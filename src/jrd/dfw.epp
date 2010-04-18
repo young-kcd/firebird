@@ -3602,17 +3602,17 @@ static bool delete_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 
 			const USHORT old_flags = function->fun_flags;
 			function->fun_flags |= FUN_obsolete;
-			if (function->getRequest())
+			if (function->getStatement())
 			{
-				if (CMP_clone_is_active(function->getRequest()))
+				if (function->getStatement()->isActive())
 				{
 					function->fun_flags = old_flags;
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				}
 
-				CMP_release(tdbb, function->getRequest());
-				function->setRequest(NULL);
+				function->getStatement()->release(tdbb);
+				function->setStatement(NULL);
 			}
 
 			// delete dependency lists
@@ -3961,17 +3961,17 @@ static bool delete_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 			old_flags = procedure->prc_flags;
 			procedure->prc_flags |= PRC_obsolete;
-			if (procedure->getRequest())
+			if (procedure->getStatement())
 			{
-				if (CMP_clone_is_active(procedure->getRequest()))
+				if (procedure->getStatement()->isActive())
 				{
 					procedure->prc_flags = old_flags;
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
 				}
 
-				CMP_release(tdbb, procedure->getRequest());
-				procedure->setRequest(NULL);
+				procedure->getStatement()->release(tdbb);
+				procedure->setStatement(NULL);
 			}
 
 			// delete dependency lists
@@ -4668,7 +4668,7 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
 
 	if (found && !blob_id.isEmpty())
 	{
-		jrd_req* request = NULL;
+		JrdStatement* statement = NULL;
 
 		MemoryPool* const new_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -4676,19 +4676,15 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
 		const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
 			work->dfw_name : work->dfw_package);
 
-		MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
+		MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &statement : NULL,
 							 NULL, depName,
 							 (work->dfw_package.isEmpty() ? obj_udf : obj_package_body),
 							 0, transaction);
 
-		if (request)
-		{
-			CMP_release(tdbb, request);
-		}
+		if (statement)
+			statement->release(tdbb);
 		else
-		{
 			dbb->deletePool(new_pool);
-		}
 	}
 }
 
@@ -4739,7 +4735,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 
 	if (procedure && !blob_id.isEmpty())
 	{
-		jrd_req* request = NULL;
+		JrdStatement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = dbb->createPool();
 		// block is used to ensure MET_verify_cache
@@ -4749,13 +4745,13 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 
 			const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
 				work->dfw_name : work->dfw_package);
-			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
+			MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &blob_id, compile ? &statement : NULL,
 								 NULL, depName,
 								 (work->dfw_package.isEmpty() ? obj_procedure : obj_package_body),
 								 0, transaction);
 
-			if (request)
-				CMP_release(tdbb, request);
+			if (statement)
+				statement->release(tdbb);
 			else
 				dbb->deletePool(new_pool);
 		}
@@ -4810,18 +4806,18 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 
 	if ((relation || (type & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB) && !blob_id.isEmpty())
 	{
-		jrd_req* request = NULL;
+		JrdStatement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
 		MemoryPool* new_pool = dbb->createPool();
 		const USHORT par_flags = (USHORT) (type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 		const Firebird::MetaName depName(work->dfw_name);
-		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, compile ? &request : NULL,
+		MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &blob_id, (compile ? &statement : NULL),
 							 NULL, depName, obj_trigger, par_flags, transaction);
 
-		if (request)
-			CMP_release(tdbb, request);
+		if (statement)
+			statement->release(tdbb);
 		else
 			dbb->deletePool(new_pool);
 	}
@@ -5264,11 +5260,13 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					if (notNull && !defaultValue->isEmpty())
 					{
 						Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
-						jrd_req* defaultRequest = NULL;
+						JrdStatement* defaultStatement = NULL;
 						try
 						{
 							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
-								NULL, &defaultRequest, false);
+								NULL, &defaultStatement, false);
+
+							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
 
 							// Attention: this is scoped to the end of this "try".
 							AutoSetRestore2<jrd_req*, thread_db> autoRequest(tdbb,
@@ -5312,12 +5310,12 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						}
 						catch (const Exception&)
 						{
-							if (defaultRequest)
-								CMP_release(tdbb, defaultRequest);
+							if (defaultStatement)
+								defaultStatement->release(tdbb);
 							throw;
 						}
 
-						CMP_release(tdbb, defaultRequest);
+						defaultStatement->release(tdbb);
 					}
 
 					// for text data types, grab the CHARACTER_SET and
@@ -5581,9 +5579,9 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 			function->fun_flags |= FUN_being_altered;
 
-			if (function->getRequest())
+			if (function->getStatement())
 			{
-				if (CMP_clone_is_active(function->getRequest()))
+				if (function->getStatement()->isActive())
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
@@ -5591,8 +5589,8 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 
 				// release the request
 
-				CMP_release(tdbb, function->getRequest());
-				function->setRequest(NULL);
+				function->getStatement()->release(tdbb);
+				function->setStatement(NULL);
 			}
 
 			// delete dependency lists
@@ -5781,9 +5779,9 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 			}
 
 			procedure->prc_flags |= PRC_being_altered;
-			if (procedure->getRequest())
+			if (procedure->getStatement())
 			{
-				if (CMP_clone_is_active(procedure->getRequest()))
+				if (procedure->getStatement()->isActive())
 				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
@@ -5791,8 +5789,8 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 
 				// release the request
 
-				CMP_release(tdbb, procedure->getRequest());
-				procedure->setRequest(NULL);
+				procedure->getStatement()->release(tdbb);
+				procedure->setStatement(NULL);
 			}
 
 			// delete dependency lists

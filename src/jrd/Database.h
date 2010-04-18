@@ -405,8 +405,8 @@ public:
 
 	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
-	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
-	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
+	Firebird::Array<JrdStatement*> dbb_internal;	// internal statements
+	Firebird::Array<JrdStatement*> dbb_dyn_req;		// internal dyn statements
 
 	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
 	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction
@@ -508,6 +508,7 @@ public:
 	void destroyIntlObjects();			// defined in intl.cpp
 
 	SLONG genSharedUniqueNumber(thread_db* tdbb);
+	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 
 private:
 	static int blockingAstSharedCounter(void*);

@@ -178,7 +178,6 @@ static void release_dsql_support(sqlda_sup&);
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
-	class jrd_req;
 	class dsql_req;
 }
 

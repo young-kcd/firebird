@@ -330,7 +330,7 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
 
 	SET_TDBB(tdbb);
 
-	if (idx && idx->idx_expression_request && idx->idx_expression)
+	if (idx && idx->idx_expression_statement && idx->idx_expression)
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
 		return OPT_expression_equal2(tdbb, csb, idx->idx_expression, node, stream);
@@ -1779,11 +1779,12 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 
 	// check whether this is during a compile or during
 	// a SET INDEX operation
-	if (csb) {
+	if (csb)
 		CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_index, idx->idx_id);
-	}
-	else {
-		CMP_post_resource(&tdbb->getRequest()->req_resources, relation, Resource::rsc_index, idx->idx_id);
+	else
+	{
+		CMP_post_resource(&tdbb->getRequest()->getStatement()->resources, relation,
+			Resource::rsc_index, idx->idx_id);
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_idx_length);

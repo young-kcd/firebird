@@ -379,7 +379,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				fb_assert(!function->fun_legacy);
 
 				function->fun_entrypoint = NULL;
-				function->setRequest(NULL);
+				function->setStatement(NULL);
 
 				HalfStaticArray<UCHAR, 512> body;
 
@@ -439,7 +439,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			else
 			{
 				function->fun_external = NULL;
-				function->setRequest(NULL);
+				function->setStatement(NULL);
 
 				if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
 				{
@@ -566,7 +566,7 @@ ULONG Function::allocateImpure(CompilerScratch* csb)
 {
 	const ULONG impure = CMP_impure(csb, sizeof(impure_value));
 
-	if (getRequest())
+	if (getStatement())
 	{
 		if (fun_in_msg_format.fmt_count)
 		{
@@ -586,18 +586,18 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 {
 	fb_assert(blob_id && !blob_id->isEmpty());
 
-	jrd_req* request = getRequest();
+	JrdStatement* statement = getStatement();
 
-	if (request)
+	if (statement)
 	{
-		CMP_release(tdbb, request);
-		setRequest(NULL);
-		request = NULL;
+		statement->release(tdbb);
+		setStatement(NULL);
+		statement = NULL;
 	}
 
-	MET_parse_blob(tdbb, NULL, blob_id, &csb, &request, false);
-	request->req_function = this;
-	setRequest(request);
+	MET_parse_blob(tdbb, NULL, blob_id, &csb, &statement, false);
+	statement->function = this;
+	setStatement(statement);
 }
 
 jrd_nod* Function::parseArgs(thread_db* tdbb, CompilerScratch* csb)
@@ -637,10 +637,10 @@ void Function::release(thread_db* tdbb)
 		Database* const dbb = tdbb->getDatabase();
 		if (fun_use_count == 0 && dbb->dbb_functions[getId()] != this)
 		{
-			if (getRequest())
+			if (getStatement())
 			{
-				CMP_release(tdbb, getRequest());
-				setRequest(NULL);
+				getStatement()->release(tdbb);
+				setStatement(NULL);
 			}
 			fun_flags &= ~FUN_being_altered;
 			remove(tdbb);
@@ -707,7 +707,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 	}
 	else
 	{
-		fb_assert(getRequest());
+		fb_assert(getStatement());
 		fb_assert(!fun_return_arg);
 		fb_assert(args->nod_count == fun_inputs);
 
@@ -741,7 +741,7 @@ dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) cons
 			}
 		}
 
-		jrd_req* const new_request = EXE_find_request(tdbb, getRequest(), false);
+		jrd_req* const new_request = getStatement()->findRequest(tdbb);
 
 		try
 		{

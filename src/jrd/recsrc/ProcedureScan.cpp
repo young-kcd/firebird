@@ -63,7 +63,7 @@ void ProcedureScan::open(thread_db* tdbb)
 	ULONG iml;
 	const UCHAR* im;
 
-	jrd_req* const proc_request = EXE_find_request(tdbb, m_procedure->getRequest(), false);
+	jrd_req* const proc_request = m_procedure->getStatement()->findRequest(tdbb);
 	impure->irsb_req_handle = proc_request;
 
 	if (m_inputs)
@@ -134,7 +134,7 @@ void ProcedureScan::close(thread_db* tdbb)
 		{
 			EXE_unwind(tdbb, proc_request);
 			proc_request->req_flags &= ~req_in_use;
-			impure->irsb_req_handle = 0;
+			impure->irsb_req_handle = NULL;
 			proc_request->req_attachment = NULL;
 		}
 

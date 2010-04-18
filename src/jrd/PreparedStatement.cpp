@@ -220,10 +220,12 @@ void PreparedStatement::setDesc(thread_db* tdbb, unsigned param, const dsc& valu
 {
 	fb_assert(param > 0);
 
+	jrd_req* jrdRequest = getRequest()->req_request;
+
 	// Setup tdbb info necessary for blobs.
 	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&getRequest()->req_request->req_transaction,
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, jrdRequest);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&jrdRequest->req_transaction,
 		tdbb->getTransaction());
 
 	MOV_move(tdbb, const_cast<dsc*>(&value), &inValues[(param - 1) * 2]);
@@ -260,7 +262,7 @@ ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction
 unsigned PreparedStatement::executeUpdate(thread_db* tdbb, jrd_tra* transaction)
 {
 	execute(tdbb, transaction);
-	return request->req_request->req_records_updated;
+	return getRequest()->req_request->req_records_updated;
 }
 
 

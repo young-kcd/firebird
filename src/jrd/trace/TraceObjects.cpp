@@ -363,7 +363,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 const char* TraceTriggerImpl::getTriggerName()
 {
-	return m_trig->req_trg_name.c_str();
+	return m_trig->getStatement()->triggerName.c_str();
 }
 
 const char* TraceTriggerImpl::getRelationName()

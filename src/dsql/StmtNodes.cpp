@@ -898,7 +898,8 @@ void ExceptionNode::setError(thread_db* tdbb) const
 		case xcp_gds_code:
 			if (xcpCode == isc_check_constraint)
 			{
-				MET_lookup_cnstrt_for_trigger(tdbb, exName, relationName, request->req_trg_name);
+				MET_lookup_cnstrt_for_trigger(tdbb, exName, relationName,
+					request->getStatement()->triggerName);
 				ERR_post(Arg::Gds(xcpCode) << Arg::Str(exName) << Arg::Str(relationName));
 			}
 			else

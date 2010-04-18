@@ -441,7 +441,7 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
 	idx->idx_primary_relation = 0;
 	idx->idx_primary_index = 0;
 	idx->idx_expression = NULL;
-	idx->idx_expression_request = NULL;
+	idx->idx_expression_statement = NULL;
 
 	// pick up field ids and type descriptions for each of the fields
 	const UCHAR* ptr = (UCHAR*) root + irt_desc->irt_desc;
@@ -472,7 +472,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	fb_assert(idx->idx_expression != NULL);
 
 	jrd_req* const org_request = tdbb->getRequest();
-	jrd_req* const expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
+	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb);
 
 	fb_assert(expr_request->req_caller == NULL);
 	expr_request->req_caller = org_request;

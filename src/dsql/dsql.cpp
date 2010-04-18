@@ -406,7 +406,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
 
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-		msgBuffer, 0);
+		msgBuffer);
 
 	const dsql_par* const eof = request->getStatement()->getEof();
 
@@ -833,7 +833,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 					TraceManager::event_dsql_free(attachment, &stmt, DSQL_close);
 				}
 
-				JRD_unwind_request(tdbb, request->req_request, 0);
+				JRD_unwind_request(tdbb, request->req_request);
 			}
 		}
 		catch (Firebird::Exception&)
@@ -1159,12 +1159,12 @@ static void execute_request(thread_db* tdbb,
 	TraceDSQLExecute trace(request->req_dbb->dbb_attachment, request);
 
 	if (!message)
-		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
+		JRD_start(tdbb, request->req_request, request->req_transaction);
 	else
 	{
 		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
 		JRD_start_and_send(tdbb, request->req_request, request->req_transaction, message->msg_number,
-						   message->msg_length, msgBuffer, 0);
+			message->msg_length, msgBuffer);
 	}
 
 	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
@@ -1195,7 +1195,7 @@ static void execute_request(thread_db* tdbb,
 		}
 
 		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-			msgBuffer, 0);
+			msgBuffer);
 
 		if (out_msg_length)
 			map_in_out(request, true, message, 0, out_blr, out_msg_length, out_msg);
@@ -1224,7 +1224,7 @@ static void execute_request(thread_db* tdbb,
 				try
 				{
 					JRD_receive(tdbb, request->req_request, message->msg_number,
-						message->msg_length, message_buffer, 0);
+						message->msg_length, message_buffer);
 					status = FB_SUCCESS;
 				}
 				catch (Firebird::Exception&)
@@ -1424,7 +1424,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request, 0,
+		JRD_request_info(tdbb, request->req_request,
 						 sizeof(explain_info), explain_info,
 						 explain_buffer.getCount(), explain_buffer.begin());
 
@@ -1432,9 +1432,8 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 		{
 			explain_buffer.resize(MAX_USHORT);
 
-			JRD_request_info(tdbb, request->req_request, 0,
-							 sizeof(explain_info), explain_info,
-							 explain_buffer.getCount(), explain_buffer.begin());
+			JRD_request_info(tdbb, request->req_request, sizeof(explain_info), explain_info,
+				explain_buffer.getCount(), explain_buffer.begin());
 
 			if (explain_buffer[0] == isc_info_truncated)
 			{
@@ -1556,9 +1555,8 @@ static USHORT get_request_info(thread_db* tdbb, dsql_req* request, SLONG buffer_
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request, 0,
-						 sizeof(record_info), record_info,
-						 buffer_length, buffer);
+		JRD_request_info(tdbb, request->req_request, sizeof(record_info), record_info,
+			buffer_length, buffer);
 	}
 	catch (Firebird::Exception&)
 	{

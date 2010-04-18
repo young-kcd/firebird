@@ -39,8 +39,8 @@ void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 	bool preTriggers, int action);
 Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_nod* in_node);
-Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, UCHAR*, bool = false);
+void EXE_release(Jrd::thread_db*, Jrd::jrd_req*);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, const UCHAR*);
 void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
 void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
@@ -56,7 +56,7 @@ namespace Jrd
 		AutoCacheRequest(thread_db* tdbb, USHORT aId, USHORT aWhich)
 			: id(aId),
 			  which(aWhich),
-			  request(CMP_find_request(tdbb, id, which))
+			  request(tdbb->getDatabase()->findSystemRequest(tdbb, id, which))
 		{
 		}
 
@@ -79,7 +79,7 @@ namespace Jrd
 
 			id = aId;
 			which = aWhich;
-			request = CMP_find_request(tdbb, id, which);
+			request = tdbb->getDatabase()->findSystemRequest(tdbb, id, which);
 		}
 
 	public:
@@ -121,9 +121,9 @@ namespace Jrd
 			Database* dbb = JRD_get_thread_data()->getDatabase();
 
 			if (which == IRQ_REQUESTS)
-				dbb->dbb_internal[id] = request;
+				dbb->dbb_internal[id] = request->getStatement();
 			else if (which == DYN_REQUESTS)
-				dbb->dbb_dyn_req[id] = request;
+				dbb->dbb_dyn_req[id] = request->getStatement();
 			else
 			{
 				fb_assert(false);

@@ -34,7 +34,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		execute_statement.cpp ExtEngineManager.cpp filters.cpp flu.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
 		IntlUtil.cpp isc_sync.cpp \
-		jrd.cpp Attachment.cpp Database.cpp lck.cpp \
+		jrd.cpp JrdStatement.cpp Attachment.cpp Database.cpp lck.cpp \
 		mov.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		ods.cpp PluginManager.cpp PreparedStatement.cpp RandomGenerator.cpp \
 		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp \

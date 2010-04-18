@@ -792,7 +792,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			{
 				request->adjustCallerStats();
 
-				if (!(request->req_flags & (req_internal | req_sys_trigger)) && request->req_caller)
+				if (!(request->getStatement()->flags &
+						(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
+					request->req_caller)
 				{
 					putCall(request, writer, fb_utils::genUniqueId());
 				}
@@ -801,9 +803,14 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 		// Request information
 
-		for (request = attachment->att_requests; request; request = request->req_request)
+		for (const jrd_req* const* i = attachment->att_requests.begin();
+			 i != attachment->att_requests.end();
+			 ++i)
 		{
-			if (!(request->req_flags & (req_internal | req_sys_trigger)))
+			const jrd_req* request = *i;
+
+			if (!(request->getStatement()->flags &
+					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 			{
 				putRequest(request, writer, fb_utils::genUniqueId());
 			}
@@ -1084,9 +1091,9 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int st
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 	}
 	// sql text
-	if (request->req_sql_text)
+	if (request->getStatement()->sqlText)
 	{
-		record.storeString(f_mon_stmt_sql_text, *request->req_sql_text);
+		record.storeString(f_mon_stmt_sql_text, *request->getStatement()->sqlText);
 	}
 
 	// statistics
@@ -1101,26 +1108,27 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 {
 	fb_assert(request);
 
-	const jrd_req* statement = request->req_caller;
-	while (statement->req_caller)
+	const jrd_req* initialRequest = request->req_caller;
+	while (initialRequest->req_caller)
 	{
-		statement = statement->req_caller;
+		initialRequest = initialRequest->req_caller;
 	}
-	fb_assert(statement);
+	fb_assert(initialRequest);
 
 	DumpRecord record(rel_mon_calls);
 
 	// call id
 	record.storeGlobalId(f_mon_call_id, getGlobalId(request->req_id));
 	// statement id
-	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(statement->req_id));
+	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(initialRequest->req_id));
 	// caller id
-	if (statement != request->req_caller)
+	if (initialRequest != request->req_caller)
 	{
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
 
-	const Routine* routine = request->getRoutine();
+	JrdStatement* statement = request->getStatement();
+	const Routine* routine = statement->getRoutine();
 
 	// object name/type
 	if (routine)
@@ -1131,9 +1139,9 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		record.storeString(f_mon_call_name, routine->getName().identifier);
 		record.storeInteger(f_mon_call_type, routine->getObjectType());
 	}
-	else if (!request->req_trg_name.isEmpty())
+	else if (!statement->triggerName.isEmpty())
 	{
-		record.storeString(f_mon_call_name, request->req_trg_name);
+		record.storeString(f_mon_call_name, statement->triggerName);
 		record.storeInteger(f_mon_call_type, obj_trigger);
 	}
 	else

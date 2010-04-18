@@ -355,12 +355,13 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		if (m_callerPrivileges)
 		{
 			jrd_req* request = tdbb->getRequest();
+			JrdStatement* statement = request ? request->getStatement() : NULL;
 			CallerName callerName;
 			const Routine* routine;
 
-			if (request && request->req_trg_name.hasData())
-				tran->tra_caller_name = CallerName(obj_trigger, request->req_trg_name);
-			else if (request && (routine = request->getRoutine()) &&
+			if (request && statement->triggerName.hasData())
+				tran->tra_caller_name = CallerName(obj_trigger, statement->triggerName);
+			else if (request && (routine = statement->getRoutine()) &&
 				routine->getName().identifier.hasData())
 			{
 				if (routine->getName().package.isEmpty())

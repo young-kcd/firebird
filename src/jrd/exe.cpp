@@ -227,8 +227,6 @@ static void stuff_stack_trace(const jrd_req*);
 
 
 // macro definitions
-const int MAX_CLONES = 1000;
-
 const int ALL_TRIGS	= 0;
 const int PRE_TRIG	= 1;
 const int POST_TRIG	= 2;
@@ -620,88 +618,6 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 }
 
 
-jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
-{
-/**************************************
- *
- *	E X E _ f i n d _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Find an inactive incarnation of a trigger request.  If necessary,
- *	clone it.
- *
- **************************************/
-	DEV_BLKCHK(request, type_req);
-
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	// I found a core file from my test runs that came from a NULL request -
-	// but have no idea what test was running.  Let's bugcheck so we can figure it out
-	if (!request)
-		BUGCHECK(167);	// msg 167 invalid SEND request
-
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_exe_clone_mutex);
-
-	jrd_req* clone = NULL;
-	USHORT count = 0;
-	if (!(request->req_flags & req_in_use))
-		clone = request;
-	else
-	{
-		if (request->req_attachment == attachment)
-			count++;
-
-		// Request exists and is in use.  Search clones for one in use by
-		// this attachment. If not found, return first inactive request.
-
-		vec<jrd_req*>* vector = request->req_sub_requests;
-		const size_t clones = vector ? (vector->count() - 1) : 0;
-
-		USHORT n;
-		for (n = 1; n <= clones; n++)
-		{
-			jrd_req* next = CMP_clone_request(tdbb, request, n, validate);
-
-			if (next->req_attachment == attachment)
-			{
-				if (!(next->req_flags & req_in_use))
-				{
-					clone = next;
-					break;
-				}
-
-				count++;
-			}
-			else if (!(next->req_flags & req_in_use) && !clone)
-			{
-				clone = next;
-			}
-		}
-
-		if (count > MAX_CLONES)
-		{
-			ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
-		}
-
-		if (!clone)
-		{
-			clone = CMP_clone_request(tdbb, request, n, validate);
-		}
-	}
-
-	clone->req_attachment = attachment;
-	clone->req_stats.reset();
-	clone->req_base_stats.reset();
-	clone->req_flags |= req_in_use;
-
-	return clone;
-}
-
-
 void EXE_receive(thread_db* tdbb,
 				 jrd_req* request,
 				 USHORT msg,
@@ -755,7 +671,8 @@ void EXE_receive(thread_db* tdbb,
 	try
 	{
 
-	const bool external = request->req_procedure && request->req_procedure->getExternal();
+	const bool external = request->getStatement()->procedure &&
+		request->getStatement()->procedure->getExternal();
 
 	if (external)
 	{
@@ -838,6 +755,32 @@ void EXE_receive(thread_db* tdbb,
 }
 
 
+// Release a request instance.
+void EXE_release(thread_db* tdbb, jrd_req* request)
+{
+	DEV_BLKCHK(request, type_req);
+
+	SET_TDBB(tdbb);
+
+	EXE_unwind(tdbb, request);
+
+	delete request->inputParams;
+	request->inputParams = NULL;
+
+	delete request->outputParams;
+	request->outputParams = NULL;
+
+	if (request->req_attachment)
+	{
+		size_t pos;
+		if (request->req_attachment->att_requests.find(request, pos))
+			request->req_attachment->att_requests.remove(pos);
+
+		request->req_attachment = NULL;
+	}
+}
+
+
 void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const UCHAR* buffer)
 {
 /**************************************
@@ -867,12 +810,14 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	node = request->req_message;
 
 	jrd_tra* transaction = request->req_transaction;
-	const bool external = request->req_procedure && request->req_procedure->getExternal();
+	const JrdStatement* statement = request->getStatement();
+
+	const bool external = statement->procedure && statement->procedure->getExternal();
 
 	if (external)
 	{
-		fb_assert(request->req_top_node->nod_type == nod_list);
-		message = request->req_top_node->nod_arg[e_extproc_input_message];	// input message
+		fb_assert(statement->topNode->nod_type == nod_list);
+		message = statement->topNode->nod_arg[e_extproc_input_message];	// input message
 		fb_assert(message->nod_type == nod_message);
 	}
 	else
@@ -985,7 +930,8 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	if (transaction->tra_flags & TRA_prepared)
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
-	jrd_prc* proc = request->req_procedure;
+	JrdStatement* statement = request->getStatement();
+	jrd_prc* proc = statement->procedure;
 
 	if (proc && proc->isUndefined())
 	{
@@ -1000,14 +946,14 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	provide transaction stability by preventing a relation from being
 	dropped after it has been referenced from an active transaction. */
 
-	TRA_post_resources(tdbb, transaction, request->req_resources);
+	TRA_post_resources(tdbb, transaction, statement->resources);
 
 	Lock* lock = transaction->tra_cancel_lock;
 	if (lock && lock->lck_logical == LCK_none)
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	TRA_attach_request(transaction, request);
-	request->req_flags &= REQ_FLAGS_INIT_MASK;
+	request->req_flags &= req_in_use;
 	request->req_flags |= req_active;
 	request->req_flags &= ~req_reserved;
 	request->req_operation = jrd_req::req_evaluate;
@@ -1032,17 +978,16 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_timestamp.validate();
 
 	// Set all invariants to not computed.
-	jrd_nod **ptr, **end;
-	for (ptr = request->req_invariants.begin(), end = request->req_invariants.end(); ptr < end; ++ptr)
+	jrd_nod** ptr, **end;
+	for (ptr = statement->invariants.begin(), end = statement->invariants.end();
+		 ptr < end; ++ptr)
 	{
 		impure_value* impure = request->getImpure<impure_value>((*ptr)->nod_impure);
 		impure->vlu_flags = 0;
 	}
 
-	if (request->req_sql_text)
-	{
+	if (statement->sqlText)
 		tdbb->bumpStats(RuntimeStatistics::STMT_EXECUTES);
-	}
 
 	// Start a save point if not in middle of one
 	if (transaction && (transaction != attachment->getSysTransaction())) {
@@ -1076,8 +1021,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
  **************************************
  *
  * Functional description
- *	Unwind a request, maybe active, maybe not.  This is particularly
- *	simple since nothing really needs to be done.
+ *	Unwind a request, maybe active, maybe not.
  *
  **************************************/
 	DEV_BLKCHK(request, type_req);
@@ -1086,7 +1030,10 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	if (request->req_flags & req_active)
 	{
-		if (request->req_fors.getCount() || request->req_exec_sta.getCount() || request->req_ext_stmt)
+		const JrdStatement* statement = request->getStatement();
+
+		if (statement->fors.getCount() ||
+			statement->execStmts.getCount() || request->req_ext_stmt)
 		{
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->getRequest();
@@ -1095,15 +1042,15 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				tdbb->setRequest(request);
 				tdbb->setTransaction(request->req_transaction);
 
-				for (RecordSource* const* ptr = request->req_fors.begin();
-					 ptr < request->req_fors.end(); ptr++)
+				for (RecordSource* const* ptr = statement->fors.begin();
+					 ptr != statement->fors.end(); ++ptr)
 				{
 					(*ptr)->close(tdbb);
 				}
 
-				for (size_t i = 0; i < request->req_exec_sta.getCount(); ++i)
+				for (size_t i = 0; i < statement->execStmts.getCount(); ++i)
 				{
-					jrd_nod* node = request->req_exec_sta[i];
+					jrd_nod* node = statement->execStmts[i];
 					ExecuteStatement* impure = request->getImpure<ExecuteStatement>(node->nod_impure);
 					impure->close(tdbb);
 				}
@@ -1128,6 +1075,8 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	delete request->resultSet;
 	request->resultSet = NULL;
+
+	request->req_sorts.unlinkAll();
 
 	if (request->req_proc_sav_point && (request->req_flags & req_proc_fetch))
 		release_proc_save_points(request);
@@ -1493,7 +1442,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		out_msg = request->getImpure<UCHAR>(out_message->nod_impure);
 	}
 
-	jrd_req* proc_request = EXE_find_request(tdbb, procedure->getRequest(), false);
+	jrd_req* proc_request = procedure->getStatement()->findRequest(tdbb);
 
 	// trace procedure execution start
 	TraceProcExecute trace(tdbb, proc_request, request, node->nod_arg[e_esp_inputs]);
@@ -1744,7 +1693,7 @@ static void execute_triggers(thread_db* tdbb,
 			}
 			else
 			{
-				jrd_req* trigger = EXE_find_request(tdbb, ptr->request, false);
+				jrd_req* trigger = ptr->statement->findRequest(tdbb);
 				trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
 				trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
 
@@ -1827,22 +1776,23 @@ static void stuff_stack_trace(const jrd_req* request)
 
 	for (const jrd_req* req = request; req; req = req->req_caller)
 	{
+		const JrdStatement* statement = req->getStatement();
 		Firebird::string name;
 
-		if (req->req_trg_name.length())
+		if (statement->triggerName.length())
 		{
 			name = "At trigger '";
-			name += req->req_trg_name.c_str();
+			name += statement->triggerName.c_str();
 		}
-		else if (req->req_procedure)
+		else if (statement->procedure)
 		{
 			name = "At procedure '";
-			name += req->req_procedure->getName().toString().c_str();
+			name += statement->procedure->getName().toString().c_str();
 		}
-		else if (req->req_function)
+		else if (statement->function)
 		{
 			name = "At function '";
-			name += req->req_function->getName().toString().c_str();
+			name += statement->function->getName().toString().c_str();
 		}
 
 		if (! name.isEmpty())
@@ -1939,12 +1889,14 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	// Execute stuff until we drop
 
-	bool runExternal = request->req_procedure && request->req_procedure->getExternal();
+	const JrdStatement* statement = request->getStatement();
+
+	bool runExternal = statement->procedure && statement->procedure->getExternal();
 
 	while (runExternal || (node && !(request->req_flags & req_stall)))
 	{
 	try {
-		if (request->req_procedure && request->req_procedure->getExternal())
+		if (statement->procedure && statement->procedure->getExternal())
 		{
 			if (runExternal)
 				runExternal = false;
@@ -1954,16 +1906,16 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation)
 			{
 				case jrd_req::req_evaluate:
-					request->req_message = request->req_top_node->nod_arg[0];	// input message
+					request->req_message = statement->topNode->nod_arg[0];	// input message
 					request->req_flags |= req_stall;
 					request->req_operation = jrd_req::req_receive;
 					break;
 
 				case jrd_req::req_sync:
 				{
-					fb_assert(request->req_top_node->nod_type == nod_list);
+					fb_assert(statement->topNode->nod_type == nod_list);
 
-					jrd_nod* outMsgNode = request->req_top_node->nod_arg[e_extproc_output_message];
+					jrd_nod* outMsgNode = statement->topNode->nod_arg[e_extproc_output_message];
 					fb_assert(outMsgNode->nod_type == nod_message);
 
 					const Format* outFormat = (Format*) outMsgNode->nod_arg[e_msg_format];
@@ -1972,11 +1924,11 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (!request->resultSet)
 					{
 						// input message
-						jrd_nod* inMsgNode = request->req_top_node->nod_arg[e_extproc_input_message];
+						jrd_nod* inMsgNode = statement->topNode->nod_arg[e_extproc_input_message];
 						fb_assert(inMsgNode->nod_type == nod_message);
 						fb_assert(request->req_message == inMsgNode);
 
-						jrd_nod* list = request->req_top_node->nod_arg[e_extproc_input_assign];
+						jrd_nod* list = statement->topNode->nod_arg[e_extproc_input_assign];
 						fb_assert(list->nod_type == nod_asn_list ||
 							(list->nod_type == nod_list && list->nod_count == 0));
 
@@ -2002,18 +1954,18 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, format, inMsg,
-								request->req_procedure->prc_input_fields);
+								statement->procedure->prc_input_fields);
 						}
 
 						if (!request->outputParams)
 						{
 							request->outputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, outFormat, outMsg,
-								request->req_procedure->prc_output_fields);
+								statement->procedure->prc_output_fields);
 							request->outputParams->setNull();
 						}
 
-						request->resultSet = request->req_procedure->getExternal()->open(tdbb,
+						request->resultSet = statement->procedure->getExternal()->open(tdbb,
 							request->inputParams, request->outputParams);
 					}
 
@@ -2025,7 +1977,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					fb_assert(eofDesc.dsc_dtype == dtype_short);
 					*((SSHORT*) (UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
 
-					jrd_nod* list = request->req_top_node->nod_arg[e_extproc_output_assign];
+					jrd_nod* list = statement->topNode->nod_arg[e_extproc_output_assign];
 					fb_assert(list->nod_type == nod_asn_list ||
 						(list->nod_type == nod_list && list->nod_count == 0));
 
@@ -2731,13 +2683,13 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				MET_lookup_generator_id(tdbb, genId, genName);
 
 				DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_BEFORE,
-					DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->req_sql_text);
+					DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->getStatement()->sqlText);
 
 				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
 				DPM_gen_id(tdbb, genId, true, MOV_get_int64(desc, 0));
 
 				DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
-					DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->req_sql_text);
+					DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->getStatement()->sqlText);
 
 				request->req_operation = jrd_req::req_return;
 			}
@@ -2770,7 +2722,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 					MapFieldInfo::ValueType fieldInfo;
 					if (itemInfo->fullDomain &&
-						request->req_map_field_info.get(itemInfo->field, fieldInfo) &&
+						request->getStatement()->mapFieldInfo.get(itemInfo->field, fieldInfo) &&
 						fieldInfo.defaultValue)
 					{
 						dsc* value = EVL_expr(tdbb, fieldInfo.defaultValue);
@@ -2937,7 +2889,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request)
 	// of handling signals use this stuff?
 	// (see jrd/ibsetjmp.h for implementation of these macros)
 
-	EXE_looper(tdbb, request, request->req_top_node);
+	EXE_looper(tdbb, request, request->getStatement()->topNode);
 
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);
@@ -3654,10 +3606,10 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	{
 		trigger->req_flags &= ~req_leave;
 		string msg;
-		MET_trigger_msg(tdbb, msg, trigger->req_trg_name, trigger->req_label);
+		MET_trigger_msg(tdbb, msg, trigger->getStatement()->triggerName, trigger->req_label);
 		if (msg.hasData())
 		{
-			if (trigger->req_flags & req_sys_trigger)
+			if (trigger->getStatement()->flags & JrdStatement::FLAG_SYS_TRIGGER)
 			{
 				ISC_STATUS code = PAR_symbol_to_gdscode(msg);
 				if (code)
@@ -3777,14 +3729,4 @@ void EXE_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 		BUGCHECK(290); // msg 290 error during savepoint backout
 	}
-}
-
-
-const Routine* jrd_req::getRoutine() const
-{
-	fb_assert(!(req_procedure && req_function));
-	if (req_procedure)
-		return req_procedure;
-
-	return req_function;
 }

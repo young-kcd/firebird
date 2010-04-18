@@ -195,12 +195,12 @@ namespace
 		tdbb->setTransaction(transaction);
 	}
 
-	inline void validateHandle(thread_db* tdbb, jrd_req* const request)
+	inline void validateHandle(thread_db* tdbb, JrdStatement* const statement)
 	{
-		if (!request || !request->checkHandle())
+		if (!statement || !statement->checkHandle())
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
-		validateHandle(tdbb, request->req_attachment);
+		validateHandle(tdbb, statement->requests[0]->req_attachment);
 	}
 
 	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
@@ -319,14 +319,12 @@ void Trigger::compile(thread_db* tdbb)
 
 	if (engine.isEmpty() && !extTrigger)
 	{
-		if (!request /*&& !compile_in_progress*/)
+		if (!statement /*&& !compile_in_progress*/)
 		{
 			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
-			if (request)
-			{
+			if (statement)
 				return;
-			}
 
 			compile_in_progress = true;
 			// Allocate statement memory pool
@@ -348,7 +346,7 @@ void Trigger::compile(thread_db* tdbb)
 				if (!dbg_blob_id.isEmpty())
 					DBG_parse_debug_info(tdbb, &dbg_blob_id, csb->csb_dbg_info);
 
-				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &request,
+				PAR_blr(tdbb, relation, blr.begin(), (ULONG) blr.getCount(), NULL, &csb, &statement,
 					(relation ? true : false), par_flags);
 
 				delete csb;
@@ -359,10 +357,10 @@ void Trigger::compile(thread_db* tdbb)
 				delete csb;
 				csb = NULL;
 
-				if (request)
+				if (statement)
 				{
-					CMP_release(tdbb, request);
-					request = NULL;
+					statement->release(tdbb);
+					statement = NULL;
 				}
 				else {
 					dbb->deletePool(new_pool);
@@ -371,16 +369,13 @@ void Trigger::compile(thread_db* tdbb)
 				throw;
 			}
 
-			request->req_trg_name = name;
+			statement->triggerName = name;
 
 			if (sys_trigger)
-			{
-				request->req_flags |= req_sys_trigger;
-			}
+				statement->flags |= JrdStatement::FLAG_SYS_TRIGGER;
+
 			if (flags & TRG_ignore_perm)
-			{
-				request->req_flags |= req_ignore_perm;
-			}
+				statement->flags |= JrdStatement::FLAG_IGNORE_PERM;
 
 			compile_in_progress = false;
 		}
@@ -408,11 +403,11 @@ void Trigger::release(thread_db* tdbb)
 		extTrigger = NULL;
 	}
 
-	if (blr.getCount() == 0 || !request || CMP_clone_is_active(request))
+	if (blr.getCount() == 0 || !statement || statement->isActive())
 		return;
 
-	CMP_release(tdbb, request);
-	request = NULL;
+	statement->release(tdbb);
+	statement = NULL;
 }
 
 // Option block for database parameter block
@@ -561,7 +556,7 @@ static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
 static void			init_database_locks(thread_db*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
-static void			verify_request_synchronization(jrd_req*& request, USHORT level);
+static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
 
 namespace {
@@ -1862,7 +1857,7 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS* user_status, jrd_tra** tra_handle)
 
 ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 						Jrd::Attachment** db_handle,
-						jrd_req** req_handle,
+						JrdStatement** stmt_handle,
 						SSHORT blr_length,
 						const SCHAR* blr)
 {
@@ -1889,12 +1884,18 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			TraceBlrCompile trace(tdbb, blr_length, (UCHAR*) blr);
 			try
 			{
-				JRD_compile(tdbb, attachment, req_handle,
-							(USHORT) blr_length, reinterpret_cast<const UCHAR*>(blr),
-							RefStrPtr(), 0, NULL, false);
+				if (*stmt_handle)
+					status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
-				fb_assert(*req_handle);
-				trace.finish(*req_handle, res_successful);
+				jrd_req* request = NULL;
+				JRD_compile(tdbb, attachment, &request,
+					(USHORT) blr_length, reinterpret_cast<const UCHAR*>(blr),
+					RefStrPtr(), 0, NULL, false);
+
+				*stmt_handle = request->getStatement();
+				fb_assert(*stmt_handle);
+
+				trace.finish(request, res_successful);
 			}
 			catch (const Exception& ex)
 			{
@@ -2961,7 +2962,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
-						jrd_req** req_handle,
+						JrdStatement** stmt_handle,
 						USHORT msg_type,
 						USHORT msg_length,
 						SCHAR* msg,
@@ -2981,15 +2982,17 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
+
+		jrd_req* request = verify_request_synchronization(stmt, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
-			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
+			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
 		}
 		catch (const Exception& ex)
 		{
@@ -3053,7 +3056,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, JrdStatement** stmt_handle)
 {
 /**************************************
  *
@@ -3069,15 +3072,15 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
 		{
-			CMP_release(tdbb, request);
-			*req_handle = NULL;
+			stmt->release(tdbb);
+			*stmt_handle = NULL;
 		}
 		catch (const Exception& ex)
 		{
@@ -3094,7 +3097,7 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, jrd_req** req_handle)
 
 
 ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
-							jrd_req** req_handle,
+							JrdStatement** stmt_handle,
 							SSHORT level,
 							SSHORT item_length,
 							const SCHAR* items,
@@ -3115,10 +3118,12 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
+
+		jrd_req* request = verify_request_synchronization(stmt, level);
 
 		try
 		{
@@ -3126,7 +3131,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 			const UCHAR* items2 = reinterpret_cast<const UCHAR*>(items);
 			UCHAR* buffer2 = reinterpret_cast<UCHAR*>(buffer);
 			SLONG buffer_length2 = (ULONG)(USHORT) buffer_length;
-			JRD_request_info(tdbb, request, level, item_length, items2, buffer_length2, buffer2);
+			JRD_request_info(tdbb, request, item_length, items2, buffer_length2, buffer2);
 		}
 		catch (const Exception& ex)
 		{
@@ -3262,7 +3267,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
-					jrd_req** req_handle,
+					JrdStatement** stmt_handle,
 					USHORT msg_type,
 					USHORT msg_length,
 					SCHAR* msg,
@@ -3282,15 +3287,17 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
+
+		jrd_req* request = verify_request_synchronization(stmt, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
 		{
-			JRD_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg), level);
+			JRD_send(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
 		}
 		catch (const Exception& ex)
 		{
@@ -3491,7 +3498,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 
 
 ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
-							jrd_req** req_handle,
+							JrdStatement** stmt_handle,
 							jrd_tra** tra_handle,
 							USHORT msg_type,
 							USHORT msg_length,
@@ -3512,11 +3519,13 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
+
+		jrd_req* request = stmt->getRequest(tdbb, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3527,7 +3536,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 			try
 			{
 				JRD_start_and_send(tdbb, request, transaction, msg_type,
-									msg_length, reinterpret_cast<UCHAR*>(msg), level);
+					msg_length, reinterpret_cast<UCHAR*>(msg));
 
 				// Notify Trace API about blr execution
 				trace.finish(res_successful);
@@ -3555,7 +3564,8 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tra_handle, SSHORT level)
+ISC_STATUS GDS_START(ISC_STATUS* user_status, JrdStatement** stmt_handle,
+	jrd_tra** tra_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3571,11 +3581,13 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tr
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
+
+		jrd_req* request = stmt->getRequest(tdbb, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3585,7 +3597,7 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status, jrd_req** req_handle, jrd_tra** tr
 			TraceBlrExecute trace(tdbb, request);
 			try
 			{
-				JRD_start(tdbb, request, transaction, level);
+				JRD_start(tdbb, request, transaction);
 				trace.finish(res_successful);
 			}
 			catch (const Exception& ex)
@@ -3792,8 +3804,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 				CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr),
 					blr_length, false);
 
-				request = CMP_make_request(tdbb, csb, false);
-				CMP_verify_access(tdbb, request);
+				request = JrdStatement::makeRequest(tdbb, csb, false);
+				request->getStatement()->verifyAccess(tdbb);
 
 				jrd_nod* node;
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
@@ -3929,7 +3941,7 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, jrd_req** req_handle, SSHORT level)
+ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, JrdStatement** stmt_handle, SSHORT level)
 {
 /**************************************
  *
@@ -3946,14 +3958,16 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, jrd_req** req_handle, SSHORT leve
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		jrd_req* const request = *req_handle;
-		validateHandle(tdbb, request);
+		JrdStatement* const stmt = *stmt_handle;
+		validateHandle(tdbb, stmt);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
+		jrd_req* request = verify_request_synchronization(stmt, level);
+
 		try
 		{
-			JRD_unwind_request(tdbb, request, level);
+			JRD_unwind_request(tdbb, request);
 		}
 		catch (const Exception& ex)
 		{
@@ -4409,7 +4423,8 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					!(attachment->att_flags & ATT_cancel_disable))
 				{
 					if ((!request ||
-						 !(request->req_flags & (req_internal | req_sys_trigger))) &&
+						 !(request->getStatement()->flags &
+						 	(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER))) &&
 						(!transaction || !(transaction->tra_flags & TRA_system)))
 					{
 						attachment->att_flags &= ~ATT_cancel_raise;
@@ -5429,10 +5444,36 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		}
 	}
 
-    // CMP_release() advances the pointer before the deallocation.
-	jrd_req* request;
-	while ( (request = attachment->att_requests) ) {
-		CMP_release(tdbb, request);
+    // CMP_release() changes att_requests.
+	while (!attachment->att_requests.isEmpty())
+		CMP_release(tdbb, attachment->att_requests.back());
+
+	for (JrdStatement** i = dbb->dbb_internal.begin(); i != dbb->dbb_internal.end(); ++i)
+	{
+		if (*i)
+		{
+			JrdStatement* stmt = *i;
+
+			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
+			{
+				if (*j && (*j)->req_attachment == attachment)
+					EXE_release(tdbb, *j);
+			}
+		}
+	}
+
+	for (JrdStatement** i = dbb->dbb_dyn_req.begin(); i != dbb->dbb_dyn_req.end(); ++i)
+	{
+		if (*i)
+		{
+			JrdStatement* stmt = *i;
+
+			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
+			{
+				if (*j && (*j)->req_attachment == attachment)
+					EXE_release(tdbb, *j);
+			}
+		}
 	}
 
 	SCL_release_all(attachment->att_security_classes);
@@ -6150,16 +6191,15 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 //
 // @param request The incoming, parent request to be replaced.
 // @param level The level of the sub-request we need to find.
-static void verify_request_synchronization(jrd_req*& request, USHORT level)
+static jrd_req* verify_request_synchronization(JrdStatement* statement, USHORT level)
 {
 	if (level)
 	{
-		const vec<jrd_req*>* vector = request->req_sub_requests;
-		if (!vector || level >= vector->count() || !(request = (*vector)[level]))
-		{
+		if (level >= statement->requests.getCount() || !statement->requests[level])
 			ERR_post(Arg::Gds(isc_req_sync));
-		}
 	}
+
+	return statement->requests[level];
 }
 
 
@@ -6417,8 +6457,8 @@ void thread_db::setRequest(jrd_req* val)
 
 SSHORT thread_db::getCharSet() const
 {
-	if (request && request->req_charset != CS_dynamic)
-		return request->req_charset;
+	if (request && request->getStatement()->charset != CS_dynamic)
+		return request->getStatement()->charset;
 
 	return attachment->att_charset;
 }
@@ -6472,9 +6512,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void JRD_receive(thread_db* tdbb, jrd_req* request,
-				 USHORT msg_type, ULONG msg_length, UCHAR* msg,
-				 USHORT level)
+void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, UCHAR* msg)
 {
 /**************************************
  *
@@ -6486,8 +6524,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request,
  *	Get a record from the host program.
  *
  **************************************/
-	verify_request_synchronization(request, level);
-
 	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
 	check_autocommit(request, tdbb);
@@ -6501,7 +6537,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request,
 
 
 void JRD_request_info(Jrd::thread_db*, jrd_req* request,
-					  USHORT level,
 					  SSHORT item_length, const UCHAR* items,
 					  SLONG buffer_length, UCHAR* buffer)
 {
@@ -6515,16 +6550,11 @@ void JRD_request_info(Jrd::thread_db*, jrd_req* request,
  *	Return information about requests.
  *
  **************************************/
-
-	verify_request_synchronization(request, level);
-
 	INF_request_info(request, items, item_length, buffer, buffer_length);
 }
 
 
-void JRD_send(thread_db* tdbb, jrd_req* request,
-			  USHORT msg_type, ULONG msg_length, UCHAR* msg,
-			  USHORT level)
+void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, UCHAR* msg)
 {
 /**************************************
  *
@@ -6536,8 +6566,6 @@ void JRD_send(thread_db* tdbb, jrd_req* request,
  *	Get a record from the host program.
  *
  **************************************/
-	verify_request_synchronization(request, level);
-
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
 
 	check_autocommit(request, tdbb);
@@ -6550,7 +6578,7 @@ void JRD_send(thread_db* tdbb, jrd_req* request,
 }
 
 
-void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USHORT level)
+void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -6562,10 +6590,6 @@ void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USH
  *	Get a record from the host program.
  *
  **************************************/
-
-	if (level)
-		request = CMP_clone_request(tdbb, request, level, false);
-
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 
@@ -6645,8 +6669,8 @@ void JRD_rollback_retaining(thread_db* tdbb, jrd_tra** transaction)
 }
 
 
-void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction, USHORT msg_type,
-	ULONG msg_length, UCHAR* msg, USHORT level)
+void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
+	USHORT msg_type, ULONG msg_length, UCHAR* msg)
 {
 /**************************************
  *
@@ -6658,10 +6682,6 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
  *	Get a record from the host program.
  *
  **************************************/
-
-	if (level)
-		request = CMP_clone_request(tdbb, request, level, false);
-
 	EXE_unwind(tdbb, request);
 	EXE_start(tdbb, request, transaction);
 	EXE_send(tdbb, request, msg_type, msg_length, msg);
@@ -6806,7 +6826,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
 }
 
 
-void JRD_unwind_request(thread_db* tdbb, jrd_req* request, USHORT level)
+void JRD_unwind_request(thread_db* tdbb, jrd_req* request)
 {
 /**************************************
  *
@@ -6819,9 +6839,6 @@ void JRD_unwind_request(thread_db* tdbb, jrd_req* request, USHORT level)
  *	be called asynchronously.
  *
  **************************************/
-	// Pick up and validate request level
-	verify_request_synchronization(request, level);
-
 	// Unwind request. This just tweaks some bits.
 	EXE_unwind(tdbb, request);
 }
@@ -6850,25 +6867,24 @@ void JRD_compile(thread_db* tdbb,
 		status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
 	jrd_req* request = CMP_compile2(tdbb, blr, blr_length, isInternalRequest, dbginfo_length, dbginfo);
-
 	request->req_attachment = attachment;
-	request->req_request = attachment->att_requests;
-	attachment->att_requests = request;
+	attachment->att_requests.add(request);
+
+	JrdStatement* statement = request->getStatement();
 
 	if (!ref_str)
 	{
-		fb_assert(request->req_blr.isEmpty());
+		fb_assert(statement->blr.isEmpty());
 
 		// hvlad: if\when we implement request's cache in the future and
 		// CMP_compile2 will return us previously compiled request with
 		// non-empty req_blr, then we must replace assertion by the line below
-		// if (!request->req_blr.isEmpty())
+		// if (!statement->req_blr.isEmpty())
 
-		request->req_blr.insert(0, blr, blr_length);
+		statement->blr.insert(0, blr, blr_length);
 	}
-	else {
-		request->req_sql_text = ref_str;
-	}
+	else
+		statement->sqlText = ref_str;
 
 	*req_handle = request;
 }

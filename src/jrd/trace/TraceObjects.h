@@ -116,7 +116,7 @@ class TraceBLRStatementImpl : public BLRPrinter
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
-		BLRPrinter(stmt->req_blr.begin(), stmt->req_blr.getCount()),
+		BLRPrinter(stmt->getStatement()->blr.begin(), stmt->getStatement()->blr.getCount()),
 		m_stmt(stmt),
 		m_perf(perf)
 	{}
@@ -233,7 +233,11 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
-	virtual const char* getProcName()	{ return m_request->req_procedure->getName().identifier.c_str(); }
+	virtual const char* getProcName()
+	{
+		return m_request->getStatement()->procedure->getName().identifier.c_str();
+	}
+
 	virtual TraceParams* getInputs()	{ return &m_inputs; }
 	virtual PerformanceInfo* getPerf()	{ return m_perf; };
 

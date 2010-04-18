@@ -105,7 +105,7 @@ static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
 
 
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
-	CompilerScratch* view_csb, CompilerScratch** csb_ptr, jrd_req** request_ptr,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
 	const bool trigger, USHORT flags)
 {
 /**************************************
@@ -201,8 +201,8 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
 
-	if (request_ptr)
-		*request_ptr = CMP_make_request(tdbb, csb, true);
+	if (statementPtr)
+		*statementPtr = JrdStatement::makeStatement(tdbb, csb, true);
 
 	if (csb_ptr)
 		*csb_ptr = csb;

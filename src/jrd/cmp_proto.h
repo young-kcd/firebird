@@ -28,15 +28,12 @@
 // req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
 #include "../jrd/scl.h"
 
-bool CMP_clone_is_active(const Jrd::jrd_req*);
 Jrd::jrd_nod* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
-Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length, bool internal_flag,
 	USHORT = 0, const UCHAR* = NULL);
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
-Jrd::jrd_req* CMP_find_request(Jrd::thread_db*, USHORT, USHORT);
 void CMP_fini(Jrd::thread_db*);
 Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);
@@ -65,6 +62,5 @@ inline void CMP_post_access(Jrd::thread_db* tdbb,
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
-void CMP_verify_access(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 
 #endif // JRD_CMP_PROTO_H

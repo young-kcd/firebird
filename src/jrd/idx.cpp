@@ -1664,12 +1664,10 @@ static void release_index_block(thread_db* tdbb, IndexBlock* index_block)
  *	Release index block structure.
  *
  **************************************/
-	if (index_block->idb_expression_request)
-	{
-		CMP_release(tdbb, index_block->idb_expression_request);
-	}
+	if (index_block->idb_expression_statement)
+		index_block->idb_expression_statement->release(tdbb);
 
-	index_block->idb_expression_request = NULL;
+	index_block->idb_expression_statement = NULL;
 	index_block->idb_expression = NULL;
 	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(dsc));
 

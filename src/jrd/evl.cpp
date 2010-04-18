@@ -1403,7 +1403,8 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 	MapFieldInfo::ValueType fieldInfo;
 	if (!err && itemInfo->fullDomain &&
-		request->req_map_field_info.get(itemInfo->field, fieldInfo) && fieldInfo.validation)
+		request->getStatement()->mapFieldInfo.get(itemInfo->field, fieldInfo) &&
+		fieldInfo.validation)
 	{
 		if (desc && null)
 		{
@@ -1455,14 +1456,16 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 				if (item.type == nod_variable)
 				{
-					if (request->req_procedure)
+					jrd_prc* procedure = request->getStatement()->procedure;
+
+					if (procedure)
 					{
-						if (index <= int(request->req_procedure->prc_output_fields.getCount()))
+						if (index <= int(procedure->prc_output_fields.getCount()))
 							s.printf("output parameter number %d", index);
 						else
 						{
 							s.printf("variable number %d",
-								index - int(request->req_procedure->prc_output_fields.getCount()));
+								index - int(procedure->prc_output_fields.getCount()));
 						}
 					}
 					else

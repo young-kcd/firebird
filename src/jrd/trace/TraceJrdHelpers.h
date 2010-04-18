@@ -231,8 +231,8 @@ public:
 		m_which_trig(which_trig)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = !(m_request->req_flags & req_sys_trigger) &&
-						trace_mgr->needs().event_trigger_execute;
+		m_need_trace = !(m_request->getStatement()->flags & JrdStatement::FLAG_SYS_TRIGGER) &&
+			trace_mgr->needs().event_trigger_execute;
 
 		if (!m_need_trace)
 			return;
@@ -360,10 +360,11 @@ public:
 		m_request(request)
 	{
 		Attachment* attachment = m_tdbb->getAttachment();
+		JrdStatement* statement = m_request->getStatement();
 
 		m_need_trace = attachment->att_trace_manager->needs().event_blr_execute &&
-			!m_request->req_sql_text &&
-			!(m_request->req_flags & req_internal) &&
+			!statement->sqlText &&
+			!(statement->flags & JrdStatement::FLAG_INTERNAL) &&
 			!(attachment->att_flags & ATT_gstat_attachment) &&
 			!(attachment->att_flags & ATT_gbak_attachment) &&
 			!(attachment->att_flags & ATT_gfix_attachment);

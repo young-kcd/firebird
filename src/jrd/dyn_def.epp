@@ -3493,7 +3493,7 @@ void DYN_define_trigger(Global*						gbl,
 
 		// the END_STORE_SPECIAL adds the foll. lines of code to the END_STORE
 		// if (ignore_perm)
-		//     request->req_flags |= req_ignore_perm;
+		//     request->getStatement()->flags |= JrdStatement::FLAG_IGNORE_PERM;
 		// after the request is compiled and before the request is sent.
 		// It makes the current request (to define the trigger) go through
 		// without checking any permissions lower in the engine
@@ -3501,7 +3501,7 @@ void DYN_define_trigger(Global*						gbl,
 	END_STORE_SPECIAL
 
 	if (ignore_perm)
-		request->req_flags &= ~req_ignore_perm;
+		request->getStatement()->flags &= ~JrdStatement::FLAG_IGNORE_PERM;
 
 	}
 	catch (const Firebird::Exception& ex)

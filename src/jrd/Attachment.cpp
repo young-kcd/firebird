@@ -138,6 +138,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publi
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
 	  att_public_handle(publicHandle),
+	  att_requests(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
 	  att_stats(*pool),

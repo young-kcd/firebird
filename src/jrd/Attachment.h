@@ -138,7 +138,7 @@ private:
 	jrd_tra*	att_sys_transaction;		// system transaction
 
 public:
-	jrd_req*	att_requests;				// Requests belonging to attachment
+	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
 	const ULONG	att_lock_owner_id;			// ID for the lock manager

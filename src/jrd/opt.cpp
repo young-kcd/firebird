@@ -752,10 +752,8 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 
 	UCharBuffer infoBuffer;
 
-	for (size_t i = 0; i < request->req_fors.getCount(); i++)
-	{
-		request->req_fors[i]->dump(tdbb, infoBuffer);
-	}
+	for (size_t i = 0; i < request->getStatement()->fors.getCount(); i++)
+		request->getStatement()->fors[i]->dump(tdbb, infoBuffer);
 
 	const size_t length = infoBuffer.getCount();
 

@@ -59,7 +59,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/sort.h"
-#include "../jrd/acl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -74,7 +73,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/scl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -99,7 +97,8 @@
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
-using Firebird::AutoSetRestore;
+using namespace Jrd;
+using namespace Firebird;
 
 
 // Firebird provides transparent conversion from string to date in
@@ -118,14 +117,6 @@ inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2)
 	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
 }
 
-const unsigned MAP_LENGTH = 256;
-
-const int MAX_RECURSION = 100;
-
-const unsigned MAX_REQUEST_SIZE = 10485760;	// 10 MB - just to be safe
-
-using namespace Jrd;
-using namespace Firebird;
 
 namespace
 {
@@ -191,7 +182,7 @@ namespace
 		{
 			// Initialize the map so all streams initially resolve to the original number. As soon
 			// copy creates new streams, the map are being overwritten.
-			for (unsigned i = 0; i < MAP_LENGTH; ++i)
+			for (unsigned i = 0; i < JrdStatement::MAP_LENGTH; ++i)
 				localMap[i] = i;
 		}
 
@@ -202,7 +193,7 @@ namespace
 		}
 
 	private:
-		UCHAR localMap[MAP_LENGTH];
+		UCHAR localMap[JrdStatement::MAP_LENGTH];
 	};
 }	// namespace
 
@@ -233,44 +224,11 @@ static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
 static bool stream_in_rse(const USHORT, const RecordSelExpr*);
-static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
-static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
 #ifdef CMP_DEBUG
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
-
-bool CMP_clone_is_active(const jrd_req* request)
-{
-/**************************************
- *
- *	C M P _ c l o n e _ i s _ a c t i v e
- *
- **************************************
- *
- * Functional description
- *	Determine if a request or any of its clones are active.
- *
- **************************************/
-	DEV_BLKCHK(request, type_req);
-
-	if (request->req_flags & req_in_use)
-		return true;
-
-	vec<jrd_req*>* vector = request->req_sub_requests;
-	if (vector)
-	{
-		for (vec<jrd_req*>::const_iterator sub_req = vector->begin(), end = vector->end();
-			sub_req < end; ++sub_req)
-		{
-			if (*sub_req && (*sub_req)->req_flags & req_in_use)
-				return true;
-		}
-	}
-
-	return false;
-}
 
 
 jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
@@ -323,407 +281,6 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 }
 
 
-inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* tvec)
-/**************************************
- *
- *	t r i g g e r s _ e x t e r n a l _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *  Invoke build_external_access for triggers in vector
- *
- **************************************/
-{
-	if (tvec)
-	{
-		for (size_t i = 0; i < tvec->getCount(); i++)
-		{
-			Trigger& t = (*tvec)[i];
-			t.compile(tdbb);
-			if (t.request)
-			{
-				build_external_access(tdbb, list, t.request);
-			}
-		}
-	}
-}
-
-
-static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request)
-{
-/**************************************
- *
- *	b u i l d _ e x t e r n a l _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *  Recursively walk external dependencies (procedures, triggers) for request to assemble full
- *  list of requests it depends on
- *
- **************************************/
-	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++)
-	{
-		size_t i;
-		if (list.find(*item, i))
-			continue;
-
-		list.insert(i, *item);
-
-		// Add externals recursively
-		if (item->exa_action == ExternalAccess::exa_procedure)
-		{
-			jrd_prc* const procedure = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (procedure && procedure->getRequest())
-				build_external_access(tdbb, list, procedure->getRequest());
-		}
-		else if (item->exa_action == ExternalAccess::exa_function)
-		{
-			Function* const function = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
-			if (function && function->getRequest())
-				build_external_access(tdbb, list, function->getRequest());
-		}
-		else
-		{
-			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
-
-			if (!relation)
-				continue;
-
-			trig_vec *vec1, *vec2;
-			switch (item->exa_action)
-			{
-			case ExternalAccess::exa_insert:
-				vec1 = relation->rel_pre_store;
-				vec2 = relation->rel_post_store;
-				break;
-			case ExternalAccess::exa_update:
-				vec1 = relation->rel_pre_modify;
-				vec2 = relation->rel_post_modify;
-				break;
-			case ExternalAccess::exa_delete:
-				vec1 = relation->rel_pre_erase;
-				vec2 = relation->rel_post_erase;
-				break;
-			default:
-				continue; // should never happen, silence the compiler
-			}
-			triggers_external_access(tdbb, list, vec1);
-			triggers_external_access(tdbb, list, vec2);
-		}
-	}
-}
-
-
-static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers,
-	jrd_rel* view)
-{
-/**************************************
- *
- *	v e r i f y _ t r i g g e r _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *  Check that we have enough rights to access all resources this list of triggers touches
- *
- **************************************/
-	if (!triggers) {
-		return;
-	}
-
-	SET_TDBB(tdbb);
-
-	for (size_t i = 0; i < triggers->getCount(); i++)
-	{
-		Trigger& t = (*triggers)[i];
-		t.compile(tdbb);
-		if (!t.request)
-		{
-			continue;
-		}
-
-		for (const AccessItem* access = t.request->req_access.begin();
-			access < t.request->req_access.end(); access++)
-		{
-			// If this is not a system relation, we don't post access check if:
-			//
-			// - The table being checked is the owner of the trigger that's accessing it.
-			// - The field being checked is owned by the same table than the trigger
-			//   that's accessing the field.
-			// - Since the trigger name comes in the triggers vector of the table and each
-			//   trigger can be owned by only one table for now, we know for sure that
-			//   it's a trigger defined on our target table.
-
-			if (!(owner_relation->rel_flags & REL_system))
-			{
-				if (access->acc_type == SCL_object_table &&
-					(owner_relation->rel_name == access->acc_name))
-				{
-					continue;
-				}
-				if (access->acc_type == SCL_object_column &&
-					(MET_lookup_field(tdbb, owner_relation, access->acc_name,
-						&access->acc_security_name) >= 0 ||
-					 MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
-				{
-					continue;
-				}
-			}
-
-			// a direct access to an object from this trigger
-			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-			SCL_check_access(tdbb, sec_class,
-							(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
-							id_trigger, t.request->req_trg_name, access->acc_mask,
-							access->acc_type, access->acc_name, access->acc_r_name);
-		}
-	}
-}
-
-
-void CMP_verify_access(thread_db* tdbb, jrd_req* request)
-{
-/**************************************
- *
- *	C M P _ v e r i f y _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *  Check that we have enough rights to access all resources this request touches including
- *  resources it used indirectecty via procedures or triggers
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	ExternalAccessList external;
-	build_external_access(tdbb, external, request);
-
-	for (ExternalAccess* item = external.begin(); item < external.end(); item++)
-	{
-		const Routine* routine = NULL;
-		int aclType;
-
-		if (item->exa_action == ExternalAccess::exa_procedure)
-		{
-			routine = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			aclType = id_procedure;
-		}
-		else if (item->exa_action == ExternalAccess::exa_function)
-		{
-			routine = Function::lookup(tdbb, item->exa_fun_id, false, false, 0);
-			aclType = id_function;
-		}
-		else
-		{
-			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
-			jrd_rel* view = NULL;
-			if (item->exa_view_id)
-				view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
-
-			if (!relation)
-				continue;
-
-			switch (item->exa_action)
-			{
-			case ExternalAccess::exa_insert:
-				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
-				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);
-				break;
-			case ExternalAccess::exa_update:
-				verify_trigger_access(tdbb, relation, relation->rel_pre_modify, view);
-				verify_trigger_access(tdbb, relation, relation->rel_post_modify, view);
-				break;
-			case ExternalAccess::exa_delete:
-				verify_trigger_access(tdbb, relation, relation->rel_pre_erase, view);
-				verify_trigger_access(tdbb, relation, relation->rel_post_erase, view);
-				break;
-			default:
-				fb_assert(false);
-			}
-
-			continue;
-		}
-
-		if (!routine->getRequest())
-			continue;
-
-		for (const AccessItem* access = routine->getRequest()->req_access.begin();
-			 access < routine->getRequest()->req_access.end();
-			 access++)
-		{
-			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-
-			if (routine->getName().package.isEmpty())
-			{
-				SCL_check_access(tdbb, sec_class, access->acc_view_id, aclType,
-					routine->getName().identifier, access->acc_mask, access->acc_type,
-					access->acc_name, access->acc_r_name);
-			}
-			else
-			{
-				SCL_check_access(tdbb, sec_class, access->acc_view_id,
-					id_package, routine->getName().package,
-					access->acc_mask, access->acc_type,
-					access->acc_name, access->acc_r_name);
-			}
-		}
-	}
-
-	// Inherit privileges of caller stored procedure or trigger if and only if
-	// this request is called immediately by caller (check for empty req_caller).
-	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
-	// tra_callback_count incremented only by it.
-	// In v3.0, this rule also works for external procedures and triggers.
-	jrd_tra* transaction = tdbb->getTransaction();
-	const bool useCallerPrivs = transaction && transaction->tra_callback_count &&
-		!request->req_caller;
-
-	for (const AccessItem* access = request->req_access.begin();
-		access < request->req_access.end();
-		access++)
-	{
-		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-
-		Firebird::MetaName objName;
-		SLONG objType = 0;
-
-		if (useCallerPrivs)
-		{
-			switch (transaction->tra_caller_name.type)
-			{
-			case obj_trigger:
-				objType = id_trigger;
-				break;
-			case obj_procedure:
-				objType = id_procedure;
-				break;
-			case obj_udf:
-				objType = id_function;
-				break;
-			case obj_package_header:
-				objType = id_package;
-				break;
-			case obj_type_MAX:	// CallerName() constructor
-				fb_assert(transaction->tra_caller_name.name.isEmpty());
-				break;
-			default:
-				fb_assert(false);
-			}
-
-			objName = transaction->tra_caller_name.name;
-		}
-
-		SCL_check_access(tdbb, sec_class, access->acc_view_id, objType, objName,
-			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
-	}
-}
-
-
-jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool validate)
-{
-/**************************************
- *
- *	C M P _ c l o n e _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Get the incarnation of the request appropriate for a given level.
- *	If the incarnation doesn't exist, clone the request.
- *
- **************************************/
-	DEV_BLKCHK(request, type_req);
-
-	SET_TDBB(tdbb);
-
-	Database* const dbb = tdbb->getDatabase();
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-	fb_assert(dbb);
-
-	// find the request if we've got it
-
-	if (!level) {
-		return request;
-	}
-
-	jrd_req* clone;
-	vec<jrd_req*>* vector = request->req_sub_requests;
-	if (vector && level < vector->count() && (clone = (*vector)[level]))
-	{
-		return clone;
-	}
-
-	if (validate)
-	{
-		const Routine* routine = request->getRoutine();
-
-		if (routine)
-		{
-			const TEXT* secName = routine->getSecurityName().nullStr();
-			const SecurityClass* secClass = SCL_get_class(tdbb, secName);
-
-			if (routine->getName().package.isEmpty())
-			{
-				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, routine->getSclType(),
-					routine->getName().identifier);
-			}
-			else
-			{
-				SCL_check_access(tdbb, secClass, 0, 0, NULL, SCL_execute, SCL_object_package,
-					routine->getName().package);
-			}
-		}
-
-		CMP_verify_access(tdbb, request);
-	}
-
-	MemoryPool* const pool = request->req_pool;
-
-	// we need to clone the request - find someplace to put it
-
-	vector = request->req_sub_requests =
-		vec<jrd_req*>::newVector(*pool, request->req_sub_requests, level + 1);
-
-	// clone the request
-
-	clone = FB_NEW(*pool) jrd_req(pool, ULONG(request->req_rpb.getCount()),
-		ULONG(request->impureArea.getCount()), &dbb->dbb_memory_stats);
-	(*vector)[level] = clone;
-	clone->req_attachment = attachment;
-	clone->req_top_node = request->req_top_node;
-	clone->req_trg_name = request->req_trg_name;
-	clone->req_procedure = request->req_procedure;
-	clone->req_function = request->req_function;
-	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
-	clone->req_last_xcp = request->req_last_xcp;
-	clone->req_charset = request->req_charset;
-	clone->req_id = fb_utils::genUniqueId();
-
-	// We are cloning full lists here, not assigning pointers
-	clone->req_invariants = request->req_invariants;
-	clone->req_fors = request->req_fors;
-	clone->req_exec_sta = request->req_exec_sta;
-	clone->req_map_field_info.assign(request->req_map_field_info);
-
-	record_param* rpb1 = clone->req_rpb.begin();
-	const record_param* const end = rpb1 + clone->req_rpb.getCount();
-
-	for (const record_param* rpb2 = request->req_rpb.begin(); rpb1 < end; ++rpb1, ++rpb2)
-	{
-		if (rpb2->rpb_stream_flags & RPB_s_update) {
-			rpb1->rpb_stream_flags |= RPB_s_update;
-		}
-		rpb1->rpb_relation = rpb2->rpb_relation;
-	}
-
-	return clone;
-}
-
-
 jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool internal_flag,
 					  USHORT dbginfo_length, const UCHAR* dbginfo)
 {
@@ -753,7 +310,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		CompilerScratch* csb =
 			PAR_parse(tdbb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
 
-		request = CMP_make_request(tdbb, csb, internal_flag);
+		request = JrdStatement::makeRequest(tdbb, csb, internal_flag);
 		new_pool->setStatsGroup(request->req_memory_stats);
 
 #ifdef CMP_DEBUG
@@ -776,13 +333,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		}
 #endif
 
-		if (internal_flag)
-		{
-			request->req_charset = CS_METADATA;
-			request->req_flags |= req_internal;
-		}
-
-		CMP_verify_access(tdbb, request);
+		request->getStatement()->verifyAccess(tdbb);
 
 		delete csb;
 	}
@@ -822,60 +373,6 @@ CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT elemen
 }
 
 
-jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
-{
-/**************************************
- *
- *	C M P _ f i n d _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Find an inactive incarnation of a system request.  If necessary,
- *	clone it.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	// if the request hasn't been compiled or isn't active,
-	// there're nothing to do
-
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
-
-	jrd_req* request;
-	if ((which == IRQ_REQUESTS && !(request = dbb->dbb_internal[id])) ||
-		(which == DYN_REQUESTS && !(request = dbb->dbb_dyn_req[id])) ||
-		!(request->req_flags & (req_active | req_reserved)))
-	{
-		if (request) {
-			request->req_flags |= req_reserved;
-		}
-		return request;
-	}
-
-	// Request exists and is in use. Look for clones until we find
-	// one that is available.
-
-	for (int n = 1; true; n++)
-	{
-		if (n > MAX_RECURSION)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
-			// Msg363 "request depth exceeded. (Recursive definition?)"
-		}
-		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
-		if (!(clone->req_flags & (req_active | req_reserved)))
-		{
-			clone->req_flags |= req_reserved;
-			return clone;
-		}
-	}
-}
-
-
 void CMP_fini(thread_db* tdbb)
 {
 /**************************************
@@ -895,16 +392,16 @@ void CMP_fini(thread_db* tdbb)
 
 	// And release the system requests.
 
-	for (jrd_req** itr = dbb->dbb_internal.begin(); itr < dbb->dbb_internal.end(); itr++)
+	for (JrdStatement** itr = dbb->dbb_internal.begin(); itr != dbb->dbb_internal.end(); ++itr)
 	{
 		if (*itr)
-			CMP_release(tdbb, *itr);
+			(*itr)->release(tdbb);
 	}
 
-	for (jrd_req** itr = dbb->dbb_dyn_req.begin(); itr < dbb->dbb_dyn_req.end(); itr++)
+	for (JrdStatement** itr = dbb->dbb_dyn_req.begin(); itr != dbb->dbb_dyn_req.end(); ++itr)
 	{
 		if (*itr)
-			CMP_release(tdbb, *itr);
+			(*itr)->release(tdbb);
 	}
 }
 
@@ -2045,7 +1542,7 @@ ULONG CMP_impure(CompilerScratch* csb, ULONG size)
 
 	const ULONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
 
-	if (offset + size > MAX_REQUEST_SIZE)
+	if (offset + size > JrdStatement::MAX_REQUEST_SIZE)
 	{
 		IBERROR(226);	// msg 226: request size limit exceeded
 	}
@@ -2053,214 +1550,6 @@ ULONG CMP_impure(CompilerScratch* csb, ULONG size)
 	csb->csb_impure = offset + size;
 
 	return offset;
-}
-
-
-jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_flag)
-{
-/**************************************
- *
- *	C M P _ m a k e _ r e q u e s t
- *
- **************************************
- *
- * Functional description
- *	Turn a parsed request into an executable request.
- *
- **************************************/
-	jrd_req* request = NULL;
-
-	DEV_BLKCHK(csb, type_csb);
-
-	SET_TDBB(tdbb);
-
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-	jrd_req* const old_request = tdbb->getRequest();
-	tdbb->setRequest(NULL);
-
-	try {
-
-	// Once any expansion required has been done, make a pass to assign offsets
-	// into the impure area and throw away any unnecessary crude. Execution
-	// optimizations can be performed here.
-
-	DEBUG;
-	csb->csb_node = CMP_pass1(tdbb, csb, csb->csb_node);
-
-	// Copy and compile (pass1) domains DEFAULT and constraints.
-	MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
-
-	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-	{
-		FieldInfo& fieldInfo = accessor.current()->second;
-		UCHAR local_map[MAP_LENGTH];
-
-		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
-
-		fieldInfo.defaultValue = NodeCopier::copy(tdbb, csb, fieldInfo.defaultValue, local_map);
-
-		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
-
-		fieldInfo.validation = NodeCopier::copy(tdbb, csb, fieldInfo.validation, local_map);
-
-		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
-		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
-	}
-
-	csb->csb_exec_sta.clear();
-
-	csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
-
-	// Compile (pass2) domains DEFAULT and constraints
-	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-	{
-		FieldInfo& fieldInfo = accessor.current()->second;
-
-		fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-		fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
-	}
-
-	if (csb->csb_impure > MAX_REQUEST_SIZE) {
-		IBERROR(226);			// msg 226 request size limit exceeded
-	}
-
-	// Build the final request block. First, compute the "effective" repeat
-	// count of hold the impure areas.
-
-	MemoryPool* const pool = tdbb->getDefaultPool();
-	Firebird::MemoryStats* const parent_stats =
-		internal_flag ? &dbb->dbb_memory_stats : &attachment->att_memory_stats;
-	request = FB_NEW(*pool) jrd_req(pool, csb->csb_n_stream, csb->csb_impure, parent_stats);
-	request->req_top_node = csb->csb_node;
-	request->req_access = csb->csb_access;
-	request->req_external = csb->csb_external;
-	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
-	request->req_charset = tdbb->getAttachment()->att_charset;
-	request->req_id = fb_utils::genUniqueId();
-
-	// CVC: Unused.
-	//request->req_variables = csb->csb_variables;
-	request->req_resources = csb->csb_resources; // Assign array contents
-	if (csb->csb_g_flags & csb_blr_version4) {
-		request->req_flags |= req_blr_version4;
-	}
-
-	// Take out existence locks on resources used in request. This is
-	// a little complicated since relation locks MUST be taken before
-	// index locks.
-
-	for (Resource* resource = request->req_resources.begin();
-		resource < request->req_resources.end(); resource++)
-	{
-		switch (resource->rsc_type)
-		{
-		case Resource::rsc_relation:
-			{
-				jrd_rel* relation = resource->rsc_rel;
-				MET_post_existence(tdbb, relation);
-				break;
-			}
-		case Resource::rsc_index:
-			{
-				jrd_rel* relation = resource->rsc_rel;
-				IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-				if (index)
-				{
-					++index->idl_count;
-					if (index->idl_count == 1) {
-						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
-					}
-				}
-				break;
-			}
-		case Resource::rsc_procedure:
-			{
-				jrd_prc* procedure = resource->rsc_prc;
-				procedure->prc_use_count++;
-#ifdef DEBUG_PROCS
-				{
-					char buffer[256];
-					sprintf(buffer,
-							"Called from CMP_make_request():\n\t Incrementing use count of %s\n",
-							procedure->getName()->toString().c_str());
-					JRD_print_procedure_info(tdbb, buffer);
-				}
-#endif
-				break;
-			}
-		case Resource::rsc_collation:
-			{
-				Collation* coll = resource->rsc_coll;
-				coll->incUseCount(tdbb);
-				break;
-			}
-		case Resource::rsc_function:
-			resource->rsc_fun->addRef();
-			break;
-		default:
-			BUGCHECK(219);		// msg 219 request of unknown resource
-		}
-	}
-
-	CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
-	const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
-	DEBUG;
-
-	for (record_param* rpb = request->req_rpb.begin(); tail < streams_end; ++rpb, ++tail)
-	{
-		// fetch input stream for update if all booleans matched against indices
-
-		if (tail->csb_flags & csb_update && !(tail->csb_flags & csb_unmatched))
-		{
-			 rpb->rpb_stream_flags |= RPB_s_update;
-		}
-
-		// if no fields are referenced and this stream is not intended for update,
-		// mark the stream as not requiring record's data
-
-		if (!tail->csb_fields && !(tail->csb_flags & csb_update))
-		{
-			 rpb->rpb_stream_flags |= RPB_s_no_data;
-		}
-
-		rpb->rpb_relation = tail->csb_relation;
-
-		delete tail->csb_fields;
-		tail->csb_fields = NULL;
-	}
-
-	// make a vector of all used RSEs
-	request->req_fors = csb->csb_fors;
-
-	// make a vector of all used ExecuteStatements into
-	request->req_exec_sta = csb->csb_exec_sta;
-
-	// make a vector of all invariant-type nodes, so that we will
-	// be able to easily reinitialize them when we restart the request
-
-	request->req_invariants = csb->csb_invariants;
-
-	DEBUG;
-	tdbb->setRequest(old_request);
-
-	} // try
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		tdbb->setRequest(old_request);
-		ERR_punt();
-	}
-
-	if (!internal_flag)
-	{
-		tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
-	}
-
-	return request;
 }
 
 
@@ -2375,11 +1664,11 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 
 #ifdef DEBUG_PROCS
 	{
-		char buffer[256];
-		sprintf(buffer,
-				"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-				procedure->getName()->toString().c_str());
-		JRD_print_procedure_info(tdbb, buffer);
+		string buffer;
+		buffer.printf(
+			"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
+			procedure->getName()->toString().c_str());
+		JRD_print_procedure_info(tdbb, buffer.c_str());
 	}
 #endif
 
@@ -2390,10 +1679,10 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	if ((procedure->prc_use_count == 0) &&
 		( (*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] != procedure))
 	{
-		if (procedure->getRequest())
+		if (procedure->getStatement())
 		{
-			CMP_release(tdbb, procedure->getRequest());
-			procedure->setRequest(NULL);
+			procedure->getStatement()->release(tdbb);
+			procedure->setStatement(NULL);
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->getId(), procedure);
@@ -2410,104 +1699,11 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
  **************************************
  *
  * Functional description
- *	Release an unneeded and unloved request.
+ *	Release a request's statement.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
 	DEV_BLKCHK(request, type_req);
-
-	// release existence locks on references
-
-	Jrd::Attachment* attachment = request->req_attachment;
-	if (!attachment || !(attachment->att_flags & ATT_shutdown))
-	{
-		for (Resource* resource = request->req_resources.begin();
-			 resource < request->req_resources.end(); resource++)
-		{
-			switch (resource->rsc_type)
-			{
-			case Resource::rsc_relation:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					MET_release_existence(tdbb, relation);
-					break;
-				}
-			case Resource::rsc_index:
-				{
-					jrd_rel* relation = resource->rsc_rel;
-					IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
-					if (index && index->idl_count)
-					{
-						--index->idl_count;
-						if (!index->idl_count)
-							LCK_release(tdbb, index->idl_lock);
-					}
-					break;
-				}
-			case Resource::rsc_procedure:
-				{
-					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
-					break;
-				}
-			case Resource::rsc_collation:
-				{
-					Collation* coll = resource->rsc_coll;
-					coll->decUseCount(tdbb);
-					break;
-				}
-			case Resource::rsc_function:
-				resource->rsc_fun->release(tdbb);
-				break;
-			default:
-				BUGCHECK(220);	// msg 220 release of unknown resource
-				break;
-			}
-		}
-	}
-
-	EXE_unwind(tdbb, request);
-
-	if (request->req_attachment)
-	{
-		for (jrd_req** next = &request->req_attachment->att_requests;
-			*next; next = &(*next)->req_request)
-		{
-			if (*next == request)
-			{
-				*next = request->req_request;
-#ifdef DEV_BUILD
-				// Once I've seen att_requests == 0x00000014,
-				// so some debugging code added to catch it earlier in dev_builds.
-				// This place is one of two, where att_requests modified.
-				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used
-				// right before pointer assignment. So make some use of pointer here
-				// to try to detect false in it earlier ...
-				if (*next)
-				{
-					jrd_req* req = (*next)->req_request;
-					req++;
-				}
-#endif
-				break;
-			}
-		}
-	}
-
-	request->req_sql_text = NULL;
-
-	delete request->inputParams;
-	request->inputParams = NULL;
-
-	delete request->outputParams;
-	request->outputParams = NULL;
-
-	// We have to call the destructor explicitly because of
-	// the delete-by-pool cleanup practice for requests
-	request->req_sorts.~SortOwner();
-
-	dbb->deletePool(request->req_pool);
+	request->getStatement()->release(tdbb);
 }
 
 
@@ -2622,8 +1818,8 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	SET_TDBB(tdbb);
 
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
-	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[MAP_LENGTH];
-	memset(p, 0, MAP_LENGTH);
+	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[JrdStatement::MAP_LENGTH];
+	memset(p, 0, JrdStatement::MAP_LENGTH);
 	p[0] = (UCHAR) stream;
 	csb->csb_rpt[stream].csb_map = p;
 
@@ -3440,7 +2636,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	if (!vector)
 		return statement;
 
-	UCHAR local_map[MAP_LENGTH];
+	UCHAR local_map[JrdStatement::MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
 	if (!map)
 	{
@@ -3558,7 +2754,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	if (!vector)
 		return NULL;
 
-	UCHAR local_map[MAP_LENGTH];
+	UCHAR local_map[JrdStatement::MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
 	if (!map)
 	{
@@ -3915,7 +3111,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					break;
 			}
 
-			UCHAR local_map[MAP_LENGTH];
+			UCHAR local_map[JrdStatement::MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
 			if (!map)
 			{

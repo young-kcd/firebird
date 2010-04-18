@@ -584,7 +584,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port, int column
 		align(column);
 		fprintf(gpreGlob.out_file, "if (ignore_perm)");
 		align(column);
-		fprintf(gpreGlob.out_file, "\trequest->req_flags |= req_ignore_perm;");
+		fprintf(gpreGlob.out_file, "\trequest->getStatement()->flags |= JrdStatement::FLAG_IGNORE_PERM;");
 	}
 	align(column);
 

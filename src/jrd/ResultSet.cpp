@@ -106,10 +106,12 @@ Firebird::string ResultSet::getString(thread_db* tdbb, unsigned param)
 {
 	fb_assert(param > 0);
 
+	jrd_req* jrdRequest = stmt->getRequest()->req_request;
+
 	// Setup tdbb info necessary for blobs.
 	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, jrdRequest);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&jrdRequest->req_transaction,
 		tdbb->getTransaction());
 
 	return MOV_make_string2(tdbb, &getDesc(param), CS_NONE);
@@ -120,10 +122,12 @@ Firebird::MetaName ResultSet::getMetaName(thread_db* tdbb, unsigned param)
 {
 	fb_assert(param > 0);
 
+	jrd_req* jrdRequest = stmt->getRequest()->req_request;
+
 	// Setup tdbb info necessary for blobs.
 	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, jrdRequest);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&jrdRequest->req_transaction,
 		tdbb->getTransaction());
 
 	return MOV_make_string2(tdbb, &getDesc(param), CS_METADATA);
@@ -134,10 +138,12 @@ void ResultSet::moveDesc(thread_db* tdbb, unsigned param, dsc& desc)
 {
 	fb_assert(param > 0);
 
+	jrd_req* jrdRequest = stmt->getRequest()->req_request;
+
 	// Setup tdbb info necessary for blobs.
 	AutoSetRestore2<jrd_req*, thread_db> autoRequest(
-		tdbb, &thread_db::getRequest, &thread_db::setRequest, stmt->getRequest()->req_request);
-	AutoSetRestore<jrd_tra*> autoRequestTrans(&stmt->getRequest()->req_request->req_transaction,
+		tdbb, &thread_db::getRequest, &thread_db::setRequest, jrdRequest);
+	AutoSetRestore<jrd_tra*> autoRequestTrans(&jrdRequest->req_transaction,
 		tdbb->getTransaction());
 
 	MOV_move(tdbb, &getDesc(param), &desc);

@@ -29,6 +29,7 @@ namespace Jrd {
 	class CompilerScratch;
 	class jrd_rel;
 	class jrd_req;
+	class JrdStatement;
 	class thread_db;
 	struct ItemInfo;
 	class DmlNode;
@@ -49,7 +50,7 @@ struct dsc;
 Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, UCHAR, USHORT);
 Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
-						Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::jrd_req**, const bool,
+						Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::JrdStatement**, const bool,
 						USHORT);
 USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
 void			PAR_error(Jrd::CompilerScratch*, const Firebird::Arg::StatusVector&, bool isSyntaxError = true);

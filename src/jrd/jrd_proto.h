@@ -34,6 +34,7 @@ namespace Jrd {
 	class blb;
 	struct bid;
 	class jrd_req;
+	class JrdStatement;
 	class Service;
 	class thread_db;
 	struct teb;
@@ -52,7 +53,7 @@ ISC_STATUS jrd8_cancel_operation(ISC_STATUS*, Jrd::Attachment**, USHORT);
 ISC_STATUS jrd8_close_blob(ISC_STATUS*, Jrd::blb **);
 ISC_STATUS jrd8_commit_transaction(ISC_STATUS*, Jrd::jrd_tra **);
 ISC_STATUS jrd8_commit_retaining(ISC_STATUS*, Jrd::jrd_tra **);
-ISC_STATUS jrd8_compile_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_req**, SSHORT, const SCHAR*);
+ISC_STATUS jrd8_compile_request(ISC_STATUS*, Jrd::Attachment**, Jrd::JrdStatement**, SSHORT, const SCHAR*);
 ISC_STATUS jrd8_create_blob2(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, Jrd::blb**,
 										   Jrd::bid*, USHORT, const UCHAR*);
 ISC_STATUS jrd8_create_database(ISC_STATUS*, FB_API_HANDLE, const TEXT*, Jrd::Attachment**, USHORT, const UCHAR*);
@@ -72,15 +73,15 @@ ISC_STATUS jrd8_put_slice(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, ISC_QU
 										const UCHAR*, USHORT, const UCHAR*, SLONG, UCHAR*);
 ISC_STATUS jrd8_que_events(ISC_STATUS*, Jrd::Attachment**, SLONG*, SSHORT, const UCHAR*,
 										 FPTR_EVENT_CALLBACK, void*);
-ISC_STATUS jrd8_receive(ISC_STATUS*, Jrd::jrd_req**, USHORT, USHORT, SCHAR *, SSHORT);
+ISC_STATUS jrd8_receive(ISC_STATUS*, Jrd::JrdStatement**, USHORT, USHORT, SCHAR *, SSHORT);
 ISC_STATUS jrd8_reconnect_transaction(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, SSHORT,
 													const UCHAR*);
-ISC_STATUS jrd8_release_request(ISC_STATUS*, Jrd::jrd_req**);
-ISC_STATUS jrd8_request_info(ISC_STATUS*, Jrd::jrd_req**, SSHORT, SSHORT, const SCHAR*, SSHORT, SCHAR*);
+ISC_STATUS jrd8_release_request(ISC_STATUS*, Jrd::JrdStatement**);
+ISC_STATUS jrd8_request_info(ISC_STATUS*, Jrd::JrdStatement**, SSHORT, SSHORT, const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_rollback_transaction(ISC_STATUS*, Jrd::jrd_tra **);
 ISC_STATUS jrd8_rollback_retaining(ISC_STATUS*, Jrd::jrd_tra **);
 ISC_STATUS jrd8_seek_blob(ISC_STATUS*, Jrd::blb **, SSHORT, SLONG, SLONG *);
-ISC_STATUS jrd8_send(ISC_STATUS *, Jrd::jrd_req**, USHORT, USHORT, SCHAR *, SSHORT);
+ISC_STATUS jrd8_send(ISC_STATUS *, Jrd::JrdStatement**, USHORT, USHORT, SCHAR *, SSHORT);
 ISC_STATUS jrd8_service_attach(ISC_STATUS*, const TEXT*, Jrd::Service**, USHORT, const SCHAR*);
 ISC_STATUS jrd8_service_detach(ISC_STATUS*, Jrd::Service**);
 ISC_STATUS jrd8_service_query(ISC_STATUS*, Jrd::Service**, ULONG*,
@@ -88,15 +89,15 @@ ISC_STATUS jrd8_service_query(ISC_STATUS*, Jrd::Service**, ULONG*,
 											USHORT, const SCHAR*,
 											USHORT, SCHAR*);
 ISC_STATUS jrd8_service_start(ISC_STATUS*, Jrd::Service**, ULONG*, USHORT, const SCHAR*);
-ISC_STATUS jrd8_start_and_send(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra **, USHORT, USHORT,
+ISC_STATUS jrd8_start_and_send(ISC_STATUS*, Jrd::JrdStatement**, Jrd::jrd_tra **, USHORT, USHORT,
 											 SCHAR *, SSHORT);
-ISC_STATUS jrd8_start_request(ISC_STATUS*, Jrd::jrd_req**, Jrd::jrd_tra**, SSHORT);
+ISC_STATUS jrd8_start_request(ISC_STATUS*, Jrd::JrdStatement**, Jrd::jrd_tra**, SSHORT);
 ISC_STATUS jrd8_start_multiple(ISC_STATUS*, FB_API_HANDLE, Jrd::jrd_tra**, USHORT, Jrd::teb*);
 ISC_STATUS jrd8_start_transaction(ISC_STATUS*, FB_API_HANDLE, Jrd::jrd_tra**, SSHORT, ...);
 ISC_STATUS jrd8_transaction_info(ISC_STATUS*, Jrd::jrd_tra**, SSHORT, const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**, USHORT, const SCHAR*,
 											   USHORT, const SCHAR*, USHORT, SCHAR*);
-ISC_STATUS jrd8_unwind_request(ISC_STATUS*, Jrd::jrd_req**, SSHORT);
+ISC_STATUS jrd8_unwind_request(ISC_STATUS*, Jrd::JrdStatement**, SSHORT);
 int jrd8_shutdown_all(unsigned int);
 ISC_STATUS jrd8_allocate_statement(ISC_STATUS*, Jrd::Attachment**, Jrd::dsql_req**);
 ISC_STATUS jrd8_execute(ISC_STATUS*, Jrd::jrd_tra**, Jrd::dsql_req**, USHORT, const SCHAR*,
@@ -136,21 +137,21 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 
 void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULONG msg_length,
-	UCHAR* msg, USHORT level);
-void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT level, SSHORT item_length,
+	UCHAR* msg);
+void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT item_length,
 	const UCHAR* items, SLONG buffer_length, UCHAR* buffer);
-void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, USHORT level);
+void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction);
 
 void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_commit_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
 void JRD_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULONG msg_length,
-	UCHAR* msg, USHORT level);
+	UCHAR* msg);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
-	USHORT msg_type, ULONG msg_length, UCHAR* msg, USHORT level);
+	USHORT msg_type, ULONG msg_length, UCHAR* msg);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
-void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT level);
+void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
 	USHORT dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);

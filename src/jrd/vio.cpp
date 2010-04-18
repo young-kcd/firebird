@@ -1460,7 +1460,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
 			// check if this  request go through without checking permissions
-			if (!(request->req_flags & req_ignore_perm)) {
+			if (!(request->getStatement()->flags & JrdStatement::FLAG_IGNORE_PERM)) {
 				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
 
@@ -1482,7 +1482,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_priv:
 			EVL_field(0, rpb->rpb_record, f_file_name, &desc);
-			if (!(tdbb->getRequest()->req_flags & req_internal))
+			if (!(tdbb->getRequest()->getStatement()->flags & JrdStatement::FLAG_INTERNAL))
 			{
 				EVL_field(0, rpb->rpb_record, f_prv_grantor, &desc);
 				if (!check_user(tdbb, &desc))
@@ -2880,7 +2880,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_trg_rname, &desc);
 
 			// check if this  request go through without checking permissions
-			if (!(request->req_flags & req_ignore_perm)) {
+			if (!(request->getStatement()->flags & JrdStatement::FLAG_IGNORE_PERM)) {
 				SCL_check_relation(tdbb, &desc, SCL_control);
 			}
 

@@ -48,7 +48,7 @@ namespace Jrd {
 class jrd_rel;
 class jrd_tra;
 template <typename T> class vec;
-class jrd_req;
+class JrdStatement;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
@@ -76,7 +76,7 @@ struct index_desc
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
 	jrd_nod* idx_expression;				// node tree for indexed expresssion
 	dsc		idx_expression_desc;			// descriptor for expression result
-	jrd_req* idx_expression_request;		// stored request for expression evaluation
+	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{

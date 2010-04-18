@@ -2516,29 +2516,21 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	for (jrd_req* request = trans->tra_attachment->att_requests; request;
-		request = request->req_request)
+
+	for (jrd_req** i = trans->tra_attachment->att_requests.begin();
+		 i != trans->tra_attachment->att_requests.end();
+		 ++i)
 	{
-		if (request->req_transaction)
-		{
-			EXE_unwind(tdbb, request);
-			EXE_start(tdbb, request, trans);
-		}
+		Array<jrd_req*>& requests = (*i)->getStatement()->requests;
 
-		// now take care of any other request levels;
-		// start at level 1 since level 0 was just handled
-
-		vec<jrd_req*>* vector = request->req_sub_requests;
-		if (vector)
+		for (jrd_req** j = requests.begin(); j != requests.end(); ++j)
 		{
-			for (USHORT level = 1; level < vector->count(); level++)
+			jrd_req* request = *j;
+
+			if (request && request->req_transaction)
 			{
-				jrd_req* clone = (*vector)[level];
-				if (clone && clone->req_transaction)
-				{
-					EXE_unwind(tdbb, clone);
-					EXE_start(tdbb, clone, trans);
-				}
+				EXE_unwind(tdbb, request);
+				EXE_start(tdbb, request, trans);
 			}
 		}
 	}

@@ -32,6 +32,7 @@
 
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
+#include "../jrd/JrdStatement.h"
 #include "../jrd/RecordNumber.h"
 #include "../jrd/ExtEngineManager.h"
 #include "../common/classes/stack.h"
@@ -197,25 +198,39 @@ private:
 class jrd_req : public pool_alloc<type_req>
 {
 public:
-	jrd_req(MemoryPool* pool, USHORT streamCount, ULONG impureSize, Firebird::MemoryStats* parent_stats)
-	:	req_pool(pool), req_memory_stats(parent_stats),
-		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
-		req_exec_sta(*pool), req_ext_stmt(NULL), req_cursors(*pool), req_invariants(*pool),
-		req_charset(CS_dynamic), req_blr(*pool), req_domain_validation(NULL),
-		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
-		req_sorts(*pool), req_rpb(*pool, streamCount), impureArea(*pool, impureSize)
+	jrd_req(/*const*/ JrdStatement* aStatement, Firebird::MemoryStats* parent_stats)
+		: statement(aStatement),
+		  req_pool(statement->pool),
+		  req_memory_stats(parent_stats),
+		  req_blobs(req_pool),
+		  req_stats(*req_pool),
+		  req_base_stats(*req_pool),
+		  req_ext_stmt(NULL),
+		  req_cursors(*req_pool),
+		  req_domain_validation(NULL),
+		  req_auto_trans(*req_pool),
+		  req_sorts(*req_pool),
+		  req_rpb(*req_pool),
+		  impureArea(*req_pool)
 	{
-		req_rpb.grow(streamCount);
-		impureArea.grow(impureSize);
+		req_rpb = statement->rpbsSetup;
+		impureArea.grow(statement->impureSize);
 	}
 
+	/*const*/ JrdStatement* getStatement() const
+	{
+		return statement;
+	}
+
+private:
+	/*const*/ JrdStatement* const statement;
+
+public:
+	MemoryPool* req_pool;
 	Attachment*	req_attachment;			// database attachment
 	SLONG		req_id;					// request identifier
 	USHORT		req_incarnation;		// incarnation number
-	MemoryPool* req_pool;
 	Firebird::MemoryStats req_memory_stats;
-	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
@@ -223,17 +238,10 @@ public:
 	jrd_req*	req_tra_next;
 	jrd_req*	req_tra_prev;
 
-	jrd_req*	req_request;			// next request in Database
 	jrd_req*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
-	ExternalAccessList req_external;	// Access to procedures/triggers to be checked
-	AccessItemList req_access;			// Access items to be checked
-	ResourceList req_resources;			// Resources (relations and indices)
 	jrd_nod*	req_message;			// Current message for send/receive
-	jrd_prc*	req_procedure;			// procedure, if any
-	Function*	req_function;			// function, if any
-	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
@@ -248,20 +256,13 @@ public:
 	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
 	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
 
-	jrd_nod*	req_top_node;			// top of execution tree
 	jrd_nod*	req_next;				// next node for execution
-	Firebird::Array<RecordSource*> req_fors;	// record sources
-	Firebird::Array<jrd_nod*>	req_exec_sta;	// exec_into nodes
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
 	Firebird::Array<Cursor*>	req_cursors;	// named cursors
-	Firebird::Array<jrd_nod*>	req_invariants;	// invariant nodes
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
 	Firebird::TimeStamp	req_timestamp;	// Start time of request
-	SSHORT req_charset;					// Client charset for this request
-	Firebird::RefStrPtr req_sql_text;	// SQL text
-	Firebird::Array<UCHAR> req_blr;		// BLR for non-SQL query
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
@@ -273,8 +274,6 @@ public:
 	USHORT	req_src_column;
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
-	MapFieldInfo	req_map_field_info;		// Map field name to field info
-	MapItemInfo		req_map_item_info;		// Map item to item info
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
 	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
 	ValuesImpl* inputParams;				// external procedure input values
@@ -321,8 +320,6 @@ public:
 		}
 		req_base_stats.assign(req_stats);
 	}
-
-	const Routine* getRoutine() const;
 };
 
 // Flags for req_flags
@@ -331,23 +328,13 @@ const ULONG req_stall			= 0x2L;
 const ULONG req_leave			= 0x4L;
 const ULONG req_null			= 0x8L;
 const ULONG req_abort			= 0x10L;
-const ULONG req_internal		= 0x20L;
+const ULONG req_error_handler	= 0x20L;		// looper is called to handle error
 const ULONG req_warning			= 0x40L;
 const ULONG req_in_use			= 0x80L;
-const ULONG req_sys_trigger		= 0x100L;		// request is a system trigger
+const ULONG req_continue_loop	= 0x100L;		// PSQL continue statement
 const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
 const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
 const ULONG req_reserved		= 0x800L;		// Request reserved for client
-const ULONG req_ignore_perm		= 0x1000L;		// ignore permissions checks
-const ULONG req_error_handler	= 0x2000L;		// looper is called to handle error
-const ULONG req_blr_version4	= 0x4000L;		// Request is of blr_version4
-const ULONG req_continue_loop	= 0x8000L;		// PSQL continue statement
-
-// Mask for flags preserved in a clone of a request
-const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);
-
-// Mask for flags preserved on initialization of a request
-const ULONG REQ_FLAGS_INIT_MASK = (req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4);
 
 // Flags for req_view_flags
 enum {

@@ -805,7 +805,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	//Database* dbb = tdbb->getDatabase();
 
-	jrd_req* request = NULL; //CMP_find_request(tdbb, drq_dom_copy, DYN_REQUESTS);
+	jrd_req* request = NULL; //dbb->findSystemRequest(tdbb, drq_dom_copy, DYN_REQUESTS);
 	jrd_req* req2 = NULL;
 
 	try

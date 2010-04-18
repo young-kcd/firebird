@@ -70,7 +70,7 @@ const USHORT MAX_MERGE_LEVEL	= 2;
 using namespace Jrd;
 using namespace Firebird;
 
-SortOwner::~SortOwner()
+void SortOwner::unlinkAll()
 {
 	while (sorts.getCount())
 	{

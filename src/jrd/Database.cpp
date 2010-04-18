@@ -44,6 +44,8 @@
 // recursive mutexes
 #include "../common/thd.h"
 
+using namespace Firebird;
+
 namespace Jrd
 {
 	bool Database::onRawDevice() const
@@ -140,6 +142,43 @@ namespace Jrd
 		}
 
 		return dbb_sh_counter_curr++;
+	}
+
+	// Find an inactive incarnation of a system request. If necessary, clone it.
+	jrd_req* Database::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
+	{
+		static const int MAX_RECURSION = 100;
+
+		// If the request hasn't been compiled or isn't active, there're nothing to do.
+
+		Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
+
+		fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
+
+		JrdStatement* statement = (which == IRQ_REQUESTS ? dbb_internal[id] : dbb_dyn_req[id]);
+
+		if (!statement)
+			return NULL;
+
+		// Look for requests until we find one that is available.
+
+		for (int n = 0;; ++n)
+		{
+			if (n > MAX_RECURSION)
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
+				// Msg363 "request depth exceeded. (Recursive definition?)"
+			}
+
+			jrd_req* clone = statement->getRequest(tdbb, n);
+
+			if (!(clone->req_flags & (req_active | req_reserved)))
+			{
+				clone->req_flags |= req_reserved;
+				return clone;
+			}
+		}
 	}
 
 	int Database::blockingAstSharedCounter(void* ast_object)

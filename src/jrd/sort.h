@@ -290,7 +290,12 @@ public:
 		: pool(p), sorts(p)
 	{}
 
-	~SortOwner();
+	~SortOwner()
+	{
+		unlinkAll();
+	}
+
+	void unlinkAll();
 
 	void linkSort(Sort* scb)
 	{

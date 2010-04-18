@@ -27,7 +27,7 @@
 
 namespace Jrd
 {
-	class jrd_req;
+	class JrdStatement;
 
 	class Routine : public Firebird::PermanentStorage
 	{
@@ -37,7 +37,7 @@ namespace Jrd
 			  id(0),
 			  name(p),
 			  securityName(p),
-			  request(NULL),
+			  statement(NULL),
 			  undefined(false)
 		{
 		}
@@ -57,8 +57,8 @@ namespace Jrd
 		const Firebird::MetaName& getSecurityName() const { return securityName; }
 		void setSecurityName(const Firebird::MetaName& value) { securityName = value; }
 
-		/*const*/ jrd_req* getRequest() const { return request; }
-		void setRequest(jrd_req* value) { request = value; }
+		/*const*/ JrdStatement* getStatement() const { return statement; }
+		void setStatement(JrdStatement* value) { statement = value; }
 
 		bool isUndefined() const { return undefined; }
 		void setUndefined(bool value) { undefined = value; }
@@ -71,7 +71,7 @@ namespace Jrd
 		USHORT id;							// routine ID
 		Firebird::QualifiedName name;		// routine name
 		Firebird::MetaName securityName;	// security class name
-		jrd_req* request;					// compiled routine request
+		JrdStatement* statement;	// compiled routine statement
 		bool undefined;						// Is the packaged routine missing the body/entrypoint?
 	};
 }
