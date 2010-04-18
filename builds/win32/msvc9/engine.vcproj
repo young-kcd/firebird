@@ -504,6 +504,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\JrdStatement.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp"
 				>
 			</File>
@@ -1225,6 +1229,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\jrd_pwd.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\JrdStatement.h"
 				>
 			</File>
 			<File
