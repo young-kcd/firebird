@@ -646,6 +646,7 @@ AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
 AC_CHECK_HEADERS(atomic.h)
 AC_CHECK_HEADERS(atomic_ops.h)
+AC_CHECK_HEADERS(utime.h)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)

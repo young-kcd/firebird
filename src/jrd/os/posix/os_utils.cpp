@@ -59,6 +59,10 @@
 #include <pwd.h>
 #endif
 
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
+
 namespace os_utils
 {
 
@@ -185,6 +189,25 @@ int openCreateSharedFile(const char* pathname, int flags)
 	}
 
 	return fd;
+}
+
+// set file's last access and modification time to current time
+bool touchFile(const char* pathname)
+{
+#ifdef HAVE_UTIME_H
+	while (utime(pathname, NULL) < 0)
+	{
+		if (SYSCALL_INTERRUPTED(errno))
+		{
+			continue;
+		}
+		return false;
+	}
+
+	return true;
+#else
+	return false;
+#endif
 }
 
 } // namespace os_utils

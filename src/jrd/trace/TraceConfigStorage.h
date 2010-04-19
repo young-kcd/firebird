@@ -33,7 +33,7 @@
 #include "../../common/classes/init.h"
 #include "../../common/classes/semaphore.h"
 #include "../../jrd/isc.h"
-#include "../../jrd/threaddata.h"
+#include "../../jrd/ThreadData.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
