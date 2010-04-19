@@ -1720,6 +1720,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			{
 				relation = NULL;
 				cont = false;
+				EXE_unwind(tdbb, handle1);
 				break;
 			}
 
@@ -1736,6 +1737,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			if (!relation)
 			{
 				cont = false;
+				EXE_unwind(tdbb, handle1);
 				break;
 			}
 
@@ -1797,6 +1799,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			else
 			{
 				cont = false;
+				EXE_unwind(tdbb, handle1);
 				break;
 			}
 
