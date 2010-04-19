@@ -1,3 +1,28 @@
+2010-04-19 13:24  alexpeshkoff
+
+	* firebird2/: configure.in (1.368.2.14),
+	src/jrd/os/posix/os_utils.cpp (1.7.4.3),
+	src/jrd/trace/TraceConfigStorage.h (1.10.2.2):
+
+	Fixed posix build, CORE-2917
+
+2010-04-19 03:13  asfernandes
+
+	* firebird2/src/dsql/metd.epp (1.145.2.1):
+
+	Fixed CORE-2971 - Invalid UPDATE OR INSERT usage may lead to
+	successive "request depth exceeded. (Recursive definition?)" error
+
+2010-04-18 20:06  hvlad
+
+	* firebird2/src/jrd/: os/os_utils.h (1.3.4.2),
+	os/win32/os_utils.cpp (1.11.2.2), trace/TraceConfigStorage.cpp
+	(1.30.2.2), trace/TraceConfigStorage.h (1.10.2.1):
+
+	Fixed bug CORE-2917 : Sever Hangs on I/O error during "open"
+	operation for file "/tmp/firebird/fb_trace_ksVDoc".  Posix part
+	will follow soon (by Alex).
+
 2010-04-16 16:01  alexpeshkoff
 
 	* firebird2/configure.in (1.368.2.13):
