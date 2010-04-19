@@ -1,3 +1,53 @@
+2010-04-19 00:24  asfernandes
+
+	* firebird2/builds/win32/msvc9/: engine.vcproj (1.20),
+	engine_classic.vcproj (1.20), engine_embed.vcproj (1.20):
+
+	MSVC9 build fix. BTW, boot build (or king of) required.
+
+2010-04-19 00:19  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.133),
+	src/dsql/ExprNodes.cpp (1.16), src/dsql/StmtNodes.cpp (1.43),
+	src/dsql/dsql.cpp (1.326), src/gpre/int_cxx.cpp (1.55),
+	src/jrd/Attachment.cpp (1.6), src/jrd/Attachment.h (1.7),
+	src/jrd/Database.cpp (1.17), src/jrd/Database.h (1.53),
+	src/jrd/DatabaseSnapshot.cpp (1.132), src/jrd/Function.epp (1.33),
+	src/jrd/JrdStatement.cpp (1.1), src/jrd/JrdStatement.h (1.1),
+	src/jrd/Optimizer.cpp (1.149), src/jrd/PreparedStatement.cpp
+	(1.30), src/jrd/ResultSet.cpp (1.12), src/jrd/Routine.h (1.5),
+	src/jrd/btr.cpp (1.283), src/jrd/btr.h (1.58), src/jrd/cmp.cpp
+	(1.417), src/jrd/cmp_proto.h (1.42), src/jrd/cvt.cpp (1.113),
+	src/jrd/dfw.epp (1.328), src/jrd/dyn_def.epp (1.209),
+	src/jrd/dyn_util.epp (1.81), src/jrd/evl.cpp (1.343),
+	src/jrd/exe.cpp (1.347), src/jrd/exe_proto.h (1.27),
+	src/jrd/idx.cpp (1.172), src/jrd/jrd.cpp (1.611), src/jrd/jrd.h
+	(1.292), src/jrd/jrd_proto.h (1.90), src/jrd/met.epp (1.330),
+	src/jrd/met_proto.h (1.79), src/jrd/opt.cpp (1.423),
+	src/jrd/par.cpp (1.288), src/jrd/par_proto.h (1.32),
+	src/jrd/pcmet.epp (1.71), src/jrd/req.h (1.110), src/jrd/sort.cpp
+	(1.157), src/jrd/sort.h (1.53), src/jrd/tra.cpp (1.221),
+	src/jrd/vio.cpp (1.292), src/jrd/why.cpp (1.278),
+	src/jrd/extds/InternalDS.cpp (1.43),
+	src/jrd/recsrc/ProcedureScan.cpp (1.9),
+	src/jrd/trace/TraceJrdHelpers.h (1.8),
+	src/jrd/trace/TraceObjects.cpp (1.25), src/jrd/trace/TraceObjects.h
+	(1.13):
+
+	Refactor jrd_req into JrdStatement (shared part) and jrd_req
+	(execution of a statement).  Fixed some bugs found in the way.
+
+2010-04-18 17:04  asfernandes
+
+	* firebird2/src/: dsql/metd.epp (1.163), jrd/Function.epp (1.32),
+	jrd/cmp.cpp (1.416), jrd/dfw.epp (1.327), jrd/dpm.epp (1.127),
+	jrd/drq.h (1.48), jrd/dyn_mod.epp (1.146), jrd/exe_proto.h (1.26),
+	jrd/grant.epp (1.89), jrd/irq.h (1.27), jrd/met.epp (1.329),
+	jrd/pcmet.epp (1.70), jrd/scl.epp (1.124):
+
+	Use AutoCacheRequest in all cacheable system requests. Fixes some
+	request leakages.
+
 2010-04-18 03:10  asfernandes
 
 	* firebird2/src/jrd/: dyn.epp (1.174), dyn.h (1.52), dyn_def.epp
