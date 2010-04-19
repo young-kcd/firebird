@@ -180,7 +180,7 @@ int FB_EXPORTED server_main( int argc, char** argv)
 				{
 				case 'D':
 					INET_SERVER_flag |= SRVR_debug;
-					debug = standalone = true;
+					debug = true;
 					break;
 #ifndef SUPERSERVER
 
