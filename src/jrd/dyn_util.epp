@@ -261,7 +261,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb, SSHORT id, const char* generator_
 			p += sizeof(gen_id_blr2);
 			fb_assert(size_t(p - blr.begin()) == blr_size);
 
-			request = CMP_compile2(tdbb, blr.begin(), (ULONG) blr.getCount(), true);
+			request.compile(tdbb, blr.begin(), (ULONG) blr.getCount());
 		}
 
 		EXE_start(tdbb, request, attachment->getSysTransaction());
@@ -688,8 +688,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 	try
 	{
-		if (!request)
-			request = CMP_compile2(tdbb, prot_blr, sizeof(prot_blr), true);
+		request.compile(tdbb, prot_blr, sizeof(prot_blr));
 
 		gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 		gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
@@ -803,10 +802,8 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 						  const Firebird::MetaName& new_name)
 {
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
-	jrd_req* request = NULL; //dbb->findSystemRequest(tdbb, drq_dom_copy, DYN_REQUESTS);
-	jrd_req* req2 = NULL;
+	AutoRequest request, request2;
 
 	try
 	{
@@ -819,7 +816,7 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 			if (!X.RDB$DIMENSIONS.NULL && X.RDB$DIMENSIONS > 0)
 				ERR_punt();
 
-			STORE(REQUEST_HANDLE req2 TRANSACTION_HANDLE gbl->gbl_transaction)
+			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				X2 IN RDB$FIELDS
 
 				X2.RDB$FIELD_NAME.NULL = FALSE;
@@ -915,28 +912,13 @@ void DYN_UTIL_copy_domain(thread_db* tdbb,
 				X2.RDB$FIELD_PRECISION.NULL   = X.RDB$FIELD_PRECISION.NULL;
 				X2.RDB$FIELD_PRECISION        = X.RDB$FIELD_PRECISION;
 			END_STORE
-
-			CMP_release(tdbb, req2);
-			req2 = NULL;
 		}
 		END_FOR
-
-		CMP_release(tdbb, request);
-		request = NULL;
-		// For now, CMP_release used instead of this:
-		//if (!DYN_REQUEST(drq_dom_copy))
-		//	DYN_REQUEST(drq_dom_copy) = request;
 
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-
-		if (request)
-			CMP_release(tdbb, request);
-		if (req2)
-			CMP_release(tdbb, req2);
-
 		DYN_error_punt(true, 228, org_name.c_str());
 		// msg 228: "DYN_UTIL_copy_domain failed for domain %s"
 	}

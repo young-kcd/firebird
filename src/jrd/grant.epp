@@ -548,15 +548,15 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 		CLS IN RDB$SECURITY_CLASSES
 			WITH CLS.RDB$SECURITY_CLASS EQ s_class
-        ERASE CLS;
-	END_FOR;
-
-	CMP_release(tdbb, handle);
+	{
+		ERASE CLS;
+	}
+	END_FOR
 }
 
 
@@ -657,8 +657,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
 	SSHORT user_type = -1;
 
 	AutoCacheRequest request(tdbb, irq_grant6, IRQ_REQUESTS);
-	jrd_req* request2 = NULL;
-	jrd_req* request3 = NULL;
+	AutoRequest request2, request3;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		FLD IN RDB$RELATION_FIELDS CROSS
@@ -766,12 +765,6 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
 		priv |= trans_sql_priv(PRV.RDB$PRIVILEGE);
 	}
 	END_FOR
-
-	if (request2)
-		CMP_release(tdbb, request2);
-
-	if (request3)
-		CMP_release(tdbb, request3);
 
 	// flush out the last user's info
 

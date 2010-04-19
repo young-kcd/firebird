@@ -82,13 +82,13 @@ namespace Jrd
 			request = tdbb->getDatabase()->findSystemRequest(tdbb, id, which);
 		}
 
-	public:
-		AutoCacheRequest& operator =(jrd_req* newRequest)
+		void compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength)
 		{
-			fb_assert(!request);
-			request = newRequest;
+			if (request)
+				return;
+
+			request = CMP_compile2(tdbb, blr, blrLength, true);
 			cacheRequest();
-			return *this;
 		}
 
 		jrd_req* operator ->()
@@ -133,6 +133,62 @@ namespace Jrd
 	private:
 		USHORT id;
 		USHORT which;
+		jrd_req* request;
+	};
+
+	class AutoRequest
+	{
+	public:
+		AutoRequest()
+			: request(NULL)
+		{
+		}
+
+		~AutoRequest()
+		{
+			release();
+		}
+
+	public:
+		void reset()
+		{
+			release();
+		}
+
+		void compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength)
+		{
+			if (request)
+				return;
+
+			request = CMP_compile2(tdbb, blr, blrLength, true);
+		}
+
+		jrd_req* operator ->()
+		{
+			return request;
+		}
+
+		operator jrd_req*()
+		{
+			return request;
+		}
+
+		bool operator !() const
+		{
+			return !request;
+		}
+
+	private:
+		inline void release()
+		{
+			if (request)
+			{
+				CMP_release(JRD_get_thread_data(), request);
+				request = NULL;
+			}
+		}
+
+	private:
 		jrd_req* request;
 	};
 }

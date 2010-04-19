@@ -326,7 +326,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
     const Firebird::MetaName* idx_name_ptr = &index_name;
 	const Firebird::MetaName* relation_name_ptr = &index_name;
 
-	jrd_req* request = NULL;
+	AutoRequest request;
 
 	// No need to cache this request handle, it's only used when
 	// new constraints are created
@@ -337,15 +337,14 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
             CROSS REL IN RDB$RELATIONS
 			OVER RDB$RELATION_NAME
 			WITH IND.RDB$INDEX_NAME EQ index_name.c_str()
-
+		{
             reln_name = REL.RDB$RELATION_NAME;
 		    if (!REL.RDB$SECURITY_CLASS.NULL)
                 s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
                 default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
-        END_FOR;
-
-        CMP_release(tdbb, request);
+		}
+        END_FOR
     }
     else
     {
@@ -355,74 +354,57 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
             OVER RDB$RELATION_NAME
             WITH IND.RDB$RELATION_NAME EQ relation_name_ptr->c_str()
             AND IND.RDB$INDEX_ID EQ index_id
-
+		{
             reln_name = REL.RDB$RELATION_NAME;
             aux_idx_name = IND.RDB$INDEX_NAME;
             if (!REL.RDB$SECURITY_CLASS.NULL)
                 s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
                 default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
-        END_FOR;
-
-        CMP_release (tdbb, request);
+        }
+        END_FOR
     }
 
 	// Check if the relation exists. It may not have been created yet.
 	// Just return in that case.
 
-	if (reln_name.length() == 0) {
+	if (reln_name.isEmpty())
 		return;
-	}
 
 	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, reln_name);
 
-	request = NULL;
+	request.reset();
 
-	// Set up the exception mechanism, so that we can release the request
-	// in case of error in SCL_check_access
+	// Check if the field used in the index has the appropriate
+	// permission. If the field in question does not have a security class
+	// defined, then the default security class for the table applies for that
+	// field.
 
-	try {
+	// No need to cache this request handle, it's only used when
+	// new constraints are created
 
-		// Check if the field used in the index has the appropriate
-		// permission. If the field in question does not have a security class
-		// defined, then the default security class for the table applies for that
-		// field.
-
-		// No need to cache this request handle, it's only used when
-		// new constraints are created
-
-		FOR(REQUEST_HANDLE request) ISEG IN RDB$INDEX_SEGMENTS
-			CROSS RF IN RDB$RELATION_FIELDS
-				OVER RDB$FIELD_NAME
-				WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
-				AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
-
-			Firebird::string fullFieldName(reln_name.c_str());
-			fullFieldName += '.';
-			fullFieldName += RF.RDB$FIELD_NAME;
-			fullFieldName.rtrim();
-	        if (!RF.RDB$SECURITY_CLASS.NULL)
-	        {
-				s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
-				SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_column, fullFieldName);
-			}
-			else
-			{
-				SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, SCL_object_column,
-								 fullFieldName);
-			}
-
-		END_FOR;
-
-		CMP_release(tdbb, request);
-	}
-	catch (const Firebird::Exception&)
+	FOR(REQUEST_HANDLE request) ISEG IN RDB$INDEX_SEGMENTS
+		CROSS RF IN RDB$RELATION_FIELDS
+			OVER RDB$FIELD_NAME
+			WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
+			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 	{
-		if (request) {
-			CMP_release(tdbb, request);
+		Firebird::string fullFieldName(reln_name.c_str());
+		fullFieldName += '.';
+		fullFieldName += RF.RDB$FIELD_NAME;
+		fullFieldName.rtrim();
+        if (!RF.RDB$SECURITY_CLASS.NULL)
+        {
+			s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
+			SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_column, fullFieldName);
 		}
-		throw;
+		else
+		{
+			SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, SCL_object_column,
+							 fullFieldName);
+		}
 	}
+	END_FOR
 }
 
 
@@ -808,46 +790,40 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
 	if (!create)
 	{
-		jrd_req* handle = NULL;
-		jrd_req* handle1 = NULL;
-		jrd_req* handle2 = NULL;
+		AutoRequest handle, handle1, handle2;
 
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
-
+		{
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				attachment->att_security_class = SCL_get_class(tdbb, X.RDB$SECURITY_CLASS);
-		END_FOR;
-		CMP_release(tdbb, handle);
+		}
+		END_FOR
 
 		FOR(REQUEST_HANDLE handle1)
 			FIRST 1 REL IN RDB$RELATIONS
 			WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
-
+		{
             if (!REL.RDB$OWNER_NAME.NULL && user->usr_user_name.hasData())
 			{
 				char name[129];
 				*name = user->usr_user_name.length();
 				user->usr_user_name.copyTo(name + 1, sizeof(name) - 1);
 				if (!check_string(reinterpret_cast<const UCHAR*>(name), REL.RDB$OWNER_NAME))
-				{
 					user->usr_flags |= USR_owner;
-				}
 			}
-		END_FOR;
-		CMP_release(tdbb, handle1);
+		}
+		END_FOR
 
 		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
 			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
-
+		{
 			if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
 				user->usr_flags |= USR_dba;
-		END_FOR;
-		CMP_release(tdbb, handle2);
+		}
+		END_FOR
 	}
-	else {
+	else
 		user->usr_flags |= USR_owner;
-	}
-
 }
 
 

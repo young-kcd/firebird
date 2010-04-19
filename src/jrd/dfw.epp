@@ -1080,8 +1080,8 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
 		max = PageSpace::maxAlloc(dbb) + 1;
-		jrd_req* handle = 0;
-		jrd_req* handle2 = 0;
+		AutoRequest handle;
+		AutoRequest handle2;
 
 		// Check the file name for node name. This has already
 		// been done for shadows in add_shadow()
@@ -1135,23 +1135,19 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 			}
 		END_FOR
 
-		CMP_release(tdbb, handle);
-
-		if (handle2)
-			CMP_release(tdbb, handle2);
-
 		if (section)
 		{
-			handle = NULL;
+			handle.reset();
 			section--;
 			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) X IN RDB$FILES
 				WITH X.RDB$FILE_SEQUENCE EQ section
 					AND X.RDB$SHADOW_NUMBER EQ shadow_number
+			{
 				MODIFY X USING
 					X.RDB$FILE_LENGTH = start - X.RDB$FILE_START;
 				END_MODIFY
+			}
 			END_FOR
-			CMP_release(tdbb, handle);
 		}
 
 		CCH_release_exclusive(tdbb);
@@ -1179,7 +1175,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
  *
  **************************************/
 
-	jrd_req* handle;
+	AutoRequest handle;
 	Shadow* shadow;
 	USHORT sequence, add_sequence;
 	bool finished;
@@ -1211,7 +1207,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 		 */
 
 		finished = false;
-		handle = NULL;
+		handle.reset();
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 			F IN RDB$FILES
 				WITH F.RDB$FILE_NAME EQ work->dfw_name.c_str()
@@ -1256,11 +1252,9 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 			}
 
 		END_FOR
-		CMP_release(tdbb, handle);
 
-		if (finished) {
+		if (finished)
 			return false;
-		}
 
 		// this file is part of a new shadow, so get all files for the shadow
 		// in order of the starting page for the file
@@ -1273,7 +1267,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 		sequence = 0;
 		min_page = 0;
 		shadow = NULL;
-		handle = NULL;
+		handle.reset();
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 			X IN RDB$FILES CROSS
 				Y IN RDB$FILES
@@ -1318,7 +1312,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 			}
 
 		END_FOR
-		CMP_release(tdbb, handle);
+
 		break;
 	}
 
@@ -1600,15 +1594,15 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(blr_end);
 			blr.add(blr_eoc);
 
-			jrd_req* request = CMP_compile2(tdbb, blr.begin(), blr.getCount(), true, 0, NULL);
+			AutoRequest request;
+			request.compile(tdbb, blr.begin(), blr.getCount());
+
 			HalfStaticArray<USHORT, 5> hasRecord;
 
 			EXE_start(tdbb, request, transaction);
 			EXE_receive(tdbb, request, 1, fields.getCount() * sizeof(USHORT),
 				(UCHAR*) hasRecord.getBuffer(fields.getCount()));
 			EXE_unwind(tdbb, request);
-
-			CMP_release(tdbb, request);
 
 			Arg::Gds errs(isc_no_meta_update);
 			bool hasError = false;
@@ -1657,7 +1651,7 @@ static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork*
 			// the context is a procedure;
 			ViewContextType vct = VCT_PROCEDURE;
 
-			jrd_req* handle1 = NULL;
+			AutoRequest handle1;
 			FOR (REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 				VRL IN RDB$VIEW_RELATIONS CROSS
 				REL IN RDB$RELATIONS OVER RDB$RELATION_NAME WITH
@@ -1668,9 +1662,8 @@ static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork*
 				vct = (REL.RDB$VIEW_BLR.NULL ? VCT_TABLE : VCT_VIEW);
 			}
 			END_FOR
-			CMP_release(tdbb, handle1);
 
-			jrd_req* handle2 = NULL;
+			AutoRequest handle2;
 			FOR (REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
 				VRL IN RDB$VIEW_RELATIONS WITH
 					VRL.RDB$VIEW_NAME = work->dfw_name.c_str() AND
@@ -1682,7 +1675,6 @@ static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork*
 				END_MODIFY
 			}
 			END_FOR
-			CMP_release(tdbb, handle2);
 		}
 		break;
 	}
@@ -2138,14 +2130,13 @@ static bool compute_security(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 			SecurityClass* s_class = SCL_recompute_class(tdbb, work->dfw_name.c_str());
 
-			jrd_req* handle = NULL;
+			AutoRequest handle;
 			FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 				WITH X.RDB$SECURITY_CLASS EQ work->dfw_name.c_str()
-
+			{
 				tdbb->getAttachment()->att_security_class = s_class;
-
+			}
 			END_FOR
-			CMP_release(tdbb, handle);
 		}
 		break;
 	}
@@ -2309,7 +2300,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	jrd_rel* partner_relation;
 	index_desc idx;
 	int key_count;
-	jrd_req* handle;
+	AutoRequest handle;
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -2318,7 +2309,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	switch (phase)
 	{
 	case 0:
-		handle = NULL;
+		handle.reset();
 
 		// Drop those indices at clean up time.
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) IDXN IN RDB$INDICES CROSS
@@ -2375,7 +2366,6 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			}
 		END_FOR
 
-		CMP_release(tdbb, handle);
 		return false;
 
 	case 1:
@@ -2482,18 +2472,16 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				if (!IDX.RDB$FOREIGN_KEY.NULL)
 					idx.idx_flags |= idx_foreign;
 
-				jrd_req* rc_request = NULL;
+				AutoRequest rc_request;
 
 				FOR(REQUEST_HANDLE rc_request TRANSACTION_HANDLE transaction)
 					RC IN RDB$RELATION_CONSTRAINTS WITH
 					RC.RDB$INDEX_NAME EQ work->dfw_name.c_str() AND
 					RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY
-
+				{
 					idx.idx_flags |= idx_primary;
-
+				}
 				END_FOR
-
-				CMP_release(tdbb, rc_request);
 			}
 
 			if (++key_count > idx.idx_count || SEG.RDB$FIELD_POSITION > idx.idx_count ||
@@ -2737,7 +2725,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	jrd_rel* relation;
 	USHORT rel_id, external_flag;
 	bid blob_id;
-	jrd_req* handle;
+	AutoRequest handle;
 	Lock* lock;
 
 	blob_id.clear();
@@ -2823,7 +2811,7 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 						// update the dbkey length to include each of the base relations
 						Y.RDB$DBKEY_LENGTH = 0;
 
-						handle = NULL;
+						handle.reset();
 
 						FOR(REQUEST_HANDLE handle)
 							Z IN RDB$VIEW_RELATIONS CROSS
@@ -2835,8 +2823,6 @@ static bool create_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 							Y.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
 						}
 						END_FOR
-
-						CMP_release(tdbb, handle);
 					}
 				END_MODIFY
 			END_MODIFY
@@ -2967,7 +2953,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 	case 1:
 		{
 			const USHORT charSetId = TTYPE_TO_CHARSET(work->dfw_id);
-			jrd_req* handle = NULL;
+			AutoRequest handle;
 
 			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 				COLL IN RDB$COLLATIONS
@@ -2975,7 +2961,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 					OVER RDB$CHARACTER_SET_ID
 				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
 					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
-
+			{
 				if (COLL.RDB$COLLATION_ID.NULL)
 				{
 					// ASF: User collations are created with the last number available,
@@ -3054,9 +3040,8 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 						END_MODIFY
 					}
 				}
-
+			}
 			END_FOR
-			CMP_release(tdbb, handle);
 		}
 
 		return true;
@@ -3249,19 +3234,18 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	case 1:
 		{
 			const Firebird::MetaName depName(work->dfw_name);
-			jrd_req* handle = NULL;
+			AutoRequest handle;
 			bid validation;
 			validation.clear();
 
 			FOR(REQUEST_HANDLE handle)
 				FLD IN RDB$FIELDS WITH
 					FLD.RDB$FIELD_NAME EQ depName.c_str()
-
+			{
 				if (!FLD.RDB$VALIDATION_BLR.NULL)
 					validation = FLD.RDB$VALIDATION_BLR;
+			}
 			END_FOR
-
-			CMP_release(tdbb, handle);
 
 			if (!validation.isEmpty())
 			{
@@ -3305,7 +3289,7 @@ static bool delete_field(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_
  **************************************/
 
 	int field_count;
-	jrd_req* handle;
+	AutoRequest handle;
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -3315,7 +3299,7 @@ static bool delete_field(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_
 	case 1:
 		// Look up the field in RFR.  If we can't find the field, go ahead with the delete.
 
-		handle = NULL;
+		handle.reset();
 		field_count = 0;
 
 		FOR(REQUEST_HANDLE handle)
@@ -3323,14 +3307,15 @@ static bool delete_field(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_
 				REL IN RDB$RELATIONS
 				OVER RDB$RELATION_NAME
 				WITH RFR.RDB$FIELD_SOURCE EQ work->dfw_name.c_str()
+		{
 			// If the rfr field is also being deleted, there's no dependency
 			if (!find_depend_in_dfw(tdbb, RFR.RDB$FIELD_NAME, obj_computed, REL.RDB$RELATION_ID,
 									transaction))
 			{
 				field_count++;
 			}
+		}
 		END_FOR
-		CMP_release(tdbb, handle);
 
 		if (field_count)
 		{
@@ -3380,19 +3365,18 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 	case 1:
 		{
 			const Firebird::MetaName depName(work->dfw_name);
-			jrd_req* handle = NULL;
+			AutoRequest handle;
 			bid validation;
 			validation.clear();
 
 			FOR(REQUEST_HANDLE handle)
 				FLD IN RDB$FIELDS WITH
 					FLD.RDB$FIELD_NAME EQ depName.c_str()
-
+			{
 				if (!FLD.RDB$VALIDATION_BLR.NULL)
 					validation = FLD.RDB$VALIDATION_BLR;
+			}
 			END_FOR
-
-			CMP_release(tdbb, handle);
 
 			const DeferredWork* const arg = work->findArg(dfw_arg_new_name);
 
@@ -3456,16 +3440,15 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
 
 	case 3:
 		{
-		jrd_req* handle = NULL;
+		AutoRequest handle;
 		FOR(REQUEST_HANDLE handle)
 			FLD IN RDB$FIELDS WITH
 				FLD.RDB$FIELD_NAME EQ work->dfw_name.c_str() AND
 				FLD.RDB$COMPUTED_BLR NOT MISSING
-
+		{
 				MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
-
+		}
 		END_FOR
-		CMP_release(tdbb, handle);
 		break;
 		}
 	}
@@ -4003,7 +3986,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
  *	a relation, and if so, clean up after it.
  *
  **************************************/
-	jrd_req* request;
+	AutoRequest request;
 	jrd_rel* relation;
 	Resource* rsc;
 	USHORT view_count;
@@ -4037,19 +4020,19 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 	case 1:
 		// check if any views use this as a base relation
 
-		request = NULL;
+		request.reset();
 		view_count = 0;
 		FOR(REQUEST_HANDLE request)
 			X IN RDB$VIEW_RELATIONS WITH
 			X.RDB$RELATION_NAME EQ work->dfw_name.c_str()
+		{
 			// If the view is also being deleted, there's no dependency
 			if (!find_depend_in_dfw(tdbb, X.RDB$VIEW_NAME, obj_view, 0, transaction))
 			{
 				view_count++;
 			}
-
+		}
 		END_FOR
-		CMP_release(tdbb, request);
 
 		if (view_count)
 		{
@@ -4174,14 +4157,14 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		// Now that the data, pointer, and index pages are gone,
 		// get rid of the relation itself
 
-		request = NULL;
+		request.reset();
 
 		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
 			X.RDB$RELATION_ID EQ relation->rel_id
+		{
 			ERASE X;
+		}
 		END_FOR
-
-		CMP_release(tdbb, request);
 
 		// Release relation locks
 		if (relation->rel_existence_lock) {
@@ -4233,7 +4216,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
  *
  **************************************/
 	int rel_exists, field_count;
-	jrd_req* handle;
+	AutoRequest handle;
 	Firebird::MetaName f;
 	jrd_rel* relation;
 
@@ -4245,7 +4228,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	case 1:
 		// first check if there are any fields used explicitly by the view
 
-		handle = NULL;
+		handle.reset();
 		field_count = 0;
 		FOR(REQUEST_HANDLE handle)
 			REL IN RDB$RELATIONS CROSS
@@ -4255,14 +4238,15 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 				VFLD.RDB$VIEW_CONTEXT EQ VR.RDB$VIEW_CONTEXT AND
 				VFLD.RDB$RELATION_NAME EQ VR.RDB$VIEW_NAME AND
 				VFLD.RDB$BASE_FIELD EQ work->dfw_name.c_str()
+		{
 			// If the view is also being deleted, there's no dependency
 			if (!find_depend_in_dfw(tdbb, VR.RDB$VIEW_NAME, obj_view, 0, transaction))
 			{
 				f = VFLD.RDB$BASE_FIELD;
 				field_count++;
 			}
+		}
 		END_FOR
-		CMP_release(tdbb, handle);
 
 		if (field_count)
 		{
@@ -4286,21 +4270,21 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 
 		// see if the relation itself is being dropped
 
-		handle = NULL;
+		handle.reset();
 		rel_exists = 0;
 		FOR(REQUEST_HANDLE handle)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_ID EQ work->dfw_id
+		{
 			rel_exists++;
+		}
 		END_FOR
-		if (handle)
-			CMP_release(tdbb, handle);
 
 		// if table exists, check if this is the last column in the table
 
 		if (rel_exists)
 		{
 			field_count = 0;
-			handle = NULL;
+			handle.reset();
 
 			FOR(REQUEST_HANDLE handle)
 				REL IN RDB$RELATIONS CROSS
@@ -4308,10 +4292,6 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 					WITH REL.RDB$RELATION_ID EQ work->dfw_id
 				field_count++;
 			END_FOR
-			if (handle)
-			{
-				CMP_release(tdbb, handle);
-			}
 
 			if (!field_count)
 			{
@@ -4553,21 +4533,16 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		if (dep_type == obj_validation)
 		{
 			// Maybe it's worth caching in the future?
-			jrd_req* request = NULL;
+			AutoRequest request;
 
 			FOR(REQUEST_HANDLE request)
 				FLD IN RDB$FIELDS WITH
 					FLD.RDB$FIELD_NAME EQ object_name
 			{
 				if (!FLD.RDB$VALIDATION_BLR.NULL)
-				{
-					CMP_release(tdbb, request);
 					return false;
-				}
 			}
 			END_FOR
-
-			CMP_release(tdbb, request);
 
 			return true;
 		}
@@ -5187,14 +5162,15 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 								}
 								if (!null_view && REL.RDB$DBKEY_LENGTH > 8)
 								{
-									jrd_req* temp = NULL;
+									AutoRequest temp;
 									RFR.RDB$UPDATE_FLAG = 0;
 									FOR(REQUEST_HANDLE temp) X IN RDB$TRIGGERS WITH
 										X.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
 											X.RDB$TRIGGER_TYPE EQ 1
+									{
 										RFR.RDB$UPDATE_FLAG = 1;
+									}
 									END_FOR
-									CMP_release(tdbb, temp);
 								}
 							}
 						END_MODIFY
@@ -5409,7 +5385,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					REL.RDB$DBKEY_LENGTH = 0;
 
-					jrd_req* handle = NULL;
+					AutoRequest handle;
 					FOR(REQUEST_HANDLE handle)
 						Z IN RDB$VIEW_RELATIONS
 						CROSS R IN RDB$RELATIONS OVER RDB$RELATION_NAME
@@ -5418,7 +5394,6 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						REL.RDB$DBKEY_LENGTH += R.RDB$DBKEY_LENGTH;
 					}
 					END_FOR
-					CMP_release(tdbb, handle);
 				}
 			END_MODIFY
 		}
@@ -5453,13 +5428,15 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 		if (external_flag)
 		{
-			jrd_req* temp = NULL;
+			AutoRequest temp;
 			FOR(REQUEST_HANDLE temp) FMTS IN RDB$FORMATS WITH
 				FMTS.RDB$RELATION_ID EQ relation->rel_id AND
 				FMTS.RDB$FORMAT EQ 0
+			{
 				ERASE FMTS;
+			}
 			END_FOR
-			CMP_release(tdbb, temp);
+
 			make_format(tdbb, relation, 0, external);
 		}
 
@@ -6187,14 +6164,14 @@ static bool shadow_defined(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 
 	bool result = false;
-	jrd_req*  handle = NULL;
+	AutoRequest handle;
 
 	FOR(REQUEST_HANDLE handle) FIRST 1 X IN RDB$FILES
 		WITH X.RDB$SHADOW_NUMBER > 0
+	{
 		result = true;
+	}
 	END_FOR
-
-	CMP_release(tdbb, handle);
 
 	return result;
 }

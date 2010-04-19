@@ -2087,7 +2087,7 @@ void DYN_define_index(Global*		gbl,
 			}
 			else
 			{
-				jrd_req* request3 = NULL;
+				AutoRequest request3;
 				found = false;
 				bool isView = false;
 
@@ -2099,8 +2099,6 @@ void DYN_define_index(Global*		gbl,
 					isView = !X.RDB$VIEW_BLR.NULL;
 				}
 				END_FOR
-
-				CMP_release(tdbb, request3);
 
 				if (isView)
 				{

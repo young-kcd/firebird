@@ -477,18 +477,17 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			// if the BLR was marked as invalid but the function was compiled,
 			// mark the BLR as valid
 
-			jrd_req* request_set_valid = NULL;
+			AutoRequest request_set_valid;
 
 			FOR(REQUEST_HANDLE request_set_valid)
 				F IN RDB$FUNCTIONS WITH F.RDB$FUNCTION_ID EQ function->getId()
-
+			{
 				MODIFY F USING
 					F.RDB$VALID_BLR = TRUE;
 					F.RDB$VALID_BLR.NULL = FALSE;
-				END_MODIFY;
-			END_FOR;
-
-			CMP_release(tdbb, request_set_valid);
+				END_MODIFY
+			}
+			END_FOR
 		}
 	}
 

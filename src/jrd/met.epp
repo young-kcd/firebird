@@ -710,21 +710,22 @@ void MET_activate_shadow(thread_db* tdbb)
 
 	// Erase any secondary files of the primary database of the shadow being activated.
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
+
 	FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 		WITH X.RDB$SHADOW_NUMBER NOT MISSING
 			AND X.RDB$SHADOW_NUMBER EQ 0
 		ERASE X;
 	END_FOR
 
-	CMP_release(tdbb, handle);
-
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	const char* dbb_file_name = pageSpace->file->fil_string;
 
 	// go through files looking for any that expand to the current database name
 	SCHAR expanded_name[MAXPATHLEN];
-	jrd_req* handle2 = handle = NULL;
+	AutoRequest handle2;
+	handle.reset();
+
 	FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 		WITH X.RDB$SHADOW_NUMBER NOT MISSING
 			AND X.RDB$SHADOW_NUMBER NE 0
@@ -743,12 +744,6 @@ void MET_activate_shadow(thread_db* tdbb)
 			ERASE X;
 		}
 	END_FOR
-
-	if (handle2)
-	{
-		CMP_release(tdbb, handle2);
-	}
-	CMP_release(tdbb, handle);
 }
 
 
@@ -1088,14 +1083,12 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 
 	FOR(REQUEST_HANDLE handle)
 		X IN RDB$FILES WITH X.RDB$SHADOW_NUMBER EQ shadow_number
 		ERASE X;
 	END_FOR
-
-	CMP_release(tdbb, handle);
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 	{
@@ -1105,9 +1098,8 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 	}
 
 	// notify other processes to check for shadow deletion
-	if (SDW_lck_update(tdbb, 0)) {
+	if (SDW_lck_update(tdbb, 0))
 		SDW_notify(tdbb);
-	}
 }
 
 
@@ -1458,7 +1450,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	{
 		MetaName domainName;
 
-		jrd_req* handle = NULL;
+		AutoRequest handle;
 		FOR(REQUEST_HANDLE handle)
 			RLF IN RDB$RELATION_FIELDS CROSS
 				FLD IN RDB$FIELDS WITH
@@ -1467,7 +1459,6 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 				RLF.RDB$FIELD_NAME EQ object_name.c_str()
 			domainName = FLD.RDB$FIELD_NAME;
 		END_FOR
-		CMP_release(tdbb, handle);
 
 		MET_delete_dependencies(tdbb, domainName, type, transaction);
 		store_dependencies(tdbb, csb, relation, domainName, type, transaction);
@@ -1535,7 +1526,7 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 	FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 		WITH X.RDB$SHADOW_NUMBER NOT MISSING
 			AND X.RDB$SHADOW_NUMBER NE 0
@@ -1563,19 +1554,15 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 		}
 	END_FOR
 
-	CMP_release(tdbb, handle);
-
 	// if any current shadows were not defined in database, mark
 	// them to be shutdown since they don't exist anymore
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 	{
-		if (!(shadow->sdw_flags & SDW_found)) {
+		if (!(shadow->sdw_flags & SDW_found))
 			shadow->sdw_flags |= SDW_shutdown;
-		}
-		else {
+		else
 			shadow->sdw_flags &= ~SDW_found;
-		}
 	}
 
 	SDW_check(tdbb);
@@ -1609,7 +1596,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 	tdbb->getDatabase()->dbb_triggers[type] = FB_NEW(*tdbb->getDatabase()->dbb_permanent)
 		trig_vec(*tdbb->getDatabase()->dbb_permanent);
 
-	jrd_req* trigger_request = NULL;
+	AutoRequest trigger_request;
 	int encoded_type = type | TRIGGER_TYPE_DB;
 
 	FOR(REQUEST_HANDLE trigger_request)
@@ -1622,8 +1609,6 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &tdbb->getDatabase()->dbb_triggers[type]);
 
 	END_FOR
-
-	CMP_release(tdbb, trigger_request);
 }
 
 
@@ -1644,7 +1629,7 @@ void MET_load_ddl_triggers(thread_db* tdbb)
 	tdbb->getDatabase()->dbb_ddl_triggers = FB_NEW(*tdbb->getDatabase()->dbb_permanent)
 		trig_vec(*tdbb->getDatabase()->dbb_permanent);
 
-	jrd_req* trigger_request = NULL;
+	AutoRequest trigger_request;
 
 	FOR(REQUEST_HANDLE trigger_request)
 		TRG IN RDB$TRIGGERS
@@ -1659,8 +1644,6 @@ void MET_load_ddl_triggers(thread_db* tdbb)
 		}
 	}
 	END_FOR
-
-	CMP_release(tdbb, trigger_request);
 }
 
 
@@ -2246,7 +2229,7 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 			// hard lookup. This is only called during index create for foreign keys.
 
 			bool found = false;
-			jrd_req* request = NULL;
+			AutoRequest request;
 
 			FOR(REQUEST_HANDLE request)
 				IDX IN RDB$INDICES CROSS
@@ -2268,7 +2251,6 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 				}
 			END_FOR
 
-			CMP_release(tdbb, request);
 			return found;
 		}
 
@@ -3138,7 +3120,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			// if the BLR was marked as invalid but the procedure was compiled,
 			// mark the BLR as valid
 
-			jrd_req* request5 = NULL;
+			AutoRequest request5;
 
 			FOR(REQUEST_HANDLE request5)
 				P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->getId()
@@ -3148,8 +3130,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					P.RDB$VALID_BLR.NULL = FALSE;
 				END_MODIFY
 			END_FOR
-
-			CMP_release(tdbb, request5);
 		}
 	} // if !noscan
 
@@ -3908,14 +3888,13 @@ void MET_update_shadow(thread_db* tdbb, Shadow* shadow, USHORT file_flags)
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 	FOR(REQUEST_HANDLE handle)
 		FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER EQ shadow->sdw_number
 		MODIFY FIL USING
 			FIL.RDB$FILE_FLAGS = file_flags;
 		END_MODIFY
 	END_FOR
-	CMP_release(tdbb, handle);
 }
 
 
@@ -4220,7 +4199,7 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
 
 	bool found = false;
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 	FOR(REQUEST_HANDLE handle)
 		FIRST 1 T IN RDB$TYPES WITH
 			T.RDB$FIELD_NAME EQ field AND
@@ -4229,7 +4208,6 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
 		found = true;
 		*id = T.RDB$TYPE;
 	END_FOR
-	CMP_release(tdbb, handle);
 
 	return found;
 }
@@ -4702,7 +4680,7 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 
 	fb_assert(id != NULL);
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 
 	if (collation == NULL)
 	{
@@ -4732,7 +4710,6 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 			*id = CS.RDB$CHARACTER_SET_ID;
 
 		END_FOR
-		CMP_release(tdbb, handle);
 
 		return found;
 	}
@@ -4747,7 +4724,6 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 			*id = COL.RDB$CHARACTER_SET_ID | (COL.RDB$COLLATION_ID << 8);
 
 		END_FOR
-		CMP_release(tdbb, handle);
 
 		return found;
 	}
@@ -4766,7 +4742,6 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 		*id = CS.RDB$CHARACTER_SET_ID | (COL.RDB$COLLATION_ID << 8);
 
 	END_FOR
-	CMP_release(tdbb, handle);
 
 	return found;
 }

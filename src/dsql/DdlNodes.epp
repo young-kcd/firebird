@@ -2315,7 +2315,7 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!create)
 	{
-		jrd_req* requestHandle = NULL;
+		AutoRequest requestHandle;
 
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			TRG IN RDB$TRIGGERS
@@ -2328,8 +2328,6 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				relationName = TRG.RDB$RELATION_NAME;
 		}
 		END_FOR
-
-		CMP_release(tdbb, requestHandle);
 
 		if (!type.specified)
 		{

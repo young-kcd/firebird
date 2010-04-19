@@ -287,10 +287,9 @@ static void gen_compile( const gpre_req* request, int column)
 	column += INDENT;
 	//const gpre_dbb* db = request->req_database;
 	//const gpre_sym* symbol = db->dbb_name;
-	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
 	align(column);
 	fprintf(gpreGlob.out_file,
-		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), true);",
+		"%s.compile(tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"));",
 			   request->req_handle, request->req_ident, request->req_ident);
 }
 

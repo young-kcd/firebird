@@ -893,14 +893,15 @@ void DPM_delete_relation( thread_db* tdbb, jrd_rel* relation)
 
 	// Next, cancel out stuff from RDB$PAGES
 
-	jrd_req* handle = NULL;
+	AutoRequest handle;
 
 	FOR(REQUEST_HANDLE handle) X IN RDB$PAGES WITH
 		X.RDB$RELATION_ID EQ relation->rel_id
-			ERASE X;
-	END_FOR;
+	{
+		ERASE X;
+	}
+	END_FOR
 
-	CMP_release(tdbb, handle);
 	CCH_flush(tdbb, FLUSH_ALL, 0);
 }
 
