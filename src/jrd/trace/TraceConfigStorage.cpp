@@ -84,6 +84,7 @@ ConfigStorage::ConfigStorage()
 	m_base = NULL;
 	m_cfg_file = -1;
 	m_dirty = false;
+	m_thdId = 0;
 
 	PathName filename;
 #ifdef WIN_NT
@@ -125,13 +126,14 @@ ConfigStorage::ConfigStorage()
 	checkFile();
 	++m_base->cnt_uses;
 
-	gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, 0);
+	gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, &m_thdId);
 }
 
 ConfigStorage::~ConfigStorage()
 {
 	// signal touchThread to finish
 	m_touchSemaphore.release();
+	THD_wait_for_completion(m_thdId);
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;

@@ -33,7 +33,7 @@
 #include "../../common/classes/init.h"
 #include "../../common/classes/semaphore.h"
 #include "../../jrd/isc.h"
-#include "../../jrd/ThreadData.h"
+#include "../../jrd/ThreadStart.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
@@ -126,6 +126,7 @@ private:
 	int  m_cfg_file;
 	bool m_dirty;
 	Firebird::Semaphore m_touchSemaphore;
+	ThreadHandle m_thdId;
 };
 
 
