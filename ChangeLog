@@ -1,3 +1,16 @@
+2010-04-20 13:08  alexpeshkoff
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.30.2.3),
+	TraceConfigStorage.h (1.10.2.3):
+
+	Fixed segfault at exit() time, CORE-2917
+
+2010-04-19 17:33  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.101.2.2):
+
+	Fixed use of debugging switch in classic mode
+
 2010-04-19 13:24  alexpeshkoff
 
 	* firebird2/: configure.in (1.368.2.14),
