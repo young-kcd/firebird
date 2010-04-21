@@ -1602,7 +1602,6 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			EXE_start(tdbb, request, transaction);
 			EXE_receive(tdbb, request, 1, fields.getCount() * sizeof(USHORT),
 				(UCHAR*) hasRecord.getBuffer(fields.getCount()));
-			EXE_unwind(tdbb, request);
 
 			Arg::Gds errs(isc_no_meta_update);
 			bool hasError = false;

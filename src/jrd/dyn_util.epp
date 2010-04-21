@@ -127,10 +127,8 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 	USHORT error_code = 0;
 	AutoCacheRequest request;
 
-	try
+	switch (object_type)
 	{
-		switch (object_type)
-		{
 		case obj_relation:
 		case obj_procedure:
 			request.reset(tdbb, drq_l_rel_name, DYN_REQUESTS);
@@ -209,11 +207,6 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 
 		default:
 			fb_assert(false);
-		}
-	}
-	catch (const Firebird::Exception&)
-	{
-		throw;
 	}
 
 	if (error_code)
@@ -238,39 +231,31 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb, SSHORT id, const char* generator_
 	Database* dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, id, DYN_REQUESTS);
-
 	SINT64 value = 0;
 
-	try
+	if (!request)
 	{
-		if (!request)
-		{
-			const size_t name_length = strlen(generator_name);
-			fb_assert(name_length < MAX_SQL_IDENTIFIER_SIZE);
-			const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + name_length;
+		const size_t name_length = strlen(generator_name);
+		fb_assert(name_length < MAX_SQL_IDENTIFIER_SIZE);
+		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + name_length;
 
-			Firebird::UCharBuffer blr;
-			UCHAR* p = blr.getBuffer(blr_size);
+		Firebird::UCharBuffer blr;
+		UCHAR* p = blr.getBuffer(blr_size);
 
-			memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
-			p += sizeof(gen_id_blr1);
-			*p++ = name_length;
-			memcpy(p, generator_name, name_length);
-			p += name_length;
-			memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
-			p += sizeof(gen_id_blr2);
-			fb_assert(size_t(p - blr.begin()) == blr_size);
+		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
+		p += sizeof(gen_id_blr1);
+		*p++ = name_length;
+		memcpy(p, generator_name, name_length);
+		p += name_length;
+		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
+		p += sizeof(gen_id_blr2);
+		fb_assert(size_t(p - blr.begin()) == blr_size);
 
-			request.compile(tdbb, blr.begin(), (ULONG) blr.getCount());
-		}
-
-		EXE_start(tdbb, request, attachment->getSysTransaction());
-		EXE_receive(tdbb, request, 0, sizeof(value), (UCHAR*) &value);
+		request.compile(tdbb, blr.begin(), (ULONG) blr.getCount());
 	}
-	catch (const Firebird::Exception&)
-	{
-		throw;
-	}
+
+	EXE_start(tdbb, request, attachment->getSysTransaction());
+	EXE_receive(tdbb, request, 0, sizeof(value), (UCHAR*) &value);
 
 	return value;
 }
@@ -701,6 +686,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
+
 	return true;
 }
 
@@ -712,7 +698,7 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 {
 /**************************************
  *
- *	D Y N _ U T I L _s t o r e _ c h e c k _ c o n s t r a i n t s
+ *	D Y N _ U T I L _ s t o r e _ c h e c k _ c o n s t r a i n t s
  *
  **************************************
  *
