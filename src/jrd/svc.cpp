@@ -732,11 +732,11 @@ namespace
 {
 	inline ULONG getServerCapabilities()
 	{
-		ULONG val = REMOTE_HOP_SUPPORT
+		ULONG val = REMOTE_HOP_SUPPORT;
 #ifdef WIN_NT
-									   | QUOTED_FILENAME_SUPPORT
+		val |= QUOTED_FILENAME_SUPPORT;
 #endif // WIN_NT
-																;
+
 		if (Config::getMultiClientServer())
 		{
 			val |= MULTI_CLIENT_SUPPORT;
