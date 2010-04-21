@@ -2,9 +2,79 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2969
+        RDB$SET_CONTEXT does not allow to overwrite any vars after encountering limit of them
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2956
+        Problems with requests of procedure	parameters
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2943
+        Error while parsing a recursive query with two recursive parts
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2936
+        Wrong page type (expected 7 found N) error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2928
+        Buffer overflow in GSEC
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2919
+        Installation script ignores non-standard ports
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2916
+        Broken error handling in the case of a conversion error happened during index creation
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2914
+        Server crashes while restoring a database having an expression index referencing a non-existent UDF
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2908
+        Engine could crash or raise not expected errors working with ODS 8.x database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2888
+        A memory corruption cause incorrect query evaluation and may crash the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2879
+        Sweep could raise error: page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2865
+        Segmentation fault when SuperServer binary is restarted
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2858
+        Possible memory trashing when raising some exceptions to signal failed security checks
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-2846
         Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
         fails after the specified timeout (because of connections being still active)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2833
+        Changing data that affects an expression index that contains references to null date fields fails
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -110,6 +180,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2586
+        Non-NULL key in unique index could be not found when key is removed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2578
         select rdb$db_key from a view with more than one table joined results in a conversion error
       Contributor(s):
@@ -119,6 +194,11 @@
         Locks of type LCK_page_space are processed incorrectly (big-endian machines)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2539
+        Delta file is not deleted after backup is completed
+      Contributor(s):
+        Roman Simakov <roman.simakov at red-soft.biz>
 
     * Bugfix CORE-2532
         Incorrect size of volumes in multi volume database
@@ -140,6 +220,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-2289
+        Wrong (primary) constraint name is reported for the foreign key violation during FK creation
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2084
         Services API security problem
       Contributor(s):
@@ -149,6 +234,16 @@
         LPAD and RPAD with two columns not working
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1089
+        Wrong ordering with views, distinct, left join and order by
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-195
+        Bugcheck 291 (cannot find record back version)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-2769
         Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
