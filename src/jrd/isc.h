@@ -37,6 +37,11 @@
 #define USE_SYS5SEMAPHORE
 #endif
 
+#ifdef LINUX
+// This hack fixes CORE-2896 - embedded connections fail on linux.
+// Looks like a lot of linux kernels are buggy when working with PRIO_INHERIT mutexes.
+#undef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+#endif
 
 #ifdef UNIX
 
