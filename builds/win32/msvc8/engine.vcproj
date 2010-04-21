@@ -504,6 +504,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\JrdStatement.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp"
 				>
 			</File>
@@ -908,6 +912,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\recsrc\Cursor.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cvt2_proto.h"
 				>
 			</File>
@@ -1068,10 +1076,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\fil.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\file_params.h"
 				>
 			</File>
@@ -1225,6 +1229,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\jrd_pwd.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\JrdStatement.h"
 				>
 			</File>
 			<File
@@ -1457,10 +1465,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sort.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sort_proto.h"
 				>
 			</File>
 			<File

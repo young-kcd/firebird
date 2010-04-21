@@ -278,6 +278,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\errd.cpp"
 				>
 			</File>
@@ -438,6 +442,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\dsql_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.h"
 				>
 			</File>
 			<File
