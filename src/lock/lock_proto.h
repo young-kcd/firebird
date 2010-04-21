@@ -437,7 +437,7 @@ private:
 	// configurations parameters - cached values
 	const ULONG m_acquireSpins;
 	const ULONG m_memorySize;
-	bool m_useBlockingThread;
+	const bool m_useBlockingThread;
 
 #ifdef WIN_NT
 	struct mtx m_shmemMutex;

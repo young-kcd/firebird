@@ -5212,7 +5212,7 @@ static Database* init(thread_db* tdbb,
 		}
 		else // config value is invalid
 		{
-			// this shoudl not happen - means bug in config
+			// this should not happen - means bug in config
 			fb_assert(false);
 		}
 	}

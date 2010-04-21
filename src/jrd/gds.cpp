@@ -377,6 +377,8 @@ void gds__ulstr(char* buffer, FB_UINT64 value, const int minlen, const char fill
 		value = value / 10;
 	} while (value);
 
+	fb_assert(p >= buffer); // did we overflow?
+
 	while (p != buffer) {
 		*--p = filler;
 	}

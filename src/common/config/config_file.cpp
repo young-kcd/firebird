@@ -40,7 +40,7 @@ namespace {
 class MainStream : public ConfigFile::Stream
 {
 public:
-	MainStream(const char* fname, bool fExceptionOnError)
+	MainStream(const char* fname, bool /*fExceptionOnError*/)
 		: file(fopen(fname, "rt")), l(0)
 	{
 /*
