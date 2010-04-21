@@ -225,7 +225,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	const TEXT* file_name = string.c_str();
 
-	DWORD dwShareMode = getShareFlags(true);
+	DWORD dwShareMode = getShareFlags(temporary);
 	if (share_delete)
 		dwShareMode |= FILE_SHARE_DELETE;
 
