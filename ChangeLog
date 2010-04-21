@@ -1,3 +1,10 @@
+2010-04-21 13:49  alexpeshkoff
+
+	* firebird2/src/jrd/isc.h (1.44.2.2):
+
+	Backported fix for CORE-2896: Embedded connections done by root
+	(like gbak, gsec, gfix) hang in linux
+
 2010-04-20 13:08  alexpeshkoff
 
 	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.30.2.3),
