@@ -518,23 +518,12 @@ private:
 class TraceFailedConnection : public TraceConnection
 {
 public:
-	TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
-	  m_filename(filename),
-	  m_options(options)
-	{}
+	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
 	virtual int getConnectionID()				{ return 0; }
 	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
 	virtual const char* getDatabaseName()		{ return m_filename; }
-
-	virtual const char* getUserName()
-	{
-		if (m_options->dpb_user_name.empty())
-			return m_options->dpb_trusted_login.c_str();
-
-		return m_options->dpb_user_name.c_str();
-	}
-
+	virtual const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
 	virtual const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
 	virtual const char* getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
@@ -544,6 +533,7 @@ public:
 private:
 	const char* m_filename;
 	const DatabaseOptions* m_options;
+	UserId m_id;
 };
 
 static void			cancel_attachments();
@@ -583,6 +573,14 @@ static void		getUserInfo(UserId&, const DatabaseOptions&);
 static bool		shutdown_dbb(thread_db*, Database*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
+
+
+TraceFailedConnection::TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
+	m_filename(filename),
+	m_options(options)
+{
+	getUserInfo(m_id, *m_options);
+}
 
 
 static void cancel_attachments()
