@@ -29,7 +29,7 @@
 bool	ISC_check_process_existence(SLONG);
 TEXT*	ISC_get_host(TEXT *, USHORT);
 const TEXT*	ISC_get_host(Firebird::string&);
-bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
+bool	ISC_get_user(Firebird::string*, int*, int*);
 SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 
 // Does not add word "Database" in the beginning like gds__log_status

@@ -101,12 +101,11 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet
 	{
-		UCHAR dummy_packet_interval, user_name, sys_user_name,
+		UCHAR dummy_packet_interval, user_name,
 			  password, password_enc, address_path, process_id, process_name;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
 									isc_dpb_user_name,
-									isc_dpb_sys_user_name,
 									isc_dpb_password,
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
@@ -114,7 +113,6 @@ namespace {
 									isc_dpb_process_name};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
 									isc_spb_user_name,
-									isc_spb_sys_user_name,
 									isc_spb_password,
 									isc_spb_password_enc,
 									isc_spb_address_path,
@@ -125,8 +123,8 @@ namespace {
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
-static rem_port* analyze(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, PathName&, bool);
-static rem_port* analyze_service(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, bool);
+static rem_port* analyze(PathName&, ISC_STATUS*, bool, ClumpletReader&, PathName&, bool);
+static rem_port* analyze_service(PathName&, ISC_STATUS*, bool, ClumpletReader&, bool);
 static bool batch_gds_receive(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool check_response(Rdb*, PACKET *);
@@ -138,7 +136,7 @@ static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 static ISC_STATUS fetch_blob(ISC_STATUS*, Rsr*, USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 static Rvnt* find_event(rem_port*, SLONG);
-static bool get_new_dpb(ClumpletWriter&, string&, const ParametersSet&);
+static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 #ifdef UNIX
 static bool get_single_user(ClumpletReader&);
 #endif
@@ -298,14 +296,11 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 		}
 #endif
 
-		string user_string;
-		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
-
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
+		const bool user_verification = get_new_dpb(newDpb, dpbParam);
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
+		rem_port* port = analyze(expanded_name, user_status, user_verification,
 			newDpb, node_name, loopback);
 
 		if (!port)
@@ -873,13 +868,11 @@ static ISC_STATUS remloop_create(ISC_STATUS* user_status,
 		}
 #endif
 
-		string user_string;
-		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
+		const bool user_verification = get_new_dpb(newDpb, dpbParam);
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, us, user_verification,
+		rem_port* port = analyze(expanded_name, user_status, user_verification,
 			newDpb, node_name, loopback);
 
 		if (!port) {
@@ -3897,12 +3890,10 @@ static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 	{
 		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE,
 			reinterpret_cast<const UCHAR*>(spb), spb_length);
-		string user_string;
 
-		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
-		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
+		const bool user_verification = get_new_dpb(newSpb, spbParam);
 
-		rem_port* port = analyze_service(expanded_name, user_status, us,
+		rem_port* port = analyze_service(expanded_name, user_status,
 			user_verification, newSpb, loopback);
 
 		if (!port) {
@@ -4692,7 +4683,6 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 
 static rem_port* analyze(PathName& file_name,
 						 ISC_STATUS* status_vector,
-						 const TEXT* user_string,
 						 bool uv_flag,
 						 ClumpletReader& dpb,
 						 PathName& node_name,
@@ -4744,7 +4734,7 @@ static rem_port* analyze(PathName& file_name,
 			node_name = INET_LOCALHOST;
 		}
 		return INET_analyze(file_name, status_vector,
-						    node_name.c_str(), user_string, uv_flag, dpb);
+						    node_name.c_str(), uv_flag, dpb);
 	}
 
 	// We have a local connection string. If it's a file on a network share,
@@ -4769,7 +4759,7 @@ static rem_port* analyze(PathName& file_name,
 		if (ISC_analyze_nfs(expanded_name, node_name))
 		{
 			port = INET_analyze(expanded_name, status_vector,
-								node_name.c_str(), user_string, uv_flag, dpb);
+								node_name.c_str(), uv_flag, dpb);
 		}
 	}
 #endif
@@ -4799,7 +4789,7 @@ static rem_port* analyze(PathName& file_name,
 		if (!port)
 		{
 			port = INET_analyze(file_name, status_vector,
-								INET_LOCALHOST, user_string, uv_flag, dpb);
+								INET_LOCALHOST, uv_flag, dpb);
 		}
 	}
 
@@ -4809,7 +4799,6 @@ static rem_port* analyze(PathName& file_name,
 
 static rem_port* analyze_service(PathName& service_name,
 								 ISC_STATUS* status_vector,
-								 const TEXT* user_string,
 								 bool uv_flag,
 								 ClumpletReader& spb,
 								 bool loopback)
@@ -4859,7 +4848,7 @@ static rem_port* analyze_service(PathName& service_name,
 			node_name = INET_LOCALHOST;
 		}
 		return INET_analyze(service_name, status_vector,
-							node_name.c_str(), user_string, uv_flag, spb);
+							node_name.c_str(), uv_flag, spb);
 	}
 
 	if (!loopback)
@@ -4889,7 +4878,7 @@ static rem_port* analyze_service(PathName& service_name,
 		if (!port)
 		{
 			port = INET_analyze(service_name, status_vector,
-								INET_LOCALHOST, user_string, uv_flag, spb);
+								INET_LOCALHOST, uv_flag, spb);
 		}
 	}
 
@@ -5546,7 +5535,7 @@ static Rvnt* find_event( rem_port* port, SLONG id)
 }
 
 
-static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const ParametersSet& par)
+static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 {
 /**************************************
  *
@@ -5583,16 +5572,6 @@ static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const Paramete
 		dpb.insertString(par.password_enc, password);
 	}
 #endif
-
-	if (dpb.find(par.sys_user_name))
-	{
-		dpb.getString(user_string);
-		dpb.deleteClumplet();
-	}
-	else
-	{
-		user_string.erase();
-	}
 
 	return dpb.find(par.user_name);
 }
@@ -5811,7 +5790,6 @@ static bool init(ISC_STATUS* user_status,
 			{
 				// Do not check isc_dpb_trusted_auth here. It's just bytes.
 				case isc_dpb_org_filename:
-				case isc_dpb_sys_user_name:
 				case isc_dpb_user_name:
 				case isc_dpb_password:
 				case isc_dpb_sql_role_name:

@@ -337,7 +337,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 #ifndef DEV_BUILD
 	Firebird::string user_name;	// holds the user name
 	// check user id
-	ISC_get_user(&user_name, NULL, NULL, NULL);
+	ISC_get_user(&user_name, NULL, NULL);
 
 	if (user_name != "root" &&
 		user_name != FIREBIRD_USER_NAME &&

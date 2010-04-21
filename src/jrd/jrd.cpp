@@ -456,9 +456,8 @@ public:
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
 	// here begin compound objects
-	// for constructor to work properly dpb_sys_user_name
+	// for constructor to work properly dpb_user_name
 	// MUST be FIRST
-	string	dpb_sys_user_name;
 	string	dpb_user_name;
 	AuthReader::AuthBlock	dpb_auth_block;
 	string	dpb_role_name;
@@ -477,7 +476,7 @@ public:
 	DatabaseOptions()
 	{
 		memset(this, 0,
-			reinterpret_cast<char*>(&this->dpb_sys_user_name) - reinterpret_cast<char*>(this));
+			reinterpret_cast<char*>(&this->dpb_user_name) - reinterpret_cast<char*>(this));
 	}
 
 	void get(const UCHAR*, USHORT, bool&);
@@ -4877,10 +4876,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_dbkey_scope = (USHORT) rdr.getInt();
 			break;
 
-		case isc_dpb_sys_user_name:
-			getString(rdr, dpb_sys_user_name);
-			break;
-
 		case isc_dpb_sql_role_name:
 			getString(rdr, dpb_role_name);
 			break;
@@ -6283,9 +6278,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 	else
 	{
-		string s(options.dpb_sys_user_name);
-		ISC_utf8ToSystem(s);
-		wheel = ISC_get_user(&name, &id, &group, s.nullStr());
+		wheel = ISC_get_user(&name, &id, &group);
 		ISC_systemToUtf8(name);
 		if (id == 0)
 		{

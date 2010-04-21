@@ -371,7 +371,6 @@ static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
 rem_port* INET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
-					const TEXT*	user_string,
 					bool	uv_flag,
 					Firebird::ClumpletReader &dpb)
 {
@@ -403,7 +402,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	int eff_gid;
 	int eff_uid;
 
-	ISC_get_user(&buffer, &eff_uid, &eff_gid, user_string);
+	ISC_get_user(&buffer, &eff_uid, &eff_gid);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);

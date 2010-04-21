@@ -833,7 +833,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					// we have embedded service connection, check environment and unix OS auth
 					if (!fb_utils::readenv(ISC_USER, svc_username))
 					{
-						if (ISC_get_user(&svc_username, NULL, NULL, NULL))
+						if (ISC_get_user(&svc_username, NULL, NULL))
 						{
 							svc_username = SYSDBA_USER_NAME;
 						}

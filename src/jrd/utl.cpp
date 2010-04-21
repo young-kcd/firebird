@@ -886,7 +886,6 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 			case isc_dpb_version1:
 				continue;
 
-			case isc_dpb_sys_user_name:
 			case isc_dpb_user_name:
 				user_seen = true;
 				break;
@@ -2127,7 +2126,7 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 	if (!(dpb.find(isc_dpb_trusted_auth) || dpb.find(isc_dpb_address_path)))
 	{
 		Firebird::string username;
-		if (fb_utils::readenv(ISC_USER, username) && !dpb.find(isc_dpb_sys_user_name))
+		if (fb_utils::readenv(ISC_USER, username))
 		{
 			setTag(dpb, isc_dpb_user_name, username.c_str());
 		}

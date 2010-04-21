@@ -331,7 +331,7 @@ const TEXT* ISC_get_host(Firebird::string& host)
 }
 
 #ifdef UNIX
-bool ISC_get_user(Firebird::string* name, int* id, int* group, const TEXT* user_string)
+bool ISC_get_user(Firebird::string* name, int* id, int* group)
 {
 /**************************************
  *
@@ -348,40 +348,14 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group, const TEXT* user_
 	TEXT user_name[256];
 	const TEXT* p = 0;
 
-	if (user_string && *user_string)
-	{
-		const TEXT* q = user_string;
-		char* un = user_name;
-		while ((*un = *q++) && *un != '.')
-			++un;
-		*un = 0;
-		p = user_name;
-		egid = euid = -1;
-#ifdef TRUST_CLIENT_VERIFICATION
-		if (*q)
-		{
-			egid = atoi(q);
-			while (*q && (*q != '.'))
-				q++;
-			if (*q == '.')
-			{
-				q++;
-				euid = atoi(q);
-			}
-		}
-#endif
-	}
+	euid = (SLONG) geteuid();
+	egid = (SLONG) getegid();
+	const struct passwd* password = getpwuid(euid);
+	if (password)
+		p = password->pw_name;
 	else
-	{
-		euid = (SLONG) geteuid();
-		egid = (SLONG) getegid();
-		const struct passwd* password = getpwuid(euid);
-		if (password)
-			p = password->pw_name;
-		else
-			p = "";
-		endpwent();
-	}
+		p = "";
+	endpwent();
 
 	if (name)
 		*name = p;
@@ -398,7 +372,7 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group, const TEXT* user_
 
 
 #ifdef WIN_NT
-bool ISC_get_user(Firebird::string* name, int* id, int* group, const TEXT* /*user_string*/)
+bool ISC_get_user(Firebird::string* name, int* id, int* group)
 {
 /**************************************
  *

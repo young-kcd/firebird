@@ -143,7 +143,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	Firebird::string buffer;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0, 0);
+	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
 	user_id.insertString(CNCT_user, buffer);
 

@@ -1397,7 +1397,6 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				UCHAR tag = newDpb.getClumpTag();
 				switch (tag)
 				{
-					case isc_dpb_sys_user_name:
 					case isc_dpb_user_name:
 					case isc_dpb_password:
 					case isc_dpb_sql_role_name:
