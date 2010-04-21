@@ -2,6 +2,31 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-2971
+        Invalid UPDATE OR INSERT usage may lead to the "request depth exceeded" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2966
+        Wrong results or unexpected errors while sorting a large data set
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2965
+        Incorrect ROW_COUNT value after SINGULAR condition
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2956
+        Problems with requests of procedure parameters
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2948
+        Segmentation fault when the server is exiting
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2943
         Error while parsing a recursive query with two recursive parts
       Contributor(s):
@@ -52,6 +77,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-2917
+        Server hangs on I/O error during "open" operation for the file "/tmp/firebird/fb_trace_ksVDoc"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2916
         Broken error handling in the case of a conversion error happened during index creation
       Contributor(s):
@@ -97,6 +127,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2876
+        Wrong backup mode when using "alter database add difference file"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2875
         String right truncation error when char column longer than 4096 bytes is compared with string constant
       Contributor(s):
@@ -122,17 +157,6 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
-    * Bugfix CORE-2876
-        Wrong backup mode when using "alter database add difference file"
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
-    * Bugfix CORE-2871
-        Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
-        fails after the specified timeout (because of connections being still active)
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
     * Bugfix CORE-2859
         Security database remains locked after replacing database
       Contributor(s):
@@ -152,6 +176,12 @@
         Problem with the fb_cancel_operation() API call
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2846
+        Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
+        fails after the specified timeout (because of connections being still active)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2844
         Unresolved symbol references when linking fbsvcmgr and fbtracemgr
