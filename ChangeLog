@@ -1,3 +1,36 @@
+2010-04-21 14:28  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.613):
+
+	Unified user name reported by TraceFailedConnection with the rest
+	of places - thanks to Dmitry
+
+2010-04-21 13:48  alexpeshkoff
+
+	* firebird2/src/jrd/isc.h (1.46):
+
+	Fixed CORE-2896: Embedded connections done by root (like gbak,
+	gsec, gfix) hang in linux
+
+2010-04-21 12:42  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.311):
+
+	I find it more readable this way.
+
+2010-04-21 12:41  robocop
+
+	* firebird2/src/: common/config/config_file.cpp (1.47), jrd/gds.cpp
+	(1.333), jrd/jrd.cpp (1.612), lock/lock_proto.h (1.36):
+
+	Misc.
+
+2010-04-21 12:06  dimitr
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.96):
+
+	Correction, thanks to Claudio.
+
 2010-04-20 00:49  asfernandes
 
 	* firebird2/src/: dsql/DdlNodes.epp (1.54), gpre/int_cxx.cpp
