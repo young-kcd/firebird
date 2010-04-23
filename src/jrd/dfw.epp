@@ -1118,7 +1118,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 						WITH Y.RDB$SHADOW_NUMBER EQ X.RDB$SHADOW_NUMBER
 						AND Y.RDB$FILE_SEQUENCE NOT MISSING
 						SORTED BY DESCENDING Y.RDB$FILE_SEQUENCE
-						start = Y.RDB$FILE_START + Y.RDB$FILE_LENGTH;
+				{
+					start = Y.RDB$FILE_START + Y.RDB$FILE_LENGTH;
+				}
 				END_FOR
 			}
 
@@ -1274,8 +1276,9 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 				OVER RDB$SHADOW_NUMBER
 				WITH X.RDB$FILE_NAME EQ expanded_fname.c_str()
 				SORTED BY Y.RDB$FILE_START
-				// for the first file, create a brand new shadow; for secondary
-				// files that have a starting page specified, add a file
+		{
+			// for the first file, create a brand new shadow; for secondary
+			// files that have a starting page specified, add a file
 			if (!sequence)
 				SDW_add(tdbb, Y.RDB$FILE_NAME, Y.RDB$SHADOW_NUMBER, Y.RDB$FILE_FLAGS);
 			else if (Y.RDB$FILE_START)
@@ -1310,7 +1313,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 				END_MODIFY
 				sequence++;
 			}
-
+		}
 		END_FOR
 
 		break;
@@ -2314,6 +2317,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) IDXN IN RDB$INDICES CROSS
 			IREL IN RDB$RELATIONS OVER RDB$RELATION_NAME
 				WITH IDXN.RDB$INDEX_NAME EQ work->dfw_name.c_str()
+		{
 			// Views do not have indices
 			if (IREL.RDB$VIEW_BLR.NULL)
 			{
@@ -2363,6 +2367,7 @@ static bool create_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					}
 				}
 			}
+		}
 		END_FOR
 
 		return false;
@@ -3439,17 +3444,17 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd
 
 	case 3:
 		{
-		AutoRequest handle;
-		FOR(REQUEST_HANDLE handle)
-			FLD IN RDB$FIELDS WITH
-				FLD.RDB$FIELD_NAME EQ work->dfw_name.c_str() AND
-				FLD.RDB$COMPUTED_BLR NOT MISSING
-		{
+			AutoRequest handle;
+			FOR(REQUEST_HANDLE handle)
+				FLD IN RDB$FIELDS WITH
+					FLD.RDB$FIELD_NAME EQ work->dfw_name.c_str() AND
+					FLD.RDB$COMPUTED_BLR NOT MISSING
+			{
 				MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
+			}
+			END_FOR
 		}
-		END_FOR
 		break;
-		}
 	}
 
 	return false;

@@ -741,6 +741,7 @@ void MET_activate_shadow(thread_db* tdbb)
 					Y.RDB$SHADOW_NUMBER = 0;
 				END_MODIFY
 			END_FOR
+
 			ERASE X;
 		}
 	END_FOR
@@ -1451,13 +1452,16 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 		MetaName domainName;
 
 		AutoRequest handle;
+
 		FOR(REQUEST_HANDLE handle)
 			RLF IN RDB$RELATION_FIELDS CROSS
 				FLD IN RDB$FIELDS WITH
 				RLF.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME AND
 				RLF.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
 				RLF.RDB$FIELD_NAME EQ object_name.c_str()
+		{
 			domainName = FLD.RDB$FIELD_NAME;
+		}
 		END_FOR
 
 		MET_delete_dependencies(tdbb, domainName, type, transaction);
@@ -1527,10 +1531,12 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 	Database* dbb = tdbb->getDatabase();
 
 	AutoRequest handle;
+
 	FOR(REQUEST_HANDLE handle) X IN RDB$FILES
 		WITH X.RDB$SHADOW_NUMBER NOT MISSING
 			AND X.RDB$SHADOW_NUMBER NE 0
 			AND X.RDB$FILE_SEQUENCE EQ 0
+	{
 		if ((X.RDB$FILE_FLAGS & FILE_shadow) && !(X.RDB$FILE_FLAGS & FILE_inactive))
 		{
 			const USHORT file_flags = X.RDB$FILE_FLAGS;
@@ -1552,6 +1558,7 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 				}
 			}
 		}
+	}
 	END_FOR
 
 	// if any current shadows were not defined in database, mark
@@ -1605,9 +1612,9 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 			 TRG.RDB$TRIGGER_TYPE EQ encoded_type AND
 			 TRG.RDB$TRIGGER_INACTIVE EQ 0
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
-
+	{
 		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &tdbb->getDatabase()->dbb_triggers[type]);
-
+	}
 	END_FOR
 }
 
@@ -2239,7 +2246,7 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 					 IDX.RDB$INDEX_NAME EQ index_name) AND
 					IND.RDB$INDEX_NAME EQ IDX.RDB$FOREIGN_KEY AND
 					IND.RDB$UNIQUE_FLAG = 1
-
+			{
 				const jrd_rel* partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 
 				if (partner_relation && !IDX.RDB$INDEX_INACTIVE && !IND.RDB$INDEX_INACTIVE)
@@ -2249,6 +2256,7 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 					fb_assert(idx->idx_primary_index != idx_invalid);
 					found = true;
 				}
+			}
 			END_FOR
 
 			return found;
@@ -3124,11 +3132,12 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			FOR(REQUEST_HANDLE request5)
 				P IN RDB$PROCEDURES WITH P.RDB$PROCEDURE_ID EQ procedure->getId()
-
+			{
 				MODIFY P USING
 					P.RDB$VALID_BLR = TRUE;
 					P.RDB$VALID_BLR.NULL = FALSE;
 				END_MODIFY
+			}
 			END_FOR
 		}
 	} // if !noscan
@@ -3889,11 +3898,14 @@ void MET_update_shadow(thread_db* tdbb, Shadow* shadow, USHORT file_flags)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	AutoRequest handle;
+
 	FOR(REQUEST_HANDLE handle)
 		FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER EQ shadow->sdw_number
+	{
 		MODIFY FIL USING
 			FIL.RDB$FILE_FLAGS = file_flags;
 		END_MODIFY
+	}
 	END_FOR
 }
 
@@ -4200,13 +4212,15 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
 	bool found = false;
 
 	AutoRequest handle;
+
 	FOR(REQUEST_HANDLE handle)
 		FIRST 1 T IN RDB$TYPES WITH
 			T.RDB$FIELD_NAME EQ field AND
 			T.RDB$TYPE_NAME EQ buffer
-
+	{
 		found = true;
 		*id = T.RDB$TYPE;
+	}
 	END_FOR
 
 	return found;
@@ -4682,7 +4696,7 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 
 	AutoRequest handle;
 
-	if (collation == NULL)
+	if (!collation)
 	{
 		if (charset == NULL)
 			charset = (const UCHAR*) DEFAULT_CHARACTER_SET_NAME;
@@ -4704,25 +4718,25 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 		FOR(REQUEST_HANDLE handle)
 			FIRST 1 CS IN RDB$CHARACTER_SETS
 				WITH CS.RDB$CHARACTER_SET_NAME EQ charset
-
+		{
             found = true;
 			dbb->dbb_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
 			*id = CS.RDB$CHARACTER_SET_ID;
-
+		}
 		END_FOR
 
 		return found;
 	}
 
-	if (charset == NULL)
+	if (!charset)
 	{
 		FOR(REQUEST_HANDLE handle)
 			FIRST 1 COL IN RDB$COLLATIONS
 				WITH COL.RDB$COLLATION_NAME EQ collation
-
+		{
 			found = true;
 			*id = COL.RDB$CHARACTER_SET_ID | (COL.RDB$COLLATION_ID << 8);
-
+		}
 		END_FOR
 
 		return found;
@@ -4736,11 +4750,11 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 			AND AL1.RDB$TYPE_NAME EQ charset
 			AND COL.RDB$COLLATION_NAME EQ collation
 			AND AL1.RDB$TYPE EQ CS.RDB$CHARACTER_SET_ID
-
+	{
         found = true;
 		dbb->dbb_charset_ids.put((const TEXT*) charset, CS.RDB$CHARACTER_SET_ID);
 		*id = CS.RDB$CHARACTER_SET_ID | (COL.RDB$COLLATION_ID << 8);
-
+	}
 	END_FOR
 
 	return found;
