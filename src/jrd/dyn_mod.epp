@@ -1904,7 +1904,7 @@ void DYN_modify_sql_field(Global* gbl, const UCHAR** ptr, const MetaName* relati
 	//check_sptrig_dependency(tdbb, gbl, *relation_name,
 	//						orig_fld.dyn_fld_name);
 
-	AutoRequest request, request2;
+	AutoRequest request;
 	bool found = false;
 	bool dtype, scale, prec, subtype, charlen, collation, fldlen, nullflg, charset;
 	dtype = scale = prec = subtype = charlen = collation = fldlen = nullflg = charset = false;
