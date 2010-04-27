@@ -1,3 +1,9 @@
+2010-04-26 18:42  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.301.2.8):
+
+	Backported CORE-2215: GROUP BY concatenation with empty string.
+
 2010-04-26 14:52  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.204.2.14), btr.h (1.44.8.3):
