@@ -18,7 +18,7 @@
       <Tool Name="VCPreLinkEventTool" />
       <Tool Name="VCLinkerTool" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe" LinkIncremental="2" AssemblyDebug="1" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" />
       <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
+      <Tool Name="VCManifestTool" AdditionalManifestFiles="$(SolutionDir)asInvoker.manifest" />
       <Tool Name="VCXDCMakeTool" />
       <Tool Name="VCBscMakeTool" />
       <Tool Name="VCFxCopTool" />
@@ -39,7 +39,7 @@
       <Tool Name="VCPreLinkEventTool" />
       <Tool Name="VCLinkerTool" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe" LinkIncremental="1" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" />
       <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
+      <Tool Name="VCManifestTool" AdditionalManifestFiles="$(SolutionDir)asInvoker.manifest" />
       <Tool Name="VCXDCMakeTool" />
       <Tool Name="VCBscMakeTool" />
       <Tool Name="VCFxCopTool" />

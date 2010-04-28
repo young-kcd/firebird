@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject ProjectType="Visual C++" Version="7.10" Name="fbrmclib" ProjectGUID="{FAF9AD25-8238-49E9-9AC9-8C56E190440A}">
   <Platforms>
     <Platform Name="Win32" />
@@ -64,6 +64,8 @@
       <File RelativePath="..\..\..\src\common\classes\locks.cpp">
       </File>
       <File RelativePath="..\..\..\src\common\StatusArg.cpp">
+      </File>
+      <File RelativePath="..\..\..\src\common\thd.cpp">
       </File>
     </Filter>
     <Filter Name="JRD files" Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">

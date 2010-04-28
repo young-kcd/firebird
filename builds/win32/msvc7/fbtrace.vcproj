@@ -63,6 +63,8 @@
       </File>
       <File RelativePath="..\..\..\src\utilities\ntrace\TracePluginImpl.cpp">
       </File>
+      <File RelativePath="..\..\..\src\utilities\ntrace\TraceUnicodeUtils.cpp">
+      </File>
     </Filter>
     <Filter Name="Header Files" Filter="h;hpp;hxx;hm;inl;inc;xsd" UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
       <File RelativePath="..\..\..\src\jrd\isc.h">
@@ -78,6 +80,8 @@
       <File RelativePath="..\..\..\src\utilities\ntrace\TracePluginConfig.h">
       </File>
       <File RelativePath="..\..\..\src\utilities\ntrace\TracePluginImpl.h">
+      </File>
+      <File RelativePath="..\..\..\src\utilities\ntrace\TraceUnicodeUtils.h">
       </File>
     </Filter>
     <Filter Name="Resource Files" Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx" UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
