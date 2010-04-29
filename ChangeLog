@@ -1,3 +1,48 @@
+2010-04-29 13:16  hvlad
+
+	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.30.2.5):
+
+	More explicit error message
+
+2010-04-29 10:51  hvlad
+
+	* firebird2/src/: common/classes/RefCounted.h (1.19.2.1),
+	jrd/trace/TraceConfigStorage.cpp (1.30.2.4),
+	jrd/trace/TraceConfigStorage.h (1.10.2.4):
+
+	Better fix for AV at exit() time, CORE-2917 : a)
+	WaitForSingleObject hungs when process unloads embedded library b)
+	shmem file was changed in incompatime way so build 26000 can't work
+	together with any previous builds c) time_t in shmem replaced by
+	SINT64 to avoid possible issues with builds by MSVC 7.1 (where
+	time_t is 32-bit)
+
+2010-04-28 19:03  skidder
+
+	* firebird2/builds/win32/update_vc7_build.cmd (1.1.2.1):
+
+	Add script for automatic update of VC7 build
+
+2010-04-28 19:03  skidder
+
+	* firebird2/builds/win32/msvc7/: Firebird2.sln (1.31.2.1),
+	btyacc.vcproj (1.5.2.1), build_msg.vcproj (1.9.2.1), codes.vcproj
+	(1.8.2.1), empbuild.vcproj (1.4.2.1), fb_inet_server.vcproj
+	(1.28.2.1), fb_lock_print.vcproj (1.28.2.1), fbguard.vcproj
+	(1.25.2.1), fbrmclib.vcproj (1.5.2.1), fbserver.vcproj (1.29.2.1),
+	fbsvcmgr.vcproj (1.3.2.1), fbtrace.vcproj (1.2.4.1),
+	fbtracemgr.vcproj (1.1.4.1), gbak.vcproj (1.23.2.1),
+	gbak_embed.vcproj (1.5.2.1), gdef.vcproj (1.25.2.1), gfix.vcproj
+	(1.26.2.1), gpre.vcproj (1.28.2.1), gpre_boot.vcproj (1.34.2.1),
+	gpre_embed.vcproj (1.10.2.1), gsec.vcproj (1.27.2.1), gsplit.vcproj
+	(1.16.2.1), gstat.vcproj (1.30.2.1), instclient.vcproj (1.9.2.1),
+	instreg.vcproj (1.21.2.1), instsvc.vcproj (1.21.2.1),
+	intlbuild.vcproj (1.3.2.1), isql.vcproj (1.25.2.1),
+	isql_embed.vcproj (1.6.2.1), nbackup.vcproj (1.11.2.1), qli.vcproj
+	(1.26.2.1):
+
+	Update MSVC7 build
+
 2010-04-26 14:18  hvlad
 
 	* firebird2/src/jrd/: btr.cpp (1.259.2.6), btr.h (1.54.2.1):
