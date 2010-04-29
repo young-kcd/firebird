@@ -430,7 +430,6 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 		dsc_name->dsc_length);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_pkg_security, IRQ_REQUESTS);
@@ -470,7 +469,6 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 							dsc_name->dsc_length);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_p_security, IRQ_REQUESTS);
@@ -511,7 +509,6 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 							dsc_name->dsc_length);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_f_security, IRQ_REQUESTS);
@@ -552,7 +549,6 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 								  dsc_name->dsc_length);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const SecurityClass* s_class = NULL;
 	AutoCacheRequest request(tdbb, irq_v_security, IRQ_REQUESTS);
@@ -584,7 +580,6 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
@@ -701,7 +696,6 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
 	Firebird::string loginName(tempId.usr_user_name);
@@ -976,7 +970,6 @@ static bool check_user_group(thread_db* tdbb, const UCHAR* acl, USHORT number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
 	SLONG n = 0;
 
@@ -1051,7 +1044,6 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
-	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t privileges = SCL_scanned;
 
@@ -1111,7 +1103,6 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// Munch ACL. If we find a hit, eat up privileges.
 
