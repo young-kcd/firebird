@@ -129,7 +129,7 @@ ConfigStorage::ConfigStorage() :
 	if (m_base->version == 2) 
 	{
 		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
-			gds__log("Can't start touch thread");
+			gds__log("Trace facility: can't start touch thread");
 		else
 			m_touchStartSem.enter();
 	}
