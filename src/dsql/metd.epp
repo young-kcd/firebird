@@ -644,8 +644,6 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 
 	bool found = false;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-
 	AutoCacheRequest handle(tdbb, irq_domain, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
@@ -795,7 +793,6 @@ bool METD_get_exception(jrd_tra* transaction, const dsql_str* name)
 
 	validateTransaction(transaction);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
 	AutoCacheRequest handle(tdbb, irq_exception, IRQ_REQUESTS);
@@ -1081,8 +1078,6 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 	thread_db* tdbb = JRD_get_thread_data();
 
 	validateTransaction(transaction);
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	DsqlNodStack stack;
 
@@ -1538,8 +1533,6 @@ bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** rel
 
 	validateTransaction(transaction);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
-
 	bool found = false;
 
 	if (relation)
@@ -1584,7 +1577,6 @@ bool METD_get_type(jrd_tra* transaction, const dsql_str* name, const char* field
 
 	validateTransaction(transaction);
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool found = false;
 
 	AutoCacheRequest handle(tdbb, irq_type, IRQ_REQUESTS);
@@ -1626,7 +1618,6 @@ dsql_rel* METD_get_view_base(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	bool first = true;
 	bool cont = true;
 	MetaNamePairMap previousAux;
@@ -1752,8 +1743,6 @@ dsql_rel* METD_get_view_relation(jrd_tra* transaction, DsqlCompilerScratch* dsql
 	validateTransaction(transaction);
 
 	dsql_rel* relation = NULL;
-
-	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
 	AutoCacheRequest handle(tdbb, irq_view, IRQ_REQUESTS);
 

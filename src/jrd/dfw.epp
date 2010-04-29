@@ -1009,7 +1009,6 @@ void DFW_update_index(const TEXT* name, USHORT id, const SelectivityList& select
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, irq_m_index_seg, IRQ_REQUESTS);
 
@@ -1832,7 +1831,6 @@ static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	bool err = false;
 	Firebird::SortedObjectsArray<Firebird::MetaName> sortedNames(*tdbb->getDefaultPool());
@@ -1899,7 +1897,6 @@ static void check_dependencies(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	const MetaName packageName(package_name);
 
@@ -2947,7 +2944,6 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -4433,7 +4429,6 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	fb_utils::exact_name(object_name);
 	enum dfw_t dfw_type;
@@ -4570,7 +4565,6 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name, Ods::Interna
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, irq_r_fld_dim, IRQ_REQUESTS);
 
@@ -6238,7 +6232,6 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		return blob;
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	// system triggers
 

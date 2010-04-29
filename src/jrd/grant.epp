@@ -212,7 +212,6 @@ static void define_default_class(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	if (default_class.length() == 0)
 	{
@@ -286,7 +285,6 @@ static SecurityClass::flags_t get_public_privs(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	SecurityClass::flags_t public_priv = 0;
 
@@ -330,7 +328,6 @@ static void get_object_info(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	owner = s_class = default_class = "";
 	view = false;
@@ -423,7 +420,6 @@ static void get_user_privs(thread_db*					tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	Firebird::MetaName user;
 	SSHORT user_type = -2;
@@ -645,7 +641,6 @@ static SecurityClass::flags_t save_field_privileges(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
 
 	Acl field_acl(relation_acl);
 	const Acl acl_start(relation_acl);
@@ -824,7 +819,6 @@ static void save_security_class(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, transaction, &blob_id);

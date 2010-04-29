@@ -172,7 +172,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	jrd_req* const old_request = tdbb->getRequest();
 	tdbb->setRequest(NULL);

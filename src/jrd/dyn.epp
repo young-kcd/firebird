@@ -286,7 +286,6 @@ bool DYN_is_it_sql_role(Global* gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
 
 	bool found = false;
 
@@ -868,7 +867,6 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	bool grant_role_stmt = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 	MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
 
 	GET_STRING(ptr, privileges);
@@ -1194,7 +1192,6 @@ static bool grantor_can_grant(Global* gbl,
 	USHORT err_num;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
 	// Verify that the input relation exists.
 
@@ -1454,7 +1451,6 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 	bool no_admin = false;
 
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
 
 	// Fetch the name of the owner of the ROLE
 	MetaName owner;
@@ -1557,7 +1553,6 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
 	// Stash away a copy of the revoker's name, in uppercase form
 
@@ -1840,7 +1835,6 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 	SSHORT user_type = -1;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
 	while ((verb = *(*ptr)++) != isc_dyn_end)
 	{
@@ -1954,7 +1948,6 @@ static void set_field_class_name(Global* gbl, const MetaName& relation, const Me
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, drq_s_f_class, DYN_REQUESTS);
 
@@ -2013,7 +2006,6 @@ static void store_privilege(Global* gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
 
 	AutoCacheRequest request(tdbb, drq_s_grant, DYN_REQUESTS);
 
