@@ -270,7 +270,8 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool ret
 {
 	fb_assert(m_transaction);
 
-	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
+	if (m_scope == traCommon && m_IntConnection.isCurrent())
+	{
 		if (!retain) {
 			m_transaction = NULL;
 		}
@@ -289,7 +290,8 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool r
 {
 	fb_assert(m_transaction);
 
-	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
+	if (m_scope == traCommon && m_IntConnection.isCurrent())
+	{
 		if (!retain) {
 			m_transaction = NULL;
 		}
@@ -359,9 +361,9 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 			CallerName callerName;
 			const Routine* routine;
 
-			if (request && statement->triggerName.hasData())
+			if (statement && statement->triggerName.hasData())
 				tran->tra_caller_name = CallerName(obj_trigger, statement->triggerName);
-			else if (request && (routine = statement->getRoutine()) &&
+			else if (statement && (routine = statement->getRoutine()) &&
 				routine->getName().identifier.hasData())
 			{
 				if (routine->getName().package.isEmpty())
@@ -390,7 +392,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	const DsqlCompiledStatement* statement = m_request->getStatement();
 
-	if (statement->getSendMsg()) {
+	if (statement->getSendMsg())
+	{
 		try {
 			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
 				m_inBlr, m_in_buffer);
@@ -404,7 +407,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_inputs = 0;
 	}
 
-	if (statement->getReceiveMsg()) {
+	if (statement->getReceiveMsg())
+	{
 		try {
 			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
 				m_outBlr, m_out_buffer);

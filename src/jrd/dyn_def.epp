@@ -1748,7 +1748,7 @@ void DYN_define_index(Global*		gbl,
 
 		id = old_id;
 
-		// The previous 2 lines and the next two lines can be
+		// The previous line and the next line can be
 		// deleted as long as no code is added in the middle.
 
 		old_id = id;

@@ -71,7 +71,7 @@ namespace Jrd
 		USHORT id;							// routine ID
 		Firebird::QualifiedName name;		// routine name
 		Firebird::MetaName securityName;	// security class name
-		JrdStatement* statement;	// compiled routine statement
+		JrdStatement* statement;			// compiled routine statement
 		bool undefined;						// Is the packaged routine missing the body/entrypoint?
 	};
 }

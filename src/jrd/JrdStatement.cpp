@@ -149,7 +149,7 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	for (record_param* rpb = rpbsSetup.begin(); tail < streams_end; ++rpb, ++tail)
 	{
 		// fetch input stream for update if all booleans matched against indices
-		if (tail->csb_flags & csb_update && !(tail->csb_flags & csb_unmatched))
+		if ((tail->csb_flags & csb_update) && !(tail->csb_flags & csb_unmatched))
 			 rpb->rpb_stream_flags |= RPB_s_update;
 
 		// if no fields are referenced and this stream is not intended for update,
@@ -263,8 +263,8 @@ const Routine* JrdStatement::getRoutine() const
 
 	if (procedure)
 		return procedure;
-	else
-		return function;
+
+	return function;
 }
 
 // Determine if any request of this statement are active.
