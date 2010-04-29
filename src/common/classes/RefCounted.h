@@ -66,13 +66,13 @@ namespace Firebird
 		explicit Reference(RefCounted& refCounted) :
 			r(refCounted)
 		{
-			r.addRef();
+			r.RefCounted::addRef();
 		}
 
 		~Reference()
 		{
 			try {
-				r.release();
+				r.RefCounted::release();
 			}
 			catch (const Exception&)
 			{

@@ -31,6 +31,7 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
+#include "../../common/classes/RefCounted.h"
 #include "../../common/classes/semaphore.h"
 #include "../../jrd/isc.h"
 #include "../../jrd/ThreadStart.h"
@@ -95,11 +96,11 @@ private:
 		volatile ULONG change_number;
 		volatile ULONG session_number;
 		ULONG cnt_uses;
-		time_t touch_time;
 		char  cfg_file_name[MAXPATHLEN];
 #ifndef WIN_NT
 		struct mtx mutex;
 #endif
+		SINT64 touch_time;
 	};
 
 	// items in every session record at sessions file
@@ -125,8 +126,9 @@ private:
 #endif
 	int  m_cfg_file;
 	bool m_dirty;
-	Firebird::Semaphore m_touchSemaphore;
-	ThreadHandle m_thdId;
+	Firebird::Semaphore m_touchStartSem;
+	Firebird::AnyRef<Firebird::Semaphore>* m_touchSemaphore;
+	Firebird::Reference  m_touchSemRef;
 };
 
 

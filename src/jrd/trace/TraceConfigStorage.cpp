@@ -79,13 +79,13 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 #endif
 }
 
-ConfigStorage::ConfigStorage()
+ConfigStorage::ConfigStorage() :
+	m_base(NULL),
+	m_cfg_file(-1),
+	m_dirty(false),
+	m_touchSemaphore(FB_NEW(*getDefaultMemoryPool()) AnyRef<Semaphore>),
+	m_touchSemRef(*m_touchSemaphore)
 {
-	m_base = NULL;
-	m_cfg_file = -1;
-	m_dirty = false;
-	m_thdId = 0;
-
 	PathName filename;
 #ifdef WIN_NT
 	DWORD sesID = 0;
@@ -120,20 +120,25 @@ ConfigStorage::ConfigStorage()
 		status_exception::raise(status);
 	}
 
-	fb_assert(m_base->version == 1);
+	fb_assert(m_base->version == 1 || m_base->version == 2);
 
 	StorageGuard guard(this);
 	checkFile();
 	++m_base->cnt_uses;
 
-	gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, &m_thdId);
+	if (m_base->version == 2) 
+	{
+		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
+			gds__log("Can't start touch thread");
+		else
+			m_touchStartSem.enter();
+	}
 }
 
 ConfigStorage::~ConfigStorage()
 {
 	// signal touchThread to finish
-	m_touchSemaphore.release();
-	THD_wait_for_completion(m_thdId);
+	m_touchSemaphore->Semaphore::release();
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
@@ -181,7 +186,7 @@ void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 	// Initialize the shared data header
 	if (initialize)
 	{
-		header->version = 1;
+		header->version = 2;
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;
@@ -311,8 +316,13 @@ THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
 
 void ConfigStorage::touchThreadFunc()
 {
+	AnyRef<Semaphore>* semaphore = m_touchSemaphore;
+	Reference semRef(*semaphore);
+
+	m_touchStartSem.release();
+
 	int delay = TOUCH_INTERVAL / 2;
-	while (!m_touchSemaphore.tryEnter(delay))
+	while (!semaphore->tryEnter(delay))
 	{
 		StorageGuard guard(this);
 
