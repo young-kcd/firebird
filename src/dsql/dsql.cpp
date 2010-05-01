@@ -2020,6 +2020,11 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 
 			data += l;
 		}
+
+#ifdef DSQL_DEBUG
+		DSQL_debug = Config::getTraceDSQL();
+#endif
+
 	}
 
 	return attachment->att_dsql_instance;

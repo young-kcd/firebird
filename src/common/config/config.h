@@ -116,6 +116,7 @@ public:
 		KEY_UDF_ACCESS,
 		KEY_TEMP_DIRECTORIES,
 		KEY_BUGCHECK_ABORT,
+		KEY_TRACE_DSQL,
 		KEY_LEGACY_HASH,
 		KEY_GC_POLICY,
 		KEY_REDIRECTION,
@@ -286,6 +287,9 @@ public:
 
 	// Temporary directories list
 	static const char* getTempDirectories();
+
+	// DSQL trace bitmask
+	static int getTraceDSQL();
 
 	// Abort on BUGCHECK and structured exceptions
  	static bool getBugcheckAbort();

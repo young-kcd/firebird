@@ -166,6 +166,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 #else
  	{TYPE_BOOLEAN,		"BugcheckAbort",			(ConfigValue) false},	// whether to abort() engine when internal error is found
 #endif
+	{TYPE_INTEGER,		"TraceDSQL",				(ConfigValue) 0},		// bitmask
 	{TYPE_BOOLEAN,		"LegacyHash",				(ConfigValue) true},	// let use old passwd hash verification
 	{TYPE_STRING,		"GCPolicy",					(ConfigValue) NULL},	// garbage collection policy
 	{TYPE_BOOLEAN,		"Redirection",				(ConfigValue) false},
@@ -541,6 +542,11 @@ const char *Config::getTempDirectories()
 bool Config::getBugcheckAbort()
 {
 	return (bool) getDefaultConfig()->values[KEY_BUGCHECK_ABORT];
+}
+
+int Config::getTraceDSQL()
+{
+	return (int) getDefaultConfig()->values[KEY_TRACE_DSQL];
 }
 
 bool Config::getLegacyHash()
