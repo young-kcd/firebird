@@ -1038,7 +1038,7 @@ typedef Firebird::SortedArray<const char*,
 */
 
 #ifdef DSQL_DEBUG
-	extern unsigned DSQL_debug;
+extern unsigned DSQL_debug;
 #endif
 
 #endif // DSQL_DSQL_H

@@ -1957,75 +1957,73 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
  **/
 static dsql_dbb* init(Jrd::Attachment* attachment)
 {
+	if (attachment->att_dsql_instance)
+		return attachment->att_dsql_instance;
+
 	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *attachment->att_database->createPool();
+	dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
+	database->dbb_attachment = attachment;
+	database->dbb_database = attachment->att_database;
+	attachment->att_dsql_instance = database;
 
-	if (!attachment->att_dsql_instance)
+	INI_init_dsql(tdbb, database);
+
+	UCHAR buffer[BUFFER_TINY];
+
+	try
 	{
-		MemoryPool& pool = *attachment->att_database->createPool();
-		dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
-		database->dbb_attachment = attachment;
-		database->dbb_database = attachment->att_database;
-		attachment->att_dsql_instance = database;
+		ThreadStatusGuard status_vector(tdbb);
+		INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
+	}
+	catch (Firebird::Exception&)
+	{
+		return database;
+	}
 
-		INI_init_dsql(tdbb, database);
+	const UCHAR* data = buffer;
+	UCHAR p;
 
-		UCHAR buffer[BUFFER_TINY];
+	while ((p = *data++) != isc_info_end)
+	{
+		const SSHORT l = static_cast<SSHORT>(gds__vax_integer(data, 2));
+		data += 2;
 
-		try
+		switch (p)
 		{
-			ThreadStatusGuard status_vector(tdbb);
+		case isc_info_db_sql_dialect:
+			fb_assert(l == 1);
+			database->dbb_db_SQL_dialect = (USHORT) data[0];
+			break;
 
-			INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
-		}
-		catch (Firebird::Exception&)
-		{
-			return database;
-		}
-
-		const UCHAR* data = buffer;
-		UCHAR p;
-		while ((p = *data++) != isc_info_end)
-		{
-			const SSHORT l = static_cast<SSHORT>(gds__vax_integer(data, 2));
-			data += 2;
-
-			switch (p)
+		case isc_info_ods_version:
+			database->dbb_ods_version = gds__vax_integer(data, l);
+			if (database->dbb_ods_version < 12)
 			{
-			case isc_info_db_sql_dialect:
-				fb_assert(l == 1);
-				database->dbb_db_SQL_dialect = (USHORT) data[0];
-				break;
-
-			case isc_info_ods_version:
-				database->dbb_ods_version = gds__vax_integer(data, l);
-				if (database->dbb_ods_version < 12)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(12));
-				}
-				break;
-
-			case isc_info_ods_minor_version:
-				database->dbb_minor_version = gds__vax_integer(data, l);
-				break;
-
-			case isc_info_db_read_only:
-				fb_assert(l == 1);
-				database->dbb_read_only = (USHORT) data[0] ? true : false;
-				break;
-
-			default:
-				break;
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(12));
 			}
+			break;
 
-			data += l;
+		case isc_info_ods_minor_version:
+			database->dbb_minor_version = gds__vax_integer(data, l);
+			break;
+
+		case isc_info_db_read_only:
+			fb_assert(l == 1);
+			database->dbb_read_only = (USHORT) data[0] ? true : false;
+			break;
+
+		default:
+			break;
 		}
+
+		data += l;
+	}
 
 #ifdef DSQL_DEBUG
-		DSQL_debug = Config::getTraceDSQL();
+	DSQL_debug = Config::getTraceDSQL();
 #endif
-
-	}
 
 	return attachment->att_dsql_instance;
 }

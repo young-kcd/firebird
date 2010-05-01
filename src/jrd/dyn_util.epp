@@ -120,7 +120,6 @@ void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
  *	If yes then return error.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 
 	USHORT error_code = 0;
@@ -574,7 +573,6 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
  *	Find the original source for a view field.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
 
 	/* CVC: It seems the logic of this function was changed over time. It's unlikely
