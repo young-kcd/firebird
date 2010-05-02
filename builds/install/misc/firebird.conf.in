@@ -406,29 +406,6 @@
 #
 #BugcheckAbort = 0
 
-# ----------------------------
-#
-# Use this option to make engine output debugging information for DSQL requests
-# into the firebird.log file. This can be useful when analysing problems with 
-# Firebird engine core. Never enable this option for production installs.
-#
-# Type: integer (bit-field)
-#
-# Bit values are as follows:
-#
-#    0       No output
-#    1       Display output tree in PASS1_statment
-#    2       Display input tree in PASS1_statment
-#    4       Display ddl BLR (DYN)
-#    8       Display BLR
-#    16      Display PASS1_rse input tree
-#    32      Display SQL input string
-#    64      Display BLR in dsql/prepare
-#    > 256   Display btyacc parser output level = DSQL_level>>8
-#
-#TraceDSQL = 0
-
-
 # Prior to Firebird 2.5 the SET clause of the UPDATE statement assigned
 # columns in the user-defined order with the NEW column values being
 # immediately accessible to the subsequent assignments. This did not

@@ -44,8 +44,10 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/auto.h"
 
+#ifdef DEV_BUILD
 // This macro enables DSQL tracing code
 #define DSQL_DEBUG
+#endif
 
 #ifdef DSQL_DEBUG
 DEFINE_TRACE_ROUTINE(dsql_trace);
