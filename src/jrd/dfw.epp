@@ -158,6 +158,17 @@ typedef Hash<
 	DeferredWork
 > DfwHash;
 
+// NS: This needs careful refactoring.
+//
+// Deferred work item:
+// * Encapsulates deferred invocation of the task routine with a given set of
+//   arguments. 
+// * Has code to maintain a doubly linked list of itself.
+//
+// These two functions need to be split, and linked list of custom entries can 
+// become generic.
+//
+
 class DeferredWork : public pool_alloc<type_dfw>,
 					 public DfwHash::Entry
 {
@@ -309,7 +320,7 @@ class DfwSavePoint : public DfwSavePointHash::Entry
 	SLONG dfw_sav_number;
 
 public:
-	DfwHash hash;
+	DfwHash hash; // Deferred work items posted under this savepoint
 
 	explicit DfwSavePoint(SLONG number) : dfw_sav_number(number) { }
 
@@ -327,10 +338,11 @@ public:
 	}
 };
 
+// List of deferred work items (with per-savepoint break-down)
 class DeferredJob
 {
 public:
-	DfwSavePointHash hash;
+	DfwSavePointHash hash; // Hash set of savepoints, that posted work
 	DeferredWork* work;
 	DeferredWork** end;
 
