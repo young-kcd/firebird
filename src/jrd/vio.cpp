@@ -673,8 +673,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
-				if (state == tra_active)
-					ERR_post(Arg::Gds(isc_deadlock));
+				if (state == tra_active) {
+					ERR_post(Arg::Gds(isc_deadlock) << 
+						Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+				}
 
 				// refetch the record and try again.  The active transaction
 				// could have updated the record a second time.
@@ -3413,7 +3415,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		case PREPARE_LOCKERR:
 			// We got some kind of locking error (deadlock, timeout or lock_conflict)
 			// Error details should be stuffed into status vector at this point
-			ERR_punt();
+			ERR_post(Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
 		case PREPARE_DELETE:
 			return false;
 	}
