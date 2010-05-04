@@ -105,12 +105,12 @@ const UCHAR SecurityDatabase::TPB[4] =
 	isc_tpb_wait
 };
 
-// Static instance of the database
-
-SecurityDatabase SecurityDatabase::instance;
-
 #ifndef EMBEDDED
 namespace {
+	// Static instance of the database
+
+	GlobalPtr<SecurityDatabase> instance;
+
 	// Disable attempts to brute-force logins/passwords
 	class FailedLogin
 	{
@@ -397,12 +397,12 @@ void SecurityDatabase::prepare()
 
 void SecurityDatabase::initialize()
 {
-	instance.init();
+	instance->init();
 }
 
 void SecurityDatabase::shutdown()
 {
-	instance.fini();
+	instance->fini();
 }
 
 int SecurityDatabase::onShutdown(const int, const int, void* me)
@@ -455,7 +455,7 @@ void SecurityDatabase::verifyUser(string& name,
 	// that means the current context must be saved and restored.
 
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance.lookupUser(name.c_str(), uid, gid, pw1);
+	const bool found = instance->lookupUser(name.c_str(), uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
 	string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();

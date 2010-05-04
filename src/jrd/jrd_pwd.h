@@ -111,9 +111,8 @@ private:
 
 	static int onShutdown(const int, const int, void*);
 
-	static SecurityDatabase instance;
-
-	SecurityDatabase()
+public:
+	SecurityDatabase(Firebird::MemoryPool&)
 		: lookup_db(0), lookup_req(0), counter(0), server_shutdown(false)
 	{}
 
