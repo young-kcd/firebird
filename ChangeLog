@@ -1,3 +1,17 @@
+2010-05-05 14:31  dimitr
+
+	* firebird2/: doc/WhatsNew (1.190.2.17), src/jrd/isc_version.h
+	(1.10.2.14):
+
+	Update.
+
+2010-05-04 16:45  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.39.2.2), pwd.cpp (1.79.2.3):
+
+	Fixed unregistered bug (added by me at RC3 stage): wrong mutex when
+	shutting down security database
+
 2010-04-29 13:16  hvlad
 
 	* firebird2/src/jrd/trace/TraceConfigStorage.cpp (1.30.2.5):
