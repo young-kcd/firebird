@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-2977
+        Server works with indexed fields of type DATE incorrectly in pre-ODS10 databases
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2971
         Invalid UPDATE OR INSERT usage may lead to the "request depth exceeded" error
       Contributor(s):
