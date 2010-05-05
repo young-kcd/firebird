@@ -1,3 +1,10 @@
+2010-05-04 19:29  skidder
+
+	* firebird2/src/jrd/vio.cpp (1.293):
+
+	Fix CORE-2988. Concurrent transaction number not reported if lock
+	timeout occurs
+
 2010-05-02 14:49  skidder
 
 	* firebird2/src/jrd/dfw.epp (1.334):
