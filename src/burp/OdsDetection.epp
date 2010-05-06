@@ -65,7 +65,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk";
 
 #define DB			tdgbl->db_handle
 #define gds_trans	tdgbl->tr_handle
-#define isc_status	tdgbl->status
+#define isc_status	tdgbl->status_vector
 
 
 void detectRuntimeODS()

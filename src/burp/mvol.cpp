@@ -589,7 +589,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 						}
 
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-						BURP_print(272, SafeArg() <<
+						BURP_print(true, 272, SafeArg() <<
 									tdgbl->action->act_file->fil_name.c_str() <<
 									tdgbl->action->act_file->fil_length <<
 									tdgbl->action->act_file->fil_next->fil_name.c_str());
@@ -737,7 +737,7 @@ static void bad_attribute(int attribute, USHORT type)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 	static const SafeArg dummy;
 	fb_msg_format(NULL, burp_msg_fac, type, sizeof(name), name, dummy);
-	BURP_print(80, SafeArg() << name << attribute);
+	BURP_print(true, 80, SafeArg() << name << attribute);
 	// msg 80  don't recognize %s attribute %ld -- continuing
 	for (int l = get(tdgbl); l; --l)
 		get(tdgbl);
@@ -867,7 +867,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		if (new_desc < 0)
 #endif // WIN_NT
 		{
-			BURP_print(222, new_file);
+			BURP_print(true, 222, new_file);
 			// msg 222 \n\nCould not open file name \"%s\"\n
 			continue;
 		}
@@ -882,13 +882,13 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
 			{
-				BURP_print(223, new_file);
+				BURP_print(true, 223, new_file);
 				// msg223 \n\nCould not write to file \"%s\"\n
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
+				BURP_msg_put(false, 261, SafeArg() << tdgbl->mvol_volume_count << new_file);
 				// Starting with volume #vol_count, new_file
 				BURP_verbose(75, new_file);	// msg 75  creating file %s
 			}
@@ -901,12 +901,12 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			USHORT format;
 			if (!read_header(new_desc, &temp_buffer_size, &format, false))
 			{
-				BURP_print(224, new_file);
+				BURP_print(true, 224, new_file);
 				continue;
 			}
 			else
 			{
-				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
+				BURP_msg_put(false, 261, SafeArg() << tdgbl->mvol_volume_count << new_file);
 				// Starting with volume #vol_count, new_file
 				BURP_verbose(100, new_file);	// msg 100  opened file %s
 			}

@@ -50,25 +50,31 @@ public:
 	typedef Firebird::HalfStaticArray<const char*, 20> ArgvType;
 
 public:
-	UtilSvc() : argv(getPool()) { }
+	UtilSvc() : argv(getPool()), usvcDataMode(false) { }
 
-	virtual void output(const char* text) = 0;
-    virtual void printf(const SCHAR* format, ...) = 0;
 	virtual bool isService() = 0;
 	virtual void started() = 0;
 	virtual void finish() = 0;
-    virtual void putLine(char, const char*) = 0;
-    virtual void putSLong(char, SLONG) = 0;
+	virtual void outputVerbose(const char* text) = 0;
+	virtual void outputError(const char* text) = 0;
+	virtual void outputData(const void* text, size_t size) = 0;
+	virtual void printf(bool err, const SCHAR* format, ...) = 0;
+	virtual void putLine(char, const char*) = 0;
+	virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
 	virtual void putBytes(const UCHAR*, size_t) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
-	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual const ISC_STATUS* getStatus() = 0;
 	virtual void initStatus() = 0;
 	virtual void checkService() = 0;
+	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
 	virtual bool finished() = 0;
+	void setDataMode(bool value)
+	{
+		usvcDataMode = value;
+	}
 
 	virtual ~UtilSvc() { }
 
@@ -96,6 +102,7 @@ public:
 
 public:
 	ArgvType argv;
+	bool usvcDataMode;
 };
 
 

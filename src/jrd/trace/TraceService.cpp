@@ -85,7 +85,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 {
 	if (!TraceManager::pluginsCount())
 	{
-		m_svc.printf("Can not start trace session. There are no trace plugins loaded\n");
+		m_svc.printf(false, "Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
 
@@ -117,7 +117,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 	}
 
 	m_svc.started();
-	m_svc.printf("Trace session ID %ld started\n", session.ses_id);
+	m_svc.printf(false, "Trace session ID %ld started\n", session.ses_id);
 
 	if (interactive)
 	{
@@ -147,15 +147,15 @@ void TraceSvcJrd::stopSession(ULONG id)
 		if (m_admin || m_user == session.ses_user)
 		{
 			storage->removeSession(id);
-			m_svc.printf("Trace session ID %ld stopped\n", id);
+			m_svc.printf(false, "Trace session ID %ld stopped\n", id);
 		}
 		else
-			m_svc.printf("No permissions to stop other user trace session\n");
+			m_svc.printf(false, "No permissions to stop other user trace session\n");
 
 		return;
 	}
 
-	m_svc.printf("Trace session ID %d not found\n", id);
+	m_svc.printf(false, "Trace session ID %d not found\n", id);
 }
 
 void TraceSvcJrd::setActive(ULONG id, bool active)
@@ -163,13 +163,13 @@ void TraceSvcJrd::setActive(ULONG id, bool active)
 	if (active)
 	{
 		if (changeFlags(id, trs_active, 0)) {
-			m_svc.printf("Trace session ID %ld resumed\n", id);
+			m_svc.printf(false, "Trace session ID %ld resumed\n", id);
 		}
 	}
 	else
 	{
 		if (changeFlags(id, 0, trs_active)) {
-			m_svc.printf("Trace session ID %ld paused\n", id);
+			m_svc.printf(false, "Trace session ID %ld paused\n", id);
 		}
 	}
 }
@@ -201,11 +201,11 @@ bool TraceSvcJrd::changeFlags(ULONG id, int setFlags, int clearFlags)
 			return true;
 		}
 
-		m_svc.printf("No permissions to change other user trace session\n");
+		m_svc.printf(false, "No permissions to change other user trace session\n");
 		return false;
 	}
 
-	m_svc.printf("Trace session ID %d not found\n", id);
+	m_svc.printf(false, "Trace session ID %d not found\n", id);
 	return false;
 }
 
@@ -223,14 +223,14 @@ void TraceSvcJrd::listSessions()
 	{
 		if (m_admin || m_user == session.ses_user)
 		{
-			m_svc.printf("\nSession ID: %d\n", session.ses_id);
+			m_svc.printf(false, "\nSession ID: %d\n", session.ses_id);
 			if (!session.ses_name.empty()) {
-				m_svc.printf("  name:  %s\n", session.ses_name.c_str());
+				m_svc.printf(false, "  name:  %s\n", session.ses_name.c_str());
 			}
-			m_svc.printf("  user:  %s\n", session.ses_user.c_str());
+			m_svc.printf(false, "  user:  %s\n", session.ses_user.c_str());
 
 			struct tm* t = localtime(&session.ses_start);
-			m_svc.printf("  date:  %04d-%02d-%02d %02d:%02d:%02d\n",
+			m_svc.printf(false, "  date:  %04d-%02d-%02d %02d:%02d:%02d\n",
 					t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
 					t->tm_hour, t->tm_min, t->tm_sec);
 
@@ -256,7 +256,7 @@ void TraceSvcJrd::listSessions()
 			if (session.ses_flags & trs_log_full) {
 				flags += ", log full";
 			}
-			m_svc.printf("  flags: %s\n", flags.c_str());
+			m_svc.printf(false, "  flags: %s\n", flags.c_str());
 		}
 	}
 }
@@ -267,7 +267,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 
 	if (session.ses_logfile.empty())
 	{
-		m_svc.printf("Can't open trace data log file");
+		m_svc.printf(false, "Can't open trace data log file");
 		return;
 	}
 

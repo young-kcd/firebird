@@ -1271,7 +1271,7 @@ static void util_output(const SCHAR* format, ...)
 		Firebird::string buf;
 		buf.vprintf(format, arglist);
 
-		tdsec->utilSvc->output(buf.c_str());
+		tdsec->utilSvc->outputError(buf.c_str());
 	}
 	va_end(arglist);
 }
