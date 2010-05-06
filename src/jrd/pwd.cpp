@@ -225,6 +225,7 @@ namespace {
 
 void SecurityDatabase::fini()
 {
+#ifndef EMBEDDED
 	MutexLockGuard guard(mutex);
 
 	if (server_shutdown)
@@ -238,10 +239,12 @@ void SecurityDatabase::fini()
 	{
 		closeDatabase();
 	}
+#endif //EMBEDDED
 }
 
 void SecurityDatabase::init()
 {
+#ifndef EMBEDDED
 	MutexLockGuard guard(mutex);
 
 	if (server_shutdown)
@@ -256,10 +259,12 @@ void SecurityDatabase::init()
 			status_exception::raise(status);
 		}
 	}
+#endif //EMBEDDED
 }
 
 void SecurityDatabase::closeDatabase()
 {
+#ifndef EMBEDDED
 	// assumes mutex is locked
 
 	if (lookup_req)
@@ -273,10 +278,12 @@ void SecurityDatabase::closeDatabase()
 		isc_detach_database(status, &lookup_db);
 		checkStatus("isc_detach_database");
 	}
+#endif //EMBEDDED
 }
 
 void SecurityDatabase::onShutdown()
 {
+#ifndef EMBEDDED
 	MutexLockGuard guard(mutex);
 
 	if (server_shutdown)
@@ -286,6 +293,7 @@ void SecurityDatabase::onShutdown()
 
 	server_shutdown = true;
 	closeDatabase();
+#endif //EMBEDDED
 }
 
 bool SecurityDatabase::lookupUser(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
@@ -397,17 +405,23 @@ void SecurityDatabase::prepare()
 
 void SecurityDatabase::initialize()
 {
+#ifndef EMBEDDED
 	instance->init();
+#endif //EMBEDDED
 }
 
 void SecurityDatabase::shutdown()
 {
+#ifndef EMBEDDED
 	instance->fini();
+#endif //EMBEDDED
 }
 
 int SecurityDatabase::onShutdown(const int, const int, void* me)
 {
+#ifndef EMBEDDED
 	((SecurityDatabase*) me)->onShutdown();
+#endif //EMBEDDED
 	return FB_SUCCESS;
 }
 
