@@ -4463,6 +4463,14 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+		// While waiting for return from LCK_lock call above the blocking AST (see 
+		// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag 
+		// again. But it not released lock as lck_id was unknown at that moment. 
+		// Do it now to not block another process waiting for a monitoring lock.
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+			LCK_release(tdbb, dbb->dbb_monitor_lock);
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
@@ -4558,12 +4566,16 @@ static void check_database(thread_db* tdbb)
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
-	// Enable signal handler for the monitoring stuff
+	// Enable signal handler for the monitoring stuff.
+	// See also comments in JRD_reshedule.
 
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+			LCK_release(tdbb, dbb->dbb_monitor_lock);
 	}
 }
 
