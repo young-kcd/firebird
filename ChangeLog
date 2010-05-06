@@ -1,3 +1,18 @@
+2010-05-06 14:26  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.565.2.10):
+
+	Comments for patch for CORE-2993
+
+2010-05-06 14:07  hvlad
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.119.2.1), jrd.cpp
+	(1.565.2.9):
+
+	Fixed bug CORE-2993 : Fatal lock manager error "Invalid lock id
+	(NNN)" while working with monitoring tables on a highly loaded
+	system
+
 2010-05-05 14:31  dimitr
 
 	* firebird2/: doc/WhatsNew (1.190.2.17), src/jrd/isc_version.h
