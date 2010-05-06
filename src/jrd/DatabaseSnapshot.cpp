@@ -980,7 +980,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	// remote process name
 	record.storeString(f_mon_att_remote_process, attachment->att_remote_process);
 	// charset
-	record.storeInteger(f_mon_att_charset_id, tdbb->getCharSet());
+	record.storeInteger(f_mon_att_charset_id, attachment->att_charset);
 	// timestamp
 	record.storeTimestamp(f_mon_att_timestamp, attachment->att_timestamp);
 	// garbage collection flag
