@@ -452,6 +452,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
+	dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
 	{ // scope for the RAII object
 
