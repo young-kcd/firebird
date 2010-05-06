@@ -4003,8 +4003,8 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 #endif // DEBUG_PROCS
 
 
-bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
-{
+	bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
+	{
 /**************************************
  *
  *	J R D _ r e s c h e d u l e
@@ -4103,6 +4103,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+			LCK_release(tdbb, dbb->dbb_monitor_lock);
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
@@ -4210,6 +4213,9 @@ static void check_database(thread_db* tdbb)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+		if (dbb->dbb_ast_flags & DBB_monitor_off)
+			LCK_release(tdbb, dbb->dbb_monitor_lock);
 	}
 }
 
