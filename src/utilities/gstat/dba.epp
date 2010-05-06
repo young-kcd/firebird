@@ -807,7 +807,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (relation->rel_id == -1) {
 			continue;
 		}
-		uSvc->printf("%s (%d)\n", relation->rel_name, relation->rel_id);
+		uSvc->printf(false, "%s (%d)\n", relation->rel_name, relation->rel_id);
 		if (sw_data)
 		{
 			dba_print(11, SafeArg() << relation->rel_pointer_page << relation->rel_index_root);
@@ -817,14 +817,14 @@ int gstat(Firebird::UtilSvc* uSvc)
 				double average = relation->rel_records ?
 					(double) relation->rel_record_space / relation->rel_records : 0.0;
 				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf("    Average record length: %s, total records: %" UQUADFORMAT "\n",
+				uSvc->printf(false, "    Average record length: %s, total records: %" UQUADFORMAT "\n",
 						buf, relation->rel_records);
 				// dba_print(18, SafeArg() << buf << relation->rel_records);
 				// msg 18: "    Average record length: %s, total records: %ld
 				average = relation->rel_versions ?
 					(double) relation->rel_version_space / relation->rel_versions : 0.0;
 				sprintf((char*) buf, "%.2f", average);
-				uSvc->printf(
+				uSvc->printf(false, 
 						"    Average version length: %s, total versions: %" UQUADFORMAT ", max versions: %" UQUADFORMAT "\n",
 						buf, relation->rel_versions, relation->rel_max_versions);
 				// dba_print(19, SafeArg() << buf << relation->rel_versions <<
@@ -841,7 +841,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			dba_print(13);	// msg 13: "    Fill distribution:"
 			print_distribution("\t", relation->rel_fill_distribution);
 		}
-		uSvc->printf("\n");
+		uSvc->printf(false, "\n");
 
 		for (const dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
@@ -857,7 +857,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			dba_print(17);
 			// msg 17: \tFill distribution:
 			print_distribution("\t    ", index->idx_fill_distribution);
-			uSvc->printf("\n");
+			uSvc->printf(false, "\n");
 		}
 	}
 
@@ -876,10 +876,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 			SCHAR s[1024];
 			if (fb_interpret(s, sizeof(s), &vector))
 			{
-				tddba->uSvc->printf("%s\n", s);
+				tddba->uSvc->printf(true, "%s\n", s);
 				s[0] = '-';
 				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
-					tddba->uSvc->printf("%s\n", s);
+					tddba->uSvc->printf(true, "%s\n", s);
 				}
 			}
 		}
@@ -1336,7 +1336,7 @@ static void db_error( SLONG status)
 		sprintf(s, "unknown Windows NT error %ld", status);
 	}
 
-	tddba->uSvc->printf("%s\n", s);
+	tddba->uSvc->printf(true, "%s\n", s);
 	dba_exit(FINI_ERROR, tddba);
 }
 
@@ -1516,7 +1516,7 @@ static void db_error( int status)
 	// FIXME: The strerror() function returns the appropriate description
 	// string, or an unknown error message if the error code is unknown.
 	// EKU: p cannot be NULL!
-	tddba->uSvc->printf("%s\n", strerror(status));
+	tddba->uSvc->printf(true, "%s\n", strerror(status));
 	dba_exit(FINI_ERROR, tddba);
 }
 
@@ -1684,7 +1684,7 @@ static void dba_print(USHORT number, const SafeArg& arg)
 	tdba* tddba = tdba::getSpecific();
 
 	fb_msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	tddba->uSvc->printf("%s\n", buffer);
+	tddba->uSvc->printf(true, "%s\n", buffer);
 }
 
 
@@ -1704,7 +1704,7 @@ static void print_distribution(const SCHAR* prefix, const ULONG* vector)
 
 	for (SSHORT n = 0; n < BUCKETS; n++)
 	{
-		tddba->uSvc->printf("%s%2d - %2d%% = %ld\n",
+		tddba->uSvc->printf(false, "%s%2d - %2d%% = %ld\n",
 				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
 }

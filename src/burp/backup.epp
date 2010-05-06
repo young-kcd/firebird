@@ -72,7 +72,7 @@ DATABASE DB = STATIC FILENAME "yachts.lnk" RUNTIME * dbb_file;
 
 #define DB			tdgbl->db_handle
 #define gds_trans	tdgbl->tr_handle
-#define isc_status	tdgbl->status
+#define isc_status	tdgbl->status_vector
 
 namespace // unnamed, private
 {
@@ -1241,7 +1241,7 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 					  NULL,	// param for subset of an array handling
 					  slice_length, slice, (SLONG*) &return_length))
 	{
-		BURP_print(81, field->fld_name);
+		BURP_print(true, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
 		BURP_print_status(status_vector);
 #ifdef DEBUG
@@ -1386,7 +1386,7 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 
 	if (!blob.open(DB, gds_trans, blob_id))
 	{
-		BURP_print(81, field->fld_name);
+		BURP_print(true, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
 		BURP_print_status(status_vector);
 		return;
@@ -1556,7 +1556,7 @@ bool put_blr_blob( att_type attribute, ISC_QUAD& blob_id)
 			break;
 
 		default:
-			BURP_print(79, SafeArg() << int(item));
+			BURP_print(true, 79, SafeArg() << int(item));
 			// msg 79 don't understand blob info item %ld
 			if (!blob.close())
 				BURP_error_redirect(status_vector, 23);
@@ -1988,7 +1988,7 @@ void put_index( burp_rel* relation)
 
 			if (count != (ULONG) X.RDB$SEGMENT_COUNT)
 			{
-				BURP_print(180, SafeArg() << X.RDB$INDEX_NAME << count << X.RDB$SEGMENT_COUNT);
+				BURP_print(true, 180, SafeArg() << X.RDB$INDEX_NAME << count << X.RDB$SEGMENT_COUNT);
 				continue;
 			}
 
@@ -2052,7 +2052,7 @@ void put_index( burp_rel* relation)
 					general_on_error();
 				END_ERROR;
 				if (!match)
-					BURP_print (179, SafeArg() << I_S.RDB$FIELD_NAME << X.RDB$INDEX_NAME);
+					BURP_print (true, 179, SafeArg() << I_S.RDB$FIELD_NAME << X.RDB$INDEX_NAME);
 				else
 					count++;
 			END_FOR;
@@ -2062,7 +2062,7 @@ void put_index( burp_rel* relation)
 
 			if (count != (ULONG) X.RDB$SEGMENT_COUNT)
 			{
-				BURP_print(180, SafeArg() << X.RDB$INDEX_NAME << count << X.RDB$SEGMENT_COUNT);
+				BURP_print(true, 180, SafeArg() << X.RDB$INDEX_NAME << count << X.RDB$SEGMENT_COUNT);
 				continue;
 			}
 
@@ -2477,7 +2477,7 @@ bool put_source_blob(att_type attribute, att_type old_attribute, ISC_QUAD& blob_
 			break;
 
 		default:
-			BURP_print(79, SafeArg() << int(item));
+			BURP_print(true, 79, SafeArg() << int(item));
 			// msg 79 don't understand blob info item %ld
 			if (!blob.close())
 			{

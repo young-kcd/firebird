@@ -390,13 +390,31 @@ void Service::parseSwitches()
 	}
 }
 
-void Service::output(const char* text)
+void Service::outputVerbose(const char* text)
 {
+	if (!usvcDataMode)
+	{
+		ULONG len = strlen(text);
+		enqueue(reinterpret_cast<const UCHAR*>(text), len);
+	}
+}
+
+void Service::outputError(const char* text)
+{
+	// should do nothing - but protect ourself for a while
+	fb_assert(!usvcDataMode);
 	ULONG len = strlen(text);
 	enqueue(reinterpret_cast<const UCHAR*>(text), len);
 }
 
-void Service::printf(const SCHAR* format, ...)
+void Service::outputData(const char* text)
+{
+	fb_assert(usvcDataMode);
+	ULONG len = strlen(text);
+	enqueue(reinterpret_cast<const UCHAR*>(text), len);
+}
+
+void Service::printf(bool /*err*/, const SCHAR* format, ...)
 {
 	// Ensure that service is not detached.
 	if (svc_flags & SVC_detached)
@@ -1560,6 +1578,11 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			recv_item_length, recv_items, res_successful);
 	}
 
+	if (status.hasData())
+	{
+		status.raise();
+	}
+
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -1583,7 +1606,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		finish(SVC_finished);
 	}
 
-	status.copyTo(svc_status);
 	return svc_status[1];
 }
 
@@ -2199,11 +2221,13 @@ void Service::readFbLog()
 			started();
 			svc_started = true;
 			TEXT buffer[100];
+			setDataMode(true);
 			while (!feof(file) && !ferror(file))
 			{
 				fgets(buffer, sizeof(buffer), file);
-				output(buffer);
+				outputData(buffer);
 			}
+			setDataMode(false);
 		}
 
 		if (!file || (file && ferror(file)))

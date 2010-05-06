@@ -95,10 +95,14 @@ class TraceManager;
 class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>
 {
 public:		// utilities interface with service
-	// output to svc_stdout
-	virtual void output(const char* text);
+	// output to svc_stdout verbose info
+	virtual void outputVerbose(const char* text);
+	// outpur error text
+	virtual void outputError(const char* text);
+	// output some data to service
+	virtual void outputData(const char* text);
 	// printf() to svc_stdout
-    virtual void printf(const SCHAR* format, ...);
+    virtual void printf(bool err, const SCHAR* format, ...);
 	// returns true - it's service :)
 	virtual bool isService();
 	// client thread started

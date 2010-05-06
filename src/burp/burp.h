@@ -890,7 +890,6 @@ public:
 	isc_tr_handle	tr_handle;
 	isc_tr_handle	global_trans;
 	DESC		file_desc;
-	ISC_STATUS*	status;		// points to either the tdgbl status or service status
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;

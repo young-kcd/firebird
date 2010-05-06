@@ -694,6 +694,6 @@ static void alice_output(const SCHAR* format, ...)
 	buf.vprintf(format, arglist);
 	va_end(arglist);
 
-	tdgbl->uSvc->output(buf.c_str());
+	tdgbl->uSvc->outputError(buf.c_str());
 }
 

@@ -36,6 +36,23 @@
 #include <stdarg.h>
 
 
+namespace {
+	void outputFile(FILE* std, const char* text)
+	{
+		size_t len = strlen(text);
+		if (::fwrite(text, 1, len, std) != len)
+		{
+			// ASF: If the console is configured to UTF-8 (chcp 65001) with TrueType font, the MSVC
+			// runtime returns the number of characters (instead of bytes) written and make
+			// ferror(stdout) return true. So lets not check for errors here.
+#ifndef WIN_NT
+			Firebird::system_call_failed::raise("StandaloneUtilityInterface::output()/fwrite()");
+#endif
+		}
+	}
+}
+
+
 namespace Firebird {
 
 class StandaloneUtilityInterface : public UtilSvc
@@ -50,30 +67,32 @@ public:
 		}
 	}
 
-	virtual void output(const char* text)
+	void outputVerbose(const char* text)
 	{
-		size_t len = strlen(text);
-		if (::fwrite(text, 1, len, stdout) != len)
-		{
-			// ASF: If the console is configured to UTF-8 (chcp 65001) with TrueType font, the MSVC
-			// runtime returns the number of characters (instead of bytes) written and make
-			// ferror(stdout) return true. So lets not check for errors here.
-#ifndef WIN_NT
-			system_call_failed::raise("StandaloneUtilityInterface::output()/fwrite()");
-#endif
-		}
+		outputFile(usvcDataMode ? stderr : stdout, text);
 	}
 
-    virtual void printf(const SCHAR* format, ...)
+	void outputError(const char* text)
+	{
+		outputFile(stderr, text);
+	}
+
+	void outputData(const char* text)
+	{
+		fb_assert(usvcDataMode);
+		outputFile(stdout, text);
+	}
+	
+    virtual void printf(bool err, const SCHAR* format, ...)
 	{
 		va_list arglist;
 		va_start(arglist, format);
-		int rc = ::vprintf(format, arglist);
+		int rc = ::vfprintf((usvcDataMode || err) ? stderr : stdout, format, arglist);
 		va_end(arglist);
 
 		if (rc < 0)
 		{
-			system_call_failed::raise("StandaloneUtilityInterface::printf()/vprintf()");
+			system_call_failed::raise("StandaloneUtilityInterface::printf()/vfprintf()");
 		}
 	}
 
