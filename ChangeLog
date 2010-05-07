@@ -1,3 +1,29 @@
+2010-05-07 13:20  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.222.2.3):
+
+	Fixed bug CORE-2995 : Same error in status vector reported twice
+
+2010-05-06 15:58  alexpeshkoff
+
+	* firebird2/src/jrd/pwd.cpp (1.79.2.4):
+
+	Fixed windows build - thanks to Paul Reeves
+
+2010-05-06 15:42  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.122.2.2), burp/backup.epp
+	(1.125.2.4), burp/burp.cpp (1.175.2.2), burp/burp.h (1.102.2.1),
+	burp/burp_proto.h (1.25.2.1), burp/mvol.cpp (1.65.2.1),
+	burp/restore.epp (1.177.2.3), common/UtilSvc.cpp (1.15.2.2),
+	common/UtilSvc.h (1.14.2.2), jrd/svc.cpp (1.285.2.10), jrd/svc.h
+	(1.79.2.5), jrd/trace/TraceService.cpp (1.14.2.5),
+	utilities/gsec/gsec.cpp (1.117.2.5), utilities/gstat/dba.epp
+	(1.119.2.2), utilities/gstat/ppg.cpp (1.36.2.2):
+
+	Backported fix for CORE-2984: gbak -v srv:db stdout creates a
+	broken backup
+
 2010-05-06 14:26  hvlad
 
 	* firebird2/src/jrd/jrd.cpp (1.565.2.10):
