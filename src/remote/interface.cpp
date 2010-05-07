@@ -1997,14 +1997,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				// hvlad: prevent subsequent fetches
 				statement->rsr_flags |= RSR_eof | RSR_past_eof;
-
-				if (statement->rsr_status) {
-					memcpy(user_status, statement->rsr_status->value(), 
-						sizeof(ISC_STATUS_ARRAY));
-					// don't clear rsr_status as it hold strings
-				}
-
-				return error(user_status);
+				stmt_raise_exception(statement);
 			}
 		}
 		statement->rsr_msgs_waiting--;
@@ -2078,6 +2071,9 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 			return unsupported(user_status);
 		}
+
+		fb_assert(stmt_have_exception(statement) == 0);
+		stmt_clear_exception(statement);
 
 		if (statement->rsr_flags & RSR_lazy) {
 			if (option == DSQL_drop) {
