@@ -1,3 +1,9 @@
+2010-05-07 13:20  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.157.2.4):
+
+	Fixed bug CORE-2995 : Same error in status vector reported twice
+
 2010-05-06 14:27  hvlad
 
 	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.44.2.32), jrd.cpp
