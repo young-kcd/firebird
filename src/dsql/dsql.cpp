@@ -1240,9 +1240,9 @@ static void execute_request(thread_db* tdbb,
 			// a non-req_sync error on any of the passes above is an error
 
 			if (!status)
-				ERRD_post(Arg::Gds(isc_sing_select_err));
+				status_exception::raise(Arg::Gds(isc_sing_select_err));
 			else if (status == isc_req_sync && counter == 1)
-				ERRD_post(Arg::Gds(isc_stream_eof));
+				status_exception::raise(Arg::Gds(isc_stream_eof));
 			else if (status != isc_req_sync)
 				status_exception::raise(localStatus);
 		}
