@@ -1,3 +1,32 @@
+2010-05-06 19:53  hvlad
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.134):
+
+	When we asked for attachment's properties we should use
+	attachment's properties, not something else.
+
+2010-05-06 19:51  hvlad
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.133), jrd.cpp
+	(1.615):
+
+	Fixed bug CORE-2993 : Fatal lock manager error "Invalid lock id
+	(NNN)" while working with monitoring tables on a highly loaded
+	system
+
+2010-05-06 15:42  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.126), burp/OdsDetection.epp
+	(1.3), burp/backup.epp (1.145), burp/burp.cpp (1.182), burp/burp.h
+	(1.114), burp/burp_proto.h (1.26), burp/mvol.cpp (1.70),
+	burp/restore.epp (1.202), common/UtilSvc.cpp (1.17),
+	common/UtilSvc.h (1.16), jrd/svc.cpp (1.313), jrd/svc.h (1.91),
+	jrd/trace/TraceService.cpp (1.21), utilities/nbackup.cpp (1.117),
+	utilities/gsec/gsec.cpp (1.124), utilities/gstat/dba.epp (1.133),
+	utilities/gstat/ppg.cpp (1.44):
+
+	Fixed CORE-2984: gbak -v srv:db stdout creates a broken backup
+
 2010-05-04 19:29  skidder
 
 	* firebird2/src/jrd/vio.cpp (1.293):
