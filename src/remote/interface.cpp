@@ -1867,7 +1867,6 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
 			{
-
 				// The previous batch of receives ended with an error status.
 				// We're all done returning data in the local queue.
 				// Return that error status vector to the user.
@@ -1878,14 +1877,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				// hvlad: prevent subsequent fetches
 				statement->rsr_flags.set(Rsr::EOF_SET | Rsr::PAST_EOF);
-
-				if (statement->rsr_status)
-				{
-					memcpy(user_status, statement->rsr_status->value(), sizeof(ISC_STATUS_ARRAY));
-					// don't clear rsr_status as it hold strings
-				}
-
-				return user_status[1];
+				statement->raiseException();
 			}
 		}
 		statement->rsr_msgs_waiting--;
@@ -1952,6 +1944,9 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) {
 			return unsupported(user_status);
 		}
+
+		fb_assert(statement->haveException() == 0);
+		statement->clearException();
 
 		if (statement->rsr_flags.test(Rsr::LAZY))
 		{
