@@ -1,3 +1,26 @@
+2010-05-08 04:25  asfernandes
+
+	* firebird2/: builds/install/misc/firebird.conf.in (1.14),
+	src/alice/alice.cpp (1.127), src/burp/burp.cpp (1.183),
+	src/burp/burp_proto.h (1.27), src/common/UtilSvc.cpp (1.18),
+	src/common/UtilSvc.h (1.17), src/jrd/dfw.epp (1.335),
+	src/jrd/jrd.cpp (1.616), src/jrd/vio.cpp (1.294):
+
+	Misc
+
+2010-05-07 17:24  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.329):
+
+	Subtask CORE-2996 - Fix error code incompatibility introduced in
+	fix for CORE-2552
+
+2010-05-07 15:02  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.249):
+
+	Fixed bug CORE-2995 : Same error in status vector reported twice
+
 2010-05-06 19:53  hvlad
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.134):
