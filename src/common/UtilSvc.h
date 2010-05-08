@@ -71,6 +71,7 @@ public:
 	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
 	virtual bool finished() = 0;
+
 	void setDataMode(bool value)
 	{
 		usvcDataMode = value;
@@ -107,6 +108,5 @@ public:
 
 
 } // namespace Firebird
-
 
 #endif // FB_UTILFACE

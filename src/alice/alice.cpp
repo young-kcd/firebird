@@ -689,4 +689,3 @@ static void alice_output(const SCHAR* format, ...)
 
 	tdgbl->uSvc->outputError(buf.c_str());
 }
-

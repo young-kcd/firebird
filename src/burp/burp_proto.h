@@ -48,4 +48,3 @@ void	BURP_verbose(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_verbose(USHORT, const char* str);
 
 #endif	//  BURP_BURP_PROTO_H
-

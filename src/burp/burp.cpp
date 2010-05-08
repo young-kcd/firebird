@@ -1067,7 +1067,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		{
 			if (f->fil_name == "stdout")
 			{
-				// the very first thing to do not to corrupt backup file...
+				// the very first thing to do to not corrupt backup file...
 				tdgbl->uSvc->setDataMode(true);
 			}
 		}
@@ -1529,13 +1529,16 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector) {
+	if (status_vector)
+	{
 		const ISC_STATUS* vector = status_vector;
 
-		if (flagStuff) {
+		if (flagStuff)
+		{
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 			tdgbl->uSvc->setServiceStatus(vector);
 			tdgbl->uSvc->started();
+
 			if (tdgbl->uSvc->isService())
 			{
 				return;
@@ -1543,10 +1546,13 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
 		}
 
         SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector)) {
+		if (fb_interpret(s, sizeof(s), &vector))
+		{
 			BURP_msg_partial(true, 256); // msg 256: gbak: ERROR:
 			burp_output(true, "%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector)) {
+
+			while (fb_interpret(s, sizeof(s), &vector))
+			{
 				BURP_msg_partial(true, 256); // msg 256: gbak: ERROR:
 				burp_output(true, "    %s\n", s);
 			}
@@ -1573,13 +1579,18 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 		// skip the error, assert that one does not exist
 		fb_assert(status_vector[0] == isc_arg_gds);
 		fb_assert(status_vector[1] == 0);
+
 		// print the warning message
 		const ISC_STATUS* vector = &status_vector[2];
 		SCHAR s[1024];
-		if (fb_interpret(s, sizeof(s), &vector)) {
+
+		if (fb_interpret(s, sizeof(s), &vector))
+		{
 			BURP_msg_partial(true, 255); // msg 255: gbak: WARNING:
 			burp_output(true, "%s\n", s);
-			while (fb_interpret(s, sizeof(s), &vector)) {
+
+			while (fb_interpret(s, sizeof(s), &vector))
+			{
 				BURP_msg_partial(true, 255); // msg 255: gbak: WARNING:
 				burp_output(true, "    %s\n", s);
 			}

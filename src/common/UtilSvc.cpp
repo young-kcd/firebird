@@ -74,7 +74,7 @@ public:
 	{
 		outputFile(usvcDataMode ? stderr : stdout, text);
   	}
-  
+
 	void outputError(const char* text)
 	{
 		outputFile(stderr, text);
@@ -85,7 +85,7 @@ public:
 		fb_assert(usvcDataMode);
 		outputFile(stdout, data, size);
 	}
-	
+
 	virtual void printf(bool err, const SCHAR* format, ...)
 	{
 		va_list arglist;

@@ -162,10 +162,10 @@ typedef Hash<
 //
 // Deferred work item:
 // * Encapsulates deferred invocation of the task routine with a given set of
-//   arguments. 
+//   arguments.
 // * Has code to maintain a doubly linked list of itself.
 //
-// These two functions need to be split, and linked list of custom entries can 
+// These two functions need to be split, and linked list of custom entries can
 // become generic.
 //
 
