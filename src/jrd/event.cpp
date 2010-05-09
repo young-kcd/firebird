@@ -108,7 +108,10 @@ static bool request_completed(EVT_REQ);
 static ISC_STATUS return_ok(ISC_STATUS *);
 #ifdef MULTI_THREAD
 static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM);
-#endif
+#ifdef WIN_NT
+HANDLE watcher_thread_handle;
+#endif // WIN_NT
+#endif // MULTI_THREAD
 
 static SSHORT acquire_count;
 static EVH EVENT_header = NULL;
@@ -681,7 +684,11 @@ static SLONG create_process(void)
 	release();
 
 #ifdef MULTI_THREAD
+#ifdef WIN_NT
+	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, &watcher_thread_handle))
+#else
 	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, 0))
+#endif
 		ERR_bugcheck_msg("cannot start thread");
 #endif
 
@@ -727,12 +734,30 @@ static void delete_process(SLONG process_offset)
  **************************************/
 	PRB process = (PRB) SRQ_ABS_PTR(process_offset);
 
+#ifdef WIN_NT
+	// If embedded library is unloaded because of host process exits then all 
+	// threads are already terminated and we can't syncronize correctly with 
+	// (dead) watcher thread. We can just detect if watcher thread still alive 
+	// and act correspondingly.
+
+	DWORD exit_code = 0;
+	const bool watcher_alive = 
+		(GetExitCodeThread(watcher_thread_handle, &exit_code) && 
+		(exit_code == STILL_ACTIVE));
+#else
+	const bool watcher_alive = true;
+#endif
+
 /* Delete any open sessions */
 
 	while (!SRQ_EMPTY(process->prb_sessions)) {
 		SES session =
 			(SES) ((UCHAR *) SRQ_NEXT(process->prb_sessions) -
 				   OFFSET(SES, ses_sessions));
+
+		if (!watcher_alive) {
+			session->ses_flags &= ~SES_delivering;
+		}
 		delete_session(SRQ_REL_PTR(session));
 	}
 
@@ -742,6 +767,9 @@ static void delete_process(SLONG process_offset)
 
 		process->prb_flags |= PRB_exiting;
 		while (process->prb_flags & PRB_exiting) {
+			if (!watcher_alive) 
+				break;
+
 			ISC_event_post(process->prb_event);
 
 			release();
