@@ -845,9 +845,7 @@ static void delete_session(SLONG session_id)
 
 		// give a chance for delivering thread to detect SES_purge flag we just set
 		release();
-		THREAD_EXIT();
 		THREAD_SLEEP(100);
-		THREAD_ENTER();
 		acquire();
 
 		return;
