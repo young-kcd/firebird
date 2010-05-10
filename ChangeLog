@@ -1,3 +1,18 @@
+2010-05-09 19:39  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.65.4.6):
+
+	Fixed bug CORE-2999 : Message "SCH_validate -- not entered" is
+	logged in firebird.log when CS connection where events was used is
+	finished
+
+2010-05-09 19:31  hvlad
+
+	* firebird2/src/jrd/event.cpp (1.65.4.5):
+
+	Fixed bug CORE-2679 : Do not correct exit applications with
+	embedded server
+
 2010-05-07 13:20  hvlad
 
 	* firebird2/src/remote/interface.cpp (1.157.2.4):
