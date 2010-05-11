@@ -2,6 +2,19 @@
 
 
 #------------------------------------------------------------------------
+# Adds parameter to $PATH if it's missing in it
+
+Add2Path() {
+	Dir=${1}
+	x=`echo :${PATH}: | grep :$Dir:`
+	if [ -z "$x" ]
+	then
+		PATH=$PATH:$Dir
+		export PATH
+	fi
+}
+
+#------------------------------------------------------------------------
 # Global stuff init
 
 Answer=""
@@ -16,7 +29,9 @@ ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 export ArchiveDateTag
 ArchiveMainFile="${FBRootDir}_${ArchiveDateTag}"
 export ArchiveMainFile
-
+#this solves a problem with sudo env missing sbin
+Add2Path /usr/sbin
+Add2Path /sbin
 
 #------------------------------------------------------------------------
 # Create temporary file. In case mktemp failed, do something...
