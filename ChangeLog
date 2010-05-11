@@ -1,3 +1,10 @@
+2010-05-11 14:03  alexpeshkoff
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.9.8.4):
+
+	Bacpported fix for CORE-3001: Install fails to create user & group
+	"firebird"
+
 2010-05-09 19:39  hvlad
 
 	* firebird2/src/jrd/event.cpp (1.65.4.6):
