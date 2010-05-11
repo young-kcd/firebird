@@ -378,7 +378,7 @@ void Service::outputVerbose(const char* text)
 	}
 }
 
-void Service::outputError(const char* text)
+void Service::outputError(const char* /*text*/)
 {
 	fb_assert(false);
 }
