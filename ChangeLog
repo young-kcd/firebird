@@ -1,3 +1,10 @@
+2010-05-11 14:08  alexpeshkoff
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.4.4.11):
+
+	Bacpported fix for CORE-3001: Install fails to create user & group
+	"firebird"
+
 2010-03-29 14:06  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.examples (1.8.4.4),
