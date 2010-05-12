@@ -1,3 +1,9 @@
+2010-05-11 17:59  asfernandes
+
+	* firebird2/src/jrd/btr.cpp (1.284):
+
+	Fixed CORE-2826 - Join condition fails for UTF-8 databases
+
 2010-05-11 14:17  alexpeshkoff
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.25):
