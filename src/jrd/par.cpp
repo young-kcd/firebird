@@ -2031,7 +2031,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	{
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
-			warning(Arg::Gds(isc_illegal_prc_type) << Arg::Str(procedure->prc_name));
+			warning(Arg::Warning(isc_illegal_prc_type) << Arg::Str(procedure->prc_name));
 		}
 		else
 		{
