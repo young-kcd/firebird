@@ -1130,6 +1130,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			{
 				bool notNull;
 				desc_ptr = BTR_eval_expression(tdbb, idx, record, notNull);
+				// Multi-byte text descriptor is returned already adjusted.
 				isNull = !notNull;
 			}
 			else
@@ -1140,6 +1141,13 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				// Reference: Bug 10116, 10424
 				//
 				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
+
+				if (!isNull && !(relation->rel_flags & REL_system) &&
+					desc_ptr->dsc_dtype == dtype_text)
+				{
+					// That's necessary for NO-PAD collations.
+					INTL_adjust_text_descriptor(tdbb, desc_ptr);
+				}
 			}
 
 			if (isNull && (idx->idx_flags & idx_unique)) {
@@ -1147,9 +1155,10 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			}
 
 			key->key_flags |= key_empty;
-			if (!isNull) {
+
+			if (!isNull)
 				key->key_flags &= ~key_all_nulls;
-			}
+
 			compress(tdbb, desc_ptr, key, tail->idx_itype, isNull,
 				(idx->idx_flags & idx_descending),
 				(fuzzy ? INTL_KEY_PARTIAL :
@@ -1180,7 +1189,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 				if (!isNull)
 				{
-					if (desc_ptr->dsc_dtype == dtype_text)
+					if (!(relation->rel_flags & REL_system) && desc_ptr->dsc_dtype == dtype_text)
 					{
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);
