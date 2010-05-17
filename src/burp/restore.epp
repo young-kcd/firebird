@@ -1024,7 +1024,7 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 
 	if (tdgbl->gbl_sw_version)
 	{
-		BURP_print(true, 139, file_name);
+		BURP_print(false, 139, file_name);
 		// msg 139 Version(s) for database "%s"
 		isc_version(&DB, BURP_output_version, (void*)"\t%s\n");
 	}

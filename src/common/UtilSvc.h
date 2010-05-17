@@ -103,6 +103,8 @@ public:
 
 public:
 	ArgvType argv;
+
+protected:
 	bool usvcDataMode;
 };
 
