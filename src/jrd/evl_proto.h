@@ -27,6 +27,7 @@
 #include "../jrd/intl_classes.h"
 
 // Implemented in evl.cpp
+void		EVL_adjust_text_descriptor(Jrd::thread_db*, dsc*);
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
 Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, Jrd::jrd_nod*, Jrd::RecordBitmap*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, Jrd::jrd_nod*);
