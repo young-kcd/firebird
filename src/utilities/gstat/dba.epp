@@ -1985,7 +1985,7 @@ static void print_distribution(const SCHAR* prefix, const ULONG* vector)
 
 	for (SSHORT n = 0; n < BUCKETS; n++)
 	{
-		tddba->uSvc->printf(false, "%s%2d - %2d%% = %ld\n",
+		tddba->uSvc->printf(false, "%s%2d - %2d%% = %" ULONGFORMAT "\n",
 				prefix, n * 100 / BUCKETS, (n + 1) * 100 / BUCKETS - 1, vector[n]);
 	}
 }
