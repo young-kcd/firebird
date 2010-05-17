@@ -865,7 +865,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			continue;
 		}
 
-		uSvc->printf(false, "false, %s (%d)\n", relation->rel_name, relation->rel_id);
+		uSvc->printf(false, "%s (%d)\n", relation->rel_name, relation->rel_id);
 
 		if (sw_data)
 		{
