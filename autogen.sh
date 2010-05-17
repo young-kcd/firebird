@@ -25,9 +25,9 @@ export ACLOCAL
 VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
 case "$VER" in
  0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
- 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
+ 2\.[1-5][0-9] | 2\.[1-5][0-9][a-z]* | 2\.6[0-2] | 2\.6[0-2][a-z]* )
   echo
-  echo "**Error**: You must have autoconf 2.56 or later installed."
+  echo "**Error**: You must have autoconf 2.63 or later installed."
   echo "Download the appropriate package for your distribution/OS,"
   echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
   DIE=1
