@@ -1,3 +1,36 @@
+2010-05-17 12:39  alexpeshkoff
+
+	* firebird2/autogen.sh (1.26.2.1):
+
+	Backported fix for CORE-2862: configure --with-fbudf breaks build
+	on CentOS
+
+2010-05-17 12:24  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.32.2.6):
+
+	Backported fix for CORE-3000: Error on delete user "ADMIN"
+
+2010-05-17 11:54  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.259.2.5):
+
+	Fixed the second part of the problem described in CORE-2933: Very
+	slow execution of a script that creates a lot of metadata.
+
+2010-05-17 11:43  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.119.2.4):
+
+	Fixed the first part of the problem described in CORE-2933: Very
+	slow execution of a script that creates a lot of metadata.
+
+2010-05-17 11:37  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.246.2.4):
+
+	Correction for my prior fix.
+
 2010-05-11 13:57  alexpeshkoff
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.23.2.2):
