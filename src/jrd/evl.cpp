@@ -142,7 +142,6 @@ static dsc* add_datetime(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_date(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_sql_time(const dsc*, const jrd_nod*, impure_value*);
 static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
-static void adjust_text_descriptor(thread_db*, dsc*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static void compute_agg_distinct(thread_db*, jrd_nod*);
@@ -869,7 +868,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
 
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				adjust_text_descriptor(tdbb, &impure->vlu_desc);
+				EVL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 			USHORT* impure_flags = (USHORT*) ((UCHAR *) request +
 				(IPTR) message->nod_arg[e_msg_impure_flags] +
@@ -917,7 +916,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			if (!relation || !(relation->rel_flags & REL_system))
 			{
 				if (impure->vlu_desc.dsc_dtype == dtype_text)
-					adjust_text_descriptor(tdbb, &impure->vlu_desc);
+					EVL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 			}
 
 			return &impure->vlu_desc;
@@ -1064,7 +1063,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			impure->vlu_desc = impure2->vlu_desc;
 
 			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				adjust_text_descriptor(tdbb, &impure->vlu_desc);
+				EVL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 			if (!(impure2->vlu_flags & VLU_checked))
 			{
@@ -2763,11 +2762,11 @@ return_result:
 }
 
 
-static void adjust_text_descriptor(thread_db* tdbb, dsc* desc)
+void EVL_adjust_text_descriptor(thread_db* tdbb, dsc* desc)
 {
 /**************************************
  *
- *      a d j u s t _ t e x t _ d e s c r i p t o r
+ * E V L _ a d j u s t _ t e x t _ d e s c r i p t o r
  *
  **************************************
  *
@@ -2969,7 +2968,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 		MOV_move(tdbb, value, &impure->vlu_desc);
 
 	if (impure->vlu_desc.dsc_dtype == dtype_text)
-		adjust_text_descriptor(tdbb, &impure->vlu_desc);
+		EVL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
 
 	return &impure->vlu_desc;
 }
