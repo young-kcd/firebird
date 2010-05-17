@@ -1696,12 +1696,14 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 // Escape Unicode characters from a string
 void ISC_escape(AbstractString& str)
 {
+#if 0	// CORE-2929
 	size_t pos = 0;
 	while ((pos = str.find_first_of("#", pos)) != npos)
 	{
 		str.insert(pos, "#");
 		pos += 2;
 	}
+#endif
 }
 
 
@@ -1736,6 +1738,7 @@ static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
 // Unescape Unicode characters from a string
 void ISC_unescape(AbstractString& str)
 {
+#if 0	// CORE-2929
 	size_t pos = 0;
 	while ((pos = str.find_first_of("#", pos)) != npos)
 	{
@@ -1764,4 +1767,5 @@ void ISC_unescape(AbstractString& str)
 		else
 			status_exception::raise(Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_escape_invalid));
 	}
+#endif
 }
