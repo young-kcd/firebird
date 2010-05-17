@@ -2282,9 +2282,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 				check_class(tdbb, transaction, org_rpb, new_rpb, f_prc_class);
 
-				EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
-				const USHORT id = MOV_get_long(&desc2, 0);
-				DFW_post_work(transaction, dfw_modify_procedure, &desc1, id, package_name);
+				if (dfw_should_know(org_rpb, new_rpb, f_prc_desc, true))
+				{
+					EVL_field(0, org_rpb->rpb_record, f_prc_id, &desc2);
+					const USHORT id = MOV_get_long(&desc2, 0);
+					DFW_post_work(transaction, dfw_modify_procedure, &desc1, id, package_name);
+				}
 			} // scope
 			break;
 
@@ -2306,9 +2309,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 				check_class(tdbb, transaction, org_rpb, new_rpb, f_fun_class);
 
-				EVL_field(0, org_rpb->rpb_record, f_fun_id, &desc2);
-				const USHORT id = MOV_get_long(&desc2, 0);
-				DFW_post_work(transaction, dfw_modify_function, &desc1, id, package_name);
+				if (dfw_should_know(org_rpb, new_rpb, f_fun_desc, true))
+				{
+					EVL_field(0, org_rpb->rpb_record, f_fun_id, &desc2);
+					const USHORT id = MOV_get_long(&desc2, 0);
+					DFW_post_work(transaction, dfw_modify_function, &desc1, id, package_name);
+				}
 			} // scope
 			break;
 
@@ -2345,8 +2351,10 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_fields:
+			check_control(tdbb);
+
+			if (dfw_should_know(org_rpb, new_rpb, f_fld_desc, true))
 			{
-				check_control(tdbb);
 				EVL_field(0, org_rpb->rpb_record, f_fld_name, &desc1);
 				MET_change_fields(tdbb, transaction, &desc1);
 				EVL_field(0, new_rpb->rpb_record, f_fld_name, &desc2);
@@ -2381,9 +2389,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_indices:
 			EVL_field(0, new_rpb->rpb_record, f_idx_relation, &desc1);
 			SCL_check_relation(tdbb, &desc1, SCL_control);
-			EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
+
 			if (dfw_should_know(org_rpb, new_rpb, f_idx_desc, true))
 			{
+				EVL_field(0, new_rpb->rpb_record, f_idx_name, &desc1);
+
 				if (EVL_field(0, new_rpb->rpb_record, f_idx_exp_blr, &desc2))
 				{
 					DFW_post_work(transaction, dfw_create_expression_index,
@@ -2397,9 +2407,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_triggers:
+			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
+			SCL_check_relation(tdbb, &desc1, SCL_control);
+
+			if (dfw_should_know(org_rpb, new_rpb, f_trg_desc, true))
 			{
-				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
-				SCL_check_relation(tdbb, &desc1, SCL_control);
 				EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
 				DFW_post_work(transaction, dfw_update_format, &desc1, 0);
 				EVL_field(0, org_rpb->rpb_record, f_trg_rname, &desc1);
