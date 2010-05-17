@@ -1,3 +1,42 @@
+2010-05-17 12:39  alexpeshkoff
+
+	* firebird2/autogen.sh (1.28):
+
+	Fixed CORE-2862: configure --with-fbudf breaks build on CentOS
+
+2010-05-17 12:11  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.41):
+
+	Fixed CORE-3000: Error on delete user "ADMIN"
+
+2010-05-17 12:01  alexpeshkoff
+
+	* firebird2/src/: burp/restore.epp (1.203), common/UtilSvc.h
+	(1.18), utilities/gstat/dba.epp (1.134):
+
+	Fixed problems, noticed by Claudio and Adriano
+
+2010-05-17 11:58  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.295):
+
+	Fixed the second part of the problem described in CORE-2933: Very
+	slow execution of a script that creates a lot of metadata.
+
+2010-05-17 11:47  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.150):
+
+	Fixed the first part of the problem described in CORE-2933: Very
+	slow execution of a script that creates a lot of metadata.
+
+2010-05-17 11:37  dimitr
+
+	* firebird2/src/jrd/par.cpp (1.289):
+
+	Correction for my prior fix.
+
 2010-05-11 17:59  asfernandes
 
 	* firebird2/src/jrd/btr.cpp (1.284):
