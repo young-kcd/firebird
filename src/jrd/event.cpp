@@ -755,9 +755,12 @@ static void delete_process(SLONG process_offset)
 			(SES) ((UCHAR *) SRQ_NEXT(process->prb_sessions) -
 				   OFFSET(SES, ses_sessions));
 
+#ifdef MULTI_THREAD
 		if (!watcher_alive) {
 			session->ses_flags &= ~SES_delivering;
 		}
+#endif
+
 		delete_session(SRQ_REL_PTR(session));
 	}
 
