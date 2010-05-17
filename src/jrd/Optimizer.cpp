@@ -1333,6 +1333,21 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
 	}
 
+	// Adjust the effective selectivity by treating computable conjunctions as filters
+	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		tail < optimizer->opt_conjuncts.end(); tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(csb, node, stream, false, true) &&
+			!invCandidate->matches.exist(node))
+		{
+			const double factor = (node->nod_type == nod_eql) ?
+				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			invCandidate->selectivity *= factor;
+		}
+	}
+
 	// Add the streams where this stream is depending on.
 	for (size_t i = 0; i < invCandidate->matches.getCount(); i++)
 	{
@@ -3288,27 +3303,11 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false, NULL);
 
 	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
-	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
-
-	// Adjust the effective selectivity by treating computable conjunctions as filters
-	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		tail < optimizer->opt_conjuncts.end(); tail++)
-	{
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			OPT_computable(csb, node, stream, false, true) &&
-			!candidate->matches.exist(node))
-		{
-			const double factor = (node->nod_type == nod_eql) ?
-				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-			selectivity *= factor;
-		}
-	}
 
 	// Calculate cardinality
 	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	const double cardinality = csb_tail->csb_cardinality * selectivity;
+	const double cardinality = csb_tail->csb_cardinality * candidate->selectivity;
 
 	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 }
