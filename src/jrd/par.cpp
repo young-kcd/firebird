@@ -2014,7 +2014,7 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
-			PAR_warning(Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));
+			PAR_warning(Arg::Warning(isc_illegal_prc_type) << Arg::Str(name));
 		}
 		else
 		{
