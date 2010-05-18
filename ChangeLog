@@ -1,3 +1,24 @@
+2010-05-18 09:39  dimitr
+
+	* firebird2/: doc/WhatsNew (1.148.2.38), src/jrd/isc_version.h
+	(1.9.8.31):
+
+	Update.
+
+2010-05-17 18:18  asfernandes
+
+	* firebird2/src/jrd/: btr.cpp (1.204.2.15), evl.cpp (1.243.2.10),
+	evl_proto.h (1.25.2.1):
+
+	Backport fix for CORE-2826 - Join condition fails for UTF-8
+	databases
+
+2010-05-17 18:14  asfernandes
+
+	* firebird2/src/jrd/event.cpp (1.65.4.7):
+
+	Fix Linux CS build
+
 2010-05-11 14:03  alexpeshkoff
 
 	* firebird2/builds/install/misc/posixLibrary.sh.in (1.9.8.4):
