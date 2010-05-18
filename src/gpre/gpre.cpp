@@ -518,7 +518,6 @@ int main(int argc, char* argv[])
 			gpreGlob.sw_no_qli = true;
 			break;
 
-#ifndef BOOT_BUILD
 #ifdef GPRE_ADA
 		case IN_SW_GPRE_ADA:
 			gpreGlob.ada_null_address = "0";
@@ -598,7 +597,6 @@ int main(int argc, char* argv[])
 			comment_stop	= "*)";
 			break;
 #endif // GPRE_PASCAL
-#endif // !BOOT_BUILD
 
 		case IN_SW_GPRE_D_FLOAT:
 			gpreGlob.sw_d_float = true;
@@ -691,7 +689,7 @@ int main(int argc, char* argv[])
 	if (gpreGlob.sw_language == lang_cpp || gpreGlob.sw_language == lang_cplusplus)
 		gpreGlob.sw_language = lang_cxx;
 
-#if defined(GPRE_COBOL) && !defined(BOOT_BUILD)
+#if defined(GPRE_COBOL)
 	// if cobol is defined we need both sw_cobol and sw_cob_dialect to
 	// determine how the string substitution table is set up
 

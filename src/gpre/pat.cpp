@@ -429,7 +429,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 
 	*p = 0;
 
-#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN) && !defined(BOOT_BUILD)
+#if (defined GPRE_ADA || defined GPRE_COBOL || defined GPRE_FORTRAN)
 	switch (gpreGlob.sw_language)
 	{
 #ifdef GPRE_ADA
