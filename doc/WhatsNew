@@ -2,6 +2,29 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-2999
+        Message "SCH_validate -- not entered" is logged in firebird.log
+        when the Classic Server connection where events were used is finished
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2995
+        Same error in the status vector is reported twice
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2993
+        Fatal lock manager error "Invalid lock id (NNN)" while working with monitoring tables
+        on a highly loaded system
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2977
+        Server works with indexed fields of type DATE incorrectly in pre-ODS10 databases
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2969
         RDB$SET_CONTEXT does not allow to overwrite any vars after encountering limit of them
       Contributor(s):
@@ -138,6 +161,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2679
+        Applications using the embedded server may hang while exiting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2675
         Small memory leak per every blob transliteration
       Contributor(s):
@@ -224,6 +252,11 @@
         Wrong (primary) constraint name is reported for the foreign key violation during FK creation
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2215
+        GROUP BY concatenation with empty string
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-2084
         Services API security problem
