@@ -1,3 +1,36 @@
+2010-05-18 12:36  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/os_utils.cpp (1.12):
+
+	Fixed CORE-3006: /tmp/firebird and files in it may get 'root' (i.e.
+	GID == 0) group
+
+2010-05-17 17:30  asfernandes
+
+	* firebird2/: doc/README.connection_string_charset.txt (1.4),
+	src/jrd/isc_file.cpp (1.148):
+
+	CORE-2929 - 'Invalid ESCAPE sequence' when connecting to the
+	database
+
+2010-05-17 17:18  asfernandes
+
+	* firebird2/src/jrd/btr.cpp (1.285):
+
+	Correction for CORE-2826 - Join condition fails for UTF-8 databases
+
+2010-05-17 15:28  alexpeshkoff
+
+	* firebird2/src/utilities/gstat/dba.epp (1.136):
+
+	Fixed distribution output
+
+2010-05-17 15:10  alexpeshkoff
+
+	* firebird2/src/utilities/gstat/dba.epp (1.135):
+
+	misc
+
 2010-05-17 12:39  alexpeshkoff
 
 	* firebird2/autogen.sh (1.28):
