@@ -74,7 +74,7 @@ SLONG get_user_group_id(const TEXT* user_group_name)
 	Firebird::MutexLockGuard guard(grMutex);
 
 	const struct group* user_group = getgrnam(user_group_name);
-	return user_group ? user_group->gr_gid : 0;
+	return user_group ? user_group->gr_gid : -1;
 }
 
 static Firebird::GlobalPtr<Firebird::Mutex> pwMutex;
