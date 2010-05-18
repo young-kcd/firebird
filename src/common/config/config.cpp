@@ -121,11 +121,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 {
 	{TYPE_INTEGER,		"TempBlockSize",			(ConfigValue) 1048576},		// bytes
 	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) -1},			// bytes
-#ifdef BOOT_BUILD
-	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) true},
-#else
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
-#endif
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
@@ -346,7 +342,7 @@ int Config::getTempCacheLimit()
 
 bool Config::getRemoteFileOpenAbility()
 {
-	return (bool) getDefaultConfig()->values[KEY_REMOTE_FILE_OPEN_ABILITY];
+	return fb_utils::bootBuild() ? true : ((bool) getDefaultConfig()->values[KEY_REMOTE_FILE_OPEN_ABILITY]);
 }
 
 int Config::getGuardianOption()

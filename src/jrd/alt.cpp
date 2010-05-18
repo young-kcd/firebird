@@ -49,9 +49,7 @@
 #include "../jrd/alt_proto.h"
 #include "../jrd/constants.h"
 
-#if !defined(BOOT_BUILD)
 static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
-#endif // BOOT_BUILD
 
 SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 										 UCHAR** result_buffer,
@@ -814,7 +812,6 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
 }
 
-#ifndef BOOT_BUILD
 namespace {
 	ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
 	{
@@ -825,7 +822,6 @@ namespace {
 		return vector[1];
 	}
 }
-#endif // BOOT_BUILD
 
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
@@ -846,9 +842,6 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef BOOT_BUILD
-	return 1;
-#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = ADD_OPER;
 
@@ -976,7 +969,6 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -995,9 +987,6 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef BOOT_BUILD
-	return 1;
-#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = DEL_OPER;
 
@@ -1022,7 +1011,6 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -1041,9 +1029,6 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-#ifdef BOOT_BUILD
-	return 1;
-#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = MOD_OPER;
 
@@ -1172,11 +1157,8 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
-#endif // BOOT_BUILD
 }
 
-
-#if !defined(BOOT_BUILD)
 
 static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 										const USER_SEC_DATA* input_user_data,
@@ -1212,5 +1194,3 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 
 	return status[1];
 }
-
-#endif // BOOT_BUILD

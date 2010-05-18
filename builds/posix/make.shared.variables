@@ -194,6 +194,9 @@ SECURITY_Sources_common = $(addprefix utilities/common/, $(SECURITY_Files_common
 SECURITY_Sources = $(SECURITY_Sources_gsec) $(SECURITY_Sources_gstat) $(SECURITY_Sources_common)
 SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
 
+SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
+SECURITY_ClientObjects_gsec = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
+
 #________________________________________________________________________
 #
 # common/classes
@@ -319,12 +322,10 @@ FBUTILSVC_Objects = $(FBUTIL_Objects) $(FBSVC_Objects)
 #________________________________________________________________________
 #
 
-UTIL_Files = 
+SVCTAB_Sources = jrd/svc_tab.cpp
+SVCTAB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SVCTAB_Sources))))
 
-UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Files))))
-
-# These are the lists of object/shared object files that will go into libgds.a
-# and libgds.$(SHRLIB_EXT).
+# These are the lists of object/shared object files that will go into libgds.$(SHRLIB_EXT).
 
 LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(JRD_Objects) \
@@ -340,7 +341,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
 				$(NBACKUP_SERVER_Objects) \
 				$(NTRACE_SERVER_Objects) \
 				$(FBUTIL_Objects) \
-				$(UTIL_Objects)
+				$(SVCTAB_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
 # have been worked out above in this file, based on macros, so here they
@@ -355,9 +356,10 @@ LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 # gbak modules.  These are then used to compile the rest of the system.
 # MOD 29-July-2002
 
-# Statically link ib_util in libfbstatic.
-IBUTIL_Sources = $(addprefix extlib/, ib_util.cpp)
-IBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBUTIL_Sources))))
+# Stub for services entrypoints missing in static library
+STUB_Sources = jrd/svc_stub.cpp
+STUB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(STUB_Sources))))
+
 
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
@@ -370,7 +372,8 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
 				$(CLUMPLETS_Objects) \
-				$(UTIL_Objects)
+				$(SECURITY_ClientObjects_gsec) \
+				$(STUB_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

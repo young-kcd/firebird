@@ -27,6 +27,7 @@
 #include <stdio.h>
 
 #include "fb_blk.h"
+#include "consts_pub.h"
 
 #include "../jrd/svc_undoc.h"
 #include "../jrd/ThreadStart.h"
@@ -39,7 +40,11 @@
 #include "../common/classes/ClumpletReader.h"
 
 // forward decl.
-struct serv_entry;
+
+namespace Jrd {
+	struct serv_entry;
+}
+
 namespace Firebird {
 	namespace Arg {
 		class StatusVector;

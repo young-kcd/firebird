@@ -134,6 +134,9 @@ namespace fb_utils
 		FB_DIR_MSG, FB_DIR_LOG, FB_DIR_GUARD, FB_DIR_PLUGINS,
 		FB_DIR_LAST};
 
+	// Returns true if called from firebird build process (appr. environment is set)
+	bool bootBuild();
+
 	// Add appropriate file prefix.
 	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
 

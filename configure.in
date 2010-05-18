@@ -1048,50 +1048,6 @@ dnl # rebuild version header if needed
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
-mkdir -p temp/boot/alice
-mkdir -p temp/boot/auth/trusted
-mkdir -p temp/boot/auth/SecurityDatabase
-mkdir -p temp/boot/burp
-mkdir -p temp/boot/common/classes
-mkdir -p temp/boot/common/config
-mkdir -p temp/boot/config
-mkdir -p temp/boot/dsql
-mkdir -p temp/boot/dudley
-mkdir -p temp/boot/extlib
-mkdir -p temp/boot/extlib/fbudf
-mkdir -p temp/boot/gpre
-mkdir -p temp/boot/intl
-mkdir -p temp/boot/ipserver
-mkdir -p temp/boot/iscguard
-mkdir -p temp/boot/isql
-mkdir -p temp/boot/jrd
-mkdir -p temp/boot/jrd/extds
-mkdir -p temp/boot/jrd/recsrc
-mkdir -p temp/boot/jrd/trace
-mkdir -p temp/boot/jrd/os/posix
-mkdir -p temp/boot/jrd/os/win32
-mkdir -p temp/boot/jrd/os/darwin
-mkdir -p temp/boot/lock
-mkdir -p temp/boot/misc
-mkdir -p temp/boot/msgs
-# mkdir -p temp/boot/plugins/udr_engine
-mkdir -p temp/boot/qli
-mkdir -p temp/boot/remote
-mkdir -p temp/boot/remote/os/win32
-mkdir -p temp/boot/remote/os/sun
-mkdir -p temp/boot/remote/os/darwin
-mkdir -p temp/boot/utilities/common
-mkdir -p temp/boot/utilities/fbtracemgr
-mkdir -p temp/boot/utilities/gsec
-mkdir -p temp/boot/utilities/gstat
-mkdir -p temp/boot/utilities/guard
-mkdir -p temp/boot/utilities/ibmgr
-mkdir -p temp/boot/utilities/install
-mkdir -p temp/boot/utilities/nbackup
-mkdir -p temp/boot/utilities/rebuild
-mkdir -p temp/boot/utilities/ntrace
-mkdir -p temp/boot/vulcan
-
 mkdir -p temp/extern/binreloc
 mkdir -p temp/std/alice
 mkdir -p temp/std/auth/trusted

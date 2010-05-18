@@ -25,6 +25,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/TempSpace.h"
+#include "../common/utils_proto.h"
 
 namespace Firebird {
 
@@ -194,9 +195,11 @@ void DirectoryList::initialize(bool simple_mode)
 
 bool DirectoryList::isPathInList(const PathName& path) const
 {
-#ifdef BOOT_BUILD
-	return true;
-#else  //BOOT_BUILD
+	if (fb_utils::bootBuild())
+	{
+		return true;
+	}
+
 	fb_assert(mode != NotInitialized);
 
 	// Handle special cases
@@ -233,7 +236,6 @@ bool DirectoryList::isPathInList(const PathName& path) const
 		}
 	}
 	return rc;
-#endif //BOOT_BUILD
 }
 
 bool DirectoryList::expandFileName(PathName& path, const PathName& name) const

@@ -920,13 +920,26 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 }
 
 
+// returns true if environment variable FIREBIRD_BOOT_BUILD is set
+bool bootBuild()
+{
+	static enum {FB_BOOT_UNKNOWN, FB_BOOT_NORMAL, FB_BOOT_SET} state = FB_BOOT_UNKNOWN;
+	if (state == FB_BOOT_UNKNOWN)
+	{
+		// not care much about protecting state with mutex - each thread will assign it same value
+		Firebird::string dummy;
+		state = readenv("FIREBIRD_BOOT_BUILD", dummy) ? FB_BOOT_SET : FB_BOOT_NORMAL;
+	}
+	return state == FB_BOOT_SET;
+}
+
+
 // Build full file name in specified directory
 Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 {
 	Firebird::PathName s;
 	char tmp[MAXPATHLEN];
 
-#ifndef BOOT_BUILD
 	const char* configDir[] = {
 		FB_BINDIR, FB_SBINDIR, FB_CONFDIR, FB_LIBDIR, FB_INCDIR, FB_DOCDIR, FB_UDFDIR, FB_SAMPLEDIR,
 		FB_SAMPLEDBDIR, FB_HELPDIR, FB_INTLDIR, FB_MISCDIR, FB_SECDBDIR, FB_MSGDIR, FB_LOGDIR,
@@ -936,13 +949,15 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
 	fb_assert(prefType < FB_DIR_LAST);
 
-	if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
+	if (! bootBuild())
 	{
-		// Value is set explicitly and is not environment overridable
-		PathUtils::concatPath(s, configDir[prefType], name);
-		return s;
+		if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
+		{
+			// Value is set explicitly and is not environment overridable
+			PathUtils::concatPath(s, configDir[prefType], name);
+			return s;
+		}
 	}
-#endif
 
 	switch(prefType)
 	{

@@ -45,6 +45,7 @@ TEST_PATH = @FIREBIRD_BUILD_DIR@
 # Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
 #LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
 LD_LIBRARY_PATH=$(LIB)
+FIREBIRD_BOOT_BUILD=1
 
 #export ISC_USER
 #export ISC_PASSWORD
@@ -52,6 +53,7 @@ LD_LIBRARY_PATH=$(LIB)
 export FIREBIRD
 export DYLD_FRAMEWORK_PATH
 export LD_LIBRARY_PATH
+export FIREBIRD_BOOT_BUILD
 
 CPU = 1
 CPU_OPTION = -j$(CPU)

@@ -6263,50 +6263,53 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options)
 {
+	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
 	string name, trusted_role;
 
-#ifdef BOOT_BUILD
-	bool wheel = true;
-#else
-	bool wheel = false;
-	if (options.dpb_trusted_login.hasData())
+	if (fb_utils::bootBuild())
 	{
-		name = options.dpb_trusted_login;
-	}
-	else if (options.dpb_user_name.hasData())
-	{
-		name = options.dpb_user_name;
-	}
-	else if (options.dpb_auth_block.hasData())
-	{
-		// stub instead mapUser(....);
-		AuthReader auth(options.dpb_auth_block);
-		if (auth.getInfo(&name))
-		{
-			auth.moveNext();
-			auth.getInfo(&trusted_role);
-		}
+		wheel = true;
 	}
 	else
 	{
-		wheel = ISC_get_user(&name, &id, &group);
-		ISC_systemToUtf8(name);
-		if (id == 0)
+		if (options.dpb_trusted_login.hasData())
+		{
+			name = options.dpb_trusted_login;
+		}
+		else if (options.dpb_user_name.hasData())
+		{
+			name = options.dpb_user_name;
+		}
+		else if (options.dpb_auth_block.hasData())
+		{
+			// stub instead mapUser(....);
+			AuthReader auth(options.dpb_auth_block);
+			if (auth.getInfo(&name))
+			{
+				auth.moveNext();
+				auth.getInfo(&trusted_role);
+			}
+		}
+		else
+		{
+			wheel = ISC_get_user(&name, &id, &group);
+			ISC_systemToUtf8(name);
+			if (id == 0)
+			{
+				wheel = true;
+			}
+		}
+
+		// if the name from the user database is defined as SYSDBA,
+		// we define that user id as having system privileges
+
+		name.upper();
+		if (name == SYSDBA_USER_NAME)
 		{
 			wheel = true;
 		}
 	}
-
-	// if the name from the user database is defined as SYSDBA,
-	// we define that user id as having system privileges
-
-	name.upper();
-	if (name == SYSDBA_USER_NAME)
-	{
-		wheel = true;
-	}
-#endif // BOOT_BUILD
 
 	// In case we became WHEEL on an OS that didn't require name SYSDBA,
 	// (Like Unix) force the effective Database User name to be SYSDBA

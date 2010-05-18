@@ -64,8 +64,11 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
-#include "../jrd/trace/TraceService.h"
+//#include "../jrd/trace/TraceService.h"
 #include "../common/classes/DbImplementation.h"
+
+// Services table. Empty at BootBuild.
+#include "../jrd/svc_tab.h"
 
 // The switches tables. Needed only for utilities that run as service, too.
 #include "../common/classes/Switches.h"
@@ -645,106 +648,6 @@ bool Service::ck_space_for_numeric(UCHAR*& info, const UCHAR* const end)
 	return true;
 }
 
-
-#ifdef DEBUG
-THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM);
-void test_cmd(USHORT, SCHAR *, TEXT **);
-#define TEST_THREAD test_thread
-#define TEST_CMD test_cmd
-#else
-#define TEST_THREAD NULL
-#define TEST_CMD NULL
-#endif
-
-// Service Functions
-#if !defined(BOOT_BUILD)
-#include "../burp/burp_proto.h"
-#include "../alice/alice_proto.h"
-THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
-#include "../utilities/nbackup/nbk_proto.h"
-
-#define MAIN_GBAK		BURP_main
-#define MAIN_GFIX		ALICE_main
-#define MAIN_GSTAT		main_gstat
-#define MAIN_NBAK		NBACKUP_main
-#define MAIN_TRACE		TRACE_main
-#else
-#define MAIN_GBAK		NULL
-#define MAIN_GFIX		NULL
-#define MAIN_GSTAT		NULL
-#define MAIN_NBAK		NULL
-#define MAIN_TRACE		NULL
-#endif
-
-#if !defined(EMBEDDED) && !defined(BOOT_BUILD)
-#include "../utilities/gsec/gsec_proto.h"
-#define MAIN_GSEC		GSEC_main
-#else
-#define MAIN_GSEC		NULL
-#endif
-
-
-struct serv_entry
-{
-	USHORT				serv_action;		// isc_action_svc_....
-	const TEXT*			serv_name;			// old service name
-	const TEXT*			serv_std_switches;	// old cmd-line switches
-	ThreadEntryPoint*	serv_thd;			// thread to execute
-};
-
-static const serv_entry services[] =
-{
-
-	{ isc_action_max, "print_cache", "", NULL },
-	{ isc_action_max, "print_locks", "", NULL },
-	{ isc_action_max, "start_cache", "", NULL },
-	{ isc_action_max, "analyze_database", "", MAIN_GFIX },
-	{ isc_action_max, "backup", "-b", MAIN_GBAK },
-	{ isc_action_max, "create", "-c", MAIN_GBAK },
-	{ isc_action_max, "restore", "-r", MAIN_GBAK },
-	{ isc_action_max, "gdef", "-svc", NULL },
-	{ isc_action_max, "gsec", "-svc", MAIN_GSEC },
-	{ isc_action_max, "disable_journal", "-disable", NULL },
-	{ isc_action_max, "dump_journal", "-online_dump", NULL },
-	{ isc_action_max, "enable_journal", "-enable", NULL },
-	{ isc_action_max, "monitor_journal", "-console", NULL },
-	{ isc_action_max, "query_server", NULL, NULL },
-	{ isc_action_max, "start_journal", "-server", NULL },
-	{ isc_action_max, "stop_cache", "-shut -cache", MAIN_GFIX },
-	{ isc_action_max, "stop_journal", "-console", NULL },
-	{ isc_action_max, "anonymous", NULL, NULL },
-
-	// NEW VERSION 2 calls, the name field MUST be different from those names above
-	{ isc_action_max, "service_mgr", NULL, NULL },
-	{ isc_action_svc_backup, "Backup Database", NULL, MAIN_GBAK },
-	{ isc_action_svc_restore, "Restore Database", NULL, MAIN_GBAK },
-	{ isc_action_svc_repair, "Repair Database", NULL, MAIN_GFIX },
-	{ isc_action_svc_add_user, "Add User", NULL, MAIN_GSEC },
-	{ isc_action_svc_delete_user, "Delete User", NULL, MAIN_GSEC },
-	{ isc_action_svc_modify_user, "Modify User", NULL, MAIN_GSEC },
-	{ isc_action_svc_display_user, "Display User", NULL, MAIN_GSEC },
-	{ isc_action_svc_properties, "Database Properties", NULL, MAIN_GFIX },
-	{ isc_action_svc_lock_stats, "Lock Stats", NULL, TEST_THREAD },
-	{ isc_action_svc_db_stats, "Database Stats", NULL, MAIN_GSTAT },
-	{ isc_action_svc_get_fb_log, "Get Log File", NULL, Service::readFbLog },
-	{ isc_action_svc_nbak, "Incremental Backup Database", NULL, MAIN_NBAK },
-	{ isc_action_svc_nrest, "Incremental Restore Database", NULL, MAIN_NBAK },
-	{ isc_action_svc_trace_start, "Start Trace Session", NULL, MAIN_TRACE },
-	{ isc_action_svc_trace_stop, "Stop Trace Session", NULL, MAIN_TRACE },
-	{ isc_action_svc_trace_suspend, "Suspend Trace Session", NULL, MAIN_TRACE },
-	{ isc_action_svc_trace_resume, "Resume Trace Session", NULL, MAIN_TRACE },
-	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, MAIN_TRACE },
-	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
-	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
-	{ isc_action_svc_display_user_adm, "Display User with Admin Info", NULL, MAIN_GSEC },
-	// actions with no names are undocumented
-	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
-	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
-	{ isc_action_svc_set_env, NULL, NULL, TEST_THREAD },
-	{ isc_action_svc_set_env_lock, NULL, NULL, TEST_THREAD },
-	{ isc_action_svc_set_env_msg, NULL, NULL, TEST_THREAD },
-	{ 0, NULL, NULL, NULL }
-};
 
 // The SERVER_CAPABILITIES_FLAG is used to mark architectural
 // differences across servers.  This allows applications like server
@@ -2184,6 +2087,7 @@ void Service::readFbLog()
 	}
 	catch (const Firebird::Exception& e)
 	{
+		setDataMode(false);
 		e.stuff_exception(svc_status);
 	}
 
@@ -2917,20 +2821,3 @@ const char* Service::getServiceName() const
 {
 	return svc_service_run ? svc_service_run->serv_name : NULL;
 }
-
-#ifdef DEBUG
-// The following two functions are temporary stubs and will be
-// removed as the services API takes shape.  They are used to
-// test that the paths for starting services and parsing command-lines
-// are followed correctly.
-THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM)
-{
-	gds__log("Starting service");
-	return FINI_OK;
-}
-
-void test_cmd(USHORT /*spb_length*/, SCHAR* /*spb*/, TEXT** /*switches*/)
-{
-	gds__log("test_cmd called");
-}
-#endif

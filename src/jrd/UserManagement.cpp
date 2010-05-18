@@ -121,9 +121,6 @@ USHORT UserManagement::put(internal_user_data* userData)
 
 void UserManagement::execute(USHORT id)
 {
-#if (defined BOOT_BUILD || defined EMBEDDED)
-	status_exception::raise(Arg::Gds(isc_wish_list));
-#else
 	if (!transaction || !commands[id])
 	{
 		// Already executed
@@ -162,5 +159,4 @@ void UserManagement::execute(USHORT id)
 
 	delete commands[id];
 	commands[id] = NULL;
-#endif
 }
