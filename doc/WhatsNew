@@ -2,6 +2,33 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-3001
+        Install fails to create user and group "firebird"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3000
+        Error while deleting user "ADMIN"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2995
+        Same error in the status vector is reported twice
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2993
+        Fatal lock manager error "Invalid lock id (NNN)" while working with monitoring tables
+        on a highly loaded system
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2984
+        GBAK -v srv:db stdout creates a broken backup
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2977
         Server works with indexed fields of type DATE incorrectly in pre-ODS10 databases
       Contributor(s):
@@ -56,6 +83,11 @@
         Memory leak in the trace plugin (fbtrace)
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2933
+        Very slow execution of a script that creates a lot of metadata
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2930
         DROP VIEW drops output parameters of used stored procedures
@@ -156,6 +188,11 @@
         Listener process of Classic Server leaks handles
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2862
+        configure --with-fbudf breaks build on CentOS
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2858
         Possible memory trashing when raising some exceptions to signal failed security checks
