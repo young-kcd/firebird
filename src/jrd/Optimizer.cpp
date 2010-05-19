@@ -1289,8 +1289,9 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 			// very safe at the moment, but in our case Array holds a sorted list.
 			// However SortedArray class should be updated to handle join right!
 			matches.join(invCandidate->matches);
-			tail = optimizer->opt_conjuncts.begin();
-			for (; tail < opt_end; tail++) {
+			for (OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+				tail < opt_end; tail++)
+			{
 				if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
 					size_t pos;
 					if (matches.find(tail->opt_conjunct_node, pos)) {
