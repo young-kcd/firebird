@@ -955,7 +955,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			// msg 14: "    Index %s (%d)"
 			//dba_print(false, 15, SafeArg() << index->idx_depth << index->idx_leaf_buckets << index->idx_nodes);
 			// msg 15: \tDepth: %d, leaf buckets: %ld, nodes: %ld
-			uSvc->printf(false, "\tRoot page: %d, depth: %d, leaf buckets: %" UQUADFORMAT ", nodes: %" UQUADFORMAT "\n",
+			uSvc->printf(false, "\tRoot page: %d, depth: %d, leaf buckets: %ld, nodes: %" UQUADFORMAT "\n",
 						 index->idx_root, index->idx_depth, index->idx_leaf_buckets, index->idx_nodes);
 			double average = (index->idx_nodes) ?
 				(double) index->idx_total_length / index->idx_nodes : 0.0;
