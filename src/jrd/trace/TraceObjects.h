@@ -60,6 +60,7 @@ public:
 	virtual const char* getDatabaseName();
 	virtual const char* getUserName();
 	virtual const char* getRoleName();
+	virtual const char* getCharSet();
 	virtual const char* getRemoteProtocol();
 	virtual const char* getRemoteAddress();
 	virtual int getRemoteProcessID();

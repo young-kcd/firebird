@@ -524,6 +524,7 @@ public:
 	virtual const char* getDatabaseName()		{ return m_filename; }
 	virtual const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
 	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
+	virtual const char* getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
 	virtual const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
 	virtual const char* getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
 	virtual int getRemoteProcessID()			{ return m_options->dpb_remote_pid; }

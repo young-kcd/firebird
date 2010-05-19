@@ -87,6 +87,12 @@ const char* TraceConnectionImpl::getRoleName()
 	return user ? user->usr_sql_role_name.c_str() : NULL;
 }
 
+const char* TraceConnectionImpl::getCharSet()
+{
+	CharSet *cs = INTL_charset_lookup(JRD_get_thread_data(), m_att->att_charset);
+	return cs ? cs->getName() : NULL;
+}
+
 const char* TraceConnectionImpl::getRemoteProtocol()
 {
 	return m_att->att_network_protocol.c_str();

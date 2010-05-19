@@ -52,6 +52,7 @@ public:
 	virtual int getProcessID() = 0;
 	virtual const char* getUserName() = 0;
 	virtual const char* getRoleName() = 0;
+	virtual const char* getCharSet() = 0;
 	virtual const char* getRemoteProtocol() = 0;
 	virtual const char* getRemoteAddress() = 0;
 	virtual int getRemoteProcessID() = 0;
