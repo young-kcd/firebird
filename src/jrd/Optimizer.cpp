@@ -1247,11 +1247,57 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 
 	invCandidate = makeInversion(&inversions, true);
 
-	// Add the streams where this stream is depending on.
-	if (invCandidate) {
+	if (invCandidate)
+	{
+		if (invCandidate->unique)
+		{
+			// Set up the unique retrieval cost to be fixed and not dependent on
+			// possibly outdated statistics
+			invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
+		}
+		else
+		{
+			// Add the records retrieval cost to the priorly calculated index scan cost
+			invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
+		}
+
+		// Adjust the effective selectivity by treating computable conjunctions as filters
+		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+			tail < optimizer->opt_conjuncts.end(); tail++)
+		{
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+				!invCandidate->matches.exist(node))
+			{
+				const double factor = (node->nod_type == nod_eql) ?
+					REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+					REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+				invCandidate->selectivity *= factor;
+			}
+		}
+
+		// Add the streams where this stream is depending on
 		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
 			findDependentFromStreams(invCandidate->matches[i], 
 				&invCandidate->dependentFromStreams);
+		}
+
+		if (setConjunctionsMatched) {
+			Firebird::SortedArray<jrd_nod*> matches;
+			// AB: Putting a unsorted array in a sorted array directly by join isn't
+			// very safe at the moment, but in our case Array holds a sorted list.
+			// However SortedArray class should be updated to handle join right!
+			matches.join(invCandidate->matches);
+			tail = optimizer->opt_conjuncts.begin();
+			for (; tail < opt_end; tail++) {
+				if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
+					size_t pos;
+					if (matches.find(tail->opt_conjunct_node, pos)) {
+						tail->opt_conjunct_flags |= opt_conjunct_matched;
+					}
+				}
+			}
 		}
 	}
 
@@ -1259,23 +1305,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	// Debug
 	printFinalCandidate(invCandidate);
 #endif
-
-	if (invCandidate && setConjunctionsMatched) {
-		Firebird::SortedArray<jrd_nod*> matches;
-		// AB: Putting a unsorted array in a sorted array directly by join isn't
-		// very safe at the moment, but in our case Array holds a sorted list.
-		// However SortedArray class should be updated to handle join right!
-		matches.join(invCandidate->matches);
-		tail = optimizer->opt_conjuncts.begin();
-		for (; tail < opt_end; tail++) {
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used)) {
-				size_t pos;
-				if (matches.find(tail->opt_conjunct_node, pos)) {
-					tail->opt_conjunct_flags |= opt_conjunct_matched;
-				}
-			}
-		}
-	}
 
 	// Clean up inversion list
 	InversionCandidate** inversion = inversions.begin();
@@ -3062,46 +3091,19 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
  *  Estimate the cost for the stream.
  *
  **************************************/
-	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	double cardinality = csb_tail->csb_cardinality;
-
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
-	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
+	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
 		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
 
 	const InversionCandidate* candidate = optimizerRetrieval->getCost();
-	double selectivity = candidate->selectivity;
 	*cost = candidate->cost;
 
-	if (!candidate->indexes)
-	{
-		// If indices are not involved, adjust the effective selectivity
-		// by treating computable conjunctions as filters
-		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-			tail < optimizer->opt_conjuncts.end(); tail++)
-		{
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				OPT_computable(optimizer->opt_csb, node, stream, false, true))
-			{
-				const double factor = (node->nod_type == nod_eql) ?
-					REDUCE_SELECTIVITY_FACTOR_EQUALITY :
-					REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-				selectivity *= factor;
-			}
-		}
-	}
+	// Calculate cardinality
+	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	const double cardinality = csb_tail->csb_cardinality * candidate->selectivity;
 
-	// Calculate the effective cardinality
-	cardinality *= selectivity;
-
-	if (candidate->unique) {
-		*resulting_cardinality = cardinality;
-	}
-	else {
-		*resulting_cardinality = MAX(cardinality, MAXIMUM_SELECTIVITY);
-	}
+	*resulting_cardinality = MAX(cardinality, MAXIMUM_SELECTIVITY);
 
 	const bool useIndexRetrieval = (candidate->indexes >= 1);
 	delete candidate;
