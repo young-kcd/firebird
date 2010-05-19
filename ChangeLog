@@ -1,3 +1,12 @@
+2010-05-18 23:57  hvlad
+
+	* firebird2/src/: jrd/ntrace.h (1.14.2.1),
+	jrd/trace/TraceObjects.cpp (1.16.2.1), jrd/trace/TraceObjects.h
+	(1.6.2.1), utilities/ntrace/TracePluginImpl.cpp (1.28.2.6):
+
+	Fixed bug CORE-2981 : Error in Trace plugin (use local symbols in
+	query)
+
 2010-05-18 12:38  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/os_utils.cpp (1.7.4.4):
