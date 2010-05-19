@@ -106,6 +106,7 @@ public:
 	virtual const char* getText() = 0;
 	virtual const char* getPlan() = 0;
 	virtual TraceParams* getInputs() = 0;
+	virtual const char* getTextUTF8() = 0;
 };
 
 class TraceBLRStatement : public TraceStatement

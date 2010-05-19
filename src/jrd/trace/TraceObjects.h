@@ -160,6 +160,7 @@ public:
 	virtual TraceParams* getInputs();
 	virtual const char* getText();
 	virtual const char* getPlan();
+	virtual const char* getTextUTF8();
 
 private:
 	class DSQLParamsImpl : public TraceParams
@@ -184,6 +185,7 @@ private:
 	PerformanceInfo* const m_perf;
 	char* m_plan;
 	DSQLParamsImpl m_inputs;
+	Firebird::string m_textUTF8;
 };
 
 
@@ -199,9 +201,11 @@ public:
 	virtual TraceParams* getInputs()	{ return NULL; }
 	virtual const char* getText()		{ return m_text.c_str(); }
 	virtual const char* getPlan()		{ return ""; }
+	virtual const char* getTextUTF8();
 
 private:
 	Firebird::string &m_text;
+	Firebird::string m_textUTF8;
 };
 
 

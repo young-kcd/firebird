@@ -32,6 +32,7 @@
 #include "TracePluginImpl.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
+#include "../../jrd/isc_f_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/path_utils.h"
@@ -147,9 +148,12 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	{
 		try
 		{
+			string filter(config.include_filter);
+			ISC_systemToUtf8(filter);
+
 			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
-				*getDefaultMemoryPool(), textType, (const UCHAR*) config.include_filter.c_str(),
-				config.include_filter.length(), '\\', true, false);
+				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
+				filter.length(), '\\', true, false);
 		}
 		catch (const Exception&)
 		{
@@ -163,9 +167,12 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	{
 		try
 		{
+			string filter(config.include_filter);
+			ISC_systemToUtf8(filter);
+
 			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
-				*getDefaultMemoryPool(), textType, (const UCHAR*) config.exclude_filter.c_str(),
-				config.exclude_filter.length(), '\\', true, false);
+				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
+				filter.length(), '\\', true, false);
 		}
 		catch (const Exception&)
 		{
@@ -1244,17 +1251,20 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 
 	if (config.include_filter.hasData() || config.exclude_filter.hasData())
 	{
+		const char* sqlUtf8 = statement->getTextUTF8();
+		size_t utf8_length = strlen(sqlUtf8);
+
 		if (config.include_filter.hasData())
 		{
 			include_matcher->reset();
-			include_matcher->process((const UCHAR*) sql, sql_length);
+			include_matcher->process((const UCHAR*) sqlUtf8, utf8_length);
 			need_statement = include_matcher->result();
 		}
 
 		if (need_statement && config.exclude_filter.hasData())
 		{
 			exclude_matcher->reset();
-			exclude_matcher->process((const UCHAR*) sql, sql_length);
+			exclude_matcher->process((const UCHAR*) sqlUtf8, utf8_length);
 			need_statement = !exclude_matcher->result();
 		}
 	}

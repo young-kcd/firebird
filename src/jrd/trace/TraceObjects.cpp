@@ -36,7 +36,9 @@
 #include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
 #include "../../jrd/tra.h"
+#include "../../jrd/DataTypeUtil.h"
 #include "../../jrd/evl_proto.h"
+#include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
 #include "../../jrd/pag_proto.h"
 #include "../../jrd/os/path_utils.h"
@@ -186,6 +188,54 @@ const char* TraceSQLStatementImpl::getText()
 	return m_stmt->getStatement()->getSqlText()->c_str();
 }
 
+// returns false if conversion not needed
+bool convertToUTF8(const string &src, string &dst)
+{
+	thread_db *tdbb = JRD_get_thread_data();
+	const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
+
+	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
+		return false;
+
+	if (charset == CS_NONE)
+	{
+		const size_t length = src.length();
+
+		const char* s = src.c_str();
+		char* p = dst.getBuffer(length);
+
+		for (const char* end = src.end(); s < end; ++p, ++s)
+			*p = (*s < 0 ? '?' : *s);
+	}
+	else // charset != CS_UTF8
+	{
+		DataTypeUtil dtUtil(tdbb);
+		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
+		
+		length = INTL_convert_bytes(tdbb, 
+			CS_UTF8, (UCHAR*) dst.getBuffer(length), length, 
+			charset, (const BYTE*) src.begin(), src.length(),
+			ERR_post);
+
+		dst.resize(length);
+	}
+
+	return true;
+}
+
+const char* TraceSQLStatementImpl::getTextUTF8()
+{
+	const string* stmtText = m_stmt->getStatement()->getSqlText();
+
+	if (m_textUTF8.isEmpty() && !stmtText->isEmpty())
+	{
+		if (!convertToUTF8(*stmtText, m_textUTF8))
+			return stmtText->c_str();
+	}
+
+	return m_textUTF8.c_str();
+}
+
 const char* TraceSQLStatementImpl::getPlan()
 {
 	if (!m_plan && m_stmt->req_request)
@@ -271,6 +321,21 @@ const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(size_t idx)
 
 	return NULL;
 }
+
+
+/// TraceFailedSQLStatement
+
+const char* TraceFailedSQLStatement::getTextUTF8()
+{
+	if (m_textUTF8.isEmpty() && !m_text.isEmpty())
+	{
+		if (!convertToUTF8(m_text, m_textUTF8))
+			return m_text.c_str();
+	}
+
+	return m_textUTF8.c_str();
+}
+
 
 
 /// TraceProcedureImpl::JrdParamsImpl
