@@ -1,3 +1,47 @@
+2010-05-19 09:33  hvlad
+
+	* firebird2/src/: jrd/ntrace.h (1.16), jrd/trace/TraceObjects.cpp
+	(1.26), jrd/trace/TraceObjects.h (1.14),
+	utilities/ntrace/TracePluginImpl.cpp (1.41):
+
+	Fixed bug CORE-2981 : Error in Trace plugin (use local symbols in
+	query)
+
+2010-05-19 09:25  hvlad
+
+	* firebird2/src/utilities/gstat/dba.epp (1.137):
+
+	Fixed invalid output of index stats in 32-bit builds
+
+2010-05-18 15:32  alexpeshkoff
+
+	* firebird2/: configure.in (1.391),
+	builds/posix/Makefile.in.boot.gpre (1.34),
+	builds/posix/Makefile.in.firebird (1.110),
+	builds/posix/Makefile.in.libfbstatic (1.13),
+	builds/posix/Makefile.in.static.gbak (1.22),
+	builds/posix/Makefile.in.static.gpre (1.24),
+	builds/posix/Makefile.in.static.isql (1.19),
+	builds/posix/make.shared.variables (1.134), src/common/utils.cpp
+	(1.78), src/common/utils_proto.h (1.42),
+	src/common/config/config.cpp (1.119),
+	src/common/config/dir_list.cpp (1.43), src/jrd/UserManagement.cpp
+	(1.16), src/jrd/alt.cpp (1.89), src/jrd/fun.epp (1.144),
+	src/jrd/jrd.cpp (1.617), src/jrd/svc.cpp (1.315), src/jrd/svc.h
+	(1.92), src/jrd/svc_stub.cpp (1.1), src/jrd/svc_tab.cpp (1.1),
+	src/jrd/svc_tab.h (1.1):
+
+	Cleaned up macro BOOT_BUILD, boot ObjModuleType in posix build and
+	a lot of related steps in posix build
+
+2010-05-18 15:15  alexpeshkoff
+
+	* firebird2/src/gpre/: ada.cpp (1.73), cob.cpp (1.87), ftn.cpp
+	(1.83), gpre.cpp (1.114), gpre.h (1.112), pas.cpp (1.73), pat.cpp
+	(1.39):
+
+	Fixed build on non-C gpre pas.cpp ada.cpp cob.cpp ftn.cpp
+
 2010-05-18 12:36  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/os_utils.cpp (1.12):
