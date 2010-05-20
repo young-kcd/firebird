@@ -1,3 +1,26 @@
+2010-05-20 12:36  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.207.2.2):
+
+	Fixed and improved diagnostics when thread failed to start
+
+2010-05-20 12:30  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.101.2.3):
+
+	Raise NPROC limit on unix to avoid errors when starting many
+	threads
+
+2010-05-19 18:13  hvlad
+
+	* firebird2/src/: jrd/jrd.cpp (1.565.2.12), jrd/ntrace.h
+	(1.14.2.2), jrd/trace/TraceObjects.cpp (1.16.2.2),
+	jrd/trace/TraceObjects.h (1.6.2.2),
+	utilities/ntrace/TracePluginImpl.cpp (1.28.2.7):
+
+	Improvement CORE-3008 :  Add attachment's CHARACTER SET name into
+	corresponding trace records
+
 2010-05-18 23:57  hvlad
 
 	* firebird2/src/: jrd/ntrace.h (1.14.2.1),
