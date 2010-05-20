@@ -628,6 +628,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\svc_tab.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\SysFunction.cpp"
 				>
 			</File>
@@ -1481,6 +1485,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\svc.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\svc_tab.h"
 				>
 			</File>
 			<File
