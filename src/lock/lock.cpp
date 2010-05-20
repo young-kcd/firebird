@@ -1777,17 +1777,17 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 
 	if (m_useBlockingThread)
 	{
-		const ULONG status = gds__thread_start(blocking_action_thread, this, THREAD_high, 0, 0);
-		if (status)
+		try
 		{
-			statusVector << Arg::Gds(isc_lockmanerr) << Arg::Gds(isc_sys_request) <<
-#ifdef WIN_NT
-				Arg::Str("CreateThread") <<
-				Arg::Windows(status);
-#else
-				Arg::Str("thr_create") <<
-				Arg::Unix(status);
-#endif
+			ThreadStart::start(blocking_action_thread, this, THREAD_high, 0);
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			ISC_STATUS_ARRAY vector;
+			ex.stuff_exception(vector);
+
+			statusVector << Arg::Gds(isc_lockmanerr);
+			statusVector << Arg::StatusVector(vector);
 			return false;
 		}
 	}
