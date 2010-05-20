@@ -78,7 +78,10 @@ const serv_entry services[] =
 	{ isc_action_max, "create", "-c", BURP_main },
 	{ isc_action_max, "restore", "-r", BURP_main },
 	{ isc_action_max, "gdef", "-svc", NULL },
+#ifndef EMBEDDED
+	// this restriction for embedded is temporarty and will gone when new build system will be introduced
 	{ isc_action_max, "gsec", "-svc", GSEC_main },
+#endif
 	{ isc_action_max, "disable_journal", "-disable", NULL },
 	{ isc_action_max, "dump_journal", "-online_dump", NULL },
 	{ isc_action_max, "enable_journal", "-enable", NULL },
@@ -94,10 +97,12 @@ const serv_entry services[] =
 	{ isc_action_svc_backup, "Backup Database", NULL, BURP_main },
 	{ isc_action_svc_restore, "Restore Database", NULL, BURP_main },
 	{ isc_action_svc_repair, "Repair Database", NULL, ALICE_main },
+#ifndef EMBEDDED
 	{ isc_action_svc_add_user, "Add User", NULL, GSEC_main },
 	{ isc_action_svc_delete_user, "Delete User", NULL, GSEC_main },
 	{ isc_action_svc_modify_user, "Modify User", NULL, GSEC_main },
 	{ isc_action_svc_display_user, "Display User", NULL, GSEC_main },
+#endif
 	{ isc_action_svc_properties, "Database Properties", NULL, ALICE_main },
 	{ isc_action_svc_lock_stats, "Lock Stats", NULL, TEST_THREAD },
 	{ isc_action_svc_db_stats, "Database Stats", NULL, main_gstat },
@@ -109,9 +114,11 @@ const serv_entry services[] =
 	{ isc_action_svc_trace_suspend, "Suspend Trace Session", NULL, TRACE_main },
 	{ isc_action_svc_trace_resume, "Resume Trace Session", NULL, TRACE_main },
 	{ isc_action_svc_trace_list, "List Trace Sessions", NULL, TRACE_main },
+#ifndef EMBEDDED
 	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, GSEC_main },
 	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, GSEC_main },
 	{ isc_action_svc_display_user_adm, "Display User with Admin Info", NULL, GSEC_main },
+#endif
 	// actions with no names are undocumented
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },

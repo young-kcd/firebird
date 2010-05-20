@@ -132,6 +132,10 @@ void UserManagement::execute(USHORT id)
 		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
 	}
 
+#ifdef EMBEDDED
+	// this restriction for embedded is temporarty and will gone when new build system will be introduced
+	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
+#else
 	ISC_STATUS_ARRAY status;
 	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 :
 		SECURITY_exec_line(status, database, transaction, commands[id], NULL, NULL);
@@ -159,4 +163,5 @@ void UserManagement::execute(USHORT id)
 
 	delete commands[id];
 	commands[id] = NULL;
+#endif
 }
