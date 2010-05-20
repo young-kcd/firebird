@@ -1790,23 +1790,19 @@ bool LockManager::create_process(ISC_STATUS* status_vector)
 		return false;
 
 #ifdef USE_BLOCKING_THREAD
-	const ULONG status = gds__thread_start(blocking_action_thread, this, THREAD_high, 0, 0);
-	if (status)
+	try
 	{
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_lockmanerr;
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_sys_request;
-		*status_vector++ = isc_arg_string;
-#ifdef WIN_NT
-		*status_vector++ = (ISC_STATUS) "CreateThread";
-		*status_vector++ = isc_arg_win32;
-#else
-		*status_vector++ = (ISC_STATUS) "thr_create";
-		*status_vector++ = isc_arg_unix;
-#endif
-		*status_vector++ = status;
-		*status_vector++ = isc_arg_end;
+		ThreadStart::start(blocking_action_thread, this, THREAD_high, 0);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ISC_STATUS_ARRAY vector;
+		ex.stuff_exception(vector);
+
+		Firebird::Arg::Gds result(isc_lockmanerr);
+		result.append(Firebird::Arg::StatusVector(vector));
+		result.copyTo(status_vector);
+
 		return false;
 	}
 #endif
