@@ -116,6 +116,11 @@ static int INET_SERVER_start = 0;
 
 static bool serverClosing = false;
 
+#if defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+#define FB_RAISE_LIMITS 1
+static void raiseLimit(int resource);
+#endif
+
 
 extern "C" {
 
@@ -281,25 +286,15 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		gds__log("Could not change directory to %s due to errno %d", TEMP_DIR, errno);
 	}
 
-#if defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+#ifdef FB_RAISE_LIMITS
+	raiseLimit(RLIMIT_NPROC);
+
 #if !(defined(DEV_BUILD))
 	if (Config::getBugcheckAbort())
 #endif
 	{
 		// try to force core files creation
-		struct rlimit core;
-		if (getrlimit(RLIMIT_CORE, &core) == 0)
-		{
-			core.rlim_cur = core.rlim_max;
-			if (setrlimit(RLIMIT_CORE, &core) != 0)
-			{
-				gds__log("setrlimit() failed, errno=%d", errno);
-			}
-		}
-		else
-		{
-			gds__log("getrlimit() failed, errno=%d", errno);
-		}
+		raiseLimit(RLIMIT_CORE);
 	}
 
 #if (defined SOLARIS || defined HPUX || defined LINUX)
@@ -308,29 +303,11 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		// Increase max open files to hard limit for Unix
 		// platforms which are known to have low soft limits.
 
-		struct rlimit old;
-
-		if (getrlimit(RLIMIT_NOFILE, &old) == 0 && old.rlim_cur < old.rlim_max)
-		{
-			struct rlimit new_max;
-			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
-			if (setrlimit(RLIMIT_NOFILE, &new_max) == 0)
-			{
-#if _FILE_OFFSET_BITS == 64
-				gds__log("64 bit i/o support is on.");
-				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new_max.rlim_cur);
-
-#else
-				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new_max.rlim_cur);
-#endif
-			}
-		}
+		raiseLimit(RLIMIT_NOFILE);
 	}
 #endif // Unix platforms
 
-#endif // HAVE_*ETRLIMIT
+#endif // FB_RAISE_LIMITS
 
 	// Remove restriction on username, for DEV builds
 	// restrict only for production builds.  MOD 21-July-2002
@@ -474,3 +451,25 @@ static void signal_handler(int)
 	++INET_SERVER_start;
 }
 
+
+#ifdef FB_RAISE_LIMITS
+static void raiseLimit(int resource)
+{
+	struct rlimit lim;
+	if (getrlimit(resource, &lim) == 0)
+	{
+		if (lim.rlim_cur != lim.rlim_max)
+		{
+			lim.rlim_cur = lim.rlim_max;
+			if (setrlimit(RLIMIT_CORE, &lim) != 0)
+			{
+				gds__log("setrlimit() failed, errno=%d", errno);
+			}
+		}
+	}
+	else
+	{
+		gds__log("getrlimit() failed, errno=%d", errno);
+	}
+}
+#endif // FB_RAISE_LIMITS
