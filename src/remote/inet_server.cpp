@@ -128,6 +128,9 @@ static USHORT INET_SERVER_flag = 0;
 
 static bool serverClosing = false;
 
+#if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+static void raiseLimit(int resource);
+#endif
 
 extern "C" {
 
@@ -269,24 +272,14 @@ int FB_EXPORTED server_main( int argc, char** argv)
 #endif
 
 #if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+	raiseLimit(RLIMIT_NPROC);
+
 #if !(defined(DEV_BUILD))
 	if (Config::getBugcheckAbort())
 #endif
 	{
 		// try to force core files creation
-		struct rlimit core;
-		if (getrlimit(RLIMIT_CORE, &core) == 0)
-		{
-			core.rlim_cur = core.rlim_max;
-			if (setrlimit(RLIMIT_CORE, &core) != 0)
-			{
-				gds__log("setrlimit() failed, errno=%d", errno);
-			}
-		}
-		else
-		{
-			gds__log("getrlimit() failed, errno=%d", errno);
-		}
+		raiseLimit(RLIMIT_CORE);
 
 		// we need some writable directory for core file
 		// on any unix /tmp seems to be the best place
@@ -298,30 +291,10 @@ int FB_EXPORTED server_main( int argc, char** argv)
 	}
 
 #if defined(SUPERSERVER) && (defined SOLARIS || defined HPUX || defined LINUX)
-	{
-		// Increase max open files to hard limit for Unix
-		// platforms which are known to have low soft limits.
+	// Increase max open files to hard limit for Unix
+	// platforms which are known to have low soft limits.
 
-		struct rlimit old;
-
-		if (getrlimit(RLIMIT_NOFILE, &old) == 0 && old.rlim_cur < old.rlim_max)
-		{
-			struct rlimit new_max;
-			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
-			if (setrlimit(RLIMIT_NOFILE, &new_max) == 0)
-			{
-#if _FILE_OFFSET_BITS == 64
-				gds__log("64 bit i/o support is on.");
-				gds__log("Open file limit increased from %lld to %lld",
-						 old.rlim_cur, new_max.rlim_cur);
-
-#else
-				gds__log("Open file limit increased from %d to %d",
-						 old.rlim_cur, new_max.rlim_cur);
-#endif
-			}
-		}
-	}
+	raiseLimit(RLIMIT_NOFILE);
 #endif
 
 #endif
@@ -581,5 +554,27 @@ static int tryStopMainThread()
  *
  **************************************/
 	return serverClosing ? 1 : 0;
+}
+#endif
+
+#if defined(UNIX) && defined(HAVE_SETRLIMIT) && defined(HAVE_GETRLIMIT)
+static void raiseLimit(int resource)
+{
+	struct rlimit lim;
+	if (getrlimit(resource, &lim) == 0)
+	{
+		if (lim.rlim_cur != lim.rlim_max)
+		{
+			lim.rlim_cur = lim.rlim_max;
+			if (setrlimit(RLIMIT_CORE, &lim) != 0)
+			{
+				gds__log("setrlimit() failed, errno=%d", errno);
+			}
+		}
+	}
+	else
+	{
+		gds__log("getrlimit() failed, errno=%d", errno);
+	}
 }
 #endif
