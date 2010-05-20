@@ -5696,12 +5696,12 @@ namespace
 			: HalfStaticArray<Auth::ClientPlugin*, 8>(p)
 		{
 			// this code will be replaced with known plugins scan
-			push(Auth::interfaceAlloc<Auth::SecurityDatabaseClient>());
+			push(interfaceAlloc<Auth::SecurityDatabaseClient>());
 #ifdef TRUSTED_AUTH
-			push(Auth::interfaceAlloc<Auth::WinSspiClient>());
+			push(interfaceAlloc<Auth::WinSspiClient>());
 #endif
 #ifdef AUTH_DEBUG
-			push(Auth::interfaceAlloc<Auth::DebugClient>());
+			push(interfaceAlloc<Auth::DebugClient>());
 #endif
 
 			// must be last
@@ -5709,7 +5709,7 @@ namespace
 		}
 	};
 
-	Firebird::InitInstance<InitList> listArray;
+	InitInstance<InitList> listArray;
 }	// namespace
 
 
@@ -5742,7 +5742,7 @@ static bool init(ISC_STATUS* user_status,
 	USHORT len;
 
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
-	AutoPtr<Auth::ClientInstance, Auth::Auto> currentInstance;
+	AutoPtr<Auth::ClientInstance, AutoInterface> currentInstance;
 	Auth::DpbImplementation di(dpb);
 	unsigned int sequence = 0;
 	Auth::ClientPlugin** list = listArray().begin();

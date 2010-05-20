@@ -227,16 +227,16 @@ public:
 		// this code will be replaced with known plugins scan
 		if (authMethod == AmNative || authMethod == AmMixed)
 		{
-			push(Auth::interfaceAlloc<Auth::SecurityDatabaseServer>());
+			push(interfaceAlloc<Auth::SecurityDatabaseServer>());
 		}
 #ifdef TRUSTED_AUTH
 		if (authMethod == AmTrusted || authMethod == AmMixed)
 		{
-			push(Auth::interfaceAlloc<Auth::WinSspiServer>());
+			push(interfaceAlloc<Auth::WinSspiServer>());
 		}
 #endif
 #ifdef AUTH_DEBUG
-		push(Auth::interfaceAlloc<Auth::DebugServer>());
+		push(interfaceAlloc<Auth::DebugServer>());
 #endif
 
 		// must be last

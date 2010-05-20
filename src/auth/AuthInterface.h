@@ -29,54 +29,15 @@
 #ifndef FB_AUTH_INTERFACE
 #define FB_AUTH_INTERFACE
 
-//#include "../jrd/gds_proto.h"
-#include "../common/classes/alloc.h"
+#include "../common/classes/Interface.h"
 
 namespace Auth {
 
 enum Result {AUTH_SUCCESS, AUTH_CONTINUE, AUTH_FAILED, AUTH_MORE_DATA};
 
-class InterfaceBase
+class InterfaceBase : public Firebird::Interface
 {
-public:
-	//virtual InterfaceBase* queryInterface() = 0;
-	//virtual void addRef() = 0;
-	virtual void release() = 0;
-protected:
-	~InterfaceBase() { }
 };
-
-class Auto
-{
-public:
-	static void clear(InterfaceBase* ptr)
-	{
-		if (ptr)
-		{
-			ptr->release();
-		}
-	}
-};
-
-template <typename T>
-T* interfaceAlloc()
-{
-/*
-	void* ptr = gds__alloc(sizeof(T));
-	return new(ptr) T;
- */
- 	return FB_NEW(*getDefaultMemoryPool()) T;
-}
-
-template <typename T>
-void interfaceFree(T* ptr)
-{
-/*
-	delete((void*)0) ptr;
-	gds__free(ptr);
- */
- 	delete ptr;
-}
 
 class WriterInterface
 {

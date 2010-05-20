@@ -33,7 +33,7 @@ namespace Auth {
 
 ClientInstance* SecurityDatabaseClient::instance()
 {
-	return interfaceAlloc<SecurityDatabaseClientInstance>();
+	return Firebird::interfaceAlloc<SecurityDatabaseClientInstance>();
 }
 
 void SecurityDatabaseClient::getName(const char** data, unsigned short* dataSize)
