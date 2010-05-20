@@ -1,3 +1,15 @@
+2010-05-19 16:15  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.78.2.10):
+
+	Misc.
+
+2010-05-19 16:10  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.78.2.9):
+
+	Backport a few optimizer adjustments from the recent versions.
+
 2010-05-18 09:39  dimitr
 
 	* firebird2/: doc/WhatsNew (1.148.2.38), src/jrd/isc_version.h
