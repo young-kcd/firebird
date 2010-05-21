@@ -173,7 +173,10 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr)
+void MVOL_init_read(const char*	file_name,
+					USHORT*		format,
+					int*		cnt,
+					UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -216,7 +219,9 @@ void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char* file_name, int* cnt, UCHAR** ptr)
+void MVOL_init_write(const char*	file_name,
+					 int*			cnt,
+					 UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -849,8 +854,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 	{
 		// We aim to keep our descriptors clean
 
-		if (new_desc != INVALID_HANDLE_VALUE)
-		{
+		if (new_desc != INVALID_HANDLE_VALUE) {
 			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
@@ -952,27 +956,27 @@ static void prompt_for_name(SCHAR* name, int length)
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
 			BURP_msg_get(225, msg, SafeArg() << (tdgbl->mvol_volume_count - 1) << tdgbl->mvol_old_file);
-			fprintf(term_out, "%s", msg);
+			fprintf(term_out, msg);
 			BURP_msg_get(226, msg);
 			// \tPress return to reopen that file, or type a new\n\tname
 			// followed by return to open a different file.\n
-			fprintf(term_out, "%s", msg);
+			fprintf(term_out, msg);
 		}
 		else	// First volume
 		{
 			BURP_msg_get(227, msg);
 			// Type a file name to open and hit return
-			fprintf(term_out, "%s", msg);
+			fprintf(term_out, msg);
 		}
 		BURP_msg_get(228, msg);	// "  Name: "
-		fprintf(term_out, "%s", msg);
+		fprintf(term_out, msg);
 
 		fflush(term_out);
 		if (fgets(name, length, term_in) == NULL)
 		{
 			BURP_msg_get(229, msg);
 			// \n\nERROR: Backup incomplete\n
-			fprintf(term_out, "%s", msg);
+			fprintf(term_out, msg);
 			BURP_exit_local(FINI_ERROR, tdgbl);
 		}
 
@@ -986,8 +990,8 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-
-			continue; // reprompt
+			else				// reprompt
+				continue;
 		}
 
 		// OK, its a file name, strip the carriage return
@@ -1136,7 +1140,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(230, msg, SafeArg() << tdgbl->gbl_backup_start_time << buffer);
 				// Expected backup start time %s, found %s\n
-				printf("%s", msg);
+				printf(msg);
 				return false;
 			}
 			break;
@@ -1170,7 +1174,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(231, msg, SafeArg() << tdgbl->gbl_database_file_name << buffer);
 				// Expected backup database %s, found %s\n
-				printf("%s", msg);
+				printf(msg);
 				return false;
 			}
 			if (init_flag)
@@ -1182,9 +1186,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 		case att_backup_format:
 			temp = get_numeric();
 			if (init_flag)
-			{
 				*format = temp;
-			}
 			break;
 
 		case att_backup_transportable:
@@ -1201,7 +1203,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 			{
 				BURP_msg_get(232, msg, SafeArg() << tdgbl->mvol_volume_count << temp);
 				// Expected volume number %d, found volume %d\n
-				printf("%s", msg);
+				printf(msg);
 				return false;
 			}
 			break;

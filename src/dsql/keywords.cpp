@@ -30,14 +30,6 @@
 #include <string.h>
 #endif
 
-#include "../dsql/Nodes.h"
-#include "../dsql/AggNodes.h"
-#include "../dsql/DdlNodes.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/PackageNodes.h"
-#include "../dsql/StmtNodes.h"
-#include "../dsql/WinNodes.h"
-#include "../common/classes/TriState.h"
 #include "dsql.tab.h"
 #include "keywords.h"
 
@@ -62,10 +54,8 @@ static const TOK tokens[] =
 	{GEQ, ">=", 1, false},
 	{BIND_PARAM, ":=", 2, false},
 	{ABS, "ABS", 2, false},
-	{KW_ABSOLUTE, "ABSOLUTE", 2, true},
 	{ACCENT, "ACCENT", 2, true},
 	{ACOS, "ACOS", 2, false},
-	{ACOSH, "ACOSH", 2, false},
 	{ACTION, "ACTION", 1, true},
 	{ACTIVE, "ACTIVE", 1, false},
 	{ADD, "ADD", 1, false},
@@ -82,11 +72,9 @@ static const TOK tokens[] =
 	{ASCII_CHAR, "ASCII_CHAR", 2, false},
 	{ASCII_VAL, "ASCII_VAL", 2, false},
 	{ASIN, "ASIN", 2, false},
-	{ASINH, "ASINH", 2, false},
 	{AT, "AT", 1, false},
 	{ATAN, "ATAN", 2, false},
 	{ATAN2, "ATAN2", 2, false},
-	{ATANH, "ATANH", 2, false},
 	{AUTO, "AUTO", 1, false},
 	{AUTONOMOUS, "AUTONOMOUS", 2, false},
 	{AVG, "AVG", 1, false},
@@ -104,7 +92,6 @@ static const TOK tokens[] =
 	{BIT_LENGTH, "BIT_LENGTH", 2, false},
 	{BLOB, "BLOB", 1, false},
 	{BLOCK, "BLOCK", 2, true},
-	{BODY, "BODY", 2, true},
 	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, true},
 	{BY, "BY", 1, false},
@@ -134,7 +121,6 @@ static const TOK tokens[] =
 	{CONNECT, "CONNECT", 2, false},
 	{CONSTRAINT, "CONSTRAINT", 1, false},
 	{CONTAINING, "CONTAINING", 1, false},
-	{CONTINUE, "CONTINUE", 2, true},
 	{COS, "COS", 2, false},
 	{COSH, "COSH", 2, false},
 	{COT, "COT", 2, false},
@@ -157,7 +143,6 @@ static const TOK tokens[] =
 	{DATEADD, "DATEADD", 2, false},
 	{DATEDIFF, "DATEDIFF", 2, false},
 	{DAY, "DAY", 2, false},
-	{DDL, "DDL", 2, false},
 	{KW_DEC, "DEC", 1, false},
 	{DECIMAL, "DECIMAL", 1, false},
 	{DECLARE, "DECLARE", 1, false},
@@ -165,11 +150,9 @@ static const TOK tokens[] =
 	{DEFAULT, "DEFAULT", 1, false},
 	{KW_DELETE, "DELETE", 1, false},
 	{DELETING, "DELETING", 2, true},
-	{DENSE_RANK, "DENSE_RANK", 2, false},
 	{DESC, "DESC", 1, false},	// Alias of DESCENDING
 	{DESC, "DESCENDING", 1, false},
 	{KW_DESCRIPTOR,	"DESCRIPTOR", 2, true},
-	{DETERMINISTIC, "DETERMINISTIC", 2, false},
 	{KW_DIFFERENCE, "DIFFERENCE", 2, true},
 	{DISCONNECT, "DISCONNECT", 2, false},
 	{DISTINCT, "DISTINCT", 1, false},
@@ -179,7 +162,6 @@ static const TOK tokens[] =
 	{DROP, "DROP", 1, false},
 	{ELSE, "ELSE", 1, false},
 	{END, "END", 1, false},
-	{ENGINE, "ENGINE", 2, true},
 	{ENTRY_POINT, "ENTRY_POINT", 1, false},
 	{ESCAPE, "ESCAPE", 1, false},
 	{EXCEPTION, "EXCEPTION", 1, false},
@@ -214,7 +196,6 @@ static const TOK tokens[] =
 	{HASH, "HASH", 2, false},
 	{HAVING, "HAVING", 1, false},
 	{HOUR, "HOUR", 2, false},
-	{IDENTITY, "IDENTITY", 2, false},
 	{IF, "IF", 1, false},
 	{KW_IGNORE, "IGNORE", 2, true},
 	{IIF, "IIF", 2, true},
@@ -233,10 +214,8 @@ static const TOK tokens[] =
 	{ISOLATION, "ISOLATION", 1, false},
 	{JOIN, "JOIN", 1, false},
 	{KEY, "KEY", 1, false},
-	{LAG, "LAG", 2, false},
 	{LAST, "LAST", 2, true},
 	{LASTNAME, "LASTNAME", 2, false},
-	{LEAD, "LEAD", 2, false},
 	{LEADING, "LEADING", 2, false},
 	{LEAVE, "LEAVE", 2, true},
 	{LEFT, "LEFT", 1, false},
@@ -268,7 +247,6 @@ static const TOK tokens[] =
 	{MOD, "MOD", 2, false},
 	{MODULE_NAME, "MODULE_NAME", 1, false},
 	{MONTH, "MONTH", 2, false},
-	{NAME, "NAME", 2, true},
 	{NAMES, "NAMES", 1, false},
 	{NATIONAL, "NATIONAL", 1, false},
 	{NATURAL, "NATURAL", 1, false},
@@ -291,16 +269,13 @@ static const TOK tokens[] =
 	{OS_NAME, "OS_NAME", 2, false},
 	{OUTER, "OUTER", 1, false},
 	{OUTPUT_TYPE, "OUTPUT_TYPE", 1, false},
-	{OVER, "OVER", 2, false},
 	{OVERFLOW, "OVERFLOW", 1, false},
 	{OVERLAY, "OVERLAY", 2, false},
-	{PACKAGE, "PACKAGE", 2, true},
 	{PAD, "PAD", 2, true},
 	{PAGE, "PAGE", 1, false},
 	{PAGES, "PAGES", 1, false},
 	{KW_PAGE_SIZE, "PAGE_SIZE", 1, false},
 	{PARAMETER, "PARAMETER", 1, false},
-	{PARTITION, "PARTITION", 2, false},
 	{PASSWORD, "PASSWORD", 1, false},
 	{PI, "PI", 2, false},
 	{PLACING, "PLACING", 2, false},
@@ -311,22 +286,17 @@ static const TOK tokens[] =
 	{PRECISION, "PRECISION", 1, false},
 	{PRESERVE, "PRESERVE", 2, true},
 	{PRIMARY, "PRIMARY", 1, false},
-	{PRIOR, "PRIOR", 2, true},
 	{PRIVILEGES, "PRIVILEGES", 1, false},
 	{PROCEDURE, "PROCEDURE", 1, false},
 	{PROTECTED, "PROTECTED", 1, false},
 	{RAND, "RAND", 2, false},
-	{RANK, "RANK", 2, false},
 	{DB_KEY, "RDB$DB_KEY", 1, false},
-	{RDB_GET_CONTEXT, "RDB$GET_CONTEXT", 2, true},
-	{RDB_SET_CONTEXT, "RDB$SET_CONTEXT", 2, true},
 	{READ, "READ", 1, false},
 	{REAL, "REAL", 1, false},
 	{VERSION, "RECORD_VERSION", 1, false},
 	{RECREATE, "RECREATE", 2, false},
 	{RECURSIVE, "RECURSIVE", 2, false},
 	{REFERENCES, "REFERENCES", 1, false},
-	{KW_RELATIVE, "RELATIVE", 2, true},
 	{RELEASE, "RELEASE", 2, false},
 	{REPLACE, "REPLACE", 2, false},
 	{REQUESTS, "REQUESTS", 2, true},
@@ -335,7 +305,6 @@ static const TOK tokens[] =
 	{RESTART, "RESTART", 2, true},
 	{RESTRICT, "RESTRICT", 1, true},
 	{RETAIN, "RETAIN", 1, false},
-	{RETURN, "RETURN", 2, false},
 	{RETURNING, "RETURNING", 2, true},
 	{RETURNING_VALUES, "RETURNING_VALUES", 1, false},
 	{RETURNS, "RETURNS", 1, false},
@@ -346,13 +315,11 @@ static const TOK tokens[] =
 	{ROLLBACK, "ROLLBACK", 1, false},
 	{ROUND, "ROUND", 2, false},
 	{ROW_COUNT, "ROW_COUNT", 2, false},
-	{ROW_NUMBER, "ROW_NUMBER", 2, false},
 	{ROWS, "ROWS", 2, false},
 	{RPAD, "RPAD", 2, false},
 	{SAVEPOINT, "SAVEPOINT", 2, false},
 	{SCALAR_ARRAY, "SCALAR_ARRAY", 2, true},
 	{DATABASE, "SCHEMA", 1, false},	// Alias of DATABASE
-	{SCROLL, "SCROLL", 2, false},
 	{SECOND, "SECOND", 2, false},
 	{SEGMENT, "SEGMENT", 1, false},
 	{SELECT, "SELECT", 1, false},
@@ -375,7 +342,6 @@ static const TOK tokens[] =
 	{SOURCE, "SOURCE", 2, true},
 	{SPACE, "SPACE", 2, true},
 	{SQLCODE, "SQLCODE", 1, false},
-	{SQLSTATE, "SQLSTATE", 2, false},
 	{SQRT, "SQRT", 2, false},
 	{STABILITY, "STABILITY", 1, false},
 	{START, "START", 2, false},
@@ -449,20 +415,19 @@ extern "C" {
 
 int API_ROUTINE KEYWORD_stringIsAToken(const char* in_str)
 {
-	const TOK* tok_ptr = tokens;
-	while (tok_ptr->tok_string)
-	{
-		if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str)) {
-			return true;
-		}
-		++tok_ptr;
-	}
-	return false;
+    const TOK* tok_ptr = tokens;
+    while (tok_ptr->tok_string) {
+        if (!tok_ptr->nonReserved && !strcmp(tok_ptr->tok_string, in_str)) {
+            return true;
+        }
+        ++tok_ptr;
+    }
+    return false;
 }
 
 Tokens API_ROUTINE KEYWORD_getTokens()
 {
-	return tokens;
+    return tokens;
 }
 
 }

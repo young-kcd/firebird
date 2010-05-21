@@ -55,7 +55,7 @@
 #include <sys/utsname.h>
 #endif
 
-// Win32 specific stuff
+/* Win32 specific stuff */
 
 #ifdef WIN_NT
 
@@ -82,8 +82,7 @@ public:
 		DWORD result = GetSecurityInfo(hCurrentProcess, SE_KERNEL_OBJECT, DACL_SECURITY_INFORMATION,
 							NULL, NULL, &pOldACL, NULL, &pOldSD);
 
-		if (result == ERROR_CALL_NOT_IMPLEMENTED)
-		{
+		if (result == ERROR_CALL_NOT_IMPLEMENTED) {
 			// For Win9X - sumulate that the call worked alright
 			pOldACL = NULL;
 			result = ERROR_SUCCESS;
@@ -183,7 +182,7 @@ static Firebird::InitInstance<SecurityAttributes> security_attributes;
 #include <ctype.h>
 #endif
 
-// Unix specific stuff
+/* Unix specific stuff */
 
 #if defined(UNIX)
 #include <sys/types.h>
@@ -331,7 +330,10 @@ const TEXT* ISC_get_host(Firebird::string& host)
 }
 
 #ifdef UNIX
-bool ISC_get_user(Firebird::string* name, int* id, int* group)
+bool ISC_get_user(Firebird::string*	name,
+				  int*	id,
+				  int*	group,
+				  const TEXT*	user_string)
 {
 /**************************************
  *
@@ -343,19 +345,45 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group)
  *      Find out who the user is.
  *
  **************************************/
-	// egid and euid need to be signed, uid_t is unsigned on SUN!
+/* egid and euid need to be signed, uid_t is unsigned on SUN! */
 	SLONG egid, euid;
 	TEXT user_name[256];
-	const TEXT* p = NULL;
+	const TEXT* p = 0;
 
-	euid = (SLONG) geteuid();
-	egid = (SLONG) getegid();
-	const struct passwd* password = getpwuid(euid);
-	if (password)
-		p = password->pw_name;
+	if (user_string && *user_string)
+	{
+		const TEXT* q = user_string;
+		char* un = user_name;
+		while ((*un = *q++) && *un != '.')
+			++un;
+		*un = 0;
+		p = user_name;
+		egid = euid = -1;
+#ifdef TRUST_CLIENT_VERIFICATION
+		if (*q)
+		{
+			egid = atoi(q);
+			while (*q && (*q != '.'))
+				q++;
+			if (*q == '.')
+			{
+				q++;
+				euid = atoi(q);
+			}
+		}
+#endif
+	}
 	else
-		p = "";
-	endpwent();
+	{
+		euid = (SLONG) geteuid();
+		egid = (SLONG) getegid();
+		const struct passwd* password = getpwuid(euid);
+		if (password)
+			p = password->pw_name;
+		else
+			p = "";
+		endpwent();
+	}
 
 	if (name)
 		*name = p;
@@ -372,7 +400,10 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group)
 
 
 #ifdef WIN_NT
-bool ISC_get_user(Firebird::string* name, int* id, int* group)
+bool ISC_get_user(Firebird::string*	name,
+				  int*	id,
+				  int*	group,
+				  const TEXT*	/*user_string*/)
 {
 /**************************************
  *
@@ -459,7 +490,8 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 
 		explicit ESwitches(MemoryPool& p)
 			: prefix(p), lockPrefix(p), msgPrefix(p)
-		{ }
+		{
+		}
 	}* eSw = 0;
 
 	if (! sw)
@@ -519,9 +551,9 @@ bool ISC_is_WinNT()
 	// In the worst case initialization will be called more than once
 	if (!os_type)
 	{
-		// The first time this routine is called we use the Windows API
-		// call GetVersion to determine whether Windows NT or 9X
-		// is running.
+		/* The first time this routine is called we use the Windows API
+		   call GetVersion to determine whether Windows NT or 9X
+		   is running. */
 		OSVERSIONINFO OsVersionInfo;
 
 		OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);

@@ -41,7 +41,6 @@
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
 
-//// TODO: DDL triggers, packages and external procedures and functions support
 namespace Jrd {
 
 class Database;
@@ -91,6 +90,28 @@ private:
 };
 
 
+class TraceDYNRequestImpl : public TraceDYNRequest
+{
+public:
+	TraceDYNRequestImpl(size_t length, const unsigned char* ddl) :
+		m_ddl(ddl),
+		m_length(length),
+		m_text(*getDefaultMemoryPool())
+	{}
+
+	virtual const unsigned char* getData()	{ return m_ddl; }
+	virtual size_t getDataLength()	{ return m_length; }
+	virtual const char* getText();
+
+private:
+	static void print_dyn(void* arg, SSHORT offset, const char* line);
+
+	const unsigned char* const m_ddl;
+	const size_t m_length;
+	Firebird::string m_text;
+};
+
+
 class BLRPrinter : public TraceBLRStatement
 {
 public:
@@ -117,7 +138,7 @@ class TraceBLRStatementImpl : public BLRPrinter
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
-		BLRPrinter(stmt->getStatement()->blr.begin(), stmt->getStatement()->blr.getCount()),
+		BLRPrinter(stmt->req_blr.begin(), stmt->req_blr.getCount()),
 		m_stmt(stmt),
 		m_perf(perf)
 	{}
@@ -150,8 +171,7 @@ public:
 		m_stmt(stmt),
 		m_perf(perf),
 		m_plan(NULL),
-		m_inputs(*getDefaultMemoryPool(), m_stmt->getStatement()->getSendMsg() ?
-			&m_stmt->getStatement()->getSendMsg()->msg_parameters : NULL)
+		m_inputs(*getDefaultMemoryPool(), m_stmt->req_send ? m_stmt->req_send->msg_parameters : NULL)
 	{}
 
 	~TraceSQLStatementImpl();
@@ -167,7 +187,7 @@ private:
 	class DSQLParamsImpl : public TraceParams
 	{
 	public:
-		DSQLParamsImpl(Firebird::MemoryPool &pool, const Firebird::Array<dsql_par*>* params) :
+		DSQLParamsImpl(Firebird::MemoryPool &pool, dsql_par* params) :
 			m_params(params),
 			m_descs(pool)
 		{}
@@ -178,7 +198,7 @@ private:
 	private:
 		void fillParams();
 
-		const Firebird::Array<dsql_par*>* m_params;
+		dsql_par* m_params;
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 
@@ -238,11 +258,7 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
-	virtual const char* getProcName()
-	{
-		return m_request->getStatement()->procedure->getName().identifier.c_str();
-	}
-
+	virtual const char* getProcName()	{ return m_request->req_procedure->prc_name.c_str(); }
 	virtual TraceParams* getInputs()	{ return &m_inputs; }
 	virtual PerformanceInfo* getPerf()	{ return m_perf; };
 

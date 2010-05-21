@@ -59,6 +59,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
+static const int TOUCH_INTERVAL = 60 * 60;		// in seconds, one hour should be enough
 
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
@@ -78,12 +79,13 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 #endif
 }
 
-ConfigStorage::ConfigStorage()
+ConfigStorage::ConfigStorage() :
+	m_base(NULL),
+	m_cfg_file(-1),
+	m_dirty(false),
+	m_touchSemaphore(FB_NEW(*getDefaultMemoryPool()) AnyRef<Semaphore>),
+	m_touchSemRef(*m_touchSemaphore)
 {
-	m_base = NULL;
-	m_cfg_file = -1;
-	m_dirty = false;
-
 	PathName filename;
 #ifdef WIN_NT
 	DWORD sesID = 0;
@@ -110,23 +112,34 @@ ConfigStorage::ConfigStorage()
 	filename.printf(TRACE_FILE); // TODO: it must be per engine instance
 #endif
 
-	Arg::StatusVector statusVector;
-	ISC_map_file(statusVector, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	ISC_STATUS_ARRAY status;
+	ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
 	if (!m_base)
 	{
-		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", statusVector.value());
-		statusVector.raise();
+		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", status);
+		status_exception::raise(status);
 	}
 
-	fb_assert(m_base->version == 1);
+	fb_assert(m_base->version == 1 || m_base->version == 2);
 
 	StorageGuard guard(this);
 	checkFile();
 	++m_base->cnt_uses;
+
+	if (m_base->version == 2) 
+	{
+		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
+			gds__log("Trace facility: can't start touch thread");
+		else
+			m_touchStartSem.enter();
+	}
 }
 
 ConfigStorage::~ConfigStorage()
 {
+	// signal touchThread to finish
+	m_touchSemaphore->Semaphore::release();
+
 	::close(m_cfg_file);
 	m_cfg_file = -1;
 
@@ -140,8 +153,8 @@ ConfigStorage::~ConfigStorage()
 		}
 	}
 
-	Arg::StatusVector statusVector;
-	ISC_unmap_file(statusVector, &m_handle);
+	ISC_STATUS_ARRAY status;
+	ISC_unmap_file(status, &m_handle);
 }
 
 void ConfigStorage::checkMutex(const TEXT* string, int state)
@@ -173,10 +186,11 @@ void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 	// Initialize the shared data header
 	if (initialize)
 	{
-		header->version = 1;
+		header->version = 2;
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;
+		header->touch_time = 0;
 		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 #ifndef WIN_NT
 		checkMutex("init", ISC_mutex_init(&header->mutex));
@@ -281,6 +295,48 @@ void ConfigStorage::checkFile()
 			fclose(cfgFile);
 		}
 	}
+
+	touchFile();
+}
+
+
+void ConfigStorage::touchFile()
+{
+	os_utils::touchFile(m_base->cfg_file_name);
+}
+
+
+THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
+{
+	ConfigStorage* storage = (ConfigStorage*) arg;
+	storage->touchThreadFunc();
+	return 0;
+}
+
+
+void ConfigStorage::touchThreadFunc()
+{
+	AnyRef<Semaphore>* semaphore = m_touchSemaphore;
+	Reference semRef(*semaphore);
+
+	m_touchStartSem.release();
+
+	int delay = TOUCH_INTERVAL / 2;
+	while (!semaphore->tryEnter(delay))
+	{
+		StorageGuard guard(this);
+
+		time_t now;
+		time(&now);
+
+		if (!m_base->touch_time || m_base->touch_time < now)
+		{
+			touchFile();
+			m_base->touch_time = now + TOUCH_INTERVAL;
+		}
+
+		delay = difftime(m_base->touch_time, now);
+	} 
 }
 
 

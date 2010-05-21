@@ -27,6 +27,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc.h"
+//#include "../lock/lock.h"
 
 #ifdef WIN_NT
 #include <process.h>

@@ -35,6 +35,7 @@
 #include "../../jrd/isc_proto.h"
 #include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
+#include "../../jrd/jrd_pwd.h"
 #include "../../jrd/tra.h"
 #include "../../jrd/DataTypeUtil.h"
 #include "../../jrd/evl_proto.h"
@@ -154,6 +155,26 @@ ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
 }
 
 
+/// TraceDYNRequestImpl
+
+const char* TraceDYNRequestImpl::getText()
+{
+	if (m_text.empty() && m_length) {
+		PRETTY_print_dyn((UCHAR*) m_ddl, print_dyn, this, 0);
+	}
+	return m_text.c_str();
+}
+
+void TraceDYNRequestImpl::print_dyn(void* arg, SSHORT offset, const char* line)
+{
+	TraceDYNRequestImpl *dyn = (TraceDYNRequestImpl*) arg;
+
+	string temp;
+	temp.printf("%4d %s\n", offset, line);
+	dyn->m_text.append(temp);
+}
+
+
 /// BLRPrinter
 
 const char* BLRPrinter::getText()
@@ -191,7 +212,7 @@ int TraceSQLStatementImpl::getStmtID()
 
 const char* TraceSQLStatementImpl::getText()
 {
-	return m_stmt->getStatement()->getSqlText()->c_str();
+	return m_stmt->req_sql_text->c_str();
 }
 
 // returns false if conversion not needed
@@ -231,12 +252,10 @@ bool convertToUTF8(const string &src, string &dst)
 
 const char* TraceSQLStatementImpl::getTextUTF8()
 {
-	const string* stmtText = m_stmt->getStatement()->getSqlText();
-
-	if (m_textUTF8.isEmpty() && !stmtText->isEmpty())
+	if (m_textUTF8.isEmpty() && !m_stmt->req_sql_text->isEmpty())
 	{
-		if (!convertToUTF8(*stmtText, m_textUTF8))
-			return stmtText->c_str();
+		if (!convertToUTF8(*m_stmt->req_sql_text, m_textUTF8))
+			return m_stmt->req_sql_text->c_str();
 	}
 
 	return m_textUTF8.c_str();
@@ -280,10 +299,8 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (size_t i = 0 ; i < m_params->getCount(); ++i)
+	for (const dsql_par* parameter = m_params; parameter; parameter = parameter->par_next)
 	{
-		dsql_par* parameter = (*m_params)[i];
-
 		if (parameter->par_index)
 		{
 			if (!first_index)
@@ -381,15 +398,14 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		{
 			case nod_argument:
 			{
-				//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
+				//const impure_value* impure = (impure_value*) ((SCHAR*) m_request + prm->nod_impure);
 				const jrd_nod* message = prm->nod_arg[e_arg_message];
 				const Format* format = (Format*) message->nod_arg[e_msg_format];
 				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
 
 				desc = format->fmt_desc[arg_number];
 				from_desc = &desc;
-				from_desc->dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
-					message->nod_impure + (IPTR) desc.dsc_address);
+				from_desc->dsc_address = (UCHAR *) m_request + message->nod_impure + (IPTR) desc.dsc_address;
 
 				// handle null flag if present
 				if (prm->nod_arg[e_arg_flag])
@@ -404,8 +420,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 			case nod_variable:
 			{
-				impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
-					prm->nod_impure);
+				impure_value* impure = (impure_value*) ((SCHAR *) m_request + prm->nod_impure);
 				from_desc = &impure->vlu_desc;
 				break;
 			}
@@ -434,12 +449,12 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 const char* TraceTriggerImpl::getTriggerName()
 {
-	return m_trig->getStatement()->triggerName.c_str();
+	return m_trig->req_trg_name.c_str();
 }
 
 const char* TraceTriggerImpl::getRelationName()
 {
-	const jrd_rel* rel = m_trig->req_rpb[0].rpb_relation;
+	const jrd_rel* rel = m_trig->req_rpb->rpb_relation;
 	return rel ? rel->rel_name.c_str() : NULL;
 }
 

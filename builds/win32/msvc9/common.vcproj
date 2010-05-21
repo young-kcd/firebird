@@ -305,10 +305,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\dir_list.cpp"
 				>
 			</File>
@@ -334,10 +330,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.cpp"
 				>
 			</File>
 			<File
@@ -382,10 +374,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusArg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.cpp"
 				>
 			</File>
 			<File
@@ -458,10 +446,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\cvt.h"
 				>
 			</File>
@@ -470,15 +454,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.h"
 				>
 			</File>
 			<File
@@ -507,10 +483,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.h"
 				>
 			</File>
 			<File

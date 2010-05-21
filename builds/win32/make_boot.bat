@@ -23,7 +23,7 @@ set ERRLEV=0
 @echo Creating directories
 @rmdir /s /q %FB_GEN_DIR% 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
-for %%v in ( alice burp dsql gpre isql journal jrd misc msgs qli examples ) do (
+for %%v in ( alice burp dsql dudley gpre isql journal jrd misc msgs qli examples ) do (
   if NOT "%%v"=="journal" (@mkdir %FB_GEN_DIR%\%%v )
 )
 
@@ -63,8 +63,6 @@ if "%ERRLEV%"=="1" goto :END
 
 call :isql_embed
 if "%ERRLEV%"=="1" goto :END
-
-@findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_GEN_DIR%\firebird.conf
 
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gbak_embed.exe %FB_GEN_DIR% > nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_embed.exe %FB_GEN_DIR% > nul

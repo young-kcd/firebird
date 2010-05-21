@@ -48,7 +48,7 @@ QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 QLI_Sources = $(addprefix qli/, $(QLI_Files)) $(QLI_Other_Sources)
 QLI_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(QLI_Sources))))
 
-AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects) $(FBUTIL_Objects)
+AllObjects = $(QLI_Objects) $(CLUMPLETS_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -60,8 +60,8 @@ all:	qli
 
 qli : create_yachts $(LIBFBEMBED_SO) $(QLI)
 
-$(QLI): $(AllObjects)
-	$(EXE_LINK) $(LINK_EMPTY_SYMBOLS) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
+$(QLI): $(QLI_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
 #      with it. metadata.fdb is what is needed here.
@@ -73,3 +73,4 @@ create_yachts:
 include $(ROOT)/gen/make.shared.targets
 
 -include $(Dependencies)
+

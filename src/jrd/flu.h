@@ -27,7 +27,7 @@
 #ifndef JRD_FLU_H
 #define JRD_FLU_H
 
-// External modules for UDFs/BLOB filters/y-valve loader
+/* External modules for UDFs/BLOB filters/y-valve loader */
 
 #include "../common/classes/objects_array.h"
 #include "../jrd/os/mod_loader.h"
@@ -165,4 +165,4 @@ namespace Jrd
 
 } // namespace Jrd
 
-#endif // JRD_FLU_H
+#endif /* JRD_FLU_H */

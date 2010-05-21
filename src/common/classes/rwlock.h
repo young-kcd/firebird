@@ -265,23 +265,12 @@ namespace Firebird {
 class ReadLockGuard
 {
 public:
-	explicit ReadLockGuard(RWLock& alock)
+	ReadLockGuard(RWLock &alock)
 		: lock(&alock)
 	{
 		lock->beginRead();
 	}
-
-	explicit ReadLockGuard(RWLock* alock)
-		: lock(alock)
-	{
-		if (lock)
-			lock->beginRead();
-	}
-
-	~ReadLockGuard()
-	{
-		release();
-	}
+	~ReadLockGuard() { release(); }
 
 	void release()
 	{
@@ -295,30 +284,19 @@ public:
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
-	RWLock* lock;
+	RWLock *lock;
 };
 
 // RAII holder of write lock
 class WriteLockGuard
 {
 public:
-	explicit WriteLockGuard(RWLock& alock)
+	WriteLockGuard(RWLock &alock)
 		: lock(&alock)
 	{
 		lock->beginWrite();
 	}
-
-	explicit WriteLockGuard(RWLock* alock)
-		: lock(alock)
-	{
-		if (lock)
-			lock->beginWrite();
-	}
-
-	~WriteLockGuard()
-	{
-		release();
-	}
+	~WriteLockGuard() { release(); }
 
 	void release()
 	{
@@ -332,9 +310,10 @@ public:
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);
-	RWLock* lock;
+	RWLock *lock;
 };
 
 } // namespace Firebird
 
 #endif // #ifndef CLASSES_RWLOCK_H
+

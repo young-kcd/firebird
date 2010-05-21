@@ -39,11 +39,11 @@ UserManagement::UserManagement(jrd_tra* tra)
 	: database(0), transaction(0), commands(*tra->tra_pool)
 {
 	char securityDatabaseName[MAXPATHLEN];
-	Auth::SecurityDatabase::getPath(securityDatabaseName);
+	SecurityDatabase::getPath(securityDatabaseName);
 	ISC_STATUS_ARRAY status;
 	Attachment* att = tra->tra_attachment;
 
-	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, att->att_user->usr_user_name);
 	if (att->att_user->usr_flags & USR_trole)
@@ -121,6 +121,9 @@ USHORT UserManagement::put(internal_user_data* userData)
 
 void UserManagement::execute(USHORT id)
 {
+#if (defined BOOT_BUILD || defined EMBEDDED)
+	status_exception::raise(Arg::Gds(isc_wish_list));
+#else
 	if (!transaction || !commands[id])
 	{
 		// Already executed
@@ -132,10 +135,6 @@ void UserManagement::execute(USHORT id)
 		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
 	}
 
-#ifdef EMBEDDED
-	// this restriction for embedded is temporarty and will gone when new build system will be introduced
-	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
-#else
 	ISC_STATUS_ARRAY status;
 	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 :
 		SECURITY_exec_line(status, database, transaction, commands[id], NULL, NULL);

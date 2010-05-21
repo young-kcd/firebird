@@ -233,7 +233,7 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 
 
 // Prints the whole chain of arguments, according to format and in the specified stream.
-int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, bool userFormatting)
+int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg)
 {
 	int out_bytes = 0;
 	for (const char* iter = format; true; ++iter)
@@ -247,10 +247,7 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, boo
 			switch (iter[1])
 			{
 			case 0:
-				if (userFormatting)
-					out_bytes += out_stream.write("@", 1);
-				else
-					out_bytes += out_stream.write("@(EOF)", 6);
+				out_bytes += out_stream.write("@(EOF)", 6);
 				return out_bytes;
 			case '@':
 				out_bytes += out_stream.write(iter, 1);
@@ -260,23 +257,15 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, boo
 					const int pos = iter[1] - '0';
 					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
 						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
-					else
+					else if (pos >= 0 && pos <= 9)
 					{
-						if (userFormatting)
-						{
-							out_bytes += out_stream.write("@", 1);
-							out_bytes += out_stream.write(iter + 1, 1);
-						}
-						else if (pos >= 0 && pos <= 9)
-						{
-							// Show the missing or out of range param number.
-							out_bytes += MsgPrint(out_stream,
-								"<Missing arg #@1 - possibly status vector overflow>",
-								SafeArg() << pos);
-						}
-						else // Something not a number following @, invalid.
-							out_bytes += out_stream.write("(error)", 7);
+						// Show the missing or out of range param number.
+						out_bytes += MsgPrint(out_stream,
+							"<Missing arg #@1 - possibly status vector overflow>",
+							SafeArg() << pos);
 					}
+					else // Something not a number following @, invalid.
+						out_bytes += out_stream.write("(error)", 7);
 				}
 			}
 			++iter;
@@ -319,10 +308,10 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, boo
 
 
 // Shortcut version to format a string with arguments on standard output.
-int MsgPrint(const char* format, const SafeArg& arg, bool userFormatting)
+int MsgPrint(const char* format, const SafeArg& arg)
 {
 	StdioStream st(stdout);
-	return MsgPrint(st, format, arg, userFormatting);
+	return MsgPrint(st, format, arg);
 }
 
 
@@ -338,28 +327,44 @@ int MsgPrint(const char* format)
 
 // Shortcut version to format a string with arguments on a string output
 // of a given size.
-int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg,
-	bool userFormatting)
+int MsgPrint(char* plainstring, unsigned int s_size, const char* format, const SafeArg& arg)
 {
 	StringStream st(plainstring, s_size);
-	return MsgPrint(st, format, arg, userFormatting);
+	return MsgPrint(st, format, arg);
 }
 
 
 // Shortcut version to format a string with arguments on standard error.
-int MsgPrintErr(const char* format, const SafeArg& arg, bool userFormatting)
+int MsgPrintErr(const char* format, const SafeArg& arg)
 {
 	StdioStream st(stderr, true); // flush
-	return MsgPrint(st, format, arg, userFormatting);
+	return MsgPrint(st, format, arg);
 }
 
 } // namespace
 
 
-// Lookup and format message.  Return as much of formatted string as fits in caller's buffer.
-int fb_msg_format(void* handle, USHORT facility, USHORT number, unsigned int bsize, TEXT* buffer,
-	const MsgFormat::SafeArg& arg)
+int fb_msg_format(void*        handle,
+				  USHORT       facility,
+				  USHORT       number,
+				  unsigned int bsize,
+				  TEXT*        buffer,
+				  const        MsgFormat::SafeArg& arg)
 {
+/**************************************
+ *
+ *	f b _ m s g _ f o r m a t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Lookup and format message.  Return as much of formatted string
+ *	as fits in caller's buffer.
+ *
+ **************************************/
+
+	using MsgFormat::MsgPrint;
+
 	// The field MESSAGES.TEXT is 118 bytes long.
 	int total_msg = 0;
 	char msg[120] = "";

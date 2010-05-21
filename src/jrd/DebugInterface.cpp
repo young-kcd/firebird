@@ -21,7 +21,6 @@
  */
 
 #include "firebird.h"
-#include "../jrd/Attachment.h"
 #include "../jrd/DebugInterface.h"
 #include "../jrd/blb_proto.h"
 
@@ -30,11 +29,10 @@ using namespace Firebird;
 
 const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(1);
 
-void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, Firebird::DbgInfo& dbgInfo)
+void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgInfo)
 {
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-
-	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
+	Database* dbb = tdbb->getDatabase();
+	blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
 	const ULONG length = blob->blb_length;
 	fb_assert(length < MAX_USHORT); // CVC: Otherwise, we'll overflow the function below.
 	Firebird::HalfStaticArray<UCHAR, 128> tmp;

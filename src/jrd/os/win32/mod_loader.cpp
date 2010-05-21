@@ -167,7 +167,7 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 	return hMod != 0;
 }
 
-void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
 	const PathName::size_type pos = name.rfind(".dll");
 	if (pos != PathName::npos && pos == name.length() - 4)
@@ -183,7 +183,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	const UINT oldErrorMode =
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 
-	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0,
+	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0, 
 		Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
 
 	// Restore old mode in case we are embedded into user application

@@ -18,7 +18,7 @@
       <Tool Name="VCPreLinkEventTool" />
       <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe" LinkIncremental="1" SubSystem="1" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" />
       <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
+      <Tool Name="VCManifestTool" AdditionalManifestFiles="$(SolutionDir)asInvoker.manifest" />
       <Tool Name="VCXDCMakeTool" />
       <Tool Name="VCBscMakeTool" />
       <Tool Name="VCFxCopTool" />
@@ -39,7 +39,7 @@
       <Tool Name="VCPreLinkEventTool" />
       <Tool Name="VCLinkerTool" AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe" LinkIncremental="1" SubSystem="1" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" />
       <Tool Name="VCALinkTool" />
-      <Tool Name="VCManifestTool" />
+      <Tool Name="VCManifestTool" AdditionalManifestFiles="$(SolutionDir)asInvoker.manifest" />
       <Tool Name="VCXDCMakeTool" />
       <Tool Name="VCBscMakeTool" />
       <Tool Name="VCFxCopTool" />
@@ -66,15 +66,11 @@
       <Filter Name="epp files" Filter="epp">
         <File RelativePath="..\..\..\src\burp\backup.epp">
         </File>
-        <File RelativePath="..\..\..\src\burp\OdsDetection.epp">
-        </File>
         <File RelativePath="..\..\..\src\burp\restore.epp">
         </File>
       </Filter>
       <Filter Name="Generated files">
         <File RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp">
-        </File>
-        <File RelativePath="..\..\..\gen\$(PlatformName)\burp\OdsDetection.cpp">
         </File>
         <File RelativePath="..\..\..\gen\$(PlatformName)\burp\restore.cpp">
         </File>
@@ -112,8 +108,6 @@
       <File RelativePath="..\..\..\src\burp\misc_proto.h">
       </File>
       <File RelativePath="..\..\..\src\burp\mvol_proto.h">
-      </File>
-      <File RelativePath="..\..\..\src\burp\OdsDetection.h">
       </File>
       <File RelativePath="..\..\..\src\burp\resto_proto.h">
       </File>

@@ -89,13 +89,13 @@ public:
 	**/
 	static Module* loadModule(const Firebird::PathName&);
 
-	/** doctorModuleExtension modifies the given path name to add the platform
+	/** doctorModuleExtention modifies the given path name to add the platform
 		specific module extention.  This allows the user to provide the root name
 		of the file, and the code to append the correct extention regardless of the
 		host operating system.  This function is typically called after a failed attempt
 		to load the module without the extention.
 	**/
-	static void doctorModuleExtension(Firebird::PathName&);
+	static void doctorModuleExtention(Firebird::PathName&);
 
 	/** isLoadableModule checks the given file to see if it is a loadable
 		module.  This function is required because different operating

@@ -132,7 +132,6 @@ TextType::TextType(TTYPE_ID _type, texttype *_tt, CharSet* _cs)
 			{'~', CHAR_TILDE},
 			{'_', CHAR_UNDERLINE},
 			{'|', CHAR_VERTICAL_BAR},
-			{'"', CHAR_DOUBLE_QUOTE},
 			{'{', CHAR_OPEN_BRACE},
 			{'}', CHAR_CLOSE_BRACE},
 			{'[', CHAR_OPEN_BRACKET},

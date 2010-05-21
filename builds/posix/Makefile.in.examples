@@ -79,12 +79,12 @@ INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
-.PHONY: all examples plugins_examples
+.PHONY: all examples
 
-all: examples plugins_examples
+all: examples
 
 # examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README plugins_examples
+examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
@@ -115,10 +115,10 @@ $(EXAMPLES_DEST)% : $(EXAMPLES_SRC)%
 # MOD 28-July-2002
 
 
-$(EMPLOYEE_DB):	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
-	-$(RM) $(EMPLOYEE_DB)
-	./empbuild $(EMPLOYEE_DB)
-	-$(CHMOD_6) $(EMPLOYEE_DB)
+$(EXAMPLES_DEST)/employee.fdb:	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	-$(RM) employee.fdb
+	./empbuild employee.fdb
+	-$(CHMOD_6) employee.fdb
 
 # To get past the fact isql is called from the programs, we create a local link
 # to the static one in this directory
@@ -165,6 +165,3 @@ $(EXAMPLES_DEST)/%.e: $(EXAMPLES_SRC)/empbuild/%.e
 
 $(EXAMPLES_DEST)/%.h: $(EXAMPLES_SRC)/common/%.h
 	$(CP) $^ $@
-
-plugins_examples:                # plugins examples
-	$(MAKE) -f $(GEN_ROOT)/examples/Makefile.plugins_examples

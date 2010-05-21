@@ -31,18 +31,25 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
+#include "../../common/classes/RefCounted.h"
+#include "../../common/classes/semaphore.h"
 #include "../../jrd/isc.h"
+#include "../../jrd/ThreadStart.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
 
+class StorageInstance;
 
 class ConfigStorage : public Firebird::GlobalStorage
 {
-public:
+friend class StorageInstance;
+
+private:
 	ConfigStorage();
 	~ConfigStorage();
 
+public:
 	void addSession(Firebird::TraceSession& session);
 	bool getNextSession(Firebird::TraceSession& session);
 	void removeSession(ULONG id);
@@ -60,6 +67,10 @@ private:
 	static void initShMem(void*, sh_mem*, bool);
 
 	void checkFile();
+	void touchFile();
+
+	static THREAD_ENTRY_DECLARE touchThread(THREAD_ENTRY_PARAM arg);
+	void touchThreadFunc();
 
 	void checkDirty()
 	{
@@ -89,6 +100,7 @@ private:
 #ifndef WIN_NT
 		struct mtx mutex;
 #endif
+		SINT64 touch_time;
 	};
 
 	// items in every session record at sessions file
@@ -114,6 +126,9 @@ private:
 #endif
 	int  m_cfg_file;
 	bool m_dirty;
+	Firebird::Semaphore m_touchStartSem;
+	Firebird::AnyRef<Firebird::Semaphore>* m_touchSemaphore;
+	Firebird::Reference  m_touchSemRef;
 };
 
 

@@ -70,7 +70,7 @@ public:
 				 bool ignoreTrailingSpaces = false)
 	{
 		dst.getBuffer(convertLength(srcLen));
-		dst.resize(convert(srcLen, src, (ULONG) dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
+		dst.resize(convert(srcLen, src, dst.getCapacity(), dst.begin(), badInputPos, ignoreTrailingSpaces));
 	}
 
 	// CVC: Beware of this can of worms: csconvert_convert gets assigned
@@ -92,7 +92,7 @@ public:
 	// To be used with getConvToUnicode method of CharSet class
 	ULONG convert(ULONG srcLen,
 				  const UCHAR* src,
-				  ULONG dstLen, // Beware: in bytes, not in characters
+				  ULONG dstLen,
 				  USHORT* dst,
 				  ULONG* badInputPos = NULL,
 				  bool ignoreTrailingSpaces = false)

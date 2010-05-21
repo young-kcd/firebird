@@ -34,6 +34,8 @@
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
 
+static const char* CONFIG_FILE	= "firebird.conf";
+
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
 	easy-to-use abilities to work with complex configurations, a decision
@@ -54,15 +56,14 @@
 
 class ConfigRoot : public Firebird::PermanentStorage
 {
-	// we deal with names of files here
+	// config_file works with OS case-sensitivity
 	typedef Firebird::PathName string;
 
 private:
 	void GetRoot()
 	{
 		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot)
-		{
+		if (clRoot) {
 			root_dir = *clRoot;
 			addSlash();
 			return;
@@ -86,13 +87,16 @@ private:
 
 public:
 	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), install_dir(getPool())
+		root_dir(getPool()), config_file(getPool()), install_dir(getPool())
 	{
 		GetInstallDir();
 		GetRoot();
+		config_file = root_dir + string(CONFIG_FILE);
 	}
 
-	const char* getInstallDirectory() const
+	virtual ~ConfigRoot() {}
+
+	const char* getInstallDirectory()
 	{
 		return install_dir.c_str();
 	}
@@ -102,8 +106,14 @@ public:
 		return root_dir.c_str();
 	}
 
+protected:
+	const char *getConfigFilePath() const
+	{
+		return config_file.c_str();
+	}
+
 private:
-	string root_dir, install_dir;
+	string root_dir, config_file, install_dir;
 
 	void addSlash()
 	{

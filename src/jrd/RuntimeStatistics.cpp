@@ -87,7 +87,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
 					dst.rlc_counter[index] -= src.rlc_counter[index];
 			}
-		} while (second.getNext());
+		} while(second.getNext());
 	}
 }
 

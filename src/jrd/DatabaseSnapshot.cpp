@@ -49,7 +49,6 @@
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/Function.h"
 
 #include "../common/utils_proto.h"
 
@@ -66,6 +65,12 @@
 #include <windows.h>
 #endif
 
+#ifdef SUPERSERVER
+static const bool SHARED_DBB = true;
+#else
+static const bool SHARED_DBB = false;
+#endif
+
 
 using namespace Firebird;
 using namespace Jrd;
@@ -79,11 +84,11 @@ DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
-	Arg::StatusVector statusVector;
+	ISC_STATUS_ARRAY statusVector;
 	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
 	if (!base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
+		iscLogStatus("Cannot initialize the shared memory region", statusVector);
 		status_exception::raise(statusVector);
 	}
 
@@ -104,7 +109,7 @@ DatabaseSnapshot::SharedData::~SharedData()
 	ISC_mutex_fini(&base->mutex);
 #endif
 
-	Arg::StatusVector statusVector;
+	ISC_STATUS_ARRAY statusVector;
 	ISC_unmap_file(statusVector, &handle);
 }
 
@@ -119,7 +124,7 @@ void DatabaseSnapshot::SharedData::acquire()
 	if (base->allocated > handle.sh_mem_length_mapped)
 	{
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector statusVector;
+		ISC_STATUS_ARRAY statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
 		if (!base)
 		{
@@ -271,7 +276,7 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #if (defined HAVE_MMAP || defined WIN_NT)
-		Arg::StatusVector statusVector;
+		ISC_STATUS_ARRAY statusVector;
 		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
 		if (!base)
 		{
@@ -404,16 +409,27 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
+
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	RecordBuffer* const dbb_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+	RecordBuffer* const att_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+	RecordBuffer* const tra_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+	RecordBuffer* const stmt_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+	RecordBuffer* const call_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+	RecordBuffer* const io_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+	RecordBuffer* const rec_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
+	RecordBuffer* const ctx_var_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+	RecordBuffer* const mem_usage_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
 
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
@@ -674,7 +690,9 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 		MOV_move(tdbb, &from_desc, &to_desc);
 
 		if (set_charset)
+		{
 			charset = (int) value;
+		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -767,7 +785,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
+		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
 			continue;
 
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -793,9 +811,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			{
 				request->adjustCallerStats();
 
-				if (!(request->getStatement()->flags &
-						(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
-					request->req_caller)
+				if (!(request->req_flags & (req_internal | req_sys_trigger)) && request->req_caller)
 				{
 					putCall(request, writer, fb_utils::genUniqueId());
 				}
@@ -804,14 +820,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 		// Request information
 
-		for (const jrd_req* const* i = attachment->att_requests.begin();
-			 i != attachment->att_requests.end();
-			 ++i)
+		for (request = attachment->att_requests; request; request = request->req_request)
 		{
-			const jrd_req* request = *i;
-
-			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+			if (!(request->req_flags & (req_internal | req_sys_trigger)))
 			{
 				putRequest(request, writer, fb_utils::genUniqueId());
 			}
@@ -917,7 +928,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	writer.putRecord(record);
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -929,8 +940,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
-	Writer& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
 
@@ -992,7 +1002,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	writer.putRecord(record);
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
@@ -1092,9 +1102,9 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int st
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 	}
 	// sql text
-	if (request->getStatement()->sqlText)
+	if (request->req_sql_text)
 	{
-		record.storeString(f_mon_stmt_sql_text, *request->getStatement()->sqlText);
+		record.storeString(f_mon_stmt_sql_text, *request->req_sql_text);
 	}
 
 	// statistics
@@ -1109,40 +1119,33 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 {
 	fb_assert(request);
 
-	const jrd_req* initialRequest = request->req_caller;
-	while (initialRequest->req_caller)
+	const jrd_req* statement = request->req_caller;
+	while (statement->req_caller)
 	{
-		initialRequest = initialRequest->req_caller;
+		statement = statement->req_caller;
 	}
-	fb_assert(initialRequest);
+	fb_assert(statement);
 
 	DumpRecord record(rel_mon_calls);
 
 	// call id
 	record.storeGlobalId(f_mon_call_id, getGlobalId(request->req_id));
 	// statement id
-	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(initialRequest->req_id));
+	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(statement->req_id));
 	// caller id
-	if (initialRequest != request->req_caller)
+	if (statement != request->req_caller)
 	{
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
-
-	JrdStatement* statement = request->getStatement();
-	const Routine* routine = statement->getRoutine();
-
 	// object name/type
-	if (routine)
+	if (request->req_procedure)
 	{
-		if (routine->getName().package.hasData())
-			record.storeString(f_mon_call_pkg_name, routine->getName().package);
-
-		record.storeString(f_mon_call_name, routine->getName().identifier);
-		record.storeInteger(f_mon_call_type, routine->getObjectType());
+		record.storeString(f_mon_call_name, request->req_procedure->prc_name);
+		record.storeInteger(f_mon_call_type, obj_procedure);
 	}
-	else if (!statement->triggerName.isEmpty())
+	else if (!request->req_trg_name.isEmpty())
 	{
-		record.storeString(f_mon_call_name, statement->triggerName);
+		record.storeString(f_mon_call_name, request->req_trg_name);
 		record.storeInteger(f_mon_call_type, obj_trigger);
 	}
 	else
@@ -1150,7 +1153,6 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		// we should never be here...
 		fb_assert(false);
 	}
-
 	// timestamp
 	record.storeTimestamp(f_mon_call_timestamp, request->req_timestamp);
 	// source line/column

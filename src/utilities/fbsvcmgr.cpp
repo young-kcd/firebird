@@ -55,20 +55,15 @@ struct SvcSwitches
 	UCHAR tagInf;
 };
 
-// Get message from messages database
-
-namespace
-{
-	const int SVCMGR_FACILITY = 22;
-	using MsgFormat::SafeArg;
-}
+// Get message from security database
 
 string getMessage(int n)
 {
 	char buffer[256];
-	static const SafeArg dummy;
+	const int FACILITY = 22;
+	static const MsgFormat::SafeArg dummy;
 
-	fb_msg_format(0, SVCMGR_FACILITY, n, sizeof(buffer), buffer, dummy);
+	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, dummy);
 
 	return string(buffer);
 }
@@ -341,7 +336,6 @@ const SvcSwitches backupOptions[] =
 	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
 	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
-	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -363,7 +357,6 @@ const SvcSwitches restoreOptions[] =
 	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
 	{"res_fix_fss_data", putStringArgument, 0, isc_spb_res_fix_fss_data, 0},
 	{"res_fix_fss_metadata", putStringArgument, 0, isc_spb_res_fix_fss_metadata, 0},
-	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -491,8 +484,8 @@ const SvcSwitches actionSwitch[] =
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
-	{"action_nbak", putSingleTag, nbackOptions, isc_action_svc_nbak, isc_info_svc_line},
-	{"action_nrest", putSingleTag, nrestOptions, isc_action_svc_nrest, isc_info_svc_line},
+	{"action_nbak", putSingleTag, nbackOptions, isc_action_svc_nbak, 0},
+	{"action_nrest", putSingleTag, nrestOptions, isc_action_svc_nrest, 0},
 	{"action_trace_start", putSingleTag, traceStartOptions, isc_action_svc_trace_start, isc_info_svc_to_eof},
 	{"action_trace_suspend", putSingleTag, traceChgStateOptions, isc_action_svc_trace_suspend, isc_info_svc_line},
 	{"action_trace_resume", putSingleTag, traceChgStateOptions, isc_action_svc_trace_resume, isc_info_svc_line},
@@ -550,16 +543,6 @@ void printString(const char*& p, int num)
 void printMessage(int num)
 {
 	printf ("%s\n", getMessage(num).c_str());
-}
-
-void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
-{
-	char buffer[256];
-	fb_msg_format(NULL, SVCMGR_FACILITY, number, sizeof(buffer), buffer, arg);
-	if (newLine)
-		printf("%s\n", buffer);
-	else
-		printf("%s", buffer);
 }
 
 void printNumeric(const char*& p, int num)
@@ -792,78 +775,13 @@ bool printInfo(const char* p, UserPrint& up)
 	return ret;
 }
 
-// print known switches help
-
-struct TypeText
-{
-	PopulateFunction* populate;
-	const char* text;
-} typeText[] = {
-	{ putStringArgument, "string value" },
-	{ putFileArgument, "file name" },
-	{ putFileFromArgument, "file name" },
-	{ putAccessMode, "prp_am_readonly | prp_am_readwrite" },
-	{ putWriteMode, "prp_wm_async | prp_wm_sync" },
-	{ putReserveSpace, "prp_res_use_full | prp_res" },
-	{ putShutdownMode, "prp_sm_normal | prp_sm_multi | prp_sm_single | prp_sm_full" },
-	{ putNumericArgument, "numeric value" },
-	{ putOption, NULL },
-	{ putSingleTag, NULL },
-	{ NULL, NULL }
-};
-
-void printHelp(unsigned int offset, const SvcSwitches* sw)
-{
-	for (; sw->name; ++sw)
-	{
-		TypeText* tt = typeText;
-		for (; tt->populate; ++tt)
-		{
-			if (sw->populate == tt->populate)
-			{
-				for (unsigned int n = 0; n < offset; ++n)
-					putchar(' ');
-
-				printf("%s", sw->name);
-				if (tt->text)
-					printf(" [%s]", tt->text);
-				if (sw->options)
-					putchar(':');
-				putchar('\n');
-
-				if (sw->options)
-					printHelp(offset + 4, sw->options);
-				break;
-			}
-		}
-
-		fb_assert(tt->populate);
-	}
-}
-
 // short usage from firebird.msg
 
-void usage(bool listSwitches)
+void usage()
 {
 	for (int i = 19; i <= 33; ++i)
 	{
 		printf("%s\n", getMessage(i).c_str());
-	}
-
-	if (! listSwitches)
-	{
-		printf("%s\n", getMessage(53).c_str());
-	}
-	else
-	{
-		printf("\n%s\n", getMessage(54).c_str());
-		printHelp(0, attSwitch);
-
-		printf("\n%s\n", getMessage(55).c_str());
-		printHelp(0, infSwitch);
-
-		printf("\n%s\n", getMessage(56).c_str());
-		printHelp(0, actionSwitch);
 	}
 }
 
@@ -889,13 +807,13 @@ int main(int ac, char** av)
 {
 	if (ac < 2 || (ac == 2 && strcmp(av[1], "-?") == 0))
 	{
-		usage(ac == 2);
+		usage();
 		return 1;
 	}
 
 	if (ac == 2 && (strcmp(av[1], "-z") == 0 || strcmp(av[1], "-Z") == 0))
 	{
-		printMessage(51, SafeArg() << FB_VERSION);
+		printf("Firebird services manager version %s\n", FB_VERSION);
 		return 0;
 	}
 
@@ -933,7 +851,7 @@ int main(int ac, char** av)
 		{
 			if (strcmp(av[0], "-z") == 0 || strcmp(av[0], "-Z") == 0)
 			{
-				printMessage(51, SafeArg() << FB_VERSION);
+				printf("Firebird services manager version %s\n", FB_VERSION);
 				++av;
 			}
 		}

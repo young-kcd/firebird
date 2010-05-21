@@ -54,7 +54,8 @@ static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
 static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
 static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const, const UCHAR*, const UCHAR* const);
 static bool sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
-static int sleuth_merge(const UCHAR*, const UCHAR*, const UCHAR* const, UCHAR* const);
+static int sleuth_merge(const UCHAR*, /*const UCHAR* const,*/ const UCHAR*, const UCHAR* const,
+	UCHAR* const);
 static bool string_boolean(qli_nod*);
 static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
@@ -963,7 +964,9 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 	// Merge search and control strings
 
 	UCHAR control[256];
-	l2 = sleuth_merge((const UCHAR*) p2, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control);
+	l2 = sleuth_merge((const UCHAR*) p2, //(const UCHAR*) (p2 + l2),
+					  (const UCHAR*) p1, (const UCHAR*) (p1 + l1),
+					  control);
 
 	// If source is not a blob, do a simple search
 
@@ -1173,7 +1176,7 @@ static bool sleuth_class( const USHORT flags,
 }
 
 
-static int sleuth_merge(const UCHAR* match,
+static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 						const UCHAR* control, const UCHAR* const end_control,
 						UCHAR* const combined)
 {

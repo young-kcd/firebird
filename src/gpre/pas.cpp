@@ -1031,12 +1031,12 @@ static void gen_create_database( const act* action, int column)
 	align(column);
 
 	if (request->req_length)
-		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, %d, gds__%d, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string,
 				   request->req_length, request->req_ident);
 	else
-		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, 0, 0, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string);
 
@@ -1359,7 +1359,7 @@ static void gen_drop_database( const act* action, int column)
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 	align(column);
 
-	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %" SIZEFORMAT ", '%s', RDB$K_DB_TYPE_GDS);",
+	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
 	set_sqlcode(action, column);
@@ -1800,7 +1800,7 @@ static void gen_event_init( const act* action, int column)
 	PAT args;
 	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
+	args.pat_value1 = (int) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 	args.pat_string1 = GDS_EVENT_WAIT;
 	args.pat_string2 = GDS_EVENT_COUNTS;
@@ -1872,7 +1872,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string))
 		{
-			ident = (int) (IPTR) event_init->nod_arg[2];
+			ident = (int) event_init->nod_arg[2];
 			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}
@@ -1914,6 +1914,54 @@ static void gen_fetch( const act* action, int column)
 {
 	const gpre_req* request = action->act_request;
 
+#ifdef SCROLLABLE_CURSORS
+	gpre_port* port = request->req_aport
+	if (port)
+	{
+		// set up the reference to point to the correct value
+		// in the linked list of values, and prepare for the
+		// next FETCH statement if applicable
+		ref* reference;
+
+		for (reference = port->por_references; reference; reference = reference->ref_next)
+		{
+			gpre_value* value = reference->ref_values;
+			reference->ref_value = value->val_value;
+			reference->ref_values = value->val_next;
+		}
+
+		// find the direction and offset parameters
+
+		reference = port->por_references;
+		const TEXT* offset = reference->ref_value;
+		reference = reference->ref_next;
+		const TEXT* direction = reference->ref_value;
+
+		// the direction in which the engine will scroll is sticky, so check to see
+		// the last direction passed to the engine; if the direction is the same and
+		// the offset is 1, then there is no need to pass the message; this prevents
+		// extra packets and allows for batch fetches in either direction
+
+		printa(column, "if (isc_%ddirection MOD 2 <> %s) or (%s <> 1) then",
+			   request->req_ident, direction, offset);
+		column += INDENT;
+		begin(column);
+
+		// assign the direction and offset parameters to the appropriate message,
+		// then send the message to the engine
+
+		asgn_from(action, port->por_references, column);
+		gen_send(action, port, column);
+		printa(column, "isc_%ddirection := %s;", request->req_ident, direction);
+		column -= INDENT;
+		endp(column);
+
+		printa(column, "if SQLCODE = 0 then");
+		column += INDENT;
+		begin(column);
+	}
+#endif
+
 	if (request->req_sync)
 	{
 		gen_send(action, request->req_sync, column);
@@ -1945,6 +1993,14 @@ static void gen_fetch( const act* action, int column)
 		column -= INDENT;
 		endp(column);
 	}
+
+#ifdef SCROLLABLE_CURSORS
+	if (port)
+	{
+		column -= INDENT;
+		endp(column);
+	}
+#endif
 }
 
 
@@ -2458,6 +2514,11 @@ static void gen_request( const gpre_req* request, int column)
 		if (request->req_flags & REQ_sql_cursor)
 			printa(column, "gds__%ds\t: %s gds__handle := nil;\t\t(* SQL statement handle *)",
 				   request->req_ident, sw_volatile);
+#ifdef SCROLLABLE_CURSORS
+		if (request->req_flags & REQ_scroll)
+			printa(column, "gds__%ddirection\t: %s := 0;\t\t(* last direction sent to engine *)",
+				   request->req_ident, SHORT_DCL);
+#endif
 		printa(column, "gds__%dl\t: %s := %d;\t\t(* request length *)",
 			   request->req_ident, SHORT_DCL, request->req_length);
 		printa(column, "gds__%d\t: %s [1..%d] of char := %s",
@@ -3317,7 +3378,7 @@ static void make_ready(const gpre_dbb* db,
 	}
 	else
 	{
-		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, %s, %s);",
+		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);",
 				   vector, strlen(db->dbb_filename), db->dbb_filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));

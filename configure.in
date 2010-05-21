@@ -47,7 +47,6 @@ dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
 RAW_DEVICES_FLG=Y
-EXPORT_SYMBOLS_STYLE=linux
 INSTALL_PREFIX=""
 
 dnl Use /usr/lib for library links on most platforms except some 64-bit ones
@@ -75,7 +74,6 @@ dnl    MAKEFILE_PREFIX=darwin_i386
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
     CPU_TYPE=x86_64
-	EXPORT_SYMBOLS_STYLE=darwin
     ;;
 
   powerpc-*-darwin*)
@@ -90,7 +88,6 @@ dnl MAKEFILE_PREFIX=darwin_ppc64
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
 dnl CPU_TYPE=ppc64
-	EXPORT_SYMBOLS_STYLE=darwin
     ;;
 
   powerpc-*-aix*)
@@ -111,7 +108,6 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(AIX, 1, [Define this if OS is AIX])
     EDITLINE_FLG=N
     SHRLIB_EXT=so
-	EXPORT_SYMBOLS_STYLE=aix
     ;;
 
   amd64-*-freebsd* | x86_64*-*-freebsd* | x86_64*-*-k*bsd*-gnu)
@@ -308,7 +304,6 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     libdir=/usr/lib/pa20_64
-	EXPORT_SYMBOLS_STYLE=hpux
     ;;
 
   hppa*-*-hpux*)
@@ -327,7 +322,6 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
-	EXPORT_SYMBOLS_STYLE=hpux
     ;;
 
   i386-pc-solaris*)
@@ -348,7 +342,6 @@ dnl CPU_TYPE=ppc64
     if test "$isa" = "amd64"; then
         libdir=/usr/lib/amd64
     fi
-    CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas_sax.il";
     INSTALL_PREFIX=solaris
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
@@ -366,13 +359,12 @@ dnl CPU_TYPE=ppc64
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
            if test "${target#*solaris}" = "2.9"; then
-             ATOMIC_OPTIONS=`pwd`"/src/common/classes/fb_atomic.il";
+             ATOMIC_OPTIONS="../src/common/classes/fb_atomic.il";
            fi
            ;;
        *)  MAKEFILE_PREFIX=solaris-64gcc ;
            ICU_PLATFORM=SOLARISGCC ;;
     esac
-    CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas.il";
     INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
@@ -407,7 +399,7 @@ AC_SUBST(AR_OPTIONS)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
-AC_DEFINE(CASE_SENSITIVITY, true, [Define this if paths are case sensitive])
+AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
 AC_SUBST(RPM64)
 
 
@@ -654,6 +646,7 @@ AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
 AC_CHECK_HEADERS(atomic.h)
 AC_CHECK_HEADERS(atomic_ops.h)
+AC_CHECK_HEADERS(utime.h)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
@@ -674,7 +667,6 @@ dnl HP-UX atomic routines are in atomic library, not standard C library.
 dnl If we can't find atomic routines in vendor library, look for atomic_ops.
 AC_SEARCH_LIBS(atomic_inc, atomic,,
 	AC_CHECK_LIB(atomic_ops, main))
-
 
 dnl Check for libraries for static C++ runtime linking
 AC_CHECK_LIB(supc++, main, XE_APPEND(-lsupc++, STATIC_CXXSUPPORT_LIB))
@@ -971,7 +963,6 @@ AC_COMPILE_IFELSE(
 CXXFLAGS=$pre_tls_cxxflags
 AC_SUBST(TLS_OPTIONS)
 AC_SUBST(ATOMIC_OPTIONS)
-AC_SUBST(CAS_OPTIONS)
 
 dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 
@@ -994,7 +985,6 @@ NEW_FIREBIRD_DIR=$GEN_ROOT/firebird
 
 AC_SUBST(BUILD_ROOT_DIR)
 AC_SUBST(NEW_FIREBIRD_DIR)
-AC_SUBST(EXPORT_SYMBOLS_STYLE)
 
 AC_DEFINE_UNQUOTED(FB_PREFIX, $(if test "x$prefix" = "xNONE" ; then echo \"$ac_default_prefix\"; else echo \"$prefix\"; fi), [Installation path prefix])
 
@@ -1009,10 +999,8 @@ mkdir -p gen/iscguard
 mkdir -p gen/isql
 mkdir -p gen/jrd
 mkdir -p gen/jrd/extds
-mkdir -p gen/jrd/recsrc
 mkdir -p gen/jrd/trace
 mkdir -p gen/msgs
-mkdir -p gen/plugins/udr_engine
 mkdir -p gen/qli
 mkdir -p gen/utilities
 mkdir -p gen/examples
@@ -1034,13 +1022,11 @@ dnl # mkdir -p gen/firebird/examples/build_unix
 dnl # mkdir -p gen/firebird/examples/build_win32
 mkdir -p gen/firebird/examples/empbuild
 mkdir -p gen/firebird/examples/include
-mkdir -p gen/firebird/examples/udr
 mkdir -p gen/firebird/examples/stat
 mkdir -p gen/firebird/examples/udf
 mkdir -p gen/firebird/lib
 mkdir -p gen/firebird/misc
 mkdir -p gen/firebird/help
-mkdir -p gen/firebird/plugins/udr
 
 dnl # rebuild version header if needed
 ./src/misc/writeBuildNum.sh rebuildHeader
@@ -1048,10 +1034,50 @@ dnl # rebuild version header if needed
 dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
+mkdir -p temp/boot/alice
+mkdir -p temp/boot/auth/trusted
+mkdir -p temp/boot/burp
+mkdir -p temp/boot/common/classes
+mkdir -p temp/boot/common/config
+mkdir -p temp/boot/config
+mkdir -p temp/boot/dsql
+mkdir -p temp/boot/dudley
+mkdir -p temp/boot/extlib
+mkdir -p temp/boot/extlib/fbudf
+mkdir -p temp/boot/gpre
+mkdir -p temp/boot/intl
+mkdir -p temp/boot/ipserver
+mkdir -p temp/boot/iscguard
+mkdir -p temp/boot/isql
+mkdir -p temp/boot/jrd
+mkdir -p temp/boot/jrd/extds
+mkdir -p temp/boot/jrd/trace
+mkdir -p temp/boot/jrd/os/posix
+mkdir -p temp/boot/jrd/os/win32
+mkdir -p temp/boot/jrd/os/darwin
+mkdir -p temp/boot/lock
+mkdir -p temp/boot/misc
+mkdir -p temp/boot/msgs
+mkdir -p temp/boot/qli
+mkdir -p temp/boot/remote
+mkdir -p temp/boot/remote/os/win32
+mkdir -p temp/boot/remote/os/sun
+mkdir -p temp/boot/remote/os/darwin
+mkdir -p temp/boot/utilities/common
+mkdir -p temp/boot/utilities/fbtracemgr
+mkdir -p temp/boot/utilities/gsec
+mkdir -p temp/boot/utilities/gstat
+mkdir -p temp/boot/utilities/guard
+mkdir -p temp/boot/utilities/ibmgr
+mkdir -p temp/boot/utilities/install
+mkdir -p temp/boot/utilities/nbackup
+mkdir -p temp/boot/utilities/rebuild
+mkdir -p temp/boot/utilities/ntrace
+mkdir -p temp/boot/vulcan
+
 mkdir -p temp/extern/binreloc
 mkdir -p temp/std/alice
 mkdir -p temp/std/auth/trusted
-mkdir -p temp/std/auth/SecurityDatabase
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
@@ -1067,7 +1093,6 @@ mkdir -p temp/std/iscguard
 mkdir -p temp/std/isql
 mkdir -p temp/std/jrd
 mkdir -p temp/std/jrd/extds
-mkdir -p temp/std/jrd/recsrc
 mkdir -p temp/std/jrd/trace
 mkdir -p temp/std/jrd/os/posix
 mkdir -p temp/std/jrd/os/win32
@@ -1075,7 +1100,6 @@ mkdir -p temp/std/jrd/os/darwin
 mkdir -p temp/std/lock
 mkdir -p temp/std/misc
 mkdir -p temp/std/msgs
-mkdir -p temp/std/plugins/udr_engine
 mkdir -p temp/std/qli
 mkdir -p temp/std/remote
 mkdir -p temp/std/remote/os/win32
@@ -1095,7 +1119,6 @@ mkdir -p temp/std/vulcan
 
 mkdir -p temp/superclient/alice
 mkdir -p temp/superclient/auth/trusted
-mkdir -p temp/superclient/auth/SecurityDatabase
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
@@ -1111,7 +1134,6 @@ mkdir -p temp/superclient/iscguard
 mkdir -p temp/superclient/isql
 mkdir -p temp/superclient/jrd
 mkdir -p temp/superclient/jrd/extds
-mkdir -p temp/superclient/jrd/recsrc
 mkdir -p temp/superclient/jrd/trace
 mkdir -p temp/superclient/jrd/os/posix
 mkdir -p temp/superclient/jrd/os/win32
@@ -1119,7 +1141,6 @@ mkdir -p temp/superclient/jrd/os/darwin
 mkdir -p temp/superclient/lock
 mkdir -p temp/superclient/misc
 mkdir -p temp/superclient/msgs
-mkdir -p temp/superclient/plugins/udr_engine
 mkdir -p temp/superclient/qli
 mkdir -p temp/superclient/remote
 mkdir -p temp/superclient/remote/os/win32
@@ -1139,7 +1160,6 @@ mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
 mkdir -p temp/superserver/auth/trusted
-mkdir -p temp/superserver/auth/SecurityDatabase
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config
@@ -1155,7 +1175,6 @@ mkdir -p temp/superserver/iscguard
 mkdir -p temp/superserver/isql
 mkdir -p temp/superserver/jrd
 mkdir -p temp/superserver/jrd/extds
-mkdir -p temp/superserver/jrd/recsrc
 mkdir -p temp/superserver/jrd/trace
 mkdir -p temp/superserver/jrd/os/posix
 mkdir -p temp/superserver/jrd/os/win32
@@ -1163,7 +1182,6 @@ mkdir -p temp/superserver/jrd/os/darwin
 mkdir -p temp/superserver/lock
 mkdir -p temp/superserver/misc
 mkdir -p temp/superserver/msgs
-mkdir -p temp/superserver/plugins/udr_engine
 mkdir -p temp/superserver/qli
 mkdir -p temp/superserver/remote
 mkdir -p temp/superserver/remote/os/win32
@@ -1181,8 +1199,6 @@ mkdir -p temp/superserver/utilities/rebuild
 mkdir -p temp/superserver/utilities/ntrace
 mkdir -p temp/superserver/vulcan
 
-mkdir -p temp/examples/udr
-
 ])
 
 
@@ -1190,10 +1206,10 @@ MAKE_SRC_DIR=builds/posix
 
 dnl common files for all posix hosts
 dnl TODO: fix "arch-specific/linux/" paths for common posix scripts with SVN
-AC_CONFIG_FILES([gen/firebird/firebird.conf:builds/install/misc/firebird.conf.in
-gen/firebird/aliases.conf:builds/install/misc/aliases.conf.in
-gen/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
-gen/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
+AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf.in
+gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
+gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
+gen/install/misc/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
 gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
 gen/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
 gen/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in
@@ -1208,7 +1224,6 @@ gen/firebird/bin/preuninstall.sh:builds/install/arch-specific/linux/misc/preunin
 gen/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postuninstall.sh.in
 gen/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
 gen/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
-gen/vers.sh:builds/posix/vers.sh.in
 gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
 gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
 gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
@@ -1351,6 +1366,7 @@ gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
 gen/Makefile.client.gfix:${MAKE_SRC_DIR}/Makefile.in.client.gfix
+gen/Makefile.client.gdef:${MAKE_SRC_DIR}/Makefile.in.client.gdef
 gen/Makefile.client.qli:${MAKE_SRC_DIR}/Makefile.in.client.qli
 gen/Makefile.client.isql:${MAKE_SRC_DIR}/Makefile.in.client.isql
 gen/Makefile.client.gpre:${MAKE_SRC_DIR}/Makefile.in.client.gpre
@@ -1359,15 +1375,15 @@ gen/Makefile.client.gsec:${MAKE_SRC_DIR}/Makefile.in.client.gsec
 gen/Makefile.intl:${MAKE_SRC_DIR}/Makefile.in.intl
 gen/Makefile.msgs:${MAKE_SRC_DIR}/Makefile.in.msgs
 gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
-gen/Makefile.plugins:${MAKE_SRC_DIR}/Makefile.in.plugins
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
-gen/examples/Makefile.plugins_examples:${MAKE_SRC_DIR}/Makefile.in.plugins_examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
+gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
 gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
 gen/Makefile.embed.gbak:${MAKE_SRC_DIR}/Makefile.in.embed.gbak
 gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
+gen/Makefile.embed.gdef:${MAKE_SRC_DIR}/Makefile.in.embed.gdef
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.fbtrace:${MAKE_SRC_DIR}/Makefile.in.fbtrace

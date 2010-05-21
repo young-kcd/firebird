@@ -329,6 +329,10 @@
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\timestamp.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -344,6 +348,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\extlib\fbudf\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\timestamp.h"
 				>
 			</File>
 		</Filter>

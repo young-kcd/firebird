@@ -31,7 +31,6 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/QualifiedName.h"
 #include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
@@ -86,11 +85,6 @@ void StatusVector::ImplStatusVector::clear() throw()
 	m_status_vector[0] = isc_arg_end;
 }
 
-void StatusVector::ImplStatusVector::makePermanent() throw()
-{
-	makePermanentVector(m_status_vector);
-}
-
 void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 {
 	ImplStatusVector newVector(getKind(), getCode());
@@ -119,7 +113,7 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
 }
 
-bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const unsigned int count) throw()
+bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
 	// CVC: I didn't expect count to be zero but it's, in some calls
 	fb_assert(count >= 0 && count <= ISC_STATUS_LENGTH);
@@ -128,7 +122,7 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 
 	unsigned int copied = 0;
 
-	for (unsigned int i = 0; i < count; )
+	for (int i = 0; i < count; )
 	{
 		if (from[i] == isc_arg_end)
 		{
@@ -146,7 +140,7 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 	m_length += copied;
 	m_status_vector[m_length] = isc_arg_end;
 
-	return copied == count;
+	return copied == static_cast<unsigned int>(count);
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()
@@ -178,11 +172,6 @@ void StatusVector::ImplStatusVector::shiftLeft(const AbstractString& text) throw
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const MetaName& text) throw()
-{
-	shiftLeft(Str(text));
-}
-
-void StatusVector::ImplStatusVector::shiftLeft(const QualifiedName& text) throw()
 {
 	shiftLeft(Str(text));
 }
@@ -235,7 +224,6 @@ Windows::Windows(ISC_STATUS s) throw() :
 Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
-// Str overloading.
 Str::Str(const char* text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
@@ -244,10 +232,6 @@ Str::Str(const AbstractString& text) throw() :
 
 Str::Str(const MetaName& text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
-
-Str::Str(const QualifiedName& text) throw() :
-	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.toString().c_str()) { }
-
 
 SqlState::SqlState(const char* text) throw() :
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text) { }

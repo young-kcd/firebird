@@ -73,138 +73,73 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/scl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
+#include "../jrd/sort_proto.h"
 #include "../jrd/execute_statement.h"
 #include "../jrd/Optimizer.h"
 
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 
-// Pick up relation ids
+/* Pick up relation ids */
 #include "../jrd/ini.h"
 
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
 #include "../dsql/Nodes.h"
-#include "../jrd/ValuesImpl.h"
-#include "../jrd/recsrc/RecordSource.h"
-#include "../jrd/recsrc/Cursor.h"
-#include "../jrd/Function.h"
-#include "../jrd/misc_func_ids.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/StmtNodes.h"
 
-using namespace Jrd;
-using namespace Firebird;
+using Firebird::AutoSetRestore;
 
 
-// Firebird provides transparent conversion from string to date in
-// contexts where it makes sense.  This macro checks a descriptor to
-// see if it is something that *could* represent a date value
-
+/* Firebird provides transparent conversion from string to date in
+ * contexts where it makes sense.  This macro checks a descriptor to
+ * see if it is something that *could* represent a date value
+ */
 inline bool COULD_BE_DATE(const dsc desc)
 {
 	return ((DTYPE_IS_DATE(desc.dsc_dtype)) || (desc.dsc_dtype <= dtype_any_text));
 }
+//#define COULD_BE_DATE(d)	((DTYPE_IS_DATE((d).dsc_dtype)) || ((d).dsc_dtype <= dtype_any_text))
 
-// One of d1,d2 is time, the other is date
+/* One of d1,d2 is time, the other is date */
 inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2)
 {
 	return (((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
 	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
 }
+//#define IS_DATE_AND_TIME(d1, d2)
+//  ((((d1).dsc_dtype==dtype_sql_time)&&((d2).dsc_dtype==dtype_sql_date)) ||
+//   (((d2).dsc_dtype==dtype_sql_time)&&((d1).dsc_dtype==dtype_sql_date)))
 
+// size of req_rpb[0]
+const size_t REQ_TAIL = sizeof(Jrd::jrd_req::blk_repeat_type);
+const int MAP_LENGTH = 256;
 
-namespace
-{
-	// Node copier for views.
-	class ViewNodeCopier : public NodeCopier
-	{
-	public:
-		ViewNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap)
-			: NodeCopier(aCsb, aRemap)
-		{
-		}
+/* RITTER - changed HP10 to HPUX */
+#if defined (HPUX) && defined (SUPERSERVER)
+const int MAX_RECURSION		= 96;
+#else
+const int MAX_RECURSION		= 128;
+#endif
 
-	protected:
-		virtual bool remapArgument()
-		{
-			return true;
-		}
+const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 
-		virtual USHORT remapField(USHORT stream, USHORT fldId)
-		{
-			jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-			jrd_fld* field = MET_get_field(relation, fldId);
-
-			if (field->fld_source)
-				fldId = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
-
-			return fldId;
-		}
-	};
-
-	// Node copier that remaps the field id 0 of stream 0 to a given field id.
-	class RemapFieldNodeCopier : public NodeCopier
-	{
-	public:
-		RemapFieldNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
-			: NodeCopier(aCsb, aRemap),
-			  fldId(aFldId)
-		{
-		}
-
-	protected:
-		virtual USHORT getFieldId(jrd_nod* input)
-		{
-			if ((input->nod_flags & nod_id) && !input->nod_arg[e_fld_id] &&
-				!input->nod_arg[e_fld_stream])
-			{
-				return fldId;
-			}
-
-			return NodeCopier::getFieldId(input);
-		}
-
-	private:
-		USHORT fldId;
-	};
-
-	// Copy sub expressions (including subqueries).
-	class SubExprNodeCopier : public NodeCopier
-	{
-	public:
-		explicit SubExprNodeCopier(CompilerScratch* aCsb)
-			: NodeCopier(aCsb, localMap)
-		{
-			// Initialize the map so all streams initially resolve to the original number. As soon
-			// copy creates new streams, the map are being overwritten.
-			for (unsigned i = 0; i < JrdStatement::MAP_LENGTH; ++i)
-				localMap[i] = i;
-		}
-
-		static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input)
-		{
-			SubExprNodeCopier obj(csb);
-			return static_cast<NodeCopier&>(obj).copy(tdbb, input);
-		}
-
-	private:
-		UCHAR localMap[JrdStatement::MAP_LENGTH];
-	};
-}	// namespace
+using namespace Jrd;
+using namespace Firebird;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
+static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
-static void mark_variant(CompilerScratch* csb, USHORT stream);
+static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
@@ -223,12 +158,44 @@ static RecordSource* post_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 static void process_map(thread_db*, CompilerScratch*, jrd_nod*, Format**);
 static SSHORT strcmp_space(const char*, const char*);
-static bool stream_in_rse(const USHORT, const RecordSelExpr*);
+static bool stream_in_rse(USHORT, const RecordSelExpr*);
+static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request);
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
 #ifdef CMP_DEBUG
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
+
+bool CMP_clone_is_active(const jrd_req* request)
+{
+/**************************************
+ *
+ *	C M P _ c l o n e _ i s _ a c t i v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Determine if a request or any of its clones are active.
+ *
+ **************************************/
+	DEV_BLKCHK(request, type_req);
+
+	if (request->req_flags & req_in_use)
+		return true;
+
+	vec<jrd_req*>* vector = request->req_sub_requests;
+	if (vector) {
+		for (vec<jrd_req*>::const_iterator sub_req = vector->begin(), end = vector->end();
+			sub_req < end; ++sub_req)
+		{
+			if (*sub_req && (*sub_req)->req_flags & req_in_use)
+				return true;
+		}
+	}
+
+	return false;
+}
 
 
 jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
@@ -248,7 +215,7 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	return NodeCopier::copy(tdbb, csb, node, NULL);
+	return copy(tdbb, csb, node, NULL, 0, NULL, false);
 }
 
 
@@ -274,8 +241,340 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		return node;
 	}
 
-	jrd_nod* clone = NodeCopier::copy(tdbb, csb, node, NULL);
+	jrd_nod* clone = copy(tdbb, csb, node, NULL, 0, NULL, false);
 	CMP_pass2(tdbb, csb, clone, 0);
+
+	return clone;
+}
+
+
+inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, trig_vec* tvec)
+/**************************************
+ *
+ *	t r i g g e r s _ e x t e r n a l _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Invoke build_external_access for triggers in vector
+ *
+ **************************************/
+{
+	if (tvec) {
+		for (size_t i = 0; i < tvec->getCount(); i++)
+		{
+			Trigger& t = (*tvec)[i];
+			t.compile(tdbb);
+			if (t.request)
+			{
+				build_external_access(tdbb, list, t.request);
+			}
+		}
+	}
+}
+
+
+static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request)
+{
+/**************************************
+ *
+ *	b u i l d _ e x t e r n a l _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Recursively walk external dependencies (procedures, triggers) for request to assemble full
+ *  list of requests it depends on
+ *
+ **************************************/
+	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++)
+	{
+		size_t i;
+		if (list.find(*item, i))
+			continue;
+
+		list.insert(i, *item);
+
+		// Add externals recursively
+		if (item->exa_action == ExternalAccess::exa_procedure) {
+			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (prc && prc->prc_request)
+				build_external_access(tdbb, list, prc->prc_request);
+		}
+		else {
+			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+
+			if (!relation)
+				continue;
+
+			trig_vec *vec1, *vec2;
+			switch (item->exa_action)
+			{
+			case ExternalAccess::exa_insert:
+				vec1 = relation->rel_pre_store;
+				vec2 = relation->rel_post_store;
+				break;
+			case ExternalAccess::exa_update:
+				vec1 = relation->rel_pre_modify;
+				vec2 = relation->rel_post_modify;
+				break;
+			case ExternalAccess::exa_delete:
+				vec1 = relation->rel_pre_erase;
+				vec2 = relation->rel_post_erase;
+				break;
+			default:
+				continue; // should never happen, silence the compiler
+			}
+			triggers_external_access(tdbb, list, vec1);
+			triggers_external_access(tdbb, list, vec2);
+		}
+	}
+}
+
+
+static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view)
+{
+/**************************************
+ *
+ *	v e r i f y _ t r i g g e r _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check that we have enough rights to access all resources this list of triggers touches
+ *
+ **************************************/
+	if (!triggers) {
+		return;
+	}
+
+	SET_TDBB(tdbb);
+
+	for (size_t i = 0; i < triggers->getCount(); i++)
+	{
+		Trigger& t = (*triggers)[i];
+		t.compile(tdbb);
+		if (!t.request)
+		{
+			continue;
+		}
+
+		for (const AccessItem* access = t.request->req_access.begin();
+			access < t.request->req_access.end(); access++)
+		{
+			// If this is not a system relation, we don't post access check if:
+			//
+			// - The table being checked is the owner of the trigger that's accessing it.
+			// - The field being checked is owned by the same table than the trigger
+			//   that's accessing the field.
+			// - Since the trigger name comes in the triggers vector of the table and each
+			//   trigger can be owned by only one table for now, we know for sure that
+			//   it's a trigger defined on our target table.
+
+			if (!(owner_relation->rel_flags & REL_system))
+			{
+				if (!strcmp(access->acc_type, object_table) &&
+					(owner_relation->rel_name == access->acc_name))
+				{
+					continue;
+				}
+				if (!strcmp(access->acc_type, object_column) &&
+					(MET_lookup_field(tdbb, owner_relation, access->acc_name,
+						&access->acc_security_name) >= 0 ||
+					 MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
+				{
+					continue;
+				}
+			}
+
+			// a direct access to an object from this trigger
+			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+			SCL_check_access(tdbb, sec_class,
+							(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
+							t.request->req_trg_name, NULL, access->acc_mask,
+							access->acc_type, access->acc_name, access->acc_r_name);
+		}
+	}
+}
+
+
+void CMP_verify_access(thread_db* tdbb, jrd_req* request)
+{
+/**************************************
+ *
+ *	C M P _ v e r i f y _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Check that we have enough rights to access all resources this request touches including
+ *  resources it used indirectecty via procedures or triggers
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+
+	ExternalAccessList external;
+	build_external_access(tdbb, external, request);
+
+	for (ExternalAccess* item = external.begin(); item < external.end(); item++)
+	{
+		if (item->exa_action == ExternalAccess::exa_procedure) {
+			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
+			if (!prc->prc_request)
+				continue;
+
+			for (const AccessItem* access = prc->prc_request->req_access.begin();
+				 access < prc->prc_request->req_access.end();
+				 access++)
+			{
+				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+				SCL_check_access(tdbb, sec_class, access->acc_view_id, NULL, prc->prc_name,
+								access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+			}
+		}
+		else {
+			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
+			jrd_rel* view = NULL;
+			if (item->exa_view_id)
+				view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
+
+			if (!relation)
+				continue;
+
+			switch (item->exa_action)
+			{
+			case ExternalAccess::exa_insert:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);
+				break;
+			case ExternalAccess::exa_update:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_modify, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_modify, view);
+				break;
+			case ExternalAccess::exa_delete:
+				verify_trigger_access(tdbb, relation, relation->rel_pre_erase, view);
+				verify_trigger_access(tdbb, relation, relation->rel_post_erase, view);
+				break;
+			default:
+				continue; // should never happen, silence the compiler
+			}
+		}
+	}
+
+	// Inherit privileges of caller stored procedure or trigger if and only if
+	// this request is called immediately by caller (check for empty req_caller).
+	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
+	// tra_callback_count incremented only by it.
+	// When external SP's will be introduced we need to decide if they also can
+	// inherit caller's privileges
+	jrd_tra* transaction = tdbb->getTransaction();
+	const jrd_req* exec_stmt_caller =
+		(transaction && transaction->tra_callback_count && !request->req_caller) ?
+			transaction->tra_callback_caller : NULL;
+
+	for (const AccessItem* access = request->req_access.begin();
+		access < request->req_access.end();
+		access++)
+	{
+		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+
+		Firebird::MetaName trgName(exec_stmt_caller ? exec_stmt_caller->req_trg_name : NULL);
+		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ?
+			exec_stmt_caller->req_procedure->prc_name : NULL);
+
+		SCL_check_access(tdbb, sec_class, access->acc_view_id, trgName, prcName,
+			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+	}
+}
+
+
+jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool validate)
+{
+/**************************************
+ *
+ *	C M P _ c l o n e _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the incarnation of the request appropriate for a given level.
+ *	If the incarnation doesn't exist, clone the request.
+ *
+ **************************************/
+	DEV_BLKCHK(request, type_req);
+
+	SET_TDBB(tdbb);
+
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
+	fb_assert(dbb);
+
+	// find the request if we've got it
+
+	if (!level) {
+		return request;
+	}
+
+	jrd_req* clone;
+	vec<jrd_req*>* vector = request->req_sub_requests;
+	if (vector && level < vector->count() && (clone = (*vector)[level]))
+	{
+		return clone;
+	}
+
+	if (validate) {
+		jrd_prc* procedure = request->req_procedure;
+		if (procedure) {
+			const TEXT* prc_sec_name = (procedure->prc_security_name.length() > 0 ?
+				procedure->prc_security_name.c_str() : NULL);
+			const SecurityClass* sec_class = SCL_get_class(tdbb, prc_sec_name);
+			SCL_check_access(tdbb, sec_class, 0, NULL, NULL, SCL_execute,
+							 object_procedure, procedure->prc_name);
+		}
+
+		CMP_verify_access(tdbb, request);
+
+	}
+
+	MemoryPool* const pool = request->req_pool;
+
+	// we need to clone the request - find someplace to put it
+
+	vector = request->req_sub_requests =
+		vec<jrd_req*>::newVector(*pool, request->req_sub_requests, level + 1);
+
+	// clone the request
+
+	const size_t n = (request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
+	clone = FB_NEW_RPT(*pool, n) jrd_req(pool, &dbb->dbb_memory_stats);
+	(*vector)[level] = clone;
+	clone->req_attachment = attachment;
+	clone->req_count = request->req_count;
+	clone->req_impure_size = request->req_impure_size;
+	clone->req_top_node = request->req_top_node;
+	clone->req_trg_name = request->req_trg_name;
+	clone->req_procedure = request->req_procedure;
+	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
+	clone->req_last_xcp = request->req_last_xcp;
+	clone->req_id = fb_utils::genUniqueId();
+
+	// We are cloning full lists here, not assigning pointers
+	clone->req_invariants = request->req_invariants;
+	clone->req_fors = request->req_fors;
+	clone->req_exec_sta = request->req_exec_sta;
+	clone->req_map_field_info.assign(request->req_map_field_info);
+
+	record_param* rpb1 = clone->req_rpb;
+	const record_param* const end = rpb1 + clone->req_count;
+
+	for (const record_param* rpb2 = request->req_rpb; rpb1 < end; rpb1++, rpb2++)
+	{
+		if (rpb2->rpb_stream_flags & RPB_s_update) {
+			rpb1->rpb_stream_flags |= RPB_s_update;
+		}
+		rpb1->rpb_relation = rpb2->rpb_relation;
+	}
 
 	return clone;
 }
@@ -310,30 +609,14 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		CompilerScratch* csb =
 			PAR_parse(tdbb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
 
-		request = JrdStatement::makeRequest(tdbb, csb, internal_flag);
+		request = CMP_make_request(tdbb, csb, internal_flag);
 		new_pool->setStatsGroup(request->req_memory_stats);
 
-#ifdef CMP_DEBUG
-		if (csb->csb_dump.hasData())
-		{
-			csb->dump("streams:\n");
-			for (unsigned i = 0; i < csb->csb_n_stream; ++i)
-			{
-				const CompilerScratch::csb_repeat& s = csb->csb_rpt[i];
-				csb->dump(
-					"\t%2d - view_stream: %2d; alias: %s; relation: %s; procedure: %s; view: %s\n",
-					i, s.csb_view_stream,
-					(s.csb_alias ? s.csb_alias->c_str() : ""),
-					(s.csb_relation ? s.csb_relation->rel_name.c_str() : ""),
-					(s.csb_procedure ? s.csb_procedure->getName().toString().c_str() : ""),
-					(s.csb_view ? s.csb_view->rel_name.c_str() : ""));
-			}
-
-			cmp_trace("\n%s\n", csb->csb_dump.c_str());
+		if (internal_flag) {
+			request->req_flags |= req_internal;
 		}
-#endif
 
-		request->getStatement()->verifyAccess(tdbb);
+		CMP_verify_access(tdbb, request);
 
 		delete csb;
 	}
@@ -373,6 +656,57 @@ CompilerScratch::csb_repeat* CMP_csb_element(CompilerScratch* csb, USHORT elemen
 }
 
 
+jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
+{
+/**************************************
+ *
+ *	C M P _ f i n d _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find an inactive incarnation of a system request.  If necessary,
+ *	clone it.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+	CHECK_DBB(dbb);
+
+	// if the request hasn't been compiled or isn't active,
+	// there're nothing to do
+
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
+
+	jrd_req* request;
+	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
+		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
+		!(request->req_flags & (req_active | req_reserved)))
+	{
+		if (request) {
+			request->req_flags |= req_reserved;
+		}
+		return request;
+	}
+
+	// Request exists and is in use. Look for clones until we find
+	// one that is available.
+
+	for (int n = 1; true; n++) {
+		if (n > MAX_RECURSION) {
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
+			// Msg363 "request depth exceeded. (Recursive definition?)"
+		}
+		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
+		if (!(clone->req_flags & (req_active | req_reserved))) {
+			clone->req_flags |= req_reserved;
+			return clone;
+		}
+	}
+}
+
+
 void CMP_fini(thread_db* tdbb)
 {
 /**************************************
@@ -388,20 +722,33 @@ void CMP_fini(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	CMP_shutdown_database(tdbb);	// Shutdown shared database locks.
+	// shutdown shared database locks
 
-	// And release the system requests.
+	CMP_shutdown_database(tdbb);
 
-	for (JrdStatement** itr = dbb->dbb_internal.begin(); itr != dbb->dbb_internal.end(); ++itr)
+	// unwind any active system requests
+
+	while (dbb->dbb_sys_trans->tra_requests)
 	{
-		if (*itr)
-			(*itr)->release(tdbb);
+		EXE_unwind(tdbb, dbb->dbb_sys_trans->tra_requests);
 	}
 
-	for (JrdStatement** itr = dbb->dbb_dyn_req.begin(); itr != dbb->dbb_dyn_req.end(); ++itr)
+	// and release them
+
+	for (jrd_req** itr = dbb->dbb_internal.begin(); itr < dbb->dbb_internal.end(); itr++)
 	{
 		if (*itr)
-			(*itr)->release(tdbb);
+		{
+			CMP_release(tdbb, *itr);
+		}
+	}
+
+	for (jrd_req** itr = dbb->dbb_dyn_req.begin(); itr < dbb->dbb_dyn_req.end(); itr++)
+	{
+		if (*itr)
+		{
+			CMP_release(tdbb, *itr);
+		}
 	}
 }
 
@@ -468,6 +815,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
 		return;
 
+	case nod_agg_total:
+	case nod_agg_total_distinct:
 	case nod_total:
 		if (node->nod_type == nod_total)
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
@@ -531,11 +880,79 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
+	case nod_agg_total2:
+	case nod_agg_total_distinct2:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		switch (dtype = desc->dsc_dtype)
+		{
+		case dtype_short:
+		case dtype_long:
+		case dtype_int64:
+			desc->dsc_dtype = dtype_int64;
+			desc->dsc_length = sizeof(SINT64);
+			node->nod_scale = desc->dsc_scale;
+			desc->dsc_flags = 0;
+			return;
+
+		case dtype_unknown:
+			desc->dsc_dtype = dtype_unknown;
+			desc->dsc_length = 0;
+			node->nod_scale = 0;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			return;
+
+		case dtype_real:
+		case dtype_double:
+		case dtype_text:
+		case dtype_cstring:
+		case dtype_varying:
+			desc->dsc_dtype = DEFAULT_DOUBLE;
+			desc->dsc_length = sizeof(double);
+			desc->dsc_scale = 0;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			node->nod_flags |= nod_double;
+			return;
+
+
+		case dtype_quad:
+			desc->dsc_dtype = dtype_quad;
+			desc->dsc_length = sizeof(SQUAD);
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			node->nod_scale = desc->dsc_scale;
+			node->nod_flags |= nod_quad;
+#ifdef NATIVE_QUAD
+			return;
+#endif
+
+		default:
+			fb_assert(false);
+			// FALLINTO
+		case dtype_sql_time:
+		case dtype_sql_date:
+		case dtype_timestamp:
+		case dtype_blob:
+		case dtype_array:
+		case dtype_dbkey:
+			// break to error reporting code
+			break;
+		}
+		break;
+
 	case nod_prot_mask:
 	case nod_null:
+	case nod_agg_count:
+	case nod_agg_count2:
+	case nod_agg_count_distinct:
+	//case nod_count2:
 	case nod_count:
 	case nod_gen_id:
 	case nod_lock_state:
+#ifdef SCROLLABLE_CURSORS
+	case nod_seek:
+#endif
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
@@ -625,6 +1042,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
+	case nod_agg_average:
+	case nod_agg_average_distinct:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		// FALL INTO
 	case nod_average:
 		if (node->nod_type == nod_average) {
 			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
@@ -640,6 +1061,55 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
+		return;
+
+		// In 6.0, the AVERAGE of an exact numeric type is int64 with the
+		// same scale. Only AVERAGE on an approximate numeric type can
+		// return a double.
+
+	case nod_agg_average2:
+	case nod_agg_average_distinct2:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		// In V6, the average of an exact type is computed in SINT64,
+		// rather than double as in prior releases
+		switch (dtype = desc->dsc_dtype)
+		{
+		case dtype_short:
+		case dtype_long:
+		case dtype_int64:
+			desc->dsc_dtype = dtype_int64;
+			desc->dsc_length = sizeof(SINT64);
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			node->nod_scale = desc->dsc_scale;
+			return;
+
+		case dtype_unknown:
+			desc->dsc_dtype = dtype_unknown;
+			desc->dsc_length = 0;
+			desc->dsc_scale = 0;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			return;
+
+		default:
+			if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
+				break;
+			}
+			desc->dsc_dtype = DEFAULT_DOUBLE;
+			desc->dsc_length = sizeof(double);
+			desc->dsc_scale = 0;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+			node->nod_flags |= nod_double;
+			return;
+		}
+		break;
+
+	case nod_agg_list:
+	case nod_agg_list_distinct:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 		return;
 
 	case nod_add:
@@ -704,10 +1174,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
 
-				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2))
-				{
-					if (node->nod_type == nod_subtract)
-					{
+				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
+					if (node->nod_type == nod_subtract) {
 						// <any date> - <any date>
 
 						/* Legal permutations are:
@@ -741,24 +1209,21 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
-						if (dtype == dtype_sql_date)
-						{
+						if (dtype == dtype_sql_date) {
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else if (dtype == dtype_sql_time)
-						{
+						else if (dtype == dtype_sql_time) {
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else
-						{
+						else {
 							fb_assert(dtype == dtype_timestamp);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
@@ -767,8 +1232,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							desc->dsc_flags = 0;
 						}
 					}
-					else if (IS_DATE_AND_TIME(desc1, desc2))
-					{
+					else if (IS_DATE_AND_TIME(desc1, desc2)) {
 						// <date> + <time>
 						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
@@ -777,8 +1241,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 						desc->dsc_sub_type = 0;
 						desc->dsc_flags = 0;
 					}
-					else
-					{
+					else {
 						// <date> + <date>
 						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
@@ -796,8 +1259,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 				}
-				else
-				{
+				else {
 					// <non-date> - <date>
 					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
@@ -917,8 +1379,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
 					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
 				{
-					if (node->nod_type == nod_subtract2)
-					{
+					if (node->nod_type == nod_subtract2) {
 						// <any date> - <any date>
 
 						/* Legal permutations are:
@@ -949,24 +1410,21 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
-						if (dtype == dtype_sql_date)
-						{
+						if (dtype == dtype_sql_date) {
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = 0;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else if (dtype == dtype_sql_time)
-						{
+						else if (dtype == dtype_sql_time) {
 							desc->dsc_dtype = dtype_long;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
 							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 							desc->dsc_sub_type = 0;
 							desc->dsc_flags = 0;
 						}
-						else
-						{
+						else {
 							fb_assert(dtype == dtype_timestamp || dtype == dtype_unknown);
 							desc->dsc_dtype = DEFAULT_DOUBLE;
 							desc->dsc_length = type_lengths[desc->dsc_dtype];
@@ -975,8 +1433,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 							desc->dsc_flags = 0;
 						}
 					}
-					else if (IS_DATE_AND_TIME(desc1, desc2))
-					{
+					else if (IS_DATE_AND_TIME(desc1, desc2)) {
 						// <date> + <time>
 						// <time> + <date>
 						desc->dsc_dtype = dtype_timestamp;
@@ -985,8 +1442,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 						desc->dsc_sub_type = 0;
 						desc->dsc_flags = 0;
 					}
-					else
-					{
+					else {
 						// <date> + <date>
 						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
@@ -1005,8 +1461,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 				}
-				else
-				{
+				else {
 					// <non-date> - <date>
 					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
@@ -1168,18 +1623,19 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
-	case nod_class_exprnode_jrd:
+	case nod_concatenate:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-			exprNode->getDesc(tdbb, csb, desc);
+			DSC desc1, desc2;
+			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
+			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
+			DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
 			return;
 		}
 
 	case nod_upcase:
 	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
-		{
+		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_ascii;
@@ -1228,34 +1684,20 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		return;
 
 	case nod_user_name:
-	case nod_current_role:
+    case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_metadata;
-		desc->dsc_length = USERNAME_LENGTH * METADATA_BYTES_PER_CHAR;
+		// ASF: should be multiplied by maxBytesPerChar of ttype_metadata in the future
+		desc->dsc_length = USERNAME_LENGTH;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
 
 	case nod_internal_info:
-		{
-			jrd_nod* const arg_node = node->nod_arg[0];
-			fb_assert(arg_node->nod_type == nod_literal);
-
-			dsc arg_desc;
-			CMP_get_desc(tdbb, csb, arg_node, &arg_desc);
-			fb_assert(arg_desc.dsc_dtype == dtype_long);
-
-			const internal_info_id id = *reinterpret_cast<internal_info_id*>(arg_desc.dsc_address);
-
-			if (id == internal_sqlstate)
-			{
-				desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
-			}
-			else
-			{
-				desc->makeLong(0);
-			}
-		}
+		desc->dsc_dtype = dtype_long;
+		desc->dsc_length = sizeof(SLONG);
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
 		return;
 
 	case nod_extract:
@@ -1274,6 +1716,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				desc->makeShort(0);
 				break;
 		}
+
 		return;
 
 	case nod_strlen:
@@ -1282,6 +1725,11 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
+		return;
+
+	case nod_agg_min:
+	case nod_agg_max:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 		return;
 
 	case nod_negate:
@@ -1432,6 +1880,62 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 		return;
 
+	case nod_function:
+		{
+			const UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
+			// Null value for the function indicates that the function was not
+			// looked up during parsing the blr. This is true if the function
+			// referenced in the procedure blr was dropped before dropping the
+			// procedure itself. Ignore the case because we are currently trying
+			// to drop the procedure.
+			// For normal requests, function would never be null. We would have
+			// created a valid block while parsing in par_function/par.c.
+			if (function) {
+				*desc = function->fun_rpt[function->fun_return_arg].fun_desc;
+			}
+			else {
+				/* Note that CMP_get_desc is always called with a pre-allocated DSC, i.e:
+					   DSC desc;
+					   CMP_get_desc (.... &desc);
+				   Hence the code:
+					   *desc = NULL;
+				   will not work. What I've done is memset the structure to zero. */
+				MOVE_CLEAR(desc, sizeof(DSC));
+			}
+			return;
+		}
+
+	case nod_sys_function:
+		{
+			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
+			fb_assert(nodeArgs->nod_type == nod_list);
+
+			Firebird::Array<dsc*> args;
+
+			for (jrd_nod** p = nodeArgs->nod_arg; p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
+			{
+				dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
+				args.push(targetDesc);
+				CMP_get_desc(tdbb, csb, *p, targetDesc);
+
+				// dsc_address is verified in makeFunc to get literals. If the node is not a
+				// literal, set it to NULL, to prevent wrong interpretation of offsets as
+				// pointers - CORE-2612.
+				if ((*p)->nod_type != nod_literal)
+					targetDesc->dsc_address = NULL;
+			}
+
+			DataTypeUtil dataTypeUtil(tdbb);
+			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
+
+			function->makeFunc(&dataTypeUtil, function,
+				desc, args.getCount(), const_cast<const dsc**>(args.begin()));
+
+			for (dsc** pArgs = args.begin(); pArgs != args.end(); ++pArgs)
+				delete *pArgs;
+		}
+		return;
+
 	case nod_variable:
 		{
 			const jrd_nod* value = node->nod_arg[e_var_variable];
@@ -1440,10 +1944,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 
 	case nod_value_if:
-		CMP_get_desc(tdbb, csb,
-			node->nod_arg[1]->nod_type != nod_null ?
-				node->nod_arg[1] : node->nod_arg[2],
-			desc);
+		CMP_get_desc(tdbb, csb, node->nod_arg[1]->nod_type != nod_null ? 
+								node->nod_arg[1] : node->nod_arg[2], desc);
 		return;
 
 	case nod_domain_validation:
@@ -1488,14 +1990,13 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	DEV_BLKCHK(relation, type_rel);
 
-	if (relation->rel_id < (USHORT) rel_MAX) {
+	if (relation->rel_id <= dbb->dbb_max_sys_rel) {
 		return NULL;
 	}
 
 	// for to find an existing block
 
-	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
-	{
+	for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next) {
 		if (index->idl_id == id) {
 			return index;
 		}
@@ -1521,7 +2022,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 }
 
 
-ULONG CMP_impure(CompilerScratch* csb, ULONG size)
+SLONG CMP_impure(CompilerScratch* csb, USHORT size)
 {
 /**************************************
  *
@@ -1535,21 +2036,225 @@ ULONG CMP_impure(CompilerScratch* csb, ULONG size)
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
 
-	if (!csb)
-	{
+	if (!csb) {
 		return 0;
 	}
 
-	const ULONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
-
-	if (offset + size > JrdStatement::MAX_REQUEST_SIZE)
-	{
-		IBERROR(226);	// msg 226: request size limit exceeded
-	}
-
+	const SLONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
 	csb->csb_impure = offset + size;
 
 	return offset;
+}
+
+
+jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_flag)
+{
+/**************************************
+ *
+ *	C M P _ m a k e _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Turn a parsed request into an executable request.
+ *
+ **************************************/
+	jrd_req* request = NULL;
+
+	DEV_BLKCHK(csb, type_csb);
+
+	SET_TDBB(tdbb);
+
+	Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
+	Attachment* const attachment = tdbb->getAttachment();
+
+	jrd_req* const old_request = tdbb->getRequest();
+	tdbb->setRequest(NULL);
+
+	try {
+
+	// Once any expansion required has been done, make a pass to assign offsets
+	// into the impure area and throw away any unnecessary crude. Execution
+	// optimizations can be performed here.
+
+	DEBUG;
+	csb->csb_node = CMP_pass1(tdbb, csb, csb->csb_node);
+
+	// Copy and compile (pass1) domains DEFAULT and constraints.
+	MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
+
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+	{
+		FieldInfo& fieldInfo = accessor.current()->second;
+		UCHAR local_map[MAP_LENGTH];
+
+		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
+		fieldInfo.defaultValue = copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+
+		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
+
+		fieldInfo.validation = copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
+
+		fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
+		fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
+	}
+
+	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
+	csb->csb_exec_sta.clear();
+
+	csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
+
+	// Compile (pass2) domains DEFAULT and constraints
+	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+	{
+		FieldInfo& fieldInfo = accessor.current()->second;
+
+		fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
+		fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
+	}
+
+	if (csb->csb_impure > MAX_REQUEST_SIZE) {
+		IBERROR(226);			// msg 226 request size limit exceeded
+	}
+
+	// Build the final request block. First, compute the "effective" repeat
+	// count of hold the impure areas.
+
+	MemoryPool* const pool = tdbb->getDefaultPool();
+	const size_t n = (csb->csb_impure - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL;
+	Firebird::MemoryStats* const parent_stats =
+		internal_flag ? &dbb->dbb_memory_stats : &attachment->att_memory_stats;
+	request = FB_NEW_RPT(*pool, n) jrd_req(pool, parent_stats);
+	request->req_count = csb->csb_n_stream;
+	request->req_impure_size = csb->csb_impure;
+	request->req_top_node = csb->csb_node;
+	request->req_access = csb->csb_access;
+	request->req_external = csb->csb_external;
+	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
+	request->req_id = fb_utils::genUniqueId();
+
+	// CVC: Unused.
+	//request->req_variables = csb->csb_variables;
+	request->req_resources = csb->csb_resources; // Assign array contents
+	if (csb->csb_g_flags & csb_blr_version4) {
+		request->req_flags |= req_blr_version4;
+	}
+
+#ifdef SCROLLABLE_CURSORS
+	request->req_async_message = csb->csb_async_message;
+#endif
+
+	// Take out existence locks on resources used in request. This is
+	// a little complicated since relation locks MUST be taken before
+	// index locks.
+
+	for (Resource* resource = request->req_resources.begin();
+		resource < request->req_resources.end(); resource++)
+	{
+		switch (resource->rsc_type)
+		{
+		case Resource::rsc_relation:
+			{
+				jrd_rel* relation = resource->rsc_rel;
+				MET_post_existence(tdbb, relation);
+				break;
+			}
+		case Resource::rsc_index:
+			{
+				jrd_rel* relation = resource->rsc_rel;
+				IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
+				if (index)
+				{
+					++index->idl_count;
+					if (index->idl_count == 1) {
+						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
+					}
+				}
+				break;
+			}
+		case Resource::rsc_procedure:
+			{
+				jrd_prc* procedure = resource->rsc_prc;
+				procedure->prc_use_count++;
+#ifdef DEBUG_PROCS
+				{
+					char buffer[256];
+					sprintf(buffer,
+							"Called from CMP_make_request():\n\t Incrementing use count of %s\n",
+							procedure->prc_name->c_str());
+					JRD_print_procedure_info(tdbb, buffer);
+				}
+#endif
+				break;
+			}
+		case Resource::rsc_collation:
+			{
+				Collation* coll = resource->rsc_coll;
+				coll->incUseCount(tdbb);
+				break;
+			}
+		default:
+			BUGCHECK(219);		// msg 219 request of unknown resource
+		}
+	}
+
+    CompilerScratch::csb_repeat* tail = csb->csb_rpt.begin();
+	const CompilerScratch::csb_repeat* const streams_end = tail + csb->csb_n_stream;
+	DEBUG;
+
+	for (record_param* rpb = request->req_rpb; tail < streams_end; rpb++, tail++)
+	{
+		// fetch input stream for update if all booleans matched against indices
+
+		if (tail->csb_flags & csb_update && !(tail->csb_flags & csb_unmatched))
+		{
+			 rpb->rpb_stream_flags |= RPB_s_update;
+		}
+
+		// if no fields are referenced and this stream is not intended for update,
+		// mark the stream as not requiring record's data
+
+		if (!tail->csb_fields && !(tail->csb_flags & csb_update))
+		{
+			 rpb->rpb_stream_flags |= RPB_s_no_data;
+		}
+
+		rpb->rpb_relation = tail->csb_relation;
+
+		delete tail->csb_fields;
+		tail->csb_fields = NULL;
+	}
+
+	// make a vector of all used RSEs
+	request->req_fors = csb->csb_fors;
+
+	// make a vector of all used ExecuteStatements into
+	request->req_exec_sta = csb->csb_exec_sta;
+
+	// make a vector of all invariant-type nodes, so that we will
+	// be able to easily reinitialize them when we restart the request
+
+	request->req_invariants = csb->csb_invariants;
+
+	DEBUG;
+	tdbb->setRequest(old_request);
+
+	} // try
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+		tdbb->setRequest(old_request);
+		ERR_punt();
+	}
+
+	if (!internal_flag)
+	{
+		tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
+	}
+
+	return request;
 }
 
 
@@ -1558,7 +2263,7 @@ void CMP_post_access(thread_db* tdbb,
 					 const Firebird::MetaName& security_name,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
-					 SLONG type_name,
+					 const TEXT* type_name,
 					 const Firebird::MetaName& name,
 					 const Firebird::MetaName& r_name)
 {
@@ -1597,7 +2302,10 @@ void CMP_post_access(thread_db* tdbb,
 }
 
 
-void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, USHORT id)
+void CMP_post_resource(	ResourceList* rsc_ptr,
+						void* obj,
+						enum Resource::rsc_s type,
+						USHORT id)
 {
 /**************************************
  *
@@ -1623,11 +2331,8 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 	case Resource::rsc_collation:
 		resource.rsc_coll = (Collation*) obj;
 		break;
-	case Resource::rsc_function:
-		resource.rsc_fun = (Function*) obj;
-		break;
 	default:
-		BUGCHECK(220);			// msg 220 unknown resource
+		BUGCHECK(220);			/* msg 220 unknown resource */
 		break;
 	}
 
@@ -1650,6 +2355,8 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
  *	decrement the procedure's use count
  *
  *********************************************/
+	DEV_BLKCHK(procedure, type_prc);
+
 	// Actually, it's possible for procedures to have intermixed dependencies, so
 	// this routine can be called for the procedure which is being freed itself.
 	// Hence we should just silently ignore such a situation.
@@ -1664,11 +2371,11 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 
 #ifdef DEBUG_PROCS
 	{
-		string buffer;
-		buffer.printf(
-			"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
-			procedure->getName()->toString().c_str());
-		JRD_print_procedure_info(tdbb, buffer.c_str());
+		char buffer[256];
+		sprintf(buffer,
+				"Called from CMP_decrement():\n\t Decrementing use count of %s\n",
+				procedure->prc_name->c_str());
+		JRD_print_procedure_info(tdbb, buffer);
 	}
 #endif
 
@@ -1677,15 +2384,14 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] != procedure))
+		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] != procedure)) // &procedure->prc_header))
 	{
-		if (procedure->getStatement())
-		{
-			procedure->getStatement()->release(tdbb);
-			procedure->setStatement(NULL);
+		if (procedure->prc_request) {
+			CMP_release(tdbb, procedure->prc_request);
+			procedure->prc_request = NULL;
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
-		MET_remove_procedure(tdbb, procedure->getId(), procedure);
+		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
 	}
 }
 
@@ -1699,11 +2405,92 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
  **************************************
  *
  * Functional description
- *	Release a request's statement.
+ *	Release an unneeded and unloved request.
  *
  **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
 	DEV_BLKCHK(request, type_req);
-	request->getStatement()->release(tdbb);
+
+	// release existence locks on references
+
+	Attachment* attachment = request->req_attachment;
+	if (!attachment || !(attachment->att_flags & ATT_shutdown))
+	{
+		for (Resource* resource = request->req_resources.begin();
+			 resource < request->req_resources.end(); resource++)
+		{
+			switch (resource->rsc_type)
+			{
+			case Resource::rsc_relation:
+				{
+					jrd_rel* relation = resource->rsc_rel;
+					MET_release_existence(tdbb, relation);
+					break;
+				}
+			case Resource::rsc_index:
+				{
+					jrd_rel* relation = resource->rsc_rel;
+					IndexLock* index = CMP_get_index_lock(tdbb, relation, resource->rsc_id);
+					if (index && index->idl_count)
+					{
+						--index->idl_count;
+						if (!index->idl_count)
+							LCK_release(tdbb, index->idl_lock);
+					}
+					break;
+				}
+			case Resource::rsc_procedure:
+				{
+					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
+					break;
+				}
+			case Resource::rsc_collation:
+				{
+					Collation* coll = resource->rsc_coll;
+					coll->decUseCount(tdbb);
+					break;
+				}
+			default:
+				BUGCHECK(220);	// msg 220 release of unknown resource
+				break;
+			}
+		}
+	}
+
+	EXE_unwind(tdbb, request);
+
+	if (request->req_attachment) {
+		for (jrd_req** next = &request->req_attachment->att_requests;
+			*next; next = &(*next)->req_request)
+		{
+			if (*next == request) {
+				*next = request->req_request;
+#ifdef DEV_BUILD
+				// Once I've seen att_requests == 0x00000014,
+				// so some debugging code added to catch it earlier in dev_builds.
+				// This place is one of two, where att_requests modified.
+				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used
+				// right before pointer assignment. So make some use of pointer here
+				// to try to detect false in it earlier ...
+				if (*next) {
+					jrd_req* req = (*next)->req_request;
+					req++;
+				}
+#endif
+				break;
+			}
+		}
+	}
+
+	request->req_sql_text = NULL;
+
+	// We have to call the destructor explicitly because of
+	// the delete-by-pool cleanup practice for requests
+	request->req_sorts.~SortOwner();
+
+	dbb->deletePool(request->req_pool);
 }
 
 
@@ -1752,8 +2539,7 @@ void CMP_shutdown_database(thread_db* tdbb)
 				}
 				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
 				{
-					if (index->idl_lock)
-					{
+					if (index->idl_lock) {
 						index->idl_count = 0;
 						LCK_release(tdbb, index->idl_lock);
 					}
@@ -1783,18 +2569,6 @@ void CMP_shutdown_database(thread_db* tdbb)
 		}
 	}
 
-	// release all function existence locks that might have been taken
-
-	for (Function** iter = dbb->dbb_functions.begin(); iter < dbb->dbb_functions.end(); ++iter)
-	{
-		Function* const function = *iter;
-
-		if (function)
-		{
-			function->releaseLocks(tdbb);
-		}
-	}
-
 	// release collation existence locks
 
 	dbb->releaseIntlObjects();
@@ -1818,8 +2592,8 @@ static UCHAR* alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	SET_TDBB(tdbb);
 
 	fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR maybe?
-	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[JrdStatement::MAP_LENGTH];
-	memset(p, 0, JrdStatement::MAP_LENGTH);
+	UCHAR* const p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[MAP_LENGTH];
+	memset(p, 0, MAP_LENGTH);
 	p[0] = (UCHAR) stream;
 	csb->csb_rpt[stream].csb_map = p;
 
@@ -1847,16 +2621,12 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 	if (stack.isEmpty())
 		return node1;
 
-	ConcatenateNode* concatNode = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(
-		*tdbb->getDefaultPool());
-	concatNode->arg1 = node1;
-	concatNode->arg2 = catenate_nodes(tdbb, stack);
+	jrd_nod* cat_node = PAR_make_node(tdbb, 2);
+	cat_node->nod_type = nod_concatenate;
+	cat_node->nod_arg[0] = node1;
+	cat_node->nod_arg[1] = catenate_nodes(tdbb, stack);
 
-	jrd_nod* node = PAR_make_node(tdbb, 1);
-	node->nod_type = nod_class_exprnode_jrd;
-	node->nod_arg[0] = (jrd_nod*) concatNode;
-
-	return node;
+	return cat_node;
 }
 
 
@@ -1952,18 +2722,35 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 
 	newInnerRse->rse_boolean = boolean;
 
-	return SubExprNodeCopier::copy(tdbb, csb, newNode);
+	UCHAR localMap[MAP_LENGTH];
+	// Initialize the map so all streams initially resolve to the original number. As soon copy
+	// creates new streams, the map are being overwritten.
+	for (unsigned i = 0; i < MAP_LENGTH; ++i)
+		localMap[i] = i;
+
+	return copy(tdbb, csb, newNode, localMap, 0, NULL, false);
 }
 
 
-USHORT NodeCopier::getFieldId(jrd_nod* input)
+static jrd_nod* copy(thread_db* tdbb,
+					CompilerScratch* csb,
+					jrd_nod* input,
+					UCHAR* remap,
+					USHORT field_id,
+					jrd_nod* message,
+					bool remap_fld)
 {
-	return (USHORT)(IPTR) input->nod_arg[e_fld_id];
-}
-
-// Copy an expression tree remapping field streams. If the map isn't present, don't remap.
-jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
-{
+/**************************************
+ *
+ *	c o p y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy an expression tree remapping field streams.  If the
+ *	map isn't present, don't remap.
+ *
+ **************************************/
 	jrd_nod* node;
 	USHORT stream, new_stream;
 
@@ -1981,21 +2768,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 	switch (input->nod_type)
 	{
-	case nod_class_exprnode_jrd:
-		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
-			ExprNode* copy = exprNode->copy(tdbb, *this);
-
-			if (copy != exprNode)
-			{
-				node = PAR_make_node(tdbb, 1);
-				node->nod_type = input->nod_type;
-				node->nod_count = input->nod_count;
-				node->nod_arg[0] = (jrd_nod*) copy;
-			}
-		}
-		return node;
-
 	case nod_ansi_all:
 	case nod_ansi_any:
 	case nod_any:
@@ -2005,12 +2777,11 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		break;
 
 	case nod_for:
-		///args = e_for_length;
-		fb_assert(false);
+		args = e_for_length;
 		break;
 
 	case nod_argument:
-		if (remapArgument())
+		if (remap_fld)
 			return input;
 		node = PAR_make_node(tdbb, e_arg_length);
 		node->nod_count = input->nod_count;
@@ -2027,8 +2798,10 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		//			cloned outside nod_procedure (e.g. in the optimizer)
 		//			and we must keep the input message.
 		node->nod_arg[e_arg_message] = message ? message : input->nod_arg[e_arg_message];
-		node->nod_arg[e_arg_flag] = copy(tdbb, input->nod_arg[e_arg_flag]);
-		node->nod_arg[e_arg_indicator] = copy(tdbb, input->nod_arg[e_arg_indicator]);
+		node->nod_arg[e_arg_flag] =
+			copy(tdbb, csb, input->nod_arg[e_arg_flag], remap, field_id, message, remap_fld);
+		node->nod_arg[e_arg_indicator] =
+			copy(tdbb, csb, input->nod_arg[e_arg_indicator], remap, field_id, message, remap_fld);
 		return node;
 
 	case nod_assignment:
@@ -2037,6 +2810,10 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 	case nod_erase:
 		args = e_erase_length;
+		break;
+
+	case nod_user_savepoint:
+		args = e_sav_length;
 		break;
 
 	case nod_modify:
@@ -2063,23 +2840,29 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 	case nod_field:
 		{
-			USHORT fldId = getFieldId(input);
-
-			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
-			fldId = remapField(stream, fldId);
-
-			if (remap)
+			if (field_id && (input->nod_flags & nod_id) && !input->nod_arg[e_fld_id] &&
+				!input->nod_arg[e_fld_stream])
 			{
-#ifdef CMP_DEBUG
-				csb->dump("remap nod_field: %d -> %d\n", stream, remap[stream]);
-#endif
-				stream = remap[stream];
+				--field_id;
 			}
+			else {
+				field_id = (USHORT)(IPTR) input->nod_arg[e_fld_id];
+			}
+			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
+			if (remap_fld) {
+				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+				jrd_fld* field = MET_get_field(relation, field_id);
+				if (field->fld_source)
+					field_id = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
+			}
+			if (remap)
+				stream = remap[stream];
 
-			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, fldId);
+			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, field_id);
 			if (input->nod_type == nod_field && input->nod_arg[e_fld_default_value])
+			{
 				temp_node->nod_arg[e_fld_default_value] = input->nod_arg[e_fld_default_value];
-
+			}
 			return temp_node;
 		}
 
@@ -2088,19 +2871,14 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node = PAR_make_node(tdbb, e_derived_expr_length);
 		node->nod_count = e_derived_expr_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_derived_expr_expr] = copy(tdbb, input->nod_arg[e_derived_expr_expr]);
+		node->nod_arg[e_derived_expr_expr] =
+			copy(tdbb, csb, input->nod_arg[e_derived_expr_expr], remap, field_id, message, remap_fld);
 
 		if (remap)
 		{
 			const UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
 			const USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
 			USHORT* newStreamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
-
-#ifdef CMP_DEBUG
-			csb->dump("remap nod_derived_expr:\n");
-			for (UCHAR i = 0; i < streamCount; ++i)
-				csb->dump("\t%d: %d -> %d\n", i, oldStreamList[i], remap[oldStreamList[i]]);
-#endif
 
 			for (UCHAR i = 0; i < streamCount; ++i)
 				newStreamList[i] = remap[oldStreamList[i]];
@@ -2113,6 +2891,15 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
 		return node;
 	}
+
+	case nod_function:
+		node = PAR_make_node(tdbb, e_fun_length);
+		node->nod_count = input->nod_count;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_fun_args] =
+			copy(tdbb, csb, input->nod_arg[e_fun_args], remap, field_id, message, remap_fld);
+		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
+		return (node);
 
 	case nod_current_time:
 	case nod_current_timestamp:
@@ -2128,15 +2915,17 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node = PAR_make_node(tdbb, e_gen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_gen_value] = copy(tdbb, input->nod_arg[e_gen_value]);
-		node->nod_arg[e_gen_id] = input->nod_arg[e_gen_id];
+		node->nod_arg[e_gen_value] =
+			copy(tdbb, csb, input->nod_arg[e_gen_value], remap, field_id, message, remap_fld);
+		node->nod_arg[e_gen_relation] = input->nod_arg[e_gen_relation];
 		return (node);
 
 	case nod_cast:
 		node = PAR_make_node(tdbb, e_cast_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_cast_source] = copy(tdbb, input->nod_arg[e_cast_source]);
+		node->nod_arg[e_cast_source] =
+			copy(tdbb, csb, input->nod_arg[e_cast_source], remap, field_id, message, remap_fld);
 		node->nod_arg[e_cast_fmt] = input->nod_arg[e_cast_fmt];
 		return (node);
 
@@ -2144,7 +2933,8 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node = PAR_make_node(tdbb, e_extract_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_extract_value] = copy(tdbb, input->nod_arg[e_extract_value]);
+		node->nod_arg[e_extract_value] =
+			copy(tdbb, csb, input->nod_arg[e_extract_value], remap, field_id, message, remap_fld);
 		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
 		return (node);
 
@@ -2152,7 +2942,8 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node = PAR_make_node(tdbb, e_strlen_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_strlen_value] = copy(tdbb, input->nod_arg[e_strlen_value]);
+		node->nod_arg[e_strlen_value] =
+			copy(tdbb, csb, input->nod_arg[e_strlen_value], remap, field_id, message, remap_fld);
 		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
 		return (node);
 
@@ -2160,12 +2951,15 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node = PAR_make_node(tdbb, e_trim_length);
 		node->nod_count = input->nod_count;
 		node->nod_type = input->nod_type;
-		node->nod_arg[e_trim_characters] = copy(tdbb, input->nod_arg[e_trim_characters]);
-		node->nod_arg[e_trim_value] = copy(tdbb, input->nod_arg[e_trim_value]);
+		node->nod_arg[e_trim_characters] =
+			copy(tdbb, csb, input->nod_arg[e_trim_characters], remap, field_id, message, remap_fld);
+		node->nod_arg[e_trim_value] =
+			copy(tdbb, csb, input->nod_arg[e_trim_value], remap, field_id, message, remap_fld);
 		node->nod_arg[e_trim_specification] = input->nod_arg[e_trim_specification];
 		return (node);
 
 	case nod_count:
+	//case nod_count2:
 	case nod_max:
 	case nod_min:
 	case nod_total:
@@ -2188,14 +2982,20 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			for (const jrd_nod* const* const end = arg1 + old_rse->rse_count;
 				arg1 < end; arg1++, arg2++)
 			{
-				*arg2 = copy(tdbb, *arg1);
+				*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
 			}
 			new_rse->rse_jointype = old_rse->rse_jointype;
-			new_rse->rse_first = copy(tdbb, old_rse->rse_first);
-			new_rse->rse_skip = copy(tdbb, old_rse->rse_skip);
-			new_rse->rse_boolean = copy(tdbb, old_rse->rse_boolean);
-			new_rse->rse_sorted = copy(tdbb, old_rse->rse_sorted);
-			new_rse->rse_projection = copy(tdbb, old_rse->rse_projection);
+			new_rse->rse_writelock = old_rse->rse_writelock;
+			new_rse->rse_first =
+				copy(tdbb, csb, old_rse->rse_first, remap, field_id, message, remap_fld);
+			new_rse->rse_skip =
+				copy(tdbb, csb, old_rse->rse_skip, remap, field_id, message, remap_fld);
+			new_rse->rse_boolean =
+				copy(tdbb, csb, old_rse->rse_boolean, remap, field_id, message, remap_fld);
+			new_rse->rse_sorted =
+				copy(tdbb, csb, old_rse->rse_sorted, remap, field_id, message, remap_fld);
+			new_rse->rse_projection =
+				copy(tdbb, csb, old_rse->rse_projection, remap, field_id, message, remap_fld);
 			return (jrd_nod*) new_rse;
 		}
 
@@ -2278,12 +3078,11 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			// dimitr:	see the appropriate code and comment above (in nod_argument).
 			//			We must copy the message first and only then use the new
 			//			pointer to copy the inputs properly.
-			node->nod_arg[e_prc_in_msg] = copy(tdbb, input->nod_arg[e_prc_in_msg]);
-
-			{	// scope
-				AutoSetRestore<jrd_nod*> autoMessage(&message, node->nod_arg[e_prc_in_msg]);
-				node->nod_arg[e_prc_inputs] = copy(tdbb, input->nod_arg[e_prc_inputs]);
-			}
+			node->nod_arg[e_prc_in_msg] =
+				copy(tdbb, csb, input->nod_arg[e_prc_in_msg], remap, field_id, message, remap_fld);
+			node->nod_arg[e_prc_inputs] =
+				copy(tdbb, csb, input->nod_arg[e_prc_inputs], remap, field_id,
+					 node->nod_arg[e_prc_in_msg], remap_fld);
 
 			stream = (USHORT)(IPTR) input->nod_arg[e_prc_stream];
 			new_stream = csb->nextStream();
@@ -2319,50 +3118,13 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		CMP_csb_element(csb, new_stream);
 
 		csb->csb_rpt[new_stream].csb_flags |= csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
-		node->nod_arg[e_agg_rse] = copy(tdbb, input->nod_arg[e_agg_rse]);
-		node->nod_arg[e_agg_group] = copy(tdbb, input->nod_arg[e_agg_group]);
-		node->nod_arg[e_agg_map] = copy(tdbb, input->nod_arg[e_agg_map]);
+		node->nod_arg[e_agg_rse] =
+			copy(tdbb, csb, input->nod_arg[e_agg_rse], remap, field_id, message, remap_fld);
+		node->nod_arg[e_agg_group] =
+			copy(tdbb, csb, input->nod_arg[e_agg_group], remap, field_id, message, remap_fld);
+		node->nod_arg[e_agg_map] =
+			copy(tdbb, csb, input->nod_arg[e_agg_map], remap, field_id, message, remap_fld);
 		return node;
-
-	case nod_window:
-	{
-		if (!remap)
-			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
-		node = PAR_make_node(tdbb, e_win_length);
-		node->nod_type = input->nod_type;
-		node->nod_count = 0;
-
-		node->nod_arg[e_win_rse] = copy(tdbb, input->nod_arg[e_win_rse]);
-
-		const jrd_nod* inputWindows = input->nod_arg[e_win_windows];
-
-		jrd_nod* copyWindows = node->nod_arg[e_win_windows] =
-			PAR_make_node(tdbb, inputWindows->nod_count);
-		copyWindows->nod_type = inputWindows->nod_type;
-		copyWindows->nod_count = inputWindows->nod_count;
-
-		for (unsigned i = 0; i < inputWindows->nod_count; ++i)
-		{
-			jrd_nod* inputPartition = inputWindows->nod_arg[i];
-
-			jrd_nod* copyPartition = copyWindows->nod_arg[i] = PAR_make_node(tdbb, e_part_length);
-			copyPartition->nod_type = inputPartition->nod_type;
-			copyPartition->nod_count = inputPartition->nod_count;
-
-			stream = (USHORT)(IPTR) inputPartition->nod_arg[e_part_stream];
-			fb_assert(stream <= MAX_STREAMS);
-			new_stream = csb->nextStream();
-			copyPartition->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) new_stream;
-			// fb_assert(new_stream <= MAX_UCHAR);
-			remap[stream] = (UCHAR) new_stream;
-			CMP_csb_element(csb, new_stream);
-
-			for (unsigned j = 0; j < copyPartition->nod_count; ++j)
-				copyPartition->nod_arg[j] = copy(tdbb, inputPartition->nod_arg[j]);
-		}
-
-		return node;
-	}
 
 	case nod_union:
 		if (!remap)
@@ -2389,7 +3151,8 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		}
 
 		csb->csb_rpt[new_stream].csb_flags |= csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
-		node->nod_arg[e_uni_clauses] = copy(tdbb, input->nod_arg[e_uni_clauses]);
+		node->nod_arg[e_uni_clauses] =
+			copy(tdbb, csb, input->nod_arg[e_uni_clauses], remap, field_id, message, remap_fld);
 		return node;
 
 	case nod_message:
@@ -2399,6 +3162,9 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
+		// dimitr: hmmm, cannot find where the following one is used...
+		node->nod_arg[e_msg_next] =
+			copy(tdbb, csb, input->nod_arg[e_msg_next], remap, field_id, message, remap_fld);
 		return node;
 
 	case nod_sort:
@@ -2415,17 +3181,21 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	case nod_dbkey:
 		stream = (USHORT)(IPTR) input->nod_arg[0];
 		if (remap)
-		{
-#ifdef CMP_DEBUG
-			csb->dump("remap nod_dbkey: %d -> %d\n", stream, remap[stream]);
-#endif
 			stream = remap[stream];
-		}
 
 		node = PAR_make_node(tdbb, 1);
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
 		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
+		return node;
+
+	case nod_sys_function:
+		node = PAR_make_node(tdbb, e_sysfun_length);
+		node->nod_type = input->nod_type;
+		node->nod_count = e_sysfun_count;
+		node->nod_arg[e_sysfun_args] =
+			copy(tdbb, csb, input->nod_arg[e_sysfun_args], remap, field_id, message, remap_fld);
+		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
 		return node;
 
 	case nod_dcl_variable:
@@ -2446,28 +3216,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		}
 		break;
 
-	case nod_dcl_cursor:
-		node = PAR_make_node(tdbb, e_dcl_cur_length);
-		node->nod_count = input->nod_count;
-		node->nod_flags = input->nod_flags;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_dcl_cur_rse] = copy(tdbb, input->nod_arg[e_dcl_cur_rse]);
-		node->nod_arg[e_dcl_cur_refs] = copy(tdbb, input->nod_arg[e_dcl_cur_refs]);
-		node->nod_arg[e_dcl_cur_number] = input->nod_arg[e_dcl_cur_number];
-		break;
-
-	case nod_cursor_stmt:
-		node = PAR_make_node(tdbb, e_cursor_stmt_length);
-		node->nod_count = input->nod_count;
-		node->nod_flags = input->nod_flags;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
-		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
-		node->nod_arg[e_cursor_stmt_scroll_op] = input->nod_arg[e_cursor_stmt_scroll_op];
-		node->nod_arg[e_cursor_stmt_scroll_val] = copy(tdbb, input->nod_arg[e_cursor_stmt_scroll_val]);
-		node->nod_arg[e_cursor_stmt_into] = copy(tdbb, input->nod_arg[e_cursor_stmt_into]);
-		break;
-
 	default:
 		break;
 	}
@@ -2484,16 +3232,18 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 	for (const jrd_nod* const* const end = arg1 + input->nod_count; arg1 < end; arg1++, arg2++)
 	{
-		if (*arg1)
-			*arg2 = copy(tdbb, *arg1);
+		if (*arg1) {
+			*arg2 = copy(tdbb, csb, *arg1, remap, field_id, message, remap_fld);
+		}
 	}
 
 	// finish off sort
 
-	if (input->nod_type == nod_sort)
-	{
+	if (input->nod_type == nod_sort) {
 		for (jrd_nod** end = arg1 + input->nod_count * 2; arg1 < end; arg1++, arg2++)
+		{
 			*arg2 = *arg1;
+		}
 	}
 
 	return node;
@@ -2581,11 +3331,10 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
 			const CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 			const jrd_rel* relation = tail->csb_relation;
-			if (relation)
-			{
+			if (relation) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : (view ? view->rel_id : 0),
-								SCL_read, SCL_object_table,
+								SCL_read, object_table,
 								relation->rel_name);
 			}
 			break;
@@ -2595,9 +3344,6 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			break;
 		case nod_aggregate:
 			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
-			break;
-		case nod_window:
-			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
 			break;
 		case nod_union:
 			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
@@ -2636,10 +3382,9 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	if (!vector)
 		return statement;
 
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
+	UCHAR local_map[MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map)
-	{
+	if (!map) {
 		map = local_map;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
 		map[0] = (UCHAR) stream;
@@ -2654,77 +3399,51 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* value;
-
-		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
-			continue;
-
-		fb_assert(statement->nod_type == nod_list);
-		if (statement->nod_type == nod_list)
+		if (*ptr1 && (value = (*ptr1)->fld_default_value))
 		{
-			bool inList = false;
-
-			for (unsigned i = 0; i < statement->nod_count; ++i)
+			fb_assert(statement->nod_type == nod_list);
+			if (statement->nod_type == nod_list)
 			{
-				const jrd_nod* assign = statement->nod_arg[i];
+				bool inList = false;
 
-				fb_assert(assign->nod_type == nod_assignment);
-				if (assign->nod_type == nod_assignment)
+				for (unsigned i = 0; i < statement->nod_count; ++i)
 				{
-					const jrd_nod* to = assign->nod_arg[e_asgn_to];
+					const jrd_nod* assign = statement->nod_arg[i];
 
-					fb_assert(to->nod_type == nod_field);
-					if (to->nod_type == nod_field &&
-						(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
-						(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
+					fb_assert(assign->nod_type == nod_assignment);
+					if (assign->nod_type == nod_assignment)
 					{
-						inList = true;
-						break;
+						const jrd_nod* to = assign->nod_arg[e_asgn_to];
+
+						fb_assert(to->nod_type == nod_field);
+						if (to->nod_type == nod_field &&
+							(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
+							(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
+						{
+							inList = true;
+							break;
+						}
 					}
 				}
-			}
 
-			if (inList)
-				continue;
+				if (inList)
+					continue;
+			}
 
 			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
+			node->nod_arg[e_asgn_from] =
+				copy(tdbb, csb, value, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
-
-			if ((*ptr1)->fld_generator_name.hasData())
-			{
-				// Make a gen_id(<generator name>, 1) expression.
-
-				jrd_nod* genNode = PAR_make_node(tdbb, e_gen_length);
-				genNode->nod_type = nod_gen_id;
-				genNode->nod_count = 1;
-
-				const SLONG tmp = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
-				genNode->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
-
-				const int count = lit_delta + (sizeof(SLONG) + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-				jrd_nod* literalNode = genNode->nod_arg[e_gen_value] = PAR_make_node(tdbb, count);
-				literalNode->nod_type = nod_literal;
-				literalNode->nod_count = 0;
-				Literal* literal = (Literal*) literalNode;
-				literal->lit_desc.makeLong(0, (SLONG*) literal->lit_data);
-				*(SLONG*) literal->lit_data = 1;
-
-				node->nod_arg[e_asgn_from] = genNode;
-			}
-			else //if (value)
-			{
-				// Clone the field default value.
-				node->nod_arg[e_asgn_from] =
-					RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, value);
-			}
 		}
 	}
 
 	if (stack.isEmpty())
 		return statement;
 
-	// We have some default - add the original statement and make a list out of the whole mess.
+	// we have some default - add the original statement and make a list out of
+	// the whole mess
 
 	stack.push(statement);
 
@@ -2754,10 +3473,9 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	if (!vector)
 		return NULL;
 
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
+	UCHAR local_map[MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map)
-	{
+	if (!map) {
 		map = local_map;
 		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
 		map[0] = (UCHAR) stream;
@@ -2778,7 +3496,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
+				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -2791,7 +3509,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
+				copy(tdbb, csb, validation, map, (USHORT) (field_id + 1), NULL, false);
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -2804,28 +3522,27 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 }
 
 
-// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field is
-// referencing, and mark them as variant - the rule is that if a field from one RecordSelExpr is
-// referenced within the scope of another RecordSelExpr, the inner RecordSelExpr can't be invariant.
-// This won't optimize all cases, but it is the simplest operating assumption for now.
-static void mark_variant(CompilerScratch* csb, USHORT stream)
+// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field
+// is referencing, and mark them as varying - the rule is that if a field
+// from one RecordSelExpr is referenced within the scope of another RecordSelExpr, the first RecordSelExpr
+// can't be invariant. This won't optimize all cases, but it is the simplest
+// operating assumption for now.
+static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
-	if (csb->csb_current_nodes.isEmpty())
-		return;
-
-	for (jrd_node_base** i_node = csb->csb_current_nodes.end() - 1;
-		 i_node >= csb->csb_current_nodes.begin(); --i_node)
+	if (csb->csb_current_nodes.getCount())
 	{
-		if ((*i_node)->nod_type == nod_rse)
+		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
+			 i_node >= csb->csb_current_nodes.begin(); i_node--)
 		{
-			RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(*i_node);
-			if (stream_in_rse(stream, rse))
-				break;
-			rse->nod_flags |= rse_variant;
-		}
-		else
-		{
-			(*i_node)->nod_flags &= ~nod_invariant;
+			if ((*i_node)->nod_type == nod_rse)
+			{
+				RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(*i_node);
+				if (stream_in_rse(stream, rse))
+					break;
+				rse->nod_flags |= rse_variant;
+			}
+			else
+				(*i_node)->nod_flags &= ~nod_invariant;
 		}
 	}
 }
@@ -2886,8 +3603,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
 		ptr[1] = CMP_pass1(tdbb, csb, ptr[1]);
-		if (node->nod_count == 3)
-		{
+		if (node->nod_count == 3) {
 			// escape symbol also needs to be taken care of
 			ptr[2] = CMP_pass1(tdbb, csb, ptr[2]);
 		}
@@ -2901,7 +3617,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			jrd_node_base **ctx_node, **end;
 			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
-				ctx_node < end; ctx_node++)
+				ctx_node < end;	ctx_node++)
 			{
 				if ((*ctx_node)->nod_type == nod_rse)
 					break;
@@ -2940,26 +3656,26 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return node;
 
 	case nod_variable:
+	{
+		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
+		vec<jrd_nod*>* vector = csb->csb_variables;
+		if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
 		{
-			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
-			{
-				PAR_syntax_error(csb, "variable identifier");
-			}
+			PAR_syntax_error(csb, "variable identifier");
 		}
 		break;
+	}
 
 	case nod_init_variable:
+	{
+		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
+		vec<jrd_nod*>* vector = csb->csb_variables;
+		if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
 		{
-			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
-			{
-				PAR_syntax_error(csb, "variable identifier");
-			}
+			PAR_syntax_error(csb, "variable identifier");
 		}
 		break;
+	}
 
 	case nod_argument:
 		break;
@@ -2985,7 +3701,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
-			mark_variant(csb, stream);
+			mark_variant(tdbb, csb, stream);
 
 			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
@@ -3045,46 +3761,55 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// the nodes in the subtree are involved in a validation
 			// clause only, the subtree is a validate_subtree in our notation.
 
-			const SLONG viewId = (tail->csb_view) ? tail->csb_view->rel_id :
-										(view ? view->rel_id : 0);
-
 			if (tail->csb_flags & csb_modify)
 			{
-				if (!csb->csb_validate_expr)
-				{
-					CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-									SCL_sql_update, SCL_object_table,
+				if (!csb->csb_validate_expr) {
+					CMP_post_access(tdbb, csb, relation->rel_security_name,
+									(tail->csb_view) ? tail->csb_view->rel_id :
+										(view ? view->rel_id : 0),
+									SCL_sql_update, object_table,
 									relation->rel_name);
-					CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-									SCL_sql_update, SCL_object_column,
+					CMP_post_access(tdbb, csb, field->fld_security_name,
+									(tail->csb_view) ? tail->csb_view->rel_id :
+										(view ? view->rel_id : 0),
+									SCL_sql_update, object_column,
 									field->fld_name, relation->rel_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase)
 			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_sql_delete, SCL_object_table,
+				CMP_post_access(tdbb, csb, relation->rel_security_name,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
+								SCL_sql_delete, object_table,
 								relation->rel_name);
 			}
 			else if (tail->csb_flags & csb_store)
 			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_sql_insert, SCL_object_table,
+				CMP_post_access(tdbb, csb, relation->rel_security_name,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
+								SCL_sql_insert, object_table,
 								relation->rel_name);
-				CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-								SCL_sql_insert, SCL_object_column,
+				CMP_post_access(tdbb, csb, field->fld_security_name,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
+								SCL_sql_insert, object_column,
 								field->fld_name, relation->rel_name);
 			}
 			else
 			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_read, SCL_object_table, relation->rel_name);
-				CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-								SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
+				CMP_post_access(tdbb, csb, relation->rel_security_name,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
+								SCL_read, object_table, relation->rel_name);
+				CMP_post_access(tdbb, csb, field->fld_security_name,
+								(tail->csb_view) ? tail->csb_view->rel_id :
+									(view ? view->rel_id : 0),
+								SCL_read, object_column, field->fld_name, relation->rel_name);
 			}
 
-			if (!(sub = field->fld_computation) && !(sub = field->fld_source))
-			{
+			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
 
 				if (!relation->rel_view_rse)
 					break;
@@ -3103,18 +3828,16 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// the substitution.
 			// Comment 1994-August-08 David Schnepper
 
-			if (tail->csb_flags & (csb_view_update | csb_trigger))
-			{
+			if (tail->csb_flags & (csb_view_update | csb_trigger)) {
 				// dimitr:	added an extra check for views, because we don't
 				//			want their old/new contexts to be substituted
 				if (relation->rel_view_rse || !field->fld_computation)
 					break;
 			}
 
-			UCHAR local_map[JrdStatement::MAP_LENGTH];
+			UCHAR local_map[MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
-			if (!map)
-			{
+			if (!map) {
 				map = local_map;
 				fb_assert(stream + 2 <= MAX_STREAMS);
 				local_map[0] = (UCHAR) stream;
@@ -3125,7 +3848,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
-			sub = NodeCopier::copy(tdbb, csb, sub, map);
+			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
 
 			if (relation->rel_view_rse)
 			{
@@ -3176,16 +3899,9 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 			NodeStack stack;
 
-#ifdef CMP_DEBUG
-			csb->dump("expand nod_derived_expr:");
-			for (UCHAR i = 0; i < streamCount; ++i)
-				csb->dump(" %d", streamList[i]);
-			csb->dump("\n");
-#endif
-
 			for (UCHAR i = 0; i < streamCount; ++i)
 			{
-				mark_variant(csb, streamList[i]);
+				mark_variant(tdbb, csb, streamList[i]);
 				expand_view_nodes(tdbb, csb, streamList[i], stack, nod_dbkey, true);
 			}
 
@@ -3195,12 +3911,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
 			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
 
-#ifdef CMP_DEBUG
-			for (NodeStack::iterator i(stack); i.hasData(); ++i)
-				csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
-			csb->dump("\n");
-#endif
-
 			for (NodeStack::iterator i(stack); i.hasData(); ++i)
 				*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
 		}
@@ -3209,8 +3919,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_assignment:
 		{
 			sub = node->nod_arg[e_asgn_from];
-			if (sub->nod_type == nod_field)
-			{
+			if (sub->nod_type == nod_field) {
 				stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
 				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation,
 									 		   (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
@@ -3227,8 +3936,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			if (!field) {
 				break;
 			}
-			if (field->fld_missing_value)
-			{
+			if (field->fld_missing_value) {
 				node->nod_arg[e_asgn_missing] = field->fld_missing_value;
 				node->nod_count = 3;
 			}
@@ -3248,7 +3956,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// Post access to procedure
 		post_procedure_access(tdbb, csb, procedure);
 		CMP_post_resource(&csb->csb_resources, procedure,
-						  Resource::rsc_procedure, procedure->getId());
+						  Resource::rsc_procedure, procedure->prc_id);
 		break;
 
 	case nod_store:
@@ -3264,8 +3972,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node);
 
 	case nod_cursor_stmt:
-		node->nod_arg[e_cursor_stmt_scroll_val] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val]);
-		node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
+		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
+			node->nod_arg[e_cursor_stmt_seek] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_seek]);
+			node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
+		}
 		break;
 
 	case nod_max:
@@ -3273,14 +3983,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_average:
 	case nod_from:
 	case nod_count:
+	//case nod_count2:
 	case nod_total:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
-		node->nod_arg[e_stat_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_rse]);
-		csb->csb_current_nodes.push(node->nod_arg[e_stat_rse]);
-		node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
-		node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
-		csb->csb_current_nodes.pop();
-		return node;
+		break;
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
@@ -3289,23 +3995,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_agg_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_rse]);
 		node->nod_arg[e_agg_map] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_map]);
 		node->nod_arg[e_agg_group] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_group]);
-		break;
-
-	case nod_window:
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			{
-				USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-				fb_assert(stream <= MAX_STREAMS);
-				csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
-			}
-
-			ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], view);
-			node->nod_arg[e_win_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_rse]);
-			node->nod_arg[e_win_windows] = CMP_pass1(tdbb, csb, node->nod_arg[e_win_windows]);
-		}
 		break;
 
 	case nod_gen_id:
@@ -3319,16 +4008,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			const nod_t type = node->nod_type;
 			stream = (USHORT)(IPTR) node->nod_arg[0];
 
-			mark_variant(csb, stream);
+			mark_variant(tdbb, csb, stream);
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type, false);
-
-#ifdef CMP_DEBUG
-			csb->dump("expand nod_dbkey: %d\n", stream);
-#endif
 
 			if (stack.hasData())
 			{
@@ -3344,10 +4029,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 					for (NodeStack::iterator i(stack); i.hasData(); ++i)
 					{
-#ifdef CMP_DEBUG
-						csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
-#endif
-
 						jrd_nod* new_node = PAR_make_node(tdbb, 3);
 						new_node->nod_type = nod_value_if;
 						new_node->nod_count = 3;
@@ -3402,7 +4083,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
 					new_node->nod_arg[0]->nod_type = nod_eql;
 					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] = NodeCopier::copy(tdbb, csb, node, NULL);
+					new_node->nod_arg[0]->nod_arg[0] = copy(tdbb, csb, node, NULL, 0, NULL, false);
 					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
 					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
@@ -3421,16 +4102,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					node = new_node;
 				}
 
-#ifdef CMP_DEBUG
-				csb->dump("\n");
-#endif
-
 				return node;
 			}
-
-#ifdef CMP_DEBUG
-			csb->dump("\n");
-#endif
 
 			// The user is asking for the dbkey/record version of an aggregate.
 			// Humor him with a key filled with zeros.
@@ -3439,16 +4112,18 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = 0;
 			node->nod_type = type;
 			node->nod_flags |= nod_agg_dbkey;
-			node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
+			node->nod_arg[0] = (jrd_nod*) (IPTR) stream;
 			return node;
 		}
+
+	case nod_abort:
+		CMP_pass1(tdbb, csb, node->nod_arg[e_xcp_msg]);
+		break;
 
 	case nod_not:
 		sub = node->nod_arg[0];
 		if (sub->nod_type == nod_ansi_any)
 			sub->nod_flags |= nod_deoptimize;
-		if (sub->nod_type == nod_ansi_any || sub->nod_type == nod_ansi_all)
-			sub->nod_flags |= nod_ansi_not;
 		break;
 
 	case nod_ansi_all:
@@ -3491,23 +4166,20 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
 		return node;
 
-	case nod_class_exprnode_jrd:
-	case nod_class_stmtnode_jrd:
-		{
-			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(dmlNode->pass1(tdbb, csb, node));
-		}
+	case nod_class_node_jrd:
+		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass1(tdbb, csb));
 		return node;
 
 	case nod_dcl_variable:
-		{
-			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_dcl_id];
-			vec<jrd_nod*>* vector = csb->csb_variables =
-				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-			fb_assert(!(*vector)[n]);
-			(*vector)[n] = node;
-		}
+	{
+		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_dcl_id];
+		vec<jrd_nod*>* vector = csb->csb_variables =
+			vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
+		fb_assert(!(*vector)[n]);
+		(*vector)[n] = node;
 		break;
+	}
 
 	default:
 		break;
@@ -3590,8 +4262,7 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	jrd_rel* view = NULL;
 	USHORT parent_stream = 0;
 
-	for (;;)
-	{
+	for (;;) {
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		const USHORT stream = new_stream;
 
@@ -3615,13 +4286,13 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			priv |= SCL_read;
 		}
 
-		const trig_vec* trigger = relation->rel_pre_erase ?
+		const trig_vec* trigger = (relation->rel_pre_erase) ?
 			relation->rel_pre_erase : relation->rel_post_erase;
 
 		// if we have a view with triggers, let's expand it
 
-		if (relation->rel_view_rse && trigger)
-		{
+		if (relation->rel_view_rse && trigger) {
+
 			new_stream = csb->nextStream();
 			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
 			CMP_csb_element(csb, new_stream)->csb_relation = relation;
@@ -3632,11 +4303,16 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// get the source relation, either a table or yet another view
 
-		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
-			new_stream, priv, parent, parent_stream);
+		jrd_nod* source =
+			pass1_update(tdbb, csb, relation, trigger, stream, new_stream,
+						 priv, parent, parent_stream);
 
-		if (!source)
-			return;	// no source means we're done
+		if (!source) {
+
+			// no source means we're done
+
+			return;
+		}
 
 		parent = relation;
 		parent_stream = stream;
@@ -3645,11 +4321,12 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = csb->csb_rpt[stream].csb_map;
 
-		if (trigger)
-		{
+		if (trigger) {
+
 			// set up the new target stream
 
-			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
+			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
+
 			view_node->nod_arg[e_erase_statement] = NULL;
 			view_node->nod_arg[e_erase_sub_erase] = NULL;
 
@@ -3657,16 +4334,19 @@ static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_erase_sub_erase + 1);
 
 			// substitute the original delete node with the newly created one
+
 			node = view_node;
 		}
-		else
-		{
+		else {
+
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
+
 			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
 		}
 
 		// let's reset the target stream
+
 		new_stream = (USHORT)(IPTR) source->nod_arg[e_rel_stream];
 		node->nod_arg[e_erase_stream] = (jrd_nod*)(IPTR) map[new_stream];
 	}
@@ -3702,10 +4382,8 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 	vec<jrd_fld*>::iterator ptr = fields->begin();
 	for (const vec<jrd_fld*>::const_iterator end = fields->end(); ptr < end; ++ptr, ++id)
 	{
-		if (*ptr)
-		{
-			if (remap)
-			{
+		if (*ptr) {
+			if (remap) {
 				const jrd_fld* field = MET_get_field(relation, id);
 				if (field->fld_source) {
 					new_id = (USHORT)(IPTR) (field->fld_source)->nod_arg[e_fld_id];
@@ -3719,8 +4397,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 			}
 			jrd_nod* node = PAR_gen_field(tdbb, new_stream, new_id);
 			CMP_get_desc(tdbb, csb, node, &desc);
-			if (!desc.dsc_address)
-			{
+			if (!desc.dsc_address) {
 				delete node;
 				continue;
 			}
@@ -3767,8 +4444,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
 
-	for (;;)
-	{
+	for (;;) {
 		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 
@@ -3797,8 +4473,8 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		// if we have a view with triggers, let's expand it
 
-		if (relation->rel_view_rse && trigger)
-		{
+		if (relation->rel_view_rse && trigger) {
+
 			node->nod_arg[e_mod_map_view] = pass1_expand_view(tdbb, csb, stream, new_stream, false);
 			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
 		}
@@ -3808,12 +4484,12 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		jrd_nod* source = pass1_update(tdbb, csb, relation, trigger, stream,
 									   new_stream, priv, parent, parent_stream);
 
-		if (!source)
-		{
+		if (!source) {
+
 			// no source means we're done
 
-			if (!relation->rel_view_rse)
-			{
+			if (!relation->rel_view_rse) {
+
 				// apply validation constraints
 
 				if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb, new_stream)) )
@@ -3838,10 +4514,10 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// copy the view source
 
 		map = alloc_map(tdbb, csb, (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
-		source = NodeCopier::copy(tdbb, csb, source, map);
+		source = copy(tdbb, csb, source, map, 0, NULL, false);
 
-		if (trigger)
-		{
+		if (trigger) {
+
 			// set up the new target stream
 
 			const USHORT view_stream = new_stream;
@@ -3849,7 +4525,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			fb_assert(new_stream <= MAX_STREAMS);
 			map[view_stream] = new_stream;
 
-			jrd_nod* view_node = ViewNodeCopier(csb, map).copy(tdbb, node);
+			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, true);
 			view_node->nod_arg[e_mod_map_view] = NULL;
 			view_node->nod_arg[e_mod_statement] =
 				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
@@ -3858,10 +4534,11 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_sub_mod + 1);
 
 			// substitute the original update node with the newly created one
+
 			node = view_node;
 		}
-		else
-		{
+		else {
+
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
 
@@ -3870,13 +4547,16 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		}
 
 		// let's reset streams to represent the mapped source and target
+
 		node->nod_arg[e_mod_org_stream] = (jrd_nod*)(IPTR) stream;
 		node->nod_arg[e_mod_new_stream] = source->nod_arg[e_rel_stream];
 	}
 }
 
 
-static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
+static RecordSelExpr* pass1_rse(thread_db* tdbb,
+					 CompilerScratch* csb,
+					 RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -3910,7 +4590,6 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 			break;
 		}
 	}
-
 	if (top_level_rse)
 		rse->nod_flags |= rse_variant;
 
@@ -3923,6 +4602,10 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 	jrd_nod* first = rse->rse_first;
 	jrd_nod* skip = rse->rse_skip;
 	jrd_nod* plan = rse->rse_plan;
+	const bool writelock = rse->rse_writelock;
+#ifdef SCROLLABLE_CURSORS
+	jrd_nod* async_message = rse->rse_async_message;
+#endif
 
 	// zip thru RecordSelExpr expanding views and inner joins
 	jrd_nod** arg = rse->rse_relation;
@@ -3936,8 +4619,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 
 	USHORT count = stack.getCount();
 
-	if (count != rse->rse_count)
-	{
+	if (count != rse->rse_count) {
 		RecordSelExpr* new_rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
 		*new_rse = *rse;
 		new_rse->rse_count = count;
@@ -3970,10 +4652,8 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 		rse->rse_skip = CMP_pass1(tdbb, csb, skip);
 	}
 
-	if (boolean)
-	{
-		if (rse->rse_boolean)
-		{
+	if (boolean) {
+		if (rse->rse_boolean) {
 			jrd_nod* additional = PAR_make_node(tdbb, 2);
 			additional->nod_type = nod_and;
 			additional->nod_arg[0] = boolean;
@@ -3997,7 +4677,17 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb, CompilerScratch* csb, RecordSel
 		rse->rse_plan = plan;
 	}
 
+	rse->rse_writelock = writelock;
+
+#ifdef SCROLLABLE_CURSORS
+	if (async_message) {
+		rse->rse_async_message = CMP_pass1(tdbb, csb, async_message);
+		csb->csb_async_message = rse->rse_async_message;
+	}
+#endif
+
 	// we are no longer in the scope of this RecordSelExpr
+
 	csb->csb_current_nodes.pop();
 
 	return rse;
@@ -4057,12 +4747,11 @@ static void pass1_source(thread_db*			tdbb,
 			}
 			// fold in the boolean for this inner join with the one for the parent
 
-			if (sub_rse->rse_boolean)
-			{
+			if (sub_rse->rse_boolean) {
+
 				jrd_nod* node = CMP_pass1(tdbb, csb, sub_rse->rse_boolean);
 
-				if (*boolean)
-				{
+				if (*boolean) {
 					jrd_nod* additional = PAR_make_node(tdbb, 2);
 					additional->nod_type = nod_and;
 					additional->nod_arg[0] = node;
@@ -4088,13 +4777,12 @@ static void pass1_source(thread_db*			tdbb,
 
 	// special case: procedure
 
-	if (source->nod_type == nod_procedure)
-	{
+	if (source->nod_type == nod_procedure) {
 		CMP_pass1(tdbb, csb, source);
 		jrd_prc* const procedure =
 			MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
+		CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->prc_id);
 
 		jrd_rel* const parent_view = csb->csb_view;
 		const USHORT view_stream = csb->csb_view_stream;
@@ -4106,15 +4794,12 @@ static void pass1_source(thread_db*			tdbb,
 		fb_assert(view_stream <= MAX_STREAMS);
 		element->csb_view_stream = (UCHAR) view_stream;
 
-		// in the case where there is a parent view, find the context name
-
 		if (parent_view)
 		{
-			const ViewContexts& ctx = parent_view->rel_view_contexts;
+			ViewContexts& ctx = parent_view->rel_view_contexts;
 			const USHORT key = (USHORT)(IPTR) source->nod_arg[e_prc_context];
 			size_t pos;
-			if (ctx.find(key, pos))
-			{
+			if (ctx.find(key, pos)) {
 				element->csb_alias = FB_NEW(csb->csb_pool)
 					Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 			}
@@ -4123,22 +4808,16 @@ static void pass1_source(thread_db*			tdbb,
 	}
 
 	// special case: union
-	if (source->nod_type == nod_union)
-	{
+
+	if (source->nod_type == nod_union) {
 		CMP_pass1(tdbb, csb, source->nod_arg[e_uni_clauses]);
 		return;
 	}
 
 	// special case: group-by/global aggregates
-	if (source->nod_type == nod_aggregate)
-	{
-		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		CMP_pass1(tdbb, csb, source);
-		return;
-	}
 
-	if (source->nod_type == nod_window)
-	{
+	if (source->nod_type == nod_aggregate) {
+		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
 		CMP_pass1(tdbb, csb, source);
 		return;
 	}
@@ -4162,13 +4841,11 @@ static void pass1_source(thread_db*			tdbb,
 
 	// in the case where there is a parent view, find the context name
 
-	if (parent_view)
-	{
-		const ViewContexts& ctx = parent_view->rel_view_contexts;
+	if (parent_view) {
+		ViewContexts& ctx = parent_view->rel_view_contexts;
 		const USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
 		size_t pos;
-		if (ctx.find(key, pos))
-		{
+		if (ctx.find(key, pos)) {
 			element->csb_alias = FB_NEW(csb->csb_pool)
 				Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
@@ -4200,7 +4877,7 @@ static void pass1_source(thread_db*			tdbb,
 		view_rse->rse_sorted || view_rse->rse_projection || view_rse->rse_first ||
 		view_rse->rse_skip || view_rse->rse_plan)
 	{
-		jrd_nod* node = NodeCopier::copy(tdbb, csb, (jrd_nod*) view_rse, map);
+		jrd_nod* node = copy(tdbb, csb, (jrd_nod*) view_rse, map, 0, NULL, false);
 		DEBUG;
 		stack.push(CMP_pass1(tdbb, csb, node));
 		DEBUG;
@@ -4223,10 +4900,12 @@ static void pass1_source(thread_db*			tdbb,
 	for (const jrd_nod* const* const end = arg + view_rse->rse_count; arg < end; arg++)
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
-		jrd_nod* node = NodeCopier::copy(tdbb, csb, *arg, map);
+
+		jrd_nod* node = copy(tdbb, csb, *arg, map, 0, NULL, false);
 
 		// Now go out and process the base table itself. This table might also be a view,
 		// in which case we will continue the process by recursion.
+
 		pass1_source(tdbb, csb, rse, node, boolean, stack);
 	}
 
@@ -4238,21 +4917,18 @@ static void pass1_source(thread_db*			tdbb,
 	// base table(s) instead of the view's context (see bug #8822), so we are ready to context-
 	// recognize them in CMP_pass1() - that is, replace the field nodes with actual field blocks.
 
-	if (view_rse->rse_projection)
-	{
+	if (view_rse->rse_projection) {
 		rse->rse_projection =
-			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, view_rse->rse_projection, map));
+			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false));
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
 	// boolean on the parent view, if any
 
-	if (view_rse->rse_boolean)
-	{
+	if (view_rse->rse_boolean) {
 		jrd_nod* node =
-			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, view_rse->rse_boolean, map));
-		if (*boolean)
-		{
+			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false));
+		if (*boolean) {
 			// The order of the nodes here is important! The
 			// boolean from the view must appear first so that
 			// it gets expanded first in pass1.
@@ -4303,8 +4979,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	// to support nested views, loop until we hit a table or
 	// a view with user-defined triggers (which means no update)
 
-	for (;;)
-	{
+	for (;;) {
 		const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 
 		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
@@ -4335,13 +5010,14 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		jrd_nod* source =
 			 pass1_update(tdbb, csb, relation, trigger, stream, stream, priv, parent, parent_stream);
 
-		if (!source)
-		{
+		if (!source) {
+
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
-			if (!relation->rel_view_rse)
-			{
+			if (!relation->rel_view_rse) {
+
 				// apply validation constraints
+
 				if ( (node->nod_arg[e_sto_validate] = make_validation(tdbb, csb, stream)) )
 				{
 					node->nod_count = MAX(node->nod_count, (USHORT) e_sto_validate + 1);
@@ -4356,23 +5032,23 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 		UCHAR* map = alloc_map(tdbb, csb, stream);
 
-		if (trigger)
-		{
+		if (trigger) {
+
 			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
 
 			// set up the new target stream
 
-			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
+			jrd_nod* view_node = copy(tdbb, csb, node, map, 0, NULL, false);
 			view_node->nod_arg[e_sto_sub_store] = NULL;
-			view_node->nod_arg[e_sto_relation] = NodeCopier::copy(tdbb, csb, source, map);
+			view_node->nod_arg[e_sto_relation] = copy(tdbb, csb, source, map, 0, NULL, false);
 			const USHORT new_stream =
 				(USHORT)(IPTR) view_node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			view_node->nod_arg[e_sto_statement] =
 				pass1_expand_view(tdbb, csb, stream, new_stream, true);
 
-			// dimitr:	I don't think the below code is required, but time will show
-			//	view_node->nod_arg[e_sto_statement] =
-			//		NodeCopier::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
+// dimitr:	I don't think the below code is required, but time will show
+//			view_node->nod_arg[e_sto_statement] =
+//				copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL, 0, NULL, false);
 
 			// bug 8150: use of blr_store2 against a view with a trigger was causing
 			// the second statement to be executed, which is not desirable
@@ -4383,17 +5059,17 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_count = MAX(node->nod_count, (USHORT) e_sto_sub_store + 1);
 
 			// substitute the original update node with the newly created one
+
 			node = view_node;
 		}
-		else
-		{
+		else {
 
 			// this relation is not actually being updated as this operation
 			// goes deeper (we have a naturally updatable view)
 
 			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
 
-			node->nod_arg[e_sto_relation] = NodeCopier::copy(tdbb, csb, source, map);
+			node->nod_arg[e_sto_relation] = copy(tdbb, csb, source, map, 0, NULL, false);
 		}
 	}
 }
@@ -4431,7 +5107,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 	// unless this is an internal request, check access permission
 
 	CMP_post_access(tdbb, csb, relation->rel_security_name, (view ? view->rel_id : 0),
-					priv, SCL_object_table, relation->rel_name);
+					priv, object_table, relation->rel_name);
 
 	// ensure that the view is set for the input streams,
 	// so that access to views can be checked at the field level
@@ -4462,7 +5138,6 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 				break;
 			}
 		}
-
 		if (user_triggers)
 		{
 			csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
@@ -4535,44 +5210,59 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	USHORT stream;
 
 	DEBUG;
-	RecordSelExpr* rse_node = NULL;
-	RecordSource** rsb_ptr = NULL;
-	Cursor** cursor_ptr = NULL;
+	RecordSource** rsb_ptr = 0;
+	jrd_nod* rse_node = NULL;
 
 	switch (node->nod_type)
 	{
-	case nod_class_stmtnode_jrd:
-		reinterpret_cast<StmtNode*>(node->nod_arg[0])->pass2Cursor(rse_node, cursor_ptr);
-		break;
-
 	case nod_rse:
 		return NULL;
 
 	case nod_union:
 		return pass2_union(tdbb, csb, node);
 
+	case nod_for:
+		rse_node = node->nod_arg[e_for_re];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_for_rsb];
+#ifdef SCROLLABLE_CURSORS
+		csb->csb_current_rse = rse_node;
+#endif
+		break;
+
 	case nod_dcl_cursor:
-		rse_node = (RecordSelExpr*) node->nod_arg[e_dcl_cur_rse];
-		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cur_cursor];
+		rse_node = node->nod_arg[e_dcl_cursor_rse];
+		rsb_ptr = (RecordSource**) & node->nod_arg[e_dcl_cursor_rsb];
+#ifdef SCROLLABLE_CURSORS
+		csb->csb_current_rse = rse_node;
+#endif
 		break;
 
 	case nod_cursor_stmt:
-		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val], node);
-		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
+		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
+			CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_seek], node);
+			CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
+		}
 		break;
+
+#ifdef SCROLLABLE_CURSORS
+	case nod_seek:
+		// store the RecordSelExpr in whose scope we are defined
+		node->nod_arg[e_seek_rse] = (jrd_nod*) csb->csb_current_rse;
+		break;
+#endif
 
 	case nod_max:
 	case nod_min:
 	case nod_count:
+	//case nod_count2:
 	case nod_average:
 	case nod_total:
 	case nod_from:
-		rse_node = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-		if (!rse_node) {
+		rse_node = node->nod_arg[e_stat_rse];
+		if (! rse_node) {
 			ERR_post(Arg::Gds(isc_wish_list));
 		}
-		if (!(rse_node->nod_flags & rse_variant))
-		{
+		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
@@ -4584,9 +5274,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_any:
 	case nod_exists:
 	case nod_unique:
-		rse_node = (RecordSelExpr*) node->nod_arg[e_any_rse];
-		if (!(rse_node->nod_flags & rse_variant))
-		{
+		rse_node = node->nod_arg[e_any_rse];
+		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
 			csb->csb_invariants.push(node);
 		}
@@ -4637,24 +5326,21 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 	}
 
-	if (rse_node)
-	{
-		pass2_rse(tdbb, csb, rse_node);
+	if (rse_node) {
+		pass2_rse(tdbb, csb, (RecordSelExpr*) rse_node);
 	}
 
 	// handle sub-expressions here
 
 	// AB: Mark the streams involved with INSERT/UPDATE statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
-	if (node->nod_type == nod_modify)
-	{
+	if (node->nod_type == nod_modify) {
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
-	else if (node->nod_type == nod_store)
-	{
+	else if (node->nod_type == nod_store) {
 		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
@@ -4668,15 +5354,13 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	}
 
 	// AB: Remove the previous flags
-	if (node->nod_type == nod_modify)
-	{
+	if (node->nod_type == nod_modify) {
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
-	else if (node->nod_type == nod_store)
-	{
+	else if (node->nod_type == nod_store) {
 		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
@@ -4687,11 +5371,17 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	switch (node->nod_type)
 	{
+	case nod_abort:
+		CMP_pass2(tdbb, csb, node->nod_arg[e_xcp_msg], node);
+		break;
+
 	case nod_assignment:
 		CMP_pass2(tdbb, csb, node->nod_arg[e_asgn_missing2], node);
 		break;
 
 	case nod_average:
+	case nod_agg_average:
+	case nod_agg_average_distinct:
 		node->nod_flags |= nod_double;
 		// FALL INTO
 
@@ -4699,6 +5389,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_min:
 	case nod_from:
 	case nod_count:
+	case nod_agg_count2:
+	case nod_agg_count_distinct:
+	//case nod_count2:
+	case nod_agg_min:
+	case nod_agg_max:
+	case nod_agg_count:
 		node->nod_count = 0;
 		csb->csb_impure += sizeof(impure_value_ex);
 		break;
@@ -4725,6 +5421,14 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_total:
+	case nod_agg_total:
+	case nod_agg_total_distinct:
+	case nod_agg_total2:
+	case nod_agg_total_distinct2:
+	case nod_agg_average2:
+	case nod_agg_average_distinct2:
+	case nod_agg_list:
+	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
@@ -4736,10 +5440,13 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_message:
 		{
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
-			fb_assert(format);
-			csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
-			node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
-			csb->csb_impure += sizeof(USHORT) * format->fmt_count;
+			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format))
+			{
+				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
+
+				node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
+				csb->csb_impure += sizeof(USHORT) * format->fmt_count;
+			}
 		}
 		break;
 
@@ -4749,8 +5456,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			csb->csb_rpt[stream].csb_flags |= csb_update;
 			const Format* format = CMP_format(tdbb, csb, stream);
 			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
-			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc)
-			{
+			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc) {
 				if (desc->dsc_dtype) {
 					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 				}
@@ -4765,10 +5471,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		if (node->nod_count > 0)
 		{
 			node->nod_type = nod_asn_list;
-			for (ptr = node->nod_arg; ptr < end; ptr++)
-			{
-				if (*ptr && (*ptr)->nod_type != nod_assignment)
-				{
+			for (ptr = node->nod_arg; ptr < end; ptr++) {
+				if ((*ptr)->nod_type != nod_assignment) {
 					node->nod_type = nod_list;
 					break;
 				}
@@ -4803,7 +5507,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			sizeof(impure_value_ex) : sizeof(dsc);
 		break;
 
-	case nod_literal:
+	case nod_concatenate:
+    case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_negate:
@@ -4812,7 +5517,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_divide:
 	case nod_null:
 	case nod_user_name:
-	case nod_current_role:
+    case nod_current_role:
 	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:
@@ -4828,6 +5533,9 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_current_timestamp:
 	case nod_current_date:
 	case nod_derived_expr:
+#ifdef SCROLLABLE_CURSORS
+	case nod_seek:
+#endif
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
@@ -4851,55 +5559,62 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		}
 		break;
 
+	case nod_function:
+		{
+			// For gbak attachments, there is no need to resolve the UDF function
+			// Also if we are dropping a procedure don't bother resolving the
+			// UDF that the procedure invokes.
+			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment) &&
+				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
+			{
+				jrd_nod* value = node->nod_arg[e_fun_args];
+				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
+				node->nod_arg[e_fun_function] = (jrd_nod*) FUN_resolve(tdbb, csb, function, value);
+				if (!node->nod_arg[e_fun_function]) {
+					ERR_post(Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name));
+				}
+			}
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+			csb->csb_impure += sizeof(impure_value);
+		}
+		break;
+
+	case nod_sys_function:
+		{
+			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
+			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
+			fb_assert(nodeArgs->nod_type == nod_list);
+
+			function->checkArgsMismatch(nodeArgs->nod_count);
+
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+			csb->csb_impure += sizeof(impure_value);
+		}
+		break;
+
 	case nod_aggregate:
 		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse]);
 		CMP_pass2(tdbb, csb, node->nod_arg[e_agg_map], node);
 		CMP_pass2(tdbb, csb, node->nod_arg[e_agg_group], node);
 		stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
-		if (node->nod_arg[e_agg_map])
-			process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_format);
+		process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_format);
 		break;
 
-	case nod_window:
-	{
-		pass2_rse(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse]);
-
-		jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-		{
-			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map], nodWindows->nod_arg[i]);
-			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_group], nodWindows->nod_arg[i]);
-			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_order], nodWindows->nod_arg[i]);
-
-			stream = (SSHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-			fb_assert(stream <= MAX_STREAMS);
-
-			process_map(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map],
-				&csb->csb_rpt[stream].csb_format);
-		}
-
-		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_regroup], nodWindows->nod_arg[i]);
-
-		break;
-	}
-
-	// boolean nodes taking three values as inputs
+		// boolean nodes taking three values as inputs
 	case nod_like:
 	case nod_between:
 	case nod_similar:
 	case nod_sleuth:
-		if (node->nod_count > 2)
-		{
+		if (node->nod_count > 2) {
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
 				ERR_post(Arg::Gds(isc_bad_dbkey));
 			}
 			dsc descriptor_c;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_c);
-			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype))
-			{
+			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype)) {
 				node->nod_arg[0]->nod_flags |= nod_date;
 				node->nod_arg[1]->nod_flags |= nod_date;
 			}
@@ -4931,14 +5646,13 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			else if (DTYPE_IS_DATE(descriptor_b.dsc_dtype))
 				node->nod_arg[0]->nod_flags |= nod_date;
 		}
-		if (node->nod_flags & nod_invariant)
-		{
+		if (node->nod_flags & nod_invariant) {
 			// This may currently happen for nod_like, nod_contains and nod_similar
 			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
 
-	// boolean nodes taking one value as input
+		// boolean nodes taking one value as input
 	case nod_missing:
 		{
 			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey) {
@@ -4960,11 +5674,10 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		csb->csb_impure += sizeof(void**);
 		break;
 
-	case nod_class_exprnode_jrd:
-	case nod_class_stmtnode_jrd:
+	case nod_class_node_jrd:
 		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
 			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass2(tdbb, csb, node));
-		break;
+		return node;
 
 	default:
 		// note: no fb_assert(false); here as too many nodes are missing
@@ -4974,54 +5687,22 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	// Bind values of invariant nodes to top-level RSE (if present)
 	if (node->nod_flags & nod_invariant)
 	{
-		if (csb->csb_current_nodes.hasData())
-		{
-			jrd_node_base* top_rse_node = csb->csb_current_nodes[0];
-			fb_assert(top_rse_node->nod_type == nod_rse);
-			RecordSelExpr* const top_rse = static_cast<RecordSelExpr*>(top_rse_node);
-
+		if (csb->csb_current_nodes.getCount()) {
+			// CVC: Nickolay says this rse_node is local. Therefore, renamed to aux_rse_node.
+			jrd_node_base* aux_rse_node = csb->csb_current_nodes[0];
+			fb_assert(aux_rse_node->nod_type == nod_rse);
+			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(aux_rse_node);
 			if (!top_rse->rse_invariants)
-			{
 				top_rse->rse_invariants =
 					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
-			}
-
 			top_rse->rse_invariants->add(node->nod_impure);
 		}
 	}
 
 	// finish up processing of record selection expressions
 
-	if (rse_node)
-	{
-		RecordSource* const rsb = post_rse(tdbb, csb, rse_node);
-
-		// for ansi ANY clauses (and ALL's, which are negated ANY's)
-		// the unoptimized boolean expression must be used, since the
-		// processing of these clauses is order dependant (see FilteredStream.cpp)
-
-		if (node->nod_type == nod_ansi_any || node->nod_type == nod_ansi_all)
-		{
-			const bool ansiAny = (node->nod_type == nod_ansi_any);
-			const bool ansiNot = (node->nod_flags & nod_ansi_not);
-			FilteredStream* const filter = reinterpret_cast<FilteredStream*>(rsb);
-			filter->setAnyBoolean(rse_node->rse_boolean, ansiAny, ansiNot);
-		}
-
-		csb->csb_fors.add(rsb);
-
-		if (rsb_ptr)
-		{
-			*rsb_ptr = rsb;
-		}
-
-		if (cursor_ptr)
-		{
-			Cursor* const cursor =
-				FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse_node->rse_invariants,
-													   rse_node->nod_flags & rse_scrollable);
-			*cursor_ptr = cursor;
-		}
+	if (rse_node) {
+		*rsb_ptr = post_rse(tdbb, csb, (RecordSelExpr*) rse_node);
 	}
 
 	return node;
@@ -5065,32 +5746,16 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 		case nod_rse:
 			pass2_rse(tdbb, csb, (RecordSelExpr*) node);
 			break;
-
-		case nod_window:
-			{
-				const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-				CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
-
-				for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-				{
-					const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-					csb->csb_rpt[stream].csb_flags |= csb_active;
-				}
-			}
-			break;
-
 		case nod_relation:
 		case nod_procedure:
 		case nod_aggregate:
 		case nod_union:
-			{
-				const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-				fb_assert(stream <= MAX_STREAMS);
-				csb->csb_rpt[stream].csb_flags |= csb_active;
-				// FALL INTO
-			}
-
+		{
+			const USHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+			fb_assert(stream <= MAX_STREAMS);
+			csb->csb_rpt[stream].csb_flags |= csb_active;
+			// FALL INTO
+		}
 		default:
 			CMP_pass2(tdbb, csb, node, (jrd_nod*) rse);
 			break;
@@ -5111,12 +5776,16 @@ static void pass2_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* rse)
 
 	// if the user has submitted a plan for this RecordSelExpr, check it for correctness
 
-	if (rse->rse_plan)
-	{
+	if (rse->rse_plan) {
 		plan_set(csb, rse, rse->rse_plan);
 		plan_check(csb, rse);
 	}
 
+#ifdef SCROLLABLE_CURSORS
+	if (rse->rse_async_message) {
+		CMP_pass2(tdbb, csb, rse->rse_async_message, 0);
+	}
+#endif
 	csb->csb_current_nodes.pop();
 }
 
@@ -5188,8 +5857,7 @@ static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
 	const jrd_nod* const* ptr = rse->rse_relation;
 	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type == nod_relation)
-		{
+		if ((*ptr)->nod_type == nod_relation) {
 			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan)) {
 				ERR_post(Arg::Gds(isc_no_stream_plan) << Arg::Str(csb->csb_rpt[stream].csb_relation->rel_name));
@@ -5223,8 +5891,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(plan, type_nod);
 
-	if (plan->nod_type == nod_join)
-	{
+	if (plan->nod_type == nod_join || plan->nod_type == nod_merge) {
 		for (jrd_nod** ptr = plan->nod_arg, **end = ptr + plan->nod_count; ptr < end; ptr++)
 		{
 			plan_set(csb, rse, *ptr);
@@ -5249,8 +5916,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	// we are interested in by searching the view map */
 	UCHAR* map = 0;
 
-	if (tail->csb_map)
-	{
+	if (tail->csb_map) {
 		const TEXT* p = plan_alias;
 
 		// if the user has specified an alias, skip past it to find the alias
@@ -5269,8 +5935,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		// loop through potentially a stack of views to find the appropriate base table
 		UCHAR* map_base;
-		while ( (map_base = tail->csb_map) )
-		{
+		while ( (map_base = tail->csb_map) ) {
 			map = map_base;
 			tail = &csb->csb_rpt[*map];
 			view_relation = tail->csb_relation;
@@ -5279,15 +5944,12 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// the view is on a single table; if it is, fix up the plan
 			// to point to the base relation
 
-			if (view_relation->rel_id == plan_relation->rel_id)
-			{
-				if (!map_base[2])
-				{
+			if (view_relation->rel_id == plan_relation->rel_id) {
+				if (!map_base[2]) {
 					map++;
 					tail = &csb->csb_rpt[*map];
 				}
-				else
-				{
+				else {
 					// view %s has more than one base relation; use aliases to distinguish
 					ERR_post(Arg::Gds(isc_view_alias) << Arg::Str(plan_relation->rel_name));
 				}
@@ -5301,24 +5963,19 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// for this level), check to make sure there is one and only one
 			// base relation in the table which matches the plan relation
 
-			if (!*p)
-			{
+			if (!*p) {
 				const jrd_rel* duplicate_relation = NULL;
 				UCHAR* duplicate_map = map_base;
 				map = NULL;
-				for (duplicate_map++; *duplicate_map; duplicate_map++)
-				{
+				for (duplicate_map++; *duplicate_map; duplicate_map++) {
 					CompilerScratch::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
 					const jrd_rel* relation = duplicate_tail->csb_relation;
-					if (relation && relation->rel_id == plan_relation->rel_id)
-					{
-						if (duplicate_relation)
-						{
+					if (relation && relation->rel_id == plan_relation->rel_id) {
+						if (duplicate_relation) {
 							// table %s is referenced twice in view; use an alias to distinguish
 							ERR_post(Arg::Gds(isc_duplicate_base_table) << Arg::Str(duplicate_relation->rel_name));
 						}
-						else
-						{
+						else {
 							duplicate_relation = relation;
 							map = duplicate_map;
 							tail = duplicate_tail;
@@ -5332,8 +5989,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			// look through all the base relations for a match
 
 			map = map_base;
-			for (map++; *map; map++)
-			{
+			for (map++; *map; map++) {
 				tail = &csb->csb_rpt[*map];
 				const jrd_rel* relation = tail->csb_relation;
 
@@ -5362,8 +6018,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				p++;
 			}
 
-			if (!*map)
-			{
+			if (!*map) {
 				// table %s is referenced in the plan but not the from list
 				ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 			}
@@ -5371,8 +6026,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		// fix up the relation node to point to the base relation's stream
 
-		if (!map || !*map)
-		{
+		if (!map || !*map) {
 			// table %s is referenced in the plan but not the from list
 			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 		}
@@ -5382,8 +6036,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 	// make some validity checks
 
-	if (!tail->csb_relation)
-	{
+	if (!tail->csb_relation) {
 		// table %s is referenced in the plan but not the from list
 		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 	}
@@ -5396,8 +6049,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 	// check if we already have a plan for this stream
 
-	if (tail->csb_plan)
-	{
+	if (tail->csb_plan) {
 		// table %s is referenced more than once in plan; use aliases to distinguish
 		ERR_post(Arg::Gds(isc_stream_twice) << Arg::Str(tail->csb_relation->rel_name));
 	}
@@ -5423,28 +6075,22 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
+	DEV_BLKCHK(procedure, type_prc);
 
 	// allow all access to internal requests
 
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name = procedure->getSecurityName().nullStr();
+	const TEXT* prc_sec_name =
+		(procedure->prc_security_name.length() > 0 ? procedure->prc_security_name.c_str() : NULL);
 
 	// this request must have EXECUTE permission on the stored procedure
-	if (procedure->getName().package.isEmpty())
-	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_procedure,
-						procedure->getName().identifier.c_str());
-	}
-	else
-	{
-		CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, SCL_object_package,
-						procedure->getName().package.c_str());
-	}
+	CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
+					procedure->prc_name.c_str());
 
 	// Add the procedure to list of external objects accessed
-	ExternalAccess temp(ExternalAccess::exa_procedure, procedure->getId());
+	ExternalAccess temp(procedure->prc_id);
 	size_t idx;
 	if (!csb->csb_external.find(temp, idx))
 		csb->csb_external.insert(idx, temp);
@@ -5470,24 +6116,8 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 
 	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
-	if (rse->nod_flags & rse_singular)
-	{
-		rsb = FB_NEW(*tdbb->getDefaultPool()) SingularStream(csb, rsb);
-	}
-
-	if (rse->nod_flags & rse_writelock)
-	{
-		for (USHORT i = 0; i < csb->csb_n_stream; i++)
-		{
-			csb->csb_rpt[i].csb_flags |= csb_update;
-		}
-
-		rsb = FB_NEW(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
-	}
-
-	if (rse->nod_flags & rse_scrollable)
-	{
-		rsb = FB_NEW(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
+	if (rse->nod_flags & rse_singular) {
+		rsb->rsb_flags |= rsb_singular;
 	}
 
 	// mark all the substreams as inactive
@@ -5506,18 +6136,12 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 			fb_assert(stream <= MAX_STREAMS);
 			csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		}
-		else if (node->nod_type == nod_window)
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			{
-				const USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-				fb_assert(stream <= MAX_STREAMS);
-				csb->csb_rpt[stream].csb_flags &= ~csb_active;
-			}
-		}
 	}
+
+	csb->csb_fors.push(rsb);
+#ifdef SCROLLABLE_CURSORS
+	rse->rse_rsb = rsb;
+#endif
 
 	return rsb;
 }
@@ -5570,7 +6194,8 @@ static void post_trigger_access(CompilerScratch* csb,
 }
 
 
-static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** input_format)
+static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
+						Format** input_format)
 {
 /**************************************
  *
@@ -5609,22 +6234,17 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, For
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (!min)
-		{
-			// eg: dtype_unknown
+		if (!min) {			// eg: dtype_unknown
 			*desc = desc2;
 		}
-		else if (max == dtype_blob)
-		{
+		else if (max == dtype_blob) {
 			desc->dsc_dtype = dtype_blob;
 			desc->dsc_length = sizeof(ISC_QUAD);
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = DataTypeUtil::getResultBlobSubType(desc, &desc2);
 			desc->dsc_flags = 0;
 		}
-		else if (min <= dtype_any_text)
-		{
-			// either field a text field?
+		else if (min <= dtype_any_text) {	// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
 			const USHORT len2 = DSC_string_length(&desc2);
 			desc->dsc_dtype = dtype_varying;
@@ -5633,32 +6253,28 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, For
 			// pick the max text type, so any transparent casts from ints are
 			// not left in ASCII format, but converted to the richer text format
 
-			desc->setTextType(MAX(INTL_TEXT_TYPE(*desc), INTL_TEXT_TYPE(desc2)));
+			INTL_ASSIGN_TTYPE(desc, MAX(INTL_TEXT_TYPE(*desc), INTL_TEXT_TYPE(desc2)));
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (DTYPE_IS_DATE(max) && !DTYPE_IS_DATE(min))
-		{
+		else if (DTYPE_IS_DATE(max) && !DTYPE_IS_DATE(min)) {
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = DSC_convert_to_text_length(max) + sizeof(USHORT);
 			desc->dsc_ttype() = ttype_ascii;
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 		}
-		else if (max != min)
-		{
+		else if (max != min) {
 			// different numeric types: if one is inexact use double,
 			// if both are exact use int64
-			if ((!DTYPE_IS_EXACT(max)) || (!DTYPE_IS_EXACT(min)))
-			{
+			if ((!DTYPE_IS_EXACT(max)) || (!DTYPE_IS_EXACT(min))) {
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 			}
-			else
-			{
+			else {
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
 				desc->dsc_scale = MIN(desc->dsc_scale, desc2.dsc_scale);
@@ -5688,7 +6304,6 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, For
 		ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = (USHORT) offset;
-	format->fmt_count = format->fmt_desc.getCount();
 }
 
 
@@ -5719,7 +6334,7 @@ static SSHORT strcmp_space(const char* p, const char* q)
 }
 
 
-static bool stream_in_rse(const USHORT stream, const RecordSelExpr* rse)
+static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -5779,22 +6394,6 @@ static bool stream_in_rse(const USHORT stream, const RecordSelExpr* rse)
 				return true;		// do not mark as variant
 			}
 			break;
-
-		case nod_window:
-			{
-				const jrd_nod* nodWindows = sub->nod_arg[e_win_windows];
-
-				for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-				{
-					if (stream == (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream])
-						return true;		// do not mark as variant
-				}
-
-				if (stream_in_rse(stream, (const RecordSelExpr*) sub->nod_arg[e_win_rse]))
-					return true;		// do not mark as variant
-			}
-			break;
-
 		// the simplest case - relations
 		case nod_relation:
 			if (stream == (USHORT)(IPTR) sub->nod_arg[e_rel_stream])

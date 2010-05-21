@@ -63,7 +63,6 @@
 #include "../jrd/os/thd_priority.h"
 #include "../jrd/event_proto.h"
 #include "../lock/lock_proto.h"
-#include "../common/config/config.h"
 
 class CharSetContainer;
 
@@ -78,7 +77,6 @@ namespace Jrd
 	class TxPageCache;
 	class BackupManager;
 	class vcl;
-    class ExternalFileDirectoryList;
 
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
@@ -130,21 +128,23 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 	class Sync : public Firebird::RefCounted
 	{
 	public:
-		Sync() : threadId(0)
+		Sync() : threadId(0), isAst(false)
 		{}
 
-		void lock()
+		void lock(bool ast = false)
 		{
 			ThreadPriorityScheduler::enter();
 			++waiters;
 			syncMutex.enter();
 			--waiters;
 			threadId = getThreadId();
+			isAst = ast;
 		}
 
 		void unlock()
 		{
 			ThreadPriorityScheduler::exit();
+			isAst = false;
 			threadId = 0;
 			syncMutex.leave();
 		}
@@ -170,6 +170,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		Firebird::Mutex syncMutex;
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
+		bool isAst;
 	};
 
 public:
@@ -180,13 +181,13 @@ public:
 		explicit SyncGuard(Database* dbb, bool ast = false)
 			: sync(*dbb->dbb_sync)
 		{
-			if (!dbb || !dbb->checkHandle())
+			if (!dbb->checkHandle())
 			{
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
 			}
 
 			sync.addRef();
-			sync.lock();
+			sync.lock(ast);
 
 			if (!dbb->checkHandle())
 			{
@@ -326,22 +327,6 @@ public:
 		return TypedHandle<type_dbb>::checkHandle();
 	}
 
-	/* CVC: Nobody's using this actively now.
-	void checkOdsForDsql(USHORT encodedVersion)
-	{
-		using namespace Firebird;
-
-		if (ENCODE_ODS(dbb_ods_version, dbb_minor_version) < encodedVersion)
-		{
-			// Feature not supported on ODS version older than %d.%d
-			status_exception::raise(
-				Arg::Gds(isc_dsql_feature_not_supported_ods) <<
-				Arg::Num(DECODE_ODS_MAJOR(encodedVersion)) <<
-				Arg::Num(DECODE_ODS_MINOR(encodedVersion)));
-		}
-	}
-	*/
-
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
 	Firebird::RefPtr<LockManager>	dbb_lock_mgr;
@@ -357,6 +342,7 @@ public:
 	Lock*		dbb_sh_counter_lock;	// lock which holds shared counter value
 	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock
 	SLONG		dbb_sh_counter_max;		// maximum cached value of shared counter lock
+	jrd_tra*	dbb_sys_trans;			// system transaction
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
@@ -366,18 +352,17 @@ public:
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
-	trig_vec*	dbb_ddl_triggers;
 
 	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
- 	ExtEngineManager dbb_extManager;	// external engine manager
 
 	Firebird::Mutex dbb_meta_mutex;		// Mutex to protect metadata changes while dbb_sync is unlocked
 	Firebird::Mutex dbb_cmp_clone_mutex;
 	Firebird::Mutex dbb_exe_clone_mutex;
 	Firebird::Mutex dbb_flush_count_mutex;
 	Firebird::Mutex dbb_dyn_mutex;
+	Firebird::Mutex dbb_sys_dfw_mutex;
 
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
@@ -385,10 +370,12 @@ public:
 	ULONG dbb_flags;
 	USHORT dbb_ods_version;				// major ODS version number
 	USHORT dbb_minor_version;			// minor ODS version number
+	USHORT dbb_minor_original;			// minor ODS version at creation
 	USHORT dbb_page_size;				// page size
 	USHORT dbb_dp_per_pp;				// data pages per pointer page
 	USHORT dbb_max_records;				// max record per data page
 	USHORT dbb_max_idx;					// max number of indexes on a root page
+	USHORT dbb_max_sys_rel;				// max id of system relation
 	USHORT dbb_use_count;				// active count of threads
 
 #ifdef SUPERSERVER_V2
@@ -405,8 +392,8 @@ public:
 
 	Firebird::Array<MemoryPool*> dbb_pools;		// pools
 
-	Firebird::Array<JrdStatement*> dbb_internal;	// internal statements
-	Firebird::Array<JrdStatement*> dbb_dyn_req;		// internal dyn statements
+	Firebird::Array<jrd_req*> dbb_internal;		// internal requests
+	Firebird::Array<jrd_req*> dbb_dyn_req;		// internal dyn requests
 
 	SLONG dbb_oldest_active;			// Cached "oldest active" transaction
 	SLONG dbb_oldest_transaction;		// Cached "oldest interesting" transaction
@@ -452,11 +439,8 @@ public:
 	vcl*		dbb_pc_transactions;	// active precommitted transactions
 	BackupManager*	dbb_backup_manager;	// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; // creation date
-	Firebird::Array<Function*> dbb_functions;	// User defined functions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, USHORT> > > dbb_charset_ids;	// Character set ids
-	ExternalFileDirectoryList* dbb_external_file_directory_list;
-	Firebird::RefPtr<Config> dbb_config;
+		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
@@ -476,9 +460,8 @@ public:
 private:
 	explicit Database(MemoryPool* p)
 	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
-		dbb_page_manager(this, *p),
+		dbb_page_manager(*p),
 		dbb_modules(*p),
-		dbb_extManager(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
 		dbb_encrypt_key(*p),
@@ -490,9 +473,7 @@ private:
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
-		dbb_functions(*p),
-		dbb_charset_ids(*p),
-		dbb_external_file_directory_list(NULL)
+		dbb_functions(*p)
 	{
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);
@@ -508,7 +489,6 @@ public:
 	void destroyIntlObjects();			// defined in intl.cpp
 
 	SLONG genSharedUniqueNumber(thread_db* tdbb);
-	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
 
 private:
 	static int blockingAstSharedCounter(void*);

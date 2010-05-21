@@ -31,8 +31,6 @@
 #include "../jrd/ThreadData.h"
 #include "../jrd/event.h"
 
-class Config;
-
 namespace Jrd {
 
 class Database;
@@ -49,7 +47,7 @@ class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 public:
 	static void init(Database*);
 
-	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
+	explicit EventManager(const Firebird::string&);
 	~EventManager();
 
 	SLONG createSession();
@@ -110,7 +108,6 @@ private:
 	sh_mem m_shmemData;
 
 	Firebird::string m_dbId;
-	Firebird::RefPtr<Config> m_config;
 
 	Firebird::Semaphore m_startupSemaphore;
 	Firebird::Semaphore m_cleanupSemaphore;
@@ -126,3 +123,4 @@ private:
 } // namespace
 
 #endif // JRD_EVENT_PROTO_H
+

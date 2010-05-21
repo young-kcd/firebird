@@ -31,7 +31,7 @@
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
 // The reason for AV is that process memory pool (from where globals should allocate memory)
-// is destroyed in atexit(), before destructors are called. Therefore each delete
+// is destoyed in atexit(), before destructors are called. Therefore each delete
 // operator in destructor will cause AV.
 #undef DEBUG_INIT
 

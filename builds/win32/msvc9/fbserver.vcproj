@@ -335,10 +335,30 @@
 	</References>
 	<Files>
 		<Filter
-			Name="AUTH files"
+			Name="UTILITIES files"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\pwd.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gstat\dba.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\nbackup.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\nbackup\nbkMain.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\trace\TraceService.cpp"
 				>
 			</File>
 		</Filter>
@@ -389,74 +409,6 @@
 						AdditionalIncludeDirectories="..\..\..\src\remote;$(NoInherit)"
 					/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="REMOTE files"
-			>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\property.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="UTILITIES files"
-			>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gstat\dba.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\nbackup.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\nbackup\nbkMain.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gsec\security.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceService.cpp"
-				>
 			</File>
 		</Filter>
 	</Files>

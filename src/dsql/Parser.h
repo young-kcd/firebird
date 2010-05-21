@@ -27,16 +27,8 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/AggNodes.h"
-#include "../dsql/WinNodes.h"
-#include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
-#include "../common/classes/TriState.h"
 #include "../common/classes/stack.h"
-
-#define _yacc_defines_keywords
-#include "../dsql/dsql.tab.h"
 
 namespace Jrd {
 
@@ -46,6 +38,7 @@ class Parser : public Firebird::PermanentStorage
 {
 private:
 	typedef int Yshort;
+	typedef dsql_nod* YYSTYPE;
 	typedef int YYPOSN;	// user-defined text position type
 
 	struct yyparsestate
@@ -71,7 +64,7 @@ private:
 		// This is, in fact, parser state. Not used in lexer itself
 		dsql_fld* g_field;
 		dsql_fil* g_file;
-		dsql_nod* g_field_name;
+		YYSTYPE g_field_name;
 		int dsql_debug;
 
 		// Actual lexer state begins from here
@@ -117,11 +110,11 @@ private:
 
 public:
 	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
-		const TEXT* string, size_t length, SSHORT characterSet);
+		const TEXT* string, USHORT length, SSHORT characterSet);
 	~Parser();
 
 public:
-	dsql_nod* parse();
+	YYSTYPE parse();
 
 	const Firebird::string& getTransformedString() const
 	{
@@ -159,17 +152,14 @@ private:
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
 
 	const TEXT* lex_position();
-	dsql_nod* make_list (dsql_nod* node);
-	dsql_nod* make_parameter();
-	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
-	dsql_nod* makeClassNode(ExprNode* node);
-	dsql_nod* makeClassNode(DdlNode* node);
-	dsql_nod* makeClassNode(StmtNode* node);
-	dsql_nod* make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
+	YYSTYPE make_list (YYSTYPE node);
+	YYSTYPE make_parameter();
+	YYSTYPE make_node(Dsql::nod_t type, int count, ...);
+	YYSTYPE makeClassNode(Node* node);
+	YYSTYPE make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 
 private:
-	Firebird::string compilingText;
 	USHORT client_dialect;
 	USHORT db_dialect;
 	USHORT parser_version;
@@ -177,7 +167,7 @@ private:
 	Firebird::string transformedString;
 	Firebird::GenericMap<Firebird::NonPooled<dsql_str*, StrMark> > strMarks;
 	bool stmt_ambiguous;
-	dsql_nod* DSQL_parse;
+	YYSTYPE DSQL_parse;
 
 	// These value/posn are taken from the lexer
 	YYSTYPE yylval;

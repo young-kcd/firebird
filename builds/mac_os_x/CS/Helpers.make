@@ -20,6 +20,7 @@ GBAK= $(BUILD_DIR)/gbak
 CREATE_DB=	$(BUILD_DIR)/create_db
 LOCK_MGR=	$(BUILD_DIR)/gds_lock_mgr
 GFIX=		$(BUILD_DIR)/gfix
+GDEF=		$(BUILD_DIR)/gdef
 ISQL=		$(BUILD_DIR)/isql
 GSEC=		$(BUILD_DIR)/gsec
 QLI=		$(BUILD_DIR)/qli
@@ -57,11 +58,14 @@ DSQL_GEN_FILES=	$(DSQL_EPP_FILES:%.epp=$(GEN_ROOT)/dsql/%.cpp) \
 GPRE_EPP_FILES=	gpre_meta.epp
 GPRE_GEN_FILES= $(GPRE_EPP_FILES:%.epp=$(GEN_ROOT)/gpre/%.cpp)
 
-GBAK_EPP_FILES=	backup.epp restore.epp OdsDetection.epp
+GBAK_EPP_FILES=	backup.epp restore.epp
 GBAK_GEN_FILES= $(GBAK_EPP_FILES:%.epp=$(GEN_ROOT)/burp/%.cpp)
 
 GFIX_EPP_FILES=	alice_meta.epp
 GFIX_GEN_FILES= $(GFIX_EPP_FILES:%.epp=$(GEN_ROOT)/alice/%.cpp)
+
+GDEF_EPP_FILES=	exe.epp extract.epp
+GDEF_GEN_FILES= $(GDEF_EPP_FILES:%.epp=$(GEN_ROOT)/dudley/%.cpp)
 
 ISQL_EPP_FILES=	extract.epp isql.epp show.epp
 ISQL_GEN_FILES= $(ISQL_EPP_FILES:%.epp=$(GEN_ROOT)/isql/%.cpp)
@@ -85,7 +89,7 @@ all:
 $(GEN_ROOT)/jrd/dyn_def.cpp : $(SRC_ROOT)/jrd/dyn_def.epp \
 								$(SRC_ROOT)/jrd/dyn_def.sed
 	$(GPRE_BOOT) $(GPRE_FLAGS) $< $(GEN_ROOT)/jrd/dyn_deffoo.cpp
-	sed -f $(SRC_ROOT)/jrd/dyn_def.sed $(GEN_ROOT)/jrd/dyn_deffoo.cpp > $@
+	sed -f $(SRC_ROOT)/jrd/dyn_def.sed $(GEN_ROOT)/jrd/dyn_deffoo.cpp > $@  
 	rm $(GEN_ROOT)/jrd/dyn_deffoo.cpp
 
 $(GEN_ROOT)/dsql/y.tab.c:    $(SRC_ROOT)/dsql/parse.y
@@ -108,6 +112,9 @@ $(GEN_ROOT)/burp/%.cpp: $(SRC_ROOT)/burp/%.epp $(GPRE)
 	$(GPRE) $(GPRE_FLAGS) $< $@
 
 $(GEN_ROOT)/alice/%.cpp: $(SRC_ROOT)/alice/%.epp $(GPRE)
+	$(GPRE) $(GPRE_FLAGS) $< $@
+
+$(GEN_ROOT)/dudley/%.cpp: $(SRC_ROOT)/dudley/%.epp $(GPRE)
 	$(GPRE) $(GPRE_FLAGS) $< $@
 
 $(GEN_ROOT)/isql/%.cpp: $(SRC_ROOT)/isql/%.epp $(GPRE)
@@ -224,6 +231,13 @@ utilities_preprocess_clean:
 utilities_preprocess_: $(UTILITIES_GEN_FILES)
 utilities_preprocess_%:
 
+gdef_preprocess_clean:
+	rm -f $(GDEF_GEN_FILES)
+gdef_preprocess: $(GDEF_GEN_FILES)
+gdef_preprocess_:
+	./gpre_wrapper.sh gdef_preprocess dudley
+gdef_preprocess_%:
+
 isql_preprocess_clean:
 	rm -f $(ISQL_GEN_FILES)
 isql_preprocess_:
@@ -239,6 +253,7 @@ $(EMPTY_DB):
 	$(CREATE_DB) $(EMPTY_DB)
 	ln -fs $(EMPTY_DB) $(GEN_ROOT)/burp/yachts.lnk
 	ln -fs $(EMPTY_DB) $(GEN_ROOT)/alice/yachts.lnk
+	ln -fs $(EMPTY_DB) $(GEN_ROOT)/dudley/yachts.lnk
 	ln -fs $(EMPTY_DB) $(GEN_ROOT)/isql/yachts.lnk
 	ln -fs $(EMPTY_DB) $(GEN_ROOT)/utilities/yachts.lnk
 empty_db_%:
@@ -283,6 +298,7 @@ $(META_DB): $(SRC_ROOT)/misc/metadata.gbak
 isc4.gdb_: $(ISC_DB) sysdba_user
 $(ISC_DB) : $(SRC_ROOT)/utilities/isc4.sql $(SRC_ROOT)/utilities/isc4.gdl
 	( cd $(FIREBIRD); $(ISQL) -z -i $(SRC_ROOT)/utilities/isc4.sql)
+	( cd $(FIREBIRD); $(GDEF) -z $(SRC_ROOT)/utilities/isc4.gdl)
 	-ln -sf $(ISC_DB) $(GEN_ROOT)/utilities/isc4.gdb
 
 isc4.gdb_clean:
@@ -334,7 +350,7 @@ fw_files_:
 	mkdir -p $(VAR)/auth
 	mkdir -p $(FB_FW)/Resources/bin
 	cp $(FIREBIRD)/interbase.msg $(VAR)/interbase.msg
-	-cp $(GPRE) $(GBAK) $(ISQL) $(QLI) $(GSEC) $(GFIX) $(FB_FW)/Resources/bin
+	-cp $(GPRE) $(GBAK) $(ISQL) $(QLI) $(GDEF) $(GSEC) $(GFIX) $(FB_FW)/Resources/bin
 	cp $(FIREBIRD)/isc.gbak $(VAR)
 	cp build/gdsintl $(VAR)/intl
 	chmod a+x $(VAR)/intl/*

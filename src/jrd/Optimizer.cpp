@@ -36,22 +36,17 @@
 #include "../jrd/rse.h"
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"
-#include "../jrd/recsrc/RecordSource.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/StmtNodes.h"
 
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/ext_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
-
-using namespace Firebird;
 
 namespace Jrd {
 
@@ -97,7 +92,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	switch (node->nod_type)
 	{
-		case nod_procedure:
+	case nod_procedure:
 		{
 			const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
 			if (inputs)
@@ -111,10 +106,9 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					}
 				}
 			}
-			break;
 		}
-
-		case nod_union:
+		break;
+	case nod_union:
 		{
 			const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
 			const jrd_nod* const* ptr = clauses->nod_arg;
@@ -124,24 +118,9 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					return false;
 				}
 			}
-			break;
 		}
-
-		case nod_class_exprnode_jrd:
-		{
-			const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
-
-			for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
-				 i != exprNode->jrdChildNodes.end(); ++i)
-			{
-				if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
-					return false;
-			}
-
-			break;
-		}
-
-		default:
+		break;
+	default:
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -150,7 +129,6 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 					return false;
 				}
 			}
-			break;
 		}
 	}
 
@@ -219,11 +197,6 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 		value = NULL;
 		break;
 
-	case nod_window:
-		rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
-		value = NULL;
-		break;
-
 	default:
 		return true;
 	}
@@ -245,28 +218,16 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		const jrd_nod* const node = *ptr;
-
-		if (node->nod_type == nod_window)
+		if ((*ptr)->nod_type != nod_rse)
 		{
-			const jrd_nod* windows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < windows->nod_count; ++i)
-			{
-				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
-			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			n = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
 		}
 	}
 
 	// Check sub-stream
-	if (((sub = rse->rse_boolean) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	if (((sub = rse->rse_boolean)    && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted)     && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
 	    ((sub = rse->rse_projection) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
 		result = false;
@@ -274,8 +235,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end && result; ptr++)
 	{
-		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
-		{
+		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
 			result = false;
 		}
 	}
@@ -288,19 +248,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	// Reset streams inactive
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		const jrd_nod* const node = *ptr;
-
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* windows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < windows->nod_count; ++i)
-			{
-				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
-			}
-		}
-		else if (node->nod_type != nod_rse)
+		if ((*ptr)->nod_type != nod_rse)
 		{
 			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
 			csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
@@ -313,7 +261,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 // Try to merge this function with node_equality() into 1 function.
 
-bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
+bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 							 const index_desc* idx, jrd_nod* node,
 							 USHORT stream)
 {
@@ -331,19 +279,53 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
 
 	SET_TDBB(tdbb);
 
-	if (idx && idx->idx_expression_statement && idx->idx_expression)
+	if (idx && idx->idx_expression_request && idx->idx_expression)
 	{
 		fb_assert(idx->idx_flags & idx_expressn);
-		return OPT_expression_equal2(tdbb, csb, idx->idx_expression, node, stream);
+
+		jrd_req* org_request = tdbb->getRequest();
+		jrd_req* expr_request = EXE_find_request(tdbb, idx->idx_expression_request, false);
+
+		fb_assert(expr_request->req_caller == NULL);
+		expr_request->req_caller = org_request;
+		tdbb->setRequest(expr_request);
+
+		bool result = false;
+
+		try
+		{
+			Jrd::ContextPoolHolder context(tdbb, expr_request->req_pool);
+
+			expr_request->req_timestamp = expr_request->req_caller ?
+				expr_request->req_caller->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
+
+			result = OPT_expression_equal2(tdbb, opt, idx->idx_expression, node, stream);
+		}
+		catch (const Firebird::Exception&)
+		{
+			tdbb->setRequest(org_request);
+			expr_request->req_caller = NULL;
+			expr_request->req_flags &= ~req_in_use;
+			expr_request->req_timestamp.invalidate();
+
+			throw;
+		}
+
+		tdbb->setRequest(org_request);
+		expr_request->req_caller = NULL;
+		expr_request->req_flags &= ~req_in_use;
+		expr_request->req_timestamp.invalidate();
+
+		return result;
 	}
 
 	return false;
 }
 
 
-bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
-						   jrd_nod* node1, jrd_nod* node2,
-						   USHORT stream)
+bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
+							  jrd_nod* node1, jrd_nod* node2,
+							  USHORT stream)
 {
 /**************************************
  *
@@ -369,15 +351,16 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 	if (node1->nod_type != node2->nod_type)
 	{
-		dsc desc1, desc2;
+		dsc dsc1, dsc2;
+		dsc *desc1 = &dsc1, *desc2 = &dsc2;
 
 		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
 		{
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
+			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source], node2, stream))
+			if (DSC_EQUIV(desc1, desc2, true) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source], node2, stream))
 			{
 				return true;
 			}
@@ -385,11 +368,11 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
 		{
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
+			CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1, node2->nod_arg[e_cast_source], stream))
+			if (DSC_EQUIV(desc1, desc2, true) &&
+				OPT_expression_equal2(tdbb, opt, node1, node2->nod_arg[e_cast_source], stream))
 			{
 				return true;
 			}
@@ -400,55 +383,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 	switch (node1->nod_type)
 	{
-		case nod_class_exprnode_jrd:
-		{
-			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
-			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
-			Array<jrd_nod**>& children1 = exprNode1->jrdChildNodes;
-			Array<jrd_nod**>& children2 = exprNode2->jrdChildNodes;
-
-			if (exprNode1->type != exprNode2->type || children1.getCount() != children2.getCount())
-				return false;
-
-			switch (exprNode1->type)
-			{
-				case ExprNode::TYPE_SYSFUNC_CALL:
-				case ExprNode::TYPE_UDF_CALL:
-					switch (exprNode1->type)
-					{
-						case ExprNode::TYPE_SYSFUNC_CALL:
-							if (!exprNode1->as<SysFuncCallNode>()->function ||
-								exprNode1->as<SysFuncCallNode>()->function != exprNode2->as<SysFuncCallNode>()->function)
-							{
-								return false;
-							}
-							break;
-
-						case ExprNode::TYPE_UDF_CALL:
-							if (!exprNode1->as<UdfCallNode>()->function ||
-								exprNode1->as<UdfCallNode>()->function != exprNode2->as<UdfCallNode>()->function)
-							{
-								return false;
-							}
-							break;
-					}
-					// fall into
-
-				case ExprNode::TYPE_CONCATENATE:
-				case ExprNode::TYPE_SUBSTRING_SIMILAR:
-					for (jrd_nod*** i = children1.begin(), ***j = children2.begin();
-						 i != children1.end(); ++i, ++j)
-					{
-						if (!OPT_expression_equal2(tdbb, csb, **i, **j, stream))
-							return false;
-					}
-
-					return true;
-			}
-
-			break;
-		}
-
 		case nod_add:
 		case nod_multiply:
 		case nod_add2:
@@ -461,8 +395,8 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			// A+B is equivalent to B+A, ditto A*B==B*A
 			// Note: If one expression is A+B+C, but the other is B+C+A we won't
 			// necessarily match them.
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[1], stream) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[1], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[1], stream) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[0], stream))
 			{
 				return true;
 			}
@@ -471,14 +405,15 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		case nod_divide:
 		case nod_subtract2:
 		case nod_divide2:
+		case nod_concatenate:
 
 		// TODO match A > B to B <= A, etc
 	    case nod_gtr:
 		case nod_geq:
 		case nod_leq:
 		case nod_lss:
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[1], node2->nod_arg[1], stream))
+			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[1], node2->nod_arg[1], stream))
 			{
 				return true;
 			}
@@ -502,15 +437,31 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			}
 			break;
 
+		case nod_function:
+			if (node1->nod_arg[e_fun_function] &&
+				(node1->nod_arg[e_fun_function] == node2->nod_arg[e_fun_function]) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_fun_args],
+									  node2->nod_arg[e_fun_args], stream))
+			{
+				return true;
+			}
+			break;
+
+		case nod_sys_function:
+			if (node1->nod_arg[e_sysfun_function] &&
+				(node1->nod_arg[e_sysfun_function] == node2->nod_arg[e_sysfun_function]) &&
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_sysfun_args],
+									  node2->nod_arg[e_sysfun_args], stream))
+			{
+				return true;
+			}
+			break;
+
 		case nod_literal:
 			{
-				dsc desc1, desc2;
-
-				CMP_get_desc(tdbb, csb, node1, &desc1);
-				CMP_get_desc(tdbb, csb, node2, &desc2);
-
-				if (DSC_EQUIV(&desc1, &desc2, true) &&
-					!memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length))
+				const dsc* desc1 = EVL_expr(tdbb, node1);
+				const dsc* desc2 = EVL_expr(tdbb, node2);
+				if (desc1 && desc2 && !MOV_compare(desc1, desc2))
 				{
 					return true;
 				}
@@ -545,7 +496,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 				}
 				for (int i = 0; i < node1->nod_count; ++i)
 				{
-					if (!OPT_expression_equal2(tdbb, csb, node1->nod_arg[i], node2->nod_arg[i], stream))
+					if (!OPT_expression_equal2(tdbb, opt, node1->nod_arg[i], node2->nod_arg[i], stream))
 					{
 						return false;
 					}
@@ -564,7 +515,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_negate:
 		case nod_internal_info:
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
 			{
 				return true;
 			}
@@ -572,7 +523,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_upcase:
 		case nod_lowcase:
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream))
+			if (OPT_expression_equal2(tdbb, opt, node1->nod_arg[0], node2->nod_arg[0], stream))
 			{
 				return true;
 			}
@@ -580,13 +531,14 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_cast:
 			{
-				dsc desc1, desc2;
+				dsc dsc1, dsc2;
+				dsc *desc1 = &dsc1, *desc2 = &dsc2;
 
-				CMP_get_desc(tdbb, csb, node1, &desc1);
-				CMP_get_desc(tdbb, csb, node2, &desc2);
+				CMP_get_desc(tdbb, opt->opt_csb, node1, desc1);
+				CMP_get_desc(tdbb, opt->opt_csb, node2, desc2);
 
-				if (DSC_EQUIV(&desc1, &desc2, true) &&
-					OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source],
+				if (DSC_EQUIV(desc1, desc2, true) &&
+					OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_cast_source],
 										  node2->nod_arg[e_cast_source], stream))
 				{
 					return true;
@@ -596,7 +548,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_extract:
 			if (node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_extract_value],
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_extract_value],
 									  node2->nod_arg[e_extract_value], stream))
 			{
 				return true;
@@ -605,7 +557,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 		case nod_strlen:
 			if (node1->nod_arg[e_strlen_type] == node2->nod_arg[e_strlen_type] &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_strlen_value],
+				OPT_expression_equal2(tdbb, opt, node1->nod_arg[e_strlen_value],
 									  node2->nod_arg[e_strlen_value], stream))
 			{
 				return true;
@@ -626,7 +578,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 				while (count--)
 				{
-					if (!OPT_expression_equal2(tdbb, csb, *ptr1++, *ptr2++, stream))
+					if (!OPT_expression_equal2(tdbb, opt, *ptr1++, *ptr2++, stream))
 					{
 						return false;
 					}
@@ -668,7 +620,9 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
 
 	if (relation->rel_file)
 	{
-		return EXT_cardinality(tdbb, relation);
+		// Is there really no way to do better?
+		// Don't we know the file-size and record-size?
+		return (double) 10000;
 	}
 
 	MET_post_existence(tdbb, relation);
@@ -704,8 +658,8 @@ jrd_nod* OPT_make_binary_node(nod_t type, jrd_nod* arg1, jrd_nod* arg2, bool fla
 }
 
 
-string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
-					  const CompilerScratch::csb_repeat* base_tail)
+VaryingString* OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
+				const CompilerScratch::csb_repeat* base_tail)
 {
 /**************************************
  *
@@ -722,54 +676,89 @@ string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
 	SET_TDBB(tdbb);
+	if (!base_tail->csb_view && !base_tail->csb_alias)
+		return NULL;
 
-	string alias;
-
-	if (base_tail->csb_view || base_tail->csb_alias)
+	const CompilerScratch::csb_repeat* csb_tail;
+	// calculate the length of the alias by going up through
+	// the view stack to find the lengths of all aliases;
+	// adjust for spaces and a null terminator
+	USHORT alias_length = 0;
+	for (csb_tail = base_tail; true; csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
 	{
-		ObjectsArray<string> alias_list;
+		if (csb_tail->csb_alias)
+			alias_length += csb_tail->csb_alias->length();
+		else {
+			alias_length += (csb_tail->csb_relation ? csb_tail->csb_relation->rel_name.length() : 0);
+		}
+		alias_length++;
+		if (!csb_tail->csb_view)
+			break;
+	}
 
-		for (const CompilerScratch::csb_repeat* csb_tail = base_tail; ;
-			csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
+	// allocate a string block to hold the concatenated alias
+	VaryingString* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) VaryingString();
+	alias->str_length = alias_length - 1;
+	// now concatenate the individual aliases into the string block,
+	// beginning at the end and copying back to the beginning
+	TEXT* p = (TEXT *) alias->str_data + alias->str_length;
+	*p-- = 0;
+	for (csb_tail = base_tail; true; csb_tail = &csb->csb_rpt[csb_tail->csb_view_stream])
+	{
+		const TEXT* q;
+		if (csb_tail->csb_alias)
+			q = (TEXT *) csb_tail->csb_alias->c_str();
+		else
 		{
-			if (csb_tail->csb_alias)
-			{
-				alias_list.push(*csb_tail->csb_alias);
-			}
-			else if (csb_tail->csb_relation)
-			{
-				alias_list.push(csb_tail->csb_relation->rel_name.c_str());
-			}
-
-			if (!csb_tail->csb_view)
-				break;
-
+			q = (csb_tail->csb_relation && csb_tail->csb_relation->rel_name.length() ?
+				csb_tail->csb_relation->rel_name.c_str() : NULL);
+		}
+		// go to the end of the alias and copy it backwards
+		if (q)
+		{
+			for (alias_length = 0; *q; alias_length++)
+				q++;
+			while (alias_length--)
+				*p-- = *--q;
 		}
 
-		while (alias_list.getCount())
-		{
-			alias += alias_list.pop();
-
-			if (alias_list.getCount())
-			{
-				alias += ' ';
-			}
-		}
-	}
-	else if (base_tail->csb_relation)
-	{
-		alias = base_tail->csb_relation->rel_name.c_str();
-	}
-	else if (base_tail->csb_procedure)
-	{
-		alias = base_tail->csb_procedure->getName().toString();
-	}
-	else
-	{
-		fb_assert(false);
+		if (!csb_tail->csb_view)
+			break;
+		*p-- = ' ';
 	}
 
 	return alias;
+}
+
+
+USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
+{
+/**************************************
+ *
+ *	n a v _ r s b _ s i z e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Calculate the size of a navigational rsb.
+ *
+ **************************************/
+	DEV_BLKCHK(rsb, type_rsb);
+#ifdef SCROLLABLE_CURSORS
+	// allocate extra impure area to hold the current key,
+	// plus an upper and lower bound key value, for a total
+	// of three times the key length for the index
+	size += sizeof(struct irsb_nav) + 3 * key_length;
+#else
+	size += sizeof(struct irsb_nav) + 2 * key_length;
+#endif
+	size = FB_ALIGN(size, FB_ALIGNMENT);
+	// make room for an idx structure to describe the index
+	// that was used to generate this rsb
+	if (rsb->rsb_type == rsb_navigate)
+		rsb->rsb_arg[RSB_NAV_idx_offset] = (RecordSource*) (IPTR) size;
+	size += sizeof(index_desc);
+	return size;
 }
 
 
@@ -834,7 +823,6 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	selectivity = MAXIMUM_SELECTIVITY;
 	candidate = false;
 	scopeCandidate = false;
-	utilized = false;
 	lowerCount = 0;
 	upperCount = 0;
 	nonFullMatchedSegments = 0;
@@ -861,8 +849,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 		// Compound indexes are generally less compressed.
 		factor = 0.7;
 	}
-
-	const Database* const dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->getDatabase();
 	cardinality = (csb_tail->csb_cardinality * (2 + (length * factor))) / (dbb->dbb_page_size - BTR_SIZE);
 	cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
 }
@@ -883,7 +870,6 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	cardinality = scratch.cardinality;
 	candidate = scratch.candidate;
 	scopeCandidate = scratch.scopeCandidate;
-	utilized = scratch.utilized;
 	lowerCount = scratch.lowerCount;
 	upperCount = scratch.upperCount;
 	nonFullMatchedSegments = scratch.nonFullMatchedSegments;
@@ -944,7 +930,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 									   SSHORT streamNumber, bool outer,
 									   bool inner, jrd_nod** sortNode) :
-	pool(p), alias(p), indexScratches(p), inversionCandidates(p)
+	pool(p), indexScratches(p), inversionCandidates(p)
 {
 /**************************************
  *
@@ -957,6 +943,7 @@ OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
  **************************************/
 	tdbb = NULL;
 	createIndexScanNodes = false;
+	alias = NULL;
 	setConjunctionsMatched = false;
 
 	SET_TDBB(tdbb);
@@ -1078,16 +1065,6 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 			findDependentFromStreams(*ptr, streamList);
 		}
 	}
-	else if (node->nod_type == nod_class_exprnode_jrd)
-	{
-		const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
-
-		for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
-			 i != exprNode->jrdChildNodes.end(); ++i)
-		{
-			findDependentFromStreams(**i, streamList);
-		}
-	}
 	else
 	{
 		const jrd_nod* const* ptr = node->nod_arg;
@@ -1154,11 +1131,6 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 			value = NULL;
 			break;
 
-		case nod_window:
-			rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
-			value = NULL;
-			break;
-
 		default:
 			return;
 	}
@@ -1199,7 +1171,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	return;
 }
 
-const string& OptimizerRetrieval::getAlias()
+VaryingString* OptimizerRetrieval::getAlias()
 {
 /**************************************
  *
@@ -1210,7 +1182,7 @@ const string& OptimizerRetrieval::getAlias()
  * Functional description
  *
  **************************************/
-	if (alias.isEmpty())
+	if (!alias)
 	{
 		const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[this->stream];
 		alias = OPT_make_alias(tdbb, csb, csb_tail);
@@ -1218,7 +1190,7 @@ const string& OptimizerRetrieval::getAlias()
 	return alias;
 }
 
-InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
+InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 {
 /**************************************
  *
@@ -1229,6 +1201,10 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
  * Functional description
  *
  **************************************/
+	if (!relation || relation->rel_file || relation->isVirtual()) {
+		return NULL;
+	}
+
 	OptimizerBlk::opt_conjunct* const opt_begin =
 		optimizer->opt_conjuncts.begin() + (outerFlag ? optimizer->opt_base_parent_conjuncts : 0);
 
@@ -1236,137 +1212,101 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		innerFlag ? optimizer->opt_conjuncts.begin() + optimizer->opt_base_missing_conjuncts :
 					optimizer->opt_conjuncts.end();
 
-	InversionCandidate* invCandidate = NULL;
+	InversionCandidateList inversions;
+	inversions.shrink(0);
 
-	if (relation && !relation->rel_file && !relation->isVirtual())
+	// First, handle "AND" comparisons (all nodes except nod_or)
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
-		InversionCandidateList inversions;
-
-		// Check for any DB_KEY comparisons
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			continue;
+		}
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-				continue;
-			}
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
-			{
-				invCandidate = matchDbKey(node);
-				if (invCandidate)
-				{
-					invCandidate->boolean = node;
-					inversions.add(invCandidate);
-				}
-			}
+			matchOnIndexes(&indexScratches, node, 1);
 		}
+	}
+	getInversionCandidates(&inversions, &indexScratches, 1);
 
-		// First, handle "AND" comparisons (all nodes except nod_or)
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+	if (sort && rsb) {
+		*rsb = generateNavigation();
+	}
+
+	// Second, handle "OR" comparisons
+	InversionCandidate* invCandidate = NULL;
+	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+	{
+		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			continue;
+		}
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-				continue;
-			}
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
+			invCandidate = matchOnIndexes(&indexScratches, node, 1);
+			if (invCandidate)
 			{
-				matchOnIndexes(&indexScratches, node, 1);
+				invCandidate->boolean = node;
+				inversions.add(invCandidate);
 			}
 		}
-
-		getInversionCandidates(&inversions, &indexScratches, 1);
-
-		if (sort && rsb) {
-			*rsb = generateNavigation();
-		}
-
-		// Second, handle "OR" comparisons
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
-		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-				continue;
-			}
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
-			{
-				invCandidate = matchOnIndexes(&indexScratches, node, 1);
-				if (invCandidate)
-				{
-					invCandidate->boolean = node;
-					inversions.add(invCandidate);
-				}
-			}
-		}
+	}
 
 #ifdef OPT_DEBUG_RETRIEVAL
-		// Debug
-		printCandidates(&inversions);
+	// Debug
+	printCandidates(&inversions);
 #endif
 
-		invCandidate = makeInversion(&inversions);
+	invCandidate = makeInversion(&inversions);
 
-		// Clean up inversion list
-		InversionCandidate** inversion = inversions.begin();
-		for (size_t i = 0; i < inversions.getCount(); i++)
+	if (invCandidate)
+	{
+		if (invCandidate->unique)
 		{
-			delete inversion[i];
+			// Set up the unique retrieval cost to be fixed and not dependent on
+			// possibly outdated statistics
+			invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
 		}
-	}
-
-	if (!invCandidate)
-	{
-		// No index will be used, thus create a dummy inversion candidate
-		// representing the natural table access. All the necessary properties
-		// (selectivity: 1.0, cost: 0, unique: false) are set up by the constructor.
-		invCandidate = FB_NEW(pool) InversionCandidate(pool);
-	}
-
-	if (invCandidate->unique)
-	{
-		// Set up the unique retrieval cost to be fixed and not dependent on
-		// possibly outdated statistics
-		invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
-	}
-	else
-	{
-		// Add the records retrieval cost to the priorly calculated index scan cost
-		invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
-	}
-
-	// Adjust the effective selectivity by treating computable conjunctions as filters
-	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		tail < optimizer->opt_conjuncts.end(); tail++)
-	{
-		jrd_nod* const node = tail->opt_conjunct_node;
-		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			OPT_computable(csb, node, stream, false, true) &&
-			!invCandidate->matches.exist(node))
+		else
 		{
-			const double factor = (node->nod_type == nod_eql) ?
-				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-			invCandidate->selectivity *= factor;
+			// Add the records retrieval cost to the priorly calculated index scan cost
+			invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
 		}
-	}
 
-	// Add the streams where this stream is depending on.
-	for (size_t i = 0; i < invCandidate->matches.getCount(); i++)
-	{
-		findDependentFromStreams(invCandidate->matches[i], &invCandidate->dependentFromStreams);
-	}
-
-	if (setConjunctionsMatched)
-	{
-		SortedArray<jrd_nod*> matches;
-		// AB: Putting a unsorted array in a sorted array directly by join isn't
-		// very safe at the moment, but in our case Array holds a sorted list.
-		// However SortedArray class should be updated to handle join right!
-		matches.join(invCandidate->matches);
-		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+		// Adjust the effective selectivity by treating computable conjunctions as filters
+		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+			tail < optimizer->opt_conjuncts.end(); tail++)
 		{
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used))
+			jrd_nod* const node = tail->opt_conjunct_node;
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+				OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+				!invCandidate->matches.exist(node))
 			{
-				if (matches.exist(tail->opt_conjunct_node))
+				const double factor = (node->nod_type == nod_eql) ?
+					REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+				invCandidate->selectivity *= factor;
+			}
+		}
+
+		// Add the streams where this stream is depending on.
+		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
+			findDependentFromStreams(invCandidate->matches[i], &invCandidate->dependentFromStreams);
+		}
+
+		if (setConjunctionsMatched)
+		{
+			Firebird::SortedArray<jrd_nod*> matches;
+			// AB: Putting a unsorted array in a sorted array directly by join isn't
+			// very safe at the moment, but in our case Array holds a sorted list.
+			// However SortedArray class should be updated to handle join right!
+			matches.join(invCandidate->matches);
+			for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
+			{
+				if (!(tail->opt_conjunct_flags & opt_conjunct_used))
 				{
-					tail->opt_conjunct_flags |= opt_conjunct_matched;
+					if (matches.exist(tail->opt_conjunct_node)) {
+						tail->opt_conjunct_flags |= opt_conjunct_matched;
+					}
 				}
 			}
 		}
@@ -1377,10 +1317,16 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 	printFinalCandidate(invCandidate);
 #endif
 
+	// Clean up inversion list
+	InversionCandidate** inversion = inversions.begin();
+	for (size_t i = 0; i < inversions.getCount(); i++) {
+		delete inversion[i];
+	}
+
 	return invCandidate;
 }
 
-IndexTableScan* OptimizerRetrieval::generateNavigation()
+RecordSource* OptimizerRetrieval::generateNavigation()
 {
 /**************************************
  *
@@ -1430,7 +1376,9 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		}
 
 		// check to see if the fields in the sort match the fields in the index
-		// in the exact same order
+		// in the exact same order--we used to check for ascending/descending prior
+		// to SCROLLABLE_CURSORS, but now descending sorts can use ascending indices
+		// and vice versa.
 
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
@@ -1440,7 +1388,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 			jrd_nod* node = *ptr;
 			if (idx->idx_flags & idx_expressn)
 			{
-				if (!OPT_expression_equal(tdbb, csb, idx, node, stream))
+				if (!OPT_expression_equal(tdbb, optimizer, idx, node, stream))
 				{
 					usableIndex = false;
 					break;
@@ -1456,10 +1404,15 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending)) ||
 				(!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending)) ||
-				((reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first &&
-					ptr[sortPtr->nod_count]) ||
-				 (reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last &&
-					!ptr[sortPtr->nod_count])))
+				// for ODS11 default nulls placement always may be matched to index
+				(database->dbb_ods_version >= ODS_VERSION11 &&
+					((reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first &&
+						ptr[sortPtr->nod_count]) ||
+						(reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last &&
+						!ptr[sortPtr->nod_count]))) ||
+				// for ODS10 and earlier indices always placed nulls at the end of dataset
+				(database->dbb_ods_version < ODS_VERSION11 &&
+					reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first) )
 			{
 				usableIndex = false;
 				break;
@@ -1509,12 +1462,20 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		// a navigational rsb for it.
 		*sort = NULL;
 		idx->idx_runtime_flags |= idx_navigate;
+		//return gen_nav_rsb(tdbb, opt, stream, relation, alias, idx);
 
-		indexScratches[i].utilized = true;
-		jrd_nod* const index_node = makeIndexScanNode(&indexScratches[i]);
-		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
-		return FB_NEW(*tdbb->getDefaultPool())
-				IndexTableScan(csb, getAlias(), stream, index_node, key_length);
+		USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
+		RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), RSB_NAV_count) RecordSource();
+		rsb->rsb_type = rsb_navigate;
+		rsb->rsb_relation = relation;
+		rsb->rsb_stream = (UCHAR) stream;
+		rsb->rsb_alias = getAlias();
+		rsb->rsb_arg[RSB_NAV_index] = (RecordSource*) makeIndexScanNode(&indexScratches[i]);
+		rsb->rsb_arg[RSB_NAV_key_length] = (RecordSource*) (IPTR) key_length;
+
+		const USHORT size = OPT_nav_rsb_size(rsb, key_length, 0);
+		rsb->rsb_impure = CMP_impure(optimizer->opt_csb, size);
+		return rsb;
 	}
 
 	return NULL;
@@ -1533,10 +1494,26 @@ InversionCandidate* OptimizerRetrieval::getCost()
  **************************************/
 	createIndexScanNodes = false;
 	setConjunctionsMatched = false;
-	return generateInversion(NULL);
+	InversionCandidate* inversion = generateInversion(NULL);
+	if (inversion) {
+		return inversion;
+	}
+
+	// No index will be used, thus
+	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->indexes = 0;
+	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+/*
+	OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+	for (; tail < optimizer->opt_conjuncts.end(); tail++) {
+		findDependentFromStreams(tail->opt_conjunct_node, &invCandidate->dependentFromStreams);
+	}
+*/
+	return invCandidate;
 }
 
-InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
+InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 {
 /**************************************
  *
@@ -1553,7 +1530,17 @@ InversionCandidate* OptimizerRetrieval::getInversion(IndexTableScan** rsb)
  **************************************/
 	createIndexScanNodes = true;
 	setConjunctionsMatched = true;
-	return generateInversion(rsb);
+	InversionCandidate* inversion = generateInversion(rsb);
+	if (inversion) {
+		return inversion;
+	}
+
+	// No index will be used
+	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->indexes = 0;
+	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+	return invCandidate;
 }
 
 void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions,
@@ -1571,13 +1558,12 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
 	// Walk through indexes to calculate selectivity / candidate
-	Array<jrd_nod*> matches;
+	Firebird::Array<jrd_nod*> matches;
 	size_t i = 0;
 	for (i = 0; i < fromIndexScratches->getCount(); i++)
 	{
 		IndexScratch& scratch = (*fromIndexScratches)[i];
 		scratch.scopeCandidate = false;
-		scratch.utilized = false;
 		scratch.lowerCount = 0;
 		scratch.upperCount = 0;
 		scratch.nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
@@ -1725,58 +1711,12 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					findDependentFromStreams(invCandidate->matches[k],
 											 &invCandidate->dependentFromStreams);
 				}
-				invCandidate->dependencies = (int) invCandidate->dependentFromStreams.getCount();
+				invCandidate->dependencies = invCandidate->dependentFromStreams.getCount();
 				inversions->add(invCandidate);
 			}
 		}
 	}
 }
-
-jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* position) const
-{
-/**************************************
- *
- *	f i n d D b K e y
- *
- **************************************
- *
- * Functional description
- *	Search a dbkey (possibly a concatenated one) for
- *	a dbkey for specified stream.
- *
- **************************************/
-
-	if (dbkey->nod_type == nod_dbkey)
-	{
-		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
-		{
-			return dbkey;
-		}
-
-		*position = *position + 1;
-		return NULL;
-	}
-
-	ConcatenateNode* concatNode = ExprNode::as<ConcatenateNode>(dbkey);
-
-	if (concatNode)
-	{
-		jrd_nod* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
-		if (dbkey_temp)
-		{
-			return dbkey_temp;
-		}
-
-		dbkey_temp = findDbKey(concatNode->arg2, stream, position);
-		if (dbkey_temp)
-		{
-			return dbkey_temp;
-		}
-	}
-
-	return NULL;
-}
-
 
 jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 {
@@ -1793,12 +1733,11 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 
 	// check whether this is during a compile or during
 	// a SET INDEX operation
-	if (csb)
+	if (csb) {
 		CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_index, idx->idx_id);
-	else
-	{
-		CMP_post_resource(&tdbb->getRequest()->getStatement()->resources, relation,
-			Resource::rsc_index, idx->idx_id);
+	}
+	else {
+		CMP_post_resource(&tdbb->getRequest()->req_resources, relation, Resource::rsc_index, idx->idx_id);
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_idx_length);
@@ -1874,9 +1813,9 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 			if (i < indexScratch->upperCount) {
 				*upper++ = segment[i]->upperValue;
 			}
-			if (segment[i]->scanType == segmentScanEquivalent) {
-				ignoreNullsOnScan = false;
-			}
+		}
+		if (segment[i]->scanType == segmentScanEquivalent) {
+			ignoreNullsOnScan = false;
 		}
 	}
 
@@ -1897,7 +1836,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		 tail != indexScratch->segments.end() && ((*tail)->lowerValue || (*tail)->upperValue); ++tail)
 	{
 		dsc dsc0;
-		CMP_get_desc(tdbb, csb, (*tail)->matches[0]->nod_arg[0], &dsc0);
+		CMP_get_desc(tdbb, optimizer->opt_csb, (*tail)->matches[0]->nod_arg[0], &dsc0);
 
 		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
 		// when looking for charsets/collations
@@ -1935,8 +1874,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	// already at index scan. But this rule doesn't apply to nod_equiv
 	// which requires NULLs to be found in the index.
 	// A second exception is when this index is used for navigation.
-	if (ignoreNullsOnScan && !(idx->idx_runtime_flags & idx_navigate))
-	{
+	if (ignoreNullsOnScan && !(idx->idx_runtime_flags & idx_navigate)) {
 		retrieval->irb_generic |= irb_ignore_null_value_key;
 	}
 
@@ -2029,16 +1967,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 		inversion[i]->used = false;
 		if (inversion[i]->scratch)
 		{
-			if (inversion[i]->scratch->utilized ||
-				(inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use))
-			{
+			if (inversion[i]->scratch->idx->idx_runtime_flags & idx_plan_dont_use) {
 				inversion[i]->used = true;
 			}
 		}
 	}
 
 	// The matches returned in this inversion are always sorted.
-	SortedArray<jrd_nod*> matches;
+	Firebird::SortedArray<jrd_nod*> matches;
 
 	for (i = 0; i < inversions->getCount(); i++)
 	{
@@ -2372,12 +2308,12 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!OPT_expression_equal(tdbb, csb, indexScratch->idx, match, stream) ||
-			(value && !OPT_computable(csb, value, stream, true, false)))
+		if (!OPT_expression_equal(tdbb, optimizer, indexScratch->idx, match, stream) ||
+			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false)))
 		{
 			if (boolean->nod_type != nod_starts && value &&
-				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
-				OPT_computable(csb, match, stream, true, false))
+				OPT_expression_equal(tdbb, optimizer, indexScratch->idx, value, stream) &&
+				OPT_computable(optimizer->opt_csb, match, stream, true, false))
 			{
 				match = boolean->nod_arg[1];
 				value = boolean->nod_arg[0];
@@ -2394,13 +2330,13 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 
 		if (match->nod_type != nod_field ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-			(value && !OPT_computable(csb, value, stream, true, false)))
+			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false)))
 		{
 			match = value;
 			value = boolean->nod_arg[0];
 			if (!match || match->nod_type != nod_field ||
 				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
-				!OPT_computable(csb, value, stream, true, false))
+				!OPT_computable(optimizer->opt_csb, value, stream, true, false))
 			{
 				return false;
 			}
@@ -2414,8 +2350,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	if (value)
 	{
 		dsc desc1, desc2;
-		CMP_get_desc(tdbb, csb, match, &desc1);
-		CMP_get_desc(tdbb, csb, value, &desc2);
+		CMP_get_desc(tdbb, optimizer->opt_csb, match, &desc1);
+		CMP_get_desc(tdbb, optimizer->opt_csb, value, &desc2);
 
 		if (!BTR_types_comparable(desc1, desc2, value->nod_flags))
 			return false;
@@ -2434,7 +2370,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 			cast->nod_count = 1;
 			cast->nod_arg[e_cast_source] = value;
 			cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
-			cast->nod_impure = CMP_impure(csb, sizeof(impure_value));
+			cast->nod_impure = CMP_impure(optimizer->opt_csb, sizeof(impure_value));
 			value = cast;
 
 			if (value2)
@@ -2444,7 +2380,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 				cast->nod_count = 1;
 				cast->nod_arg[e_cast_source] = value2;
 				cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
-				cast->nod_impure = CMP_impure(csb, sizeof(impure_value));
+				cast->nod_impure = CMP_impure(optimizer->opt_csb, sizeof(impure_value));
 				value2 = cast;
 			}
 		}
@@ -2467,7 +2403,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 			{
 
 				case nod_between:
-					if (!forward || !OPT_computable(csb, value2, stream, true, false))
+					if (!forward || !OPT_computable(optimizer->opt_csb, value2, stream, true, false))
 					{
 						return false;
 					}
@@ -2621,91 +2557,6 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	return (count >= 1);
 }
 
-InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
-{
-/**************************************
- *
- *	m a t c h D b K e y
- *
- **************************************
- *
- * Functional description
- *  Check whether a boolean is a DB_KEY based comparison.
- *
- **************************************/
-	// If this isn't an equality, it isn't even interesting
-
-	if (boolean->nod_type != nod_eql)
-	{
-		return NULL;
-	}
-
-	// Find the side of the equality that is potentially a dbkey.  If
-	// neither, make the obvious deduction
-
-	jrd_nod* dbkey = boolean->nod_arg[0];
-	jrd_nod* value = boolean->nod_arg[1];
-
-	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
-	{
-		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
-		{
-			return NULL;
-		}
-
-		dbkey = value;
-		value = boolean->nod_arg[0];
-	}
-
-	// If the value isn't computable, this has been a waste of time
-
-	if (!OPT_computable(csb, value, stream, false, false))
-	{
-		return NULL;
-	}
-
-	// If this is a concatenation, find an appropriate dbkey
-
-	SLONG n = 0;
-	if (ExprNode::is<ConcatenateNode>(dbkey))
-	{
-		dbkey = findDbKey(dbkey, stream, &n);
-		if (!dbkey)
-		{
-			return NULL;
-		}
-	}
-
-	// Make sure we have the correct stream
-
-	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
-	{
-		return NULL;
-	}
-
-	// If this is a dbkey for the appropriate stream, it's invertable
-
-	InversionCandidate* const invCandidate = FB_NEW(pool) InversionCandidate(pool);
-	invCandidate->indexes = 0;
-	invCandidate->selectivity = 1 / csb->csb_rpt[stream].csb_cardinality;
-	invCandidate->cost = 0;
-	invCandidate->unique = true;
-	invCandidate->matches.add(boolean);
-
-	if (createIndexScanNodes)
-	{
-		jrd_nod* const inversion = PAR_make_node(tdbb, 2);
-		inversion->nod_count = 1;
-		inversion->nod_type = nod_bit_dbkey;
-		inversion->nod_arg[0] = value;
-		inversion->nod_arg[1] = (jrd_nod*)(IPTR) n;
-		inversion->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
-		invCandidate->inversion = inversion;
-	}
-
-	return invCandidate;
-}
-
 InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	IndexScratchList* inputIndexScratches, jrd_nod* boolean, USHORT scope) const
 {
@@ -2799,7 +2650,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			// Add matches conjunctions that exists in both left and right inversion
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
 			{
-				SortedArray<jrd_nod*> matches;
+				Firebird::SortedArray<jrd_nod*> matches;
 				for (size_t j = 0; j < invCandidate1->matches.getCount(); j++) {
 					matches.add(invCandidate1->matches[j]);
 				}
@@ -2960,14 +2811,14 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
-		if (!(OPT_expression_equal(tdbb, csb, indexScratch->idx, field, stream) ||
-			(value && !OPT_computable(csb, value, stream, true, false))))
+		if (!(OPT_expression_equal(tdbb, optimizer, indexScratch->idx, field, stream) ||
+			(value && !OPT_computable(optimizer->opt_csb, value, stream, true, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
-				OPT_computable(csb, field, stream, true, false))
+				OPT_expression_equal(tdbb, optimizer, indexScratch->idx, value, stream) &&
+				OPT_computable(optimizer->opt_csb, field, stream, true, false))
 			{
 				field = value;
 				value = boolean->nod_arg[0];
@@ -3015,7 +2866,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||
 				indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
-			!OPT_computable(csb, value, stream, false, false))
+			!OPT_computable(optimizer->opt_csb, value, stream, false, false))
 		{
 			return false;
 		}
@@ -3059,6 +2910,8 @@ InnerJoinStreamInfo::InnerJoinStreamInfo(MemoryPool& p) :
 	baseIndexes = 0;
 	baseConjunctionMatches = 0;
 	used = false;
+
+	indexedRelationships.shrink(0);
 	previousExpectedStreams = 0;
 }
 
@@ -3081,7 +2934,8 @@ bool InnerJoinStreamInfo::independent() const
 
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-									   jrd_nod** sort_clause, jrd_nod* plan_clause) :
+		/*RiverStack& river_stack,*/ jrd_nod** sort_clause,
+		jrd_nod** project_clause, jrd_nod* plan_clause) :
 	pool(p), innerStreams(p)
 {
 /**************************************
@@ -3099,6 +2953,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const U
 	this->optimizer = opt;
 	this->csb = this->optimizer->opt_csb;
 	this->sort = sort_clause;
+	this->project = project_clause;
 	this->plan = plan_clause;
 	this->remainingStreams = 0;
 
@@ -3128,13 +2983,13 @@ OptimizerInnerJoin::~OptimizerInnerJoin()
 
 	for (size_t i = 0; i < innerStreams.getCount(); i++)
 	{
-		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++)
-		{
+		for (size_t j = 0; j < innerStreams[i]->indexedRelationships.getCount(); j++) {
 			delete innerStreams[i]->indexedRelationships[j];
 		}
-
+		innerStreams[i]->indexedRelationships.clear();
 		delete innerStreams[i];
 	}
+	innerStreams.clear();
 }
 
 void OptimizerInnerJoin::calculateCardinalities()
@@ -3184,12 +3039,15 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
 		csb_tail->csb_flags |= csb_active;
 
-		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
-		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
+		OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
+			OptimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
+		InversionCandidate* candidate = optimizerRetrieval->getCost();
 		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
-		innerStreams[i]->baseConjunctionMatches = (int) candidate->matches.getCount();
+		innerStreams[i]->baseConjunctionMatches = candidate->matches.getCount();
+		delete candidate;
+		delete optimizerRetrieval;
 
 		csb_tail->csb_flags &= ~csb_active;
 	}
@@ -3299,9 +3157,10 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
  **************************************/
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
-	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false, NULL);
+	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
+		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
 
-	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
+	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	*cost = candidate->cost;
 
 	// Calculate cardinality
@@ -3309,6 +3168,9 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	const double cardinality = csb_tail->csb_cardinality * candidate->selectivity;
 
 	*resulting_cardinality = MAX(cardinality, MINIMUM_CARDINALITY);
+
+	delete candidate;
+	delete optimizerRetrieval;
 }
 
 int OptimizerInnerJoin::findJoinOrder()
@@ -3357,7 +3219,6 @@ int OptimizerInnerJoin::findJoinOrder()
 	if (optimizer->opt_best_count == 0)
 	{
 		IndexedRelationships indexedRelationships(pool);
-
 		for (i = 0; i < innerStreams.getCount(); i++)
 		{
 			if (!innerStreams[i]->used)
@@ -3421,7 +3282,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 
 	// Save the various flag bits from the optimizer block to reset its
 	// state after each test.
-	HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
+	Firebird::HalfStaticArray<bool, OPT_STATIC_ITEMS> streamFlags(pool);
 	streamFlags.grow(innerStreams.getCount());
 	for (size_t i = 0; i < streamFlags.getCount(); i++) {
 		streamFlags[i] = innerStreams[i]->used;
@@ -3437,6 +3298,7 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 		new_cardinality = position_cardinality * cardinality;
 	}
 
+	optimizer->opt_combinations++;
 	// If the partial order is either longer than any previous partial order,
 	// or the same length and cheap, save order as "best".
 	if (position > optimizer->opt_best_count ||
@@ -3570,8 +3432,9 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[testStream->stream];
 	csb_tail->csb_flags |= csb_active;
 
-	OptimizerRetrieval optimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
-	AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
+	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool)
+		OptimizerRetrieval(pool, optimizer, testStream->stream, false, false, NULL);
+	InversionCandidate* candidate = optimizerRetrieval->getCost();
 
 	if (candidate->dependentFromStreams.exist(baseStream->stream))
 	{
@@ -3596,6 +3459,8 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		baseStream->indexedRelationships.insert(index, indexRelationship);
 		testStream->previousExpectedStreams++;
 	}
+	delete candidate;
+	delete optimizerRetrieval;
 
 	csb_tail->csb_flags &= ~csb_active;
 }

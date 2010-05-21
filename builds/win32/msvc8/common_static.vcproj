@@ -373,10 +373,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\Switches.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
@@ -446,10 +442,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\fbsyslog.h"
 				>
 			</File>
@@ -475,10 +467,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.h"
 				>
 			</File>
 			<File

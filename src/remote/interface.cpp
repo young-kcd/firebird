@@ -46,7 +46,9 @@
 #include "../jrd/ibase.h"
 #include "../jrd/ThreadStart.h"
 #include "../jrd/license.h"
+#include "../jrd/fil.h"
 #include "../jrd/sdl.h"
+#include "../jrd/jrd_pwd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/inter_proto.h"
 #include "../remote/merge_proto.h"
@@ -58,13 +60,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/jrd_pwd.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/DbImplementation.h"
-#include "../auth/Auth.h"
-#include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/trusted/AuthSspi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -76,6 +74,9 @@
 #endif
 
 #if defined(WIN_NT)
+#if !defined(EMBEDDED)
+#define USE_XNET
+#endif
 #include "../jrd/isc_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
 #include "../remote/xnet_proto.h"
@@ -86,14 +87,6 @@
 #endif // WIN_NT
 
 
-const char* const PROTOCOL_INET = "inet";
-const char* const PROTOCOL_WNET = "wnet";
-const char* const PROTOCOL_XNET = "xnet";
-
-const char* const INET_LOCALHOST = "localhost";
-const char* const WNET_LOCALHOST = "\\\\.";
-
-
 using namespace Firebird;
 
 namespace {
@@ -101,49 +94,59 @@ namespace {
 	// for both services and databases attachments
 	struct ParametersSet
 	{
-		UCHAR dummy_packet_interval, user_name,
-			  password, password_enc, address_path, process_id, process_name;
+		UCHAR dummy_packet_interval, user_name, sys_user_name,
+			  password, password_enc, address_path, process_id, process_name,
+			  trusted_auth, trusted_role;
 	};
 	const ParametersSet dpbParam = {isc_dpb_dummy_packet_interval,
 									isc_dpb_user_name,
+									isc_dpb_sys_user_name,
 									isc_dpb_password,
 									isc_dpb_password_enc,
 									isc_dpb_address_path,
 									isc_dpb_process_id,
-									isc_dpb_process_name};
+									isc_dpb_process_name,
+									isc_dpb_trusted_auth,
+									isc_dpb_trusted_role};
 	const ParametersSet spbParam = {isc_spb_dummy_packet_interval,
 									isc_spb_user_name,
+									isc_spb_sys_user_name,
 									isc_spb_password,
 									isc_spb_password_enc,
 									isc_spb_address_path,
 									isc_spb_process_id,
-									isc_spb_process_name};
+									isc_spb_process_name,
+									isc_spb_trusted_auth,
+									isc_spb_trusted_role};
 }
 
 static Rvnt* add_event(rem_port*);
 static void add_other_params(rem_port*, ClumpletWriter&, const ParametersSet&);
 static void add_working_directory(ClumpletWriter&, const PathName&);
-static rem_port* analyze(PathName&, ISC_STATUS*, bool, ClumpletReader&, PathName&, bool);
-static rem_port* analyze_service(PathName&, ISC_STATUS*, bool, ClumpletReader&, bool);
+static rem_port* analyze(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&, PathName&);
+static rem_port* analyze_service(PathName&, ISC_STATUS*, const TEXT*, bool, ClumpletReader&);
 static bool batch_gds_receive(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool batch_dsql_fetch(rem_port*, struct rmtque *, ISC_STATUS *, USHORT);
 static bool check_response(Rdb*, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
 static bool clear_stmt_que(rem_port*, ISC_STATUS*, Rsr*);
 static void disconnect(rem_port*);
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache(rem_port*, ISC_STATUS *, Rrq::rrq_repeat *);
+#endif
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
 static ISC_STATUS fetch_blob(ISC_STATUS*, Rsr*, USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 static Rvnt* find_event(rem_port*, SLONG);
-static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
+static bool get_new_dpb(ClumpletWriter&, string&, const ParametersSet&);
 #ifdef UNIX
 static bool get_single_user(ClumpletReader&);
 #endif
 static ISC_STATUS handle_error(ISC_STATUS *, ISC_STATUS);
 static ISC_STATUS info(ISC_STATUS*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 					const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&);
+static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&, ClumpletWriter&, const ParametersSet&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static bool mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -160,6 +163,9 @@ static void release_statement(Rsr**);
 static void release_sql_request(Rsr*);
 static void release_transaction(Rtr*);
 static ISC_STATUS return_success(Rdb*);
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(ISC_STATUS *, Rrq*, rem_port*, Rrq::rrq_repeat *, USHORT *, ULONG *);
+#endif
 static ISC_STATUS send_and_receive(Rdb*, PACKET *, ISC_STATUS *);
 static ISC_STATUS send_blob(ISC_STATUS*, Rbl*, USHORT, const UCHAR*);
 static void send_cancel_event(Rvnt*);
@@ -172,7 +178,7 @@ static void zap_packet(PACKET *);
 
 static ULONG remote_event_id = 0;
 
-#define CHECK_HANDLE(blk, type, error) if (!blk || !blk->checkHandle()) \
+#define CHECK_HANDLE(blk, type, error) if (!blk->checkHandle()) \
 				return handle_error (user_status, (ISC_STATUS) error)
 
 #define NULL_CHECK(ptr, code)	if (*ptr) return handle_error (user_status, (ISC_STATUS) code)
@@ -256,12 +262,11 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 #define GDS_DSQL_SQL_INFO	REM_sql_info
 
 
-static ISC_STATUS remloop_att(ISC_STATUS* user_status,
-							  const TEXT* filename,
-							  Rdb** handle,
-							  SSHORT dpb_length,
-							  const SCHAR* dpb,
-							  bool loopback)
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+							   const TEXT* filename,
+							   Rdb** handle,
+							   SSHORT dpb_length,
+							   const SCHAR* dpb)
 {
 /**************************************
  *
@@ -281,12 +286,11 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 
 	NULL_CHECK(handle, isc_bad_db_handle);
 
-	Rdb* rdb = NULL;
+	Rdb* rdb = 0;
 
-	try
-	{
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
+	try {
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 #ifdef UNIX
 		// If single user, return
@@ -296,13 +300,14 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 		}
 #endif
 
-		const bool user_verification = get_new_dpb(newDpb, dpbParam);
+		string user_string;
+		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
+
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : 0;
 
 		PathName expanded_name(filename);
 		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, user_verification,
-			newDpb, node_name, loopback);
-
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
 		if (!port)
 		{
 			return user_status[1];
@@ -319,7 +324,7 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 		add_other_params(port, newDpb, dpbParam);
 		add_working_directory(newDpb, node_name);
 
-		const bool result = init(user_status, port, op_attach, expanded_name, newDpb);
+		const bool result = init(user_status, port, op_attach, expanded_name, newDpb, dpbParam);
 
 		if (!result) {
 			return user_status[1];
@@ -333,50 +338,6 @@ static ISC_STATUS remloop_att(ISC_STATUS* user_status,
 	}
 
 	return return_success(rdb);
-}
-
-
-ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
-							   const TEXT* filename,
-							   Rdb** handle,
-							   SSHORT dpb_length,
-							   const SCHAR* dpb)
-{
-/**************************************
- *
- *	g d s _ a t t a c h _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Connect to an old, grungy database, corrupted by user data.
- *
- **************************************/
-
-	return remloop_att(user_status, filename, handle, dpb_length, dpb, false);
-}
-
-
-ISC_STATUS LOOP_attach_database(ISC_STATUS* user_status,
-								FB_API_HANDLE /*public_handle*/,
-								const TEXT* filename,
-								Rdb** handle,
-								SSHORT dpb_length,
-								const SCHAR* dpb)
-{
-/**************************************
- *
- *	g d s _ a t t a c h _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Connect to an old, grungy database, corrupted by user data.
- *
- **************************************/
-
-	return remloop_att(user_status, filename, handle, dpb_length, dpb, true);
 }
 
 
@@ -732,10 +693,16 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			next = message->msg_next;
 
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 
 			Rrq::rrq_repeat * tail = &request->rrq_rpt[message->msg_number];
 			tail->rrq_message = message;
 			tail->rrq_xdr = message;
+#ifdef SCROLLABLE_CURSORS
+			tail->rrq_last = NULL;
+#endif
 			tail->rrq_format = (rem_fmt*) message->msg_address;
 
 			message->msg_address = NULL;
@@ -828,86 +795,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 }
 
 
-static ISC_STATUS remloop_create(ISC_STATUS* user_status,
-								 const TEXT* filename,
-								 Rdb** handle,
-								 SSHORT dpb_length,
-								 const SCHAR* dpb,
-								 bool loopback)
-{
-/**************************************
- *
- *	g d s _ c r e a t e _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Create a nice, squeeky clean database, uncorrupted by user data.
- *
- **************************************/
-
-	ISC_STATUS* v = user_status;
-	*v++ = isc_arg_gds;
-	*v++ = isc_unavailable;
-	*v = isc_arg_end;
-
-	NULL_CHECK(handle, isc_bad_db_handle);
-
-	Rdb* rdb = NULL;
-
-	try
-	{
-		ClumpletWriter newDpb(ClumpletReader::dpbList, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(dpb), dpb_length);
-
-#ifdef UNIX
-		// If single user, return
-		if (get_single_user(newDpb))
-		{
-			return isc_unavailable;
-		}
-#endif
-
-		const bool user_verification = get_new_dpb(newDpb, dpbParam);
-
-		PathName expanded_name(filename);
-		PathName node_name;
-		rem_port* port = analyze(expanded_name, user_status, user_verification,
-			newDpb, node_name, loopback);
-
-		if (!port) {
-			return user_status[1];
-		}
-
-		RefMutexGuard portGuard(*port->port_sync);
-		rdb = port->port_context;
-		rdb->set_status_vector(user_status);
-
-		// The client may have set a parameter for dummy_packet_interval.  Add that to the
-		// the DPB so the server can pay attention to it.  Note: allocation code must
-		// ensure sufficient space has been added.
-
-		add_other_params(port, newDpb, dpbParam);
-		add_working_directory(newDpb, node_name);
-
-		const bool result = init(user_status, port, op_create, expanded_name, newDpb);
-		if (!result) {
-			return user_status[1];
-		}
-
-		*handle = rdb;
-	}
-	catch (const Exception& ex)
-	{
-		return stuff_exception(user_status, ex);
-	}
-
-	return return_success(rdb);
-}
-
-
 ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
-							   FB_API_HANDLE /*public_handle*/,
 							   const TEXT* filename,
 							   Rdb** handle,
 							   SSHORT dpb_length,
@@ -923,30 +811,63 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
+	ISC_STATUS* v = user_status;
+	*v++ = isc_arg_gds;
+	*v++ = isc_unavailable;
+	*v = isc_arg_end;
 
-	return remloop_create(user_status, filename, handle, dpb_length, dpb, false);
-}
+	NULL_CHECK(handle, isc_bad_db_handle);
 
+	Rdb* rdb = 0;
 
-ISC_STATUS LOOP_create_database(ISC_STATUS* user_status,
-								FB_API_HANDLE /*public_handle*/,
-								const TEXT* filename,
-								Rdb** handle,
-								SSHORT dpb_length,
-								const SCHAR* dpb)
-{
-/**************************************
- *
- *	g d s _ c r e a t e _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Create a nice, squeeky clean database, uncorrupted by user data.
- *
- **************************************/
+	try
+	{
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
+					reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
-	return remloop_create(user_status, filename, handle, dpb_length, dpb, true);
+#ifdef UNIX
+		// If single user, return
+		if (get_single_user(newDpb))
+		{
+			return isc_unavailable;
+		}
+#endif
+
+		string user_string;
+		const bool user_verification = get_new_dpb(newDpb, user_string, dpbParam);
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
+
+		PathName expanded_name(filename);
+		PathName node_name;
+		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
+		if (!port) {
+			return user_status[1];
+		}
+
+		RefMutexGuard portGuard(*port->port_sync);
+		rdb = port->port_context;
+		rdb->set_status_vector(user_status);
+
+		// The client may have set a parameter for dummy_packet_interval.  Add that to the
+		// the DPB so the server can pay attention to it.  Note: allocation code must
+		// ensure sufficient space has been added.
+
+		add_other_params(port, newDpb, dpbParam);
+		add_working_directory(newDpb, node_name);
+
+		const bool result = init(user_status, port, op_create, expanded_name, newDpb, dpbParam);
+		if (!result) {
+			return user_status[1];
+		}
+
+		*handle = rdb;
+	}
+	catch (const Exception& ex)
+	{
+		return stuff_exception(user_status, ex);
+	}
+
+	return return_success(rdb);
 }
 
 
@@ -990,7 +911,7 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
 			MERGE_database_info(temp_buffer, buffer, buffer_length,
-								DbImplementation::current.backwardCompatibleImplementation(), 3, 1,
+								IMPLEMENTATION, 3, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
 								reinterpret_cast<const UCHAR*>(port->port_host->str_data));
 		}
@@ -1393,6 +1314,9 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 				port->port_statement->rsr_buffer = message2;
 				port->port_statement->rsr_message = message2;
 				message2->msg_next = message2;
+#ifdef SCROLLABLE_CURSORS
+				message2->msg_prior = message2;
+#endif
 				port->port_statement->rsr_fmt_length = 0;
 			}
 		}
@@ -1404,6 +1328,9 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 			statement->rsr_message = message;
 
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 
 			statement->rsr_fmt_length = 0;
 		}
@@ -1637,6 +1564,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -1687,8 +1617,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 		if (packet->p_operation != op_sql_response)
 			check_response(rdb, packet);
-		else
-		{
+		else {
 			message->msg_address = NULL;
 			receive_response(rdb, packet);
 		}
@@ -1696,8 +1625,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 		if (user_status[1])
 			return user_status[1];
 
-		if (transaction && !packet->p_resp.p_resp_object)
-		{
+		if (transaction && !packet->p_resp.p_resp_object) {
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			*rtr_handle = NULL;
@@ -1819,6 +1747,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			statement->rsr_buffer = new RMessage(0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
+#ifdef SCROLLABLE_CURSORS
+			statement->rsr_message->msg_prior = statement->rsr_message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 
@@ -2147,6 +2078,9 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 			statement->rsr_buffer = message = new RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+			message->msg_prior = message;
+#endif
 			statement->rsr_fmt_length = 0;
 		}
 		else {
@@ -3271,12 +3205,17 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
+ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 					   Rrq** req_handle,
 					   USHORT msg_type,
 					   USHORT msg_length,
-					   UCHAR* msg,
-					   SSHORT level)
+					   UCHAR * msg,
+					   SSHORT level
+#ifdef SCROLLABLE_CURSORS
+					 , USHORT direction
+					 , ULONG offset
+#endif
+	)
 {
 /**************************************
  *
@@ -3307,6 +3246,16 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		Rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
 		RMessage* message = tail->rrq_message;
+#ifdef SCROLLABLE_CURSORS
+		if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
+		{
+			message = scroll_cache(user_status, request, port, tail, &direction, &offset);
+			if (!message) {
+				return user_status[1];
+			}
+		}
+#endif
+
 
 #ifdef DEBUG
 		fprintf(stdout, "Rows Pending in REM_receive=%d\n", tail->rrq_rows_pending);
@@ -3349,6 +3298,48 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 			data->p_data_request = request->rrq_id;
 			data->p_data_message_number = msg_type;
 			data->p_data_incarnation = level;
+#ifdef SCROLLABLE_CURSORS
+			// if the protocol can handle it, tell the server to scroll before returning records
+
+			if (port->port_protocol >= PROTOCOL_SCROLLABLE_CURSORS)
+			{
+				data->p_data_direction = direction;
+				data->p_data_offset = offset;
+
+				// set the appropriate flags according to the way we're about to scroll
+				// the next layer down, and calculate the offset from the beginning
+				// of the result set
+
+				switch (direction)
+				{
+				case blr_forward:
+					tail->rrq_flags &= ~Rrq::BACKWARD;
+					tail->rrq_absolute +=
+						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+					break;
+
+				case blr_backward:
+					tail->rrq_flags |= Rrq::BACKWARD;
+					tail->rrq_absolute +=
+						(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+					break;
+
+				case blr_bof_forward:
+					tail->rrq_flags &= ~Rrq::BACKWARD;
+					tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
+					tail->rrq_absolute = offset;
+					direction = blr_forward;
+					break;
+
+				case blr_eof_backward:
+					tail->rrq_flags |= Rrq::BACKWARD;
+					tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
+					tail->rrq_absolute = offset;
+					direction = blr_backward;
+					break;
+				}
+			}
+#endif
 
 			// Compute how many to send in a batch.  While this calculation
 			// is the same for each batch (June 1996), perhaps in the future it
@@ -3431,6 +3422,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		message = tail->rrq_message;
 		memcpy(msg, message->msg_address, msg_length);
 
+#ifdef SCROLLABLE_CURSORS
+		tail->rrq_last = message;
+#else
 		// Move the head-of-full-buffer-queue pointer forward
 
 		tail->rrq_message = message->msg_next;
@@ -3438,7 +3432,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS* user_status,
 		// Mark the buffer the message came from as available for reuse
 
 		message->msg_address = NULL;
-
+#endif
 		tail->rrq_msgs_waiting--;
 	}
 	catch (const Exception& ex)
@@ -3498,7 +3492,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS* user_status, Rrq** req_handle)
+ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, Rrq** req_handle)
 {
 /**************************************
  *
@@ -3853,12 +3847,11 @@ ISC_STATUS GDS_SEND(ISC_STATUS* user_status,
 }
 
 
-static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
+ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 							  const TEXT* service_name,
 							  Rdb** handle,
 							  USHORT spb_length,
-							  const UCHAR* spb,
-							  bool loopback)
+							  const UCHAR* spb)
 {
 /**************************************
  *
@@ -3879,18 +3872,17 @@ static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 	*v++ = isc_unavailable;
 	*v = isc_arg_end;
 
-	Rdb* rdb = NULL;
+	Rdb* rdb = 0;
 
-	try
-	{
-		ClumpletWriter newSpb(ClumpletReader::spbList, MAX_DPB_SIZE,
-			reinterpret_cast<const UCHAR*>(spb), spb_length);
+	try {
+		ClumpletWriter newSpb(ClumpletReader::SpbAttach, MAX_DPB_SIZE,
+				reinterpret_cast<const UCHAR*>(spb), spb_length, isc_spb_current_version);
+		string user_string;
 
-		const bool user_verification = get_new_dpb(newSpb, spbParam);
+		const bool user_verification = get_new_dpb(newSpb, user_string, spbParam);
+		const TEXT* us = user_string.hasData() ? user_string.c_str() : NULL;
 
-		rem_port* port = analyze_service(expanded_name, user_status,
-			user_verification, newSpb, loopback);
-
+		rem_port* port = analyze_service(expanded_name, user_status, us, user_verification, newSpb);
 		if (!port) {
 			return user_status[1];
 		}
@@ -3912,7 +3904,7 @@ static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 
 		add_other_params(port, newSpb, spbParam);
 
-		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb);
+		const bool result = init(user_status, port, op_service_attach, expanded_name, newSpb, spbParam);
 		if (!result) {
 			return user_status[1];
 		}
@@ -3925,48 +3917,6 @@ static ISC_STATUS remloop_svc(ISC_STATUS* user_status,
 	}
 
 	return return_success(rdb);
-}
-
-
-ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
-							  const TEXT* service_name,
-							  Rdb** handle,
-							  USHORT spb_length,
-							  const UCHAR* spb)
-{
-/**************************************
- *
- *	g d s _ s e r v i c e _ a t t a c h
- *
- **************************************
- *
- * Functional description
- *	Connect to a Firebird service.
- *
- **************************************/
-
-	return remloop_svc(user_status, service_name, handle, spb_length, spb, false);
-}
-
-
-ISC_STATUS LOOP_service_attach(ISC_STATUS* user_status,
-							   const TEXT* service_name,
-							   Rdb** handle,
-							   USHORT spb_length,
-							   const UCHAR* spb)
-{
-/**************************************
- *
- *	g d s _ s e r v i c e _ a t t a c h
- *
- **************************************
- *
- * Functional description
- *	Connect to a Firebird service.
- *
- **************************************/
-
-	return remloop_svc(user_status, service_name, handle, spb_length, spb, true);
 }
 
 
@@ -4294,7 +4244,6 @@ ISC_STATUS GDS_START(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
-								 FB_API_HANDLE /*public_handle*/,
 								 Rtr** rtr_handle,
 								 SSHORT /*count*/,
 								 Rdb** db_handle,
@@ -4678,10 +4627,10 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 
 static rem_port* analyze(PathName& file_name,
 						 ISC_STATUS* status_vector,
+						 const TEXT* user_string,
 						 bool uv_flag,
 						 ClumpletReader& dpb,
-						 PathName& node_name,
-						 bool loopback)
+						 PathName& node_name)
 {
 /**************************************
  *
@@ -4700,103 +4649,112 @@ static rem_port* analyze(PathName& file_name,
  *	NOTE: The file name must have been expanded prior to this call.
  *
  **************************************/
+#if defined(WIN_NT)
+	ISC_expand_share(file_name);
+#endif
+
+	rem_port* port = NULL;
 
 	// Analyze the file name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
 
-#ifdef WIN_NT
-	if (ISC_analyze_protocol(PROTOCOL_XNET, file_name, node_name))
-	{
-		return XNET_analyze(file_name, status_vector, uv_flag);
-	}
-
-	if (ISC_analyze_protocol(PROTOCOL_WNET, file_name, node_name) ||
-		ISC_analyze_pclan(file_name, node_name))
-	{
-		if (node_name.isEmpty())
-		{
-			node_name = WNET_LOCALHOST;
-		}
-		return WNET_analyze(file_name, status_vector, node_name.c_str(), uv_flag);
+#if defined(WIN_NT)
+	if (ISC_analyze_pclan(file_name, node_name)) {
+		return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
 
-	if (ISC_analyze_protocol(PROTOCOL_INET, file_name, node_name) ||
-		ISC_analyze_tcp(file_name, node_name))
-	{
-		if (node_name.isEmpty())
-		{
-			node_name = INET_LOCALHOST;
-		}
-		return INET_analyze(file_name, status_vector,
-						    node_name.c_str(), uv_flag, dpb);
-	}
-
-	// We have a local connection string. If it's a file on a network share,
-	// try to connect to the corresponding host remotely.
-
-	rem_port* port = NULL;
-
-#ifdef WIN_NT
-	PathName expanded_name = file_name;
-	ISC_expand_share(expanded_name);
-
-	if (ISC_analyze_pclan(expanded_name, node_name))
-	{
-		port = WNET_analyze(expanded_name, status_vector, node_name.c_str(), uv_flag);
-	}
-#endif
-
-#ifndef NO_NFS
 	if (!port)
 	{
-		PathName expanded_name = file_name;
-		if (ISC_analyze_nfs(expanded_name, node_name))
+		if (ISC_analyze_tcp(file_name, node_name))
 		{
-			port = INET_analyze(expanded_name, status_vector,
-								node_name.c_str(), uv_flag, dpb);
+			port = INET_analyze(file_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, dpb);
+
+			if (!port)
+			{
+				// retry in case multiclient inet server not forked yet
+				sleep(2);
+				port = INET_analyze(file_name, status_vector,
+									node_name.c_str(), user_string, uv_flag, dpb);
+			}
+		}
+		else
+		{
+#ifndef NO_NFS
+			if (!port)
+			{
+				if (ISC_analyze_nfs(file_name, node_name))
+				{
+					port = INET_analyze(file_name, status_vector,
+										node_name.c_str(), user_string, uv_flag, dpb);
+					if (!port)
+					{
+						// retry in case multiclient inet server not forked yet
+
+						sleep(2);
+						port = INET_analyze(file_name, status_vector,
+											node_name.c_str(), user_string, uv_flag, dpb);
+					}
+				}
+			}
+#endif
 		}
 	}
-#endif
 
-	if (!loopback)
+#if defined(USE_XNET)
+
+	// all remote attempts have failed, so access locally through the interprocess server
+
+	if (!port && node_name.isEmpty())
+	{
+		return XNET_analyze(file_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
+	}
+
+#endif // USE_XNET
+
+#if defined(SUPERCLIENT) && !defined(EMBEDDED)
+	// Coerce host connections to loopback
+
+#ifdef WIN_NT
+	if (!port && node_name.isEmpty())
+	{
+		file_name.insert(0, "\\\\.\\");
+		if (ISC_analyze_pclan(file_name, node_name))
+			return WNET_analyze(file_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
+	}
+#endif // WIN_NT
+
+#ifdef UNIX
+
+	if (!port && node_name.isEmpty())
+	{
+		file_name.insert(0, "localhost:");
+		if (ISC_analyze_tcp(file_name, node_name))
+		{
+			return INET_analyze(file_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, dpb);
+		}
+	}
+
+#endif // UNIX
+
+#endif // SUPERCLIENT
+
+	if (port || status_vector[1])
 	{
 		return port;
 	}
 
-	// We still have a local connection string but failed to connect so far.
-	// If we're a pure client, attempt connect to the localhost.
-
-	if (node_name.isEmpty())
-	{
-#ifdef WIN_NT
-		if (!port)
-		{
-			port = XNET_analyze(file_name, status_vector, uv_flag);
-		}
-
-		if (!port)
-		{
-			port = WNET_analyze(file_name, status_vector,
-								WNET_LOCALHOST, uv_flag);
-		}
-#endif
-		if (!port)
-		{
-			port = INET_analyze(file_name, status_vector,
-								INET_LOCALHOST, uv_flag, dpb);
-		}
-	}
-
-	return port;
+	return NULL;
 }
 
 
 static rem_port* analyze_service(PathName& service_name,
 								 ISC_STATUS* status_vector,
+								 const TEXT* user_string,
 								 bool uv_flag,
-								 ClumpletReader& spb,
-								 bool loopback)
+								 ClumpletReader& spb)
 {
 /**************************************
  *
@@ -4813,69 +4771,51 @@ static rem_port* analyze_service(PathName& service_name,
  *	Otherwise, return NULL.
  *
  **************************************/
+	rem_port* port = NULL;
 	PathName node_name;
 
 	// Analyze the service name to see if a remote connection is required.  If not,
 	// quietly (sic) return.
 
 #if defined(WIN_NT)
-	if (ISC_analyze_protocol(PROTOCOL_XNET, service_name, node_name))
-	{
-		return XNET_analyze(service_name, status_vector, uv_flag);
-	}
-
-	if (ISC_analyze_protocol(PROTOCOL_WNET, service_name, node_name) ||
-		ISC_analyze_pclan(service_name, node_name))
-	{
-		if (node_name.isEmpty())
-		{
-			node_name = WNET_LOCALHOST;
-		}
-		return WNET_analyze(service_name, status_vector, node_name.c_str(), uv_flag);
+	if (ISC_analyze_pclan(service_name, node_name)) {
+		return WNET_analyze(service_name, status_vector, node_name.c_str(), /*user_string,*/ uv_flag);
 	}
 #endif
-
-	if (ISC_analyze_protocol(PROTOCOL_INET, service_name, node_name) ||
-		ISC_analyze_tcp(service_name, node_name))
+	if (!port)
 	{
-		if (node_name.isEmpty())
-		{
-			node_name = INET_LOCALHOST;
-		}
-		return INET_analyze(service_name, status_vector,
-							node_name.c_str(), uv_flag, spb);
-	}
-
-	if (!loopback)
-	{
-		return NULL;
-	}
-
-	// We have a local connection string. If we're a pure client,
-	// attempt connect to a localhost.
-
-	rem_port* port = NULL;
-
-	if (node_name.isEmpty())
-	{
-#if defined(WIN_NT)
-		if (!port)
-		{
-			port = XNET_analyze(service_name, status_vector, uv_flag);
-		}
-
-		if (!port)
-		{
-			port = WNET_analyze(service_name, status_vector,
-								WNET_LOCALHOST, uv_flag);
-		}
-#endif
-		if (!port)
+		if (ISC_analyze_tcp(service_name, node_name))
 		{
 			port = INET_analyze(service_name, status_vector,
-								INET_LOCALHOST, uv_flag, spb);
+								node_name.c_str(), user_string, uv_flag, spb);
 		}
 	}
+
+#if defined(USE_XNET)
+
+	// all remote attempts have failed, so access locally through the
+	// interprocess server
+
+	if (!port && node_name.isEmpty()) {
+		port = XNET_analyze(service_name, status_vector, /*node_name.c_str(), user_string,*/ uv_flag);
+	}
+#endif
+
+#ifdef SUPERCLIENT
+#ifdef UNIX
+
+	if (!port && node_name.isEmpty())
+	{
+		service_name.insert(0, "localhost:");
+		if (ISC_analyze_tcp(service_name, node_name))
+		{
+			return INET_analyze(service_name, status_vector,
+								node_name.c_str(), user_string, uv_flag, spb);
+		}
+	}
+#endif // UNIX
+#endif // SUPERCLIENT
+
 
 	return port;
 }
@@ -4993,10 +4933,20 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 			new_msg->msg_next = message;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
+#endif
 		}
 
 		if (!receive_packet_noqueue(port, packet, tmp_status))
@@ -5141,12 +5091,22 @@ static bool batch_gds_receive(rem_port*		port,
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			// Walk the que until we find the predecessor of message
 
 			while (message->msg_next != new_msg->msg_next) {
 				message = message->msg_next;
 			}
 			message->msg_next = new_msg;
+#endif
 		}
 
 		// Note: not receive_packet
@@ -5180,6 +5140,21 @@ static bool batch_gds_receive(rem_port*		port,
 			break;
 		}
 
+#ifdef SCROLLABLE_CURSORS
+		// at this point we've received a row into the message, so mark the message
+		// with the absolute offset
+		const bool bIsBackward    = (tail->rrq_flags & Rrq::BACKWARD) != 0;
+		const bool bIsAbsBackward = (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) != 0;
+
+		if (bIsBackward == bIsAbsBackward) {
+				tail->rrq_absolute++;
+		}
+		else {
+			tail->rrq_absolute--;
+		}
+		message->msg_absolute = tail->rrq_absolute;
+#endif
+
 		tail->rrq_msgs_waiting++;
 		tail->rrq_rows_pending--;
 #ifdef DEBUG
@@ -5204,6 +5179,14 @@ static bool batch_gds_receive(rem_port*		port,
 
 		if (!clear_queue)
 			break;
+
+#ifdef SCROLLABLE_CURSORS
+		// if we are just trying to clear the queue, then NULL out the message
+		// address so we don't get a record out of order--it would mess up
+		// scrolling through the cache
+
+		message->msg_address = NULL;
+#endif
 	}
 
 	packet->p_resp.p_resp_status_vector = save_status;
@@ -5211,7 +5194,7 @@ static bool batch_gds_receive(rem_port*		port,
 }
 
 
-static bool check_response(Rdb* rdb, PACKET* packet)
+static bool check_response(Rdb* rdb, PACKET * packet)
 {
 /**************************************
  *
@@ -5265,7 +5248,7 @@ static bool check_response(Rdb* rdb, PACKET* packet)
 }
 
 
-static bool clear_queue(rem_port* port, ISC_STATUS* user_status)
+static bool clear_queue(rem_port* port, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -5357,6 +5340,42 @@ static void disconnect( rem_port* port)
 	port->disconnect();
 	delete rdb;
 }
+
+
+#ifdef SCROLLABLE_CURSORS
+static RMessage* dump_cache(rem_port* port, ISC_STATUS * user_status, Rrq::rrq_repeat * tail)
+{
+/**************************************
+ *
+ *	d u m p _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have encountered a situation where what's in
+ *	cache is not useful, so clear any pending requests
+ *	and empty the cache in preparation for refilling it.
+ *
+ **************************************/
+	if (!clear_queue(port, user_status))
+		return NULL;
+
+	RMessage* message = tail->rrq_message;
+	while (true)
+	{
+		message->msg_address = NULL;
+		message = message->msg_next;
+		if (message == tail->rrq_message)
+			break;
+	}
+
+	tail->rrq_xdr = message;
+	tail->rrq_last = NULL;
+	tail->rrq_rows_pending = 0;
+
+	return message;
+}
+#endif
 
 
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
@@ -5530,7 +5549,7 @@ static Rvnt* find_event( rem_port* port, SLONG id)
 }
 
 
-static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
+static bool get_new_dpb(ClumpletWriter& dpb, string& user_string, const ParametersSet& par)
 {
 /**************************************
  *
@@ -5561,12 +5580,22 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 			ISC_systemToUtf8(password);
 		ISC_unescape(password);
 
-		TEXT pwt[Auth::MAX_PASSWORD_LENGTH + 2];
-		ENC_crypt(pwt, sizeof pwt, password.c_str(), Auth::PASSWORD_SALT);
+		TEXT pwt[MAX_PASSWORD_LENGTH + 2];
+		ENC_crypt(pwt, sizeof pwt, password.c_str(), PASSWORD_SALT);
 		password = pwt + 2;
 		dpb.insertString(par.password_enc, password);
 	}
 #endif
+
+	if (dpb.find(par.sys_user_name))
+	{
+		dpb.getString(user_string);
+		dpb.deleteClumplet();
+	}
+	else
+	{
+		user_string.erase();
+	}
 
 	return dpb.find(par.user_name);
 }
@@ -5586,9 +5615,11 @@ static bool get_single_user(ClumpletReader& dpb)
  *	otherwise.
  *
  ******************************************/
+	if (dpb.getBufferTag() != isc_dpb_version1)
+		return false;
+
 	string su;
-	if (dpb.find(isc_dpb_reserved))
-	{
+	if (dpb.find(isc_dpb_reserved)) {
 		dpb.getString(su);
 		return su == "YES";
 	}
@@ -5596,7 +5627,7 @@ static bool get_single_user(ClumpletReader& dpb)
 }
 #endif
 
-static ISC_STATUS handle_error( ISC_STATUS* user_status, ISC_STATUS code)
+static ISC_STATUS handle_error( ISC_STATUS * user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -5687,38 +5718,12 @@ static ISC_STATUS info(ISC_STATUS* user_status,
 }
 
 
-namespace
-{
-	class InitList : public HalfStaticArray<Auth::ClientPlugin*, 8>
-	{
-	public:
-		explicit InitList(MemoryPool& p)
-			: HalfStaticArray<Auth::ClientPlugin*, 8>(p)
-		{
-			// this code will be replaced with known plugins scan
-			push(interfaceAlloc<Auth::SecurityDatabaseClient>());
-#ifdef TRUSTED_AUTH
-			push(interfaceAlloc<Auth::WinSspiClient>());
-#endif
-#ifdef AUTH_DEBUG
-			push(interfaceAlloc<Auth::DebugClient>());
-#endif
-
-			// must be last
-			push(NULL);
-		}
-	};
-
-	InitInstance<InitList> listArray;
-}	// namespace
-
-
-
 static bool init(ISC_STATUS* user_status,
 				 rem_port* port,
 				 P_OP op,
 				 PathName& file_name,
-				 ClumpletWriter& dpb)
+				 ClumpletWriter& dpb,
+				 const ParametersSet& param)
 {
 /**************************************
  *
@@ -5737,38 +5742,25 @@ static bool init(ISC_STATUS* user_status,
 	MemoryPool& pool = *getDefaultMemoryPool();
 	port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
 
-	// current instance name
-	const char* nm;
-	USHORT len;
+	// Do we can & need to try trusted auth
 
-	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
-	AutoPtr<Auth::ClientInstance, AutoInterface> currentInstance;
-	Auth::DpbImplementation di(dpb);
-	unsigned int sequence = 0;
-	Auth::ClientPlugin** list = listArray().begin();
+	dpb.deleteWithTag(param.trusted_auth);
+	dpb.deleteWithTag(param.trusted_role);
 
-	for (bool working = true; working && list[sequence]; ++sequence)
+#ifdef TRUSTED_AUTH
+	AuthSspi authSspi;
+	AuthSspi::DataHolder data;
+
+	if ((port->port_protocol >= PROTOCOL_VERSION11) &&
+		((!dpb.find(param.user_name)) || (dpb.getClumpLength() == 0)))
 	{
-		if (port->port_protocol >= PROTOCOL_VERSION13 ||
-			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(list[sequence])))
+		if (authSspi.request(data))
 		{
-			// plugin may be used
-			currentInstance.reset(list[sequence]->instance());
-			list[sequence]->getName(&nm, &len);
-
-			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
-			{
-			case Auth::AUTH_SUCCESS:
-				working = false;
-				break;
-			case Auth::AUTH_FAILED:
-				disconnect(port);
-				return false;
-			default:
-				break;
-			}
+			// on no error we send data no matter, was context created or not
+			dpb.insertBytes(param.trusted_auth, data.begin(), data.getCount());
 		}
 	}
+#endif //TRUSTED_AUTH
 
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
@@ -5785,6 +5777,7 @@ static bool init(ISC_STATUS* user_status,
 			{
 				// Do not check isc_dpb_trusted_auth here. It's just bytes.
 				case isc_dpb_org_filename:
+				case isc_dpb_sys_user_name:
 				case isc_dpb_user_name:
 				case isc_dpb_password:
 				case isc_dpb_sql_role_name:
@@ -5806,6 +5799,7 @@ static bool init(ISC_STATUS* user_status,
 	}
 
 	// Make attach packet
+
 	P_ATCH* attach = &packet->p_atch;
 	packet->p_operation = op;
 	attach->p_atch_file.cstr_length = file_name.length();
@@ -5819,118 +5813,62 @@ static bool init(ISC_STATUS* user_status,
 		return false;
 	}
 
-	for (;;)
+	// Get response
+
+#ifdef TRUSTED_AUTH
+	ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
+	if (!receive_packet(rdb->rdb_port, packet, status))
 	{
-		// Get response
-		ISC_STATUS* status = packet->p_resp.p_resp_status_vector = rdb->get_status_vector();
+		REMOTE_save_status_strings(user_status);
+		disconnect(port);
+		return false;
+	}
+
+	while (packet->p_operation == op_trusted_auth)
+	{
+		if (!authSspi.isActive())
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		cstring* d = &packet->p_trau.p_trau_data;
+		memcpy(data.getBuffer(d->cstr_length), d->cstr_address, d->cstr_length);
+		REMOTE_free_packet(rdb->rdb_port, packet);
+		if (!authSspi.request(data))
+		{
+			disconnect(port);
+			return false;	// isc_unavailable
+		}
+		packet->p_operation = op_trusted_auth;
+		d->cstr_address = data.begin();
+		d->cstr_length = data.getCount();
+
+		if (!send_packet(rdb->rdb_port, packet, user_status))
+		{
+			disconnect(port);
+			return false;
+		}
 		if (!receive_packet(rdb->rdb_port, packet, status))
 		{
-			REMOTE_save_status_strings(user_status);
-			break;
-		}
-
-		// Check response
-		cstring* n = NULL;
-		cstring* d = NULL;
-
-		switch(packet->p_operation)
-		{
-		case op_trusted_auth:
-			d = &packet->p_trau.p_trau_data;
-			break;
-
-		case op_cont_auth:
-			d = &packet->p_auth_cont.p_data;
-			n = &packet->p_auth_cont.p_name;
-			break;
-
-		default:
-			if (check_response(rdb, packet))
-			{
-				// successfully attached
-				rdb->rdb_id = packet->p_resp.p_resp_object;
-				return true;
-			}
-
 			REMOTE_save_status_strings(user_status);
 			disconnect(port);
 			return false;
 		}
-
-		bool contFlag = true;
-		if (n && n->cstr_length && currentInstance.hasData())
-		{
-			// if names match, do not reset instance
-			if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
-			{
-				n = NULL;
-			}
-		}
-
-		if (n && n->cstr_length)
-		{
-			// switch to other plugin
-			currentInstance.reset(0);
-
-			for (sequence = 0; list[sequence]; ++sequence)
-			{
-				list[sequence]->getName(&nm, &len);
-				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
-				{
-					currentInstance.reset(list[sequence]->instance());
-					break;
-				}
-			}
-
-			if (currentInstance)
-			{
-				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach,
-																	   file_name.c_str(), 0);
-				if (rc == Auth::AUTH_FAILED)
-				{
-					break;
-				}
-				if (rc != Auth::AUTH_MORE_DATA)
-				{
-					contFlag = false;
-				}
-			}
-			else
-			{
-				contFlag = false;
-				packet->p_trau.p_trau_data.cstr_length = 0;
-			}
-		}
-
-		if (contFlag)
-		{
-			// continue auth
-			if (!currentInstance)
-			{
-				break;
-			}
-			if (currentInstance->contAuthentication(d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
-			{
-				break;
-			}
-		}
-
-		// send answer (may be empty) to server
-		packet->p_operation = op_trusted_auth;
-		d = &packet->p_trau.p_trau_data;
-		d->cstr_allocated = 0;
-		// violate constness here safely - send operation does not modify data
-		currentInstance->getData(const_cast<const unsigned char**>(&d->cstr_address),
-								 &d->cstr_length);
-
-		if (!send_packet(rdb->rdb_port, packet, user_status))
-		{
-			break;
-		}
 	}
 
-	disconnect(port);
-	return false;
+	if (!check_response(rdb, packet))
+#else // TRUSTED_AUTH
+	if (!receive_response(rdb, packet))
+#endif //TRUSTED_AUTH
+	{
+		REMOTE_save_status_strings(user_status);
+		disconnect(port);
+		return false;
+	}
+
+	rdb->rdb_id = packet->p_resp.p_resp_object;
+
+	return true;
 }
 
 
@@ -5974,10 +5912,9 @@ static bool mov_dsql_message(ISC_STATUS* status,
  *
  **************************************/
 
-	try
-	{
-		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count)
-		{
+	try {
+
+		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
 			move_error(Arg::Gds(isc_dsql_sqlda_err));
 			// Msg 263 SQLDA missing or wrong number of variables
 		}
@@ -6079,9 +6016,19 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
 
+#ifdef SCROLLABLE_CURSORS
+			// link the new message in a doubly linked list to make it
+			// easier to scroll back and forth through the records
+
+			RMessage* prior = message->msg_prior;
+			message->msg_prior = new_msg;
+			prior->msg_next = new_msg;
+			new_msg->msg_prior = prior;
+#else
 			while (message->msg_next != new_msg->msg_next)
 				message = message->msg_next;
 			message->msg_next = new_msg;
+#endif
 		}
 
 		// Note: not receive_packet
@@ -6110,7 +6057,7 @@ static void receive_after_start( Rrq* request, USHORT msg_type)
 }
 
 
-static bool receive_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
+static bool receive_packet(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6139,7 +6086,7 @@ static bool receive_packet(rem_port* port, PACKET* packet, ISC_STATUS* user_stat
 }
 
 
-static bool receive_packet_noqueue(rem_port* port, PACKET* packet, ISC_STATUS* user_status)
+static bool receive_packet_noqueue(rem_port* port, PACKET * packet, ISC_STATUS * user_status)
 {
 /**************************************
  *
@@ -6599,6 +6546,192 @@ static ISC_STATUS return_success( Rdb* rdb)
 }
 
 
+#ifdef SCROLLABLE_CURSORS
+static RMessage* scroll_cache(ISC_STATUS * user_status,
+							Rrq* request,
+							rem_port* port,
+							Rrq::rrq_repeat * tail,
+							USHORT * direction, ULONG * offset)
+{
+/**************************************
+ *
+ *	s c r o l l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ * Try to fetch the requested record from cache, if possible.  This algorithm depends
+ * on all scrollable cursors being INSENSITIVE to database changes, so that absolute
+ * record numbers within the result set will remain constant.
+ *
+ *  1.  BOF Forward or EOF Backward:  Retain the record number of the offset from the
+ *      beginning or end of the result set.  If we can figure out the relative offset
+ *      from the absolute, then scroll to it.  If it's in cache, great, otherwise dump
+ *      the cache and have the server scroll the correct number of records.
+ *
+ *  2.  Forward or Backward:  Try to scroll the desired offset in cache.  If we
+ *      scroll off the end of the cache, dump the cache and ask the server for a
+ *      packetful of records.
+ *
+ *  In the forward direction, assume X is the number of records cached.
+ *  If offset <= X, scroll forward offset records.  If offset > X,
+ *  dump the cache and send a message to the server to scroll forward (offset - X)
+ *  records.  However, if the server last scrolled in the backward direction,
+ *  ask the server to scroll forward (offset - X + C) records, where C is the
+ *  total number of records in cache.
+ *
+ *  In the backward direction, do the same thing but in reverse.
+ *
+ **************************************/
+
+	// if we are to continue in the current direction, set direction to
+	// the last direction scrolled; then depending on the direction asked
+	// for, save the last direction asked for by the next layer above
+
+	if (*direction == blr_continue)
+	{
+		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
+			*direction = blr_backward;
+		else
+			*direction = blr_forward;
+	}
+
+	if (*direction == blr_forward || *direction == blr_bof_forward)
+		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
+	else
+		tail->rrq_flags |= Rrq::LAST_BACKWARD;
+
+	// set to the last message returned to the higher level;
+	// if none, set to the first message in cache
+	RMessage* message = tail->rrq_last;
+	if (!message)
+	{
+		message = tail->rrq_message;
+
+		// if the first record hasn't been returned yet and we are doing a relative seek
+		// forward (or backward when caching backwards), we effectively have just seeked
+		// forward one by positioning to the first record, so decrement the offset by one
+
+		if (*offset &&
+			((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+		{
+			(*offset)--;
+		}
+	}
+
+	// if we are scrolling from BOF and the cache was started from EOF
+	// (or vice versa), the cache is unusable.
+
+	if (
+		(*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+	{
+		return dump_cache(port, user_status, tail);
+	}
+
+	// if we are going to an absolute position, see if we can find that position
+	// in cache, otherwise change to a relative seek from our former position
+
+	if (*direction == blr_bof_forward || *direction == blr_eof_backward)
+	{
+		// if offset is before our current position, scroll backwards
+		// through the cache to see if we can find it
+
+		if (*offset < message->msg_absolute)
+		{
+			for (;;)
+			{
+				if (message == tail->rrq_xdr || !message->msg_address)
+				{
+					// if the cache was formed in the backward direction, see if
+					// there are any packets pending which might contain the record
+
+					if ((tail->rrq_flags & Rrq::BACKWARD) && (tail->rrq_rows_pending > 0))
+					{
+						tail->rrq_message = message;
+						while (!message->msg_address && !request->rrq_status_vector[1])
+						{
+							if (!receive_queued_packet(port, user_status, request->rrq_id))
+							{
+								return NULL;
+							}
+						}
+					}
+
+					if ((message == tail->rrq_xdr) || !message->msg_address) {
+						return dump_cache(port, user_status, tail);
+					}
+				}
+				else {
+					message = message->msg_prior;
+				}
+
+				if (*offset == message->msg_absolute)
+					return message;
+			}
+		}
+
+		// convert the absolute to relative, and prepare to scroll forward or
+		// back to look for the record
+
+		*offset -= message->msg_absolute;
+		if (*direction == blr_bof_forward)
+			*direction = blr_forward;
+		else
+			*direction = blr_backward;
+	}
+
+	for (; *offset; (*offset)--)
+	{
+		// if the record was not found, see if there are any packets pending
+		// which might contain the record; otherwise dump the cache
+
+		if (!message->msg_address || message == tail->rrq_xdr)
+		{
+			if (tail->rrq_rows_pending > 0)
+			{
+				if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+					((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+				{
+					tail->rrq_message = message;
+					while (!message->msg_address && !request->rrq_status_vector[1])
+					{
+						if (!receive_queued_packet(port, user_status,
+												   request->rrq_id))
+						{
+							return NULL;
+						}
+					}
+				}
+			}
+
+			if ((message == tail->rrq_xdr) || !message->msg_address)
+			{
+				return dump_cache(port, user_status, tail);
+			}
+		}
+
+		// step one record forward or back, depending on whether the cache was
+		// initially formed in the forward or backward direction
+
+		if (((*direction == blr_forward) && !(tail->rrq_flags & Rrq::BACKWARD)) ||
+			((*direction == blr_backward) && (tail->rrq_flags & Rrq::BACKWARD)))
+		{
+			message = message->msg_next;
+		}
+		else
+		{
+			message = message->msg_prior;
+		}
+	}
+
+	return message;
+}
+#endif
+
+
 static ISC_STATUS send_and_receive(Rdb* rdb, PACKET* packet, ISC_STATUS* user_status)
 {
 /**************************************
@@ -7014,3 +7147,4 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 	rdb->reset_async_vector();
 	return FB_SUCCESS;
 }
+

@@ -1,12 +1,7 @@
 
 ========================================
-Firebird 2.5.0 pre Alpha (Windows Build)
+Firebird 2.5.0 RC2 (Windows Build)
 ==================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 o Uvod
@@ -20,20 +15,34 @@ o Prijavljivanje Bug-ova
 Uvod
 ============
 
-Dobrodosli u Firebird 2.1.
+Dobrodosli u Firebird 2.5.
 
 
 Kome je namjenjen?
 ============================
 
-Ovaj release candidate je namjenjen naprednim korisnicima
-Firebird-a. On je poprilicno dobro istestiran i sve nove
-mogucnosti bi trebale biti lijepo dokumentovane.
+Firebird 2.5 je prosao kroz opsezno testiranje i
+namjenjen je za siroku upotrebu u produkciji. Svejedno,
+korisnicima se preporucuje da prate standardne procedure
+prije instalacije ovog release-a na produkcioni server. tj:
 
-Nemojte koristiti ovu verziju u produkcionom okruzenju.
+ o Molimo prvo procitajte dokumente
+   "Instalacija_ProcitajMe.txt" i
+   release notes.
+
+ o Ako imate vazne podatke, sjetite se da napravite back-up
+   prije instalacije ovog release-a.
+
+ o Preporucuje se da uklonite sve prethodne
+   verzije prije instalacije. Deinstalacija
+   ce sacuvati konfiguracione datoteke i log datoteke.
+
+ o Preporucuje se da izvrsite sopstvene
+   testove u razvojnom okruzenju prije
+   instalacije u produkciju.
 
 
-Poznati nedostatci
+Poznati nedostaci
 ============
 
 Windows Vista - Binarni installer ne uspjeva pokrenuti
@@ -41,7 +50,7 @@ Firebird kao service prilikom instalacije, medjutim,
 service se ispravno pokrece nakon restarta racunara. Kao
 workaround, mozete uraditi sljedece: shift-right click na
 Firebird control panel applet, izabrati 'Run as...' i
-pokrenuti service odatle.
+pokrenuti service tim putem.
 
 
 Odlike ovog release-a (sve platforme)
@@ -55,9 +64,9 @@ Instalacija
 ============
 
 Problemi prilikom instalacije su pokriveni u detalje u
-Installation Guide-u koji je dostupanu doc directoriju nakon
+Installation Guide-u koji je dostupan u doc directoriju nakon
 instalacije. Kratak sadržaj instalacionih problema se moze
-naci i u installation_readme.txt, koji je takodje
+naci i u Instalacija_ProcitajMe.txt, koji je takodje
 dostupan u doc directoriju nakon instalacije.
 
 
@@ -72,29 +81,17 @@ Prije nego prijavite bug:
  o Mozda je neko vec prijavio bug? Pogledajte
    postojece prijave bugova ovdje:
 
-	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
-
-  Mozete se prijaviti ovdje:
-
-	mailto:firebird-support-subscribe@yahoogroups.com
-
+    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
  o Ako ste u dilemi zasto ne diskutujete o problemu na
    Firebird-devel listi? Mozete se prijaviti ovdje:
 
-	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+    http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    i listu je moguce pogledati kroz newsgroup interface ovdje:
 
-	news://news.atkin.com/
+    news://news.atkin.com/
 
 
-Molimo da ne koristite Firebird-devel listu za tehnicku podrsku
-osim ako je pitanje specificno vezano za nove mogucnosti
-u Firebird-u 2.1
-
-
-Sretno testiranje!
-
-Firebird team.
+Od Firebird team-a.
 

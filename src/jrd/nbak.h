@@ -36,7 +36,6 @@
 #include "../common/classes/fb_string.h"
 #include "GlobalRWLock.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/Attachment.h"
 
 // Uncomment this line if you need to trace backup-related activity
 //#define NBAK_DEBUG

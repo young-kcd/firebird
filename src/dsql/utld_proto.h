@@ -27,6 +27,10 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
+#if !defined(SUPERCLIENT)
+#include "../jrd/DataTypeUtil.h"
+#endif
+
 struct sqlda_sup;
 
 USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar);
@@ -38,4 +42,32 @@ void		UTLD_save_status_strings(ISC_STATUS*);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 
+#if !defined(SUPERCLIENT)
+
+namespace Jrd {
+
+	class CompiledStatement;
+
+	class DSqlDataTypeUtil : public DataTypeUtilBase
+	{
+	public:
+		explicit DSqlDataTypeUtil(CompiledStatement* aStatement)
+			: statement(aStatement)
+		{
+		}
+
+	public:
+		virtual UCHAR maxBytesPerChar(UCHAR charSet);
+		virtual USHORT getDialect() const;
+
+	private:
+		CompiledStatement* statement;
+	};
+
+} // namespace
+
+#endif
+
+
 #endif //  DSQL_UTLD_PROTO_H
+

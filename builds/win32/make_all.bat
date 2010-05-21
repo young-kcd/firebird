@@ -56,7 +56,6 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\fbtrace.dll %FB_OUTPUT_DIR%\plugins\fbtrace.dll >nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr_engine.dll %FB_OUTPUT_DIR%\plugins\udr_engine.dll >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
@@ -70,7 +69,6 @@ for %%v in ( btyacc gbak_embed gpre_boot gpre_embed isql_embed ) do (
 findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_OUTPUT_DIR%\firebird.conf
 @copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\src\utilities\ntrace\fbtrace.conf %FB_OUTPUT_DIR% >nul
-@copy %FB_ROOT_PATH%\src\plugins\udr_engine\udr_engine.conf %FB_OUTPUT_DIR%\plugins\udr_engine.conf >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\IPLicense.txt %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
 
@@ -114,6 +112,7 @@ copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 :: Installers
 @copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR%\bin >nul
+@copy %FB_INSTALL_SCRIPTS%\install_superclassic.bat %FB_OUTPUT_DIR%\bin >nul
 @copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR%\bin >nul
 
 :: MSVC runtime

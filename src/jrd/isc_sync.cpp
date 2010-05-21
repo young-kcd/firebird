@@ -43,6 +43,9 @@
 #include <string.h>
 
 #ifdef SOLARIS
+#ifndef DEV_BUILD
+#define NDEBUG                                 // Turn off fb_assert() macros
+#endif
 #include "../jrd/gdsassert.h"
 #endif
 
@@ -64,6 +67,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/jrd_pwd.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
@@ -79,7 +83,7 @@ static int process_id;
 #include <signal.h>
 #endif
 
-// Unix specific stuff
+/* Unix specific stuff */
 
 #ifdef UNIX
 #include <sys/types.h>
@@ -146,7 +150,7 @@ static size_t getpagesize()
 #endif
 
 
-// Windows NT
+/* Windows NT */
 
 #ifdef WIN_NT
 
@@ -158,18 +162,11 @@ static size_t getpagesize()
 using namespace Jrd;
 using namespace Firebird;
 
-static void		error(Arg::StatusVector&, const TEXT*, ISC_STATUS);
+static void		error(ISC_STATUS*, const TEXT*, ISC_STATUS);
 static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-static void		longjmp_sig_handler(int);
-#ifdef __cplusplus
-}
-#endif
 static void		longjmp_sig_handler(int);
 static GlobalPtr<Mutex> openFdInit;
 
@@ -182,8 +179,8 @@ namespace {
 		enum LockLevel {LCK_NONE, LCK_SHARED, LCK_EXCL};
 		enum DtorMode {CLOSED, OPENED, LOCKED};
 
-		FileLock(Arg::StatusVector& aStatusVector, int pFd, DtorMode pMode = CLOSED)
-			: statusVector(aStatusVector), level(LCK_NONE), fd(pFd), dtorMode(pMode)
+		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED)
+			: status(pStatus), level(LCK_NONE), fd(pFd), dtorMode(pMode)
 		{ }
 
 		~FileLock()
@@ -221,9 +218,9 @@ namespace {
 			if (fcntl(fd, F_SETLK, &lock) == -1)
 #endif
 			{
-				Arg::StatusVector local;
+				ISC_STATUS_ARRAY local;
 				error(local, NAME, errno);
-				iscLogStatus("Unlock error", local.value());
+				iscLogStatus("Unlock error", local);
 			}
 			level = LCK_NONE;
 		}
@@ -262,7 +259,7 @@ namespace {
 		}
 
 	private:
-		Arg::StatusVector& statusVector;
+		ISC_STATUS* const status;
 		LockLevel level;
 		int fd;
 		DtorMode dtorMode;
@@ -291,7 +288,7 @@ namespace {
 			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 #endif
 			{
-				error(statusVector, NAME, errno);
+				error(status, NAME, errno);
 				return false;
 			}
 			level = newLevel;
@@ -309,7 +306,7 @@ namespace {
 
 #ifdef USE_SYS5SEMAPHORE
 
-static SLONG	create_semaphores(Arg::StatusVector&, SLONG, int);
+static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
 
 namespace {
 
@@ -547,8 +544,7 @@ namespace {
 		{
 			MutexLockGuard guard(mutex);
 			int n = getByAddress((UCHAR*) s);
-			if (n >= 0)
-			{
+			if (n >= 0) {
 				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n].from, sharedFiles[n].to));
 				sharedFiles.remove(n);
 			}
@@ -638,7 +634,7 @@ namespace {
 
 	bool getSem5(Sys5Semaphore* sem)
 	{
-		Arg::StatusVector status;
+		ISC_STATUS_ARRAY status;
 
 		// Lock init file.
 		FileLock initLock(status, fd_init, FileLock::OPENED);
@@ -657,13 +653,13 @@ namespace {
 
 	void freeSem5(Sys5Semaphore* sem)
 	{
-		Arg::StatusVector status;
+		ISC_STATUS_ARRAY status;
 
 		// Lock init file.
 		FileLock initLock(status, fd_init, FileLock::OPENED);
 		if (!initLock.exclusive())
 		{
-			iscLogStatus("freeSem5 failed to lock init file", status.value());
+			iscLogStatus("freeSem5 failed to lock init file", status);
 			return;
 		}
 
@@ -680,7 +676,7 @@ int Sys5Semaphore::getId()
 
 	if (id < 0)
 	{
-		Arg::StatusVector status;
+		ISC_STATUS_ARRAY status;
 		id = create_semaphores(status, semTable->getKey(semSet), SemTable::SEM_PER_SET);
 		if (id >= 0)
 		{
@@ -688,7 +684,7 @@ int Sys5Semaphore::getId()
 		}
 		else
 		{
-			iscLogStatus("create_semaphores failed:", status.value());
+			iscLogStatus("create_semaphores failed:", status);
 		}
 	}
 
@@ -909,8 +905,7 @@ SLONG ISC_event_clear(event_t* event)
 	arg.val = 1;
 	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
 	{
-		iscLogStatus("event_clear()",
-			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("event_clear()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 	}
 
 	return (event->event_count + 1);
@@ -961,8 +956,7 @@ int ISC_event_init(event_t* event)
 	arg.val = 0;
 	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
 	{
-		iscLogStatus("event_init()",
-			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("event_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 		return FB_FAILURE;
 	}
 
@@ -1003,7 +997,9 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
+int ISC_event_wait(event_t*	event,
+				   SLONG	value,
+				   const SLONG	micro_seconds)
 {
 /**************************************
  *
@@ -1020,11 +1016,11 @@ int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
  **************************************/
 	//sigset_t mask, oldmask;
 
-	// If we're not blocked, the rest is a gross waste of time
+/* If we're not blocked, the rest is a gross waste of time */
 	if (!event_blocked(event, value))
 		return FB_SUCCESS;
 
-	// Set up timers if a timeout period was specified.
+/* Set up timers if a timeout period was specified. */
 
 	//struct itimerval user_timer;
 	//struct sigaction user_handler;
@@ -1036,7 +1032,7 @@ int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
 		timeout = addTimer(event, micro_seconds);
 	}
 
-	// Go into wait loop
+/* Go into wait loop */
 
 	int ret = FB_SUCCESS;
 	for (;;)
@@ -1070,7 +1066,7 @@ int ISC_event_wait(event_t* event, SLONG value, const SLONG micro_seconds)
 		}
 	}
 
-	// Cancel the handler.  We only get here if a timeout was specified.
+/* Cancel the handler.  We only get here if a timeout was specified. */
 	if (micro_seconds > 0)
 	{
 		delTimer(event);
@@ -1086,8 +1082,7 @@ int isPthreadError(int rc, const char* function)
 {
 	if (rc == 0)
 		return 0;
-	iscLogStatus("Pthread Error",
-		(Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
+	iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
 	return rc;
 }
 }
@@ -1155,7 +1150,7 @@ int ISC_event_init(event_t* event)
 	event->event_count = 0;
 	event->pid = getpid();
 
-	// Prepare an Inter-Process event block
+	/* Prepare an Inter-Process event block */
 	pthread_mutexattr_t mattr;
 	pthread_condattr_t cattr;
 
@@ -1202,7 +1197,9 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
+int ISC_event_wait(event_t* event,
+				   const SLONG value,
+				   const SLONG micro_seconds)
 {
 /**************************************
  *
@@ -1218,12 +1215,12 @@ int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
  *
  **************************************/
 
-	// If we're not blocked, the rest is a gross waste of time
+/* If we're not blocked, the rest is a gross waste of time */
 
 	if (!event_blocked(event, value))
 		return FB_SUCCESS;
 
-	// Set up timers if a timeout period was specified.
+/* Set up timers if a timeout period was specified. */
 
 	struct timespec timer;
 	if (micro_seconds > 0)
@@ -1243,9 +1240,10 @@ int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
 			break;
 		}
 
-		// The Posix pthread_cond_wait & pthread_cond_timedwait calls
-		// atomically release the mutex and start a wait.
-		// The mutex is reacquired before the call returns.
+		/* The Posix pthread_cond_wait & pthread_cond_timedwait calls
+		   atomically release the mutex and start a wait.
+		   The mutex is reacquired before the call returns.
+		 */
 		if (micro_seconds > 0)
 		{
 			ret = pthread_cond_timedwait(event->event_cond, event->event_mutex, &timer);
@@ -1257,8 +1255,8 @@ int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
 #endif
 			{
 
-				// The timer expired - see if the event occurred and return
-				// FB_SUCCESS or FB_FAILURE accordingly.
+				/* The timer expired - see if the event occurred and return
+				   FB_SUCCESS or FB_FAILURE accordingly. */
 
 				if (event_blocked(event, value))
 					ret = FB_FAILURE;
@@ -1375,7 +1373,9 @@ int ISC_event_post(event_t* event)
 }
 
 
-int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
+int ISC_event_wait(event_t* event,
+				   const SLONG value,
+				   const SLONG micro_seconds)
 {
 /**************************************
  *
@@ -1387,13 +1387,13 @@ int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
  *	Wait on an event.
  *
  **************************************/
-	// If we're not blocked, the rest is a gross waste of time
+	/* If we're not blocked, the rest is a gross waste of time */
 
 	if (!event_blocked(event, value)) {
 		return FB_SUCCESS;
 	}
 
-	// Go into wait loop
+	/* Go into wait loop */
 
 	const DWORD timeout = (micro_seconds > 0) ? micro_seconds / 1000 : INFINITE;
 
@@ -1615,7 +1615,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
 		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_exception_stack_overflow));
-		// This will never be called, but to be safe it's here
+		/* This will never be called, but to be safe it's here */
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;
 		break;
@@ -1628,15 +1628,16 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 	case EXCEPTION_IN_PAGE_ERROR:
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_GUARD_PAGE:
-		// Pass these exception on to someone else, probably the OS or the debugger,
-		// since there isn't a dam thing we can do with them
+		/* Pass these exception on to someone else,
+		   probably the OS or the debugger, since there
+		   isn't a dam thing we can do with them */
 		result = EXCEPTION_CONTINUE_SEARCH;
 		is_critical = false;
 		break;
-	case 0xE06D7363: // E == Exception. 0x6D7363 == "msc". Intel and Borland use the same code to be compatible
-		// If we've caught our own software exception,
-		// continue rewinding the stack to properly handle it
-		// and deliver an error information to the client side
+	case 0xE06D7363: /* E == Exception. 0x6D7363 == "msc". Intel and Borland use the same code to be compatible */
+		/* If we've caught our own software exception,
+		   continue rewinding the stack to properly handle it
+		   and deliver an error information to the client side */
 		result = EXCEPTION_CONTINUE_SEARCH;
 		is_critical = false;
 		break;
@@ -1688,7 +1689,7 @@ void ISC_remove_map_file(const TEXT* filename)
 
 #ifdef UNIX
 
-UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
@@ -1711,17 +1712,17 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
-	// make the complete filename for the init file this file is to be used as a
-	// master lock to eliminate possible race conditions with just a single file
-	// locking. The race condition is caused as the conversion of a EXCLUSIVE
-	// lock to a LCK_SHARED lock is not atomic
+/* make the complete filename for the init file this file is to be used as a
+   master lock to eliminate possible race conditions with just a single file
+   locking. The race condition is caused as the conversion of a EXCLUSIVE
+   lock to a LCK_SHARED lock is not atomic*/
 
 	TEXT init_filename[MAXPATHLEN];
 	gds__prefix_lock(init_filename, INIT_FILE);
 
 	const bool trunc_flag = (length != 0);
 
-	// open the init lock file
+/* open the init lock file */
 	MutexLockGuard guard(openFdInit);
 
 #ifdef USE_SYS5SEMAPHORE
@@ -1732,19 +1733,19 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		fd_init = os_utils::openCreateSharedFile(init_filename, 0);
 	if (fd_init == -1)
 	{
-		error(statusVector, "open", errno);
+		error(status_vector, "open", errno);
 		return NULL;
 	}
 
-	// get an exclusive lock on the INIT file with blocking
-	FileLock initLock(statusVector, fd_init);
+/* get an exclusive lock on the INIT file with blocking */
+	FileLock initLock(status_vector, fd_init);
 #ifdef USE_SYS5SEMAPHORE
 	initLock.setDtorMode(FileLock::OPENED);
 #endif
 	if (!initLock.exclusive())
 		return NULL;
 
-	// init file is locked - no races possible later in this function
+// init file is locked - no races possible later in this function
 
 #ifdef USE_SYS5SEMAPHORE
 	if (fdSem < 0)
@@ -1754,13 +1755,13 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		const int f = os_utils::openCreateSharedFile(sem_filename, 0);
 		if (f == -1)
 		{
-			error(statusVector, "open", errno);
+			error(status_vector, "open", errno);
 			return NULL;
 		}
 		void* sTab = mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
 		if ((U_IPTR) sTab == (U_IPTR) -1)
 		{
-			error(statusVector, "mmap", errno);
+			error(status_vector, "mmap", errno);
 			return NULL;
 		}
 
@@ -1770,7 +1771,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	}
 	fb_assert(semTable);
 
-	FileLock semLock(statusVector, fdSem, FileLock::OPENED);
+	FileLock semLock(status_vector, fdSem, FileLock::OPENED);
 
 	if (semLock.tryExclusive())
 	{
@@ -1780,24 +1781,24 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		return NULL;
 #endif
 
-	// open the file to be inited
+/* open the file to be inited */
 	const int fd = os_utils::openCreateSharedFile(expanded_filename, 0);
 	if (fd == -1)
 	{
-		error(statusVector, "open", errno);
+		error(status_vector, "open", errno);
 		return NULL;
 	}
 
-	// create lock in order to have file autoclosed on error
-	FileLock mainLock(statusVector, fd);
+/* create lock in order to have file autoclosed on error */
+	FileLock mainLock(status_vector, fd);
 
 	if (length == 0)
 	{
-		// Get and use the existing length of the shared segment
+		/* Get and use the existing length of the shared segment */
 		struct stat file_stat;
 		if (fstat(fd, &file_stat) == -1)
 		{
-			error(statusVector, "fstat", errno);
+			error(status_vector, "fstat", errno);
 			return NULL;
 		}
 		length = file_stat.st_size;
@@ -1805,16 +1806,16 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		if (length == 0)
 		{
 			// keep old text of message here -  will be assigned a bit later
-			error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
+			error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
 			return NULL;
 		}
 	}
 
-	// map file to memory
+/* map file to memory */
 	UCHAR* const address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
-		error(statusVector, "mmap", errno);
+		error(status_vector, "mmap", errno);
 		return NULL;
 	}
 
@@ -1852,15 +1853,15 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 #endif
 
 
-	// Try to get an exclusive lock on the lock file.  This will
-	// fail if somebody else has the exclusive or shared lock
+/* Try to get an exclusive lock on the lock file.  This will
+   fail if somebody else has the exclusive or shared lock */
 
 	if (mainLock.tryExclusive())
 	{
 		if (!init_routine)
 		{
 			munmap((char *) address, length);
-			statusVector << Arg::Gds(isc_unavailable);
+			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
 
@@ -1887,7 +1888,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			(*init_routine) (init_arg, shmem_data, false);
 	}
 
-	// keep opened the shared file_decriptor
+/* keep opened the shared file_decriptor */
 	mainLock.setDtorMode(FileLock::LOCKED);
 #ifdef USE_SYS5SEMAPHORE
 	// keep shared lock before last shared memory region unmapped
@@ -1904,7 +1905,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 
 #ifdef WIN_NT
-UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
+UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
 					void* init_arg,
@@ -1931,7 +1932,9 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 	const bool trunc_flag = (length != 0);
 
-	// retry to attach to mmapped file if the process initializing dies during initialization.
+/* retry to attach to mmapped file if the process initializing
+ * dies during initialization.
+ */
 
   retry:
 	retry_count++;
@@ -1945,7 +1948,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 							 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
-		error(statusVector, "CreateFile", GetLastError());
+		error(status_vector, "CreateFile", GetLastError());
 		return NULL;
 	}
 
@@ -1959,7 +1962,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	TEXT object_name[MAXPATHLEN];
 	if (!make_object_name(object_name, sizeof(object_name), filename, "_event"))
 	{
-		error(statusVector, "make_object_name", GetLastError());
+		error(status_vector, "make_object_name", GetLastError());
 		CloseHandle(file_handle);
 		return NULL;
 	}
@@ -1967,7 +1970,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
 	if (!event_handle)
 	{
-		error(statusVector, "CreateEvent", GetLastError());
+		error(status_vector, "CreateEvent", GetLastError());
 		CloseHandle(file_handle);
 		return NULL;
 	}
@@ -1978,45 +1981,48 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	{
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		statusVector << Arg::Gds(isc_unavailable);
+		Arg::Gds(isc_unavailable).copyTo(status_vector);
 		return NULL;
 	}
 
 	if (length == 0)
 	{
-		// Get and use the existing length of the shared segment
+		/* Get and use the existing length of the shared segment */
 
 		if ((length = GetFileSize(file_handle, NULL)) == -1)
 		{
-			error(statusVector, "GetFileSize", GetLastError());
+			error(status_vector, "GetFileSize", GetLastError());
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
 			return NULL;
 		}
 	}
 
-	// All but the initializer will wait until the event is set.  That
-	// is done after initialization is complete.
-	// Close the file and wait for the event to be set or time out.
-	// The file may be truncated.
+/* All but the initializer will wait until the event is set.  That
+ * is done after initialization is complete.
+ * Close the file and wait for the event to be set or time out.
+ * The file may be truncated.
+ */
 
 	CloseHandle(file_handle);
 
 	if (!init_flag)
 	{
-		// Wait for 10 seconds.  Then retry
+		/* Wait for 10 seconds.  Then retry */
 
 		const DWORD ret_event = WaitForSingleObject(event_handle, 10000);
 
-		// If we timed out, just retry.  It is possible that the
-		// process doing the initialization died before setting the event.
+		/* If we timed out, just retry.  It is possible that the
+		 * process doing the initialization died before setting the
+		 * event.
+		 */
 
 		if (ret_event == WAIT_TIMEOUT)
 		{
 			CloseHandle(event_handle);
 			if (retry_count > 10)
 			{
-				error(statusVector, "WaitForSingleObject", GetLastError());
+				error(status_vector, "WaitForSingleObject", GetLastError());
 				return NULL;
 			}
 			goto retry;
@@ -2041,20 +2047,20 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		const DWORD err = GetLastError();
 
 		if (err == ERROR_USER_MAPPED_FILE && init_flag && file_exists && trunc_flag)
-			statusVector << Arg::Gds(isc_instance_conflict);
+			Arg::Gds(isc_instance_conflict).copyTo(status_vector);
 		else
-			error(statusVector, "CreateFile", err);
+			error(status_vector, "CreateFile", err);
 
 		CloseHandle(event_handle);
 		return NULL;
 	}
 
-	// Create a file mapping object that will be used to make remapping possible.
-	// The current length of real mapped file and its name are saved in it.
+/* Create a file mapping object that will be used to make remapping possible.
+   The current length of real mapped file and its name are saved in it. */
 
 	if (!make_object_name(object_name, sizeof(object_name), filename, "_mapping"))
 	{
-		error(statusVector, "make_object_name", GetLastError());
+		error(status_vector, "make_object_name", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		return NULL;
@@ -2067,7 +2073,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 										  object_name);
 	if (header_obj == NULL)
 	{
-		error(statusVector, "CreateFileMapping", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		return NULL;
@@ -2088,14 +2094,15 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 	if (header_address == NULL)
 	{
-		error(statusVector, "MapViewOfFile", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		return NULL;
 	}
 
-	// Set or get the true length of the file depending on whether or not we are the first user.
+/* Set or get the true length of the file depending on whether or not
+   we are the first user. */
 
 	if (init_flag)
 	{
@@ -2105,14 +2112,14 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	else
 		length = header_address[0];
 
-	// Create the real file mapping object.
+/* Create the real file mapping object. */
 
 	TEXT mapping_name[64]; // enough for int32 as text
 	sprintf(mapping_name, "_mapping_%"ULONGFORMAT, header_address[1]);
 
 	if (!make_object_name(object_name, sizeof(object_name), filename, mapping_name))
 	{
-		error(statusVector, "make_object_name", GetLastError());
+		error(status_vector, "make_object_name", GetLastError());
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
@@ -2127,7 +2134,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 										object_name);
 	if (file_obj == NULL)
 	{
-		error(statusVector, "CreateFileMapping", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
@@ -2139,7 +2146,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 	if (address == NULL)
 	{
-		error(statusVector, "MapViewOfFile", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(file_obj);
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
@@ -2153,7 +2160,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 	if (!shmem_data->sh_mem_length_mapped)
 	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
 		return NULL;
 	}
 
@@ -2175,7 +2182,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
-			error(statusVector, "SetFilePointer", GetLastError());
+			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
 		}
 	}
@@ -2186,7 +2193,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 
 
 #ifdef HAVE_MMAP
-UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
+UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
@@ -2201,26 +2208,27 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
  *	Try to map an object given a file mapping.
  *
  **************************************/
-	// Get system page size as this is the unit of mapping.
+/* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
 	const long ps = sysconf(_SC_PAGESIZE);
 	if (ps == -1)
 	{
-		error(statusVector, "sysconf", errno);
+		error(status_vector, "sysconf", errno);
 		return NULL;
 	}
 #else
 	const int ps = getpagesize();
 	if (ps == -1)
 	{
-		error(statusVector, "getpagesize", errno);
+		error(status_vector, "getpagesize", errno);
 		return NULL;
 	}
 #endif
 	const ULONG page_size = (ULONG) ps;
 
-	// Compute the start and end page-aligned offsets which contain the object being mapped.
+/* Compute the start and end page-aligned offsets which
+   contain the object being mapped. */
 
 	const ULONG start = (object_offset / page_size) * page_size;
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
@@ -2231,11 +2239,11 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
-		error(statusVector, "mmap", errno);
+		error(status_vector, "mmap", errno);
 		return NULL;
 	}
 
-	// Return the virtual address of the mapped object.
+/* Return the virtual address of the mapped object. */
 
 	IPC_TRACE(("ISC_map_object in %p to %p %p\n", shmem_data->sh_mem_address, address, address + length));
 
@@ -2243,7 +2251,10 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG object_length)
+void ISC_unmap_object(ISC_STATUS* status_vector,
+					  //sh_mem* shmem_data,
+					  UCHAR** object_pointer,
+					  ULONG object_length)
 {
 /**************************************
  *
@@ -2256,26 +2267,27 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
  *	Zero the object pointer after a successful unmap.
  *
  **************************************/
-	// Get system page size as this is the unit of mapping.
+/* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
 	const long ps = sysconf(_SC_PAGESIZE);
 	if (ps == -1)
 	{
-		error(statusVector, "sysconf", errno);
+		error(status_vector, "sysconf", errno);
 		return;
 	}
 #else
 	const int ps = getpagesize();
 	if (ps == -1)
 	{
-		error(statusVector, "getpagesize", errno);
+		error(status_vector, "getpagesize", errno);
 		return;
 	}
 #endif
 	const ULONG page_size = (ULONG) ps;
 
-	// Compute the start and end page-aligned addresses which contain the mapped object.
+/* Compute the start and end page-aligned addresses which
+   contain the mapped object. */
 
 	UCHAR* const start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
 	const UCHAR* end =
@@ -2284,7 +2296,7 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 
 	if (munmap((char *) start, length) == -1)
 	{
-		error(statusVector, "munmap", errno);
+		error(status_vector, "munmap", errno);
 		return; // false;
 	}
 
@@ -2295,7 +2307,7 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 
 
 #ifdef WIN_NT
-UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
+UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
 					  ULONG object_length)
@@ -2327,7 +2339,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 
 	if (address == NULL)
 	{
-		error(statusVector, "MapViewOfFile", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		return NULL;
 	}
 
@@ -2337,7 +2349,10 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG /*object_length*/)
+void ISC_unmap_object(ISC_STATUS* status_vector,
+					  //sh_mem* shmem_data,
+					  UCHAR** object_pointer,
+					  ULONG /*object_length*/)
 {
 /**************************************
  *
@@ -2360,7 +2375,7 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 	const UCHAR* start = (UCHAR*) ((U_IPTR) *object_pointer & ~(page_size - 1));
 	if (!UnmapViewOfFile(start))
 	{
-		error(statusVector, "UnmapViewOfFile", GetLastError());
+		error(status_vector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
 
@@ -2395,8 +2410,7 @@ int ISC_mutex_init(struct mtx* mutex)
 	int state = semctl(mutex->getId(), mutex->semNum, SETVAL, arg);
 	if (state == -1)
 	{
-		iscLogStatus("ISC_mutex_init()",
-			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		iscLogStatus("ISC_mutex_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
 		return FB_FAILURE;
 	}
 
@@ -3099,7 +3113,7 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
+UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG new_length,
 					  bool flag)
@@ -3134,7 +3148,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (!shmem_data->sh_mem_length_mapped)
 	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
 		return NULL;
 	}
 
@@ -3146,7 +3160,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
+UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 					  sh_mem* shmem_data,
 					  ULONG new_length,
 					  bool flag)
@@ -3168,21 +3182,21 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
-			error(statusVector, "SetFilePointer", GetLastError());
+			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
 		}
 	}
 
-	/* If the remap file exists, remap does not occur correctly.
-	* The file number is local to the process and when it is
-	* incremented and a new filename is created, that file may
-	* already exist.  In that case, the file is not expanded.
-	* This will happen when the file is expanded more than once
-	* by concurrently running processes.
-	*
-	* The problem will be fixed by making sure that a new file name
-	* is generated with the mapped file is created.
-	*/
+/* If the remap file exists, remap does not occur correctly.
+ * The file number is local to the process and when it is
+ * incremented and a new filename is created, that file may
+ * already exist.  In that case, the file is not expanded.
+ * This will happen when the file is expanded more than once
+ * by concurrently running processes.
+ *
+ * The problem will be fixed by making sure that a new file name
+ * is generated with the mapped file is created.
+ */
 
 	HANDLE file_obj = NULL;
 
@@ -3211,7 +3225,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (file_obj == NULL)
 	{
-		error(statusVector, "CreateFileMapping", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		return NULL;
 	}
 
@@ -3219,7 +3233,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (address == NULL)
 	{
-		error(statusVector, "MapViewOfFile", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(file_obj);
 		return NULL;
 	}
@@ -3239,7 +3253,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (!shmem_data->sh_mem_length_mapped)
 	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
 		return NULL;
 	}
 
@@ -3249,7 +3263,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
+UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 						sh_mem* shmem_data,
 						ULONG new_length,
 						bool flag)
@@ -3265,7 +3279,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
  *
  **************************************/
 
-	statusVector << Arg::Gds(isc_unavailable);
+	Arg::Gds(isc_unavailable).copyTo(status_vector);
 
 	return NULL;
 }
@@ -3319,7 +3333,7 @@ void ISC_sync_signals_reset()
 #endif // UNIX
 
 #ifdef UNIX
-void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -3333,16 +3347,16 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
  **************************************/
 #ifdef USE_SYS5SEMAPHORE
 	// Lock init file.
-	FileLock initLock(statusVector, fd_init, FileLock::OPENED);
+	FileLock initLock(status_vector, fd_init, FileLock::OPENED);
 	if (!initLock.exclusive())
 	{
-		iscLogStatus("ISC_unmap_file failed to lock init file", statusVector.value());
+		iscLogStatus("ISC_unmap_file failed to lock init file", status_vector);
 	}
 	else
 	{
 		SharedFile* sf = SharedFile::locate(shmem_data->sh_mem_address);
 
-		FileLock lock(statusVector, shmem_data->sh_mem_handle);
+		FileLock lock(status_vector, shmem_data->sh_mem_handle);
 		lock.setLevel(FileLock::LCK_SHARED);
 		semTable->cleanup(sf->getNum(), lock.tryExclusive());
 		SharedFile::remove(shmem_data->sh_mem_address);
@@ -3356,8 +3370,9 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 }
 #endif
 
+
 #ifdef WIN_NT
-void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 {
 /**************************************
  *
@@ -3373,7 +3388,7 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	CloseHandle(shmem_data->sh_mem_interest);
 	if (!UnmapViewOfFile(shmem_data->sh_mem_address))
 	{
-		error(statusVector, "UnmapViewOfFile", GetLastError());
+		error(status_vector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
 	CloseHandle(shmem_data->sh_mem_object);
@@ -3381,7 +3396,7 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	CloseHandle(shmem_data->sh_mem_handle);
 	if (!UnmapViewOfFile(shmem_data->sh_mem_hdr_address))
 	{
-		error(statusVector, "UnmapViewOfFile", GetLastError());
+		error(status_vector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
 	CloseHandle(shmem_data->sh_mem_hdr_object);
@@ -3390,14 +3405,14 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
 	if (!DeleteFile(expanded_filename))
 	{
-		error(statusVector, "DeleteFile", GetLastError());
+		error(status_vector, "DeleteFile", GetLastError());
 		return;
 	}
 }
 #endif
 
 
-static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATUS status)
+static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS status)
 {
 /**************************************
  *
@@ -3409,8 +3424,9 @@ static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATU
  *	We've encountered an error, report it.
  *
  **************************************/
-	statusVector << Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status);
-	statusVector.makePermanent();
+
+	(Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status)).copyTo(status_vector);
+	makePermanentVector(status_vector);
 }
 
 
@@ -3418,7 +3434,8 @@ static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATU
 
 #ifdef USE_SYS5SEMAPHORE
 
-static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int semaphores)
+static SLONG create_semaphores(ISC_STATUS* status_vector,
+							 SLONG key, int semaphores)
 {
 /**************************************
  *
@@ -3438,7 +3455,7 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 		{
 			if (errno != ENOENT)
 			{
-				error(statusVector, "semget", errno);
+				error(status_vector, "semget", errno);
 				return -1;
 			}
 		}
@@ -3450,7 +3467,7 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 			// Get number of semaphores in opened set
 			if (semctl(semid, 0, IPC_STAT, arg) == -1)
 			{
-				error(statusVector, "semctl", errno);
+				error(status_vector, "semctl", errno);
 				return -1;
 			}
 			if ((int) buf.sem_nsems >= semaphores)
@@ -3458,7 +3475,7 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 			// Number of semaphores in existing set is too small. Discard it.
 			if (semctl(semid, 0, IPC_RMID) == -1)
 			{
-				error(statusVector, "semctl", errno);
+				error(status_vector, "semctl", errno);
 				return -1;
 			}
 		}
@@ -3487,13 +3504,13 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 
 		if (errno != EEXIST)
 		{
-			error(statusVector, "semget", errno);
+			error(status_vector, "semget", errno);
 			return -1;
 		}
 	}
 }
 
-#endif // USE_SYS5SEMAPHORE
+#endif
 
 void longjmp_sig_handler(int sig_num)
 {

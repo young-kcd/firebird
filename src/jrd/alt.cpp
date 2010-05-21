@@ -38,6 +38,7 @@
 
 #include <stdarg.h>
 #include "../jrd/ibase.h"
+#include "../jrd/jrd_pwd.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
@@ -49,7 +50,11 @@
 #include "../jrd/alt_proto.h"
 #include "../jrd/constants.h"
 
+#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
+#if !defined(BOOT_BUILD)
 static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
+#endif // BOOT_BUILD
+#endif
 
 SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 										 UCHAR** result_buffer,
@@ -706,7 +711,9 @@ int API_ROUTINE gds__version(FB_API_HANDLE* db_handle,
 
 void API_ROUTINE gds__set_debug(int flag)
 {
+#ifndef SUPERCLIENT
 	isc_set_debug(flag);
+#endif
 }
 
 int API_ROUTINE isc_blob_display(ISC_STATUS* status_vector,
@@ -812,6 +819,22 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
 }
 
+#ifndef WIN_NT
+// This function was exported earlier for reasons, not completely clear to me.
+// It MUST not be ever exported - looks like I've missed bad commit in CVS.
+// Keep it here to avoid senseless API change.
+
+void API_ROUTINE SCH_ast(enum ast_t)
+{
+	// call to this function may be safely ingored
+}
+#endif
+
+#if !defined(SUPERSERVER) || defined(SUPERCLIENT)
+// AP: isc_*_user entrypoints are used only in any kind of embedded
+// server (both posix and windows) and fbclient
+
+#ifndef BOOT_BUILD
 namespace {
 	ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
 	{
@@ -822,6 +845,7 @@ namespace {
 		return vector[1];
 	}
 }
+#endif // BOOT_BUILD
 
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
@@ -842,6 +866,9 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef BOOT_BUILD
+	return 1;
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = ADD_OPER;
 
@@ -969,6 +996,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -987,6 +1015,9 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef BOOT_BUILD
+	return 1;
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = DEL_OPER;
 
@@ -1011,6 +1042,7 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
 ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
@@ -1029,6 +1061,9 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
+#ifdef BOOT_BUILD
+	return 1;
+#else // BOOT_BUILD
 	internal_user_data userInfo;
 	userInfo.operation = MOD_OPER;
 
@@ -1157,8 +1192,11 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
+#endif // BOOT_BUILD
 }
 
+
+#if !defined(BOOT_BUILD)
 
 static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 										const USER_SEC_DATA* input_user_data,
@@ -1194,3 +1232,7 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 
 	return status[1];
 }
+
+#endif // BOOT_BUILD
+
+#endif // !defined(SUPERSERVER) || defined(SUPERCLIENT)

@@ -116,6 +116,7 @@ static xdr_t::xdr_ops wnet_ops =
 rem_port* WNET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
+					//const TEXT*	user_string,
 					bool	uv_flag)
 {
 /**************************************
@@ -143,7 +144,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	Firebird::string buffer;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0);
+	ISC_get_user(&buffer, 0, 0, 0);
 	buffer.lower();
 	user_id.insertString(CNCT_user, buffer);
 
@@ -165,6 +166,10 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
+	// Note: prior to V3.1E a receivers could not in truth handle more
+	// than 5 protocol descriptions; however, this restriction does not
+	// apply to Windows since it was created in 4.0
+
 	// If we want user verification, we can't speak anything less than version 7
 
 	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
@@ -176,8 +181,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, ptype_batch_send, 6)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
@@ -920,10 +928,6 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
@@ -944,10 +948,6 @@ static int send_full( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
@@ -967,10 +967,6 @@ static int send_partial( rem_port* port, PACKET* packet)
  *	Send a packet across a port to another process.
  *
  **************************************/
-
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
 
 	return xdr_protocol(&port->port_send, packet);
 }

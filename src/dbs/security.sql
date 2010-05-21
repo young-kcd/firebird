@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * 
  * 2004.09.14 Alex Peshkoff - security changes, preventing ordinary users
  *		from access to other users crypted passwords and enabling modification
  *		of there own password. Originally suggested by Ivan Prenosil
@@ -54,11 +54,11 @@ COMMIT;
 
 /*  View: USERS. Let's user modify his own password. */
 CREATE VIEW USERS (USER_NAME, SYS_USER_NAME, GROUP_NAME, UID, GID, PASSWD,
-		PRIVILEGE, COMMENT, FIRST_NAME, MIDDLE_NAME, LAST_NAME, FULL_NAME) AS
-	SELECT RDB$USER_NAME, RDB$SYS_USER_NAME, RDB$GROUP_NAME, RDB$UID, RDB$GID, RDB$PASSWD,
-		RDB$PRIVILEGE, RDB$COMMENT, RDB$FIRST_NAME, RDB$MIDDLE_NAME, RDB$LAST_NAME,
-		COALESCE (RDB$first_name || _UNICODE_FSS ' ', '') ||
-		COALESCE (RDB$middle_name || _UNICODE_FSS ' ', '') ||
+		PRIVILEGE, COMMENT, FIRST_NAME, MIDDLE_NAME, LAST_NAME, FULL_NAME) AS 
+	SELECT RDB$USER_NAME, RDB$SYS_USER_NAME, RDB$GROUP_NAME, RDB$UID, RDB$GID, RDB$PASSWD, 
+		RDB$PRIVILEGE, RDB$COMMENT, RDB$FIRST_NAME, RDB$MIDDLE_NAME, RDB$LAST_NAME, 
+		COALESCE (RDB$first_name || _UNICODE_FSS ' ', '') || 
+		COALESCE (RDB$middle_name || _UNICODE_FSS ' ', '') || 
 		COALESCE (RDB$last_name, '')
 	FROM RDB$USERS
 	WHERE CURRENT_USER = 'SYSDBA'

@@ -35,6 +35,13 @@
 #include <sys/stat.h>
 #include <dlfcn.h>
 
+#if defined(__hpux) && defined(__hppa)
+// shared libraries have .sl suffix on HP-UX HPPA
+#define SHRLIB_EXT ".sl"
+#else
+#define SHRLIB_EXT ".so"
+#endif
+
 /// This is the POSIX (dlopen) implementation of the mod_loader abstraction.
 
 class DlfcnModule : public ModuleLoader::Module
@@ -63,27 +70,17 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
-	if (name.isEmpty())
-		return;
-
-	Firebird::PathName::size_type pos = name.rfind(".so");
-	if (pos == Firebird::PathName::npos || pos != name.length() - 3)
-	{
-		name += ".so";
-	}
-	pos = name.rfind('/');
-	pos = (pos == Firebird::PathName::npos) ? 0 : pos + 1;
-	if (name.find("lib", pos) != pos)
-	{
-		name.insert(pos, "lib");
-	}
+	Firebird::PathName::size_type pos = name.rfind(SHRLIB_EXT);
+	if (pos != Firebird::PathName::npos && pos == name.length() - 3)
+		return;		// No doctoring necessary
+	name += SHRLIB_EXT;
 }
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
+	void* module = dlopen(modPath.c_str(), RTLD_LAZY);
 	if (module == NULL)
 		return 0;
 

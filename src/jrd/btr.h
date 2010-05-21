@@ -48,7 +48,7 @@ namespace Jrd {
 class jrd_rel;
 class jrd_tra;
 template <typename T> class vec;
-class JrdStatement;
+class jrd_req;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
@@ -76,7 +76,7 @@ struct index_desc
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
 	jrd_nod* idx_expression;				// node tree for indexed expresssion
 	dsc		idx_expression_desc;			// descriptor for expression result
-	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
+	jrd_req* idx_expression_request;		// stored request for expression evaluation
 	// This structure should exactly match IRTD structure for current ODS
 	struct idx_repeat
 	{
@@ -101,12 +101,12 @@ const USHORT idx_invalid = USHORT(~0);		// Applies to idx_id as special value
 
 const int idx_numeric		= 0;
 const int idx_string		= 1;
-// value of 2 was used in ODS < 10
+const int idx_timestamp1	= 2;
 const int idx_byte_array	= 3;
 const int idx_metadata		= 4;
 const int idx_sql_date		= 5;
 const int idx_sql_time		= 6;
-const int idx_timestamp		= 7;
+const int idx_timestamp2	= 7;
 const int idx_numeric2		= 8;	// Introduced for 64-bit Integer support
 
 				   // idx_itype space for future expansion
@@ -129,7 +129,10 @@ const int idx_plan_dont_use	= 1;	// index is not mentioned in user-specified acc
 const int idx_plan_navigate	= 2;	// plan specifies index to be used for ordering
 const int idx_used 			= 4;	// index was in fact selected for retrieval
 const int idx_navigate		= 8;	// index was in fact selected for navigation
-const int idx_marker		= 16;	// marker used in procedure sort_indices
+const int idx_plan_missing	= 16;	// index mentioned in missing clause
+const int idx_plan_starts	= 32;	// index mentioned in starts clause
+const int idx_used_with_and	= 64;	// marker used in procedure sort_indices
+const int idx_marker		= 128;	// marker used in procedure sort_indices
 
 // Index insertion block -- parameter block for index insertions
 
@@ -219,6 +222,13 @@ const int irb_exclude_upper	= 64;			// exclude upper bound keys while scanning i
 
 // macros used to manipulate btree nodes
 #define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
+
+#define NEXT_NODE(node)	(btree_nod*)(node->btn_data + node->btn_length)
+#define NEXT_NODE_RECNR(node)	(btree_nod*)(node->btn_data + node->btn_length + sizeof(SLONG))
+
+//#define LAST_NODE(page)	(btree_nod*) ((UCHAR*) page + page->btr_length)
+
+//#define NEXT_EXPANDED(xxx,yyy)	(btree_exp*) ((UCHAR*) xxx->btx_data + (yyy)->btn_prefix + (yyy)->btn_length)
 
 typedef Firebird::HalfStaticArray<float, 4> SelectivityList;
 

@@ -125,7 +125,7 @@ public:
 		// This means - for objects with ctors/dtors that want to be global,
 		// provide ctor with MemoryPool& parameter. Even if it is ignored!
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
-		// Put ourselves into linked list for cleanup.
+		// Put ourself into linked list for cleanup.
 		// Allocated pointer is saved by InstanceList::constructor.
 		new InstanceControl::InstanceLink<GlobalPtr>(this);
 	}
@@ -156,11 +156,9 @@ public:
 		: flag(false) { }
 	void init()
 	{
-		if (!flag)
-		{
+		if (!flag) {
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (!flag)
-			{
+			if (!flag) {
 				C::init();
 				flag = true;
 			}
@@ -168,11 +166,9 @@ public:
 	}
 	void cleanup()
 	{
-		if (flag)
-		{
+		if (flag) {
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (flag)
-			{
+			if (flag) {
 				C::cleanup();
 				flag = false;
 			}
@@ -180,43 +176,39 @@ public:
 	}
 };
 
-// InitInstance - allocate instance of class T on first request.
+// InitInstance - initialize pointer to class once and only once,
+// DefaultInit uses default memory pool for it.
 
 template <typename T>
-class InitInstance : private InstanceControl
+class DefaultInit
+{
+public:
+	static T* init()
+	{
+		return FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+	}
+};
+
+template <typename T,
+	typename I = DefaultInit<T> >
+class InitInstance
 {
 private:
 	T* instance;
 	volatile bool flag;
-
 public:
 	InitInstance()
-		: instance(NULL), flag(false)
-	{ }
-
+		: flag(false) { }
 	T& operator()()
 	{
-		if (!flag)
-		{
+		if (!flag) {
 			MutexLockGuard guard(*StaticMutex::mutex);
-			if (!flag)
-			{
-				instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
+			if (!flag) {
+				instance = I::init();
 				flag = true;
-				// Put ourselves into linked list for cleanup.
-				// Allocated pointer is saved by InstanceList::constructor.
-				new InstanceControl::InstanceLink<InitInstance>(this);
 			}
 		}
 		return *instance;
-	}
-
-	void dtor()
-	{
-		MutexLockGuard guard(*StaticMutex::mutex);
-		flag = false;
-		delete instance;
-		instance = NULL;
 	}
 };
 

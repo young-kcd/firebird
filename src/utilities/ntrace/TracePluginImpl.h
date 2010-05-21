@@ -167,7 +167,7 @@ private:
 	Firebird::RWLock renameLock;
 
 	UnicodeCollationHolder unicodeCollation;
-	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > >
+	Firebird::AutoPtr<Firebird::SimilarToMatcher<Jrd::UpcaseConverter<Jrd::NullStrConverter>, UCHAR> >
 		include_matcher, exclude_matcher;
 
 	void appendGlobalCounts(const PerformanceInfo* info);
@@ -183,7 +183,7 @@ private:
 	void register_sql_statement(TraceSQLStatement* statement);
 	void register_blr_statement(TraceBLRStatement* statement);
 	void register_service(TraceService* service);
-
+	
 	bool checkServiceFilter(TraceService* service, bool started);
 
 	// Write message to text log file
@@ -328,6 +328,5 @@ private:
 	static ntrace_boolean_t ntrace_event_service_detach(const TracePlugin* tpl_plugin,
 		TraceService* service, ntrace_result_t detach_result);
 };
-
 
 #endif // TRACEPLUGINIMPL_H

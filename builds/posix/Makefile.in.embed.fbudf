@@ -50,7 +50,7 @@ UTIL_Files = ib_util.cpp
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
-AllObjects = $(FBUDF_Objects)
+AllObjects = $(FBUDF_Objects) $(FBUTIL_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -65,8 +65,9 @@ all: lib_fbudf
 
 lib_fbudf: $(LIBIBUTIL_SO) $(UDF)/fbudf.$(SHRLIB_EXT)
 
-$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects)
-	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS)
+$(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
+	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS) 
+
 
 include $(ROOT)/gen/make.shared.targets
 

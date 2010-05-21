@@ -4,7 +4,6 @@
 	Version="9,00"
 	Name="common_classic"
 	ProjectGUID="{F5746066-8613-4811-B27C-0ED70FF9F0FF}"
-	RootNamespace="common_classic"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -305,10 +304,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\dir_list.cpp"
 				>
 			</File>
@@ -334,10 +329,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.cpp"
 				>
 			</File>
 			<File
@@ -382,10 +373,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusArg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.cpp"
 				>
 			</File>
 			<File
@@ -458,10 +445,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\cvt.h"
 				>
 			</File>
@@ -470,15 +453,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\dir_list.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.h"
 				>
 			</File>
 			<File
@@ -503,10 +478,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\StatusHolder.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.h"
 				>
 			</File>
 			<File

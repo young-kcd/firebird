@@ -59,37 +59,39 @@
 #include <pwd.h>
 #endif
 
-using namespace Firebird;
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
 
 namespace os_utils
 {
 
-static GlobalPtr<Mutex> grMutex;
+static Firebird::GlobalPtr<Firebird::Mutex> grMutex;
 
 // Return user group id if user group name found, otherwise return 0.
 SLONG get_user_group_id(const TEXT* user_group_name)
 {
-	MutexLockGuard guard(grMutex);
+	Firebird::MutexLockGuard guard(grMutex);
 
 	const struct group* user_group = getgrnam(user_group_name);
 	return user_group ? user_group->gr_gid : -1;
 }
 
-static GlobalPtr<Mutex> pwMutex;
+static Firebird::GlobalPtr<Firebird::Mutex> pwMutex;
 
 // Return user id if user found, otherwise return -1.
 SLONG get_user_id(const TEXT* user_name)
 {
-	MutexLockGuard guard(pwMutex);
+	Firebird::MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwnam(user_name);
 	return user ? user->pw_uid : -1;
 }
 
 // Fills the buffer with home directory if user found
-bool get_user_home(int user_id, PathName& homeDir)
+bool get_user_home(int user_id, Firebird::PathName& homeDir)
 {
-	MutexLockGuard guard(pwMutex);
+	Firebird::MutexLockGuard guard(pwMutex);
 
 	const struct passwd* user = getpwuid(user_id);
 	if (user)
@@ -100,23 +102,8 @@ bool get_user_home(int user_id, PathName& homeDir)
 	return false;
 }
 
-namespace
-{
-	// runuser/rungroup
-	const char* const FIREBIRD = "firebird";
-
-	// change ownership and access of file
-	void changeFileRights(const char* pathname, const mode_t mode)
-	{
-		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
-		gid_t gid = get_user_group_id(FIREBIRD);
-		while (chown(pathname, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
-
-		while (chmod(pathname, mode) < 0 && SYSCALL_INTERRUPTED(errno))
-			;
-	}
-} // anonymous namespace
+// runuser/rungroup
+static const char* const FIREBIRD = "firebird";
 
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
@@ -132,7 +119,7 @@ void createLockDirectory(const char* pathname)
 				{
 					continue;
 				}
-				system_call_failed::raise("stat");
+				Firebird::system_call_failed::raise("stat");
 			}
 
 			if (S_ISDIR(st.st_mode))
@@ -141,7 +128,7 @@ void createLockDirectory(const char* pathname)
 			}
 
 			// not exactly original meaning, but very close to it
-			system_call_failed::raise("access", ENOTDIR);
+			Firebird::system_call_failed::raise("access", ENOTDIR);
 		}
 	} while (SYSCALL_INTERRUPTED(errno));
 
@@ -151,10 +138,21 @@ void createLockDirectory(const char* pathname)
 		{
 			continue;
 		}
-		(Arg::Gds(isc_lock_dir_access) << pathname).raise();
+		Firebird::string msg;
+		msg.printf("Can't access lock files' directory %s", pathname);
+		(Firebird::Arg::Gds(isc_random) << msg).raise();
 	}
 
-	changeFileRights(pathname, 0770);
+#ifndef SUPERSERVER
+	uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+	gid_t gid = get_user_group_id(FIREBIRD);
+	while (chown(pathname, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+		;
+#endif //SUPERSERVER
+
+	const mode_t mode = 0770;
+	while (chmod(pathname, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+		;
 }
 
 // open (or create if missing) and set appropriate access rights
@@ -178,10 +176,38 @@ int openCreateSharedFile(const char* pathname, int flags)
 			return -1;
 		}
 
-		changeFileRights(pathname, 0660);
+#ifndef SUPERSERVER
+		uid_t uid = geteuid() == 0 ? get_user_id(FIREBIRD) : -1;
+		gid_t gid = get_user_group_id(FIREBIRD);
+		while (fchown(fd, uid, gid) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+#endif //SUPERSERVER
+
+		const mode_t mode = 0660;
+		while (fchmod(fd, mode) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
 	}
 
 	return fd;
+}
+
+// set file's last access and modification time to current time
+bool touchFile(const char* pathname)
+{
+#ifdef HAVE_UTIME_H
+	while (utime(pathname, NULL) < 0)
+	{
+		if (SYSCALL_INTERRUPTED(errno))
+		{
+			continue;
+		}
+		return false;
+	}
+
+	return true;
+#else
+	return false;
+#endif
 }
 
 } // namespace os_utils

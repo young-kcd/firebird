@@ -31,7 +31,6 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
-#include "../jrd/ibase.h"
 #include "../jrd/svc.h"
 #include "../common/thd.h"
 #include "../jrd/thread_proto.h"

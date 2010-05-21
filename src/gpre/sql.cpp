@@ -2162,8 +2162,8 @@ static act* act_create_view()
 //____________________________________________________________
 //
 //		Recognize BEGIN/END DECLARE SECTION,
-//		and mark it as a good place to put miscellaneous
-//		global routine stuff.
+//     and mark it as a good place to put miscellaneous
+//     global routine stuff.
 //
 
 static act* act_d_section(act_t type)
@@ -2297,6 +2297,9 @@ static act* act_declare()
 		}
 	} // end scope
 
+#ifdef SCROLLABLE_CURSORS
+	bool scroll = false;
+#endif
 	act* action = NULL;
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
@@ -2305,6 +2308,13 @@ static act* act_declare()
 	case KW_TABLE:
 		return (act_declare_table(symbol, 0));
 
+#ifdef SCROLLABLE_CURSORS
+	case KW_SCROLL:
+		PAR_get_token();
+		scroll = true;
+		if (gpreGlob.token_global.tok_keyword != KW_CURSOR)
+			CPR_s_error("CURSOR");
+#endif
 	case KW_CURSOR:
 		PAR_get_token();
 		if (!MSC_match(KW_FOR))
@@ -2313,6 +2323,10 @@ static act* act_declare()
 		{
 			gpre_req* request = MSC_request(REQ_cursor);
 			request->req_flags |= REQ_sql_cursor | REQ_sql_declare_cursor;
+#ifdef SCROLLABLE_CURSORS
+			if (scroll)
+				request->req_flags |= REQ_scroll;
+#endif
 			symbol->sym_object = (gpre_ctx*) request;
 			action = MSC_action(request, ACT_cursor);
 			action->act_object = (ref*) symbol;
@@ -3097,7 +3111,113 @@ static act* act_fetch()
 
 	// Statement is static SQL
 
+#ifdef SCROLLABLE_CURSORS
+	// parse the fetch orientation
+
+	USHORT direction = blr_forward;
+	const TEXT* direction_string = NULL;
+	gpre_nod* offset_node = NULL;
+
+	if (!MSC_match(KW_NEXT))
+	{
+		if (MSC_match(KW_PRIOR))
+		{
+			direction = blr_backward;
+			direction_string = "1";
+		}
+		else if (MSC_match(KW_FIRST))
+		{
+			direction = blr_bof_forward;
+			direction_string = "2";
+		}
+		else if (MSC_match(KW_LAST))
+		{
+			direction = blr_eof_backward;
+			direction_string = "3";
+		}
+		else if (MSC_match(KW_RELATIVE))
+		{
+			direction = blr_forward;
+			direction_string = "0";
+			offset_node = SQE_value(0, false, NULL, NULL);
+			PAR_get_token();
+		}
+		else if (MSC_match(KW_ABSOLUTE))
+		{
+			direction = blr_bof_forward;
+			direction_string = "2";
+			offset_node = SQE_value(0, false, NULL, NULL);
+			PAR_get_token();
+		}
+	}
+
+	MSC_match(KW_FROM);
+#endif
+
 	gpre_req* request = par_cursor(NULL);
+
+#ifdef SCROLLABLE_CURSORS
+	// if scrolling is required, set up the offset and direction parameters
+	// to be passed to the running request via the asynchronous message--
+	// there could be multiple FETCH statements, so we need to store multiple
+	// value blocks, one for each FETCH statement
+
+	if (direction != blr_forward)
+	{
+		if (!(request->req_flags & REQ_scroll))
+			PAR_error("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
+
+		// create a literal for the direction parameter
+
+		ref* reference = request->req_avalues;
+		if (!reference)
+			reference = request->req_avalues = (ref*) MSC_alloc(REF_LEN);
+
+		gpre_value* value = reference->ref_values;
+		if (!value)
+			reference->ref_values = value = (gpre_value*) MSC_alloc(VAL_LEN);
+		else
+		{
+			while (value->val_next) {
+				value = value->val_next;
+			}
+			value->val_next = (gpre_value*) MSC_alloc(VAL_LEN);
+			value = value->val_next;
+		}
+
+		TEXT* string = (TEXT*) MSC_alloc(2);
+		value->val_value = string;
+		MSC_copy(direction_string, 1, string);
+
+		// create a reference to the offset variable or literal
+
+		if (!reference->ref_next)
+			reference->ref_next = (ref*) MSC_alloc(REF_LEN);
+		reference = reference->ref_next;
+
+		value = reference->ref_values;
+		if (!value)
+			reference->ref_values = value = (gpre_value*) MSC_alloc(VAL_LEN);
+		else
+		{
+			while (value->val_next) {
+				value = value->val_next;
+			}
+			value->val_next = (gpre_value*) MSC_alloc(VAL_LEN);
+			value = value->val_next;
+		}
+
+		if (offset_node)
+			value->val_value = ((ref*) offset_node->nod_arg[0])->ref_value;
+		else
+		{
+			const TEXT* offset_string = "1";
+			string = (TEXT*) MSC_alloc(2);
+			value->val_value = string;
+			MSC_copy(offset_string, 1, string);
+		}
+	}
+#endif
 
 	if (request->req_flags & REQ_sql_blob_create)
 		PAR_error("Fetching from a blob being created is not allowed.");
@@ -4522,8 +4642,7 @@ static act* act_update()
 			if (transaction)
 				PAR_error("different transaction for select and update");
 			else
-			{
-				// does not specify transaction clause in
+			{				// does not specify transaction clause in
 				// "update ... where cuurent of cursor" stmt
 				const USHORT trans_nm_len = strlen(request->req_trans);
 				char* newtrans = (SCHAR *) MSC_alloc(trans_nm_len + 1);
@@ -4995,7 +5114,7 @@ static gpre_dbb* dup_dbb(const gpre_dbb* db)
 
 //____________________________________________________________
 //
-//		Report an error with parameter
+//       Report an error with parameter
 //
 
 static void error(const TEXT* format, const TEXT* string2)
@@ -5009,7 +5128,7 @@ static void error(const TEXT* format, const TEXT* string2)
 
 //____________________________________________________________
 //
-//		Extract string from "string" in
+//       Extract string from "string" in
 //		token.
 //
 
@@ -5689,7 +5808,7 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field)
 //____________________________________________________________
 //
 //		Parse the INTO clause for a dynamic SQL statement.
-//		Nobody uses its returned value currently.
+//      Nobody uses its returned value currently.
 
 static bool par_into( dyn* statement)
 {
