@@ -104,6 +104,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-2929
+        Error "invalid ESCAPE sequence" when connecting to the database
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2928
         Buffer overflow in GSEC
       Contributor(s):
@@ -244,6 +249,11 @@
         Changing data that affects an expression index that contains references to null date fields fails
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2826
+        Join condition fails for UTF-8 databases
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-2825
         Some patches for building on Debian/kFreeBSD and FreeBSD
