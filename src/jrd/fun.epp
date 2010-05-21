@@ -85,7 +85,7 @@ namespace
 
 	struct IbUtilStartup
 	{
-		IbUtilStartup(MemoryPool& p) : libUtilPath(p)
+		explicit IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
 			if (! fb_utils::bootBuild())
 			{
