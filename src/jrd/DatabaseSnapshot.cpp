@@ -917,7 +917,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	writer.putRecord(record);
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
-	if (Config::getSharedDatabase())
+	if (Config::getSharedCache())
 	{
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -992,7 +992,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	writer.putRecord(record);
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
-	if (Config::getSharedDatabase())
+	if (Config::getSharedCache())
 	{
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
