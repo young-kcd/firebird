@@ -99,7 +99,6 @@ struct dba_idx
 	FB_UINT64 idx_unpacked_length;
 	FB_UINT64 idx_packed_length;
 	FB_UINT64 idx_diff_pages;
-	ULONG idx_prior_pagno;
 	ULONG idx_fill_distribution[BUCKETS];
 	SCHAR idx_name[MAX_SQL_IDENTIFIER_SIZE];
 };
@@ -1374,6 +1373,7 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 	//UCHAR key[4096];
 	UCHAR* key = (UCHAR*) alloc(tddba->page_size / 4);
 	USHORT key_length = 0;
+	ULONG prior_pagno = MAX_ULONG;
 	while (true)
 	{
 		++index->idx_leaf_buckets;
@@ -1406,10 +1406,10 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 			USHORT pp_sequence;
 			SSHORT slot, line;
 			node.recordNumber.decompose(tddba->max_records, tddba->dp_per_pp, line, slot, pp_sequence);
-			const ULONG pagno = (pp_sequence << 16) | slot;
-			if (!firstLeafNode && pagno != index->idx_prior_pagno)
+			const ULONG pagno = pp_sequence * tddba->dp_per_pp + slot;
+			if (pagno != prior_pagno)
 				++index->idx_diff_pages;
-			index->idx_prior_pagno = pagno;
+			prior_pagno = pagno;
 
 			const USHORT l = node.length + node.prefix;
 			index->idx_unpacked_length += l;
