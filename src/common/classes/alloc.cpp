@@ -1206,6 +1206,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 				,__FILE__, __LINE__
 #endif
 				);
+			parent->decrement_usage(ext_size);
 		}
 		else
 		{
@@ -1540,6 +1541,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 				,__FILE__, __LINE__
 #endif
 				);
+			parent->decrement_usage(ext_size);
 		}
 		else
 		{
