@@ -28,8 +28,10 @@
 #include "AuthSspi.h"
 
 #ifdef TRUSTED_AUTH
-#include <../common/classes/ClumpletReader.h>
-#include <../common/classes/alloc.h>
+#include "../common/classes/ClumpletReader.h"
+#include "../common/classes/Interface.h"
+
+using namespace Firebird;
 
 namespace
 {
@@ -49,7 +51,7 @@ namespace
 		FARPROC rc = GetProcAddress(lib, entry);
 		if (! rc)
 		{
-			Firebird::LongJump::raise();
+			LongJump::raise();
 		}
 		return (ToType)rc;
 	}
@@ -94,7 +96,7 @@ bool AuthSspi::initEntries()
 		fAcceptSecurityContext = getProc<ACCEPT_SECURITY_CONTEXT_FN>
 			(library, "AcceptSecurityContext");
 	}
-	catch (const Firebird::LongJump&)
+	catch (const LongJump&)
 	{
 		return false;
 	}
@@ -146,7 +148,7 @@ bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 	GetTokenInformation(spc.AccessToken, TokenGroups, 0, 0, &token_len);
 
 	// Query actual group information
-	Firebird::Array<char> buffer;
+	Array<char> buffer;
 	TOKEN_GROUPS *ptg = (TOKEN_GROUPS *)buffer.getBuffer(token_len);
 	bool ok = GetTokenInformation(spc.AccessToken,
 			TokenGroups, ptg, token_len, &token_len);
@@ -308,7 +310,7 @@ bool AuthSspi::accept(AuthSspi::DataHolder& data)
 	return true;
 }
 
-bool AuthSspi::getLogin(Firebird::string& login, bool& wh)
+bool AuthSspi::getLogin(string& login, bool& wh)
 {
 	wh = false;
 	if (ctName.hasData())
@@ -366,9 +368,9 @@ Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*
 												WriterInterface* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-	Firebird::ClumpletReader rdr(isService ?
-		Firebird::ClumpletReader::spbList :
-		Firebird::ClumpletReader::dpbList, dpb, dpbSize);
+	ClumpletReader rdr(isService ?
+		ClumpletReader::spbList :
+		ClumpletReader::dpbList, dpb, dpbSize);
 
 	if (rdr.find(tag))
 	{
@@ -397,7 +399,7 @@ Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterfac
 	if (!sspi.isActive())
 	{
 		bool wheel = false;
-		Firebird::string login;
+		string login;
 		sspi.getLogin(login, wheel);
 		writerInterface->add(login.c_str(), "WIN_SSPI", "");
 		if (wheel)
