@@ -45,6 +45,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/ext_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -667,9 +668,7 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
 
 	if (relation->rel_file)
 	{
-		// Is there really no way to do better?
-		// Don't we know the file-size and record-size?
-		return (double) 10000;
+		return EXT_cardinality(tdbb, relation);
 	}
 
 	MET_post_existence(tdbb, relation);

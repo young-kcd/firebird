@@ -35,6 +35,7 @@ namespace Jrd {
 	struct bid;
 }
 
+double	EXT_cardinality(Jrd::thread_db*, Jrd::jrd_rel*);
 void	EXT_erase(Jrd::record_param*, Jrd::jrd_tra*);
 Jrd::ExternalFile*	EXT_file(Jrd::jrd_rel*, const TEXT*); //, Jrd::bid*);
 void	EXT_fini(Jrd::jrd_rel*, bool);

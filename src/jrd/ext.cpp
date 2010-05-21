@@ -67,6 +67,7 @@ __int64 __cdecl _ftelli64(FILE*);
 #endif
 
 #ifdef WIN_NT
+#include <sys/stat.h>
 #define FTELL64 _ftelli64
 #define FSEEK64 _fseeki64
 #else
@@ -151,6 +152,56 @@ namespace {
 		return ext_file->ext_ifi;
 	}
 } // namespace
+
+
+double EXT_cardinality(thread_db* tdbb, jrd_rel* relation)
+{
+/**************************************
+ *
+ *	E X T _ c a r d i n a l i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return cardinality for the external file.
+ *
+ **************************************/
+	ExternalFile* const file = relation->rel_file;
+	fb_assert(file);
+
+	bool must_close = false;
+	if (!file->ext_ifi)
+	{
+		ext_fopen(tdbb->getDatabase(), file);
+		must_close = true;
+	}
+
+	FB_UINT64 file_size = 0;
+
+#ifdef WIN_NT
+	struct __stat64 statistics;
+	if (!_fstat64(_fileno(file->ext_ifi), &statistics))
+#else
+	struct stat statistics;
+	if (!fstat(file->ext_ifi, &statistics))
+#endif
+	{
+		file_size = statistics.st_size;
+	}
+
+	if (must_close)
+	{
+		fclose(file->ext_ifi);
+		file->ext_ifi = NULL;
+	}
+
+	const Format* const format = MET_current(tdbb, relation);
+	fb_assert(format && format->fmt_length);
+	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
+	const ULONG record_length = format->fmt_length - offset;
+
+	return (double) file_size / record_length;
+}
 
 
 void EXT_erase(record_param*, jrd_tra*)
