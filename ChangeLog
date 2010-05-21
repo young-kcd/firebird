@@ -1,3 +1,44 @@
+2010-05-21 11:18  robocop
+
+	* firebird2/src/jrd/fun.epp (1.145):
+
+	Misc.
+
+2010-05-21 10:51  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.135):
+
+	Correction.
+
+2010-05-21 10:19  hvlad
+
+	* firebird2/src/utilities/gstat/dba.epp (1.138):
+
+	Corrections for index stats
+
+2010-05-21 08:14  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.151), ext.cpp (1.100),
+	ext_proto.h (1.22):
+
+	Let's calculate the exact cardinality for external tables.
+
+2010-05-21 07:49  dimitr
+
+	* firebird2/src/auth/trusted/AuthSspi.cpp (1.23):
+
+	Fixed the windows build.
+
+2010-05-20 17:02  alexpeshkoff
+
+	* firebird2/src/: auth/AuthInterface.h (1.5),
+	auth/SecurityDatabase/LegacyClient.cpp (1.5),
+	common/classes/Interface.h (1.1), remote/interface.cpp (1.250),
+	remote/server.cpp (1.280):
+
+	Moved not auth-specific part of interface declaration to separate
+	file
+
 2010-05-20 14:07  alexpeshkoff
 
 	* firebird2/src/lock/lock.cpp (1.216):
