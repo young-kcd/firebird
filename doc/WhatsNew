@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-3006
+        /tmp/firebird and files in it may get 'root' (i.e. GID == 0) group
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3001
         Install fails to create user and group "firebird"
       Contributor(s):
@@ -28,6 +33,11 @@
         GBAK -v srv:db stdout creates a broken backup
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2981
+        Error in the trace plugin (use local symbols in query)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2977
         Server works with indexed fields of type DATE incorrectly in pre-ODS10 databases
@@ -260,6 +270,11 @@
         Bugcheck 291 (cannot find record back version)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3008
+        Add attachment's charset name into corresponding trace records
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
 
   **************************
