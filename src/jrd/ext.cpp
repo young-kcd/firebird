@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -67,7 +68,6 @@ __int64 __cdecl _ftelli64(FILE*);
 #endif
 
 #ifdef WIN_NT
-#include <sys/stat.h>
 #define FTELL64 _ftelli64
 #define FSEEK64 _fseeki64
 #else
@@ -183,7 +183,7 @@ double EXT_cardinality(thread_db* tdbb, jrd_rel* relation)
 	if (!_fstat64(_fileno(file->ext_ifi), &statistics))
 #else
 	struct stat statistics;
-	if (!fstat(file->ext_ifi, &statistics))
+	if (!fstat(fileno(file->ext_ifi), &statistics))
 #endif
 	{
 		file_size = statistics.st_size;
