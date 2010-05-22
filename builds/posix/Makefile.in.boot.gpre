@@ -52,7 +52,7 @@ COMMONBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(COMMONBOO
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
 		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp \
-				@GPRE_LANGUAGE_MODULES@
+		@GPRE_LANGUAGE_MODULES@
 
 GPRE_Files = $(GPRECOMMON_Files) pretty.cpp gpre_meta_boot.cpp
 GPRE_Sources = $(addprefix gpre/, $(GPRE_Files))

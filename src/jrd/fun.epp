@@ -87,21 +87,17 @@ namespace
 	{
 		explicit IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
-			if (! fb_utils::bootBuild())
-			{
+			if (fb_utils::bootBuild())
+				return;
+
 #if defined(WIN_NT)
-				libUtilPath.assign(LIBNAME);
+			libUtilPath.assign(LIBNAME);
 #elif defined(DARWIN)
-				libUtilPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/" LIBNAME;
+			libUtilPath = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/" LIBNAME;
 #else
-				const PathName id(Config::getInstallDirectory());
-				PathUtils::concatPath(libUtilPath, id, "lib/" LIBNAME);
+			const PathName id(Config::getInstallDirectory());
+			PathUtils::concatPath(libUtilPath, id, "lib/" LIBNAME);
 #endif // WIN_NT
-			}
-			else
-			{
-				initDone = true;
-			}
 		}
 
 		PathName libUtilPath;

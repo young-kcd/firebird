@@ -1142,7 +1142,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 				//
 				isNull = !EVL_field(relation, record, tail->idx_field, desc_ptr);
 
-				if (!isNull && !(relation->rel_flags & REL_system) &&
+				if (!isNull &&
+					!(relation->rel_flags & REL_system) &&	// UNICODE_FSS_HACK
 					desc_ptr->dsc_dtype == dtype_text)
 				{
 					// That's necessary for NO-PAD collations.
@@ -1189,7 +1190,8 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 
 				if (!isNull)
 				{
-					if (!(relation->rel_flags & REL_system) && desc_ptr->dsc_dtype == dtype_text)
+					if (!(relation->rel_flags & REL_system) &&	// UNICODE_FSS_HACK
+						desc_ptr->dsc_dtype == dtype_text)
 					{
 						// That's necessary for NO-PAD collations.
 						INTL_adjust_text_descriptor(tdbb, desc_ptr);

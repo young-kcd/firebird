@@ -205,7 +205,7 @@ public:
 	virtual const char* getTextUTF8();
 
 private:
-	Firebird::string &m_text;
+	Firebird::string& m_text;
 	Firebird::string m_textUTF8;
 };
 

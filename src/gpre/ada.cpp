@@ -1745,7 +1745,7 @@ static void gen_event_init( const act* action, int column)
 	PAT args;
 	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) (IPTR) init->nod_arg[2];
+	args.pat_value1 = (int)(IPTR) init->nod_arg[2];
 
 	// generate call to dynamically generate event blocks
 
@@ -1810,7 +1810,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string))
 		{
-			ident = (int) (IPTR) event_init->nod_arg[2];
+			ident = (int)(IPTR) event_init->nod_arg[2];
 			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}

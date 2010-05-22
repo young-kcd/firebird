@@ -1781,13 +1781,14 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 		{
 			ThreadStart::start(blocking_action_thread, this, THREAD_high, 0);
 		}
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
 			ISC_STATUS_ARRAY vector;
 			ex.stuff_exception(vector);
 
 			statusVector << Arg::Gds(isc_lockmanerr);
 			statusVector << Arg::StatusVector(vector);
+
 			return false;
 		}
 	}

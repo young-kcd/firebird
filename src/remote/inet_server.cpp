@@ -456,6 +456,7 @@ static void signal_handler(int)
 static void raiseLimit(int resource)
 {
 	struct rlimit lim;
+
 	if (getrlimit(resource, &lim) == 0)
 	{
 		if (lim.rlim_cur != lim.rlim_max)

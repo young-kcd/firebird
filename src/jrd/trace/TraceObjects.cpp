@@ -89,7 +89,7 @@ const char* TraceConnectionImpl::getRoleName()
 
 const char* TraceConnectionImpl::getCharSet()
 {
-	CharSet *cs = INTL_charset_lookup(JRD_get_thread_data(), m_att->att_charset);
+	CharSet* cs = INTL_charset_lookup(JRD_get_thread_data(), m_att->att_charset);
 	return cs ? cs->getName() : NULL;
 }
 
@@ -194,10 +194,10 @@ const char* TraceSQLStatementImpl::getText()
 	return m_stmt->getStatement()->getSqlText()->c_str();
 }
 
-// returns false if conversion not needed
-bool convertToUTF8(const string &src, string &dst)
+// Returns false if conversion is not needed.
+static bool convertToUTF8(const string& src, string& dst)
 {
-	thread_db *tdbb = JRD_get_thread_data();
+	thread_db* tdbb = JRD_get_thread_data();
 	const CHARSET_ID charset = tdbb->getAttachment()->att_charset;
 
 	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
@@ -217,9 +217,9 @@ bool convertToUTF8(const string &src, string &dst)
 	{
 		DataTypeUtil dtUtil(tdbb);
 		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
-		
-		length = INTL_convert_bytes(tdbb, 
-			CS_UTF8, (UCHAR*) dst.getBuffer(length), length, 
+
+		length = INTL_convert_bytes(tdbb,
+			CS_UTF8, (UCHAR*) dst.getBuffer(length), length,
 			charset, (const BYTE*) src.begin(), src.length(),
 			ERR_post);
 

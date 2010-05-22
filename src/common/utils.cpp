@@ -924,12 +924,14 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 bool bootBuild()
 {
 	static enum {FB_BOOT_UNKNOWN, FB_BOOT_NORMAL, FB_BOOT_SET} state = FB_BOOT_UNKNOWN;
+
 	if (state == FB_BOOT_UNKNOWN)
 	{
 		// not care much about protecting state with mutex - each thread will assign it same value
 		Firebird::string dummy;
 		state = readenv("FIREBIRD_BOOT_BUILD", dummy) ? FB_BOOT_SET : FB_BOOT_NORMAL;
 	}
+
 	return state == FB_BOOT_SET;
 }
 

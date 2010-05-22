@@ -1337,6 +1337,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		tail < optimizer->opt_conjuncts.end(); tail++)
 	{
 		jrd_nod* const node = tail->opt_conjunct_node;
+
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			OPT_computable(csb, node, stream, false, true) &&
 			!invCandidate->matches.exist(node))

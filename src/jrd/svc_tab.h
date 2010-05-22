@@ -43,6 +43,6 @@ struct serv_entry
 
 extern const serv_entry services[];
 
-} //namespace Jrd
+} // namespace Jrd
 
-#endif //JRD_SVC_TAB_H
+#endif // JRD_SVC_TAB_H

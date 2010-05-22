@@ -28,6 +28,7 @@
 #include "AuthSspi.h"
 
 #ifdef TRUSTED_AUTH
+
 #include "../common/classes/ClumpletReader.h"
 #include "../common/classes/Interface.h"
 
@@ -368,9 +369,8 @@ Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*
 												WriterInterface* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
-	ClumpletReader rdr(isService ?
-		ClumpletReader::spbList :
-		ClumpletReader::dpbList, dpb, dpbSize);
+	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
+		dpb, dpbSize);
 
 	if (rdr.find(tag))
 	{

@@ -197,7 +197,7 @@ double EXT_cardinality(thread_db* tdbb, jrd_rel* relation)
 
 	const Format* const format = MET_current(tdbb, relation);
 	fb_assert(format && format->fmt_length);
-	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
+	const USHORT offset = (USHORT)(IPTR) format->fmt_desc[0].dsc_address;
 	const ULONG record_length = format->fmt_length - offset;
 
 	return (double) file_size / record_length;

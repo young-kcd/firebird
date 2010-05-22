@@ -40,6 +40,7 @@ public:
 	//virtual InterfaceBase* queryInterface() = 0;
 	//virtual void addRef() = 0;
 	virtual void release() = 0;
+
 protected:
 	~Interface() { }
 };
@@ -59,20 +60,20 @@ public:
 template <typename T>
 T* interfaceAlloc()
 {
-/*
+	/***
 	void* ptr = gds__alloc(sizeof(T));
 	return new(ptr) T;
- */
+	***/
  	return FB_NEW(*getDefaultMemoryPool()) T;
 }
 
 template <typename T>
 void interfaceFree(T* ptr)
 {
-/*
-	delete((void*)0) ptr;
+	/***
+	delete((void*) 0) ptr;
 	gds__free(ptr);
- */
+	***/
  	delete ptr;
 }
 

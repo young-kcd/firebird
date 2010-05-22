@@ -47,7 +47,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
                           FB_API_HANDLE trans,
                           internal_user_data* io_user_data,
                           FPTR_SECURITY_CALLBACK display_func,
-                          void* callback_arg) 
+                          void* callback_arg)
 {
 	(Arg::Gds(isc_random) << "Security is missing in current build").copyTo(isc_status);
 	return -1;
