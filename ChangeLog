@@ -1,3 +1,24 @@
+2010-05-22 04:19  asfernandes
+
+	* firebird2/src/jrd/ext.cpp (1.102):
+
+	Fix Linux build
+
+2010-05-22 04:00  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.boot.gpre (1.35),
+	src/auth/trusted/AuthSspi.cpp (1.24), src/common/utils.cpp (1.79),
+	src/common/classes/Interface.h (1.2), src/gpre/ada.cpp (1.74),
+	src/gpre/ftn.cpp (1.84), src/gpre/pas.cpp (1.74),
+	src/jrd/Optimizer.cpp (1.152), src/jrd/btr.cpp (1.286),
+	src/jrd/ext.cpp (1.101), src/jrd/fun.epp (1.146),
+	src/jrd/svc_stub.cpp (1.2), src/jrd/svc_tab.h (1.2),
+	src/jrd/trace/TraceObjects.cpp (1.28), src/jrd/trace/TraceObjects.h
+	(1.16), src/lock/lock.cpp (1.217), src/remote/inet_server.cpp
+	(1.109):
+
+	Misc
+
 2010-05-21 11:18  robocop
 
 	* firebird2/src/jrd/fun.epp (1.145):
