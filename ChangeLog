@@ -1,3 +1,9 @@
+2010-05-21 17:40  dimitr
+
+	* firebird2/doc/WhatsNew (1.148.2.39):
+
+	Update.
+
 2010-05-19 16:15  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.78.2.10):
