@@ -96,6 +96,9 @@ DatabaseSnapshot::SharedData::~SharedData()
 	{ // scope
 		DumpGuard guard(this);
 		cleanup();
+
+		if (base->used == sizeof(Header))
+			ISC_remove_map_file(&handle);
 	}
 
 #ifdef WIN_NT

@@ -105,6 +105,7 @@ struct sh_mem
 	UCHAR *sh_mem_address;
 	ULONG sh_mem_length_mapped;
 	SLONG sh_mem_handle;
+	TEXT sh_mem_name[MAXPATHLEN];
 };
 
 #endif // UNIX

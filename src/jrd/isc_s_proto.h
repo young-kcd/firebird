@@ -72,5 +72,6 @@ UCHAR*	ISC_remap_file(Firebird::Arg::StatusVector&, struct sh_mem*, ULONG, bool)
 void	ISC_unmap_file(Firebird::Arg::StatusVector&, struct sh_mem*);
 
 void	ISC_remove_map_file(const TEXT* filename);
+void	ISC_remove_map_file(const struct sh_mem*);
 
 #endif // JRD_ISC_S_PROTO_H

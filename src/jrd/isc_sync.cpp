@@ -1678,12 +1678,19 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 
 void ISC_remove_map_file(const TEXT* filename)
 {
+#ifndef WIN_NT
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
 	unlink(expanded_filename);
+#endif // WIN_NT
+}
+
+void ISC_remove_map_file(const struct sh_mem* shmem_data)
+{
+	ISC_remove_map_file(shmem_data->sh_mem_name);
 }
 
 #ifdef UNIX
@@ -1821,6 +1828,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 	shmem_data->sh_mem_handle = fd;
+	strcpy(shmem_data->sh_mem_name, filename);
 
 #ifdef USE_SYS5SEMAPHORE
 	// register mapped file
@@ -1923,18 +1931,21 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	HANDLE file_handle, event_handle;
+	HANDLE file_handle;
+	HANDLE event_handle = 0;
 	int retry_count = 0;
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
 	const bool trunc_flag = (length != 0);
+	bool init_flag = false;
 
 	// retry to attach to mmapped file if the process initializing dies during initialization.
 
   retry:
-	retry_count++;
+	if (retry_count++ > 0)
+		THREAD_SLEEP(10);
 
 	file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,
@@ -1943,15 +1954,19 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 							 OPEN_ALWAYS,
 							 FILE_ATTRIBUTE_NORMAL,
 							 NULL);
+	DWORD err = GetLastError();
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
+		if (err == ERROR_SHARING_VIOLATION)
+			goto retry;
+
 		error(statusVector, "CreateFile", GetLastError());
 		return NULL;
 	}
 
 	// Check if file already exists
 
-	const bool file_exists = (GetLastError() == ERROR_ALREADY_EXISTS);
+	const bool file_exists = (err == ERROR_ALREADY_EXISTS);
 
 	// Create an event that can be used to determine if someone has already
 	// initialized shared memory.
@@ -1964,22 +1979,25 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		return NULL;
 	}
 
-	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
-	if (!event_handle)
+	if (!init_flag)
 	{
-		error(statusVector, "CreateEvent", GetLastError());
-		CloseHandle(file_handle);
-		return NULL;
-	}
+		event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
+		if (!event_handle)
+		{
+			error(statusVector, "CreateEvent", GetLastError());
+			CloseHandle(file_handle);
+			return NULL;
+		}
 
-	const bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
+		init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
 
-	if (init_flag && !init_routine)
-	{
-		CloseHandle(event_handle);
-		CloseHandle(file_handle);
-		statusVector << Arg::Gds(isc_unavailable);
-		return NULL;
+		if (init_flag && !init_routine)
+		{
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			statusVector << Arg::Gds(isc_unavailable);
+			return NULL;
+		}
 	}
 
 	if (length == 0)
@@ -2016,7 +2034,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			CloseHandle(event_handle);
 			if (retry_count > 10)
 			{
-				error(statusVector, "WaitForSingleObject", GetLastError());
+				error(statusVector, "WaitForSingleObject", 0);
 				return NULL;
 			}
 			goto retry;
@@ -2039,6 +2057,14 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
 		const DWORD err = GetLastError();
+
+		if ((err == ERROR_SHARING_VIOLATION) || (err == ERROR_FILE_NOT_FOUND && fdw_create == TRUNCATE_EXISTING))
+		{
+			if (!init_flag) {
+				CloseHandle(event_handle);
+			}
+			goto retry;
+		}
 
 		if (err == ERROR_USER_MAPPED_FILE && init_flag && file_exists && trunc_flag)
 			statusVector << Arg::Gds(isc_instance_conflict);
@@ -3388,11 +3414,18 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
-	if (!DeleteFile(expanded_filename))
-	{
-		error(statusVector, "DeleteFile", GetLastError());
-		return;
-	}
+
+	// Delete file only if it is not used by anyone else
+	HANDLE hFile = CreateFile(expanded_filename,
+							 DELETE,
+							 0,
+							 NULL,
+							 OPEN_EXISTING,
+							 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+							 NULL);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+		CloseHandle(hFile);
 }
 #endif
 
