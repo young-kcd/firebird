@@ -28636,7 +28636,8 @@
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.3), cch.cpp (1.160):
 
-	Small NBAK performance optimization from Roman Simakov
+	Small NBAK performance optimization from Rom
+an Simakov
 
 2007-05-04 16:48  asfernandes
 
