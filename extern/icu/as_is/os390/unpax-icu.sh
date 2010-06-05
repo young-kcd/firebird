@@ -52,7 +52,8 @@ if [ $# -gt 1 ]; then
          ;;
         *)
           # then this entry is NOT a directory
-          tr -d  <$i >@@@icu@tmp
+          tr -d 
+ <$i >@@@icu@tmp
           chmod +w $i
           rm $i
           mv @@@icu@tmp $i
