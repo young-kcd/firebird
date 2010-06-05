@@ -150,6 +150,8 @@ ConfigStorage::~ConfigStorage()
 		{
 			unlink(m_base->cfg_file_name);
 			memset(m_base->cfg_file_name, 0, sizeof(m_base->cfg_file_name));
+
+			ISC_remove_map_file(&m_handle);
 		}
 	}
 

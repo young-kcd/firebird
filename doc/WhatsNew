@@ -2,6 +2,39 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-3021
+		Segfault in DEV_BUILD
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3017
+		Files left at Firebird's lock directory 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3016
+		On disconnect it is possible to see "Fatal lock manager error: invalid lock id (0), errno: 0" 
+		in firebird.log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3015
+		Various "Cannot initialize the shared memory region" errors
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3011
+		Server hangs or crashes while monitoring connections repeatedly attaching and detaching
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3010
+		First connect to any database shows MON$MEMORY_USED = 4Gb 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3006
         /tmp/firebird and files in it may get 'root' (i.e. GID == 0) group
       Contributor(s):

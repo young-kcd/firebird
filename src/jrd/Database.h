@@ -107,6 +107,7 @@ const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
 const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
 const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
 const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
+const ULONG DBB_monitor_locking		= 0x200000L;	// monitoring lock is being acquired
 
 //
 // dbb_ast_flags

@@ -101,6 +101,9 @@ DatabaseSnapshot::SharedData::~SharedData()
 	{ // scope
 		DumpGuard guard(this);
 		cleanup();
+
+		if (base->used == sizeof(Header))
+			ISC_remove_map_file(&handle);
 	}
 
 #ifdef WIN_NT
@@ -387,8 +390,13 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 				}
 			}
 
-			// Release the lock and mark dbb as requesting a new one
-			LCK_release(tdbb, lock);
+			// Release the lock, if feasible
+			if (!(dbb->dbb_flags & DBB_monitor_locking))
+			{
+				LCK_release(tdbb, lock);
+			}
+
+			// Mark dbb as requesting a new lock
 			dbb->dbb_ast_flags |= DBB_monitor_off;
 		}
 	}

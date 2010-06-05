@@ -38,10 +38,18 @@
 #endif
 
 #ifdef LINUX
+
 // This hack fixes CORE-2896 - embedded connections fail on linux.
 // Looks like a lot of linux kernels are buggy when working with PRIO_INHERIT mutexes.
 #undef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
+
+#if (SIZEOF_VOID_P < 8) && defined(DEV_BUILD)
+// This hack fixes CORE-3021 - segfault in DEV_BUILD.
+// Release build does not cause visible problems.
+#undef HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP
 #endif
+
+#endif //LINUX
 
 #ifdef UNIX
 
@@ -105,6 +113,7 @@ struct sh_mem
 	UCHAR *sh_mem_address;
 	ULONG sh_mem_length_mapped;
 	SLONG sh_mem_handle;
+	TEXT	sh_mem_name[MAXPATHLEN];
 };
 
 #endif // UNIX

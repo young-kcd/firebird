@@ -6,9 +6,6 @@
 # on system startup and shutdown to start the background
 # Firebird database server daemon
 
-# Source function library.
-. /etc/init.d/functions.sh
-
 # To run more instances of firebird:
 #   Copy @prefix@ somewhere
 #   Copy this script under a new name
@@ -49,19 +46,19 @@ if [ ! -x $GUARDIAN ]; then
 	GUARDIAN=@FB_SBINDIR@/fbguard
 fi
 
-start(){
+start() {
 	ebegin "Starting $FULLNAME"
 	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $GUARDIAN -- $FB_OPTS
 	eend $?
 }
 
-stop(){
+stop() {
 	ebegin "Stopping $FULLNAME"
 	start-stop-daemon --stop --pidfile $pidfile --oknodo
 	eend $?
 }
 
-restart(){
+restart() {
 	svc_stop
 	sleep 1
 	svc_start
