@@ -1,3 +1,31 @@
+2010-05-29 04:01  asfernandes
+
+	* firebird2/src/jrd/isc_sync.cpp (1.233):
+
+	Misc
+
+2010-05-27 10:55  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.263):
+
+	Fixed bug CORE-3016 : On disconnect it is possible to see "Fatal
+	lock manager error: invalid lock id (0), errno: 0" in firebird.log
+
+2010-05-27 10:53  hvlad
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.136),
+	trace/TraceConfigStorage.cpp (1.33):
+
+	Fixed bug CORE-3017 : Files left at Firebird's lock directory
+
+2010-05-27 10:51  hvlad
+
+	* firebird2/src/jrd/: isc_s_proto.h (1.33), isc_sync.cpp (1.232),
+	isc.h (1.47):
+
+	Fixed bug CORE-3015 : Various "Cannot initialize the shared memory
+	region" errors
+
 2010-05-22 04:19  asfernandes
 
 	* firebird2/src/jrd/ext.cpp (1.102):
