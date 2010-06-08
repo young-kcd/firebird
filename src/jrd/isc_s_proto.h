@@ -45,7 +45,7 @@ UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
 #if defined(WIN_NT)
 int		ISC_mutex_init(struct mtx*, const TEXT*);
 #else
-int		ISC_mutex_init(struct mtx*);
+int		ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped);
 #endif
 
 int		ISC_mutex_lock(struct mtx*);
@@ -57,6 +57,9 @@ void	ISC_mutex_fini(struct mtx*);
 UCHAR*	ISC_map_object(ISC_STATUS*, sh_mem*, ULONG, ULONG);
 void	ISC_unmap_object(ISC_STATUS*, /*sh_mem*,*/ UCHAR**, ULONG);
 #endif
+
+int		ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped);
+void	ISC_unmap_mutex(mtx* mutex);
 
 #ifdef UNIX
 void	ISC_exception_post(ULONG, const TEXT*);

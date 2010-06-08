@@ -179,7 +179,8 @@ void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 	fb_assert(storage);
 
 #ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&storage->m_mutex, shmemData->sh_mem_name));
+	checkMutex("init", ISC_mutex_init(&storage->m_winMutex, shmemData->sh_mem_name));
+	storage->m_mutex = &storage->m_winMutex;
 #endif
 
 	ShMemHeader* const header = (ShMemHeader*) shmemData->sh_mem_address;
@@ -195,7 +196,11 @@ void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 		header->touch_time = 0;
 		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
 #ifndef WIN_NT
-		checkMutex("init", ISC_mutex_init(&header->mutex));
+		checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &storage->m_mutex));
+	}
+	else
+	{
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &storage->m_mutex));
 #endif
 	}
 }
@@ -344,22 +349,13 @@ void ConfigStorage::touchThreadFunc()
 
 void ConfigStorage::acquire()
 {
-#ifdef WIN_NT
-	checkMutex("lock", ISC_mutex_lock(&m_mutex));
-#else
-	checkMutex("lock", ISC_mutex_lock(&m_base->mutex));
-#endif
+	checkMutex("lock", ISC_mutex_lock(m_mutex));
 }
 
 void ConfigStorage::release()
 {
 	checkDirty();
-
-#ifdef WIN_NT
-	checkMutex("unlock", ISC_mutex_unlock(&m_mutex));
-#else
-	checkMutex("unlock", ISC_mutex_unlock(&m_base->mutex));
-#endif
+	checkMutex("unlock", ISC_mutex_unlock(m_mutex));
 }
 
 void ConfigStorage::addSession(TraceSession& session)

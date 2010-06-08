@@ -2219,6 +2219,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 
 #ifdef HAVE_MMAP
+
+#define HAVE_MAP_OBJECT 1
+
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
@@ -2278,7 +2281,6 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -2333,6 +2335,9 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 
 #ifdef WIN_NT
+
+#define HAVE_MAP_OBJECT 1
+
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
@@ -2376,7 +2381,6 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG /*object_length*/)
 {
@@ -2409,12 +2413,42 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 }
 #endif
 
+int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
+{
+#ifdef HAVE_MAP_OBJECT
+	ISC_STATUS_ARRAY temp;
+	mutex = reinterpret_cast<mtx*>(ISC_map_object(temp, shmem_data,
+			reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
+	if (!mutex)
+	{
+		iscLogStatus("ISC_map_mutex()", temp);
+		return -1;
+	}
+#endif // HAVE_MAP_OBJECT
+
+	*mapped = mutex;
+	return 0;
+}
+
+void ISC_unmap_mutex(mtx* mutex)
+{
+#ifdef HAVE_MAP_OBJECT
+	ISC_STATUS_ARRAY temp;
+	ISC_unmap_object(temp, reinterpret_cast<UCHAR**>(&mutex), sizeof(mtx));
+	if (mutex)
+	{
+		iscLogStatus("ISC_unmap_mutex()", temp);
+	}
+#endif // HAVE_MAP_OBJECT
+
+}
+		
 
 #ifdef USE_POSIX_THREADS
 
 #ifdef USE_SYS5SEMAPHORE
 
-int ISC_mutex_init(struct mtx* mutex)
+int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 {
 /**************************************
  *
@@ -2426,6 +2460,13 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
+
+	if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
+	{
+		return -1;	// no errno known here...
+	}
+	mutex = *mapped;
+
 	if (!getSem5(mutex))
 	{
 		return FB_FAILURE;
@@ -2456,7 +2497,7 @@ void ISC_mutex_fini(struct mtx *mutex)
  *	Destroy a mutex.
  *
  **************************************/
-	// no-op for SystemV semaphores
+	ISC_unmap_mutex(mutex);
 }
 
 
@@ -2562,7 +2603,7 @@ int ISC_mutex_unlock(struct mtx* mutex)
 static volatile bool staticBugFlag = false;
 #endif
 
-int ISC_mutex_init(struct mtx* mutex)
+int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 {
 /**************************************
  *
@@ -2574,6 +2615,13 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
+
+  if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
+  {
+		return -1;	// no errno known here...
+  }
+  mutex = *mapped;
+
 #ifdef BUGGY_LINUX_MUTEX
   do
   {
@@ -2662,7 +2710,7 @@ void ISC_mutex_fini(struct mtx *mutex)
  *	Destroy a mutex.
  *
  **************************************/
-	// no-op for posix threads
+	ISC_unmap_mutex(mutex);
 }
 
 

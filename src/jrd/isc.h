@@ -43,12 +43,6 @@
 // Looks like a lot of linux kernels are buggy when working with PRIO_INHERIT mutexes.
 #undef HAVE_PTHREAD_MUTEXATTR_SETPROTOCOL
 
-#if (SIZEOF_VOID_P < 8) && defined(DEV_BUILD)
-// This hack fixes CORE-3021 - segfault in DEV_BUILD.
-// Release build does not cause visible problems.
-#undef HAVE_PTHREAD_MUTEXATTR_SETROBUST_NP
-#endif
-
 #endif //LINUX
 
 #ifdef UNIX

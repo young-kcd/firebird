@@ -106,12 +106,7 @@ DatabaseSnapshot::SharedData::~SharedData()
 			ISC_remove_map_file(&handle);
 	}
 
-#ifdef WIN_NT
-	ISC_mutex_fini(&mutex);
-#else
-	ISC_mutex_fini(&base->mutex);
-#endif
-
+	ISC_mutex_fini(mutex);
 	ISC_STATUS_ARRAY statusVector;
 	ISC_unmap_file(statusVector, &handle);
 }
@@ -119,11 +114,8 @@ DatabaseSnapshot::SharedData::~SharedData()
 
 void DatabaseSnapshot::SharedData::acquire()
 {
-#ifdef WIN_NT
-	checkMutex("lock", ISC_mutex_lock(&mutex));
-#else
-	checkMutex("lock", ISC_mutex_lock(&base->mutex));
-#endif
+	checkMutex("lock", ISC_mutex_lock(mutex));
+
 	if (base->allocated > handle.sh_mem_length_mapped)
 	{
 #if (defined HAVE_MMAP || defined WIN_NT)
@@ -142,11 +134,7 @@ void DatabaseSnapshot::SharedData::acquire()
 
 void DatabaseSnapshot::SharedData::release()
 {
-#ifdef WIN_NT
-	checkMutex("unlock", ISC_mutex_unlock(&mutex));
-#else
-	checkMutex("unlock", ISC_mutex_unlock(&base->mutex));
-#endif
+	checkMutex("unlock", ISC_mutex_unlock(mutex));
 }
 
 
@@ -314,20 +302,27 @@ void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initi
 	fb_assert(shmem);
 
 #ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&shmem->mutex, shmemData->sh_mem_name));
+	checkMutex("init", ISC_mutex_init(&shmem->winMutex, shmemData->sh_mem_name));
+	shmem->mutex = &shmem->winMutex;
 #endif
 
+	Header* const header = (Header*) shmemData->sh_mem_address;
+
 	if (!initialize)
+	{
+#ifndef WIN_NT
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &shmem->mutex));
+#endif
 		return;
+	}
 
 	// Initialize the shared data header
-	Header* const header = (Header*) shmemData->sh_mem_address;
 	header->version = MONITOR_VERSION;
 	header->used = alignOffset(sizeof(Header));
 	header->allocated = shmemData->sh_mem_length_mapped;
 
 #ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(&header->mutex));
+	checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &shmem->mutex));
 #endif
 }
 

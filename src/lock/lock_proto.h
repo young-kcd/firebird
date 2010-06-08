@@ -438,6 +438,8 @@ private:
 
 #ifdef WIN_NT
 	struct mtx m_shmemMutex;
+#else
+	struct mtx* m_lhb_mutex;
 #endif
 
 #ifdef USE_SHMEM_EXT
