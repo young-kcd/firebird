@@ -33,23 +33,18 @@ namespace Firebird {
 
 #ifdef COMMON_CLASSES_SEMAPHORE_MACH
 
-	void SignalSafeSemaphore::machErrorCheck(kern_return_t rc, const char* fun)
-	{
-		if (rc != KERN_SUCCESS)
-		{
-			(Arg::Gds(isc_sys_request) << fun << Arg::Mach(static_cast<ISC_STATUS>(rc))).raise();
-		}
-	}
-
 	void SignalSafeSemaphore::init()
 	{
-		machErrorCheck(semaphore_create(mach_task_self(), &sem, SYNC_POLICY_FIFO, 0),
-					  "semaphore_create");
+		semaphore = dispatch_semaphore_create(0);
+		if (!semaphore)	// With const zero parameter this means OOM
+		{
+			BadAlloc::raise();
+		}
 	}
 
 	SignalSafeSemaphore::~SignalSafeSemaphore()
 	{
-		machErrorCheck(semaphore_destroy(mach_task_self(), sem), "semaphore_destroy");
+		dispatch_release(semaphore);
 	}
 
 #endif  // COMMON_CLASSES_SEMAPHORE_MACH

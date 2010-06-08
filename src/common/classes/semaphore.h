@@ -93,9 +93,7 @@ public:
 
 // Mach semaphore
 #define COMMON_CLASSES_SEMAPHORE_MACH
-#include <mach/mach.h>
-#include <mach/semaphore.h>
-#include <mach/task.h>
+#include <dispatch/dispatch.h>
 
 namespace Firebird
 {
@@ -105,9 +103,8 @@ class MemoryPool;
 class SignalSafeSemaphore
 {
 private:
-	semaphore_t sem;
+	dispatch_semaphore_t semaphore;
 
-	static void machErrorCheck(kern_return_t rc, const char* function);
 	void init();
 
 public:
@@ -118,7 +115,7 @@ public:
 
 	void enter()
 	{
-		machErrorCheck(semaphore_wait(sem), "semaphore_wait");
+		dispatch_semaphore_wait(semaphore);
 	}
 
 	void release(SLONG count = 1)
@@ -126,7 +123,7 @@ public:
 		fb_assert(count >= 0);
 		while (count--)
 		{
-			machErrorCheck(semaphore_signal(sem), "semaphore_signal");
+			dispatch_semaphore_signal(semaphore);
 		}
 	}
 };
