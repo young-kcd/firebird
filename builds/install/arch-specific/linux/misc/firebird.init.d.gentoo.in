@@ -6,9 +6,6 @@
 # on system startup and shutdown to start the background
 # Firebird/interbase database server daemon
 
-# Source function library.
-. /etc/init.d/functions.sh
-
 FIREBIRD=@prefix@
 FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
