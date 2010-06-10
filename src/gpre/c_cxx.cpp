@@ -3079,6 +3079,7 @@ static void gen_select( const act* action, int column)
 	gen_receive(action, column, port);
 	printa(column, "if (!SQLCODE)");
 	column += INDENT;
+	begin(column);
 	printa(column, "if (%s)", name);
 	column += INDENT;
 
@@ -3094,8 +3095,11 @@ static void gen_select( const act* action, int column)
 	endp(column);
 
 	printa(column - INDENT, "else");
+	begin(column);
 	printa(column, "SQLCODE = 100;");
+	endp(column);
 	column -= INDENT;
+	endp(column);
 	column -= INDENT;
 	endp(column);
 }
