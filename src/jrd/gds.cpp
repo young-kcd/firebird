@@ -1095,7 +1095,7 @@ void API_ROUTINE gds__trace(const TEXT* text)
  *  This function tries to be async-signal safe
  *
  **************************************/
-	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
+	const time_t now = time(NULL); // is specified in POSIX to be signal-safe
 
 	// 07 Sept 2003, Nickolay Samofatov.
 	// Since we cannot call ctime/localtime_r or anything else like this from
@@ -1111,7 +1111,7 @@ void API_ROUTINE gds__trace(const TEXT* text)
     today.tm_min = rem / 60;
     today.tm_sec = rem % 60;
 
-	char buffer[1024]; // 1K should be enough for the trace message
+	char buffer[BUFFER_MEDIUM];
 	char* p = buffer;
 
 	gds__ulstr(p, today.tm_year + 1900, 4, '0');
@@ -1144,11 +1144,13 @@ void API_ROUTINE gds__trace(const TEXT* text)
 	gds__ulstr(p, getThreadId(), 5, ' ');
 	p += 5;
 	*p++ = ' ';
-	strcpy(p, text);
-	p += strlen(p);
-	strcat(p, "\n");
-	p += strlen(p);
-	gds__trace_raw(buffer, p - buffer);
+	*p = '\0';
+
+	Firebird::string s(p);
+	s += text;
+	s += "\n";
+
+	gds__trace_raw(s.c_str(), s.length());
 }
 
 

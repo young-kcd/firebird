@@ -800,15 +800,14 @@ struct ISC_TIMESTAMP
 #define IMPLEMENT_TRACE_ROUTINE(routine, subsystem) \
 void routine(const char* message, ...) \
 { \
-	static const char name_facility[] = subsystem ","; \
-	char buffer[1000]; \
-	strcpy(buffer, name_facility); \
-	char *ptr = buffer + sizeof(name_facility) - 1; \
+	Firebird::string format(subsystem ","); \
+	format += message; \
+	Firebird::string buffer; \
 	va_list params; \
 	va_start(params, message); \
-	VSNPRINTF(ptr, sizeof(buffer) - sizeof(name_facility), message, params); \
+	buffer.vprintf(format.c_str(), params); \
 	va_end(params); \
-	gds__trace(buffer); \
+	gds__trace(buffer.c_str()); \
 }
 
 #ifdef DEV_BUILD
