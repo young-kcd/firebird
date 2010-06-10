@@ -2620,7 +2620,8 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 {
 	dsql_nod* rse = NULL;
 	const dsql_msg* message = NULL;
-	bool send_before_for = !(dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT);
+	bool innerSend = dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
+	bool merge = dsqlScratch->flags & DsqlCompilerScratch::FLAG_MERGE;
 
 	switch (node->nod_type)
 	{
@@ -2634,12 +2635,12 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		rse = node->nod_arg[e_era_rse];
 		break;
 	default:
-		send_before_for = false;
+		innerSend = true;
 		break;
 	}
 
 	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE &&
-		send_before_for)
+		!innerSend && !merge)
 	{
 		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
 		{
@@ -2660,7 +2661,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		{
 			stuff(dsqlScratch->getStatement(), blr_begin);
 
-			if (!send_before_for)
+			if (innerSend && !merge)
 			{
 				stuff(dsqlScratch->getStatement(), blr_send);
 				stuff(dsqlScratch->getStatement(), message->msg_number);

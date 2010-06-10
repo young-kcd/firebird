@@ -471,6 +471,7 @@ enum node_args {
 	e_mrg_using,
 	e_mrg_condition,
 	e_mrg_when,
+	e_mrg_return,
 	e_mrg_count,
 
 	e_mrg_when_matched = 0,	// nod_merge_when

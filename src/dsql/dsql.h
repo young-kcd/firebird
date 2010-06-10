@@ -617,7 +617,8 @@ public:
 	static const unsigned FLAG_BLOCK				= 0x020;
 	static const unsigned FLAG_RECURSIVE_CTE		= 0x040;
 	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x080;
-	static const unsigned FLAG_FUNCTION				= 0x100;
+	static const unsigned FLAG_MERGE				= 0x100;
+	static const unsigned FLAG_FUNCTION				= 0x200;
 
 public:
 	explicit DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,

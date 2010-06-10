@@ -1104,7 +1104,7 @@ void ForNode::genBlr()
 
 	stuff(statement, blr_for);
 
-	if (!dsqlAction)
+	if (!dsqlAction || dsqlForceSingular)
 		stuff(statement, blr_singular);
 
 	GEN_rse(dsqlScratch, dsqlSelect);

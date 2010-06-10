@@ -4524,9 +4524,9 @@ insert		: INSERT INTO simple_table_name ins_column_parens_opt
 // MERGE statement
 merge
 	: MERGE INTO table_name USING table_reference ON search_condition
-			merge_when_clause
+			merge_when_clause returning_clause
 		{
-			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8);
+			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8, $9);
 		}
 	;
 

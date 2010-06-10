@@ -206,6 +206,7 @@ public:
 		  dsqlCursor(NULL),
 		  dsqlAction(NULL),
 		  dsqlLabel(NULL),
+		  dsqlForceSingular(false),
 		  stall(NULL),
 		  rse(NULL),
 		  statement(NULL),
@@ -240,6 +241,7 @@ public:
 	dsql_nod* dsqlCursor;
 	dsql_nod* dsqlAction;
 	dsql_nod* dsqlLabel;
+	bool dsqlForceSingular;
 	jrd_nod* stall;
 	jrd_nod* rse;
 	jrd_nod* statement;
