@@ -30,8 +30,7 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/fb_pair.h"
 
-typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
-typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+typedef Firebird::GenericMap<Firebird::MetaNamePair> MetaNamePairMap;
 
 // forward declarations
 namespace Jrd {
