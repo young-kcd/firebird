@@ -32,8 +32,7 @@
 
 // forward declarations
 namespace Jrd {
-	typedef Firebird::Pair<Firebird::Full<Firebird::MetaName, Firebird::MetaName> > MetaNamePair;
-	typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
+	typedef Firebird::GenericMap<Firebird::MetaNamePair> MetaNamePairMap;
 
 	class dsql_req;
 	class dsql_str;

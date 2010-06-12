@@ -30,6 +30,7 @@
 #define METANAME_H
 
 #include "../common/classes/fb_string.h"
+#include "../common/classes/fb_pair.h"
 #include "../jrd/constants.h"
 
 #ifdef SFIO
@@ -116,6 +117,8 @@ public:
 	{ }
 	~MetaNameProxy() { strcpy(target, c_str()); }
 };
+
+typedef Pair<Full<MetaName, MetaName> > MetaNamePair;
 
 } // namespace Firebird
 
