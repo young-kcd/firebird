@@ -1113,8 +1113,9 @@ void PAG_header(bool info)
 		(*vector)[0] = header->hdr_PAGES;
 	}
 
-	dbb->dbb_next_transaction = header->hdr_next_transaction;
-
+	if (!info || dbb->dbb_next_transaction < header->hdr_next_transaction) {
+		dbb->dbb_next_transaction = header->hdr_next_transaction;
+	}
 	if (!info || dbb->dbb_oldest_transaction < header->hdr_oldest_transaction) {
 		dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
 	}
@@ -1124,8 +1125,9 @@ void PAG_header(bool info)
 	if (!info || dbb->dbb_oldest_snapshot < header->hdr_oldest_snapshot) {
 		dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
 	}
-
-	dbb->dbb_attachment_id = header->hdr_attachment_id;
+	if (!info || dbb->dbb_attachment_id < header->hdr_attachment_id) {
+		dbb->dbb_attachment_id = header->hdr_attachment_id;
+	}
 
 	if (header->hdr_flags & hdr_read_only) {
 		/* If Header Page flag says the database is ReadOnly, gladly accept it. */
