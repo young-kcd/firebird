@@ -119,6 +119,21 @@ $(OBJ)/%.o: $(SRC_ROOT)/%.cpp
 
 .SUFFIXES: .epp .e
 
+.SECONDARY: \
+	$(OBJ)/msgs/modify_msgs.epp $(OBJ)/msgs/check_msgs.epp $(OBJ)/msgs/include.epp \
+	$(OBJ)/msgs/load.epp $(OBJ)/msgs/build_file.epp $(OBJ)/msgs/change_msgs.epp \
+	$(OBJ)/msgs/enter_msgs.epp $(OBJ)/jrd/ini.epp $(OBJ)/jrd/dyn_def.epp $(OBJ)/jrd/scl.epp \
+	$(OBJ)/jrd/dyn_del.epp $(OBJ)/jrd/dyn_mod.epp $(OBJ)/jrd/Function.epp $(OBJ)/jrd/grant.epp \
+	$(OBJ)/jrd/fun.epp $(OBJ)/jrd/dyn.epp $(OBJ)/jrd/dfw.epp $(OBJ)/jrd/dyn_util.epp \
+	$(OBJ)/jrd/pcmet.epp $(OBJ)/jrd/met.epp $(OBJ)/jrd/dpm.epp $(OBJ)/utilities/rebuild/rstore.epp \
+	$(OBJ)/utilities/rebuild/rmet.epp $(OBJ)/utilities/gstat/dba.epp $(OBJ)/utilities/stats.epp \
+	$(OBJ)/utilities/gsec/security.epp $(OBJ)/alice/alice_meta.epp $(OBJ)/qli/meta.epp \
+	$(OBJ)/qli/proc.epp $(OBJ)/qli/show.epp $(OBJ)/qli/help.epp $(OBJ)/misc/codes.epp \
+	$(OBJ)/gpre/gpre_meta.epp $(OBJ)/dsql/blob.epp $(OBJ)/dsql/array.epp \
+	$(OBJ)/dsql/PackageNodes.epp $(OBJ)/dsql/metd.epp $(OBJ)/dsql/DdlNodes.epp $(OBJ)/isql/show.epp \
+	$(OBJ)/isql/extract.epp $(OBJ)/isql/isql.epp $(OBJ)/burp/restore.epp $(OBJ)/burp/backup.epp \
+	$(OBJ)/burp/OdsDetection.epp
+
 # Rules for making resource files
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
