@@ -202,6 +202,7 @@ public:
 
 	Lock*		rel_existence_lock;	// existence lock, if any
 	Lock*		rel_partners_lock;	// partners lock
+	Lock*		rel_rescan_lock;	// lock forcing relation to be scanned
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
 	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger

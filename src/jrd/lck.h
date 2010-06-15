@@ -56,7 +56,8 @@ enum lck_t {
 	LCK_cancel,					// Cancellation lock
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
 	LCK_shared_counter,			// Database-wide shared counter
-	LCK_fun_exist				// Function existence lock
+	LCK_fun_exist,				// Function existence lock
+	LCK_rel_rescan				// Relation forced rescan lock
 };
 
 // Lock owner types
