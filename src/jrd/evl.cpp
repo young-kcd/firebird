@@ -910,8 +910,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				const Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
 
 				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
+				// AP: for fields that are missing in original format use record's one.
 				if (compileFormat &&
 					record->rec_format->fmt_version != compileFormat->fmt_version &&
+					id < compileFormat->fmt_desc.getCount() &&
 					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
 				{
 					dsc desc = impure->vlu_desc;
