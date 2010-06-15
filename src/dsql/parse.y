@@ -651,8 +651,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> begin_string begin_trigger between_predicate bit_length_expression
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
-%type <legacyNode> blob_subtype_value_io blob_type block_input_params block_parameter
-%type <legacyNode> block_proc_parameter block_parameters breakleave
+%type <legacyNode> blob_subtype_value_io blob_type breakleave
+
+%type block_input_params(<parametersClause>) block_parameter(<parametersClause>)
+%type block_parameters(<parametersClause>)
 
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification char_length_expression character_keyword character_type
@@ -1937,7 +1939,7 @@ input_proc_parameters($parameters)
 
 input_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause default_par_opt
-		{ $parameters->add(ParameterClause($1, toName($3), $4)); }
+		{ $parameters->add(ParameterClause($1, toName($3), $4, NULL)); }
 	;
 
 output_proc_parameters($parameters)
@@ -1947,7 +1949,7 @@ output_proc_parameters($parameters)
 
 output_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause
-		{ $parameters->add(ParameterClause($1, toName($3), NULL)); }
+		{ $parameters->add(ParameterClause($1, toName($3), NULL, NULL)); }
 	;
 
 default_par_opt	: DEFAULT begin_trigger default_value end_default
@@ -2170,13 +2172,14 @@ local_declarations	: local_declaration
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-local_declaration : stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
-			{
-				$$ = $5;
-				$$->nod_line = (IPTR) $1;
-				$$->nod_column = (IPTR) $2;
-			}
-		;
+local_declaration
+	: stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
+		{
+			$$ = $5;
+			$$->nod_line = (IPTR) $1;
+			$$->nod_column = (IPTR) $2;
+		}
+	;
 
 local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
@@ -2630,40 +2633,33 @@ proc_outputs_opt	: RETURNING_VALUES variable_list
 // EXECUTE BLOCK
 
 exec_block
-	: EXECUTE BLOCK block_input_params
+	: EXECUTE BLOCK
 			{ $<execBlockNode>$ = FB_NEW(getPool()) ExecBlockNode(getPool()); }
-			output_parameters(&$4->returns) AS
+			block_input_params(&$3->parameters)
+			output_parameters(&$3->returns) AS
 			local_declaration_list
 			full_proc_block
 		{
-			ExecBlockNode* node = $4;
-			node->legacyParameters = $3;
+			ExecBlockNode* node = $3;
 			node->localDeclList = $7;
 			node->body = $8;
 			$$ = node;
 		}
 	;
 
-
-block_input_params :	'(' block_parameters ')'
-				{ $$ = make_list ($2); }
-			|
-				{ $$ = NULL; }
-			;
-
-block_parameters	: block_parameter
-		| block_parameters ',' block_parameter
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
-
-block_parameter
-	: block_proc_parameter '=' parameter
-		{ $$ = make_node (nod_param_val, e_prm_val_count, $1, $3); }
+block_input_params($parameters)
+	:
+	| '(' block_parameters($parameters) ')'
 	;
 
-block_proc_parameter
-	: simple_column_def_name domain_or_non_array_type collate_clause
-		{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, NULL, NULL, $3, NULL, NULL, NULL); }
+block_parameters($parameters)
+	: block_parameter($parameters)
+	| block_parameters ',' block_parameter($parameters)
+	;
+
+block_parameter($parameters)
+	: simple_column_def_name domain_or_non_array_type collate_clause '=' parameter
+		{ $parameters->add(ParameterClause($1, toName($3), NULL, $5)); }
 	;
 
 // CREATE VIEW

@@ -366,10 +366,12 @@ void TypeClause::print(string& text) const
 //----------------------
 
 
-ParameterClause::ParameterClause(dsql_fld* field, const MetaName& aCollate, dsql_nod* dflt)
+ParameterClause::ParameterClause(dsql_fld* field, const MetaName& aCollate, dsql_nod* dflt,
+			dsql_nod* aLegacyParameter)
 	: TypeClause(field, aCollate),
 	  name(field->fld_name),
-	  legacyDefault(dflt)
+	  legacyDefault(dflt),
+	  legacyParameter(aLegacyParameter)
 {
 }
 
@@ -632,23 +634,6 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void FunctionNode::genReturn()
-{
-	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, false, false);
-}
-
-
-dsql_nod* FunctionNode::resolveVariable(const dsql_str* varName)
-{
-	// try to resolve variable name against parameters and local variables
-	CreateAlterFunctionNode* node = getCreateAlterNode();
-	return PASS1_resolve_variable_name(node->variables, varName);
-}
-
-
-//----------------------
-
-
 void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -717,6 +702,8 @@ DdlNode* CreateAlterFunctionNode::internalDsqlPass()
 
 	source.ltrim("\n\r\t ");
 
+	bool hasDefaultParams = false;
+
 	// compile default expressions
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
@@ -724,8 +711,16 @@ DdlNode* CreateAlterFunctionNode::internalDsqlPass()
 
 		if (parameter.legacyDefault)
 		{
+			hasDefaultParams = true;
 			parameter.legacyDefault->nod_arg[e_dft_default] =
 				PASS1_node(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+		}
+		else if (hasDefaultParams)
+		{
+			// parameter without default value after parameters with default
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_bad_default_value) <<
+					  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
 		}
 	}
 
@@ -996,7 +991,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 
 		// and insert the new ones
 
-		ParameterClause returnParameter(returnType.legacyField, returnType.collate, NULL);
+		ParameterClause returnParameter(returnType.legacyField, returnType.collate, NULL, NULL);
 		returnParameter.resolve(dsqlScratch);
 		storeArgument(tdbb, transaction, 0, returnParameter);
 
@@ -1224,13 +1219,13 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		}
 
 		dsql_var* const variable = (dsql_var*) outputVariables[0]->nod_arg[Dsql::e_var_variable];
-		DDL_put_local_variable(dsqlScratch, variable, 0, NULL);
+		putLocalVariable(dsqlScratch, variable, 0, NULL);
 
 		// ASF: This is here to not change the old logic (proc_flag)
 		// of previous calls to PASS1_node and PASS1_statement.
 		dsqlScratch->setPsql(true);
 
-		DDL_put_local_variables(dsqlScratch, localDeclList, 1, variables);
+		putLocalVariables(dsqlScratch, localDeclList, 1);
 
 		statement->append_uchar(blr_stall);
 		// put a label before body of procedure,
@@ -1244,7 +1239,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		statement->setType(DsqlCompiledStatement::TYPE_DDL);
 		statement->append_uchar(blr_end);
-		GEN_return(dsqlScratch, outputVariables, false, false);
+		genReturn(statement, false);
 
 		statement->append_uchar(blr_end);
 		statement->append_uchar(blr_eoc);
@@ -1427,23 +1422,6 @@ void RecreateFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void ProcedureNode::genReturn()
-{
-	GEN_return(dsqlScratch, getCreateAlterNode()->outputVariables, true, false);
-}
-
-
-dsql_nod* ProcedureNode::resolveVariable(const dsql_str* varName)
-{
-	// try to resolve variable name against input and output parameters and local variables
-	CreateAlterProcedureNode* node = getCreateAlterNode();
-	return PASS1_resolve_variable_name(node->variables, varName);
-}
-
-
-//----------------------
-
-
 void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -1528,6 +1506,8 @@ DdlNode* CreateAlterProcedureNode::internalDsqlPass()
 
 	source.ltrim("\n\r\t ");
 
+	bool hasDefaultParams = false;
+
 	// compile default expressions
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
@@ -1535,8 +1515,16 @@ DdlNode* CreateAlterProcedureNode::internalDsqlPass()
 
 		if (parameter.legacyDefault)
 		{
+			hasDefaultParams = true;
 			parameter.legacyDefault->nod_arg[e_dft_default] =
 				PASS1_node(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
+		}
+		else if (hasDefaultParams)
+		{
+			// parameter without default value after parameters with default
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_bad_default_value) <<
+					  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
 		}
 	}
 
@@ -2053,14 +2041,14 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	{
 		dsql_nod* parameter = *i;
 		dsql_var* const variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		DDL_put_local_variable(dsqlScratch, variable, 0, NULL);
+		putLocalVariable(dsqlScratch, variable, 0, NULL);
 	}
 
 	// ASF: This is here to not change the old logic (proc_flag)
 	// of previous calls to PASS1_node and PASS1_statement.
 	dsqlScratch->setPsql(true);
 
-	DDL_put_local_variables(dsqlScratch, localDeclList, returns.getCount(), variables);
+	putLocalVariables(dsqlScratch, localDeclList, returns.getCount());
 
 	statement->append_uchar(blr_stall);
 	// put a label before body of procedure,
@@ -2074,7 +2062,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->append_uchar(blr_end);
-	GEN_return(dsqlScratch, outputVariables, true, true);
+	genReturn(statement, true);
 
 	statement->append_uchar(blr_end);
 	statement->append_uchar(blr_eoc);
@@ -2237,17 +2225,6 @@ void RecreateProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
-dsql_nod* TriggerNode::resolveVariable(const dsql_str* varName)
-{
-	// try to resolve variable name against local variables
-	CreateAlterTriggerNode* node = getCreateAlterNode();
-	return PASS1_resolve_variable_name(node->variables, varName);
 }
 
 
@@ -2590,7 +2567,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		dsqlScratch->setPsql(true);
 
-		DDL_put_local_variables(dsqlScratch, localDeclList, 0, variables);
+		putLocalVariables(dsqlScratch, localDeclList, 0);
 
 		dsqlScratch->scopeLevel++;
 		// dimitr: I see no reason to deny EXIT command in triggers,

@@ -65,12 +65,7 @@ void DDL_execute(Jrd::dsql_req*);
 void DDL_generate(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 bool DDL_ids(const Jrd::DsqlCompilerScratch*);
 bool DDL_is_array_or_blob(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
-void DDL_put_field_dtype(Jrd::DsqlCompilerScratch*, const Jrd::dsql_fld*, bool);
 void DDL_resolve_intl_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Jrd::dsql_str*);
 void DDL_resolve_intl_type2(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Jrd::dsql_str*, bool);
-
-void DDL_put_local_variable(Jrd::DsqlCompilerScratch*, Jrd::dsql_var*, Jrd::dsql_nod*, const Jrd::dsql_str*);
-void DDL_put_local_variables(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*, SSHORT,
-	Firebird::Array<Jrd::dsql_nod*>& variables);
 
 #endif // DSQL_DDL_PROTO_H

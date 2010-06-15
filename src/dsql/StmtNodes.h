@@ -108,10 +108,9 @@ class ExecBlockNode : public DsqlOnlyStmtNode, public BlockNode
 public:
 	explicit ExecBlockNode(MemoryPool& pool)
 		: DsqlOnlyStmtNode(pool),
+		  BlockNode(pool, true),
+		  parameters(pool),
 		  returns(pool),
-		  variables(pool),
-		  outputVariables(pool),
-		  legacyParameters(NULL),
 		  localDeclList(NULL),
 		  body(NULL)
 	{
@@ -124,18 +123,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void genBlr();
 
-public:
-	virtual void genReturn();
-	virtual dsql_nod* resolveVariable(const dsql_str* varName);
-
 private:
 	static void revertParametersOrder(Firebird::Array<dsql_par*>& parameters);
 
 public:
+	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
-	dsql_nod* legacyParameters;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
 };

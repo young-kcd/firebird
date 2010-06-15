@@ -2620,7 +2620,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			else
 				statement->addFlags(DsqlCompiledStatement::FLAG_BLR_VERSION4);
 
-			GEN_request(request, scratch, node);
+			GEN_request(scratch, node);
 			// fall into
 
 		case DsqlCompiledStatement::TYPE_GET_SEGMENT:

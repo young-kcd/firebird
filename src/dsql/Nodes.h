@@ -574,13 +574,32 @@ private:
 class BlockNode
 {
 public:
+	explicit BlockNode(MemoryPool& pool, bool aHasEos)
+		: hasEos(aHasEos),
+		  variables(pool),
+		  outputVariables(pool)
+	{
+	}
+
 	virtual ~BlockNode()
 	{
 	}
 
-public:
-	virtual void genReturn() = 0;
-	virtual dsql_nod* resolveVariable(const dsql_str* varName) = 0;
+	static void putDtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field, bool useSubType);
+
+	void putLocalVariables(DsqlCompilerScratch* dsqlScratch, const dsql_nod* parameters,
+		SSHORT locals);
+	void putLocalVariable(DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
+		dsql_nod* hostParam, const dsql_str* collationName);
+	dsql_nod* resolveVariable(const dsql_str* varName);
+	void genReturn(DsqlCompiledStatement* statement, bool eosFlag = false);
+
+private:
+	bool hasEos;
+
+protected:
+	Firebird::Array<dsql_nod*> variables;
+	Firebird::Array<dsql_nod*> outputVariables;
 };
 
 

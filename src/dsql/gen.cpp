@@ -734,7 +734,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
     @param node
 
  **/
-void GEN_request(dsql_req* /*request*/, DsqlCompilerScratch* scratch, dsql_nod* node)
+void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -1324,7 +1324,7 @@ static void gen_cast( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
 	stuff(dsqlScratch->getStatement(), blr_cast);
 	const dsql_fld* field = (dsql_fld*) node->nod_arg[e_cast_target];
-	DDL_put_field_dtype(dsqlScratch, field, true);
+	BlockNode::putDtype(dsqlScratch, field, true);
 	GEN_expr(dsqlScratch, node->nod_arg[e_cast_source]);
 }
 
@@ -1973,20 +1973,21 @@ static void gen_optional_expr(DsqlCompilerScratch* dsqlScratch, const UCHAR code
 static void gen_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
 {
 	const dsql_msg* message = parameter->par_message;
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	const dsql_par* null = parameter->par_null;
 	if (null != NULL)
 	{
-		stuff(dsqlScratch->getStatement(), blr_parameter2);
-		stuff(dsqlScratch->getStatement(), message->msg_number);
-		stuff_word(dsqlScratch->getStatement(), parameter->par_parameter);
-		stuff_word(dsqlScratch->getStatement(), null->par_parameter);
+		stuff(statement, blr_parameter2);
+		stuff(statement, message->msg_number);
+		stuff_word(statement, parameter->par_parameter);
+		stuff_word(statement, null->par_parameter);
 		return;
 	}
 
-	stuff(dsqlScratch->getStatement(), blr_parameter);
-	stuff(dsqlScratch->getStatement(), message->msg_number);
-	stuff_word(dsqlScratch->getStatement(), parameter->par_parameter);
+	stuff(statement, blr_parameter);
+	stuff(statement, message->msg_number);
+	stuff_word(statement, parameter->par_parameter);
 }
 
 
@@ -2162,65 +2163,6 @@ static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
 
 /**
 
- 	gen_return
-
-    @brief	Generate blr for a procedure return.
-
-
-    @param dsqlScratch
-    @param procedure
-    @param eos_flag
-
- **/
-void GEN_return(DsqlCompilerScratch* dsqlScratch, const Array<dsql_nod*>& variables,
-				bool has_eos, bool eos_flag)
-{
-	if (has_eos && !eos_flag)
-	{
-		stuff(dsqlScratch->getStatement(), blr_begin);
-	}
-
-	stuff(dsqlScratch->getStatement(), blr_send);
-	stuff(dsqlScratch->getStatement(), 1);
-	stuff(dsqlScratch->getStatement(), blr_begin);
-
-	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
-	{
-		const dsql_nod* parameter = *i;
-		const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-		stuff(dsqlScratch->getStatement(), blr_assignment);
-		stuff(dsqlScratch->getStatement(), blr_variable);
-		stuff_word(dsqlScratch->getStatement(), variable->var_variable_number);
-		stuff(dsqlScratch->getStatement(), blr_parameter2);
-		stuff(dsqlScratch->getStatement(), variable->var_msg_number);
-		stuff_word(dsqlScratch->getStatement(), variable->var_msg_item);
-		stuff_word(dsqlScratch->getStatement(), variable->var_msg_item + 1);
-	}
-
-	if (has_eos)
-	{
-		stuff(dsqlScratch->getStatement(), blr_assignment);
-		stuff(dsqlScratch->getStatement(), blr_literal);
-		stuff(dsqlScratch->getStatement(), blr_short);
-		stuff(dsqlScratch->getStatement(), 0);
-		stuff_word(dsqlScratch->getStatement(), (eos_flag ? 0 : 1));
-		stuff(dsqlScratch->getStatement(), blr_parameter);
-		stuff(dsqlScratch->getStatement(), 1);
-		stuff_word(dsqlScratch->getStatement(), USHORT(2 * variables.getCount()));
-	}
-
-	stuff(dsqlScratch->getStatement(), blr_end);
-
-	if (has_eos && !eos_flag)
-	{
-		stuff(dsqlScratch->getStatement(), blr_stall);
-		stuff(dsqlScratch->getStatement(), blr_end);
-	}
-}
-
-
-/**
-
  	GEN_rse
 
     @brief	Generate a record selection expression.
@@ -2362,7 +2304,7 @@ static void gen_searched_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod*
 
  	gen_select
 
-    @brief	Generate BLR for a SELECT dsqlScratch.
+    @brief	Generate BLR for a SELECT statement.
 
 
     @param dsqlScratch

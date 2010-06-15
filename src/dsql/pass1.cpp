@@ -1247,7 +1247,6 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
 					MAKE_desc_from_field(&desc_node->nod_desc, field);
-					//	PASS1_set_parameter_type(dsqlScratch, *input, &desc_node, false);
 					PASS1_set_parameter_type(dsqlScratch, *input, desc_node, false);
 				}
 			}
@@ -9023,30 +9022,6 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 
 
 /**
-	PASS1_resolve_variable_name
-
- **/
-dsql_nod* PASS1_resolve_variable_name(const Array<dsql_nod*>& variables, const dsql_str* var_name)
-{
-	for (Array<dsql_nod*>::const_iterator i = variables.begin(); i != variables.end(); ++i)
-	{
-		dsql_nod* var_node = *i;
-
-		fb_assert(var_node->nod_type == nod_variable);
-		if (var_node->nod_type == nod_variable)
-		{
-			const dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
-			DEV_BLKCHK(variable, dsql_type_var);
-			if (!strcmp(var_name->str_data, variable->var_name))
-				 return var_node;
-		}
-	}
-
-	return NULL;
-}
-
-
-/**
 
  	pass1_variable
 
@@ -9084,11 +9059,12 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	if (dsqlScratch->getStatement()->getBlockNode())	// Are we processing a PSQL block?
+	BlockNode* block = dsqlScratch->getStatement()->getBlockNode();
+	if (block)
 	{
-		dsql_nod* var_node = dsqlScratch->getStatement()->getBlockNode()->resolveVariable(var_name);
-		if (var_node)
-			return var_node;
+		dsql_nod* varNode = block->resolveVariable(var_name);
+		if (varNode)
+			return varNode;
 	}
 
 	// field unresolved

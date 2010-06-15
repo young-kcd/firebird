@@ -87,7 +87,8 @@ public:
 class ParameterClause : public TypeClause
 {
 public:
-	explicit ParameterClause(dsql_fld* field, const Firebird::MetaName& aCollate, dsql_nod* dflt);
+	explicit ParameterClause(dsql_fld* field, const Firebird::MetaName& aCollate, dsql_nod* dflt,
+		dsql_nod* aLegacyParameter);
 
 public:
 	void print(Firebird::string& text) const;
@@ -95,6 +96,7 @@ public:
 public:
 	Firebird::MetaName name;
 	dsql_nod* legacyDefault;
+	dsql_nod* legacyParameter;
 };
 
 
@@ -147,32 +149,13 @@ private:
 };
 
 
-class CreateAlterFunctionNode;
-
-
-class FunctionNode : public DdlNode, public BlockNode
-{
-public:
-	explicit FunctionNode(MemoryPool& p, const Firebird::string& sqlText)
-		: DdlNode(p, sqlText)
-	{
-	}
-
-public:
-	virtual void genReturn();
-	virtual dsql_nod* resolveVariable(const dsql_str* varName);
-
-protected:
-	virtual CreateAlterFunctionNode* getCreateAlterNode() = 0;
-};
-
-
-class CreateAlterFunctionNode : public FunctionNode
+class CreateAlterFunctionNode : public DdlNode, public BlockNode
 {
 public:
 	explicit CreateAlterFunctionNode(MemoryPool& pool, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
-		: FunctionNode(pool, sqlText),
+		: DdlNode(pool, sqlText),
+		  BlockNode(pool, false),
 		  name(pool, aName),
 		  create(true),
 		  alter(false),
@@ -180,8 +163,6 @@ public:
 		  invariant(false),
 		  parameters(pool),
 		  returnType(NULL, NULL),
-		  variables(pool),
-		  outputVariables(pool),
 		  localDeclList(NULL),
 		  source(pool),
 		  body(NULL),
@@ -191,12 +172,6 @@ public:
 		  packageOwner(pool),
 		  privateScope(false)
 	{
-	}
-
-protected:
-	virtual CreateAlterFunctionNode* getCreateAlterNode()
-	{
-		return this;
 	}
 
 public:
@@ -222,8 +197,6 @@ public:
 	bool invariant;
 	Firebird::Array<ParameterClause> parameters;
 	TypeClause returnType;
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
 	dsql_nod* localDeclList;
 	Firebird::string source;
 	dsql_nod* body;
@@ -265,22 +238,16 @@ public:
 };
 
 
-class RecreateFunctionNode : public FunctionNode
+class RecreateFunctionNode : public DdlNode
 {
 public:
 	explicit RecreateFunctionNode(MemoryPool& p, const Firebird::string& sqlText,
 				CreateAlterFunctionNode* aCreateNode)
-		: FunctionNode(p, sqlText),
+		: DdlNode(p, sqlText),
 		  createNode(aCreateNode),
 		  dropNode(p, sqlText, createNode->name)
 	{
 		dropNode.silent = true;
-	}
-
-protected:
-	virtual CreateAlterFunctionNode* getCreateAlterNode()
-	{
-		return createNode;
 	}
 
 public:
@@ -296,40 +263,19 @@ private:
 };
 
 
-class CreateAlterProcedureNode;
-
-
-class ProcedureNode : public DdlNode, public BlockNode
-{
-public:
-	explicit ProcedureNode(MemoryPool& p, const Firebird::string& sqlText)
-		: DdlNode(p, sqlText)
-	{
-	}
-
-public:
-	virtual void genReturn();
-	virtual dsql_nod* resolveVariable(const dsql_str* varName);
-
-protected:
-	virtual CreateAlterProcedureNode* getCreateAlterNode() = 0;
-};
-
-
-class CreateAlterProcedureNode : public ProcedureNode
+class CreateAlterProcedureNode : public DdlNode, public BlockNode
 {
 public:
 	explicit CreateAlterProcedureNode(MemoryPool& pool, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
-		: ProcedureNode(pool, sqlText),
+		: DdlNode(pool, sqlText),
+		  BlockNode(pool, true),
 		  name(pool, aName),
 		  create(true),
 		  alter(false),
 		  external(NULL),
 		  parameters(pool),
 		  returns(pool),
-		  variables(pool),
-		  outputVariables(pool),
 		  source(pool),
 		  localDeclList(NULL),
 		  body(NULL),
@@ -339,12 +285,6 @@ public:
 		  packageOwner(pool),
 		  privateScope(false)
 	{
-	}
-
-protected:
-	virtual CreateAlterProcedureNode* getCreateAlterNode()
-	{
-		return this;
 	}
 
 public:
@@ -368,8 +308,6 @@ public:
 	ExternalClause* external;
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
 	Firebird::string source;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
@@ -411,22 +349,16 @@ public:
 };
 
 
-class RecreateProcedureNode : public ProcedureNode
+class RecreateProcedureNode : public DdlNode
 {
 public:
 	explicit RecreateProcedureNode(MemoryPool& p, const Firebird::string& sqlText,
 				CreateAlterProcedureNode* aCreateNode)
-		: ProcedureNode(p, sqlText),
+		: DdlNode(p, sqlText),
 		  createNode(aCreateNode),
 		  dropNode(p, sqlText, createNode->name)
 	{
 		dropNode.silent = true;
-	}
-
-protected:
-	virtual CreateAlterProcedureNode* getCreateAlterNode()
-	{
-		return createNode;
 	}
 
 public:
@@ -442,55 +374,24 @@ private:
 };
 
 
-class CreateAlterTriggerNode;
-
-
-class TriggerNode : public DdlNode, public BlockNode
-{
-public:
-	explicit TriggerNode(MemoryPool& p, const Firebird::string& sqlText)
-		: DdlNode(p, sqlText)
-	{
-	}
-
-public:
-	virtual void genReturn()
-	{
-		fb_assert(false);
-	}
-
-	virtual dsql_nod* resolveVariable(const dsql_str* varName);
-
-protected:
-	virtual CreateAlterTriggerNode* getCreateAlterNode() = 0;
-};
-
-
-class CreateAlterTriggerNode : public TriggerNode
+class CreateAlterTriggerNode : public DdlNode, public BlockNode
 {
 public:
 	explicit CreateAlterTriggerNode(MemoryPool& p, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
-		: TriggerNode(p, sqlText),
+		: DdlNode(p, sqlText),
+		  BlockNode(p, false),
 		  name(p, aName),
 		  create(true),
 		  alter(false),
 		  relationName(p),
 		  external(NULL),
 		  source(p),
-		  variables(p),
 		  localDeclList(NULL),
 		  body(NULL),
 		  compiled(false),
 		  invalid(false)
 	{
-	}
-
-
-protected:
-	virtual CreateAlterTriggerNode* getCreateAlterNode()
-	{
-		return this;
 	}
 
 public:
@@ -531,7 +432,6 @@ public:
 	TriStateType<int> position;
 	ExternalClause* external;
 	Firebird::string source;
-	Firebird::Array<dsql_nod*> variables;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
 	bool compiled;
@@ -563,12 +463,12 @@ public:
 };
 
 
-class RecreateTriggerNode : public TriggerNode
+class RecreateTriggerNode : public DdlNode
 {
 public:
 	explicit RecreateTriggerNode(MemoryPool& p, const Firebird::string& sqlText,
 				CreateAlterTriggerNode* aCreateNode)
-		: TriggerNode(p, sqlText),
+		: DdlNode(p, sqlText),
 		  createNode(aCreateNode),
 		  dropNode(p, sqlText, createNode->name)
 	{

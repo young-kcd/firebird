@@ -174,7 +174,6 @@ static void modify_udf(DsqlCompilerScratch*);
 static void modify_map(DsqlCompilerScratch*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
 static void put_descriptor(DsqlCompilerScratch*, const dsc*);
-static void put_dtype(DsqlCompilerScratch*, const dsql_fld*, bool);
 static void put_field(DsqlCompilerScratch*, dsql_fld*, bool);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
 static void reset_context_stack(DsqlCompilerScratch*);
@@ -380,17 +379,6 @@ bool DDL_ids(const DsqlCompilerScratch* scratch)
 
 
 //
-// Emit blr that describes a descriptor.
-// Note that this depends on the same stuff variant
-// as used in gen.cpp
-//
-void DDL_put_field_dtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field, bool use_subtype)
-{
-	put_dtype(dsqlScratch, field, use_subtype);
-}
-
-
-//
 // See the next function for description. This is only a
 // wrapper that sets the last parameter to false to indicate
 // we are creating a field, not modifying one.
@@ -399,7 +387,6 @@ void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field, co
 {
 	DDL_resolve_intl_type2(dsqlScratch, field, collation_name, false);
 }
-
 
 
 void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
@@ -434,8 +421,6 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 
 	if (field->fld_type_of_name.hasData())
 	{
-		//statement->getAttachment()->dbb_database->checkOdsForDsql(ODS_11_1);
-
 		if (field->fld_type_of_table)
 		{
 			dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch,
@@ -445,6 +430,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			if (relation)
 			{
 				const MetaName fieldName(field->fld_type_of_name);
+
 				for (fld = relation->rel_fields; fld; fld = fld->fld_next)
 				{
 					if (fieldName == fld->fld_name)
@@ -460,7 +446,6 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 						field->fld_flags = fld->fld_flags;
 						field->fld_dtype = fld->fld_dtype;
 						field->fld_seg_length = fld->fld_seg_length;
-
 						break;
 					}
 				}
@@ -495,8 +480,8 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 	{
 		if (field->fld_character_set || collation_name || field->fld_flags & FLD_national)
 		{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
 		}
 		return;
 	}
@@ -517,31 +502,33 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
+
 		if (field->fld_sub_type > isc_blob_text)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
 					  Arg::Gds(isc_subtype_for_internal_use));
 		}
+
 		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
-		{
 			field->fld_sub_type = isc_blob_text;
-		}
+
 		if (field->fld_character_set && (field->fld_sub_type != isc_blob_text))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
+
 		if (collation_name && (field->fld_sub_type != isc_blob_text))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
-		if (field->fld_sub_type != isc_blob_text) {
+
+		if (field->fld_sub_type != isc_blob_text)
 			return;
-		}
 	}
 
 	if (field->fld_character_set_id != 0 && !collation_name)
@@ -559,6 +546,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 #endif
 		const dsql_fld* afield = field->fld_next;
 		USHORT bpc = 0;
+
 		while (afield)
 		{
 			// The first test is redundant.
@@ -567,8 +555,10 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 				fb_assert(afield->fld_relation == relation || !relation);
 				break;
 			}
+
 			afield = afield->fld_next;
 		}
+
 		if (afield)
 		{
 			field->fld_character_set_id = afield->fld_character_set_id;
@@ -576,52 +566,43 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			field->fld_collation_id = afield->fld_collation_id;
 			field->fld_ttype = afield->fld_ttype;
 
-			if (afield->fld_flags & FLD_national) {
+			if (afield->fld_flags & FLD_national)
 				field->fld_flags |= FLD_national;
-			}
-			else {
+			else
 				field->fld_flags &= ~FLD_national;
-			}
 
 			assign_field_length (field, bpc);
 			return;
 		}
 	}
 
-
 	if (!(field->fld_character_set || field->fld_character_set_id ||	// set if a domain
 		(field->fld_flags & FLD_national)))
 	{
-
 		// Attach the database default character set, if not otherwise specified
 
 		const dsql_str* dfl_charset = METD_get_default_charset(dsqlScratch->getTransaction());
+
 		if (dfl_charset)
-		{
 			field->fld_character_set = (dsql_nod*) dfl_charset;
-		}
 		else
 		{
 			// If field is not specified with NATIONAL, or CHARACTER SET
 			// treat it as a single-byte-per-character field of character set NONE.
-
 			assign_field_length(field, 1);
 			field->fld_ttype = 0;
-			if (!collation_name) {
+
+			if (!collation_name)
 				return;
-			}
 		}
 	}
 
-	const char* charset_name = 0;
+	const char* charset_name = NULL;
 
-	if (field->fld_flags & FLD_national) {
+	if (field->fld_flags & FLD_national)
 		charset_name = NATIONAL_CHARACTER_SET;
-	}
-	else if (field->fld_character_set) {
+	else if (field->fld_character_set)
 		charset_name = ((dsql_str*) field->fld_character_set)->str_data;
-	}
-
 
 	// Find an intlsym for any specified character set name & collation name
 	const dsql_intlsym* resolved_type = NULL;
@@ -639,6 +620,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_charset_not_found) << Arg::Str(charset_name));
 		}
+
 		field->fld_character_set_id = resolved_charset->intlsym_charset_id;
 		resolved_type = resolved_charset;
 	}
@@ -671,6 +653,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 		// A "literal constant" must be handled (charset as ttype_dynamic)
 
 		resolved_type = resolved_collation;
+
 		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id) &&
 			(field->fld_character_set_id != ttype_dynamic))
 		{
@@ -684,11 +667,10 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 
 	assign_field_length (field, resolved_type->intlsym_bytes_per_char);
 
-	field->fld_ttype            = resolved_type->intlsym_ttype;
+	field->fld_ttype = resolved_type->intlsym_ttype;
 	field->fld_character_set_id = resolved_type->intlsym_charset_id;
-	field->fld_collation_id     = resolved_type->intlsym_collate_id;
+	field->fld_collation_id = resolved_type->intlsym_collate_id;
 }
-
 
 
 static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
@@ -5009,118 +4991,6 @@ static void put_descriptor(DsqlCompilerScratch* dsqlScratch, const dsc* desc)
 }
 
 
-//
-// Write out field data type
-// Taking special care to declare international text.
-//
-static void put_dtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field, bool use_subtype)
-{
-#ifdef DEV_BUILD
-	// Check if the field describes a known datatype
-
-	if (field->fld_dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->fld_dtype])
-	{
-		SCHAR buffer[100];
-
-		sprintf(buffer, "Invalid dtype %d in put_dtype", field->fld_dtype);
-		ERRD_bugcheck(buffer);
-	}
-#endif
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	if (field->fld_not_nullable)
-		statement->append_uchar(blr_not_nullable);
-
-	if (field->fld_type_of_name.hasData())
-	{
-		if (field->fld_type_of_table)
-		{
-			if (field->fld_explicit_collation)
-			{
-				statement->append_uchar(blr_column_name2);
-				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_table->str_data);
-				statement->append_meta_string(field->fld_type_of_name.c_str());
-				statement->append_ushort(field->fld_ttype);
-			}
-			else
-			{
-				statement->append_uchar(blr_column_name);
-				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_table->str_data);
-				statement->append_meta_string(field->fld_type_of_name.c_str());
-			}
-		}
-		else
-		{
-			if (field->fld_explicit_collation)
-			{
-				statement->append_uchar(blr_domain_name2);
-				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_name.c_str());
-				statement->append_ushort(field->fld_ttype);
-			}
-			else
-			{
-				statement->append_uchar(blr_domain_name);
-				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_name.c_str());
-			}
-		}
-
-		return;
-	}
-
-	switch (field->fld_dtype)
-	{
-	case dtype_cstring:
-	case dtype_text:
-	case dtype_varying:
-	case dtype_blob:
-		if (!use_subtype) {
-			statement->append_uchar(blr_dtypes[field->fld_dtype]);
-		}
-		else if (field->fld_dtype == dtype_varying)
-		{
-			statement->append_uchar(blr_varying2);
-			statement->append_ushort(field->fld_ttype);
-		}
-		else if (field->fld_dtype == dtype_cstring)
-		{
-			statement->append_uchar(blr_cstring2);
-			statement->append_ushort(field->fld_ttype);
-		}
-		else if (field->fld_dtype == dtype_blob)
-		{
-			statement->append_uchar(blr_blob2);
-			statement->append_ushort(field->fld_sub_type);
-			statement->append_ushort(field->fld_ttype);
-		}
-		else
-		{
-			statement->append_uchar(blr_text2);
-			statement->append_ushort(field->fld_ttype);
-		}
-
-		if (field->fld_dtype == dtype_varying) {
-			statement->append_ushort(field->fld_length - sizeof(USHORT));
-		}
-		else if (field->fld_dtype != dtype_blob) {
-			statement->append_ushort(field->fld_length);
-		}
-		break;
-
-	default:
-		statement->append_uchar(blr_dtypes[field->fld_dtype]);
-		if (DTYPE_IS_EXACT(field->fld_dtype) || (dtype_quad == field->fld_dtype))
-		{
-			statement->append_uchar(field->fld_scale);
-		}
-	}
-}
-
-
 static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool udf_flag)
 {
 /**************************************
@@ -5208,135 +5078,6 @@ static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool u
 		{
 			statement->append_number(isc_dyn_fld_precision, field->fld_precision);
 			statement->append_number(isc_dyn_fld_sub_type, field->fld_sub_type);
-		}
-	}
-}
-
-
-void DDL_put_local_variable( DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
-	dsql_nod* host_param, const dsql_str* collation_name)
-{
-/**************************************
- *
- *	D D L _ p u t _ l o c a l _ v a r i a b l e
- *
- **************************************
- *
- * Function
- *	Write out local variable field data type
- *
- **************************************/
-
-	dsql_fld* field = variable->var_field;
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	statement->append_uchar(blr_dcl_variable);
-	statement->append_ushort(variable->var_variable_number);
-	DDL_resolve_intl_type(dsqlScratch, field, collation_name);
-
-	//const USHORT dtype = field->fld_dtype;
-
-	put_dtype(dsqlScratch, field, true);
-	//field->fld_dtype = dtype;
-
-	// Check for a default value, borrowed from define_domain
-	dsql_nod* node = host_param ? host_param->nod_arg[e_dfl_default] : 0;
-
-	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
-	{
-		statement->append_uchar(blr_assignment);
-
-		if (node)
-		{
-			fb_assert(node->nod_type == nod_def_default);
-			PsqlChanger psqlChanger(dsqlScratch, false);
-			node = PASS1_node(dsqlScratch, node->nod_arg[e_dft_default]);
-			GEN_expr(dsqlScratch, node);
-		}
-		else
-		{
-			// Initialize variable to NULL
-			statement->append_uchar(blr_null);
-		}
-		statement->append_uchar(blr_variable);
-		statement->append_ushort(variable->var_variable_number);
-	}
-	else
-	{
-		statement->append_uchar(blr_init_variable);
-		statement->append_ushort(variable->var_variable_number);
-	}
-
-	if (variable->var_name[0])	// Not a function return value
-	{
-		statement->put_debug_variable(variable->var_variable_number, variable->var_name);
-	}
-
-	++dsqlScratch->hiddenVarsNumber;
-}
-
-
-void DDL_put_local_variables(DsqlCompilerScratch* dsqlScratch, const dsql_nod* parameters,
-	SSHORT locals, Array<dsql_nod*>& variables)
-{
-/**************************************
- *
- *	D D L _ p u t _ l o c a l _ v a r i a b l e s
- *
- **************************************
- *
- * Function
- *	Emit dyn for the local variables declared
- *	in a procedure or trigger.
- *
- **************************************/
-
-	if (parameters)
-	{
-		dsql_nod* const* ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-		{
-			dsql_nod* parameter = *ptr;
-
-			dsqlScratch->getStatement()->put_debug_src_info(parameter->nod_line, parameter->nod_column);
-
-			if (parameter->nod_type == nod_def_field)
-			{
-				dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-				const dsql_nod* const* rest = ptr;
-				while (++rest != end)
-				{
-					if ((*rest)->nod_type == nod_def_field)
-					{
-						const dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
-						if (field->fld_name == rest_field->fld_name)
-						{
-							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-									  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(field->fld_name));
-						}
-					}
-				}
-
-				dsql_nod* var_node = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
-				variables.add(var_node);
-
-				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
-				DDL_put_local_variable(dsqlScratch, variable, parameter,
-					reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
-
-				// Some field attributes are calculated inside
-				// DDL_put_local_variable(), so we reinitialize the
-				// descriptor
-				MAKE_desc_from_field(&var_node->nod_desc, field);
-
-				locals++;
-			}
-			else if (parameter->nod_type == nod_cursor)
-			{
-				PASS1_statement(dsqlScratch, parameter);
-				GEN_statement(dsqlScratch, parameter);
-			}
 		}
 	}
 }
