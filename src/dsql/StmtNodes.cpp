@@ -192,7 +192,7 @@ void BlockNode::putLocalVariables(DsqlCompilerScratch* dsqlScratch, const dsql_n
 			dsql_nod* var_node = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
 			variables.add(var_node);
 
-			dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];
+			dsql_var* variable = (dsql_var*) var_node->nod_arg[Dsql::e_var_variable];
 			putLocalVariable(dsqlScratch, variable, parameter,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 
