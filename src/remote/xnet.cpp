@@ -1102,17 +1102,21 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 				return NULL;
 			}
 		}
+	}
 
-		// setup status with net read error in case of wait timeout
-		Arg::StatusVector temp;
-		temp << Arg::Gds(isc_net_read_err);
-		DWORD err = 0;
+	// setup status with net read error in case of wait timeout
+	Arg::StatusVector temp;
+	temp << Arg::Gds(isc_net_read_err);
 
-		static const int timeout = Config::getConnectionTimeout() * 1000;
+	static const int timeout = Config::getConnectionTimeout() * 1000;
 
-		// waiting for XNET connect lock to release
+	// waiting for XNET connect lock to release
 
-		err = WaitForSingleObject(xnet_connect_mutex, timeout);
+	DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
+
+	{ // xnet_mutex scope
+		Firebird::MutexLockGuard guard(xnet_mutex);
+
 		if (err != WAIT_OBJECT_0)
 		{
 			connect_fini();
@@ -1132,10 +1136,15 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		((XNET_RESPONSE*) xnet_connect_map)->proc_id = current_process_id;
 
 		SetEvent(xnet_connect_event);
+	}
 
-		// waiting for server response
+	// waiting for server response
 
-		err = WaitForSingleObject(xnet_response_event, timeout);
+	err = WaitForSingleObject(xnet_response_event, timeout);
+
+	{ // xnet_mutex scope
+		Firebird::MutexLockGuard guard(xnet_mutex);
+
 		if (err != WAIT_OBJECT_0)
 		{
 			ReleaseMutex(xnet_connect_mutex);
@@ -1150,7 +1159,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		memcpy(&response, xnet_connect_map, XNET_CONNECT_RESPONZE_SIZE);
 		ReleaseMutex(xnet_connect_mutex);
 		connect_fini();
-	} // xnet_mutex scope
+	}
 
 	if (response.map_num == XNET_INVALID_MAP_NUM)
 	{
