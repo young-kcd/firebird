@@ -343,7 +343,7 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(isc_dyn_eoc);
 
 		// Store DYN data in the statement.
-		dsqlScratch->getStatement()->getDdlData() = dsqlScratch->getBlrData();
+		dsqlScratch->getStatement()->setDdlData(dsqlScratch->getBlrData());
 	}
 }
 

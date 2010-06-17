@@ -968,7 +968,7 @@ void GEN_start_transaction( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tr
 	}
 
 	// Store DYN data in the statement.
-	dsqlScratch->getStatement()->getDdlData() = dsqlScratch->getBlrData();
+	dsqlScratch->getStatement()->setDdlData(dsqlScratch->getBlrData());
 }
 
 

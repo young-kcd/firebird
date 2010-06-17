@@ -423,6 +423,7 @@ public:
 
 	Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() { return ddlData; }
 	const Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() const { return ddlData; }
+	void setDdlData(Firebird::HalfStaticArray<UCHAR, 1024>& value) { ddlData = value; }
 
 	BlockNode* getBlockNode() { return blockNode; }
 	const BlockNode* getBlockNode() const { return blockNode; }
