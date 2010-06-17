@@ -233,8 +233,9 @@ public:
 
 		sh_mem handle;
 #ifdef WIN_NT
-		struct mtx mutex;
+		struct mtx winMutex;
 #endif
+		struct mtx *mutex;
 		Header* base;
 
 		const SLONG process_id;

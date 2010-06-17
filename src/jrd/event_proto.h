@@ -117,6 +117,8 @@ private:
 
 #ifdef WIN_NT
 	struct mtx m_mutex;
+#else
+	struct mtx* m_mutex;
 #endif
 
 	bool m_sharedFileCreated;

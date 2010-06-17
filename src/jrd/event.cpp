@@ -61,7 +61,7 @@
 #include <windows.h>
 #define MUTEX		&m_mutex
 #else
-#define MUTEX		&m_header->evh_mutex
+#define MUTEX		m_mutex
 #endif
 
 #define SRQ_BASE                  ((UCHAR*) m_header)
@@ -1117,11 +1117,17 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 #endif
 
 	m_sharedFileCreated = initialize;
+	m_header = (evh*) shmem_data->sh_mem_address;
 
 	if (!initialize)
+	{
+#ifndef WIN_NT
+		if ( (mutex_state = ISC_map_mutex(shmem_data, &m_header->evh_mutex, &MUTEX)) )
+			mutex_bugcheck("mutex map", mutex_state);
+#endif
 		return;
+	}
 
-	m_header = (evh*) shmem_data->sh_mem_address;
 	m_header->evh_length = m_shmemData.sh_mem_length_mapped;
 	m_header->evh_version = EVENT_VERSION;
 	m_header->evh_request_id = 0;
@@ -1130,7 +1136,7 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 	SRQ_INIT(m_header->evh_events);
 
 #ifndef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(MUTEX)) )
+	if ( (mutex_state = ISC_mutex_init(shmem_data, &m_header->evh_mutex, &MUTEX)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
 

@@ -94,7 +94,7 @@
 #include <process.h>
 #define MUTEX		&m_shmemMutex
 #else
-#define MUTEX		&m_header->lhb_mutex
+#define MUTEX		m_lhb_mutex
 #endif
 
 #ifdef DEV_BUILD
@@ -2303,6 +2303,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
  *	to have an exclusive lock on the lock file.
  *
  **************************************/
+
 #ifdef WIN_NT
 	if (ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) {
 		bug(NULL, "mutex init failed");
@@ -2322,6 +2323,11 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 #endif
 
 	if (!initializeMemory) {
+#ifndef WIN_NT
+		if (ISC_map_mutex(shmem_data, &m_header->lhb_mutex, &(MUTEX))) {
+			bug(NULL, "mutex map failed");
+		}
+#endif
 		return;
 	}
 
@@ -2340,7 +2346,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	SRQ_INIT(m_header->lhb_free_requests);
 
 #ifndef WIN_NT
-	if (ISC_mutex_init(MUTEX)) {
+	if (ISC_mutex_init(shmem_data, &m_header->lhb_mutex, &(MUTEX))) {
 		bug(NULL, "mutex init failed");
 	}
 #endif

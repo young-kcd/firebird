@@ -245,7 +245,8 @@ void TraceLog::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 	TraceLog* log = (TraceLog*) arg;
 
 #ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&log->m_mutex, shmemData->sh_mem_name));
+	checkMutex("init", ISC_mutex_init(&log->m_winMutex, shmemData->sh_mem_name));
+	log->m_mutex = &log->m_winMutex;
 #endif
 
 	ShMemHeader* const header = (ShMemHeader*) shmemData->sh_mem_address;
@@ -256,27 +257,23 @@ void TraceLog::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 		header->readFileNum = 0;
 		header->writeFileNum = 0;
 #ifndef WIN_NT
-		checkMutex("init", ISC_mutex_init(&header->mutex));
+		checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &log->m_mutex));
+	}
+	else
+	{
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &log->m_mutex));
 #endif
 	}
 }
 
 void TraceLog::lock()
 {
-#ifdef WIN_NT
-	checkMutex("lock", ISC_mutex_lock(&m_mutex));
-#else
-	checkMutex("lock", ISC_mutex_lock(&m_base->mutex));
-#endif
+	checkMutex("lock", ISC_mutex_lock(m_mutex));
 }
 
 void TraceLog::unlock()
 {
-#ifdef WIN_NT
-	checkMutex("unlock", ISC_mutex_unlock(&m_mutex));
-#else
-	checkMutex("unlock", ISC_mutex_unlock(&m_base->mutex));
-#endif
+	checkMutex("unlock", ISC_mutex_unlock(m_mutex));
 }
 
 } // namespace Jrd
