@@ -1720,8 +1720,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					SORT_put(tdbb, asb_impure->iasb_sort_handle,
 							 reinterpret_cast<ULONG**>(&data));
 					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
-					asb->asb_desc.dsc_address = data;
-					MOV_move(tdbb, desc, &asb->asb_desc);
+
+					dsc toDesc = asb->asb_desc;
+					toDesc.dsc_address = data;
+
+					MOV_move(tdbb, desc, &toDesc);
 					break;
 				}
 
@@ -2997,7 +3000,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
 	impure_agg_sort* asb_impure =
 		(impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-	dsc* desc = &asb->asb_desc;
+	dsc desc = asb->asb_desc;
 	impure_value_ex* impure =
 		(impure_value_ex*) ((SCHAR *) request + node->nod_impure);
 
@@ -3023,18 +3026,18 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			break;
 		}
 
-		desc->dsc_address = data;
+		desc.dsc_address = data;
 		switch (node->nod_type) {
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
-			add(desc, node, impure);
+			add(&desc, node, impure);
 			break;
 
 		case nod_agg_total_distinct2:
 		case nod_agg_average_distinct2:
 			++impure->vlux_count;
-			add2(desc, node, impure);
+			add2(&desc, node, impure);
 			break;
 
 		case nod_agg_count_distinct:
@@ -3048,7 +3051,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			{
 				impure->vlu_blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 					&impure->vlu_misc.vlu_bid);
-				impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
+				impure->vlu_desc.makeBlob(desc.getBlobSubType(), desc.getTextType(),
 					(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
 			}
 
@@ -3067,7 +3070,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 				BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			}
 			++impure->vlux_count;
-			len = MOV_make_string2(tdbb, desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
+			len = MOV_make_string2(tdbb, &desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
 			BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			break;
 		}
