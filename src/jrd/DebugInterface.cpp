@@ -90,7 +90,7 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 
 				// variable number
 				USHORT index = *data++;
-				index |= *data++;
+				index |= *data++ << 8;
 
 				// variable name string length
 				USHORT length = *data++;
@@ -121,7 +121,7 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 
 				// argument number
 				info.index = *data++;
-				info.index |= *data++;
+				info.index |= *data++ << 8;
 
 				// argument name string length
 				USHORT length = *data++;
