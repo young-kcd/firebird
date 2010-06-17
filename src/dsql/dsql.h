@@ -38,6 +38,7 @@
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Database.h"
+#include "../dsql/BlrWriter.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
@@ -101,6 +102,8 @@ namespace Firebird
 #include "../jrd/dsc.h"
 
 namespace Jrd {
+
+class DsqlCompilerScratch;
 
 //! generic data type used to store strings
 class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
@@ -366,6 +369,8 @@ enum intlsym_flags_vals {
 // Compiled statement - shared by multiple requests.
 class DsqlCompiledStatement : public Firebird::PermanentStorage
 {
+	friend class DsqlCompilerScratch;
+
 public:
 	enum Type	// statement type
 	{
@@ -386,10 +391,8 @@ public:
 	explicit DsqlCompiledStatement(MemoryPool& p)
 		: PermanentStorage(p),
 		  type(TYPE_SELECT),
-		  baseOffset(0),
 		  flags(0),
-		  blrData(p),
-		  debugData(p),
+		  ddlData(p),
 		  blockNode(NULL),
 		  ddlNode(NULL),
 		  blob(NULL),
@@ -410,9 +413,6 @@ public:
 	Type getType() const { return type; }
 	void setType(Type value) { type = value; }
 
-	ULONG getBaseOffset() const { return baseOffset; }
-	void setBaseOffset(ULONG value) { baseOffset = value; }
-
 	ULONG getFlags() const { return flags; }
 	void setFlags(ULONG value) { flags = value; }
 	void addFlags(ULONG value) { flags |= value; }
@@ -421,11 +421,8 @@ public:
 	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
 	void setSqlText(Firebird::RefString* value) { sqlText = value; }
 
-	Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() { return blrData; }
-	const Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() const { return blrData; }
-
-	Firebird::HalfStaticArray<UCHAR, 128>& getDebugData() { return debugData; }
-	const Firebird::HalfStaticArray<UCHAR, 128>& getDebugData() const { return debugData; }
+	Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() { return ddlData; }
+	const Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() const { return ddlData; }
 
 	BlockNode* getBlockNode() { return blockNode; }
 	const BlockNode* getBlockNode() const { return blockNode; }
@@ -470,56 +467,11 @@ public:
 	dsql_req* getParentRequest() const { return parentRequest; }
 	void setParentRequest(dsql_req* value) { parentRequest = value; }
 
-public:
-	void append_uchar(UCHAR byte)
-	{
-		blrData.add(byte);
-	}
-
-	void append_ushort(USHORT val)
-	{
-		append_uchar(val);
-		append_uchar(val >> 8);
-	}
-
-	void append_ulong(ULONG val)
-	{
-		append_ushort(val);
-		append_ushort(val >> 16);
-	}
-
-	void append_cstring(UCHAR verb, const char* string);
-	void append_meta_string(const char* string);
-	void append_raw_string(const char* string, USHORT len);
-	void append_raw_string(const UCHAR* string, USHORT len);
-	void append_string(UCHAR verb, const char* string, USHORT len);
-	void append_string(UCHAR verb, const Firebird::MetaName& name);
-	void append_string(UCHAR verb, const Firebird::string& name);
-	void append_number(UCHAR verb, SSHORT number);
-	void begin_blr(UCHAR verb);
-	void end_blr();
-	void append_uchars(UCHAR byte, int count);
-	void append_ushort_with_length(USHORT val);
-	void append_ulong_with_length(ULONG val);
-	void append_file_length(ULONG length);
-	void append_file_start(ULONG start);
-	void generate_unnamed_trigger_beginning(bool on_update_trigger, const char*	prim_rel_name,
-		const dsql_nod* prim_columns, const char* for_rel_name, const dsql_nod* for_columns);
-
-	void beginDebug();
-	void endDebug();
-	void put_debug_src_info(USHORT, USHORT);
-	void put_debug_variable(USHORT, const TEXT*);
-	void put_debug_argument(UCHAR, USHORT, const TEXT*);
-	void append_debug_info();
-
 private:
 	Type type;					// Type of statement
-	ULONG baseOffset;			// place to go back and stuff in blr length
 	ULONG flags;				// generic flag
 	Firebird::RefStrPtr sqlText;
-	Firebird::HalfStaticArray<UCHAR, 1024> blrData;
-	Firebird::HalfStaticArray<UCHAR, 128> debugData;
+	Firebird::HalfStaticArray<UCHAR, 1024> ddlData;
 	BlockNode* blockNode;		// Defining block
 	dsql_nod* ddlNode;			// Store metadata statement
 	dsql_blb* blob;				// Blob info for blob statements
@@ -606,7 +558,7 @@ protected:
 
 
 // DSQL Compiler scratch block - may be discarded after compilation in the future.
-class DsqlCompilerScratch : public Firebird::PermanentStorage
+class DsqlCompilerScratch : public BlrWriter
 {
 public:
 	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x001;
@@ -623,7 +575,7 @@ public:
 public:
 	explicit DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
 				DsqlCompiledStatement* aStatement)
-		: PermanentStorage(p),
+		: BlrWriter(p),
 		  dbb(aDbb),
 		  transaction(aTransaction),
 		  statement(aStatement),
@@ -670,6 +622,17 @@ protected:
 	// DsqlCompilerScratch should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~DsqlCompilerScratch();
+
+	virtual bool isVersion4()
+	{
+		return statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4;
+	}
+
+	virtual bool isDdlDyn()
+	{
+		return (statement->type == DsqlCompiledStatement::TYPE_DDL || statement->ddlNode) &&
+			!statement->blockNode;
+	}
 
 public:
 	MemoryPool& getPool()
@@ -742,15 +705,8 @@ public:
 		}
 	}
 
-	bool isPsql() const
-	{
-		return psql;
-	}
-
-	void setPsql(bool value)
-	{
-		psql = value;
-	}
+	bool isPsql() const { return psql; }
+	void setPsql(bool value) { psql = value; }
 
 private:
 	dsql_dbb* dbb;						// DSQL attachment

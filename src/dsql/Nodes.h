@@ -592,7 +592,7 @@ public:
 	void putLocalVariable(DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
 		dsql_nod* hostParam, const dsql_str* collationName);
 	dsql_nod* resolveVariable(const dsql_str* varName);
-	void genReturn(DsqlCompiledStatement* statement, bool eosFlag = false);
+	void genReturn(DsqlCompilerScratch* dsqlScratch, bool eosFlag = false);
 
 private:
 	bool hasEos;

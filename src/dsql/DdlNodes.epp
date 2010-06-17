@@ -132,7 +132,7 @@ void DdlNode::putType(const TypeClause& type, bool useSubType)
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	if (type.notNull)
-		statement->append_uchar(blr_not_nullable);
+		dsqlScratch->appendUChar(blr_not_nullable);
 
 	if (type.typeOfName.hasData())
 	{
@@ -140,34 +140,34 @@ void DdlNode::putType(const TypeClause& type, bool useSubType)
 		{
 			if (type.collateSpecified)
 			{
-				statement->append_uchar(blr_column_name2);
-				statement->append_uchar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(type.typeOfTable.c_str());
-				statement->append_meta_string(type.typeOfName.c_str());
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_column_name2);
+				dsqlScratch->appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				dsqlScratch->appendMetaString(type.typeOfTable.c_str());
+				dsqlScratch->appendMetaString(type.typeOfName.c_str());
+				dsqlScratch->appendUShort(type.textType);
 			}
 			else
 			{
-				statement->append_uchar(blr_column_name);
-				statement->append_uchar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(type.typeOfTable.c_str());
-				statement->append_meta_string(type.typeOfName.c_str());
+				dsqlScratch->appendUChar(blr_column_name);
+				dsqlScratch->appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				dsqlScratch->appendMetaString(type.typeOfTable.c_str());
+				dsqlScratch->appendMetaString(type.typeOfName.c_str());
 			}
 		}
 		else
 		{
 			if (type.collateSpecified)
 			{
-				statement->append_uchar(blr_domain_name2);
-				statement->append_uchar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(type.typeOfName.c_str());
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_domain_name2);
+				dsqlScratch->appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				dsqlScratch->appendMetaString(type.typeOfName.c_str());
+				dsqlScratch->appendUShort(type.textType);
 			}
 			else
 			{
-				statement->append_uchar(blr_domain_name);
-				statement->append_uchar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(type.typeOfName.c_str());
+				dsqlScratch->appendUChar(blr_domain_name);
+				dsqlScratch->appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				dsqlScratch->appendMetaString(type.typeOfName.c_str());
 			}
 		}
 
@@ -181,39 +181,39 @@ void DdlNode::putType(const TypeClause& type, bool useSubType)
 		case dtype_varying:
 		case dtype_blob:
 			if (!useSubType)
-				statement->append_uchar(blr_dtypes[type.type]);
+				dsqlScratch->appendUChar(blr_dtypes[type.type]);
 			else if (type.type == dtype_varying)
 			{
-				statement->append_uchar(blr_varying2);
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_varying2);
+				dsqlScratch->appendUShort(type.textType);
 			}
 			else if (type.type == dtype_cstring)
 			{
-				statement->append_uchar(blr_cstring2);
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_cstring2);
+				dsqlScratch->appendUShort(type.textType);
 			}
 			else if (type.type == dtype_blob)
 			{
-				statement->append_uchar(blr_blob2);
-				statement->append_ushort(type.subType);
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_blob2);
+				dsqlScratch->appendUShort(type.subType);
+				dsqlScratch->appendUShort(type.textType);
 			}
 			else
 			{
-				statement->append_uchar(blr_text2);
-				statement->append_ushort(type.textType);
+				dsqlScratch->appendUChar(blr_text2);
+				dsqlScratch->appendUShort(type.textType);
 			}
 
 			if (type.type == dtype_varying)
-				statement->append_ushort(type.length - sizeof(USHORT));
+				dsqlScratch->appendUShort(type.length - sizeof(USHORT));
 			else if (type.type != dtype_blob)
-				statement->append_ushort(type.length);
+				dsqlScratch->appendUShort(type.length);
 			break;
 
 		default:
-			statement->append_uchar(blr_dtypes[type.type]);
+			dsqlScratch->appendUChar(blr_dtypes[type.type]);
 			if (DTYPE_IS_EXACT(type.type) || dtype_quad == type.type)
-				statement->append_uchar(type.scale);
+				dsqlScratch->appendUChar(type.scale);
 			break;
 	}
 }
@@ -959,13 +959,13 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 				{
 					FUN.RDB$FUNCTION_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$FUNCTION_BLR,
-						statement->getBlrData().begin(),
-						statement->getBlrData().getCount());
+						dsqlScratch->getBlrData().begin(),
+						dsqlScratch->getBlrData().getCount());
 
 					FUN.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$DEBUG_INFO,
-						statement->getDebugData().begin(),
-						statement->getDebugData().getCount());
+						dsqlScratch->getDebugData().begin(),
+						dsqlScratch->getDebugData().getCount());
 				}
 			}
 
@@ -1110,20 +1110,20 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			string defaultSource = string(defaultString->str_data, defaultString->str_length);
 			attachment->storeMetaDataBlob(tdbb, transaction, &ARG.RDB$DEFAULT_SOURCE, defaultSource);
 
-			statement->getBlrData().clear();
+			dsqlScratch->getBlrData().clear();
 
 			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-				statement->append_uchar(blr_version4);
+				dsqlScratch->appendUChar(blr_version4);
 			else
-				statement->append_uchar(blr_version5);
+				dsqlScratch->appendUChar(blr_version5);
 
 			GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
 
-			statement->append_uchar(blr_eoc);
+			dsqlScratch->appendUChar(blr_eoc);
 
 			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
-				statement->getBlrData().begin(),
-				statement->getBlrData().getCount());
+				dsqlScratch->getBlrData().begin(),
+				dsqlScratch->getBlrData().getCount());
 		}
 	}
 	END_STORE
@@ -1145,49 +1145,49 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 	if (body)
 	{
-		statement->beginDebug();
-		statement->getBlrData().clear();
+		dsqlScratch->beginDebug();
+		dsqlScratch->getBlrData().clear();
 
 		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-			statement->append_uchar(blr_version4);
+			dsqlScratch->appendUChar(blr_version4);
 		else
-			statement->append_uchar(blr_version5);
+			dsqlScratch->appendUChar(blr_version5);
 
-		statement->append_uchar(blr_begin);
+		dsqlScratch->appendUChar(blr_begin);
 
 		if (parameters.getCount() != 0)
 		{
 			fb_assert(parameters.getCount() < size_t(MAX_USHORT / 2));
-			statement->append_uchar(blr_message);
-			statement->append_uchar(0);
-			statement->append_ushort(2 * parameters.getCount());
+			dsqlScratch->appendUChar(blr_message);
+			dsqlScratch->appendUChar(0);
+			dsqlScratch->appendUShort(2 * parameters.getCount());
 
 			for (unsigned i = 0; i < parameters.getCount(); ++i)
 			{
 				ParameterClause& parameter = parameters[i];
-				statement->put_debug_argument(fb_dbg_arg_input, i,
+				dsqlScratch->putDebugArgument(fb_dbg_arg_input, i,
 					parameter.name.c_str());
 				putType(parameter, true);
 
 				// add slot for null flag (parameter2)
-				statement->append_uchar(blr_short);
-				statement->append_uchar(0);
+				dsqlScratch->appendUChar(blr_short);
+				dsqlScratch->appendUChar(0);
 
 				variables.add(MAKE_variable(parameter.legacyField,
 					parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
 			}
 		}
 
-		statement->append_uchar(blr_message);
-		statement->append_uchar(1);
-		statement->append_ushort(2);
+		dsqlScratch->appendUChar(blr_message);
+		dsqlScratch->appendUChar(1);
+		dsqlScratch->appendUShort(2);
 
-		statement->put_debug_argument(fb_dbg_arg_output, 0, "");
+		dsqlScratch->putDebugArgument(fb_dbg_arg_output, 0, "");
 		putType(returnType, true);
 
 		// add slot for null flag (parameter2)
-		statement->append_uchar(blr_short);
-		statement->append_uchar(0);
+		dsqlScratch->appendUChar(blr_short);
+		dsqlScratch->appendUChar(0);
 
 		dsql_nod* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
 		variables.add(var);
@@ -1195,11 +1195,11 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		if (parameters.getCount() != 0)
 		{
-			statement->append_uchar(blr_receive);
-			statement->append_uchar(0);
+			dsqlScratch->appendUChar(blr_receive);
+			dsqlScratch->appendUChar(0);
 		}
 
-		statement->append_uchar(blr_begin);
+		dsqlScratch->appendUChar(blr_begin);
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
@@ -1209,12 +1209,12 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 			{
 				// ASF: To validate input parameters we need only to read its value.
 				// Assigning it to null is an easy way to do this.
-				statement->append_uchar(blr_assignment);
-				statement->append_uchar(blr_parameter2);
-				statement->append_uchar(0);	// input
-				statement->append_ushort(i * 2);
-				statement->append_ushort(i * 2 + 1);
-				statement->append_uchar(blr_null);
+				dsqlScratch->appendUChar(blr_assignment);
+				dsqlScratch->appendUChar(blr_parameter2);
+				dsqlScratch->appendUChar(0);	// input
+				dsqlScratch->appendUShort(i * 2);
+				dsqlScratch->appendUShort(i * 2 + 1);
+				dsqlScratch->appendUChar(blr_null);
 			}
 		}
 
@@ -1227,24 +1227,24 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		putLocalVariables(dsqlScratch, localDeclList, 1);
 
-		statement->append_uchar(blr_stall);
+		dsqlScratch->appendUChar(blr_stall);
 		// put a label before body of procedure,
 		// so that any EXIT statement can get out
-		statement->append_uchar(blr_label);
-		statement->append_uchar(0);
+		dsqlScratch->appendUChar(blr_label);
+		dsqlScratch->appendUChar(0);
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
 
 		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
 		statement->setType(DsqlCompiledStatement::TYPE_DDL);
-		statement->append_uchar(blr_end);
-		genReturn(statement, false);
+		dsqlScratch->appendUChar(blr_end);
+		genReturn(dsqlScratch, false);
 
-		statement->append_uchar(blr_end);
-		statement->append_uchar(blr_eoc);
+		dsqlScratch->appendUChar(blr_end);
+		dsqlScratch->appendUChar(blr_eoc);
 
-		statement->endDebug();
+		dsqlScratch->endDebug();
 	}
 
 	invalid = false;
@@ -1761,13 +1761,13 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				{
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
-						statement->getBlrData().begin(),
-						statement->getBlrData().getCount());
+						dsqlScratch->getBlrData().begin(),
+						dsqlScratch->getBlrData().getCount());
 
 					P.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
-						statement->getDebugData().begin(),
-						statement->getDebugData().getCount());
+						dsqlScratch->getDebugData().begin(),
+						dsqlScratch->getDebugData().getCount());
 
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT)
@@ -1914,20 +1914,20 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 
 			DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-			statement->getBlrData().clear();
+			dsqlScratch->getBlrData().clear();
 
 			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-				statement->append_uchar(blr_version4);
+				dsqlScratch->appendUChar(blr_version4);
 			else
-				statement->append_uchar(blr_version5);
+				dsqlScratch->appendUChar(blr_version5);
 
 			GEN_expr(dsqlScratch, parameter.legacyDefault->nod_arg[e_dft_default]);
 
-			statement->append_uchar(blr_eoc);
+			dsqlScratch->appendUChar(blr_eoc);
 
 			attachment->storeBinaryBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
-				statement->getBlrData().begin(),
-				statement->getBlrData().getCount());
+				dsqlScratch->getBlrData().begin(),
+				dsqlScratch->getBlrData().getCount());
 		}
 	}
 	END_STORE
@@ -1951,32 +1951,32 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	statement->beginDebug();
-	statement->getBlrData().clear();
+	dsqlScratch->beginDebug();
+	dsqlScratch->getBlrData().clear();
 
 	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-		statement->append_uchar(blr_version4);
+		dsqlScratch->appendUChar(blr_version4);
 	else
-		statement->append_uchar(blr_version5);
+		dsqlScratch->appendUChar(blr_version5);
 
-	statement->append_uchar(blr_begin);
+	dsqlScratch->appendUChar(blr_begin);
 
 	if (parameters.getCount() != 0)
 	{
 		fb_assert(parameters.getCount() < MAX_USHORT / 2);
-		statement->append_uchar(blr_message);
-		statement->append_uchar(0);
-		statement->append_ushort(2 * parameters.getCount());
+		dsqlScratch->appendUChar(blr_message);
+		dsqlScratch->appendUChar(0);
+		dsqlScratch->appendUShort(2 * parameters.getCount());
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
-			statement->put_debug_argument(fb_dbg_arg_input, i, parameter.name.c_str());
+			dsqlScratch->putDebugArgument(fb_dbg_arg_input, i, parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)
-			statement->append_uchar(blr_short);
-			statement->append_uchar(0);
+			dsqlScratch->appendUChar(blr_short);
+			dsqlScratch->appendUChar(0);
 
 			variables.add(MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
@@ -1984,21 +1984,21 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	}
 
 	fb_assert(returns.getCount() < MAX_USHORT / 2);
-	statement->append_uchar(blr_message);
-	statement->append_uchar(1);
-	statement->append_ushort(2 * returns.getCount() + 1);
+	dsqlScratch->appendUChar(blr_message);
+	dsqlScratch->appendUChar(1);
+	dsqlScratch->appendUShort(2 * returns.getCount() + 1);
 
 	if (returns.getCount() != 0)
 	{
 		for (unsigned i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause& parameter = returns[i];
-			statement->put_debug_argument(fb_dbg_arg_output, i, parameter.name.c_str());
+			dsqlScratch->putDebugArgument(fb_dbg_arg_output, i, parameter.name.c_str());
 			putType(parameter, true);
 
 			// add slot for null flag (parameter2)
-			statement->append_uchar(blr_short);
-			statement->append_uchar(0);
+			dsqlScratch->appendUChar(blr_short);
+			dsqlScratch->appendUChar(0);
 
 			dsql_nod* const var = MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
@@ -2009,16 +2009,16 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 	}
 
 	// add slot for EOS
-	statement->append_uchar(blr_short);
-	statement->append_uchar(0);
+	dsqlScratch->appendUChar(blr_short);
+	dsqlScratch->appendUChar(0);
 
 	if (parameters.getCount() != 0)
 	{
-		statement->append_uchar(blr_receive);
-		statement->append_uchar(0);
+		dsqlScratch->appendUChar(blr_receive);
+		dsqlScratch->appendUChar(0);
 	}
 
-	statement->append_uchar(blr_begin);
+	dsqlScratch->appendUChar(blr_begin);
 
 	for (unsigned i = 0; i < parameters.getCount(); ++i)
 	{
@@ -2028,12 +2028,12 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		{
 			// ASF: To validate an input parameter we need only to read its value.
 			// Assigning it to null is an easy way to do this.
-			statement->append_uchar(blr_assignment);
-			statement->append_uchar(blr_parameter2);
-			statement->append_uchar(0);	// input
-			statement->append_ushort(i * 2);
-			statement->append_ushort(i * 2 + 1);
-			statement->append_uchar(blr_null);
+			dsqlScratch->appendUChar(blr_assignment);
+			dsqlScratch->appendUChar(blr_parameter2);
+			dsqlScratch->appendUChar(0);	// input
+			dsqlScratch->appendUShort(i * 2);
+			dsqlScratch->appendUShort(i * 2 + 1);
+			dsqlScratch->appendUChar(blr_null);
 		}
 	}
 
@@ -2050,24 +2050,24 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	putLocalVariables(dsqlScratch, localDeclList, returns.getCount());
 
-	statement->append_uchar(blr_stall);
+	dsqlScratch->appendUChar(blr_stall);
 	// put a label before body of procedure,
 	// so that any EXIT statement can get out
-	statement->append_uchar(blr_label);
-	statement->append_uchar(0);
+	dsqlScratch->appendUChar(blr_label);
+	dsqlScratch->appendUChar(0);
 	dsqlScratch->loopLevel = 0;
 	dsqlScratch->cursorNumber = 0;
 
 	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
 	statement->setType(DsqlCompiledStatement::TYPE_DDL);
-	statement->append_uchar(blr_end);
-	genReturn(statement, true);
+	dsqlScratch->appendUChar(blr_end);
+	genReturn(dsqlScratch, true);
 
-	statement->append_uchar(blr_end);
-	statement->append_uchar(blr_eoc);
+	dsqlScratch->appendUChar(blr_end);
+	dsqlScratch->appendUChar(blr_eoc);
 
-	statement->endDebug();
+	dsqlScratch->endDebug();
 
 	invalid = false;
 }
@@ -2466,13 +2466,13 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 
 					TRG.RDB$TRIGGER_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
-						statement->getBlrData().begin(),
-						statement->getBlrData().getCount());
+						dsqlScratch->getBlrData().begin(),
+						dsqlScratch->getBlrData().getCount());
 
 					TRG.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
-						statement->getDebugData().begin(),
-						statement->getDebugData().getCount());
+						dsqlScratch->getDebugData().begin(),
+						dsqlScratch->getDebugData().getCount());
 				}
 
 				if (source.hasData())
@@ -2515,8 +2515,8 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 	{
 		DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-		statement->beginDebug();
-		statement->getBlrData().clear();
+		dsqlScratch->beginDebug();
+		dsqlScratch->getBlrData().clear();
 
 		// Create the "OLD" and "NEW" contexts for the trigger --
 		// the new one could be a dummy place holder to avoid resolving
@@ -2559,11 +2559,11 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		// generate the trigger blr
 
 		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
-			statement->append_uchar(blr_version4);
+			dsqlScratch->appendUChar(blr_version4);
 		else
-			statement->append_uchar(blr_version5);
+			dsqlScratch->appendUChar(blr_version5);
 
-		statement->append_uchar(blr_begin);
+		dsqlScratch->appendUChar(blr_begin);
 
 		dsqlScratch->setPsql(true);
 
@@ -2577,16 +2577,16 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		// although the fact that they use the same BLR code
 		// is still a potential danger and must be fixed.
 		// Hopefully, system triggers are never recompiled.
-		statement->append_uchar(blr_label);
-		statement->append_uchar(0);
+		dsqlScratch->appendUChar(blr_label);
+		dsqlScratch->appendUChar(0);
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
 		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 		dsqlScratch->scopeLevel--;
-		statement->append_uchar(blr_end);
-		statement->append_uchar(blr_eoc);
+		dsqlScratch->appendUChar(blr_end);
+		dsqlScratch->appendUChar(blr_eoc);
 
-		statement->endDebug();
+		dsqlScratch->endDebug();
 
 		// The statement type may have been set incorrectly when parsing
 		// the trigger actions, so reset it to reflect the fact that this

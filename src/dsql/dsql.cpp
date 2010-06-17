@@ -1085,8 +1085,8 @@ static void execute_request(thread_db* tdbb,
 	{
 	case DsqlCompiledStatement::TYPE_START_TRANS:
 		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
-			request->getStatement()->getBlrData().getCount(),
-			request->getStatement()->getBlrData().begin());
+			request->getStatement()->getDdlData().getCount(),
+			request->getStatement()->getDdlData().begin());
 		*tra_handle = request->req_transaction;
 		return;
 
@@ -2469,9 +2469,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
-	if (!string_length) {
+	if (!string_length)
 		string_length = strlen(string);
-	}
 
 	// Get rid of the trailing ";" if there is one.
 
@@ -2654,7 +2653,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			return request;
 	}
 
-	const ULONG length = (ULONG) statement->getBlrData().getCount();
+	const ULONG length = (ULONG) scratch->getBlrData().getCount();
 
 	// stop here for ddl statements
 
@@ -2675,8 +2674,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
 		gds__trace_raw("\nBLR:\n");
-		fb_print_blr(statement->getBlrData().begin(),
-			(ULONG) statement->getBlrData().getCount(),
+		fb_print_blr(scratch->getBlrData().begin(),
+			(ULONG) scratch->getBlrData().getCount(),
 			gds__trace_printer, 0, 0);
 	}
 #endif
@@ -2696,10 +2695,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 					scratch->getAttachment()->dbb_attachment,
 					&request->req_request,
 					length,
-					statement->getBlrData().begin(),
+					scratch->getBlrData().begin(),
 					statement->getSqlText(),
-					statement->getDebugData().getCount(),
-					statement->getDebugData().begin(),
+					scratch->getDebugData().getCount(),
+					scratch->getDebugData().begin(),
 					isInternalRequest);
 	}
 	catch (const Firebird::Exception&)
@@ -2727,7 +2726,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	}
 
 	// free blr memory
-	statement->getBlrData().free();
+	scratch->getBlrData().free();
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
@@ -2805,7 +2804,7 @@ static void release_statement(DsqlCompiledStatement* statement)
 	}
 
 	statement->setSqlText(NULL);
-	statement->getBlrData().free();	// free blr memory
+	statement->getDdlData().free();	// free blr memory
 }
 
 

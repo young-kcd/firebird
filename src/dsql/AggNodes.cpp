@@ -277,11 +277,11 @@ void AggNode::genBlr()
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	if (aggInfo.blr)	// Is this a standard aggregate function?
-		stuff(statement, (distinct ? aggInfo.distinctBlr : aggInfo.blr));
+		dsqlScratch->appendUChar((distinct ? aggInfo.distinctBlr : aggInfo.blr));
 	else	// This is a new window function.
 	{
-		stuff(statement, blr_agg_function);
-		stuff_cstring(statement, aggInfo.name);
+		dsqlScratch->appendUChar(blr_agg_function);
+		dsqlScratch->appendNullString(aggInfo.name);
 
 		unsigned count = 0;
 		for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
@@ -290,7 +290,7 @@ void AggNode::genBlr()
 				++count;
 		}
 
-		stuff(statement, UCHAR(count));
+		dsqlScratch->appendUChar(UCHAR(count));
 	}
 
 	for (dsql_nod*** i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
@@ -795,7 +795,7 @@ void CountAggNode::genBlr()
 	if (dsqlArg)
 		AggNode::genBlr();
 	else
-		dsqlScratch->getStatement()->append_uchar(blr_agg_count);
+		dsqlScratch->appendUChar(blr_agg_count);
 }
 
 void CountAggNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)

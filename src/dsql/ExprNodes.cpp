@@ -189,7 +189,7 @@ bool ConcatenateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void ConcatenateNode::genBlr()
 {
-	stuff(dsqlScratch->getStatement(), blr_concatenate);
+	dsqlScratch->appendUChar(blr_concatenate);
 	GEN_expr(dsqlScratch, dsqlArg1);
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
@@ -677,7 +677,7 @@ bool SubstringSimilarNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void SubstringSimilarNode::genBlr()
 {
-	stuff(dsqlScratch->getStatement(), blr_substring_similar);
+	dsqlScratch->appendUChar(blr_substring_similar);
 	GEN_expr(dsqlScratch, dsqlExpr);
 	GEN_expr(dsqlScratch, dsqlPattern);
 	GEN_expr(dsqlScratch, dsqlEscape);
@@ -928,9 +928,9 @@ void SysFuncCallNode::genBlr()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	stuff(statement, blr_sys_function);
-	statement->append_meta_string(function->name.c_str());
-	stuff(statement, dsqlArgs->nod_count);
+	dsqlScratch->appendUChar(blr_sys_function);
+	dsqlScratch->appendMetaString(function->name.c_str());
+	dsqlScratch->appendUChar(dsqlArgs->nod_count);
 
 	dsql_nod* const* ptr = dsqlArgs->nod_arg;
 	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr < end; ptr++)
@@ -1161,15 +1161,15 @@ void UdfCallNode::genBlr()
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	if (dsqlFunction->udf_name.package.isEmpty())
-		stuff(statement, blr_function);
+		dsqlScratch->appendUChar(blr_function);
 	else
 	{
-		stuff(statement, blr_function2);
-		statement->append_meta_string(dsqlFunction->udf_name.package.c_str());
+		dsqlScratch->appendUChar(blr_function2);
+		dsqlScratch->appendMetaString(dsqlFunction->udf_name.package.c_str());
 	}
 
-	statement->append_meta_string(dsqlFunction->udf_name.identifier.c_str());
-	stuff(statement, dsqlArgs->nod_count);
+	dsqlScratch->appendMetaString(dsqlFunction->udf_name.identifier.c_str());
+	dsqlScratch->appendUChar(dsqlArgs->nod_count);
 
 	dsql_nod* const* ptr = dsqlArgs->nod_arg;
 	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr < end; ptr++)

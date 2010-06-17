@@ -34,33 +34,4 @@ void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>
 void	GEN_start_transaction(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
 void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 
-// CVC: I think this can be replaced by statement->append_uchar(byte) in the calling code.
-inline void stuff(Jrd::DsqlCompiledStatement* statement, const UCHAR byte)
-{
-	statement->getBlrData().add(byte);
-}
-
-// Cram a word into the blr buffer.
-inline void stuff_word(Jrd::DsqlCompiledStatement* dsqlScratch, USHORT word)
-{
-	stuff(dsqlScratch, word);
-	stuff(dsqlScratch, word >> 8);
-}
-
-// Write out a string with one byte of length.
-inline void stuff_string(Jrd::DsqlCompiledStatement* statement, const char* string, int len)
-{
-	fb_assert(len >= 0 && len <= 255);
-	// CVC: Maybe the Release version should truncate "len" to 255?
-
-	stuff(statement, len);
-	statement->append_raw_string(string, len);
-}
-
-// Write out a string with one byte of length.
-inline void stuff_cstring(Jrd::DsqlCompiledStatement* statement, const char* string)
-{
-	stuff_string(statement, string, strlen(string));
-}
-
 #endif //  DSQL_GEN_PROTO_H

@@ -6359,8 +6359,8 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 			if (!dsqlScratch->isPsql() && message)
 			{
-				statement->append_uchar(blr_send);
-				statement->append_uchar(message->msg_number);
+				dsqlScratch->appendUChar(blr_send);
+				dsqlScratch->appendUChar(message->msg_number);
 			}
 
 			GEN_statement(dsqlScratch, stmt);

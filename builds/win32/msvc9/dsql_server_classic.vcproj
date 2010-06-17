@@ -271,6 +271,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\BlrWriter.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp"
 				>
 			</File>
@@ -419,6 +423,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\blob_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\BlrWriter.h"
 				>
 			</File>
 			<File
