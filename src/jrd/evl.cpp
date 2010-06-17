@@ -1602,8 +1602,11 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					SORT_put(tdbb->tdbb_status_vector, asb_impure->iasb_sort_handle,
 							 reinterpret_cast<ULONG**>(&data));
 					MOVE_CLEAR(data, ROUNDUP_LONG(asb->asb_key_desc->skd_length));
-					asb->asb_desc.dsc_address = data;
-					MOV_move(desc, &asb->asb_desc);
+
+					dsc toDesc = asb->asb_desc;
+					toDesc.dsc_address = data;
+
+					MOV_move(desc, &toDesc);
 					break;
 				}
 
@@ -2750,7 +2753,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	jrd_req* request = tdbb->tdbb_request;
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[1];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-	dsc* desc = &asb->asb_desc;
+	dsc desc = asb->asb_desc;
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
@@ -2778,18 +2781,18 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			break;
 		}
 
-		desc->dsc_address = data;
+		desc.dsc_address = data;
 		switch (node->nod_type) {
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
-			add(desc, node, impure);
+			add(&desc, node, impure);
 			break;
 
 		case nod_agg_total_distinct2:
 		case nod_agg_average_distinct2:
 			++impure->vlux_count;
-			add2(desc, node, impure);
+			add2(&desc, node, impure);
 			break;
 
 		case nod_agg_count_distinct:
@@ -2797,8 +2800,8 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			++impure->vlu_misc.vlu_long;
 			break;
 
-                default:  /* Shut up some warnings */
-                    break;
+		default:  /* Shut up some warnings */
+			break;
 		}
 	}
 }
