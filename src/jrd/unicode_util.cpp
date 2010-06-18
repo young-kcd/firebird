@@ -889,7 +889,8 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			!icu->ulocGetAvailable || !icu->usetClose || !icu->usetGetItem ||
 			!icu->usetGetItemCount || !icu->usetOpen || !icu->ucolClose ||
 			!icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
-			!icu->ucolSetAttribute || !icu->ucolStrColl || !icu->ucolGetVersion)
+			!icu->ucolSetAttribute || !icu->ucolStrColl || !icu->ucolGetVersion ||
+			!icu->utransOpen || !icu->utransClose || !icu->utransTransUChars)
 		{
 			delete icu;
 			continue;
