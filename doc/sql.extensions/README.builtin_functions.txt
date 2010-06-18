@@ -498,6 +498,8 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
+    3) The first string is truncated if its length is greater than the length
+	   parameter.
 
 Example:
     select lpad(x, 10) from y;
@@ -708,6 +710,8 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
+    3) The first string is truncated if its length is greater than the length
+	   parameter.
 
 Example:
     select rpad(x, 10) from y;
