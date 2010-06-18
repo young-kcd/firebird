@@ -2974,47 +2974,10 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
 					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
 			{
-				if (COLL.RDB$COLLATION_ID.NULL)
-				{
-					// ASF: User collations are created with the last number available,
-					// to minimize the possibility of conflicts with future system collations.
-					// The greater available number is 126 to avoid signed/unsigned problems.
-
-					SSHORT id = 126;
-
-					AutoCacheRequest request(tdbb, irq_l_colls, IRQ_REQUESTS);
-
-					FOR(REQUEST_HANDLE request)
-						Y IN RDB$COLLATIONS
-						WITH Y.RDB$CHARACTER_SET_ID = COLL.RDB$CHARACTER_SET_ID
-						SORTED BY DESCENDING Y.RDB$COLLATION_ID
-					{
-						if (!COLL.RDB$COLLATION_ID.NULL)
-							break;
-
-						if (Y.RDB$COLLATION_ID + 1 <= id)
-							COLL.RDB$COLLATION_ID.NULL = FALSE;
-						else
-							id = Y.RDB$COLLATION_ID - 1;
-					}
-					END_FOR
-
-					if (COLL.RDB$COLLATION_ID.NULL)
-					{
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_max_coll_per_charset));
-					}
-					else
-					{
-						MODIFY COLL USING
-							COLL.RDB$COLLATION_ID = id;
-						END_MODIFY
-					}
-				}
-				else
+				if (COLL.RDB$SYSTEM_FLAG != 0)
 				{
 					SLONG length = 0;
-					Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+					HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 
 					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 					{
@@ -3023,8 +2986,8 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 						length = BLB_get_data(tdbb, blob, buffer.getBuffer(length), length);
 					}
 
-					const Firebird::string specificAttributes((const char*) buffer.begin(), length);
-					Firebird::string newSpecificAttributes;
+					const string specificAttributes((const char*) buffer.begin(), length);
+					string newSpecificAttributes;
 
 					// ASF: If setupCollationAttributes fail we store the original
 					// attributes. This should be what we want for new databases
@@ -3042,12 +3005,8 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 							else
 							{
 								COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-
-								blb* blob = BLB_create(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
-								BLB_put_segment(tdbb, blob,
-									(const UCHAR*) newSpecificAttributes.begin(),
-									newSpecificAttributes.length());
-								BLB_close(tdbb, blob);
+								attachment->storeMetaDataBlob(tdbb, transaction,
+									&COLL.RDB$SPECIFIC_ATTRIBUTES, newSpecificAttributes);
 							}
 						END_MODIFY
 					}

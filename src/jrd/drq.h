@@ -231,6 +231,7 @@ enum drq_type_t
 	drq_e_ident_gens,		// erase generators (identity column)
 	drq_l_ident_gens,		// lookup generators (identity column)
 	drq_m_prm_view,			// modify view's field source inherited from parameters
+	drq_l_max_coll_id,		// lookup max collation id
 
 	drq_MAX
 };

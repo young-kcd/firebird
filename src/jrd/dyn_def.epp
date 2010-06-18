@@ -122,9 +122,10 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Firebird::MetaName collation_name;
-	Firebird::MetaName charsetName;
+	MetaName collation_name;
+	MetaName charsetName;
 
 	GET_STRING(ptr, collation_name);
 
@@ -145,7 +146,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			USHORT attributes_on = 0;
 			USHORT attributes_off = 0;
 			SSHORT specific_attributes_charset = CS_NONE;
-			Firebird::UCharBuffer specific_attributes;
+			UCharBuffer specific_attributes;
 
 			X.RDB$SYSTEM_FLAG = 0;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
@@ -186,7 +187,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						{
 							if (info.specificAttributes.getCount() != 0)
 							{
-								Firebird::UCharBuffer temp;
+								UCharBuffer temp;
 								ULONG size = info.specificAttributes.getCount() * cs->maxBytesPerChar();
 
 								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
@@ -243,7 +244,7 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 						{
 							if (specific_attributes.getCount() != 0)
 							{
-								Firebird::UCharBuffer temp;
+								UCharBuffer temp;
 								ULONG size = specific_attributes.getCount() * cs->maxBytesPerChar();
 
 								size = INTL_convert_bytes(tdbb, X.RDB$CHARACTER_SET_ID,
@@ -283,19 +284,19 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 			fb_assert(cs);
 			if (cs)
 			{
-				Firebird::IntlUtil::SpecificAttributesMap map;
+				IntlUtil::SpecificAttributesMap map;
 
-				if (!Firebird::IntlUtil::parseSpecificAttributes(
+				if (!IntlUtil::parseSpecificAttributes(
 						cs, info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
-					!Firebird::IntlUtil::parseSpecificAttributes(
+					!IntlUtil::parseSpecificAttributes(
 						cs, specific_attributes.getCount(), specific_attributes.begin(), &map))
 				{
 					DYN_error_punt(false, 222);
 					// msg: 222: "Invalid collation attributes"
 				}
 
-				const Firebird::string s = Firebird::IntlUtil::generateSpecificAttributes(cs, map);
-				Firebird::string newSpecificAttributes;
+				const string s = IntlUtil::generateSpecificAttributes(cs, map);
+				string newSpecificAttributes;
 
 				if (!IntlManager::setupCollationAttributes(
 						info.baseCollationName.c_str(), info.charsetName.c_str(), s,
@@ -337,11 +338,42 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				// msg: 222: "Invalid collation attributes"
 			}
 
+			// ASF: User collations are created with the last number available,
+			// to minimize the possibility of conflicts with future system collations.
+			// The greater available number is 126 to avoid signed/unsigned problems.
+
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID = 126;
+
+			AutoCacheRequest request2(tdbb, drq_l_max_coll_id, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request2)
+				Y IN RDB$COLLATIONS
+				WITH Y.RDB$CHARACTER_SET_ID = X.RDB$CHARACTER_SET_ID AND
+					 Y.RDB$COLLATION_ID NOT MISSING
+				SORTED BY DESCENDING Y.RDB$COLLATION_ID
+			{
+				if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
+				{
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					break;
+				}
+				else
+					X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
+			}
+			END_FOR
+
+			if (X.RDB$COLLATION_ID.NULL)
+			{
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_max_coll_per_charset));
+			}
+
 			b_ending_store = true;
 		}
 		END_STORE
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store)
