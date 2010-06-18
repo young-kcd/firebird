@@ -33,3 +33,5 @@ UPDATE OR INSERT statement
   Limitation:
     1. A singleton error will be raised if the RETURNING clause is present and more than
        one record match the condition.
+    2. There is no "UPDATE OR INSERT ... SELECT ..." as "INSERT ... SELECT". Use MERGE for
+       this type of functionality.
