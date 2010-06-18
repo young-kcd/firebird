@@ -1576,29 +1576,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		} // end scope
 		return node;
 
-	case nod_param_val:
-		node = MAKE_node(input->nod_type, e_prm_val_count);
-		node->nod_arg[e_prm_val_fld] = input->nod_arg[e_prm_val_fld];
-		node->nod_arg[e_prm_val_val] = PASS1_node(dsqlScratch, input->nod_arg[e_prm_val_val]);
-
-		field = (dsql_fld*) node->nod_arg[e_prm_val_fld]->nod_arg[e_dfl_field];
-		DDL_resolve_intl_type(dsqlScratch, field, NULL);
-
-		{ // scope
-			dsql_nod *temp	= node->nod_arg[e_prm_val_val];
-			// Initialize this stack variable, and make it look like a node
-			Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
-
-			DEV_BLKCHK(field, dsql_type_fld);
-			DEV_BLKCHK(temp, dsql_type_nod);
-
-			field->fld_flags |= FLD_nullable;
-			MAKE_desc_from_field(&(desc_node->nod_desc), field);
-			PASS1_set_parameter_type(dsqlScratch, temp, desc_node, false);
-		} // end scope
-
-		return node;
-
 	case nod_eql:
 	case nod_neq:
 	case nod_gtr:
@@ -2632,7 +2609,6 @@ void PASS1_check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 
 	const dsql_nod* const* ptr = fields->nod_arg;
 	const dsql_nod* const* const end = ptr + fields->nod_count;
-	const dsql_nod* temp;
 	const dsql_fld* field;
 	const dsql_str* str;
 	const char* name = NULL;
@@ -2645,20 +2621,13 @@ void PASS1_check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);
 				name = field->fld_name.c_str();
-			break;
-
-			case nod_param_val:
-				temp = (*ptr)->nod_arg[e_prm_val_fld];
-				field = (dsql_fld*) temp->nod_arg[e_dfl_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name.c_str();
-			break;
+				break;
 
 			case nod_cursor:
 				str = (dsql_str*) (*ptr)->nod_arg[e_cur_name];
 				DEV_BLKCHK(str, dsql_type_str);
 				name = str->str_data;
-			break;
+				break;
 
 			default:
 				fb_assert(false);
@@ -10718,10 +10687,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_fetch_scroll:
 		verb = "fetch_scroll";
-		break;
-
-	case nod_param_val:
-		verb = "param_val"; // do we need more here?
 		break;
 
 	case nod_query_spec:
