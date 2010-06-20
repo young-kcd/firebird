@@ -694,9 +694,6 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
 	node->dsqlScratch = dsqlScratch;
 
-	//// ASF: ParameterClause.resolve uses database charset. This is wrong here,
-	//// but is in sync with CORE-3407. To be resolved soon.
-
 	for (ParameterClause* param = parameters.begin(); param != parameters.end(); ++param)
 	{
 		PsqlChanger changer(dsqlScratch, false);
