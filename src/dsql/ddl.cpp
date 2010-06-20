@@ -77,6 +77,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../jrd/ibase.h"
+#include "../jrd/Attachment.h"
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/jrd.h"
@@ -333,6 +334,8 @@ void DDL_generate(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
 	}
 
+	dsqlScratch->getStatement()->setDdlNode(node);
+
 	if (node->nod_type != nod_class_stmtnode)
 		dsqlScratch->appendUChar(isc_dyn_version_1);
 
@@ -561,7 +564,24 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 	{
 		// Attach the database default character set, if not otherwise specified
 
-		const dsql_str* dfl_charset = METD_get_default_charset(dsqlScratch->getTransaction());
+		const dsql_str* dfl_charset = NULL;
+
+		if (dsqlScratch->getStatement()->getDdlNode() ||
+			(dsqlScratch->flags & (
+				DsqlCompilerScratch::FLAG_FUNCTION | DsqlCompilerScratch::FLAG_PROCEDURE |
+				DsqlCompilerScratch::FLAG_TRIGGER)))
+		{
+			dfl_charset = METD_get_default_charset(dsqlScratch->getTransaction());
+		}
+		else
+		{
+			USHORT charSet = dsqlScratch->getAttachment()->dbb_attachment->att_charset;
+			if (charSet != CS_NONE)
+			{
+				MetaName charSetName = METD_get_charset_name(dsqlScratch->getTransaction(), charSet);
+				dfl_charset = MAKE_string(charSetName.c_str(), charSetName.length());
+			}
+		}
 
 		if (dfl_charset)
 			field->fld_character_set = (dsql_nod*) dfl_charset;
@@ -2029,12 +2049,13 @@ static void define_collation(DsqlCompilerScratch* dsqlScratch)
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	const dsql_str* coll_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_def_coll_name];
-	const dsql_str* coll_for = (dsql_str*) statement->getDdlNode()->nod_arg[e_def_coll_for];
-	const dsql_nod* coll_from = statement->getDdlNode()->nod_arg[e_def_coll_from];
-	const dsql_nod* coll_attributes = statement->getDdlNode()->nod_arg[e_def_coll_attributes];
+	const dsql_nod* ddlNode = statement->getDdlNode();
+	const dsql_str* coll_name = (dsql_str*) ddlNode->nod_arg[e_def_coll_name];
+	const dsql_str* coll_for = (dsql_str*) ddlNode->nod_arg[e_def_coll_for];
+	const dsql_nod* coll_from = ddlNode->nod_arg[e_def_coll_from];
+	const dsql_nod* coll_attributes = ddlNode->nod_arg[e_def_coll_attributes];
 	const dsql_nod* coll_specific_attributes =
-		PASS1_node(dsqlScratch, statement->getDdlNode()->nod_arg[e_def_coll_specific_attributes]);
+		PASS1_node(dsqlScratch, ddlNode->nod_arg[e_def_coll_specific_attributes]);
 
 	const dsql_intlsym* resolved_charset =
 		METD_get_charset(dsqlScratch->getTransaction(), (USHORT) strlen(coll_for->str_data),
@@ -3613,9 +3634,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
  *
  **************************************/
 	const dsql_str* string;
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	statement->setDdlNode(node);
 
 	switch (node->nod_type)
 	{

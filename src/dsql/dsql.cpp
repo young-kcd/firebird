@@ -2539,7 +2539,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 
 	if (!node)
 	{
-		// CVC: Apparently, dsql_ypparse won't return if the command is incomplete,
+		// CVC: Apparently, Parser::parse won't return if the command is incomplete,
 		// because yyerror() will call ERRD_post().
 		// This may be a special case, but we don't know about positions here.
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
