@@ -83,17 +83,6 @@ bool ExprNode::dsqlVisit(NonConstDsqlNodeVisitor& visitor)
 	return ret;
 }
 
-bool ExprNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
-{
-	for (const dsql_nod* const* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i)
-	{
-		if (DDL_is_array_or_blob(dsqlScratch, **i))
-			return true;
-	}
-
-	return false;
-}
-
 void ExprNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ExprNode"; // needed or not?
@@ -896,23 +885,6 @@ DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-bool SysFuncCallNode::isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const
-{
-	Array<const dsc*> argsArray;
-
-	for (dsql_nod** p = dsqlArgs->nod_arg; p < dsqlArgs->nod_arg + dsqlArgs->nod_count; ++p)
-	{
-		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
-		argsArray.add(&(*p)->nod_desc);
-	}
-
-	dsc desc;
-	DSqlDataTypeUtil(dsqlScratch).makeSysFunction(&desc, name.c_str(),
-		argsArray.getCount(), argsArray.begin());
-
-	return desc.isBlob();
-}
-
 void SysFuncCallNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "SysFuncCallNode\n\tname: " + string(name.c_str());
@@ -1137,12 +1109,6 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
     }
 
 	return node;
-}
-
-bool UdfCallNode::isArrayOrBlob(DsqlCompilerScratch* /*dsqlScratch*/) const
-{
-	// Parameters to UDF don't need checking, a blob or array can be passed.
-	return dsqlFunction->udf_dtype == dtype_blob || dsqlFunction->udf_dtype == dtype_array;
 }
 
 void UdfCallNode::print(string& text, Array<dsql_nod*>& nodes) const

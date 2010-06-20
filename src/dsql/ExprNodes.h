@@ -138,7 +138,6 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr();
@@ -170,7 +169,6 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr();

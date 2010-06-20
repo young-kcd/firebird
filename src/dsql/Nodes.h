@@ -285,7 +285,6 @@ public:
 		return jrdVisit(visitor);
 	}
 
-	virtual bool isArrayOrBlob(DsqlCompilerScratch* dsqlScratch) const;
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
