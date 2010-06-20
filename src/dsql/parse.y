@@ -666,7 +666,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> column_constraint_def column_constraint_list column_def
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
-%type <legacyNode> column_singleton comment commit comparison_predicate complex_proc_statement
+%type <legacyNode> column_singleton commit comparison_predicate complex_proc_statement
 %type <legacyNode> computed_by computed_clause conditional constant continue constraint_index_opt
 %type <legacyNode> constraint_name_opt containing_predicate correlation_name create
 %type <legacyNode> create_clause create_or_alter create_user_clause cross_join current_role
@@ -814,7 +814,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <boolVal> release_only_opt
 
-%type <ddlNode> alter_charset_clause generator_clause
+%type <ddlNode> alter_charset_clause comment generator_clause
 %type <stmtNode> if_then_else in_autonomous_transaction excp_statement raise_statement
 %type <execBlockNode> exec_block
 
@@ -843,38 +843,39 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 // list of possible statements
 
-top		: statement
-			{ DSQL_parse = $1; }
-		| statement ';'
-			{ DSQL_parse = $1; }
-		;
+top
+	: statement
+		{ DSQL_parse = $1; }
+	| statement ';'
+		{ DSQL_parse = $1; }
+	;
 
-statement	: alter
-		| blob_io
-		| comment
-		| commit
-		| create
-		| create_or_alter
-		| declare
-		| delete
-		| drop
-		| grant
-		| insert
-		| merge
-		| exec_procedure
-		| exec_block
-			{
-				$$ = makeClassNode($1);
-			}
-		| recreate
-		| revoke
-		| rollback
-		| savepoint
-		| select
-		| set
-		| update
-		| update_or_insert
-		;
+statement
+	: alter
+	| blob_io
+	| comment
+		{ $$ = makeClassNode($1); }
+	| commit
+	| create
+	| create_or_alter
+	| declare
+	| delete
+	| drop
+	| grant
+	| insert
+	| merge
+	| exec_procedure
+	| exec_block
+		{ $$ = makeClassNode($1); }
+	| recreate
+	| revoke
+	| rollback
+	| savepoint
+	| select
+	| set
+	| update
+	| update_or_insert
+	;
 
 
 // GRANT statement
@@ -4031,18 +4032,18 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 comment
 	: COMMENT ON ddl_type0 IS ddl_desc
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				"", "", ($5 ? toString($5) : ""), ($5 ? $5->str_charset : NULL)));
+			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
+				"", "", ($5 ? toString($5) : ""), ($5 ? $5->str_charset : NULL));
 		}
 	| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				toName($4), "", ($6 ? toString($6) : ""), ($6 ? $6->str_charset : NULL)));
+			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
+				toName($4), "", ($6 ? toString($6) : ""), ($6 ? $6->str_charset : NULL));
 		}
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
-				toName($4), toName($5), ($7 ? toString($7) : ""), ($7 ? $7->str_charset : NULL)));
+			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), compilingText, $3,
+				toName($4), toName($5), ($7 ? toString($7) : ""), ($7 ? $7->str_charset : NULL));
 		}
 	;
 
@@ -6694,31 +6695,31 @@ int Parser::yylexAux()
 		return STRING;
 	}
 
-/*
- * Check for a numeric constant, which starts either with a digit or with
- * a decimal point followed by a digit.
- *
- * This code recognizes the following token types:
- *
- * NUMBER: string of digits which fits into a 32-bit integer
- *
- * NUMBER64BIT: string of digits whose value might fit into an SINT64,
- *   depending on whether or not there is a preceding '-', which is to
- *   say that "9223372036854775808" is accepted here.
- *
- * SCALEDINT: string of digits and a single '.', where the digits
- *   represent a value which might fit into an SINT64, depending on
- *   whether or not there is a preceding '-'.
- *
- * FLOAT: string of digits with an optional '.', and followed by an "e"
- *   or "E" and an optionally-signed exponent.
- *
- * NOTE: we swallow leading or trailing blanks, but we do NOT accept
- *   embedded blanks:
- *
- * Another note: c is the first character which need to be considered,
- *   ptr points to the next character.
- */
+	/*
+	 * Check for a numeric constant, which starts either with a digit or with
+	 * a decimal point followed by a digit.
+	 *
+	 * This code recognizes the following token types:
+	 *
+	 * NUMBER: string of digits which fits into a 32-bit integer
+	 *
+	 * NUMBER64BIT: string of digits whose value might fit into an SINT64,
+	 *   depending on whether or not there is a preceding '-', which is to
+	 *   say that "9223372036854775808" is accepted here.
+	 *
+	 * SCALEDINT: string of digits and a single '.', where the digits
+	 *   represent a value which might fit into an SINT64, depending on
+	 *   whether or not there is a preceding '-'.
+	 *
+	 * FLOAT: string of digits with an optional '.', and followed by an "e"
+	 *   or "E" and an optionally-signed exponent.
+	 *
+	 * NOTE: we swallow leading or trailing blanks, but we do NOT accept
+	 *   embedded blanks:
+	 *
+	 * Another note: c is the first character which need to be considered,
+	 *   ptr points to the next character.
+	 */
 
 	fb_assert(lex.ptr <= lex.end);
 
