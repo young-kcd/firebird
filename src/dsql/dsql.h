@@ -369,8 +369,6 @@ enum intlsym_flags_vals {
 // Compiled statement - shared by multiple requests.
 class DsqlCompiledStatement : public Firebird::PermanentStorage
 {
-	///friend class DsqlCompilerScratch;
-
 public:
 	enum Type	// statement type
 	{
