@@ -274,8 +274,6 @@ void AggNode::setParameterName(dsql_par* parameter) const
 
 void AggNode::genBlr()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (aggInfo.blr)	// Is this a standard aggregate function?
 		dsqlScratch->appendUChar((distinct ? aggInfo.distinctBlr : aggInfo.blr));
 	else	// This is a new window function.

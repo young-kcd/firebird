@@ -235,7 +235,7 @@ public:
 #ifdef WIN_NT
 		struct mtx winMutex;
 #endif
-		struct mtx *mutex;
+		struct mtx* mutex;
 		Header* base;
 
 		const SLONG process_id;

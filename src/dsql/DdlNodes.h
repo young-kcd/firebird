@@ -475,7 +475,6 @@ public:
 		dropNode.silent = true;
 	}
 
-
 protected:
 	virtual CreateAlterTriggerNode* getCreateAlterNode()
 	{

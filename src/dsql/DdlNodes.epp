@@ -129,8 +129,6 @@ void DdlNode::putType(const TypeClause& type, bool useSubType)
 	}
 #endif
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (type.notNull)
 		dsqlScratch->appendUChar(blr_not_nullable);
 
@@ -894,7 +892,6 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 	bool secondPass, bool runTriggers)
 {
 	Attachment* attachment = transaction->getAttachment();
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	bool modified = false;
 
@@ -2462,8 +2459,6 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				}
 				else if (body)
 				{
-					DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 					TRG.RDB$TRIGGER_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
 						dsqlScratch->getBlrData().begin(),

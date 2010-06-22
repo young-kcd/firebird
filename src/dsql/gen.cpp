@@ -232,8 +232,8 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_dom_value:
 		dsqlScratch->appendUChar(blr_fid);
-		dsqlScratch->appendUChar(0);				// Context
-		dsqlScratch->appendUShort(0);			// Field id
+		dsqlScratch->appendUChar(0);		// Context
+		dsqlScratch->appendUShort(0);		// Field id
 		return;
 
 	case nod_field:
@@ -1111,14 +1111,14 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_while:
 		dsqlScratch->appendUChar(blr_label);
-		dsqlScratch->appendUChar((int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
+		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
 		dsqlScratch->appendUChar(blr_loop);
 		dsqlScratch->appendUChar(blr_begin);
 		dsqlScratch->appendUChar(blr_if);
 		GEN_expr(dsqlScratch, node->nod_arg[e_while_cond]);
 		GEN_statement(dsqlScratch, node->nod_arg[e_while_action]);
 		dsqlScratch->appendUChar(blr_leave);
-		dsqlScratch->appendUChar((int) (IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
+		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
 		dsqlScratch->appendUChar(blr_end);
 		return;
 
@@ -1130,7 +1130,7 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_cursor:
 		dsqlScratch->appendUChar(blr_dcl_cursor);
-		dsqlScratch->appendUShort((int) (IPTR) node->nod_arg[e_cur_number]);
+		dsqlScratch->appendUShort((int)(IPTR) node->nod_arg[e_cur_number]);
 		if (node->nod_arg[e_cur_scroll])
 		{
 			dsqlScratch->appendUChar(blr_scrollable);
@@ -1394,7 +1394,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	{
 	case dtype_short:
 		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SSHORT *) p;
+		value = *(SSHORT*) p;
 		if (negate_value)
 			value = -value;
 		dsqlScratch->appendUShort(value);
@@ -1402,7 +1402,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 
 	case dtype_long:
 		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG *) p;
+		value = *(SLONG*) p;
 		if (negate_value)
 			value = -value;
 		//printf("gen.cpp = %p %d\n", *((void**)p), value);
@@ -1413,7 +1413,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	case dtype_sql_time:
 	case dtype_sql_date:
 		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG *) p;
+		value = *(SLONG*) p;
 		dsqlScratch->appendUShort(value);
 		dsqlScratch->appendUShort(value >> 16);
 		break;
@@ -1441,7 +1441,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 		break;
 
 	case dtype_int64:
-		i64value = *(SINT64 *) p;
+		i64value = *(SINT64*) p;
 
 		if (negate_value)
 			i64value = -i64value;
@@ -1488,10 +1488,10 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	case dtype_array:
 	case dtype_timestamp:
 		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG *) p;
+		value = *(SLONG*) p;
 		dsqlScratch->appendUShort(value);
 		dsqlScratch->appendUShort(value >> 16);
-		value = *(SLONG *) (p + 4);
+		value = *(SLONG*) (p + 4);
 		dsqlScratch->appendUShort(value);
 		dsqlScratch->appendUShort(value >> 16);
 		break;
@@ -1782,6 +1782,7 @@ static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 			GEN_expr(dsqlScratch, temp->nod_arg[i]);
 		}
 	}
+
 	dsqlScratch->appendUChar(blr_end);
 }
 

@@ -6323,7 +6323,6 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 		virtual void genBlr()
 		{
-			DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 			dsql_msg* message = dsqlScratch->getStatement()->getReceiveMsg();
 
 			if (!dsqlScratch->isPsql() && message)

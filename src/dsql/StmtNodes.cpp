@@ -67,8 +67,6 @@ void BlockNode::putDtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field
 	}
 #endif
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (field->fld_not_nullable)
 		dsqlScratch->appendUChar(blr_not_nullable);
 
@@ -213,7 +211,6 @@ void BlockNode::putLocalVariables(DsqlCompilerScratch* dsqlScratch, const dsql_n
 void BlockNode::putLocalVariable(DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
 	dsql_nod* hostParam, const dsql_str* collationName)
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	dsql_fld* field = variable->var_field;
 
 	dsqlScratch->appendUChar(blr_dcl_variable);
@@ -365,8 +362,6 @@ void SavepointEncloseNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void SavepointEncloseNode::genBlr()
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
-
 	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_start_savepoint);
 	stmt->genBlr();
@@ -1375,7 +1370,7 @@ void ForNode::genBlr()
 	if (dsqlAction)
 	{
 		dsqlScratch->appendUChar(blr_label);
-		dsqlScratch->appendUChar((int) (IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+		dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
 	}
 
 	// Generate FOR loop
@@ -1900,8 +1895,6 @@ void ReturnNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ReturnNode::genBlr()
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
-
 	dsqlScratch->appendUChar(blr_assignment);
 	GEN_expr(dsqlScratch, value);
 	dsqlScratch->appendUChar(blr_variable);

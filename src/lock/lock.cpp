@@ -2322,7 +2322,8 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	}
 #endif
 
-	if (!initializeMemory) {
+	if (!initializeMemory)
+	{
 #ifndef WIN_NT
 		if (ISC_map_mutex(shmem_data, &m_header->lhb_mutex, &(MUTEX))) {
 			bug(NULL, "mutex map failed");

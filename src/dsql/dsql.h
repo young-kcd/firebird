@@ -369,7 +369,7 @@ enum intlsym_flags_vals {
 // Compiled statement - shared by multiple requests.
 class DsqlCompiledStatement : public Firebird::PermanentStorage
 {
-	friend class DsqlCompilerScratch;
+	///friend class DsqlCompilerScratch;
 
 public:
 	enum Type	// statement type
@@ -626,13 +626,13 @@ protected:
 
 	virtual bool isVersion4()
 	{
-		return statement->flags & DsqlCompiledStatement::FLAG_BLR_VERSION4;
+		return statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4;
 	}
 
 	virtual bool isDdlDyn()
 	{
-		return (statement->type == DsqlCompiledStatement::TYPE_DDL || statement->ddlNode) &&
-			!statement->blockNode;
+		return (statement->getType() == DsqlCompiledStatement::TYPE_DDL || statement->getDdlNode()) &&
+			!statement->getBlockNode();
 	}
 
 public:

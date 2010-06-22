@@ -2981,9 +2981,10 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 				dsqlScratch->appendNullString(isc_dyn_def_local_fld, field_string);
 
 			dsqlScratch->appendString(isc_dyn_fld_base_fld, field->fld_name);
-			if (field->fld_dtype <= dtype_any_text) {
+
+			if (field->fld_dtype <= dtype_any_text)
 				dsqlScratch->appendNumber(isc_dyn_fld_collation, field->fld_collation_id);
-			}
+
 			dsqlScratch->appendNumber(isc_dyn_view_context, context->ctx_context);
 		}
 		else
@@ -3299,7 +3300,6 @@ static void delete_exception (DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 		}
 	}
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	dsqlScratch->appendNullString(isc_dyn_del_exception, string->str_data);
 	dsqlScratch->appendUChar(isc_dyn_end);
 }
@@ -3354,7 +3354,6 @@ static void delete_relation_view (DsqlCompilerScratch* dsqlScratch, dsql_nod* no
 	}
 	if (relation)
 	{
-		DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 		dsqlScratch->appendNullString(isc_dyn_delete_rel, string->str_data);
 		dsqlScratch->appendUChar(isc_dyn_end);
 	}
@@ -3867,8 +3866,6 @@ static void make_index(	DsqlCompilerScratch* dsqlScratch,
 	if (string)
 		index_name = string->str_data;
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (element->nod_type == nod_primary)
 		dsqlScratch->appendNullString(isc_dyn_def_primary_key, index_name);
 	else if (element->nod_type == nod_unique)
@@ -4076,9 +4073,8 @@ static void modify_database( DsqlCompilerScratch* dsqlScratch)
 			drop_difference = true;
 	}
 
-	if (drop_difference) {
+	if (drop_difference)
 		dsqlScratch->appendUChar(isc_dyn_drop_difference);
-	}
 
 	SLONG start = 0;
 
@@ -4104,7 +4100,7 @@ static void modify_database( DsqlCompilerScratch* dsqlScratch)
 			break;
 		case nod_difference_file:
 			dsqlScratch->appendNullString(isc_dyn_def_difference,
-									 ((dsql_str*) element->nod_arg[0])->str_data);
+				((dsql_str*) element->nod_arg[0])->str_data);
 			break;
 		case nod_begin_backup:
 			dsqlScratch->appendUChar(isc_dyn_begin_backup);
@@ -4211,7 +4207,7 @@ static void modify_domain( DsqlCompilerScratch* dsqlScratch)
 			{
 				fb_assert(string->str_length <= MAX_USHORT);
 				dsqlScratch->appendString(isc_dyn_fld_validation_source,
-										 string->str_data, string->str_length);
+					string->str_data, string->str_length);
 			}
 			break;
 
@@ -4269,12 +4265,10 @@ static void modify_index( DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendNullString(isc_dyn_mod_idx, index_name->str_data);
 
-	if (index_node->nod_type == nod_idx_active) {
+	if (index_node->nod_type == nod_idx_active)
 		dsqlScratch->appendNumber(isc_dyn_idx_inactive, 0);
-	}
-	else if (index_node->nod_type == nod_idx_inactive) {
+	else if (index_node->nod_type == nod_idx_inactive)
 		dsqlScratch->appendNumber(isc_dyn_idx_inactive, 1);
-	}
 
 	dsqlScratch->appendUChar(isc_dyn_end);
 }
@@ -4292,7 +4286,6 @@ static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* use
  *	Stuff a user/role/obj option in grant/revoke
  *
  **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	const dsql_str* name = (dsql_str*) user->nod_arg[0];
 
 	switch (user->nod_type)
@@ -4302,12 +4295,10 @@ static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* use
 		break;
 
 	case nod_user_name:
-		if (user->nod_count == 2) {
+		if (user->nod_count == 2)
 		   dsqlScratch->appendNullString(isc_dyn_grant_user_explicit, name->str_data);
-		}
-		else {
+		else
 			dsqlScratch->appendNullString(isc_dyn_grant_user, name->str_data);
-		}
 		break;
 
 	case nod_package_obj:
@@ -4363,8 +4354,6 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
  *
  **************************************/
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (type == nod_grant)
 		dsqlScratch->appendUChar(isc_dyn_grant);
 	else
@@ -4374,6 +4363,7 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 
 	SSHORT priv_count = 0;
 	dsqlScratch->appendUShort(0);
+
 	for (; *privs; privs++)
 	{
 		priv_count++;
@@ -4381,9 +4371,8 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	UCHAR* dynsave = dsqlScratch->getBlrData().end();
-	for (SSHORT i = priv_count + 2; i; i--) {
+	for (SSHORT i = priv_count + 2; i; i--)
 		--dynsave;
-	}
 
 	*dynsave++ = (UCHAR) priv_count;
 	*dynsave = (UCHAR) (priv_count >> 8);
@@ -4408,14 +4397,11 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 
 	put_user_grant(dsqlScratch, user);
 
-	if (field_name) {
+	if (field_name)
 		dsqlScratch->appendNullString(isc_dyn_fld_name, field_name->str_data);
-	}
 
 	if (option)
-	{
 		dsqlScratch->appendNumber(isc_dyn_grant_options, option);
-	}
 
 	put_grantor(dsqlScratch, grantor);
 
@@ -4808,14 +4794,10 @@ static void process_role_nm_list(DsqlCompilerScratch* dsqlScratch,
  *     Build req_blr for grant & revoke role stmt
  *
  **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	if (type == nod_grant) {
+	if (type == nod_grant)
 		dsqlScratch->appendUChar(isc_dyn_grant);
-	}
-	else {
+	else
 		dsqlScratch->appendUChar(isc_dyn_revoke);
-	}
 
 	dsqlScratch->appendUShort(1);
 	dsqlScratch->appendUChar('M');
@@ -4850,7 +4832,6 @@ static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* granto
  **************************************/
 	if (grantor)
 	{
-		DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 		fb_assert(grantor->nod_type == nod_user_name);
 		const dsql_str* name = (const dsql_str*) grantor->nod_arg[0];
 		dsqlScratch->appendNullString(isc_dyn_grant_grantor, name->str_data);
@@ -4871,8 +4852,6 @@ static void put_descriptor(DsqlCompilerScratch* dsqlScratch, const dsc* desc)
  *	input descriptor.
  *
  **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	dsqlScratch->appendNumber(isc_dyn_fld_type, blr_dtypes[desc->dsc_dtype]);
 	if (desc->dsc_dtype == dtype_varying) {
@@ -4917,8 +4896,6 @@ static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool u
  *	or a procedure output.
  *
  **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	if (field->fld_not_nullable)
 		dsqlScratch->appendUChar(isc_dyn_fld_not_null);

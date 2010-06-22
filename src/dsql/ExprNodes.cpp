@@ -898,8 +898,6 @@ void SysFuncCallNode::setParameterName(dsql_par* parameter) const
 
 void SysFuncCallNode::genBlr()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	dsqlScratch->appendUChar(blr_sys_function);
 	dsqlScratch->appendMetaString(function->name.c_str());
 	dsqlScratch->appendUChar(dsqlArgs->nod_count);
@@ -1124,8 +1122,6 @@ void UdfCallNode::setParameterName(dsql_par* parameter) const
 
 void UdfCallNode::genBlr()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (dsqlFunction->udf_name.package.isEmpty())
 		dsqlScratch->appendUChar(blr_function);
 	else

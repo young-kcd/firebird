@@ -2405,7 +2405,7 @@ int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
 #ifdef HAVE_MAP_OBJECT
 	Arg::StatusVector temp;
 	mutex = reinterpret_cast<mtx*>(ISC_map_object(temp, shmem_data,
-			reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
+		reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
 	if (!mutex)
 	{
 		iscLogStatus("ISC_map_mutex()", temp.value());
@@ -2429,7 +2429,7 @@ void ISC_unmap_mutex(mtx* mutex)
 #endif // HAVE_MAP_OBJECT
 
 }
-		
+
 
 #ifdef USE_POSIX_THREADS
 
@@ -2452,6 +2452,7 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 	{
 		return -1;	// no errno known here...
 	}
+
 	mutex = *mapped;
 
 	if (!getSem5(mutex))
@@ -2608,6 +2609,7 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
   {
 		return -1;	// no errno known here...
   }
+
   mutex = *mapped;
 
 #ifdef BUGGY_LINUX_MUTEX
