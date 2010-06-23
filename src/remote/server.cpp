@@ -277,7 +277,7 @@ inline bool bad_service(ISC_STATUS* status_vector, Rdb* rdb)
 class Worker
 {
 public:
-	static const int MAX_THREADS = 127;		// With 128 gdb shows -128. gcc/gdb bug?
+	static const int MAX_THREADS = MAX_SLONG;
 	static const int IDLE_TIMEOUT = 60;
 
 	Worker();
