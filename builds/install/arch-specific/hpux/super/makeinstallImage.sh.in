@@ -113,6 +113,7 @@ copyFiles() {
     copyIfExists $BuiltFBDir/bin/security.gbak $DestDir/bin/security.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
+    cp $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr 
 
     cp $BuildRootDir/gen/install/bin/SSchangeRunUser.sh $DestDir/bin
     cp $BuildRootDir/gen/install/bin/SSrestoreRootRunUser.sh $DestDir/bin

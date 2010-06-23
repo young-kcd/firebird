@@ -139,6 +139,7 @@ copyFiles() {
     copyIfExists $BuiltFBDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
+    cp $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr 
 
 #   Append libraries to scripts
     addLibs $BuiltFBDir/bin changedbaPassword.sh $DestDir/bin
