@@ -26,23 +26,23 @@
 #ifndef JRD_EVENT_H
 #define JRD_EVENT_H
 
-#include "../jrd/isc.h"
+#include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
+#include "../jrd/isc_s_proto.h"
 
 // Global section header
 
 const int EVENT_VERSION = 4;
 
-struct evh
+class evh : public Jrd::MemoryHeader
 {
+public:
 	ULONG evh_length;				// Current length of global section
-	UCHAR evh_version;				// Version number of global section
 	srq evh_events;					// Known events
 	srq evh_processes;				// Known processes
 	SRQ_PTR evh_free;				// Free blocks
 	SRQ_PTR evh_current_process;	// Current process, if any
-	struct mtx evh_mutex;			// Mutex controlling access
 	SLONG evh_request_id;			// Next request id
 };
 

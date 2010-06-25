@@ -25,6 +25,7 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
+#include "../jrd/isc_s_proto.h"
 
 namespace Jrd {
 
@@ -184,20 +185,19 @@ class DatabaseSnapshot
 	};
 
 public:
-	class SharedData
+	class SnapshotHeader : public MemoryHeader
+	{
+	public:
+		ULONG used;
+		ULONG allocated;
+	};
+
+	class SharedData : public SharedMemory<SnapshotHeader>
 	{
 		static const ULONG MONITOR_VERSION = 3;
 		static const ULONG DEFAULT_SIZE = 1048576;
 
-		struct Header
-		{
-			ULONG version;
-			ULONG used;
-			ULONG allocated;
-#ifndef WIN_NT
-			struct mtx mutex;
-#endif
-		};
+		typedef SnapshotHeader Header;
 
 		struct Element
 		{
@@ -211,6 +211,9 @@ public:
 	public:
 		explicit SharedData(const Database*);
 		~SharedData();
+
+		bool initialize(bool);
+		void mutexBug(int osErrorCode, const char* text);
 
 		void acquire();
 		void release();
@@ -227,16 +230,6 @@ public:
 		SharedData& operator =(const SharedData&);
 
 		void ensureSpace(ULONG);
-
-		static void checkMutex(const TEXT*, int);
-		static void init(void*, sh_mem*, bool);
-
-		sh_mem handle;
-#ifdef WIN_NT
-		struct mtx winMutex;
-#endif
-		struct mtx* mutex;
-		Header* base;
 
 		const SLONG process_id;
 		const SLONG local_id;

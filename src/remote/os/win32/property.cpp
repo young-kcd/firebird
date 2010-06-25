@@ -37,7 +37,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/license.h"
-#include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../remote/remote_def.h"
 #include "../remote/os/win32/window.h"

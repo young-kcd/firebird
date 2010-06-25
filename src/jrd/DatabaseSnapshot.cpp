@@ -80,14 +80,14 @@ DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
 	Arg::StatusVector statusVector;
-	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
-	if (!base)
+	mapFile(statusVector, name.c_str(), DEFAULT_SIZE);
+	if (!sh_mem_header)
 	{
 		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
 		status_exception::raise(statusVector);
 	}
 
-	fb_assert(base->version == MONITOR_VERSION);
+	fb_assert(sh_mem_header->mhb_version == MONITOR_VERSION);
 }
 
 
@@ -97,27 +97,25 @@ DatabaseSnapshot::SharedData::~SharedData()
 		DumpGuard guard(this);
 		cleanup();
 
-		if (base->used == sizeof(Header))
-			ISC_remove_map_file(&handle);
+		if (sh_mem_header->used == sizeof(Header))
+			removeMapFile();
 	}
 
-	ISC_mutex_fini(mutex);
-
 	Arg::StatusVector statusVector;
-	ISC_unmap_file(statusVector, &handle);
+	unmapFile(statusVector);
 }
 
 
 void DatabaseSnapshot::SharedData::acquire()
 {
-	checkMutex("lock", ISC_mutex_lock(mutex));
+	mutexLock();
 
-	if (base->allocated > handle.sh_mem_length_mapped)
+	if (sh_mem_header->allocated > sh_mem_length_mapped)
 	{
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
-		if (!base)
+		remapFile(statusVector, sh_mem_header->allocated, false);
+		if (!remapFile(statusVector, sh_mem_header->allocated, false))
 		{
 			status_exception::raise(statusVector);
 		}
@@ -130,7 +128,7 @@ void DatabaseSnapshot::SharedData::acquire()
 
 void DatabaseSnapshot::SharedData::release()
 {
-	checkMutex("unlock", ISC_mutex_unlock(mutex));
+	mutexUnlock();
 }
 
 
@@ -145,9 +143,9 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 	// and copy the data there, starting with our own dbb.
 
 	// First pass
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) base + offset;
+		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -163,9 +161,9 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 		}
 		else
 		{
-			fb_assert(base->used >= offset + length);
-			memmove(ptr, ptr + length, base->used - offset - length);
-			base->used -= length;
+			fb_assert(sh_mem_header->used >= offset + length);
+			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
+			sh_mem_header->used -= length;
 		}
 	}
 
@@ -175,14 +173,14 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 
 	fb_assert(self_dbb_offset);
 
-	UCHAR* const ptr = (UCHAR*) base + self_dbb_offset;
+	UCHAR* const ptr = (UCHAR*) sh_mem_header + self_dbb_offset;
 	const Element* const element = (Element*) ptr;
 	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
 	bufferPtr += element->length;
 
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) base + offset;
+		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -205,13 +203,13 @@ ULONG DatabaseSnapshot::SharedData::setup()
 	ensureSpace(sizeof(Element));
 
 	// Put an up-to-date element at the tail
-	const ULONG offset = base->used;
-	UCHAR* const ptr = (UCHAR*) base + offset;
+	const ULONG offset = sh_mem_header->used;
+	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
 	Element* const element = (Element*) ptr;
 	element->processId = process_id;
 	element->localId = local_id;
 	element->length = 0;
-	base->used += alignOffset(sizeof(Element));
+	sh_mem_header->used += alignOffset(sizeof(Element));
 	return offset;
 }
 
@@ -221,30 +219,30 @@ void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void*
 	ensureSpace(length);
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) base + offset;
+	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
 	ULONG current = alignOffset(sizeof(Element) + element->length);
-	base->used += (current - previous);
+	sh_mem_header->used += (current - previous);
 }
 
 
 void DatabaseSnapshot::SharedData::cleanup()
 {
 	// Remove information about our dbb
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) base + offset;
+		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
-			fb_assert(base->used >= offset + length);
-			memmove(ptr, ptr + length, base->used - offset - length);
-			base->used -= length;
+			fb_assert(sh_mem_header->used >= offset + length);
+			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
+			sh_mem_header->used -= length;
 		}
 		else
 		{
@@ -256,20 +254,19 @@ void DatabaseSnapshot::SharedData::cleanup()
 
 void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 {
-	ULONG newSize = base->used + length;
+	ULONG newSize = sh_mem_header->used + length;
 
-	if (newSize > base->allocated)
+	if (newSize > sh_mem_header->allocated)
 	{
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
-		if (!base)
+		if (!remapFile(statusVector, newSize, true))
 		{
 			status_exception::raise(statusVector);
 		}
-		base->allocated = handle.sh_mem_length_mapped;
+		sh_mem_header->allocated = sh_mem_length_mapped;
 #else
 		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
@@ -277,49 +274,28 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 }
 
 
-void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
+void DatabaseSnapshot::SharedData::mutexBug(int osErrorCode, const char* string)
 {
-	if (state)
-	{
-		TEXT msg[BUFFER_TINY];
+	gds__log("MONITOR: mutex %s error, status = %d", string, osErrorCode);
 
-		sprintf(msg, "MONITOR: mutex %s error, status = %d", string, state);
-		gds__log(msg);
-
-		//fprintf(stderr, "%s\n", msg);
-		exit(FINI_ERROR);
-	}
+	//fprintf(stderr, "%s\n", msg);
+	exit(FINI_ERROR);
 }
 
 
-void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initialize)
+bool DatabaseSnapshot::SharedData::initialize(bool initialize)
 {
-	SharedData* const shmem = (SharedData*) arg;
-	fb_assert(shmem);
-
-#ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&shmem->winMutex, shmemData->sh_mem_name));
-	shmem->mutex = &shmem->winMutex;
-#endif
-
-	Header* const header = (Header*) shmemData->sh_mem_address;
-
-	if (!initialize)
+	if (initialize)
 	{
-#ifndef WIN_NT
-		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &shmem->mutex));
-#endif
-		return;
+		// Initialize the shared data header
+		sh_mem_header->mhb_type = SRAM_DATABASE_SNAPSHOT;
+		sh_mem_header->mhb_version = MONITOR_VERSION;
+
+		sh_mem_header->used = alignOffset(sizeof(Header));
+		sh_mem_header->allocated = sh_mem_length_mapped;
 	}
 
-	// Initialize the shared data header
-	header->version = MONITOR_VERSION;
-	header->used = alignOffset(sizeof(Header));
-	header->allocated = shmemData->sh_mem_length_mapped;
-
-#ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &shmem->mutex));
-#endif
+	return true;
 }
 
 

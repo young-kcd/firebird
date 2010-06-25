@@ -28,7 +28,6 @@
 // here when the file was removed.
 // Most probably only a few of the includes are needed
 #include "../jrd/common.h"
-#include "../jrd/isc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/ods.h"

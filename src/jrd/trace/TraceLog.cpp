@@ -48,20 +48,18 @@ using namespace Firebird;
 
 namespace Jrd {
 
-const size_t MAX_LOG_FILE_SIZE = 1024 * 1024;
+const off_t MAX_LOG_FILE_SIZE = 1024 * 1024;
 const unsigned int MAX_FILE_NUM = (unsigned int) -1;
 
 TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	m_baseFileName(pool)
 {
-	m_base = 0;
 	m_fileNum = 0;
 	m_fileHandle = -1;
 	m_reader = reader;
 
 	Arg::StatusVector statusVector;
-	ISC_map_file(statusVector, fileName.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
-	if (!m_base)
+	if (!mapFile(statusVector, fileName.c_str(), sizeof(TraceLogHeader)))
 	{
 		iscLogStatus("TraceLog: cannot initialize the shared memory region", statusVector.value());
 		statusVector.raise();
@@ -75,7 +73,7 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	if (m_reader)
 		m_fileNum = 0;
 	else
-		m_fileNum = m_base->writeFileNum;
+		m_fileNum = sh_mem_header->writeFileNum;
 
 	m_fileHandle = openFile(m_fileNum);
 }
@@ -87,19 +85,19 @@ TraceLog::~TraceLog()
 	if (m_reader)
 	{
 		// indicate reader is gone
-		m_base->readFileNum = MAX_FILE_NUM;
+		sh_mem_header->readFileNum = MAX_FILE_NUM;
 
-		for (; m_fileNum <= m_base->writeFileNum; m_fileNum++)
+		for (; m_fileNum <= sh_mem_header->writeFileNum; m_fileNum++)
 			removeFile(m_fileNum);
 	}
-	else if (m_fileNum < m_base->readFileNum) {
+	else if (m_fileNum < sh_mem_header->readFileNum) {
 		removeFile(m_fileNum);
 	}
 
-	const bool readerDone = (m_base->readFileNum == MAX_FILE_NUM);
+	const bool readerDone = (sh_mem_header->readFileNum == MAX_FILE_NUM);
 
 	Arg::StatusVector statusVector;
-	ISC_unmap_file(statusVector, &m_handle);
+	unmapFile(statusVector);
 
 	if (m_reader || readerDone) {
 		unlink(m_baseFileName.c_str());
@@ -148,8 +146,8 @@ size_t TraceLog::read(void* buf, size_t size)
 				::close(m_fileHandle);
 				removeFile(m_fileNum);
 
-				fb_assert(m_base->readFileNum == m_fileNum);
-				m_fileNum = ++m_base->readFileNum;
+				fb_assert(sh_mem_header->readFileNum == m_fileNum);
+				m_fileNum = ++sh_mem_header->readFileNum;
 				m_fileHandle = openFile(m_fileNum);
 			}
 			else
@@ -179,7 +177,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 	fb_assert(!m_reader);
 
 	// if reader already gone, don't write anything
-	if (m_base->readFileNum == MAX_FILE_NUM)
+	if (sh_mem_header->readFileNum == MAX_FILE_NUM)
 		return size;
 
 	TraceLogGuard guard(this);
@@ -195,10 +193,10 @@ size_t TraceLog::write(const void* buf, size_t size)
 			// While this instance of writer was idle, new log file was created.
 			// More, if current file was already read by reader, we must delete it.
 			::close(m_fileHandle);
-			if (m_fileNum < m_base->readFileNum) {
+			if (m_fileNum < sh_mem_header->readFileNum) {
 				removeFile(m_fileNum);
 			}
-			m_fileNum = m_base->writeFileNum;
+			m_fileNum = sh_mem_header->writeFileNum;
 			m_fileHandle = openFile(m_fileNum);
 			continue;
 		}
@@ -212,7 +210,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 		if (writeLeft || (len + toWrite == MAX_LOG_FILE_SIZE))
 		{
 			::close(m_fileHandle);
-			m_fileNum = ++m_base->writeFileNum;
+			m_fileNum = ++sh_mem_header->writeFileNum;
 			m_fileHandle = openFile(m_fileNum);
 		}
 	}
@@ -222,58 +220,47 @@ size_t TraceLog::write(const void* buf, size_t size)
 
 size_t TraceLog::getApproxLogSize() const
 {
-	return (m_base->writeFileNum - m_base->readFileNum + 1) *
+	return (sh_mem_header->writeFileNum - sh_mem_header->readFileNum + 1) *
 			(MAX_LOG_FILE_SIZE / (1024 * 1024));
 }
 
-void TraceLog::checkMutex(const TEXT* string, int state)
+void TraceLog::mutexBug(int state, const char* string)
 {
-	if (state)
-	{
-		TEXT msg[BUFFER_TINY];
+	TEXT msg[BUFFER_TINY];
 
-		sprintf(msg, "TraceLog: mutex %s error, status = %d", string, state);
-		gds__log(msg);
+	sprintf(msg, "TraceLog: mutex %s error, status = %d", string, state);
+	gds__log(msg);
 
-		fprintf(stderr, "%s\n", msg);
-		exit(FINI_ERROR);
-	}
+	fprintf(stderr, "%s\n", msg);
+	exit(FINI_ERROR);
 }
 
-void TraceLog::initShMem(void* arg, sh_mem* shmemData, bool initialize)
+bool TraceLog::initialize(bool initialize)
 {
-	TraceLog* log = (TraceLog*) arg;
-
-#ifdef WIN_NT
-	checkMutex("init", ISC_mutex_init(&log->m_winMutex, shmemData->sh_mem_name));
-	log->m_mutex = &log->m_winMutex;
-#endif
-
-	ShMemHeader* const header = (ShMemHeader*) shmemData->sh_mem_address;
-	log->m_base = header;
-
 	if (initialize)
 	{
-		header->readFileNum = 0;
-		header->writeFileNum = 0;
-#ifndef WIN_NT
-		checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &log->m_mutex));
+		sh_mem_header->mhb_type = SRAM_TRACE_LOG;
+		sh_mem_header->mhb_version = 1;
+		sh_mem_header->readFileNum = 0;
+		sh_mem_header->writeFileNum = 0;
 	}
 	else
 	{
-		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &log->m_mutex));
-#endif
+		fb_assert(sh_mem_header->mhb_type == SRAM_TRACE_LOG);
+		fb_assert(sh_mem_header->mhb_version == 1);
 	}
+
+	return true;
 }
 
 void TraceLog::lock()
 {
-	checkMutex("lock", ISC_mutex_lock(m_mutex));
+	mutexLock();
 }
 
 void TraceLog::unlock()
 {
-	checkMutex("unlock", ISC_mutex_unlock(m_mutex));
+	mutexUnlock();
 }
 
 } // namespace Jrd

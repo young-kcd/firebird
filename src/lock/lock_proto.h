@@ -36,7 +36,10 @@
 #include "../common/classes/array.h"
 #include "../common/StatusArg.h"
 #include "../jrd/ThreadStart.h"
-#include "../jrd/isc.h"
+#include "../jrd/isc_s_proto.h"
+#ifdef USE_SHMEM_EXT
+#include "../common/classes/objects_array.h"
+#endif
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -113,10 +116,9 @@ const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
 // Lock header block -- one per lock file, lives up front
 
-struct lhb
+struct lhb : public Jrd::MemoryHeader
 {
-	UCHAR lhb_type;					// memory tag - always type_lbh
-	UCHAR lhb_version;				// Version of lock table
+	USHORT lhb_type;				// memory tag - always type_lhb
 	SRQ_PTR lhb_secondary;			// Secondary lock header block
 	SRQ_PTR lhb_active_owner;		// Active owner, if any
 	srq lhb_owners;					// Que of active owners
@@ -309,7 +311,9 @@ namespace Jrd {
 
 class Database;
 
-class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
+class LockManager : public Firebird::RefCounted, 
+					public Firebird::GlobalStorage, 
+					public SharedMemory<lhb>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 
@@ -343,7 +347,7 @@ private:
 
 	bool lockOrdering() const
 	{
-		return (m_header->lhb_flags & LHB_lock_ordering) ? true : false;
+		return (sh_mem_header->lhb_flags & LHB_lock_ordering) ? true : false;
 	}
 
 	void acquire_shmem(SRQ_PTR);
@@ -368,7 +372,6 @@ private:
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(Database*, lrq*, lbl*, SSHORT);
 	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
-	void initialize(sh_mem*, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
 	bool internal_convert(Database* database, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT,
@@ -410,19 +413,13 @@ private:
 		return 0;
 	}
 
-	static void initialize(void* arg, sh_mem* shmem, bool init)
-	{
-		LockManager* const lockMgr = static_cast<LockManager*>(arg);
-		lockMgr->initialize(shmem, init);
-	}
+	bool initialize(bool init);
+	void mutexBug(int osErrorCode, const char* text);
 
 	bool m_bugcheck;
 	bool m_sharedFileCreated;
-	lhb* volatile m_header;
 	prc* m_process;
 	SRQ_PTR m_processOffset;
-
-	sh_mem m_shmem;
 
 	Firebird::Mutex m_localMutex;
 	Firebird::RWLock m_remapSync;
@@ -439,19 +436,41 @@ private:
 	const ULONG m_memorySize;
 	const bool m_useBlockingThread;
 
-#ifdef WIN_NT
-	struct mtx m_shmemMutex;
-#else
-	struct mtx* m_lhb_mutex;
-#endif
-
 #ifdef USE_SHMEM_EXT
-	struct Extent
+	struct SecondaryFile : public Jrd::MemoryHeader
 	{
-		lhb* table;
-		sh_mem sh_data;
 	};
-	Firebird::Array<Extent> m_extents;
+
+	class Extent : public SharedMemory<SecondaryFile>
+	{
+	public:
+		Extent() { }
+		Extent(Firebird::MemoryPool&) { }
+		Extent(const SharedMemoryBase& p) 
+		{ 
+			assign(p);
+		}
+		Extent(Firebird::MemoryPool&, const SharedMemoryBase& p) 
+		{ 
+			assign(p);
+		}
+		Extent& operator=(const SharedMemoryBase& p)
+		{ 
+			assign(p);
+			return *this;
+		}
+
+		~Extent()
+		{
+			sh_mem_header = NULL;	// avoid unmapping in dtor
+		}
+
+		void assign(const SharedMemoryBase& p);
+
+		bool initialize(bool init);
+		void mutexBug(int osErrorCode, const char* text);
+	};
+	Firebird::ObjectsArray<Extent> m_extents;
 
 	ULONG getTotalMapped() const
 	{

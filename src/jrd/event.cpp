@@ -64,7 +64,7 @@
 #define MUTEX		m_mutex
 #endif
 
-#define SRQ_BASE                  ((UCHAR*) m_header)
+#define SRQ_BASE                  ((UCHAR*) sh_mem_header)
 
 using namespace Firebird;
 
@@ -97,7 +97,6 @@ void EventManager::init(Database* dbb)
 
 EventManager::EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf)
 	: PID(getpid()),
-	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
 	  m_dbId(getPool(), id),
@@ -130,8 +129,8 @@ EventManager::~EventManager()
 		ISC_event_post(&m_process->prb_event);
 		m_cleanupSemaphore.tryEnter(5);
 
-#if (defined HAVE_MMAP || defined WIN_NT)
-		ISC_unmap_object(localStatus, (UCHAR**) &m_process, sizeof(prb));
+#ifdef HAVE_OBJECT_MAP
+		unmapObject(localStatus, &m_process);
 #else
 		m_process = NULL;
 #endif
@@ -143,11 +142,9 @@ EventManager::~EventManager()
 	{
 		delete_process(process_offset);
 	}
-	if (m_header && SRQ_EMPTY(m_header->evh_processes))
+	if (sh_mem_header && SRQ_EMPTY(sh_mem_header->evh_processes))
 	{
-		Firebird::PathName name;
-		get_shared_file_name(name);
-		ISC_remove_map_file(name.c_str());
+		removeMapFile();
 	}
 	release_shmem();
 
@@ -168,27 +165,24 @@ void EventManager::attach_shared_file()
 	get_shared_file_name(name);
 
 	Arg::StatusVector localStatus;
-	if (!(m_header = (evh*) ISC_map_file(localStatus,
-										 name.c_str(),
-										 init_shmem, this,
-										 m_config->getEventMemSize(),
-										 &m_shmemData)))
+	mapFile(localStatus, name.c_str(), m_config->getEventMemSize());
+	if (!sh_mem_header)
 	{
 		localStatus.raise();
 	}
 
-	fb_assert(m_header->evh_version == EVENT_VERSION);
+	fb_assert(sh_mem_header->mhb_type == SRAM_EVENT_MANAGER);
+	fb_assert(sh_mem_header->mhb_version == EVENT_VERSION);
 }
 
 
 void EventManager::detach_shared_file()
 {
 	Arg::StatusVector localStatus;
-	if (m_header)
+	if (sh_mem_header)
 	{
-		ISC_mutex_fini(MUTEX);
-		ISC_unmap_file(localStatus, &m_shmemData);
-		m_header = NULL;
+		unmapFile(localStatus);
+		sh_mem_header = NULL;
 	}
 }
 
@@ -283,7 +277,7 @@ SLONG EventManager::queEvents(SLONG session_id,
 	request->req_process = m_processOffset;
 	request->req_ast = ast_routine;
 	request->req_ast_arg = ast_arg;
-	const SLONG id = ++m_header->evh_request_id;
+	const SLONG id = ++sh_mem_header->evh_request_id;
 	request->req_request_id = id;
 
 	const SLONG request_offset = SRQ_REL_PTR(request);
@@ -498,7 +492,7 @@ void EventManager::deliverEvents()
 	{
 		flag = false;
 		srq* event_srq;
-		SRQ_LOOP (m_header->evh_processes, event_srq)
+		SRQ_LOOP (sh_mem_header->evh_processes, event_srq)
 		{
 			prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET (prb*, prb_processes));
 			if (process->prb_flags & PRB_wakeup)
@@ -514,7 +508,7 @@ void EventManager::deliverEvents()
 }
 
 
-evh* EventManager::acquire_shmem()
+void EventManager::acquire_shmem()
 {
 /**************************************
  *
@@ -527,29 +521,22 @@ evh* EventManager::acquire_shmem()
  *
  **************************************/
 
-	int mutex_state = ISC_mutex_lock(MUTEX);
-	if (mutex_state)
-		mutex_bugcheck("mutex lock", mutex_state);
+	mutexLock();
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(m_header->evh_processes))
+	while (SRQ_EMPTY(sh_mem_header->evh_processes))
 	{
 		if (! m_sharedFileCreated)
 		{
 			// Someone is going to delete shared file? Reattach.
-			mutex_state = ISC_mutex_unlock(MUTEX);
-			if (mutex_state)
-				mutex_bugcheck("mutex unlock", mutex_state);
+			mutexUnlock();
 			detach_shared_file();
 
 			THD_yield();
 
 			attach_shared_file();
-			mutex_state = ISC_mutex_lock(MUTEX);
-			if (mutex_state) {
-				mutex_bugcheck("mutex lock", mutex_state);
-			}
+			mutexLock();
 		}
 		else
 		{
@@ -561,29 +548,22 @@ evh* EventManager::acquire_shmem()
 	}
 	fb_assert(!m_sharedFileCreated);
 
-	m_header->evh_current_process = m_processOffset;
+	sh_mem_header->evh_current_process = m_processOffset;
 
-	if (m_header->evh_length > m_shmemData.sh_mem_length_mapped)
+	if (sh_mem_header->evh_length > sh_mem_length_mapped)
 	{
-		const ULONG length = m_header->evh_length;
+		const ULONG length = sh_mem_header->evh_length;
 
-		evh* header = NULL;
-
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector localStatus;
-		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, length, false);
+		if (remapFile(localStatus, length, false))
 #endif
-		if (!header)
 		{
 			release_shmem();
 			gds__log("Event table remap failed");
 			exit(FINI_ERROR);
 		}
-
-		m_header = header;
 	}
-
-	return m_header;
 }
 
 
@@ -605,7 +585,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	length = FB_ALIGN(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
-	for (SRQ_PTR* ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (SRQ_PTR* ptr = &sh_mem_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
@@ -618,25 +598,24 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 
 	if (!best && !recurse)
 	{
-		const ULONG old_length = m_shmemData.sh_mem_length_mapped;
+		const ULONG old_length = sh_mem_length_mapped;
 		const ULONG ev_length = old_length + m_config->getEventMemSize();
 
 		evh* header = NULL;
 
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector localStatus;
-		header = (evh*) ISC_remap_file(localStatus, &m_shmemData, ev_length, true);
+		if (remapFile(localStatus, ev_length, true))
 #endif
-		if (header)
 		{
 			free = (frb*) ((UCHAR*) header + old_length);
 			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
-			free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - old_length;
+			free->frb_header.hdr_length = sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
-			m_header = header;
-			m_header->evh_length = m_shmemData.sh_mem_length_mapped;
+			sh_mem_header = header;
+			sh_mem_header->evh_length = sh_mem_length_mapped;
 
 			free_global(free);
 
@@ -687,16 +666,16 @@ void EventManager::create_process()
 
 	prb* const process = (prb*) alloc_global(type_prb, sizeof(prb), false);
 	process->prb_process_id = PID;
-	insert_tail(&m_header->evh_processes, &process->prb_processes);
+	insert_tail(&sh_mem_header->evh_processes, &process->prb_processes);
 	SRQ_INIT(process->prb_sessions);
 
 	ISC_event_init(&process->prb_event);
 
 	m_processOffset = SRQ_REL_PTR(process);
 
-#if (defined HAVE_MMAP || defined WIN_NT)
+#ifdef HAVE_OBJECT_MAP
 	Arg::StatusVector localStatus;
-	m_process = (prb*) ISC_map_object(localStatus, &m_shmemData, m_processOffset, sizeof(prb));
+	m_process = mapObject<prb>(localStatus, m_processOffset);
 
 	if (!m_process)
 	{
@@ -1002,7 +981,7 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string, evnt* parent)
 	const SRQ_PTR parent_offset = parent ? SRQ_REL_PTR(parent) : 0;
 
 	srq* event_srq;
-	SRQ_LOOP(m_header->evh_events, event_srq)
+	SRQ_LOOP(sh_mem_header->evh_events, event_srq)
 	{
 		evnt* const event = (evnt*) ((UCHAR*) event_srq - OFFSET(evnt*, evnt_events));
 		if (event->evnt_parent == parent_offset && event->evnt_length == length &&
@@ -1035,14 +1014,14 @@ void EventManager::free_global(frb* block)
 	const SRQ_PTR offset = SRQ_REL_PTR(block);
 	block->frb_header.hdr_type = type_frb;
 
-	for (ptr = &m_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
+	for (ptr = &sh_mem_header->evh_free; (free = (frb*) SRQ_ABS_PTR(*ptr)) && *ptr;
 		 prior = free, ptr = &free->frb_next)
 	{
 		if ((SCHAR *) block < (SCHAR *) free)
 			break;
 	}
 
-	if (offset <= 0 || static_cast<ULONG>(offset) > m_header->evh_length ||
+	if (offset <= 0 || static_cast<ULONG>(offset) > sh_mem_header->evh_length ||
 		(prior && (UCHAR*) block < (UCHAR*) prior + prior->frb_header.hdr_length))
 	{
 		punt("free_global: bad block");
@@ -1097,7 +1076,13 @@ req_int* EventManager::historical_interest(ses* session, SRQ_PTR event_offset)
 }
 
 
-void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
+void EventManager::mutexBug(int osErrorCode, const char* text)
+{
+	mutex_bugcheck(text, osErrorCode);
+}
+
+
+bool EventManager::initialize(bool initialize)
 {
 /**************************************
  *
@@ -1109,43 +1094,28 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
  *	Initialize global region header.
  *
  **************************************/
-	int mutex_state;
-
-#ifdef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(MUTEX, shmem_data->sh_mem_name)) )
-		mutex_bugcheck("mutex init", mutex_state);
-#endif
 
 	m_sharedFileCreated = initialize;
-	m_header = (evh*) shmem_data->sh_mem_address;
 
-	if (!initialize)
+	if (initialize)
 	{
-#ifndef WIN_NT
-		if ( (mutex_state = ISC_map_mutex(shmem_data, &m_header->evh_mutex, &MUTEX)) )
-			mutex_bugcheck("mutex map", mutex_state);
-#endif
-		return;
+		sh_mem_header->evh_length = sh_mem_length_mapped;
+		sh_mem_header->mhb_version = EVENT_VERSION;
+		sh_mem_header->mhb_type = SRAM_EVENT_MANAGER;
+		sh_mem_header->evh_request_id = 0;
+
+		SRQ_INIT(sh_mem_header->evh_processes);
+		SRQ_INIT(sh_mem_header->evh_events);
+
+		frb* const free = (frb*) ((UCHAR*) sh_mem_header + sizeof(evh));
+		free->frb_header.hdr_length = sh_mem_length_mapped - sizeof(evh);
+		free->frb_header.hdr_type = type_frb;
+		free->frb_next = 0;
+
+		sh_mem_header->evh_free = (UCHAR*) free - (UCHAR*) sh_mem_header;
 	}
 
-	m_header->evh_length = m_shmemData.sh_mem_length_mapped;
-	m_header->evh_version = EVENT_VERSION;
-	m_header->evh_request_id = 0;
-
-	SRQ_INIT(m_header->evh_processes);
-	SRQ_INIT(m_header->evh_events);
-
-#ifndef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(shmem_data, &m_header->evh_mutex, &MUTEX)) )
-		mutex_bugcheck("mutex init", mutex_state);
-#endif
-
-	frb* const free = (frb*) ((UCHAR*) m_header + sizeof(evh));
-	free->frb_header.hdr_length = m_shmemData.sh_mem_length_mapped - sizeof(evh);
-	free->frb_header.hdr_type = type_frb;
-	free->frb_next = 0;
-
-	m_header->evh_free = (UCHAR*) free - (UCHAR*) m_header;
+	return true;
 }
 
 
@@ -1183,7 +1153,7 @@ evnt* EventManager::make_event(USHORT length, const TEXT* string, SLONG parent_o
  *
  **************************************/
 	evnt* const event = (evnt*) alloc_global(type_evnt, sizeof(evnt) + length, false);
-	insert_tail(&m_header->evh_events, &event->evnt_events);
+	insert_tail(&sh_mem_header->evh_events, &event->evnt_events);
 	SRQ_INIT(event->evnt_interests);
 
 	if (parent_offset)
@@ -1255,7 +1225,7 @@ void EventManager::probe_processes()
  *
  **************************************/
 	srq* event_srq;
-	SRQ_LOOP(m_header->evh_processes, event_srq)
+	SRQ_LOOP(sh_mem_header->evh_processes, event_srq)
 	{
 		prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET(prb*, prb_processes));
 		const SLONG process_offset = SRQ_REL_PTR(process);
@@ -1301,11 +1271,8 @@ void EventManager::release_shmem()
 	validate();
 #endif
 
-	m_header->evh_current_process = 0;
-
-	const int mutex_state = ISC_mutex_unlock(MUTEX);
-	if (mutex_state)
-		mutex_bugcheck("mutex unlock", mutex_state);
+	sh_mem_header->evh_current_process = 0;
+	mutexUnlock();
 }
 
 
@@ -1373,7 +1340,7 @@ int EventManager::validate()
 	SRQ_PTR next_free = 0;
 	ULONG offset;
 
-	for (offset = sizeof(evh); offset < m_header->evh_length;
+	for (offset = sizeof(evh); offset < sh_mem_header->evh_length;
 		offset += block->frb_header.hdr_length)
 	{
 		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
@@ -1393,12 +1360,12 @@ int EventManager::validate()
 		if (block->frb_header.hdr_type == type_frb)
 		{
 			next_free = ((frb*) block)->frb_next;
-			if (next_free >= m_header->evh_length)
+			if (next_free >= sh_mem_header->evh_length)
 				punt("bad frb_next");
 		}
 	}
 
-	if (offset != m_header->evh_length)
+	if (offset != sh_mem_header->evh_length)
 		punt("bad block length");
 }
 #endif

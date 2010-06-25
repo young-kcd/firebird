@@ -34,7 +34,7 @@
 #include "../../dsql/dsql.h"
 #include "../../jrd/ntrace.h"
 #include "../../jrd/dsc.h"
-#include "../../jrd/isc.h"
+#include "../../jrd/isc_s_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/tra.h"

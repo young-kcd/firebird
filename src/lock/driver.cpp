@@ -26,7 +26,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/isc.h"
 
 #ifdef WIN_NT
 #include <process.h>

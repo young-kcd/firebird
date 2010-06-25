@@ -31,13 +31,20 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
-#include "../../jrd/isc.h"
+#include "../../jrd/isc_s_proto.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {
 
+struct TraceCSHeader : public MemoryHeader
+{
+	volatile ULONG change_number;
+	volatile ULONG session_number;
+	ULONG cnt_uses;
+	char  cfg_file_name[MAXPATHLEN];
+};
 
-class ConfigStorage : public Firebird::GlobalStorage
+class ConfigStorage : public Firebird::GlobalStorage, public SharedMemory<TraceCSHeader>
 {
 public:
 	ConfigStorage();
@@ -50,14 +57,14 @@ public:
 	void updateSession(Firebird::TraceSession& session);
 
 	ULONG getChangeNumber() const
-	{ return m_base ? m_base->change_number : 0; }
+	{ return sh_mem_header ? sh_mem_header->change_number : 0; }
 
 	void acquire();
 	void release();
 
 private:
-	static void checkMutex(const TEXT*, int);
-	static void initShMem(void*, sh_mem*, bool);
+	void mutexBug(int osErrorCode, const char* text);
+	bool initialize(bool);
 
 	void checkFile();
 
@@ -74,22 +81,10 @@ private:
 	{
 		if (!m_dirty)
 		{
-			m_base->change_number++;
+			sh_mem_header->change_number++;
 			m_dirty = true;
 		}
 	}
-
-	struct ShMemHeader
-	{
-		ULONG version;
-		volatile ULONG change_number;
-		volatile ULONG session_number;
-		ULONG cnt_uses;
-		char  cfg_file_name[MAXPATHLEN];
-#ifndef WIN_NT
-		struct mtx mutex;
-#endif
-	};
 
 	// items in every session record at sessions file
 	enum ITEM
@@ -107,12 +102,6 @@ private:
 	void putItem(ITEM tag, ULONG len, const void* data);
 	bool getItemLength(ITEM& tag, ULONG& len);
 
-	sh_mem m_handle;
-	ShMemHeader* m_base;
-#ifdef WIN_NT
-	struct mtx m_winMutex;
-#endif
-	struct mtx* m_mutex;
 	int  m_cfg_file;
 	bool m_dirty;
 };

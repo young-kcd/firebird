@@ -39,7 +39,6 @@
 #include "../jrd/file_params.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
-#include "../jrd/isc.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/gds_proto.h"
@@ -87,8 +86,31 @@ struct waitque
 	SRQ_PTR waitque_entry[30];
 };
 
+namespace {
+	class sh_mem : public Jrd::SharedMemory<lhb>
+	{
+	public:
+		sh_mem(bool p_consistency)
+		  :	sh_mem_consistency(p_consistency)
+		{ }
+
+		bool initialize(bool) 
+		{
+			// Initialize a lock table to looking -- i.e. don't do nuthin.
+			return sh_mem_consistency;
+		}
+
+		void mutexBug(int osErrorCode, const char* text)
+		{
+			// Do nothing - lock print always ignored mutex errors
+		}
+
+	private:
+		bool sh_mem_consistency;
+	};
+}
+
 static void prt_lock_activity(OUTFILE, const lhb*, USHORT, ULONG, ULONG);
-static void prt_lock_init(void*, sh_mem*, bool);
 static void prt_history(OUTFILE, const lhb*, SRQ_PTR, const SCHAR*);
 static void prt_lock(OUTFILE, const lhb*, lbl*, USHORT);
 static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool);
@@ -449,22 +471,20 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	Firebird::Arg::StatusVector statusVector;
-	sh_mem shmem_data;
+	sh_mem shmem_data(sw_consistency);
 
 	Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > buffer;
 	lhb* LOCK_header = NULL;
 
 	if (db_file)
 	{
-		LOCK_header = (lhb*) ISC_map_file(statusVector, filename.c_str(),
-										  prt_lock_init, NULL, 0, &shmem_data);
-
-		if (!LOCK_header)
+		if (!shmem_data.mapFile(statusVector, filename.c_str(), 0))
 		{
 			FPRINTF(outfile, "Unable to access lock table.\n");
 			gds__print_status(statusVector.value());
 			exit(FINI_OK);
 		}
+		LOCK_header = shmem_data.sh_mem_header;
 
 		// Make sure the lock file is valid - if it's a zero length file we
 		// can't look at the header without causing a BUS error by going
@@ -479,10 +499,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		if (sw_consistency)
 		{
-#ifdef WIN_NT
-			ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
-#endif
-			ISC_mutex_lock(MUTEX);
+			shmem_data.mutexLock();
 		}
 
 #ifdef USE_SHMEM_EXT
@@ -505,25 +522,27 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		for (ULONG extent = 1; extent < extentsCount; ++extent)
 		{
 			Firebird::PathName extName;
-			sh_mem extData;
 			extName.printf("%s.ext%d", filename.c_str(), extent);
-			UCHAR* ext = (UCHAR*) ISC_map_file(statusVector, extName.c_str(),
-											   prt_lock_init, NULL, 0, &extData);
-			if (! ext)
+
+			sh_mem extData(false);
+			if (! extData.mapFile(statusVector, extName.c_str(), 0))
 			{
 				FPRINTF(outfile, "Could not map extent number %d, file %s.\n", extent, extName.c_str());
 				exit(FINI_OK);
 			}
-			memcpy(((UCHAR*) buffer) + extent * extentSize, ext, extentSize);
-			ISC_unmap_file(statusVector, &extData);
+
+			memcpy(((UCHAR*) buffer) + extent * extentSize, extData.sh_mem_header, extentSize);
+
+			extData.unmapFile(statusVector);
 		}
 
 		LOCK_header = (lhb*)(UCHAR*) buffer;
-#elif (defined HAVE_MMAP || defined WIN_NT)
+#elif defined HAVE_OBJECT_MAP
 		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 		{
 			const ULONG length = LOCK_header->lhb_length;
-			LOCK_header = (lhb*) ISC_remap_file(statusVector, &shmem_data, length, false);
+			shmem_data.remapFile(statusVector, length, false);
+			LOCK_header = shmem_data.sh_mem_header;
 		}
 #endif
 
@@ -550,11 +569,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header = (lhb*)(UCHAR*) buffer;
 #endif
 
-			ISC_mutex_unlock(MUTEX);
-
-#ifdef WIN_NT
-			ISC_mutex_fini(MUTEX);
-#endif
+			shmem_data.mutexUnlock();
 		}
 	}
 	else if (lock_file)
@@ -648,16 +663,16 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	// if we can't read this version - admit there's nothing to say and return.
 
-	if (LOCK_header->lhb_version != LHB_VERSION)
+	if (LOCK_header->mhb_version != LHB_VERSION)
 	{
-		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0)
+		if (LOCK_header->mhb_type == 0 && LOCK_header->mhb_version == 0)
 		{
 			FPRINTF(outfile, "\tLock table is empty.\n");
 		}
 		else
 		{
 			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
-				LOCK_header->lhb_version);
+				LOCK_header->mhb_version);
 		}
 		exit(FINI_OK);
 	}
@@ -679,7 +694,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	FPRINTF(outfile,
 			"\tVersion: %d, Active owner: %s, Length: %6"SLONGFORMAT
 			", Used: %6"SLONGFORMAT"\n",
-			LOCK_header->lhb_version, (const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
+			LOCK_header->mhb_version, (const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
 	FPRINTF(outfile, "\tFlags: 0x%04X\n",
@@ -796,11 +811,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
 	prt_html_end(outfile);
-
-	if (db_file)
-	{
-		ISC_unmap_file(statusVector, &shmem_data);
-	}
 
 	return FINI_OK;
 }
@@ -1025,22 +1035,6 @@ static void prt_lock_activity(OUTFILE outfile,
 	}
 
 	FPRINTF(outfile, "\n");
-}
-
-
-static void prt_lock_init(void*, sh_mem*, bool)
-{
-/**************************************
- *
- *      l o c k _ i n i t
- *
- **************************************
- *
- * Functional description
- *      Initialize a lock table to looking -- i.e. don't do
- *      nuthin.
- *
- **************************************/
 }
 
 

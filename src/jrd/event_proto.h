@@ -30,6 +30,7 @@
 #include "../common/classes/RefCounted.h"
 #include "../jrd/ThreadData.h"
 #include "../jrd/event.h"
+#include "../jrd/isc_s_proto.h"
 
 class Config;
 
@@ -37,7 +38,7 @@ namespace Jrd {
 
 class Database;
 
-class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
+class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
 
@@ -61,8 +62,11 @@ public:
 	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
 	void deliverEvents();
 
+	bool initialize(bool);
+	void mutexBug(int osErrorCode, const char* text);
+
 private:
-	evh* acquire_shmem();
+	void acquire_shmem();
 	frb* alloc_global(UCHAR type, ULONG length, bool recurse);
 	void create_process();
 	void delete_event(evnt*);
@@ -75,7 +79,6 @@ private:
 	evnt* find_event(USHORT, const TEXT*, evnt*);
 	void free_global(frb*);
 	req_int* historical_interest(ses*, SLONG);
-	void init_shmem(sh_mem*, bool);
 	void insert_tail(srq*, srq*);
 	evnt* make_event(USHORT, const TEXT*, SLONG);
 	void post_process(prb*);
@@ -95,19 +98,17 @@ private:
 		return 0;
 	}
 
-	static void init_shmem(void* arg, sh_mem* shmem, bool init)
+/*	static void init_shmem(void* arg, sh_mem* shmem, bool init)
 	{
 		EventManager* const eventMgr = static_cast<EventManager*>(arg);
 		eventMgr->init_shmem(shmem, init);
 	}
-
+*/
 	static void mutex_bugcheck(const TEXT*, int);
 	static void punt(const TEXT*);
 
-	evh* m_header;
 	prb* m_process;
 	SLONG m_processOffset;
-	sh_mem m_shmemData;
 
 	Firebird::string m_dbId;
 	Firebird::RefPtr<Config> m_config;

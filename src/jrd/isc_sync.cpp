@@ -53,7 +53,6 @@
 //#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
-#include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
@@ -68,6 +67,7 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
+#include "../jrd/jrd_pwd.h"
 
 #ifdef UNIX
 #include <setjmp.h>
@@ -515,8 +515,8 @@ namespace {
 	class SharedFile
 	{
 	public:
-		SharedFile(const char* pName, UCHAR* address, int length)
-			: fileNum(semTable->addFileByName(pName)), from(address), to(address + length)
+		SharedFile(const char* pName, void* address, int length)
+			: fileNum(semTable->addFileByName(pName)), from((UCHAR*) address), to(from + length)
 		{ }
 
 		SharedFile() : fileNum(0), from(0), to(0) { }
@@ -557,15 +557,16 @@ namespace {
 			}
 		}
 
-		static void remap(UCHAR* const from, UCHAR* to, int newLength)
+		static void remap(void* const f, void* const to, int newLength)
 		{
 			MutexLockGuard guard(mutex);
+			UCHAR* const from = (UCHAR*) f;
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
 			{
 				if (from == sharedFiles[n].from)
 				{
-					sharedFiles[n].from = to;
-					sharedFiles[n].to = to + newLength;
+					sharedFiles[n].from = (UCHAR*) to;
+					sharedFiles[n].to = sharedFiles[n].from + newLength;
 					return;
 				}
 			}
@@ -1416,7 +1417,7 @@ int ISC_event_wait(event_t* event, const SLONG value, const SLONG micro_seconds)
 
 
 #ifdef UNIX
-void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
+ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 {
 /**************************************
  *
@@ -1492,6 +1493,8 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 		gds__free(log_msg);
 	}
 	abort();
+
+	return 0;	// compiler silencer
 }
 #endif // UNIX
 
@@ -1676,11 +1679,11 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 }
 #endif // WIN_NT
 
-void ISC_remove_map_file(const TEXT* filename)
+void SharedMemoryBase::removeMapFile()
 {
 #ifndef WIN_NT
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
+	gds__prefix_lock(expanded_filename, sh_mem_name);
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
@@ -1688,19 +1691,10 @@ void ISC_remove_map_file(const TEXT* filename)
 #endif // WIN_NT
 }
 
-void ISC_remove_map_file(const struct sh_mem* shmem_data)
-{
-	ISC_remove_map_file(shmem_data->sh_mem_name);
-}
-
 #ifdef UNIX
 
-UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
-					const TEXT* filename,
-					FPTR_INIT_GLOBAL_REGION init_routine,
-					void* init_arg,
-					ULONG length,
-					sh_mem* shmem_data)
+bool SharedMemoryBase::mapFile(Firebird::Arg::StatusVector& statusVector, 
+							   const TEXT* filename, ULONG length)
 {
 /**************************************
  *
@@ -1714,6 +1708,8 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
+
+	setHeader(NULL);
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
@@ -1740,7 +1736,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	if (fd_init == -1)
 	{
 		error(statusVector, "open", errno);
-		return NULL;
+		return false;
 	}
 
 	// get an exclusive lock on the INIT file with blocking
@@ -1749,7 +1745,9 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	initLock.setDtorMode(FileLock::OPENED);
 #endif
 	if (!initLock.exclusive())
-		return NULL;
+	{
+		return false;
+	}
 
 	// init file is locked - no races possible later in this function
 
@@ -1762,13 +1760,13 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		if (f == -1)
 		{
 			error(statusVector, "open", errno);
-			return NULL;
+			return false;
 		}
 		void* sTab = mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
 		if ((U_IPTR) sTab == (U_IPTR) -1)
 		{
 			error(statusVector, "mmap", errno);
-			return NULL;
+			return false;
 		}
 
 		fdSem = f;
@@ -1784,7 +1782,9 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		semTable->init();
 	}
 	if (!semLock.shared())
-		return NULL;
+	{
+		return false;
+	}
 #endif
 
 	// open the file to be inited
@@ -1792,7 +1792,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	if (fd == -1)
 	{
 		error(statusVector, "open", errno);
-		return NULL;
+		return false;
 	}
 
 	// create lock in order to have file autoclosed on error
@@ -1805,7 +1805,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		if (fstat(fd, &file_stat) == -1)
 		{
 			error(statusVector, "fstat", errno);
-			return NULL;
+			return false;
 		}
 		length = file_stat.st_size;
 
@@ -1813,22 +1813,17 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		{
 			// keep old text of message here -  will be assigned a bit later
 			error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
-			return NULL;
+			return false;
 		}
 	}
 
 	// map file to memory
-	UCHAR* const address = (UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	void* const address = mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	if ((U_IPTR) address == (U_IPTR) -1)
 	{
 		error(statusVector, "mmap", errno);
-		return NULL;
+		return false;
 	}
-
-	shmem_data->sh_mem_address = address;
-	shmem_data->sh_mem_length_mapped = length;
-	shmem_data->sh_mem_handle = fd;
-	strcpy(shmem_data->sh_mem_name, filename);
 
 #ifdef USE_SYS5SEMAPHORE
 	// register mapped file
@@ -1859,40 +1854,59 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	sfHolder holder(SharedFile(expanded_filename, address, length));
 #endif
 
+	MemoryHeader* hdr = (MemoryHeader*) address;
+	setHeader(hdr);
+	sh_mem_length_mapped = length;
+	sh_mem_handle = fd;
+	strcpy(sh_mem_name, filename);
+
+#if defined(HAVE_OBJECT_MAP) && (!defined(USE_SYS5SEMAPHORE))
+	sh_mem_mutex = (mtx*) mapObject(statusVector, OFFSET(MemoryHeader*, mhb_mutex), sizeof(mtx));
+	if (!sh_mem_mutex)
+	{
+		munmap(address, length);
+		setHeader(NULL);
+		return false;
+	}
+#else
+	sh_mem_mutex = &hdr->mhb_mutex;
+#endif
 
 	// Try to get an exclusive lock on the lock file.  This will
 	// fail if somebody else has the exclusive or shared lock
 
 	if (mainLock.tryExclusive())
 	{
-		if (!init_routine)
-		{
-			munmap((char *) address, length);
-			statusVector << Arg::Gds(isc_unavailable);
-			return NULL;
-		}
-
 		if (trunc_flag)
 			ftruncate(fd, length);
 
-		(*init_routine) (init_arg, shmem_data, true);
-
-		if (!mainLock.tryShared())
+		if (initialize(true))
 		{
-			munmap((char *) address, length);
-			return NULL;
+			int mtxState = ISC_mutex_init(sh_mem_mutex);
+			if (mtxState != 0)
+			{
+				mutexBug(mtxState, "ISC_init_mutex");
+			}
+
+			if (!mainLock.tryShared())
+			{
+				munmap(address, length);
+				setHeader(NULL);
+				return false;
+			}
 		}
 	}
 	else
 	{
-		if (!mainLock.tryShared())
+		if (initialize(false))
 		{
-			munmap((char *) address, length);
-			return NULL;
+			if (!mainLock.tryShared())
+			{
+				munmap(address, length);
+				setHeader(NULL);
+				return false;
+			}
 		}
-
-		if (init_routine)
-			(*init_routine) (init_arg, shmem_data, false);
 	}
 
 	// keep opened the shared file_decriptor
@@ -1905,19 +1919,15 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	holder.materialize();
 #endif
 
-	return address;
+	return true;
 }
 
 #endif // UNIX
 
 
 #ifdef WIN_NT
-UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
-					const TEXT* filename,
-					FPTR_INIT_GLOBAL_REGION init_routine,
-					void* init_arg,
-					ULONG length,
-					sh_mem* shmem_data)
+bool SharedMemoryBase::mapFile(Firebird::Arg::StatusVector& statusVector, 
+							   const TEXT* filename, ULONG length)
 {
 /**************************************
  *
@@ -1931,6 +1941,12 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
+
+	setHeader(NULL);
+
+	ISC_mutex_init(&sh_mem_winMutex, filename);
+	sh_mem_mutex = &sh_mem_winMutex;
+
 	HANDLE file_handle;
 	HANDLE event_handle = 0;
 	int retry_count = 0;
@@ -1961,7 +1977,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			goto retry;
 
 		error(statusVector, "CreateFile", GetLastError());
-		return NULL;
+		return false;
 	}
 
 	// Check if file already exists
@@ -1976,7 +1992,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 	{
 		error(statusVector, "make_object_name", GetLastError());
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	if (!init_flag)
@@ -1986,17 +2002,17 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		{
 			error(statusVector, "CreateEvent", GetLastError());
 			CloseHandle(file_handle);
-			return NULL;
+			return false;
 		}
 
 		init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
 
-		if (init_flag && !init_routine)
+		if (init_flag && false)
 		{
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
 			statusVector << Arg::Gds(isc_unavailable);
-			return NULL;
+			return false;
 		}
 	}
 
@@ -2009,7 +2025,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			error(statusVector, "GetFileSize", GetLastError());
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
-			return NULL;
+			return false;
 		}
 	}
 
@@ -2035,7 +2051,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			if (retry_count > 10)
 			{
 				error(statusVector, "WaitForSingleObject", 0);
-				return NULL;
+				return false;
 			}
 			goto retry;
 		}
@@ -2072,7 +2088,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 			error(statusVector, "CreateFile", err);
 
 		CloseHandle(event_handle);
-		return NULL;
+		return false;
 	}
 
 	// Create a file mapping object that will be used to make remapping possible.
@@ -2083,7 +2099,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		error(statusVector, "make_object_name", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	HANDLE header_obj = CreateFileMapping(INVALID_HANDLE_VALUE,
@@ -2096,7 +2112,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		error(statusVector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
@@ -2118,7 +2134,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	// Set or get the true length of the file depending on whether or not we are the first user.
@@ -2143,7 +2159,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	HANDLE file_obj = CreateFileMapping(file_handle,
@@ -2158,7 +2174,7 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
 	UCHAR* const address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
@@ -2171,54 +2187,49 @@ UCHAR* ISC_map_file(Arg::StatusVector& statusVector,
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		return NULL;
+		return false;
 	}
 
-	shmem_data->sh_mem_address = address;
-	shmem_data->sh_mem_length_mapped = length;
+	MemoryHeader* hdr = (MemoryHeader*) address;
+	setHeader(hdr);
+	sh_mem_length_mapped = length;
 
-	if (!shmem_data->sh_mem_length_mapped)
+	if (!sh_mem_length_mapped)
 	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
+		error(statusVector, "sh_mem_length_mapped is 0", 0);
+		return false;
 	}
 
-	shmem_data->sh_mem_handle = file_handle;
-	shmem_data->sh_mem_object = file_obj;
-	shmem_data->sh_mem_interest = event_handle;
-	shmem_data->sh_mem_hdr_object = header_obj;
-	shmem_data->sh_mem_hdr_address = header_address;
-	strcpy(shmem_data->sh_mem_name, filename);
+	sh_mem_handle = file_handle;
+	sh_mem_object = file_obj;
+	sh_mem_interest = event_handle;
+	sh_mem_hdr_object = header_obj;
+	sh_mem_hdr_address = header_address;
+	strcpy(sh_mem_name, filename);
 
-	if (init_routine)
-		(*init_routine) (init_arg, shmem_data, init_flag);
+	initialize(init_flag);
 
 	if (init_flag)
 	{
 		FlushViewOfFile(address, 0);
 		SetEvent(event_handle);
-		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
-			!SetEndOfFile(shmem_data->sh_mem_handle) ||
-			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
+		if (SetFilePointer(sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
+			!SetEndOfFile(sh_mem_handle) ||
+			!FlushViewOfFile(address, 0))
 		{
 			error(statusVector, "SetFilePointer", GetLastError());
-			return NULL;
+			return false;
 		}
 	}
 
-	return address;
+	return true;
 }
 #endif
 
 
 #ifdef HAVE_MMAP
 
-#define HAVE_MAP_OBJECT 1
-
-UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
-					  sh_mem* shmem_data,
-					  ULONG object_offset,
-					  ULONG object_length)
+UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector, ULONG object_offset, ULONG object_length)
 {
 /**************************************
  *
@@ -2230,6 +2241,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
  *	Try to map an object given a file mapping.
  *
  **************************************/
+
 	// Get system page size as this is the unit of mapping.
 
 #ifdef SOLARIS
@@ -2254,7 +2266,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 	const ULONG start = (object_offset / page_size) * page_size;
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
 	const ULONG length = end - start;
-	int fd = shmem_data->sh_mem_handle;
+	int fd = sh_mem_handle;
 
 	UCHAR* address = (UCHAR*) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, start);
 
@@ -2268,11 +2280,11 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 
 	IPC_TRACE(("ISC_map_object in %p to %p %p\n", shmem_data->sh_mem_address, address, address + length));
 
-	return (address + (object_offset - start));
+	return address + (object_offset - start);
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG object_length)
+void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG object_length)
 {
 /**************************************
  *
@@ -2325,12 +2337,9 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 
 #ifdef WIN_NT
 
-#define HAVE_MAP_OBJECT 1
-
-UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
-					  sh_mem* shmem_data,
-					  ULONG object_offset,
-					  ULONG object_length)
+UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector, 
+								   ULONG object_offset, 
+								   ULONG object_length)
 {
 /**************************************
  *
@@ -2353,7 +2362,7 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 	const ULONG start = (object_offset / page_size) * page_size;
 	const ULONG end = FB_ALIGN(object_offset + object_length, page_size);
 	const ULONG length = end - start;
-	const HANDLE handle = shmem_data->sh_mem_object;
+	const HANDLE handle = sh_mem_object;
 
 	UCHAR* address = (UCHAR*) MapViewOfFile(handle, FILE_MAP_WRITE, 0, start, length);
 
@@ -2369,7 +2378,8 @@ UCHAR* ISC_map_object(Arg::StatusVector& statusVector,
 }
 
 
-void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG /*object_length*/)
+void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, 
+								   UCHAR** object_pointer, ULONG object_length)
 {
 /**************************************
  *
@@ -2400,42 +2410,14 @@ void ISC_unmap_object(Arg::StatusVector& statusVector, UCHAR** object_pointer, U
 }
 #endif
 
-int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
-{
-#ifdef HAVE_MAP_OBJECT
-	Arg::StatusVector temp;
-	mutex = reinterpret_cast<mtx*>(ISC_map_object(temp, shmem_data,
-		reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
-	if (!mutex)
-	{
-		iscLogStatus("ISC_map_mutex()", temp.value());
-		return -1;
-	}
-#endif // HAVE_MAP_OBJECT
-
-	*mapped = mutex;
-	return 0;
-}
-
-void ISC_unmap_mutex(mtx* mutex)
-{
-#ifdef HAVE_MAP_OBJECT
-	Arg::StatusVector temp;
-	ISC_unmap_object(temp, reinterpret_cast<UCHAR**>(&mutex), sizeof(mtx));
-	if (mutex)
-	{
-		iscLogStatus("ISC_unmap_mutex()", temp.value());
-	}
-#endif // HAVE_MAP_OBJECT
-
-}
-
 
 #ifdef USE_POSIX_THREADS
 
 #ifdef USE_SYS5SEMAPHORE
 
-int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
+
+
+int ISC_mutex_init(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2448,13 +2430,6 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
  *
  **************************************/
 
-	if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
-	{
-		return -1;	// no errno known here...
-	}
-
-	mutex = *mapped;
-
 	if (!getSem5(mutex))
 	{
 		return FB_FAILURE;
@@ -2465,28 +2440,10 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 	int state = semctl(mutex->getId(), mutex->semNum, SETVAL, arg);
 	if (state == -1)
 	{
-		iscLogStatus("ISC_mutex_init()",
-			(Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
-		return FB_FAILURE;
+		return errno;
 	}
 
 	return 0;
-}
-
-
-void ISC_mutex_fini(struct mtx *mutex)
-{
-/**************************************
- *
- *	m u t e x _ f i n i ( S Y S V )
- *
- **************************************
- *
- * Functional description
- *	Destroy a mutex.
- *
- **************************************/
-	ISC_unmap_mutex(mutex);
 }
 
 
@@ -2592,7 +2549,7 @@ int ISC_mutex_unlock(struct mtx* mutex)
 static volatile bool staticBugFlag = false;
 #endif
 
-int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
+int ISC_mutex_init(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2604,13 +2561,6 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
  *	Initialize a mutex.
  *
  **************************************/
-
-  if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
-  {
-		return -1;	// no errno known here...
-  }
-
-  mutex = *mapped;
 
 #ifdef BUGGY_LINUX_MUTEX
   do
@@ -2685,22 +2635,6 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 
   return state;
 #endif
-}
-
-
-void ISC_mutex_fini(struct mtx *mutex)
-{
-/**************************************
- *
- *	m u t e x _ f i n i ( P O S I X _ T H R E A D S )
- *
- **************************************
- *
- * Functional description
- *	Destroy a mutex.
- *
- **************************************/
-	ISC_unmap_mutex(mutex);
 }
 
 
@@ -3177,10 +3111,7 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
-					  sh_mem* shmem_data,
-					  ULONG new_length,
-					  bool flag)
+bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_length, bool flag)
 {
 /**************************************
  *
@@ -3192,29 +3123,36 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
  *	Try to re-map a given file.
  *
  **************************************/
+	if (!new_length)
+	{
+		error(statusVector, "Zero new_length is requested", 0);
+		return false;
+	}
+
 	if (flag)
-		ftruncate(shmem_data->sh_mem_handle, new_length);
+		ftruncate(sh_mem_handle, new_length);
 
-	UCHAR* const address = (UCHAR*)
-		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, shmem_data->sh_mem_handle, 0);
+	MemoryHeader* const address = (MemoryHeader*)
+		mmap(0, new_length, PROT_READ | PROT_WRITE, MAP_SHARED, sh_mem_handle, 0);
 	if ((U_IPTR) address == (U_IPTR) -1)
-		return NULL;
+	{
+		error(statusVector, "mmap() failed", errno);
+		return false;
+	}
 
-	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
+	munmap((char *) getHeader(), sh_mem_length_mapped);
 
 #ifdef USE_SYS5SEMAPHORE
-	SharedFile::remap(shmem_data->sh_mem_address, address, new_length);
+	SharedFile::remap(getHeader(), address, new_length);
 #endif
-	IPC_TRACE(("ISC_remap_file %p to %p %p\n", shmem_data->sh_mem_address, address, address + new_length));
+	IPC_TRACE(("ISC_remap_file %p to %p %d\n", getHeader(), address, new_length));
 
-	shmem_data->sh_mem_address = address;
-	shmem_data->sh_mem_length_mapped = new_length;
+	setHeader(address);
+	sh_mem_length_mapped = new_length;
 
-	if (!shmem_data->sh_mem_length_mapped)
-	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
+#if (!defined(HAVE_OBJECT_MAP)) || defined(USE_SYS5SEMAPHORE)
+	sh_mem_mutex = &getHeader()->mhb_mutex;
+#endif
 
 	return address;
 }
@@ -3224,10 +3162,8 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
-					  sh_mem* shmem_data,
-					  ULONG new_length,
-					  bool flag)
+bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, 
+								 ULONG new_length, bool flag)
 {
 /**************************************
  *
@@ -3242,9 +3178,9 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (flag)
 	{
-		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
-			!SetEndOfFile(shmem_data->sh_mem_handle) ||
-			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
+		if (SetFilePointer(sh_mem_handle, new_length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
+			!SetEndOfFile(sh_mem_handle) ||
+			!FlushViewOfFile(getHeader(), 0))
 		{
 			error(statusVector, "SetFilePointer", GetLastError());
 			return NULL;
@@ -3267,13 +3203,13 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 	while (true)
 	{
 		TEXT mapping_name[64]; // enough for int32 as text
-		sprintf(mapping_name, "_mapping_%"ULONGFORMAT, shmem_data->sh_mem_hdr_address[1] + 1);
+		sprintf(mapping_name, "_mapping_%"ULONGFORMAT, sh_mem_hdr_address[1] + 1);
 
 		TEXT object_name[MAXPATHLEN];
-		if (!make_object_name(object_name, sizeof(object_name), shmem_data->sh_mem_name, mapping_name))
+		if (!make_object_name(object_name, sizeof(object_name), sh_mem_name, mapping_name))
 			break;
 
-		file_obj = CreateFileMapping(shmem_data->sh_mem_handle,
+		file_obj = CreateFileMapping(sh_mem_handle,
 									 ISC_get_security_desc(),
 									 PAGE_READWRITE,
 									 0, new_length,
@@ -3284,7 +3220,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 		CloseHandle(file_obj);
 		file_obj = NULL;
-		shmem_data->sh_mem_hdr_address[1]++;
+		sh_mem_hdr_address[1]++;
 	}
 
 	if (file_obj == NULL)
@@ -3293,7 +3229,7 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 		return NULL;
 	}
 
-	void* const address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	MemoryHeader* const address = (MemoryHeader*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL)
 	{
@@ -3304,33 +3240,30 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
 
 	if (flag)
 	{
-		shmem_data->sh_mem_hdr_address[0] = new_length;
-		shmem_data->sh_mem_hdr_address[1]++;
+		sh_mem_hdr_address[0] = new_length;
+		sh_mem_hdr_address[1]++;
 	}
 
-	UnmapViewOfFile(shmem_data->sh_mem_address);
-	CloseHandle(shmem_data->sh_mem_object);
+	UnmapViewOfFile(getHeader());
+	CloseHandle(sh_mem_object);
 
-	shmem_data->sh_mem_address = static_cast<UCHAR*>(address);
-	shmem_data->sh_mem_length_mapped = new_length;
-	shmem_data->sh_mem_object = file_obj;
+	setHeader(address);
+	sh_mem_length_mapped = new_length;
+	sh_mem_object = file_obj;
 
-	if (!shmem_data->sh_mem_length_mapped)
+	if (!sh_mem_length_mapped)
 	{
-		error(statusVector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		error(statusVector, "sh_mem_length_mapped is 0", 0);
 		return NULL;
 	}
 
-	return static_cast<UCHAR*>(address);
+	return (address);
 }
 #endif
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
-						sh_mem* shmem_data,
-						ULONG new_length,
-						bool flag)
+bool SharedMemoryBase::remapFile(Firebird::Arg::StatusVector& statusVector, ULONG, bool)
 {
 /**************************************
  *
@@ -3343,7 +3276,8 @@ UCHAR* ISC_remap_file(Arg::StatusVector& statusVector,
  *
  **************************************/
 
-	statusVector << Arg::Gds(isc_unavailable);
+	statusVector << Arg::Gds(isc_unavailable) << 
+					Arg::Gds(isc_random) << "SharedMemory::remapFile";
 
 	return NULL;
 }
@@ -3397,7 +3331,7 @@ void ISC_sync_signals_reset()
 #endif // UNIX
 
 #ifdef UNIX
-void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
+void SharedMemoryBase::unmapFile(Arg::StatusVector& statusVector)
 {
 /**************************************
  *
@@ -3418,24 +3352,28 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 	}
 	else
 	{
-		SharedFile* sf = SharedFile::locate(shmem_data->sh_mem_address);
+		SharedFile* sf = SharedFile::locate(getHeader());
 
-		FileLock lock(statusVector, shmem_data->sh_mem_handle);
+		FileLock lock(statusVector, sh_mem_handle);
 		lock.setLevel(FileLock::LCK_SHARED);
 		semTable->cleanup(sf->getNum(), lock.tryExclusive());
-		SharedFile::remove(shmem_data->sh_mem_address);
+		SharedFile::remove(getHeader());
 	}
 	--sharedCount;
 #endif
 
-	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
+#if defined(HAVE_OBJECT_MAP) && (!defined(USE_SYS5SEMAPHORE))
+	unmapObject(statusVector, (UCHAR**) sh_mem_mutex, sizeof(mtx));
+#endif
 
-	close(shmem_data->sh_mem_handle);
+	munmap((char *) getHeader(), sh_mem_length_mapped);
+	setHeader(NULL);
+	close(sh_mem_handle);
 }
 #endif
 
 #ifdef WIN_NT
-void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
+void SharedMemoryBase::unmapFile(Arg::StatusVector& statusVector)
 {
 /**************************************
  *
@@ -3448,24 +3386,24 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
  *
  **************************************/
 
-	CloseHandle(shmem_data->sh_mem_interest);
-	if (!UnmapViewOfFile(shmem_data->sh_mem_address))
+	CloseHandle(sh_mem_interest);
+	if (!UnmapViewOfFile(getHeader()))
 	{
 		error(statusVector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
-	CloseHandle(shmem_data->sh_mem_object);
+	CloseHandle(sh_mem_object);
 
-	CloseHandle(shmem_data->sh_mem_handle);
-	if (!UnmapViewOfFile(shmem_data->sh_mem_hdr_address))
+	CloseHandle(sh_mem_handle);
+	if (!UnmapViewOfFile(sh_mem_hdr_address))
 	{
 		error(statusVector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
-	CloseHandle(shmem_data->sh_mem_hdr_object);
+	CloseHandle(sh_mem_hdr_object);
 
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
+	gds__prefix_lock(expanded_filename, sh_mem_name);
 
 	// Delete file only if it is not used by anyone else
 	HANDLE hFile = CreateFile(expanded_filename,
@@ -3478,6 +3416,13 @@ void ISC_unmap_file(Arg::StatusVector& statusVector, sh_mem* shmem_data)
 
 	if (hFile != INVALID_HANDLE_VALUE)
 		CloseHandle(hFile);
+
+#ifdef WIN_NT
+	ISC_mutex_fini(&sh_mem_winMutex);
+	sh_mem_mutex = NULL;
+#endif
+
+	setHeader(NULL);
 }
 #endif
 
@@ -3555,7 +3500,7 @@ static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int s
 			// We want to limit access to semaphores, created here
 			// Reasonable access rights to them - exactly like security database has
 			char secDb[MAXPATHLEN];
-			SecurityDatabase::getPath(secDb);
+			Auth::SecurityDatabase::getPath(secDb);
 			struct stat st;
 			if (stat(secDb, &st) == 0)
 			{
@@ -3660,3 +3605,47 @@ static bool make_object_name(TEXT* buffer, size_t bufsize,
 	return true;
 }
 #endif // WIN_NT
+
+void SharedMemoryBase::mutexLock()
+{
+	int state = ISC_mutex_lock(sh_mem_mutex);
+	if (state != 0)
+	{
+		mutexBug(state, "ISC_mutex_lock");
+	}
+}
+
+bool SharedMemoryBase::mutexLockCond()
+{
+	return ISC_mutex_lock_cond(sh_mem_mutex) == 0;
+}
+
+void SharedMemoryBase::mutexUnlock()
+{
+	int state = ISC_mutex_unlock(sh_mem_mutex);
+	if (state != 0)
+	{
+		mutexBug(state, "ISC_mutex_unlock");
+	}
+}
+
+SharedMemoryBase::SharedMemoryBase()
+  :	sh_mem_mutex(0), sh_mem_length_mapped(0), 
+#ifdef WIN_NT
+	sh_mem_handle(0), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
+	sh_mem_hdr_address(0)
+#else
+	sh_mem_handle(-1)
+#endif
+{
+	sh_mem_name[0] = '\0';
+}
+
+SharedMemoryBase::~SharedMemoryBase()
+{
+}
+
+void SharedMemoryBase::logError(const char* text, const Firebird::Arg::StatusVector& status)
+{
+	iscLogStatus(text, status.value());
+}

@@ -29,11 +29,17 @@
 #define TRACE_LOG
 
 #include "../../common/classes/fb_string.h"
-#include "../../jrd/isc.h"
+#include "../../jrd/isc_s_proto.h"
 
 namespace Jrd {
 
-class TraceLog
+struct TraceLogHeader : public MemoryHeader
+{
+	volatile unsigned int readFileNum;
+	volatile unsigned int writeFileNum;
+};
+
+class TraceLog : public SharedMemory<TraceLogHeader>
 {
 public:
 	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
@@ -46,30 +52,14 @@ public:
 	size_t getApproxLogSize() const;
 
 private:
-	static void checkMutex(const TEXT*, int);
-	static void initShMem(void*, sh_mem*, bool);
+	void mutexBug(int osErrorCode, const char* text);
+	bool initialize(bool);
 
 	void lock();
 	void unlock();
 
 	int openFile(int fileNum);
 	int removeFile(int fileNum);
-
-	struct ShMemHeader
-	{
-		volatile unsigned int readFileNum;
-		volatile unsigned int writeFileNum;
-#ifndef WIN_NT
-		struct mtx mutex;
-#endif
-	};
-
-	sh_mem m_handle;
-	ShMemHeader* m_base;
-#ifdef WIN_NT
-	struct mtx m_winMutex;
-#endif
-	struct mtx* m_mutex;
 
 	Firebird::PathName m_baseFileName;
 	unsigned int m_fileNum;
