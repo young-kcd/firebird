@@ -3417,10 +3417,8 @@ void SharedMemoryBase::unmapFile(Arg::StatusVector& statusVector)
 	if (hFile != INVALID_HANDLE_VALUE)
 		CloseHandle(hFile);
 
-#ifdef WIN_NT
 	ISC_mutex_fini(&sh_mem_winMutex);
 	sh_mem_mutex = NULL;
-#endif
 
 	setHeader(NULL);
 }
