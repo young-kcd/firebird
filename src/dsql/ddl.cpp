@@ -273,7 +273,7 @@ void DDL_execute(dsql_req* request)
 			// Signal UDF for obsolescence
 			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_udf_name];
 			sym_type = SYM_udf;
-			METD_drop_function(request->getTransaction(), string, "");
+			METD_drop_function(request->getTransaction(), QualifiedName(string->str_data, ""));
 			break;
 	}
 

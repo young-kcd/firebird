@@ -137,7 +137,6 @@ enum irq_type_t
 	irq_parameters,			// DSQL/METD: lookup a procedure's parameters
 	irq_collation,			// DSQL/METD: lookup a collation name
 	irq_charset,			// DSQL/METD: lookup a character set
-	irq_trigger,			// DSQL/METD: lookup a trigger
 	irq_domain,				// DSQL/METD: lookup a domain
 	irq_type,				// DSQL/METD: lookup a symbolic name in RDB$TYPES
 	irq_col_default,		// DSQL/METD: lookup default for a column

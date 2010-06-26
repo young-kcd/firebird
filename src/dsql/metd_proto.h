@@ -48,8 +48,8 @@ namespace Jrd {
 
 void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);
 void METD_drop_collation(Jrd::jrd_tra*, const Firebird::MetaName&);
-void METD_drop_function(Jrd::jrd_tra*, const Jrd::dsql_str*, const Firebird::MetaName&);
-void METD_drop_procedure(Jrd::jrd_tra*, const Jrd::dsql_str*, const Firebird::MetaName&);
+void METD_drop_function(Jrd::jrd_tra*, const Firebird::QualifiedName&);
+void METD_drop_procedure(Jrd::jrd_tra*, const Firebird::QualifiedName&);
 void METD_drop_relation(Jrd::jrd_tra*, const Jrd::dsql_str*);
 
 Jrd::dsql_intlsym* METD_get_charset(Jrd::jrd_tra*, USHORT, const char* name);
@@ -67,7 +67,6 @@ Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*,
 	const Jrd::dsql_str*);
 Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*);
-bool METD_get_trigger(Jrd::jrd_tra*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
 bool METD_get_type(Jrd::jrd_tra*, const Jrd::dsql_str*, const char*, SSHORT*);
 Jrd::dsql_rel* METD_get_view_base(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
 	Jrd::MetaNamePairMap& fields);

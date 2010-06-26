@@ -148,7 +148,7 @@ void METD_drop_collation(jrd_tra* transaction, const MetaName& name)
 }
 
 
-void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
+void METD_drop_function(jrd_tra* transaction, const QualifiedName& name)
 {
 /**************************************
  *
@@ -169,20 +169,19 @@ void METD_drop_function(jrd_tra* transaction, const dsql_str* name, const MetaNa
 	thread_db* tdbb = JRD_get_thread_data();
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_udf* function;
 
-	if (dbb->dbb_functions.get(metaName, function))
+	if (dbb->dbb_functions.get(name, function))
 	{
-		MET_dsql_cache_use(tdbb, SYM_udf, metaName.identifier, metaName.package);
+		MET_dsql_cache_use(tdbb, SYM_udf, name.identifier, name.package);
 		function->udf_flags |= UDF_dropped;
-		dbb->dbb_functions.remove(metaName);
+		dbb->dbb_functions.remove(name);
 	}
 
 }
 
 
-void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaName& packageName)
+void METD_drop_procedure(jrd_tra* transaction, const QualifiedName& name)
 {
 /**************************************
  *
@@ -203,14 +202,13 @@ void METD_drop_procedure(jrd_tra* transaction, const dsql_str* name, const MetaN
 	thread_db* tdbb = JRD_get_thread_data();
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	const QualifiedName metaName(MetaName(name->str_data, name->str_length), packageName);
 	dsql_prc* procedure;
 
-	if (dbb->dbb_procedures.get(metaName, procedure))
+	if (dbb->dbb_procedures.get(name, procedure))
 	{
-		MET_dsql_cache_use(tdbb, SYM_procedure, metaName.identifier, metaName.package);
+		MET_dsql_cache_use(tdbb, SYM_procedure, name.identifier, name.package);
 		procedure->prc_flags |= PRC_dropped;
-		dbb->dbb_procedures.remove(metaName);
+		dbb->dbb_procedures.remove(name);
 	}
 }
 
@@ -1512,50 +1510,6 @@ dsql_rel* METD_get_relation(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		relation->rel_flags |= REL_new_relation;
 
 	return relation;
-}
-
-
-bool METD_get_trigger(jrd_tra* transaction, const dsql_str* name, dsql_str** relation, USHORT* trig_type)
-{
-/**************************************
- *
- *  M E T D _ g e t _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *  Look up a trigger's relation and it's current type
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	validateTransaction(transaction);
-
-	bool found = false;
-
-	if (relation)
-		*relation = NULL;
-
-	AutoCacheRequest handle(tdbb, irq_trigger, IRQ_REQUESTS);
-
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
-	{
-		found = true;
-		*trig_type = X.RDB$TRIGGER_TYPE;
-
-		if (!X.RDB$RELATION_NAME.NULL)
-		{
-			if (relation)
-			{
-				fb_utils::exact_name(X.RDB$RELATION_NAME);
-				*relation = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			}
-		}
-	}
-	END_FOR
-
-	return found;
 }
 
 

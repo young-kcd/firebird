@@ -781,9 +781,8 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	if (alter)
 	{
 		// Update DSQL cache
-		AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-		METD_drop_function(transaction, str, package);
-		MET_dsql_cache_release(tdbb, SYM_udf, str->str_data, package);
+		METD_drop_function(transaction, QualifiedName(name, package));
+		MET_dsql_cache_release(tdbb, SYM_udf, name.c_str(), package);
 	}
 }
 
@@ -1382,9 +1381,8 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
-	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-	METD_drop_function(transaction, str, package);
-	MET_dsql_cache_release(tdbb, SYM_udf, str->str_data, package);
+	METD_drop_function(transaction, QualifiedName(name, package));
+	MET_dsql_cache_release(tdbb, SYM_udf, name.c_str(), package);
 }
 
 
@@ -1579,9 +1577,8 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	if (alter)
 	{
 		// Update DSQL cache
-		AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-		METD_drop_procedure(transaction, str, package);
-		MET_dsql_cache_release(tdbb, SYM_procedure, str->str_data, package);
+		METD_drop_procedure(transaction, QualifiedName(name, package));
+		MET_dsql_cache_release(tdbb, SYM_procedure, name.c_str(), package);
 	}
 }
 
@@ -2191,9 +2188,8 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
-	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-	METD_drop_procedure(transaction, str, package);
-	MET_dsql_cache_release(tdbb, SYM_procedure, str->str_data, package);
+	METD_drop_procedure(transaction, QualifiedName(name, package));
+	MET_dsql_cache_release(tdbb, SYM_procedure, name.c_str(), package);
 }
 
 
