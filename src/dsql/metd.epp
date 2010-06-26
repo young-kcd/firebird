@@ -116,7 +116,7 @@ void METD_drop_charset(jrd_tra* transaction, const MetaName& metaName)
 }
 
 
-void METD_drop_collation(jrd_tra* transaction, const dsql_str* name)
+void METD_drop_collation(jrd_tra* transaction, const MetaName& name)
 {
 /**************************************
  *
@@ -137,14 +137,13 @@ void METD_drop_collation(jrd_tra* transaction, const dsql_str* name)
 	thread_db* tdbb = JRD_get_thread_data();
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	MetaName metaName(name->str_data, name->str_length);
 	dsql_intlsym* collation;
 
-	if (dbb->dbb_collations.get(metaName, collation))
+	if (dbb->dbb_collations.get(name, collation))
 	{
-		MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
+		MET_dsql_cache_use(tdbb, SYM_intlsym_collation, name);
 		collation->intlsym_flags |= INTLSYM_dropped;
-		dbb->dbb_collations.remove(metaName);
+		dbb->dbb_collations.remove(name);
 	}
 }
 
@@ -249,7 +248,7 @@ void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
 }
 
 
-dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USHORT charset_id)
+dsql_intlsym* METD_get_collation(jrd_tra* transaction, const MetaName& name, USHORT charset_id)
 {
 /**************************************
  *
@@ -267,14 +266,13 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 	validateTransaction(transaction);
 
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	MetaName metaName(name->str_data, name->str_length);
 
 	// Start by seeing if symbol is already defined
 
 	dsql_intlsym* symbol;
-	if (dbb->dbb_collations.get(metaName, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
+	if (dbb->dbb_collations.get(name, symbol) && !(symbol->intlsym_flags & INTLSYM_dropped))
 	{
-		if (MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName))
+		if (MET_dsql_cache_use(tdbb, SYM_intlsym_collation, name))
 			symbol->intlsym_flags |= INTLSYM_dropped;
 		else
 			return symbol;
@@ -289,11 +287,11 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
-		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
+		WITH X.RDB$COLLATION_NAME EQ name.c_str() AND
 			 X.RDB$CHARACTER_SET_ID EQ charset_id;
 	{
 		symbol = FB_NEW(dbb->dbb_pool) dsql_intlsym(dbb->dbb_pool);
-		symbol->intlsym_name = metaName;
+		symbol->intlsym_name = name;
 		symbol->intlsym_flags = 0;
 		symbol->intlsym_charset_id = X.RDB$CHARACTER_SET_ID;
 		symbol->intlsym_collate_id = X.RDB$COLLATION_ID;
@@ -307,8 +305,8 @@ dsql_intlsym* METD_get_collation(jrd_tra* transaction, const dsql_str* name, USH
 	if (!symbol)
 		return NULL;
 
-	dbb->dbb_collations.put(metaName, symbol);
-	MET_dsql_cache_use(tdbb, SYM_intlsym_collation, metaName);
+	dbb->dbb_collations.put(name, symbol);
+	MET_dsql_cache_use(tdbb, SYM_intlsym_collation, name);
 
 	return symbol;
 }

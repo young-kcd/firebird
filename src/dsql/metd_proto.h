@@ -47,7 +47,7 @@ namespace Jrd {
 };
 
 void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);
-void METD_drop_collation(Jrd::jrd_tra*, const Jrd::dsql_str*);
+void METD_drop_collation(Jrd::jrd_tra*, const Firebird::MetaName&);
 void METD_drop_function(Jrd::jrd_tra*, const Jrd::dsql_str*, const Firebird::MetaName&);
 void METD_drop_procedure(Jrd::jrd_tra*, const Jrd::dsql_str*, const Firebird::MetaName&);
 void METD_drop_relation(Jrd::jrd_tra*, const Jrd::dsql_str*);
@@ -55,7 +55,7 @@ void METD_drop_relation(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_intlsym* METD_get_charset(Jrd::jrd_tra*, USHORT, const char* name);
 USHORT METD_get_charset_bpc(Jrd::jrd_tra*, SSHORT);
 Firebird::MetaName METD_get_charset_name(Jrd::jrd_tra*, SSHORT);
-Jrd::dsql_intlsym* METD_get_collation(Jrd::jrd_tra*, const Jrd::dsql_str*, USHORT charset_id);
+Jrd::dsql_intlsym* METD_get_collation(Jrd::jrd_tra*, const Firebird::MetaName&, USHORT charset_id);
 USHORT METD_get_col_default(Jrd::jrd_tra*, const char*, const char*, bool*, UCHAR*, USHORT);
 Jrd::dsql_str* METD_get_default_charset(Jrd::jrd_tra*);
 bool METD_get_domain(Jrd::jrd_tra*, class Jrd::dsql_fld*, const char* name);

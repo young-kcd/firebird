@@ -619,7 +619,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 	if (collation_name)
 	{
 		const dsql_intlsym* resolved_collation = METD_get_collation(dsqlScratch->getTransaction(),
-			collation_name, field->fld_character_set_id);
+			collation_name->str_data, field->fld_character_set_id);
 
 		if (!resolved_collation)
 		{

@@ -2951,9 +2951,8 @@ void CreateCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
-	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-	METD_drop_collation(transaction, str);
-	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, str->str_data);
+	METD_drop_collation(transaction, name);
+	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, name.c_str());
 }
 
 DdlNode* CreateCollationNode::internalDsqlPass()
@@ -2972,9 +2971,8 @@ DdlNode* CreateCollationNode::internalDsqlPass()
 
 	if (fromName.hasData())
 	{
-		AutoPtr<dsql_str> str(MAKE_string(fromName.c_str(), fromName.length()));
 		const dsql_intlsym* resolvedCollation = METD_get_collation(
-			dsqlScratch->getTransaction(), str, forCharSetId);
+			dsqlScratch->getTransaction(), fromName, forCharSetId);
 
 		if (!resolvedCollation)
 		{
@@ -3103,9 +3101,8 @@ void DropCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	savePoint.release();	// everything is ok
 
 	// Update DSQL cache
-	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
-	METD_drop_collation(transaction, str);
-	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, str->str_data);
+	METD_drop_collation(transaction, name);
+	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, name.c_str());
 }
 
 
