@@ -25,6 +25,10 @@
 #define JRD_DYN_H
 
 #include "../common/classes/MsgPrint.h"
+#include "../common/classes/MetaName.h"
+#include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
+#include "../jrd/dsc.h"
 
 const char* const ALL_PRIVILEGES = "SIUDR";	// all applicable grant/revoke privileges
 const char* const ALL_PROC_PRIVILEGES = "X";	// all applicable grant/revoke privileges for a procedure
@@ -40,6 +44,7 @@ namespace Jrd {
 
 struct bid;
 class jrd_tra;
+class thread_db;
 
 class Global
 {

@@ -160,7 +160,6 @@ enum drq_type_t
 	drq_m_fun,				// modify udf
 	drq_m_view,				// modify view
 	drq_s_colls,			// store collations
-	drq_l_charset,			// lookup charset
 	drq_dom_is_array,		// lookup domain to see if it's an array
 	drq_l_rel_info,			// lookup name and flags of one master relation
 	drq_l_rel_info2,		// lookup names and flags of all master relations

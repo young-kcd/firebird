@@ -378,14 +378,6 @@ void DYN_execute(Global* gbl,
 		DYN_modify_database(gbl, ptr);
 		break;
 
-	case isc_dyn_def_collation:
-		DYN_define_collation(gbl, ptr);
-		break;
-
-	case isc_dyn_del_collation:
-		DYN_delete_collation(gbl, ptr);
-		break;
-
 	case isc_dyn_def_rel:
 	case isc_dyn_def_view:
 		DYN_define_relation(gbl, ptr, verb == isc_dyn_def_view);

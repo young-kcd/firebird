@@ -265,12 +265,6 @@ enum nod_t
 	nod_redef_exception, // RECREATE EXCEPTION
 	nod_replace_exception, // CREATE OR ALTER EXCEPTION
 	nod_mod_udf,
-	nod_def_collation,
-	nod_del_collation,
-	nod_collation_from,
-	nod_collation_from_external,
-	nod_collation_attr,
-	nod_collation_specific_attr,
 	nod_strlen,
 	nod_trim,
 	nod_returning,
@@ -830,16 +824,6 @@ enum node_args {
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
 	e_mod_udf_count,
-
-	e_def_coll_name = 0,
-	e_def_coll_for,
-	e_def_coll_from,
-	e_def_coll_attributes,
-	e_def_coll_specific_attributes,
-	e_def_coll_count,
-
-	e_del_coll_name = 0,
-	e_del_coll_count,
 
 	e_strlen_type = 0,				// constant representing type of length
 	e_strlen_value,

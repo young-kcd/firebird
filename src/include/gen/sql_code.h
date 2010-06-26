@@ -814,7 +814,12 @@ static const struct {
 	{336068829, -829}, /* 221 max_coll_per_charset */
 	{336068830, -829}, /* 222 invalid_coll_attr */
 	{336068840, -901}, /* 232 dyn_wrong_gtt_scope */
+	{336068843, -901}, /* 235 dyn_coll_used_table */
+	{336068844, -901}, /* 236 dyn_coll_used_domain */
+	{336068845, -607}, /* 237 dyn_cannot_del_syscoll */
+	{336068846, -901}, /* 238 dyn_cannot_del_def_coll */
 	{336068849, -901}, /* 241 dyn_table_not_found */
+	{336068851, -901}, /* 243 dyn_coll_used_procedure */
 	{336068852, -829}, /* 244 dyn_scale_too_big */
 	{336068853, -829}, /* 245 dyn_precision_too_small */
 	{336068855,  106}, /* 247 dyn_miss_priv_warning */

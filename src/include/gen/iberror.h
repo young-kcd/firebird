@@ -849,7 +849,12 @@ const ISC_STATUS isc_dyn_gen_not_found                = 336068822L;
 const ISC_STATUS isc_max_coll_per_charset             = 336068829L;
 const ISC_STATUS isc_invalid_coll_attr                = 336068830L;
 const ISC_STATUS isc_dyn_wrong_gtt_scope              = 336068840L;
+const ISC_STATUS isc_dyn_coll_used_table              = 336068843L;
+const ISC_STATUS isc_dyn_coll_used_domain             = 336068844L;
+const ISC_STATUS isc_dyn_cannot_del_syscoll           = 336068845L;
+const ISC_STATUS isc_dyn_cannot_del_def_coll          = 336068846L;
 const ISC_STATUS isc_dyn_table_not_found              = 336068849L;
+const ISC_STATUS isc_dyn_coll_used_procedure          = 336068851L;
 const ISC_STATUS isc_dyn_scale_too_big                = 336068852L;
 const ISC_STATUS isc_dyn_precision_too_small          = 336068853L;
 const ISC_STATUS isc_dyn_miss_priv_warning            = 336068855L;
@@ -1123,7 +1128,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1067;
+const ISC_STATUS isc_err_max                          = 1072;
 
 #else /* c definitions */
 
@@ -1942,7 +1947,12 @@ const ISC_STATUS isc_err_max                          = 1067;
 #define isc_max_coll_per_charset             336068829L
 #define isc_invalid_coll_attr                336068830L
 #define isc_dyn_wrong_gtt_scope              336068840L
+#define isc_dyn_coll_used_table              336068843L
+#define isc_dyn_coll_used_domain             336068844L
+#define isc_dyn_cannot_del_syscoll           336068845L
+#define isc_dyn_cannot_del_def_coll          336068846L
 #define isc_dyn_table_not_found              336068849L
+#define isc_dyn_coll_used_procedure          336068851L
 #define isc_dyn_scale_too_big                336068852L
 #define isc_dyn_precision_too_small          336068853L
 #define isc_dyn_miss_priv_warning            336068855L
@@ -2216,7 +2226,7 @@ const ISC_STATUS isc_err_max                          = 1067;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1067
+#define isc_err_max                          1072
 
 #endif
 

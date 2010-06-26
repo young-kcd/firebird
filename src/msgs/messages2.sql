@@ -1798,15 +1798,15 @@ COMMIT WORK;
 ('dyn_wrong_gtt_scope', 'DYN_define_constraint', 'dyn_def.e', NULL, 8, 232, NULL, '@1 cannot reference @2', NULL, NULL);
 (NULL, 'dyn_mod.epp', 'DYN_modify_sql_field', NULL, 8, 233, NULL, 'Local column @1 is computed, cannot set a default value', NULL, NULL);
 ('del_coll_fail', 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 234, NULL, 'ERASE RDB$COLLATIONS failed', NULL, NULL);
-(NULL, NULL, 'dyn_del.epp', NULL, 8, 235, NULL, 'Collation @1 is used in table @2 (field name @3) and cannot be dropped', NULL, NULL);
-(NULL, NULL, 'dyn_del.epp', NULL, 8, 236, NULL, 'Collation @1 is used in domain @2 and cannot be dropped', NULL, NULL);
-(NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 237, NULL, 'Cannot delete system collation', NULL, NULL);
-(NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 238, NULL, 'Cannot delete default collation of CHARACTER SET @1', NULL, NULL);
+('dyn_coll_used_table', NULL, 'dyn_del.epp', NULL, 8, 235, NULL, 'Collation @1 is used in table @2 (field name @3) and cannot be dropped', NULL, NULL);
+('dyn_coll_used_domain', NULL, 'dyn_del.epp', NULL, 8, 236, NULL, 'Collation @1 is used in domain @2 and cannot be dropped', NULL, NULL);
+('dyn_cannot_del_syscoll', 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 237, NULL, 'Cannot delete system collation', NULL, NULL);
+('dyn_cannot_del_def_coll', 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 238, NULL, 'Cannot delete default collation of CHARACTER SET @1', NULL, NULL);
 (NULL, NULL, 'dyn_del.epp', NULL, 8, 239, NULL, 'Domain @1 is used in procedure @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 240, NULL, 'Field @1 cannot be used twice in index @2', NULL, NULL);
 ('dyn_table_not_found', 'DYN_define_index', 'dyn_def.epp', NULL, 8, 241, NULL, 'Table @1 not found', NULL, NULL);
 (NULL, 'DYN_define_index', 'dyn_def.epp', NULL, 8, 242, NULL, 'attempt to reference a view (@1) in a foreign key', NULL, NULL);
-(NULL, 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 243, NULL, 'Collation @1 is used in procedure @2 (parameter name @3) and cannot be dropped', NULL, NULL);
+('dyn_coll_used_procedure', 'DYN_delete_collation', 'dyn_del.epp', NULL, 8, 243, NULL, 'Collation @1 is used in procedure @2 (parameter name @3) and cannot be dropped', NULL, NULL);
 -- Do not change the arguments of the previous DYN messages.
 -- Write the new DYN messages here.
 ('dyn_scale_too_big', 'check_update_numeric_type', 'dyn_mod.epp', NULL, 8, 244, NULL, 'New scale specified for column @1 must be at most @2.', NULL, NULL);

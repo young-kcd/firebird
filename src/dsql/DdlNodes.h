@@ -24,11 +24,14 @@
 #define DSQL_DDL_NODES_H
 
 #include "../jrd/common.h"
+#include "../jrd/dyn.h"
+#include "../jrd/msg_encode.h"
 #include "../dsql/node.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/Nodes.h"
 #include "../common/classes/array.h"
 #include "../common/classes/TriState.h"
+#include "../dsql/errd_proto.h"
 
 namespace Jrd {
 
@@ -491,6 +494,91 @@ protected:
 private:
 	CreateAlterTriggerNode* createNode;
 	DropTriggerNode dropNode;
+};
+
+
+class CreateCollationNode : public DdlNode
+{
+public:
+	explicit CreateCollationNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName, const Firebird::MetaName& aForCharSet)
+		: DdlNode(p, sqlText),
+		  name(p, aName),
+		  forCharSet(p, aForCharSet),
+		  fromName(p),
+		  fromExternal(p),
+		  specificAttributes(p),
+		  attributesOn(0),
+		  attributesOff(0),
+		  forCharSetId(0),
+		  fromCollationId(0)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+	void setAttribute(USHORT attribute)
+	{
+		if ((attributesOn | attributesOff) & attribute)
+		{
+			// msg: 222: "Invalid collation attributes"
+			using namespace Firebird;
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+		}
+
+		attributesOn |= attribute;
+	}
+
+	void unsetAttribute(USHORT attribute)
+	{
+		if ((attributesOn | attributesOff) & attribute)
+		{
+			// msg: 222: "Invalid collation attributes"
+			using namespace Firebird;
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+		}
+
+		attributesOff |= attribute;
+	}
+
+protected:
+	virtual DdlNode* internalDsqlPass();
+
+public:
+	Firebird::MetaName name;
+	Firebird::MetaName forCharSet;
+	Firebird::MetaName fromName;
+	Firebird::string fromExternal;
+	Firebird::UCharBuffer specificAttributes;
+
+private:
+	USHORT attributesOn;
+	USHORT attributesOff;
+	USHORT forCharSetId;
+	USHORT fromCollationId;
+};
+
+
+class DropCollationNode : public DdlNode
+{
+public:
+	explicit DropCollationNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName)
+		: DdlNode(p, sqlText),
+		  name(p, aName)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	Firebird::MetaName name;
 };
 
 

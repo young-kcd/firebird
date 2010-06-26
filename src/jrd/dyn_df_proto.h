@@ -24,7 +24,6 @@
 #ifndef JRD_DYN_DF_PROTO_H
 #define JRD_DYN_DF_PROTO_H
 
-void DYN_define_collation(Jrd::Global*, const UCHAR**);
 void DYN_define_constraint(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void DYN_define_dimension(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void DYN_define_exception(Jrd::Global*, const UCHAR**);

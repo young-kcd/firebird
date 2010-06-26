@@ -30,6 +30,7 @@
 #include "../jrd/msg_encode.h"
 #include "../jrd/obj.h"
 #include "../jrd/tra.h"
+#include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -2751,6 +2752,360 @@ void RecreateTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateCollationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateCollationNode\n"
+		"  name: '%s'\n"
+		"  forCharSet: '%s'\n"
+		"  fromName: '%s'\n"
+		"  fromExternal: '%s'\n"
+		"  attributesOn: %x\n"
+		"  attributesOff: %x\n",
+		name.c_str(), forCharSet.c_str(), fromName.c_str(), fromExternal.c_str(),
+		attributesOn, attributesOff);
+}
+
+void CreateCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_COLLATION, name);
+
+	bool endStore = false;
+
+	try
+	{
+		AutoCacheRequest request(tdbb, drq_s_colls, DYN_REQUESTS);
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			X IN RDB$COLLATIONS
+		{
+			X.RDB$CHARACTER_SET_ID = forCharSetId;
+			strcpy(X.RDB$COLLATION_NAME, name.c_str());
+			X.RDB$SYSTEM_FLAG = 0;
+
+			X.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+			X.RDB$BASE_COLLATION_NAME.NULL = TRUE;
+
+			CharSet* cs = INTL_charset_lookup(tdbb, forCharSetId);
+			SubtypeInfo info;
+
+			if (fromName.hasData())
+			{
+				if (MET_get_char_coll_subtype_info(tdbb,
+						INTL_CS_COLL_TO_TTYPE(forCharSetId, fromCollationId), &info) &&
+					info.specificAttributes.hasData())
+				{
+					UCharBuffer temp;
+					ULONG size = info.specificAttributes.getCount() * cs->maxBytesPerChar();
+
+					size = INTL_convert_bytes(tdbb, forCharSetId, temp.getBuffer(size), size,
+						CS_METADATA, info.specificAttributes.begin(),
+						info.specificAttributes.getCount(), status_exception::raise);
+					temp.shrink(size);
+					info.specificAttributes = temp;
+				}
+
+				strcpy(X.RDB$BASE_COLLATION_NAME, info.baseCollationName.c_str());
+				X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+			}
+			else if (fromExternal.hasData())
+			{
+				strcpy(X.RDB$BASE_COLLATION_NAME, fromExternal.c_str());
+				X.RDB$BASE_COLLATION_NAME.NULL = FALSE;
+			}
+
+			if (specificAttributes.hasData())
+			{
+				UCharBuffer temp;
+				ULONG size = specificAttributes.getCount() * cs->maxBytesPerChar();
+
+				size = INTL_convert_bytes(tdbb, forCharSetId, temp.getBuffer(size), size,
+					attachment->att_charset, specificAttributes.begin(),
+					specificAttributes.getCount(), status_exception::raise);
+				temp.shrink(size);
+				specificAttributes = temp;
+			}
+
+			info.charsetName = forCharSet.c_str();
+			info.collationName = name;
+			if (X.RDB$BASE_COLLATION_NAME.NULL)
+				info.baseCollationName = info.collationName;
+			else
+				info.baseCollationName = X.RDB$BASE_COLLATION_NAME;
+			info.ignoreAttributes = false;
+
+			if (!IntlManager::collationInstalled(info.baseCollationName.c_str(),
+					info.charsetName.c_str()))
+			{
+				// msg: 223: "Collation @1 not installed for character set @2"
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(ENCODE_ISC_MSG(223, DYN_MSG_FAC)) <<
+					info.baseCollationName << info.charsetName);
+			}
+
+			IntlUtil::SpecificAttributesMap map;
+
+			if (!IntlUtil::parseSpecificAttributes(
+					cs, info.specificAttributes.getCount(), info.specificAttributes.begin(), &map) ||
+				!IntlUtil::parseSpecificAttributes(
+					cs, specificAttributes.getCount(), specificAttributes.begin(), &map))
+			{
+				// msg: 222: "Invalid collation attributes"
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			}
+
+			const string s = IntlUtil::generateSpecificAttributes(cs, map);
+			string newSpecificAttributes;
+
+			if (!IntlManager::setupCollationAttributes(
+					info.baseCollationName.c_str(), info.charsetName.c_str(), s,
+					newSpecificAttributes))
+			{
+				// msg: 222: "Invalid collation attributes"
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			}
+
+			memcpy(info.specificAttributes.getBuffer(newSpecificAttributes.length()),
+				newSpecificAttributes.begin(), newSpecificAttributes.length());
+
+			if (info.specificAttributes.hasData())
+			{
+				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+				attachment->storeMetaDataBlob(tdbb, transaction, &X.RDB$SPECIFIC_ATTRIBUTES,
+					string(info.specificAttributes.begin(), info.specificAttributes.getCount()),
+					forCharSetId);
+			}
+
+			info.attributes = (info.attributes | attributesOn) & (~attributesOff);
+			X.RDB$COLLATION_ATTRIBUTES = info.attributes;
+
+			// Do not allow invalid attributes here.
+			if (!INTL_texttype_validate(tdbb, &info))
+			{
+				// msg: 222: "Invalid collation attributes"
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(ENCODE_ISC_MSG(222, DYN_MSG_FAC)));
+			}
+
+			// ASF: User collations are created with the last number available,
+			// to minimize the possibility of conflicts with future system collations.
+			// The greater available number is 126 to avoid signed/unsigned problems.
+
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID = 126;
+
+			AutoCacheRequest request2(tdbb, drq_l_max_coll_id, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request2)
+				Y IN RDB$COLLATIONS
+				WITH Y.RDB$CHARACTER_SET_ID = forCharSetId AND
+					 Y.RDB$COLLATION_ID NOT MISSING
+				SORTED BY DESCENDING Y.RDB$COLLATION_ID
+			{
+				if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
+				{
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					break;
+				}
+				else
+					X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
+			}
+			END_FOR
+
+			if (X.RDB$COLLATION_ID.NULL)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(isc_max_coll_per_charset));
+			}
+
+			endStore = true;
+		}
+		END_STORE
+	}
+	catch (const status_exception& ex)
+	{
+		// DEFINE COLLATION failed
+		rethrowMetaException(ex, ENCODE_ISC_MSG(219, DYN_MSG_FAC), endStore);
+	}
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_COLLATION, name);
+
+	savePoint.release();	// everything is ok
+
+	// Update DSQL cache
+	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
+	METD_drop_collation(transaction, str);
+	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, str->str_data);
+}
+
+DdlNode* CreateCollationNode::internalDsqlPass()
+{
+	const dsql_intlsym* resolvedCharSet = METD_get_charset(
+		dsqlScratch->getTransaction(), forCharSet.length(), forCharSet.c_str());
+
+	if (!resolvedCharSet)
+	{
+		// specified character set not found
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_charset_not_found) << forCharSet);
+	}
+
+	forCharSetId = resolvedCharSet->intlsym_charset_id;
+
+	if (fromName.hasData())
+	{
+		AutoPtr<dsql_str> str(MAKE_string(fromName.c_str(), fromName.length()));
+		const dsql_intlsym* resolvedCollation = METD_get_collation(
+			dsqlScratch->getTransaction(), str, forCharSetId);
+
+		if (!resolvedCollation)
+		{
+			// Specified collation not found
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_collation_not_found) << fromName << forCharSet);
+		}
+
+		fromCollationId = resolvedCollation->intlsym_collate_id;
+	}
+
+	return DdlNode::internalDsqlPass();
+}
+
+
+//----------------------
+
+
+void DropCollationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropCollationNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	bool found = false;
+	AutoCacheRequest request(tdbb, drq_e_colls, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		COLL IN RDB$COLLATIONS
+		CROSS CS IN RDB$CHARACTER_SETS
+		WITH COLL.RDB$COLLATION_NAME EQ name.c_str() AND
+			 CS.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID
+	{
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_COLLATION, name);
+
+		if (!COLL.RDB$SYSTEM_FLAG.NULL && COLL.RDB$SYSTEM_FLAG)
+		{
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_cannot_del_syscoll));
+		}
+
+		if (COLL.RDB$COLLATION_ID == 0 ||
+			(!CS.RDB$DEFAULT_COLLATE_NAME.NULL &&
+				MetaName(COLL.RDB$COLLATION_NAME) == MetaName(CS.RDB$DEFAULT_COLLATE_NAME)))
+		{
+			fb_utils::exact_name_limit(CS.RDB$CHARACTER_SET_NAME,
+				sizeof(CS.RDB$CHARACTER_SET_NAME));
+
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_cannot_del_def_coll) << CS.RDB$CHARACTER_SET_NAME);
+		}
+
+		found = true;
+		fb_utils::exact_name_limit(COLL.RDB$COLLATION_NAME, sizeof(COLL.RDB$COLLATION_NAME));
+
+		AutoCacheRequest request2(tdbb, drq_l_rfld_coll, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			RF IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS
+			WITH RF.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
+				 F.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID AND
+				 RF.RDB$COLLATION_ID EQ COLL.RDB$COLLATION_ID
+		{
+			fb_utils::exact_name_limit(RF.RDB$RELATION_NAME, sizeof(RF.RDB$RELATION_NAME));
+			fb_utils::exact_name_limit(RF.RDB$FIELD_NAME, sizeof(RF.RDB$FIELD_NAME));
+
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_coll_used_table) << COLL.RDB$COLLATION_NAME <<
+				RF.RDB$RELATION_NAME << RF.RDB$FIELD_NAME);
+		}
+		END_FOR
+
+		request2.reset(tdbb, drq_l_prm_coll, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			PRM IN RDB$PROCEDURE_PARAMETERS CROSS F IN RDB$FIELDS
+			WITH PRM.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
+				 F.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID AND
+				 PRM.RDB$COLLATION_ID EQ COLL.RDB$COLLATION_ID
+		{
+			fb_utils::exact_name_limit(PRM.RDB$PARAMETER_NAME, sizeof(PRM.RDB$PARAMETER_NAME));
+
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_coll_used_procedure) <<
+				COLL.RDB$COLLATION_NAME <<
+				QualifiedName(PRM.RDB$PROCEDURE_NAME,
+					(PRM.RDB$PACKAGE_NAME.NULL ? NULL : PRM.RDB$PACKAGE_NAME)).toString().c_str() <<
+				PRM.RDB$PARAMETER_NAME);
+		}
+		END_FOR
+
+		request2.reset(tdbb, drq_l_fld_coll, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			F IN RDB$FIELDS
+			WITH F.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID AND
+				 F.RDB$COLLATION_ID EQ COLL.RDB$COLLATION_ID
+		{
+			fb_utils::exact_name_limit(F.RDB$FIELD_NAME, sizeof(F.RDB$FIELD_NAME));
+
+			status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(isc_dyn_coll_used_domain) << COLL.RDB$COLLATION_NAME << F.RDB$FIELD_NAME);
+		}
+		END_FOR
+
+		ERASE COLL;
+	}
+	END_FOR
+
+	if (found)
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_COLLATION, name);
+	else
+	{
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(name));
+	}
+
+	savePoint.release();	// everything is ok
+
+	// Update DSQL cache
+	AutoPtr<dsql_str> str(MAKE_string(name.c_str(), name.length()));
+	METD_drop_collation(transaction, str);
+	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, str->str_data);
 }
 
 

@@ -132,7 +132,6 @@ static void define_exception(DsqlCompilerScratch*, NOD_TYPE);
 static void define_field(DsqlCompilerScratch*, dsql_nod*, SSHORT, const dsql_str*, const dsql_nod* pkcols);
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
-static void define_collation(DsqlCompilerScratch*);
 static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
 static void define_rel_constraint(DsqlCompilerScratch*, dsql_nod*);
@@ -148,7 +147,6 @@ static void define_upd_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const 
 	const dsql_nod*, const char*, const char*);
 static void define_view(DsqlCompilerScratch*, NOD_TYPE);
 static void define_view_trigger(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*);
-static void delete_collation(DsqlCompilerScratch*);
 static void delete_exception(DsqlCompilerScratch*, dsql_nod*, bool);
 static void delete_relation_view(DsqlCompilerScratch*, dsql_nod*, bool);
 static const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements);
@@ -268,13 +266,6 @@ void DDL_execute(dsql_req* request)
 				string = (dsql_str*) statement->getDdlNode()->nod_arg[e_alt_name];
 			sym_type = SYM_relation;
 			METD_drop_relation(request->getTransaction(), string);
-			break;
-
-		case nod_del_collation:
-			// for delete, get rid of the cached collation metadata
-			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_del_coll_name];
-			sym_type = SYM_intlsym_collation;
-			METD_drop_collation(request->getTransaction(), string);
 			break;
 
 		case nod_del_udf:
@@ -1918,105 +1909,6 @@ static void define_filter(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-static void define_collation(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ c o l l a t i o n
- *
- **************************************
- *
- * Function
- *	Create a collation.
- *
- **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	const dsql_nod* ddlNode = statement->getDdlNode();
-	const dsql_str* coll_name = (dsql_str*) ddlNode->nod_arg[e_def_coll_name];
-	const dsql_str* coll_for = (dsql_str*) ddlNode->nod_arg[e_def_coll_for];
-	const dsql_nod* coll_from = ddlNode->nod_arg[e_def_coll_from];
-	const dsql_nod* coll_attributes = ddlNode->nod_arg[e_def_coll_attributes];
-	const dsql_nod* coll_specific_attributes =
-		PASS1_node(dsqlScratch, ddlNode->nod_arg[e_def_coll_specific_attributes]);
-
-	const dsql_intlsym* resolved_charset =
-		METD_get_charset(dsqlScratch->getTransaction(), (USHORT) strlen(coll_for->str_data),
-			coll_for->str_data);
-
-	if (!resolved_charset)
-	{
-		// specified character set not found
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-				  Arg::Gds(isc_charset_not_found) << Arg::Str(coll_for->str_data));
-	}
-
-	if (coll_specific_attributes)
-		coll_specific_attributes = coll_specific_attributes->nod_arg[0];
-
-	dsqlScratch->appendNullString(isc_dyn_def_collation, coll_name->str_data);
-	dsqlScratch->appendNumber(isc_dyn_coll_for_charset, resolved_charset->intlsym_charset_id);
-
-	if (coll_from)
-	{
-		const dsql_str* coll_name = reinterpret_cast<dsql_str*>(coll_from->nod_arg[0]);
-		if (coll_from->nod_type == nod_collation_from)
-		{
-			const dsql_intlsym* resolved_collation = METD_get_collation(
-				dsqlScratch->getTransaction(), coll_name, resolved_charset->intlsym_charset_id);
-
-			if (!resolved_collation)
-			{
-				// Specified collation not found
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_collation_not_found) << Arg::Str(coll_name->str_data) <<
-						  									   Arg::Str(resolved_charset->intlsym_name));
-			}
-
-			dsqlScratch->appendNumber(isc_dyn_coll_from,
-				INTL_CS_COLL_TO_TTYPE(resolved_collation->intlsym_charset_id,
-					resolved_collation->intlsym_collate_id));
-		}
-		else if (coll_from->nod_type == nod_collation_from_external)
-		{
-			dsqlScratch->appendNullString(isc_dyn_coll_from_external, coll_name->str_data);
-		}
-		else
-			fb_assert(false);
-	}
-
-	if (coll_attributes)
-	{
-		const dsql_nod* const* ptr = coll_attributes->nod_arg;
-		for (const dsql_nod* const* const end = ptr + coll_attributes->nod_count; ptr < end; ptr++)
-		{
-			const dsql_nod* attribute = *ptr;
-
-			switch (attribute->nod_type)
-			{
-				case nod_collation_attr:
-					dsqlScratch->appendNumber(isc_dyn_coll_attribute, (IPTR) attribute->nod_arg[0]);
-					break;
-
-				default:
-					break;
-			}
-		}
-	}
-
-	if (coll_specific_attributes)
-	{
-		dsqlScratch->appendNumber(isc_dyn_coll_specific_attributes_charset,
-			coll_specific_attributes->nod_desc.dsc_ttype());
-		dsqlScratch->appendNullString(isc_dyn_coll_specific_attributes,
-			((dsql_str*)coll_specific_attributes->nod_arg[0])->str_data);
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static void define_index(DsqlCompilerScratch* dsqlScratch)
 {
 /**************************************
@@ -3258,26 +3150,6 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 }
 
 
-static void delete_collation(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e l e t e _ c o l l a t i o n
- *
- **************************************
- *
- * Function
- *	Delete a collation.
- *
- **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_str* coll_name = (dsql_str*) statement->getDdlNode()->nod_arg[e_del_coll_name];
-	dsqlScratch->appendNullString(isc_dyn_del_collation, coll_name->str_data);
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static void delete_exception (DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool silent_deletion)
 {
 /**************************************
@@ -3671,14 +3543,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_mod_role:
 		modify_map(dsqlScratch);
-		break;
-
-	case nod_def_collation:
-		define_collation(dsqlScratch);
-		break;
-
-	case nod_del_collation:
-		delete_collation(dsqlScratch);
 		break;
 
 	case nod_add_user:

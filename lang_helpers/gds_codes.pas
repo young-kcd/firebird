@@ -826,7 +826,12 @@ const
 	gds_max_coll_per_charset             = 336068829;
 	gds_invalid_coll_attr                = 336068830;
 	gds_dyn_wrong_gtt_scope              = 336068840;
+	gds_dyn_coll_used_table              = 336068843;
+	gds_dyn_coll_used_domain             = 336068844;
+	gds_dyn_cannot_del_syscoll           = 336068845;
+	gds_dyn_cannot_del_def_coll          = 336068846;
 	gds_dyn_table_not_found              = 336068849;
+	gds_dyn_coll_used_procedure          = 336068851;
 	gds_dyn_scale_too_big                = 336068852;
 	gds_dyn_precision_too_small          = 336068853;
 	gds_dyn_miss_priv_warning            = 336068855;

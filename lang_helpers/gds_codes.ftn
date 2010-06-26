@@ -1638,8 +1638,18 @@ C --
       PARAMETER (GDS__invalid_coll_attr                = 336068830)
       INTEGER*4 GDS__dyn_wrong_gtt_scope             
       PARAMETER (GDS__dyn_wrong_gtt_scope              = 336068840)
+      INTEGER*4 GDS__dyn_coll_used_table             
+      PARAMETER (GDS__dyn_coll_used_table              = 336068843)
+      INTEGER*4 GDS__dyn_coll_used_domain            
+      PARAMETER (GDS__dyn_coll_used_domain             = 336068844)
+      INTEGER*4 GDS__dyn_cannot_del_syscoll          
+      PARAMETER (GDS__dyn_cannot_del_syscoll           = 336068845)
+      INTEGER*4 GDS__dyn_cannot_del_def_coll         
+      PARAMETER (GDS__dyn_cannot_del_def_coll          = 336068846)
       INTEGER*4 GDS__dyn_table_not_found             
       PARAMETER (GDS__dyn_table_not_found              = 336068849)
+      INTEGER*4 GDS__dyn_coll_used_procedure         
+      PARAMETER (GDS__dyn_coll_used_procedure          = 336068851)
       INTEGER*4 GDS__dyn_scale_too_big               
       PARAMETER (GDS__dyn_scale_too_big                = 336068852)
       INTEGER*4 GDS__dyn_precision_too_small         

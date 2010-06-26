@@ -1929,8 +1929,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_add_user:
 	case nod_mod_user:
 	case nod_del_user:
-	case nod_def_collation:
-	case nod_del_collation:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return input;
 
@@ -10694,30 +10692,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_mod_udf:
 		verb = "mod_udf";
-		break;
-
-	case nod_def_collation:
-		verb = "def_collation";
-		break;
-
-	case nod_del_collation:
-		verb = "del_collation";
-		break;
-
-	case nod_collation_from:
-		verb = "collation_from";
-		break;
-
-	case nod_collation_from_external:
-		verb = "collation_from_external";
-		break;
-
-	case nod_collation_attr:
-		verb = "collation_attr";
-		break;
-
-	case nod_collation_specific_attr:
-		verb = "collation_specific_attr";
 		break;
 
 	case nod_returning:

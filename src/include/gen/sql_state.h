@@ -814,7 +814,12 @@ static const struct {
 	{336068829, "2C000"}, // 221 max_coll_per_charset
 	{336068830, "HY000"}, // 222 invalid_coll_attr
 	{336068840, "HY000"}, // 232 dyn_wrong_gtt_scope
+	{336068843, "HY000"}, // 235 dyn_coll_used_table
+	{336068844, "HY000"}, // 236 dyn_coll_used_domain
+	{336068845, "HY000"}, // 237 dyn_cannot_del_syscoll
+	{336068846, "HY000"}, // 238 dyn_cannot_del_def_coll
 	{336068849, "42000"}, // 241 dyn_table_not_found
+	{336068851, "HY000"}, // 243 dyn_coll_used_procedure
 	{336068852, "42000"}, // 244 dyn_scale_too_big
 	{336068853, "42000"}, // 245 dyn_precision_too_small
 	{336068855, "42000"}, // 247 dyn_miss_priv_warning

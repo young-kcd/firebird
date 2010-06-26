@@ -627,6 +627,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ExprNode* exprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
+	Jrd::CreateCollationNode* createCollationNode;
 	Jrd::CreateAlterFunctionNode* createAlterFunctionNode;
 	Jrd::CreateAlterProcedureNode* createAlterProcedureNode;
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
@@ -659,10 +660,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification char_length_expression character_keyword character_type
 %type <legacyNode> charset_clause check_constraint check_opt close_cursor col_opt collate_clause
-%type <legacyNode> collation_accent_attribute collation_attribute collation_attribute_list
-%type <legacyNode> collation_attribute_list_opt collation_case_attribute collation_clause
-%type <legacyNode> collation_pad_attribute collation_sequence_definition
-%type <legacyNode> collation_specific_attribute_opt column_constraint column_constraint_clause
+%type <legacyNode> column_constraint column_constraint_clause
 %type <legacyNode> column_constraint_def column_constraint_list column_def
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
@@ -821,6 +819,16 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <createAlterFunctionNode> alter_function_clause function_clause function_clause_start replace_function_clause
 %type <createAlterProcedureNode> alter_procedure_clause procedure_clause procedure_clause_start replace_procedure_clause
 %type <externalClause> external_clause
+
+%type <createCollationNode> collation_clause
+%type collation_sequence_definition(<createCollationNode>)
+%type collation_accent_attribute(<createCollationNode>)
+%type collation_attribute(<createCollationNode>)
+%type collation_attribute_list(<createCollationNode>)
+%type collation_attribute_list_opt(<createCollationNode>)
+%type collation_case_attribute(<createCollationNode>)
+%type collation_pad_attribute(<createCollationNode>)
+%type collation_specific_attribute_opt(<createCollationNode>)
 
 %type <triBoolVal> trigger_active
 %type <uint64Val> trigger_db_type trigger_ddl_type trigger_ddl_type_items trigger_type
@@ -1213,7 +1221,7 @@ create_clause	: EXCEPTION exception_clause
 		| ROLE role_clause
 			{ $$ = $2; }
 		| COLLATION collation_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| USER create_user_clause
 			{ $$ = $2; }
 		| PACKAGE package_clause
@@ -1426,62 +1434,71 @@ role_clause : symbol_role_name
 
 // CREATE COLLATION
 
-collation_clause : symbol_collation_name FOR symbol_character_set_name
-		collation_sequence_definition
-		collation_attribute_list_opt collation_specific_attribute_opt
-			{ $$ = make_node (nod_def_collation,
-						(int) e_def_coll_count, $1, $3, $4, make_list($5), $6); }
-		;
+collation_clause
+	: symbol_collation_name FOR symbol_character_set_name
+			{
+				$<createCollationNode>$ = FB_NEW(getPool()) CreateCollationNode(
+					getPool(), compilingText, toName($1), toName($3));
+			}
+		collation_sequence_definition($4)
+		collation_attribute_list_opt($4) collation_specific_attribute_opt($4)
+			{ $$ = $4; }
+	;
 
-collation_sequence_definition :
-		FROM symbol_collation_name
-			{ $$ = make_node(nod_collation_from, 1, $2); }
-		| FROM EXTERNAL '(' sql_string ')'
-			{ $$ = make_node(nod_collation_from_external, 1, $4); }
-		|
-			{ $$ = NULL; }
-		;
+collation_sequence_definition($createCollation)
+	:
+	| FROM symbol_collation_name
+		{ $createCollation->fromName = toName($2); }
+	| FROM EXTERNAL '(' sql_string ')'
+		{ $createCollation->fromExternal = toString($4); }
+	;
 
-collation_attribute_list_opt :
-			{ $$ = NULL; }
-		| collation_attribute_list
-		;
+collation_attribute_list_opt($createCollation)
+	:
+	| collation_attribute_list($createCollation)
+	;
 
-collation_attribute_list : collation_attribute
-		| collation_attribute_list collation_attribute
-			{ $$ = make_node(nod_list, 2, $1, $2); }
-		;
+collation_attribute_list($createCollation)
+	: collation_attribute($createCollation)
+	| collation_attribute_list collation_attribute($createCollation)
+	;
 
-collation_attribute :
-		  collation_pad_attribute
-		| collation_case_attribute
-		| collation_accent_attribute
-		;
+collation_attribute($createCollation)
+	: collation_pad_attribute($createCollation)
+	| collation_case_attribute($createCollation)
+	| collation_accent_attribute($createCollation)
+	;
 
-collation_pad_attribute : NO PAD
-			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_PAD_SPACE); }
-		| PAD SPACE
-			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_PAD_SPACE); }
-		;
+collation_pad_attribute($createCollation)
+	: NO PAD
+		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
+	| PAD SPACE
+		{ $createCollation->setAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
+	;
 
-collation_case_attribute : CASE SENSITIVE
-			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_CASE_INSENSITIVE); }
-		| CASE INSENSITIVE
-			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_CASE_INSENSITIVE); }
-		;
+collation_case_attribute($createCollation)
+	: CASE SENSITIVE
+		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+	| CASE INSENSITIVE
+		{ $createCollation->setAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+	;
 
-collation_accent_attribute : ACCENT SENSITIVE
-			{ $$ = make_node(nod_collation_attr, 1, -TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
-		| ACCENT INSENSITIVE
-			{ $$ = make_node(nod_collation_attr, 1, TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
-		;
+collation_accent_attribute($createCollation)
+	: ACCENT SENSITIVE
+		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+	| ACCENT INSENSITIVE
+		{ $createCollation->setAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+	;
 
-collation_specific_attribute_opt :
-			{ $$ = NULL; }
-		| sql_string
-			{ $$ = make_node(nod_collation_specific_attr, 1,
-				MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
-		;
+collation_specific_attribute_opt($createCollation)
+	:
+	| sql_string
+		{
+			string s(toString($1));
+			$createCollation->specificAttributes.clear();
+			$createCollation->specificAttributes.add((const UCHAR*) s.begin(), s.length());
+		}
+	;
 
 // ALTER CHARACTER SET
 
@@ -3361,7 +3378,7 @@ drop_clause	: EXCEPTION symbol_exception_name
 		| SEQUENCE symbol_generator_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		| COLLATION symbol_collation_name
-			{ $$ = make_node (nod_del_collation, (int) 1, $2); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) DropCollationNode(getPool(), compilingText, toName($2))); }
 		| USER drop_user_clause
 			{ $$ = $2; }
 		| PACKAGE symbol_package_name

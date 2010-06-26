@@ -818,7 +818,12 @@ Data source : @4"},		/* eds_statement */
 	{336068829, "Maximum number of collations per character set exceeded"},		/* max_coll_per_charset */
 	{336068830, "Invalid collation attributes"},		/* invalid_coll_attr */
 	{336068840, "@1 cannot reference @2"},		/* dyn_wrong_gtt_scope */
+	{336068843, "Collation @1 is used in table @2 (field name @3) and cannot be dropped"},		/* dyn_coll_used_table */
+	{336068844, "Collation @1 is used in domain @2 and cannot be dropped"},		/* dyn_coll_used_domain */
+	{336068845, "Cannot delete system collation"},		/* dyn_cannot_del_syscoll */
+	{336068846, "Cannot delete default collation of CHARACTER SET @1"},		/* dyn_cannot_del_def_coll */
 	{336068849, "Table @1 not found"},		/* dyn_table_not_found */
+	{336068851, "Collation @1 is used in procedure @2 (parameter name @3) and cannot be dropped"},		/* dyn_coll_used_procedure */
 	{336068852, "New scale specified for column @1 must be at most @2."},		/* dyn_scale_too_big */
 	{336068853, "New precision specified for column @1 must be at least @2."},		/* dyn_precision_too_small */
 	{336068855, "Warning: @1 on @2 is not granted to @3."},		/* dyn_miss_priv_warning */
