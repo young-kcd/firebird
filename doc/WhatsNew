@@ -90,6 +90,7 @@
     * Bugfix CORE-2985
         Altering COMPUTED columns doesn't handle dependencies well
       Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-2984
