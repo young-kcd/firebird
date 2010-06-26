@@ -311,8 +311,8 @@ namespace Jrd {
 
 class Database;
 
-class LockManager : public Firebird::RefCounted, 
-					public Firebird::GlobalStorage, 
+class LockManager : public Firebird::RefCounted,
+					public Firebird::GlobalStorage,
 					public SharedMemory<lhb>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
@@ -446,18 +446,15 @@ private:
 	public:
 		Extent() { }
 		Extent(Firebird::MemoryPool&) { }
-		Extent(const SharedMemoryBase& p) 
-		{ 
+
+		Extent(const SharedMemoryBase& p)
+		{
 			assign(p);
 		}
-		Extent(Firebird::MemoryPool&, const SharedMemoryBase& p) 
-		{ 
+
+		Extent(Firebird::MemoryPool&, const SharedMemoryBase& p)
+		{
 			assign(p);
-		}
-		Extent& operator=(const SharedMemoryBase& p)
-		{ 
-			assign(p);
-			return *this;
 		}
 
 		~Extent()
@@ -465,11 +462,18 @@ private:
 			sh_mem_header = NULL;	// avoid unmapping in dtor
 		}
 
+		Extent& operator=(const SharedMemoryBase& p)
+		{
+			assign(p);
+			return *this;
+		}
+
 		void assign(const SharedMemoryBase& p);
 
 		bool initialize(bool init);
 		void mutexBug(int osErrorCode, const char* text);
 	};
+
 	Firebird::ObjectsArray<Extent> m_extents;
 
 	ULONG getTotalMapped() const

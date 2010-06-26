@@ -41,7 +41,7 @@ struct TraceCSHeader : public MemoryHeader
 	volatile ULONG change_number;
 	volatile ULONG session_number;
 	ULONG cnt_uses;
-	char  cfg_file_name[MAXPATHLEN];
+	char cfg_file_name[MAXPATHLEN];
 };
 
 class ConfigStorage : public Firebird::GlobalStorage, public SharedMemory<TraceCSHeader>

@@ -1061,7 +1061,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	ULONG spins = 0;
 	while (spins++ < m_acquireSpins)
 	{
-		if (mutexLockCond()) 
+		if (mutexLockCond())
 		{
 			status = FB_SUCCESS;
 			break;
@@ -1199,7 +1199,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 
 #ifdef USE_SHMEM_EXT
-bool LockManager::Extent::initialize(bool) 
+bool LockManager::Extent::initialize(bool)
 {
 	return false;
 }
@@ -2310,7 +2310,7 @@ bool LockManager::initialize(bool initializeMemory)
 	}
 #endif
 
-	if (!initializeMemory) 
+	if (!initializeMemory)
 	{
 		return true;
 	}

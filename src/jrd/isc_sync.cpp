@@ -1617,7 +1617,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_exception_stack_overflow));
+		status_exception::raise(Arg::Gds(isc_exception_stack_overflow));
 		// This will never be called, but to be safe it's here
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;
@@ -1693,7 +1693,7 @@ void SharedMemoryBase::removeMapFile()
 
 #ifdef UNIX
 
-bool SharedMemoryBase::mapFile(Firebird::Arg::StatusVector& statusVector, 
+bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 							   const TEXT* filename, ULONG length)
 {
 /**************************************
@@ -1926,7 +1926,7 @@ bool SharedMemoryBase::mapFile(Firebird::Arg::StatusVector& statusVector,
 
 
 #ifdef WIN_NT
-bool SharedMemoryBase::mapFile(Firebird::Arg::StatusVector& statusVector, 
+bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 							   const TEXT* filename, ULONG length)
 {
 /**************************************
@@ -2337,8 +2337,8 @@ void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, UCHAR** obje
 
 #ifdef WIN_NT
 
-UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector, 
-								   ULONG object_offset, 
+UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector,
+								   ULONG object_offset,
 								   ULONG object_length)
 {
 /**************************************
@@ -2378,7 +2378,7 @@ UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector,
 }
 
 
-void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, 
+void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector,
 								   UCHAR** object_pointer, ULONG object_length)
 {
 /**************************************
@@ -3140,7 +3140,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_leng
 		return false;
 	}
 
-	munmap((char *) getHeader(), sh_mem_length_mapped);
+	munmap((char*) getHeader(), sh_mem_length_mapped);
 
 #ifdef USE_SYS5SEMAPHORE
 	SharedFile::remap(getHeader(), address, new_length);
@@ -3162,7 +3162,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_leng
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, 
+bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector,
 								 ULONG new_length, bool flag)
 {
 /**************************************
@@ -3263,7 +3263,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector,
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-bool SharedMemoryBase::remapFile(Firebird::Arg::StatusVector& statusVector, ULONG, bool)
+bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG, bool)
 {
 /**************************************
  *
@@ -3276,7 +3276,7 @@ bool SharedMemoryBase::remapFile(Firebird::Arg::StatusVector& statusVector, ULON
  *
  **************************************/
 
-	statusVector << Arg::Gds(isc_unavailable) << 
+	statusVector << Arg::Gds(isc_unavailable) <<
 					Arg::Gds(isc_random) << "SharedMemory::remapFile";
 
 	return NULL;
@@ -3628,7 +3628,7 @@ void SharedMemoryBase::mutexUnlock()
 }
 
 SharedMemoryBase::SharedMemoryBase()
-  :	sh_mem_mutex(0), sh_mem_length_mapped(0), 
+  :	sh_mem_mutex(0), sh_mem_length_mapped(0),
 #ifdef WIN_NT
 	sh_mem_handle(0), sh_mem_object(0), sh_mem_interest(0), sh_mem_hdr_object(0),
 	sh_mem_hdr_address(0)
@@ -3643,7 +3643,7 @@ SharedMemoryBase::~SharedMemoryBase()
 {
 }
 
-void SharedMemoryBase::logError(const char* text, const Firebird::Arg::StatusVector& status)
+void SharedMemoryBase::logError(const char* text, const Arg::StatusVector& status)
 {
 	iscLogStatus(text, status.value());
 }

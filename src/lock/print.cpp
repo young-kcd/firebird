@@ -86,7 +86,8 @@ struct waitque
 	SRQ_PTR waitque_entry[30];
 };
 
-namespace {
+namespace
+{
 	class sh_mem : public Jrd::SharedMemory<lhb>
 	{
 	public:
@@ -94,7 +95,7 @@ namespace {
 		  :	sh_mem_consistency(p_consistency)
 		{ }
 
-		bool initialize(bool) 
+		bool initialize(bool)
 		{
 			// Initialize a lock table to looking -- i.e. don't do nuthin.
 			return sh_mem_consistency;

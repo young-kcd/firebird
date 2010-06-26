@@ -113,12 +113,12 @@ struct event_t
 
 struct FAST_MUTEX_SHARED_SECTION
 {
-	SLONG   fInitialized;
-	SLONG   lSpinLock;
-	SLONG   lThreadsWaiting;
-	SLONG   lAvailable;
+	SLONG fInitialized;
+	SLONG lSpinLock;
+	SLONG lThreadsWaiting;
+	SLONG lAvailable;
 #ifdef _DEBUG
-	DWORD  dwThreadId;
+	DWORD dwThreadId;
 #endif
 };
 
@@ -126,7 +126,7 @@ struct FAST_MUTEX
 {
 	HANDLE hEvent;
 	HANDLE hFileMap;
-	SLONG  lSpinCount;
+	SLONG lSpinCount;
 	volatile FAST_MUTEX_SHARED_SECTION* lpSharedInfo;
 };
 
@@ -137,10 +137,10 @@ struct mtx
 
 struct event_t
 {
-	SLONG		event_pid;
-	SLONG		event_id;
-	SLONG		event_count;
-	void*		event_handle;
+	SLONG event_pid;
+	SLONG event_id;
+	SLONG event_count;
+	void* event_handle;
 };
 
 #endif // WIN_NT
@@ -182,7 +182,7 @@ public:
 	USHORT mhb_version;
 #ifndef WIN_NT
 	struct mtx mhb_mutex;
-#endif		
+#endif
 };
 
 class SharedMemoryBase
@@ -232,7 +232,7 @@ public:
 	enum MemoryTypes
 	{
 		SRAM_LOCK_MANAGER = 0xFF,		// To avoid mixing with old files no matter of endianness
-		SRAM_DATABASE_SNAPSHOT = 0xFE,	// use downcount for shared memeory types
+		SRAM_DATABASE_SNAPSHOT = 0xFE,	// use downcount for shared memory types
 		SRAM_EVENT_MANAGER = 0xFD,
 		SRAM_TRACE_CONFIG = 0xFC,
 		SRAM_TRACE_LOG = 0xFB
@@ -247,7 +247,9 @@ class SharedMemory : public SharedMemoryBase
 {
 public:
 	SharedMemory()
-		: SharedMemoryBase(), sh_mem_header(NULL) { }
+		: SharedMemoryBase(), sh_mem_header(NULL)
+	{ }
+
 	~SharedMemory()
 	{
 		if (sh_mem_header)
