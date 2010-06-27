@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{09996c88-69a7-44d0-9b78-d3bf97b38b32}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5f470e34-fdd9-4de2-adf6-e9c1193c21a3}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{1cbd499c-a0be-4954-b905-c59477034d65}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="toolutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ucbuf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ucm.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ucmpwrit.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ucmstate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="unewdata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="uoptions.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="uparse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="uperf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="toolutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ucbuf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ucm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ucmpwrit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="unewdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uoptions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uparse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uperf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

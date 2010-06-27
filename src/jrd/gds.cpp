@@ -102,7 +102,9 @@
 
 #ifdef WIN_NT
 #include <shlobj.h>
+#if _MSC_VER <= 1500
 #include <shfolder.h>
+#endif
 #define _WINSOCKAPI_
 #include <share.h>
 #include "err_proto.h"

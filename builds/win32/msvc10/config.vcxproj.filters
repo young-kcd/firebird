@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Config files">
+      <UniqueIdentifier>{af57d4cf-4c36-40c6-8faa-92c2c8efadbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vulcan files">
+      <UniqueIdentifier>{375269bd-4c1b-43d3-8369-5684fd25ad84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{49340e77-9a3e-494f-89a3-6d38723413d7}</UniqueIdentifier>
+      <Extensions>h</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\config\ScanDir.cpp">
+      <Filter>Config files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\config\ScanDir.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
