@@ -556,7 +556,7 @@ void EventManager::acquire_shmem()
 
 #ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector localStatus;
-		if (remapFile(localStatus, length, false))
+		if (!remapFile(localStatus, length, false))
 #endif
 		{
 			release_shmem();
@@ -596,25 +596,21 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		}
 	}
 
+#ifdef HAVE_OBJECT_MAP
 	if (!best && !recurse)
 	{
 		const ULONG old_length = sh_mem_length_mapped;
 		const ULONG ev_length = old_length + m_config->getEventMemSize();
 
-		evh* header = NULL;
-
-#ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector localStatus;
 		if (remapFile(localStatus, ev_length, true))
-#endif
 		{
-			free = (frb*) ((UCHAR*) header + old_length);
+			free = (frb*) (((UCHAR*) sh_mem_header) + old_length);
 			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
 			free->frb_header.hdr_length = sh_mem_length_mapped - old_length;
 			free->frb_header.hdr_type = type_frb;
 			free->frb_next = 0;
 
-			sh_mem_header = header;
 			sh_mem_header->evh_length = sh_mem_length_mapped;
 
 			free_global(free);
@@ -622,6 +618,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 			return alloc_global(type, length, true);
 		}
 	}
+#endif
 
 	if (!best)
 	{
