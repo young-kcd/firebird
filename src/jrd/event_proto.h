@@ -98,14 +98,6 @@ private:
 		return 0;
 	}
 
-	/*
-	static void init_shmem(void* arg, sh_mem* shmem, bool init)
-	{
-		EventManager* const eventMgr = static_cast<EventManager*>(arg);
-		eventMgr->init_shmem(shmem, init);
-	}
-	*/
-
 	static void mutex_bugcheck(const TEXT*, int);
 	static void punt(const TEXT*);
 
