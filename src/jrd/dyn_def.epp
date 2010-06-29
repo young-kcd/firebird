@@ -507,10 +507,10 @@ void DYN_define_dimension(Global*		gbl,
 	{
 		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			DIM IN RDB$FIELD_DIMENSIONS
+		{
 			DIM.RDB$UPPER_BOUND.NULL = TRUE;
 			DIM.RDB$LOWER_BOUND.NULL = TRUE;
 			DIM.RDB$DIMENSION = (SSHORT)DYN_get_number(ptr);
-		{
 			if (field_name) {
 				strcpy(DIM.RDB$FIELD_NAME, field_name->c_str());
 			}
