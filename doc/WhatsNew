@@ -2,10 +2,68 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-3046
+        Assertion after ALTER TABLE
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3038
+        The insert failed because a column definition includes validation
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3034
+        Bugcheck 300 (can't find shared latch)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3021
+        Segfault in DEV_BUILD
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3019
+        Startup failure of SuperServer and SuperClassic on Linux Gentoo
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3017
+        Files left at Firebird's lock directory 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3016
+        On disconnect it is possible to see "Fatal lock manager error: invalid lock id (0), errno: 0" 
+        in firebird.log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3015
+        Various "Cannot initialize the shared memory region" errors
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3011
+        Server hangs or crashes while monitoring connections repeatedly attaching and detaching
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3010
+        First connect to any database shows MON$MEMORY_USED = 4Gb 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3006
         /tmp/firebird and files in it may get 'root' (i.e. GID == 0) group
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3003
+        Procedure suspend check may cause restore to fail
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-3001
         Install fails to create user and group "firebird"
@@ -28,6 +86,12 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2985
+        Altering COMPUTED columns doesn't handle dependencies well
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-2984
         GBAK -v srv:db stdout creates a broken backup
@@ -124,6 +188,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-2920
+        Incorrect execution of volatile SQL statements inside EXECUTE STATEMENT
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2919
         Installation script ignores non-standard ports
       Contributor(s):
@@ -159,8 +228,18 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2900
+        Access violation using aggregate distinct
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2898
         CHAR_TO_UUID and UUID_TO_CHAR work differently in big/little endian architectures
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2893
+        Expression in a subquery may be treated as invariant and produce incorrect results
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -209,15 +288,15 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
-    * Bugfix CORE-2858
-        Possible memory trashing when raising some exceptions to signal failed security checks
-      Contributor(s):
-        Claudio Valderrama <cvalde at usa.net>
-
     * Bugfix CORE-2859
         Security database remains locked after replacing database
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2858
+        Possible memory trashing when raising some exceptions to signal failed security checks
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-2856
         Non-NULL key in unique index could be not found when key is removed
@@ -240,6 +319,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2845
+        Solaris 10 no longer requires SFIO
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
     * Bugfix CORE-2844
         Unresolved symbol references when linking fbsvcmgr and fbtracemgr
       Contributor(s):
@@ -259,6 +343,11 @@
         Some patches for building on Debian/kFreeBSD and FreeBSD
       Contributor(s):
         Damyan Ivanov <dmn at debian.org>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2756
+        Substring from timestamp - unexpected result
+      Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-2750

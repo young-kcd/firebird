@@ -3986,6 +3986,11 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	//case nod_count2:
 	case nod_total:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_stat_rse], view);
+		node->nod_arg[e_stat_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_rse]);
+		csb->csb_current_nodes.push(node->nod_arg[e_stat_rse]);
+		node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
+		node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
+		csb->csb_current_nodes.pop();
 		break;
 
 	case nod_aggregate:

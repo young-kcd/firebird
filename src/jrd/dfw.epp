@@ -4143,11 +4143,14 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 		break;
 	}
 
-	// Look to see if an object of the desired type is being deleted.
+	// Look to see if an object of the desired type is being deleted or modified.
+	// For an object being modified we verify dependencies separately when we parse its BLR.
 	for (const DeferredWork* work = transaction->tra_deferred_job->work; work; work = work->getNext())
 	{
 		if ((work->dfw_type == dfw_type ||
-			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure)) &&
+			(work->dfw_type == dfw_modify_procedure && dfw_type == dfw_delete_procedure) ||
+			(work->dfw_type == dfw_modify_field && dfw_type == dfw_delete_global) ||
+			(work->dfw_type == dfw_modify_trigger && dfw_type == dfw_delete_trigger)) &&
 			work->dfw_name == object_name && (!rel_id || rel_id == work->dfw_id))
 		{
 			if (work->dfw_type == dfw_modify_procedure)

@@ -525,7 +525,8 @@ static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
-static void			init_database_locks(thread_db*);
+static void			init_database_lock(thread_db*);
+static void			init_monitoring_lock(thread_db*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
@@ -591,8 +592,7 @@ static void cancel_attachments()
 							jrd8_cancel_operation(status, &att, fb_cancel_enable);
 							jrd8_cancel_operation(status, &att, fb_cancel_raise);
 						}
-
-						THREAD_YIELD();
+						THREAD_SLEEP(10);
 					}
 
 					// check if attachment still exist
@@ -1000,8 +1000,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		LCK_init(tdbb, LCK_OWNER_attachment);
 		attachment->att_flags |= ATT_lck_init_done;
 
-		// Initialize locks
-		init_database_locks(tdbb);
+		// Initialize the database lock
+		init_database_lock(tdbb);
 
 		INI_init(tdbb);
 		SHUT_init(tdbb);
@@ -1032,6 +1032,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// initialize shadowing as soon as the database is ready for it
 		// but before any real work is done
 		SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
+
+		// Turn monitoring on
+		init_monitoring_lock(tdbb);
 	}
 	else
 	{
@@ -2040,8 +2043,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	LCK_init(tdbb, LCK_OWNER_attachment);
 	attachment->att_flags |= ATT_lck_init_done;
 
-	// Initialize locks
-	init_database_locks(tdbb);
+	// Initialize the database lock
+	init_database_lock(tdbb);
 
 	INI_init(tdbb);
 	PAG_init(tdbb);
@@ -2115,6 +2118,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 #ifdef GARBAGE_THREAD
 	VIO_init(tdbb);
 #endif
+
+	// Turn monitoring on
+	init_monitoring_lock(tdbb);
 
     if (options.dpb_set_db_readonly)
     {
@@ -4017,6 +4023,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *	control so that somebody else may run.
  *
  **************************************/
+	if (tdbb->tdbb_latch_count && !(tdbb->tdbb_flags & TDBB_no_cache_unwind))
+	{
+		if (tdbb->tdbb_quantum < 0)
+			tdbb->tdbb_quantum = 0;
+		return false;
+	}
+	
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_sync->hasContention())
@@ -4103,7 +4116,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		dbb->dbb_flags |= DBB_monitor_locking;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+		dbb->dbb_flags &= ~DBB_monitor_locking;
 
 		// While waiting for return from LCK_lock call above the blocking AST (see 
 		// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag 
@@ -4219,7 +4234,9 @@ static void check_database(thread_db* tdbb)
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		dbb->dbb_flags |= DBB_monitor_locking;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+		dbb->dbb_flags &= ~DBB_monitor_locking;
 
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
 			LCK_release(tdbb, dbb->dbb_monitor_lock);
@@ -4915,16 +4932,16 @@ static Database* init(thread_db* tdbb,
 }
 
 
-static void init_database_locks(thread_db* tdbb)
+static void init_database_lock(thread_db* tdbb)
 {
 /**************************************
  *
- *	i n i t _ d a t a b a s e _ l o c k s
+ *	i n i t _ d a t a b a s e _ l o c k
  *
  **************************************
  *
  * Functional description
- *	Initialize database locks.
+ *	Initialize the database lock.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -4977,11 +4994,27 @@ static void init_database_locks(thread_db* tdbb)
 			}
 		}
 	}
+}
+
+static void init_monitoring_lock(thread_db* tdbb)
+{
+/**************************************
+ *
+ *	i n i t _ m o n i t o r i n g _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize the monitoring lock.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
 
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_monitor_lock = lock;
 	lock->lck_type = LCK_monitor;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);

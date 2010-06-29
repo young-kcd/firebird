@@ -1371,6 +1371,9 @@ void MemoryPool::deletePool(MemoryPool* pool)
 		MemoryExtent* extent = pool->extents_parent;
 		while (extent) {
 			MemoryExtent* next = extent->mxt_next;
+
+			MemoryBlock* blk = ptrToBlock(extent);
+			parent->increment_usage(blk->mbk_small.mbk_length);
 			parent->deallocate(extent);
 			extent = next;
 		}
@@ -1731,6 +1734,7 @@ void MemoryPool::free_blk_extent(MemoryBlock* blk)
 	}
 	else
 	{
+		parent->increment_usage(ext_size);
 		parent->deallocate(extent);
 	}
 }

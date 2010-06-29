@@ -1679,12 +1679,19 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 
 void ISC_remove_map_file(const TEXT* filename)
 {
+#ifndef WIN_NT
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
 	unlink(expanded_filename);
+#endif // WIN_NT
+}
+
+void ISC_remove_map_file(const struct sh_mem* shmem_data)
+{
+	ISC_remove_map_file(shmem_data->sh_mem_name);
 }
 
 #ifdef UNIX
@@ -1822,6 +1829,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 	shmem_data->sh_mem_handle = fd;
+	strcpy(shmem_data->sh_mem_name, filename);
 
 #ifdef USE_SYS5SEMAPHORE
 	// register mapped file
@@ -1924,20 +1932,23 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	HANDLE file_handle, event_handle;
+	HANDLE file_handle;
+	HANDLE event_handle = 0;
 	int retry_count = 0;
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, filename);
 
 	const bool trunc_flag = (length != 0);
+	bool init_flag = false;
 
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
  */
 
   retry:
-	retry_count++;
+	if (retry_count++ > 0) 
+		THREAD_SLEEP(10);
 
 	file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,
@@ -1946,15 +1957,19 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 							 OPEN_ALWAYS,
 							 FILE_ATTRIBUTE_NORMAL,
 							 NULL);
+	DWORD err = GetLastError();
 	if (file_handle == INVALID_HANDLE_VALUE)
 	{
-		error(status_vector, "CreateFile", GetLastError());
+		if (err == ERROR_SHARING_VIOLATION)
+			goto retry;
+
+		error(status_vector, "CreateFile", err);
 		return NULL;
 	}
 
 	// Check if file already exists
 
-	const bool file_exists = (GetLastError() == ERROR_ALREADY_EXISTS);
+	const bool file_exists = (err == ERROR_ALREADY_EXISTS);
 
 	// Create an event that can be used to determine if someone has already
 	// initialized shared memory.
@@ -1967,22 +1982,25 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		return NULL;
 	}
 
-	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
-	if (!event_handle)
+	if (!init_flag)
 	{
-		error(status_vector, "CreateEvent", GetLastError());
-		CloseHandle(file_handle);
-		return NULL;
-	}
+		event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, object_name);
+		if (!event_handle)
+		{
+			error(status_vector, "CreateEvent", GetLastError());
+			CloseHandle(file_handle);
+			return NULL;
+		}
 
-	const bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
+		init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
 
-	if (init_flag && !init_routine)
-	{
-		CloseHandle(event_handle);
-		CloseHandle(file_handle);
-		Arg::Gds(isc_unavailable).copyTo(status_vector);
-		return NULL;
+		if (init_flag && !init_routine)
+		{
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			Arg::Gds(isc_unavailable).copyTo(status_vector);
+			return NULL;
+		}
 	}
 
 	if (length == 0)
@@ -2022,7 +2040,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			CloseHandle(event_handle);
 			if (retry_count > 10)
 			{
-				error(status_vector, "WaitForSingleObject", GetLastError());
+				error(status_vector, "WaitForSingleObject", 0);
 				return NULL;
 			}
 			goto retry;
@@ -2046,6 +2064,14 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	{
 		const DWORD err = GetLastError();
 
+		if ((err == ERROR_SHARING_VIOLATION) || (err == ERROR_FILE_NOT_FOUND && fdw_create == TRUNCATE_EXISTING))
+		{
+			if (!init_flag) {
+				CloseHandle(event_handle);
+			}
+			goto retry;
+		}
+		
 		if (err == ERROR_USER_MAPPED_FILE && init_flag && file_exists && trunc_flag)
 			Arg::Gds(isc_instance_conflict).copyTo(status_vector);
 		else
@@ -2193,6 +2219,9 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 
 #ifdef HAVE_MMAP
+
+#define HAVE_MAP_OBJECT 1
+
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
@@ -2252,7 +2281,6 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG object_length)
 {
@@ -2307,6 +2335,9 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 
 #ifdef WIN_NT
+
+#define HAVE_MAP_OBJECT 1
+
 UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG object_offset,
@@ -2350,7 +2381,6 @@ UCHAR* ISC_map_object(ISC_STATUS* status_vector,
 
 
 void ISC_unmap_object(ISC_STATUS* status_vector,
-					  //sh_mem* shmem_data,
 					  UCHAR** object_pointer,
 					  ULONG /*object_length*/)
 {
@@ -2383,12 +2413,42 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 }
 #endif
 
+int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
+{
+#ifdef HAVE_MAP_OBJECT
+	ISC_STATUS_ARRAY temp;
+	mutex = reinterpret_cast<mtx*>(ISC_map_object(temp, shmem_data,
+			reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
+	if (!mutex)
+	{
+		iscLogStatus("ISC_map_mutex()", temp);
+		return -1;
+	}
+#endif // HAVE_MAP_OBJECT
+
+	*mapped = mutex;
+	return 0;
+}
+
+void ISC_unmap_mutex(mtx* mutex)
+{
+#ifdef HAVE_MAP_OBJECT
+	ISC_STATUS_ARRAY temp;
+	ISC_unmap_object(temp, reinterpret_cast<UCHAR**>(&mutex), sizeof(mtx));
+	if (mutex)
+	{
+		iscLogStatus("ISC_unmap_mutex()", temp);
+	}
+#endif // HAVE_MAP_OBJECT
+
+}
+		
 
 #ifdef USE_POSIX_THREADS
 
 #ifdef USE_SYS5SEMAPHORE
 
-int ISC_mutex_init(struct mtx* mutex)
+int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 {
 /**************************************
  *
@@ -2400,6 +2460,13 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
+
+	if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
+	{
+		return -1;	// no errno known here...
+	}
+	mutex = *mapped;
+
 	if (!getSem5(mutex))
 	{
 		return FB_FAILURE;
@@ -2430,7 +2497,7 @@ void ISC_mutex_fini(struct mtx *mutex)
  *	Destroy a mutex.
  *
  **************************************/
-	// no-op for SystemV semaphores
+	ISC_unmap_mutex(mutex);
 }
 
 
@@ -2536,7 +2603,7 @@ int ISC_mutex_unlock(struct mtx* mutex)
 static volatile bool staticBugFlag = false;
 #endif
 
-int ISC_mutex_init(struct mtx* mutex)
+int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 {
 /**************************************
  *
@@ -2548,6 +2615,13 @@ int ISC_mutex_init(struct mtx* mutex)
  *	Initialize a mutex.
  *
  **************************************/
+
+  if (ISC_map_mutex(shmem_data, mutex, mapped) != 0)
+  {
+		return -1;	// no errno known here...
+  }
+  mutex = *mapped;
+
 #ifdef BUGGY_LINUX_MUTEX
   do
   {
@@ -2636,7 +2710,7 @@ void ISC_mutex_fini(struct mtx *mutex)
  *	Destroy a mutex.
  *
  **************************************/
-	// no-op for posix threads
+	ISC_unmap_mutex(mutex);
 }
 
 
@@ -3403,11 +3477,18 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 
 	TEXT expanded_filename[MAXPATHLEN];
 	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
-	if (!DeleteFile(expanded_filename))
-	{
-		error(status_vector, "DeleteFile", GetLastError());
-		return;
-	}
+	
+	// Delete file only if it is not used by anyone else
+	HANDLE hFile = CreateFile(expanded_filename,
+							 DELETE,
+							 0,
+							 NULL,
+							 OPEN_EXISTING,
+							 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+							 NULL);
+
+	if (hFile != INVALID_HANDLE_VALUE) 
+		CloseHandle(hFile);
 }
 #endif
 

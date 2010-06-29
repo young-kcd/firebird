@@ -357,19 +357,21 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 	case blr_domain_name2:
 		{
 			bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
-			Firebird::MetaName* name = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			MetaName* name = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
 			par_name(csb, *name);
 
+			MetaNamePair namePair(*name, "");
+
 			FieldInfo fieldInfo;
-			bool exist = csb->csb_map_field_info.get(*name, fieldInfo);
+			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
 			MET_get_domain(tdbb, *name, desc, (exist ? NULL : &fieldInfo));
 
 			if (!exist)
-				csb->csb_map_field_info.put(*name, fieldInfo);
+				csb->csb_map_field_info.put(namePair, fieldInfo);
 
 			if (itemInfo)
 			{
-				itemInfo->field = *name;
+				itemInfo->field = namePair;
 
 				if (fullDomain)
 				{
@@ -416,21 +418,23 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 	case blr_column_name2:
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
-			Firebird::MetaName* relationName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			MetaName* relationName = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
 			par_name(csb, *relationName);
-			Firebird::MetaName* fieldName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
+			MetaName* fieldName = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
 			par_name(csb, *fieldName);
 
+			MetaNamePair namePair(*relationName, *fieldName);
+
 			FieldInfo fieldInfo;
-			Firebird::MetaName fieldSource = MET_get_relation_field(tdbb, *relationName, *fieldName, desc, &fieldInfo);
-			bool exist = csb->csb_map_field_info.get(fieldSource, fieldInfo);
+			bool exist = csb->csb_map_field_info.get(namePair, fieldInfo);
+			MET_get_relation_field(tdbb, *relationName, *fieldName, desc, (exist ? NULL : &fieldInfo));
 
 			if (!exist)
-				csb->csb_map_field_info.put(fieldSource, fieldInfo);
+				csb->csb_map_field_info.put(namePair, fieldInfo);
 
 			if (itemInfo)
 			{
-				itemInfo->field = fieldSource;
+				itemInfo->field = namePair;
 
 				if (fullDomain)
 				{

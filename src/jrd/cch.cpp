@@ -374,6 +374,9 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Database::SyncGuard dsGuard(dbb, true);
 
+		if (dbb->dbb_flags & DBB_not_in_use)
+			return 0;
+
 		Lock* const lock = dbb->dbb_lock;
 
 		// Since this routine will be called asynchronously,
@@ -5251,14 +5254,17 @@ static SSHORT latch_bdb(thread_db* tdbb,
 		{
 		case LATCH_shared:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			allocSharedLatch(tdbb, bdb);
 			break;
 		case LATCH_exclusive:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			bdb->bdb_exclusive = tdbb;
 			break;
 		case LATCH_io:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			bdb->bdb_io = tdbb;
 			break;
 		case LATCH_mark:
@@ -5323,6 +5329,7 @@ static SSHORT latch_bdb(thread_db* tdbb,
 		// waiters while an io is in progress.
 
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		allocSharedLatch(tdbb, bdb);
 		//LATCH_MUTEX_RELEASE;
 		return 0;
@@ -5335,6 +5342,7 @@ static SSHORT latch_bdb(thread_db* tdbb,
 			break;				// someone else owns the io latch
 		}
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		bdb->bdb_io = tdbb;
 		//LATCH_MUTEX_RELEASE;
 		return 0;
@@ -5352,6 +5360,7 @@ static SSHORT latch_bdb(thread_db* tdbb,
 			break;
 		}
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		bdb->bdb_exclusive = tdbb;
 		//LATCH_MUTEX_RELEASE;
 		return 0;
@@ -6045,6 +6054,7 @@ static void release_bdb(thread_db* tdbb,
 		// ail.c does: exclusive - mark - exclusive
 		// CVC: but this comment was related to our obsolete WAL facility.
 		--bdb->bdb_use_count;
+		--tdbb->tdbb_latch_count;
 		if (!bdb->bdb_use_count)
 		{
 			// All latches are released
@@ -6093,6 +6103,7 @@ static void release_bdb(thread_db* tdbb,
 			BUGCHECK(297);	// bdb is unexpectedly marked
 		}
 		--bdb->bdb_use_count;
+		--tdbb->tdbb_latch_count;
 		if (bdb->bdb_io == tdbb) {
 			bdb->bdb_io = 0;
 		}
@@ -6124,6 +6135,7 @@ static void release_bdb(thread_db* tdbb,
 					return;
 				}
 				++bdb->bdb_use_count;
+				++lwt->lwt_tdbb->tdbb_latch_count;
 				bdb->bdb_exclusive = lwt->lwt_tdbb;
 				lwt->lwt_flags &= ~LWT_pending;
 				lwt->lwt_sem.release();
@@ -6134,6 +6146,7 @@ static void release_bdb(thread_db* tdbb,
 				if (!bdb->bdb_io)
 				{
 					++bdb->bdb_use_count;
+					++lwt->lwt_tdbb->tdbb_latch_count;
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					lwt->lwt_sem.release();
@@ -6166,6 +6179,7 @@ static void release_bdb(thread_db* tdbb,
 					*/
 				}
 				++bdb->bdb_use_count;
+				++lwt->lwt_tdbb->tdbb_latch_count;
 				allocSharedLatch(lwt->lwt_tdbb, bdb);
 				lwt->lwt_flags &= ~LWT_pending;
 				lwt->lwt_sem.release();

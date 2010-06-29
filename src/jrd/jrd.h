@@ -679,18 +679,27 @@ public:
 		tdbb_quantum = QUANTUM;
 		tdbb_flags = 0;
 		tdbb_temp_traid = 0;
+		tdbb_latch_count = 0;
 		QUE_INIT(tdbb_latches);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 
 		tdbb_status_vector = status;
 		fb_utils::init_status(tdbb_status_vector);
 	}
+
+	~thread_db()
+	{
+		fb_assert(QUE_EMPTY(tdbb_latches));
+		fb_assert(tdbb_latch_count == 0);
+	}
+
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 
 	SLONG		tdbb_temp_traid;	// current temporary table scope
 
+	int			tdbb_latch_count;	// count of all latches held by thread
 	que			tdbb_latches;		// shared latches held by thread
 
 	MemoryPool* getDefaultPool()

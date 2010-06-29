@@ -910,8 +910,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				const Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
 
 				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
+				// AP: for fields that are missing in original format use record's one.
 				if (compileFormat &&
 					record->rec_format->fmt_version != compileFormat->fmt_version &&
+					id < compileFormat->fmt_desc.getCount() &&
 					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
 				{
 					dsc desc = impure->vlu_desc;
@@ -1754,9 +1756,10 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 							desc, &to, INTL_KEY_UNIQUE);
 					}
 
-					asb->asb_desc.dsc_address = data +
+					dsc toDesc = asb->asb_desc;
+					toDesc.dsc_address = data +
 						(asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
-					MOV_move(tdbb, desc, &asb->asb_desc);
+					MOV_move(tdbb, desc, &toDesc);
 
 					break;
 				}
@@ -3018,7 +3021,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 	const size_t asb_index = (node->nod_type == nod_agg_list_distinct) ? 2 : 1;
 	AggregateSort* asb = (AggregateSort*) node->nod_arg[asb_index];
 	impure_agg_sort* asb_impure = (impure_agg_sort*) ((SCHAR *) request + asb->nod_impure);
-	dsc* desc = &asb->asb_desc;
+	dsc desc = asb->asb_desc;
 	impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + node->nod_impure);
 
 /* Sort the values already "put" to sort */
@@ -3042,20 +3045,20 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			break;
 		}
 
-		desc->dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
+		desc.dsc_address = data + (asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
 
 		switch (node->nod_type)
 		{
 		case nod_agg_total_distinct:
 		case nod_agg_average_distinct:
 			++impure->vlux_count;
-			add(desc, node, impure);
+			add(&desc, node, impure);
 			break;
 
 		case nod_agg_total_distinct2:
 		case nod_agg_average_distinct2:
 			++impure->vlux_count;
-			add2(desc, node, impure);
+			add2(&desc, node, impure);
 			break;
 
 		case nod_agg_count_distinct:
@@ -3069,7 +3072,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 			{
 				impure->vlu_blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 					&impure->vlu_misc.vlu_bid);
-				impure->vlu_desc.makeBlob(desc->getBlobSubType(), desc->getTextType(),
+				impure->vlu_desc.makeBlob(desc.getBlobSubType(), desc.getTextType(),
 					(ISC_QUAD* ) &impure->vlu_misc.vlu_bid);
 			}
 
@@ -3088,7 +3091,7 @@ static void compute_agg_distinct(thread_db* tdbb, jrd_nod* node)
 				BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			}
 			++impure->vlux_count;
-			len = MOV_make_string2(tdbb, desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
+			len = MOV_make_string2(tdbb, &desc, impure->vlu_desc.getTextType(), &temp, buffer, false);
 			BLB_put_data(tdbb, impure->vlu_blob, temp, len);
 			break;
 		}

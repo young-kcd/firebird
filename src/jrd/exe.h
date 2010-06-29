@@ -786,13 +786,14 @@ struct ItemInfo
 	}
 
 	Firebird::MetaName name;
-	Firebird::MetaName field;
+	Firebird::MetaNamePair field;
 	bool nullable;
 	bool explicitCollation;
 	bool fullDomain;
 };
 
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaName, FieldInfo> > > MapFieldInfo;
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaNamePair, FieldInfo> > >
+	MapFieldInfo;
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > MapItemInfo;
 
 // Compile scratch block

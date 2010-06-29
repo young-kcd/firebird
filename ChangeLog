@@ -1,3 +1,23 @@
+2010-05-21 17:35  dimitr
+
+	* firebird2/doc/WhatsNew (1.190.2.20):
+
+	Update.
+
+2010-05-21 10:24  dimitr
+
+	* firebird2/src/common/classes/alloc.cpp (1.128.2.1):
+
+	Fixed unregistered bug: MON$MEMORY_USED for connection/database is
+	bigger than MON$MEMORY_ALLOCATED.
+
+2010-05-21 07:19  dimitr
+
+	* firebird2/: doc/WhatsNew (1.190.2.19), src/jrd/isc_version.h
+	(1.10.2.16):
+
+	Update.
+
 2010-05-20 12:36  alexpeshkoff
 
 	* firebird2/src/lock/lock.cpp (1.207.2.2):
