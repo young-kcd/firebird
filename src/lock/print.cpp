@@ -91,7 +91,7 @@ namespace
 	class sh_mem : public Jrd::SharedMemory<lhb>
 	{
 	public:
-		sh_mem(bool p_consistency)
+		explicit sh_mem(bool p_consistency)
 		  :	sh_mem_consistency(p_consistency)
 		{ }
 
@@ -101,7 +101,7 @@ namespace
 			return sh_mem_consistency;
 		}
 
-		void mutexBug(int osErrorCode, const char* text)
+		void mutexBug(int /*osErrorCode*/, const char* /*text*/)
 		{
 			// Do nothing - lock print always ignored mutex errors
 		}

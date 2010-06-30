@@ -62,7 +62,7 @@ void BlockNode::putDtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field
 	{
 		SCHAR buffer[100];
 
-		sprintf(buffer, "Invalid dtype %d in put_dtype", field->fld_dtype);
+		sprintf(buffer, "Invalid dtype %d in BlockNode::putDtype", field->fld_dtype);
 		ERRD_bugcheck(buffer);
 	}
 #endif

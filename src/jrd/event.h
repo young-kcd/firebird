@@ -29,7 +29,6 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
-#include "../jrd/isc_s_proto.h"
 
 // Global section header
 

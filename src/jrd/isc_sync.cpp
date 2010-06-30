@@ -2379,7 +2379,7 @@ UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector,
 
 
 void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector,
-								   UCHAR** object_pointer, ULONG object_length)
+								   UCHAR** object_pointer, ULONG /*object_length*/)
 {
 /**************************************
  *

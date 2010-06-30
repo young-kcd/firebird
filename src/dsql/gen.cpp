@@ -2551,7 +2551,7 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 	dsql_nod* rse = NULL;
 	const dsql_msg* message = NULL;
 	bool innerSend = dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
-	bool merge = dsqlScratch->flags & DsqlCompilerScratch::FLAG_MERGE;
+	const bool merge = dsqlScratch->flags & DsqlCompilerScratch::FLAG_MERGE;
 
 	switch (node->nod_type)
 	{

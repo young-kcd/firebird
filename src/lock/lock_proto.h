@@ -445,7 +445,7 @@ private:
 	{
 	public:
 		Extent() { }
-		Extent(Firebird::MemoryPool&) { }
+		explicit Extent(Firebird::MemoryPool&) { }
 
 		Extent(const SharedMemoryBase& p)
 		{
