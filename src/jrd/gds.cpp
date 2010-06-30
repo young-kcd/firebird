@@ -1148,7 +1148,7 @@ void API_ROUTINE gds__trace(const TEXT* text)
 	*p++ = ' ';
 	*p = '\0';
 
-	Firebird::string s(p);
+	Firebird::string s(buffer);
 	s += text;
 	s += "\n";
 
