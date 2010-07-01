@@ -875,9 +875,16 @@ public:
 		tdbb_quantum = 0;
 		tdbb_flags = 0;
 		tdbb_temp_attid = tdbb_temp_traid = 0;
+		tdbb_latch_count = 0;
 		JRD_inuse_clear(this);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 	}
+
+	~thread_db()
+	{
+		fb_assert(tdbb_latch_count == 0);
+	}
+
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
@@ -885,6 +892,7 @@ public:
 
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
+	int			tdbb_latch_count;	// count of all latches held by thread
 
 #if defined(UNIX) && defined(SUPERSERVER)
 	sigjmp_buf tdbb_sigsetjmp;

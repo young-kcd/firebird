@@ -5261,14 +5261,17 @@ static SSHORT latch_bdb(
 		switch (type) {
 		case LATCH_shared:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			bdb->bdb_shared[0] = tdbb;
 			break;
 		case LATCH_exclusive:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			bdb->bdb_exclusive = tdbb;
 			break;
 		case LATCH_io:
 			++bdb->bdb_use_count;
+			++tdbb->tdbb_latch_count;
 			bdb->bdb_io = tdbb;
 			break;
 		case LATCH_mark:
@@ -5336,6 +5339,7 @@ static SSHORT latch_bdb(
 			break;
 		}
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		bdb->bdb_shared[i] = tdbb;
 //		LATCH_MUTEX_RELEASE;
 		return 0;
@@ -5348,6 +5352,7 @@ static SSHORT latch_bdb(
 			break;				/* someone else owns the io latch */
 		}
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		bdb->bdb_io = tdbb;
 //		LATCH_MUTEX_RELEASE;
 		return 0;
@@ -5365,6 +5370,7 @@ static SSHORT latch_bdb(
 			break;
 		}
 		++bdb->bdb_use_count;
+		++tdbb->tdbb_latch_count;
 		bdb->bdb_exclusive = tdbb;
 //		LATCH_MUTEX_RELEASE;
 		return 0;
@@ -6092,6 +6098,7 @@ static void release_bdb(
    ail.c does: exclusive - mark - exclusive */
 	if (bdb->bdb_exclusive == tdbb) {
 		--bdb->bdb_use_count;
+		--tdbb->tdbb_latch_count;
 		if (!bdb->bdb_use_count) {	/* All latches are released */
 			bdb->bdb_exclusive = bdb->bdb_io = 0;
 			for (i = 0; i < BDB_max_shared; bdb->bdb_shared[i++] = 0); // null loop body
@@ -6127,6 +6134,7 @@ static void release_bdb(
 			BUGCHECK(297);	/* bdb is unexpectedly marked */
 		}
 		--bdb->bdb_use_count;
+		--tdbb->tdbb_latch_count;
 		if (bdb->bdb_io == tdbb) {
 			bdb->bdb_io = 0;
 		}
@@ -6156,6 +6164,7 @@ static void release_bdb(
 				}
 				else {
 					++bdb->bdb_use_count;
+					++lwt->lwt_tdbb->tdbb_latch_count;
 					bdb->bdb_exclusive = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					ISC_event_post(&lwt->lwt_event);
@@ -6169,6 +6178,7 @@ static void release_bdb(
 				}
 				else {
 					++bdb->bdb_use_count;
+					++lwt->lwt_tdbb->tdbb_latch_count;
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
 					ISC_event_post(&lwt->lwt_event);
@@ -6204,6 +6214,7 @@ static void release_bdb(
 					break;
 				}
 				++bdb->bdb_use_count;
+				++lwt->lwt_tdbb->tdbb_latch_count;
 				bdb->bdb_shared[i] = lwt->lwt_tdbb;
 				lwt->lwt_flags &= ~LWT_pending;
 				ISC_event_post(&lwt->lwt_event);

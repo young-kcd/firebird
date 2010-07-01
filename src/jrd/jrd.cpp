@@ -4565,6 +4565,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
+	if (tdbb->tdbb_latch_count && !(tdbb->tdbb_flags & TDBB_no_cache_unwind))
+	{
+		if (tdbb->tdbb_quantum < 0)
+			tdbb->tdbb_quantum = 0;
+		return false;
+	}
+
 #ifdef SUPERSERVER
 	// Force garbage collection activity to yield the
 	// processor in case client threads haven't had
