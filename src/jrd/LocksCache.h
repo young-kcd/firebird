@@ -168,6 +168,10 @@ GlobalRWLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 				// our lock from internal structures first and only then try 
 				// to change its key
 
+				if (que_inst == &m_lru) {
+					que_inst = que_inst->que_backward;
+				}
+
 				lock = (LockClass*) ((SCHAR*) que_inst - OFFSET (LockClass*, m_lru));
 	
 				bool found = (m_sortedLocks.find(KeyHolder(lock->getLockKey(), m_lockLen), pos));
@@ -191,8 +195,23 @@ GlobalRWLock* LocksCache<LockClass>::get(thread_db *tdbb, const UCHAR* key)
 				m_sortedLocks.insert(pos, lock);
 			}
 
-			const bool found = (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos));
-			fb_assert(!found);
+			if (m_sortedLocks.find(KeyHolder(key, m_lockLen), pos))
+			{
+				Firebird::HalfStaticArray<UCHAR, 64> zeroBuf;
+				UCHAR* zeroKey = zeroBuf.getBuffer(m_lockLen);
+				memset(zeroKey, 0, m_lockLen);
+
+				bool ok = lock->setLockKey(tdbb, zeroKey);
+				fb_assert(ok);
+
+				m_sortedLocks.insert(0, lock);
+				QUE_APPEND(m_lru, lock->m_lru);
+
+				lock = m_sortedLocks[pos+1];
+				QUE_DELETE(lock->m_lru);
+				QUE_INSERT(m_lru, lock->m_lru);
+				return lock;
+			}
 		}
 		m_sortedLocks.insert(pos, lock);
 	}

@@ -238,6 +238,12 @@ BtrPageGCLock::~BtrPageGCLock()
 	}
 }
 
+#ifdef SUPERSERVER
+const size_t MAX_BTR_PAGE_LOCKS = 128;
+#else
+const size_t MAX_BTR_PAGE_LOCKS = 16;
+#endif 
+
 BtrPageLocks* BtrPageGCLock::getLocksCache(thread_db* tdbb)
 {
 	Database *dbb = tdbb->tdbb_database;
@@ -245,7 +251,7 @@ BtrPageLocks* BtrPageGCLock::getLocksCache(thread_db* tdbb)
 	if (!locks)
 	{
 		locks = FB_NEW (*dbb->dbb_permanent) 
-			BtrPageLocks(tdbb, LCK_btr_dont_gc, sizeof(SLONG), 128);
+			BtrPageLocks(tdbb, LCK_btr_dont_gc, sizeof(SLONG), MAX_BTR_PAGE_LOCKS);
 		dbb->dbb_btr_page_locks = locks;
 	}
 
