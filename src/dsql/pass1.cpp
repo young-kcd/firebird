@@ -6924,7 +6924,7 @@ static dsql_nod* pass1_alias_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* al
 				dsqlScratch->scopeLevel++;
 				context = pass1_alias(dsqlScratch, context->ctx_childs_derived_table, (dsql_str*) *arg);
 			}
-			else
+			else if (context->ctx_relation)
 			{
 				// This must be a VIEW
 				dsql_nod** startArg = arg;
@@ -6977,6 +6977,10 @@ static dsql_nod* pass1_alias_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* al
 				{
 					context = NULL;
 				}
+			}
+			else
+			{
+				context = NULL;
 			}
 		}
 		else
