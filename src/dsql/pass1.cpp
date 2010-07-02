@@ -7274,7 +7274,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 				request->req_scope_level++;
 				context = pass1_alias(request, context->ctx_childs_derived_table, (dsql_str*) *arg);
 			}
-			else
+			else if (context->ctx_relation)
 			{
 				// This must be a VIEW
 				dsql_nod** startArg = arg;
@@ -7322,11 +7322,15 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 
 					context = new_context;
 				}
-				else 
+				else
 				{
 					context = NULL;				
 				}				
 			}
+			else
+			{
+				context = NULL;				
+			}				
 		}
 		else
 		{
