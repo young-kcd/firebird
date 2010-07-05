@@ -62,7 +62,7 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, Record
 	m_args.add(inner);
 }
 
-void NestedLoopJoin::open(thread_db* tdbb)
+void NestedLoopJoin::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -70,7 +70,7 @@ void NestedLoopJoin::open(thread_db* tdbb)
 	impure->irsb_flags = irsb_open | irsb_first | irsb_mustread;
 }
 
-void NestedLoopJoin::close(thread_db* tdbb)
+void NestedLoopJoin::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -89,7 +89,7 @@ void NestedLoopJoin::close(thread_db* tdbb)
 	}
 }
 
-bool NestedLoopJoin::getRecord(thread_db* tdbb)
+bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -208,18 +208,18 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool NestedLoopJoin::refetchRecord(thread_db* tdbb)
+bool NestedLoopJoin::refetchRecord(thread_db* tdbb) const
 {
 	return true;
 }
 
-bool NestedLoopJoin::lockRecord(thread_db* tdbb)
+bool NestedLoopJoin::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void NestedLoopJoin::dump(thread_db* tdbb, UCharBuffer& buffer)
+void NestedLoopJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -247,7 +247,7 @@ void NestedLoopJoin::markRecursive()
 	}
 }
 
-void NestedLoopJoin::findUsedStreams(StreamsArray& streams)
+void NestedLoopJoin::findUsedStreams(StreamsArray& streams) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
@@ -255,7 +255,7 @@ void NestedLoopJoin::findUsedStreams(StreamsArray& streams)
 	}
 }
 
-void NestedLoopJoin::invalidateRecords(jrd_req* request)
+void NestedLoopJoin::invalidateRecords(jrd_req* request) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
@@ -263,7 +263,7 @@ void NestedLoopJoin::invalidateRecords(jrd_req* request)
 	}
 }
 
-void NestedLoopJoin::nullRecords(thread_db* tdbb)
+void NestedLoopJoin::nullRecords(thread_db* tdbb) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
@@ -271,7 +271,7 @@ void NestedLoopJoin::nullRecords(thread_db* tdbb)
 	}
 }
 
-void NestedLoopJoin::saveRecords(thread_db* tdbb)
+void NestedLoopJoin::saveRecords(thread_db* tdbb) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
@@ -279,7 +279,7 @@ void NestedLoopJoin::saveRecords(thread_db* tdbb)
 	}
 }
 
-void NestedLoopJoin::restoreRecords(thread_db* tdbb)
+void NestedLoopJoin::restoreRecords(thread_db* tdbb) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
@@ -287,7 +287,7 @@ void NestedLoopJoin::restoreRecords(thread_db* tdbb)
 	}
 }
 
-bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n)
+bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
 {
 	RecordSource* const arg = m_args[n];
 

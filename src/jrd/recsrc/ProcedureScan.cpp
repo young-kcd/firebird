@@ -45,7 +45,7 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name,
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void ProcedureScan::open(thread_db* tdbb)
+void ProcedureScan::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -116,7 +116,7 @@ void ProcedureScan::open(thread_db* tdbb)
 	proc_request->req_flags |= req_proc_fetch;
 }
 
-void ProcedureScan::close(thread_db* tdbb)
+void ProcedureScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -143,7 +143,7 @@ void ProcedureScan::close(thread_db* tdbb)
 	}
 }
 
-bool ProcedureScan::getRecord(thread_db* tdbb)
+bool ProcedureScan::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -217,18 +217,18 @@ bool ProcedureScan::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool ProcedureScan::refetchRecord(thread_db* tdbb)
+bool ProcedureScan::refetchRecord(thread_db* tdbb) const
 {
 	return true;
 }
 
-bool ProcedureScan::lockRecord(thread_db* tdbb)
+bool ProcedureScan::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer)
+void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 	buffer.add(isc_info_rsb_procedure);
@@ -251,7 +251,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 								 const UCHAR* msg,
 								 const dsc* to_desc,
 								 SSHORT to_id,
-								 Record* record)
+								 Record* record) const
 {
 	SSHORT indicator;
 	dsc desc2;

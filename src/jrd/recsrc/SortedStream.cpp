@@ -47,7 +47,7 @@ SortedStream::SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* ma
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void SortedStream::open(thread_db* tdbb)
+void SortedStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -62,7 +62,7 @@ void SortedStream::open(thread_db* tdbb)
 	impure->irsb_sort = init(tdbb);
 }
 
-void SortedStream::close(thread_db* tdbb)
+void SortedStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -81,7 +81,7 @@ void SortedStream::close(thread_db* tdbb)
 	}
 }
 
-bool SortedStream::getRecord(thread_db* tdbb)
+bool SortedStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -103,17 +103,17 @@ bool SortedStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool SortedStream::refetchRecord(thread_db* tdbb)
+bool SortedStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool SortedStream::lockRecord(thread_db* tdbb)
+bool SortedStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void SortedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void SortedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -130,32 +130,32 @@ void SortedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SortedStream::findUsedStreams(StreamsArray& streams)
+void SortedStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void SortedStream::invalidateRecords(jrd_req* request)
+void SortedStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void SortedStream::nullRecords(thread_db* tdbb)
+void SortedStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void SortedStream::saveRecords(thread_db* tdbb)
+void SortedStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void SortedStream::restoreRecords(thread_db* tdbb)
+void SortedStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }
 
-Sort* SortedStream::init(thread_db* tdbb)
+Sort* SortedStream::init(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -292,7 +292,7 @@ Sort* SortedStream::init(thread_db* tdbb)
 	return scb.release();
 }
 
-UCHAR* SortedStream::getData(thread_db* tdbb)
+UCHAR* SortedStream::getData(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -303,7 +303,7 @@ UCHAR* SortedStream::getData(thread_db* tdbb)
 	return reinterpret_cast<UCHAR*>(data);
 }
 
-void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data)
+void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 {
 	dsc from, to;
 

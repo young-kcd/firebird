@@ -45,7 +45,7 @@ SkipRowsStream::SkipRowsStream(CompilerScratch* csb, RecordSource* next, jrd_nod
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void SkipRowsStream::open(thread_db* tdbb)
+void SkipRowsStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -65,7 +65,7 @@ void SkipRowsStream::open(thread_db* tdbb)
 	m_next->open(tdbb);
 }
 
-void SkipRowsStream::close(thread_db* tdbb)
+void SkipRowsStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -81,7 +81,7 @@ void SkipRowsStream::close(thread_db* tdbb)
 	}
 }
 
-bool SkipRowsStream::getRecord(thread_db* tdbb)
+bool SkipRowsStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -106,17 +106,17 @@ bool SkipRowsStream::getRecord(thread_db* tdbb)
 	return m_next->getRecord(tdbb);
 }
 
-bool SkipRowsStream::refetchRecord(thread_db* tdbb)
+bool SkipRowsStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool SkipRowsStream::lockRecord(thread_db* tdbb)
+bool SkipRowsStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void SkipRowsStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void SkipRowsStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -133,27 +133,27 @@ void SkipRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SkipRowsStream::findUsedStreams(StreamsArray& streams)
+void SkipRowsStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void SkipRowsStream::invalidateRecords(jrd_req* request)
+void SkipRowsStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void SkipRowsStream::nullRecords(thread_db* tdbb)
+void SkipRowsStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void SkipRowsStream::saveRecords(thread_db* tdbb)
+void SkipRowsStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void SkipRowsStream::restoreRecords(thread_db* tdbb)
+void SkipRowsStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }

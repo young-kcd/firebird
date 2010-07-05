@@ -57,7 +57,7 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR s
 	m_impure = CMP_impure(csb, size);
 }
 
-void IndexTableScan::open(thread_db* tdbb)
+void IndexTableScan::open(thread_db* tdbb) const
 {
 	//Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
@@ -71,7 +71,7 @@ void IndexTableScan::open(thread_db* tdbb)
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
 
-void IndexTableScan::close(thread_db* tdbb)
+void IndexTableScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -106,7 +106,7 @@ void IndexTableScan::close(thread_db* tdbb)
 	}
 }
 
-bool IndexTableScan::getRecord(thread_db* tdbb)
+bool IndexTableScan::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -236,7 +236,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb)
 	return false;
 }
 
-void IndexTableScan::dump(thread_db* tdbb, UCharBuffer& buffer)
+void IndexTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -261,7 +261,7 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 								const UCHAR* key_string1,
 								USHORT length1,
 								const temporary_key* key2,
-								USHORT flags)
+								USHORT flags) const
 {
 	const UCHAR* string1 = key_string1;
 	const UCHAR* string2 = key2->key_data;
@@ -372,7 +372,7 @@ int IndexTableScan::compareKeys(const index_desc* idx,
 	return (length1 < length2) ? -1 : 1;
 }
 
-bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR** return_pointer)
+bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR** return_pointer) const
 {
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
@@ -433,7 +433,7 @@ bool IndexTableScan::findSavedNode(thread_db* tdbb, Impure* impure, win* window,
 	}
 }
 
-UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
+UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window) const
 {
 	// If this is the first time, start at the beginning
 	if (!window->win_page.getPageNum())
@@ -477,7 +477,7 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 	return BTreeNode::getPointerFirstNode(page);
 }
 
-UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window)
+UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) const
 {
 	// initialize for a retrieval
 	if (!setupBitmaps(tdbb, impure))
@@ -533,7 +533,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window)
 	return BTreeNode::getPointerFirstNode(page);
 }
 
-void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window)
+void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const
 {
 	const SLONG newPage = window ? window->win_page.getPageNum() : 0;
 
@@ -564,7 +564,7 @@ void IndexTableScan::setPosition(thread_db* tdbb,
 								 record_param* rpb,
 								 win* window,
 								 const UCHAR* pointer,
-								 const temporary_key& key)
+								 const temporary_key& key) const
 {
 	// We can actually set position without having a data page
 	// fetched; if not, just set the incarnation to the lowest possible
@@ -580,7 +580,7 @@ void IndexTableScan::setPosition(thread_db* tdbb,
 	impure->irsb_nav_offset = pointer - (UCHAR*) window->win_buffer;
 }
 
-bool IndexTableScan::setupBitmaps(thread_db* tdbb, Impure* impure)
+bool IndexTableScan::setupBitmaps(thread_db* tdbb, Impure* impure) const
 {
 	// Start a bitmap which tells us we have already visited
 	// this record; this is to handle the case where there is more

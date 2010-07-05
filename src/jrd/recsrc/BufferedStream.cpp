@@ -106,7 +106,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	m_format->fmt_length = offset;
 }
 
-void BufferedStream::open(thread_db* tdbb)
+void BufferedStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -122,7 +122,7 @@ void BufferedStream::open(thread_db* tdbb)
 	impure->irsb_position = 0;
 }
 
-void BufferedStream::close(thread_db* tdbb)
+void BufferedStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -141,7 +141,7 @@ void BufferedStream::close(thread_db* tdbb)
 	}
 }
 
-bool BufferedStream::getRecord(thread_db* tdbb)
+bool BufferedStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -277,17 +277,17 @@ bool BufferedStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool BufferedStream::refetchRecord(thread_db* tdbb)
+bool BufferedStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool BufferedStream::lockRecord(thread_db* tdbb)
+bool BufferedStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void BufferedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void BufferedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -304,27 +304,27 @@ void BufferedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void BufferedStream::findUsedStreams(StreamsArray& streams)
+void BufferedStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void BufferedStream::invalidateRecords(jrd_req* request)
+void BufferedStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void BufferedStream::nullRecords(thread_db* tdbb)
+void BufferedStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void BufferedStream::saveRecords(thread_db* tdbb)
+void BufferedStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void BufferedStream::restoreRecords(thread_db* tdbb)
+void BufferedStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }

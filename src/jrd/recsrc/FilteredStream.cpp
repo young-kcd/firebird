@@ -44,7 +44,7 @@ FilteredStream::FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void FilteredStream::open(thread_db* tdbb)
+void FilteredStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -54,7 +54,7 @@ void FilteredStream::open(thread_db* tdbb)
 	m_next->open(tdbb);
 }
 
-void FilteredStream::close(thread_db* tdbb)
+void FilteredStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -70,7 +70,7 @@ void FilteredStream::close(thread_db* tdbb)
 	}
 }
 
-bool FilteredStream::getRecord(thread_db* tdbb)
+bool FilteredStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -89,7 +89,7 @@ bool FilteredStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool FilteredStream::refetchRecord(thread_db* tdbb)
+bool FilteredStream::refetchRecord(thread_db* tdbb) const
 {
 	if (m_next->refetchRecord(tdbb))
 	{
@@ -99,12 +99,12 @@ bool FilteredStream::refetchRecord(thread_db* tdbb)
 	return false;
 }
 
-bool FilteredStream::lockRecord(thread_db* tdbb)
+bool FilteredStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void FilteredStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void FilteredStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -121,32 +121,32 @@ void FilteredStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FilteredStream::findUsedStreams(StreamsArray& streams)
+void FilteredStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void FilteredStream::invalidateRecords(jrd_req* request)
+void FilteredStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void FilteredStream::nullRecords(thread_db* tdbb)
+void FilteredStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void FilteredStream::saveRecords(thread_db* tdbb)
+void FilteredStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void FilteredStream::restoreRecords(thread_db* tdbb)
+void FilteredStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }
 
-bool FilteredStream::evaluateBoolean(thread_db* tdbb)
+bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 

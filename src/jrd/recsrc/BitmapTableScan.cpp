@@ -44,7 +44,7 @@ BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, UCHAR
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void BitmapTableScan::open(thread_db* tdbb)
+void BitmapTableScan::open(thread_db* tdbb) const
 {
 	//Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
@@ -59,7 +59,7 @@ void BitmapTableScan::open(thread_db* tdbb)
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
 
-void BitmapTableScan::close(thread_db* tdbb)
+void BitmapTableScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -79,7 +79,7 @@ void BitmapTableScan::close(thread_db* tdbb)
 	}
 }
 
-bool BitmapTableScan::getRecord(thread_db* tdbb)
+bool BitmapTableScan::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -118,7 +118,7 @@ bool BitmapTableScan::getRecord(thread_db* tdbb)
 	return false;
 }
 
-void BitmapTableScan::dump(thread_db* tdbb, UCharBuffer& buffer)
+void BitmapTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 

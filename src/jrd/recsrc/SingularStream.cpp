@@ -40,7 +40,7 @@ SingularStream::SingularStream(CompilerScratch* csb, RecordSource* next)
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void SingularStream::open(thread_db* tdbb)
+void SingularStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -50,7 +50,7 @@ void SingularStream::open(thread_db* tdbb)
 	m_next->open(tdbb);
 }
 
-void SingularStream::close(thread_db* tdbb)
+void SingularStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -66,7 +66,7 @@ void SingularStream::close(thread_db* tdbb)
 	}
 }
 
-bool SingularStream::getRecord(thread_db* tdbb)
+bool SingularStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -100,17 +100,17 @@ bool SingularStream::getRecord(thread_db* tdbb)
 	return false;
 }
 
-bool SingularStream::refetchRecord(thread_db* tdbb)
+bool SingularStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool SingularStream::lockRecord(thread_db* tdbb)
+bool SingularStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void SingularStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void SingularStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -127,27 +127,27 @@ void SingularStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SingularStream::findUsedStreams(StreamsArray& streams)
+void SingularStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void SingularStream::invalidateRecords(jrd_req* request)
+void SingularStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void SingularStream::nullRecords(thread_db* tdbb)
+void SingularStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void SingularStream::saveRecords(thread_db* tdbb)
+void SingularStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void SingularStream::restoreRecords(thread_db* tdbb)
+void SingularStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }

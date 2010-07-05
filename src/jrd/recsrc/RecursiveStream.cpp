@@ -65,7 +65,7 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 	m_inner->markRecursive();
 }
 
-void RecursiveStream::open(thread_db* tdbb)
+void RecursiveStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -93,7 +93,7 @@ void RecursiveStream::open(thread_db* tdbb)
 	m_root->open(tdbb);
 }
 
-void RecursiveStream::close(thread_db* tdbb)
+void RecursiveStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -121,7 +121,7 @@ void RecursiveStream::close(thread_db* tdbb)
 	}
 }
 
-bool RecursiveStream::getRecord(thread_db* tdbb)
+bool RecursiveStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -248,18 +248,18 @@ bool RecursiveStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool RecursiveStream::refetchRecord(thread_db* tdbb)
+bool RecursiveStream::refetchRecord(thread_db* tdbb) const
 {
 	return true;
 }
 
-bool RecursiveStream::lockRecord(thread_db* tdbb)
+bool RecursiveStream::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void RecursiveStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void RecursiveStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -279,7 +279,7 @@ void RecursiveStream::markRecursive()
 	m_inner->markRecursive();
 }
 
-void RecursiveStream::invalidateRecords(jrd_req* request)
+void RecursiveStream::invalidateRecords(jrd_req* request) const
 {
 	m_root->invalidateRecords(request);
 	m_inner->invalidateRecords(request);

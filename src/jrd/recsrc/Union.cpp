@@ -66,7 +66,7 @@ Union::Union(CompilerScratch* csb, UCHAR stream,
 	}
 }
 
-void Union::open(thread_db* tdbb)
+void Union::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -87,7 +87,7 @@ void Union::open(thread_db* tdbb)
 	m_args[impure->irsb_count]->open(tdbb);
 }
 
-void Union::close(thread_db* tdbb)
+void Union::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -106,7 +106,7 @@ void Union::close(thread_db* tdbb)
 	}
 }
 
-bool Union::getRecord(thread_db* tdbb)
+bool Union::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -142,7 +142,7 @@ bool Union::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool Union::refetchRecord(thread_db* tdbb)
+bool Union::refetchRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -155,7 +155,7 @@ bool Union::refetchRecord(thread_db* tdbb)
 	return m_args[impure->irsb_count]->refetchRecord(tdbb);
 }
 
-bool Union::lockRecord(thread_db* tdbb)
+bool Union::lockRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -168,7 +168,7 @@ bool Union::lockRecord(thread_db* tdbb)
 	return m_args[impure->irsb_count]->lockRecord(tdbb);
 }
 
-void Union::dump(thread_db* tdbb, UCharBuffer& buffer)
+void Union::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -196,7 +196,7 @@ void Union::markRecursive()
 	}
 }
 
-void Union::invalidateRecords(jrd_req* request)
+void Union::invalidateRecords(jrd_req* request) const
 {
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{

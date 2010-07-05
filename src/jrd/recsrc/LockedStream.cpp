@@ -43,7 +43,7 @@ LockedStream::LockedStream(CompilerScratch* csb, RecordSource* next)
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void LockedStream::open(thread_db* tdbb)
+void LockedStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -53,7 +53,7 @@ void LockedStream::open(thread_db* tdbb)
 	m_next->open(tdbb);
 }
 
-void LockedStream::close(thread_db* tdbb)
+void LockedStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -69,7 +69,7 @@ void LockedStream::close(thread_db* tdbb)
 	}
 }
 
-bool LockedStream::getRecord(thread_db* tdbb)
+bool LockedStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -95,17 +95,17 @@ bool LockedStream::getRecord(thread_db* tdbb)
 	return false;
 }
 
-bool LockedStream::refetchRecord(thread_db* tdbb)
+bool LockedStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool LockedStream::lockRecord(thread_db* tdbb)
+bool LockedStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void LockedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void LockedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -122,27 +122,27 @@ void LockedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void LockedStream::findUsedStreams(StreamsArray& streams)
+void LockedStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void LockedStream::invalidateRecords(jrd_req* request)
+void LockedStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void LockedStream::nullRecords(thread_db* tdbb)
+void LockedStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void LockedStream::saveRecords(thread_db* tdbb)
+void LockedStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void LockedStream::restoreRecords(thread_db* tdbb)
+void LockedStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }

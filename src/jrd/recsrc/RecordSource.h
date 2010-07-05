@@ -58,22 +58,22 @@ namespace Jrd
 	class RecordSource
 	{
 	public:
-		virtual void open(thread_db* tdbb) = 0;
-		virtual void close(thread_db* tdbb) = 0;
+		virtual void open(thread_db* tdbb) const = 0;
+		virtual void close(thread_db* tdbb) const = 0;
 
-		virtual bool getRecord(thread_db* tdbb) = 0;
-		virtual bool refetchRecord(thread_db* tdbb) = 0;
-		virtual bool lockRecord(thread_db* tdbb) = 0;
+		virtual bool getRecord(thread_db* tdbb) const = 0;
+		virtual bool refetchRecord(thread_db* tdbb) const = 0;
+		virtual bool lockRecord(thread_db* tdbb) const = 0;
 
-		virtual void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) = 0;
+		virtual void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const = 0;
 
 		virtual void markRecursive() = 0;
-		virtual void invalidateRecords(jrd_req* request) = 0;
+		virtual void invalidateRecords(jrd_req* request) const = 0;
 
-		virtual void findUsedStreams(StreamsArray& streams) = 0;
-		virtual void nullRecords(thread_db* tdbb) = 0;
-		virtual void saveRecords(thread_db* tdbb) = 0;
-		virtual void restoreRecords(thread_db* tdbb) = 0;
+		virtual void findUsedStreams(StreamsArray& streams) const = 0;
+		virtual void nullRecords(thread_db* tdbb) const = 0;
+		virtual void saveRecords(thread_db* tdbb) const = 0;
+		virtual void restoreRecords(thread_db* tdbb) const = 0;
 
 		virtual ~RecordSource();
 
@@ -119,16 +119,16 @@ namespace Jrd
 	public:
 		RecordStream(CompilerScratch* csb, UCHAR stream, Format* format = NULL);
 
-		virtual bool refetchRecord(thread_db* tdbb);
-		virtual bool lockRecord(thread_db* tdbb);
+		virtual bool refetchRecord(thread_db* tdbb) const;
+		virtual bool lockRecord(thread_db* tdbb) const;
 
 		virtual void markRecursive();
-		virtual void invalidateRecords(jrd_req* request);
+		virtual void invalidateRecords(jrd_req* request) const;
 
-		virtual void findUsedStreams(StreamsArray& streams);
-		virtual void nullRecords(thread_db* tdbb);
-		virtual void saveRecords(thread_db* tdbb);
-		virtual void restoreRecords(thread_db* tdbb);
+		virtual void findUsedStreams(StreamsArray& streams) const;
+		virtual void nullRecords(thread_db* tdbb) const;
+		virtual void saveRecords(thread_db* tdbb) const;
+		virtual void restoreRecords(thread_db* tdbb) const;
 
 	protected:
 		const UCHAR m_stream;
@@ -143,12 +143,12 @@ namespace Jrd
 	public:
 		FullTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 	private:
 		const Firebird::string m_name;
@@ -165,12 +165,12 @@ namespace Jrd
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
 			jrd_nod* inversion);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 	private:
 		const Firebird::string m_name;
@@ -198,12 +198,12 @@ namespace Jrd
 		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
 			jrd_nod* index, USHORT keyLength);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void setInversion(jrd_nod* inversion)
 		{
@@ -212,14 +212,14 @@ namespace Jrd
 		}
 
 	private:
-		int compareKeys(const index_desc*, const UCHAR*, USHORT, const temporary_key*, USHORT);
-		bool findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR**);
-		UCHAR* getPosition(thread_db* tdbb, Impure* impure, win* window);
-		UCHAR* openStream(thread_db* tdbb, Impure* impure, win* window);
-		void setPage(thread_db* tdbb, Impure* impure, win* window);
+		int compareKeys(const index_desc*, const UCHAR*, USHORT, const temporary_key*, USHORT) const;
+		bool findSavedNode(thread_db* tdbb, Impure* impure, win* window, UCHAR**) const;
+		UCHAR* getPosition(thread_db* tdbb, Impure* impure, win* window) const;
+		UCHAR* openStream(thread_db* tdbb, Impure* impure, win* window) const;
+		void setPage(thread_db* tdbb, Impure* impure, win* window) const;
 		void setPosition(thread_db* tdbb, Impure* impure, record_param*,
-						 win* window, const UCHAR*, const temporary_key&);
-		bool setupBitmaps(thread_db* tdbb, Impure* impure);
+						 win* window, const UCHAR*, const temporary_key&) const;
+		bool setupBitmaps(thread_db* tdbb, Impure* impure) const;
 
 		const Firebird::string m_name;
 		jrd_nod* const m_index;
@@ -238,14 +238,14 @@ namespace Jrd
 	public:
 		ExternalTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 	private:
 		const Firebird::string m_name;
@@ -261,14 +261,14 @@ namespace Jrd
 	public:
 		VirtualTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 	private:
 		const Firebird::string m_name;
@@ -286,18 +286,18 @@ namespace Jrd
 		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
 					  jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 	private:
 		void assignParams(thread_db* tdbb, const dsc* from_desc, const dsc* flag_desc,
-						  const UCHAR* msg, const dsc* to_desc, SSHORT to_id, Record* record);
+						  const UCHAR* msg, const dsc* to_desc, SSHORT to_id, Record* record) const;
 
 		const Firebird::string m_name;
 		jrd_prc* const m_procedure;
@@ -313,22 +313,22 @@ namespace Jrd
 	public:
 		SingularStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		RecordSource* const m_next;
@@ -339,22 +339,22 @@ namespace Jrd
 	public:
 		LockedStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		RecordSource* const m_next;
@@ -370,22 +370,22 @@ namespace Jrd
 	public:
 		FirstRowsStream(CompilerScratch* csb, RecordSource* next, jrd_nod* value);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		RecordSource* const m_next;
@@ -402,22 +402,22 @@ namespace Jrd
 	public:
 		SkipRowsStream(CompilerScratch* csb, RecordSource* next, jrd_nod* value);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		RecordSource* const m_next;
@@ -429,22 +429,22 @@ namespace Jrd
 	public:
 		FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod* boolean);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 		void setAnyBoolean(jrd_nod* anyBoolean, bool ansiAny, bool ansiNot)
 		{
@@ -457,7 +457,7 @@ namespace Jrd
 		}
 
 	private:
-		bool evaluateBoolean(thread_db* tdbb);
+		bool evaluateBoolean(thread_db* tdbb) const;
 
 		RecordSource* const m_next;
 		jrd_nod* const m_boolean;
@@ -522,22 +522,22 @@ namespace Jrd
 
 		SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* map);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 		USHORT getLength() const
 		{
@@ -549,11 +549,11 @@ namespace Jrd
 			return m_map->keyLength;
 		}
 
-		UCHAR* getData(thread_db* tdbb);
-		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data);
+		UCHAR* getData(thread_db* tdbb) const;
+		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const;
 
 	private:
-		Sort* init(thread_db* tdbb);
+		Sort* init(thread_db* tdbb) const;
 
 		RecordSource* const m_next;
 		SortMap* const m_map;
@@ -601,25 +601,25 @@ namespace Jrd
 		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
 			jrd_nod* const map, RecordSource* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
+		void findUsedStreams(StreamsArray& streams) const;
 
 	private:
 		void init(CompilerScratch* csb);
 
-		State evaluateGroup(thread_db* tdbb, State state);
-		void finiDistinct(thread_db* tdbb, jrd_req* request);
+		State evaluateGroup(thread_db* tdbb, State state) const;
+		void finiDistinct(thread_db* tdbb, jrd_req* request) const;
 
 		BaseBufferedStream* m_bufferedStream;
 		RecordSource* const m_next;
@@ -634,22 +634,22 @@ namespace Jrd
 	public:
 		WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		BufferedStream* m_next;
@@ -695,22 +695,22 @@ namespace Jrd
 	public:
 		BufferedStream(CompilerScratch* csb, RecordSource* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position);
 		FB_UINT64 getCount(jrd_req* request) const;
@@ -737,25 +737,25 @@ namespace Jrd
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 					   jrd_nod* boolean, bool semiJoin, bool antiJoin);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		bool fetchRecord(thread_db*, size_t);
+		bool fetchRecord(thread_db*, size_t) const;
 
 		const bool m_outerJoin;
 		const bool m_semiJoin;
@@ -769,22 +769,22 @@ namespace Jrd
 	public:
 		FullOuterJoin(CompilerScratch* csb, RecordSource* arg1, RecordSource* arg2);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
 		RecordSource* const m_arg1;
@@ -804,27 +804,27 @@ namespace Jrd
 		HashJoin(CompilerScratch* csb, size_t count,
 				 RecordSource* const* args, jrd_nod* const* keys);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys);
-		bool compareKeys(thread_db* tdbb, jrd_req* request);
-		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream);
+		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys) const;
+		bool compareKeys(thread_db* tdbb, jrd_req* request) const;
+		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const;
 
 		RecordSource* m_leader;
 		jrd_nod* m_leaderKeys;
@@ -868,28 +868,28 @@ namespace Jrd
 		MergeJoin(CompilerScratch* csb, size_t count,
 				  SortedStream* const* args, jrd_nod* const* keys);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		int compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2);
-		UCHAR* getData(thread_db* tdbb, MergeFile* mfb, SLONG record);
-		SLONG getRecord(thread_db* tdbb, size_t index);
-		bool fetchRecord(thread_db* tdbb, size_t index);
+		int compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2) const;
+		UCHAR* getData(thread_db* tdbb, MergeFile* mfb, SLONG record) const;
+		SLONG getRecord(thread_db* tdbb, size_t index) const;
+		bool fetchRecord(thread_db* tdbb, size_t index) const;
 
 		Firebird::Array<SortedStream*> m_args;
 		Firebird::Array<jrd_nod*> m_keys;
@@ -907,17 +907,17 @@ namespace Jrd
 			  size_t argCount, RecordSource* const* args, jrd_nod* const* maps,
 			  size_t streamCount, const UCHAR* streams);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
 	private:
 		Firebird::Array<RecordSource*> m_args;
@@ -946,17 +946,17 @@ namespace Jrd
 					    size_t streamCount, const UCHAR* innerStreams,
 					    size_t saveOffset);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
 	private:
 		const UCHAR m_mapStream;

@@ -51,22 +51,22 @@ namespace
 	public:
 		BufferedStreamWindow(CompilerScratch* csb, BufferedStream* next);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, UCharBuffer& buffer);
+		void dump(thread_db* tdbb, UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 		void locate(thread_db* tdbb, FB_UINT64 position)
 		{
@@ -108,25 +108,25 @@ namespace
 		WindowJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 			const jrd_nod* outerKeys, const jrd_nod* innerKeys);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool getRecord(thread_db* tdbb);
-		bool refetchRecord(thread_db* tdbb);
-		bool lockRecord(thread_db* tdbb);
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer);
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
 		void markRecursive();
-		void invalidateRecords(jrd_req* request);
+		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams);
-		void nullRecords(thread_db* tdbb);
-		void saveRecords(thread_db* tdbb);
-		void restoreRecords(thread_db* tdbb);
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		int compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues);
+		int compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues) const;
 
 		RecordSource* const m_outer;
 		BufferedStream* const m_inner;
@@ -142,7 +142,7 @@ namespace
 		m_impure = CMP_impure(csb, sizeof(Impure));
 	}
 
-	void BufferedStreamWindow::open(thread_db* tdbb)
+	void BufferedStreamWindow::open(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -151,7 +151,7 @@ namespace
 		impure->irsb_position = 0;
 	}
 
-	void BufferedStreamWindow::close(thread_db* tdbb)
+	void BufferedStreamWindow::close(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 
@@ -163,7 +163,7 @@ namespace
 			impure->irsb_flags &= ~irsb_open;
 	}
 
-	bool BufferedStreamWindow::getRecord(thread_db* tdbb)
+	bool BufferedStreamWindow::getRecord(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -179,17 +179,17 @@ namespace
 		return true;
 	}
 
-	bool BufferedStreamWindow::refetchRecord(thread_db* tdbb)
+	bool BufferedStreamWindow::refetchRecord(thread_db* tdbb) const
 	{
 		return m_next->refetchRecord(tdbb);
 	}
 
-	bool BufferedStreamWindow::lockRecord(thread_db* tdbb)
+	bool BufferedStreamWindow::lockRecord(thread_db* tdbb) const
 	{
 		return m_next->lockRecord(tdbb);
 	}
 
-	void BufferedStreamWindow::dump(thread_db* tdbb, UCharBuffer& buffer)
+	void BufferedStreamWindow::dump(thread_db* tdbb, UCharBuffer& buffer) const
 	{
 		m_next->dump(tdbb, buffer);
 	}
@@ -199,27 +199,27 @@ namespace
 		m_next->markRecursive();
 	}
 
-	void BufferedStreamWindow::findUsedStreams(StreamsArray& streams)
+	void BufferedStreamWindow::findUsedStreams(StreamsArray& streams) const
 	{
 		m_next->findUsedStreams(streams);
 	}
 
-	void BufferedStreamWindow::invalidateRecords(jrd_req* request)
+	void BufferedStreamWindow::invalidateRecords(jrd_req* request) const
 	{
 		m_next->invalidateRecords(request);
 	}
 
-	void BufferedStreamWindow::nullRecords(thread_db* tdbb)
+	void BufferedStreamWindow::nullRecords(thread_db* tdbb) const
 	{
 		m_next->nullRecords(tdbb);
 	}
 
-	void BufferedStreamWindow::saveRecords(thread_db* tdbb)
+	void BufferedStreamWindow::saveRecords(thread_db* tdbb) const
 	{
 		m_next->saveRecords(tdbb);
 	}
 
-	void BufferedStreamWindow::restoreRecords(thread_db* tdbb)
+	void BufferedStreamWindow::restoreRecords(thread_db* tdbb) const
 	{
 		m_next->restoreRecords(tdbb);
 	}
@@ -238,7 +238,7 @@ namespace
 		m_impure = CMP_impure(csb, sizeof(Impure));
 	}
 
-	void WindowJoin::open(thread_db* tdbb)
+	void WindowJoin::open(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -258,7 +258,7 @@ namespace
 		m_outer->open(tdbb);
 	}
 
-	void WindowJoin::close(thread_db* tdbb)
+	void WindowJoin::close(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 
@@ -275,7 +275,7 @@ namespace
 		}
 	}
 
-	bool WindowJoin::getRecord(thread_db* tdbb)
+	bool WindowJoin::getRecord(thread_db* tdbb) const
 	{
 		jrd_req* const request = tdbb->getRequest();
 		Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -337,18 +337,18 @@ namespace
 		return false;
 	}
 
-	bool WindowJoin::refetchRecord(thread_db* tdbb)
+	bool WindowJoin::refetchRecord(thread_db* tdbb) const
 	{
 		return true;
 	}
 
-	bool WindowJoin::lockRecord(thread_db* tdbb)
+	bool WindowJoin::lockRecord(thread_db* tdbb) const
 	{
 		status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 		return false; // compiler silencer
 	}
 
-	void WindowJoin::dump(thread_db* tdbb, UCharBuffer& buffer)
+	void WindowJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
 	{
 		buffer.add(isc_info_rsb_begin);
 
@@ -364,37 +364,37 @@ namespace
 		m_inner->markRecursive();
 	}
 
-	void WindowJoin::findUsedStreams(StreamsArray& streams)
+	void WindowJoin::findUsedStreams(StreamsArray& streams) const
 	{
 		m_outer->findUsedStreams(streams);
 		m_inner->findUsedStreams(streams);
 	}
 
-	void WindowJoin::invalidateRecords(jrd_req* request)
+	void WindowJoin::invalidateRecords(jrd_req* request) const
 	{
 		m_outer->invalidateRecords(request);
 		m_inner->invalidateRecords(request);
 	}
 
-	void WindowJoin::nullRecords(thread_db* tdbb)
+	void WindowJoin::nullRecords(thread_db* tdbb) const
 	{
 		m_outer->nullRecords(tdbb);
 		m_inner->nullRecords(tdbb);
 	}
 
-	void WindowJoin::saveRecords(thread_db* tdbb)
+	void WindowJoin::saveRecords(thread_db* tdbb) const
 	{
 		m_outer->saveRecords(tdbb);
 		m_inner->saveRecords(tdbb);
 	}
 
-	void WindowJoin::restoreRecords(thread_db* tdbb)
+	void WindowJoin::restoreRecords(thread_db* tdbb) const
 	{
 		m_outer->restoreRecords(tdbb);
 		m_inner->restoreRecords(tdbb);
 	}
 
-	int WindowJoin::compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues)
+	int WindowJoin::compareKeys(thread_db* tdbb, jrd_req* request, DscNull* outerValues) const
 	{
 		int cmp;
 
@@ -531,7 +531,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 	}
 }
 
-void WindowedStream::open(thread_db* tdbb)
+void WindowedStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -542,7 +542,7 @@ void WindowedStream::open(thread_db* tdbb)
 	m_joinedStream->open(tdbb);
 }
 
-void WindowedStream::close(thread_db* tdbb)
+void WindowedStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -558,7 +558,7 @@ void WindowedStream::close(thread_db* tdbb)
 	}
 }
 
-bool WindowedStream::getRecord(thread_db* tdbb)
+bool WindowedStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -572,18 +572,18 @@ bool WindowedStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool WindowedStream::refetchRecord(thread_db* tdbb)
+bool WindowedStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_joinedStream->refetchRecord(tdbb);
 }
 
-bool WindowedStream::lockRecord(thread_db* tdbb)
+bool WindowedStream::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void WindowedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void WindowedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -600,27 +600,27 @@ void WindowedStream::markRecursive()
 	m_joinedStream->markRecursive();
 }
 
-void WindowedStream::invalidateRecords(jrd_req* request)
+void WindowedStream::invalidateRecords(jrd_req* request) const
 {
 	m_joinedStream->invalidateRecords(request);
 }
 
-void WindowedStream::findUsedStreams(StreamsArray& streams)
+void WindowedStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_joinedStream->findUsedStreams(streams);
 }
 
-void WindowedStream::nullRecords(thread_db* tdbb)
+void WindowedStream::nullRecords(thread_db* tdbb) const
 {
 	m_joinedStream->nullRecords(tdbb);
 }
 
-void WindowedStream::saveRecords(thread_db* tdbb)
+void WindowedStream::saveRecords(thread_db* tdbb) const
 {
 	m_joinedStream->saveRecords(tdbb);
 }
 
-void WindowedStream::restoreRecords(thread_db* tdbb)
+void WindowedStream::restoreRecords(thread_db* tdbb) const
 {
 	m_joinedStream->restoreRecords(tdbb);
 }

@@ -44,7 +44,7 @@ ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& name, U
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void ExternalTableScan::open(thread_db* tdbb)
+void ExternalTableScan::open(thread_db* tdbb) const
 {
 	Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
@@ -74,7 +74,7 @@ void ExternalTableScan::open(thread_db* tdbb)
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
 
-void ExternalTableScan::close(thread_db* tdbb)
+void ExternalTableScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -88,7 +88,7 @@ void ExternalTableScan::close(thread_db* tdbb)
 	}
 }
 
-bool ExternalTableScan::getRecord(thread_db* tdbb)
+bool ExternalTableScan::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -111,12 +111,12 @@ bool ExternalTableScan::getRecord(thread_db* tdbb)
 	return false;
 }
 
-bool ExternalTableScan::refetchRecord(thread_db* /*tdbb*/)
+bool ExternalTableScan::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool ExternalTableScan::lockRecord(thread_db* tdbb)
+bool ExternalTableScan::lockRecord(thread_db* tdbb) const
 {
 	SET_TDBB(tdbb);
 
@@ -124,7 +124,7 @@ bool ExternalTableScan::lockRecord(thread_db* tdbb)
 	return false; // compiler silencer
 }
 
-void ExternalTableScan::dump(thread_db* tdbb, UCharBuffer& buffer)
+void ExternalTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 

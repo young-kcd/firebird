@@ -36,7 +36,7 @@ using namespace Jrd;
 // Cursor implementation
 // ---------------------
 
-Cursor::Cursor(CompilerScratch* csb, RecordSource* rsb,
+Cursor::Cursor(CompilerScratch* csb, const RecordSource* rsb,
 			   const VarInvariantArray* invariants, bool scrollable)
 	: m_top(rsb), m_invariants(invariants), m_scrollable(scrollable)
 {

@@ -43,7 +43,7 @@ VirtualTableScan::VirtualTableScan(CompilerScratch* csb, const string& name, UCH
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void VirtualTableScan::open(thread_db* tdbb)
+void VirtualTableScan::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -73,7 +73,7 @@ void VirtualTableScan::open(thread_db* tdbb)
 	impure->irsb_record_buffer = snapshot->getData(relation);
 }
 
-void VirtualTableScan::close(thread_db* tdbb)
+void VirtualTableScan::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -88,7 +88,7 @@ void VirtualTableScan::close(thread_db* tdbb)
 	}
 }
 
-bool VirtualTableScan::getRecord(thread_db* tdbb)
+bool VirtualTableScan::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -114,18 +114,18 @@ bool VirtualTableScan::getRecord(thread_db* tdbb)
 	return false;
 }
 
-bool VirtualTableScan::refetchRecord(thread_db* tdbb)
+bool VirtualTableScan::refetchRecord(thread_db* tdbb) const
 {
 	return true;
 }
 
-bool VirtualTableScan::lockRecord(thread_db* tdbb)
+bool VirtualTableScan::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void VirtualTableScan::dump(thread_db* tdbb, UCharBuffer& buffer)
+void VirtualTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 

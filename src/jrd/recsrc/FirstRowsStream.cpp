@@ -45,7 +45,7 @@ FirstRowsStream::FirstRowsStream(CompilerScratch* csb, RecordSource* next, jrd_n
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void FirstRowsStream::open(thread_db* tdbb)
+void FirstRowsStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -68,7 +68,7 @@ void FirstRowsStream::open(thread_db* tdbb)
 	}
 }
 
-void FirstRowsStream::close(thread_db* tdbb)
+void FirstRowsStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -84,7 +84,7 @@ void FirstRowsStream::close(thread_db* tdbb)
 	}
 }
 
-bool FirstRowsStream::getRecord(thread_db* tdbb)
+bool FirstRowsStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -105,17 +105,17 @@ bool FirstRowsStream::getRecord(thread_db* tdbb)
 	return m_next->getRecord(tdbb);
 }
 
-bool FirstRowsStream::refetchRecord(thread_db* tdbb)
+bool FirstRowsStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool FirstRowsStream::lockRecord(thread_db* tdbb)
+bool FirstRowsStream::lockRecord(thread_db* tdbb) const
 {
 	return m_next->lockRecord(tdbb);
 }
 
-void FirstRowsStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void FirstRowsStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -132,27 +132,27 @@ void FirstRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FirstRowsStream::findUsedStreams(StreamsArray& streams)
+void FirstRowsStream::findUsedStreams(StreamsArray& streams) const
 {
 	m_next->findUsedStreams(streams);
 }
 
-void FirstRowsStream::invalidateRecords(jrd_req* request)
+void FirstRowsStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void FirstRowsStream::nullRecords(thread_db* tdbb)
+void FirstRowsStream::nullRecords(thread_db* tdbb) const
 {
 	m_next->nullRecords(tdbb);
 }
 
-void FirstRowsStream::saveRecords(thread_db* tdbb)
+void FirstRowsStream::saveRecords(thread_db* tdbb) const
 {
 	m_next->saveRecords(tdbb);
 }
 
-void FirstRowsStream::restoreRecords(thread_db* tdbb)
+void FirstRowsStream::restoreRecords(thread_db* tdbb) const
 {
 	m_next->restoreRecords(tdbb);
 }

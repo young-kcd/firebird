@@ -205,7 +205,7 @@ RecordStream::RecordStream(CompilerScratch* csb, UCHAR stream, Format* format)
 	fb_assert(m_format);
 }
 
-bool RecordStream::refetchRecord(thread_db* tdbb)
+bool RecordStream::refetchRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
@@ -228,7 +228,7 @@ bool RecordStream::refetchRecord(thread_db* tdbb)
 	return true;
 }
 
-bool RecordStream::lockRecord(thread_db* tdbb)
+bool RecordStream::lockRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
@@ -248,19 +248,19 @@ void RecordStream::markRecursive()
 	m_recursive = true;
 }
 
-void RecordStream::findUsedStreams(StreamsArray& streams)
+void RecordStream::findUsedStreams(StreamsArray& streams) const
 {
 	if (!streams.exist(m_stream))
 		streams.add(m_stream);
 }
 
-void RecordStream::invalidateRecords(jrd_req* request)
+void RecordStream::invalidateRecords(jrd_req* request) const
 {
 	record_param* const rpb = &request->req_rpb[m_stream];
 	rpb->rpb_number.setValid(false);
 }
 
-void RecordStream::nullRecords(thread_db* tdbb)
+void RecordStream::nullRecords(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -285,13 +285,13 @@ void RecordStream::nullRecords(thread_db* tdbb)
 	record->rec_format = NULL;
 }
 
-void RecordStream::saveRecords(thread_db* tdbb)
+void RecordStream::saveRecords(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	saveRecord(tdbb, &request->req_rpb[m_stream]);
 }
 
-void RecordStream::restoreRecords(thread_db* tdbb)
+void RecordStream::restoreRecords(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	restoreRecord(tdbb, &request->req_rpb[m_stream]);

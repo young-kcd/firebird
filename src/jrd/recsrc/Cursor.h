@@ -46,7 +46,7 @@ namespace Jrd
 		};
 
 	public:
-		Cursor(CompilerScratch* csb, RecordSource* rsb, const VarInvariantArray* invariants,
+		Cursor(CompilerScratch* csb, const RecordSource* rsb, const VarInvariantArray* invariants,
 			bool scrollable);
 
 		void open(thread_db* tdbb);
@@ -59,7 +59,7 @@ namespace Jrd
 		bool fetchAbsolute(thread_db* tdbb, SINT64 offset);
 		bool fetchRelative(thread_db* tdbb, SINT64 offset);
 
-		RecordSource* getAccessPath() const
+		const RecordSource* getAccessPath() const
 		{
 			return m_top;
 		}
@@ -68,7 +68,7 @@ namespace Jrd
 		bool reschedule(thread_db* tdbb);
 
 		ULONG m_impure;
-		RecordSource* const m_top;
+		const RecordSource* const m_top;
 		const VarInvariantArray* const m_invariants;
 		const bool m_scrollable;
 	};

@@ -176,7 +176,7 @@ HashJoin::HashJoin(CompilerScratch* csb, size_t count,
 	}
 }
 
-void HashJoin::open(thread_db* tdbb)
+void HashJoin::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -205,7 +205,7 @@ void HashJoin::open(thread_db* tdbb)
 	m_leader->open(tdbb);
 }
 
-void HashJoin::close(thread_db* tdbb)
+void HashJoin::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -228,7 +228,7 @@ void HashJoin::close(thread_db* tdbb)
 	}
 }
 
-bool HashJoin::getRecord(thread_db* tdbb)
+bool HashJoin::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -297,18 +297,18 @@ bool HashJoin::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool HashJoin::refetchRecord(thread_db* tdbb)
+bool HashJoin::refetchRecord(thread_db* tdbb) const
 {
 	return true;
 }
 
-bool HashJoin::lockRecord(thread_db* tdbb)
+bool HashJoin::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void HashJoin::dump(thread_db* tdbb, UCharBuffer& buffer)
+void HashJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -338,7 +338,7 @@ void HashJoin::markRecursive()
 	}
 }
 
-void HashJoin::findUsedStreams(StreamsArray& streams)
+void HashJoin::findUsedStreams(StreamsArray& streams) const
 {
 	m_leader->findUsedStreams(streams);
 	for (size_t i = 0; i < m_args.getCount(); i++)
@@ -347,7 +347,7 @@ void HashJoin::findUsedStreams(StreamsArray& streams)
 	}
 }
 
-void HashJoin::invalidateRecords(jrd_req* request)
+void HashJoin::invalidateRecords(jrd_req* request) const
 {
 	m_leader->invalidateRecords(request);
 	for (size_t i = 0; i < m_args.getCount(); i++)
@@ -356,7 +356,7 @@ void HashJoin::invalidateRecords(jrd_req* request)
 	}
 }
 
-void HashJoin::nullRecords(thread_db* tdbb)
+void HashJoin::nullRecords(thread_db* tdbb) const
 {
 	m_leader->nullRecords(tdbb);
 	for (size_t i = 0; i < m_args.getCount(); i++)
@@ -365,7 +365,7 @@ void HashJoin::nullRecords(thread_db* tdbb)
 	}
 }
 
-void HashJoin::saveRecords(thread_db* tdbb)
+void HashJoin::saveRecords(thread_db* tdbb) const
 {
 	m_leader->saveRecords(tdbb);
 	for (size_t i = 0; i < m_args.getCount(); i++)
@@ -374,7 +374,7 @@ void HashJoin::saveRecords(thread_db* tdbb)
 	}
 }
 
-void HashJoin::restoreRecords(thread_db* tdbb)
+void HashJoin::restoreRecords(thread_db* tdbb) const
 {
 	m_leader->restoreRecords(tdbb);
 	for (size_t i = 0; i < m_args.getCount(); i++)
@@ -383,7 +383,7 @@ void HashJoin::restoreRecords(thread_db* tdbb)
 	}
 }
 
-size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys)
+size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys) const
 {
 	size_t hash_slot = 0;
 
@@ -451,7 +451,7 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, j
 	return hash_slot;
 }
 
-bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request)
+bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request) const
 {
 	for (size_t i = 0; i < m_leaderKeys->nod_count; i++)
 	{
@@ -478,7 +478,7 @@ bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request)
 	return true;
 }
 
-bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream)
+bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const
 {
 	BufferedStream* const arg = m_args[stream];
 	FB_UINT64 position;

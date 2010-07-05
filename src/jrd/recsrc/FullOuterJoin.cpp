@@ -46,7 +46,7 @@ FullOuterJoin::FullOuterJoin(CompilerScratch* csb, RecordSource* arg1, RecordSou
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void FullOuterJoin::open(thread_db* tdbb)
+void FullOuterJoin::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -56,7 +56,7 @@ void FullOuterJoin::open(thread_db* tdbb)
 	m_arg1->open(tdbb);
 }
 
-void FullOuterJoin::close(thread_db* tdbb)
+void FullOuterJoin::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -79,7 +79,7 @@ void FullOuterJoin::close(thread_db* tdbb)
 	}
 }
 
-bool FullOuterJoin::getRecord(thread_db* tdbb)
+bool FullOuterJoin::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -104,12 +104,12 @@ bool FullOuterJoin::getRecord(thread_db* tdbb)
 	return m_arg2->getRecord(tdbb);
 }
 
-bool FullOuterJoin::refetchRecord(thread_db* /*tdbb*/)
+bool FullOuterJoin::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool FullOuterJoin::lockRecord(thread_db* tdbb)
+bool FullOuterJoin::lockRecord(thread_db* tdbb) const
 {
 	SET_TDBB(tdbb);
 
@@ -117,7 +117,7 @@ bool FullOuterJoin::lockRecord(thread_db* tdbb)
 	return false; // compiler silencer
 }
 
-void FullOuterJoin::dump(thread_db* tdbb, UCharBuffer& buffer)
+void FullOuterJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -139,31 +139,31 @@ void FullOuterJoin::markRecursive()
 	m_arg2->markRecursive();
 }
 
-void FullOuterJoin::findUsedStreams(StreamsArray& streams)
+void FullOuterJoin::findUsedStreams(StreamsArray& streams) const
 {
 	m_arg1->findUsedStreams(streams);
 	m_arg2->findUsedStreams(streams);
 }
 
-void FullOuterJoin::invalidateRecords(jrd_req* request)
+void FullOuterJoin::invalidateRecords(jrd_req* request) const
 {
 	m_arg1->invalidateRecords(request);
 	m_arg2->invalidateRecords(request);
 }
 
-void FullOuterJoin::nullRecords(thread_db* tdbb)
+void FullOuterJoin::nullRecords(thread_db* tdbb) const
 {
 	m_arg1->nullRecords(tdbb);
 	m_arg2->nullRecords(tdbb);
 }
 
-void FullOuterJoin::saveRecords(thread_db* tdbb)
+void FullOuterJoin::saveRecords(thread_db* tdbb) const
 {
 	m_arg1->saveRecords(tdbb);
 	m_arg2->saveRecords(tdbb);
 }
 
-void FullOuterJoin::restoreRecords(thread_db* tdbb)
+void FullOuterJoin::restoreRecords(thread_db* tdbb) const
 {
 	m_arg1->restoreRecords(tdbb);
 	m_arg2->restoreRecords(tdbb);

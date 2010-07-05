@@ -65,7 +65,7 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* 
 	init(csb);
 }
 
-void AggregatedStream::open(thread_db* tdbb)
+void AggregatedStream::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -79,7 +79,7 @@ void AggregatedStream::open(thread_db* tdbb)
 	m_next->open(tdbb);
 }
 
-void AggregatedStream::close(thread_db* tdbb)
+void AggregatedStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -95,7 +95,7 @@ void AggregatedStream::close(thread_db* tdbb)
 	}
 }
 
-bool AggregatedStream::getRecord(thread_db* tdbb)
+bool AggregatedStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	record_param* const rpb = &request->req_rpb[m_stream];
@@ -189,18 +189,18 @@ bool AggregatedStream::getRecord(thread_db* tdbb)
 	return true;
 }
 
-bool AggregatedStream::refetchRecord(thread_db* tdbb)
+bool AggregatedStream::refetchRecord(thread_db* tdbb) const
 {
 	return m_next->refetchRecord(tdbb);
 }
 
-bool AggregatedStream::lockRecord(thread_db* tdbb)
+bool AggregatedStream::lockRecord(thread_db* tdbb) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
 }
 
-void AggregatedStream::dump(thread_db* tdbb, UCharBuffer& buffer)
+void AggregatedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
 {
 	buffer.add(isc_info_rsb_begin);
 
@@ -217,12 +217,12 @@ void AggregatedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void AggregatedStream::invalidateRecords(jrd_req* request)
+void AggregatedStream::invalidateRecords(jrd_req* request) const
 {
 	m_next->invalidateRecords(request);
 }
 
-void AggregatedStream::findUsedStreams(StreamsArray& streams)
+void AggregatedStream::findUsedStreams(StreamsArray& streams) const
 {
 	RecordStream::findUsedStreams(streams);
 	if (m_bufferedStream)
@@ -247,7 +247,7 @@ void AggregatedStream::init(CompilerScratch* csb)
 
 // Compute the next aggregated record of a value group. evlGroup is driven by, and returns, a state
 // variable.
-AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, AggregatedStream::State state)
+AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, AggregatedStream::State state) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
@@ -487,7 +487,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 }
 
 // Finalize a sort for distinct aggregate
-void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request)
+void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 {
 	jrd_nod** ptr;
 	const jrd_nod* const* end;
