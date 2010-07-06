@@ -3132,7 +3132,7 @@ void DropCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CreateDomainNode::print(string& text, Array<dsql_nod*>& nodes) const
+void CreateDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	string nameTypeStr;
 	nameType.print(nameTypeStr);
@@ -3715,7 +3715,7 @@ void AlterDomainNode::modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transactio
 	END_FOR
 }
 
-void AlterDomainNode::print(string& text, Array<dsql_nod*>& nodes) const
+void AlterDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
 		"AlterDomainNode\n"
@@ -3864,7 +3864,7 @@ void AlterDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					origDom.dyn_null_flag = !FLD.RDB$NULL_FLAG.NULL && FLD.RDB$NULL_FLAG != 0;
 
 					// If the original field type is an array, force its blr type to blr_blob
-					bool has_dimensions = false;
+					//bool has_dimensions = false;
 					if (FLD.RDB$DIMENSIONS != 0)
 						origDom.dyn_dtype = blr_blob;
 
