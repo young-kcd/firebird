@@ -68,7 +68,7 @@ namespace
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
 
-		void locate(thread_db* tdbb, FB_UINT64 position)
+		void locate(thread_db* tdbb, FB_UINT64 position) const
 		{
 			jrd_req* const request = tdbb->getRequest();
 			Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -87,7 +87,7 @@ namespace
 		}
 
 	public:
-		BufferedStream* m_next;
+		NestedSource<BufferedStream> m_next;
 	};
 
 	// Make join between outer stream and already sorted (aggregated) partition.
@@ -421,12 +421,12 @@ namespace
 // ------------------------------
 
 WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next)
-	: m_joinedStream(NULL)
+	: m_next(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
+	  m_joinedStream(NULL)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
-	m_next = FB_NEW(csb->csb_pool) BufferedStream(csb, next);
 
 	// Process the unpartioned and unordered map, if existent.
 

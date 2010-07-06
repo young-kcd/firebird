@@ -503,7 +503,7 @@ void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 }
 
 
-SlidingWindow::SlidingWindow(thread_db* aTdbb, BaseBufferedStream* aStream, jrd_nod* aGroup,
+SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, jrd_nod* aGroup,
 			jrd_req* aRequest)
 	: tdbb(aTdbb),	// Note: instanciate the class only as local variable
 	  stream(aStream),

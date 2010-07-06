@@ -103,8 +103,8 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 	{
 		fb_assert(m_args.getCount() == 2);
 
-		RecordSource* const outer = m_args[0];
-		RecordSource* const inner = m_args[1];
+		const RecordSource* const outer = m_args[0];
+		const RecordSource* const inner = m_args[1];
 
 		if (impure->irsb_flags & irsb_first)
 		{
@@ -289,7 +289,7 @@ void NestedLoopJoin::restoreRecords(thread_db* tdbb) const
 
 bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
 {
-	RecordSource* const arg = m_args[n];
+	const RecordSource* const arg = m_args[n];
 
 	if (arg->getRecord(tdbb))
 	{

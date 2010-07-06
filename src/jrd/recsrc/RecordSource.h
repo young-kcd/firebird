@@ -132,7 +132,35 @@ namespace Jrd
 
 	protected:
 		const UCHAR m_stream;
-		Format* const m_format;
+		const Format* const m_format;
+	};
+
+
+	// Helper class to make const-correct nested record sources
+
+	template <typename T = RecordSource>
+	class NestedSource
+	{
+	public:
+		NestedSource(T* source)
+			: m_source(source)
+		{
+		}
+
+		NestedSource<T>& operator =(T* source)
+		{
+			m_source = source;
+			return *this;
+		}
+
+		operator T*() { return m_source; }
+		operator const T*() const { return m_source; }
+
+		T* operator ->() { return m_source; }
+		const T* operator ->() const { return m_source; }
+
+	private:
+		T* m_source;
 	};
 
 
@@ -300,7 +328,7 @@ namespace Jrd
 						  const UCHAR* msg, const dsc* to_desc, SSHORT to_id, Record* record) const;
 
 		const Firebird::string m_name;
-		jrd_prc* const m_procedure;
+		const jrd_prc* const m_procedure;
 		jrd_nod* const m_inputs;
 		jrd_nod* const m_message;
 	};
@@ -331,7 +359,7 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		RecordSource* const m_next;
+		NestedSource<> m_next;
 	};
 
 	class LockedStream : public RecordSource
@@ -357,7 +385,7 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		RecordSource* const m_next;
+		NestedSource<> m_next;
 	};
 
 	class FirstRowsStream : public RecordSource
@@ -388,7 +416,7 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		RecordSource* const m_next;
+		NestedSource<> m_next;
 		jrd_nod* const m_value;
 	};
 
@@ -420,7 +448,7 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		RecordSource* const m_next;
+		NestedSource<> m_next;
 		jrd_nod* const m_value;
 	};
 
@@ -459,7 +487,7 @@ namespace Jrd
 	private:
 		bool evaluateBoolean(thread_db* tdbb) const;
 
-		RecordSource* const m_next;
+		NestedSource<> m_next;
 		jrd_nod* const m_boolean;
 		jrd_nod* m_anyBoolean;
 		bool m_ansiAny;
@@ -555,22 +583,22 @@ namespace Jrd
 	private:
 		Sort* init(thread_db* tdbb) const;
 
-		RecordSource* const m_next;
-		SortMap* const m_map;
+		NestedSource<> m_next;
+		const SortMap* const m_map;
 	};
 
 	// Make moves in a window without going out of partition boundaries.
 	class SlidingWindow
 	{
 	public:
-		SlidingWindow(thread_db* aTdbb, BaseBufferedStream* aStream, jrd_nod* aGroup, jrd_req* aRequest);
+		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, jrd_nod* aGroup, jrd_req* aRequest);
 		~SlidingWindow();
 
 		bool move(SINT64 delta);
 
 	private:
 		thread_db* tdbb;
-		BaseBufferedStream* stream;
+		const BaseBufferedStream* const stream;
 		jrd_nod* group;
 		jrd_req* request;
 		Firebird::Array<impure_value> partitionKeys;
@@ -621,8 +649,8 @@ namespace Jrd
 		State evaluateGroup(thread_db* tdbb, State state) const;
 		void finiDistinct(thread_db* tdbb, jrd_req* request) const;
 
-		BaseBufferedStream* m_bufferedStream;
-		RecordSource* const m_next;
+		NestedSource<BaseBufferedStream> m_bufferedStream;
+		NestedSource<> m_next;
 		jrd_nod* const m_group;
 		jrd_nod* const m_map;
 		jrd_nod* const m_order;
@@ -652,15 +680,15 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		BufferedStream* m_next;
-		RecordSource* m_joinedStream;
+		NestedSource<BufferedStream> m_next;
+		NestedSource<> m_joinedStream;
 	};
 
 	// Abstract class for different implementations of buffered streams.
 	class BaseBufferedStream : public RecordSource
 	{
 	public:
-		virtual void locate(thread_db* tdbb, FB_UINT64 position) = 0;
+		virtual void locate(thread_db* tdbb, FB_UINT64 position) const = 0;
 		virtual FB_UINT64 getCount(jrd_req* request) const = 0;
 		virtual FB_UINT64 getPosition(jrd_req* request) const = 0;
 	};
@@ -712,7 +740,7 @@ namespace Jrd
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
 
-		void locate(thread_db* tdbb, FB_UINT64 position);
+		void locate(thread_db* tdbb, FB_UINT64 position) const;
 		FB_UINT64 getCount(jrd_req* request) const;
 
 		FB_UINT64 getPosition(jrd_req* request) const
@@ -722,9 +750,9 @@ namespace Jrd
 		}
 
 	private:
-		RecordSource* m_next;
+		NestedSource<> m_next;
 		Firebird::HalfStaticArray<FieldMap, OPT_STATIC_ITEMS> m_map;
-		Format* m_format;
+		const Format* m_format;
 	};
 
 
@@ -760,7 +788,7 @@ namespace Jrd
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;
-		Firebird::Array<RecordSource*> m_args;
+		Firebird::Array<NestedSource<> > m_args;
 		jrd_nod* const m_boolean;
 	};
 
@@ -787,8 +815,8 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		RecordSource* const m_arg1;
-		RecordSource* const m_arg2;
+		NestedSource<> m_arg1;
+		NestedSource<> m_arg2;
 	};
 
 	class HashJoin : public RecordSource

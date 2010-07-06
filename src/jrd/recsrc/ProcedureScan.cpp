@@ -156,7 +156,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	}
 
 	jrd_req* const proc_request = impure->irsb_req_handle;
-	Format* const rec_format = m_format;
+	const Format* const rec_format = m_format;
 
 	const Format* const msg_format = (Format*) m_procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)

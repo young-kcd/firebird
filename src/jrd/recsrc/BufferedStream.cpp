@@ -84,17 +84,17 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	}
 
 	const size_t count = fields.getCount();
-	m_format = Format::newFormat(csb->csb_pool, count);
+	Format* format = Format::newFormat(csb->csb_pool, count);
 	ULONG offset = FLAG_BYTES(count);
 
 	for (size_t i = 0; i < count; i++)
 	{
-		dsc& desc = m_format->fmt_desc[i] = fields[i];
+		dsc& desc = format->fmt_desc[i] = fields[i];
 		if (desc.dsc_dtype >= dtype_aligned)
 		{
 			offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
 		}
-		desc.dsc_address = (UCHAR *)(IPTR) offset;
+		desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc.dsc_length;
 	}
 
@@ -103,7 +103,8 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 	}
 
-	m_format->fmt_length = offset;
+	format->fmt_length = offset;
+	m_format = format;
 }
 
 void BufferedStream::open(thread_db* tdbb) const
@@ -329,7 +330,7 @@ void BufferedStream::restoreRecords(thread_db* tdbb) const
 	m_next->restoreRecords(tdbb);
 }
 
-void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position)
+void BufferedStream::locate(thread_db* tdbb, FB_UINT64 position) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);

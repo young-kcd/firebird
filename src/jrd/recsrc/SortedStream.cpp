@@ -195,7 +195,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 		// Be careful to null field all unused bytes in the sort key.
 
 		const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
-		for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
+		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
 			to = item->desc;
 			to.dsc_address = data + (IPTR) to.dsc_address;
@@ -271,7 +271,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 		SSHORT stream = -1;
 
 		const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
-		for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
+		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
 			if (item->node && item->node->nod_type != nod_field)
 				continue;
@@ -309,7 +309,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 	const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
 
-	for (SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
+	for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 	{
 		const UCHAR flag = *(data + item->flagOffset);
 		from = item->desc;
