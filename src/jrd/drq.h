@@ -104,7 +104,6 @@ enum drq_type_t
 	drq_s_grant,			// store grant
 	drq_l_fld_src2,			// lookup a field source
 	drq_m_database,			// modify database
-	drq_m_gfield,			// modify global field
 	drq_m_index,			// modify index
 	drq_m_lfield,			// modify local field
 	drq_m_relation,			// modify relation
@@ -231,6 +230,9 @@ enum drq_type_t
 	drq_l_ident_gens,		// lookup generators (identity column)
 	drq_m_prm_view,			// modify view's field source inherited from parameters
 	drq_l_max_coll_id,		// lookup max collation id
+	drq_m_fld,				// create domain field
+	drq_s_fld_dym,			// store field dymension
+	drq_m_fld2,				// alter domain
 
 	drq_MAX
 };

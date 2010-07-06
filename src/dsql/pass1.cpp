@@ -1651,20 +1651,14 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		return node;
 
 	case nod_dom_value:
+		if (dsqlScratch->domainValue.isUnknown())
 		{
-			const dsql_nod* const ddl_node =
-				(dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_DDL) ?
-					dsqlScratch->getStatement()->getDdlNode() : NULL;
-
-			if (!ddl_node ||
-				!(ddl_node->nod_type == nod_def_domain || ddl_node->nod_type == nod_mod_domain))
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-						  Arg::Gds(isc_dsql_domain_err));
-			}
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+					  Arg::Gds(isc_dsql_domain_err));
 		}
+
 		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_desc = input->nod_desc;
+		node->nod_desc = dsqlScratch->domainValue;
 		return node;
 
 	case nod_internal_info:
@@ -1917,8 +1911,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_def_filter:
 	case nod_del_filter:
 	case nod_def_domain:
-	case nod_mod_domain:
-	case nod_del_domain:
 	case nod_def_udf:
 	case nod_del_udf:
 	case nod_def_shadow:
@@ -10285,12 +10277,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_domain:
 		verb = "def_domain";
 		break;
-	case nod_mod_domain:
-		verb = "mod_domain";
-		break;
-	case nod_del_domain:
-		verb = "del_domain";
-		break;
 	case nod_def_constraint:
 		verb = "def_constraint";
 		break;
@@ -10469,9 +10455,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_del_role:
 		verb = "del_role";
-		break;
-	case nod_mod_domain_type:
-		verb = "mod_domain_type";
 		break;
 	case nod_mod_field_name:
 		verb = "mod_field_name";

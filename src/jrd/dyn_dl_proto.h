@@ -29,7 +29,6 @@ void	DYN_delete_dimensions(Jrd::Global*, const UCHAR**); //, const Firebird::Met
 void	DYN_delete_exception(Jrd::Global*, const UCHAR**);
 void	DYN_delete_filter(Jrd::Global*, const UCHAR**);
 void	DYN_delete_generator(Jrd::Global*, const UCHAR**);
-void	DYN_delete_global_field(Jrd::Global*, const UCHAR**);
 void	DYN_delete_index(Jrd::Global*, const UCHAR**);
 void	DYN_delete_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void	DYN_delete_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);

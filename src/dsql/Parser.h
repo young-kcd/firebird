@@ -136,6 +136,52 @@ public:
 private:
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
 
+	// Set the value of a clause, checking if it was already specified.
+
+	template <typename T>
+	void setClause(T& clause, const char* duplicateMsg, const T& value)
+	{
+		using namespace Firebird;
+		if (isDuplicateClause(clause))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
+
+		clause = value;
+	}
+
+	template <typename T, typename Delete>
+	void setClause(Firebird::AutoPtr<T, Delete>& clause, const char* duplicateMsg, T* value)
+	{
+		using namespace Firebird;
+		if (isDuplicateClause(clause))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
+
+		clause = value;
+	}
+
+	void setClause(bool& clause, const char* duplicateMsg)
+	{
+		setClause(clause, duplicateMsg, true);
+	}
+
+	template <typename T>
+	bool isDuplicateClause(const T& clause)
+	{
+		return clause != 0;
+	}
+
+	bool isDuplicateClause(const Firebird::MetaName& clause)
+	{
+		return clause.hasData();
+	}
+
 // start - defined in btyacc_fb.ske
 private:
 	static void yySCopy(YYSTYPE* to, YYSTYPE* from, int size);

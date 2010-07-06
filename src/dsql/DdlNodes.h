@@ -582,6 +582,94 @@ public:
 };
 
 
+class CreateDomainNode : public DdlNode
+{
+public:
+	explicit CreateDomainNode(MemoryPool& p, const Firebird::string& sqlText,
+				const ParameterClause& aNameType)
+		: DdlNode(p, sqlText),
+		  nameType(aNameType),
+		  notNull(false),
+		  check(NULL)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	ParameterClause nameType;
+	bool notNull;
+	dsql_nod* check;
+};
+
+
+class AlterDomainNode : public DdlNode
+{
+public:
+	explicit AlterDomainNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName)
+		: DdlNode(p, sqlText),
+		  name(p, aName),
+		  dropConstraint(false),
+		  dropDefault(false),
+		  setConstraint(NULL),
+		  setDefault(NULL),
+		  renameTo(p)
+	{
+	}
+
+public:
+	static void checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld);
+	static ULONG checkUpdateNumericType(const dyn_fld& origFld, const dyn_fld& newFld);
+
+	static void modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName,
+		const Firebird::MetaName& newFieldName);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+private:
+	void rename(thread_db* tdbb, jrd_tra* transaction, SSHORT dimensions);
+
+public:
+	Firebird::MetaName name;
+	bool dropConstraint;
+	bool dropDefault;
+	dsql_nod* setConstraint;
+	dsql_nod* setDefault;
+	Firebird::MetaName renameTo;
+	Firebird::AutoPtr<TypeClause> type;
+};
+
+
+class DropDomainNode : public DdlNode
+{
+public:
+	explicit DropDomainNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName)
+		: DdlNode(p, sqlText),
+		  name(p, aName)
+	{
+	}
+
+	static bool deleteDimensionRecords(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& name);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+private:
+	void check(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	Firebird::MetaName name;
+};
+
+
 class CreateSequenceNode : public DdlNode
 {
 public:

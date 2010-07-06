@@ -628,6 +628,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
 	Jrd::CreateCollationNode* createCollationNode;
+	Jrd::CreateDomainNode* createDomainNode;
+	Jrd::AlterDomainNode* alterDomainNode;
 	Jrd::CreateAlterFunctionNode* createAlterFunctionNode;
 	Jrd::CreateAlterProcedureNode* createAlterProcedureNode;
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
@@ -642,7 +644,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> access_mode access_type alias_list
 %type <legacyNode> alter alter_clause alter_column_name
-%type <legacyNode> alter_data_type_or_domain alter_db alter_domain_op alter_domain_ops
+%type <legacyNode> alter_data_type_or_domain alter_db
 %type <legacyNode> alter_exception_clause alter_index_clause alter_op alter_ops
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
@@ -677,8 +679,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
 %type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
-%type <legacyNode> deterministic_opt distinct_clause distinct_predicate domain_clause domain_constraint
-%type <legacyNode> domain_constraint_clause domain_constraint_def domain_constraint_list
+%type <legacyNode> deterministic_opt distinct_clause distinct_predicate
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
 %type <legacyNode> drop_clause drop_user_clause
@@ -829,6 +830,15 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type collation_case_attribute(<createCollationNode>)
 %type collation_pad_attribute(<createCollationNode>)
 %type collation_specific_attribute_opt(<createCollationNode>)
+
+%type <createDomainNode> domain_clause
+%type domain_constraints_opt(<createDomainNode>)
+%type domain_constraints(<createDomainNode>)
+%type domain_constraint(<createDomainNode>)
+
+%type <alterDomainNode> alter_domain
+%type alter_domain_ops(<alterDomainNode>)
+%type alter_domain_op(<alterDomainNode>)
 
 %type <triBoolVal> trigger_active
 %type <uint64Val> trigger_db_type trigger_ddl_type trigger_ddl_type_items trigger_type
@@ -1215,7 +1225,7 @@ create_clause	: EXCEPTION exception_clause
 		| DATABASE db_clause
 			{ $$ = $2; }
 		| DOMAIN domain_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| SHADOW shadow_clause
 			{ $$ = $2; }
 		| ROLE role_clause
@@ -1252,10 +1262,6 @@ recreate_clause
 		{ $$ = makeClassNode(FB_NEW(getPool()) RecreatePackageNode(getPool(), compilingText, $2)); }
 	| PACKAGE BODY package_body_clause
 		{ $$ = makeClassNode(FB_NEW(getPool()) RecreatePackageBodyNode(getPool(), compilingText, $3)); }
-/*
-	| DOMAIN rdomain_clause
-		{ $$ = $2; }
-*/
 	| EXCEPTION rexception_clause
 		{ $$ = $2; }
 	;
@@ -1358,61 +1364,63 @@ db_file_list	: db_file
 
 // CREATE DOMAIN
 
-domain_clause	: column_def_name
-		as_opt
-		data_type
-		domain_default_opt
-		domain_constraint_clause
-		collate_clause
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, $4, make_list ($5), $6); }
-		;
+domain_clause
+	: column_def_name as_opt data_type domain_default_opt
+			{
+				$<createDomainNode>$ = FB_NEW(getPool()) CreateDomainNode(getPool(), compilingText,
+					ParameterClause((dsql_fld*) $1, "", $4, NULL));
+			}
+		domain_constraints_opt($5) collate_clause
+			{
+				$$ = $5;
+				$$->nameType.collate = toName($7);
+			}
+	;
 
-/*
-rdomain_clause	: DOMAIN alter_column_name alter_domain_ops
-			{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
-					$2, make_list ($3)); }
-*/
+domain_constraints_opt($createDomainNode)
+	:
+	| domain_constraints($createDomainNode)
+	;
 
-as_opt	: AS
-			{ $$ = NULL; }
-		|
-			{ $$ = NULL; }
-		;
+domain_constraints($createDomainNode)
+	: domain_constraint($createDomainNode)
+	| domain_constraints domain_constraint($createDomainNode)
+	;
 
-domain_default	: DEFAULT begin_trigger default_value end_default
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		;
+domain_constraint($createDomainNode)
+	: null_constraint
+		{ setClause($createDomainNode->notNull, "NOT NULL"); }
+	| check_constraint
+		{ setClause($createDomainNode->check, "DOMAIN CHECK CONSTRAINT", $1); }
+	;
 
-domain_default_opt	: domain_default
-		|
-			{ $$ = NULL; }
-		;
+as_opt
+	:
+		{ $$ = NULL; }
+	| AS
+		{ $$ = NULL; }
+	;
 
-domain_constraint_clause	: domain_constraint_list
-		|
-			{ $$ = NULL; }
-		;
+domain_default
+	: DEFAULT begin_trigger default_value end_default
+		{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
+	;
 
-domain_constraint_list  : domain_constraint_def
-		| domain_constraint_list domain_constraint_def
-			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
-		;
+domain_default_opt	
+	:
+		{ $$ = NULL; }
+	| domain_default
+	;
 
-domain_constraint_def	: domain_constraint
-			{ $$ = make_node (nod_rel_constraint, (int) 2, NULL, $1);}
-		;
+null_constraint
+	: NOT KW_NULL
+		{ $$ = make_node (nod_null, (int) 0, NULL); }
+	;
 
-domain_constraint	: null_constraint
-		| check_constraint
-		;
-
-null_constraint	: NOT KW_NULL
-			{ $$ = make_node (nod_null, (int) 0, NULL); }
-		;
-
-check_constraint	: CHECK begin_trigger '(' search_condition ')' end_trigger
-			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, NULL, NULL, $4, NULL, $6); }
-		;
+check_constraint
+	: CHECK begin_trigger '(' search_condition ')' end_trigger
+		{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, NULL, NULL, $4, NULL, $6); }
+	;
 
 
 // CREATE SEQUENCE/GENERATOR
@@ -3014,8 +3022,8 @@ alter_clause	: EXCEPTION alter_exception_clause
  			{ $$ = makeClassNode($2); }
 		| DATABASE init_alter_db alter_db
 			{ $$ = make_node (nod_mod_database, (int) e_adb_count, make_list ($3)); }
-		| DOMAIN alter_column_name alter_domain_ops
-			{ $$ = make_node (nod_mod_domain, (int) e_alt_count, $2, make_list ($3)); }
+		| DOMAIN alter_domain
+ 			{ $$ = makeClassNode($2); }
 		| INDEX alter_index_clause
 			{ $$ = make_node (nod_mod_index, (int) e_mod_idx_count, $2); }
 		| SEQUENCE alter_sequence_clause
@@ -3032,26 +3040,42 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = makeClassNode($3); }
 		;
 
-alter_domain_ops	: alter_domain_op
-		| alter_domain_ops alter_domain_op
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+alter_domain
+	: keyword_or_column
+			{
+				$<alterDomainNode>$ = FB_NEW(getPool()) AlterDomainNode(getPool(), compilingText,
+					toName($1));
+			}
+		alter_domain_ops($2)
+			{ $$ = $2; }
+	;
 
-alter_domain_op	: SET domain_default
-			{ $$ = $2; }
-		| ADD CONSTRAINT check_constraint
-			{ $$ = $3; }
-		| ADD check_constraint
-			{ $$ = $2; }
-		| DROP DEFAULT
-			{$$ = make_node (nod_del_default, (int) 0, NULL); }
-		| DROP CONSTRAINT
-			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
-		| TO simple_column_name
-			{ $$ = $2; }
-		| KW_TYPE init_data_type non_array_type
-			{ $$ = make_node (nod_mod_domain_type, 2, $2); }
-		;
+alter_domain_ops($alterDomainNode)
+	: alter_domain_op($alterDomainNode)
+	| alter_domain_ops alter_domain_op($alterDomainNode)
+	;
+
+alter_domain_op($alterDomainNode)
+	: SET domain_default
+		{ setClause($alterDomainNode->setDefault, "DOMAIN DEFAULT", $2); }
+	| ADD CONSTRAINT check_constraint
+		{ setClause($alterDomainNode->setConstraint, "DOMAIN CONSTRAINT", $3); }
+	| ADD check_constraint
+		{ setClause($alterDomainNode->setConstraint, "DOMAIN CONSTRAINT", $2); }
+	| DROP DEFAULT
+		{ setClause($alterDomainNode->dropDefault, "DOMAIN DROP DEFAULT"); }
+	| DROP CONSTRAINT
+		{ setClause($alterDomainNode->dropConstraint, "DOMAIN DROP CONSTRAINT"); }
+	| TO symbol_column_name
+		{ setClause($alterDomainNode->renameTo, "DOMAIN NAME", toName($2)); }
+	| KW_TYPE init_data_type non_array_type
+		{
+			//// FIXME: ALTER DOMAIN doesn't support collations, and altered domain's
+			//// collation is always lost.
+			TypeClause* type = FB_NEW(getPool()) TypeClause($2, NULL);
+			setClause($alterDomainNode->type, "DOMAIN TYPE", type);
+		}
+	;
 
 alter_ops	: alter_op
 		| alter_ops ',' alter_op
@@ -3364,7 +3388,7 @@ drop_clause	: EXCEPTION symbol_exception_name
 		| FILTER symbol_filter_name
 			{ $$ = make_node (nod_del_filter, (int) 1, $2); }
 		| DOMAIN symbol_domain_name
-			{ $$ = make_node (nod_del_domain, (int) 1, $2); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) DropDomainNode(getPool(), compilingText, toName($2))); }
 		| EXTERNAL FUNCTION symbol_UDF_name
 			{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($3))); }
 		| FUNCTION symbol_UDF_name
@@ -6468,7 +6492,7 @@ static void stack_nodes (dsql_nod* node, DsqlNodStack& stack)
 		stack_nodes (*ptr, stack);
 }
 
-static Firebird::MetaName toName(dsql_nod* node)
+static MetaName toName(dsql_nod* node)
 {
 	if (!node)
 		return "";
@@ -6476,14 +6500,14 @@ static Firebird::MetaName toName(dsql_nod* node)
 	dsql_str* str = (dsql_str*) node;
 
 	if (str->str_length > MAX_SQL_IDENTIFIER_LEN)
-		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_dyn_name_longer));
+		yyabandon(-104, isc_dyn_name_longer);
 
-	return Firebird::MetaName(str->str_data);
+	return MetaName(str->str_data);
 }
 
-static Firebird::string toString(dsql_str* node)
+static string toString(dsql_str* node)
 {
-	return Firebird::string(node->str_data);
+	return string(node->str_data);
 }
 
 int Parser::yylex()
@@ -6679,6 +6703,12 @@ int Parser::yylexAux()
 					if (buffer != string)
 						gds__free (buffer);
 					yyabandon(-104, isc_token_too_long);
+				}
+				else if (p - buffer > MAX_SQL_IDENTIFIER_LEN)
+				{
+					if (buffer != string)
+						gds__free (buffer);
+					yyabandon(-104, isc_dyn_name_longer);
 				}
 				else if (p - buffer == 0)
 				{
@@ -7201,6 +7231,10 @@ int Parser::yylexAux()
 			lex.lines_bk = lex.lines;
 			return sym->sym_keyword;
 		}
+
+		if (p - string > MAX_SQL_IDENTIFIER_LEN)
+			yyabandon(-104, isc_dyn_name_longer);
+
 		yylval.legacyNode = (dsql_nod*) MAKE_string(string, p - string);
 		lex.last_token_bk = lex.last_token;
 		lex.line_start_bk = lex.line_start;

@@ -35,6 +35,7 @@
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/RuntimeStatistics.h"
 
+#include "../common/classes/ByteChunk.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/PublicHandle.h"
 #include "../common/classes/stack.h"
@@ -203,7 +204,7 @@ public:
 	void storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 		bid* blobId, const Firebird::string& text, USHORT fromCharSet);
 	void storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction, bid* blobId,
-		const UCHAR* data, unsigned length);
+		const Firebird::ByteChunk& chunk);
 
 	void cancelExternalConnection(thread_db* tdbb);
 	void detachLocksFromAttachment();

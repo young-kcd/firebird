@@ -286,12 +286,12 @@ void Jrd::Attachment::storeMetaDataBlob(thread_db* tdbb, jrd_tra* transaction,
 
 // We store raw stuff; don't attempt to translate.
 void Jrd::Attachment::storeBinaryBlob(thread_db* tdbb, jrd_tra* transaction,
-	bid* blobId, const UCHAR* data, unsigned length)
+	bid* blobId, const ByteChunk& chunk)
 {
 	blb* blob = BLB_create2(tdbb, transaction, blobId, 0, NULL);
 	try
 	{
-		BLB_put_data(tdbb, blob, data, length);
+		BLB_put_data(tdbb, blob, chunk.data, chunk.length);
 	}
 	catch (const Exception&)
 	{

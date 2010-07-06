@@ -178,6 +178,7 @@
     <ClInclude Include="..\..\..\src\common\classes\alloc.h" />
     <ClInclude Include="..\..\..\src\common\classes\array.h" />
     <ClInclude Include="..\..\..\src\common\classes\BaseStream.h" />
+    <ClInclude Include="..\..\..\src\common\classes\ByteChunk.h" />
     <ClInclude Include="..\..\..\src\common\classes\ClumpletReader.h" />
     <ClInclude Include="..\..\..\src\common\classes\ClumpletWriter.h" />
     <ClInclude Include="..\..\..\src\common\config\config.h" />

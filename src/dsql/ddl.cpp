@@ -117,7 +117,6 @@ const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
 
 static void assign_field_length(dsql_fld*, USHORT);
 static void check_constraint(DsqlCompilerScratch*, dsql_nod*, bool);
-static void check_one_call(USHORT*, SSHORT, const TEXT*);
 static void create_view_triggers(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static void define_computed(DsqlCompilerScratch*, dsql_nod*, dsql_fld*, dsql_nod*);
 static void define_constraint_trigger(DsqlCompilerScratch*, dsql_nod*);
@@ -127,7 +126,6 @@ static void define_del_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const 
 	const dsql_nod*, const char*, const char*);
 //static void define_del_default_trg(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, TEXT*, TEXT*);
 static void define_dimensions(DsqlCompilerScratch*, const dsql_fld*);
-static void define_domain(DsqlCompilerScratch*);
 static void define_exception(DsqlCompilerScratch*, NOD_TYPE);
 static void define_field(DsqlCompilerScratch*, dsql_nod*, SSHORT, const dsql_str*, const dsql_nod* pkcols);
 static void define_filter(DsqlCompilerScratch*);
@@ -162,7 +160,6 @@ static void make_index(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*, c
 static void make_index_trg_ref_int(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*,
 	const char*, const char*);
 static void modify_database(DsqlCompilerScratch*);
-static void modify_domain(DsqlCompilerScratch*);
 static void modify_field(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static void modify_index(DsqlCompilerScratch*);
 static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SSHORT option,
@@ -185,7 +182,6 @@ static void set_statistics(DsqlCompilerScratch*);
 static void stuff_default_blr(DsqlCompilerScratch*, const UCHAR*, USHORT);
 static void stuff_matching_blr(BlrWriter*, const dsql_nod*, const dsql_nod*);
 static void stuff_trg_firing_cond(BlrWriter*, const dsql_nod*);
-static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
 static void clearPermanentField (dsql_rel*, bool);
 static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
@@ -282,6 +278,8 @@ void DDL_execute(dsql_req* request)
 
 	if (type == nod_class_stmtnode)
 	{
+		fb_utils::init_status(tdbb->tdbb_status_vector);	// Do the same as DYN_ddl does.
+
 		// run all statements under savepoint control
 		{	// scope
 			AutoSavePoint savePoint(tdbb, request->req_transaction);
@@ -751,27 +749,6 @@ static void check_constraint(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	dsqlScratch->appendUChar(isc_dyn_end);	// For CHECK constraint definition
-}
-
-
-static void check_one_call (USHORT* repetition_count, SSHORT pos, const TEXT* error_msg)
-{
-/**************************************
- *
- *  c h e c k _ o n e _ c a l l
- *
- **************************************
- *
- * Function
- *  Ensure that each option in modify_domain() is called only once.
- *  This restriction cannot be enforced by the DSQL parser.
- *
- **************************************/
-	if (++repetition_count[pos] > 1)
-	{
-		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				   Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(error_msg));
-	}
 }
 
 
@@ -1443,123 +1420,6 @@ static void define_dimensions( DsqlCompilerScratch* dsqlScratch, const dsql_fld*
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_arr_range_error));
 		}
 	}
-}
-
-
-static void define_domain(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ d o m a i n
- *
- **************************************
- *
- * Function
- *	Define a domain (global field)
- *
- **************************************/
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* element = statement->getDdlNode();
-	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dom_name];
-
-	if (fb_utils::implicit_domain(field->fld_name.c_str()))
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-				  Arg::Gds(isc_dsql_implicit_domain_name) << Arg::Str(field->fld_name));
-	}
-
-	dsqlScratch->appendString(isc_dyn_def_global_fld, field->fld_name);
-
-	DDL_resolve_intl_type(dsqlScratch, field, (dsql_str*) element->nod_arg[e_dom_collate]);
-	put_field(dsqlScratch, field, false);
-
-	// check for a default value
-
-	dsql_nod* node = element->nod_arg[e_dom_default];
-	if (node)
-	{
-		define_default(dsqlScratch, node);
-	}
-
-	if (field->fld_ranges)
-	{
-		define_dimensions(dsqlScratch, field);
-	}
-
-	bool null_flag = false;
-	bool check_flag = false;
-
-	// check for constraints
-	node = element->nod_arg[e_dom_constraint];
-	if (node)
-	{
-		dsql_nod** ptr = node->nod_arg;
-		const dsql_nod* const* const end_ptr = ptr + node->nod_count;
-		for (; ptr < end_ptr; ++ptr)
-		{
-			if ((*ptr)->nod_type == nod_rel_constraint)
-			{
-				dsql_nod* node1 = (*ptr)->nod_arg[e_rct_type];
-				if (node1->nod_type == nod_null)
-				{
-					if (!null_flag)
-					{
-						dsqlScratch->appendUChar(isc_dyn_fld_not_null);
-						null_flag = true;
-					}
-					else
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str("NOT NULL"));
-					}
-				}
-				else if (node1->nod_type == nod_def_constraint)
-				{
-					if (check_flag)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str("DOMAIN CHECK CONSTRAINT"));
-					}
-					check_flag = true;
-
-					const dsql_str* string = (dsql_str*) node1->nod_arg[e_cnstr_source];
-					if (string)
-					{
-						fb_assert(string->str_length <= MAX_USHORT);
-						dsqlScratch->appendString(isc_dyn_fld_validation_source,
-							string->str_data, string->str_length);
-					}
-					dsqlScratch->beginBlr(isc_dyn_fld_validation_blr);
-
-					// Set any VALUE nodes to the type of the domain being defined.
-					if (node1->nod_arg[e_cnstr_condition])
-					{
-						set_nod_value_attributes(node1->nod_arg[e_cnstr_condition], field);
-					}
-
-					// Increment the context level for this statement, so
-					// that the context number for any RSE generated for a
-					// SELECT within the CHECK clause will be greater than
-					// 0.  In the environment of a domain check
-					// constraint, context number 0 is reserved for the
-					// "blr_fid, 0, 0, 0," which is emitted for a
-					// nod_dom_value, corresponding to an occurance of the
-					// VALUE keyword in the body of the check constraint.
-					// -- chrisj 1999-08-20
-					dsqlScratch->contextNumber++;
-					node = PASS1_node(dsqlScratch, node1->nod_arg[e_cnstr_condition]);
-
-					GEN_hidden_variables(dsqlScratch, true);
-					GEN_expr(dsqlScratch, node);
-
-					dsqlScratch->endBlr();
-				}
-			}
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
 }
 
 
@@ -3392,14 +3252,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_def_domain:
-		define_domain(dsqlScratch);
-		break;
-
-	case nod_mod_domain:
-		modify_domain(dsqlScratch);
-		break;
-
 	case nod_def_index:
 		define_index(dsqlScratch);
 		break;
@@ -3451,12 +3303,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_def_constraint:
 		define_constraint_trigger(dsqlScratch, node);
-		break;
-
-	case nod_del_domain:
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(isc_dyn_delete_global_fld, string->str_data);
-		dsqlScratch->appendUChar(isc_dyn_end);
 		break;
 
 	case nod_del_index:
@@ -3976,130 +3822,6 @@ static void modify_database( DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->appendNullString(isc_dyn_fld_character_set_name,
 				((dsql_str*) element->nod_arg[0])->str_data);
 			break;
-		default:
-			break;
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void modify_domain( DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	m o d i f y _ d o m a i n
- *
- **************************************
- *
- * Function
- *	Alter an SQL domain.
- *
- **************************************/
-	dsql_str* string;
-	dsql_fld* field;
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_fld local_field(statement->getPool());
-	// CVC: This array used with check_one_call to ensure each modification
-	// option is called only once. Enlarge it if the switch() below gets more
-	// cases.
-	USHORT repetition_count[6];
-
-	dsql_nod* ddl_node = statement->getDdlNode();
-
-	dsql_nod* domain_node = ddl_node->nod_arg[e_alt_dom_name];
-	const dsql_str* domain_name = (dsql_str*) domain_node->nod_arg[e_fln_name];
-
-	dsqlScratch->appendNullString(isc_dyn_mod_global_fld, domain_name->str_data);
-
-	// Is MOVE_CLEAR enough for all platforms?
-	// MOVE_CLEAR (repetition_count, sizeof (repetition_count));
-	const USHORT rtop = FB_NELEM(repetition_count);
-	USHORT* p = repetition_count;
-	while (p < repetition_count + rtop) {
-		*p++ = 0;
-	}
-
-	dsql_nod* ops = ddl_node->nod_arg[e_alt_dom_ops];
-	dsql_nod** ptr = ops->nod_arg;
-	for (const dsql_nod* const* const end = ptr + ops->nod_count; ptr < end; ptr++)
-	{
-		dsql_nod* element = *ptr;
-		switch (element->nod_type)
-		{
-		case nod_def_default:
-			check_one_call(repetition_count, 0, "DOMAIN DEFAULT");
-			define_default(dsqlScratch, element);
-			break;
-
-		case nod_def_constraint:
-			check_one_call(repetition_count, 1, "DOMAIN CONSTRAINT");
-			dsqlScratch->appendUChar(isc_dyn_single_validation);
-			dsqlScratch->beginBlr(isc_dyn_fld_validation_blr);
-
-			// Get the attributes of the domain, and set any occurances of
-			// nod_dom_value (corresponding to the keyword VALUE) to the
-			// correct type, length, scale, etc.
-			if (!METD_get_domain(dsqlScratch->getTransaction(), &local_field, domain_name->str_data))
-			{
-				// Specified domain or source field does not exist
-				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
-			}
-
-			if (element->nod_arg[e_cnstr_condition])
-				set_nod_value_attributes(element->nod_arg[e_cnstr_condition], &local_field);
-
-			// Increment the context level for this statement, so that
-			// the context number for any RSE generated for a SELECT
-			// within the CHECK clause will be greater than 0.  In the
-			// environment of a domain check constraint, context
-			// number 0 is reserved for the "blr_fid, 0, 0, 0," which
-			// is emitted for a nod_dom_value, corresponding to an
-			// occurance of the VALUE keyword in the body of the check
-			// constraint.  -- chrisj 1999-08-20
-			dsqlScratch->contextNumber++;
-
-			{
-				dsql_nod* node = PASS1_node(dsqlScratch, element->nod_arg[e_cnstr_condition]);
-				GEN_hidden_variables(dsqlScratch, true);
-				GEN_expr(dsqlScratch, node);
-			}
-
-			dsqlScratch->endBlr();
-			if ((string = (dsql_str*) element->nod_arg[e_cnstr_source]) != NULL)
-			{
-				fb_assert(string->str_length <= MAX_USHORT);
-				dsqlScratch->appendString(isc_dyn_fld_validation_source,
-					string->str_data, string->str_length);
-			}
-			break;
-
-		case nod_mod_domain_type:
-			field = (dsql_fld*) element->nod_arg[e_mod_dom_new_dom_type];
-			DDL_resolve_intl_type(dsqlScratch, field, NULL);
-			put_field(dsqlScratch, field, false);
-			break;
-
-		case nod_field_name:
-			{
-				check_one_call(repetition_count, 3, "DOMAIN NAME");
-
-				const dsql_str* new_dom_name = (dsql_str*) element->nod_arg[e_fln_name];
-				dsqlScratch->appendNullString(isc_dyn_fld_name, new_dom_name->str_data);
-				break;
-			}
-
-		case nod_delete_rel_constraint:
-			check_one_call(repetition_count, 4, "DOMAIN DROP CONSTRAINT");
-			dsqlScratch->appendUChar(isc_dyn_del_validation);
-			break;
-
-		case nod_del_default:
-			check_one_call(repetition_count, 5, "DOMAIN DROP DEFAULT");
-			dsqlScratch->appendUChar(isc_dyn_del_default);
-			break;
-
 		default:
 			break;
 		}
@@ -5301,48 +5023,6 @@ static void modify_field(DsqlCompilerScratch* dsqlScratch, dsql_nod*element, con
 	clearPermanentField(relation, permanent);
 }
 
-
-static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
-{
-/**************************************
- *
- *	s e t _ n o d _ v a l u e _ a t t r i b u t e s
- *
- **************************************
- *
- * Function
- *	Examine all the children of the argument node:
- *	if any is a nod_dom_value, set its dtype, size, and scale
- *      to those of the field argument
- *
- **************************************/
-	for (ULONG child_number = 0; child_number < node->nod_count; ++child_number)
-	{
-		dsql_nod* child = node->nod_arg[child_number];
-		if (child && child->getType() == dsql_type_nod)
-		{
-			if (nod_dom_value == child->nod_type)
-			{
-				fb_assert(field->fld_dtype <= MAX_UCHAR);
-				child->nod_desc.dsc_dtype = (UCHAR) field->fld_dtype;
-				child->nod_desc.dsc_length = field->fld_length;
-				fb_assert(field->fld_scale <= MAX_SCHAR);
-				child->nod_desc.dsc_scale = (SCHAR) field->fld_scale;
-			}
-			else if ((nod_constant != child->nod_type) && (child->nod_count > 0))
-			{
-				// A nod_constant can have nod_arg entries which are not really
-				// pointers to other nodes, but rather integer values, so
-				// it is not safe to scan through its children.  Fortunately,
-				// it cannot have a nod_dom_value as a child in any case, so
-				// we lose nothing by skipping it.
-
-				set_nod_value_attributes(child, field);
-			}
-		}						// if it's a node
-	}							// for (child_number ...
-	return;
-}
 
 //
 // removes temporary pool pointers from field, stored in permanent cache

@@ -451,18 +451,6 @@ void DYN_execute(Global* gbl,
 		DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
 		break;
 
-	case isc_dyn_def_global_fld:
-		DYN_define_global_field(gbl, ptr, relation_name, field_name);
-		break;
-
-	case isc_dyn_mod_global_fld:
-		DYN_modify_global_field(gbl, ptr, relation_name, field_name);
-		break;
-
-	case isc_dyn_delete_global_fld:
-		DYN_delete_global_field(gbl, ptr);
-		break;
-
 	case isc_dyn_def_local_fld:
 		DYN_define_local_field(gbl, ptr, relation_name, field_name);
 		break;

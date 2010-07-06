@@ -884,11 +884,13 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-    bid blob_id_1;
-    attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id_1, acl, acl_length);
+	bid blob_id_1;
+	attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id_1,
+		ByteChunk(acl, acl_length));
 
-    bid blob_id_2;
-    attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id_2, acl, acl_length);
+	bid blob_id_2;
+	attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id_2,
+		ByteChunk(acl, acl_length));
 
 	security_class.printf("%s%" SQUADFORMAT, SQL_SECCLASS_PREFIX,
 						  DPM_gen_id(tdbb, MET_lookup_generator(tdbb, SQL_SECCLASS_GENERATOR), false, 1));
@@ -1047,7 +1049,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, AutoRequest&
 		if (gfield->gfld_dflt_blr)
 		{
 		    attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &X.RDB$DEFAULT_VALUE,
-				gfield->gfld_dflt_blr, gfield->gfld_dflt_len);
+				ByteChunk(gfield->gfld_dflt_blr, gfield->gfld_dflt_len));
 			X.RDB$DEFAULT_VALUE.NULL = FALSE;
 		}
 		else
@@ -1335,7 +1337,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, AutoRequest& 
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
 		attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &X.RDB$TRIGGER_BLR,
-			trigger->trg_blr, trigger->trg_length);
+			ByteChunk(trigger->trg_blr, trigger->trg_length));
 	}
 	END_STORE
 }

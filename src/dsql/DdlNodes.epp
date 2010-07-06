@@ -34,6 +34,7 @@
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../jrd/dyn_dl_proto.h"
 #include "../jrd/dyn_ut_proto.h"
 #include "../jrd/exe_proto.h"
@@ -80,6 +81,88 @@ static void rethrowMetaException(const status_exception& ex, ISC_STATUS code, bo
 
 	newVector.append(Arg::StatusVector(status));
 	status_exception::raise(newVector);
+}
+
+// Update RDB$FIELDS received by reference.
+static void updateRdbFields(const TypeClause& type,
+	SSHORT& fieldType,
+	SSHORT& fieldLength,
+	SSHORT& fieldSubTypeNull, SSHORT& fieldSubType,
+	SSHORT& fieldScaleNull, SSHORT& fieldScale,
+	SSHORT& characterSetIdNull, SSHORT& characterSetId,
+	SSHORT& characterLengthNull, SSHORT& characterLength,
+	SSHORT& fieldPrecisionNull, SSHORT& fieldPrecision,
+	SSHORT& collationIdNull, SSHORT& collationId,
+	SSHORT& segmentLengthNull, SSHORT& segmentLength)
+{
+	// Initialize all nullable fields.
+	fieldSubTypeNull = fieldScaleNull = characterSetIdNull = characterLengthNull =
+		fieldPrecisionNull = collationIdNull = segmentLengthNull = TRUE;
+
+	if (type.type == dtype_blob)
+	{
+		fieldSubTypeNull = FALSE;
+		fieldSubType = type.subType;
+
+		fieldScaleNull = FALSE;
+		fieldScale = 0;
+
+		if (type.subType == isc_blob_text)
+		{
+			characterSetIdNull = FALSE;
+			characterSetId = type.charSetId;
+
+			collationIdNull = !type.collateSpecified;
+			collationId = type.collationId;
+		}
+
+		if (type.segLength != 0)
+		{
+			segmentLengthNull = FALSE;
+			segmentLength = type.segLength;
+		}
+	}
+	else if (type.type <= dtype_any_text)
+	{
+		fieldSubTypeNull = FALSE;
+		fieldSubType = type.subType;
+
+		fieldScaleNull = FALSE;
+		fieldScale = 0;
+
+		characterLengthNull = FALSE;
+		characterLength = type.charLength;
+
+		characterSetIdNull = FALSE;
+		characterSetId = type.charSetId;
+
+		collationIdNull = !type.collateSpecified;
+		collationId = type.collationId;
+	}
+	else
+	{
+		fieldScaleNull = FALSE;
+		fieldScale = type.scale;
+
+		if (DTYPE_IS_EXACT(type.type))
+		{
+			fieldPrecisionNull = FALSE;
+			fieldPrecision = type.precision;
+
+			fieldSubTypeNull = FALSE;
+			fieldSubType = type.subType;
+		}
+	}
+
+	if (type.type == dtype_varying)
+	{
+		fb_assert(type.length <= MAX_SSHORT);
+		fieldLength = (SSHORT) (type.length - sizeof(USHORT));
+	}
+	else
+		fieldLength = type.length;
+
+	fieldType = blr_dtypes[type.type];
 }
 
 
@@ -225,94 +308,44 @@ void DdlNode::resetContextStack()
 }
 
 
-MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, const TypeClause& parameter)
+MetaName DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, const TypeClause& field,
+	MetaName& name)
 {
-	MetaName name;
+	bool endStore = false;
 
-	AutoCacheRequest requestHandle(tdbb, drq_s_fld_src, DYN_REQUESTS);
-
-	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		FLD IN RDB$FIELDS
+	try
 	{
-		FLD.RDB$FIELD_SUB_TYPE.NULL = TRUE;
-		FLD.RDB$FIELD_SCALE.NULL = TRUE;
-		FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
-		FLD.RDB$CHARACTER_LENGTH.NULL = TRUE;
-		FLD.RDB$FIELD_PRECISION.NULL = TRUE;
-		FLD.RDB$COLLATION_ID.NULL = TRUE;
-		FLD.RDB$SEGMENT_LENGTH.NULL = TRUE;
+		if (name.isEmpty())
+			DYN_UTIL_generate_field_name(tdbb, NULL, name);
 
-		FLD.RDB$SYSTEM_FLAG = 0;
+		AutoCacheRequest requestHandle(tdbb, drq_s_fld_src, DYN_REQUESTS);
 
-		DYN_UTIL_generate_field_name(tdbb, NULL, name);
-		strcpy(FLD.RDB$FIELD_NAME, name.c_str());
-
-		if (parameter.type == dtype_blob)
+		STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			FLD IN RDB$FIELDS
 		{
-			FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-			FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
+			FLD.RDB$SYSTEM_FLAG = 0;
+			strcpy(FLD.RDB$FIELD_NAME, name.c_str());
 
-			FLD.RDB$FIELD_SCALE.NULL = FALSE;
-			FLD.RDB$FIELD_SCALE = 0;
+			updateRdbFields(field,
+				FLD.RDB$FIELD_TYPE,
+				FLD.RDB$FIELD_LENGTH,
+				FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
+				FLD.RDB$FIELD_SCALE.NULL, FLD.RDB$FIELD_SCALE,
+				FLD.RDB$CHARACTER_SET_ID.NULL, FLD.RDB$CHARACTER_SET_ID,
+				FLD.RDB$CHARACTER_LENGTH.NULL, FLD.RDB$CHARACTER_LENGTH,
+				FLD.RDB$FIELD_PRECISION.NULL, FLD.RDB$FIELD_PRECISION,
+				FLD.RDB$COLLATION_ID.NULL, FLD.RDB$COLLATION_ID,
+				FLD.RDB$SEGMENT_LENGTH.NULL, FLD.RDB$SEGMENT_LENGTH);
 
-			if (parameter.subType == isc_blob_text)
-			{
-				FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-				FLD.RDB$CHARACTER_SET_ID = parameter.charSetId;
-
-				FLD.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
-				FLD.RDB$COLLATION_ID = parameter.collationId;
-			}
-
-			if (parameter.segLength != 0)
-			{
-				FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
-				FLD.RDB$SEGMENT_LENGTH = parameter.segLength;
-			}
+			endStore = true;
 		}
-		else if (parameter.type <= dtype_any_text)
-		{
-			FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-			FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
-
-			FLD.RDB$FIELD_SCALE.NULL = FALSE;
-			FLD.RDB$FIELD_SCALE = 0;
-
-			FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
-			FLD.RDB$CHARACTER_LENGTH = parameter.charLength;
-
-			FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-			FLD.RDB$CHARACTER_SET_ID = parameter.charSetId;
-
-			FLD.RDB$COLLATION_ID.NULL = !parameter.collateSpecified;
-			FLD.RDB$COLLATION_ID = parameter.collationId;
-		}
-		else
-		{
-			FLD.RDB$FIELD_SCALE.NULL = FALSE;
-			FLD.RDB$FIELD_SCALE = parameter.scale;
-
-			if (DTYPE_IS_EXACT(parameter.type))
-			{
-				FLD.RDB$FIELD_PRECISION.NULL = FALSE;
-				FLD.RDB$FIELD_PRECISION = parameter.precision;
-
-				FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-				FLD.RDB$FIELD_SUB_TYPE = parameter.subType;
-			}
-		}
-
-		if (parameter.type == dtype_varying)
-		{
-			fb_assert(parameter.length <= MAX_SSHORT);
-			FLD.RDB$FIELD_LENGTH = (SSHORT) (parameter.length - sizeof(USHORT));
-		}
-		else
-			FLD.RDB$FIELD_LENGTH = parameter.length;
-
-		FLD.RDB$FIELD_TYPE = blr_dtypes[parameter.type];
+		END_STORE
 	}
-	END_STORE
+	catch (const status_exception& ex)
+	{
+		// STORE RDB$FIELDS failed
+		rethrowMetaException(ex, ENCODE_ISC_MSG(13, DYN_MSG_FAC), endStore);
+	}
 
 	return name;
 }
@@ -956,13 +989,11 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, jrd_tra* transaction
 				{
 					FUN.RDB$FUNCTION_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$FUNCTION_BLR,
-						dsqlScratch->getBlrData().begin(),
-						dsqlScratch->getBlrData().getCount());
+						dsqlScratch->getBlrData());
 
 					FUN.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &FUN.RDB$DEBUG_INFO,
-						dsqlScratch->getDebugData().begin(),
-						dsqlScratch->getDebugData().getCount());
+						dsqlScratch->getDebugData());
 				}
 			}
 
@@ -1069,7 +1100,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 				strcpy(ARG.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
 			else
 			{
-				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
+				MetaName fieldName;
+				storeGlobalField(tdbb, transaction, parameter, fieldName);
 				strcpy(ARG.RDB$FIELD_SOURCE, fieldName.c_str());
 			}
 		}
@@ -1119,8 +1151,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 			dsqlScratch->appendUChar(blr_eoc);
 
 			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
-				dsqlScratch->getBlrData().begin(),
-				dsqlScratch->getBlrData().getCount());
+				dsqlScratch->getBlrData());
 		}
 	}
 	END_STORE
@@ -1756,13 +1787,11 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, jrd_tra* transactio
 				{
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$PROCEDURE_BLR,
-						dsqlScratch->getBlrData().begin(),
-						dsqlScratch->getBlrData().getCount());
+						dsqlScratch->getBlrData());
 
 					P.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &P.RDB$DEBUG_INFO,
-						dsqlScratch->getDebugData().begin(),
-						dsqlScratch->getDebugData().getCount());
+						dsqlScratch->getDebugData());
 
 					P.RDB$PROCEDURE_TYPE.NULL = FALSE;
 					P.RDB$PROCEDURE_TYPE = (USHORT)
@@ -1874,7 +1903,8 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 				strcpy(PRM.RDB$FIELD_SOURCE, parameter.typeOfName.c_str());
 			else
 			{
-				const MetaName fieldName = storeGlobalField(tdbb, transaction, parameter);
+				MetaName fieldName;
+				storeGlobalField(tdbb, transaction, parameter, fieldName);
 				strcpy(PRM.RDB$FIELD_SOURCE, fieldName.c_str());
 			}
 		}
@@ -1921,8 +1951,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 			dsqlScratch->appendUChar(blr_eoc);
 
 			attachment->storeBinaryBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
-				dsqlScratch->getBlrData().begin(),
-				dsqlScratch->getBlrData().getCount());
+				dsqlScratch->getBlrData());
 		}
 	}
 	END_STORE
@@ -2458,13 +2487,11 @@ bool CreateAlterTriggerNode::executeAlter(thread_db* tdbb, jrd_tra* transaction,
 				{
 					TRG.RDB$TRIGGER_BLR.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$TRIGGER_BLR,
-						dsqlScratch->getBlrData().begin(),
-						dsqlScratch->getBlrData().getCount());
+						dsqlScratch->getBlrData());
 
 					TRG.RDB$DEBUG_INFO.NULL = FALSE;
 					attachment->storeBinaryBlob(tdbb, transaction, &TRG.RDB$DEBUG_INFO,
-						dsqlScratch->getDebugData().begin(),
-						dsqlScratch->getDebugData().getCount());
+						dsqlScratch->getDebugData());
 				}
 
 				if (source.hasData())
@@ -3099,6 +3126,1027 @@ void DropCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	// Update DSQL cache
 	METD_drop_collation(transaction, name);
 	MET_dsql_cache_release(tdbb, SYM_intlsym_collation, name.c_str());
+}
+
+
+//----------------------
+
+
+void CreateDomainNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	string nameTypeStr;
+	nameType.print(nameTypeStr);
+
+	text =
+		"CreateDomainNode\n"
+		"  " + nameTypeStr + "\n";
+}
+
+void CreateDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	if (fb_utils::implicit_domain(nameType.name.c_str()))
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+			Arg::Gds(isc_dsql_implicit_domain_name) << nameType.name);
+	}
+
+	const dsql_nod* elements = nameType.legacyField->fld_ranges;
+	const USHORT dims = elements ? elements->nod_count / 2 : 0;
+
+	if (nameType.legacyDefault && dims != 0)
+	{
+		// Default value is not allowed for array type in domain %s
+		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(ENCODE_ISC_MSG(226, DYN_MSG_FAC)) << nameType.name);
+	}
+
+	if (dims > MAX_ARRAY_DIMENSIONS)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-604) <<
+			Arg::Gds(isc_dsql_max_arr_dim_exceeded));
+	}
+
+	nameType.resolve(dsqlScratch);
+
+	dsqlScratch->domainValue.dsc_dtype = nameType.type;
+	dsqlScratch->domainValue.dsc_length = nameType.length;
+	dsqlScratch->domainValue.dsc_scale = nameType.scale;
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_DOMAIN, nameType.name);
+
+	storeGlobalField(tdbb, transaction, nameType, nameType.name);
+
+	if (nameType.legacyDefault || check || notNull || dims != 0)
+	{
+		AutoCacheRequest request(tdbb, drq_m_fld, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			FLD IN RDB$FIELDS
+			WITH FLD.RDB$FIELD_NAME EQ nameType.name.c_str()
+		{
+			MODIFY FLD
+				if (nameType.legacyDefault)
+				{
+					dsql_str* defaultString =
+						(dsql_str*) nameType.legacyDefault->nod_arg[e_dft_default_source];
+					string defaultSource = string(defaultString->str_data, defaultString->str_length);
+
+					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
+
+					dsqlScratch->getBlrData().clear();
+					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+					dsql_nod* node = PASS1_node(dsqlScratch, nameType.legacyDefault->nod_arg[e_dft_default]);
+
+					GEN_hidden_variables(dsqlScratch, true);
+					GEN_expr(dsqlScratch, node);
+
+					dsqlScratch->appendUChar(blr_eoc);
+
+					FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FLD.RDB$DEFAULT_VALUE,
+						dsqlScratch->getBlrData());
+				}
+
+				if (check)
+				{
+					dsql_str* checkString = (dsql_str*) check->nod_arg[e_cnstr_source];
+					string checkSource = string(checkString->str_data, checkString->str_length);
+
+					FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
+
+					dsqlScratch->getBlrData().clear();
+					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+					// Increment the context level for this statement, so that the context number for
+					// any RSE generated for a SELECT within the CHECK clause will be greater than 0.
+					// In the environment of a domain check constraint, context number 0 is reserved
+					// for the "blr_fid, 0, 0, 0," which is emitted for a nod_dom_value, corresponding
+					// to an occurance of the VALUE keyword in the body of the check constraint.
+					// -- chrisj 1999-08-20
+					++dsqlScratch->contextNumber;
+
+					dsql_nod* node = PASS1_node(dsqlScratch, check->nod_arg[e_cnstr_condition]);
+
+					GEN_hidden_variables(dsqlScratch, true);
+					GEN_expr(dsqlScratch, node);
+
+					dsqlScratch->appendUChar(blr_eoc);
+
+					FLD.RDB$VALIDATION_BLR.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FLD.RDB$VALIDATION_BLR,
+						dsqlScratch->getBlrData());
+				}
+
+				if (notNull)
+				{
+					FLD.RDB$NULL_FLAG.NULL = FALSE;
+					FLD.RDB$NULL_FLAG = 1;
+				}
+
+				if (dims != 0)
+				{
+					FLD.RDB$DIMENSIONS.NULL = FALSE;
+					FLD.RDB$DIMENSIONS = dims;
+				}
+			END_MODIFY
+		}
+		END_FOR
+	}
+
+	if (elements)	// Is the type an array?
+	{
+		AutoCacheRequest request(tdbb, drq_s_fld_dym, DYN_REQUESTS);
+
+		SSHORT position = 0;
+		const dsql_nod* const* ptr = elements->nod_arg;
+		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr, ++position)
+		{
+			const dsql_nod* element = *ptr++;
+			const SLONG lrange = element->getSlong();
+			element = *ptr;
+			const SLONG hrange = element->getSlong();
+
+			if (lrange >= hrange)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-604) <<
+					Arg::Gds(isc_dsql_arr_range_error));
+			}
+
+			bool endStore = false;
+
+			try
+			{
+				STORE (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					DIM IN RDB$FIELD_DIMENSIONS
+				{
+					strcpy(DIM.RDB$FIELD_NAME, nameType.name.c_str());
+					DIM.RDB$DIMENSION = position;
+					DIM.RDB$UPPER_BOUND = hrange;
+					DIM.RDB$LOWER_BOUND = lrange;
+
+					endStore = true;
+				}
+				END_STORE
+
+			}
+			catch (const status_exception& ex)
+			{
+				// STORE RDB$FIELD_DIMENSIONS failed
+				rethrowMetaException(ex, ENCODE_ISC_MSG(3, DYN_MSG_FAC), endStore);
+			}
+		}
+	}
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_DOMAIN, nameType.name);
+
+	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+// Compare the original field type with the new field type to determine if the original type can be
+// changed to the new type.
+//
+// The following conversions are not allowed:
+//   Blob to anything
+//   Array to anything
+//   Date to anything
+//   Char to any numeric
+//   Varchar to any numeric
+//   Anything to Blob
+//   Anything to Array
+//
+// This function throws an exception if the conversion can not be made.
+//
+// ASF: We should stop using dyn_fld here as soon DYN stops to be a caller of this function.
+void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
+{
+	ULONG errorCode = FB_SUCCESS;
+
+	// Check to make sure that the old and new types are compatible
+	switch (origFld.dyn_dtype)
+	{
+	// CHARACTER types
+	case blr_text:
+	case blr_varying:
+	case blr_cstring:
+		switch (newFld.dyn_dtype)
+		{
+		case blr_blob:
+		case blr_blob_id:
+			// Cannot change datatype for column %s.
+			// The operation cannot be performed on BLOB, or ARRAY columns.
+			errorCode = isc_dyn_dtype_invalid;
+			break;
+
+		case blr_sql_date:
+		case blr_sql_time:
+		case blr_timestamp:
+		case blr_int64:
+		case blr_long:
+		case blr_short:
+		case blr_d_float:
+		case blr_double:
+		case blr_float:
+			// Cannot convert column %s from character to non-character data.
+			errorCode = isc_dyn_dtype_conv_invalid;
+			break;
+
+		// If the original field is a character field and the new field is a character field,
+		// is there enough space in the new field?
+		case blr_text:
+		case blr_varying:
+		case blr_cstring:
+			{
+				// CVC: Because our caller invoked DSC_make_descriptor() on newFld previously,
+				// we should have the added bytes for varchar. For cstring, we are done, since
+				// DSC_make_descriptor(DSC_string_length) != DSC_string_length(DSC_make_descriptor).
+
+				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
+
+				// We can have this assertion since this case is for both string fields.
+				const ULONG new_len = DSC_string_length(&newFld.dyn_dsc);
+				fb_assert(new_len - maxflen == (ULONG) newFld.dyn_charbytelen - origFld.dyn_charbytelen);
+				// if (newFld.dyn_dsc.dsc_length < maxflen)
+				if (new_len < maxflen)
+				{
+					// msg 208: New size specified for column %s must be at least %d characters.
+					errorCode = isc_dyn_char_fld_too_small;
+				}
+			}
+			break;
+
+		default:
+			fb_assert(FALSE);
+			errorCode = 87;			// MODIFY RDB$FIELDS FAILED
+			break;
+		}
+		break;
+
+	// BLOB and ARRAY types
+	case blr_blob:
+	case blr_blob_id:
+		// Cannot change datatype for column %s.
+		// The operation cannot be performed on BLOB, or ARRAY columns.
+		errorCode = isc_dyn_dtype_invalid;
+		break;
+
+	// DATE types
+	case blr_sql_date:
+	case blr_sql_time:
+	case blr_timestamp:
+		switch (newFld.dyn_dtype)
+		{
+		case blr_sql_date:
+			if (origFld.dyn_dtype == blr_sql_time)
+			{
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+			}
+			break;
+
+		case blr_sql_time:
+			if (origFld.dyn_dtype == blr_sql_date)
+			{
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+			}
+			break;
+
+		case blr_timestamp:
+			if (origFld.dyn_dtype == blr_sql_time)
+			{
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+			}
+			break;
+
+		// If the original field is a date field and the new field is a character field,
+		// is there enough space in the new field?
+		case blr_text:
+		case blr_text2:
+		case blr_varying:
+		case blr_varying2:
+		case blr_cstring:
+		case blr_cstring2:
+			{
+				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
+
+				// CVC: Solve bug #910423, missing DSC_string_length call.
+				// if (newFld.dyn_dsc.dsc_length < maxflen)
+				if (DSC_string_length(&newFld.dyn_dsc) < maxflen)
+				{
+					// msg 208: New size specified for column %s must be at least %d characters.
+					errorCode = isc_dyn_char_fld_too_small;
+				}
+			}
+
+			break;
+
+		default:
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+			errorCode = isc_dyn_invalid_dtype_conversion;
+			break;
+		}
+		break;
+
+	// NUMERIC types
+	case blr_int64:
+	case blr_long:
+	case blr_short:
+	case blr_d_float:
+	case blr_double:
+	case blr_float:
+		switch (newFld.dyn_dtype)
+		{
+		case blr_blob:
+		case blr_blob_id:
+			// Cannot change datatype for column %s.
+			// The operation cannot be performed on BLOB, or ARRAY columns.
+			errorCode = isc_dyn_dtype_invalid;
+			break;
+
+		case blr_sql_date:
+		case blr_sql_time:
+		case blr_timestamp:
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+			errorCode = isc_dyn_invalid_dtype_conversion;
+			break;
+
+		// If the original field is a numeric field and the new field is a numeric field,
+		// is there enough space in the new field (do not allow the base type to decrease)
+
+		case blr_short:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_short:
+				errorCode = checkUpdateNumericType(origFld, newFld);
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		case blr_long:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_long:
+			case blr_short:
+				errorCode = checkUpdateNumericType(origFld, newFld);
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		case blr_float:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_float:
+			case blr_short:
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		case blr_int64:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_int64:
+			case blr_long:
+			case blr_short:
+				errorCode = checkUpdateNumericType(origFld, newFld);
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		case blr_d_float:
+		case blr_double:
+			switch (origFld.dyn_dtype)
+			{
+			case blr_double:
+			case blr_d_float:
+			case blr_float:
+			case blr_short:
+			case blr_long:
+				break;
+
+			default:
+				// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+				errorCode = isc_dyn_invalid_dtype_conversion;
+				break;
+			}
+			break;
+
+		// If the original field is a numeric field and the new field is a character field,
+		// is there enough space in the new field?
+		case blr_text:
+		case blr_varying:
+		case blr_cstring:
+			{
+				const USHORT maxflen = DSC_string_length(&origFld.dyn_dsc);
+
+				// CVC: Solve bug #910423, missing DSC_string_length call.
+				// if (newFld.dyn_dsc.dsc_length < maxflen)
+				if (DSC_string_length(&newFld.dyn_dsc) < maxflen)
+				{
+					// msg 208: New size specified for column %s must be at least %d characters.
+					errorCode = isc_dyn_char_fld_too_small;
+				}
+			}
+			break;
+
+		default:
+			fb_assert(FALSE);
+			errorCode = 87;			// MODIFY RDB$FIELDS FAILED
+			break;
+		}
+		break;
+
+	default:
+		fb_assert(FALSE);
+		errorCode = 87;				// MODIFY RDB$FIELDS FAILED
+		break;
+	}
+
+	if (errorCode == FB_SUCCESS)
+		return;
+
+	switch (errorCode)
+	{
+	case isc_dyn_dtype_invalid:
+		// Cannot change datatype for column %s.The operation cannot be performed on DATE, BLOB, or ARRAY columns.
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str());
+		break;
+
+	case isc_dyn_dtype_conv_invalid:
+		// Cannot convert column %s from character to non-character data.
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str());
+		break;
+
+	case isc_dyn_char_fld_too_small:
+		// msg 208: New size specified for column %s must be at least %d characters.
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str() <<
+				Arg::Num(DSC_string_length(&origFld.dyn_dsc)));
+		break;
+
+	case isc_dyn_scale_too_big:
+		{
+			int code = errorCode;
+			int diff = newFld.dyn_precision -
+				(origFld.dyn_precision + origFld.dyn_dsc.dsc_scale);
+			if (diff < 0)
+			{
+				// If new scale becomes negative externally, the message is useless for the user.
+				// (The scale is always zero or negative for us but externally is non-negative.)
+				// Let's ask the user to widen the precision, then. Example: numeric(4, 0) -> numeric(1, 1).
+				code = isc_dyn_precision_too_small;
+				diff = newFld.dyn_precision - newFld.dyn_dsc.dsc_scale - diff;
+			}
+
+			// scale_too_big: New scale specified for column @1 must be at most @2.
+			// precision_too_small: New precision specified for column @1 must be at least @2.
+			status_exception::raise(
+				Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(code) << origFld.dyn_fld_name.c_str() << Arg::Num(diff));
+		}
+		break;
+
+	case isc_dyn_invalid_dtype_conversion:
+		{
+			TEXT orig_type[25], new_type[25];
+
+			DSC_get_dtype_name(&origFld.dyn_dsc, orig_type, sizeof(orig_type));
+			DSC_get_dtype_name(&newFld.dyn_dsc, new_type, sizeof(new_type));
+
+			// Cannot change datatype for @1.  Conversion from base type @2 to @3 is not supported.
+			status_exception::raise(
+				Arg::Gds(isc_no_meta_update) <<
+				Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str() << orig_type << new_type);
+		}
+		break;
+
+	default:
+		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
+		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(95, DYN_MSG_FAC)));
+	}
+}
+
+// Compare the original field type with the new field type to determine if the original type can be
+// changed to the new type.
+// The types should be integral, since it tests only numeric/decimal subtypes to ensure the scale is
+// not being widened at the expense of the precision, because the old stored values should fit in
+// the new definition.
+//
+// This function returns an error code if the conversion can not be made. If the conversion can be
+// made, FB_SUCCESS is returned.
+ULONG AlterDomainNode::checkUpdateNumericType(const dyn_fld& origFld, const dyn_fld& newFld)
+{
+ 	// Since dsc_scale is negative, the sum of precision and scale produces
+	// the width of the integral part.
+	if (origFld.dyn_sub_type && newFld.dyn_sub_type &&
+		origFld.dyn_precision + origFld.dyn_dsc.dsc_scale >
+			newFld.dyn_precision + newFld.dyn_dsc.dsc_scale)
+	{
+		return isc_dyn_scale_too_big;
+	}
+
+	return FB_SUCCESS;
+}
+
+// Updates the field names in an index and forces the index to be rebuilt with the new field names.
+void AlterDomainNode::modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& relationName, const MetaName& fieldName, const MetaName& newFieldName)
+{
+	AutoRequest request;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		IDX IN RDB$INDICES CROSS IDXS IN RDB$INDEX_SEGMENTS WITH
+			IDX.RDB$INDEX_NAME EQ IDXS.RDB$INDEX_NAME AND
+			IDX.RDB$RELATION_NAME EQ relationName.c_str() AND
+			IDXS.RDB$FIELD_NAME EQ fieldName.c_str()
+	{
+		// Change the name of the field in the index
+		MODIFY IDXS USING
+			memcpy(IDXS.RDB$FIELD_NAME, newFieldName.c_str(), sizeof(IDXS.RDB$FIELD_NAME));
+		END_MODIFY
+
+		// Set the index name to itself to tell the index to rebuild
+		MODIFY IDX USING
+			// This is to fool both gpre and gcc.
+			char* p = IDX.RDB$INDEX_NAME;
+			p[MAX_SQL_IDENTIFIER_LEN] = 0;
+		END_MODIFY
+	}
+	END_FOR
+}
+
+void AlterDomainNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf(
+		"AlterDomainNode\n"
+		"  %s\n", name.c_str());
+}
+
+void AlterDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+	bool found = false;
+
+	bool endModify = false;
+
+	try
+	{
+		AutoCacheRequest request(tdbb, drq_m_fld2, DYN_REQUESTS);
+
+		FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			FLD IN RDB$FIELDS
+			WITH FLD.RDB$FIELD_NAME EQ name.c_str()
+		{
+			found = true;
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_DOMAIN, name);
+
+			MODIFY FLD
+				if (dropConstraint)
+				{
+					FLD.RDB$VALIDATION_BLR.NULL = TRUE;
+					FLD.RDB$VALIDATION_SOURCE.NULL = TRUE;
+				}
+
+				if (dropDefault)
+				{
+					FLD.RDB$DEFAULT_VALUE.NULL = TRUE;
+					FLD.RDB$DEFAULT_SOURCE.NULL = TRUE;
+				}
+
+				if (setConstraint)
+				{
+					if (!FLD.RDB$VALIDATION_BLR.NULL)
+					{
+						// msg 160: "Only one constraint allowed for a domain"
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(ENCODE_ISC_MSG(160, DYN_MSG_FAC)));
+					}
+
+					dsql_fld localField(dsqlScratch->getStatement()->getPool());
+
+					// Get the attributes of the domain, and set any occurances of
+					// keyword VALUE to the correct type, length, scale, etc.
+					if (!METD_get_domain(dsqlScratch->getTransaction(), &localField, name.c_str()))
+					{
+						// Specified domain or source field does not exist
+						status_exception::raise(
+							Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+							Arg::Gds(isc_dsql_command_err) <<
+							Arg::Gds(isc_dsql_domain_not_found) << name);
+					}
+
+					dsqlScratch->domainValue.dsc_dtype = localField.fld_dtype;
+					dsqlScratch->domainValue.dsc_length = localField.fld_length;
+					dsqlScratch->domainValue.dsc_scale = localField.fld_scale;
+
+					dsql_str* checkString = (dsql_str*) setConstraint->nod_arg[e_cnstr_source];
+					string checkSource = string(checkString->str_data, checkString->str_length);
+
+					FLD.RDB$VALIDATION_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$VALIDATION_SOURCE, checkSource);
+
+					dsqlScratch->getBlrData().clear();
+					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+					// Increment the context level for this statement, so that the context number for
+					// any RSE generated for a SELECT within the CHECK clause will be greater than 0.
+					// In the environment of a domain check constraint, context number 0 is reserved
+					// for the "blr_fid, 0, 0, 0," which is emitted for a nod_dom_value, corresponding
+					// to an occurance of the VALUE keyword in the body of the check constraint.
+					// -- chrisj 1999-08-20
+					++dsqlScratch->contextNumber;
+
+					dsql_nod* node = PASS1_node(dsqlScratch, setConstraint->nod_arg[e_cnstr_condition]);
+
+					GEN_hidden_variables(dsqlScratch, true);
+					GEN_expr(dsqlScratch, node);
+
+					dsqlScratch->appendUChar(blr_eoc);
+
+					FLD.RDB$VALIDATION_BLR.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FLD.RDB$VALIDATION_BLR,
+						dsqlScratch->getBlrData());
+				}
+
+				if (setDefault)
+				{
+					if (FLD.RDB$DIMENSIONS)
+					{
+						// msg 226: "Default value is not allowed for array type in domain %s"
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(ENCODE_ISC_MSG(226, DYN_MSG_FAC)) << name);
+					}
+
+					dsql_str* defaultString =
+						(dsql_str*) setDefault->nod_arg[e_dft_default_source];
+					string defaultSource = string(defaultString->str_data, defaultString->str_length);
+
+					FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction, &FLD.RDB$DEFAULT_SOURCE, defaultSource);
+
+					dsqlScratch->getBlrData().clear();
+					dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+					dsql_nod* node = PASS1_node(dsqlScratch, setDefault->nod_arg[e_dft_default]);
+
+					GEN_hidden_variables(dsqlScratch, true);
+					GEN_expr(dsqlScratch, node);
+
+					dsqlScratch->appendUChar(blr_eoc);
+
+					FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
+					attachment->storeBinaryBlob(tdbb, transaction, &FLD.RDB$DEFAULT_VALUE,
+						dsqlScratch->getBlrData());
+				}
+
+				if (type)
+				{
+					type->resolve(dsqlScratch);
+
+					dyn_fld origDom, newDom;
+
+					DSC_make_descriptor(&origDom.dyn_dsc, FLD.RDB$FIELD_TYPE, FLD.RDB$FIELD_SCALE,
+						FLD.RDB$FIELD_LENGTH, FLD.RDB$FIELD_SUB_TYPE, FLD.RDB$CHARACTER_SET_ID,
+						FLD.RDB$COLLATION_ID);
+
+					origDom.dyn_fld_name = name;
+					origDom.dyn_charbytelen = FLD.RDB$FIELD_LENGTH;
+					origDom.dyn_dtype = FLD.RDB$FIELD_TYPE;
+					origDom.dyn_precision = FLD.RDB$FIELD_PRECISION;
+					origDom.dyn_sub_type = FLD.RDB$FIELD_SUB_TYPE;
+					origDom.dyn_charlen = FLD.RDB$CHARACTER_LENGTH;
+					origDom.dyn_collation = FLD.RDB$COLLATION_ID;
+					origDom.dyn_null_flag = !FLD.RDB$NULL_FLAG.NULL && FLD.RDB$NULL_FLAG != 0;
+
+					// If the original field type is an array, force its blr type to blr_blob
+					bool has_dimensions = false;
+					if (FLD.RDB$DIMENSIONS != 0)
+						origDom.dyn_dtype = blr_blob;
+
+					USHORT typeLength = type->length;
+					switch (type->type)
+					{
+						case dtype_varying:
+							typeLength -= sizeof(USHORT);
+							break;
+
+						// Not valid for domains, but may be important for a future refactor.
+						case dtype_cstring:
+							--typeLength;
+							break;
+
+						default:
+							break;
+					}
+
+					DSC_make_descriptor(&newDom.dyn_dsc, blr_dtypes[type->type], type->scale,
+						typeLength, type->subType, type->charSetId, type->collationId);
+
+					newDom.dyn_fld_name = name;
+					newDom.dyn_charbytelen = typeLength;
+					newDom.dyn_dtype = blr_dtypes[type->type];
+					newDom.dyn_precision = type->precision;
+					newDom.dyn_sub_type = type->subType;
+					newDom.dyn_charlen = type->charLength;
+					newDom.dyn_collation = type->collationId;
+					newDom.dyn_null_flag = type->notNull;
+
+					// Now that we have all of the information needed, let's check to see if the field
+					// type can be modifed.
+
+					checkUpdate(origDom, newDom);
+
+					if (!newDom.dyn_dsc.isExact() || newDom.dyn_dsc.dsc_scale != 0)
+					{
+						AutoCacheRequest request(tdbb, drq_l_ident_gens, DYN_REQUESTS);
+
+						FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+							RFR IN RDB$RELATION_FIELDS
+							WITH RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
+								 RFR.RDB$GENERATOR_NAME NOT MISSING
+						{
+							// Domain @1 must be of exact number type with zero scale because it's used
+							// in an identity column.
+							status_exception::raise(
+								Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(ENCODE_ISC_MSG(276, DYN_MSG_FAC)) << name);
+						}
+						END_FOR
+					}
+
+					// If the datatype was changed, update any indexes that involved the domain
+
+					AutoRequest request2;
+
+					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+						DOM IN RDB$RELATION_FIELDS
+						WITH DOM.RDB$FIELD_SOURCE EQ name.c_str()
+					{
+						modifyLocalFieldIndex(tdbb, transaction, DOM.RDB$RELATION_NAME,
+							DOM.RDB$FIELD_NAME, DOM.RDB$FIELD_NAME);
+					}
+					END_FOR
+
+					// Update RDB$FIELDS
+					updateRdbFields(*type,
+						FLD.RDB$FIELD_TYPE,
+						FLD.RDB$FIELD_LENGTH,
+						FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
+						FLD.RDB$FIELD_SCALE.NULL, FLD.RDB$FIELD_SCALE,
+						FLD.RDB$CHARACTER_SET_ID.NULL, FLD.RDB$CHARACTER_SET_ID,
+						FLD.RDB$CHARACTER_LENGTH.NULL, FLD.RDB$CHARACTER_LENGTH,
+						FLD.RDB$FIELD_PRECISION.NULL, FLD.RDB$FIELD_PRECISION,
+						FLD.RDB$COLLATION_ID.NULL, FLD.RDB$COLLATION_ID,
+						FLD.RDB$SEGMENT_LENGTH.NULL, FLD.RDB$SEGMENT_LENGTH);
+				}
+
+				if (renameTo.hasData())
+				{
+					rename(tdbb, transaction, (FLD.RDB$DIMENSIONS.NULL ? 0 : FLD.RDB$DIMENSIONS));
+					strcpy(FLD.RDB$FIELD_NAME, renameTo.c_str());
+				}
+			END_MODIFY
+
+			endModify = true;
+		}
+		END_FOR
+	}
+	catch (const status_exception& ex)
+	{
+		// msg 87: "MODIFY RDB$FIELDS failed"
+		rethrowMetaException(ex, ENCODE_ISC_MSG(87, DYN_MSG_FAC), endModify);
+	}
+
+	if (!found)
+	{
+		// msg 89: "Global field not found"
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(ENCODE_ISC_MSG(89, DYN_MSG_FAC)));
+	}
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_DOMAIN, name);
+
+	savePoint.release();	// everything is ok
+}
+
+void AlterDomainNode::rename(thread_db* tdbb, jrd_tra* transaction, SSHORT dimensions)
+{
+	// Checks to see if the given domain already exists.
+
+	AutoRequest request;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ renameTo.c_str()
+	{
+		// msg 204: Cannot rename domain %s to %s.  A domain with that name already exists.
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(ENCODE_ISC_MSG(204, DYN_MSG_FAC)) << name << renameTo);
+	}
+	END_FOR
+
+	// CVC: Let's update the dimensions, too.
+	if (dimensions != 0)
+	{
+		request.reset();
+
+		FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			FDIM IN RDB$FIELD_DIMENSIONS
+			WITH FDIM.RDB$FIELD_NAME EQ name.c_str()
+		{
+			MODIFY FDIM USING
+				strcpy(FDIM.RDB$FIELD_NAME, renameTo.c_str());
+			END_MODIFY
+		}
+		END_FOR
+	}
+
+	request.reset();
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		RFLD IN RDB$RELATION_FIELDS
+		WITH RFLD.RDB$FIELD_SOURCE EQ name.c_str()
+	{
+		MODIFY RFLD USING
+			strcpy(RFLD.RDB$FIELD_SOURCE, renameTo.c_str());
+		END_MODIFY
+
+		modifyLocalFieldIndex(tdbb, transaction, RFLD.RDB$RELATION_NAME,
+			RFLD.RDB$FIELD_NAME, RFLD.RDB$FIELD_NAME);
+	}
+	END_FOR
+}
+
+
+//----------------------
+
+
+// Delete the records in RDB$FIELD_DIMENSIONS pertaining to a field.
+bool DropDomainNode::deleteDimensionRecords(thread_db* tdbb, jrd_tra* transaction, const MetaName& name)
+{
+	AutoCacheRequest request(tdbb, drq_e_dims, DYN_REQUESTS);
+	bool found = false;
+
+	try
+	{
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			X IN RDB$FIELD_DIMENSIONS
+			WITH X.RDB$FIELD_NAME EQ name.c_str()
+		{
+			found = true;
+			ERASE X;
+		}
+		END_FOR
+	}
+	catch (const status_exception& ex)
+	{
+		// msg 35: "ERASE RDB$FIELDS failed"
+		rethrowMetaException(ex, ENCODE_ISC_MSG(35, DYN_MSG_FAC), true);
+	}
+
+	return found;
+}
+
+void DropDomainNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"DropDomainNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	bool found = false;
+
+	try
+	{
+		AutoCacheRequest request(tdbb, drq_e_gfields, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			X IN RDB$FIELDS
+			WITH X.RDB$FIELD_NAME EQ name.c_str()
+		{
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_DOMAIN, name);
+
+			check(tdbb, transaction);
+			deleteDimensionRecords(tdbb, transaction, name);
+
+			ERASE X;
+
+			found = true;
+		}
+		END_FOR
+	}
+	catch (const status_exception& ex)
+	{
+		// msg 44: "ERASE RDB$FIELDS failed"
+		rethrowMetaException(ex, ENCODE_ISC_MSG(44, DYN_MSG_FAC), found);
+	}
+
+	if (found)
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_DOMAIN, name);
+	else
+	{
+		// msg 89: "Domain not found"
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(ENCODE_ISC_MSG(89, DYN_MSG_FAC)));
+	}
+
+	savePoint.release();	// everything is ok
+}
+
+void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
+{
+	AutoCacheRequest request(tdbb, drq_l_fld_src, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		Y IN RDB$RELATION_FIELDS
+		WITH Y.RDB$FIELD_SOURCE EQ name.c_str()
+	{
+		fb_utils::exact_name_limit(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
+		fb_utils::exact_name_limit(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
+		fb_utils::exact_name_limit(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
+
+		// msg 43: "Domain %s is used in table %s (local name %s) and can not be dropped"
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(ENCODE_ISC_MSG(43, DYN_MSG_FAC)) << Y.RDB$FIELD_SOURCE <<
+				Y.RDB$RELATION_NAME << Y.RDB$FIELD_NAME);
+	}
+	END_FOR
+
+	request.reset(tdbb, drq_l_prp_src, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$PROCEDURE_PARAMETERS
+		WITH X.RDB$FIELD_SOURCE EQ name.c_str()
+	{
+		fb_utils::exact_name_limit(X.RDB$FIELD_SOURCE, sizeof(X.RDB$FIELD_SOURCE));
+		fb_utils::exact_name_limit(X.RDB$PROCEDURE_NAME, sizeof(X.RDB$PROCEDURE_NAME));
+		fb_utils::exact_name_limit(X.RDB$PARAMETER_NAME, sizeof(X.RDB$PARAMETER_NAME));
+
+		// msg 239: "Domain %s is used in procedure %s (parameter name %s) and cannot be dropped"
+		status_exception::raise(
+			Arg::Gds(isc_no_meta_update) <<
+			Arg::Gds(ENCODE_ISC_MSG(239, DYN_MSG_FAC)) << X.RDB$FIELD_SOURCE <<
+				QualifiedName(X.RDB$PROCEDURE_NAME,
+					(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)).toString().c_str() <<
+				X.RDB$PARAMETER_NAME);
+	}
+	END_FOR
+
+	//// FIXME: Check domain usage in functions.
 }
 
 

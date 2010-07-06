@@ -62,8 +62,6 @@ enum nod_t
 	nod_del_default,
 	nod_def_database,
 	nod_def_domain,
-	nod_mod_domain,
-	nod_del_domain,
 	nod_mod_database,
 	nod_def_relation,
 	nod_mod_relation,
@@ -228,7 +226,6 @@ enum nod_t
 	nod_current_date,
 	nod_current_timestamp,
 	nod_extract,
-	nod_mod_domain_type,	// ALTER column/domain support
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
@@ -743,13 +740,6 @@ enum node_args {
 	e_current_time_count = 0,
 	e_current_date_count = 0,
 	e_current_timestamp_count = 0,
-
-	e_alt_dom_name = 0,				// nod_mod_domain
-	e_alt_dom_ops,
-	e_alt_dom_count,
-
-	e_mod_dom_new_dom_type = 0, 	// nod_mod_domain_type
-	e_mod_dom_count,
 
 	e_mod_fld_name_orig_name = 0,	// nod_mod_field_name
 	e_mod_fld_name_new_name,

@@ -411,6 +411,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\ByteChunk.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletReader.h"
 				>
 			</File>

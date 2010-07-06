@@ -132,8 +132,9 @@ public:
 	ULONG getBaseOffset() const { return baseOffset; }
 	void setBaseOffset(ULONG value) { baseOffset = value; }
 
-protected:
 	virtual bool isVersion4() = 0;
+
+protected:
 	virtual bool isDdlDyn() = 0;
 
 private:

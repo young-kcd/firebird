@@ -31,7 +31,6 @@ void DYN_define_file(Jrd::Global*, const UCHAR**, SLONG, SLONG*, USHORT);
 void DYN_define_filter(Jrd::Global*, const UCHAR**);
 void DYN_define_function(Jrd::Global*, const UCHAR**);
 void DYN_define_function_arg(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
-void DYN_define_global_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void DYN_define_index(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, UCHAR,
 					  Firebird::MetaName*, Firebird::MetaName*, Firebird::MetaName*, UCHAR*);
 void DYN_define_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);

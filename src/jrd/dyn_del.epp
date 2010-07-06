@@ -69,7 +69,6 @@ using namespace Firebird;
 DATABASE DB = STATIC "ODS.RDB";
 
 static bool delete_constraint_records(Global*, const Firebird::MetaName&, const Firebird::MetaName&);
-static bool delete_dimension_records(Global*, const Firebird::MetaName&);
 static void delete_f_key_constraint(thread_db*, Global*,
 									const Firebird::MetaName&, const Firebird::MetaName&,
 									const Firebird::MetaName&, const Firebird::MetaName&);
@@ -130,11 +129,12 @@ void DYN_delete_dimensions(Global* gbl, const UCHAR** ptr)
  *	you.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
 	Firebird::MetaName f;
 
 	GET_STRING(ptr, f);
 
-	delete_dimension_records(gbl, f);
+	DropDomainNode::deleteDimensionRecords(tdbb, gbl->gbl_transaction, f);
 
 	while (*(*ptr)++ != isc_dyn_end)
 	{
@@ -316,101 +316,6 @@ void DYN_delete_generator(Global* gbl, const UCHAR**ptr)
 	{
 		DYN_error_punt(false, 214, t.c_str());
 	    // msg 214: "Generator %s not found"
-	}
-}
-
-
-void DYN_delete_global_field( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ g l o b a l _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	deletes a global field.
- *
- **************************************/
-	Firebird::MetaName f;
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	AutoCacheRequest request(tdbb, drq_e_gfields, DYN_REQUESTS);
-
-	bool found = false;
-
-	try
-	{
-		GET_STRING(ptr, f);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$FIELDS WITH X.RDB$FIELD_NAME EQ f.c_str()
-		{
-			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-				DDL_TRIGGER_DROP_DOMAIN, f, gbl->sqlText);
-
-			delete_dimension_records(gbl, f);
-			ERASE X;
-			found = true;
-		}
-		END_FOR
-
-		request.reset(tdbb, drq_l_fld_src, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			Y IN RDB$RELATION_FIELDS WITH Y.RDB$FIELD_SOURCE EQ f.c_str()
-		{
-			fb_utils::exact_name_limit(Y.RDB$FIELD_SOURCE, sizeof(Y.RDB$FIELD_SOURCE));
-			fb_utils::exact_name_limit(Y.RDB$RELATION_NAME, sizeof(Y.RDB$RELATION_NAME));
-			fb_utils::exact_name_limit(Y.RDB$FIELD_NAME, sizeof(Y.RDB$FIELD_NAME));
-			DYN_error_punt(false, 43, SafeArg() << Y.RDB$FIELD_SOURCE << Y.RDB$RELATION_NAME <<
-						   Y.RDB$FIELD_NAME);
-			// msg 43: "Domain %s is used in table %s (local name %s) and can not be dropped"
-		}
-		END_FOR
-
-		request.reset(tdbb, drq_l_prp_src, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$PROCEDURE_PARAMETERS
-				WITH X.RDB$FIELD_SOURCE EQ f.c_str()
-		{
-			fb_utils::exact_name_limit(X.RDB$FIELD_SOURCE, sizeof(X.RDB$FIELD_SOURCE));
-			fb_utils::exact_name_limit(X.RDB$PROCEDURE_NAME, sizeof(X.RDB$PROCEDURE_NAME));
-			fb_utils::exact_name_limit(X.RDB$PARAMETER_NAME, sizeof(X.RDB$PARAMETER_NAME));
-
-			DYN_error_punt(false, 239, SafeArg() << X.RDB$FIELD_SOURCE <<
-				QualifiedName(X.RDB$PROCEDURE_NAME,
-					(X.RDB$PACKAGE_NAME.NULL ? NULL : X.RDB$PACKAGE_NAME)).toString().c_str() <<
-				X.RDB$PARAMETER_NAME);
-			// msg 239: "Domain %s is used in procedure %s (parameter name %s) and cannot be dropped"
-		}
-		END_FOR
-	} // try
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 44);
-		// msg 44: "ERASE RDB$FIELDS failed"
-	}
-
-	if (found)
-	{
-		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-			DDL_TRIGGER_DROP_DOMAIN, f, gbl->sqlText);
-	}
-	else
-	{
-		DYN_error_punt(false, 89);
-		// msg 89: "Domain not found"
-	}
-
-	while (*(*ptr)++ != isc_dyn_end)
-	{
-		--(*ptr);
-		DYN_execute(gbl, ptr, NULL, &f, NULL, NULL, NULL);
 	}
 }
 
@@ -1167,47 +1072,6 @@ static bool delete_constraint_records(Global*	gbl,
 }
 
 
-static bool delete_dimension_records(Global* gbl, const Firebird::MetaName& field_name)
-{
-/**************************************
- *
- *	d e l e t e _ d i m e n s i o n s _ r e c o r d s
- *
- **************************************
- *
- * Functional description
- *	Delete the records in RDB$FIELD_DIMENSIONS
- *	pertaining to a field.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	AutoCacheRequest request(tdbb, drq_e_dims, DYN_REQUESTS);
-
-	bool found = false;
-
-	try
-	{
-		found = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$FIELD_DIMENSIONS WITH X.RDB$FIELD_NAME EQ field_name.c_str()
-		{
-			found = true;
-			ERASE X;
-		}
-		END_FOR
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 35);
-		// msg 35: "ERASE RDB$FIELDS failed"
-	}
-
-	return found;
-}
-
-
 static void delete_f_key_constraint(thread_db*	tdbb,
 									Global*		gbl,
 									const Firebird::MetaName&	tbl_nm,
@@ -1306,7 +1170,7 @@ static void delete_gfield_for_lfield( Global* gbl, const Firebird::MetaName& lfi
 			(NOT ANY PRC IN RDB$PROCEDURE_PARAMETERS WITH
 				PRC.RDB$FIELD_SOURCE EQ FLD.RDB$FIELD_NAME)
 	{
-		delete_dimension_records(gbl, FLD.RDB$FIELD_NAME);
+		DropDomainNode::deleteDimensionRecords(tdbb, gbl->gbl_transaction, FLD.RDB$FIELD_NAME);
 		ERASE FLD;
 	}
 	END_FOR

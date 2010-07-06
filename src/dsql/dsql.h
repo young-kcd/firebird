@@ -615,17 +615,13 @@ public:
 		  currCteAlias(NULL),
 		  psql(false)
 	{
+		domainValue.clear();
 	}
 
 protected:
 	// DsqlCompilerScratch should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~DsqlCompilerScratch();
-
-	virtual bool isVersion4()
-	{
-		return statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4;
-	}
 
 	virtual bool isDdlDyn()
 	{
@@ -634,6 +630,11 @@ protected:
 	}
 
 public:
+	virtual bool isVersion4()
+	{
+		return statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4;
+	}
+
 	MemoryPool& getPool()
 	{
 		return PermanentStorage::getPool();
@@ -745,6 +746,7 @@ public:
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE
 	USHORT recursiveCtxId;				// id of recursive union stream context
 	bool processingWindow;				// processing window functions
+	dsc domainValue;					// VALUE in the context of domain's check constraint
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions
