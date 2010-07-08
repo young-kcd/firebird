@@ -124,7 +124,7 @@ template<typename BasePair>
 		}
 		bool operator<(const Pair& v) const
 		{
-			return this->first < v.first || (!(this->first < v.first) && this->second < v.second);
+			return this->first < v.first || (this->first == v.first && this->second < v.second);
 		}
 		bool operator!=(const Pair& v) const
 		{
