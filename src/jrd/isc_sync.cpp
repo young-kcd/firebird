@@ -2312,7 +2312,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 		return;
 	}
 #endif
-	const ULONG page_size = (ULONG) ps;
+	const size_t page_size = (ULONG) ps;
 
 /* Compute the start and end page-aligned addresses which
    contain the mapped object. */
