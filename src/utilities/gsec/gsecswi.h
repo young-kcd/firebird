@@ -34,7 +34,7 @@
 const int IN_SW_GSEC_0					= 0;	// not a known switch
 const int IN_SW_GSEC_UID				= 1;	// uid is specified
 const int IN_SW_GSEC_GID				= 2;	// gid is specified
-const int IN_SW_GSEC_SYSUSER			= 3;	// sys_user_name is specified
+const int IN_SW_GSEC_SYSUSER			= 3;	// sys_user name is specified
 const int IN_SW_GSEC_GROUP				= 4;	// group is specified
 const int IN_SW_GSEC_PASSWORD			= 5;	// password is specified
 const int IN_SW_GSEC_FNAME				= 6;	// first name is specified
@@ -62,6 +62,7 @@ const int IN_SW_GSEC_FETCH_PASSWORD		= 25;   // Fetch Password (Database Admin.)
 const int IN_SW_GSEC_MAPPING			= 26;	// Change auto admin mapping
 const int IN_SW_GSEC_ADMIN				= 27;	// Grant/revoke RDB$ADMIN in security database
 const int IN_SW_GSEC_DIS_ADM			= 28;	// display user(s) with admin info
+const int IN_SW_GSEC_REAL_USER			= 29;	// svc user, if not SYSDBA
 
 static const struct Switches::in_sw_tab_t gsec_in_sw_table [] =
 {
@@ -85,6 +86,7 @@ static const struct Switches::in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_DBA_USER_NAME,		0,						"USER",		0, 0, 0, false,	0,	1, NULL},	// Database Admin. User name
     {IN_SW_GSEC_DBA_PASSWORD, 		0,						"PASSWORD",	0, 0, 0, false,	0,	2, NULL},	// Database Admin. Password
     {IN_SW_GSEC_FETCH_PASSWORD,		0,				"FETCH_PASSWORD",	0, 0, 0, false, 0,	2, NULL},	// Fetch Database Admin. Password
+	{IN_SW_GSEC_REAL_USER,			0,					"REAL_USER",	0, 0, 0, false, 0,	9, NULL},	// name of real user, connected to services
     {IN_SW_GSEC_SQL_ROLE_NAME,		isc_spb_sql_role_name,	"ROLE",		0, 0, 0, false,	0,	2, NULL},	// SQL Role to assume
 	{IN_SW_GSEC_DBA_TRUSTED_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,
 															TRUSTED_USER_SWITCH_LEN, NULL},	// Database Admin. Trusted User name

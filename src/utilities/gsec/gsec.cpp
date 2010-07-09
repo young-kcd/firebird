@@ -278,7 +278,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 				uSvc->started();
 			if (! useServices)
 			{
-				ret = SECURITY_exec_line(status, db_handle, user_data, data_print, NULL);
+				ret = SECURITY_exec_line(status, tdsec->tsec_real_user, 
+										 db_handle, user_data, data_print, NULL);
 				if (ret)
 				{
 					GSEC_print(ret, user_data->user_name);
@@ -596,8 +597,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->gid_entered = true;
 				break;
 			case IN_SW_GSEC_SYSUSER:
-				fb_utils::copy_terminate(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
-				user_data->sys_user_entered = true;
+				// ignore it
 				break;
 			case IN_SW_GSEC_GROUP:
 				fb_utils::copy_terminate(user_data->group_name, string, sizeof(user_data->group_name));
@@ -652,6 +652,10 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				tdsec->utilSvc->checkService();
 				fb_utils::copy_terminate(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
 				user_data->dba_trust_user_name_entered = true;
+				break;
+			case IN_SW_GSEC_REAL_USER:
+				tdsec->utilSvc->checkService();
+				tdsec->tsec_real_user = string;
 				break;
 			case IN_SW_GSEC_MAPPING:
 				{
@@ -808,13 +812,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->gid = 0;
 					break;
 				case IN_SW_GSEC_SYSUSER:
-					if (user_data->sys_user_specified)
-					{
-						err_msg_no = GsecMsg34;
-						break;
-					}
-					user_data->sys_user_specified = true;
-					user_data->sys_user_name[0] = '\0';
+					// ignore it
 					break;
 				case IN_SW_GSEC_GROUP:
 					if (user_data->group_name_specified)
@@ -932,6 +930,8 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				GSEC_diag(GsecMsg41);
 				// gsec - ambiguous switch specified
 				return false;
+			case IN_SW_GSEC_REAL_USER:
+				break;
 			}
 			last_sw = in_sw;
 		}
@@ -940,7 +940,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 		// is valid, and if not, indicate why not
 
 		if (user_data->uid_entered || user_data->gid_entered ||
-			user_data->sys_user_entered || user_data->group_name_entered ||
+			user_data->group_name_entered ||
 			user_data->password_entered || user_data->first_name_entered ||
 			user_data->middle_name_entered || user_data->last_name_entered)
 		{

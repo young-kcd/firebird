@@ -166,3 +166,9 @@
 	FIELD(fld_arg_mechanism	, nam_arg_mechanism	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 
 	FIELD(fld_identity_type	, nam_identity_type	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
+
+	FIELD(fld_uid			, nam_uid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
+	FIELD(fld_gid			, nam_gid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
+	FIELD(fld_passwd_type	, nam_passwd_type	, dtype_text	, 32						, dsc_text_type_ascii		, NULL		, true)
+	FIELD(fld_passwd		, nam_passwd		, dtype_blob	, BLOB_SIZE					, isc_blob_untyped			, NULL		, true)
+	FIELD(fld_name_part		, nam_name_part		, dtype_text	, 32						, dsc_text_type_metadata	, NULL		, true)

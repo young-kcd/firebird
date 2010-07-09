@@ -2905,6 +2905,7 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg101', 'gsec', 'gsec.cpp', NULL, 18, 101, NULL, 'use gsec -? to get help', NULL, NULL);
 ('GsecMsg102', 'gsec', 'gsec.cpp', NULL, 18, 102, NULL, '-admin {yes|no}', NULL, NULL);
 ('GsecMsg103', 'gsec', 'gsec.cpp', NULL, 18, 103, NULL, 'invalid parameter for -ADMIN, only YES or NO is accepted', NULL, NULL);
+('GsecMsg104', 'SECURITY_exec_line', 'security.epp', NULL, 18, 104, NULL, 'not enough privileges to complete operation', NULL, NULL);
 -- GSTAT
 ('gstat_unknown_switch', 'main', 'dba.e', NULL, 21, 1, NULL, 'found unknown switch', NULL, NULL);
 ('gstat_retry', 'main', 'dba.e', NULL, 21, 2, NULL, 'please retry, giving a database name', NULL, NULL);

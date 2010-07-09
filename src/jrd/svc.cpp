@@ -1924,27 +1924,31 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	// Only need to add username and password information to those calls which need
 	// to make a database connection
-	if (svc_id == isc_action_svc_backup ||
+
+	bool flNeedUser = (svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_nbak ||
 		svc_id == isc_action_svc_nrest ||
 		svc_id == isc_action_svc_repair ||
-		svc_id == isc_action_svc_add_user ||
-		svc_id == isc_action_svc_delete_user ||
-		svc_id == isc_action_svc_modify_user ||
-		svc_id == isc_action_svc_display_user ||
-		svc_id == isc_action_svc_display_user_adm ||
 		svc_id == isc_action_svc_db_stats ||
 		svc_id == isc_action_svc_properties ||
 		svc_id == isc_action_svc_trace_start ||
 		svc_id == isc_action_svc_trace_stop ||
 		svc_id == isc_action_svc_trace_suspend ||
 		svc_id == isc_action_svc_trace_resume ||
-		svc_id == isc_action_svc_trace_list ||
+		svc_id == isc_action_svc_trace_list);
+
+	bool flGsecUser = (svc_id == isc_action_svc_add_user ||
+		svc_id == isc_action_svc_delete_user ||
+		svc_id == isc_action_svc_modify_user ||
+		svc_id == isc_action_svc_display_user ||
+		svc_id == isc_action_svc_display_user_adm ||
 		svc_id == isc_action_svc_set_mapping ||
-		svc_id == isc_action_svc_drop_mapping)
+		svc_id == isc_action_svc_drop_mapping);
+
+	if (flNeedUser || flGsecUser)
 	{
-		// add the username and password to the end of svc_switches if needed
+		// add the username to the end of svc_switches if needed
 		if (svc_switches.hasData())
 		{
 			if (svc_username.hasData())
@@ -1952,9 +1956,15 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 				string auth = "-";
 				auth += TRUSTED_USER_SWITCH;
 				auth += ' ';
+				if (flGsecUser)
+				{
+					// gsec service - gsec will take care itself about security
+					auth += SYSDBA_USER_NAME;
+					auth += " -REAL_USER ";
+				}
 				auth += svc_username;
 				auth += ' ';
-				if (svc_trusted_role)
+				if (svc_trusted_role && (!flGsecUser))
 				{
 					auth += "-";
 					auth += TRUSTED_ROLE_SWITCH;
@@ -1964,6 +1974,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			}
 		}
 	}
+
 
 	// All services except for get_ib_log require switches
 	spb.rewind();

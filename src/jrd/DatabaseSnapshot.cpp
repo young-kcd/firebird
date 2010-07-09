@@ -370,7 +370,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
-	: snapshot(pool), idMap(pool), idCounter(0)
+	: DataDump(pool), snapshot(pool)
 {
 	SET_TDBB(tdbb);
 
@@ -589,7 +589,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 	jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
-	fb_assert(relation->isVirtual());
+	fb_assert(relation->isVirtual() && !relation->isUsers());
 	Format* format = MET_current(tdbb, relation);
 	fb_assert(format);
 
@@ -601,7 +601,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 }
 
 
-void DatabaseSnapshot::clearRecord(Record* record)
+void DataDump::clearRecord(Record* record)
 {
 	fb_assert(record);
 
@@ -612,7 +612,7 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField& field,
+void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 								int& charset, bool set_charset)
 {
 	fb_assert(record);

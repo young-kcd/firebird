@@ -18,6 +18,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *		Alex Peshkoff, 2010 - divided into class DataDump and the remaining part of DatabaseSnapshot
  */
 
 #ifndef JRD_DATABASE_SNAPSHOT_H
@@ -26,24 +27,36 @@
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
 #include "../jrd/isc_s_proto.h"
+#include "../common/classes/timestamp.h"
+#include "../jrd/val.h"
 
 namespace Jrd {
 
 // forward declarations
 class jrd_rel;
+class Record;
 class RecordBuffer;
 class RuntimeStatistics;
 
-class DatabaseSnapshot
+class DataDump
 {
+public:
 	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
+
+	DataDump(MemoryPool& pool)
+		: idMap(pool), idCounter(0) { }
 
 	struct DumpField
 	{
+		DumpField(USHORT p_id, ValueType p_type, USHORT p_length, const void* p_data)
+			: id(p_id), type(p_type), length(p_length), data(p_data) { }
+		DumpField()
+			: id(0), type(VALUE_GLOBAL_ID), length(0), data(NULL) { }
+
 		USHORT id;
 		ValueType type;
 		USHORT length;
-		void* data;
+		const void* data;
 	};
 
 	class DumpRecord
@@ -178,6 +191,16 @@ class DatabaseSnapshot
 		ULONG sizeLimit;
 	};
 
+	void clearRecord(Record*);
+	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
+
+private:
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
+	int idCounter;
+};
+
+class DatabaseSnapshot : public DataDump
+{
 	struct RelationData
 	{
 		int rel_id;
@@ -321,8 +344,6 @@ protected:
 
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
-	void clearRecord(Record*);
-	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
 
 	static void dumpData(thread_db*);
 
@@ -338,8 +359,6 @@ private:
 	static void putMemoryUsage(const Firebird::MemoryStats&, Writer&, int, int);
 
 	Firebird::Array<RelationData> snapshot;
-	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
-	int idCounter;
 };
 
 } // namespace

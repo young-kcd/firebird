@@ -3074,6 +3074,11 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// External table
 		rsb = FB_NEW(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream);
 	}
+	else if (relation->isUsers())
+	{
+		// Users table
+		rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream);
+	}
 	else if (relation->isVirtual())
 	{
 		// Virtual table

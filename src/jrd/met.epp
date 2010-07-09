@@ -3607,6 +3607,9 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				case rel_view:
 					fb_assert(relation->rel_view_rse);
 					break;
+				case rel_vrt_users:
+					relation->rel_flags |= REL_users;
+					break;
 				case rel_virtual:
 					relation->rel_flags |= REL_virtual;
 					break;

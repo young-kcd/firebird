@@ -65,9 +65,6 @@ struct internal_user_data
 	int		gid;							// the user's group id
 	bool	gid_entered;					// GID entered flag
 	bool	gid_specified;					// GID specified flag
-	TEXT	sys_user_name [ALT_NAME_LEN];	// the sys_user's name
-	bool	sys_user_entered;				// sys_user entered flag
-	bool	sys_user_specified;				// sys_user specified flag
 	TEXT	group_name [ALT_NAME_LEN];		// the group name
 	bool	group_name_entered;				// group_name entered flag
 	bool	group_name_specified;			// group_name specified flag
@@ -123,13 +120,15 @@ class tsec : public ThreadData
 public:
 	explicit tsec(Firebird::UtilSvc* uf)
 		: ThreadData(ThreadData::tddSEC), utilSvc(uf),
-		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false),
+		tsec_user_data(0), tsec_real_user(NULL),
+		tsec_exit_code(0), tsec_throw(false),
 		tsec_interactive(false), tsec_sw_version(false)
 	{
 	}
 
 	Firebird::UtilSvc*	utilSvc;
 	internal_user_data*	tsec_user_data;
+	const char*			tsec_real_user;
 	int					tsec_exit_code;
 	bool				tsec_throw;
 	bool				tsec_interactive;
@@ -255,6 +254,7 @@ const USHORT GsecMsg100	= 100;	// -ma(pping) {set|drop}
 const USHORT GsecMsg101 = 101;	// use gsec -? to get help
 const USHORT GsecMsg102 = 102;	// -adm(in) {yes|no}
 const USHORT GsecMsg103	= 103;	// invalid parameter for -ADMIN, only YES or NO is accepted
+const USHORT GsecMsg104	= 104;	// not enough privileges to complete operation
 
 #endif // UTILITIES_GSEC_H
 

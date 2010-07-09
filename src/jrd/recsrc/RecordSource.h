@@ -302,6 +302,29 @@ namespace Jrd
 		const Firebird::string m_name;
 	};
 
+	class UsersTableScan : public RecordStream
+	{
+		struct Impure : public RecordSource::Impure
+		{
+			RecordBuffer* irsb_record_buffer;
+		};
+
+	public:
+		UsersTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
+
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
+
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
+
+		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+
+	private:
+		const Firebird::string m_name;
+	};
+
 	class ProcedureScan : public RecordStream
 	{
 		struct Impure : public RecordSource::Impure

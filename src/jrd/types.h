@@ -112,6 +112,7 @@ TYPE ("EXTERNAL", rel_external, nam_r_type)
 TYPE ("VIRTUAL", rel_virtual, nam_r_type)
 TYPE ("GLOBAL_TEMPORARY_PRESERVE", rel_global_temp_preserve, nam_r_type)
 TYPE ("GLOBAL_TEMPORARY_DELETE", rel_global_temp_delete, nam_r_type)
+TYPE ("USERS LIST", rel_vrt_users, nam_r_type)
 
 TYPE ("LEGACY", prc_legacy, nam_prc_type)
 TYPE ("SELECTABLE", prc_selectable, nam_prc_type)

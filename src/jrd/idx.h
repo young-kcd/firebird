@@ -345,6 +345,10 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_prm_procedure, idx_metadata),	// procedure name
 		SEGMENT(f_prm_name, idx_metadata),		// parameter name
 		SEGMENT(f_prm_pkg_name, idx_metadata)	// package name
+	}},
+	// define index RDB$INDEX_52 for RDB$USERS unique RDB$USER_NAME;
+	INDEX(52, ODS_12_0, rel_users, idx_unique, 1)
+		SEGMENT(f_user_name, idx_metadata)		// procedure name
 	}}
 
 	// Last index in ODS 12.0 is RDB$INDEX_51

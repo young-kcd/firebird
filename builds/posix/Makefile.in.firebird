@@ -76,9 +76,7 @@ CPU_OPTION = -j$(CPU)
 #    use the static files as a last resort.
 #
 #  The bootstrap version of gpre (gpre_boot) is used to build all the
-#    engine files, except security.bin.  security.epp requires the security
-#    database which is not available at this time.  The code in jrd/alt.cpp
-#    that references the functions in security.bin has been #ifdef'ed out.
+#    engine file.  
 #    During this phase of the build process the limited version of alt.bin
 #    is used.  The full version of alt.bin is compiled later in the build
 #    process after the security database is available.  After the

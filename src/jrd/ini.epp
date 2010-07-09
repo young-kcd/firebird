@@ -71,7 +71,7 @@ const int FB_MAX_ACL_SIZE	= 4096;
 
 static void add_index_set(thread_db*);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
-		const TEXT*, const UCHAR*, const SSHORT);
+		const TEXT*, const UCHAR*, const SSHORT, const bool);
 static void store_generator(thread_db*, const gen*, AutoRequest&);
 static void store_global_field(thread_db*, const gfld*, AutoRequest&);
 static void store_intlnames(thread_db*);
@@ -468,10 +468,39 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	*acl++ = ACL_end;
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", buffer, length);
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", buffer, length);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", buffer, length, true);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", buffer, length, true);
 	// DFW writes here
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", buffer, length);
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", buffer, length, true);
+
+	// nobody except DBA should access it
+	acl = buffer;
+	*acl++ = ACL_version;
+	*acl++ = ACL_id_list;
+	*acl++ = id_person;
+
+	length = ownerName.length();
+	if (length > MAX_UCHAR)
+		length = MAX_UCHAR;
+
+	*acl++ = (UCHAR)length;
+	if (length)
+	{
+		const TEXT* p_1 = ownerName.c_str();
+		memcpy(acl, p_1, length);
+		acl += length;
+	}
+	*acl++ = ACL_end;
+	*acl++ = ACL_priv_list;
+	*acl++ = priv_protect;
+	*acl++ = priv_control;
+	*acl++ = priv_delete;
+	*acl++ = priv_write;
+	*acl++ = priv_read;
+	*acl++ = ACL_end;
+	*acl++ = ACL_end;
+	length = acl - buffer;
+	add_security_to_sys_rel(tdbb, ownerName, "RDB$USERS", buffer, length, false);
 }
 
 
@@ -863,7 +892,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 									const Firebird::MetaName&	user_name,
 									const TEXT*	rel_name,
 									const UCHAR*	acl,
-									const SSHORT	acl_length)
+									const SSHORT	acl_length,
+									const bool		pub_select)
 {
 /**************************************
  *
@@ -935,7 +965,7 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	handle1.reset();
 
-	for (int cnt = 0; cnt < 6; cnt++)
+	for (int cnt = 0; cnt < (pub_select ? 6 : 5); cnt++)
 	{
 		STORE(REQUEST_HANDLE handle1) PRIV IN RDB$USER_PRIVILEGES
 			switch (cnt)

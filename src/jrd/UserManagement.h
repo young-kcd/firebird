@@ -25,7 +25,9 @@
 
 #include "firebird.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
+#include "../jrd/DatabaseSnapshot.h"
 
 struct internal_user_data;
 
@@ -33,9 +35,10 @@ namespace Jrd {
 
 class thread_db;
 class jrd_tra;
+class RecordBuffer;
 
 // User management argument for deferred work
-class UserManagement
+class UserManagement : public DataDump
 {
 public:
 	explicit UserManagement(jrd_tra* tra);
@@ -47,10 +50,19 @@ public:
 	void execute(USHORT id);
 	// commit transaction in security database
 	void commit();
+	// return users list for SEC$USERS
+	RecordBuffer* getList(thread_db* tdbb);
 
 private:
 	FB_API_HANDLE database, transaction;
+	RecordBuffer* buffer;
+	thread_db* threadDbb;
+	const char* realUser;
 	Firebird::HalfStaticArray<internal_user_data*, 8> commands;
+
+	static void display(void* arg, const internal_user_data* u, bool firstTime);
+	void display(const internal_user_data* u);
+	static void checkSecurityResult(int errcode, ISC_STATUS* status, const char* userName);
 };
 
 }	// namespace

@@ -590,3 +590,28 @@ RELATION(nam_packages, rel_packages, ODS_12_0, rel_persistent)
 	FIELD(f_pkg_sys_flag, nam_sys_flag, fld_flag, 1, ODS_12_0)
 	FIELD(f_pkg_desc, nam_description, fld_description, 1, ODS_12_0)
 END_RELATION
+
+// Relation 43 (RDB$USERS)
+RELATION(nam_users, rel_users, ODS_12_0, rel_persistent)
+	FIELD(f_user_name, nam_user_name, fld_user, 1, ODS_12_0)
+	FIELD(f_group_name, nam_group_name, fld_user, 1, ODS_12_0)
+	FIELD(f_uid, nam_uid, fld_uid, 1, ODS_12_0)
+	FIELD(f_gid, nam_gid, fld_gid, 1, ODS_12_0)
+	FIELD(f_passwd_type, nam_passwd_type, fld_passwd_type, 1, ODS_12_0)
+	FIELD(f_passwd, nam_passwd, fld_passwd, 1, ODS_12_0)
+	FIELD(f_first_name, nam_first_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_middle_name, nam_middle_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_last_name, nam_last_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_user_desc, nam_description, fld_description, 1, ODS_12_0)
+END_RELATION
+
+// Relation 44 (SEC$USERS)
+RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_vrt_users)
+	FIELD(f_sec_user_name, nam_user_name, fld_user, 1, ODS_12_0)
+	FIELD(f_sec_group_name, nam_group_name, fld_user, 1, ODS_12_0)
+	FIELD(f_sec_uid, nam_uid, fld_uid, 1, ODS_12_0)
+	FIELD(f_sec_gid, nam_gid, fld_gid, 1, ODS_12_0)
+	FIELD(f_sec_first_name, nam_first_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_sec_middle_name, nam_middle_name, fld_name_part, 1, ODS_12_0)
+	FIELD(f_sec_last_name, nam_last_name, fld_name_part, 1, ODS_12_0)
+END_RELATION
