@@ -2314,16 +2314,16 @@ void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, UCHAR** obje
 		return;
 	}
 #endif
-	const ULONG page_size = (ULONG) ps;
+	const size_t page_size = (ULONG) ps;
 
 	// Compute the start and end page-aligned addresses which contain the mapped object.
 
-	UCHAR* const start = (UCHAR *) ((U_IPTR) * object_pointer & ~(page_size - 1));
-	const UCHAR* end =
-		(UCHAR*) ((U_IPTR) ((*object_pointer + object_length) + (page_size - 1)) & ~(page_size - 1));
-	const ULONG length = end - start;
+	char* const start = (char*) ((U_IPTR) (*object_pointer) & ~(page_size - 1));
+	char* const end =
+		(char*) ((U_IPTR) ((*object_pointer + object_length) + (page_size - 1)) & ~(page_size - 1));
+	const size_t length = end - start;
 
-	if (munmap((char *) start, length) == -1)
+	if (munmap(start, length) == -1)
 	{
 		error(statusVector, "munmap", errno);
 		return; // false;
@@ -3363,7 +3363,7 @@ void SharedMemoryBase::unmapFile(Arg::StatusVector& statusVector)
 #endif
 
 #if defined(HAVE_OBJECT_MAP) && (!defined(USE_SYS5SEMAPHORE))
-	unmapObject(statusVector, (UCHAR**) sh_mem_mutex, sizeof(mtx));
+	unmapObject(statusVector, (UCHAR**) &sh_mem_mutex, sizeof(mtx));
 #endif
 
 	munmap((char *) getHeader(), sh_mem_length_mapped);
