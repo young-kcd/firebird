@@ -2,6 +2,11 @@
   * v2.5 Release Candidate 3
   **************************
 
+    * Bugfix CORE-3067
+        Shared files not unmapped when shared memory is closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3046
         Assertion after ALTER TABLE
       Contributor(s):
