@@ -2895,18 +2895,19 @@ void ISC_unmap_object(ISC_STATUS * status_vector,
 /* Get system page size as this is the unit of mapping. */
 
 #ifdef SOLARIS
-	const SLONG page_size = sysconf(_SC_PAGESIZE);
-	if (page_size == -1) {
+	const SLONG ps = sysconf(_SC_PAGESIZE);
+	if (ps == -1) {
 		error(status_vector, "sysconf", errno);
 		return; // false;
 	}
 #else
-	const SLONG page_size = (int) getpagesize();
-	if (page_size == -1) {
+	const SLONG ps = (int) getpagesize();
+	if (ps == -1) {
 		error(status_vector, "getpagesize", errno);
 		return; // false;
 	}
 #endif
+    const size_t page_size = (ULONG) ps;
 
 /* Compute the start and end page-aligned addresses which
    contain the mapped object. */
@@ -2916,7 +2917,7 @@ void ISC_unmap_object(ISC_STATUS * status_vector,
 		(UCHAR
 		 *) ((U_IPTR) ((*object_pointer + object_length) +
 					   (page_size - 1)) & ~(page_size - 1));
-	const SLONG length = end - start;
+	const size_t length = end - start;
 
 	if (munmap((char *) start, length) == -1) {
 		error(status_vector, "munmap", errno);
