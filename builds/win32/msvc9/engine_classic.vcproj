@@ -807,9 +807,13 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\jrd\recsrc\VirtualTableScan.cpp"
+					RelativePath="..\..\..\src\jrd\recsrc\UsersTableScan.cpp"
 					>
 				</File>
+				<File
+					RelativePath="..\..\..\src\jrd\recsrc\VirtualTableScan.cpp"
+					>
+				</File>				
 				<File
 					RelativePath="..\..\..\src\jrd\recsrc\WindowedStream.cpp"
 					>
