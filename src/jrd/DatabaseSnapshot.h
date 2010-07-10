@@ -43,7 +43,7 @@ class DataDump
 public:
 	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING};
 
-	DataDump(MemoryPool& pool)
+	explicit DataDump(MemoryPool& pool)
 		: idMap(pool), idCounter(0) { }
 
 	struct DumpField

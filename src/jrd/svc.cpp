@@ -1925,7 +1925,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// Only need to add username and password information to those calls which need
 	// to make a database connection
 
-	bool flNeedUser = (svc_id == isc_action_svc_backup ||
+	const bool flNeedUser = (svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_nbak ||
 		svc_id == isc_action_svc_nrest ||
@@ -1938,7 +1938,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_trace_resume ||
 		svc_id == isc_action_svc_trace_list);
 
-	bool flGsecUser = (svc_id == isc_action_svc_add_user ||
+	const bool flGsecUser = (svc_id == isc_action_svc_add_user ||
 		svc_id == isc_action_svc_delete_user ||
 		svc_id == isc_action_svc_modify_user ||
 		svc_id == isc_action_svc_display_user ||
