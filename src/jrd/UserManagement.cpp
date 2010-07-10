@@ -39,7 +39,7 @@ using namespace Firebird;
 
 
 UserManagement::UserManagement(jrd_tra* tra)
-	: DataDump(*tra->tra_pool), database(0), transaction(0), buffer(0), 
+	: DataDump(*tra->tra_pool), database(0), transaction(0), buffer(0),
 	  threadDbb(NULL), realUser(NULL), commands(*tra->tra_pool)
 {
 	Attachment* att = tra->tra_attachment;
@@ -128,13 +128,12 @@ USHORT UserManagement::put(internal_user_data* userData)
 
 void UserManagement::checkSecurityResult(int errcode, ISC_STATUS* status, const char* userName)
 {
-	Arg::StatusVector tmp;
-
 	if (!errcode)
 	{
 	    return;
 	}
 
+	Arg::StatusVector tmp;
 	tmp << Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC));
 	if (errcode == GsecMsg22)
 	{
@@ -175,7 +174,7 @@ void UserManagement::execute(USHORT id)
 
 void UserManagement::display(void* arg, const internal_user_data* u, bool/*firstTime*/)
 {
-	UserManagement* instance = reinterpret_cast<UserManagement*>(arg);
+	UserManagement* instance = static_cast<UserManagement*>(arg);
 	fb_assert(instance && instance->buffer);
 
 	instance->display(u);
@@ -189,32 +188,32 @@ void UserManagement::display(const internal_user_data* u)
 	int attachment_charset = ttype_none;
 
 	if (u->user_name_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->user_name), u->user_name), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->user_name), u->user_name),
 				 attachment_charset);
 	if (u->group_name_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->group_name), u->group_name), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->group_name), u->group_name),
 				 attachment_charset);
 	if (u->uid_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &u->uid), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &u->uid),
 				 attachment_charset);
 	if (u->gid_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &u->gid), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &u->gid),
 				 attachment_charset);
 	if (u->first_name_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->first_name), u->first_name), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->first_name), u->first_name),
 				 attachment_charset);
 	if (u->middle_name_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middle_name), u->middle_name), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middle_name), u->middle_name),
 				 attachment_charset);
 	if (u->last_name_entered)
-		putField(threadDbb, record, 
-				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->last_name), u->last_name), 
+		putField(threadDbb, record,
+				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->last_name), u->last_name),
 				 attachment_charset);
 
 	buffer->store(record);
@@ -225,6 +224,7 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb)
 #ifdef EMBEDDED
 	// this restriction for embedded is temporarty and will gone when new build system will be introduced
 	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
+	return 0; // keep the compiler happy
 #else
 	if (buffer)
 	{
