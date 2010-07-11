@@ -144,69 +144,6 @@ void DYN_delete_dimensions(Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_exception( Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ e x c e p t i o n
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	deletes an exception.
- *
- **************************************/
-	Firebird::MetaName t;
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	GET_STRING(ptr, t);
-
-	AutoCacheRequest request(tdbb, drq_e_xcp, DYN_REQUESTS);
-
-	bool found = false;
-
-	try
-	{
-		found = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$EXCEPTIONS
-	        WITH X.RDB$EXCEPTION_NAME EQ t.c_str()
-		{
-			found = true;
-
-			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-				DDL_TRIGGER_DROP_EXCEPTION, t, gbl->sqlText);
-
-			ERASE X;
-		}
-		END_FOR
-	} // try
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 143);
-		// msg 143: "ERASE EXCEPTION failed"
-	}
-
-	if (found)
-	{
-		DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-			DDL_TRIGGER_DROP_EXCEPTION, t, gbl->sqlText);
-	}
-	else
-	{
-		DYN_error_punt(false, 144);
-		// msg 144: "Exception not found"
-	}
-
-	if (*(*ptr)++ != isc_dyn_end) {
-		DYN_unsupported_verb();
-	}
-}
-
-
 void DYN_delete_filter( Global* gbl, const UCHAR** ptr)
 {
 /**************************************

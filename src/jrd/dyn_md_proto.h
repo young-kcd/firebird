@@ -25,7 +25,6 @@
 #define JRD_DYN_MD_PROTO_H
 
 void DYN_modify_database(Jrd::Global*, const UCHAR**);
-void DYN_modify_exception(Jrd::Global*, const UCHAR**);
 void DYN_modify_function(Jrd::Global*, const UCHAR**);
 void DYN_modify_index(Jrd::Global*, const UCHAR**);
 void DYN_modify_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);

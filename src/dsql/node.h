@@ -73,9 +73,6 @@ enum nod_t
 	nod_del_index,
 	nod_def_view,
 	nod_def_constraint,
-	nod_def_exception,
-	nod_mod_exception,
-	nod_del_exception,
 	nod_del_generator,
 	nod_def_filter,
 	nod_del_filter,
@@ -259,8 +256,6 @@ enum nod_t
 	nod_rows,	// ROWS support
 	nod_query_spec,
 	nod_equiv,  // IS DISTINCT FROM
-	nod_redef_exception, // RECREATE EXCEPTION
-	nod_replace_exception, // CREATE OR ALTER EXCEPTION
 	nod_mod_udf,
 	nod_strlen,
 	nod_trim,
@@ -330,10 +325,6 @@ enum node_args {
 	e_ary_array = 0,		// nod_array
 	e_ary_indices,
 	e_ary_count,
-
-	e_xcp_name = 0,			// nod_exception
-	e_xcp_text,
-	e_xcp_count,
 
 	e_blk_action = 0,		// nod_block
 	e_blk_errs,

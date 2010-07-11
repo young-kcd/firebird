@@ -1897,11 +1897,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_replace_view:
 	case nod_del_view:
 	case nod_def_constraint:
-	case nod_def_exception:
-	case nod_redef_exception:
-	case nod_mod_exception:
-	case nod_replace_exception:
-	case nod_del_exception:
 	case nod_grant:
 	case nod_revoke:
 	case nod_mod_database:
@@ -10291,21 +10286,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "del_trigger_msg";
 		break;
 */
-	case nod_def_exception:
-		verb = "def_exception";
-		break;
-	case nod_redef_exception:
-		verb = "redef_exception";
-		break;
-	case nod_mod_exception:
-		verb = "mod_exception";
-		break;
-	case nod_replace_exception:
-		verb = "replace_exception";
-		break;
-	case nod_del_exception:
-		verb = "del_exception";
-		break;
 	case nod_def_shadow:
 		verb = "def_shadow";
 		break;

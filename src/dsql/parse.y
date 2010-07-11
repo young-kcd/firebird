@@ -1288,21 +1288,44 @@ replace_clause
 
 // CREATE EXCEPTION
 
-exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_def_exception, (int) e_xcp_count, $1, $2); }
-		;
+exception_clause
+	: symbol_exception_name sql_string
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) CreateAlterExceptionNode(
+				getPool(), compilingText, toName($1), toString($2)));
+		}
+	;
 
-rexception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_redef_exception, (int) e_xcp_count, $1, $2); }
-		;
+rexception_clause
+	: symbol_exception_name sql_string
+		{
+			CreateAlterExceptionNode* createNode = FB_NEW(getPool()) CreateAlterExceptionNode(
+				getPool(), compilingText, toName($1), toString($2));
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateExceptionNode(
+				getPool(), compilingText, createNode));
+		}
+	;
 
-replace_exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_replace_exception, (int) e_xcp_count, $1, $2); }
-		;
+replace_exception_clause
+	: symbol_exception_name sql_string
+		{
+			CreateAlterExceptionNode* node = FB_NEW(getPool()) CreateAlterExceptionNode(
+				getPool(), compilingText, toName($1), toString($2));
+			node->alter = true;
+			$$ = makeClassNode(node);
+		}
+	;
 
-alter_exception_clause	: symbol_exception_name sql_string
-			{ $$ = make_node (nod_mod_exception, (int) e_xcp_count, $1, $2); }
-		;
+alter_exception_clause
+	: symbol_exception_name sql_string
+		{
+			CreateAlterExceptionNode* node = FB_NEW(getPool()) CreateAlterExceptionNode(
+				getPool(), compilingText, toName($1), toString($2));
+			node->create = false;
+			node->alter = true;
+			$$ = makeClassNode(node);
+		}
+	;
 
 
 // CREATE INDEX
@@ -3373,43 +3396,44 @@ drop		: DROP drop_clause
 			{ $$ = $2; }
 				;
 
-drop_clause	: EXCEPTION symbol_exception_name
-			{ $$ = make_node (nod_del_exception, 1, $2); }
-		| INDEX symbol_index_name
-			{ $$ = make_node (nod_del_index, (int) 1, $2); }
-		| PROCEDURE symbol_procedure_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropProcedureNode(getPool(), compilingText, toName($2))); }
-		| TABLE symbol_table_name
-			{ $$ = make_node (nod_del_relation, (int) 1, $2); }
-		| TRIGGER symbol_trigger_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropTriggerNode(getPool(), compilingText, toName($2))); }
-		| VIEW symbol_view_name
-			{ $$ = make_node (nod_del_view, (int) 1, $2); }
-		| FILTER symbol_filter_name
-			{ $$ = make_node (nod_del_filter, (int) 1, $2); }
-		| DOMAIN symbol_domain_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropDomainNode(getPool(), compilingText, toName($2))); }
-		| EXTERNAL FUNCTION symbol_UDF_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($3))); }
-		| FUNCTION symbol_UDF_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($2))); }
-		| SHADOW pos_short_integer
-			{ $$ = make_node (nod_del_shadow, (int) 1, (dsql_nod*)(IPTR) $2); }
-		| ROLE symbol_role_name
-			{ $$ = make_node (nod_del_role, (int) 1, $2); }
-		| GENERATOR symbol_generator_name
-			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
-		| SEQUENCE symbol_generator_name
-			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
-		| COLLATION symbol_collation_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropCollationNode(getPool(), compilingText, toName($2))); }
-		| USER drop_user_clause
-			{ $$ = $2; }
-		| PACKAGE symbol_package_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageNode(getPool(), compilingText, toName($2))); }
-		| PACKAGE BODY symbol_package_name
-			{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageBodyNode(getPool(), compilingText, toName($3))); }
-		;
+drop_clause
+	: EXCEPTION symbol_exception_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropExceptionNode(getPool(), compilingText, toName($2))); }
+	| INDEX symbol_index_name
+		{ $$ = make_node (nod_del_index, (int) 1, $2); }
+	| PROCEDURE symbol_procedure_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropProcedureNode(getPool(), compilingText, toName($2))); }
+	| TABLE symbol_table_name
+		{ $$ = make_node (nod_del_relation, (int) 1, $2); }
+	| TRIGGER symbol_trigger_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropTriggerNode(getPool(), compilingText, toName($2))); }
+	| VIEW symbol_view_name
+		{ $$ = make_node (nod_del_view, (int) 1, $2); }
+	| FILTER symbol_filter_name
+		{ $$ = make_node (nod_del_filter, (int) 1, $2); }
+	| DOMAIN symbol_domain_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropDomainNode(getPool(), compilingText, toName($2))); }
+	| EXTERNAL FUNCTION symbol_UDF_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($3))); }
+	| FUNCTION symbol_UDF_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), compilingText, toName($2))); }
+	| SHADOW pos_short_integer
+		{ $$ = make_node (nod_del_shadow, (int) 1, (dsql_nod*)(IPTR) $2); }
+	| ROLE symbol_role_name
+		{ $$ = make_node (nod_del_role, (int) 1, $2); }
+	| GENERATOR symbol_generator_name
+		{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+	| SEQUENCE symbol_generator_name
+		{ $$ = make_node (nod_del_generator, (int) 1, $2); }
+	| COLLATION symbol_collation_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropCollationNode(getPool(), compilingText, toName($2))); }
+	| USER drop_user_clause
+		{ $$ = $2; }
+	| PACKAGE symbol_package_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageNode(getPool(), compilingText, toName($2))); }
+	| PACKAGE BODY symbol_package_name
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageBodyNode(getPool(), compilingText, toName($3))); }
+	;
 
 
 // these are the allowable datatypes

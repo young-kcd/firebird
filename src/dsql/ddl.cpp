@@ -126,7 +126,6 @@ static void define_del_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const 
 	const dsql_nod*, const char*, const char*);
 //static void define_del_default_trg(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, TEXT*, TEXT*);
 static void define_dimensions(DsqlCompilerScratch*, const dsql_fld*);
-static void define_exception(DsqlCompilerScratch*, NOD_TYPE);
 static void define_field(DsqlCompilerScratch*, dsql_nod*, SSHORT, const dsql_str*, const dsql_nod* pkcols);
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
@@ -145,7 +144,6 @@ static void define_upd_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const 
 	const dsql_nod*, const char*, const char*);
 static void define_view(DsqlCompilerScratch*, NOD_TYPE);
 static void define_view_trigger(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*);
-static void delete_exception(DsqlCompilerScratch*, dsql_nod*, bool);
 static void delete_relation_view(DsqlCompilerScratch*, dsql_nod*, bool);
 static const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements);
 static ULONG find_start_of_body(const dsql_str* string);
@@ -261,7 +259,7 @@ void DDL_execute(dsql_req* request)
 			if (!string)
 				string = (dsql_str*) statement->getDdlNode()->nod_arg[e_alt_name];
 			sym_type = SYM_relation;
-			METD_drop_relation(request->getTransaction(), string);
+			METD_drop_relation(request->getTransaction(), string->str_data);
 			break;
 
 		case nod_del_udf:
@@ -1420,53 +1418,6 @@ static void define_dimensions( DsqlCompilerScratch* dsqlScratch, const dsql_fld*
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_arr_range_error));
 		}
 	}
-}
-
-
-static void define_exception( DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
-{
-/**************************************
- *
- *	d e f i n e _ e x c e p t i o n
- *
- **************************************
- *
- * Function
- *	Generate ddl to create an exception code.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	const dsql_nod* ddl_node = statement->getDdlNode();
-	const dsql_str* name = (dsql_str*) ddl_node->nod_arg[e_xcp_name];
-
-	switch (op)
-	{
-	case nod_replace_exception:
-		if (METD_get_exception(dsqlScratch->getTransaction(), name)) {
-			define_exception(dsqlScratch, nod_mod_exception);
-		}
-		else {
-			define_exception(dsqlScratch, nod_def_exception);
-		}
-		break;
-
-	case nod_def_exception:
-	case nod_redef_exception:
-		dsqlScratch->appendNullString(isc_dyn_def_exception, name->str_data);
-		break;
-
-	case nod_mod_exception:
-		dsqlScratch->appendNullString(isc_dyn_mod_exception, name->str_data);
-		break;
-
-	default:
-		fb_assert(false);
-	}
-
-	const dsql_str* text = (dsql_str*) ddl_node->nod_arg[e_xcp_text];
-	fb_assert(text->str_length <= MAX_USHORT);
-	dsqlScratch->appendString(isc_dyn_xcp_msg, text->str_data, text->str_length);
-	dsqlScratch->appendUChar(isc_dyn_end);
 }
 
 
@@ -3010,33 +2961,6 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 }
 
 
-static void delete_exception (DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool silent_deletion)
-{
-/**************************************
- *
- *	d e l e t e _ e x c e p t i o n
- *
- **************************************
- *
- * Function
- *  Do nothing and don't throw error if the exception doesn't exist
- *  and silent_deletion is true.
- *
- **************************************/
-	const dsql_str* string = (dsql_str*) node->nod_arg[0];
-	fb_assert(string);
-	if (node->nod_type == nod_redef_exception || silent_deletion)
-	{
-		if (!METD_get_exception(dsqlScratch->getTransaction(), string)) {
-			return;
-		}
-	}
-
-	dsqlScratch->appendNullString(isc_dyn_del_exception, string->str_data);
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 static void delete_relation_view (DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool silent_deletion)
 {
 /**************************************
@@ -3282,23 +3206,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		delete_relation_view(dsqlScratch, node, true); // silent.
 		define_view(dsqlScratch, node->nod_type);
 		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_def_exception:
-	case nod_mod_exception:
-	case nod_replace_exception:
-		define_exception(dsqlScratch, node->nod_type);
-		break;
-
-	case nod_redef_exception:
-		dsqlScratch->appendUChar(isc_dyn_begin);
-		delete_exception(dsqlScratch, node, true);	// silent
-		define_exception(dsqlScratch, node->nod_type);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_del_exception:
-		delete_exception(dsqlScratch, node, false);	// no silent
 		break;
 
 	case nod_def_constraint:
@@ -4228,7 +4135,7 @@ static void modify_relation(DsqlCompilerScratch* dsqlScratch)
 	}	// try
 	catch (const Exception&)
 	{
-		METD_drop_relation(dsqlScratch->getTransaction(), relation_name);
+		METD_drop_relation(dsqlScratch->getTransaction(), relation_name->str_data);
 		dsqlScratch->relation = 0;
 		throw;
 	}

@@ -213,7 +213,7 @@ void METD_drop_procedure(jrd_tra* transaction, const QualifiedName& name)
 }
 
 
-void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
+void METD_drop_relation(jrd_tra* transaction, const MetaName& name)
 {
 /**************************************
  *
@@ -234,14 +234,13 @@ void METD_drop_relation(jrd_tra* transaction, const dsql_str* name)
 	thread_db* tdbb = JRD_get_thread_data();
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
 
-	MetaName metaName(name->str_data, name->str_length);
 	dsql_rel* relation;
 
-	if (dbb->dbb_relations.get(metaName, relation))
+	if (dbb->dbb_relations.get(name, relation))
 	{
-		MET_dsql_cache_use(tdbb, SYM_relation, metaName);
+		MET_dsql_cache_use(tdbb, SYM_relation, name);
 		relation->rel_flags |= REL_dropped;
-		dbb->dbb_relations.remove(metaName);
+		dbb->dbb_relations.remove(name);
 	}
 }
 

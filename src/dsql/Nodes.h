@@ -121,8 +121,8 @@ protected:
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
 	void putType(const TypeClause& type, bool useSubType);
 	void resetContextStack();
-	Firebird::MetaName storeGlobalField(thread_db* tdbb, jrd_tra* transaction,
-		const TypeClause& field, Firebird::MetaName& name);
+	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, const TypeClause& field,
+		Firebird::MetaName& name);
 
 protected:
 	virtual DdlNode* internalDsqlPass()

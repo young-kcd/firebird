@@ -670,6 +670,81 @@ public:
 };
 
 
+class CreateAlterExceptionNode : public DdlNode
+{
+public:
+	explicit CreateAlterExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName, const Firebird::string& aMessage)
+		: DdlNode(p, sqlText),
+		  name(p, aName),
+		  message(p, aMessage),
+		  create(true),
+		  alter(false)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+private:
+	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	Firebird::MetaName name;
+	Firebird::string message;
+	bool create;
+	bool alter;
+};
+
+
+class DropExceptionNode : public DdlNode
+{
+public:
+	explicit DropExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName)
+		: DdlNode(p, sqlText),
+		  name(p, aName),
+		  silent(false)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+public:
+	Firebird::MetaName name;
+	bool silent;
+};
+
+
+class RecreateExceptionNode : public DdlNode
+{
+public:
+	explicit RecreateExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
+				CreateAlterExceptionNode* aCreateNode)
+		: DdlNode(p, sqlText),
+		  createNode(aCreateNode),
+		  dropNode(p, sqlText, createNode->name)
+	{
+		dropNode.silent = true;
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual DdlNode* internalDsqlPass();
+
+private:
+	CreateAlterExceptionNode* createNode;
+	DropExceptionNode dropNode;
+};
+
+
 class CreateSequenceNode : public DdlNode
 {
 public:

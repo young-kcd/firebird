@@ -50,7 +50,7 @@ void METD_drop_charset(Jrd::jrd_tra*, const Firebird::MetaName&);
 void METD_drop_collation(Jrd::jrd_tra*, const Firebird::MetaName&);
 void METD_drop_function(Jrd::jrd_tra*, const Firebird::QualifiedName&);
 void METD_drop_procedure(Jrd::jrd_tra*, const Firebird::QualifiedName&);
-void METD_drop_relation(Jrd::jrd_tra*, const Jrd::dsql_str*);
+void METD_drop_relation(Jrd::jrd_tra*, const Firebird::MetaName&);
 
 Jrd::dsql_intlsym* METD_get_charset(Jrd::jrd_tra*, USHORT, const char* name);
 USHORT METD_get_charset_bpc(Jrd::jrd_tra*, SSHORT);

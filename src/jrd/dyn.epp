@@ -395,18 +395,6 @@ void DYN_execute(Global* gbl,
 		DYN_delete_relation(gbl, ptr, relation_name);
 		break;
 
-	case isc_dyn_def_exception:
-		DYN_define_exception(gbl, ptr);
-		break;
-
-	case isc_dyn_mod_exception:
-		DYN_modify_exception(gbl, ptr);
-		break;
-
-	case isc_dyn_del_exception:
-		DYN_delete_exception(gbl, ptr);
-		break;
-
 	case isc_dyn_def_filter:
 		DYN_define_filter(gbl, ptr);
 		break;
