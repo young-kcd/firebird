@@ -403,7 +403,7 @@ Statement* Connection::createStatement(const string& sql)
 		}
 	}
 
-	if (m_freeStatements)
+	if (m_free_stmts >= MAX_CACHED_STMTS)
 	{
 		Statement* stmt = m_freeStatements;
 		m_freeStatements = stmt->m_nextFree;
