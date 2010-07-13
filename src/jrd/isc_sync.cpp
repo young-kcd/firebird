@@ -2397,7 +2397,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
  **************************************/
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
-	const ULONG page_size = sys_info.dwAllocationGranularity;
+	const size_t page_size = sys_info.dwAllocationGranularity;
 
 	// Compute the start and end page-aligned offsets which
 	// contain the object being mapped.
