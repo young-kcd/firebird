@@ -423,9 +423,6 @@
     <ClCompile Include="..\..\..\src\gpre\pretty.cpp">
       <Filter>GPRE files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\recsrc\UsersTableScan.cpp">
-      <Filter>JRD files\Data Access</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\acl.h">

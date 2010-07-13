@@ -221,7 +221,6 @@
     <ClCompile Include="..\..\..\src\jrd\PreparedStatement.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RandomGenerator.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RecordBuffer.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\recsrc\UsersTableScan.cpp" />
     <ClCompile Include="..\..\..\src\jrd\Relation.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ResultSet.cpp" />
     <ClCompile Include="..\..\..\src\jrd\rlck.cpp" />

@@ -68,9 +68,6 @@ void VirtualTableScan::open(thread_db* tdbb) const
 	}
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
-
-	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
-	impure->irsb_record_buffer = snapshot->getData(relation);
 }
 
 void VirtualTableScan::close(thread_db* tdbb) const
@@ -84,7 +81,6 @@ void VirtualTableScan::close(thread_db* tdbb) const
 	if (impure->irsb_flags & irsb_open)
 	{
 		impure->irsb_flags &= ~irsb_open;
-		impure->irsb_record_buffer = NULL;
 	}
 }
 
@@ -102,9 +98,7 @@ bool VirtualTableScan::getRecord(thread_db* tdbb) const
 
 	rpb->rpb_number.increment();
 
-	fb_assert(impure->irsb_record_buffer);
-
-	if (impure->irsb_record_buffer->fetch(rpb->rpb_number.getValue(), rpb->rpb_record))
+	if (retrieveRecord(tdbb, rpb->rpb_relation, rpb->rpb_number.getValue(), rpb->rpb_record))
 	{
 		rpb->rpb_number.setValid(true);
 		return true;

@@ -71,9 +71,17 @@ using namespace Firebird;
 using namespace Jrd;
 
 
-// SharedData class
+bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
+										 FB_UINT64 position, Record* record) const
+{
+	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
+	return snapshot->getData(relation)->fetch(position, record);
+}
 
-DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
+
+// MonitoringData class
+
+MonitoringData::MonitoringData(const Database* dbb)
 	: process_id(getpid()), local_id(dbb->dbb_monitoring_id)
 {
 	string name;
@@ -91,10 +99,10 @@ DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 }
 
 
-DatabaseSnapshot::SharedData::~SharedData()
+MonitoringData::~MonitoringData()
 {
 	{ // scope
-		DumpGuard guard(this);
+		Guard guard(this);
 		cleanup();
 
 		if (sh_mem_header->used == sizeof(Header))
@@ -106,7 +114,7 @@ DatabaseSnapshot::SharedData::~SharedData()
 }
 
 
-void DatabaseSnapshot::SharedData::acquire()
+void MonitoringData::acquire()
 {
 	mutexLock();
 
@@ -126,13 +134,13 @@ void DatabaseSnapshot::SharedData::acquire()
 }
 
 
-void DatabaseSnapshot::SharedData::release()
+void MonitoringData::release()
 {
 	mutexUnlock();
 }
 
 
-UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
+UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 {
 	ULONG self_dbb_offset = 0;
 
@@ -198,7 +206,7 @@ UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 }
 
 
-ULONG DatabaseSnapshot::SharedData::setup()
+ULONG MonitoringData::setup()
 {
 	ensureSpace(sizeof(Element));
 
@@ -214,7 +222,7 @@ ULONG DatabaseSnapshot::SharedData::setup()
 }
 
 
-void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void* buffer)
+void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
 {
 	ensureSpace(length);
 
@@ -229,7 +237,7 @@ void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void*
 }
 
 
-void DatabaseSnapshot::SharedData::cleanup()
+void MonitoringData::cleanup()
 {
 	// Remove information about our dbb
 	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
@@ -252,7 +260,7 @@ void DatabaseSnapshot::SharedData::cleanup()
 }
 
 
-void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
+void MonitoringData::ensureSpace(ULONG length)
 {
 	ULONG newSize = sh_mem_header->used + length;
 
@@ -274,7 +282,7 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 }
 
 
-void DatabaseSnapshot::SharedData::mutexBug(int osErrorCode, const char* string)
+void MonitoringData::mutexBug(int osErrorCode, const char* string)
 {
 	gds__log("MONITOR: mutex %s error, status = %d", string, osErrorCode);
 
@@ -283,7 +291,7 @@ void DatabaseSnapshot::SharedData::mutexBug(int osErrorCode, const char* string)
 }
 
 
-bool DatabaseSnapshot::SharedData::initialize(bool initialize)
+bool MonitoringData::initialize(bool initialize)
 {
 	if (initialize)
 	{
@@ -299,10 +307,11 @@ bool DatabaseSnapshot::SharedData::initialize(bool initialize)
 }
 
 
-ULONG DatabaseSnapshot::SharedData::alignOffset(ULONG unaligned)
+ULONG MonitoringData::alignOffset(ULONG unaligned)
 {
-	return Firebird::MEM_ALIGN(unaligned);
+	return (ULONG) Firebird::MEM_ALIGN(unaligned);
 }
+
 
 // DatabaseSnapshot class
 
@@ -424,7 +433,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	{ // scope
 		fb_assert(dbb->dbb_monitoring_data);
-		DumpGuard guard(dbb->dbb_monitoring_data);
+		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 		dataPtr = dbb->dbb_monitoring_data->read(pool, dataSize);
 	}
 
@@ -589,7 +598,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 	jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
-	fb_assert(relation->isVirtual() && !relation->isUsers());
+	fb_assert(relation->isVirtual());
 	Format* format = MET_current(tdbb, relation);
 	fb_assert(format);
 
@@ -613,7 +622,7 @@ void DataDump::clearRecord(Record* record)
 
 
 void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
-								int& charset, bool set_charset)
+						int& charset, bool set_charset)
 {
 	fb_assert(record);
 
@@ -726,10 +735,10 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	if (!dbb->dbb_monitoring_data)
 	{
-		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) SharedData(dbb);
+		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) MonitoringData(dbb);
 	}
 
-	DumpGuard guard(dbb->dbb_monitoring_data);
+	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup();
 
 	Writer writer(dbb->dbb_monitoring_data);
@@ -905,7 +914,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 
 
 bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
-	Writer& writer, int stat_id)
+									 Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
 

@@ -29,6 +29,7 @@
 #include "../jrd/isc_s_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../jrd/val.h"
+#include "../jrd/recsrc/RecordSource.h"
 
 namespace Jrd {
 
@@ -199,6 +200,90 @@ private:
 	int idCounter;
 };
 
+
+class MonitoringHeader : public MemoryHeader
+{
+public:
+	ULONG used;
+	ULONG allocated;
+};
+
+class MonitoringData : public SharedMemory<MonitoringHeader>
+{
+	static const ULONG MONITOR_VERSION = 3;
+	static const ULONG DEFAULT_SIZE = 1048576;
+
+	typedef MonitoringHeader Header;
+
+	struct Element
+	{
+		SLONG processId;
+		SLONG localId;
+		ULONG length;
+	};
+
+	static ULONG alignOffset(ULONG absoluteOffset);
+
+public:
+	class Guard
+	{
+	public:
+		explicit Guard(MonitoringData* ptr)
+			: data(ptr)
+		{
+			data->acquire();
+		}
+
+		~Guard()
+		{
+			data->release();
+		}
+
+	private:
+		Guard(const Guard&);
+		Guard& operator=(const Guard&);
+
+		MonitoringData* const data;
+	};
+
+	explicit MonitoringData(const Database*);
+	~MonitoringData();
+
+	bool initialize(bool);
+	void mutexBug(int osErrorCode, const char* text);
+
+	void acquire();
+	void release();
+
+	UCHAR* read(MemoryPool&, ULONG&);
+	ULONG setup();
+	void write(ULONG, ULONG, const void*);
+
+	void cleanup();
+
+private:
+	// copying is prohibited
+	MonitoringData(const MonitoringData&);
+	MonitoringData& operator =(const MonitoringData&);
+
+	void ensureSpace(ULONG);
+
+	const SLONG process_id;
+	const SLONG local_id;
+};
+
+
+class MonitoringTableScan: public VirtualTableScan
+{
+public:
+	MonitoringTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream)
+		: VirtualTableScan(csb, name, stream)
+	{}
+
+	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
+};
+
+
 class DatabaseSnapshot : public DataDump
 {
 	struct RelationData
@@ -207,83 +292,11 @@ class DatabaseSnapshot : public DataDump
 		RecordBuffer* data;
 	};
 
-public:
-	class SnapshotHeader : public MemoryHeader
-	{
-	public:
-		ULONG used;
-		ULONG allocated;
-	};
-
-	class SharedData : public SharedMemory<SnapshotHeader>
-	{
-		static const ULONG MONITOR_VERSION = 3;
-		static const ULONG DEFAULT_SIZE = 1048576;
-
-		typedef SnapshotHeader Header;
-
-		struct Element
-		{
-			SLONG processId;
-			SLONG localId;
-			ULONG length;
-		};
-
-		static ULONG alignOffset(ULONG absoluteOffset);
-
-	public:
-		explicit SharedData(const Database*);
-		~SharedData();
-
-		bool initialize(bool);
-		void mutexBug(int osErrorCode, const char* text);
-
-		void acquire();
-		void release();
-
-		UCHAR* read(MemoryPool&, ULONG&);
-		ULONG setup();
-		void write(ULONG, ULONG, const void*);
-
-		void cleanup();
-
-	private:
-		// copying is prohibited
-		SharedData(const SharedData&);
-		SharedData& operator =(const SharedData&);
-
-		void ensureSpace(ULONG);
-
-		const SLONG process_id;
-		const SLONG local_id;
-	};
-
 private:
-	class DumpGuard
-	{
-	public:
-		explicit DumpGuard(SharedData* ptr)
-			: data(ptr)
-		{
-			data->acquire();
-		}
-
-		~DumpGuard()
-		{
-			data->release();
-		}
-
-	private:
-		DumpGuard(const DumpGuard&);
-		DumpGuard& operator=(const DumpGuard&);
-
-		SharedData* const data;
-	};
-
 	class Writer
 	{
 	public:
-		explicit Writer(SharedData* data)
+		explicit Writer(MonitoringData* data)
 			: dump(data)
 		{
 			fb_assert(dump);
@@ -299,7 +312,7 @@ private:
 		}
 
 	private:
-		SharedData* dump;
+		MonitoringData* dump;
 		ULONG offset;
 	};
 
@@ -338,6 +351,7 @@ public:
 
 	static DatabaseSnapshot* create(thread_db*);
 	static int blockingAst(void*);
+	static bool getRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record);
 
 protected:
 	DatabaseSnapshot(thread_db*, MemoryPool&);

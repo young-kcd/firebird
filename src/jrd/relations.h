@@ -606,7 +606,7 @@ RELATION(nam_users, rel_users, ODS_12_0, rel_persistent)
 END_RELATION
 
 // Relation 44 (SEC$USERS)
-RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_vrt_users)
+RELATION(nam_sec_users, rel_sec_users, ODS_12_0, rel_virtual)
 	FIELD(f_sec_user_name, nam_user_name, fld_user, 1, ODS_12_0)
 	FIELD(f_sec_group_name, nam_group_name, fld_user, 1, ODS_12_0)
 	FIELD(f_sec_uid, nam_uid, fld_uid, 1, ODS_12_0)

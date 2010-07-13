@@ -28,6 +28,7 @@
 #include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
 #include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/recsrc/RecordSource.h"
 
 struct internal_user_data;
 
@@ -36,6 +37,16 @@ namespace Jrd {
 class thread_db;
 class jrd_tra;
 class RecordBuffer;
+
+class UsersTableScan: public VirtualTableScan
+{
+public:
+	UsersTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream)
+		: VirtualTableScan(csb, name, stream)
+	{}
+
+	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
+};
 
 // User management argument for deferred work
 class UserManagement : public DataDump
@@ -51,7 +62,7 @@ public:
 	// commit transaction in security database
 	void commit();
 	// return users list for SEC$USERS
-	RecordBuffer* getList(thread_db* tdbb);
+	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 
 private:
 	FB_API_HANDLE database, transaction;

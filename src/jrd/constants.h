@@ -202,8 +202,7 @@ enum rel_t {
 	rel_external = 2,
 	rel_virtual = 3,
 	rel_global_temp_preserve = 4,
-	rel_global_temp_delete = 5,
-	rel_vrt_users = 6
+	rel_global_temp_delete = 5
 };
 
 // procedure types

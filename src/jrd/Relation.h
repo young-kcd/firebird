@@ -219,7 +219,6 @@ public:
 	bool isSystem() const;
 	bool isTemporary() const;
 	bool isVirtual() const;
-	bool isUsers() const;
 
 	// global temporary relations attributes
 	RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
@@ -299,7 +298,6 @@ const ULONG REL_deleting				= 0x1000;	// relation delete in progress
 const ULONG REL_temp_tran				= 0x2000;	// relation is a GTT delete rows
 const ULONG REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const ULONG REL_virtual					= 0x8000;	// relation is virtual
-const ULONG REL_users					= 0x00010000;	// relation is users list
 
 
 inline bool jrd_rel::isSystem() const
@@ -314,12 +312,7 @@ inline bool jrd_rel::isTemporary() const
 
 inline bool jrd_rel::isVirtual() const
 {
-	return (rel_flags & (REL_virtual | REL_users));
-}
-
-inline bool jrd_rel::isUsers() const
-{
-	return (rel_flags & REL_users);
+	return (rel_flags & REL_virtual);
 }
 
 inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)

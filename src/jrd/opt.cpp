@@ -56,6 +56,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/sort.h"
 #include "../jrd/rse.h"
+#include "../jrd/ini.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/btr_proto.h"
@@ -76,6 +77,8 @@
 #include "../jrd/dbg_proto.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/VirtualTable.h"
+#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/UserManagement.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../jrd/recsrc/RecordSource.h"
@@ -3045,9 +3048,9 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		DEV_BLKCHK(*return_boolean, type_nod);
 	}
 
-	CompilerScratch* csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	jrd_rel* relation = csb_tail->csb_relation;
+	CompilerScratch* const csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
+	jrd_rel* const relation = csb_tail->csb_relation;
 
 	fb_assert(relation);
 
@@ -3074,15 +3077,17 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// External table
 		rsb = FB_NEW(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream);
 	}
-	else if (relation->isUsers())
-	{
-		// Users table
-		rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream);
-	}
 	else if (relation->isVirtual())
 	{
-		// Virtual table
-		rsb = FB_NEW(*tdbb->getDefaultPool()) VirtualTableScan(csb, alias, stream);
+		// Virtual table: monitoring or security
+		if (relation->rel_id == rel_sec_users)
+		{
+			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream);
+		}
+		else
+		{
+			rsb = FB_NEW(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream);
+		}
 	}
 	else
 	{

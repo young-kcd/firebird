@@ -28,11 +28,6 @@
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
 
-namespace Ods
-{
-	struct btree_page;
-}
-
 namespace Jrd
 {
 	class thread_db;
@@ -281,11 +276,6 @@ namespace Jrd
 
 	class VirtualTableScan : public RecordStream
 	{
-		struct Impure : public RecordSource::Impure
-		{
-			RecordBuffer* irsb_record_buffer;
-		};
-
 	public:
 		VirtualTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
 
@@ -298,28 +288,9 @@ namespace Jrd
 
 		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
-	private:
-		const Firebird::string m_name;
-	};
-
-	class UsersTableScan : public RecordStream
-	{
-		struct Impure : public RecordSource::Impure
-		{
-			RecordBuffer* irsb_record_buffer;
-		};
-
-	public:
-		UsersTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream);
-
-		void open(thread_db* tdbb) const;
-		void close(thread_db* tdbb) const;
-
-		bool getRecord(thread_db* tdbb) const;
-		bool refetchRecord(thread_db* tdbb) const;
-		bool lockRecord(thread_db* tdbb) const;
-
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+	protected:
+		virtual bool retrieveRecord(thread_db* tdbb, jrd_rel* relation,
+									FB_UINT64 position, Record* record) const = 0;
 
 	private:
 		const Firebird::string m_name;

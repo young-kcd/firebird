@@ -54,7 +54,6 @@
 #include "../common/classes/PublicHandle.h"
 #include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
-#include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
@@ -79,6 +78,7 @@ namespace Jrd
 	class BackupManager;
 	class vcl;
     class ExternalFileDirectoryList;
+	class MonitoringData;
 
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
@@ -368,7 +368,7 @@ public:
 	trig_vec*	dbb_triggers[DB_TRIGGER_MAX];
 	trig_vec*	dbb_ddl_triggers;
 
-	DatabaseSnapshot::SharedData*	dbb_monitoring_data;	// monitoring data
+	MonitoringData*	dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
  	ExtEngineManager dbb_extManager;	// external engine manager

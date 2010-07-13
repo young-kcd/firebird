@@ -38,6 +38,14 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
+									FB_UINT64 position, Record* record) const
+{
+	jrd_tra* const transaction = tdbb->getTransaction();
+	return transaction->getUserManagement()->getList(tdbb, relation)->fetch(position, record);
+}
+
+
 UserManagement::UserManagement(jrd_tra* tra)
 	: DataDump(*tra->tra_pool), database(0), transaction(0), buffer(0),
 	  threadDbb(NULL), realUser(NULL), commands(*tra->tra_pool)
@@ -219,51 +227,44 @@ void UserManagement::display(const internal_user_data* u)
 	buffer->store(record);
 }
 
-RecordBuffer* UserManagement::getList(thread_db* tdbb)
+RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 {
 #ifdef EMBEDDED
 	// this restriction for embedded is temporarty and will gone when new build system will be introduced
 	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
 	return 0; // keep the compiler happy
 #else
-	if (buffer)
+	if (!buffer)
 	{
-		return buffer;
-	}
+		try
+		{
+			threadDbb = tdbb;
 
-	try
-	{
-		threadDbb = tdbb;
+			fb_assert(relation && relation->rel_id == rel_sec_users);
 
-		jrd_rel* relation = MET_lookup_relation_id(threadDbb, rel_sec_users, false);
-		fb_assert(relation);
+			MET_scan_relation(threadDbb, relation);
 
-		MET_scan_relation(threadDbb, relation);
-		fb_assert(relation->isUsers());
+			Format* const format = MET_current(threadDbb, relation);
+			fb_assert(format);
 
-		Format* format = MET_current(threadDbb, relation);
-		fb_assert(format);
+			MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
+			fb_assert(pool);
 
-		MemoryPool* pool = threadDbb->getTransaction()->tra_pool;
-		fb_assert(pool);
+			buffer = FB_NEW(*pool) RecordBuffer(*pool, format);
+			fb_assert(buffer);
 
-		buffer = FB_NEW(*pool) RecordBuffer(*pool, format);
-		fb_assert(buffer);
-
-		ISC_STATUS_ARRAY status;
-		internal_user_data u;
-		u.operation = DIS_OPER;
-		int errcode = SECURITY_exec_line(status, realUser, database, transaction, &u, display, this);
-		checkSecurityResult(errcode, status, u.user_name);
-	}
-	catch (const Exception&)
-	{
-		if (buffer)
+			ISC_STATUS_ARRAY status;
+			internal_user_data u;
+			u.operation = DIS_OPER;
+			int errcode = SECURITY_exec_line(status, realUser, database, transaction, &u, display, this);
+			checkSecurityResult(errcode, status, u.user_name);
+		}
+		catch (const Exception&)
 		{
 			delete buffer;
 			buffer = NULL;
+			throw;
 		}
-		throw;
 	}
 
 	return buffer;
