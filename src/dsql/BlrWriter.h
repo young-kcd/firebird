@@ -79,35 +79,35 @@ public:
 		size_t len = strlen(string);
 
 		// CVC: Maybe the Release version should truncate "len" to 255?
-		fb_assert(len >= 0 && len <= 255);
+		fb_assert(len <= MAX_UCHAR);
 
-		appendUChar(len);
-		appendBytes(reinterpret_cast<const UCHAR*>(string), len);
+		appendUChar(static_cast<USHORT>(len));
+		appendBytes(reinterpret_cast<const UCHAR*>(string), static_cast<USHORT>(len));
 	}
 
 	// Write out a string valued attribute.
 	void appendNullString(UCHAR verb, const char* string)
 	{
-		const USHORT length = string ? strlen(string) : 0;
+		const USHORT length = string ? static_cast<USHORT>(strlen(string)) : 0;
 		appendString(verb, string, length);
 	}
 
 	// Write out a string in metadata charset with one byte of length.
 	void appendMetaString(const char* string)
 	{
-		appendString(0, string, strlen(string));
+		appendString(0, string, static_cast<USHORT>(strlen(string)));
 	}
 
 	void appendString(UCHAR verb, const char* string, USHORT len);
 
 	void appendString(UCHAR verb, const Firebird::MetaName& name)
 	{
-		appendString(verb, name.c_str(), name.length());
+		appendString(verb, name.c_str(), static_cast<USHORT>(name.length()));
 	}
 
 	void appendString(UCHAR verb, const Firebird::string& name)
 	{
-		appendString(verb, name.c_str(), name.length());
+		appendString(verb, name.c_str(), static_cast<USHORT>(name.length()));
 	}
 
 	void appendNumber(UCHAR verb, SSHORT number);
