@@ -53,7 +53,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		recsrc/MergeJoin.cpp recsrc/NestedLoopJoin.cpp \
 		recsrc/ProcedureScan.cpp recsrc/RecordSource.cpp recsrc/RecursiveStream.cpp \
 		recsrc/SingularStream.cpp recsrc/SkipRowsStream.cpp recsrc/SortedStream.cpp recsrc/Union.cpp \
-		recsrc/VirtualTableScan.cpp recsrc/UsersTableScan.cpp recsrc/WindowedStream.cpp
+		recsrc/VirtualTableScan.cpp recsrc/WindowedStream.cpp
 
 JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
 JRD_ServerSources += gpre/pretty.cpp
