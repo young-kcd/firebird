@@ -80,16 +80,16 @@ struct internal_user_data
 	TEXT	last_name [NAME_LEN];			// the user's last name
 	bool	last_name_entered;				// last name entered flag
 	bool	last_name_specified;			// last name specified flag
-	TEXT	dba_user_name [USER_NAME_LEN];	// the user's name
-	bool	dba_user_name_entered;			// user name entered flag
-	bool	dba_user_name_specified;		// database specified flag
+	TEXT	dba_user_name [USER_NAME_LEN];	// the dba user's name
+	bool	dba_user_name_entered;			// dba user name entered flag
+	bool	dba_user_name_specified;		// dba user name specified flag
 	TEXT	dba_trust_user_name [USER_NAME_LEN];	// the trusted dba user's name
 	bool	dba_trust_user_name_entered;	// trusted dba user name entered flag
 	bool	dba_trust_user_name_specified;	// trusted dba user name specified flag
 	bool	trusted_role;					// use trusted role to authenticate
-	TEXT	dba_password [NAME_LEN];		// the user's name
-	bool	dba_password_entered;			// user name entered flag
-	bool	dba_password_specified;			// database specified flag
+	TEXT	dba_password [NAME_LEN];		// the dba user's password
+	bool	dba_password_entered;			// dba password entered flag
+	bool	dba_password_specified;			// dba password specified flag
 	TEXT	sql_role_name [NAME_LEN];		// the user's role
 	bool	sql_role_name_entered;			// role entered flag
 	bool	sql_role_name_specified;		// role specified flag
