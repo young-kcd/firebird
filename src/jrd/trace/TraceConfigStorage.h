@@ -127,7 +127,7 @@ private:
 	struct mtx* m_mutex;
 	int  m_cfg_file;
 	bool m_dirty;
-	Firebird::Semaphore m_touchStartSem;
+	Firebird::Semaphore m_touchStartStop;
 	Firebird::AnyRef<Firebird::Semaphore>* m_touchSemaphore;
 	Firebird::Reference  m_touchSemRef;
 };

@@ -131,7 +131,7 @@ ConfigStorage::ConfigStorage() :
 		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
 			gds__log("Trace facility: can't start touch thread");
 		else
-			m_touchStartSem.enter();
+			m_touchStartStop.tryEnter(3);
 	}
 }
 
@@ -139,6 +139,7 @@ ConfigStorage::~ConfigStorage()
 {
 	// signal touchThread to finish
 	m_touchSemaphore->Semaphore::release();
+	m_touchStartStop.tryEnter(3);
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
@@ -317,6 +318,10 @@ THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
 {
 	ConfigStorage* storage = (ConfigStorage*) arg;
 	storage->touchThreadFunc();
+
+	// release start/stop semaphore only here to avoid problems 
+	// with dtors of local varoables in touchThreadFunc()
+	storage->m_touchStartStop.release();
 	return 0;
 }
 
@@ -326,7 +331,7 @@ void ConfigStorage::touchThreadFunc()
 	AnyRef<Semaphore>* semaphore = m_touchSemaphore;
 	Reference semRef(*semaphore);
 
-	m_touchStartSem.release();
+	m_touchStartStop.release();
 
 	int delay = TOUCH_INTERVAL / 2;
 	while (!semaphore->tryEnter(delay))
