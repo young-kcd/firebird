@@ -85,7 +85,7 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HA
 }
 
 
-static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans, 
+static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
 						ISC_QUAD& blobId, const Firebird::string& passwd)
 {
 	UserBlob blob(isc_status);
@@ -98,6 +98,7 @@ static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE 
 
 	if (!blob.putData(passwd.length(), passwd.c_str()))
 	{
+		blob.close();
 		return false;
 	}
 
@@ -105,7 +106,7 @@ static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE 
 }
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char *realUser,
+						  const char* realUser,
 						  FB_API_HANDLE DB,
 						  FB_API_HANDLE trans,
 						  internal_user_data* io_user_data,
@@ -544,7 +545,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 }
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char *realUser,
+						  const char* realUser,
 						  FB_API_HANDLE DB,
 						  internal_user_data* io_user_data,
 						  FPTR_SECURITY_CALLBACK display_func,

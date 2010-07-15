@@ -278,7 +278,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				uSvc->started();
 			if (! useServices)
 			{
-				ret = SECURITY_exec_line(status, tdsec->tsec_real_user, 
+				ret = SECURITY_exec_line(status, tdsec->tsec_real_user,
 										 db_handle, user_data, data_print, NULL);
 				if (ret)
 				{

@@ -1925,7 +1925,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	// Only need to add username and password information to those calls which need
 	// to make a database connection
 
-	const bool flNeedUser = (svc_id == isc_action_svc_backup ||
+	const bool flNeedUser =
+		svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
 		svc_id == isc_action_svc_nbak ||
 		svc_id == isc_action_svc_nrest ||
@@ -1936,15 +1937,16 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_trace_stop ||
 		svc_id == isc_action_svc_trace_suspend ||
 		svc_id == isc_action_svc_trace_resume ||
-		svc_id == isc_action_svc_trace_list);
+		svc_id == isc_action_svc_trace_list;
 
-	const bool flGsecUser = (svc_id == isc_action_svc_add_user ||
+	const bool flGsecUser =
+		svc_id == isc_action_svc_add_user ||
 		svc_id == isc_action_svc_delete_user ||
 		svc_id == isc_action_svc_modify_user ||
 		svc_id == isc_action_svc_display_user ||
 		svc_id == isc_action_svc_display_user_adm ||
 		svc_id == isc_action_svc_set_mapping ||
-		svc_id == isc_action_svc_drop_mapping);
+		svc_id == isc_action_svc_drop_mapping;
 
 	if (flNeedUser || flGsecUser)
 	{
@@ -1974,7 +1976,6 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			}
 		}
 	}
-
 
 	// All services except for get_ib_log require switches
 	spb.rewind();

@@ -196,33 +196,53 @@ void UserManagement::display(const internal_user_data* u)
 	int attachment_charset = ttype_none;
 
 	if (u->user_name_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->user_name), u->user_name),
 				 attachment_charset);
+	}
+
 	if (u->group_name_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->group_name), u->group_name),
 				 attachment_charset);
+	}
+
 	if (u->uid_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &u->uid),
 				 attachment_charset);
+	}
+
 	if (u->gid_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &u->gid),
 				 attachment_charset);
+	}
+
 	if (u->first_name_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->first_name), u->first_name),
 				 attachment_charset);
+	}
+
 	if (u->middle_name_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middle_name), u->middle_name),
 				 attachment_charset);
+	}
+
 	if (u->last_name_entered)
+	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->last_name), u->last_name),
 				 attachment_charset);
+	}
 
 	buffer->store(record);
 }

@@ -33,4 +33,3 @@ SSHORT	SECURITY_exec_line (ISC_STATUS* isc_status, const char* realUser, FB_API_
 							void* callback_arg);
 
 #endif // UTILITIES_SECUR_PROTO_H
-
