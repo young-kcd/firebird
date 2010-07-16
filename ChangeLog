@@ -1,3 +1,251 @@
+2010-07-14 12:31  alexpeshkoff
+
+	* firebird2/src/jrd/trace/: TraceConfigStorage.cpp (1.30.2.8),
+	TraceConfigStorage.h (1.10.2.6):
+
+	Fixed unregistred bug (rc3 vs rc2 regression) - races when closing
+	touchThread
+
+2010-07-13 09:13  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.19):
+
+	Update.
+
+2010-07-13 09:08  dimitr
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.45.2.4):
+
+	Backported recent Vlad's bugfix.
+
+2010-07-13 08:55  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.221.2.8):
+
+	Mirror the recent Alex's change for Windows. It doesn't seem being
+	strictly required, but let's be safe.
+
+2010-07-09 15:12  alexpeshkoff
+
+	* firebird2/doc/WhatsNew (1.190.2.26):
+
+	Updated WhatsNew
+
+2010-07-09 14:03  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.221.2.7):
+
+	Backported fix for CORE-3067: Objects not unmapped when shared
+	memory is closed
+
+2010-07-08 12:31  dimitr
+
+	* firebird2/src/common/classes/fb_pair.h (1.18.2.1):
+
+	Fixed the old bug which was left unnoticed until RC3 where
+	Pair<MetaName, MetaName> was used as a key for a b-tree.  At the
+	first glance, it promises only wrong ordering of items, but in fact
+	it trashes the b-tree internals and crashes the server :-( It's
+	unregistered and undocumented, but being a very recent RC3 only
+	regression, let's leave it this way.  I suppose the intended code
+	should be !(v.first < this->first), but we have the operator ==
+	defined, so I used a simpler form.
+
+2010-07-02 12:31  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.458.2.5):
+
+	Fixed CORE-3064: Using the procedure alias inside an explicit plan
+	crashes the server.
+
+2010-06-26 03:26  asfernandes
+
+	* firebird2/doc/WhatsNew (1.190.2.25):
+
+	Credits
+
+2010-06-25 11:04  dimitr
+
+	* firebird2/: src/jrd/isc_version.h (1.10.2.18), doc/WhatsNew
+	(1.190.2.24):
+
+	Update.
+
+2010-06-23 15:28  hvlad
+
+	* firebird2/src/remote/server.cpp (1.264.2.3):
+
+	Disable hard limit on number of worker threads. Something more
+	smart should be implemented instead.
+
+2010-06-18 13:24  asfernandes
+
+	* firebird2/src/jrd/unicode_util.cpp (1.53.2.1):
+
+	Fix problem seen by Vlad where crash happens when our older ICU is
+	found
+
+2010-06-16 14:05  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.307.2.4):
+
+	Fixed CORE-2900 - "AV - The code attempted to access a virtual
+	address without privilege to do so" using aggregate distinct
+
+2010-06-15 14:20  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.307.2.3):
+
+	Backported fix for CORE-3046: Assertion after ALTER TABLE
+
+2010-06-14 13:44  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.242.2.7), jrd.cpp (1.565.2.15),
+	jrd.h (1.270.2.3):
+
+	Fixed bug CORE-3034 : Bugchek 300 (can't find shared latch)
+
+2010-06-13 17:00  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.352.2.5):
+
+	Backport fix for CORE-2893 - Expression in a subquery may be
+	treated as invariant and produce incorrect results
+
+2010-06-12 21:23  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.283.2.5):
+
+	Backported fix for CORE-2985 - The new 2.5 feature to alter
+	COMPUTED columns doesn't handle dependencies well
+
+2010-06-12 20:23  asfernandes
+
+	* firebird2/src/: common/classes/MetaName.h (1.11.2.1),
+	dsql/metd_proto.h (1.33.2.1), jrd/exe.h (1.138.2.3), jrd/par.cpp
+	(1.246.2.5):
+
+	Backport fix for CORE-3038 - The insert failed because a column
+	definition includes validation.
+
+2010-06-08 16:31  paulbeach
+
+	* firebird2/: builds/posix/postfix.darwin (1.17.2.3),
+	builds/posix/prefix.darwin_i386 (1.16.2.3),
+	builds/posix/prefix.darwin_x86_64 (1.13.2.3),
+	extern/icu/source/config/mh-darwin (1.6.2.2):
+
+	Grand Central Dispatch means 10.6 only from 2.5 RC3
+
+2010-06-08 15:19  alexpeshkoff
+
+	* firebird2/src/common/classes/: semaphore.cpp (1.5.2.1),
+	semaphore.h (1.64.2.1):
+
+	Mac port - use dispatch semaphores
+
+2010-06-07 15:29  alexpeshkoff
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.119.2.4),
+	jrd/DatabaseSnapshot.h (1.37.2.1), jrd/event.cpp (1.102.2.1),
+	jrd/event_proto.h (1.21.2.1), jrd/isc.h (1.44.2.5),
+	jrd/isc_s_proto.h (1.30.2.2), jrd/isc_sync.cpp (1.221.2.6),
+	jrd/trace/TraceConfigStorage.cpp (1.30.2.7),
+	jrd/trace/TraceConfigStorage.h (1.10.2.5), jrd/trace/TraceLog.cpp
+	(1.14.2.2), jrd/trace/TraceLog.h (1.8.2.1), lock/lock.cpp
+	(1.207.2.3), lock/lock_proto.h (1.32.2.1):
+
+	Much better test for CORE-3021: Segfault in DEV_BUILD
+
+2010-05-28 16:38  alexpeshkoff
+
+	* firebird2/src/jrd/isc_version.h (1.10.2.17):
+
+	Change build number
+
+2010-05-28 16:32  hvlad
+
+	* firebird2/doc/WhatsNew (1.190.2.23):
+
+	Update
+
+2010-05-28 09:13  alexpeshkoff
+
+	* firebird2/src/jrd/isc.h (1.44.2.4):
+
+	Fix (at least temporary) for CORE-3021: Segfault in DEV_BUILD
+
+2010-05-26 17:47  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.gentoo.in
+	(1.11.2.1):
+
+	Fixed CORE-3019: Startup failure of SS and SC on linux gentoo
+
+2010-05-26 15:17  hvlad
+
+	* firebird2/doc/WhatsNew (1.190.2.22):
+
+	Update documentation
+
+2010-05-26 14:29  hvlad
+
+	* firebird2/doc/WhatsNew (1.190.2.21):
+
+	Update documentation
+
+2010-05-26 14:13  hvlad
+
+	* firebird2/src/common/classes/alloc.cpp (1.128.2.2):
+
+	Fixed bug CORE-3010 : First connect to any database shows
+	MON$MEMORY_USED = 4Gb
+
+2010-05-26 13:33  alexpeshkoff
+
+	* firebird2/src/jrd/: isc.h (1.44.2.3), isc_sync.cpp (1.221.2.5):
+
+	Corrections for CORE-3017
+
+2010-05-26 11:46  hvlad
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.119.2.3),
+	trace/TraceConfigStorage.cpp (1.30.2.6):
+
+	Fixed bug CORE-3017 : Files left at Firebird's lock directory
+
+2010-05-26 11:42  hvlad
+
+	* firebird2/src/jrd/cch.cpp (1.242.2.6):
+
+	Fixed bug CORE-3016 : On disconnect it is possible to see "Fatal
+	lock manager error: invalid lock id (0), errno: 0" in firebird.log
+
+2010-05-26 11:39  hvlad
+
+	* firebird2/src/jrd/: isc_s_proto.h (1.30.2.1), isc_sync.cpp
+	(1.221.2.4):
+
+	Fixed bug CORE-3015 : Various "Cannot initialize the shared memory
+	region" errors
+
+2010-05-23 19:06  dimitr
+
+	* firebird2/src/jrd/: Database.h (1.42.2.3), DatabaseSnapshot.cpp
+	(1.119.2.2), jrd.cpp (1.565.2.14):
+
+	More complete solution for CORE-2993 : Fatal lock manager error
+	"Invalid lock id (NNN)" while working with monitoring tables on a
+	highly loaded system.
+
+2010-05-23 18:19  dimitr
+
+	* firebird2/src/jrd/jrd.cpp (1.565.2.13):
+
+	Fixed CORE-3011: Server hangs or crashes while monitoring
+	connections repeatedly attaching and detaching.
+
 2010-05-21 17:35  dimitr
 
 	* firebird2/doc/WhatsNew (1.190.2.20):
@@ -33610,8 +33858,7 @@
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.3), cch.cpp (1.160):
 
-	Small NBAK performance optimization from Rom
-an Simakov
+	Small NBAK performance optimization from Roman Simakov
 
 2007-05-04 16:48  asfernandes
 
