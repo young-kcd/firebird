@@ -96,8 +96,10 @@
 #ifdef WIN_NT
 #include <process.h>
 #define MUTEX		&m_shmemMutex
+#define MUTEX_PTR   NULL
 #else
 #define MUTEX		m_lhb_mutex
+#define MUTEX_PTR   &m_lhb_mutex
 #endif
 
 #ifdef DEV_BUILD
@@ -1162,7 +1164,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		remap_local_owners();
 		// Remap the shared memory region
 		ISC_STATUS_ARRAY status_vector;
-		lhb* const header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, false);
+		lhb* const header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, false, 
+												  MUTEX_PTR);
 		if (header)
 			m_header = header;
 		else
@@ -1264,7 +1267,7 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 		remap_local_owners();
 		// Remap the shared memory region
 		const ULONG new_length = m_shmem.sh_mem_length_mapped + m_memorySize;
-		lhb* header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, true);
+		lhb* header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, true, MUTEX_PTR);
 		if (header)
 		{
 			m_header = header;
@@ -2338,7 +2341,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 
 	if (!initializeMemory) {
 #ifndef WIN_NT
-		if (ISC_map_mutex(shmem_data, &m_header->lhb_mutex, &(MUTEX))) {
+		if (ISC_map_mutex(shmem_data, &m_header->lhb_mutex, MUTEX_PTR)) {
 			bug(NULL, "mutex map failed");
 		}
 #endif
@@ -2360,7 +2363,7 @@ void LockManager::initialize(sh_mem* shmem_data, bool initializeMemory)
 	SRQ_INIT(m_header->lhb_free_requests);
 
 #ifndef WIN_NT
-	if (ISC_mutex_init(shmem_data, &m_header->lhb_mutex, &(MUTEX))) {
+	if (ISC_mutex_init(shmem_data, &m_header->lhb_mutex, MUTEX_PTR)) {
 		bug(NULL, "mutex init failed");
 	}
 #endif

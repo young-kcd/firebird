@@ -115,7 +115,7 @@ public:
 
 	void enter()
 	{
-		dispatch_semaphore_wait(semaphore);
+		dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 	}
 
 	void release(SLONG count = 1)

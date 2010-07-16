@@ -120,7 +120,7 @@ void DatabaseSnapshot::SharedData::acquire()
 	{
 #if (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false);
+		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false, &mutex);
 		if (!base)
 		{
 			status_exception::raise(statusVector);
@@ -268,7 +268,7 @@ void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true, &mutex);
 		if (!base)
 		{
 			status_exception::raise(statusVector);
