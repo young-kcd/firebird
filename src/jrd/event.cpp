@@ -60,8 +60,10 @@
 #include <process.h>
 #include <windows.h>
 #define MUTEX		&m_mutex
+#define MUTEX_PTR	NULL
 #else
 #define MUTEX		m_mutex
+#define MUTEX_PTR	&m_mutex
 #endif
 
 #define SRQ_BASE                  ((UCHAR*) m_header)
@@ -566,7 +568,7 @@ evh* EventManager::acquire_shmem()
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, length, false);
+		header = (evh*) ISC_remap_file(local_status, &m_shmemData, length, false, MUTEX_PTR);
 #endif
 		if (!header)
 		{
@@ -620,7 +622,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 		ISC_STATUS_ARRAY local_status;
-		header = (evh*) ISC_remap_file(local_status, &m_shmemData, ev_length, true);
+		header = (evh*) ISC_remap_file(local_status, &m_shmemData, ev_length, true, MUTEX_PTR);
 #endif
 		if (header)
 		{
@@ -1119,7 +1121,7 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 	if (!initialize)
 	{
 #ifndef WIN_NT
-		if ( (mutex_state = ISC_map_mutex(shmem_data, &m_header->evh_mutex, &MUTEX)) )
+		if ( (mutex_state = ISC_map_mutex(shmem_data, &m_header->evh_mutex, MUTEX_PTR)) )
 			mutex_bugcheck("mutex map", mutex_state);
 #endif
 		return;
@@ -1133,7 +1135,7 @@ void EventManager::init_shmem(sh_mem* shmem_data, bool initialize)
 	SRQ_INIT(m_header->evh_events);
 
 #ifndef WIN_NT
-	if ( (mutex_state = ISC_mutex_init(shmem_data, &m_header->evh_mutex, &MUTEX)) )
+	if ( (mutex_state = ISC_mutex_init(shmem_data, &m_header->evh_mutex, MUTEX_PTR)) )
 		mutex_bugcheck("mutex init", mutex_state);
 #endif
 

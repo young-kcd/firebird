@@ -71,7 +71,7 @@ void	ISC_sync_signals_reset();
 ULONG	ISC_exception_post(ULONG, const TEXT*);
 #endif
 
-UCHAR*	ISC_remap_file(ISC_STATUS*, struct sh_mem*, ULONG, bool);
+UCHAR*	ISC_remap_file(ISC_STATUS*, struct sh_mem*, ULONG, bool, struct mtx**);
 void	ISC_unmap_file(ISC_STATUS*, struct sh_mem*);
 
 void	ISC_remove_map_file(const TEXT* filename);

@@ -523,7 +523,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (LOCK_header->lhb_length > shmem_data.sh_mem_length_mapped)
 		{
 			const ULONG length = LOCK_header->lhb_length;
-			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false);
+			LOCK_header = (lhb*) ISC_remap_file(status_vector, &shmem_data, length, false, NULL);
 		}
 #endif
 

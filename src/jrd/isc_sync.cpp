@@ -553,13 +553,22 @@ namespace {
 			}
 		}
 
-		static void remap(UCHAR* const from, UCHAR* to, int newLength)
+		static void remap(UCHAR* const from, UCHAR* to, int newLength, struct mtx** mtxPtr)
 		{
 			MutexLockGuard guard(mutex);
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
 			{
 				if (from == sharedFiles[n].from)
 				{
+					if (mtxPtr)
+					{
+						UCHAR* m = (UCHAR*)(*mtxPtr);
+						if (m >= sharedFiles[n].from && m < sharedFiles[n].to)
+						{
+							m = to + (m - sharedFiles[n].from);
+							*mtxPtr = (struct mtx*)m;
+						}
+					}
 					sharedFiles[n].from = to;
 					sharedFiles[n].to = to + newLength;
 					return;
@@ -2415,7 +2424,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
 {
-#ifdef HAVE_MAP_OBJECT
+#if defined(HAVE_MAP_OBJECT) && (!defined(USE_SYS5SEMAPHORE))
 	ISC_STATUS_ARRAY temp;
 	mutex = reinterpret_cast<mtx*>(ISC_map_object(temp, shmem_data,
 			reinterpret_cast<UCHAR*>(mutex) - shmem_data->sh_mem_address, sizeof(mtx)));
@@ -2432,7 +2441,7 @@ int ISC_map_mutex(sh_mem* shmem_data, mtx* mutex, mtx** mapped)
 
 void ISC_unmap_mutex(mtx* mutex)
 {
-#ifdef HAVE_MAP_OBJECT
+#if defined(HAVE_MAP_OBJECT) && (!defined(USE_SYS5SEMAPHORE))
 	ISC_STATUS_ARRAY temp;
 	ISC_unmap_object(temp, reinterpret_cast<UCHAR**>(&mutex), sizeof(mtx));
 	if (mutex)
@@ -3190,7 +3199,8 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 					  sh_mem* shmem_data,
 					  ULONG new_length,
-					  bool flag)
+					  bool flag,
+					  struct mtx** mutex)
 {
 /**************************************
  *
@@ -3210,11 +3220,12 @@ UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 	if ((U_IPTR) address == (U_IPTR) -1)
 		return NULL;
 
+#ifdef USE_SYS5SEMAPHORE
+	SharedFile::remap(shmem_data->sh_mem_address, address, new_length, mutex);
+#endif
+
 	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
 
-#ifdef USE_SYS5SEMAPHORE
-	SharedFile::remap(shmem_data->sh_mem_address, address, new_length);
-#endif
 	IPC_TRACE(("ISC_remap_file %p to %p %p\n", shmem_data->sh_mem_address, address, address + new_length));
 
 	shmem_data->sh_mem_address = address;
@@ -3237,7 +3248,8 @@ UCHAR *ISC_remap_file(ISC_STATUS* status_vector,
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 					  sh_mem* shmem_data,
 					  ULONG new_length,
-					  bool flag)
+					  bool flag,
+					  struct mtx** /*mutex*/)
 {
 /**************************************
  *
@@ -3340,7 +3352,8 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 						sh_mem* shmem_data,
 						ULONG new_length,
-						bool flag)
+						bool flag,
+						struct mtx** mutex)
 {
 /**************************************
  *
