@@ -123,7 +123,7 @@ namespace {
 	// from AuthSspi
 	char name1[] = "WIN_SSPI";
 	Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, name1> server1;
-	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name1> client1;
+//	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name1> client1;
 
 	// from LegacyClient
 	char name2[] = "LEGACY_AUTH";

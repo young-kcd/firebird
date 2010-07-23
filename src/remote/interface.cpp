@@ -68,6 +68,15 @@
 //#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/ImplementHelper.h"
 
+#ifdef WIN_NT
+#include "../auth/trusted/AuthSspi.h"
+
+namespace {
+	char name[] = "WIN_SSPI";
+	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name> client;
+}
+#endif
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
