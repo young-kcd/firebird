@@ -1958,7 +1958,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 				string auth = "-";
 				auth += TRUSTED_USER_SWITCH;
 				auth += ' ';
-				if (flGsecUser)
+				if (flGsecUser && svc_username != SYSDBA_USER_NAME)
 				{
 					// gsec service - gsec will take care itself about security
 					auth += SYSDBA_USER_NAME;
