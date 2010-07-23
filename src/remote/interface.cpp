@@ -68,6 +68,9 @@
 //#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/ImplementHelper.h"
 
+// hvlad: following code registering plugins is temporary and should be
+// moved at appropriate places
+
 #ifdef WIN_NT
 #include "../auth/trusted/AuthSspi.h"
 
