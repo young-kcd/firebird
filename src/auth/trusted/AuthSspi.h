@@ -99,16 +99,12 @@ class WinSspiServer : public ServerPlugin
 {
 public:
 	ServerInstance* instance();
-    void getName(const char** data, unsigned short* dataSize);
-    void release();
 };
 
 class WinSspiClient : public ClientPlugin
 {
 public:
 	ClientInstance* instance();
-    void getName(const char** data, unsigned short* dataSize);
-    void release();
 };
 
 class WinSspiServerInstance : public ServerInstance

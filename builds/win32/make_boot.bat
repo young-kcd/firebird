@@ -23,14 +23,15 @@ set ERRLEV=0
 @echo Creating directories
 @rmdir /s /q %FB_GEN_DIR% 2>nul
 :: Remove previously generated output, and recreate the directory hierarchy. Note the exceptions to the rule!
-for %%v in ( alice burp dsql gpre isql journal jrd misc msgs qli examples ) do (
+for %%v in ( alice auth burp dsql gpre isql journal jrd misc msgs qli examples ) do (
   if NOT "%%v"=="journal" (@mkdir %FB_GEN_DIR%\%%v )
 )
 
 @rmdir /s /q %FB_GEN_DIR%\utilities 2>nul
 @mkdir %FB_GEN_DIR%\utilities 2>nul
 @mkdir %FB_GEN_DIR%\utilities\gstat 2>nul
-@mkdir %FB_GEN_DIR%\utilities\gsec 2>nul
+
+@mkdir %FB_GEN_DIR%\auth\SecurityDatabase 2>nul
 
 ::=======
 call :btyacc

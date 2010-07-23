@@ -31,8 +31,10 @@
 #include "../common/classes/ImplementHelper.h"
 
 namespace {
+#ifndef WIN_NT
 	char name[] = "LEGACY_AUTH";
 	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, name> client;
+#endif
 }
 
 namespace Auth {

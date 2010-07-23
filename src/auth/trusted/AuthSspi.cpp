@@ -31,6 +31,15 @@
 
 #include "../common/classes/ClumpletReader.h"
 #include "../common/classes/Interface.h"
+#include "../common/classes/ImplementHelper.h"
+
+namespace {
+#ifndef WIN_NT
+    char name[] = "WIN_SSPI";
+    Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, name> server;
+    Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name> client;
+#endif
+}
 
 using namespace Firebird;
 
@@ -336,25 +345,6 @@ ClientInstance* WinSspiClient::instance()
 	return interfaceAlloc<WinSspiClientInstance>();
 }
 
-void WinSspiServer::getName(const char** data, unsigned short* dataSize)
-{
-	authName(data, dataSize);
-}
-
-void WinSspiClient::getName(const char** data, unsigned short* dataSize)
-{
-	authName(data, dataSize);
-}
-
-void WinSspiServer::release()
-{
-	interfaceFree(this);
-}
-
-void WinSspiClient::release()
-{
-	interfaceFree(this);
-}
 
 WinSspiServerInstance::WinSspiServerInstance()
 	: sspiData(*getDefaultMemoryPool())

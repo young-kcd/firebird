@@ -74,6 +74,7 @@ goto :EOF
 :MASTER_PROCESS
 @set GPRE=%FB_GEN_DIR%\gpre_embed
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
+@for %%i in (LegacyManagement) do @call :PREPROCESS auth/SecurityDatabase %%i
 @for %%i in (backup, restore, OdsDetection) do @call :PREPROCESS burp %%i
 @for %%i in (array, blob) do @call :PREPROCESS dsql %%i
 @for %%i in (metd) do @call :PREPROCESS dsql %%i -gds_cxx
@@ -85,7 +86,6 @@ goto :EOF
 @for %%i in (help, meta, proc, show) do @call :PREPROCESS qli %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
 @for %%i in (dba) do @call :PREPROCESS utilities/gstat %%i
-@for %%i in (security) do @call :PREPROCESS utilities/gsec %%i
 @for %%i in (stats) do @call :PREPROCESS utilities %%i
 @goto :EOF
 

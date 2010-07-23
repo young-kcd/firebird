@@ -350,6 +350,9 @@ EXPORTS
 	_isc_expand_dpb=isc_expand_dpb
 	_isc_event_block=isc_event_block
 
+	fb_register_plugin
+	fb_query_plugin
+
 ;-----------------
 ; OTHER FUNCTIONS
 ;-----------------
