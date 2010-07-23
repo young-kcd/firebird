@@ -29,8 +29,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GSEC_Other_Sources = jrd/isc_file.cpp jrd/ThreadData.cpp jrd/enc.cpp \
-					 jrd/sha.cpp jrd/guid.cpp
+GSEC_Other_Sources = jrd/isc_file.cpp jrd/ThreadData.cpp
 GSEC_Files =  gsec.cpp call_service.cpp gsecMain.cpp security.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))

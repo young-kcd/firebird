@@ -472,35 +472,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", buffer, length, true);
 	// DFW writes here
 	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", buffer, length, true);
-
-	// nobody except DBA should access it
-	acl = buffer;
-	*acl++ = ACL_version;
-	*acl++ = ACL_id_list;
-	*acl++ = id_person;
-
-	length = ownerName.length();
-	if (length > MAX_UCHAR)
-		length = MAX_UCHAR;
-
-	*acl++ = (UCHAR)length;
-	if (length)
-	{
-		const TEXT* p_1 = ownerName.c_str();
-		memcpy(acl, p_1, length);
-		acl += length;
-	}
-	*acl++ = ACL_end;
-	*acl++ = ACL_priv_list;
-	*acl++ = priv_protect;
-	*acl++ = priv_control;
-	*acl++ = priv_delete;
-	*acl++ = priv_write;
-	*acl++ = priv_read;
-	*acl++ = ACL_end;
-	*acl++ = ACL_end;
-	length = acl - buffer;
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$USERS", buffer, length, false);
 }
 
 

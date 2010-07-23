@@ -27,8 +27,12 @@
  *
  */
 
-#ifndef FB_AUTH_H
-#define FB_AUTH_H
+#ifndef FB_AUTHDBG_H
+#define FB_AUTHDBG_H
+
+//#define AUTH_DEBUG
+
+#ifdef AUTH_DEBUG
 
 #include "../auth/AuthInterface.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -38,41 +42,6 @@
 
 namespace Auth {
 
-bool legacy(Firebird::Plugin* plugin);
-
-class WriterImplementation : public WriterInterface, public Firebird::PermanentStorage
-{
-public:
-	WriterImplementation(Firebird::MemoryPool&, bool svcFlag);
-
-	void store(Firebird::ClumpletWriter& to);
-
-	void reset();
-	void add(const char* name, const char* method, const char* details);
-
-private:
-	Firebird::AuthWriter body;
-	unsigned int sequence;
-	unsigned char tag;
-};
-
-class DpbImplementation : public DpbInterface
-{
-public:
-	DpbImplementation(Firebird::ClumpletWriter& base);
-
-	int find(UCHAR tag);
-	void add(UCHAR tag, const void* bytes, unsigned int count);
-	void drop();
-
-private:
-	Firebird::ClumpletWriter* body;
-};
-
-#define AUTH_DEBUG
-
-#ifdef AUTH_DEBUG
-
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
@@ -80,14 +49,12 @@ class DebugServer : public ServerPlugin
 {
 public:
 	ServerInstance* instance();
-    void release();
 };
 
 class DebugClient : public ClientPlugin
 {
 public:
 	ClientInstance* instance();
-    void release();
 };
 
 class DebugServerInstance : public ServerInstance
@@ -121,9 +88,8 @@ private:
 	Firebird::string str;
 };
 
-#endif // AUTH_DEBUG
-
 } // namespace Auth
 
+#endif // AUTH_DEBUG
 
-#endif // FB_AUTH_H
+#endif // FB_AUTHDBG_H

@@ -15,15 +15,36 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * 
  * 2004.09.14 Alex Peshkoff - security changes, preventing ordinary users
  *		from access to other users crypted passwords and enabling modification
  *		of there own password. Originally suggested by Ivan Prenosil
  *		(see http://www.volny.cz/iprenosil/interbase/ for details).
  */
 
+/* Domain definitions */
+CREATE DOMAIN PLG$PASSWD AS VARCHAR(64) CHARACTER SET BINARY;
+
+COMMIT;
+
+
+/*  Table: RDB$USERS */
+CREATE TABLE PLG$USERS (
+	PLG$USER_NAME 		SEC$USER_NAME NOT NULL PRIMARY KEY,
+	PLG$GROUP_NAME		SEC$USER_NAME,
+	PLG$UID 			SEC$UID,
+	PLG$GID 			SEC$GID,
+	PLG$PASSWD 			PLG$PASSWD NOT NULL,
+	PLG$COMMENT 		RDB$DESCRIPTION,
+	PLG$FIRST_NAME 		SEC$NAME_PART,
+	PLG$MIDDLE_NAME		SEC$NAME_PART,
+	PLG$LAST_NAME		SEC$NAME_PART);
+
+COMMIT;
+
+
 /*	Needed record - with PASSWD = random + SHA1 (random + 'SYSDBA' + crypt('masterke')) */
-INSERT INTO RDB$USERS(RDB$USER_NAME, RDB$PASSWD, RDB$FIRST_NAME, RDB$MIDDLE_NAME, RDB$LAST_NAME)
+INSERT INTO PLG$USERS(PLG$USER_NAME, PLG$PASSWD, PLG$FIRST_NAME, PLG$MIDDLE_NAME, PLG$LAST_NAME)
 	VALUES ('SYSDBA', 'NLtwcs9LrxLMOYhG0uGM9i6KS7mf3QAKvFVpmRg=', 'Sql', 'Server', 'Administrator');
 
 COMMIT;

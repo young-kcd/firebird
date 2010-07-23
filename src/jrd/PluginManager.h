@@ -40,7 +40,7 @@ namespace Jrd {
 
 typedef Firebird::Pair<Firebird::Full<ConfigFile::KeyType, ConfigFile::String> > ConfigEntry;
 
-class PluginImpl : public Firebird::Plugin, public Firebird::GlobalStorage
+class PluginImpl : public Firebird::ExtEngPlugin, public Firebird::GlobalStorage
 {
 friend class PluginManager;
 

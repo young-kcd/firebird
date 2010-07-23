@@ -31,13 +31,13 @@
 
 #include "../common/classes/Interface.h"
 
+// This is temporal measure - see later
+struct internal_user_data;
+#include "../utilities/gsec/secur_proto.h"
+
 namespace Auth {
 
 enum Result {AUTH_SUCCESS, AUTH_CONTINUE, AUTH_FAILED, AUTH_MORE_DATA};
-
-class InterfaceBase : public Firebird::Interface
-{
-};
 
 class WriterInterface
 {
@@ -54,13 +54,7 @@ public:
 	virtual void drop() = 0;
 };
 
-class Plugin : public InterfaceBase
-{
-public:
-	virtual void getName(const char** data, unsigned short* dataSize) = 0;
-};
-
-class ServerInstance : public InterfaceBase
+class ServerInstance : public Firebird::Interface
 {
 public:
 	virtual Result startAuthentication(bool isService, const char* dbName,
@@ -71,13 +65,13 @@ public:
 	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 
-class ServerPlugin : public Plugin
+class ServerPlugin : public Firebird::Plugin
 {
 public:
 	virtual ServerInstance* instance() = 0;
 };
 
-class ClientInstance : public InterfaceBase
+class ClientInstance : public Firebird::Interface
 {
 public:
 	virtual Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb) = 0;
@@ -85,10 +79,20 @@ public:
 	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 
-class ClientPlugin : public Plugin
+class ClientPlugin : public Firebird::Plugin
 {
 public:
 	virtual ClientInstance* instance() = 0;
+};
+
+class ManagementPlugin : public Firebird::Plugin
+{
+public:
+	// work in progress - we must avoid both internal_user_data and callback function
+	virtual int execLine(ISC_STATUS* isc_status, const char *realUser, 
+						 FB_API_HANDLE db, FB_API_HANDLE trans,
+						 internal_user_data* io_user_data, 
+						 FPTR_SECURITY_CALLBACK display_func, void* callback_arg) = 0;
 };
 
 } // namespace Auth

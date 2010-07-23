@@ -27,10 +27,9 @@
 #  Contributor(s):
 # 
 #
+#
 ROOT=..
-ObjModuleType=superserver
-CXXFLAGS+= -DSUPERSERVER
-ArchType=super
+ObjModuleType=std
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -39,26 +38,43 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-SERVER_Other_sources = jrd/pwd.cpp jrd/sha.cpp
-SERVER_Other Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Other_sources))))
 
-SERVER_Files = $(OS_ServerFiles) server.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
-SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) \
-                 $(LIBFBSERVER_Objects) $(COMMON_Objects) $(SERVER_Other Objects)
+USER_MANAGEMENT_Files = LegacyManagement.epp
 
+USER_MANAGEMENT_Sources = $(addprefix auth/SecurityDatabase/, $(USER_MANAGEMENT_Files))
 
-.PHONY: fbserver
+USER_MANAGEMENT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(USER_MANAGEMENT_Sources))))
 
 
-fbserver : $(FB_SUPER_SERVER)
+MANAGEMENT_OTHER_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp common/classes/alloc.cpp \
+common/classes/locks.cpp common/classes/UserBlob.cpp common/classes/init.cpp common/classes/fb_string.cpp \
+common/fb_exception.cpp common/thd.cpp common/StatusArg.cpp
 
-$(FB_SUPER_SERVER):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_EXEC_EXPORT) $(LINK_FIREBIRD_SYMBOLS) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LIB_GUI) $(LINK_LIBS) $(ICU_LIBS)
 
-AllObjects = $(SERVER_Objects)
+MANAGEMENT_OTHER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(MANAGEMENT_OTHER_Sources))))
 
+
+MANAGEMENT_Objects = $(USER_MANAGEMENT_Objects) $(MANAGEMENT_OTHER_Objects)
+#$(FBCLASSES_ClientObjects) $(FBCOMMON_ClientObjects)
+#				  $(CONFIG_Objects) \
+#				  $(FBCLASSES_MsgObjects) \
+#				  $(FBCONFIG_Objects)
+
+
+AllObjects = $(MANAGEMENT_Objects)
 Dependencies = $(AllObjects:.o=.d)
+
+
+.PHONY: all user_management
+
+
+all : user_management
+
+user_management: $(MANAGEMENT)
+
+$(MANAGEMENT):	$(MANAGEMENT_Objects)
+	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(MANAGEMENT).0) -o $@ $^ $(LINK_PLUG_LIBS)
+
 
 include $(ROOT)/gen/make.shared.targets
 

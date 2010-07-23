@@ -70,7 +70,7 @@ DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
 DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))) $(FBCOMMON_ClientObjects)
 
 
-GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp \
+GSEC_Other_Sources = \
 jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
 common/config/ConfigCache.cpp common/config/dir_list.cpp \
 jrd/ThreadData.cpp $(OS_SPECIFIC_Sources)

@@ -29,11 +29,9 @@
 #ifndef FB_COMMON_CLASSES_INTERFACE
 #define FB_COMMON_CLASSES_INTERFACE
 
-//#include "../jrd/gds_proto.h"
-#include "../common/classes/alloc.h"
-
 namespace Firebird {
 
+// Regular interface, typically returned by plugin or other interface
 class Interface
 {
 public:
@@ -45,39 +43,31 @@ protected:
 	~Interface() { }
 };
 
-class AutoInterface
+// Plugin - single static instance of each plugin is created when plugin library is loaded
+class Plugin
 {
 public:
-	static void clear(Interface* ptr)
-	{
-		if (ptr)
-		{
-			ptr->release();
-		}
-	}
+	virtual const char* name() const = 0;
+	virtual unsigned int type() const = 0;
+
+	virtual void link(Plugin* chain) = 0;
+	virtual Plugin* next() const = 0;
+
+//	static const unsigned int YValve = 1;
+//	static const unsigned int Engine = 2;
+//	static const unsigned int Redirector = 3;
+	static const unsigned int AuthServer = 4;
+	static const unsigned int AuthClient = 5;
+	static const unsigned int UserManagement = 6;
 };
 
-template <typename T>
-T* interfaceAlloc()
+} // namespace Firebird
+
+extern "C"
 {
-	/***
-	void* ptr = gds__alloc(sizeof(T));
-	return new(ptr) T;
-	***/
- 	return FB_NEW(*getDefaultMemoryPool()) T;
+	// additional API functions
+	void ISC_EXPORT fb_register_plugin ( Firebird::Plugin* plugin );
+	Firebird::Plugin* ISC_EXPORT fb_query_plugin (unsigned int type, const char* name);
 }
-
-template <typename T>
-void interfaceFree(T* ptr)
-{
-	/***
-	delete((void*) 0) ptr;
-	gds__free(ptr);
-	***/
- 	delete ptr;
-}
-
-} // namespace Auth
-
 
 #endif // FB_COMMON_CLASSES_INTERFACE

@@ -64,8 +64,9 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/DbImplementation.h"
 #include "../auth/Auth.h"
-#include "../auth/SecurityDatabase/LegacyClient.h"
-#include "../auth/trusted/AuthSspi.h"
+//#include "../auth/SecurityDatabase/LegacyClient.h"
+//#include "../auth/trusted/AuthSspi.h"
+#include "../common/classes/ImplementHelper.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -5695,15 +5696,11 @@ namespace
 		explicit InitList(MemoryPool& p)
 			: HalfStaticArray<Auth::ClientPlugin*, 8>(p)
 		{
-			// this code will be replaced with known plugins scan
-			push(interfaceAlloc<Auth::SecurityDatabaseClient>());
-#ifdef TRUSTED_AUTH
-			push(interfaceAlloc<Auth::WinSspiClient>());
-#endif
-#ifdef AUTH_DEBUG
-			push(interfaceAlloc<Auth::DebugClient>());
-#endif
-
+			Firebird::Plugin* plugin;
+			while ( (plugin = fb_query_plugin(Firebird::Plugin::AuthClient, NULL)) )
+			{
+				push(reinterpret_cast<Auth::ClientPlugin*>(plugin));
+			}
 			// must be last
 			push(NULL);
 		}
@@ -5739,7 +5736,6 @@ static bool init(ISC_STATUS* user_status,
 
 	// current instance name
 	const char* nm;
-	USHORT len;
 
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
 	AutoPtr<Auth::ClientInstance, AutoInterface> currentInstance;
@@ -5754,7 +5750,7 @@ static bool init(ISC_STATUS* user_status,
 		{
 			// plugin may be used
 			currentInstance.reset(list[sequence]->instance());
-			list[sequence]->getName(&nm, &len);
+			nm = list[sequence]->name();
 
 			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
 			{
@@ -5861,7 +5857,7 @@ static bool init(ISC_STATUS* user_status,
 		if (n && n->cstr_length && currentInstance.hasData())
 		{
 			// if names match, do not reset instance
-			if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
+			if (strlen(nm) == n->cstr_length && memcmp(nm, n->cstr_address, n->cstr_length) == 0)
 			{
 				n = NULL;
 			}
@@ -5874,8 +5870,8 @@ static bool init(ISC_STATUS* user_status,
 
 			for (sequence = 0; list[sequence]; ++sequence)
 			{
-				list[sequence]->getName(&nm, &len);
-				if (len == n->cstr_length && memcmp(nm, n->cstr_address, len) == 0)
+				nm = list[sequence]->name();
+				if (strlen(nm) == n->cstr_length && memcmp(nm, n->cstr_address, n->cstr_length) == 0)
 				{
 					currentInstance.reset(list[sequence]->instance());
 					break;
@@ -5905,7 +5901,7 @@ static bool init(ISC_STATUS* user_status,
 		if (contFlag)
 		{
 			// continue auth
-			if (!currentInstance)
+			if (!currentInstance.hasData())
 			{
 				break;
 			}
@@ -5915,6 +5911,11 @@ static bool init(ISC_STATUS* user_status,
 			}
 		}
 
+
+		if (!currentInstance.hasData())
+		{
+			break;
+		}
 		// send answer (may be empty) to server
 		packet->p_operation = op_trusted_auth;
 		d = &packet->p_trau.p_trau_data;

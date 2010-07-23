@@ -134,7 +134,7 @@ CPU_OPTION = -j$(CPU)
 .PHONY: all firebird firebird_boot firebird_basic
 .PHONY: firebird_embedded firebird_server classic_programs super_programs
 .PHONY: firebird_super firebird_classic btyacc_binary
-.PHONY: fbtrace
+.PHONY: plugins2
 
 
 # The main targets are firebird_embedded or firebird_server
@@ -145,8 +145,8 @@ CPU_OPTION = -j$(CPU)
 
 firebird : firebird_@FIREBIRD_ARCH_TYPE@ $(PLATFORM_POSTBUILD_TARGET)
 
-firebird_classic firebird_embedded: firebird_basic classic_targets fbtrace
-firebird_super firebird_server: firebird_basic super_targets fbtrace
+firebird_classic firebird_embedded: firebird_basic classic_targets plugins2
+firebird_super firebird_server: firebird_basic super_targets plugins2
 
 
 
@@ -414,8 +414,9 @@ client_qli:
 
 #---------------------------------------------------------------------------
 
-fbtrace:
+plugins2:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.fbtrace
+	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.user.management
 
 
 #---------------------------------------------------------------------------

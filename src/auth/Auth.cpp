@@ -28,134 +28,7 @@
 #include "firebird.h"
 #include "../auth/Auth.h"
 #include "../jrd/ibase.h"
-
-#ifdef AUTH_DEBUG
-
-namespace
-{
-	void debugName(const char** data, unsigned short* dataSize)
-	{
-		// Construct a copy of the literal so we don't violate the constness.
-		// The caller can do anything with the pointer unless we change getName() signature.
-		static char name[] = "DEBUG_AUTH";
-		*data = name;
-		*dataSize = strlen(name);
-	}
-}
-
-namespace Auth {
-
-ServerInstance* DebugServer::instance()
-{
-	return interfaceAlloc<DebugServerInstance>();
-}
-
-ClientInstance* DebugClient::instance()
-{
-	return interfaceAlloc<DebugClientInstance>();
-}
-
-void DebugServer::getName(const char** data, unsigned short* dataSize)
-{
-	debugName(data, dataSize);
-}
-
-void DebugClient::getName(const char** data, unsigned short* dataSize)
-{
-	debugName(data, dataSize);
-}
-
-void DebugServer::release()
-{
-	interfaceFree(this);
-}
-
-void DebugClient::release()
-{
-	interfaceFree(this);
-}
-
-DebugServerInstance::DebugServerInstance()
-	: str(*getDefaultMemoryPool())
-{ }
-
-Result DebugServerInstance::startAuthentication(bool isService, const char* dbName,
-												const unsigned char* dpb, unsigned int dpbSize,
-												WriterInterface* writerInterface)
-{
-	str.erase();
-	Firebird::ClumpletReader rdr(isService ?
-		Firebird::ClumpletReader::spbList :
-		Firebird::ClumpletReader::dpbList, dpb, dpbSize);
-
-	if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
-	{
-		str.assign(rdr.getBytes(), rdr.getClumpLength());
-	}
-
-	str += '_';
-	return AUTH_MORE_DATA;
-}
-
-Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
-											   const unsigned char* data, unsigned int size)
-{
-	//fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
-	writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
-	return AUTH_SUCCESS;
-}
-
-void DebugServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = reinterpret_cast<const unsigned char*>(str.c_str());
-	*dataSize = str.length();
-	//fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
-}
-
-void DebugServerInstance::release()
-{
-	interfaceFree(this);
-}
-
-DebugClientInstance::DebugClientInstance()
-	: str(*getDefaultMemoryPool())
-{ }
-
-Result DebugClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
-{
-	str = "HAND";
-	if (dpb)
-	{
-		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth,
-					str.c_str(), str.length());
-		return AUTH_SUCCESS;
-	}
-	return AUTH_MORE_DATA;
-}
-
-Result DebugClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
-{
-	//fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
-	str.assign(data, size);
-	str += "SHAKE";
-	return AUTH_CONTINUE;
-}
-
-void DebugClientInstance::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = reinterpret_cast<const unsigned char*>(str.c_str());
-	*dataSize = str.length();
-	//fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
-}
-
-void DebugClientInstance::release()
-{
-	interfaceFree(this);
-}
-
-} // namespace Auth
-
-#endif // AUTH_DEBUG
+#include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
 
@@ -202,16 +75,13 @@ void DpbImplementation::drop()
 }
 
 
-bool legacy(Plugin* plugin)
+bool legacy(Firebird::Plugin* plugin)
 {
 	const char* legacyTrusted = "WIN_SSPI";
-	const short legLength = strlen(legacyTrusted);
-	const char* nm;
-	USHORT len;
+	const unsigned short legLength = strlen(legacyTrusted);
+	const char* nm = plugin->name();
 
-	plugin->getName(&nm, &len);
-
-	return len == legLength && memcmp(legacyTrusted, nm, legLength) == 0;
+	return strlen(nm) == legLength && memcmp(legacyTrusted, nm, legLength) == 0;
 }
 
 } // namespace Auth

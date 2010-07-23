@@ -764,7 +764,7 @@ public:
 } factory;
 
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Error* error, Plugin* plugin)
+extern "C" void FB_PLUGIN_ENTRY_POINT(Error* error, ExtEngPlugin* plugin)
 {
 	if (plugin->getLibraryName())
 		libraryName->assign(plugin->getLibraryName());

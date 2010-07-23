@@ -23,6 +23,7 @@
  */
 
 #include "firebird.h"
+#include "../common/classes/alloc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,16 +35,23 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/UserBlob.h"
+#include "../auth/SecurityDatabase/LegacyManagement.h"
+#include "../common/classes/ImplementHelper.h"
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
 
-static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
+namespace {
 
-static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
+Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
+
+// register plugin
+char name[] = "LEGACY_AUTH";
+Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, name> manage;
+
+bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
 	const internal_user_data* io_user_data)
 {
 	if (!io_user_data->admin_entered)
@@ -84,8 +92,8 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HA
 	return isc_status[1] == 0;
 }
 
-
-static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
+/*
+bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans, 
 						ISC_QUAD& blobId, const Firebird::string& passwd)
 {
 	UserBlob blob(isc_status);
@@ -98,15 +106,21 @@ static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE 
 
 	if (!blob.putData(passwd.length(), passwd.c_str()))
 	{
-		blob.close();
 		return false;
 	}
 
 	return blob.close();
 }
+ */
 
-SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char* realUser,
+} // anonymous namespace
+
+namespace Auth {
+
+// work in progress - we must avoid both internal_user_data and callback function
+
+int SecurityDatabaseManagement::execLine(ISC_STATUS* isc_status,
+						  const char *realUser,
 						  FB_API_HANDLE DB,
 						  FB_API_HANDLE trans,
 						  internal_user_data* io_user_data,
@@ -178,7 +192,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	SCHAR encrypted1[Auth::MAX_PASSWORD_LENGTH + 2];
 	Firebird::string encrypted2;
 	bool found;
-	SSHORT ret = 0;
+	int ret = 0;
 
 	// check for non-printable characters in user name
 	for (const TEXT* p = io_user_data->user_name; *p; p++)
@@ -220,63 +234,59 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		// this checks the "entered" flags for each parameter (except the name)
 		// and makes all non-entered parameters null valued
 
-		STORE (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN RDB$USERS USING
-			strcpy(U.RDB$USER_NAME, io_user_data->user_name);
+		STORE (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN PLG$USERS USING
+			strcpy(U.PLG$USER_NAME, io_user_data->user_name);
 			if (io_user_data->uid_entered)
 			{
-				U.RDB$UID = io_user_data->uid;
-				U.RDB$UID.NULL = ISC_FALSE;
+				U.PLG$UID = io_user_data->uid;
+				U.PLG$UID.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$UID.NULL = ISC_TRUE;
+				U.PLG$UID.NULL = ISC_TRUE;
 			if (io_user_data->gid_entered)
 			{
-				U.RDB$GID = io_user_data->gid;
-				U.RDB$GID.NULL = ISC_FALSE;
+				U.PLG$GID = io_user_data->gid;
+				U.PLG$GID.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$GID.NULL = ISC_TRUE;
+				U.PLG$GID.NULL = ISC_TRUE;
 			if (io_user_data->group_name_entered)
 			{
-				strcpy(U.RDB$GROUP_NAME, io_user_data->group_name);
-				U.RDB$GROUP_NAME.NULL = ISC_FALSE;
+				strcpy(U.PLG$GROUP_NAME, io_user_data->group_name);
+				U.PLG$GROUP_NAME.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$GROUP_NAME.NULL = ISC_TRUE;
+				U.PLG$GROUP_NAME.NULL = ISC_TRUE;
 			if (io_user_data->password_entered)
 			{
 				ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, Auth::PASSWORD_SALT);
 				Auth::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
-				if (!storePasswd(isc_status, DB, trans, U.RDB$PASSWD, encrypted2))
-				{
-					ret = GsecMsg19;
-					break;
-				}
-				U.RDB$PASSWD.NULL = ISC_FALSE;
+				strcpy(U.PLG$PASSWD, encrypted2.c_str());
+				U.PLG$PASSWD.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$PASSWD.NULL = ISC_TRUE;
+				U.PLG$PASSWD.NULL = ISC_TRUE;
 			if (io_user_data->first_name_entered)
 			{
-				strcpy(U.RDB$FIRST_NAME, io_user_data->first_name);
-				U.RDB$FIRST_NAME.NULL = ISC_FALSE;
+				strcpy(U.PLG$FIRST_NAME, io_user_data->first_name);
+				U.PLG$FIRST_NAME.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$FIRST_NAME.NULL = ISC_TRUE;
+				U.PLG$FIRST_NAME.NULL = ISC_TRUE;
 			if (io_user_data->middle_name_entered)
 			{
-				strcpy(U.RDB$MIDDLE_NAME, io_user_data->middle_name);
-				U.RDB$MIDDLE_NAME.NULL = ISC_FALSE;
+				strcpy(U.PLG$MIDDLE_NAME, io_user_data->middle_name);
+				U.PLG$MIDDLE_NAME.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$MIDDLE_NAME.NULL = ISC_TRUE;
+				U.PLG$MIDDLE_NAME.NULL = ISC_TRUE;
 			if (io_user_data->last_name_entered)
 			{
-				strcpy(U.RDB$LAST_NAME, io_user_data->last_name);
-				U.RDB$LAST_NAME.NULL = ISC_FALSE;
+				strcpy(U.PLG$LAST_NAME, io_user_data->last_name);
+				U.PLG$LAST_NAME.NULL = ISC_FALSE;
 			}
 			else
-				U.RDB$LAST_NAME.NULL = ISC_TRUE;
+				U.PLG$LAST_NAME.NULL = ISC_TRUE;
 		END_STORE
 		ON_ERROR
 			ret = GsecMsg19;	// gsec - add record error
@@ -299,65 +309,61 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		// changes the current value to the null value
 
 		found = false;
-		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN RDB$USERS
-				WITH U.RDB$USER_NAME EQ io_user_data->user_name
+		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN PLG$USERS
+				WITH U.PLG$USER_NAME EQ io_user_data->user_name
 			found = true;
 			MODIFY U USING
 				if (io_user_data->uid_entered)
 				{
-					U.RDB$UID = io_user_data->uid;
-					U.RDB$UID.NULL = ISC_FALSE;
+					U.PLG$UID = io_user_data->uid;
+					U.PLG$UID.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->uid_specified)
-					U.RDB$UID.NULL = ISC_TRUE;
+					U.PLG$UID.NULL = ISC_TRUE;
 				if (io_user_data->gid_entered)
 				{
-					U.RDB$GID = io_user_data->gid;
-					U.RDB$GID.NULL = ISC_FALSE;
+					U.PLG$GID = io_user_data->gid;
+					U.PLG$GID.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->gid_specified)
-					U.RDB$GID.NULL = ISC_TRUE;
+					U.PLG$GID.NULL = ISC_TRUE;
 				if (io_user_data->group_name_entered)
 				{
-					strcpy(U.RDB$GROUP_NAME, io_user_data->group_name);
-					U.RDB$GROUP_NAME.NULL = ISC_FALSE;
+					strcpy(U.PLG$GROUP_NAME, io_user_data->group_name);
+					U.PLG$GROUP_NAME.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->group_name_specified)
-					U.RDB$GROUP_NAME.NULL = ISC_TRUE;
+					U.PLG$GROUP_NAME.NULL = ISC_TRUE;
 				if (io_user_data->password_entered)
 				{
 					ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, Auth::PASSWORD_SALT);
 					Auth::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
-					if (!storePasswd(isc_status, DB, trans, U.RDB$PASSWD, encrypted2))
-					{
-						ret = GsecMsg21;
-						break;
-					}
-					U.RDB$PASSWD.NULL = ISC_FALSE;
+					strcpy(U.PLG$PASSWD, encrypted2.c_str());
+					U.PLG$PASSWD.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->password_specified)
-					U.RDB$PASSWD.NULL = ISC_TRUE;
+					U.PLG$PASSWD.NULL = ISC_TRUE;
 				if (io_user_data->first_name_entered)
 				{
-					strcpy(U.RDB$FIRST_NAME, io_user_data->first_name);
-					U.RDB$FIRST_NAME.NULL = ISC_FALSE;
+					strcpy(U.PLG$FIRST_NAME, io_user_data->first_name);
+					U.PLG$FIRST_NAME.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->first_name_specified)
-					U.RDB$FIRST_NAME.NULL = ISC_TRUE;
+					U.PLG$FIRST_NAME.NULL = ISC_TRUE;
 				if (io_user_data->middle_name_entered)
 				{
-					strcpy(U.RDB$MIDDLE_NAME, io_user_data->middle_name);
-					U.RDB$MIDDLE_NAME.NULL = ISC_FALSE;
+					strcpy(U.PLG$MIDDLE_NAME, io_user_data->middle_name);
+					U.PLG$MIDDLE_NAME.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->middle_name_specified)
-					U.RDB$MIDDLE_NAME.NULL = ISC_TRUE;
+					U.PLG$MIDDLE_NAME.NULL = ISC_TRUE;
 				if (io_user_data->last_name_entered)
 				{
-					strcpy(U.RDB$LAST_NAME, io_user_data->last_name);
-					U.RDB$LAST_NAME.NULL = ISC_FALSE;
+					strcpy(U.PLG$LAST_NAME, io_user_data->last_name);
+					U.PLG$LAST_NAME.NULL = ISC_FALSE;
 				}
 				else if (io_user_data->last_name_specified)
-					U.RDB$LAST_NAME.NULL = ISC_TRUE;
+					U.PLG$LAST_NAME.NULL = ISC_TRUE;
 			END_MODIFY
 			ON_ERROR
 				ret = GsecMsg20;
@@ -389,8 +395,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			ret = GsecMsg23;
 		else
 		{
-			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN RDB$USERS
-					WITH U.RDB$USER_NAME EQ io_user_data->user_name
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN PLG$USERS
+					WITH U.PLG$USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
 				ON_ERROR
@@ -439,27 +445,27 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		found = false;
 		if (!io_user_data->user_name_entered)
 		{
-			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN RDB$USERS
-				io_user_data->uid = U.RDB$UID;
-				io_user_data->uid_entered = !U.RDB$UID.NULL;
-				io_user_data->gid = U.RDB$GID;
-				io_user_data->gid_entered = !U.RDB$GID.NULL;
-				strcpy(io_user_data->user_name, U.RDB$USER_NAME);
-				io_user_data->user_name_entered = !U.RDB$USER_NAME.NULL;
-				strcpy(io_user_data->group_name, U.RDB$GROUP_NAME);
-				io_user_data->group_name_entered = !U.RDB$GROUP_NAME.NULL;
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN PLG$USERS
+				io_user_data->uid = U.PLG$UID;
+				io_user_data->uid_entered = !U.PLG$UID.NULL;
+				io_user_data->gid = U.PLG$GID;
+				io_user_data->gid_entered = !U.PLG$GID.NULL;
+				strcpy(io_user_data->user_name, U.PLG$USER_NAME);
+				io_user_data->user_name_entered = !U.PLG$USER_NAME.NULL;
+				strcpy(io_user_data->group_name, U.PLG$GROUP_NAME);
+				io_user_data->group_name_entered = !U.PLG$GROUP_NAME.NULL;
 				io_user_data->password[0] = 0;
 				io_user_data->password_entered = false;
-				strcpy(io_user_data->first_name, U.RDB$FIRST_NAME);
-				io_user_data->first_name_entered = !U.RDB$FIRST_NAME.NULL;
-				strcpy(io_user_data->middle_name, U.RDB$MIDDLE_NAME);
-				io_user_data->middle_name_entered = !U.RDB$MIDDLE_NAME.NULL;
-				strcpy(io_user_data->last_name, U.RDB$LAST_NAME);
-				io_user_data->last_name_entered = !U.RDB$LAST_NAME.NULL;
+				strcpy(io_user_data->first_name, U.PLG$FIRST_NAME);
+				io_user_data->first_name_entered = !U.PLG$FIRST_NAME.NULL;
+				strcpy(io_user_data->middle_name, U.PLG$MIDDLE_NAME);
+				io_user_data->middle_name_entered = !U.PLG$MIDDLE_NAME.NULL;
+				strcpy(io_user_data->last_name, U.PLG$LAST_NAME);
+				io_user_data->last_name_entered = !U.PLG$LAST_NAME.NULL;
 
 				io_user_data->admin = 0;
 				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-						WITH P.RDB$USER EQ U.RDB$USER_NAME
+						WITH P.RDB$USER EQ U.PLG$USER_NAME
 						 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
 						 AND P.RDB$PRIVILEGE EQ 'M'
 					io_user_data->admin = 1;
@@ -475,28 +481,28 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		}
 		else
 		{
-			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN RDB$USERS
-					WITH U.RDB$USER_NAME EQ io_user_data->user_name
-				io_user_data->uid = U.RDB$UID;
-				io_user_data->uid_entered = !U.RDB$UID.NULL;
-				io_user_data->gid = U.RDB$GID;
-				io_user_data->gid_entered = !U.RDB$GID.NULL;
-				strcpy(io_user_data->user_name, U.RDB$USER_NAME);
-				io_user_data->user_name_entered = !U.RDB$USER_NAME.NULL;
-				strcpy(io_user_data->group_name, U.RDB$GROUP_NAME);
-				io_user_data->group_name_entered = !U.RDB$GROUP_NAME.NULL;
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN PLG$USERS
+					WITH U.PLG$USER_NAME EQ io_user_data->user_name
+				io_user_data->uid = U.PLG$UID;
+				io_user_data->uid_entered = !U.PLG$UID.NULL;
+				io_user_data->gid = U.PLG$GID;
+				io_user_data->gid_entered = !U.PLG$GID.NULL;
+				strcpy(io_user_data->user_name, U.PLG$USER_NAME);
+				io_user_data->user_name_entered = !U.PLG$USER_NAME.NULL;
+				strcpy(io_user_data->group_name, U.PLG$GROUP_NAME);
+				io_user_data->group_name_entered = !U.PLG$GROUP_NAME.NULL;
 				io_user_data->password[0] = 0;
 				io_user_data->password_entered = false;
-				strcpy(io_user_data->first_name, U.RDB$FIRST_NAME);
-				io_user_data->first_name_entered = !U.RDB$FIRST_NAME.NULL;
-				strcpy(io_user_data->middle_name, U.RDB$MIDDLE_NAME);
-				io_user_data->middle_name_entered = !U.RDB$MIDDLE_NAME.NULL;
-				strcpy(io_user_data->last_name, U.RDB$LAST_NAME);
-				io_user_data->last_name_entered = !U.RDB$LAST_NAME.NULL;
+				strcpy(io_user_data->first_name, U.PLG$FIRST_NAME);
+				io_user_data->first_name_entered = !U.PLG$FIRST_NAME.NULL;
+				strcpy(io_user_data->middle_name, U.PLG$MIDDLE_NAME);
+				io_user_data->middle_name_entered = !U.PLG$MIDDLE_NAME.NULL;
+				strcpy(io_user_data->last_name, U.PLG$LAST_NAME);
+				io_user_data->last_name_entered = !U.PLG$LAST_NAME.NULL;
 
 				io_user_data->admin = 0;
 				FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-						WITH P.RDB$USER EQ U.RDB$USER_NAME
+						WITH P.RDB$USER EQ U.PLG$USER_NAME
 						 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
 						 AND P.RDB$PRIVILEGE EQ 'M'
 					io_user_data->admin = 1;
@@ -544,38 +550,4 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 	return ret;
 }
 
-SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char* realUser,
-						  FB_API_HANDLE DB,
-						  internal_user_data* io_user_data,
-						  FPTR_SECURITY_CALLBACK display_func,
-						  void* callback_arg)
-{
-	FB_API_HANDLE gds_trans = 0;
-
-	START_TRANSACTION
-	ON_ERROR
-		return GsecMsg75;		// gsec error
-	END_ERROR;
-
-	SSHORT ret = SECURITY_exec_line(isc_status, realUser, DB, gds_trans, io_user_data, display_func, callback_arg);
-
-	// rollback if we have an error using tmp_status to avoid
-	// overwriting the error status which the caller wants to see
-
-	if (ret)
-	{
-		ISC_STATUS_ARRAY tmp_status;
-		isc_rollback_transaction(tmp_status, &gds_trans);
-	}
-	else
-	{
-		COMMIT
-		ON_ERROR
-			// CVC: Shouldn't we call isc_rollback_transaction() here?
-			return GsecMsg75;	// gsec error
-		END_ERROR;
-	}
-
-	return ret;
-}
+} // namespace Auth

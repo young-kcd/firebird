@@ -69,8 +69,9 @@
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../common/classes/DbImplementation.h"
 #include "../auth/Auth.h"
-#include "../jrd/jrd_pwd.h"
-#include "../auth/trusted/AuthSspi.h"
+//#include "../jrd/jrd_pwd.h"
+//#include "../auth/trusted/AuthSspi.h"
+#include "../common/classes/ImplementHelper.h"
 
 using namespace Firebird;
 
@@ -222,22 +223,11 @@ public:
 	explicit InitList(MemoryPool& p)
 		: HalfStaticArray<Auth::ServerPlugin*, 8>(p)
 	{
-		PathName authMethod(Config::getAuthMethod());
-
-		// this code will be replaced with known plugins scan
-		if (authMethod == AmNative || authMethod == AmMixed)
+		Firebird::Plugin* plugin;
+		while ( (plugin = fb_query_plugin(Firebird::Plugin::AuthServer, NULL)) )
 		{
-			push(interfaceAlloc<Auth::SecurityDatabaseServer>());
+			push(reinterpret_cast<Auth::ServerPlugin*>(plugin));
 		}
-#ifdef TRUSTED_AUTH
-		if (authMethod == AmTrusted || authMethod == AmMixed)
-		{
-			push(interfaceAlloc<Auth::WinSspiServer>());
-		}
-#endif
-#ifdef AUTH_DEBUG
-		push(interfaceAlloc<Auth::DebugServer>());
-#endif
 
 		// must be last
 		push(NULL);
@@ -342,7 +332,8 @@ public:
 					if (first)
 					{
 						// violate constness here safely - send operation does not modify data
-						list[sequence]->getName((const char**)(&s->cstr_address), &s->cstr_length);
+						s->cstr_address = (UCHAR*) list[sequence]->name();
+						s->cstr_length = strlen(list[sequence]->name());
 					}
 					else
 					{

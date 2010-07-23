@@ -28,25 +28,18 @@
 #include "firebird.h"
 #include "../jrd/ibase.h"
 #include "../auth/SecurityDatabase/LegacyClient.h"
+#include "../common/classes/ImplementHelper.h"
+
+namespace {
+	char name[] = "LEGACY_AUTH";
+	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, name> client;
+}
 
 namespace Auth {
 
 ClientInstance* SecurityDatabaseClient::instance()
 {
 	return Firebird::interfaceAlloc<SecurityDatabaseClientInstance>();
-}
-
-void SecurityDatabaseClient::getName(const char** data, unsigned short* dataSize)
-{
-	// Do not violate the constness.
-	static char name[] = "LEGACY_AUTH";
-	*data = name;
-	*dataSize = strlen(name);
-}
-
-void SecurityDatabaseClient::release()
-{
-	interfaceFree(this);
 }
 
 Result SecurityDatabaseClientInstance::startAuthentication(bool, const char*, DpbInterface* dpb)

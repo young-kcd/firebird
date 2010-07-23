@@ -1371,6 +1371,7 @@ gen/Makefile.embed.isql:${MAKE_SRC_DIR}/Makefile.in.embed.isql
 gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.fbtrace:${MAKE_SRC_DIR}/Makefile.in.fbtrace
+gen/Makefile.user.management:${MAKE_SRC_DIR}/Makefile.in.user.management
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
 )

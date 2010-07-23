@@ -317,6 +317,9 @@ LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) $(LI
  $(call LIB_LINK_SONAME,$(SharedLibrarySoName)) $(call LIB_LINK_RPATH,lib)
 LINK_EMBED_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
 
+LINK_PLUGIN = $(LIB_LINK) $(LINK_EMPTY_SYMBOLS) $(LIB_LINK_OPTIONS) $(call LIB_LINK_RPATH,lib)
+LINK_PLUG_LIBS = -L$(LIB) $(SO_LINK_LIBS)
+
 # From utilities
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
 GDS_DROP	= $(BIN)/gds_drop$(EXEC_EXT)
@@ -339,6 +342,7 @@ INSTREG		= $(BIN)/instreg$(EXEC_EXT)
 INSTSVC		= $(BIN)/instsvc$(EXEC_EXT)
 ISC_GDB		= $(FIREBIRD)/security2.fdb
 ISC_GBAK	= $(BIN)/security.gbak
+MANAGEMENT	= $(PLUGINS)/$(LIB_PREFIX)user_management.$(SHRLIB_EXT)
 
 # From qli
 QLI            = $(BIN)/qli$(EXEC_EXT)

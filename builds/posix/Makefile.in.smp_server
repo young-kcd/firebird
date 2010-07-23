@@ -42,8 +42,8 @@ include     $(ROOT)/gen/make.shared.variables
 SERVER_JrdFiles = ThreadData.cpp divorce.cpp dsc.cpp enc.cpp isc_file.cpp isc.cpp \
 sdl.cpp status.cpp 
 SERVER_Files = $(OS_ServerFiles) server.cpp
-SERVER_Other_sources = common/cvt.cpp common/classes/DbImplementation.cpp \
-jrd/pwd.cpp jrd/sha.cpp jrd/guid.cpp auth/Auth.cpp
+SERVER_Other_sources = common/cvt.cpp common/classes/DbImplementation.cpp auth/Auth.cpp \
+jrd/pwd.cpp jrd/sha.cpp jrd/guid.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles)) $(SERVER_Other_sources)
 
 REMOTE_CommonSources = $(addprefix remote/, $(REMOTE_CommonFiles))

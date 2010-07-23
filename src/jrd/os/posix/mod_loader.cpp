@@ -85,7 +85,12 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 {
 	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
 	if (module == NULL)
+	{
+#ifdef DEV_BUILD
+		gds__log("loadModule failed loading %s: %s", modPath.c_str(), dlerror());
+#endif
 		return 0;
+	}
 
 	return FB_NEW(*getDefaultMemoryPool()) DlfcnModule(module);
 }

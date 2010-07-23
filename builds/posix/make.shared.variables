@@ -14,7 +14,7 @@ WHY_Sources = why.cpp
 
 
 JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
-		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
+		gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		perf.cpp sdl.cpp status.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
@@ -41,7 +41,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
 		ValueImpl.cpp ValuesImpl.cpp vio.cpp \
-		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
+		nodebug.cpp nbak.cpp $(Physical_IO_Module) TextType.cpp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
 		trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
@@ -114,7 +114,7 @@ INTERFACE_Files=	$(REMOTE_ClientFiles) $(REMOTE_CommonFiles)
 
 
 INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files)) \
-			auth/Auth.cpp auth/SecurityDatabase/LegacyClient.cpp
+			auth/Auth.cpp auth/AuthDbg.cpp auth/SecurityDatabase/LegacyClient.cpp jrd/enc.cpp
 INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
 
 ifeq ($(PLATFORM),win32)
@@ -357,7 +357,7 @@ LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 # MOD 29-July-2002
 
 # Stub for services entrypoints missing in static library
-STUB_Sources = jrd/svc_stub.cpp utilities/gsec/security.epp
+STUB_Sources = jrd/svc_stub.cpp utilities/gsec/security.cpp
 STUB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(STUB_Sources))))
 
 

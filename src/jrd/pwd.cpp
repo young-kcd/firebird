@@ -41,10 +41,16 @@
 #include "../common/config/config.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
+#include "../common/classes/ImplementHelper.h"
 
 using namespace Firebird;
 
 namespace {
+
+// register plugin
+
+char name[] = "LEGACY_AUTH";
+PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, name> server;
 
 // temporal implementation of timer
 
@@ -138,27 +144,27 @@ const UCHAR PWD_REQUEST[] =
 	blr_begin,
 	blr_for,
 	blr_rse, 1,
-	blr_relation, 9, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R', 'S', 0,
+	blr_relation, 9, 'P', 'L', 'G', '$', 'U', 'S', 'E', 'R', 'S', 0,
 	blr_first,
 	blr_literal, blr_short, 0, 1, 0,
 	blr_boolean,
 	blr_eql,
-	blr_field, 0, 13, 'R', 'D', 'B', '$', 'U', 'S', 'E', 'R', '_', 'N', 'A', 'M', 'E',
+	blr_field, 0, 13, 'P', 'L', 'G', '$', 'U', 'S', 'E', 'R', '_', 'N', 'A', 'M', 'E',
 	blr_parameter, 0, 0, 0,
 	blr_end,
 	blr_send, 1,
 	blr_begin,
 	blr_assignment,
-	blr_field, 0, 7, 'R', 'D', 'B', '$', 'G', 'I', 'D',
+	blr_field, 0, 7, 'P', 'L', 'G', '$', 'G', 'I', 'D',
 	blr_parameter, 1, 0, 0,
 	blr_assignment,
-	blr_field, 0, 7, 'R', 'D', 'B', '$', 'U', 'I', 'D',
+	blr_field, 0, 7, 'P', 'L', 'G', '$', 'U', 'I', 'D',
 	blr_parameter, 1, 1, 0,
 	blr_assignment,
 	blr_literal, blr_short, 0, 1, 0,
 	blr_parameter, 1, 2, 0,
 	blr_assignment,
-	blr_field, 0, 10, 'R', 'D', 'B', '$', 'P', 'A', 'S', 'S', 'W', 'D',
+	blr_field, 0, 10, 'P', 'L', 'G', '$', 'P', 'A', 'S', 'S', 'W', 'D',
 	blr_parameter, 1, 3, 0,
 	blr_end,
 	blr_send, 1,
@@ -433,19 +439,7 @@ void SecurityDatabase::shutdown(void*)
 
 ServerInstance* SecurityDatabaseServer::instance()
 {
-	return interfaceAlloc<SecurityDatabaseServerInstance>();
-}
-
-void SecurityDatabaseServer::getName(const char** data, unsigned short* dataSize)
-{
-	static char name[] = "LEGACY_AUTH";
-	*data = name;
-	*dataSize = strlen(name);
-}
-
-void SecurityDatabaseServer::release()
-{
-	gds__free(this);
+	return Firebird::interfaceAlloc<SecurityDatabaseServerInstance>();
 }
 
 Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const char*,
@@ -470,7 +464,7 @@ void SecurityDatabaseServerInstance::getData(const unsigned char** data, unsigne
 
 void SecurityDatabaseServerInstance::release()
 {
-	gds__free(this);
+	interfaceFree(this);
 }
 
 } // namespace Auth

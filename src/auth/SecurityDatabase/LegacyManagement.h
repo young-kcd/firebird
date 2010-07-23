@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird authentication
- *	MODULE:			LegacyClient.h
- *	DESCRIPTION:	Performs legacy actions on DPB at client side.
+ *	MODULE:			LegacyManagement.h
+ *	DESCRIPTION:	Performs legacy actions with security database
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -24,31 +24,24 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef AUTH_LEGACY_CLIENT_H
-#define AUTH_LEGACY_CLIENT_H
+#ifndef AUTH_LEGACY_MANAGEMENT_H
+#define AUTH_LEGACY_MANAGEMENT_H
 
 #include "../auth/AuthInterface.h"
 
+
 namespace Auth {
 
-// Required to stop analyzing rest of plugins before first roundtrip to server
-// if legacy login is present in DPB
-
-class SecurityDatabaseClient : public ClientPlugin
+class SecurityDatabaseManagement : public ManagementPlugin
 {
 public:
-	ClientInstance* instance();
-};
-
-class SecurityDatabaseClientInstance : public ClientInstance
-{
-public:
-	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(const unsigned char* data, unsigned int size);
-    void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+	// work in progress - we must avoid both internal_user_data and callback function
+	int execLine(ISC_STATUS* isc_status, const char *realUser, 
+				 FB_API_HANDLE db, FB_API_HANDLE trans,
+				 internal_user_data* io_user_data, 
+				 FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
 };
 
 } // namespace Auth
 
-#endif // AUTH_LEGACY_CLIENT_H
+#endif // AUTH_LEGACY_MANAGEMENT_H

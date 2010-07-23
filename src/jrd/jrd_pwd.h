@@ -112,8 +112,6 @@ class SecurityDatabaseServer : public ServerPlugin
 {
 public:
 	ServerInstance* instance();
-	void getName(const char** data, unsigned short* dataSize);
-	void release();
 };
 
 class SecurityDatabaseServerInstance : public ServerInstance

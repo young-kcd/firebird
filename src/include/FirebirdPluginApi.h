@@ -100,7 +100,7 @@ public:
 
 
 // Passed to plugin library through entry point FB_PLUGIN_ENTRY_POINT in Firebird initialization.
-class Plugin
+class ExtEngPlugin
 {
 public:
 	virtual int FB_CALL getVersion() = 0;
@@ -114,7 +114,7 @@ public:
 };
 
 
-typedef void (*PluginEntryPoint)(Error* error, Plugin* plugin);
+typedef void (*PluginEntryPoint)(Error* error, ExtEngPlugin* plugin);
 
 
 }	// namespace Firebird

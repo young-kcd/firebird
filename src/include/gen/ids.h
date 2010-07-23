@@ -592,21 +592,7 @@
 	const USHORT  f_pkg_desc = 6;
 
 
-// Relation 43 (RDB$USERS)
-
-	const USHORT  f_user_name = 0;
-	const USHORT  f_group_name = 1;
-	const USHORT  f_uid = 2;
-	const USHORT  f_gid = 3;
-	const USHORT  f_passwd_type = 4;
-	const USHORT  f_passwd = 5;
-	const USHORT  f_first_name = 6;
-	const USHORT  f_middle_name = 7;
-	const USHORT  f_last_name = 8;
-	const USHORT  f_user_desc = 9;
-
-
-// Relation 44 (SEC$USERS)
+// Relation 43 (SEC$USERS)
 
 	const USHORT  f_sec_user_name = 0;
 	const USHORT  f_sec_group_name = 1;

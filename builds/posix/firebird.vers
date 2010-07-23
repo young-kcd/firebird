@@ -333,6 +333,11 @@ Bopen
 fb_shutdown
 fb_shutdown_callback
 
+# Plugins support
+
+fb_register_plugin
+fb_query_plugin
+
 # Other misc functions
 
 isc_ftof
