@@ -66,8 +66,8 @@ public:
 extern "C"
 {
 	// additional API functions
-	void ISC_EXPORT fb_register_plugin(Plugin* plugin);
-	Plugin* ISC_EXPORT fb_query_plugin(unsigned int type, const char* name);
+	void ISC_EXPORT fb_register_plugin(Firebird::Plugin* plugin);
+	Firebird::Plugin* ISC_EXPORT fb_query_plugin(unsigned int type, const char* name);
 }
 
 #endif // FB_COMMON_CLASSES_INTERFACE
