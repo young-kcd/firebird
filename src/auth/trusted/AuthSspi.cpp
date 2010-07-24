@@ -33,15 +33,15 @@
 #include "../common/classes/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 
+using namespace Firebird;
+
 namespace {
 #ifndef WIN_NT
-    char name[] = "WIN_SSPI";
-    Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, name> server;
-    Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name> client;
+	char name[] = "WIN_SSPI";
+	PluginHelper<Auth::WinSspiServer, Plugin::AuthServer, name> server;
+	PluginHelper<Auth::WinSspiClient, Plugin::AuthClient, name> client;
 #endif
 }
-
-using namespace Firebird;
 
 namespace
 {

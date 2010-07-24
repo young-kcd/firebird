@@ -42,7 +42,7 @@ namespace Auth {
 
 ServerInstance* DebugServer::instance()
 {
-	return Firebird::interfaceAlloc<DebugServerInstance>(); 
+	return Firebird::interfaceAlloc<DebugServerInstance>();
 }
 
 ClientInstance* DebugClient::instance()
@@ -101,8 +101,8 @@ Result DebugClientInstance::startAuthentication(bool isService, const char*, Dpb
 	str = "HAND";
 	if (dpb)
 	{
-		dpb->add(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth,
-					str.c_str(), str.length());
+		dpb->add((isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth),
+				 str.c_str(), str.length());
 		return AUTH_SUCCESS;
 	}
 	return AUTH_MORE_DATA;

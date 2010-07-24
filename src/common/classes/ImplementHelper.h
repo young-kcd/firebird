@@ -70,7 +70,7 @@ void interfaceFree(T* ptr)
  	delete ptr;
 }
 
-// Template to create statis instance of plugin
+// Template to create static instance of plugin
 template <typename C, unsigned int T, char NM[]>
 class PluginHelper : public C
 {
@@ -79,10 +79,12 @@ public:
 	{
 		fb_register_plugin(this);
 	}
+
 	virtual const char* name() const
 	{
 		return NM;
 	}
+
 	virtual unsigned int type() const
 	{
 		return T;
@@ -92,6 +94,7 @@ public:
 	{
 		pp = chain;
 	}
+
 	virtual Plugin* next() const
 	{
 		return pp;

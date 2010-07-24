@@ -3851,7 +3851,7 @@ Firebird::Plugin* API_ROUTINE fb_query_plugin(unsigned int type, const char* nam
 	Firebird::Plugin* prev = NULL;
 	for (Firebird::Plugin* p = pluginChain; p; prev = p, p = p->next())
 	{
-		if (p->type() == type && ((!name) || (!strcmp(name, p->name()))))
+		if (p->type() == type && (!name || !strcmp(name, p->name())))
 		{
 			if (prev)
 				prev->link(p->next());

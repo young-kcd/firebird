@@ -223,8 +223,8 @@ public:
 	explicit InitList(MemoryPool& p)
 		: HalfStaticArray<Auth::ServerPlugin*, 8>(p)
 	{
-		Firebird::Plugin* plugin;
-		while ( (plugin = fb_query_plugin(Firebird::Plugin::AuthServer, NULL)) )
+		Plugin* plugin;
+		while ( (plugin = fb_query_plugin(Plugin::AuthServer, NULL)) )
 		{
 			push(reinterpret_cast<Auth::ServerPlugin*>(plugin));
 		}

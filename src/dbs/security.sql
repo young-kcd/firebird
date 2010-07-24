@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * 
+ *
  * 2004.09.14 Alex Peshkoff - security changes, preventing ordinary users
  *		from access to other users crypted passwords and enabling modification
  *		of there own password. Originally suggested by Ivan Prenosil

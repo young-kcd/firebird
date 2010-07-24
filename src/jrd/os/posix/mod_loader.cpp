@@ -45,10 +45,10 @@ public:
 	{}
 
 	~DlfcnModule();
-	void *findSymbol(const Firebird::string&);
+	void* findSymbol(const Firebird::string&);
 
 private:
-	void *module;
+	void* module;
 };
 
 bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
@@ -81,7 +81,7 @@ void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 	}
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
+ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
 	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
 	if (module == NULL)
@@ -101,10 +101,10 @@ DlfcnModule::~DlfcnModule()
 		dlclose(module);
 }
 
-void *DlfcnModule::findSymbol(const Firebird::string& symName)
+void* DlfcnModule::findSymbol(const Firebird::string& symName)
 {
-	void *result = dlsym(module, symName.c_str());
-	if (result == NULL)
+	void* result = dlsym(module, symName.c_str());
+	if (!result)
 	{
 		Firebird::string newSym = '_' + symName;
 

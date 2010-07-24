@@ -36,9 +36,9 @@ class SecurityDatabaseManagement : public ManagementPlugin
 {
 public:
 	// work in progress - we must avoid both internal_user_data and callback function
-	int execLine(ISC_STATUS* isc_status, const char *realUser, 
+	int execLine(ISC_STATUS* isc_status, const char* realUser,
 				 FB_API_HANDLE db, FB_API_HANDLE trans,
-				 internal_user_data* io_user_data, 
+				 internal_user_data* io_user_data,
 				 FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
 };
 

@@ -46,7 +46,7 @@
 using namespace Firebird;
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char *realUser,
+						  const char* realUser,
 						  FB_API_HANDLE db,
 						  FB_API_HANDLE trans,
 						  internal_user_data* io_user_data,
@@ -54,20 +54,23 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 						  void* callback_arg)
 {
 	static Auth::ManagementPlugin* volatile plugin = NULL;
+
 	if (!plugin)
 	{
 		static GlobalPtr<Mutex> mutex;
 		MutexLockGuard g(mutex);
+
 		if (!plugin)
 		{
 			// temporary measure before PluginManager integration
-			Firebird::PathName plugFile(fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, "user_management"));
+			PathName plugFile(fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, "user_management"));
 			ModuleLoader::doctorModuleExtension(plugFile);
 			ModuleLoader::loadModule(plugFile);
 
-			plugin = reinterpret_cast<Auth::ManagementPlugin*>
-									 (fb_query_plugin(Firebird::Plugin::UserManagement, NULL));
+			plugin = reinterpret_cast<Auth::ManagementPlugin*>(
+				fb_query_plugin(Plugin::UserManagement, NULL));
 		}
+
 		if (!plugin)
 		{
 			(Arg::Gds(isc_random) << "Missing user management plugin").copyTo(isc_status);
@@ -79,7 +82,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 }
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  const char *realUser,
+						  const char* realUser,
 						  FB_API_HANDLE db,
 						  internal_user_data* io_user_data,
 						  FPTR_SECURITY_CALLBACK display_func,

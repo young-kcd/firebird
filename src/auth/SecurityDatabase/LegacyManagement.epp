@@ -1,5 +1,4 @@
 /*
- *
  *	PROGRAM:	Security data base manager
  *	MODULE:		security.epp
  *	DESCRIPTION:	Security routines
@@ -95,7 +94,7 @@ bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE tr
 }
 
 /*
-bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans, 
+bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
 						ISC_QUAD& blobId, const Firebird::string& passwd)
 {
 	UserBlob blob(isc_status);
@@ -122,7 +121,7 @@ namespace Auth {
 // work in progress - we must avoid both internal_user_data and callback function
 
 int SecurityDatabaseManagement::execLine(ISC_STATUS* isc_status,
-						  const char *realUser,
+						  const char* realUser,
 						  FB_API_HANDLE DB,
 						  FB_API_HANDLE trans,
 						  internal_user_data* io_user_data,
