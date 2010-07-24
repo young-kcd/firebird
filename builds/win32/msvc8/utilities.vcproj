@@ -298,7 +298,7 @@
 				Name="Generated files"
 				>
 				<File
-					RelativePath="..\..\..\gen\Win32\auth\SecurityDatabase\LegacyManagement.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\auth\SecurityDatabase\LegacyManagement.cpp"
 					>
 				</File>
 			</Filter>
