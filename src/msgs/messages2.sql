@@ -2420,8 +2420,48 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_invalid_type_div_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 966, NULL, 'Invalid data type for division in dialect 3', NULL, NULL)
 ('dsql_nostring_neg_dial3',  'MAKE_desc', 'make.cpp', NULL, 13, 967, NULL, 'Strings cannot be negated (applied the minus operator) in dialect 3', NULL, NULL)
 ('dsql_invalid_type_neg', 'MAKE_desc', 'make.cpp', NULL, 13, 968, NULL, 'Invalid data type for negation (minus operator)', NULL, NULL)
-('dsql_max_distinct_items', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 969, NULL, 'Cannot have more than 255 items in DISTINCT list', NULL, NULL);
 -- End of extras for isc_expression_eval_err
+('dsql_max_distinct_items', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 969, NULL, 'Cannot have more than 255 items in DISTINCT list', NULL, NULL);
+('dsql_alter_charset_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 970, NULL, 'ALTER CHARACTER SET @1 failed', NULL, NULL);
+('dsql_comment_on_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 971, NULL, 'COMMENT ON @1 failed', NULL, NULL);
+('dsql_create_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 972, NULL, 'CREATE FUNCTION @1 failed', NULL, NULL);
+('dsql_alter_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 973, NULL, 'ALTER FUNCTION @1 failed', NULL, NULL);
+('dsql_create_alter_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 974, NULL, 'CREATE OR ALTER FUNCTION @1 failed', NULL, NULL);
+('dsql_drop_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 975, NULL, 'DROP FUNCTION @1 failed', NULL, NULL);
+('dsql_recreate_func_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 976, NULL, 'RECREATE FUNCTION @1 failed', NULL, NULL);
+('dsql_create_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 977, NULL, 'CREATE PROCEDURE @1 failed', NULL, NULL);
+('dsql_alter_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 978, NULL, 'ALTER PROCEDURE @1 failed', NULL, NULL);
+('dsql_create_alter_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 979, NULL, 'CREATE OR ALTER PROCEDURE @1 failed', NULL, NULL);
+('dsql_drop_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 980, NULL, 'DROP PROCEDURE @1 failed', NULL, NULL);
+('dsql_recreate_proc_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 981, NULL, 'RECREATE PROCEDURE @1 failed', NULL, NULL);
+('dsql_create_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 982, NULL, 'CREATE TRIGGER @1 failed', NULL, NULL);
+('dsql_alter_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 983, NULL, 'ALTER TRIGGER TRIGGER @1 failed', NULL, NULL);
+('dsql_create_alter_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 984, NULL, 'CREATE OR ALTER TRIGGER @1 failed', NULL, NULL);
+('dsql_drop_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 985, NULL, 'DROP TRIGGER @1 failed', NULL, NULL);
+('dsql_recreate_trigger_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 986, NULL, 'RECREATE TRIGGER @1 failed', NULL, NULL);
+('dsql_create_collation_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 987, NULL, 'CREATE COLLATION @1 failed', NULL, NULL);
+('dsql_drop_collation_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 988, NULL, 'DROP COLLATION @1 failed', NULL, NULL);
+('dsql_create_domain_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 989, NULL, 'CREATE DOMAIN @1 failed', NULL, NULL);
+('dsql_alter_domain_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 990, NULL, 'ALTER DOMAIN @1 failed', NULL, NULL);
+('dsql_drop_domain_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 991, NULL, 'DROP DOMAIN @1 failed', NULL, NULL);
+('dsql_create_except_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 992, NULL, 'CREATE EXCEPTION @1 failed', NULL, NULL);
+('dsql_alter_except_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 993, NULL, 'ALTER EXCEPTION @1 failed', NULL, NULL);
+('dsql_create_alter_except_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 994, NULL, 'CREATE OR ALTER EXCEPTION @1 failed', NULL, NULL);
+('dsql_recreate_except_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 995, NULL, 'RECREATE EXCEPTION @1 failed', NULL, NULL);
+('dsql_drop_except_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 996, NULL, 'DROP EXCEPTION @1 failed', NULL, NULL);
+('dsql_create_sequence_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 997, NULL, 'CREATE SEQUENCE @1 failed', NULL, NULL);
+('dsql_create_table_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 998, NULL, 'CREATE TABLE @1 failed', NULL, NULL);
+('dsql_alter_table_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 999, NULL, 'ALTER TABLE @1 failed', NULL, NULL);
+('dsql_drop_table_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1000, NULL, 'DROP TABLE @1 failed', NULL, NULL);
+('dsql_recreate_table_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1001, NULL, 'RECREATE TABLE @1 failed', NULL, NULL);
+('dsql_create_pack_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1002, NULL, 'CREATE PACKAGE @1 failed', NULL, NULL);
+('dsql_alter_pack_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1003, NULL, 'ALTER PACKAGE @1 failed', NULL, NULL);
+('dsql_create_alter_pack_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1004, NULL, 'CREATE OR ALTER PACKAGE @1 failed', NULL, NULL);
+('dsql_drop_pack_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1005, NULL, 'DROP PACKAGE @1 failed', NULL, NULL);
+('dsql_recreate_pack_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1006, NULL, 'RECREATE PACKAGE @1 failed', NULL, NULL);
+('dsql_create_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1007, NULL, 'CREATE PACKAGE BODY @1 failed', NULL, NULL);
+('dsql_drop_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1008, NULL, 'DROP PACKAGE BODY @1 failed', NULL, NULL);
+('dsql_recreate_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1009, NULL, 'RECREATE PACKAGE BODY @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

@@ -84,6 +84,15 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_pack_failed, isc_dsql_alter_pack_failed,
+					isc_dsql_create_alter_pack_failed)) <<
+				name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -119,6 +128,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_pack_failed) << name;
+	}
+
 public:
 	Firebird::MetaName name;
 	bool silent;
@@ -142,6 +157,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_pack_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -169,6 +189,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_pack_body_failed) << name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 public:
@@ -196,6 +221,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_pack_body_failed) << name;
+	}
+
 public:
 	Firebird::MetaName name;
 };
@@ -217,6 +248,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_pack_body_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:

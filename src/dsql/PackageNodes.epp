@@ -630,7 +630,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		ERASE PKG;
 
 		if (!PKG.RDB$SECURITY_CLASS.NULL)
-			DYN_delete_security_class2(transaction, PKG.RDB$SECURITY_CLASS);
+			deleteSecurityClass(tdbb, transaction, PKG.RDB$SECURITY_CLASS);
 
 		dsc desc;
 		desc.makeText(name.length(), ttype_metadata,

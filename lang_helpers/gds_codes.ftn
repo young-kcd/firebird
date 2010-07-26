@@ -1996,6 +1996,86 @@ C --
       PARAMETER (GDS__dsql_invalid_type_neg            = 336397256)
       INTEGER*4 GDS__dsql_max_distinct_items         
       PARAMETER (GDS__dsql_max_distinct_items          = 336397257)
+      INTEGER*4 GDS__dsql_alter_charset_failed       
+      PARAMETER (GDS__dsql_alter_charset_failed        = 336397258)
+      INTEGER*4 GDS__dsql_comment_on_failed          
+      PARAMETER (GDS__dsql_comment_on_failed           = 336397259)
+      INTEGER*4 GDS__dsql_create_func_failed         
+      PARAMETER (GDS__dsql_create_func_failed          = 336397260)
+      INTEGER*4 GDS__dsql_alter_func_failed          
+      PARAMETER (GDS__dsql_alter_func_failed           = 336397261)
+      INTEGER*4 GDS__dsql_create_alter_func_failed   
+      PARAMETER (GDS__dsql_create_alter_func_failed    = 336397262)
+      INTEGER*4 GDS__dsql_drop_func_failed           
+      PARAMETER (GDS__dsql_drop_func_failed            = 336397263)
+      INTEGER*4 GDS__dsql_recreate_func_failed       
+      PARAMETER (GDS__dsql_recreate_func_failed        = 336397264)
+      INTEGER*4 GDS__dsql_create_proc_failed         
+      PARAMETER (GDS__dsql_create_proc_failed          = 336397265)
+      INTEGER*4 GDS__dsql_alter_proc_failed          
+      PARAMETER (GDS__dsql_alter_proc_failed           = 336397266)
+      INTEGER*4 GDS__dsql_create_alter_proc_failed   
+      PARAMETER (GDS__dsql_create_alter_proc_failed    = 336397267)
+      INTEGER*4 GDS__dsql_drop_proc_failed           
+      PARAMETER (GDS__dsql_drop_proc_failed            = 336397268)
+      INTEGER*4 GDS__dsql_recreate_proc_failed       
+      PARAMETER (GDS__dsql_recreate_proc_failed        = 336397269)
+      INTEGER*4 GDS__dsql_create_trigger_failed      
+      PARAMETER (GDS__dsql_create_trigger_failed       = 336397270)
+      INTEGER*4 GDS__dsql_alter_trigger_failed       
+      PARAMETER (GDS__dsql_alter_trigger_failed        = 336397271)
+      INTEGER*4 GDS__dsql_create_alter_trigger_failed
+      PARAMETER (GDS__dsql_create_alter_trigger_failed = 336397272)
+      INTEGER*4 GDS__dsql_drop_trigger_failed        
+      PARAMETER (GDS__dsql_drop_trigger_failed         = 336397273)
+      INTEGER*4 GDS__dsql_recreate_trigger_failed    
+      PARAMETER (GDS__dsql_recreate_trigger_failed     = 336397274)
+      INTEGER*4 GDS__dsql_create_collation_failed    
+      PARAMETER (GDS__dsql_create_collation_failed     = 336397275)
+      INTEGER*4 GDS__dsql_drop_collation_failed      
+      PARAMETER (GDS__dsql_drop_collation_failed       = 336397276)
+      INTEGER*4 GDS__dsql_create_domain_failed       
+      PARAMETER (GDS__dsql_create_domain_failed        = 336397277)
+      INTEGER*4 GDS__dsql_alter_domain_failed        
+      PARAMETER (GDS__dsql_alter_domain_failed         = 336397278)
+      INTEGER*4 GDS__dsql_drop_domain_failed         
+      PARAMETER (GDS__dsql_drop_domain_failed          = 336397279)
+      INTEGER*4 GDS__dsql_create_except_failed       
+      PARAMETER (GDS__dsql_create_except_failed        = 336397280)
+      INTEGER*4 GDS__dsql_alter_except_failed        
+      PARAMETER (GDS__dsql_alter_except_failed         = 336397281)
+      INTEGER*4 GDS__dsql_create_alter_except_failed 
+      PARAMETER (GDS__dsql_create_alter_except_failed  = 336397282)
+      INTEGER*4 GDS__dsql_recreate_except_failed     
+      PARAMETER (GDS__dsql_recreate_except_failed      = 336397283)
+      INTEGER*4 GDS__dsql_drop_except_failed         
+      PARAMETER (GDS__dsql_drop_except_failed          = 336397284)
+      INTEGER*4 GDS__dsql_create_sequence_failed     
+      PARAMETER (GDS__dsql_create_sequence_failed      = 336397285)
+      INTEGER*4 GDS__dsql_create_table_failed        
+      PARAMETER (GDS__dsql_create_table_failed         = 336397286)
+      INTEGER*4 GDS__dsql_alter_table_failed         
+      PARAMETER (GDS__dsql_alter_table_failed          = 336397287)
+      INTEGER*4 GDS__dsql_drop_table_failed          
+      PARAMETER (GDS__dsql_drop_table_failed           = 336397288)
+      INTEGER*4 GDS__dsql_recreate_table_failed      
+      PARAMETER (GDS__dsql_recreate_table_failed       = 336397289)
+      INTEGER*4 GDS__dsql_create_pack_failed         
+      PARAMETER (GDS__dsql_create_pack_failed          = 336397290)
+      INTEGER*4 GDS__dsql_alter_pack_failed          
+      PARAMETER (GDS__dsql_alter_pack_failed           = 336397291)
+      INTEGER*4 GDS__dsql_create_alter_pack_failed   
+      PARAMETER (GDS__dsql_create_alter_pack_failed    = 336397292)
+      INTEGER*4 GDS__dsql_drop_pack_failed           
+      PARAMETER (GDS__dsql_drop_pack_failed            = 336397293)
+      INTEGER*4 GDS__dsql_recreate_pack_failed       
+      PARAMETER (GDS__dsql_recreate_pack_failed        = 336397294)
+      INTEGER*4 GDS__dsql_create_pack_body_failed    
+      PARAMETER (GDS__dsql_create_pack_body_failed     = 336397295)
+      INTEGER*4 GDS__dsql_drop_pack_body_failed      
+      PARAMETER (GDS__dsql_drop_pack_body_failed       = 336397296)
+      INTEGER*4 GDS__dsql_recreate_pack_body_failed  
+      PARAMETER (GDS__dsql_recreate_pack_body_failed   = 336397297)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

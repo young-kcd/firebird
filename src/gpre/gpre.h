@@ -411,16 +411,6 @@ struct gpre_trg
 
 const size_t TRG_LEN = sizeof(gpre_trg);
 
-// Beware the numbers cannot change
-enum gpre_trg_types {
-	PRE_STORE_TRIGGER = 1,
-	//POST_STORE_TRIGGER = 2,
-	PRE_MODIFY_TRIGGER = 3,
-	POST_MODIFY_TRIGGER = 4,
-	//PRE_ERASE_TRIGGER = 5,
-	POST_ERASE_TRIGGER = 6
-};
-
 
 // Linked list stack stuff
 

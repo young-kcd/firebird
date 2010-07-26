@@ -993,6 +993,46 @@ static const struct {
 	{336397255, -833}, /* 967 dsql_nostring_neg_dial3 */
 	{336397256, -833}, /* 968 dsql_invalid_type_neg */
 	{336397257, -104}, /* 969 dsql_max_distinct_items */
+	{336397258, -901}, /* 970 dsql_alter_charset_failed */
+	{336397259, -901}, /* 971 dsql_comment_on_failed */
+	{336397260, -901}, /* 972 dsql_create_func_failed */
+	{336397261, -901}, /* 973 dsql_alter_func_failed */
+	{336397262, -901}, /* 974 dsql_create_alter_func_failed */
+	{336397263, -901}, /* 975 dsql_drop_func_failed */
+	{336397264, -901}, /* 976 dsql_recreate_func_failed */
+	{336397265, -901}, /* 977 dsql_create_proc_failed */
+	{336397266, -901}, /* 978 dsql_alter_proc_failed */
+	{336397267, -901}, /* 979 dsql_create_alter_proc_failed */
+	{336397268, -901}, /* 980 dsql_drop_proc_failed */
+	{336397269, -901}, /* 981 dsql_recreate_proc_failed */
+	{336397270, -901}, /* 982 dsql_create_trigger_failed */
+	{336397271, -901}, /* 983 dsql_alter_trigger_failed */
+	{336397272, -901}, /* 984 dsql_create_alter_trigger_failed */
+	{336397273, -901}, /* 985 dsql_drop_trigger_failed */
+	{336397274, -901}, /* 986 dsql_recreate_trigger_failed */
+	{336397275, -901}, /* 987 dsql_create_collation_failed */
+	{336397276, -901}, /* 988 dsql_drop_collation_failed */
+	{336397277, -901}, /* 989 dsql_create_domain_failed */
+	{336397278, -901}, /* 990 dsql_alter_domain_failed */
+	{336397279, -901}, /* 991 dsql_drop_domain_failed */
+	{336397280, -901}, /* 992 dsql_create_except_failed */
+	{336397281, -901}, /* 993 dsql_alter_except_failed */
+	{336397282, -901}, /* 994 dsql_create_alter_except_failed */
+	{336397283, -901}, /* 995 dsql_recreate_except_failed */
+	{336397284, -901}, /* 996 dsql_drop_except_failed */
+	{336397285, -901}, /* 997 dsql_create_sequence_failed */
+	{336397286, -901}, /* 998 dsql_create_table_failed */
+	{336397287, -901}, /* 999 dsql_alter_table_failed */
+	{336397288, -901}, /* 1000 dsql_drop_table_failed */
+	{336397289, -901}, /* 1001 dsql_recreate_table_failed */
+	{336397290, -901}, /* 1002 dsql_create_pack_failed */
+	{336397291, -901}, /* 1003 dsql_alter_pack_failed */
+	{336397292, -901}, /* 1004 dsql_create_alter_pack_failed */
+	{336397293, -901}, /* 1005 dsql_drop_pack_failed */
+	{336397294, -901}, /* 1006 dsql_recreate_pack_failed */
+	{336397295, -901}, /* 1007 dsql_create_pack_body_failed */
+	{336397296, -901}, /* 1008 dsql_drop_pack_body_failed */
+	{336397297, -901}, /* 1009 dsql_recreate_pack_body_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

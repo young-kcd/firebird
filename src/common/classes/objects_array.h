@@ -279,6 +279,11 @@ namespace Firebird
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
 
+		bool hasData() const
+		{
+			return getCount() != 0;
+		}
+
 		bool isEmpty() const
 		{
 			return getCount() == 0;

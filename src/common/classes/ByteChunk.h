@@ -24,6 +24,7 @@
 #define COMMON_BYTE_CHUNK_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 
 namespace Firebird {
 
@@ -46,8 +47,22 @@ struct ByteChunk
 	{
 	}
 
-	const UCHAR* const data;
-	const size_t length;
+	// String buffer.
+	ByteChunk(string& str)
+		: data((UCHAR*) str.c_str()),
+		  length(str.length())
+	{
+	}
+
+	// Empty.
+	ByteChunk()
+		: data(NULL),
+		  length(0)
+	{
+	}
+
+	const UCHAR* data;
+	size_t length;
 };
 
 }	// namespace Firebird

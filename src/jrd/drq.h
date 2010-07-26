@@ -62,7 +62,6 @@ enum drq_type_t
 	drq_n_idx_seg,			// count index segments
 	drq_c_dup_con,			// check for duplicate contraint
 	drq_l_intg_con,			// lookup an integrity constraint
-	drq_s_dims,				// store dimensions
 	drq_s_files,			// store files
 	drq_s_filters,			// store filters
 	drq_s_gens,				// store generators
@@ -105,8 +104,6 @@ enum drq_type_t
 	drq_l_fld_src2,			// lookup a field source
 	drq_m_database,			// modify database
 	drq_m_index,			// modify index
-	drq_m_lfield,			// modify local field
-	drq_m_relation,			// modify relation
 	drq_e_grant1,			// erase grant
 	drq_e_grant2,			// erase grant
 	drq_s_indices,			// store indices
@@ -233,6 +230,9 @@ enum drq_type_t
 	drq_m_fld,				// create domain field
 	drq_s_fld_dym,			// store field dymension
 	drq_m_fld2,				// alter domain
+	drq_s_lfields2,			// store local fields
+	drq_c_unq_nam2,			// check for unique field names
+	drq_s_rels2,			// store relations
 
 	drq_MAX
 };

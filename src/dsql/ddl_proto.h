@@ -64,6 +64,7 @@ const USHORT blr_dtypes[] = {
 void DDL_execute(Jrd::dsql_req*);
 void DDL_generate(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 bool DDL_ids(const Jrd::DsqlCompilerScratch*);
+void DDL_reset_context_stack(Jrd::DsqlCompilerScratch*);
 void DDL_resolve_intl_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Jrd::dsql_str*);
 void DDL_resolve_intl_type2(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Jrd::dsql_str*, bool);
 

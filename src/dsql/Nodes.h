@@ -28,6 +28,7 @@
 #include "../dsql/node.h"
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
+#include "../common/classes/ByteChunk.h"
 
 namespace Jrd {
 
@@ -96,6 +97,9 @@ public:
 	{
 	}
 
+	static bool deleteSecurityClass(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& secClass);
+
 public:
 	const Firebird::string& getSqlText()
 	{
@@ -106,23 +110,66 @@ public:
 	// execution is a hack.
 	void executeDdl(thread_db* tdbb, jrd_tra* transaction)
 	{
+		using namespace Firebird;
+
 		dsqlScratch->setTransaction(transaction);
-		execute(tdbb, transaction);
+
+		try
+		{
+			execute(tdbb, transaction);
+		}
+		catch (status_exception& ex)
+		{
+			// Rethrow an exception with isc_no_meta_update and prefix codes.
+
+			Arg::StatusVector newVector;
+			newVector << Arg::Gds(isc_no_meta_update);
+			putErrorPrefix(newVector);
+
+			const ISC_STATUS* status = ex.value();
+
+			if (status[1] == isc_no_meta_update)
+				status += 2;
+
+			newVector.append(Arg::StatusVector(status));
+
+			status_exception::raise(newVector);
+		}
 	}
 
 public:
 	enum DdlTriggerWhen { DTW_BEFORE, DTW_AFTER };
+
 	static void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
 		const Firebird::string& sqlText);
 
 protected:
+	// Return exception code based on combination of create and alter clauses.
+	static ISC_STATUS createAlterCode(bool create, bool alter, ISC_STATUS createCode,
+		ISC_STATUS alterCode, ISC_STATUS createOrAlterCode)
+	{
+		if (create && alter)
+			return createOrAlterCode;
+		else if (create)
+			return createCode;
+		else if (alter)
+			return alterCode;
+		else
+		{
+			fb_assert(false);
+			return 0;
+		}
+	}
+
 	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
 	void putType(const TypeClause& type, bool useSubType);
 	void resetContextStack();
-	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, const TypeClause& field,
-		Firebird::MetaName& name);
+	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
+		const TypeClause& field,
+		const Firebird::string& computedSource = "",
+		const BlrWriter::BlrData& computedValue = BlrWriter::BlrData());
 
 protected:
 	virtual DdlNode* internalDsqlPass()
@@ -130,6 +177,9 @@ protected:
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		return this;
 	}
+
+	// Prefix DDL exceptions. To be implemented in each command.
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector) = 0;
 
 public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;

@@ -102,461 +102,6 @@ DATABASE DB = STATIC "ODS.RDB";
 
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 
-static rel_t get_relation_type(thread_db*, Global*, const Firebird::MetaName&);
-static void check_foreign_key_temp_scope(thread_db*, Global*, const TEXT*, const TEXT*);
-static void check_relation_temp_scope(thread_db*, Global*, const TEXT*, const rel_t);
-static void make_relation_scope_name(const TEXT*, const rel_t, Firebird::string&);
-
-
-void DYN_define_constraint(Global*		gbl,
-						   const UCHAR**	ptr,
-						   const Firebird::MetaName*	relation_name,
-						   Firebird::MetaName*	field_name)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ c o n s t r a i n t
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	creates an integrity constraint and if not a CHECK
- *	constraint, also an index for the constraint.
- *
- **************************************/
-	UCHAR verb;
-	Firebird::MetaName constraint_name, index_name, referred_index_name;
-	Firebird::MetaName null_field_name, trigger_name;
-	MetaNameArray field_list;
-	bool primary_flag = false, foreign_flag = false;
-	UCHAR ri_action = 0;
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	GET_STRING(ptr, constraint_name);
-	if (constraint_name.isEmpty())
-		DYN_UTIL_generate_constraint_name(tdbb, gbl, constraint_name);
-
-	SSHORT id = -1;
-
-	try {
-
-	AutoCacheRequest request(tdbb, drq_s_rel_con, DYN_REQUESTS);
-	id = drq_s_rel_con;
-
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		CRT IN RDB$RELATION_CONSTRAINTS
-	{
-		strcpy(CRT.RDB$CONSTRAINT_NAME, constraint_name.c_str());
-		strcpy(CRT.RDB$RELATION_NAME, relation_name->c_str());
-
-		switch (verb = *(*ptr)++)
-		{
-		case isc_dyn_def_primary_key:
-			primary_flag = true;
-			strcpy(CRT.RDB$CONSTRAINT_TYPE, PRIMARY_KEY);
-			break;
-
-		case isc_dyn_def_foreign_key:
-			foreign_flag = true;
-			strcpy(CRT.RDB$CONSTRAINT_TYPE, FOREIGN_KEY);
-			break;
-
-		case isc_dyn_def_unique:
-			strcpy(CRT.RDB$CONSTRAINT_TYPE, UNIQUE_CNSTRT);
-			break;
-
-		case isc_dyn_def_trigger:
-			strcpy(CRT.RDB$CONSTRAINT_TYPE, CHECK_CNSTRT);
-			CRT.RDB$INDEX_NAME.NULL = TRUE;
-			break;
-
-		case isc_dyn_fld_not_null:
-			strcpy(CRT.RDB$CONSTRAINT_TYPE, NOT_NULL_CNSTRT);
-			CRT.RDB$INDEX_NAME.NULL = TRUE;
-			break;
-
-		default:
-			DYN_unsupported_verb();
-		}
-
-		if (verb != isc_dyn_def_trigger && verb != isc_dyn_fld_not_null)
-		{
-			referred_index_name = "";
-			DYN_define_index(gbl, ptr, relation_name, verb, &index_name,
-							 &referred_index_name, &constraint_name, &ri_action);
-			strcpy(CRT.RDB$INDEX_NAME, index_name.c_str());
-			CRT.RDB$INDEX_NAME.NULL = FALSE;
-
-			SSHORT old_id = id;
-			id = drq_l_rel_info;
-			check_foreign_key_temp_scope(tdbb, gbl,
-										 relation_name->c_str(), referred_index_name.c_str());
-			id = old_id;
-
-			// check that we have references permissions on the table and
-			// fields that the index:referred_index_name is on.
-
-			SCL_check_index(tdbb, referred_index_name, 0, SCL_sql_references);
-		}
-	}
-	END_STORE
-
-	}	// try
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SSHORT local_id = -1;
-		USHORT number;
-		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
-		// msg 124: "A column name is repeated in the definition of constraint: %s"
-		// msg 125: "Integrity constraint lookup failed"
-		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
-		// msg 232: "%s cannot reference %s"
-		switch (id)
-		{
-			case drq_s_rel_con:
-				number = 121;
-				local_id = id;
-				break;
-			case drq_s_ref_con:
-				number = 127;
-				local_id = id;
-				break;
-			case drq_c_unq_nam:
-				number = 121;
-				break;
-			case drq_n_idx_seg:
-				number = 124;
-				break;
-			case drq_c_dup_con:
-				number = 125;
-				break;
-			case drq_l_rel_info:
-				number = 232;
-				break;
-			default:
-				number = 125;
-				break;
-		}
-
-		DYN_error_punt(true, number, number == 124 ? constraint_name.c_str() : NULL);
-	}
-
-	if (verb == isc_dyn_def_trigger)
-	{
-		do {
-			DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, false);
-			DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name, trigger_name);
-		} while ((verb = *(*ptr)++) == isc_dyn_def_trigger);
-
-		if (verb != isc_dyn_end) {
-			DYN_unsupported_verb();
-		}
-		return;
-	}
-
-	if (verb == isc_dyn_fld_not_null)
-	{
-		fb_assert(field_name);
-		DYN_UTIL_store_check_constraints(tdbb, gbl, constraint_name, *field_name);
-
-		if (*(*ptr)++ != isc_dyn_end) {
-			DYN_unsupported_verb();
-		}
-		return;
-	}
-
-	try {
-
-	// Make sure unique field names were specified for UNIQUE/PRIMARY/FOREIGN
-	// All fields must have the NOT NULL attribute specified for UNIQUE/PRIMARY.
-
-	AutoCacheRequest request(tdbb, drq_c_unq_nam, DYN_REQUESTS);
-	id = drq_c_unq_nam;
-
-	bool not_null = true;
-	int all_count = 0, unique_count = 0;
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDS IN RDB$INDEX_SEGMENTS
-			CROSS RFR IN RDB$RELATION_FIELDS
-			CROSS FLX IN RDB$FIELDS WITH
-			IDS.RDB$INDEX_NAME EQ index_name.c_str() AND
-			RFR.RDB$RELATION_NAME EQ relation_name->c_str() AND
-			RFR.RDB$FIELD_NAME EQ IDS.RDB$FIELD_NAME AND
-			FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-			REDUCED TO IDS.RDB$FIELD_NAME, IDS.RDB$INDEX_NAME,
-			FLX.RDB$NULL_FLAG
-			SORTED BY ASCENDING IDS.RDB$FIELD_NAME
-	{
-		if ((FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG) &&
-			(RFR.RDB$NULL_FLAG.NULL || !RFR.RDB$NULL_FLAG) &&
-			primary_flag)
-		{
-			not_null = false;
-			null_field_name = RFR.RDB$FIELD_NAME;
-			break;
-		}
-
-		unique_count++;
-		field_list.add() = IDS.RDB$FIELD_NAME;
-	}
-	END_FOR
-
-	if (!not_null)
-	{
-		DYN_error_punt(false, 123, null_field_name.c_str());
-		// msg 123: "Field: %s not defined as NOT NULL - can't be used in PRIMARY KEY constraint definition"
-	}
-
-	request.reset(tdbb, drq_n_idx_seg, DYN_REQUESTS);
-	id = drq_n_idx_seg;
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDS IN RDB$INDEX_SEGMENTS WITH IDS.RDB$INDEX_NAME EQ index_name.c_str()
-	{
-		all_count++;
-	}
-	END_FOR
-
-	if (unique_count != all_count)
-		goto dyn_punt_false_124;
-
-	// For PRIMARY KEY/UNIQUE constraints, make sure same set of columns
-	// is not used in another constraint of either type
-
-	if (!foreign_flag)
-	{
-		request.reset(tdbb, drq_c_dup_con, DYN_REQUESTS);
-		id = drq_c_dup_con;
-
-		index_name = "";
-		int list_index = -1;
-		bool found  = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			CRT IN RDB$RELATION_CONSTRAINTS CROSS
-				IDS IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME
-				WITH CRT.RDB$RELATION_NAME EQ relation_name->c_str() AND
-				(CRT.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY OR
-				 CRT.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT) AND
-				CRT.RDB$CONSTRAINT_NAME NE constraint_name.c_str()
-				SORTED BY CRT.RDB$INDEX_NAME, DESCENDING IDS.RDB$FIELD_NAME
-		{
-			if (index_name != CRT.RDB$INDEX_NAME)
-			{
-				if (list_index >= 0) {
-					found = false;
-				}
-				if (found)
-					break;
-				list_index = field_list.getCount() - 1;
-				index_name = CRT.RDB$INDEX_NAME;
-				found = true;
-			}
-
-			if (list_index >= 0)
-			{
-				if (field_list[list_index--] != IDS.RDB$FIELD_NAME)
-				{
-					found = false;
-				}
-			}
-			else {
-				found = false;
-			}
-		}
-		END_FOR
-
-		if (list_index >= 0)
-			found = false;
-
-		if (found)
-			goto dyn_punt_false_126;
-	}
-	else
-	{
-		// Foreign key being defined
-
-		request.reset(tdbb, drq_s_ref_con, DYN_REQUESTS);
-		id = drq_s_ref_con;
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			REF IN RDB$REF_CONSTRAINTS
-		{
-			const SSHORT old_id = id;
-			AutoCacheRequest request2(tdbb, drq_l_intg_con, DYN_REQUESTS);
-			id = drq_l_intg_con;
-
-			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-				CRT IN RDB$RELATION_CONSTRAINTS WITH
-					CRT.RDB$INDEX_NAME EQ referred_index_name.c_str() AND
-					(CRT.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
-					 CRT.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
-			{
-				fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME, sizeof(CRT.RDB$CONSTRAINT_NAME));
-				strcpy(REF.RDB$CONST_NAME_UQ, CRT.RDB$CONSTRAINT_NAME);
-				strcpy(REF.RDB$CONSTRAINT_NAME, constraint_name.c_str());
-
-				REF.RDB$UPDATE_RULE.NULL = FALSE;
-				if (ri_action & FOR_KEY_UPD_CASCADE)
-					strcpy(REF.RDB$UPDATE_RULE, RI_ACTION_CASCADE);
-				else if (ri_action & FOR_KEY_UPD_NULL)
-					strcpy(REF.RDB$UPDATE_RULE, RI_ACTION_NULL);
-				else if (ri_action & FOR_KEY_UPD_DEFAULT)
-					strcpy(REF.RDB$UPDATE_RULE, RI_ACTION_DEFAULT);
-				else if (ri_action & FOR_KEY_UPD_NONE)
-					strcpy(REF.RDB$UPDATE_RULE, RI_ACTION_NONE);
-				else
-					// RESTRICT is the default value for this column
-					strcpy(REF.RDB$UPDATE_RULE, RI_RESTRICT);
-
-				REF.RDB$DELETE_RULE.NULL = FALSE;
-				if (ri_action & FOR_KEY_DEL_CASCADE)
-					strcpy(REF.RDB$DELETE_RULE, RI_ACTION_CASCADE);
-				else if (ri_action & FOR_KEY_DEL_NULL)
-					strcpy(REF.RDB$DELETE_RULE, RI_ACTION_NULL);
-				else if (ri_action & FOR_KEY_DEL_DEFAULT)
-					strcpy(REF.RDB$DELETE_RULE, RI_ACTION_DEFAULT);
-				else if (ri_action & FOR_KEY_DEL_NONE)
-					strcpy(REF.RDB$DELETE_RULE, RI_ACTION_NONE);
-				else
-					// RESTRICT is the default value for this column
-					strcpy(REF.RDB$DELETE_RULE, RI_RESTRICT);
-			}
-			END_FOR
-
-			id = old_id;
-		}
-		END_STORE
-	}
-
-	}	// try
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		SSHORT local_id = -1;
-		USHORT number;
-		// msg 121: "STORE RDB$RELATION_CONSTRAINTS failed"
-		// msg 124: "A column name is repeated in the definition of constraint: %s"
-		// msg 125: "Integrity constraint lookup failed"
-		// msg 127: "STORE RDB$REF_CONSTRAINTS failed"
-		switch (id)
-		{
-			case drq_s_rel_con:
-				number = 121;
-				local_id = id;
-				break;
-			case drq_s_ref_con:
-				number = 127;
-				local_id = id;
-				break;
-			case drq_c_unq_nam:
-				number = 121;
-				break;
-			case drq_n_idx_seg:
-				number = 124;
-				break;
-			case drq_c_dup_con:
-				number = 125;
-				break;
-			default:
-				number = 125;
-				break;
-		}
-
-		DYN_error_punt(true, number, number == 124 ? constraint_name.c_str() : NULL);
-	}
-
-	return;
-
-dyn_punt_false_124:
-	DYN_error_punt(false, 124, constraint_name.c_str());
-	// msg 124: "A column name is repeated in the definition of constraint: %s"
-	return;
-
-dyn_punt_false_126:
-	DYN_error_punt(false, 126);
-	// msg 126: "Same set of columns cannot be used in more than one PRIMARY KEY and/or UNIQUE constraint definition"
-}
-
-
-void DYN_define_dimension(Global*		gbl,
-						  const UCHAR**	ptr,
-						  const Firebird::MetaName*		relation_name,
-						  Firebird::MetaName*		field_name)
-{
-/**************************************
- *
- *	D Y N _ d e f i n e _ d i m e n s i o n
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl statement that
- *	defines a single dimension for a field.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-	AutoCacheRequest request(tdbb, drq_s_dims, DYN_REQUESTS);
-
-	bool b_ending_store = false;
-
-	try
-	{
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			DIM IN RDB$FIELD_DIMENSIONS
-		{
-			DIM.RDB$UPPER_BOUND.NULL = TRUE;
-			DIM.RDB$LOWER_BOUND.NULL = TRUE;
-			DIM.RDB$DIMENSION = (SSHORT)DYN_get_number(ptr);
-			if (field_name) {
-				strcpy(DIM.RDB$FIELD_NAME, field_name->c_str());
-			}
-
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-			{
-				switch (verb)
-				{
-				case isc_dyn_fld_name:
-					GET_STRING(ptr, DIM.RDB$FIELD_NAME);
-					break;
-
-				case isc_dyn_dim_upper:
-					DIM.RDB$UPPER_BOUND = DYN_get_number(ptr);
-					DIM.RDB$UPPER_BOUND.NULL = FALSE;
-					break;
-
-				case isc_dyn_dim_lower:
-					DIM.RDB$LOWER_BOUND = DYN_get_number(ptr);
-					DIM.RDB$LOWER_BOUND.NULL = FALSE;
-					break;
-
-				default:
-					--(*ptr);
-					DYN_execute(gbl, ptr, relation_name, field_name, NULL, NULL, NULL);
-				}
-			}
-
-			b_ending_store = true;
-		}
-		END_STORE
-
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (b_ending_store)
-		{
-			DYN_error_punt(true, 3);
-			// msg 3: "STORE RDB$FIELD_DIMENSIONS failed"
-		}
-		throw;
-	}
-}
-
 
 void DYN_define_file(Global*		gbl,
 					 const UCHAR**	ptr,
@@ -1046,537 +591,206 @@ void DYN_define_index(Global*		gbl,
  **************************************
  *
  * Functional description
- *	Execute a dynamic ddl statement that
- *	creates an index.
+ *	Execute a dynamic ddl statement that creates an index.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
 	Firebird::MetaName index_name;
-	Firebird::MetaName referenced_relation;
 	UCHAR verb;
-	MetaNameArray field_list, seg_list;
 	Firebird::MetaName trigger_name;
 
-	if (ri_actionP != NULL) {
-		(*ri_actionP) = 0;
-	}
-
-	thread_db* tdbb = JRD_get_thread_data();
+	if (ri_actionP)
+		*ri_actionP = 0;
 
 	GET_STRING(ptr, index_name);
 
 	if (index_name.isEmpty())
-	{
-		DYN_UTIL_generate_index_name(tdbb, gbl, index_name, index_type);
-	}
+		DYN_UTIL_generate_index_name(tdbb, gbl->gbl_transaction, index_name, index_type);
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
 		DDL_TRIGGER_CREATE_INDEX, index_name, gbl->sqlText);
 
-	SSHORT id = -1;
-
-	try {
-
-	id = drq_l_idx_name;
-	DYN_UTIL_check_unique_name(tdbb, gbl->gbl_transaction, index_name, obj_index);
-
-	AutoCacheRequest request(tdbb, drq_s_indices, DYN_REQUESTS);
-	id = drq_s_indices;
-
-	ULONG key_length = 0;
-
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		IDX IN RDB$INDICES
+	try
 	{
-		IDX.RDB$UNIQUE_FLAG.NULL = TRUE;
-		IDX.RDB$INDEX_INACTIVE.NULL = TRUE;
-		IDX.RDB$INDEX_TYPE.NULL = TRUE;
-		IDX.RDB$FOREIGN_KEY.NULL = TRUE;
-		IDX.RDB$EXPRESSION_SOURCE.NULL = TRUE;
-		IDX.RDB$EXPRESSION_BLR.NULL = TRUE;
-		ULONG fld_count = 0, seg_count = 0;
-		strcpy(IDX.RDB$INDEX_NAME, index_name.c_str());
+		DYN_UTIL_check_unique_name(tdbb, gbl->gbl_transaction, index_name, obj_index);
+	}
+	catch (const Exception& ex)
+	{
+		stuff_exception(tdbb->tdbb_status_vector, ex);
+		DYN_error_punt(true, 21);	// msg 21: "STORE RDB$INDICES failed"
+	}
+
+	try
+	{
+		CreateIndexNode::Definition definition;
+		definition.type = index_type;
+
 		if (new_index_name)
-			*new_index_name = IDX.RDB$INDEX_NAME;
+			*new_index_name = index_name;
+
 		if (relation_name)
-			strcpy(IDX.RDB$RELATION_NAME, relation_name->c_str());
+			definition.relation = *relation_name;
 		else if (*(*ptr)++ == isc_dyn_rel_name)
-			GET_STRING(ptr, IDX.RDB$RELATION_NAME);
+			GET_STRING(ptr, definition.relation);
 		else
-			DYN_error_punt(false, 14); // msg 14: "No relation specified for index"
-
-		IDX.RDB$RELATION_NAME.NULL = FALSE;
-		IDX.RDB$SYSTEM_FLAG = 0;
-		IDX.RDB$SYSTEM_FLAG.NULL = FALSE;
-
-		// Check if the table is actually a view
-
-		SSHORT old_id = id;
-		AutoCacheRequest request2(tdbb, drq_l_view_idx, DYN_REQUESTS);
-		id = drq_l_view_idx;
-
-		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-			VREL IN RDB$RELATIONS
-			WITH VREL.RDB$RELATION_NAME EQ IDX.RDB$RELATION_NAME
-		{
-			if (!VREL.RDB$VIEW_BLR.NULL)
-				DYN_error_punt(false, 181); // msg 181: "attempt to index a view"
-		}
-		END_FOR
-
-		id = old_id;
-
-		// The previous line and the next line can be
-		// deleted as long as no code is added in the middle.
-
-		old_id = id;
-		request2.reset(tdbb, drq_l_lfield, DYN_REQUESTS);
-		id = drq_l_lfield;
-
-		ULONG referred_cols = 0;
+			DYN_error_punt(false, 14);	// msg 14: "No relation specified for index"
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
 		{
 			switch (verb)
 			{
-			case isc_dyn_idx_unique:
-				IDX.RDB$UNIQUE_FLAG = (SSHORT)DYN_get_number(ptr);
-				IDX.RDB$UNIQUE_FLAG.NULL = FALSE;
-				break;
+				case isc_dyn_idx_unique:
+					definition.unique = bool(DYN_get_number(ptr));
+					break;
 
-			case isc_dyn_idx_inactive:
-				IDX.RDB$INDEX_INACTIVE = (SSHORT)DYN_get_number(ptr);
-				IDX.RDB$INDEX_INACTIVE.NULL = FALSE;
-				break;
+				case isc_dyn_idx_inactive:
+					definition.inactive = bool(DYN_get_number(ptr));
+					break;
 
-			case isc_dyn_idx_type:
-				IDX.RDB$INDEX_TYPE = (SSHORT)DYN_get_number(ptr);
-				IDX.RDB$INDEX_TYPE.NULL = FALSE;
-				break;
+				case isc_dyn_idx_type:
+					definition.descending = bool(DYN_get_number(ptr));
+					break;
 
-			case isc_dyn_fld_name:
+				case isc_dyn_fld_name:
 				{
-					Firebird::MetaName& str = seg_list.add();
+					MetaName& str = definition.columns.add();
 					GET_STRING(ptr, str);
-					// The famous brute force approach.
-					for (ULONG iter = 0; iter < seg_count; ++iter)
+					break;
+				}
+
+				case isc_dyn_fld_computed_blr:
+					DYN_put_blr_blob(gbl, ptr, &definition.expressionBlr);
+					break;
+
+				case isc_dyn_fld_computed_source:
+					DYN_put_text_blob(gbl, ptr, &definition.expressionSource);
+					break;
+
+				// for foreign keys, point to the corresponding relation
+
+				case isc_dyn_idx_foreign_key:
+					GET_STRING(ptr, definition.refRelation);
+					break;
+
+				case isc_dyn_idx_ref_column:
+				{
+					MetaName& str = definition.refColumns.add();
+					GET_STRING(ptr, str);
+					break;
+				}
+
+				case isc_dyn_foreign_key_delete:
+					fb_assert(ri_actionP != NULL);
+					switch (verb = *(*ptr)++)
 					{
-						if (seg_list[iter] == str)
-						{
-							DYN_error_punt(false, 240, SafeArg() << str.c_str() << IDX.RDB$INDEX_NAME);
-							// msg 240 "Field %s cannot be used twice in index %s"
-						}
-					}
-
-					seg_count++;
-
-					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-						F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
-							WITH GF.RDB$FIELD_NAME EQ F.RDB$FIELD_SOURCE AND
-							F.RDB$FIELD_NAME EQ str.c_str() AND
-							IDX.RDB$RELATION_NAME EQ F.RDB$RELATION_NAME
-					{
-						ULONG length = 0;
-
-						fld_count++;
-						if (GF.RDB$FIELD_TYPE == blr_blob)
-						{
-							DYN_error_punt(false, 116, IDX.RDB$INDEX_NAME);
-							// msg 116 "attempt to index blob field in index %s"
-						}
-						else if (!GF.RDB$DIMENSIONS.NULL)
-						{
-							DYN_error_punt(false, 117, IDX.RDB$INDEX_NAME);
-							// msg 117 "attempt to index array field in index %s"
-						}
-						else if (!GF.RDB$COMPUTED_BLR.NULL)
-						{
-							DYN_error_punt(false, 179, IDX.RDB$INDEX_NAME);
-							// msg 179 "attempt to index COMPUTED BY field in index %s"
-						}
-						else if (GF.RDB$FIELD_TYPE == blr_varying ||
-								 GF.RDB$FIELD_TYPE == blr_text)
-						{
-							// Compute the length of the key segment allowing
-							// for international information.  Note that we
-							// must convert a <character set, collation> type
-							// to an index type in order to compute the length
-							if (!F.RDB$COLLATION_ID.NULL)
+						case isc_dyn_foreign_key_cascade:
+							*ri_actionP |= FOR_KEY_DEL_CASCADE;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
 							{
-								length = INTL_key_length(tdbb,
-									INTL_TEXT_TO_INDEX(INTL_CS_COLL_TO_TTYPE(
-										GF.RDB$CHARACTER_SET_ID, F.RDB$COLLATION_ID)),
-									GF.RDB$FIELD_LENGTH);
-							}
-							else if (!GF.RDB$COLLATION_ID.NULL)
-							{
-								length = INTL_key_length(tdbb,
-									INTL_TEXT_TO_INDEX(INTL_CS_COLL_TO_TTYPE(
-										GF.RDB$CHARACTER_SET_ID, GF.RDB$COLLATION_ID)),
-									GF.RDB$FIELD_LENGTH);
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
 							}
 							else
-								length = GF.RDB$FIELD_LENGTH;
-						}
-						else
-							length = sizeof(double);
+								DYN_unsupported_verb();
+							break;
 
-						if (key_length)
-						{
-							key_length += ((length + STUFF_COUNT - 1) / (unsigned) STUFF_COUNT) *
-											(STUFF_COUNT + 1);
-						}
-						else
-						{
-							key_length = length;
-						}
+						case isc_dyn_foreign_key_null:
+							*ri_actionP |= FOR_KEY_DEL_NULL;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+							{
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
+							}
+							else
+								DYN_unsupported_verb();
+							break;
+
+						case isc_dyn_foreign_key_default:
+							*ri_actionP |= FOR_KEY_DEL_DEFAULT;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+							{
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
+							}
+							else
+								DYN_unsupported_verb();
+							break;
+
+						case isc_dyn_foreign_key_none:
+							*ri_actionP |= FOR_KEY_DEL_NONE;
+							break;
+
+						default:
+							fb_assert(0);	// should not come here
+							DYN_unsupported_verb();
 					}
-					END_FOR
-
 					break;
-				}
 
-			// for expression indices, store the BLR and the source string
-
-			case isc_dyn_fld_computed_blr:
-				DYN_put_blr_blob(gbl, ptr, &IDX.RDB$EXPRESSION_BLR);
-				IDX.RDB$EXPRESSION_BLR.NULL = FALSE;
-				break;
-
-			case isc_dyn_fld_computed_source:
-				DYN_put_text_blob(gbl, ptr, &IDX.RDB$EXPRESSION_SOURCE);
-				IDX.RDB$EXPRESSION_SOURCE.NULL = FALSE;
-				break;
-
-			// for foreign keys, point to the corresponding relation
-
-			case isc_dyn_idx_foreign_key:
-				GET_STRING(ptr, referenced_relation);
-				break;
-
-			case isc_dyn_idx_ref_column:
-				{
-					Firebird::MetaName& str2 = field_list.add();
-					GET_STRING(ptr, str2);
-					referred_cols++;
-				}
-				break;
-
-			case isc_dyn_foreign_key_delete:
-				fb_assert(ri_actionP != NULL);
-				switch (verb = *(*ptr)++)
-				{
-				case isc_dyn_foreign_key_cascade:
-					(*ri_actionP) |= FOR_KEY_DEL_CASCADE;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+				case isc_dyn_foreign_key_update:
+					fb_assert(ri_actionP != NULL);
+					switch (verb = *(*ptr)++)
 					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
+						case isc_dyn_foreign_key_cascade:
+							*ri_actionP |= FOR_KEY_UPD_CASCADE;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+							{
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
+							}
+							else
+								DYN_unsupported_verb();
+							break;
+
+						case isc_dyn_foreign_key_null:
+							*ri_actionP |= FOR_KEY_UPD_NULL;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+							{
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
+							}
+							else
+								DYN_unsupported_verb();
+							break;
+
+						case isc_dyn_foreign_key_default:
+							*ri_actionP |= FOR_KEY_UPD_DEFAULT;
+							if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
+							{
+								DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
+								fb_assert(cnst_name);
+								DYN_UTIL_store_check_constraints(tdbb, gbl->gbl_transaction, *cnst_name, trigger_name);
+							}
+							else
+								DYN_unsupported_verb();
+							break;
+
+						case isc_dyn_foreign_key_none:
+							*ri_actionP |= FOR_KEY_UPD_NONE;
+							break;
+
+						default:
+							fb_assert(0);	// should not come here
+							DYN_unsupported_verb();
 					}
-					else
-						DYN_unsupported_verb();
 					break;
-				case isc_dyn_foreign_key_null:
-					(*ri_actionP) |= FOR_KEY_DEL_NULL;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
-					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
-					}
-					else
-						DYN_unsupported_verb();
-					break;
-				case isc_dyn_foreign_key_default:
-					(*ri_actionP) |= FOR_KEY_DEL_DEFAULT;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
-					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
-					}
-					else
-						DYN_unsupported_verb();
-					break;
-				case isc_dyn_foreign_key_none:
-					(*ri_actionP) |= FOR_KEY_DEL_NONE;
-					break;
+
 				default:
-					fb_assert(0);	// should not come here
 					DYN_unsupported_verb();
-				}
-				break;
-
-			case isc_dyn_foreign_key_update:
-				fb_assert(ri_actionP != NULL);
-				switch (verb = *(*ptr)++)
-				{
-				case isc_dyn_foreign_key_cascade:
-					(*ri_actionP) |= FOR_KEY_UPD_CASCADE;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
-					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
-					}
-					else
-						DYN_unsupported_verb();
-					break;
-				case isc_dyn_foreign_key_null:
-					(*ri_actionP) |= FOR_KEY_UPD_NULL;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
-					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
-					}
-					else
-						DYN_unsupported_verb();
-					break;
-				case isc_dyn_foreign_key_default:
-					(*ri_actionP) |= FOR_KEY_UPD_DEFAULT;
-					if ((verb = *(*ptr)++) == isc_dyn_def_trigger)
-					{
-						DYN_define_trigger(gbl, ptr, relation_name, &trigger_name, true);
-						fb_assert(cnst_name);
-						DYN_UTIL_store_check_constraints(tdbb, gbl, *cnst_name, trigger_name);
-					}
-					else
-						DYN_unsupported_verb();
-					break;
-				case isc_dyn_foreign_key_none:
-					(*ri_actionP) |= FOR_KEY_UPD_NONE;
-					break;
-				default:
-					fb_assert(0);	// should not come here
-					DYN_unsupported_verb();
-				}
-				break;
-			default:
-				DYN_unsupported_verb();
 			}
 		}
 
-		id = old_id;
-
-		key_length = ROUNDUP(key_length, sizeof(SLONG));
-		if (key_length >= MAX_KEY)
-			DYN_error_punt(false, 118, IDX.RDB$INDEX_NAME); // msg 118 "key size too big for index %s"
-
-		if (seg_count)
-		{
-			if (seg_count != fld_count)
-				DYN_error_punt(false, 120, IDX.RDB$INDEX_NAME); // msg 118 "Unknown fields in index %s"
-
-			old_id = id;
-			request2.reset(tdbb, drq_s_idx_segs, DYN_REQUESTS);
-			id = drq_s_idx_segs;
-
-			while (seg_list.getCount())
-			{
-				STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-					X IN RDB$INDEX_SEGMENTS
-				{
-					strcpy(X.RDB$INDEX_NAME, IDX.RDB$INDEX_NAME);
-					Firebird::MetaName str = seg_list.pop();
-					strcpy(X.RDB$FIELD_NAME, str.c_str());
-					X.RDB$FIELD_POSITION = --fld_count;
-				}
-				END_STORE
-			}
-
-			id = old_id;
-		}
-		else if (IDX.RDB$EXPRESSION_BLR.NULL)
-		{
-			DYN_error_punt(false, 119, IDX.RDB$INDEX_NAME);
-			// msg 119 "no keys for index %s"
-		}
-
-		if (field_list.getCount())
-		{
-			// If referring columns count <> referred columns return error
-
-			if (seg_count != referred_cols)
-				DYN_error_punt(true, 133);
-				// msg 133: "Number of referencing columns do not equal number of referenced columns
-
-			// lookup a unique index in the referenced relation with the
-			// referenced fields mentioned
-
-			old_id = id;
-			request2.reset(tdbb, drq_l_unq_idx, DYN_REQUESTS);
-			id = drq_l_unq_idx;
-
-			index_name = "";
-			int list_index = -1;
-			bool found = false;
-			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-			    RC IN RDB$RELATION_CONSTRAINTS CROSS
-				IND IN RDB$INDICES OVER RDB$INDEX_NAME CROSS
-					ISEG IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME WITH
-					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
-				    IND.RDB$UNIQUE_FLAG NOT MISSING AND
-					(RC.RDB$CONSTRAINT_TYPE = PRIMARY_KEY OR
-					RC.RDB$CONSTRAINT_TYPE = UNIQUE_CNSTRT)
-					SORTED BY IND.RDB$INDEX_NAME,
-					DESCENDING ISEG.RDB$FIELD_POSITION
-			{
-				if (index_name != IND.RDB$INDEX_NAME)
-				{
-					if (list_index >= 0)
-						found = false;
-					if (found)
-						break;
-					list_index = field_list.getCount() - 1;
-					index_name = IND.RDB$INDEX_NAME;
-					found = true;
-				}
-
-				// if there are no more fields or the field name doesn't
-				// match, then this is not the correct index
-
-				if (list_index >= 0)
-				{
-					fb_utils::exact_name_limit(ISEG.RDB$FIELD_NAME, sizeof(ISEG.RDB$FIELD_NAME));
-					if (field_list[list_index--] != ISEG.RDB$FIELD_NAME)
-					{
-						found = false;
-					}
-				}
-				else
-					found = false;
-			}
-			END_FOR
-
-			id = old_id;
-
-			if (list_index >= 0)
-				found = false;
-
-			if (found)
-			{
-				strcpy(IDX.RDB$FOREIGN_KEY, index_name.c_str());
-				IDX.RDB$FOREIGN_KEY.NULL = FALSE;
-				if (referred_index_name) {
-					*referred_index_name = index_name;
-				}
-			}
-			else
-			{
-				AutoRequest request3;
-				found = false;
-				bool isView = false;
-
-				FOR(REQUEST_HANDLE request3 TRANSACTION_HANDLE gbl->gbl_transaction)
-					X IN RDB$RELATIONS
-						WITH X.RDB$RELATION_NAME EQ referenced_relation.c_str()
-				{
-					found = true;
-					isView = !X.RDB$VIEW_BLR.NULL;
-				}
-				END_FOR
-
-				if (isView)
-				{
-					DYN_error_punt(false, 242, referenced_relation.c_str());
-					// msg 242: "attempt to reference a view (%s) in a foreign key"
-				}
-
-				if (found)
-				{
-					DYN_error_punt(false, 18, referenced_relation.c_str());
-					// msg 18: "could not find UNIQUE or PRIMARY KEY constraint in table %s with specified columns"
-				}
-				else
-				{
-					DYN_error_punt(false, 241, referenced_relation.c_str());
-					// msg 241: "Table %s not found"
-				}
-			}
-		}
-		else if (referenced_relation.length())
-		{
-			old_id = id;
-			request2.reset(tdbb, drq_l_primary, DYN_REQUESTS);
-			id = drq_l_primary;
-
-			FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-				IND IN RDB$INDICES CROSS
-					RC IN RDB$RELATION_CONSTRAINTS
-					OVER RDB$INDEX_NAME WITH
-					IND.RDB$RELATION_NAME EQ referenced_relation.c_str() AND
-					RC.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
-			{
-				// Number of columns in referred index should be same as number
-				// of columns in referring index
-
-				fb_assert(IND.RDB$SEGMENT_COUNT >= 0);
-				if (seg_count != ULONG(IND.RDB$SEGMENT_COUNT))
-					DYN_error_punt(true, 133);
-					// msg 133: "Number of referencing columns do not equal number of referenced columns"
-
-				fb_utils::exact_name_limit(IND.RDB$INDEX_NAME, sizeof(IND.RDB$INDEX_NAME));
-				strcpy(IDX.RDB$FOREIGN_KEY, IND.RDB$INDEX_NAME);
-				IDX.RDB$FOREIGN_KEY.NULL = FALSE;
-				if (referred_index_name)
-					*referred_index_name = IND.RDB$INDEX_NAME;
-			}
-			END_FOR
-
-			id = old_id;
-
-			if (IDX.RDB$FOREIGN_KEY.NULL)
-			{
-				DYN_error_punt(false, 20, referenced_relation.c_str());
-				// msg 20: "could not find PRIMARY KEY index in specified table %s"
-			}
-		}
-
-		IDX.RDB$SEGMENT_COUNT = seg_count;
+		CreateIndexNode::store(tdbb, gbl->gbl_transaction, index_name, definition,
+			referred_index_name);
 	}
-	END_STORE
-
-	}	// try
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (id == drq_s_indices)
-		{
-			DYN_error_punt(true, 21);
-			// msg 21: "STORE RDB$INDICES failed"
-		}
-		else if (id == drq_s_idx_segs)
-		{
-			DYN_error_punt(true, 15);
-			// msg 15: "STORE RDB$INDEX_SEGMENTS failed"
-		}
-
-		switch (id)
-		{
-		case drq_l_idx_name:
-			DYN_error_punt(true, 21);
-			// msg 21: "STORE RDB$INDICES failed"
-			break;
-		case drq_l_lfield:
-			DYN_error_punt(true, 15);
-			// msg 15: "STORE RDB$INDEX_SEGMENTS failed"
-			break;
-		case drq_l_unq_idx:
-			DYN_error_punt(true, 17);
-			// msg 17: "Primary Key field lookup failed"
-			break;
-		case drq_l_view_idx:
-			DYN_error_punt(true, 180);
-			// msg 180: "Table Name lookup failed"
-			break;
-		case drq_l_primary:
-			DYN_error_punt(true, 19);
-			// msg 19: "Primary Key lookup failed"
-			break;
-		default:
-			fb_assert(false);
-		}
+		stuff_exception(tdbb->tdbb_status_vector, ex);
+		throw;
 	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
@@ -1946,11 +1160,11 @@ void DYN_define_local_field(Global*		gbl,
 }
 
 
-void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
+void DYN_define_view(Global* gbl, const UCHAR** ptr)
 {
 /**************************************
  *
- *	D Y N _ d e f i n e _ r e l a t i o n
+ *	D Y N _ d e f i n e _ v i e w
  *
  **************************************
  *
@@ -1967,7 +1181,7 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	GET_STRING(ptr, relation_name);
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-		(view ? DDL_TRIGGER_CREATE_VIEW : DDL_TRIGGER_CREATE_TABLE), relation_name, gbl->sqlText);
+		DDL_TRIGGER_CREATE_VIEW, relation_name, gbl->sqlText);
 
 	SSHORT id = -1;
 
@@ -2027,46 +1241,9 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 				REL.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
-			case isc_dyn_rel_ext_file:
-				GET_STRING(ptr, REL.RDB$EXTERNAL_FILE);
-				if (ISC_check_if_remote(REL.RDB$EXTERNAL_FILE, false))
-					DYN_error_punt(true, 163);
-
-				// Check for any path, present in filename.
-				// If miss it, file will be searched in External Tables Dirs,
-				// that's why no expand_filename required.
-				PathUtils::splitLastComponent(Path, Name, REL.RDB$EXTERNAL_FILE);
-				if (Path.length() > 0)	// path component present in filename
-				{
-					ISC_expand_filename(REL.RDB$EXTERNAL_FILE,
-										strlen(REL.RDB$EXTERNAL_FILE),
-										REL.RDB$EXTERNAL_FILE,
-										sizeof(REL.RDB$EXTERNAL_FILE),
-										false);
-				}
-				REL.RDB$EXTERNAL_FILE.NULL = FALSE;
-				rel_type = rel_external;
-				break;
-
 			case isc_dyn_rel_sql_protection:
 				REL.RDB$FLAGS |= REL_sql;
 				sql_prot = (bool) DYN_get_number(ptr);
-				break;
-
-			case isc_dyn_rel_temporary:
-				switch (DYN_get_number(ptr))
-				{
-					case isc_dyn_rel_temp_global_preserve:
-						rel_type = rel_global_temp_preserve;
-						break;
-
-					case isc_dyn_rel_temp_global_delete:
-						rel_type = rel_global_temp_delete;
-						break;
-
-					default:
-						fb_assert(false);
-				}
 				break;
 
 			default:
@@ -2081,11 +1258,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 		// The relation type cannot be determined definitely inside the above loop,
 		// because there are many DYN codes that affect it.
 		REL.RDB$RELATION_TYPE = rel_type;
-
-		SSHORT old_id = id;
-		id = drq_l_rel_info2;
-		check_relation_temp_scope(tdbb, gbl, REL.RDB$RELATION_NAME, rel_type);
-		id = old_id;
 
 		if (sql_prot)
 		{
@@ -2183,9 +1355,6 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 		case drq_l_view_rels:
 			DYN_error_punt(true, 115); // msg 115: "CREATE VIEW failed"
 			break;
-		case drq_l_rel_info2:
-			ERR_punt();
-			break;
 		}
 
 		// Control should never reach this point, because id should
@@ -2195,7 +1364,7 @@ void DYN_define_relation(Global* gbl, const UCHAR** ptr, bool view)
 	}
 
 	DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-		(view ? DDL_TRIGGER_CREATE_VIEW : DDL_TRIGGER_CREATE_TABLE), relation_name, gbl->sqlText);
+		DDL_TRIGGER_CREATE_VIEW, relation_name, gbl->sqlText);
 }
 
 
@@ -2717,7 +1886,7 @@ void DYN_define_trigger(Global*						gbl,
 
 	GET_STRING(ptr, t);
 	if (t.isEmpty())
-		DYN_UTIL_generate_trigger_name(tdbb, gbl, t);
+		DYN_UTIL_generate_trigger_name(tdbb, gbl->gbl_transaction, t);
 
 	if (trigger_name)
 		*trigger_name = t;
@@ -3037,172 +2206,4 @@ bool is_it_user_name(Global* gbl, const Firebird::MetaName& role_name, thread_db
 	}
 
 	return found;
-}
-
-
-static rel_t get_relation_type(thread_db* tdbb, Global* gbl, const Firebird::MetaName& rel_name)
-{
-	rel_t rel_type = rel_persistent;
-
-	AutoCacheRequest request(tdbb, drq_l_rel_type, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		REL IN RDB$RELATIONS
-		WITH REL.RDB$RELATION_NAME EQ rel_name.c_str()
-		  AND REL.RDB$RELATION_TYPE NOT MISSING
-	{
-		rel_type = (rel_t) REL.RDB$RELATION_TYPE;
-	}
-	END_FOR
-
-	return rel_type;
-}
-
-
-static void check_foreign_key_temp_scope(thread_db* tdbb, Global* gbl,
-	const TEXT*	child_rel_name, const TEXT* master_index_name)
-{
-/**********************************************************
- *
- *	c h e c k _ f o r e i g n _ k e y _ t e m p _ s c o p e
- *
- **********************************************************
- *
- * Functional description
- *	Check temporary table reference rules between given child
- *	relation and master relation (owner of given PK\UK index)
- *
- **********************************************************/
-	AutoCacheRequest request(tdbb, drq_l_rel_info, DYN_REQUESTS);
-	bool bErr = false;
-	Firebird::string sMaster, sChild;
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
-		REL_C IN RDB$RELATIONS CROSS
-		REL_M IN RDB$RELATIONS
-		WITH (RLC_M.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT OR
-			  RLC_M.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY)
-		 AND RLC_M.RDB$INDEX_NAME EQ master_index_name
-		 AND REL_C.RDB$RELATION_NAME EQ child_rel_name
-		 AND REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
-	{
-		const rel_t master_type = get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
-		fb_assert(master_type == rel_persistent ||
-				  master_type == rel_global_temp_preserve ||
-				  master_type == rel_global_temp_delete);
-
-		const rel_t child_type = get_relation_type(tdbb, gbl, REL_C.RDB$RELATION_NAME);
-		fb_assert(child_type == rel_persistent ||
-				  child_type == rel_global_temp_preserve ||
-				  child_type == rel_global_temp_delete);
-
-		bErr = (master_type != child_type) &&
-				!( (master_type == rel_global_temp_preserve) &&
-				(child_type == rel_global_temp_delete) );
-
-		if (bErr)
-		{
-			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
-			fb_utils::exact_name_limit(REL_C.RDB$RELATION_NAME, sizeof(REL_C.RDB$RELATION_NAME));
-
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
-			make_relation_scope_name(REL_C.RDB$RELATION_NAME, child_type, sChild);
-		}
-	}
-	END_FOR
-
-	if (bErr)
-	{
-		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			SafeArg() << sChild.c_str() << sMaster.c_str());
-	}
-}
-
-
-static void check_relation_temp_scope(thread_db* tdbb, Global* gbl,
-	const TEXT*	child_rel_name, const rel_t child_type)
-{
-/****************************************************
- *
- *	c h e c k _ r e l a t i o n _ t e m p _ s c o p e
- *
- ****************************************************
- *
- * Functional description
- *	Check temporary table reference rules between just
- *	created child relation and all its master relations
- *
- ****************************************************/
-	if (child_type != rel_persistent &&
-		child_type != rel_global_temp_preserve &&
-		child_type != rel_global_temp_delete)
-	{
-		return;
-	}
-
-	AutoCacheRequest request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
-	bool bErr = false;
-	Firebird::string sMaster, sChild;
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RLC_C IN RDB$RELATION_CONSTRAINTS CROSS
-		IND_C IN RDB$INDICES CROSS
-		IND_M IN RDB$INDICES CROSS
-		REL_M IN RDB$RELATIONS
-		WITH RLC_C.RDB$CONSTRAINT_TYPE EQ FOREIGN_KEY
-		 AND RLC_C.RDB$RELATION_NAME EQ child_rel_name
-		 AND IND_C.RDB$INDEX_NAME EQ RLC_C.RDB$INDEX_NAME
-		 AND IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY
-		 AND IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
-	{
-		const rel_t master_type = get_relation_type(tdbb, gbl, REL_M.RDB$RELATION_NAME);
-		fb_assert(master_type == rel_persistent ||
-				  master_type == rel_global_temp_preserve ||
-				  master_type == rel_global_temp_delete);
-
-		bErr = (master_type != child_type) &&
-				!( (master_type == rel_global_temp_preserve) &&
-					(child_type == rel_global_temp_delete) );
-
-		if (bErr)
-		{
-			fb_utils::exact_name_limit(REL_M.RDB$RELATION_NAME, sizeof(REL_M.RDB$RELATION_NAME));
-
-			make_relation_scope_name(REL_M.RDB$RELATION_NAME, master_type, sMaster);
-			make_relation_scope_name(child_rel_name, child_type, sChild);
-		}
-	}
-	END_FOR
-
-	if (bErr)
-	{
-		DYN_error_punt(false, 232, // Msg 232 : "%s can't reference %s"
-			SafeArg() << sChild.c_str() << sMaster.c_str());
-	}
-}
-
-
-static void make_relation_scope_name(const TEXT* rel_name, const rel_t rel_type, Firebird::string& str)
-{
-/**************************************************
- *
- *	m a k e _ r e l a t i o n _ s c o p e _ n a m e
- *
- **************************************************
- *
- * Functional description
- *	Make string with relation name and type
- *	of its temporary scope
- *
- **************************************************/
-	const char *scope = NULL;
-	if (rel_type == rel_global_temp_preserve)
-		scope = REL_SCOPE_GTT_PRESERVE;
-	else if (rel_type == rel_global_temp_delete)
-		scope = REL_SCOPE_GTT_DELETE;
-	else
-		scope = REL_SCOPE_PERSISTENT;
-
-	str.printf(scope, rel_name);
 }

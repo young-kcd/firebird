@@ -36,11 +36,18 @@ class dsql_nod;
 class BlrWriter : public Firebird::PermanentStorage
 {
 public:
+	typedef Firebird::HalfStaticArray<UCHAR, 1024> BlrData;
+	typedef Firebird::HalfStaticArray<UCHAR, 128> DebugData;
+
 	explicit BlrWriter(MemoryPool& p)
 		: PermanentStorage(p),
 		  blrData(p),
 		  debugData(p),
 		  baseOffset(0)
+	{
+	}
+
+	virtual ~BlrWriter()
 	{
 	}
 
@@ -126,8 +133,8 @@ public:
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
 	void appendDebugInfo();
 
-	Firebird::HalfStaticArray<UCHAR, 1024>& getBlrData() { return blrData; }
-	Firebird::HalfStaticArray<UCHAR, 128>& getDebugData() { return debugData; }
+	BlrData& getBlrData() { return blrData; }
+	DebugData& getDebugData() { return debugData; }
 
 	ULONG getBaseOffset() const { return baseOffset; }
 	void setBaseOffset(ULONG value) { baseOffset = value; }
@@ -138,8 +145,8 @@ protected:
 	virtual bool isDdlDyn() = 0;
 
 private:
-	Firebird::HalfStaticArray<UCHAR, 1024> blrData;
-	Firebird::HalfStaticArray<UCHAR, 128> debugData;
+	BlrData blrData;
+	DebugData debugData;
 	ULONG baseOffset;					// place to go back and stuff in blr length
 };
 

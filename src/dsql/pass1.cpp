@@ -1884,10 +1884,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_CREATE_DB);
 		return input;
 
-	case nod_def_relation:
-	case nod_redef_relation:
-	case nod_mod_relation:
-	case nod_del_relation:
 	case nod_def_index:
 	case nod_mod_index:
 	case nod_del_index:
@@ -1895,7 +1891,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_redef_view:
 	case nod_mod_view:
 	case nod_replace_view:
-	case nod_del_view:
 	case nod_def_constraint:
 	case nod_grant:
 	case nod_revoke:
@@ -9957,13 +9952,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_def_index:
 		verb = "define index";
 		break;
-	case nod_def_relation:
-		verb = "define relation";
-		break;
-	// CVC: New node redef_relation.
-	case nod_redef_relation:
-		verb = "redefine relation";
-		break;
 	case nod_def_view:
 		verb = "define view";
 		break;
@@ -9990,13 +9978,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_del_index:
 		verb = "delete index";
-		break;
-	case nod_del_relation:
-		verb = "delete relation";
-		break;
-	// CVC: New node del_view.
-	case nod_del_view:
-		verb = "delete view";
 		break;
 	case nod_divide:
 		verb = "divide";
@@ -10087,9 +10068,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_mod_field:
 		verb = "modify field";
-		break;
-	case nod_mod_relation:
-		verb = "modify relation";
 		break;
 	case nod_multiply:
 		verb = "multiply";

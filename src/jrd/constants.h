@@ -265,6 +265,15 @@ enum stat_group_t {
 	stat_call = 4
 };
 
+enum TriggerType {
+	PRE_STORE_TRIGGER = 1,
+	POST_STORE_TRIGGER = 2,
+	PRE_MODIFY_TRIGGER = 3,
+	POST_MODIFY_TRIGGER = 4,
+	PRE_ERASE_TRIGGER = 5,
+	POST_ERASE_TRIGGER = 6
+};
+
 const int TRIGGER_TYPE_SHIFT		= 13;
 const int TRIGGER_TYPE_MASK			= (0x3 << TRIGGER_TYPE_SHIFT);
 

@@ -997,6 +997,46 @@ Data source : @4"},		/* eds_statement */
 	{336397255, "Strings cannot be negated (applied the minus operator) in dialect 3"},		/* dsql_nostring_neg_dial3 */
 	{336397256, "Invalid data type for negation (minus operator)"},		/* dsql_invalid_type_neg */
 	{336397257, "Cannot have more than 255 items in DISTINCT list"},		/* dsql_max_distinct_items */
+	{336397258, "ALTER CHARACTER SET @1 failed"},		/* dsql_alter_charset_failed */
+	{336397259, "COMMENT ON @1 failed"},		/* dsql_comment_on_failed */
+	{336397260, "CREATE FUNCTION @1 failed"},		/* dsql_create_func_failed */
+	{336397261, "ALTER FUNCTION @1 failed"},		/* dsql_alter_func_failed */
+	{336397262, "CREATE OR ALTER FUNCTION @1 failed"},		/* dsql_create_alter_func_failed */
+	{336397263, "DROP FUNCTION @1 failed"},		/* dsql_drop_func_failed */
+	{336397264, "RECREATE FUNCTION @1 failed"},		/* dsql_recreate_func_failed */
+	{336397265, "CREATE PROCEDURE @1 failed"},		/* dsql_create_proc_failed */
+	{336397266, "ALTER PROCEDURE @1 failed"},		/* dsql_alter_proc_failed */
+	{336397267, "CREATE OR ALTER PROCEDURE @1 failed"},		/* dsql_create_alter_proc_failed */
+	{336397268, "DROP PROCEDURE @1 failed"},		/* dsql_drop_proc_failed */
+	{336397269, "RECREATE PROCEDURE @1 failed"},		/* dsql_recreate_proc_failed */
+	{336397270, "CREATE TRIGGER @1 failed"},		/* dsql_create_trigger_failed */
+	{336397271, "ALTER TRIGGER TRIGGER @1 failed"},		/* dsql_alter_trigger_failed */
+	{336397272, "CREATE OR ALTER TRIGGER @1 failed"},		/* dsql_create_alter_trigger_failed */
+	{336397273, "DROP TRIGGER @1 failed"},		/* dsql_drop_trigger_failed */
+	{336397274, "RECREATE TRIGGER @1 failed"},		/* dsql_recreate_trigger_failed */
+	{336397275, "CREATE COLLATION @1 failed"},		/* dsql_create_collation_failed */
+	{336397276, "DROP COLLATION @1 failed"},		/* dsql_drop_collation_failed */
+	{336397277, "CREATE DOMAIN @1 failed"},		/* dsql_create_domain_failed */
+	{336397278, "ALTER DOMAIN @1 failed"},		/* dsql_alter_domain_failed */
+	{336397279, "DROP DOMAIN @1 failed"},		/* dsql_drop_domain_failed */
+	{336397280, "CREATE EXCEPTION @1 failed"},		/* dsql_create_except_failed */
+	{336397281, "ALTER EXCEPTION @1 failed"},		/* dsql_alter_except_failed */
+	{336397282, "CREATE OR ALTER EXCEPTION @1 failed"},		/* dsql_create_alter_except_failed */
+	{336397283, "RECREATE EXCEPTION @1 failed"},		/* dsql_recreate_except_failed */
+	{336397284, "DROP EXCEPTION @1 failed"},		/* dsql_drop_except_failed */
+	{336397285, "CREATE SEQUENCE @1 failed"},		/* dsql_create_sequence_failed */
+	{336397286, "CREATE TABLE @1 failed"},		/* dsql_create_table_failed */
+	{336397287, "ALTER TABLE @1 failed"},		/* dsql_alter_table_failed */
+	{336397288, "DROP TABLE @1 failed"},		/* dsql_drop_table_failed */
+	{336397289, "RECREATE TABLE @1 failed"},		/* dsql_recreate_table_failed */
+	{336397290, "CREATE PACKAGE @1 failed"},		/* dsql_create_pack_failed */
+	{336397291, "ALTER PACKAGE @1 failed"},		/* dsql_alter_pack_failed */
+	{336397292, "CREATE OR ALTER PACKAGE @1 failed"},		/* dsql_create_alter_pack_failed */
+	{336397293, "DROP PACKAGE @1 failed"},		/* dsql_drop_pack_failed */
+	{336397294, "RECREATE PACKAGE @1 failed"},		/* dsql_recreate_pack_failed */
+	{336397295, "CREATE PACKAGE BODY @1 failed"},		/* dsql_create_pack_body_failed */
+	{336397296, "DROP PACKAGE BODY @1 failed"},		/* dsql_drop_pack_body_failed */
+	{336397297, "RECREATE PACKAGE BODY @1 failed"},		/* dsql_recreate_pack_body_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

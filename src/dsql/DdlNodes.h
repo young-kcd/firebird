@@ -24,12 +24,15 @@
 #define DSQL_DDL_NODES_H
 
 #include "../jrd/common.h"
+#include "../jrd/blr.h"
 #include "../jrd/dyn.h"
 #include "../jrd/msg_encode.h"
 #include "../dsql/node.h"
 #include "../dsql/make_proto.h"
+#include "../dsql/BlrWriter.h"
 #include "../dsql/Nodes.h"
 #include "../common/classes/array.h"
+#include "../common/classes/ByteChunk.h"
 #include "../common/classes/TriState.h"
 #include "../dsql/errd_proto.h"
 
@@ -39,9 +42,15 @@ namespace Jrd {
 class ExternalClause
 {
 public:
-	explicit ExternalClause(MemoryPool& pool)
-		: name(pool),
-		  engine(pool)
+	ExternalClause(MemoryPool& p, const ExternalClause& o)
+		: name(p, o.name),
+		  engine(p, o.engine)
+	{
+	}
+
+	explicit ExternalClause(MemoryPool& p)
+		: name(p),
+		  engine(p)
 	{
 	}
 
@@ -58,7 +67,7 @@ public:
 	virtual ~TypeClause() {}
 
 public:
-	void resolve(DsqlCompilerScratch* dsqlScratch);
+	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false);
 
 public:
 	virtual void print(Firebird::string& text) const;
@@ -118,6 +127,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_charset_failed) << charSet;
+	}
+
 private:
 	Firebird::MetaName charSet;
 	Firebird::MetaName defaultCollation;
@@ -142,6 +157,18 @@ public:
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		/*** ASF: FIXME: When returning, str is destroyed but its pointer is recorded.
+		Firebird::string str(objName.c_str());
+		if (subName.hasData())
+			str.append(".").append(subName.c_str());
+		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << str;
+		***/
+		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << objName;
+	}
 
 private:
 	int objType;
@@ -182,6 +209,15 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_func_failed, isc_dsql_alter_func_failed,
+					isc_dsql_create_alter_func_failed)) <<
+				name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -232,6 +268,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_func_failed) << name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 public:
@@ -258,6 +299,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_func_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -295,6 +341,15 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_proc_failed, isc_dsql_alter_proc_failed,
+					isc_dsql_create_alter_proc_failed)) <<
+				name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -343,6 +398,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_proc_failed) << name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 public:
@@ -369,6 +429,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_proc_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -377,24 +442,62 @@ private:
 };
 
 
-class CreateAlterTriggerNode : public DdlNode, public BlockNode
+class TriggerDefinition
+{
+public:
+	TriggerDefinition(MemoryPool& p)
+		: name(p),
+		  relationName(p),
+		  external(NULL),
+		  source(p),
+		  systemFlag(fb_sysflag_user),
+		  fkTrigger(false)
+	{
+	}
+
+	void store(thread_db* tdbb, jrd_tra* transaction);
+	bool modify(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void preModify(thread_db* tdbb, jrd_tra* transaction)
+	{
+	}
+
+	virtual void postModify(thread_db* tdbb, jrd_tra* transaction)
+	{
+	}
+
+public:
+	Firebird::MetaName name;
+	Firebird::MetaName relationName;
+	TriStateType<FB_UINT64> type;
+	TriStateType<bool> active;
+	TriStateType<int> position;
+	ExternalClause* external;
+	Firebird::string source;
+	Firebird::ByteChunk blrData;
+	Firebird::ByteChunk debugData;
+	USHORT systemFlag;
+	bool fkTrigger;
+};
+
+
+class CreateAlterTriggerNode : public DdlNode, public BlockNode, public TriggerDefinition
 {
 public:
 	explicit CreateAlterTriggerNode(MemoryPool& p, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
 		: DdlNode(p, sqlText),
 		  BlockNode(p, false),
-		  name(p, aName),
+		  TriggerDefinition(p),
 		  create(true),
 		  alter(false),
-		  relationName(p),
-		  external(NULL),
-		  source(p),
 		  localDeclList(NULL),
 		  body(NULL),
 		  compiled(false),
 		  invalid(false)
 	{
+		name = aName;
 	}
 
 public:
@@ -402,11 +505,31 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_trigger_failed, isc_dsql_alter_trigger_failed,
+					isc_dsql_create_alter_trigger_failed)) <<
+				name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
+
+	virtual void preModify(thread_db* tdbb, jrd_tra* transaction)
+	{
+		if (alter)
+			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, name);
+	}
+
+	virtual void postModify(thread_db* tdbb, jrd_tra* transaction)
+	{
+		if (alter)
+			executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TRIGGER, name);
+	}
 
 private:
 	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	bool executeAlter(thread_db* tdbb, jrd_tra* transaction, bool runTriggers);
 	void compile(thread_db* tdbb, jrd_tra* transaction);
 
 	static inline bool hasOldContext(const unsigned value)
@@ -426,15 +549,8 @@ private:
 	}
 
 public:
-	Firebird::MetaName name;
 	bool create;
 	bool alter;
-	Firebird::MetaName relationName;
-	TriStateType<FB_UINT64> type;
-	TriStateType<bool> active;
-	TriStateType<int> position;
-	ExternalClause* external;
-	Firebird::string source;
 	dsql_nod* localDeclList;
 	dsql_nod* body;
 	bool compiled;
@@ -458,6 +574,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_trigger_failed) << name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 public:
@@ -489,6 +610,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_trigger_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -546,6 +672,11 @@ public:
 	}
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_collation_failed) << name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 public:
@@ -577,6 +708,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_collation_failed) << name;
+	}
+
 public:
 	Firebird::MetaName name;
 };
@@ -597,6 +734,12 @@ public:
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_domain_failed) << nameType.name;
+	}
 
 public:
 	ParameterClause nameType;
@@ -623,13 +766,19 @@ public:
 public:
 	static void checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld);
 	static ULONG checkUpdateNumericType(const dyn_fld& origFld, const dyn_fld& newFld);
-
+	static void getDomainType(thread_db* tdbb, jrd_tra* transaction, dyn_fld& dynFld);
 	static void modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName,
 		const Firebird::MetaName& newFieldName);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_domain_failed) << name;
+	}
 
 private:
 	void rename(thread_db* tdbb, jrd_tra* transaction, SSHORT dimensions);
@@ -662,6 +811,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_domain_failed) << name;
+	}
+
 private:
 	void check(thread_db* tdbb, jrd_tra* transaction);
 
@@ -686,6 +841,16 @@ public:
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_except_failed, isc_dsql_alter_except_failed,
+					isc_dsql_create_alter_except_failed)) <<
+				name;
+	}
 
 private:
 	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
@@ -714,6 +879,12 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_except_failed) << name;
+	}
+
 public:
 	Firebird::MetaName name;
 	bool silent;
@@ -737,6 +908,11 @@ public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_except_failed) << createNode->name;
+	}
+
 	virtual DdlNode* internalDsqlPass();
 
 private:
@@ -755,16 +931,293 @@ public:
 	{
 	}
 
+	static void store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
+		fb_sysflag sysFlag);
+
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
-public:
-	static void store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
-		fb_sysflag sysFlag);
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_sequence_failed) << name;
+	}
 
 private:
 	Firebird::MetaName name;
+};
+
+
+class DropSequenceNode
+{
+public:
+	static bool deleteGenerator(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& name);
+};
+
+
+class RelationNode : public DdlNode
+{
+public:
+	struct Constraint : public PermanentStorage
+	{
+		enum Type { TYPE_CHECK, TYPE_NOT_NULL, TYPE_PK, TYPE_UNIQUE, TYPE_FK };
+
+		// Specialized BlrWriter for constraints.
+		class BlrWriter : public Jrd::BlrWriter
+		{
+		public:
+			BlrWriter(MemoryPool& p)
+				: Jrd::BlrWriter(p),
+				  dsqlScratch(NULL)
+			{
+			}
+
+			void init(DsqlCompilerScratch* aDsqlScratch)
+			{
+				dsqlScratch = aDsqlScratch;
+				dsqlScratch->getBlrData().clear();
+				dsqlScratch->getDebugData().clear();
+				appendUChar(isVersion4() ? blr_version4 : blr_version5);
+			}
+
+			virtual bool isVersion4()
+			{
+				return dsqlScratch->isVersion4();
+			}
+
+		protected:
+			virtual bool isDdlDyn()
+			{
+				return false;
+			}
+
+		private:
+			DsqlCompilerScratch* dsqlScratch;
+		};
+
+		Constraint(MemoryPool& p)
+			: PermanentStorage(p),
+			  type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
+			  name(p),
+			  columns(p),
+			  indexName(p),
+			  descending(false),
+			  refRelation(p),
+			  refColumns(p),
+			  refUpdateAction(RI_ACTION_NONE),
+			  refDeleteAction(RI_ACTION_NONE),
+			  triggers(p),
+			  blrWritersHolder(p)
+		{
+		}
+
+		Constraint::Type type;
+		Firebird::MetaName name;
+		Firebird::ObjectsArray<Firebird::MetaName> columns;
+		Firebird::MetaName indexName;
+		bool descending;
+		Firebird::MetaName refRelation;
+		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
+		const char* refUpdateAction;
+		const char* refDeleteAction;
+		Firebird::ObjectsArray<TriggerDefinition> triggers;
+		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
+	};
+
+	explicit RelationNode(MemoryPool& p, const Firebird::string& sqlText, dsql_nod* aDsqlNode)
+		: DdlNode(p, sqlText),
+		  dsqlNode(aDsqlNode),
+		  name(p, ((dsql_str*) aDsqlNode->nod_arg[Dsql::e_rln_name])->str_data),
+		  elements(p)
+	{
+	}
+
+	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
+
+protected:
+	void defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
+		SSHORT position, const dsql_nod* pkcols);
+	void defineComputed(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
+		Firebird::string& source, BlrWriter::BlrData& value);
+	bool defineDefault(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
+		Firebird::string& source, BlrWriter::BlrData& value);
+	void makeConstraint(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* node,
+		Firebird::ObjectsArray<Constraint>& constraints, bool* notNull = NULL);
+	void defineConstraint(thread_db* tdbb, jrd_tra* transaction, Constraint& constraint);
+	void defineCheckConstraint(Constraint& constraint, dsql_nod* node);
+	void defineCheckConstraintTrigger(Constraint& constraint, dsql_nod* node,
+		FB_UINT64 triggerType);
+	void defineSetDefaultTrigger(Constraint& constraint, bool onUpdate);
+	void defineSetNullTrigger(Constraint& constraint, bool onUpdate);
+	void defineDeleteCascadeTrigger(Constraint& constraint);
+	void defineUpdateCascadeTrigger(Constraint& constraint);
+	void generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate, BlrWriter& blrWriter);
+	void stuffDefaultBlr(const Firebird::ByteChunk& defaultBlr, BlrWriter& blrWriter);
+	void stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter);
+	void stuffTriggerFiringCondition(Constraint& constraint, BlrWriter& blrWriter);
+
+public:
+	dsql_nod* dsqlNode;
+	Firebird::MetaName name;
+	Firebird::Array<dsql_nod*> elements;
+};
+
+
+class CreateRelationNode : public RelationNode
+{
+public:
+	explicit CreateRelationNode(MemoryPool& p, const Firebird::string& sqlText,
+				dsql_nod* aDsqlNode, const Firebird::PathName* aExternalFile = NULL)
+		: RelationNode(p, sqlText, aDsqlNode),
+		  externalFile(aExternalFile),
+		  relationType(rel_persistent)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_create_table_failed) << name;
+	}
+
+private:
+	const dsql_nod* findPkColumns();
+
+public:
+	const Firebird::PathName* externalFile;
+	rel_t relationType;
+};
+
+
+class AlterRelationNode : public RelationNode
+{
+public:
+	explicit AlterRelationNode(MemoryPool& p, const Firebird::string& sqlText, dsql_nod* aDsqlNode)
+		: RelationNode(p, sqlText, aDsqlNode)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_alter_table_failed) << name;
+	}
+
+private:
+	void modifyField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element);
+};
+
+
+class DropRelationNode : public DdlNode
+{
+public:
+	explicit DropRelationNode(MemoryPool& p, const Firebird::string& sqlText,
+				const Firebird::MetaName& aName, bool aView)
+		: DdlNode(p, sqlText),
+		  name(p, aName),
+		  view(aView),
+		  silent(false)
+	{
+	}
+
+	static void deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& globalName);
+
+	static void erase(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
+		bool view, const Firebird::string& sqlText);
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_drop_table_failed) << name;
+	}
+
+public:
+	Firebird::MetaName name;
+	bool view;
+	bool silent;
+};
+
+
+class RecreateRelationNode : public DdlNode
+{
+public:
+	explicit RecreateRelationNode(MemoryPool& p, const Firebird::string& sqlText,
+				CreateRelationNode* aCreateNode)
+		: DdlNode(p, sqlText),
+		  createNode(aCreateNode),
+		  dropNode(p, sqlText, createNode->name, false)
+	{
+		dropNode.silent = true;
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_table_failed) << createNode->name;
+	}
+
+	virtual DdlNode* internalDsqlPass();
+
+private:
+	CreateRelationNode* createNode;
+	DropRelationNode dropNode;
+};
+
+
+class CreateIndexNode
+{
+public:
+	struct Definition
+	{
+		Definition()
+			: type(0)
+		{
+			expressionBlr.clear();
+			expressionSource.clear();
+		}
+
+		Firebird::MetaName relation;
+		Firebird::ObjectsArray<Firebird::MetaName> columns;
+		TriStateType<bool> unique;
+		TriStateType<bool> descending;
+		TriStateType<bool> inactive;
+		SSHORT type;
+		bid expressionBlr;
+		bid expressionSource;
+		Firebird::MetaName refRelation;
+		Firebird::ObjectsArray<Firebird::MetaName> refColumns;
+	};
+
+	static void store(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
+		Definition& definition, Firebird::MetaName* referredIndexName = NULL);
+};
+
+
+class DropIndexNode
+{
+public:
+	static bool deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
+		const Firebird::MetaName& name);
 };
 
 

@@ -112,53 +112,23 @@ using namespace Dsql;
 using namespace Firebird;
 
 
-const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
-
-
 static void assign_field_length(dsql_fld*, USHORT);
-static void check_constraint(DsqlCompilerScratch*, dsql_nod*, bool);
 static void create_view_triggers(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static void define_computed(DsqlCompilerScratch*, dsql_nod*, dsql_fld*, dsql_nod*);
-static void define_constraint_trigger(DsqlCompilerScratch*, dsql_nod*);
 static void define_database(DsqlCompilerScratch*);
-static bool define_default(DsqlCompilerScratch*, const dsql_nod*);
-static void define_del_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*,
-	const dsql_nod*, const char*, const char*);
-//static void define_del_default_trg(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, TEXT*, TEXT*);
-static void define_dimensions(DsqlCompilerScratch*, const dsql_fld*);
-static void define_field(DsqlCompilerScratch*, dsql_nod*, SSHORT, const dsql_str*, const dsql_nod* pkcols);
 static void define_filter(DsqlCompilerScratch*);
 static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void define_role(DsqlCompilerScratch*);
 static void define_index(DsqlCompilerScratch*);
-static void define_rel_constraint(DsqlCompilerScratch*, dsql_nod*);
-static void define_relation(DsqlCompilerScratch*);
-static void define_set_null_trg(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*,
-	const dsql_nod*, const char*, const char*, bool);
-static void define_set_default_trg(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*,
-	const dsql_nod*, const char*, const char*, bool);
 static void define_shadow(DsqlCompilerScratch*);
 static void define_udf(DsqlCompilerScratch*);
 static void define_update_action(DsqlCompilerScratch*, dsql_nod**, dsql_nod**,	dsql_nod*);
-static void define_upd_cascade_trg(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*,
-	const dsql_nod*, const char*, const char*);
 static void define_view(DsqlCompilerScratch*, NOD_TYPE);
 static void define_view_trigger(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*);
 static void delete_relation_view(DsqlCompilerScratch*, dsql_nod*, bool);
-static const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements);
-static ULONG find_start_of_body(const dsql_str* string);
-static void fix_default_source(dsql_str* string);
-static void foreign_key(DsqlCompilerScratch*, dsql_nod*, const char* index_name);
 static void generate_dyn(DsqlCompilerScratch*, dsql_nod*);
-static void generateUnnamedTriggerBeginning(BlrWriter* blrWriter, bool onUpdateTrigger,
-	const char* primRelName, const dsql_nod* primColumns,
-	const char* forRelName, const dsql_nod* forColumns);
 static void grant_revoke(DsqlCompilerScratch*);
-static void make_index(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*, const char*);
-static void make_index_trg_ref_int(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*,
-	const char*, const char*);
 static void modify_database(DsqlCompilerScratch*);
-static void modify_field(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static void modify_index(DsqlCompilerScratch*);
 static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SSHORT option,
 							 const UCHAR* privs, const dsql_nod* table,
@@ -166,48 +136,22 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch, NOD_TYPE type, SS
 							 const dsql_str* field_name);
 static char modify_privileges(DsqlCompilerScratch*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*, const dsql_nod*);
-static void modify_relation(DsqlCompilerScratch*);
 static void modify_udf(DsqlCompilerScratch*);
 static void modify_map(DsqlCompilerScratch*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
 static void put_descriptor(DsqlCompilerScratch*, const dsc*);
 static void put_field(DsqlCompilerScratch*, dsql_fld*, bool);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
-static void reset_context_stack(DsqlCompilerScratch*);
 static void save_field(DsqlCompilerScratch*, const SCHAR*);
 static void save_relation(DsqlCompilerScratch*, const dsql_str*);
 static void set_statistics(DsqlCompilerScratch*);
-static void stuff_default_blr(DsqlCompilerScratch*, const UCHAR*, USHORT);
-static void stuff_matching_blr(BlrWriter*, const dsql_nod*, const dsql_nod*);
-static void stuff_trg_firing_cond(BlrWriter*, const dsql_nod*);
-static void clearPermanentField (dsql_rel*, bool);
 static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
 static void post_607(const Arg::StatusVector& v);
 static void put_user_grant(DsqlCompilerScratch* dsqlScratch, const dsql_nod* user);
 
-enum trigger_type {
-	PRE_STORE_TRIGGER = 1,
-	POST_STORE_TRIGGER = 2,
-	PRE_MODIFY_TRIGGER = 3,
-	POST_MODIFY_TRIGGER = 4,
-	PRE_ERASE_TRIGGER = 5,
-	POST_ERASE_TRIGGER = 6
-};
-
-const int DEFAULT_BUFFER	= 2048;
 
 const int DEFAULT_BLOB_SEGMENT_SIZE = 80; // bytes
-
-
-static const UCHAR nonnull_validation_blr[] =
-{
-	blr_version5,
-	blr_not,
-	blr_missing,
-	blr_fid, 0, 0, 0,
-	blr_eoc
-};
 
 
 void DDL_execute(dsql_req* request)
@@ -240,24 +184,15 @@ void DDL_execute(dsql_req* request)
 
 	const dsql_str* string = NULL;
 	SYM_TYPE sym_type;
-	const dsql_nod* relation_node;
 
 	const NOD_TYPE type = statement->getDdlNode()->nod_type;
 
 	switch (type)
 	{
-		case nod_mod_relation:
-		case nod_redef_relation:
-			relation_node = statement->getDdlNode()->nod_arg[e_alt_name];
-			string = (dsql_str*) relation_node->nod_arg[e_rln_name];
-			// fall into
 		case nod_mod_view:
 		case nod_replace_view:
 		case nod_redef_view:
-		case nod_del_relation:
-		case nod_del_view:
-			if (!string)
-				string = (dsql_str*) statement->getDdlNode()->nod_arg[e_alt_name];
+			string = (dsql_str*) statement->getDdlNode()->nod_arg[e_alt_name];
 			sym_type = SYM_relation;
 			METD_drop_relation(request->getTransaction(), string->str_data);
 			break;
@@ -698,58 +633,6 @@ static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 }
 
 
-static void check_constraint(DsqlCompilerScratch* dsqlScratch,
-							 dsql_nod* element,
-							 bool delete_trigger_required)
-{
-/**************************************
- *
- *	c h e c k _ c o n s t r a i n t
- *
- **************************************
- *
- * Function
- *	Generate triggers to implement the CHECK
- *	clause, either at the field or table level.
- *
- **************************************/
-
-	dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
-
-	if (!element->nod_arg[e_cnstr_table]) {
-		element->nod_arg[e_cnstr_table] = ddl_node->nod_arg[e_drl_name];
-	}
-
-	// specify that the trigger should abort if the condition is not met
-
-	dsql_nod* list_node = MAKE_node(nod_list, 1);
-	element->nod_arg[e_cnstr_actions] = list_node;
-	list_node->nod_arg[0] = MAKE_node(nod_gdscode, 1);
-
-	dsql_nod** errorcode_node = &list_node->nod_arg[0]->nod_arg[0];
-	*errorcode_node = (dsql_nod*) MAKE_cstring("check_constraint");
-
-	// create the INSERT trigger
-
-	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_STORE_TRIGGER);
-	define_constraint_trigger(dsqlScratch, element);
-
-	// create the UPDATE trigger
-
-	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_MODIFY_TRIGGER);
-	define_constraint_trigger(dsqlScratch, element);
-
-	// create the DELETE trigger, if required
-	if (delete_trigger_required)
-	{
-		element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_ERASE_TRIGGER);
-		define_constraint_trigger(dsqlScratch, element);
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);	// For CHECK constraint definition
-}
-
-
 static void create_view_triggers(DsqlCompilerScratch* dsqlScratch, dsql_nod* element, dsql_nod* items)
 {
 /**************************************
@@ -827,7 +710,7 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 	statement->setDdlNode(node);
 
 	// Get the table node & set up correct context
-	reset_context_stack(dsqlScratch);
+	DDL_reset_context_stack(dsqlScratch);
 
 	dsc save_desc;
 	// Save the size of the field if it is specified
@@ -895,136 +778,13 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 
 	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->setDdlNode(saved_ddl_node);
-	reset_context_stack(dsqlScratch);
+	DDL_reset_context_stack(dsqlScratch);
 
 	// generate the source text
 	const dsql_str* source = (dsql_str*) node->nod_arg[e_cmp_text];
 	fb_assert(source->str_length <= MAX_USHORT);
 	dsqlScratch->appendString(isc_dyn_fld_computed_source, source->str_data,
 		(USHORT) source->str_length);
-}
-
-
-static void define_constraint_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
-{
-/**************************************
- *
- *	d e f i n e _ c o n s t r a i n t _ t r i g g e r
- *
- **************************************
- *
- * Function
- *	Create the ddl to define or alter a constraint trigger.
- * This is a SQL's check constraint.
- *
- **************************************/
-
-	// make the "define trigger" node the current statement ddl node so
-	// that generating of BLR will be appropriate for trigger
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* const saved_ddl_node = statement->getDdlNode();
-
-	statement->setDdlNode(node);
-
-	if (node->nod_type != nod_def_constraint)
-		return;
-
-	dsqlScratch->appendString(isc_dyn_def_trigger, "", 0);
-
-	dsql_nod* relation_node = node->nod_arg[e_cnstr_table];
-	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
-
-	dsqlScratch->appendString(isc_dyn_rel_name, relation_name->str_data,
-		(USHORT) relation_name->str_length);
-
-	const dsql_str* source = (dsql_str*) node->nod_arg[e_cnstr_source];
-	if (source)
-	{
-		fb_assert(source->str_length <= MAX_USHORT);
-		const ULONG j = find_start_of_body(source);
-		if (j < source->str_length)
-		{
-			dsqlScratch->appendString(isc_dyn_trg_source, source->str_data + j,
-				source->str_length - j);
-		}
-	}
-
-	dsqlScratch->appendNumber(isc_dyn_trg_sequence, 0);
-
-	const dsql_nod* constant = node->nod_arg[e_cnstr_type];
-	if (constant)
-	{
-		const SSHORT type = (SSHORT) constant->getSlong();
-		dsqlScratch->appendNumber(isc_dyn_trg_type, type);
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_sql_object);
-
-	// generate the trigger blr
-
-	if (node->nod_arg[e_cnstr_condition] && node->nod_arg[e_cnstr_actions])
-	{
-		dsqlScratch->beginBlr(isc_dyn_trg_blr);
-		dsqlScratch->appendUChar(blr_begin);
-
-		// create the "OLD" and "NEW" contexts for the trigger --
-		// the new one could be a dummy place holder to avoid resolving
-		// fields to that context but prevent relations referenced in
-		// the trigger actions from referencing the predefined "1" context
-
-		reset_context_stack(dsqlScratch);
-
-		// CVC: check_constraint() is the only caller and it always receives
-		// false for the delete_trigger_required flag. Hence, I thought I could
-		// disable the OLD context here to avoid "ambiguous field name" errors
-		// in pre_store and pre_modify triggers. Also, what sense can I make
-		// from NEW in pre_delete? However, we clash at JRD with "no current
-		// record for fetch operation".
-
-		relation_node->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
-		dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relation_node);
-		oldContext->ctx_flags |= CTX_system;
-		relation_node->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(NEW_CONTEXT);
-		dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relation_node);
-		newContext->ctx_flags |= CTX_system;
-
-		// generate the condition for firing the trigger
-
-		dsql_nod* condition = MAKE_node(nod_not, 1);
-		condition->nod_arg[0] = node->nod_arg[e_cnstr_condition];
-		condition = PASS1_node(dsqlScratch, condition);
-
-		GEN_hidden_variables(dsqlScratch, false);
-		dsqlScratch->appendUChar(blr_if);
-		GEN_expr(dsqlScratch, condition);
-
-		// generate the action statements for the trigger
-
-		dsql_nod* actions = node->nod_arg[e_cnstr_actions];
-		dsql_nod** ptr = actions->nod_arg;
-		for (const dsql_nod* const* const end = ptr + actions->nod_count; ptr < end; ptr++)
-		{
-			GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, *ptr));
-		}
-
-		dsqlScratch->appendUChar(blr_end);	// of if (as there's no ELSE branch)
-		dsqlScratch->appendUChar(blr_end);	// of begin
-
-		dsqlScratch->endBlr();
-	}
-
-	dsqlScratch->appendNumber(isc_dyn_system_flag, fb_sysflag_check_constraint);
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-
-	// the statement type may have been set incorrectly when parsing
-	// the trigger actions, so reset it to reflect the fact that this
-	// is a data definition statement; also reset the ddl node
-
-	statement->setType(DsqlCompiledStatement::TYPE_DDL);
-	statement->setDdlNode(saved_ddl_node);
-	reset_context_stack(dsqlScratch);
 }
 
 
@@ -1116,541 +876,6 @@ static void define_database(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static bool define_default(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-/*****************************************
- *
- *	d e f i n e _ d e f a u l t
- *
- *****************************************
- *
- * Function
- *  Define default value for domain/column.
- *  Returns whether it is specified as being NULL.
- *
- **************************************/
-	fb_assert(node && node->nod_type == nod_def_default);
-
-	dsql_nod* const value = PASS1_node(dsqlScratch, node->nod_arg[e_dft_default]);
-	fb_assert(value);
-
-	dsqlScratch->beginBlr(isc_dyn_fld_default_value);
-	GEN_hidden_variables(dsqlScratch, true);
-	GEN_expr(dsqlScratch, value);
-	dsqlScratch->endBlr();
-
-	dsql_str* const string = (dsql_str*) node->nod_arg[e_dft_default_source];
-	fb_assert(string && string->str_length <= MAX_USHORT);
-
-	fix_default_source(string);
-	dsqlScratch->appendString(isc_dyn_fld_default_source, string->str_data, string->str_length);
-
-	return (value->nod_type == nod_null);
-}
-
-
-static void define_del_cascade_trg(	DsqlCompilerScratch* dsqlScratch,
-									const dsql_nod*    element,
-									const dsql_nod*    for_columns,
-									const dsql_nod*    prim_columns,
-									const char* prim_rel_name,
-									const char* for_rel_name)
-{
-/*****************************************************
- *
- *	d e f i n e _ d e l _ c a s c a d e _ t r g
- *
- *****************************************************
- *
- * Function
- *	define "on delete cascade" trigger (for referential integrity)
- *      along with its blr
- *
- *****************************************************/
-
-	if (element->nod_type != nod_foreign) {
-		return;
-	}
-
-	// stuff a trigger_name of size 0. So the dyn-parser will make one up.
-	dsqlScratch->appendString(isc_dyn_def_trigger, "", 0);
-
-	dsqlScratch->appendNumber(isc_dyn_trg_type, (SSHORT) POST_ERASE_TRIGGER);
-
-	dsqlScratch->appendUChar(isc_dyn_sql_object);
-	dsqlScratch->appendNumber(isc_dyn_trg_sequence, (SSHORT) 1);
-	dsqlScratch->appendNumber(isc_dyn_trg_inactive, (SSHORT) 0);
-	dsqlScratch->appendNullString(isc_dyn_rel_name, prim_rel_name);
-
-	// the trigger blr
-	dsqlScratch->beginBlr(isc_dyn_trg_blr);
-	dsqlScratch->appendUChar(blr_for);
-	dsqlScratch->appendUChar(blr_rse);
-
-	// the context for the prim. key relation
-	dsqlScratch->appendUChar(1);
-
-	dsqlScratch->appendUChar(blr_relation);
-	dsqlScratch->appendNullString(0, for_rel_name);
-	// the context for the foreign key relation
-	dsqlScratch->appendUChar(2);
-
-	stuff_matching_blr(dsqlScratch, for_columns, prim_columns);
-
-	dsqlScratch->appendUChar(blr_erase);
-	dsqlScratch->appendUChar(2);
-	dsqlScratch->endBlr();
-	// end of the blr
-
-	dsqlScratch->appendNumber(isc_dyn_system_flag, fb_sysflag_referential_constraint);
-
-	// no trg_source and no trg_description
-	dsqlScratch->appendUChar(isc_dyn_end);
-
-}
-
-
-static void define_set_default_trg(	DsqlCompilerScratch* dsqlScratch,
-									const dsql_nod*    element,
-									const dsql_nod*    for_columns,
-									const dsql_nod*    prim_columns,
-									const char*	prim_rel_name,
-									const char*	for_rel_name,
-									bool        on_upd_trg)
-{
-/*****************************************************
- *
- *	d e f i n e _ s e t _ d e f a u l t _ t r g
- *
- *****************************************************
- *
- * Function
- *	define "on delete|update set default" trigger (for
- *      referential integrity) along with its blr
- *
- *****************************************************/
-
-	if (element->nod_type != nod_foreign)
-		return;
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	generateUnnamedTriggerBeginning(dsqlScratch,
-		on_upd_trg, prim_rel_name, prim_columns, for_rel_name, for_columns);
-
-	UCHAR default_val[BLOB_BUFFER_SIZE];
-	USHORT num_fields = 0;
-	const dsql_nod* const* for_key_flds = for_columns->nod_arg;
-	const dsql_nod* ddl_node = statement->getDdlNode();
-
-	do {
-		// for every column in the foreign key ....
-		const dsql_str* for_key_fld_name_str = (dsql_str*) (*for_key_flds)->nod_arg[1];
-
-		dsqlScratch->appendUChar(blr_assignment);
-
-		// here stuff the default value as blr_literal .... or blr_null
-		// if this col. does not have an applicable default
-
-		// the default is determined in many cases:
-		// (1) the info. for the column is in memory. (This is because
-		// the column is being created in this ddl statement)
-		// (1-a) the table has a column level default. We get this by
-		// searching the dsql parse tree starting from the ddl node.
-		// (1-b) the table does not have a column level default, but
-		// has a domain default. We get the domain name from the dsql
-		// parse tree and call METD_get_domain_default to read the
-		// default from the system tables.
-		// (2) The default-info for this column is not in memory (This is
-		// because this is an alter table ddl statement). The table
-		// already exists; therefore we get the column and/or domain
-		// default value from the system tables by calling:
-		// METD_get_col_default().
-
-		bool found_default = false;
-		bool search_for_default = true;
-
-		// search the parse tree to find the column
-
-		const dsql_nod* elem = ddl_node->nod_arg[e_drl_elements];
-		const dsql_nod* const* ptr = elem->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elem->nod_count; ptr < end; ++ptr)
-		{
-			elem = *ptr;
-			if (elem->nod_type != nod_def_field) {
-				continue;
-			}
-
-			const dsql_fld* field = (dsql_fld*) elem->nod_arg[e_dfl_field];
-			if (field->fld_name != for_key_fld_name_str->str_data)
-			{
-				continue;
-			}
-
-			// Now, we have the right column in the parse tree. case (1) above
-
-			dsql_nod* default_node = elem->nod_arg[e_dfl_default];
-			if (default_node)
-			{
-				// case (1-a) above: there is a col. level default
-				fb_assert(default_node->nod_type == nod_def_default);
-				GEN_hidden_variables(dsqlScratch, true);
-				GEN_expr(dsqlScratch, default_node->nod_arg[e_dft_default]);
-				found_default = true;
-				search_for_default = false;
-			}
-			else
-			{
-				const TEXT* domain_name;
-				const dsql_str* domain_name_str;
-				const dsql_nod* tmp_node;
-
-				const dsql_nod* domain_node = elem->nod_arg[e_dfl_domain];
-				if (!domain_node ||
-					!(tmp_node = domain_node->nod_arg[e_dom_name]) ||
-					!(domain_name_str = (dsql_str*) tmp_node->nod_arg[e_fln_name]) ||
-					!(domain_name = domain_name_str->str_data))
-				{
-					break;
-				}
-
-				// case: (1-b): domain name is available. Column level default
-				// is not declared. so get the domain default
-				const USHORT def_len = METD_get_domain_default(dsqlScratch->getTransaction(),
-					domain_name, &found_default, default_val, sizeof(default_val));
-
-				search_for_default = false;
-				if (found_default)
-				{
-					stuff_default_blr(dsqlScratch, default_val, def_len);
-				}
-				else
-				{
-					// neither col level nor domain level default exists
-					dsqlScratch->appendUChar(blr_null);
-				}
-			}
-			break;
-		}
-
-		if (search_for_default)
-		{
-			// case 2: see if the column/domain has already been created
-
-			const USHORT def_len = METD_get_col_default(dsqlScratch->getTransaction(), for_rel_name,
-				for_key_fld_name_str->str_data, &found_default, default_val, sizeof(default_val));
-
-			if (found_default) {
-				stuff_default_blr(dsqlScratch, default_val, def_len);
-			}
-			else {
-				dsqlScratch->appendUChar(blr_null);
-			}
-
-		}
-
-		// the context for the foreign key relation
-		dsqlScratch->appendUChar(blr_field);
-		dsqlScratch->appendUChar(2);
-		dsqlScratch->appendNullString(0, for_key_fld_name_str->str_data);
-
-		num_fields++;
-		for_key_flds++;
-
-	} while (num_fields < for_columns->nod_count);
-
-	dsqlScratch->appendUChar(blr_end);
-
-	if (on_upd_trg)
-		dsqlScratch->appendUCharRepeated(blr_end, 3);
-
-	dsqlScratch->endBlr();
-
-	dsqlScratch->appendNumber(isc_dyn_system_flag, fb_sysflag_referential_constraint);
-
-	// no trg_source and no trg_description
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void define_dimensions( DsqlCompilerScratch* dsqlScratch, const dsql_fld* field)
-{
-/*****************************************
- *
- *	d e f i n e _ d i m e n s i o n s
- *
- *****************************************
- *
- * Function
- *	Define dimensions of an array
- *
- **************************************/
-
-	const dsql_nod* elements = field->fld_ranges;
-	const USHORT dims = elements->nod_count / 2;
-
-	if (dims > MAX_ARRAY_DIMENSIONS)
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_max_arr_dim_exceeded));
-	}
-
-	dsqlScratch->appendNumber(isc_dyn_fld_dimensions, (SSHORT) dims);
-
-	SSHORT position = 0;
-	const dsql_nod* const* ptr = elements->nod_arg;
-	for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr, ++position)
-	{
-		dsqlScratch->appendNumber(isc_dyn_def_dimension, position);
-		const dsql_nod* element = *ptr++;
-		dsqlScratch->appendUChar(isc_dyn_dim_lower);
-		const SLONG lrange = element->getSlong();
-		dsqlScratch->appendULongWithLength(lrange);
-		element = *ptr;
-		dsqlScratch->appendUChar(isc_dyn_dim_upper);
-		const SLONG hrange = element->getSlong();
-		dsqlScratch->appendULongWithLength(hrange);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		if (lrange >= hrange)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_arr_range_error));
-		}
-	}
-}
-
-
-static void define_field(DsqlCompilerScratch* dsqlScratch,
-						 dsql_nod* element, SSHORT position,
-						 const dsql_str* relation_name,
-						 const dsql_nod* pkcols)
-{
-/**************************************
- *
- *	d e f i n e _ f i e l d
- *
- **************************************
- *
- * Function
- *	Define a field, either as part of a create
- *	table or an alter table statement.
- *
- **************************************/
-	dsql_fld* field = (dsql_fld*) element->nod_arg[e_dfl_field];
-
-	// add the field to the relation being defined for parsing purposes
-
-	bool permanent = false;
-	dsql_rel* relation = dsqlScratch->relation;
-	if (relation != NULL)
-	{
-		if (! (relation->rel_flags & REL_new_relation))
-		{
-			dsql_fld* perm_field = FB_NEW(dsqlScratch->getAttachment()->dbb_pool) dsql_fld(
-				dsqlScratch->getAttachment()->dbb_pool);
-
-			*perm_field = *field;
-
-			field = perm_field;
-			permanent = true;
-		}
-		field->fld_next = relation->rel_fields;
-		relation->rel_fields = field;
-	}
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	try {
-
-	const dsql_nod* domain_node = element->nod_arg[e_dfl_domain];
-	if (domain_node)
-	{
-		dsqlScratch->appendString(isc_dyn_def_local_fld, field->fld_name);
-		const dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
-		const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
-		dsqlScratch->appendNullString(isc_dyn_fld_source, domain_name->str_data);
-
-		// Get the domain information
-
-		if (!METD_get_domain(dsqlScratch->getTransaction(), field, domain_name->str_data))
-		{
-			// Specified domain or source field does not exist
-			post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
-		}
-
-		DDL_resolve_intl_type(dsqlScratch, field,
-			reinterpret_cast<const dsql_str*>(element->nod_arg[e_dfl_collate]));
-
-		if (element->nod_arg[e_dfl_collate]) {
-			dsqlScratch->appendNumber(isc_dyn_fld_collation, field->fld_collation_id);
-		}
-	}
-	else
-	{
-		dsqlScratch->appendString(isc_dyn_def_sql_fld, field->fld_name);
-		if (relation_name)
-			dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
-
-		if (element->nod_arg[e_dfl_computed])
-		{
-			field->fld_flags |= FLD_computed;
-			dsql_nod* computed_node = element->nod_arg[e_dfl_computed];
-			define_computed(dsqlScratch, statement->getDdlNode()->nod_arg[e_drl_name], field,
-				computed_node);
-		}
-
-		DDL_resolve_intl_type(dsqlScratch, field,
-							  reinterpret_cast<const dsql_str*>(element->nod_arg[e_dfl_collate]));
-		put_field(dsqlScratch, field, false);
-	}
-
-	if ((relation->rel_flags & REL_external) &&
-		(field->fld_dtype == dtype_blob || field->fld_dtype == dtype_array || field->fld_dimensions))
-	{
-		const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
-
-		post_607(Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) <<
-															 Arg::Str(relation->rel_name) <<
-															 Arg::Str(field->fld_name));
-	}
-
-	if (position != -1)
-		dsqlScratch->appendNumber(isc_dyn_fld_position, position);
-
-	// check for a default value
-	bool default_null_flag = false;
-	dsql_nod* node = element->nod_arg[e_dfl_default];
-	if (node)
-	{
-		default_null_flag = define_default(dsqlScratch, node);
-	}
-
-	if (field->fld_ranges) {
-		define_dimensions(dsqlScratch, field);
-	}
-
-	// check for constraints
-	bool not_null_flag = false;
-
-	if (element->nod_arg[e_dfl_identity])
-	{
-		not_null_flag = true;	// identity columns are implicitly not null
-		dsqlScratch->appendUChar(isc_dyn_fld_identity);
-	}
-
-	// dimitr:  store the final position of the vector to insert a not null
-	//			item later, if required. This is a kind of a hack, but I see
-	//			no other way to ensure that NOT NULL is properly understood
-	//			everywhere in the column constraint definition.	A better
-	//			solution would be a special class which handles all append_*
-	//			operations for BLR/DYN (we could store constraints in the
-	//			separate object and then merge them into dsql scratch's BLR), but
-	//			this is for another day.
-	const size_t end = dsqlScratch->getBlrData().getCount();
-	dsqlScratch->appendUChar(isc_dyn_end);
-
-	if ( (node = element->nod_arg[e_dfl_constraint]) )
-	{
-		const dsql_nod* const* const end_ptr = node->nod_arg + node->nod_count;
-		for (dsql_nod** ptr = node->nod_arg; ptr < end_ptr; ++ptr)
-		{
-			if ((*ptr)->nod_type == nod_rel_constraint)
-			{
-				const dsql_str* string = (dsql_str*) (*ptr)->nod_arg[e_rct_name];
-				dsql_nod* node1 = (*ptr)->nod_arg[e_rct_type];
-
-				switch (node1->nod_type)
-				{
-				case nod_null:
-				case nod_primary:
-					if (default_null_flag)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-								  Arg::Gds(isc_bad_default_value) <<
-								  Arg::Gds(isc_invalid_clause) << Arg::Str("default null not null"));
-					}
-					if (!not_null_flag)
-					{
-						dsqlScratch->appendNullString(isc_dyn_rel_constraint,
-							string && node1->nod_type == nod_null ? string->str_data : 0);
-						dsqlScratch->appendUChar(isc_dyn_fld_not_null);
-						dsqlScratch->appendUChar(isc_dyn_end);
-						not_null_flag = true;
-					}
-					if (node1->nod_type == nod_null)
-						break;
-					// nod_primary falls into
-				case nod_unique:
-					{
-						const char* constraint_name = string ? string->str_data : 0;
-						dsqlScratch->appendNullString(isc_dyn_rel_constraint, constraint_name);
-
-						const dsql_nod* index = node1->nod_arg[e_pri_index];
-						fb_assert(index);
-
-						const char* index_name = constraint_name;
-						string = (dsql_str*) index->nod_arg[e_idx_name];
-						if (string)
-							index_name = string->str_data;
-
-						if (node1->nod_type == nod_primary)
-							dsqlScratch->appendNullString(isc_dyn_def_primary_key, index_name);
-						else if (node1->nod_type == nod_unique)
-							dsqlScratch->appendNullString(isc_dyn_def_unique, index_name);
-
-						dsqlScratch->appendNumber(isc_dyn_idx_unique, 1);
-
-						if (index->nod_arg[e_idx_asc_dsc])
-							dsqlScratch->appendNumber(isc_dyn_idx_type, 1);
-
-						dsqlScratch->appendString(isc_dyn_fld_name, field->fld_name);
-						dsqlScratch->appendUChar(isc_dyn_end);
-					}
-					break;
-				case nod_foreign:
-					{
-						const char* constraint_name = string ? string->str_data : 0;
-						dsqlScratch->appendNullString(isc_dyn_rel_constraint, constraint_name);
-						foreign_key(dsqlScratch, node1, constraint_name);
-					}
-					break;
-				case nod_def_constraint:
-					dsqlScratch->appendNullString(isc_dyn_rel_constraint, string ? string->str_data : 0);
-					check_constraint(dsqlScratch, node1, false); // No delete trigger
-					break;
-				}
-			}
-		}
-	}
-
-	if (not_null_flag)
-	{
-		// dimitr: insert a not null item right before column's isc_dyn_end
-		dsqlScratch->getBlrData().insert(end, isc_dyn_fld_not_null);
-	}
-	else if (pkcols)
-	{
-		// Let's see if it appears in a "primary_key(a, b, c)" relation constraint.
-		for (int i = 0; i < pkcols->nod_count; ++i)
-		{
-			const dsql_str* pkfield_name = (dsql_str*) pkcols->nod_arg[i]->nod_arg[e_fln_name];
-			if (field->fld_name == pkfield_name->str_data)
-			{
-				dsqlScratch->getBlrData().insert(end, isc_dyn_fld_not_null);
-				break;
-			}
-		}
-	}
-
-	} // try
-	catch (const Exception&)
-	{
-		clearPermanentField(relation, permanent);
-		throw;
-	}
-
-	clearPermanentField(relation, permanent);
 }
 
 
@@ -1773,115 +998,6 @@ static void define_index(DsqlCompilerScratch* dsqlScratch)
 }
 
 
-// *****************************************
-// d e f i n e _ r e l _ c o n s t r a i n t
-// *****************************************
-// Define a constraint, either as part of a create
-// table or an alter table statement.
-//
-static void define_rel_constraint(DsqlCompilerScratch* dsqlScratch, dsql_nod* element)
-{
-	const dsql_str* string = (dsql_str*) element->nod_arg[e_rct_name];
-	const char* constraint_name = string ? string->str_data : 0;
-
-	dsqlScratch->appendNullString(isc_dyn_rel_constraint, constraint_name);
-
-	dsql_nod* node = element->nod_arg[e_rct_type];
-
-	switch (node->nod_type)
-	{
-	case nod_unique:
-	case nod_primary:
-		make_index(dsqlScratch, node, node->nod_arg[e_pri_columns], constraint_name);
-		break;
-	case nod_foreign:
-		foreign_key(dsqlScratch, node, constraint_name);
-		break;
-	case nod_def_constraint:
-		check_constraint(dsqlScratch, node, false); // false = No delete trigger
-		break;
-	default:   // silence compiler
-	    break;
-	}
-}
-
-
-static void define_relation(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	d e f i n e _ r e l a t i o n
- *
- **************************************
- *
- * Function
- *	Create an SQL table, relying on DYN to generate
- *	global fields for the local fields.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data(); // not used
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->getDdlNode();
-
-	const dsql_nod* relation_node = ddl_node->nod_arg[e_drl_name];
-	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
-	dsqlScratch->appendNullString(isc_dyn_def_rel, relation_name->str_data);
-	const dsql_str* external_file = (dsql_str*) ddl_node->nod_arg[e_drl_ext_file];
-	if (external_file)
-	{
-		dsqlScratch->appendNullString(isc_dyn_rel_ext_file, external_file->str_data);
-	}
-	save_relation(dsqlScratch, relation_name);
-	if (external_file)
-	{
-		fb_assert(dsqlScratch->relation);
-		dsqlScratch->relation->rel_flags |= REL_external;
-	}
-	dsqlScratch->appendNumber(isc_dyn_rel_sql_protection, 1);
-
-	switch (ddl_node->nod_flags)
-	{
-		case NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS:
-			dsqlScratch->appendNumber(isc_dyn_rel_temporary, isc_dyn_rel_temp_global_preserve);
-			break;
-
-		case NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS:
-			dsqlScratch->appendNumber(isc_dyn_rel_temporary, isc_dyn_rel_temp_global_delete);
-			break;
-	}
-
-	// now do the actual metadata definition
-
-	dsql_nod* elements = ddl_node->nod_arg[e_drl_elements];
-	const dsql_nod* pkcols = find_pk_columns(elements);
-
-	SSHORT position = 0;
-	dsql_nod** ptr = elements->nod_arg;
-	for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
-	{
-		dsql_nod* element = *ptr;
-		switch (element->nod_type)
-		{
-		case nod_def_field:
-			define_field(dsqlScratch, element, position, relation_name, pkcols);
-			++position;
-			break;
-
-		case nod_rel_constraint:
-			define_rel_constraint(dsqlScratch, element);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	dsqlScratch->relation->rel_flags &= ~REL_creating;
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
 // ******************************
 // d e f i n e _ r o l e
 // ******************************
@@ -1894,72 +1010,6 @@ static void define_role(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendNullString(isc_dyn_def_sql_role, role_name->str_data);
 	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void define_set_null_trg(DsqlCompilerScratch* dsqlScratch,
-								const dsql_nod*    element,
-								const dsql_nod*    for_columns,
-								const dsql_nod*    prim_columns,
-								const char*	prim_rel_name,
-								const char*	for_rel_name,
-								bool        on_upd_trg)
-{
-/*****************************************************
- *
- *	d e f i n e _ s e t _ n u l l _ t r g
- *
- *****************************************************
- *
- * Function
- *	define "on delete/update set null" trigger (for referential integrity)
- *      The trigger blr is the same for both the delete and update
- *      cases. Only difference is its TRIGGER_TYPE (ON DELETE or ON UPDATE)
- *      The on_upd_trg parameter == true is an update trigger.
- *
- *****************************************************/
-
-	if (element->nod_type != nod_foreign) {
-		return;
-	}
-
-	// count of foreign key columns
-	fb_assert(prim_columns->nod_count == for_columns->nod_count);
-	fb_assert(prim_columns->nod_count != 0);
-
-	generateUnnamedTriggerBeginning(dsqlScratch,
-		on_upd_trg, prim_rel_name, prim_columns, for_rel_name, for_columns);
-
-	USHORT num_fields = 0;
-	const dsql_nod* const* for_key_flds = for_columns->nod_arg;
-
-	do {
-		const dsql_str* for_key_fld_name_str = (dsql_str*) (*for_key_flds)->nod_arg[1];
-
-		dsqlScratch->appendUChar(blr_assignment);
-		dsqlScratch->appendUChar(blr_null);
-		dsqlScratch->appendUChar(blr_field);
-		dsqlScratch->appendUChar(2);
-		dsqlScratch->appendNullString(0, for_key_fld_name_str->str_data);
-
-		num_fields++;
-		for_key_flds++;
-
-	} while (num_fields < for_columns->nod_count);
-
-	dsqlScratch->appendUChar(blr_end);
-
-	if (on_upd_trg)
-		dsqlScratch->appendUCharRepeated(blr_end, 3);
-
-	dsqlScratch->endBlr();
-	// end of the blr
-
-	dsqlScratch->appendNumber(isc_dyn_system_flag, fb_sysflag_referential_constraint);
-
-	// no trg_source and no trg_description
-	dsqlScratch->appendUChar(isc_dyn_end);
-
 }
 
 
@@ -2331,70 +1381,6 @@ static void define_update_action(DsqlCompilerScratch* dsqlScratch,
 }
 
 
-static void define_upd_cascade_trg(	DsqlCompilerScratch* dsqlScratch,
-									const dsql_nod*    element,
-									const dsql_nod*    for_columns,
-									const dsql_nod*    prim_columns,
-									const char* prim_rel_name,
-									const char* for_rel_name)
-{
-/*****************************************************
- *
- *	d e f i n e _ u p d _ c a s c a d e _ t r g
- *
- *****************************************************
- *
- * Function
- *	define "on update cascade" trigger (for referential integrity)
- *      along with the trigger blr.
- *
- *****************************************************/
-
-	if (element->nod_type != nod_foreign) {
-		return;
-	}
-
-	// count of foreign key columns
-	fb_assert(prim_columns->nod_count == for_columns->nod_count);
-	fb_assert(prim_columns->nod_count != 0);
-
-	generateUnnamedTriggerBeginning(dsqlScratch,true,
-		prim_rel_name, prim_columns, for_rel_name, for_columns);
-
-	USHORT num_fields = 0;
-	const dsql_nod* const*   for_key_flds  = for_columns->nod_arg;
-	const dsql_nod* const*   prim_key_flds = prim_columns->nod_arg;
-
-	do {
-		const dsql_str* for_key_fld_name_str  = (dsql_str*) (*for_key_flds)->nod_arg[1];
-		const dsql_str* prim_key_fld_name_str = (dsql_str*) (*prim_key_flds)->nod_arg[1];
-
-		dsqlScratch->appendUChar(blr_assignment);
-		dsqlScratch->appendUChar(blr_field);
-		dsqlScratch->appendUChar(1);
-		dsqlScratch->appendNullString(0, prim_key_fld_name_str->str_data);
-		dsqlScratch->appendUChar(blr_field);
-		dsqlScratch->appendUChar(2);
-		dsqlScratch->appendNullString(0, for_key_fld_name_str->str_data);
-
-		num_fields++;
-		prim_key_flds++;
-		for_key_flds++;
-
-	} while (num_fields < for_columns->nod_count);
-
-	dsqlScratch->appendUCharRepeated(blr_end, 4);
-	dsqlScratch->endBlr();
-	// end of the blr
-
-	dsqlScratch->appendNumber(isc_dyn_system_flag, fb_sysflag_referential_constraint);
-
-	// no trg_source and no trg_description
-	dsqlScratch->appendUChar(isc_dyn_end);
-
-}
-
-
 static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 {
 /**************************************
@@ -2445,7 +1431,7 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 	// at 1 (except for computed fields)  -- note that calling PASS1_rse
 	// directly rather than PASS1_statement saves the context stack
 
-	reset_context_stack(dsqlScratch);
+	DDL_reset_context_stack(dsqlScratch);
 	dsqlScratch->contextNumber++;
 	dsql_nod* select_expr = node->nod_arg[e_view_select];
 	select_expr->nod_flags |= NOD_SELECT_VIEW_FIELDS;
@@ -2797,7 +1783,7 @@ static void define_view(DsqlCompilerScratch* dsqlScratch, NOD_TYPE op)
 	}
 
 	dsqlScratch->appendUChar(isc_dyn_end);
-	reset_context_stack(dsqlScratch);
+	DDL_reset_context_stack(dsqlScratch);
 }
 
 
@@ -2889,7 +1875,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 				*sav_context = *context;
 			}
 		}
-		reset_context_stack(dsqlScratch);
+		DDL_reset_context_stack(dsqlScratch);
 		dsql_nod* temp_alias = relation_node->nod_arg[e_rln_alias];
 		relation_node->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
 		dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relation_node);
@@ -2957,7 +1943,7 @@ static void define_view_trigger(DsqlCompilerScratch* dsqlScratch, dsql_nod* node
 
 	statement->setType(DsqlCompiledStatement::TYPE_DDL);
 	statement->setDdlNode(saved_ddl_node);
-	reset_context_stack(dsqlScratch);
+	DDL_reset_context_stack(dsqlScratch);
 }
 
 
@@ -2970,192 +1956,26 @@ static void delete_relation_view (DsqlCompilerScratch* dsqlScratch, dsql_nod* no
  **************************************
  *
  * Function
- *  Check that DROP TABLE is dropping a table and that
- *  DROP VIEW is dropping a view.
- *  Do nothing and don't throw error if the table or view doesn't exist
+ *  Check that DROP VIEW is dropping a view.
+ *  Do nothing and don't throw error if the view doesn't exist
  *  and silent_deletion is true.
  *  CVC: Created this function to not clutter generate_dyn().
  *
  **************************************/
-	const dsql_str* string = 0;
-
-	if (node->nod_type == nod_redef_relation)
-	{
-		dsql_nod* relation_node = node->nod_arg[e_alt_name];
-		fb_assert (relation_node);
-		string = (dsql_str*) relation_node->nod_arg[e_rln_name];
-	}
-	else {
-		string = (dsql_str*) node->nod_arg[e_alt_name];
-	}
-
+	const dsql_str* string = (dsql_str*) node->nod_arg[e_alt_name];
 	fb_assert (string);
 
 	const dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, string);
 
-	if (node->nod_type == nod_del_relation || node->nod_type == nod_redef_relation)
-	{
-		if (!relation && !silent_deletion || relation && (relation->rel_flags & REL_view))
-		{
-			post_607(Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
-		}
-	}
-	else
-	{
-		// node->nod_type == nod_del_view, nod_redef_view
-		if (!relation && !silent_deletion || relation && !(relation->rel_flags & REL_view))
-		{
-			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
-		}
-	}
+	// node->nod_type == nod_del_view, nod_redef_view
+	if (!relation && !silent_deletion || relation && !(relation->rel_flags & REL_view))
+		post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
+
 	if (relation)
 	{
 		dsqlScratch->appendNullString(isc_dyn_delete_rel, string->str_data);
 		dsqlScratch->appendUChar(isc_dyn_end);
 	}
-}
-
-
-// f i n d _ p k _ c o l u m n s
-//
-// @brief Starting from the elements in a table definition, locate the PK columns
-// if given in a separate table constraint declaration.
-//
-const dsql_nod* find_pk_columns(const dsql_nod* def_rel_elements)
-{
-	for (int i = 0; i < def_rel_elements->nod_count; ++i)
-	{
-		const dsql_nod* element = def_rel_elements->nod_arg[i];
-		if (element->nod_type == nod_rel_constraint)
-		{
-			const dsql_nod* node = element->nod_arg[e_rct_type];
-			if (node->nod_type == nod_primary)
-				return node->nod_arg[e_pri_columns];
-		}
-	}
-	return 0;
-}
-
-
-//	f i n d _ s t a r t _ o f _ b o d y
-//
-//  @brief Find the start of a procedure body. Empty lines are irrelevant.
-//  @param string the source string to be searched.
-//
-static ULONG find_start_of_body(const dsql_str* string)
-{
-	ULONG j = 0;
-
-	for (ULONG i = 0; i < string->str_length; ++i)
-	{
-		switch (string->str_data[i])
-		{
-		case '\n':
-			j = i + 1;
-			break;
-		case ' ':
-		case '\r':
-		case '\t':
-			break;
-		default:
-			return j;
-		}
-	}
-
-	return 0; // Something suspicious happened, better return zero than str_length.
-}
-
-
-/**
-
- 	f i x _ d e f a u l t _ s o u r c e
-
-	@brief Get rid of newlines between DEFAULT and the value.
-
-	@param string the source text to be fixed if necessary.
-
- **/
-static void fix_default_source(dsql_str* string)
-{
-	// CVC: I know this is not very brilliant, but some people are annoyed
-	// at this for years.
-	// We assume the first position is used by "default"
-#ifdef DEV_BUILD
-	// Verify that assumption about "default"
-	const char* token = "default\0DEFAULT";
-	for (int t = 0; t < 7; ++t)
-	{
-		const char c = string->str_data[t];
-		if (c != token[t] && c != token[t + 8])
-			return; // something is screwed, skip town.
-	}
-#endif
-
-	for (ULONG i = 7; i < string->str_length; ++i)
-	{
-		switch (string->str_data[i])
-		{
-		case ' ':
-		case '\n':
-		case '\r':
-		case '\t':
-			string->str_data[i] = ' ';
-			break;
-		default:
-			return;
-		}
-	}
-}
-
-
-static void foreign_key(DsqlCompilerScratch* dsqlScratch, dsql_nod* element, const char* index_name)
-{
-/**************************************
- *
- *	f o r e i g n _ k e y
- *
- **************************************
- *
- * Function
- *	Generate ddl to create a foreign key
- *	constraint.
- *
- **************************************/
-	dsql_nod* columns1 = element->nod_arg[e_for_columns];
-
-	dsql_nod* relation2_node = element->nod_arg[e_for_reftable];
-	const dsql_str* relation2 = (dsql_str*) relation2_node->nod_arg[e_rln_name];
-
-	// If there is a referenced table name but no referenced field names, the
-	// primary key of the referenced table designates the referenced fields.
-	dsql_nod* columns2 = element->nod_arg[e_for_refcolumns];
-	if (!columns2)
-	{
-		element->nod_arg[e_for_refcolumns] = columns2 = METD_get_primary_key(
-			dsqlScratch->getTransaction(), relation2);
-
-		// If there is NEITHER an explicitly referenced field name, NOR does
-		// the referenced table have a primary key to serve as the implicitly
-		// referenced field, fail.
-		if (!columns2)
-		{
-			// "REFERENCES table" without "(column)" requires PRIMARY
-			// KEY on referenced table
-			post_607(Arg::Gds(isc_reftable_requires_pk));
-		}
-	}
-
-	if (columns2 && (columns1->nod_count != columns2->nod_count))
-	{
-		// foreign key field count does not match primary key
-		post_607(Arg::Gds(isc_key_field_count_err));
-	}
-
-	// define the foreign key index and the triggers that may be needed
-	// for referential integrity action.
-
-	make_index_trg_ref_int(dsqlScratch, element, columns1, element->nod_arg[e_for_refcolumns],
-						   relation2->str_data, index_name);
 }
 
 
@@ -3180,21 +2000,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		define_index(dsqlScratch);
 		break;
 
-	case nod_def_relation:
-		define_relation(dsqlScratch);
-		break;
-
-	case nod_redef_relation:
-		dsqlScratch->appendUChar(isc_dyn_begin);
-		delete_relation_view(dsqlScratch, node, true); // silent.
-		define_relation (dsqlScratch);
-		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	case nod_mod_relation:
-		modify_relation(dsqlScratch);
-		break;
-
 	case nod_def_view:
 	case nod_mod_view:
 	case nod_replace_view:
@@ -3208,20 +2013,10 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(isc_dyn_end);
 		break;
 
-	case nod_def_constraint:
-		define_constraint_trigger(dsqlScratch, node);
-		break;
-
 	case nod_del_index:
 		string = (dsql_str*) node->nod_arg[0];
 		dsqlScratch->appendNullString(isc_dyn_delete_idx, string->str_data);
 		dsqlScratch->appendUChar(isc_dyn_end);
-		break;
-
-	// CVC: Handling drop table and drop view properly.
-	case nod_del_relation:
-	case nod_del_view:
-		delete_relation_view (dsqlScratch, node, false); // no silent.
 		break;
 
 	case nod_del_role:
@@ -3316,55 +2111,6 @@ static void generate_dyn(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 }
 
 
-// Common code factored out.
-static void generateUnnamedTriggerBeginning(BlrWriter* blrWriter, bool onUpdateTrigger,
-	const char* primRelName, const dsql_nod* primColumns,
-	const char* forRelName, const dsql_nod* forColumns)
-{
-	// no trigger name. It is generated by the engine
-	blrWriter->appendString(isc_dyn_def_trigger, "", 0);
-
-	blrWriter->appendNumber(isc_dyn_trg_type,
-		(SSHORT) (onUpdateTrigger ? POST_MODIFY_TRIGGER : POST_ERASE_TRIGGER));
-
-	blrWriter->appendUChar(isc_dyn_sql_object);
-	blrWriter->appendNumber(isc_dyn_trg_sequence, 1);
-	blrWriter->appendNumber(isc_dyn_trg_inactive, 0);
-	blrWriter->appendNullString(isc_dyn_rel_name, primRelName);
-
-	// the trigger blr
-	blrWriter->beginBlr(isc_dyn_trg_blr);
-
-	// for ON UPDATE TRIGGER only: generate the trigger firing condition:
-	// if prim_key.old_value != prim_key.new value.
-	// Note that the key could consist of multiple columns
-
-	if (onUpdateTrigger)
-	{
-		stuff_trg_firing_cond(blrWriter, primColumns);
-		blrWriter->appendUCharRepeated(blr_begin, 2);
-	}
-
-	blrWriter->appendUChar(blr_for);
-	blrWriter->appendUChar(blr_rse);
-
-	// the context for the prim. key relation
-	blrWriter->appendUChar(1);
-	blrWriter->appendUChar(blr_relation);
-	blrWriter->appendNullString(0, forRelName);
-	// the context for the foreign key relation
-	blrWriter->appendUChar(2);
-
-	// generate the blr for: foreign_key == primary_key
-	stuff_matching_blr(blrWriter, forColumns, primColumns);
-
-	blrWriter->appendUChar(blr_modify);
-	blrWriter->appendUChar(2);
-	blrWriter->appendUChar(2);
-	blrWriter->appendUChar(blr_begin);
-}
-
-
 static void grant_revoke(DsqlCompilerScratch* dsqlScratch)
 {
 /**************************************
@@ -3444,215 +2190,6 @@ static void grant_revoke(DsqlCompilerScratch* dsqlScratch)
 				process_role_nm_list(dsqlScratch, option, *uptr, *role_ptr,
 									 ddl_node->nod_type, ddl_node->nod_arg[e_grant_grantor]);
 			}
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void make_index(	DsqlCompilerScratch* dsqlScratch,
-						const dsql_nod*    element,
-						const dsql_nod*    columns,
-						const char* index_name)
-{
-/**************************************
- *
- *	m a k e _ i n d e x
- *
- **************************************
- *
- * Function
- *	Generate ddl to create an index for a unique
- *	or primary key constraint.
- *      This is not called for a foreign key constraint.
- *      The func. make_index_trf_ref_int handles foreign key constraint
- *
- **************************************/
-
-	// stuff either user-defined name or
-	// zero-length name, indicating that an index name
-	// should be generated
-
-	fb_assert(element->nod_type != nod_foreign);
-
-	const dsql_nod* index = element->nod_arg[e_pri_index];
-	fb_assert(index);
-
-	const dsql_str* string = (dsql_str*) index->nod_arg[e_idx_name];
-	if (string)
-		index_name = string->str_data;
-
-	if (element->nod_type == nod_primary)
-		dsqlScratch->appendNullString(isc_dyn_def_primary_key, index_name);
-	else if (element->nod_type == nod_unique)
-		dsqlScratch->appendNullString(isc_dyn_def_unique, index_name);
-
-	dsqlScratch->appendNumber(isc_dyn_idx_unique, 1);
-
-	if (index->nod_arg[e_idx_asc_dsc])
-		dsqlScratch->appendNumber(isc_dyn_idx_type, 1);
-
-	const dsql_nod* const* ptr = columns->nod_arg;
-	for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr < end; ++ptr)
-	{
-		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[e_fln_name];
-		dsqlScratch->appendNullString(isc_dyn_fld_name, field_name->str_data);
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-}
-
-
-static void make_index_trg_ref_int(	DsqlCompilerScratch*    dsqlScratch,
-									dsql_nod*    element,
-									dsql_nod*    columns,
-									dsql_nod*    referenced_columns,
-									const char*	relation_name,
-									const char* index_name)
-{
-/******************************************************
- *
- *	m a k e _ i n d e x _ t r g _ r e f _ i n t
- *
- ******************************************************
- *
- * Function
- *      This is called only when the element->nod_type == nod_foreign_key
- *
- *     o Generate ddl to create an index for a unique
- *       or primary key constraint.
- *     o Also make an index for the foreign key constraint
- *     o in the caase of foreign key, also generate an appropriate trigger for
- *       cascading referential integrity.
- *
- *
- *****************************************************/
-
-	fb_assert(element->nod_type == nod_foreign)
-
-	// for_rel_name_str is the name of the relation
-	// on which the ddl operation is being done,
-	// in this case the foreign key table
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node         = statement->getDdlNode();
-	dsql_nod* for_rel_node     = ddl_node->nod_arg[e_drl_name];
-	const dsql_str* for_rel_name_str = (dsql_str*) for_rel_node->nod_arg[e_rln_name];
-
-	// stuff either user-defined name or
-	// zero-length name, indicating that an index name
-	// should be generated
-
-	dsql_nod* index = element->nod_arg[e_for_index];
-	fb_assert(index);
-
-	const dsql_str* string = (dsql_str*) index->nod_arg[e_idx_name];
-	if (string)
-	{
-		index_name = string->str_data;
-	}
-
-	dsqlScratch->appendNullString(isc_dyn_def_foreign_key, index_name);
-
-	if (index->nod_arg[e_idx_asc_dsc])
-	{
-		dsqlScratch->appendNumber(isc_dyn_idx_type, 1);
-	}
-
-	if (element->nod_arg[e_for_action])
-	{
-		dsql_nod* nod_for_action = element->nod_arg[e_for_action];
-		fb_assert(nod_for_action->nod_type == nod_ref_upd_del);
-
-		dsql_nod* nod_ref_upd_action = nod_for_action->nod_arg[e_ref_upd];
-		if (nod_ref_upd_action)
-		{
-			fb_assert(nod_ref_upd_action->nod_type == nod_ref_trig_action);
-
-			dsqlScratch->appendUChar(isc_dyn_foreign_key_update);
-			switch (nod_ref_upd_action->nod_flags)
-			{
-			case REF_ACTION_CASCADE:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_cascade);
-				define_upd_cascade_trg(dsqlScratch, element, columns, referenced_columns,
-									   relation_name, for_rel_name_str->str_data);
-				break;
-			case REF_ACTION_SET_DEFAULT:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_default);
-				define_set_default_trg(dsqlScratch, element, columns, referenced_columns,
-									   relation_name, for_rel_name_str->str_data,
-									   true);
-				break;
-			case REF_ACTION_SET_NULL:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_null);
-				define_set_null_trg(dsqlScratch, element, columns, referenced_columns,
-									relation_name, for_rel_name_str->str_data,
-									true);
-				break;
-			case REF_ACTION_NONE:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_none);
-				break;
-			default:
-				fb_assert(0);
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_none);	// just in case
-				break;
-			}
-		}
-
-		dsql_nod* nod_ref_del_action = nod_for_action->nod_arg[e_ref_del];
-		if (nod_ref_del_action)
-		{
-			fb_assert(nod_ref_del_action->nod_type == nod_ref_trig_action);
-
-			dsqlScratch->appendUChar(isc_dyn_foreign_key_delete);
-			switch (nod_ref_del_action->nod_flags)
-			{
-			case REF_ACTION_CASCADE:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_cascade);
-				define_del_cascade_trg(dsqlScratch, element, columns, referenced_columns,
-									   relation_name, for_rel_name_str->str_data);
-				break;
-			case REF_ACTION_SET_DEFAULT:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_default);
-				define_set_default_trg(dsqlScratch, element, columns, referenced_columns,
-									   relation_name, for_rel_name_str->str_data,
-									   false);
-				break;
-			case REF_ACTION_SET_NULL:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_null);
-				define_set_null_trg(dsqlScratch, element, columns, referenced_columns,
-									relation_name, for_rel_name_str->str_data,
-									false);
-				break;
-			case REF_ACTION_NONE:
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_none);
-				break;
-			default:
-				fb_assert(0);
-				dsqlScratch->appendUChar(isc_dyn_foreign_key_none);	// just in case
-				break;
-				// Error
-			}
-		}
-	}
-
-
-	const dsql_nod* const* ptr = columns->nod_arg;
-	for (const dsql_nod* const* const end = ptr + columns->nod_count; ptr < end; ++ptr)
-	{
-		const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
-		dsqlScratch->appendNullString(isc_dyn_fld_name, field_name->str_data);
-	}
-
-	dsqlScratch->appendNullString(isc_dyn_idx_foreign_key, relation_name);
-	if (referenced_columns)
-	{
-		ptr = referenced_columns->nod_arg;
-		for (const dsql_nod* const* const end = ptr + referenced_columns->nod_count; ptr < end; ++ptr)
-		{
-			const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
-			dsqlScratch->appendNullString(isc_dyn_idx_ref_column, field_name->str_data);
 		}
 	}
 
@@ -3986,159 +2523,6 @@ static char modify_privileges(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	return 0;
-}
-
-
-static void modify_relation(DsqlCompilerScratch* dsqlScratch)
-{
-/**************************************
- *
- *	m o d i f y _ r e l a t i o n
- *
- **************************************
- *
- * Function
- *	Alter an SQL table, relying on DYN to generate
- *	global fields for the local fields.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data(); // not used
-
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_nod* ddl_node = statement->getDdlNode();
-
-	dsql_nod* relation_node = ddl_node->nod_arg[e_alt_name];
-	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
-
-	dsqlScratch->appendNullString(isc_dyn_mod_rel, relation_name->str_data);
-	save_relation(dsqlScratch, relation_name);
-
-	if (!dsqlScratch->relation)
-	{
-		TEXT linecol[64];
-		sprintf (linecol, "At line %d, column %d.",
-				(int) relation_node->nod_line, (int) relation_node->nod_column);
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-				  Arg::Gds(isc_dsql_relation_err) <<
-				  Arg::Gds(isc_random) << Arg::Str(relation_name->str_data) <<
-				  Arg::Gds(isc_random) << Arg::Str(linecol));
-	}
-
-	// need to handle error that occur in generating dyn string.
-	// If there is an error, get rid of the cached data
-
-	try {
-
-	dsql_nod* ops = ddl_node->nod_arg[e_alt_ops];
-	dsql_nod** ptr = ops->nod_arg;
-	for (const dsql_nod* const* const end = ptr + ops->nod_count; ptr < end; ptr++)
-	{
-		const dsql_nod* field_node;
-		const dsql_str* field_name;
-		dsql_nod* element = *ptr;
-
-		switch (element->nod_type)
-		{
-		case nod_mod_field_name:
-			{
-				const dsql_nod* old_field = element->nod_arg[e_mod_fld_name_orig_name];
-				const dsql_str* old_field_name = (dsql_str*) old_field->nod_arg[e_fln_name];
-				dsqlScratch->appendNullString(isc_dyn_mod_local_fld, old_field_name->str_data);
-
-				dsql_nod* new_field = element->nod_arg[e_mod_fld_name_new_name];
-				const dsql_str* new_field_name = (dsql_str*) new_field->nod_arg[e_fln_name];
-				dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
-				dsqlScratch->appendNullString(isc_dyn_new_fld_name, new_field_name->str_data);
-				dsqlScratch->appendUChar(isc_dyn_end);
-				break;
-			}
-
-		case nod_mod_field_null_flag:
-			field_node = element->nod_arg[e_mod_fld_null_flag_field];
-			field_name = (dsql_str*) field_node->nod_arg[e_fln_name];
-			dsqlScratch->appendNullString(isc_dyn_mod_local_fld, field_name->str_data);
-			dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
-			if (element->nod_arg[e_mod_fld_null_flag_value]->getSlong())
-				dsqlScratch->appendUChar(isc_dyn_fld_not_null);
-			else
-				dsqlScratch->appendUChar(isc_dyn_fld_null);
-			dsqlScratch->appendUChar(isc_dyn_end);
-			break;
-
-		case nod_mod_field_pos:
-			{
-				field_node = element->nod_arg[e_mod_fld_pos_orig_name];
-				field_name = (dsql_str*) field_node->nod_arg[e_fln_name];
-				dsqlScratch->appendNullString(isc_dyn_mod_local_fld, field_name->str_data);
-				const dsql_nod* const_node = element->nod_arg[e_mod_fld_pos_new_position];
-
-				// CVC: Since now the parser accepts pos=1..N, let's subtract one here.
-				const SSHORT constant = (SSHORT) const_node->getSlong() - 1;
-
-				dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
-				dsqlScratch->appendNumber(isc_dyn_fld_position, constant);
-				dsqlScratch->appendUChar(isc_dyn_end);
-				break;
-			}
-
-		case nod_mod_field_type:
-			modify_field(dsqlScratch, element, relation_name);
-			break;
-
-		case nod_def_field:
-			define_field(dsqlScratch, element, (SSHORT) -1, relation_name, 0);
-			break;
-
-		case nod_del_field:
-			// Fix for bug 8054:
-			//
-			// [CASCADE | RESTRICT] syntax is available in IB4.5, but not
-			// required until v5.0.
-			//
-			// Option CASCADE causes an error :
-			// unsupported DSQL construct
-			//
-			// Option RESTRICT is default behaviour.
-
-			field_node = element->nod_arg[0];
-			field_name = (dsql_str*) field_node->nod_arg[e_fln_name];
-
-			if ((element->nod_arg[1])->nod_type == nod_cascade)
-			{
-				// Unsupported DSQL construct
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_dsql_construct_err));
-			}
-
-			fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
-			dsqlScratch->appendNullString(isc_dyn_delete_local_fld, field_name->str_data);
-			dsqlScratch->appendUChar(isc_dyn_end);
-			break;
-
-		case nod_delete_rel_constraint:
-			field_name = (dsql_str*) element->nod_arg[0];
-			dsqlScratch->appendNullString(isc_dyn_delete_rel_constraint, field_name->str_data);
-			break;
-
-		case nod_rel_constraint:
-			define_rel_constraint(dsqlScratch, element);
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	dsqlScratch->appendUChar(isc_dyn_end);
-
-	}	// try
-	catch (const Exception&)
-	{
-		METD_drop_relation(dsqlScratch->getTransaction(), relation_name->str_data);
-		dsqlScratch->relation = 0;
-		throw;
-	}
 }
 
 
@@ -4550,11 +2934,11 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 }
 
 
-static void reset_context_stack(DsqlCompilerScratch* dsqlScratch)
+void DDL_reset_context_stack(DsqlCompilerScratch* dsqlScratch)
 {
 /**************************************
  *
- *	r e s e t _ c o n t e x t _ s t a c k
+ *	D D L _ r e s e t _ c o n t e x t _ s t a c k
  *
  **************************************
  *
@@ -4632,18 +3016,9 @@ static void save_relation(DsqlCompilerScratch* dsqlScratch, const dsql_str* rela
 	const dsql_nod* ddl_node = statement->getDdlNode();
 	dsql_rel* relation;
 
-	if (ddl_node->nod_type == nod_mod_relation)
-	{
-		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);
-	}
-	else
-	{
-		MemoryPool& pool = *tdbb->getDefaultPool();
-		relation = FB_NEW(pool) dsql_rel(pool);
-		relation->rel_name = relation_name->str_data;
-		if (ddl_node->nod_type == nod_def_relation || ddl_node->nod_type == nod_redef_relation)
-			relation->rel_flags = REL_creating;
-	}
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	relation = FB_NEW(pool) dsql_rel(pool);
+	relation->rel_name = relation_name->str_data;
 
 	dsqlScratch->relation = relation;
 }
@@ -4669,282 +3044,6 @@ static void set_statistics(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(isc_dyn_end);
 }
 
-
-static void stuff_default_blr(DsqlCompilerScratch* dsqlScratch, const UCHAR* default_buff, USHORT buff_size)
-{
-/********************************************
- *
- *      s t u f f _ d e f a u l t _ b l r
- *
- ********************************************
- * Function:
- *   The default_blr is passed in default_buffer. It is of the form:
- *   blr_version4 blr_literal ..... blr_eoc.
- *   strip the blr_version4 and blr_eoc verbs and stuff the remaining
- *   blr in the blr stream in the statement.
- *
- *********************************************/
-	fb_assert((*default_buff == blr_version4) || (*default_buff == blr_version5));
-
-	USHORT i;
-
-	for (i = 1; i < buff_size - 1; ++i)
-		dsqlScratch->appendUChar(default_buff[i]);
-
-	fb_assert(default_buff[i] == blr_eoc);
-}
-
-
-static void stuff_matching_blr(BlrWriter* blrWriter, const dsql_nod* for_columns,
-	const dsql_nod* prim_columns)
-{
-/********************************************
- *
- *      s t u f f _ m a t c h i n g _ b l r
- *
- ********************************************
- *
- * Function
- *   Generate blr to express: foreign_key == primary_key
- *   ie.,  for_key.column_1 = prim_key.column_1 and
- *         for_key.column_2 = prim_key.column_2 and ....  so on..
- *
- **************************************/
-
-	// count of foreign key columns
-	fb_assert(prim_columns->nod_count == for_columns->nod_count);
-	fb_assert(prim_columns->nod_count != 0);
-
-	blrWriter->appendUChar(blr_boolean);
-	if (prim_columns->nod_count > 1)
-		blrWriter->appendUChar(blr_and);
-
-	USHORT num_fields = 0;
-	const dsql_nod* const* for_key_flds = for_columns->nod_arg;
-	const dsql_nod* const* prim_key_flds = prim_columns->nod_arg;
-
-	do
-	{
-		blrWriter->appendUChar(blr_eql);
-
-		const dsql_str* for_key_fld_name_str = (dsql_str*) (*for_key_flds)->nod_arg[1];
-		const dsql_str* prim_key_fld_name_str = (dsql_str*) (*prim_key_flds)->nod_arg[1];
-
-		blrWriter->appendUChar(blr_field);
-		blrWriter->appendUChar(2);
-		blrWriter->appendNullString(0, for_key_fld_name_str->str_data);
-		blrWriter->appendUChar(blr_field);
-		blrWriter->appendUChar(0);
-		blrWriter->appendNullString(0, prim_key_fld_name_str->str_data);
-
-		num_fields++;
-
-		if (prim_columns->nod_count - num_fields >= 2)
-			blrWriter->appendUChar(blr_and);
-
-		for_key_flds++;
-		prim_key_flds++;
-	} while (num_fields < for_columns->nod_count);
-
-	blrWriter->appendUChar(blr_end);
-}
-
-
-static void stuff_trg_firing_cond(BlrWriter* blrWriter, const dsql_nod* prim_columns)
-{
-/********************************************
- *
- *      s t u f f _ t r g _ f i r i n g _ c o n d
- *
- ********************************************
- *
- * Function
- *   Generate blr to express: if (old.primary_key != new.primary_key).
- *   do a column by column comparison.
- *
- **************************************/
-
-	blrWriter->appendUChar(blr_if);
-
-	if (prim_columns->nod_count > 1)
-		blrWriter->appendUChar(blr_or);
-
-	USHORT num_fields = 0;
-	const dsql_nod* const* prim_key_flds = prim_columns->nod_arg;
-
-	do
-	{
-		blrWriter->appendUChar(blr_neq);
-
-		const dsql_str* prim_key_fld_name_str = (dsql_str*) (*prim_key_flds)->nod_arg[1];
-
-		blrWriter->appendUChar(blr_field);
-		blrWriter->appendUChar(0);
-		blrWriter->appendNullString(0, prim_key_fld_name_str->str_data);
-		blrWriter->appendUChar(blr_field);
-		blrWriter->appendUChar(1);
-		blrWriter->appendNullString(0, prim_key_fld_name_str->str_data);
-
-		num_fields++;
-
-		if (prim_columns->nod_count - num_fields >= 2)
-			blrWriter->appendUChar(blr_or);
-
-		prim_key_flds++;
-	} while (num_fields < prim_columns->nod_count);
-}
-
-
-static void modify_field(DsqlCompilerScratch* dsqlScratch, dsql_nod*element, const dsql_str* relation_name)
-{
-/**************************************
- *
- *	m o d i f y _ f i e l d
- *
- **************************************
- *
- * Function
- *	Modify a field, as part of an alter table statement.
- *  Alter domain is handled in modify_domain.
- *
- **************************************/
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	dsql_fld* field = (dsql_fld*) element->nod_arg[e_mod_fld_type_field];
-	dsqlScratch->appendString(isc_dyn_mod_sql_fld, field->fld_name);
-
-	// add the field to the relation being defined for parsing purposes
-	bool permanent = false;
-	dsql_rel* relation = dsqlScratch->relation;
-
-	if (relation != NULL)
-	{
-		if (! (relation->rel_flags & REL_new_relation))
-		{
-  			dsql_fld* perm_field = FB_NEW(dsqlScratch->getAttachment()->dbb_pool)
-				dsql_fld(dsqlScratch->getAttachment()->dbb_pool);
-			*perm_field = *field;
-
-			field = perm_field;
-			permanent = true;
-		}
-
-		field->fld_next = relation->rel_fields;
-		relation->rel_fields = field;
-	}
-
-	try
-	{
-		dsql_nod* computedNod = element->nod_arg[e_mod_fld_type_computed];
-		if (computedNod)
-		{
-			reset_context_stack(dsqlScratch);
-
-			PASS1_make_context(dsqlScratch, statement->getDdlNode()->nod_arg[e_alt_name]);
-
-			dsql_str* computedSrc = (dsql_str*) computedNod->nod_arg[e_cmp_text];
-			fb_assert(computedSrc->str_length <= MAX_USHORT);
-
-			computedNod = PASS1_node(dsqlScratch, computedNod->nod_arg[e_cmp_expr]);
-
-			dsqlScratch->beginBlr(isc_dyn_fld_computed_blr);
-			GEN_hidden_variables(dsqlScratch, true);
-			GEN_expr(dsqlScratch, computedNod);
-			dsqlScratch->endBlr();
-
-			dsqlScratch->appendString(isc_dyn_fld_computed_source,
-				computedSrc->str_data, (USHORT) computedSrc->str_length);
-
-			reset_context_stack(dsqlScratch);
-		}
-
-		const dsql_nod* defNod = element->nod_arg[e_mod_fld_type_default];
-		if (defNod)
-		{
-			// We have the default or want to get rid of it.
-			if (defNod->nod_type == nod_def_default)
-				define_default(dsqlScratch, defNod);
-			else if (defNod->nod_type == nod_del_default)
-				dsqlScratch->appendUChar(isc_dyn_del_default);
-			else
-			{
-				fb_assert(false);
-			}
-		}
-		else
-		{
-			// We have the type. Default and type/domain are exclusive for now.
-			dsql_nod* domain_node = element->nod_arg[e_mod_fld_type_dom_name];
-			if (domain_node)
-			{
-				const dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
-				const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
-				dsqlScratch->appendNullString(isc_dyn_fld_source, domain_name->str_data);
-
-				// Get the domain information
-				if (!METD_get_domain(dsqlScratch->getTransaction(), field, domain_name->str_data))
-				{
-					// Specified domain or source field does not exist
-					post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
-				}
-				DDL_resolve_intl_type(dsqlScratch, field, NULL);
-			}
-			else
-			{
-				if (relation_name) {
-					dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
-				}
-
-				// If COMPUTED was specified but the type wasn't, we use the type of
-				// the computed expression.
-				if (computedNod && field->fld_dtype == dtype_unknown)
-				{
-					dsc desc;
-					MAKE_desc(dsqlScratch, &desc, computedNod, NULL);
-
-					field->fld_dtype  = desc.dsc_dtype;
-					field->fld_length = desc.dsc_length;
-					field->fld_scale  = desc.dsc_scale;
-					if (field->fld_dtype <= dtype_any_text)
-					{
-						field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-						field->fld_collation_id= DSC_GET_COLLATE(&desc);
-					}
-					else
-						field->fld_sub_type = desc.dsc_sub_type;
-				}
-				else
-					DDL_resolve_intl_type2(dsqlScratch, field, NULL, true);
-
-				put_field(dsqlScratch, field, false);
-			}
-		}
-
-		dsqlScratch->appendUChar(isc_dyn_end);
-	} // try
-	catch (const Exception&)
-	{
-		clearPermanentField(relation, permanent);
-		throw;
-	}
-
-	clearPermanentField(relation, permanent);
-}
-
-
-//
-// removes temporary pool pointers from field, stored in permanent cache
-//
-void clearPermanentField (dsql_rel* relation, bool perm)
-{
-	if (relation && relation->rel_fields && perm)
-	{
-		relation->rel_fields->fld_procedure = 0;
-		relation->rel_fields->fld_ranges = 0;
-		relation->rel_fields->fld_character_set = 0;
-		relation->rel_fields->fld_sub_type_name = 0;
-		relation->rel_fields->fld_relation = relation;
-	}
-}
 
 // post very often used error - avoid code duplication
 static void post_607(const Arg::StatusVector& v)

@@ -63,9 +63,6 @@ enum nod_t
 	nod_def_database,
 	nod_def_domain,
 	nod_mod_database,
-	nod_def_relation,
-	nod_mod_relation,
-	nod_del_relation,
 	nod_def_field,
 	nod_mod_field,
 	nod_del_field,
@@ -226,10 +223,8 @@ enum nod_t
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
-	nod_del_view,	// CVC: SQL requires that DROP VIEW and DROP table are independent
 	nod_current_role, // nod_role_name is already taken but only for DDL
 	nod_breakleave,
-	nod_redef_relation, // allows silent creation/overwriting of a relation
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_limit, // limit support
 	nod_exec_sql, // EXECUTE STATEMENT
@@ -569,7 +564,7 @@ enum node_args {
 	e_while_label,
 	e_while_count,
 
-	e_drl_name = 0,			// nod_def_relation
+	e_drl_name = 0,			// relation support
 	e_drl_elements,
 	e_drl_ext_file,			// external file
 	e_drl_count,
@@ -934,10 +929,6 @@ enum nod_flags_vals {
 
 	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
 	NOD_DT_CTE_USED			= 2,		// nod_derived_table
-
-	NOD_PERMANENT_TABLE			= 1, // nod_def_relation
-	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
-	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
 
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,

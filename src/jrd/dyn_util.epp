@@ -58,6 +58,7 @@
 
 using MsgFormat::SafeArg;
 
+using namespace Firebird;
 using namespace Jrd;
 
 DATABASE DB = STATIC "ODS.RDB";
@@ -415,7 +416,7 @@ void DYN_UTIL_generate_field_position(thread_db* tdbb,
 }
 
 
-void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* /*gbl*/,
+void DYN_UTIL_generate_index_name(thread_db* tdbb, jrd_tra* /*transaction*/,
 								  Firebird::MetaName& buffer, UCHAR verb)
 {
 /**************************************
@@ -510,7 +511,7 @@ void DYN_UTIL_generate_generator_name(thread_db* tdbb, Firebird::MetaName& buffe
 }
 
 
-void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* /*gbl*/, Firebird::MetaName& buffer)
+void DYN_UTIL_generate_trigger_name(thread_db* tdbb, jrd_tra* /*transaction*/, MetaName& buffer)
 {
 /**************************************
  *
@@ -681,10 +682,8 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 }
 
 
-void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
-									  Global*					gbl,
-									  const Firebird::MetaName&	constraint_name,
-									  const Firebird::MetaName&	trigger_name)
+void DYN_UTIL_store_check_constraints(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& constraint_name, const MetaName& trigger_name)
 {
 /**************************************
  *
@@ -703,7 +702,7 @@ void DYN_UTIL_store_check_constraints(thread_db*				tdbb,
 
 	try
 	{
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			CHK IN RDB$CHECK_CONSTRAINTS
 		{
 	        strcpy(CHK.RDB$CONSTRAINT_NAME, constraint_name.c_str());

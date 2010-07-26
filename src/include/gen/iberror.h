@@ -1028,6 +1028,46 @@ const ISC_STATUS isc_dsql_invalid_type_div_dial3      = 336397254L;
 const ISC_STATUS isc_dsql_nostring_neg_dial3          = 336397255L;
 const ISC_STATUS isc_dsql_invalid_type_neg            = 336397256L;
 const ISC_STATUS isc_dsql_max_distinct_items          = 336397257L;
+const ISC_STATUS isc_dsql_alter_charset_failed        = 336397258L;
+const ISC_STATUS isc_dsql_comment_on_failed           = 336397259L;
+const ISC_STATUS isc_dsql_create_func_failed          = 336397260L;
+const ISC_STATUS isc_dsql_alter_func_failed           = 336397261L;
+const ISC_STATUS isc_dsql_create_alter_func_failed    = 336397262L;
+const ISC_STATUS isc_dsql_drop_func_failed            = 336397263L;
+const ISC_STATUS isc_dsql_recreate_func_failed        = 336397264L;
+const ISC_STATUS isc_dsql_create_proc_failed          = 336397265L;
+const ISC_STATUS isc_dsql_alter_proc_failed           = 336397266L;
+const ISC_STATUS isc_dsql_create_alter_proc_failed    = 336397267L;
+const ISC_STATUS isc_dsql_drop_proc_failed            = 336397268L;
+const ISC_STATUS isc_dsql_recreate_proc_failed        = 336397269L;
+const ISC_STATUS isc_dsql_create_trigger_failed       = 336397270L;
+const ISC_STATUS isc_dsql_alter_trigger_failed        = 336397271L;
+const ISC_STATUS isc_dsql_create_alter_trigger_failed = 336397272L;
+const ISC_STATUS isc_dsql_drop_trigger_failed         = 336397273L;
+const ISC_STATUS isc_dsql_recreate_trigger_failed     = 336397274L;
+const ISC_STATUS isc_dsql_create_collation_failed     = 336397275L;
+const ISC_STATUS isc_dsql_drop_collation_failed       = 336397276L;
+const ISC_STATUS isc_dsql_create_domain_failed        = 336397277L;
+const ISC_STATUS isc_dsql_alter_domain_failed         = 336397278L;
+const ISC_STATUS isc_dsql_drop_domain_failed          = 336397279L;
+const ISC_STATUS isc_dsql_create_except_failed        = 336397280L;
+const ISC_STATUS isc_dsql_alter_except_failed         = 336397281L;
+const ISC_STATUS isc_dsql_create_alter_except_failed  = 336397282L;
+const ISC_STATUS isc_dsql_recreate_except_failed      = 336397283L;
+const ISC_STATUS isc_dsql_drop_except_failed          = 336397284L;
+const ISC_STATUS isc_dsql_create_sequence_failed      = 336397285L;
+const ISC_STATUS isc_dsql_create_table_failed         = 336397286L;
+const ISC_STATUS isc_dsql_alter_table_failed          = 336397287L;
+const ISC_STATUS isc_dsql_drop_table_failed           = 336397288L;
+const ISC_STATUS isc_dsql_recreate_table_failed       = 336397289L;
+const ISC_STATUS isc_dsql_create_pack_failed          = 336397290L;
+const ISC_STATUS isc_dsql_alter_pack_failed           = 336397291L;
+const ISC_STATUS isc_dsql_create_alter_pack_failed    = 336397292L;
+const ISC_STATUS isc_dsql_drop_pack_failed            = 336397293L;
+const ISC_STATUS isc_dsql_recreate_pack_failed        = 336397294L;
+const ISC_STATUS isc_dsql_create_pack_body_failed     = 336397295L;
+const ISC_STATUS isc_dsql_drop_pack_body_failed       = 336397296L;
+const ISC_STATUS isc_dsql_recreate_pack_body_failed   = 336397297L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1128,7 +1168,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1072;
+const ISC_STATUS isc_err_max                          = 1112;
 
 #else /* c definitions */
 
@@ -2126,6 +2166,46 @@ const ISC_STATUS isc_err_max                          = 1072;
 #define isc_dsql_nostring_neg_dial3          336397255L
 #define isc_dsql_invalid_type_neg            336397256L
 #define isc_dsql_max_distinct_items          336397257L
+#define isc_dsql_alter_charset_failed        336397258L
+#define isc_dsql_comment_on_failed           336397259L
+#define isc_dsql_create_func_failed          336397260L
+#define isc_dsql_alter_func_failed           336397261L
+#define isc_dsql_create_alter_func_failed    336397262L
+#define isc_dsql_drop_func_failed            336397263L
+#define isc_dsql_recreate_func_failed        336397264L
+#define isc_dsql_create_proc_failed          336397265L
+#define isc_dsql_alter_proc_failed           336397266L
+#define isc_dsql_create_alter_proc_failed    336397267L
+#define isc_dsql_drop_proc_failed            336397268L
+#define isc_dsql_recreate_proc_failed        336397269L
+#define isc_dsql_create_trigger_failed       336397270L
+#define isc_dsql_alter_trigger_failed        336397271L
+#define isc_dsql_create_alter_trigger_failed 336397272L
+#define isc_dsql_drop_trigger_failed         336397273L
+#define isc_dsql_recreate_trigger_failed     336397274L
+#define isc_dsql_create_collation_failed     336397275L
+#define isc_dsql_drop_collation_failed       336397276L
+#define isc_dsql_create_domain_failed        336397277L
+#define isc_dsql_alter_domain_failed         336397278L
+#define isc_dsql_drop_domain_failed          336397279L
+#define isc_dsql_create_except_failed        336397280L
+#define isc_dsql_alter_except_failed         336397281L
+#define isc_dsql_create_alter_except_failed  336397282L
+#define isc_dsql_recreate_except_failed      336397283L
+#define isc_dsql_drop_except_failed          336397284L
+#define isc_dsql_create_sequence_failed      336397285L
+#define isc_dsql_create_table_failed         336397286L
+#define isc_dsql_alter_table_failed          336397287L
+#define isc_dsql_drop_table_failed           336397288L
+#define isc_dsql_recreate_table_failed       336397289L
+#define isc_dsql_create_pack_failed          336397290L
+#define isc_dsql_alter_pack_failed           336397291L
+#define isc_dsql_create_alter_pack_failed    336397292L
+#define isc_dsql_drop_pack_failed            336397293L
+#define isc_dsql_recreate_pack_failed        336397294L
+#define isc_dsql_create_pack_body_failed     336397295L
+#define isc_dsql_drop_pack_body_failed       336397296L
+#define isc_dsql_recreate_pack_body_failed   336397297L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2226,7 +2306,7 @@ const ISC_STATUS isc_err_max                          = 1072;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1072
+#define isc_err_max                          1112
 
 #endif
 

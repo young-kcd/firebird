@@ -621,7 +621,9 @@ public:
 protected:
 	// DsqlCompilerScratch should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
-	~DsqlCompilerScratch();
+	~DsqlCompilerScratch()
+	{
+	}
 
 	virtual bool isDdlDyn()
 	{

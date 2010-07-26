@@ -993,6 +993,46 @@ static const struct {
 	{336397255, "42000"}, // 967 dsql_nostring_neg_dial3
 	{336397256, "42000"}, // 968 dsql_invalid_type_neg
 	{336397257, "54011"}, // 969 dsql_max_distinct_items
+	{336397258, "42000"}, // 970 dsql_alter_charset_failed
+	{336397259, "42000"}, // 971 dsql_comment_on_failed
+	{336397260, "42000"}, // 972 dsql_create_func_failed
+	{336397261, "42000"}, // 973 dsql_alter_func_failed
+	{336397262, "42000"}, // 974 dsql_create_alter_func_failed
+	{336397263, "42000"}, // 975 dsql_drop_func_failed
+	{336397264, "42000"}, // 976 dsql_recreate_func_failed
+	{336397265, "42000"}, // 977 dsql_create_proc_failed
+	{336397266, "42000"}, // 978 dsql_alter_proc_failed
+	{336397267, "42000"}, // 979 dsql_create_alter_proc_failed
+	{336397268, "42000"}, // 980 dsql_drop_proc_failed
+	{336397269, "42000"}, // 981 dsql_recreate_proc_failed
+	{336397270, "42000"}, // 982 dsql_create_trigger_failed
+	{336397271, "42000"}, // 983 dsql_alter_trigger_failed
+	{336397272, "42000"}, // 984 dsql_create_alter_trigger_failed
+	{336397273, "42000"}, // 985 dsql_drop_trigger_failed
+	{336397274, "42000"}, // 986 dsql_recreate_trigger_failed
+	{336397275, "42000"}, // 987 dsql_create_collation_failed
+	{336397276, "42000"}, // 988 dsql_drop_collation_failed
+	{336397277, "42000"}, // 989 dsql_create_domain_failed
+	{336397278, "42000"}, // 990 dsql_alter_domain_failed
+	{336397279, "42000"}, // 991 dsql_drop_domain_failed
+	{336397280, "42000"}, // 992 dsql_create_except_failed
+	{336397281, "42000"}, // 993 dsql_alter_except_failed
+	{336397282, "42000"}, // 994 dsql_create_alter_except_failed
+	{336397283, "42000"}, // 995 dsql_recreate_except_failed
+	{336397284, "42000"}, // 996 dsql_drop_except_failed
+	{336397285, "42000"}, // 997 dsql_create_sequence_failed
+	{336397286, "42000"}, // 998 dsql_create_table_failed
+	{336397287, "42000"}, // 999 dsql_alter_table_failed
+	{336397288, "42000"}, // 1000 dsql_drop_table_failed
+	{336397289, "42000"}, // 1001 dsql_recreate_table_failed
+	{336397290, "42000"}, // 1002 dsql_create_pack_failed
+	{336397291, "42000"}, // 1003 dsql_alter_pack_failed
+	{336397292, "42000"}, // 1004 dsql_create_alter_pack_failed
+	{336397293, "42000"}, // 1005 dsql_drop_pack_failed
+	{336397294, "42000"}, // 1006 dsql_recreate_pack_failed
+	{336397295, "42000"}, // 1007 dsql_create_pack_body_failed
+	{336397296, "42000"}, // 1008 dsql_drop_pack_body_failed
+	{336397297, "42000"}, // 1009 dsql_recreate_pack_body_failed
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

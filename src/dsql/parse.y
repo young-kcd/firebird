@@ -621,6 +621,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::dsql_nod* legacyNode;
 	Jrd::dsql_str* legacyStr;
 	Jrd::dsql_fld* legacyField;
+	Firebird::PathName* pathNamePtr;
 	TEXT* textPtr;
 	Jrd::ExternalClause* externalClause;
 	Firebird::Array<Jrd::ParameterClause>* parametersClause;
@@ -637,6 +638,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
+	Jrd::CreateRelationNode* createRelationNode;
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
@@ -691,7 +693,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list exists_predicate
 %type <legacyNode> ext_datasrc ext_privs ext_pwd ext_role ext_tran ext_user extra_indices_opt
 %type <legacyNode> extract_expression execute_privilege
-%type <legacyStr>  end_trigger entry_op external_file
+%type <legacyStr>  end_trigger entry_op
+%type <pathNamePtr> external_file
 
 %type <legacyNode> fetch_cursor fetch_opt fetch_scroll_opt file1 file_clause file_desc file_desc1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause
@@ -701,8 +704,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <int32Val>   first_file_length
 
 %type <legacyNode> generated_always_clause grant grant_option granted_by granted_by_text grantee grantee_list
-%type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause gtt_scope
-%type <legacyNode> gtt_table_clause
+%type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause
 %type <legacyStr>  grant_admin grant_admin_opt
 
 %type <legacyNode> having_clause
@@ -783,7 +785,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  sql_string
 %type <int32Val>   signed_long_integer signed_short_integer
 
-%type <legacyNode> table_clause table_constraint table_constraint_definition table_element table_elements
+%type <createRelationNode> table_clause
+%type <createRelationNode> gtt_table_clause
+%type table_elements(<createRelationNode>)
+%type table_element(<createRelationNode>)
+%type <intVal> gtt_scope
+
+%type <legacyNode> table_constraint table_constraint_definition
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
 %type <legacyNode> timestamp_part top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
@@ -1211,9 +1219,9 @@ create_clause	: EXCEPTION exception_clause
 		| PROCEDURE procedure_clause
 			{ $$ = makeClassNode($2); }
 		| TABLE table_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| GLOBAL TEMPORARY TABLE gtt_table_clause
-			{ $$ = $4; }
+			{ $$ = makeClassNode($4); }
 		| TRIGGER trigger_clause
 			{ $$ = makeClassNode($2); }
 		| VIEW view_clause
@@ -1660,51 +1668,68 @@ page_noise
 
 // CREATE TABLE
 
-table_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_flag_node (nod_def_relation, NOD_PERMANENT_TABLE,
-				(int) e_drl_count, $1, make_list ($4), $2); }
-		;
-
-rtable_clause	: simple_table_name external_file '(' table_elements ')'
-			{ $$ = make_flag_node (nod_redef_relation, NOD_PERMANENT_TABLE,
-				(int) e_drl_count, $1, make_list ($4), $2); }
-		;
-
-gtt_table_clause :	simple_table_name '(' table_elements ')' gtt_scope
-			{ $$ = make_flag_node (nod_def_relation, (SSHORT) (IPTR) ($5),
-				(int) e_drl_count, $1, make_list ($3), NULL); }
-		;
-
-gtt_recreate_clause	:	simple_table_name '(' table_elements ')' gtt_scope
-			{ $$ = make_flag_node (nod_redef_relation, (SSHORT) (IPTR) ($5),
-				(int) e_drl_count, $1, make_list ($3), NULL); }
-		;
-
-gtt_scope : ON COMMIT PRESERVE ROWS
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS; }
-		|	ON COMMIT KW_DELETE ROWS
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
-		|
-			{ $$ = (dsql_nod*) NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS; }
-		;
-
-external_file	: EXTERNAL KW_FILE sql_string
+table_clause
+	: simple_table_name external_file
+			{
+				$<createRelationNode>$ = FB_NEW(getPool()) CreateRelationNode(
+					getPool(), compilingText, $1, $2);
+			}
+		'(' table_elements($3) ')'
 			{ $$ = $3; }
-		| EXTERNAL sql_string
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+	;
 
-table_elements	: table_element
-		| table_elements ',' table_element
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+rtable_clause
+	: table_clause
+		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(getPool(), compilingText, $1)); }
+	;
 
-table_element	: column_def
-		| table_constraint_definition
-		;
+gtt_table_clause
+	: simple_table_name
+			{
+				$<createRelationNode>$ = FB_NEW(getPool()) CreateRelationNode(
+					getPool(), compilingText, $1);
+			}
+		'(' table_elements($2) ')' gtt_scope
+			{
+				$$ = $2;
+				$$->relationType = static_cast<rel_t>($6);
+			}
+	;
 
+gtt_recreate_clause
+	: gtt_table_clause
+		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(getPool(), compilingText, $1)); }
+	;
+
+gtt_scope
+	:
+		{ $$ = rel_global_temp_delete; }
+	| ON COMMIT KW_DELETE ROWS
+		{ $$ = rel_global_temp_delete; }
+	| ON COMMIT PRESERVE ROWS
+		{ $$ = rel_global_temp_preserve; }
+	;
+
+external_file
+	:
+		{ $$ = NULL; }
+	| EXTERNAL KW_FILE sql_string
+		{ $$ = FB_NEW(getPool()) PathName(getPool(), $3->str_data, $3->str_length); }
+	| EXTERNAL sql_string
+		{ $$ = FB_NEW(getPool()) PathName(getPool(), $2->str_data, $2->str_length); }
+	;
+
+table_elements($createRelationNode)
+	: table_element($createRelationNode)
+	| table_elements ',' table_element($createRelationNode)
+	;
+
+table_element($createRelationNode)
+	: column_def
+		{ $createRelationNode->elements.add($1); }
+	| table_constraint_definition
+		{ $createRelationNode->elements.add($1); }
+	;
 
 
 // column definition
@@ -3031,37 +3056,47 @@ alter	: ALTER alter_clause
 			{ $$ = $2; }
 		;
 
-alter_clause	: EXCEPTION alter_exception_clause
-			{ $$ = $2; }
-		| TABLE simple_table_name alter_ops
-			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, $2, make_list ($3)); }
- 		| VIEW alter_view_clause
- 			{ $$ = $2; }
-		| TRIGGER alter_trigger_clause
- 			{ $$ = makeClassNode($2); }
-		| PROCEDURE alter_procedure_clause
- 			{ $$ = makeClassNode($2); }
- 		| PACKAGE alter_package_clause
- 			{ $$ = makeClassNode($2); }
-		| DATABASE init_alter_db alter_db
-			{ $$ = make_node (nod_mod_database, (int) e_adb_count, make_list ($3)); }
-		| DOMAIN alter_domain
- 			{ $$ = makeClassNode($2); }
-		| INDEX alter_index_clause
-			{ $$ = make_node (nod_mod_index, (int) e_mod_idx_count, $2); }
-		| SEQUENCE alter_sequence_clause
-			{ $$ = $2; }
- 		| EXTERNAL FUNCTION alter_udf_clause
- 			{ $$ = $3; }
- 		| FUNCTION alter_function_clause
- 			{ $$ = makeClassNode($2); }
-		| ROLE alter_role_clause
-			{ $$ = $2; }
-		| USER alter_user_clause
-			{ $$ = $2; }
-		| CHARACTER SET alter_charset_clause
-			{ $$ = makeClassNode($3); }
-		;
+alter_clause
+	: EXCEPTION alter_exception_clause
+		{ $$ = $2; }
+	| TABLE simple_table_name alter_ops
+		{
+			AlterRelationNode* node = FB_NEW(getPool()) AlterRelationNode(getPool(),
+				compilingText, $2);
+
+			dsql_nod* list = make_list($3);
+			for (dsql_nod** ptr = list->nod_arg; ptr != list->nod_arg + list->nod_count; ++ptr)
+				node->elements.add(*ptr);
+
+			$$ = makeClassNode(node);
+		}
+	| VIEW alter_view_clause
+		{ $$ = $2; }
+	| TRIGGER alter_trigger_clause
+		{ $$ = makeClassNode($2); }
+	| PROCEDURE alter_procedure_clause
+		{ $$ = makeClassNode($2); }
+	| PACKAGE alter_package_clause
+		{ $$ = makeClassNode($2); }
+	| DATABASE init_alter_db alter_db
+		{ $$ = make_node (nod_mod_database, (int) e_adb_count, make_list ($3)); }
+	| DOMAIN alter_domain
+		{ $$ = makeClassNode($2); }
+	| INDEX alter_index_clause
+		{ $$ = make_node (nod_mod_index, (int) e_mod_idx_count, $2); }
+	| SEQUENCE alter_sequence_clause
+		{ $$ = $2; }
+	| EXTERNAL FUNCTION alter_udf_clause
+		{ $$ = $3; }
+	| FUNCTION alter_function_clause
+		{ $$ = makeClassNode($2); }
+	| ROLE alter_role_clause
+		{ $$ = $2; }
+	| USER alter_user_clause
+		{ $$ = $2; }
+	| CHARACTER SET alter_charset_clause
+		{ $$ = makeClassNode($3); }
+	;
 
 alter_domain
 	: keyword_or_column
@@ -3100,10 +3135,11 @@ alter_domain_op($alterDomainNode)
 		}
 	;
 
-alter_ops	: alter_op
-		| alter_ops ',' alter_op
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+alter_ops
+	: alter_op
+	| alter_ops ',' alter_op
+		{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
 alter_op	: DROP simple_column_name drop_behaviour
 			{ $$ = make_node (nod_del_field, 2, $2, $3); }
@@ -3404,11 +3440,11 @@ drop_clause
 	| PROCEDURE symbol_procedure_name
 		{ $$ = makeClassNode(FB_NEW(getPool()) DropProcedureNode(getPool(), compilingText, toName($2))); }
 	| TABLE symbol_table_name
-		{ $$ = make_node (nod_del_relation, (int) 1, $2); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropRelationNode(getPool(), compilingText, toName($2), false)); }
 	| TRIGGER symbol_trigger_name
 		{ $$ = makeClassNode(FB_NEW(getPool()) DropTriggerNode(getPool(), compilingText, toName($2))); }
 	| VIEW symbol_view_name
-		{ $$ = make_node (nod_del_view, (int) 1, $2); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) DropRelationNode(getPool(), compilingText, toName($2), true)); }
 	| FILTER symbol_filter_name
 		{ $$ = make_node (nod_del_filter, (int) 1, $2); }
 	| DOMAIN symbol_domain_name

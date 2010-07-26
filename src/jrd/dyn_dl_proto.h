@@ -24,15 +24,11 @@
 #ifndef JRD_DYN_DL_PROTO_H
 #define JRD_DYN_DL_PROTO_H
 
-void	DYN_delete_constraint(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void	DYN_delete_dimensions(Jrd::Global*, const UCHAR**); //, const Firebird::MetaName*, Firebird::MetaName*);
 void	DYN_delete_filter(Jrd::Global*, const UCHAR**);
 void	DYN_delete_generator(Jrd::Global*, const UCHAR**);
 void	DYN_delete_index(Jrd::Global*, const UCHAR**);
 void	DYN_delete_local_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
-void	DYN_delete_relation(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void	DYN_delete_role(Jrd::Global*, const UCHAR**);
-bool	DYN_delete_security_class2(Jrd::jrd_tra* transaction, const Firebird::MetaName& security_class);
 void	DYN_delete_shadow(Jrd::Global*, const UCHAR**);
 
 #endif // JRD_DYN_DL_PROTO_H
