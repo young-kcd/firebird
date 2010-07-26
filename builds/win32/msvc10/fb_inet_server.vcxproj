@@ -208,11 +208,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\utilities\gsec\call_service.cpp" />
     <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gstat\dba.cpp" />
+    <ClCompile Include="..\..\..\gen\$(Platform)\auth\SecurityDatabase\LegacyManagement.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp" />
     <ClCompile Include="..\..\..\src\utilities\nbackup.cpp" />
     <ClCompile Include="..\..\..\src\utilities\nbackup\nbkMain.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp" />
-    <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gsec\security.cpp" />
+    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp" />
     <ClCompile Include="..\..\..\src\jrd\trace\TraceCmdLine.cpp" />
     <ClCompile Include="..\..\..\src\jrd\trace\TraceService.cpp" />
     <ClCompile Include="..\..\..\src\remote\os\win32\chop.cpp" />

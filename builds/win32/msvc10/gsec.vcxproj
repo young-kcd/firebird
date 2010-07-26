@@ -183,7 +183,7 @@
     <ClCompile Include="..\..\..\src\utilities\gsec\call_service.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\gsecMain.cpp" />
-    <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gsec\security.cpp" />
+    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp" />
     <ClCompile Include="..\..\..\src\jrd\enc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\guid.cpp" />
     <ClCompile Include="..\..\..\src\jrd\isc.cpp" />

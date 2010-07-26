@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gstat\dba.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\gen\$(Platform)\auth\SecurityDatabase\LegacyManagement.cpp">
+      <Filter>UTILITIES files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
@@ -55,7 +58,7 @@
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gsec\security.cpp">
+    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\trace\TraceCmdLine.cpp">
