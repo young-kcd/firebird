@@ -611,15 +611,20 @@ void DFW_merge_work(jrd_tra* transaction,
 		oldSp->hash.remove(*work); // After ++itr
 		work->dfw_sav_number = new_sav_number;
 
-		if (!newSp->hash.lookup(*work))
+		DeferredWork* foundWork = newSp->hash.lookup(*work);
+		if (!foundWork)
 		{
 			newSp->hash.add(work);
 		}
 		else
 		{
+			foundWork->dfw_count += work->dfw_count;
 			delete work;
 		}
 	}
+
+	job->hash.remove(old_sav_number);
+	delete oldSp;
 }
 
 
