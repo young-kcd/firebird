@@ -800,30 +800,32 @@ static void add_index_set(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	Firebird::MetaName string;
 	index_desc idx;
 
-	AutoRequest handle1, handle2;
+	AutoRequest handle1, handle2, handle3;
 
 	for (int n = 0; n < SYSTEM_INDEX_COUNT; n++)
 	{
 		const ini_idx_t* index = &indices[n];
+		jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
+
+		Firebird::MetaName indexName;
+		indexName.printf("RDB$INDEX_%d", index->ini_idx_index_id);
 
 		STORE(REQUEST_HANDLE handle1) X IN RDB$INDICES
-			jrd_rel* relation = MET_relation(tdbb, index->ini_idx_relid);
 			PAD(relation->rel_name.c_str(), X.RDB$RELATION_NAME);
-			string.printf("RDB$INDEX_%d", index->ini_idx_index_id);
-			PAD(string.c_str(), X.RDB$INDEX_NAME);
+			PAD(indexName.c_str(), X.RDB$INDEX_NAME);
 			X.RDB$UNIQUE_FLAG = index->ini_idx_flags & idx_unique;
 			X.RDB$SEGMENT_COUNT = index->ini_idx_segment_count;
+
 			if (index->ini_idx_flags & idx_descending)
 			{
 				X.RDB$INDEX_TYPE.NULL = FALSE;
 				X.RDB$INDEX_TYPE = 1;
 			}
-			else {
+			else
 				X.RDB$INDEX_TYPE.NULL = TRUE;
-			}
+
 			X.RDB$SYSTEM_FLAG = RDB_system;
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$INDEX_INACTIVE = 0;
@@ -842,16 +844,30 @@ static void add_index_set(thread_db* tdbb)
 					tail->idx_field = segment->ini_idx_rfld_id;
 					tail->idx_itype = segment->ini_idx_type;
 				    tail->idx_selectivity = 0;
-				END_STORE;
+				END_STORE
 			}
+
 			idx.idx_count = index->ini_idx_segment_count;
 			idx.idx_flags = index->ini_idx_flags;
 			SelectivityList selectivity(*tdbb->getDefaultPool());
-			IDX_create_index(tdbb, relation, &idx, string.c_str(), NULL,
-				attachment->getSysTransaction(), selectivity);
-			X.RDB$INDEX_ID = idx.idx_id + 1;
-		END_STORE;
 
+			IDX_create_index(tdbb, relation, &idx, indexName.c_str(), NULL,
+				attachment->getSysTransaction(), selectivity);
+
+			X.RDB$INDEX_ID = idx.idx_id + 1;
+		END_STORE
+
+		if (index->ini_idx_flags & idx_unique)
+		{
+			STORE(REQUEST_HANDLE handle3) RC IN RDB$RELATION_CONSTRAINTS
+				PAD(indexName.c_str(), RC.RDB$CONSTRAINT_NAME);
+				PAD(indexName.c_str(), RC.RDB$INDEX_NAME);
+				PAD(relation->rel_name.c_str(), RC.RDB$RELATION_NAME);
+				strcpy(RC.RDB$CONSTRAINT_TYPE, UNIQUE_CNSTRT);
+				strcpy(RC.RDB$DEFERRABLE, "NO");
+				strcpy(RC.RDB$INITIALLY_DEFERRED, "NO");
+			END_STORE
+		}
 	}
 }
 
