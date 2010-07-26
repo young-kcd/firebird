@@ -676,9 +676,13 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
 					newWork->dfw_ids.add(n);
 			}
 
+			newWork->dfw_count += work->dfw_count;
 			delete work;
 		}
 	}
+
+	job->hash.remove(old_sav_number);
+	delete oldSp;
 }
 
 
