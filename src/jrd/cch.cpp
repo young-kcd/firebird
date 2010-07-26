@@ -330,6 +330,9 @@ int CCH_down_grade_dbb(void* ast_object)
 		return 0;
 	}
 
+	if (dbb->dbb_flags & DBB_not_in_use)
+		return 0;
+
 /* Since this routine will be called asynchronously, we must establish
    a thread context. */
 	thread_db thd_context, *tdbb;
