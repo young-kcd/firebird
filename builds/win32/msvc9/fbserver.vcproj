@@ -431,6 +431,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\auth\SecurityDatabase\LegacyManagement.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp"
 				>
 			</File>
@@ -447,7 +451,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gsec\security.cpp"
+				RelativePath="..\..\..\src\utilities\gsec\security.cpp"
 				>
 			</File>
 			<File
