@@ -791,6 +791,7 @@ public:
 	dsql_nod* setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
+	TriStateType<bool> nullFlag;	// true = NULL / false = NOT NULL
 };
 
 

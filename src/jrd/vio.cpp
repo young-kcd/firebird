@@ -2344,7 +2344,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 					EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
 
 					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
-					Array<int>& ids = DFW_get_ids(work);
+					SortedArray<int>& ids = DFW_get_ids(work);
 					ids.add(MOV_get_long(&desc2, 0));
 				}
 			}
@@ -2359,6 +2359,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				MET_change_fields(tdbb, transaction, &desc1);
 				EVL_field(0, new_rpb->rpb_record, f_fld_name, &desc2);
 				DeferredWork* dw = MET_change_fields(tdbb, transaction, &desc2);
+				dsc desc3, desc4;
+				bool rc1, rc2;
+
 				if (dw)
 				{
 					// Did we convert computed field into physical, stored field?
@@ -2366,9 +2369,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 					// Warning: getting the result of MET_change_fields is the last relation
 					// that was affected, but for computed fields, it's an implicit domain
 					// and hence it can be used only by a single field and therefore one relation.
-					dsc desc3, desc4;
-					bool rc1 = EVL_field(0, org_rpb->rpb_record, f_fld_computed, &desc3);
-					bool rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
+					rc1 = EVL_field(0, org_rpb->rpb_record, f_fld_computed, &desc3);
+					rc2 = EVL_field(0, new_rpb->rpb_record, f_fld_computed, &desc4);
 					if (rc1 != rc2 || rc1 && MOV_compare(&desc3, &desc4)) {
 						DFW_post_work_arg(transaction, dw, &desc1, 0, dfw_arg_force_computed);
 					}
@@ -2376,6 +2378,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 				dw = DFW_post_work(transaction, dfw_modify_field, &desc1, 0);
 				DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_new_name);
+
+				rc1 = EVL_field(NULL, org_rpb->rpb_record, f_fld_null_flag, &desc3);
+				rc2 = EVL_field(NULL, new_rpb->rpb_record, f_fld_null_flag, &desc4);
+
+				if ((!rc1 || MOV_get_long(&desc3, 0) == 0) && rc2 && MOV_get_long(&desc4, 0) != 0)
+					DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_field_null);
 			}
 			break;
 

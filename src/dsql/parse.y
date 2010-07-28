@@ -3124,6 +3124,10 @@ alter_domain_op($alterDomainNode)
 		{ setClause($alterDomainNode->dropDefault, "DOMAIN DROP DEFAULT"); }
 	| DROP CONSTRAINT
 		{ setClause($alterDomainNode->dropConstraint, "DOMAIN DROP CONSTRAINT"); }
+	| KW_NULL
+		{ setClause($alterDomainNode->nullFlag, "[NOT] NULL", true); }
+	| NOT KW_NULL
+		{ setClause($alterDomainNode->nullFlag, "[NOT] NULL", false); }
 	| TO symbol_column_name
 		{ setClause($alterDomainNode->renameTo, "DOMAIN NAME", toName($2)); }
 	| KW_TYPE init_data_type non_array_type

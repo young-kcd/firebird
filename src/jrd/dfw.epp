@@ -3341,8 +3341,30 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 		{
 			const Firebird::MetaName depName(work->dfw_name);
 			AutoRequest handle;
+
+			// If a domain is being changed to NOT NULL, schedule validation for involved relations.
+			if (work->findArg(dfw_arg_field_null))
+			{
+				FOR(REQUEST_HANDLE handle)
+					RFL IN RDB$RELATION_FIELDS
+					WITH RFL.RDB$FIELD_SOURCE EQ depName.c_str()
+					REDUCED TO RFL.RDB$RELATION_NAME, RFL.RDB$FIELD_ID
+				{
+					dsc desc;
+					desc.makeText(strlen(RFL.RDB$RELATION_NAME), CS_METADATA,
+						(UCHAR*) RFL.RDB$RELATION_NAME);
+
+					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc, 0);
+					SortedArray<int>& ids = DFW_get_ids(work);
+					ids.add(RFL.RDB$FIELD_ID);
+				}
+				END_FOR
+			}
+
 			bid validation;
 			validation.clear();
+
+			handle.reset();
 
 			FOR(REQUEST_HANDLE handle)
 				FLD IN RDB$FIELDS WITH
@@ -5124,7 +5146,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 										DeferredWork* work = DFW_post_work(transaction,
 											dfw_check_not_null, &desc, 0);
-										Array<int>& ids = DFW_get_ids(work);
+										SortedArray<int>& ids = DFW_get_ids(work);
 										ids.add(RFR.RDB$FIELD_ID);
 									}
 								}

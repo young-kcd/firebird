@@ -166,6 +166,20 @@ private:
 		clause = value;
 	}
 
+	template <typename T>
+	void setClause(TriStateType<T>& clause, const char* duplicateMsg, const T& value)
+	{
+		using namespace Firebird;
+		if (clause.specified)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << duplicateMsg);
+		}
+
+		clause = value;
+	}
+
 	void setClause(bool& clause, const char* duplicateMsg)
 	{
 		setClause(clause, duplicateMsg, true);

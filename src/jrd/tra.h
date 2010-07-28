@@ -455,7 +455,8 @@ enum dfw_t {
 	dfw_arg_check_blr,		// check if BLR is still compilable
 	dfw_arg_rel_name,		// relation name of a trigger
 	dfw_arg_trg_type,		// trigger type
-	dfw_arg_new_name		// new name
+	dfw_arg_new_name,		// new name
+	dfw_arg_field_null
 };
 
 // Verb actions
