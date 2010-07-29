@@ -912,9 +912,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 		CCH_init(tdbb, options.dpb_buffers);
 
-		// Initialize locks
-		init_database_locks(tdbb, dbb);
-
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
@@ -930,6 +927,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		// but before any real work is done
 		SDW_init(options.dpb_activate_shadow,
 				 options.dpb_delete_shadow);
+
+		// Initialize locks
+		init_database_locks(tdbb, dbb);
 
 		/* dimitr: disabled due to unreliable behaviour of minor ODS upgrades
 			a) in the case of any failure it's impossible to attach the database
@@ -2026,9 +2026,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
 	CCH_init(tdbb, options.dpb_buffers);
 
-	// Initialize locks
-	init_database_locks(tdbb, dbb);
-
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
@@ -2089,6 +2086,9 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 #ifdef GARBAGE_THREAD
 	VIO_init(tdbb);
 #endif
+
+	// Initialize locks
+	init_database_locks(tdbb, dbb);
 
     if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
