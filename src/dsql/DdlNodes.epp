@@ -1079,7 +1079,7 @@ void CommentOnNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			return;
 	}
 
-	TriStateType<string> description;
+	Nullable<string> description;
 	if (!text.isEmpty())
 		description = attachment->stringToMetaCharSet(tdbb, text, textCharSet);
 

@@ -99,19 +99,19 @@ namespace
 		MetaName fieldSource;
 		MetaName fieldName;
 		MetaName relationName;
-		TriStateType<SSHORT> collationId;
-		TriStateType<SSHORT> nullFlag;
+		Nullable<SSHORT> collationId;
+		Nullable<SSHORT> nullFlag;
 		SSHORT mechanism;
-		TriStateType<SSHORT> fieldLength;
-		TriStateType<SSHORT> fieldScale;
-		TriStateType<SSHORT> fieldType;
-		TriStateType<SSHORT> fieldSubType;
-		TriStateType<SSHORT> fieldSegmentLength;
-		TriStateType<SSHORT> fieldNullFlag;
-		TriStateType<SSHORT> fieldCharLength;
-		TriStateType<SSHORT> fieldCollationId;
-		TriStateType<SSHORT> fieldCharSetId;
-		TriStateType<SSHORT> fieldPrecision;
+		Nullable<SSHORT> fieldLength;
+		Nullable<SSHORT> fieldScale;
+		Nullable<SSHORT> fieldType;
+		Nullable<SSHORT> fieldSubType;
+		Nullable<SSHORT> fieldSegmentLength;
+		Nullable<SSHORT> fieldNullFlag;
+		Nullable<SSHORT> fieldCharLength;
+		Nullable<SSHORT> fieldCollationId;
+		Nullable<SSHORT> fieldCharSetId;
+		Nullable<SSHORT> fieldPrecision;
 
 		// Not compared
 		bid defaultSource;

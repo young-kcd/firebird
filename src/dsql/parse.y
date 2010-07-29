@@ -609,15 +609,14 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %union
 {
-	TriStateRawType<int> triIntVal;
-	TriStateRawType<bool> triBoolVal;
+	BaseNullable<int> nullableIntVal;
+	BaseNullable<bool> nullableBoolVal;
 	bool boolVal;
 	int intVal;
 	unsigned uintVal;
 	SLONG int32Val;
 	FB_UINT64 uint64Val;
-	TriStateRawType<unsigned> triUintVal;
-	TriStateRawType<FB_UINT64> triUint64Val;
+	BaseNullable<FB_UINT64> nullableUint64Val;
 	Jrd::dsql_nod* legacyNode;
 	Jrd::dsql_str* legacyStr;
 	Jrd::dsql_fld* legacyField;
@@ -848,12 +847,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type alter_domain_ops(<alterDomainNode>)
 %type alter_domain_op(<alterDomainNode>)
 
-%type <triBoolVal> trigger_active
+%type <nullableBoolVal> trigger_active
 %type <uint64Val> trigger_db_type trigger_ddl_type trigger_ddl_type_items trigger_type
 %type <uint64Val> trigger_type_prefix trigger_type_suffix
-%type <triUint64Val> trigger_type_opt
+%type <nullableUint64Val> trigger_type_opt
 %type <createAlterTriggerNode> alter_trigger_clause replace_trigger_clause trigger_clause
-%type <triIntVal> trigger_position
+%type <nullableIntVal> trigger_position
 
 %type <legacyNode> symbol_package_name
 %type <createAlterPackageNode> alter_package_clause package_clause replace_package_clause
@@ -2920,11 +2919,11 @@ replace_trigger_clause
 
 trigger_active
 	: ACTIVE
-		{ $$ = TriStateRawType<bool>::val(true); }
+		{ $$ = Nullable<bool>::val(true); }
 	| INACTIVE
-		{ $$ = TriStateRawType<bool>::val(false); }
+		{ $$ = Nullable<bool>::val(false); }
 	|
-		{ $$ = TriStateRawType<bool>::empty(); }
+		{ $$ = Nullable<bool>::empty(); }
 	;
 
 trigger_type
@@ -3045,9 +3044,9 @@ trigger_type_suffix
 
 trigger_position
 	: POSITION nonneg_short_integer
-		{ $$ = TriStateRawType<int>::val($2); }
+		{ $$ = Nullable<int>::val($2); }
 	|
-		{ $$ = TriStateRawType<int>::empty(); }
+		{ $$ = Nullable<int>::empty(); }
 	;
 
 // ALTER statement
@@ -3424,9 +3423,9 @@ alter_trigger_clause
 
 trigger_type_opt	// we do not allow alter database triggers, hence we do not use trigger_type here
 	: trigger_type_prefix trigger_type_suffix
-		{ $$ = TriStateRawType<FB_UINT64>::val($1 + $2 - 1); }
+		{ $$ = Nullable<FB_UINT64>::val($1 + $2 - 1); }
 	|
-		{ $$ = TriStateRawType<FB_UINT64>::empty(); }
+		{ $$ = Nullable<FB_UINT64>::empty(); }
 	;
 
 

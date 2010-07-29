@@ -32,7 +32,7 @@
 #include "../dsql/WinNodes.h"
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
-#include "../common/classes/TriState.h"
+#include "../common/classes/Nullable.h"
 #include "../common/classes/stack.h"
 
 #define _yacc_defines_keywords
@@ -167,7 +167,7 @@ private:
 	}
 
 	template <typename T>
-	void setClause(TriStateType<T>& clause, const char* duplicateMsg, const T& value)
+	void setClause(Nullable<T>& clause, const char* duplicateMsg, const T& value)
 	{
 		using namespace Firebird;
 		if (clause.specified)

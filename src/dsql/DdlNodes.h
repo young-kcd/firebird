@@ -33,7 +33,7 @@
 #include "../dsql/Nodes.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
-#include "../common/classes/TriState.h"
+#include "../common/classes/Nullable.h"
 #include "../dsql/errd_proto.h"
 
 namespace Jrd {
@@ -470,9 +470,9 @@ protected:
 public:
 	Firebird::MetaName name;
 	Firebird::MetaName relationName;
-	TriStateType<FB_UINT64> type;
-	TriStateType<bool> active;
-	TriStateType<int> position;
+	Nullable<FB_UINT64> type;
+	Nullable<bool> active;
+	Nullable<int> position;
 	ExternalClause* external;
 	Firebird::string source;
 	Firebird::ByteChunk blrData;
@@ -791,7 +791,7 @@ public:
 	dsql_nod* setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
-	TriStateType<bool> nullFlag;	// true = NULL / false = NOT NULL
+	Nullable<bool> nullFlag;	// true = NULL / false = NOT NULL
 };
 
 
@@ -1199,9 +1199,9 @@ public:
 
 		Firebird::MetaName relation;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
-		TriStateType<bool> unique;
-		TriStateType<bool> descending;
-		TriStateType<bool> inactive;
+		Nullable<bool> unique;
+		Nullable<bool> descending;
+		Nullable<bool> inactive;
 		SSHORT type;
 		bid expressionBlr;
 		bid expressionSource;

@@ -32,7 +32,7 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/TriState.h"
+#include "../common/classes/Nullable.h"
 
 namespace Jrd {
 
@@ -101,7 +101,7 @@ public:
 	public:
 		// Output variables.
 
-		template <typename T> OutputParam operator ()(const char* chunk, TriStateType<T>& param)
+		template <typename T> OutputParam operator ()(const char* chunk, Nullable<T>& param)
 		{
 			OutputParam ret = (*this)(chunk, param.value);
 			outputSlots[outputSlots.getCount() - 1].specifiedAddress = &param.specified;
@@ -132,7 +132,7 @@ public:
 			return *this;
 		}
 
-		template <typename T> Builder& operator <<(const TriStateType<T>& param)
+		template <typename T> Builder& operator <<(const Nullable<T>& param)
 		{
 			*this << param.value;
 			inputSlots[inputSlots.getCount() - 1].specifiedAddress = &param.specified;

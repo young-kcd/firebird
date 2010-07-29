@@ -37,7 +37,7 @@
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/WinNodes.h"
-#include "../common/classes/TriState.h"
+#include "../common/classes/Nullable.h"
 #include "dsql.tab.h"
 #include "keywords.h"
 
