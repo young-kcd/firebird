@@ -776,7 +776,7 @@ Data source : @4', NULL, NULL)
 ('eds_expl_tran_ctrl', NULL, '', NULL, 0, 666, NULL, 'Explicit transaction control is not allowed', NULL, NULL)
 ('no_trusted_spb', NULL, 'svc.cpp', NULL, 0, 667, NULL, 'Use of TRUSTED switches in spb_command_line is prohibited', NULL, NULL)
 ('package_name', 'check_dependencies', 'dfw.epp', NULL, 0, 668, NULL, 'PACKAGE @1', NULL, NULL);
-('cannot_make_not_null', 'check_not_null', 'dfw.epp', NULL, 0, 669, NULL, 'Cannot make field @1 NOT NULL because there are NULLs present', NULL, NULL);
+('cannot_make_not_null', 'check_not_null', 'dfw.epp', NULL, 0, 669, NULL, 'Cannot make field @1 of table @2 NOT NULL because there are NULLs present', NULL, NULL);
 ('feature_deprecated', NULL, '', NULL, 0, 670, NULL, 'Feature @1 is deprecated', NULL, NULL);
 ('view_name', 'check_dependencies', 'dfw.epp', NULL, 0, 671, NULL, 'VIEW @1', NULL, NULL);
 ('lock_dir_access', 'createLockDirectory', 'os_utils.cpp', NULL, 0, 672, NULL, 'Can not access lock files directory @1', NULL, NULL);

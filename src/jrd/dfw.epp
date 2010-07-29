@@ -1630,7 +1630,8 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				{
 					hasError = true;
 					errs << Arg::Gds(isc_cannot_make_not_null) <<
-							 Arg::Str((*relation->rel_fields)[fields[i]]->fld_name);
+							(*relation->rel_fields)[fields[i]]->fld_name <<
+							relation->rel_name;
 				}
 			}
 
@@ -3342,12 +3343,15 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			const Firebird::MetaName depName(work->dfw_name);
 			AutoRequest handle;
 
-			// If a domain is being changed to NOT NULL, schedule validation for involved relations.
-			if (work->findArg(dfw_arg_field_null))
+			// If a domain is being changed to NOT NULL, schedule validation of involved relations.
+			if (work->findArg(dfw_arg_field_not_null))
 			{
 				FOR(REQUEST_HANDLE handle)
-					RFL IN RDB$RELATION_FIELDS
-					WITH RFL.RDB$FIELD_SOURCE EQ depName.c_str()
+					RFL IN RDB$RELATION_FIELDS CROSS
+					REL IN RDB$RELATIONS
+					WITH REL.RDB$RELATION_NAME EQ RFL.RDB$RELATION_NAME AND
+						 RFL.RDB$FIELD_SOURCE EQ depName.c_str() AND
+						 REL.RDB$VIEW_BLR MISSING
 					REDUCED TO RFL.RDB$RELATION_NAME, RFL.RDB$FIELD_ID
 				{
 					dsc desc;

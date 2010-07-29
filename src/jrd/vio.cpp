@@ -2383,7 +2383,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				rc2 = EVL_field(NULL, new_rpb->rpb_record, f_fld_null_flag, &desc4);
 
 				if ((!rc1 || MOV_get_long(&desc3, 0) == 0) && rc2 && MOV_get_long(&desc4, 0) != 0)
-					DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_field_null);
+					DFW_post_work_arg(transaction, dw, &desc2, 0, dfw_arg_field_not_null);
 			}
 			break;
 

@@ -693,7 +693,7 @@ Data source : @4"},		/* eds_statement */
 	{335544986, "Explicit transaction control is not allowed"},		/* eds_expl_tran_ctrl */
 	{335544987, "Use of TRUSTED switches in spb_command_line is prohibited"},		/* no_trusted_spb */
 	{335544988, "PACKAGE @1"},		/* package_name */
-	{335544989, "Cannot make field @1 NOT NULL because there are NULLs present"},		/* cannot_make_not_null */
+	{335544989, "Cannot make field @1 of table @2 NOT NULL because there are NULLs present"},		/* cannot_make_not_null */
 	{335544990, "Feature @1 is deprecated"},		/* feature_deprecated */
 	{335544991, "VIEW @1"},		/* view_name */
 	{335544992, "Can not access lock files directory @1"},		/* lock_dir_access */
