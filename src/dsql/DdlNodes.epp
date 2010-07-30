@@ -4666,7 +4666,7 @@ bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, co
 	}
 	END_FOR
 
-	return false;
+	return found;
 }
 
 
