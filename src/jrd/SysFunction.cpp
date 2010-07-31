@@ -3044,7 +3044,10 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, jrd_nod* args,
 										Arg::Str(function->name));
 	}
 
-	if (v1 < 0 && !(value2->isExact() && value2->dsc_scale == 0))
+	if (v1 < 0 &&
+		(!value2->isExact() ||
+		 MOV_get_int64(value2, 0) * SINT64(CVT_power_of_ten(-value2->dsc_scale)) !=
+			MOV_get_int64(value2, value2->dsc_scale)))
 	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_invalid_negpowfp) <<
