@@ -2550,15 +2550,18 @@ UCHAR* ISC_map_file(
  **************************************/
 	TEXT expanded_filename[MAXPATHLEN], hostname[64];
 	TEXT map_file[MAXPATHLEN];
-	HANDLE file_handle, event_handle;
+	HANDLE file_handle;
+	HANDLE event_handle = 0;
 	int retry_count = 0;
+	bool init_flag = false;
 
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
  */
 
   retry:
-	retry_count++;
+	if (retry_count++ > 0) 
+		THREAD_SLEEP(10);
 
 	ISC_get_host(hostname, sizeof(hostname));
 	sprintf(map_file, filename, hostname);
@@ -2573,44 +2576,52 @@ UCHAR* ISC_map_file(
 				 OPEN_ALWAYS,
 				 FILE_ATTRIBUTE_NORMAL,
 				 NULL);
-	if (file_handle == INVALID_HANDLE_VALUE) {
-		error(status_vector, "CreateFile", GetLastError());
+	DWORD err = GetLastError();
+	if (file_handle == INVALID_HANDLE_VALUE) 
+	{
+		if (err == ERROR_SHARING_VIOLATION)
+			goto retry;
+
+		error(status_vector, "CreateFile", err);
 		return NULL;
 	}
 
 /* Check if file already exists */
 
-	const bool file_exists = (GetLastError() == ERROR_ALREADY_EXISTS);
+	const bool file_exists = (err == ERROR_ALREADY_EXISTS);
 
 /* Create an event that can be used to determine if someone has already
    initialized shared memory. */
 
 	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event");
-	if (!ISC_is_WinNT())
-		event_handle =
-			CreateMutex(ISC_get_security_desc(), TRUE, expanded_filename);
-	else
-		event_handle =
-			CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
-						expanded_filename);
-	if (!event_handle) {
+	if (!init_flag)
+	{
 		if (!ISC_is_WinNT())
-			error(status_vector, "CreateMutex", GetLastError());
+			event_handle =
+				CreateMutex(ISC_get_security_desc(), TRUE, expanded_filename);
 		else
-			error(status_vector, "CreateEvent", GetLastError());
-		CloseHandle(file_handle);
-		return NULL;
-	}
+			event_handle =
+				CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
+							expanded_filename);
+		if (!event_handle) {
+			if (!ISC_is_WinNT())
+				error(status_vector, "CreateMutex", GetLastError());
+			else
+				error(status_vector, "CreateEvent", GetLastError());
+			CloseHandle(file_handle);
+			return NULL;
+		}
 
-	bool init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? false: true;
+		init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? false: true;
 
-	if (init_flag && !init_routine) {
-		CloseHandle(event_handle);
-		CloseHandle(file_handle);
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_unavailable;
-		*status_vector++ = isc_arg_end;
-		return NULL;
+		if (init_flag && !init_routine) {
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			*status_vector++ = isc_arg_gds;
+			*status_vector++ = isc_unavailable;
+			*status_vector++ = isc_arg_end;
+			return NULL;
+		}
 	}
 
 	if (length == 0) {
@@ -2651,7 +2662,7 @@ UCHAR* ISC_map_file(
 		if (ret_event == WAIT_TIMEOUT) {
 			CloseHandle(event_handle);
 			if (retry_count > 10) {
-				error(status_vector, "WaitForSingleObject", GetLastError());
+				error(status_vector, "WaitForSingleObject", 0);
 				return NULL;
 			}
 			goto retry;
@@ -2660,7 +2671,7 @@ UCHAR* ISC_map_file(
 
 	DWORD fdw_create;
 	if (init_flag && file_exists)
-		fdw_create = TRUNCATE_EXISTING | OPEN_ALWAYS;
+		fdw_create = TRUNCATE_EXISTING;
 	else
 		fdw_create = OPEN_ALWAYS;
 
@@ -2675,9 +2686,21 @@ UCHAR* ISC_map_file(
 				 FILE_ATTRIBUTE_NORMAL,
 #endif
 				 NULL);
-	if (file_handle == INVALID_HANDLE_VALUE) {
+	if (file_handle == INVALID_HANDLE_VALUE)
+	{
+		const DWORD err = GetLastError();
+
+		if ((err == ERROR_SHARING_VIOLATION) || 
+			((err == ERROR_FILE_NOT_FOUND || err == ERROR_USER_MAPPED_FILE) && fdw_create == TRUNCATE_EXISTING))
+		{
+			if (!init_flag) {
+				CloseHandle(event_handle);
+			}
+			goto retry;
+		}
+		
 		CloseHandle(event_handle);
-		error(status_vector, "CreateFile", GetLastError());
+		error(status_vector, "CreateFile", err);
 		return NULL;
 	}
 
