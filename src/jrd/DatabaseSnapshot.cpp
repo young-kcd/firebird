@@ -403,19 +403,27 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 	{
 		// Write the data to the shared memory
-		try
+		if (!(dbb->dbb_flags & DBB_not_in_use))
 		{
-			dumpData(tdbb, true);
-		}
-		catch (const Exception& ex)
-		{
-			ISC_STATUS_ARRAY status;
-			ex.stuff_exception(status);
-			gds__log_status("Cannot dump the monitoring data", status);
+			try
+			{
+				dumpData(tdbb, true);
+			}
+			catch (const Exception& ex)
+			{
+				ISC_STATUS_ARRAY status;
+				ex.stuff_exception(status);
+				gds__log_status("Cannot dump the monitoring data", status);
+			}
 		}
 
-		// Release the lock and mark dbb as requesting a new one
-		LCK_release(tdbb, lock);
+		// Release the lock, if feasible
+		if (!(dbb->dbb_flags & DBB_monitor_locking))
+		{
+			LCK_release(tdbb, lock);
+		}
+
+		// Mark dbb as requesting a new lock
 		dbb->dbb_ast_flags |= DBB_monitor_off;
 	}
 

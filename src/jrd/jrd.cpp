@@ -4692,7 +4692,9 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	if (dbb->dbb_ast_flags & DBB_monitor_off) 
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		dbb->dbb_flags |= DBB_monitor_locking;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+		dbb->dbb_flags &= ~DBB_monitor_locking;
 
 		// While waiting for return from LCK_lock call above the blocking AST (see 
 		// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag 
@@ -5029,7 +5031,9 @@ static ISC_STATUS check_database(thread_db* tdbb, Attachment* attachment, ISC_ST
 	if (dbb->dbb_ast_flags & DBB_monitor_off) 
 	{
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
+		dbb->dbb_flags |= DBB_monitor_locking;
 		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+		dbb->dbb_flags &= ~DBB_monitor_locking;
 
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
 			LCK_release(tdbb, dbb->dbb_monitor_lock);

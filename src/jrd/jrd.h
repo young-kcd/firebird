@@ -389,6 +389,8 @@ const ULONG DBB_gc_background		= 0x1000000L;	// background garbage collection by
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
 const ULONG DBB_exec_statement		= 0x2000000L;	// execute statement runs against database
 #endif
+const ULONG DBB_monitor_locking		= 0x4000000L;	// monitoring lock is being acquired
+
 //
 // dbb_ast_flags
 //
