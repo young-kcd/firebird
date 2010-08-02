@@ -75,7 +75,7 @@ public:
 			appendUChar(byte);
 	}
 
-	void appendBytes(const UCHAR* string, USHORT len)
+	void appendBytes(const UCHAR* string, size_t len)
 	{
 		blrData.add(string, len);
 	}

@@ -5769,6 +5769,9 @@ void RelationNode::defineCheckConstraintTrigger(Constraint& constraint, dsql_nod
 // Define "on delete|update set default" trigger (for referential integrity) along with its blr.
 void RelationNode::defineSetDefaultTrigger(Constraint& constraint, bool onUpdate)
 {
+	fb_assert(constraint.columns.getCount() == constraint.refColumns.getCount());
+	fb_assert(constraint.columns.hasData());
+
 	Constraint::BlrWriter& blrWriter = constraint.blrWritersHolder.add();
 	blrWriter.init(dsqlScratch);
 
@@ -6058,14 +6061,10 @@ void RelationNode::generateUnnamedTriggerBeginning(Constraint& constraint, bool 
 // statement.
 void RelationNode::stuffDefaultBlr(const ByteChunk& defaultBlr, BlrWriter& blrWriter)
 {
+	fb_assert(defaultBlr.length > 2 && defaultBlr.data[defaultBlr.length - 1] == blr_eoc);
 	fb_assert(*defaultBlr.data == blr_version4 || *defaultBlr.data == blr_version5);
 
-	size_t i;
-
-	for (i = 1; i < defaultBlr.length - 1; ++i)
-		blrWriter.appendUChar(defaultBlr.data[i]);
-
-	fb_assert(defaultBlr.data[i] == blr_eoc);
+	blrWriter.appendBytes(defaultBlr.data + 1, defaultBlr.length - 2);
 }
 
 // Generate blr to express: foreign_key == primary_key
