@@ -1185,7 +1185,8 @@ class RecreateViewNode :
 public:
 	explicit RecreateViewNode(MemoryPool& p, const Firebird::string& sqlText,
 				CreateAlterViewNode* aCreateNode)
-		: RecreateNode(p, sqlText, aCreateNode)
+		: RecreateNode<CreateAlterViewNode, DropRelationNode, isc_dsql_recreate_view_failed>(
+				p, sqlText, aCreateNode)
 	{
 		dropNode.view = true;
 	}
