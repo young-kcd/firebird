@@ -1683,8 +1683,8 @@ table_clause
 rtable_clause
 	: table_clause
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
-				getPool(), compilingText, $1, false));
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateTableNode(
+				getPool(), compilingText, $1));
 		}
 	;
 
@@ -1704,8 +1704,8 @@ gtt_table_clause
 gtt_recreate_clause
 	: gtt_table_clause
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
-				getPool(), compilingText, $1, false));
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateTableNode(
+				getPool(), compilingText, $1));
 		}
 	;
 
@@ -2760,8 +2760,8 @@ view_clause
 rview_clause
 	: view_clause
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
-				getPool(), compilingText, $1, true));
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateViewNode(
+				getPool(), compilingText, $1));
 		}
 	;
 

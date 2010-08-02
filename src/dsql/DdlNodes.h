@@ -34,6 +34,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/Nullable.h"
+#include "../jrd/vio_proto.h"
 #include "../dsql/errd_proto.h"
 
 namespace Jrd {
@@ -110,6 +111,55 @@ public:
 	Firebird::MetaName name;
 	dsql_nod* legacyDefault;
 	dsql_nod* legacyParameter;
+};
+
+
+template <typename CreateNode, typename DropNode, ISC_STATUS ERROR_CODE>
+class RecreateNode : public DdlNode
+{
+public:
+	explicit RecreateNode(MemoryPool& p, const Firebird::string& sqlText,
+				CreateNode* aCreateNode)
+		: DdlNode(p, sqlText),
+		  createNode(aCreateNode),
+		  dropNode(p, sqlText, createNode->name)
+	{
+		dropNode.silent = true;
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		text.printf("RecreateNode\n");
+	}
+
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction)
+	{
+		// run all statements under savepoint control
+		AutoSavePoint savePoint(tdbb, transaction);
+
+		dropNode.execute(tdbb, transaction);
+		createNode->execute(tdbb, transaction);
+
+		savePoint.release();	// everything is ok
+	}
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector << Firebird::Arg::Gds(ERROR_CODE) << createNode->name;
+	}
+
+	virtual DdlNode* internalDsqlPass()
+	{
+		createNode->dsqlPass(dsqlScratch);
+		dropNode.dsqlPass(dsqlScratch);
+		return DdlNode::internalDsqlPass();
+	}
+
+protected:
+	CreateNode* createNode;
+	DropNode dropNode;
 };
 
 
@@ -283,34 +333,8 @@ public:
 };
 
 
-class RecreateFunctionNode : public DdlNode
-{
-public:
-	explicit RecreateFunctionNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterFunctionNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-		dropNode.silent = true;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_func_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreateAlterFunctionNode* createNode;
-	DropFunctionNode dropNode;
-};
+typedef RecreateNode<CreateAlterFunctionNode, DropFunctionNode, isc_dsql_recreate_func_failed>
+	RecreateFunctionNode;
 
 
 class CreateAlterProcedureNode : public DdlNode, public BlockNode
@@ -413,34 +437,8 @@ public:
 };
 
 
-class RecreateProcedureNode : public DdlNode
-{
-public:
-	explicit RecreateProcedureNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterProcedureNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-		dropNode.silent = true;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_proc_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreateAlterProcedureNode* createNode;
-	DropProcedureNode dropNode;
-};
+typedef RecreateNode<CreateAlterProcedureNode, DropProcedureNode, isc_dsql_recreate_proc_failed>
+	RecreateProcedureNode;
 
 
 class TriggerDefinition
@@ -588,40 +586,8 @@ public:
 };
 
 
-class RecreateTriggerNode : public DdlNode
-{
-public:
-	explicit RecreateTriggerNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterTriggerNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-		dropNode.silent = true;
-	}
-
-protected:
-	virtual CreateAlterTriggerNode* getCreateAlterNode()
-	{
-		return createNode;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_trigger_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreateAlterTriggerNode* createNode;
-	DropTriggerNode dropNode;
-};
+typedef RecreateNode<CreateAlterTriggerNode, DropTriggerNode, isc_dsql_recreate_trigger_failed>
+	RecreateTriggerNode;
 
 
 class CreateCollationNode : public DdlNode
@@ -893,34 +859,8 @@ public:
 };
 
 
-class RecreateExceptionNode : public DdlNode
-{
-public:
-	explicit RecreateExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterExceptionNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-		dropNode.silent = true;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_except_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreateAlterExceptionNode* createNode;
-	DropExceptionNode dropNode;
-};
+typedef RecreateNode<CreateAlterExceptionNode, DropExceptionNode, isc_dsql_recreate_except_failed>
+	RecreateExceptionNode;
 
 
 class CreateSequenceNode : public DdlNode
@@ -1156,7 +1096,7 @@ class DropRelationNode : public DdlNode
 {
 public:
 	explicit DropRelationNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName, bool aView)
+				const Firebird::MetaName& aName, bool aView = false)
 		: DdlNode(p, sqlText),
 		  name(p, aName),
 		  view(aView),
@@ -1187,36 +1127,8 @@ public:
 };
 
 
-class RecreateRelationNode : public DdlNode
-{
-public:
-	explicit RecreateRelationNode(MemoryPool& p, const Firebird::string& sqlText,
-				RelationNode* aCreateNode, bool view)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name, view)
-	{
-		dropNode.silent = true;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		ISC_STATUS code = dropNode.view ?
-			isc_dsql_recreate_table_failed : isc_dsql_recreate_table_failed;
-		statusVector << Firebird::Arg::Gds(code) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	RelationNode* createNode;
-	DropRelationNode dropNode;
-};
+typedef RecreateNode<CreateRelationNode, DropRelationNode, isc_dsql_recreate_table_failed>
+	RecreateTableNode;
 
 
 class CreateAlterViewNode : public RelationNode
@@ -1264,6 +1176,19 @@ public:
 	dsql_nod* selectExpr;
 	Firebird::string source;
 	bool withCheckOption;
+};
+
+
+class RecreateViewNode :
+	public RecreateNode<CreateAlterViewNode, DropRelationNode, isc_dsql_recreate_view_failed>
+{
+public:
+	explicit RecreateViewNode(MemoryPool& p, const Firebird::string& sqlText,
+				CreateAlterViewNode* aCreateNode)
+		: RecreateNode(p, sqlText, aCreateNode)
+	{
+		dropNode.view = true;
+	}
 };
 
 

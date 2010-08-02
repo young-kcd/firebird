@@ -1865,33 +1865,6 @@ void DropFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreateFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreateFunctionNode\n");
-}
-
-DdlNode* RecreateFunctionNode::internalDsqlPass()
-{
-	createNode->dsqlPass(dsqlScratch);
-	dropNode.dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-void RecreateFunctionNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
 void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text.printf(
@@ -2647,33 +2620,6 @@ void DropProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreateProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreateProcedureNode\n");
-}
-
-DdlNode* RecreateProcedureNode::internalDsqlPass()
-{
-	dropNode.dsqlPass(dsqlScratch);
-	createNode->dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-void RecreateProcedureNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
 void TriggerDefinition::store(thread_db* tdbb, jrd_tra* transaction)
 {
 	if (name.isEmpty())
@@ -3138,33 +3084,6 @@ void DropTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (found)
 		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_TRIGGER, name);
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
-void RecreateTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreateTriggerNode\n");
-}
-
-DdlNode* RecreateTriggerNode::internalDsqlPass()
-{
-	dropNode.dsqlPass(dsqlScratch);
-	createNode->dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-void RecreateTriggerNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }
@@ -4583,33 +4502,6 @@ void DropExceptionNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		// msg 144: "Exception not found"
 		status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(144, DYN_MSG_FAC)));
 	}
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
-void RecreateExceptionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreateExceptionNode\n");
-}
-
-DdlNode* RecreateExceptionNode::internalDsqlPass()
-{
-	createNode->dsqlPass(dsqlScratch);
-	dropNode.dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-void RecreateExceptionNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }
@@ -7258,33 +7150,6 @@ void DropRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	METD_drop_relation(transaction, name.c_str());
 	MET_dsql_cache_release(tdbb, SYM_relation, name);
-}
-
-
-//----------------------
-
-
-void RecreateRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreateRelationNode\n");
-}
-
-DdlNode* RecreateRelationNode::internalDsqlPass()
-{
-	createNode->dsqlPass(dsqlScratch);
-	dropNode.dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-void RecreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.execute(tdbb, transaction);
-	createNode->execute(tdbb, transaction);
-
-	savePoint.release();	// everything is ok
 }
 
 
