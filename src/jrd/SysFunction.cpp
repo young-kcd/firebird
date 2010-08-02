@@ -2258,6 +2258,13 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	if ((v1 == 0 && v2 < 0) ||
 		(v1 < 0 && !(value2->isExact() && value2->dsc_scale == 0)))
+
+
+	if ((v1 == 0 && v2 < 0) ||
+		(v1 < 0 &&
+		 (!value2->isExact() ||
+		  MOV_get_int64(value2, 0) * SINT64(CVT_power_of_ten(-value2->dsc_scale)) !=
+			MOV_get_int64(value2, value2->dsc_scale))))
 	{
 		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
