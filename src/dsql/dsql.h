@@ -207,7 +207,32 @@ class dsql_fld : public pool_alloc<dsql_type_fld>
 {
 public:
 	explicit dsql_fld(MemoryPool& p)
-		: fld_type_of_name(p),
+		: fld_next(NULL),
+		  fld_relation(NULL),
+		  fld_procedure(NULL),
+		  fld_ranges(NULL),
+		  fld_character_set(NULL),
+		  fld_sub_type_name(NULL),
+		  fld_flags(0),
+		  fld_id(0),
+		  fld_dtype(0),
+		  fld_length(0),
+		  fld_element_dtype(0),
+		  fld_element_length(0),
+		  fld_scale(0),
+		  fld_sub_type(0),
+		  fld_precision(0),
+		  fld_character_length(0),
+		  fld_seg_length(0),
+		  fld_dimensions(0),
+		  fld_character_set_id(0),
+		  fld_collation_id(0),
+		  fld_ttype(0),
+		  fld_type_of_name(p),
+		  fld_type_of_table(NULL),
+		  fld_explicit_collation(false),
+		  fld_not_nullable(false),
+		  fld_full_domain(false),
 		  fld_name(p),
 		  fld_source(p)
 	{
@@ -215,7 +240,7 @@ public:
 
 	dsql_fld*	fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
-	class dsql_prc*	fld_procedure;		// Parent procedure
+	dsql_prc*	fld_procedure;			// Parent procedure
 	dsql_nod*	fld_ranges;				// ranges for multi dimension array
 	dsql_nod*	fld_character_set;		// null means not specified
 	dsql_nod*	fld_sub_type_name;		// Subtype name for later resolution
@@ -610,6 +635,7 @@ public:
 		  recursiveCtx(0),
 		  recursiveCtxId(0),
 		  processingWindow(false),
+		  checkConstraintTrigger(false),
 		  ctes(p),
 		  cteAliases(p),
 		  currCteAlias(NULL),
@@ -748,6 +774,7 @@ public:
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE
 	USHORT recursiveCtxId;				// id of recursive union stream context
 	bool processingWindow;				// processing window functions
+	bool checkConstraintTrigger;		// compiling a check constraint trigger
 	dsc domainValue;					// VALUE in the context of domain's check constraint
 
 private:

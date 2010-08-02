@@ -237,7 +237,7 @@ static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
 static void remap_streams_to_parent_context(dsql_nod*, dsql_ctx*);
-static dsql_fld* resolve_context(DsqlCompilerScratch*, const dsql_str*, dsql_ctx*, bool, bool);
+static dsql_fld* resolve_context(DsqlCompilerScratch*, const dsql_str*, dsql_ctx*, bool);
 static dsql_nod* resolve_using_field(DsqlCompilerScratch* dsqlScratch, dsql_str* name, DsqlNodStack& stack,
 	const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static void set_parameters_name(dsql_nod*, const dsql_nod*);
@@ -1096,7 +1096,9 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	}
 	else
 	{
-		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);
+		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch,
+			relation_name->str_data);
+
 		if (!relation && (relation_node->nod_type == nod_rel_proc_name))
 		{
 			procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
@@ -1887,10 +1889,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_def_index:
 	case nod_mod_index:
 	case nod_del_index:
-	case nod_def_view:
-	case nod_redef_view:
-	case nod_mod_view:
-	case nod_replace_view:
 	case nod_def_constraint:
 	case nod_grant:
 	case nod_revoke:
@@ -5040,16 +5038,6 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	// CVC: This shameful hack added to allow CHECK constraint implementation via triggers
-	// to be able to work.
-	bool is_check_constraint = false;
-	{ // scope block
-		const dsql_nod* ddl_node = dsqlScratch->getStatement()->getDdlNode();
-		if (ddl_node && ddl_node->nod_type == nod_def_constraint) {
-			is_check_constraint = true;
-		}
-	} // end scope block
-
 	// handle an array element.
 	dsql_nod* indices;
 	if (input->nod_type == nod_array)
@@ -5165,8 +5153,7 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 					continue;
 				}
 
-				dsql_fld* field = resolve_context(dsqlScratch, qualifier, context, is_check_constraint,
-												  resolve_by_alias);
+				dsql_fld* field = resolve_context(dsqlScratch, qualifier, context, resolve_by_alias);
 
 				// AB: When there's no relation and no procedure then we have a derived table.
 				const bool is_derived_table =
@@ -5355,12 +5342,10 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		if (node)
 			break;
 
-		if (resolve_by_alias && !is_check_constraint && relaxedAliasChecking) {
+		if (resolve_by_alias && !dsqlScratch->checkConstraintTrigger && relaxedAliasChecking)
 			resolve_by_alias = false;
-		}
-		else {
+		else
 			break;
-		}
 	}
 
 	// CVC: We can't return blindly if this is a check constraint, because there's
@@ -9185,7 +9170,7 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 
  **/
 static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_str* qualifier,
-	dsql_ctx* context, bool isCheckConstraint, bool resolveByAlias)
+	dsql_ctx* context, bool resolveByAlias)
 {
 	// CVC: Warning: the second param, "name" was is not used anymore and
 	// therefore it was removed. Thus, the local variable "table_name"
@@ -9220,7 +9205,7 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 	// the qualifier present.
 	// An exception is a check-constraint that is allowed to reference fields
 	// without the qualifier.
-	if (!isCheckConstraint && (context->ctx_flags & CTX_system) && !qualifier) {
+	if (!dsqlScratch->checkConstraintTrigger && (context->ctx_flags & CTX_system) && !qualifier) {
 		return NULL;
 	}
 
@@ -9232,7 +9217,7 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 	// contains the "NEW" alias. This is because it is possible
 	// to reference a field by the complete table-name as alias
 	// (see EMPLOYEE table in examples for a example).
-	if (isCheckConstraint && table_name)
+	if (dsqlScratch->checkConstraintTrigger && table_name)
 	{
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
 		if (!(qualifier && !strcmp(qualifier->str_data, table_name)))
@@ -9951,18 +9936,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_def_index:
 		verb = "define index";
-		break;
-	case nod_def_view:
-		verb = "define view";
-		break;
-	case nod_redef_view:
-		verb = "redefine view";
-		break;
-	case nod_mod_view:
-		verb = "modify view";
-		break;
-	case nod_replace_view:
-		verb = "replace view";
 		break;
 	case nod_delete:
 		verb = "delete";

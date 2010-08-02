@@ -1026,6 +1026,11 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1007, 'dsql_create_pack_body_failed', NULL, NULL);
 (-901, '42', '000', 13, 1008, 'dsql_drop_pack_body_failed', NULL, NULL);
 (-901, '42', '000', 13, 1009, 'dsql_recreate_pack_body_failed', NULL, NULL);
+(-901, '42', '000', 13, 1010, 'dsql_create_view_failed', NULL, NULL);
+(-901, '42', '000', 13, 1011, 'dsql_alter_view_failed', NULL, NULL);
+(-901, '42', '000', 13, 1012, 'dsql_create_alter_view_failed', NULL, NULL);
+(-901, '42', '000', 13, 1013, 'dsql_recreate_view_failed', NULL, NULL);
+(-901, '42', '000', 13, 1014, 'dsql_drop_view_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

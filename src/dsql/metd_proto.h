@@ -66,7 +66,7 @@ Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*,
 	const Jrd::dsql_str*);
-Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*);
+Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Firebird::MetaName&);
 bool METD_get_type(Jrd::jrd_tra*, const Jrd::dsql_str*, const char*, SSHORT*);
 Jrd::dsql_rel* METD_get_view_base(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const char* view_name,
 	Jrd::MetaNamePairMap& fields);

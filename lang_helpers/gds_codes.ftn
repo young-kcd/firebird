@@ -2076,6 +2076,16 @@ C --
       PARAMETER (GDS__dsql_drop_pack_body_failed       = 336397296)
       INTEGER*4 GDS__dsql_recreate_pack_body_failed  
       PARAMETER (GDS__dsql_recreate_pack_body_failed   = 336397297)
+      INTEGER*4 GDS__dsql_create_view_failed         
+      PARAMETER (GDS__dsql_create_view_failed          = 336397298)
+      INTEGER*4 GDS__dsql_alter_view_failed          
+      PARAMETER (GDS__dsql_alter_view_failed           = 336397299)
+      INTEGER*4 GDS__dsql_create_alter_view_failed   
+      PARAMETER (GDS__dsql_create_alter_view_failed    = 336397300)
+      INTEGER*4 GDS__dsql_recreate_view_failed       
+      PARAMETER (GDS__dsql_recreate_view_failed        = 336397301)
+      INTEGER*4 GDS__dsql_drop_view_failed           
+      PARAMETER (GDS__dsql_drop_view_failed            = 336397302)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

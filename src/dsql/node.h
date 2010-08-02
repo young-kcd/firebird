@@ -68,7 +68,6 @@ enum nod_t
 	nod_del_field,
 	nod_def_index,
 	nod_del_index,
-	nod_def_view,
 	nod_def_constraint,
 	nod_del_generator,
 	nod_def_filter,
@@ -232,9 +231,6 @@ enum nod_t
 	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
-	nod_mod_view, // ALTER VIEW
-	nod_replace_view, // CREATE OR ALTER VIEW
-	nod_redef_view, // allows silent creation/overwriting of a view
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
 	nod_exec_into, // EXECUTE STATEMENT INTO
@@ -587,17 +583,6 @@ enum node_args {
 	e_dfl_computed,
 	e_dfl_identity,
 	e_dfl_count,
-
-	e_view_name = 0,		// nod_def_view
-	e_view_fields,
-	e_view_select,
-	e_view_check,
-	e_view_source,
-	e_view_count,
-
-	e_alt_name = 0,			// nod_mod_relation
-	e_alt_ops,
-	e_alt_count,
 
 	e_grant_privs = 0,		// nod_grant
 	e_grant_table,

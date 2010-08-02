@@ -75,8 +75,9 @@ static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition,
 	USHORT existingPosition);
 static rel_t relationType(SSHORT relationTypeNull, SSHORT relationType);
+static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const MetaName& fieldName);
 static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* relationName, bool creating);
+	const MetaName& relationName, bool view, bool creating);
 static void updateRdbFields(const TypeClause& type,
 	SSHORT& fieldType,
 	SSHORT& fieldLength,
@@ -435,13 +436,27 @@ static rel_t relationType(SSHORT relationTypeNull, SSHORT relationType)
 	return relationTypeNull ? rel_persistent : rel_t(relationType);
 }
 
+// Save the name of a field in the relation or view currently being defined. This is done to support
+// definition of triggers which will depend on the metadata created in this statement.
+static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const MetaName& fieldName)
+{
+	dsql_rel* relation = dsqlScratch->relation;
+	if (!relation)
+		return;
+
+	MemoryPool& p = relation->rel_flags & REL_new_relation ?
+		*tdbb->getDefaultPool() : dsqlScratch->getAttachment()->dbb_pool;
+	dsql_fld* field = FB_NEW(p) dsql_fld(p);
+	field->fld_name = fieldName.c_str();
+	field->fld_next = relation->rel_fields;
+	relation->rel_fields = field;
+}
+
 // Save the name of the relation or view currently being defined. This is done to support definition
 // of triggers which will depend on the metadata created in this statement.
 static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* relationName, bool creating)
+	const MetaName& relationName, bool view, bool creating)
 {
-	//// TODO: Verify "creating" usage when using this function for views.
-
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_METADATA_SAVED)
@@ -451,14 +466,15 @@ static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 	dsql_rel* relation;
 
-	if (!creating)
+	if (!view && !creating)
 		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relationName);
 	else
 	{
 		MemoryPool& pool = *tdbb->getDefaultPool();
 		relation = FB_NEW(pool) dsql_rel(pool);
-		relation->rel_name = relationName->str_data;
-		relation->rel_flags = REL_creating;
+		relation->rel_name = relationName;
+		if (!view)
+			relation->rel_flags = REL_creating;
 	}
 
 	dsqlScratch->relation = relation;
@@ -511,8 +527,11 @@ static void updateRdbFields(const TypeClause& type,
 		fieldScaleNull = FALSE;
 		fieldScale = 0;
 
-		characterLengthNull = FALSE;
-		characterLength = type.charLength;
+		if (type.charLength != 0)
+		{
+			characterLengthNull = FALSE;
+			characterLength = type.charLength;
+		}
 
 		characterSetIdNull = FALSE;
 		characterSetId = type.charSetId;
@@ -815,6 +834,11 @@ void TypeClause::resolve(DsqlCompilerScratch* dsqlScratch, bool modifying)
 	DDL_resolve_intl_type2(dsqlScratch, legacyField,
 		(collate.isEmpty() ? NULL : MAKE_cstring(collate.c_str())), modifying);
 
+	setup(dsqlScratch);
+}
+
+void TypeClause::setup(DsqlCompilerScratch* dsqlScratch)
+{
 	type = legacyField->fld_dtype;
 	length = legacyField->fld_length;
 	scale = legacyField->fld_scale;
@@ -2655,7 +2679,7 @@ void TriggerDefinition::store(thread_db* tdbb, jrd_tra* transaction)
 	if (name.isEmpty())
 		DYN_UTIL_generate_trigger_name(tdbb, transaction, name);
 
-	AutoCacheRequest requestHandle(tdbb, drq_s_triggers2, DYN_REQUESTS);
+	AutoCacheRequest requestHandle(tdbb, drq_s_triggers, DYN_REQUESTS);
 
 	STORE (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		TRG IN RDB$TRIGGERS
@@ -3403,7 +3427,8 @@ void DropCollationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		AutoCacheRequest request2(tdbb, drq_l_rfld_coll, DYN_REQUESTS);
 
 		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
-			RF IN RDB$RELATION_FIELDS CROSS F IN RDB$FIELDS
+			RF IN RDB$RELATION_FIELDS
+			CROSS F IN RDB$FIELDS
 			WITH RF.RDB$FIELD_SOURCE EQ F.RDB$FIELD_NAME AND
 				 F.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID AND
 				 RF.RDB$COLLATION_ID EQ COLL.RDB$COLLATION_ID
@@ -4205,7 +4230,7 @@ void AlterDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 						RFR IN RDB$RELATION_FIELDS
 						WITH RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
-								RFR.RDB$GENERATOR_NAME NOT MISSING
+							 RFR.RDB$GENERATOR_NAME NOT MISSING
 					{
 						// Domain @1 must be of exact number type with zero scale because it's used
 						// in an identity column.
@@ -4673,6 +4698,175 @@ bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, co
 //----------------------
 
 
+void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	AutoRequest request;
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		RFR IN RDB$RELATION_FIELDS
+		WITH RFR.RDB$RELATION_NAME EQ relationName.c_str() AND
+			 RFR.RDB$FIELD_NAME EQ name.c_str()
+	{
+		// ASF: This is prepared only to modify view fields!
+
+		MODIFY RFR
+			strcpy(RFR.RDB$FIELD_SOURCE, fieldSource.c_str());
+
+			RFR.RDB$COLLATION_ID.NULL = TRUE;
+			RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+			RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
+			RFR.RDB$NULL_FLAG.NULL = TRUE;
+			RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
+			RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
+			RFR.RDB$FIELD_POSITION.NULL = TRUE;
+
+			RFR.RDB$VIEW_CONTEXT.NULL = TRUE;
+			RFR.RDB$BASE_FIELD.NULL = TRUE;
+			///RFR.RDB$UPDATE_FLAG.NULL = TRUE;
+
+			if (collationId.specified)
+			{
+				RFR.RDB$COLLATION_ID.NULL = FALSE;
+				RFR.RDB$COLLATION_ID = collationId.value;
+			}
+
+			SLONG fieldPos = -1;
+
+			if (position.specified)
+				fieldPos = position.value;
+			else
+			{
+				DYN_UTIL_generate_field_position(tdbb, NULL, name, &fieldPos);
+				if (fieldPos >= 0)
+					++fieldPos;
+			}
+
+			if (fieldPos >= 0)
+			{
+				RFR.RDB$FIELD_POSITION.NULL = FALSE;
+				RFR.RDB$FIELD_POSITION = SSHORT(fieldPos);
+			}
+
+			if (baseField.hasData())
+			{
+				RFR.RDB$BASE_FIELD.NULL = FALSE;
+				strcpy(RFR.RDB$BASE_FIELD, baseField.c_str());
+			}
+
+			if (viewContext.specified)
+			{
+				fb_assert(baseField.hasData());
+
+				RFR.RDB$VIEW_CONTEXT.NULL = FALSE;
+				RFR.RDB$VIEW_CONTEXT = viewContext.value;
+
+				DYN_UTIL_find_field_source(tdbb, transaction, relationName, viewContext.value,
+					baseField.c_str(), RFR.RDB$FIELD_SOURCE);
+			}
+		END_MODIFY
+	}
+	END_FOR
+}
+
+void RelationNode::FieldDefinition::store(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	AutoCacheRequest request(tdbb, drq_s_lfields, DYN_REQUESTS);
+
+	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		RFR IN RDB$RELATION_FIELDS
+	{
+		strcpy(RFR.RDB$FIELD_NAME, name.c_str());
+		strcpy(RFR.RDB$RELATION_NAME, relationName.c_str());
+		strcpy(RFR.RDB$FIELD_SOURCE, fieldSource.c_str());
+		RFR.RDB$SYSTEM_FLAG = 0;
+
+		RFR.RDB$COLLATION_ID.NULL = TRUE;
+		RFR.RDB$GENERATOR_NAME.NULL = TRUE;
+		RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
+		RFR.RDB$NULL_FLAG.NULL = TRUE;
+		RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
+		RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
+		RFR.RDB$FIELD_POSITION.NULL = TRUE;
+
+		RFR.RDB$VIEW_CONTEXT.NULL = TRUE;
+		RFR.RDB$BASE_FIELD.NULL = TRUE;
+		///RFR.RDB$UPDATE_FLAG.NULL = TRUE;
+
+		if (collationId.specified)
+		{
+			RFR.RDB$COLLATION_ID.NULL = FALSE;
+			RFR.RDB$COLLATION_ID = collationId.value;
+		}
+
+		if (identitySequence.hasData())
+		{
+			RFR.RDB$GENERATOR_NAME.NULL = FALSE;
+			strcpy(RFR.RDB$GENERATOR_NAME, identitySequence.c_str());
+
+			RFR.RDB$IDENTITY_TYPE.NULL = FALSE;
+			RFR.RDB$IDENTITY_TYPE = IDENT_TYPE_BY_DEFAULT;
+		}
+
+		if (notNullFlag.specified)
+		{
+			RFR.RDB$NULL_FLAG.NULL = FALSE;
+			RFR.RDB$NULL_FLAG = notNullFlag.value;
+		}
+
+		if (defaultSource.hasData())
+		{
+			RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
+			attachment->storeMetaDataBlob(tdbb, transaction, &RFR.RDB$DEFAULT_SOURCE,
+				defaultSource);
+		}
+
+		if (defaultValue.length > 0)
+		{
+			RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
+			attachment->storeBinaryBlob(tdbb, transaction, &RFR.RDB$DEFAULT_VALUE, defaultValue);
+		}
+
+		SLONG fieldPos = -1;
+
+		if (position.specified)
+			fieldPos = position.value;
+		else
+		{
+			DYN_UTIL_generate_field_position(tdbb, NULL, name, &fieldPos);
+			if (fieldPos >= 0)
+				++fieldPos;
+		}
+
+		if (fieldPos >= 0)
+		{
+			RFR.RDB$FIELD_POSITION.NULL = FALSE;
+			RFR.RDB$FIELD_POSITION = SSHORT(fieldPos);
+		}
+
+		if (baseField.hasData())
+		{
+			RFR.RDB$BASE_FIELD.NULL = FALSE;
+			strcpy(RFR.RDB$BASE_FIELD, baseField.c_str());
+		}
+
+		if (viewContext.specified)
+		{
+			fb_assert(baseField.hasData());
+
+			RFR.RDB$VIEW_CONTEXT.NULL = FALSE;
+			RFR.RDB$VIEW_CONTEXT = viewContext.value;
+
+			DYN_UTIL_find_field_source(tdbb, transaction, relationName, viewContext.value,
+				baseField.c_str(), RFR.RDB$FIELD_SOURCE);
+		}
+	}
+	END_STORE
+}
+
 // Delete local field.
 //
 //  The rules for dropping a regular column:
@@ -4828,6 +5022,29 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	}
 }
 
+void RelationNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	AutoCacheRequest request(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
+
+	for (const TEXT* p = ALL_PRIVILEGES; *p; ++p)
+	{
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			X IN RDB$USER_PRIVILEGES
+		{
+			strcpy(X.RDB$RELATION_NAME, name.c_str());
+			strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
+			X.RDB$USER_TYPE = obj_user;
+			X.RDB$OBJECT_TYPE = obj_relation;
+			X.RDB$PRIVILEGE[0] = *p;
+			X.RDB$PRIVILEGE[1] = 0;
+			X.RDB$GRANT_OPTION = 1;
+		}
+		END_STORE
+	}
+}
+
 void RelationNode::defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
 	SSHORT position, const dsql_nod* pkCols)
 {
@@ -4887,156 +5104,108 @@ void RelationNode::defineField(thread_db* tdbb, jrd_tra* transaction, const dsql
 			}
 		}
 
-		AutoCacheRequest request(tdbb, drq_s_lfields2, DYN_REQUESTS);
+		FieldDefinition fieldDefinition(*tdbb->getDefaultPool());
+		fieldDefinition.relationName = name;
+		fieldDefinition.name = field->fld_name;
+		fieldDefinition.notNullFlag = notNullFlag;
 
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-			RFR IN RDB$RELATION_FIELDS
+		if (position >= 0)
+			fieldDefinition.position = position;
+
+		const dsql_nod* domainNode = element->nod_arg[Dsql::e_dfl_domain];
+
+		if (domainNode)
 		{
-			const dsql_nod* domainNode = element->nod_arg[Dsql::e_dfl_domain];
-			MetaName fieldSource;
+			const dsql_nod* node1 = domainNode->nod_arg[Dsql::e_dom_name];
+			const dsql_str* domainName = (dsql_str*) node1->nod_arg[Dsql::e_fln_name];
 
-			if (domainNode)
+			// Get the domain information.
+			if (!METD_get_domain(transaction, field, domainName->str_data))
 			{
-				const dsql_nod* node1 = domainNode->nod_arg[Dsql::e_dom_name];
-				const dsql_str* domainName = (dsql_str*) node1->nod_arg[Dsql::e_fln_name];
-
-				// Get the domain information.
-				if (!METD_get_domain(transaction, field, domainName->str_data))
-				{
-					// Specified domain or source field does not exist
-					status_exception::raise(
-						Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						Arg::Gds(isc_dsql_command_err) <<
-						Arg::Gds(isc_dsql_domain_not_found) << domainName->str_data);
-				}
-
-				fieldSource = domainName->str_data;
-			}
-			else
-			{
-				string computedSource;
-				BlrWriter::BlrData computedValue;
-
-				if (element->nod_arg[e_dfl_computed])
-				{
-					field->fld_flags |= FLD_computed;
-
-					defineComputed(tdbb, field, element->nod_arg[e_dfl_computed],
-						computedSource, computedValue);
-				}
-
-				TypeClause fieldType(field, NULL);	// Don't use the collate in the generated domain.
-				fieldType.resolve(dsqlScratch);
-
-				// Generate a domain.
-				storeGlobalField(tdbb, transaction, fieldSource, fieldType,
-					computedSource, computedValue);
-			}
-
-			if ((relation->rel_flags & REL_external) &&
-				(field->fld_dtype == dtype_blob || field->fld_dtype == dtype_array ||
-				 field->fld_dimensions))
-			{
-				const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
-
+				// Specified domain or source field does not exist
 				status_exception::raise(
 					Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					Arg::Gds(isc_dsql_command_err) <<
-					Arg::Gds(isc_dsql_type_not_supp_ext_tab) << typeName << name << field->fld_name);
+					Arg::Gds(isc_dsql_domain_not_found) << domainName->str_data);
 			}
 
-			strcpy(RFR.RDB$FIELD_NAME, field->fld_name.c_str());
-			strcpy(RFR.RDB$FIELD_SOURCE, fieldSource.c_str());
-			strcpy(RFR.RDB$RELATION_NAME, name.c_str());
-			RFR.RDB$SYSTEM_FLAG = 0;
+			fieldDefinition.fieldSource = domainName->str_data;
+		}
+		else
+		{
+			string computedSource;
+			BlrWriter::BlrData computedValue;
 
-			RFR.RDB$NULL_FLAG.NULL = TRUE;
-			RFR.RDB$BASE_FIELD.NULL = TRUE;
-			RFR.RDB$UPDATE_FLAG.NULL = TRUE;
-			RFR.RDB$FIELD_POSITION.NULL = TRUE;
-			RFR.RDB$VIEW_CONTEXT.NULL = TRUE;
-			RFR.RDB$DEFAULT_VALUE.NULL = TRUE;
-			RFR.RDB$DEFAULT_SOURCE.NULL = TRUE;
-			RFR.RDB$COLLATION_ID.NULL = TRUE;
-			RFR.RDB$GENERATOR_NAME.NULL = TRUE;
-			RFR.RDB$IDENTITY_TYPE.NULL = TRUE;
-
-			if (element->nod_arg[Dsql::e_dfl_collate])
+			if (element->nod_arg[e_dfl_computed])
 			{
-				DDL_resolve_intl_type(dsqlScratch, field, (dsql_str*) element->nod_arg[Dsql::e_dfl_collate]);
+				field->fld_flags |= FLD_computed;
 
-				RFR.RDB$COLLATION_ID.NULL = FALSE;
-				RFR.RDB$COLLATION_ID = SSHORT(field->fld_collation_id);
+				defineComputed(tdbb, field, element->nod_arg[e_dfl_computed],
+					computedSource, computedValue);
 			}
 
-			if (element->nod_arg[Dsql::e_dfl_identity])
+			TypeClause fieldType(field, NULL);	// Don't use the collate in the generated domain.
+			fieldType.resolve(dsqlScratch);
+
+			// Generate a domain.
+			storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+				computedSource, computedValue);
+		}
+
+		if ((relation->rel_flags & REL_external) &&
+			(field->fld_dtype == dtype_blob || field->fld_dtype == dtype_array ||
+				field->fld_dimensions))
+		{
+			const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
+
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_dsql_type_not_supp_ext_tab) << typeName << name << field->fld_name);
+		}
+
+		if (element->nod_arg[Dsql::e_dfl_collate])
+			DDL_resolve_intl_type(dsqlScratch, field, (dsql_str*) element->nod_arg[Dsql::e_dfl_collate]);
+
+		if (element->nod_arg[Dsql::e_dfl_identity])
+		{
+			dsc desc;
+			MET_get_domain(tdbb, fieldDefinition.fieldSource, &desc, NULL);
+
+			if (!desc.isExact() || desc.dsc_scale != 0)
 			{
-				dsc desc;
-				MET_get_domain(tdbb, fieldSource, &desc, NULL);
-
-				if (!desc.isExact() || desc.dsc_scale != 0)
-				{
-					// Identity column @1 of table @2 must be exact numeric with zero scale.
-					status_exception::raise(
-						Arg::Gds(ENCODE_ISC_MSG(273, DYN_MSG_FAC)) << field->fld_name << name);
-				}
-
-				MetaName sequenceName;
-				DYN_UTIL_generate_generator_name(tdbb, sequenceName);
-
-				CreateSequenceNode::store(tdbb, transaction, sequenceName,
-					fb_sysflag_identity_generator);
-
-				RFR.RDB$GENERATOR_NAME.NULL = FALSE;
-				strcpy(RFR.RDB$GENERATOR_NAME, sequenceName.c_str());
-
-				RFR.RDB$IDENTITY_TYPE.NULL = FALSE;
-				RFR.RDB$IDENTITY_TYPE = IDENT_TYPE_BY_DEFAULT;
+				// Identity column @1 of table @2 must be exact numeric with zero scale.
+				status_exception::raise(
+					Arg::Gds(ENCODE_ISC_MSG(273, DYN_MSG_FAC)) << field->fld_name << name);
 			}
 
-			if (notNullFlag)
+			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
+
+			CreateSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
+				fb_sysflag_identity_generator);
+		}
+
+		BlrWriter::BlrData defaultValue;
+
+		if (element->nod_arg[Dsql::e_dfl_default])
+		{
+			if (defineDefault(tdbb, field, element->nod_arg[Dsql::e_dfl_default],
+					fieldDefinition.defaultSource, defaultValue) &&
+				notNullFlag)
 			{
-				RFR.RDB$NULL_FLAG.NULL = FALSE;
-				RFR.RDB$NULL_FLAG = TRUE;
-			}
-
-			if (element->nod_arg[Dsql::e_dfl_default])
-			{
-				string defaultSource;
-				BlrWriter::BlrData defaultValue;
-
-				if (defineDefault(tdbb, field, element->nod_arg[Dsql::e_dfl_default], defaultSource,
-						defaultValue) &&
-					notNullFlag)
-				{
-					status_exception::raise(
-						Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						Arg::Gds(isc_bad_default_value) <<
-						Arg::Gds(isc_invalid_clause) << "default null not null");
-				}
-
-				RFR.RDB$DEFAULT_SOURCE.NULL = FALSE;
-				attachment->storeMetaDataBlob(tdbb, transaction, &RFR.RDB$DEFAULT_SOURCE, defaultSource);
-
-				RFR.RDB$DEFAULT_VALUE.NULL = FALSE;
-				attachment->storeBinaryBlob(tdbb, transaction, &RFR.RDB$DEFAULT_VALUE, defaultValue);
-			}
-
-			if (position == -1)
-			{
-				SLONG fieldPos = -1;
-				DYN_UTIL_generate_field_position(tdbb, NULL, name, &fieldPos);
-				if (fieldPos >= 0)
-					position = SSHORT(fieldPos + 1);
-			}
-
-			if (position >= 0)
-			{
-				RFR.RDB$FIELD_POSITION.NULL = FALSE;
-				RFR.RDB$FIELD_POSITION = position;
+				status_exception::raise(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					Arg::Gds(isc_bad_default_value) <<
+					Arg::Gds(isc_invalid_clause) << "default null not null");
 			}
 		}
-		END_STORE
+
+		fieldDefinition.defaultValue = defaultValue;
+
+		if (element->nod_arg[Dsql::e_dfl_collate])
+			fieldDefinition.collationId = field->fld_collation_id;
+
+		fieldDefinition.store(tdbb, transaction);
 
 		// Define the field constraints.
 		for (ObjectsArray<Constraint>::iterator constraint(constraints.begin());
@@ -5130,7 +5299,7 @@ void RelationNode::defineComputed(thread_db* tdbb, dsql_fld* field, dsql_nod* no
 		if (field->fld_dtype <= dtype_any_text)
 		{
 			field->fld_character_set_id = DSC_GET_CHARSET(&desc);
-			field->fld_collation_id= DSC_GET_COLLATE(&desc);
+			field->fld_collation_id = DSC_GET_COLLATE(&desc);
 		}
 		else
 			field->fld_sub_type = desc.dsc_sub_type;
@@ -5639,9 +5808,7 @@ void RelationNode::defineCheckConstraint(Constraint& constraint, dsql_nod* node)
 void RelationNode::defineCheckConstraintTrigger(Constraint& constraint, dsql_nod* node,
 	FB_UINT64 triggerType)
 {
-	// See hack at pass1_field.
-	AutoSetRestore2<dsql_nod*, DsqlCompiledStatement> autoDdlNode(dsqlScratch->getStatement(),
-		&DsqlCompiledStatement::getDdlNode, &DsqlCompiledStatement::setDdlNode, node);
+	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
 	Constraint::BlrWriter& blrWriter = constraint.blrWritersHolder.add();
 	blrWriter.init(dsqlScratch);
@@ -6085,7 +6252,7 @@ void CreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
 
-	saveRelation(tdbb, dsqlScratch, MAKE_cstring(name.c_str()), true);
+	saveRelation(tdbb, dsqlScratch, name, false, true);
 
 	if (externalFile)
 	{
@@ -6145,23 +6312,7 @@ void CreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_STORE
 
-	for (const TEXT* p = ALL_PRIVILEGES; *p; ++p)
-	{
-		request.reset(tdbb, drq_s_usr_prvs, DYN_REQUESTS);
-
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-			X IN RDB$USER_PRIVILEGES
-		{
-			strcpy(X.RDB$RELATION_NAME, name.c_str());
-			strcpy(X.RDB$USER, attachment->att_user->usr_user_name.c_str());
-			X.RDB$USER_TYPE = obj_user;
-			X.RDB$OBJECT_TYPE = obj_relation;
-			X.RDB$PRIVILEGE[0] = *p;
-			X.RDB$PRIVILEGE[1] = 0;
-			X.RDB$GRANT_OPTION = 1;
-		}
-		END_STORE
-	}
+	storePrivileges(tdbb, transaction);
 
 	ObjectsArray<Constraint> constraints;
 	const dsql_nod* pkCols = findPkColumns();
@@ -6241,7 +6392,7 @@ void AlterRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
 
-	saveRelation(tdbb, dsqlScratch, MAKE_cstring(name.c_str()), false);
+	saveRelation(tdbb, dsqlScratch, name, false, false);
 
 	if (!dsqlScratch->relation)
 	{
@@ -7076,8 +7227,7 @@ void DropRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DropRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	AutoPtr<dsql_str> nameStr(MAKE_string(name.c_str(), name.length()));
-	const dsql_rel* relation = METD_get_relation(transaction, dsqlScratch, nameStr);
+	const dsql_rel* relation = METD_get_relation(transaction, dsqlScratch, name);
 
 	if (!relation && silent)
 		return;
@@ -7135,6 +7285,927 @@ void RecreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	createNode->execute(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
+}
+
+
+//----------------------
+
+
+void CreateAlterViewNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text.printf(
+		"CreateAlterViewNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void CreateAlterViewNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	Attachment* attachment = transaction->tra_attachment;
+
+	const dsql_rel* modifyingView = NULL;
+
+	if (alter)
+	{
+		modifyingView = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, name);
+
+		if (!modifyingView && !create)
+			status_exception::raise(Arg::Gds(isc_dyn_view_not_found) << name);
+	}
+
+	saveRelation(tdbb, dsqlScratch, name, true, modifyingView == NULL);
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	const int ddlTriggerAction = (modifyingView ? DDL_TRIGGER_ALTER_VIEW : DDL_TRIGGER_CREATE_VIEW);
+
+	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, ddlTriggerAction, name);
+
+	if (!modifyingView)
+		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_relation);
+
+	// Compile the SELECT statement into a record selection expression, making sure to bump the
+	// context number since view contexts start at 1 (except for computed fields) -- note that
+	// calling PASS1_rse directly rather than PASS1_statement saves the context stack.
+
+	DDL_reset_context_stack(dsqlScratch);
+	++dsqlScratch->contextNumber;
+	selectExpr->nod_flags |= NOD_SELECT_VIEW_FIELDS;
+	dsql_nod* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
+
+	dsqlScratch->getBlrData().clear();
+	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+	// ASF: Call GEN_hidden_variables could be a optimization for views to not have
+	// blr_dcl_variables inside RSE loops, but this is currently not possible because it will
+	// mix the variables from view fields and view body.
+
+	GEN_expr(dsqlScratch, rse);
+	dsqlScratch->appendUChar(blr_eoc);
+
+	// Store the blr and source string for the view definition.
+
+	if (modifyingView)
+	{
+		AutoCacheRequest request(tdbb, drq_m_view, DYN_REQUESTS);
+		bool found = false;
+
+		FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			REL IN RDB$RELATIONS
+			WITH REL.RDB$RELATION_NAME EQ name.c_str() AND
+				 REL.RDB$VIEW_BLR NOT MISSING
+		{
+			found = true;
+
+			MODIFY REL
+				attachment->storeMetaDataBlob(tdbb, transaction, &REL.RDB$VIEW_SOURCE, source);
+				attachment->storeBinaryBlob(tdbb, transaction, &REL.RDB$VIEW_BLR,
+					dsqlScratch->getBlrData());
+			END_MODIFY
+		}
+		END_FOR
+
+		if (!found)
+			status_exception::raise(Arg::Gds(isc_dyn_view_not_found) << name);
+
+		AutoRequest request2;
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			VR IN RDB$VIEW_RELATIONS
+			WITH VR.RDB$VIEW_NAME EQ name.c_str()
+		{
+			ERASE VR;
+		}
+		END_FOR
+
+		request2.reset();
+
+		FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+			TRG IN RDB$TRIGGERS
+			WITH TRG.RDB$RELATION_NAME EQ name.c_str() AND
+				 TRG.RDB$SYSTEM_FLAG EQ fb_sysflag_view_check
+		{
+			ERASE TRG;
+		}
+		END_FOR
+	}
+	else
+	{
+		AutoCacheRequest request(tdbb, drq_s_rels, DYN_REQUESTS);
+
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			REL IN RDB$RELATIONS
+		{
+			strcpy(REL.RDB$RELATION_NAME, name.c_str());
+			REL.RDB$SYSTEM_FLAG = 0;
+			REL.RDB$FLAGS = REL_sql;
+			REL.RDB$RELATION_TYPE = SSHORT(rel_view);
+
+			attachment->storeMetaDataBlob(tdbb, transaction, &REL.RDB$VIEW_SOURCE, source);
+			attachment->storeBinaryBlob(tdbb, transaction, &REL.RDB$VIEW_BLR, dsqlScratch->getBlrData());
+		}
+		END_STORE
+
+		storePrivileges(tdbb, transaction);
+	}
+
+	// Define the view source relations from the statement contexts and union contexts.
+
+	while (dsqlScratch->derivedContext.hasData())
+		dsqlScratch->context->push(dsqlScratch->derivedContext.pop());
+
+	while (dsqlScratch->unionContext.hasData())
+		dsqlScratch->context->push(dsqlScratch->unionContext.pop());
+
+	AutoCacheRequest request(tdbb, drq_s_view_rels, DYN_REQUESTS);
+
+	for (DsqlContextStack::iterator temp(*dsqlScratch->context); temp.hasData(); ++temp)
+	{
+		const dsql_ctx* context = temp.object();
+		const dsql_rel* relation = context->ctx_relation;
+		const dsql_prc* procedure = context->ctx_procedure;
+
+		if (relation || procedure)
+		{
+			const MetaName& refName = relation ? relation->rel_name : procedure->prc_name.identifier;
+			const char* contextName = context->ctx_alias ? context->ctx_alias : refName.c_str();
+
+			ViewContextType ctxType;
+			if (relation)
+			{
+				if (!(relation->rel_flags & REL_view))
+					ctxType = VCT_TABLE;
+				else
+					ctxType = VCT_VIEW;
+			}
+			else //if (procedure)
+				ctxType = VCT_PROCEDURE;
+
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+				VRL IN RDB$VIEW_RELATIONS
+			{
+				strcpy(VRL.RDB$VIEW_NAME, name.c_str());
+				strcpy(VRL.RDB$RELATION_NAME, refName.c_str());
+				VRL.RDB$CONTEXT_TYPE = SSHORT(ctxType);
+				VRL.RDB$VIEW_CONTEXT = context->ctx_context;
+				strcpy(VRL.RDB$CONTEXT_NAME, contextName);
+
+				if (procedure && procedure->prc_name.package.hasData())
+				{
+					VRL.RDB$PACKAGE_NAME.NULL = FALSE;
+					strcpy(VRL.RDB$PACKAGE_NAME, procedure->prc_name.package.c_str());
+				}
+				else
+					VRL.RDB$PACKAGE_NAME.NULL = TRUE;
+			}
+			END_STORE
+		}
+	}
+
+	// Check privileges on base tables and views.
+
+	request.reset(tdbb, drq_l_view_rels, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		VRL IN RDB$VIEW_RELATIONS CROSS
+		PREL IN RDB$RELATIONS OVER RDB$RELATION_NAME
+		WITH VRL.RDB$PACKAGE_NAME MISSING AND
+			 VRL.RDB$VIEW_NAME EQ name.c_str()
+	{
+		// CVC: This never matches so it causes unnecessary calls to verify,
+		// so I included a call to strip trailing blanks.
+		fb_utils::exact_name_limit(PREL.RDB$OWNER_NAME, sizeof(PREL.RDB$OWNER_NAME));
+
+		if (attachment->att_user->usr_user_name != PREL.RDB$OWNER_NAME)
+		{
+			SecurityClass::flags_t priv;
+
+			// I think this should be the responsability of DFW or the user will find ways to
+			// circumvent DYN.
+			if (!DYN_UTIL_get_prot(tdbb, transaction, PREL.RDB$RELATION_NAME, "", &priv))
+			{
+				// ASF: DYN_UTIL_get_prot will throw instead of return false.
+				fb_assert(false);
+			}
+
+			if (!(priv & SCL_read))
+			{
+				// msg 32: no permission for %s access to %s %s
+				status_exception::raise(
+					Arg::Gds(isc_no_priv) << Arg::Str("SELECT") <<	//	Non-Translatable
+					// Remember, a view may be based on a view.
+					"TABLE/VIEW" <<	//  Non-Translatable
+					// We want to print the name of the base table or view.
+					MetaName(PREL.RDB$RELATION_NAME));
+			}
+		}
+	}
+	END_FOR
+
+	// If there are field names defined for the view, match them in order with the items from the
+	// SELECT. Otherwise use all the fields from the rse node that was created from the select
+	// expression.
+
+	const dsql_nod* const* ptr = NULL;
+	const dsql_nod* const* end = NULL;
+
+	if (viewFields)
+	{
+		ptr = viewFields->nod_arg;
+		end = ptr + viewFields->nod_count;
+	}
+
+	// Go through the fields list, defining or modifying the local fields;
+	// If an expression is specified rather than a field, define a global
+	// field for the computed value as well.
+
+	dsql_nod* items = rse->nod_arg[Dsql::e_rse_items];
+	dsql_nod** itemsPtr = items->nod_arg;
+	SortedArray<dsql_fld*> modifiedFields;
+	bool updatable = true;
+	SSHORT position = 0;
+
+	for (const dsql_nod* const* const itemsEnd = itemsPtr + items->nod_count;
+		 itemsPtr < itemsEnd; ++itemsPtr, ++position)
+	{
+		dsql_nod* fieldNode = *itemsPtr;
+
+		// Determine the proper field name, replacing the default if necessary.
+
+		const dsql_nod* nameNode = fieldNode;
+		const dsql_str* aliasName = NULL;
+
+		while (nameNode->nod_type == Dsql::nod_alias ||
+			nameNode->nod_type == Dsql::nod_derived_field ||
+			nameNode->nod_type == Dsql::nod_map)
+		{
+			switch (nameNode->nod_type)
+			{
+				case Dsql::nod_alias:
+					if (!aliasName)
+						aliasName = (dsql_str*) nameNode->nod_arg[Dsql::e_alias_alias];
+					nameNode = nameNode->nod_arg[Dsql::e_alias_value];
+					break;
+
+				case Dsql::nod_derived_field:
+					if (!aliasName)
+						aliasName = (dsql_str*) nameNode->nod_arg[Dsql::e_derived_field_name];
+					nameNode = nameNode->nod_arg[Dsql::e_derived_field_value];
+					break;
+
+				case Dsql::nod_map:
+				{
+					const dsql_map* map = (dsql_map*) nameNode->nod_arg[Dsql::e_map_map];
+					nameNode = map->map_node;
+					break;
+				}
+
+				default:
+					break;
+			}
+		}
+
+		const dsql_fld* nameField = NULL;
+
+		if (nameNode->nod_type == Dsql::nod_field)
+			nameField = (dsql_fld*) nameNode->nod_arg[Dsql::e_fld_field];
+
+		const TEXT* fieldStr = NULL;
+
+		if (aliasName)
+			fieldStr = aliasName->str_data;
+		else if (nameField)
+			fieldStr = nameField->fld_name.c_str();
+
+		// Check if this is a field or an expression.
+
+		if (fieldNode->nod_type == Dsql::nod_alias)
+			fieldNode = fieldNode->nod_arg[Dsql::e_alias_value];
+
+		dsql_fld* field = NULL;
+		const dsql_ctx* context = NULL;
+
+		if (fieldNode->nod_type == Dsql::nod_field)
+		{
+			field = (dsql_fld*) fieldNode->nod_arg[Dsql::e_fld_field];
+			context = (dsql_ctx*) fieldNode->nod_arg[Dsql::e_fld_context];
+		}
+		else
+			updatable = false;
+
+		// If this is an expression, check to make sure there is a name specified.
+
+		if (!ptr && !fieldStr)
+		{
+			// must specify field name for view select expression
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_specify_field_err));
+		}
+
+		// CVC: Small modification here to catch any mismatch between number of
+		// explicit field names in a view and number of fields in the select expression,
+		// see comment below. This closes Firebird Bug #223059.
+		if (ptr)
+		{
+			if (ptr < end)
+			{
+				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[1];
+				fieldStr = fieldName->str_data;
+			}
+
+			++ptr;
+		}
+
+		// If not an expression, point to the proper base relation field,
+		// else make up an SQL field with generated global field for calculations.
+
+		dsql_fld* relField = NULL;
+
+		if (modifyingView)	// if we're modifying a view
+		{
+			for (relField = modifyingView->rel_fields; relField; relField = relField->fld_next)
+			{
+				if (relField->fld_name == fieldStr)
+				{
+					if (modifiedFields.exist(relField))
+					{
+						// column @1 appears more than once in ALTER VIEW
+						status_exception::raise(
+							Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							Arg::Gds(isc_dsql_command_err) <<
+							Arg::Gds(isc_dsql_col_more_than_once_view) << Arg::Str(fieldStr));
+					}
+
+					modifiedFields.add(relField);
+					break;
+				}
+			}
+		}
+
+		FieldDefinition fieldDefinition(*tdbb->getDefaultPool());
+		fieldDefinition.relationName = name;
+		fieldDefinition.name = fieldStr;
+		fieldDefinition.position = position;
+
+		// CVC: Not sure if something should be done now that isc_dyn_view_context is used here,
+		// but if alter view is going to work, maybe we need here the context type and package, too.
+		if (field)
+		{
+			TypeClause fieldType(field, NULL);
+			fieldType.resolve(dsqlScratch);
+
+			fieldDefinition.viewContext = context->ctx_context;
+			fieldDefinition.baseField = field->fld_name;
+
+			if (field->fld_dtype <= dtype_any_text)
+				fieldDefinition.collationId = field->fld_collation_id;
+
+			if (relField)	// modifying a view
+			{
+				// We're now modifying a field and it will be based on another one. So if the old
+				// field was an expression, delete it now.
+
+				AutoRequest request2;
+
+				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+					RFL IN RDB$RELATION_FIELDS CROSS
+					FLD IN RDB$FIELDS
+					WITH RFL.RDB$FIELD_NAME EQ fieldStr AND
+						 RFL.RDB$RELATION_NAME EQ name.c_str() AND
+						 RFL.RDB$BASE_FIELD MISSING AND
+						 FLD.RDB$FIELD_NAME EQ RFL.RDB$FIELD_SOURCE
+				{
+					bool wasInternalDomain = fb_utils::implicit_domain(FLD.RDB$FIELD_NAME);
+					fb_assert(wasInternalDomain);
+
+					if (wasInternalDomain)
+						ERASE FLD;
+				}
+				END_FOR
+
+				fieldDefinition.modify(tdbb, transaction);
+			}
+			else
+				fieldDefinition.store(tdbb, transaction);
+		}
+		else
+		{
+			dsqlScratch->getBlrData().clear();
+			dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+			GEN_expr(dsqlScratch, fieldNode);
+			dsqlScratch->appendUChar(blr_eoc);
+
+			// Get the type of the expression.
+			dsc desc;
+			MAKE_desc(dsqlScratch, &desc, fieldNode, NULL);
+
+			dsql_fld newField(*tdbb->getDefaultPool());
+			newField.fld_dtype = desc.dsc_dtype;
+			newField.fld_length = desc.dsc_length;
+			newField.fld_scale = desc.dsc_scale;
+
+			if (desc.isText() || (desc.isBlob() && desc.getBlobSubType() == isc_blob_text))
+			{
+				newField.fld_character_set_id = desc.getCharSet();
+				newField.fld_collation_id = desc.getTextType();
+			}
+
+			if (desc.isText())
+			{
+				newField.fld_character_length = newField.fld_length;
+				newField.fld_length *= METD_get_charset_bpc(
+					dsqlScratch->getTransaction(), newField.fld_character_set_id);
+			}
+			else
+				newField.fld_sub_type = desc.dsc_sub_type;
+
+			TypeClause fieldType(&newField, NULL);
+			fieldType.setup(dsqlScratch);
+
+			if (relField)	// modifying a view
+			{
+				AutoRequest request2;
+
+				FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+					RFL IN RDB$RELATION_FIELDS CROSS
+					FLD IN RDB$FIELDS
+					WITH RFL.RDB$FIELD_NAME EQ fieldStr AND
+						 RFL.RDB$RELATION_NAME EQ name.c_str() AND
+						 RFL.RDB$BASE_FIELD MISSING AND
+						 FLD.RDB$FIELD_NAME EQ RFL.RDB$FIELD_SOURCE
+				{
+					bool wasInternalDomain = fb_utils::implicit_domain(FLD.RDB$FIELD_NAME);
+					fb_assert(wasInternalDomain);
+
+					if (wasInternalDomain)
+					{
+						fieldDefinition.fieldSource = FLD.RDB$FIELD_NAME;
+
+						MODIFY FLD
+							updateRdbFields(fieldType,
+								FLD.RDB$FIELD_TYPE,
+								FLD.RDB$FIELD_LENGTH,
+								FLD.RDB$FIELD_SUB_TYPE.NULL, FLD.RDB$FIELD_SUB_TYPE,
+								FLD.RDB$FIELD_SCALE.NULL, FLD.RDB$FIELD_SCALE,
+								FLD.RDB$CHARACTER_SET_ID.NULL, FLD.RDB$CHARACTER_SET_ID,
+								FLD.RDB$CHARACTER_LENGTH.NULL, FLD.RDB$CHARACTER_LENGTH,
+								FLD.RDB$FIELD_PRECISION.NULL, FLD.RDB$FIELD_PRECISION,
+								FLD.RDB$COLLATION_ID.NULL, FLD.RDB$COLLATION_ID,
+								FLD.RDB$SEGMENT_LENGTH.NULL, FLD.RDB$SEGMENT_LENGTH);
+
+							FLD.RDB$COMPUTED_BLR.NULL = FALSE;
+							attachment->storeBinaryBlob(tdbb, transaction, &FLD.RDB$COMPUTED_BLR,
+								dsqlScratch->getBlrData());
+						END_MODIFY
+					}
+				}
+				END_FOR
+
+				if (fieldDefinition.fieldSource.isEmpty())
+				{
+					storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+						"", dsqlScratch->getBlrData());
+				}
+
+				fieldDefinition.modify(tdbb, transaction);
+			}
+			else
+			{
+				storeGlobalField(tdbb, transaction, fieldDefinition.fieldSource, fieldType,
+					"", dsqlScratch->getBlrData());
+
+				fieldDefinition.store(tdbb, transaction);
+			}
+		}
+
+		if (fieldStr)
+			saveField(tdbb, dsqlScratch, fieldStr);
+	}
+
+	// CVC: This message was not catching the case when
+	// #fields < items in select list, see comment above.
+
+	if (ptr != end)
+	{
+		// number of fields does not match select list
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+			Arg::Gds(isc_dsql_command_err) <<
+			Arg::Gds(isc_num_field_err));
+	}
+
+	if (modifyingView)	// modifying a view
+	{
+		// Delete the old fields not present in the new definition.
+		for (dsql_fld* relField = modifyingView->rel_fields; relField; relField = relField->fld_next)
+		{
+			if (!modifiedFields.exist(relField))
+				deleteLocalField(tdbb, transaction, name, relField->fld_name);
+		}
+	}
+
+	// Setup to define triggers for WITH CHECK OPTION.
+
+	if (withCheckOption)
+	{
+		if (!updatable)
+		{
+			// Only simple column names permitted for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_col_name_err));
+		}
+
+		dsql_nod* querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+
+		if (querySpec->nod_type == Dsql::nod_list)
+		{
+			// Only one table allowed for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_table_view_err));
+		}
+
+		if (querySpec->nod_arg[Dsql::e_qry_from]->nod_count != 1)
+		{
+			// Only one table allowed for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_table_view_err));
+		}
+
+		if (!querySpec->nod_arg[Dsql::e_qry_where])
+		{
+			// No where clause for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_where_err));
+		}
+
+		if (querySpec->nod_arg[Dsql::e_qry_distinct] || querySpec->nod_arg[Dsql::e_qry_group] ||
+			querySpec->nod_arg[Dsql::e_qry_having])
+		{
+			// DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_distinct_err));
+		}
+
+		createCheckTriggers(tdbb, transaction, items);
+	}
+
+	DDL_reset_context_stack(dsqlScratch);
+
+	executeDdlTrigger(tdbb, transaction, DTW_AFTER, ddlTriggerAction, name);
+
+	savePoint.release();	// everything is ok
+
+	// Update DSQL cache
+	METD_drop_relation(transaction, name);
+	MET_dsql_cache_release(tdbb, SYM_relation, name);
+}
+
+// Generate triggers to implement the WITH CHECK OPTION clause for a VIEW.
+void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, jrd_tra* transaction, dsql_nod* items)
+{
+	// Specify that the trigger should abort if the condition is not met.
+	dsql_nod* actionNode = MAKE_node(Dsql::nod_list, 1);
+	actionNode->nod_arg[0] = MAKE_node(Dsql::nod_gdscode, 1);
+	actionNode->nod_arg[0]->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+
+	// Create the UPDATE trigger.
+
+	dsql_nod* baseAndNode = NULL;
+	dsql_nod* baseRelation = NULL;
+	defineUpdateAction(dsqlScratch, &baseAndNode, &baseRelation, items);
+	fb_assert(baseAndNode);
+	fb_assert(baseRelation);
+
+	dsql_nod* rse = MAKE_node(Dsql::nod_rse, e_rse_count);
+	rse->nod_arg[e_rse_boolean] = baseAndNode;
+	dsql_nod* temp = MAKE_node(Dsql::nod_list, 1);
+	rse->nod_arg[e_rse_streams] = temp;
+	temp->nod_arg[0] = baseRelation;
+
+	createCheckTrigger(tdbb, dsqlScratch, rse, items, actionNode, PRE_MODIFY_TRIGGER);
+	createCheckTrigger(tdbb, dsqlScratch, NULL, items, actionNode, PRE_STORE_TRIGGER);
+}
+
+// Define a trigger for a VIEW WITH CHECK OPTION.
+void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* rse, dsql_nod* items, dsql_nod* actions, TriggerType triggerType)
+{
+	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
+
+	const dsql_nod* querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+	dsql_nod* relationNode = dsqlNode;
+
+	// Generate the trigger blr.
+
+	dsqlScratch->getBlrData().clear();
+	dsqlScratch->getDebugData().clear();
+	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
+
+	dsqlScratch->appendUChar(blr_begin);
+
+	// Create the "OLD" and "NEW" contexts for the trigger -- the new one could be a dummy place
+	// holder to avoid resolving fields to that context but prevent relations referenced in
+	// the trigger actions from referencing the predefined "1" context.
+
+	dsql_ctx* savContext = NULL;
+	dsql_ctx* context = NULL;
+
+	if (dsqlScratch->contextNumber)
+	{
+		// If an alias is specified for the single base table involved,
+		// save and then add the context.
+
+		context = dsqlScratch->context->object();
+
+		if (context->ctx_alias)
+		{
+			MemoryPool& pool = *tdbb->getDefaultPool();
+			savContext = FB_NEW(pool) dsql_ctx(pool);
+			*savContext = *context;
+		}
+	}
+
+	DDL_reset_context_stack(dsqlScratch);
+
+	dsql_nod* tempAlias = relationNode->nod_arg[Dsql::e_rln_alias];
+
+	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
+	oldContext->ctx_flags |= CTX_system;
+
+	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(NEW_CONTEXT);
+	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
+	newContext->ctx_flags |= CTX_system;
+
+	relationNode->nod_arg[Dsql::e_rln_alias] = tempAlias;
+
+	if (savContext)
+	{
+		savContext->ctx_context = dsqlScratch->contextNumber++;
+		context->ctx_scope_level = dsqlScratch->scopeLevel;
+		dsqlScratch->context->push(savContext);
+	}
+
+	// Generate the condition for firing the trigger.
+
+	dsql_nod* condition;
+
+	if (triggerType == PRE_MODIFY_TRIGGER)
+	{
+		dsqlScratch->appendUChar(blr_for);
+
+		dsql_nod* temp = rse->nod_arg[Dsql::e_rse_streams];
+		temp->nod_arg[0] = PASS1_node(dsqlScratch, temp->nod_arg[0]);
+		temp = rse->nod_arg[Dsql::e_rse_boolean];
+
+		rse->nod_arg[Dsql::e_rse_boolean] = PASS1_node(dsqlScratch, temp);
+		GEN_expr(dsqlScratch, rse);
+
+		condition = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where], items,
+			viewFields, false, NEW_CONTEXT);
+	}
+	else if (triggerType == PRE_STORE_TRIGGER)
+	{
+		condition = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where], items,
+			viewFields, true, NEW_CONTEXT);
+	}
+	else
+	{
+		fb_assert(false);
+	}
+
+	dsqlScratch->appendUChar(blr_if);
+	GEN_expr(dsqlScratch, PASS1_node(dsqlScratch, condition));
+	dsqlScratch->appendUChar(blr_begin);
+	dsqlScratch->appendUChar(blr_end);
+
+	// Generate the action statements for the trigger.
+
+	dsql_nod** ptr = actions->nod_arg;
+
+	for (const dsql_nod* const* const end = ptr + actions->nod_count; ptr != end; ++ptr)
+		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, *ptr));
+
+	dsqlScratch->appendUChar(blr_end);	// of begin
+	dsqlScratch->appendUChar(blr_eoc);
+
+	DDL_reset_context_stack(dsqlScratch);
+
+	TriggerDefinition trigger(*tdbb->getDefaultPool());
+	trigger.systemFlag = fb_sysflag_view_check;
+	trigger.relationName = name;
+	trigger.type = triggerType;
+	trigger.blrData = dsqlScratch->getBlrData();
+	trigger.store(tdbb, dsqlScratch->getTransaction());
+}
+
+// Define an action statement which, given a view definition, will map an update to a record from
+// a view of a single relation into the base relation.
+void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod** baseAndNode, dsql_nod** baseRelation, dsql_nod* items)
+{
+	// Check whether this is an updatable view definition.
+
+	dsql_nod* querySpec = NULL;
+	dsql_nod* fromList = NULL;
+
+	if (!(querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec]) ||
+		!(fromList = querySpec->nod_arg[Dsql::e_qry_from]) ||
+		fromList->nod_count != 1)
+	{
+		// The caller seems throwing proper errors for all the above conditions.
+		// But just in case it doesn't, here we have the final attempt to prevent the bad things.
+		fb_assert(false);
+	}
+
+	// Use the relation referenced in the select statement for rse.
+
+	dsql_nod* relationNode = MAKE_node(Dsql::nod_relation_name, (int) Dsql::e_rln_count);
+	relationNode->nod_arg[Dsql::e_rln_name] = fromList->nod_arg[0]->nod_arg[Dsql::e_rln_name];
+	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
+	*baseRelation = relationNode;
+
+	// Get the list of values and fields to compare to -- if there is no list of fields, get all
+	// fields in the base relation that are not computed.
+
+	dsql_nod* valuesNode = viewFields;
+	dsql_nod* fieldsNode = querySpec->nod_arg[Dsql::e_qry_list];
+
+	if (!fieldsNode)
+	{
+		const dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(),
+			dsqlScratch, name);
+		DsqlNodStack field_stack;
+
+		for (const dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
+		{
+			if (!(field->fld_flags & FLD_computed))
+				field_stack.push(MAKE_field_name(field->fld_name.c_str()));
+		}
+
+		fieldsNode = MAKE_list(field_stack);
+	}
+
+	if (!valuesNode)
+		valuesNode = fieldsNode;
+
+	// Generate the list of assignments to fields in the base relation.
+
+	dsql_nod** ptr = fieldsNode->nod_arg;
+	const dsql_nod* const* const end = ptr + fieldsNode->nod_count;
+	dsql_nod** ptr2 = valuesNode->nod_arg;
+	const dsql_nod* const* const end2 = ptr2 + valuesNode->nod_count;
+	dsql_nod* andNode = MAKE_node(Dsql::nod_and, 2);
+	int andArg = 0;
+
+	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++)
+	{
+		dsql_nod* fieldNode = *ptr;
+		if (fieldNode->nod_type == Dsql::nod_alias)
+			fieldNode = fieldNode->nod_arg[Dsql::e_alias_value];
+
+		// Generate the actual comparisons.
+
+		if (fieldNode->nod_type == Dsql::nod_field_name)
+		{
+			fieldNode->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
+
+			dsql_nod* oldValueNode = MAKE_node(Dsql::nod_field_name, (int) Dsql::e_fln_count);
+			oldValueNode->nod_arg[Dsql::e_fln_name] = (*ptr2)->nod_arg[Dsql::e_fln_name];
+			oldValueNode->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+
+			dsql_nod* eqlNode = MAKE_node(Dsql::nod_eql, 2);
+			eqlNode->nod_arg[0] = oldValueNode;
+			eqlNode->nod_arg[1] = fieldNode;
+
+			dsql_nod* nullNode1 = MAKE_node(Dsql::nod_missing, 1);
+			nullNode1->nod_arg[0] = oldValueNode;
+			dsql_nod* nullNode2 = MAKE_node(Dsql::nod_missing, 1);
+			nullNode2->nod_arg[0] = fieldNode;
+
+			dsql_nod* andNode2 = MAKE_node(Dsql::nod_and, 2);
+			andNode2->nod_arg[0] = nullNode1;
+			andNode2->nod_arg[1] = nullNode2;
+
+			dsql_nod* orNode = MAKE_node(Dsql::nod_or, 2);
+			orNode->nod_arg[0] = eqlNode;
+			orNode->nod_arg[1] = andNode2;
+
+			if (andArg <= 1)
+				andNode->nod_arg[andArg++] = orNode;
+			else
+			{
+				dsql_nod* oldAnd = andNode;
+				andNode = MAKE_node(Dsql::nod_and, (int) 2);
+				andNode->nod_arg[0] = oldAnd;
+				andNode->nod_arg[1] = orNode;
+			}
+		}
+	}
+
+	if (andArg <= 1)
+	{
+		andNode->nod_arg[andArg] = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where],
+			items, NULL, false, TEMP_CONTEXT);
+	}
+	else
+	{
+		dsql_nod* oldAnd = andNode;
+		andNode = MAKE_node(Dsql::nod_and, 2);
+		andNode->nod_arg[0] = oldAnd;
+		andNode->nod_arg[1] = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where],
+			items, NULL, false, TEMP_CONTEXT);
+	}
+
+	*baseAndNode = andNode;
+}
+
+// Given an input node tree, find any field name nodes and replace them according to the mapping
+// provided. This is used to create view WITH CHECK OPTION.
+dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,
+	dsql_nod* replaceFields, bool nullThem, const char* contextName)
+{
+	if (!input || input->getType() != dsql_type_nod)
+		return input;
+
+	const dsql_nod* const* const endo = input->nod_arg + input->nod_count;
+
+	for (dsql_nod** ptr = input->nod_arg; ptr < endo; ++ptr)
+	{
+		if ((*ptr)->nod_type == Dsql::nod_select_expr)
+		{
+			// No subqueries permitted for VIEW WITH CHECK OPTION
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_subquery_err));
+		}
+
+		if ((*ptr)->nod_type == Dsql::nod_field_name)
+		{
+			// Found a field node, check if it needs to be replaced.
+
+			const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+			dsql_nod** search = searchFields->nod_arg;
+			const dsql_nod* const* const end = search + searchFields->nod_count;
+			dsql_nod** replace = NULL;
+
+			if (replaceFields)
+				replace = replaceFields->nod_arg;
+
+			bool found = false;
+
+			for (; search < end; ++search, replaceFields ? ++replace : NULL)
+			{
+				const dsql_str* replaceName = NULL;
+				if (replaceFields)
+					replaceName = (dsql_str*) (*replace)->nod_arg[Dsql::e_fln_name];
+
+				const dsql_nod* fieldNode = *search;
+				const dsql_fld* field = (dsql_fld*) fieldNode->nod_arg[Dsql::e_fld_field];
+
+				if (field->fld_name == fieldName->str_data)
+				{
+					found = true;
+
+					if (replaceFields)
+						(*ptr)->nod_arg[e_fln_name] = (*replace)->nod_arg[Dsql::e_fln_name];
+
+					(*ptr)->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(contextName);
+
+				}
+
+				if (nullThem && replaceFields &&
+					strcmp(fieldName->str_data, replaceName->str_data) == 0)
+				{
+					found = true;
+				}
+			}
+
+			if (nullThem && !found)
+				(*ptr) = MAKE_node(Dsql::nod_null, 0);
+		}
+		else
+		{
+			// Recursively go through the input tree looking for field name nodes.
+			replaceFieldNames(*ptr, searchFields, replaceFields, nullThem, contextName);
+		}
+	}
+
+	return input;
 }
 
 

@@ -256,64 +256,6 @@ void DYN_delete_index( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_delete_local_field(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* relation_name)
-							//Firebird::MetaName* field_name) // Obtained from the stream
-{
-/**************************************
- *
- *	D Y N _ d e l e t e _ l o c a l _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Execute a dynamic ddl 'delete local field'
- *	statement.
- *
- *  The rules for dropping a regular column:
- *
- *    1. the column is not referenced in any views.
- *    2. the column is not part of any user defined indexes.
- *    3. the column is not used in any SQL statements inside of store
- *         procedures or triggers
- *    4. the column is not part of any check-constraints
- *
- *  The rules for dropping a column that was created as primary key:
- *
- *    1. the column is not defined as any foreign keys
- *    2. the column is not defined as part of compound primary keys
- *
- *  The rules for dropping a column that was created as foreign key:
- *
- *    1. the column is not defined as a compound foreign key. A
- *         compound foreign key is a foreign key consisted of more
- *         than one columns.
- *
- *  The RI enforcement for dropping primary key column is done by system
- *  triggers and the RI enforcement for dropping foreign key column is
- *  done by code and system triggers. See the functional description of
- *  delete_f_key_constraint function for detail.
- *
- **************************************/
-	Firebird::MetaName tbl_nm, col_nm;
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	GET_STRING(ptr, col_nm);
-
-	if (relation_name)
-		tbl_nm = *relation_name;
-	else if (*(*ptr)++ != isc_dyn_rel_name)
-	{
-		DYN_error_punt(false, 51);
-		// msg 51: "No relation specified in ERASE RFR"
-	}
-	else
-		GET_STRING(ptr, tbl_nm);
-
-	RelationNode::deleteLocalField(tdbb, gbl->gbl_transaction, tbl_nm, col_nm);
-}
-
-
 void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 {
 /**************************************

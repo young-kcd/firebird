@@ -1037,6 +1037,11 @@ Data source : @4"},		/* eds_statement */
 	{336397295, "CREATE PACKAGE BODY @1 failed"},		/* dsql_create_pack_body_failed */
 	{336397296, "DROP PACKAGE BODY @1 failed"},		/* dsql_drop_pack_body_failed */
 	{336397297, "RECREATE PACKAGE BODY @1 failed"},		/* dsql_recreate_pack_body_failed */
+	{336397298, "CREATE VIEW @1 failed"},		/* dsql_create_view_failed */
+	{336397299, "ALTER VIEW @1 failed"},		/* dsql_alter_view_failed */
+	{336397300, "CREATE OR ALTER VIEW @1 failed"},		/* dsql_create_alter_view_failed */
+	{336397301, "RECREATE VIEW @1 failed"},		/* dsql_recreate_view_failed */
+	{336397302, "DROP VIEW @1 failed"},		/* dsql_drop_view_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

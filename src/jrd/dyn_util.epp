@@ -558,7 +558,7 @@ void DYN_UTIL_generate_trigger_name(thread_db* tdbb, jrd_tra* /*transaction*/, M
 
 
 bool DYN_UTIL_find_field_source(thread_db* tdbb,
-								Global* gbl,
+								jrd_tra* transaction,
 								const Firebird::MetaName& view_name,
 								USHORT context,
 								const TEXT* local_name,
@@ -588,7 +588,7 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 	try {
 		AutoCacheRequest request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
 
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			VRL IN RDB$VIEW_RELATIONS CROSS
 				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
@@ -607,7 +607,7 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 		{
 			request.reset(tdbb, drq_l_fld_src3, DYN_REQUESTS);
 
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 				VRL IN RDB$VIEW_RELATIONS CROSS
 					PPR IN RDB$PROCEDURE_PARAMETERS
 					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
@@ -636,11 +636,8 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 }
 
 
-bool DYN_UTIL_get_prot(thread_db*		tdbb,
-						  Global*		gbl,
-						  const SCHAR*	rname,
-						  const SCHAR*	fname,
-						  SecurityClass::flags_t*	prot_mask)
+bool DYN_UTIL_get_prot(thread_db* tdbb, jrd_tra* transaction, const SCHAR* rname,
+	const SCHAR* fname, SecurityClass::flags_t* prot_mask)
 {
 /**************************************
  *
@@ -668,7 +665,7 @@ bool DYN_UTIL_get_prot(thread_db*		tdbb,
 
 		gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
 		gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
-		EXE_start(tdbb, request, gbl->gbl_transaction);
+		EXE_start(tdbb, request, transaction);
 		EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*) &in_msg);
 		EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*) prot_mask);
 	}

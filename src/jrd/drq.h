@@ -74,7 +74,6 @@ enum drq_type_t
 	drq_l_rel_name,			// lookup relation name
 	drq_l_view_rels,		// lookup relations in view
 	drq_s_usr_prvs,			// store user privileges
-	drq_s_sql_lfld,			// store sql fields
 	drq_s_sql_gfld,			// store sql fields
 	drq_s_triggers,			// store triggers
 	drq_s_view_rels,		// store view relations
@@ -184,7 +183,6 @@ enum drq_type_t
 	drq_s_prm_src2,
 	drq_m_prcs2,
 	drq_e_prms2,
-	drq_s_triggers2,
 	drq_m_trigger2,
 	drq_e_prcs2,
 	drq_e_prc_prvs,
@@ -230,7 +228,6 @@ enum drq_type_t
 	drq_m_fld,				// create domain field
 	drq_s_fld_dym,			// store field dymension
 	drq_m_fld2,				// alter domain
-	drq_s_lfields2,			// store local fields
 	drq_c_unq_nam2,			// check for unique field names
 	drq_s_rels2,			// store relations
 

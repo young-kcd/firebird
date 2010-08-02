@@ -638,6 +638,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 	Jrd::CreateRelationNode* createRelationNode;
+	Jrd::CreateAlterViewNode* createAlterViewNode;
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
@@ -662,9 +663,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification char_length_expression character_keyword character_type
-%type <legacyNode> charset_clause check_constraint check_opt close_cursor col_opt collate_clause
+%type <legacyNode> charset_clause check_constraint close_cursor col_opt collate_clause
 %type <legacyNode> column_constraint column_constraint_clause
 %type <legacyNode> column_constraint_def column_constraint_list column_def
+%type <boolVal>	   check_opt
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
 %type <legacyNode> column_singleton commit comparison_predicate complex_proc_statement
@@ -805,7 +807,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <int32Val>   unsigned_short_integer
 
 %type <legacyNode> valid_symbol_name value value_list value_list_opt var_decl_opt var_declaration_item
-%type <legacyNode> variable variable_list varying_keyword version_mode view_clause
+%type <legacyNode> variable variable_list varying_keyword version_mode
+%type <createAlterViewNode> view_clause
 
 %type <legacyNode> when_operand where_clause while window_partition_opt
 %type <legacyNode> with_clause with_item with_list
@@ -1224,7 +1227,7 @@ create_clause	: EXCEPTION exception_clause
 		| TRIGGER trigger_clause
 			{ $$ = makeClassNode($2); }
 		| VIEW view_clause
-			{ $$ = $2; }
+			{ $$ = makeClassNode($2); }
 		| GENERATOR generator_clause
 			{ $$ = makeClassNode($2); }
 		| SEQUENCE generator_clause
@@ -1679,7 +1682,10 @@ table_clause
 
 rtable_clause
 	: table_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(getPool(), compilingText, $1)); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
+				getPool(), compilingText, $1, false));
+		}
 	;
 
 gtt_table_clause
@@ -1697,7 +1703,10 @@ gtt_table_clause
 
 gtt_recreate_clause
 	: gtt_table_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(getPool(), compilingText, $1)); }
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
+				getPool(), compilingText, $1, false));
+		}
 	;
 
 gtt_scope
@@ -2737,26 +2746,41 @@ block_parameter($parameters)
 
 // CREATE VIEW
 
-view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_trigger
-			{ $$ = make_node (nod_def_view, (int) e_view_count, $1, $2, $5, $6, $7); }
-		;
+view_clause
+	: simple_table_name column_parens_opt AS begin_string select_expr check_opt end_trigger
+		{
+			CreateAlterViewNode* node = FB_NEW(getPool()) CreateAlterViewNode(getPool(),
+				compilingText, $1, $2, $5);
+			node->source = toString($7);
+			node->withCheckOption = $6;
+			$$ = node;
+		}
+	;
 
+rview_clause
+	: view_clause
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) RecreateRelationNode(
+				getPool(), compilingText, $1, true));
+		}
+	;
 
-rview_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_trigger
-			{ $$ = make_node (nod_redef_view, (int) e_view_count, $1, $2, $5, $6, $7); }
-		;
+replace_view_clause
+	: view_clause
+		{
+			$1->alter = true;
+			$$ = makeClassNode($1);
+		}
+	;
 
-replace_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_trigger
-			{ $$ = make_node (nod_replace_view, (int) e_view_count, $1, $2, $5, $6, $7); }
-		;
-
-alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
-															check_opt end_trigger
- 			{ $$ = make_node (nod_mod_view, (int) e_view_count, $1, $2, $5, $6, $7); }
- 		;
+alter_view_clause
+	: view_clause
+		{
+			$1->alter = true;
+			$1->create = false;
+			$$ = makeClassNode($1);
+		}
+	;
 
 
 // these rules will capture the input string for storage in metadata
@@ -2794,12 +2818,12 @@ end_default	:
 			}
 		;
 
-check_opt	: WITH CHECK OPTION
-			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count,
-					NULL, NULL, NULL, NULL, NULL); }
-		|
-			{ $$ = 0; }
-		;
+check_opt
+	:
+		{ $$ = false; }
+	| WITH CHECK OPTION
+		{ $$ = true; }
+	;
 
 
 

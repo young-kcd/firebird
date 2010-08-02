@@ -1068,6 +1068,11 @@ const ISC_STATUS isc_dsql_recreate_pack_failed        = 336397294L;
 const ISC_STATUS isc_dsql_create_pack_body_failed     = 336397295L;
 const ISC_STATUS isc_dsql_drop_pack_body_failed       = 336397296L;
 const ISC_STATUS isc_dsql_recreate_pack_body_failed   = 336397297L;
+const ISC_STATUS isc_dsql_create_view_failed          = 336397298L;
+const ISC_STATUS isc_dsql_alter_view_failed           = 336397299L;
+const ISC_STATUS isc_dsql_create_alter_view_failed    = 336397300L;
+const ISC_STATUS isc_dsql_recreate_view_failed        = 336397301L;
+const ISC_STATUS isc_dsql_drop_view_failed            = 336397302L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1168,7 +1173,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1112;
+const ISC_STATUS isc_err_max                          = 1117;
 
 #else /* c definitions */
 
@@ -2206,6 +2211,11 @@ const ISC_STATUS isc_err_max                          = 1112;
 #define isc_dsql_create_pack_body_failed     336397295L
 #define isc_dsql_drop_pack_body_failed       336397296L
 #define isc_dsql_recreate_pack_body_failed   336397297L
+#define isc_dsql_create_view_failed          336397298L
+#define isc_dsql_alter_view_failed           336397299L
+#define isc_dsql_create_alter_view_failed    336397300L
+#define isc_dsql_recreate_view_failed        336397301L
+#define isc_dsql_drop_view_failed            336397302L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2306,7 +2316,7 @@ const ISC_STATUS isc_err_max                          = 1112;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1112
+#define isc_err_max                          1117
 
 #endif
 

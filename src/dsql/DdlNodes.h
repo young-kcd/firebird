@@ -68,6 +68,7 @@ public:
 
 public:
 	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false);
+	void setup(DsqlCompilerScratch* dsqlScratch);
 
 public:
 	virtual void print(Firebird::string& text) const;
@@ -961,6 +962,36 @@ public:
 class RelationNode : public DdlNode
 {
 public:
+	class FieldDefinition
+	{
+	public:
+		FieldDefinition(MemoryPool& p)
+			: name(p),
+			  relationName(p),
+			  fieldSource(p),
+			  identitySequence(p),
+			  defaultSource(p),
+			  baseField(p)
+		{
+		}
+
+		void modify(thread_db* tdbb, jrd_tra* transaction);
+		void store(thread_db* tdbb, jrd_tra* transaction);
+
+	public:
+		Firebird::MetaName name;
+		Firebird::MetaName relationName;
+		Firebird::MetaName fieldSource;
+		Firebird::MetaName identitySequence;
+		Nullable<USHORT> collationId;
+		Nullable<bool> notNullFlag;
+		Nullable<USHORT> position;
+		Firebird::string defaultSource;
+		Firebird::ByteChunk defaultValue;
+		Nullable<USHORT> viewContext;
+		Firebird::MetaName baseField;
+	};
+
 	struct Constraint : public PermanentStorage
 	{
 		enum Type { TYPE_CHECK, TYPE_NOT_NULL, TYPE_PK, TYPE_UNIQUE, TYPE_FK };
@@ -1039,6 +1070,7 @@ public:
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
 
 protected:
+	void storePrivileges(thread_db* tdbb, jrd_tra* transaction);
 	void defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
 		SSHORT position, const dsql_nod* pkcols);
 	void defineComputed(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
@@ -1159,10 +1191,10 @@ class RecreateRelationNode : public DdlNode
 {
 public:
 	explicit RecreateRelationNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateRelationNode* aCreateNode)
+				RelationNode* aCreateNode, bool view)
 		: DdlNode(p, sqlText),
 		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name, false)
+		  dropNode(p, sqlText, createNode->name, view)
 	{
 		dropNode.silent = true;
 	}
@@ -1174,14 +1206,64 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_table_failed) << createNode->name;
+		ISC_STATUS code = dropNode.view ?
+			isc_dsql_recreate_table_failed : isc_dsql_recreate_table_failed;
+		statusVector << Firebird::Arg::Gds(code) << createNode->name;
 	}
 
 	virtual DdlNode* internalDsqlPass();
 
 private:
-	CreateRelationNode* createNode;
+	RelationNode* createNode;
 	DropRelationNode dropNode;
+};
+
+
+class CreateAlterViewNode : public RelationNode
+{
+public:
+	explicit CreateAlterViewNode(MemoryPool& p, const Firebird::string& sqlText,
+				dsql_nod* aDsqlNode, dsql_nod* aViewFields, dsql_nod* aSelectExpr)
+		: RelationNode(p, sqlText, aDsqlNode),
+		  create(true),
+		  alter(false),
+		  viewFields(aViewFields),
+		  selectExpr(aSelectExpr),
+		  source(p),
+		  withCheckOption(false)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+protected:
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+	{
+		statusVector <<
+			Firebird::Arg::Gds(createAlterCode(create, alter,
+					isc_dsql_create_view_failed, isc_dsql_alter_view_failed,
+					isc_dsql_create_alter_view_failed)) <<
+				name;
+	}
+
+private:
+	void createCheckTriggers(thread_db* tdbb, jrd_tra* transaction, dsql_nod* items);
+	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* rse, dsql_nod* items, dsql_nod* actions, TriggerType triggerType);
+	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, dsql_nod** baseAndNode,
+		dsql_nod** baseRelation, dsql_nod* items);
+	static dsql_nod* replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,
+		dsql_nod* replaceFields, bool nullThem, const char* contextName);
+
+public:
+	bool create;
+	bool alter;
+	dsql_nod* viewFields;
+	dsql_nod* selectExpr;
+	Firebird::string source;
+	bool withCheckOption;
 };
 
 

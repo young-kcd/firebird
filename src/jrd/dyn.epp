@@ -378,32 +378,6 @@ void DYN_execute(Global* gbl,
 		DYN_modify_database(gbl, ptr);
 		break;
 
-	case isc_dyn_def_view:
-		DYN_define_view(gbl, ptr);
-		break;
-
-	case isc_dyn_mod_view:
-		DYN_modify_view(gbl, ptr);
-		break;
-
-	case  isc_dyn_delete_rel:	// Temporary hack for views.
-		{
-			thread_db* tdbb = JRD_get_thread_data();
-
-			MetaName relationName;
-			GET_STRING(ptr, relationName);
-
-			DropRelationNode::erase(tdbb, gbl->gbl_transaction, relationName, true, gbl->sqlText);
-
-			while (*(*ptr)++ != isc_dyn_end)
-			{
-				--(*ptr);
-				DYN_execute(gbl, ptr, &relationName, NULL, NULL, NULL, NULL);
-			}
-
-			break;
-		}
-
 	case isc_dyn_def_filter:
 		DYN_define_filter(gbl, ptr);
 		break;
@@ -444,28 +418,8 @@ void DYN_execute(Global* gbl,
 		DYN_delete_shadow(gbl, ptr);
 		break;
 
-	case isc_dyn_def_trigger:
-		DYN_define_trigger(gbl, ptr, relation_name, NULL, false);
-		break;
-
-	case isc_dyn_def_local_fld:
-		DYN_define_local_field(gbl, ptr, relation_name, field_name);
-		break;
-
-	case isc_dyn_delete_local_fld:
-		DYN_delete_local_field(gbl, ptr, relation_name); //, field_name);
-		break;
-
-	case isc_dyn_mod_sql_fld:
-		DYN_modify_sql_field(gbl, ptr, relation_name);
-		break;
-
-	case isc_dyn_def_sql_fld:
-		DYN_define_sql_field(gbl, ptr, relation_name, field_name);
-		break;
-
 	case isc_dyn_def_idx:
-		DYN_define_index(gbl, ptr, relation_name, verb, NULL, NULL, NULL, NULL);
+		DYN_define_index(gbl, ptr, relation_name, verb);
 		break;
 
 	case isc_dyn_mod_idx:
@@ -474,10 +428,6 @@ void DYN_execute(Global* gbl,
 
 	case isc_dyn_delete_idx:
 		DYN_delete_index(gbl, ptr);
-		break;
-
-	case isc_dyn_view_relation:
-		DYN_define_view_relation(gbl, ptr, relation_name);
 		break;
 
 	case isc_dyn_mapping:

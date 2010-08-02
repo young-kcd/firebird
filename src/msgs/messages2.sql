@@ -2462,6 +2462,11 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_create_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1007, NULL, 'CREATE PACKAGE BODY @1 failed', NULL, NULL);
 ('dsql_drop_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1008, NULL, 'DROP PACKAGE BODY @1 failed', NULL, NULL);
 ('dsql_recreate_pack_body_failed', 'getMainErrorCode', 'PackageNodes.h', NULL, 13, 1009, NULL, 'RECREATE PACKAGE BODY @1 failed', NULL, NULL);
+('dsql_create_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1010, NULL, 'CREATE VIEW @1 failed', NULL, NULL);
+('dsql_alter_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1011, NULL, 'ALTER VIEW @1 failed', NULL, NULL);
+('dsql_create_alter_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1012, NULL, 'CREATE OR ALTER VIEW @1 failed', NULL, NULL);
+('dsql_recreate_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1013, NULL, 'RECREATE VIEW @1 failed', NULL, NULL);
+('dsql_drop_view_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1014, NULL, 'DROP VIEW @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

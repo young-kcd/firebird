@@ -1033,6 +1033,11 @@ static const struct {
 	{336397295, "42000"}, // 1007 dsql_create_pack_body_failed
 	{336397296, "42000"}, // 1008 dsql_drop_pack_body_failed
 	{336397297, "42000"}, // 1009 dsql_recreate_pack_body_failed
+	{336397298, "42000"}, // 1010 dsql_create_view_failed
+	{336397299, "42000"}, // 1011 dsql_alter_view_failed
+	{336397300, "42000"}, // 1012 dsql_create_alter_view_failed
+	{336397301, "42000"}, // 1013 dsql_recreate_view_failed
+	{336397302, "42000"}, // 1014 dsql_drop_view_failed
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

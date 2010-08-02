@@ -1045,6 +1045,11 @@ const
 	gds_dsql_create_pack_body_failed     = 336397295;
 	gds_dsql_drop_pack_body_failed       = 336397296;
 	gds_dsql_recreate_pack_body_failed   = 336397297;
+	gds_dsql_create_view_failed          = 336397298;
+	gds_dsql_alter_view_failed           = 336397299;
+	gds_dsql_create_alter_view_failed    = 336397300;
+	gds_dsql_recreate_view_failed        = 336397301;
+	gds_dsql_drop_view_failed            = 336397302;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
