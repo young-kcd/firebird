@@ -978,8 +978,8 @@ public:
 			  descending(false),
 			  refRelation(p),
 			  refColumns(p),
-			  refUpdateAction(RI_ACTION_NONE),
-			  refDeleteAction(RI_ACTION_NONE),
+			  refUpdateAction(RI_RESTRICT),
+			  refDeleteAction(RI_RESTRICT),
 			  triggers(p),
 			  blrWritersHolder(p)
 		{

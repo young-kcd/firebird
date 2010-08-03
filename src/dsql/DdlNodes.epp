@@ -4630,7 +4630,7 @@ void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction
 				fieldPos = position.value;
 			else
 			{
-				DYN_UTIL_generate_field_position(tdbb, NULL, name, &fieldPos);
+				DYN_UTIL_generate_field_position(tdbb, NULL, relationName, &fieldPos);
 				if (fieldPos >= 0)
 					++fieldPos;
 			}
@@ -4728,7 +4728,7 @@ void RelationNode::FieldDefinition::store(thread_db* tdbb, jrd_tra* transaction)
 			fieldPos = position.value;
 		else
 		{
-			DYN_UTIL_generate_field_position(tdbb, NULL, name, &fieldPos);
+			DYN_UTIL_generate_field_position(tdbb, NULL, relationName, &fieldPos);
 			if (fieldPos >= 0)
 				++fieldPos;
 		}
