@@ -457,8 +457,6 @@ static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const M
 static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	const MetaName& relationName, bool view, bool creating)
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_METADATA_SAVED)
 		return;
 
