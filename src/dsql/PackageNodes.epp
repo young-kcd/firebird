@@ -583,7 +583,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 		MODIFY PKG
 			PKG.RDB$PACKAGE_HEADER_SOURCE.NULL = FALSE;
 			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE,
-				getSqlText());
+				source);
 
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
 		END_MODIFY
