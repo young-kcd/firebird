@@ -690,35 +690,6 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void RecreatePackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreatePackageNode\n");
-}
-
-
-DdlNode* RecreatePackageNode::internalDsqlPass()
-{
-	dropNode.dsqlPass(dsqlScratch);
-	createNode->dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-
-void RecreatePackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.executeDdl(tdbb, transaction);
-	createNode->executeDdl(tdbb, transaction);
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
 void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	fb_assert(items);
@@ -1113,35 +1084,6 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE_BODY, name);
-
-	savePoint.release();	// everything is ok
-}
-
-
-//----------------------
-
-
-void RecreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf("RecreatePackageBodyNode\n");
-}
-
-
-DdlNode* RecreatePackageBodyNode::internalDsqlPass()
-{
-	dropNode.dsqlPass(dsqlScratch);
-	createNode->dsqlPass(dsqlScratch);
-	return DdlNode::internalDsqlPass();
-}
-
-
-void RecreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
-
-	dropNode.executeDdl(tdbb, transaction);
-	createNode->executeDdl(tdbb, transaction);
 
 	savePoint.release();	// everything is ok
 }

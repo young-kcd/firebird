@@ -140,34 +140,8 @@ public:
 };
 
 
-class RecreatePackageNode : public DdlNode
-{
-public:
-	explicit RecreatePackageNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterPackageNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-		dropNode.silent = true;
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_pack_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreateAlterPackageNode* createNode;
-	DropPackageNode dropNode;
-};
+typedef RecreateNode<CreateAlterPackageNode, DropPackageNode, isc_dsql_recreate_pack_failed>
+	RecreatePackageNode;
 
 
 class CreatePackageBodyNode : public DdlNode
@@ -213,7 +187,8 @@ public:
 	explicit DropPackageBodyNode(MemoryPool& pool, const Firebird::string& sqlText,
 				const Firebird::MetaName& aName)
 		: DdlNode(pool, sqlText),
-		  name(pool, aName)
+		  name(pool, aName),
+		  silent(false)
 	{
 	}
 
@@ -229,36 +204,12 @@ protected:
 
 public:
 	Firebird::MetaName name;
+	bool silent;	// Unused. Just to please RecreateNode template.
 };
 
 
-class RecreatePackageBodyNode : public DdlNode
-{
-public:
-	explicit RecreatePackageBodyNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreatePackageBodyNode* aCreateNode)
-		: DdlNode(p, sqlText),
-		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
-	{
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_recreate_pack_body_failed) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass();
-
-private:
-	CreatePackageBodyNode* createNode;
-	DropPackageBodyNode dropNode;
-};
+typedef RecreateNode<CreatePackageBodyNode, DropPackageBodyNode, isc_dsql_recreate_pack_body_failed>
+	RecreatePackageBodyNode;
 
 
 } // namespace
