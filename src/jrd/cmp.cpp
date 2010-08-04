@@ -2797,7 +2797,19 @@ static jrd_nod* copy(thread_db* tdbb,
 		//			passed message is NULL, it means nod_argument is
 		//			cloned outside nod_procedure (e.g. in the optimizer)
 		//			and we must keep the input message.
-		node->nod_arg[e_arg_message] = message ? message : input->nod_arg[e_arg_message];
+		// ASF: We should only use "message" if its number matches the number
+		// in nod_argument. If it don't, it may be an input parameter cloned
+		// in convertNeqAllToNotAny - see CORE-3094.
+
+		if (message &&
+			(IPTR) message->nod_arg[e_msg_number] ==
+				(IPTR) input->nod_arg[e_arg_message]->nod_arg[e_msg_number])
+		{
+			node->nod_arg[e_arg_message] = message;
+		}
+		else
+			node->nod_arg[e_arg_message] = input->nod_arg[e_arg_message];
+
 		node->nod_arg[e_arg_flag] =
 			copy(tdbb, csb, input->nod_arg[e_arg_flag], remap, field_id, message, remap_fld);
 		node->nod_arg[e_arg_indicator] =
