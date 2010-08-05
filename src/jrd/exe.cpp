@@ -1695,7 +1695,9 @@ static void execute_triggers(thread_db* tdbb,
 			{
 				jrd_req* trigger = ptr->statement->findRequest(tdbb);
 				trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
-				trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
+
+				if (trigger->req_rpb.getCount() > 1)
+					trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
 
 				if (old_rec && trigger_action != jrd_req::req_trigger_insert)
 				{
@@ -1713,7 +1715,7 @@ static void execute_triggers(thread_db* tdbb,
 					trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
 					trigger->req_rpb[1].rpb_number.setValid(true);
 				}
-				else
+				else if (trigger->req_rpb.getCount() > 1)
 					trigger->req_rpb[1].rpb_number.setValid(false);
 
 				trigger->req_timestamp = timestamp;
