@@ -91,9 +91,8 @@ protected:
 class DdlNode : public Node
 {
 public:
-	explicit DdlNode(MemoryPool& pool, const Firebird::string& aSqlText)
-		: Node(pool),
-		  sqlText(pool, aSqlText)
+	explicit DdlNode(MemoryPool& pool)
+		: Node(pool)
 	{
 	}
 
@@ -101,11 +100,6 @@ public:
 		const Firebird::MetaName& secClass);
 
 public:
-	const Firebird::string& getSqlText()
-	{
-		return sqlText;
-	}
-
 	// Set the scratch's transaction when executing a node. Fact of accessing the scratch during
 	// execution is a hack.
 	void executeDdl(thread_db* tdbb, jrd_tra* transaction)
@@ -183,9 +177,6 @@ protected:
 
 public:
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
-
-private:
-	Firebird::string sqlText;
 };
 
 

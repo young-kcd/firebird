@@ -65,9 +65,8 @@ public:
 	};
 
 public:
-	CreateAlterPackageNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	CreateAlterPackageNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  create(true),
 		  alter(false),
@@ -116,9 +115,8 @@ private:
 class DropPackageNode : public DdlNode
 {
 public:
-	DropPackageNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	DropPackageNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  silent(false)
 	{
@@ -147,9 +145,8 @@ typedef RecreateNode<CreateAlterPackageNode, DropPackageNode, isc_dsql_recreate_
 class CreatePackageBodyNode : public DdlNode
 {
 public:
-	CreatePackageBodyNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	CreatePackageBodyNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  source(pool),
 		  declaredItems(NULL),
@@ -184,9 +181,8 @@ private:
 class DropPackageBodyNode : public DdlNode
 {
 public:
-	DropPackageBodyNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	DropPackageBodyNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  silent(false)
 	{

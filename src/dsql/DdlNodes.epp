@@ -612,7 +612,8 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 	DdlNode::DdlTriggerWhen when, int action, const MetaName& objectName)
 {
-	executeDdlTrigger(tdbb, transaction, when, action, objectName, sqlText);
+	executeDdlTrigger(tdbb, transaction, when, action, objectName,
+		*dsqlScratch->getStatement()->getSqlText());
 }
 
 void DdlNode::putType(const TypeClause& type, bool useSubType)
@@ -6923,10 +6924,43 @@ void DropRelationNode::deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-// Remove records from a relation.
-void DropRelationNode::erase(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
-	bool view, const string& sqlText)
+void DropRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
+	text.printf(
+		"DropRelationNode\n"
+		"  name: '%s'\n",
+		name.c_str());
+}
+
+void DropRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
+{
+	const dsql_rel* relation = METD_get_relation(transaction, dsqlScratch, name);
+
+	if (!relation && silent)
+		return;
+
+	// Check that DROP TABLE is dropping a table and that DROP VIEW is dropping a view.
+	if (view)
+	{
+		if (!relation || (relation && !(relation->rel_flags & REL_view)))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_dsql_view_not_found) << name);
+		}
+	}
+	else
+	{
+		if (!relation || (relation && (relation->rel_flags & REL_view)))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				Arg::Gds(isc_dsql_command_err) <<
+				Arg::Gds(isc_dsql_table_not_found) << name);
+		}
+	}
+
 	const int ddlTriggerAction = (view ? DDL_TRIGGER_DROP_VIEW : DDL_TRIGGER_DROP_TABLE);
 
 	// run all statements under savepoint control
@@ -6939,7 +6973,7 @@ void DropRelationNode::erase(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 		R IN RDB$RELATIONS
 		WITH R.RDB$RELATION_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, ddlTriggerAction, name, sqlText);
+		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, ddlTriggerAction, name);
 		found = true;
 	}
 	END_FOR
@@ -7096,7 +7130,7 @@ void DropRelationNode::erase(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, ddlTriggerAction, name, sqlText);
+		executeDdlTrigger(tdbb, transaction, DTW_AFTER, ddlTriggerAction, name);
 	else
 	{
 		// msg 61: "Relation not found"
@@ -7104,46 +7138,6 @@ void DropRelationNode::erase(thread_db* tdbb, jrd_tra* transaction, const MetaNa
 	}
 
 	savePoint.release();	// everything is ok
-}
-
-void DropRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text.printf(
-		"DropRelationNode\n"
-		"  name: '%s'\n",
-		name.c_str());
-}
-
-void DropRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
-{
-	const dsql_rel* relation = METD_get_relation(transaction, dsqlScratch, name);
-
-	if (!relation && silent)
-		return;
-
-	// Check that DROP TABLE is dropping a table and that DROP VIEW is dropping a view.
-	if (view)
-	{
-		if (!relation || (relation && !(relation->rel_flags & REL_view)))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				Arg::Gds(isc_dsql_command_err) <<
-				Arg::Gds(isc_dsql_view_not_found) << name);
-		}
-	}
-	else
-	{
-		if (!relation || (relation && (relation->rel_flags & REL_view)))
-		{
-			status_exception::raise(
-				Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				Arg::Gds(isc_dsql_command_err) <<
-				Arg::Gds(isc_dsql_table_not_found) << name);
-		}
-	}
-
-	erase(tdbb, transaction, name, view, getSqlText());
 
 	METD_drop_relation(transaction, name.c_str());
 	MET_dsql_cache_release(tdbb, SYM_relation, name);

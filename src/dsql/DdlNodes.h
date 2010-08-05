@@ -118,10 +118,10 @@ template <typename CreateNode, typename DropNode, ISC_STATUS ERROR_CODE>
 class RecreateNode : public DdlNode
 {
 public:
-	RecreateNode(MemoryPool& p, const Firebird::string& sqlText, CreateNode* aCreateNode)
-		: DdlNode(p, sqlText),
+	RecreateNode(MemoryPool& p, CreateNode* aCreateNode)
+		: DdlNode(p),
 		  createNode(aCreateNode),
-		  dropNode(p, sqlText, createNode->name)
+		  dropNode(p, createNode->name)
 	{
 		dropNode.silent = true;
 	}
@@ -165,9 +165,9 @@ protected:
 class AlterCharSetNode : public DdlNode
 {
 public:
-	AlterCharSetNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aCharSet, const Firebird::MetaName& aDefaultCollation)
-		: DdlNode(pool, sqlText),
+	AlterCharSetNode(MemoryPool& pool, const Firebird::MetaName& aCharSet,
+				const Firebird::MetaName& aDefaultCollation)
+		: DdlNode(pool),
 		  charSet(pool, aCharSet),
 		  defaultCollation(pool, aDefaultCollation)
 	{
@@ -192,10 +192,10 @@ private:
 class CommentOnNode : public DdlNode
 {
 public:
-	CommentOnNode(MemoryPool& pool, const Firebird::string& sqlText, int aObjType,
+	CommentOnNode(MemoryPool& pool, int aObjType,
 				const Firebird::MetaName& aObjName, const Firebird::MetaName& aSubName,
 				const Firebird::string& aText, const char* aTextCharSet)
-		: DdlNode(pool, sqlText),
+		: DdlNode(pool),
 		  objType(aObjType),
 		  objName(pool, aObjName),
 		  subName(pool, aSubName),
@@ -232,9 +232,8 @@ private:
 class CreateAlterFunctionNode : public DdlNode, public BlockNode
 {
 public:
-	CreateAlterFunctionNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	CreateAlterFunctionNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  BlockNode(pool, false),
 		  name(pool, aName),
 		  create(true),
@@ -300,9 +299,8 @@ public:
 class DropFunctionNode : public DdlNode
 {
 public:
-	DropFunctionNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	DropFunctionNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  silent(false),
 		  package(pool)
@@ -339,9 +337,8 @@ typedef RecreateNode<CreateAlterFunctionNode, DropFunctionNode, isc_dsql_recreat
 class CreateAlterProcedureNode : public DdlNode, public BlockNode
 {
 public:
-	CreateAlterProcedureNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	CreateAlterProcedureNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  BlockNode(pool, true),
 		  name(pool, aName),
 		  create(true),
@@ -404,9 +401,8 @@ public:
 class DropProcedureNode : public DdlNode
 {
 public:
-	DropProcedureNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	DropProcedureNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName),
 		  silent(false),
 		  package(pool)
@@ -483,9 +479,8 @@ public:
 class CreateAlterTriggerNode : public DdlNode, public BlockNode, public TriggerDefinition
 {
 public:
-	CreateAlterTriggerNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	CreateAlterTriggerNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  BlockNode(p, false),
 		  TriggerDefinition(p),
 		  create(true),
@@ -559,8 +554,8 @@ public:
 class DropTriggerNode : public DdlNode
 {
 public:
-	DropTriggerNode(MemoryPool& p, const Firebird::string& sqlText, const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	DropTriggerNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  name(p, aName),
 		  silent(false)
 	{
@@ -591,9 +586,9 @@ typedef RecreateNode<CreateAlterTriggerNode, DropTriggerNode, isc_dsql_recreate_
 class CreateCollationNode : public DdlNode
 {
 public:
-	CreateCollationNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName, const Firebird::MetaName& aForCharSet)
-		: DdlNode(p, sqlText),
+	CreateCollationNode(MemoryPool& p, const Firebird::MetaName& aName,
+				const Firebird::MetaName& aForCharSet)
+		: DdlNode(p),
 		  name(p, aName),
 		  forCharSet(p, aForCharSet),
 		  fromName(p),
@@ -662,9 +657,8 @@ private:
 class DropCollationNode : public DdlNode
 {
 public:
-	DropCollationNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	DropCollationNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  name(p, aName)
 	{
 	}
@@ -687,9 +681,8 @@ public:
 class CreateDomainNode : public DdlNode
 {
 public:
-	CreateDomainNode(MemoryPool& p, const Firebird::string& sqlText,
-				const ParameterClause& aNameType)
-		: DdlNode(p, sqlText),
+	CreateDomainNode(MemoryPool& p, const ParameterClause& aNameType)
+		: DdlNode(p),
 		  nameType(aNameType),
 		  notNull(false),
 		  check(NULL)
@@ -716,8 +709,8 @@ public:
 class AlterDomainNode : public DdlNode
 {
 public:
-	AlterDomainNode(MemoryPool& p, const Firebird::string& sqlText, const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	AlterDomainNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  name(p, aName),
 		  dropConstraint(false),
 		  dropDefault(false),
@@ -762,8 +755,8 @@ public:
 class DropDomainNode : public DdlNode
 {
 public:
-	DropDomainNode(MemoryPool& p, const Firebird::string& sqlText, const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	DropDomainNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  name(p, aName)
 	{
 	}
@@ -792,9 +785,9 @@ public:
 class CreateAlterExceptionNode : public DdlNode
 {
 public:
-	CreateAlterExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName, const Firebird::string& aMessage)
-		: DdlNode(p, sqlText),
+	CreateAlterExceptionNode(MemoryPool& p, const Firebird::MetaName& aName,
+				const Firebird::string& aMessage)
+		: DdlNode(p),
 		  name(p, aName),
 		  message(p, aMessage),
 		  create(true),
@@ -831,9 +824,8 @@ public:
 class DropExceptionNode : public DdlNode
 {
 public:
-	DropExceptionNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(p, sqlText),
+	DropExceptionNode(MemoryPool& p, const Firebird::MetaName& aName)
+		: DdlNode(p),
 		  name(p, aName),
 		  silent(false)
 	{
@@ -862,9 +854,8 @@ typedef RecreateNode<CreateAlterExceptionNode, DropExceptionNode, isc_dsql_recre
 class CreateSequenceNode : public DdlNode
 {
 public:
-	CreateSequenceNode(MemoryPool& pool, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName)
-		: DdlNode(pool, sqlText),
+	CreateSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName)
+		: DdlNode(pool),
 		  name(pool, aName)
 	{
 	}
@@ -994,8 +985,8 @@ public:
 		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
 	};
 
-	RelationNode(MemoryPool& p, const Firebird::string& sqlText, dsql_nod* aDsqlNode)
-		: DdlNode(p, sqlText),
+	RelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
+		: DdlNode(p),
 		  dsqlNode(aDsqlNode),
 		  name(p, ((dsql_str*) aDsqlNode->nod_arg[Dsql::e_rln_name])->str_data),
 		  elements(p)
@@ -1038,9 +1029,9 @@ public:
 class CreateRelationNode : public RelationNode
 {
 public:
-	CreateRelationNode(MemoryPool& p, const Firebird::string& sqlText,
-				dsql_nod* aDsqlNode, const Firebird::PathName* aExternalFile = NULL)
-		: RelationNode(p, sqlText, aDsqlNode),
+	CreateRelationNode(MemoryPool& p, dsql_nod* aDsqlNode,
+				const Firebird::PathName* aExternalFile = NULL)
+		: RelationNode(p, aDsqlNode),
 		  externalFile(aExternalFile),
 		  relationType(rel_persistent)
 	{
@@ -1068,8 +1059,8 @@ public:
 class AlterRelationNode : public RelationNode
 {
 public:
-	AlterRelationNode(MemoryPool& p, const Firebird::string& sqlText, dsql_nod* aDsqlNode)
-		: RelationNode(p, sqlText, aDsqlNode)
+	AlterRelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
+		: RelationNode(p, aDsqlNode)
 	{
 	}
 
@@ -1091,9 +1082,8 @@ private:
 class DropRelationNode : public DdlNode
 {
 public:
-	DropRelationNode(MemoryPool& p, const Firebird::string& sqlText,
-				const Firebird::MetaName& aName, bool aView = false)
-		: DdlNode(p, sqlText),
+	DropRelationNode(MemoryPool& p, const Firebird::MetaName& aName, bool aView = false)
+		: DdlNode(p),
 		  name(p, aName),
 		  view(aView),
 		  silent(false)
@@ -1102,9 +1092,6 @@ public:
 
 	static void deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& globalName);
-
-	static void erase(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
-		bool view, const Firebird::string& sqlText);
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
@@ -1130,9 +1117,9 @@ typedef RecreateNode<CreateRelationNode, DropRelationNode, isc_dsql_recreate_tab
 class CreateAlterViewNode : public RelationNode
 {
 public:
-	CreateAlterViewNode(MemoryPool& p, const Firebird::string& sqlText,
-				dsql_nod* aDsqlNode, dsql_nod* aViewFields, dsql_nod* aSelectExpr)
-		: RelationNode(p, sqlText, aDsqlNode),
+	CreateAlterViewNode(MemoryPool& p, dsql_nod* aDsqlNode, dsql_nod* aViewFields,
+				dsql_nod* aSelectExpr)
+		: RelationNode(p, aDsqlNode),
 		  create(true),
 		  alter(false),
 		  viewFields(aViewFields),
@@ -1179,10 +1166,9 @@ class RecreateViewNode :
 	public RecreateNode<CreateAlterViewNode, DropRelationNode, isc_dsql_recreate_view_failed>
 {
 public:
-	RecreateViewNode(MemoryPool& p, const Firebird::string& sqlText,
-				CreateAlterViewNode* aCreateNode)
+	RecreateViewNode(MemoryPool& p, CreateAlterViewNode* aCreateNode)
 		: RecreateNode<CreateAlterViewNode, DropRelationNode, isc_dsql_recreate_view_failed>(
-				p, sqlText, aCreateNode)
+				p, aCreateNode)
 	{
 		dropNode.view = true;
 	}

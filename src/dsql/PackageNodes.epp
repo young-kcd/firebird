@@ -561,7 +561,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 		{
 			if (!functionNames.exist(i->name))
 			{
-				DropFunctionNode dropNode(getPool(), "", i->name);
+				DropFunctionNode dropNode(getPool(), i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
 				dropNode.executeDdl(tdbb, transaction);
@@ -573,7 +573,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 		{
 			if (!procedureNames.exist(i->name))
 			{
-				DropProcedureNode dropNode(getPool(), "", i->name);
+				DropProcedureNode dropNode(getPool(), i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
 				dropNode.executeDdl(tdbb, transaction);
@@ -653,7 +653,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
 	{
-		DropFunctionNode dropNode(getPool(), "", i->name);
+		DropFunctionNode dropNode(getPool(), i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
 		dropNode.executeDdl(tdbb, transaction);
@@ -662,7 +662,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
 		 i != existingProcs.end(); ++i)
 	{
-		DropProcedureNode dropNode(getPool(), "", i->name);
+		DropProcedureNode dropNode(getPool(), i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
 		dropNode.executeDdl(tdbb, transaction);
@@ -1038,7 +1038,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		if (!FUN.RDB$PRIVATE_FLAG.NULL && FUN.RDB$PRIVATE_FLAG != 0)
 		{
-			DropFunctionNode dropNode(getPool(), "", FUN.RDB$FUNCTION_NAME);
+			DropFunctionNode dropNode(getPool(), FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
 			dropNode.executeDdl(tdbb, transaction);
@@ -1065,7 +1065,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		if (!PRC.RDB$PRIVATE_FLAG.NULL && PRC.RDB$PRIVATE_FLAG != 0)
 		{
-			DropProcedureNode dropNode(getPool(), "", PRC.RDB$PROCEDURE_NAME);
+			DropProcedureNode dropNode(getPool(), PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
 			dropNode.executeDdl(tdbb, transaction);
