@@ -2533,6 +2533,14 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_malformed_string));
 		}
+
+		UCharBuffer temp;
+
+		CsConvert conversor(charSet->getStruct(),
+			INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
+		conversor.convert(transformedText.length(), (const UCHAR*) transformedText.c_str(), temp);
+
+		transformedText.assign(temp.begin(), temp.getCount());
 	}
 
 	statement->setSqlText(FB_NEW(pool) RefString(pool, transformedText));

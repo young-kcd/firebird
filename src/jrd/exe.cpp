@@ -931,7 +931,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
 	JrdStatement* statement = request->getStatement();
-	jrd_prc* proc = statement->procedure;
+	const jrd_prc* proc = statement->procedure;
 
 	if (proc && proc->isUndefined())
 	{
@@ -1042,7 +1042,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 				tdbb->setRequest(request);
 				tdbb->setTransaction(request->req_transaction);
 
-				for (RecordSource* const* ptr = statement->fors.begin();
+				for (const RecordSource* const* ptr = statement->fors.begin();
 					 ptr != statement->fors.end(); ++ptr)
 				{
 					(*ptr)->close(tdbb);

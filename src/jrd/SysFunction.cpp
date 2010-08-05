@@ -2143,8 +2143,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, jrd_nod* args,
 			BLB_close(tdbb, blob);
 
 			dsc result;
-			result.makeBlob(isc_blob_text, attachment->att_charset,
-				(ISC_QUAD*) &impure->vlu_misc.vlu_bid);
+			result.makeBlob(isc_blob_text, ttype_metadata, (ISC_QUAD*) &impure->vlu_misc.vlu_bid);
 			EVL_make_value(tdbb, &result, impure);
 
 			request->req_flags &= ~req_null;

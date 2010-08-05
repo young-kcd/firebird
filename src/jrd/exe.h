@@ -794,7 +794,7 @@ public:
 	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	NodeStack		csb_dependencies;			// objects this request depends upon
-	Firebird::Array<RecordSource*> csb_fors;	// record sources
+	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant

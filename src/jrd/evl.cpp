@@ -1458,7 +1458,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 				if (item.type == nod_variable)
 				{
-					jrd_prc* procedure = request->getStatement()->procedure;
+					const jrd_prc* procedure = request->getStatement()->procedure;
 
 					if (procedure)
 					{

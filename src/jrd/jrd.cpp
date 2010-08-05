@@ -6464,8 +6464,8 @@ void thread_db::setRequest(jrd_req* val)
 
 SSHORT thread_db::getCharSet() const
 {
-	if (request && request->getStatement()->charset != CS_dynamic)
-		return request->getStatement()->charset;
+	if (request && request->charSetId != CS_dynamic)
+		return request->charSetId;
 
 	return attachment->att_charset;
 }

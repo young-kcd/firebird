@@ -32,6 +32,7 @@
 
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
+#include "../jrd/Attachment.h"
 #include "../jrd/JrdStatement.h"
 #include "../jrd/RecordNumber.h"
 #include "../jrd/ExtEngineManager.h"
@@ -198,7 +199,8 @@ private:
 class jrd_req : public pool_alloc<type_req>
 {
 public:
-	jrd_req(/*const*/ JrdStatement* aStatement, Firebird::MemoryStats* parent_stats)
+	jrd_req(Attachment* attachment, /*const*/ JrdStatement* aStatement,
+			Firebird::MemoryStats* parent_stats)
 		: statement(aStatement),
 		  req_pool(statement->pool),
 		  req_memory_stats(parent_stats),
@@ -213,6 +215,7 @@ public:
 		  req_rpb(*req_pool),
 		  impureArea(*req_pool)
 	{
+		setAttachment(attachment);
 		req_rpb = statement->rpbsSetup;
 		impureArea.grow(statement->impureSize);
 	}
@@ -220,6 +223,13 @@ public:
 	/*const*/ JrdStatement* getStatement() const
 	{
 		return statement;
+	}
+
+	void setAttachment(Attachment* newAttachment)
+	{
+		req_attachment = newAttachment;
+		charSetId = statement->flags & JrdStatement::FLAG_INTERNAL ?
+			CS_METADATA : req_attachment->att_charset;
 	}
 
 private:
@@ -281,6 +291,7 @@ public:
 	SortOwner req_sorts;
 	Firebird::Array<record_param> req_rpb;	// record parameter blocks
 	Firebird::Array<UCHAR> impureArea;		// impure area
+	USHORT charSetId;						// "client" character set of the request
 
 	enum req_ta {
 		// Order should be maintained because the numbers are stored in BLR

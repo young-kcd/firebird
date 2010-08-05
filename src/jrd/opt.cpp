@@ -755,7 +755,7 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 
 	UCharBuffer infoBuffer;
 
-	Array<RecordSource*>& fors = request->getStatement()->fors;
+	Array<const RecordSource*>& fors = request->getStatement()->fors;
 	for (size_t i = 0; i < fors.getCount(); i++)
 		fors[i]->dump(tdbb, infoBuffer);
 

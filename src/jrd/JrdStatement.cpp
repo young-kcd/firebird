@@ -52,7 +52,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  fors(*p),
 	  execStmts(*p),
 	  invariants(*p),
-	  charset(CS_dynamic),
 	  blr(*p),
 	  mapFieldInfo(*p),
 	  mapItemInfo(*p)
@@ -61,7 +60,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	accessList = csb->csb_access;
 	externalList = csb->csb_external;
 	mapFieldInfo.takeOwnership(csb->csb_map_field_info);
-	charset = tdbb->getAttachment()->att_charset;
 	resources = csb->csb_resources; // Assign array contents
 	impureSize = csb->csb_impure;
 
@@ -238,10 +236,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 	}
 
 	if (internalFlag)
-	{
-		statement->charset = CS_METADATA;
 		statement->flags |= FLAG_INTERNAL;
-	}
 	else
 		tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
 
@@ -321,7 +316,7 @@ jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 	if (!clone)
 		clone = getRequest(tdbb, n);
 
-	clone->req_attachment = attachment;
+	clone->setAttachment(attachment);
 	clone->req_stats.reset();
 	clone->req_base_stats.reset();
 	clone->req_flags |= req_in_use;
@@ -345,9 +340,8 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 	MemoryStats* const parentStats = (flags & FLAG_INTERNAL) ?
 		&dbb->dbb_memory_stats : &attachment->att_memory_stats;
 
-	// Clone the request.
-	jrd_req* request = FB_NEW(*pool) jrd_req(this, parentStats);
-	request->req_attachment = attachment;
+	// Create the request.
+	jrd_req* request = FB_NEW(*pool) jrd_req(attachment, this, parentStats);
 	request->req_id = fb_utils::genUniqueId();
 
 	requests[level] = request;

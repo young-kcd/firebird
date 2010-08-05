@@ -555,6 +555,11 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			// generic logic that covers all other relations
 			else if (record && dbb_allowed && att_allowed)
 			{
+				// ASF: The statement text is always dumped in the metadata charset.
+				AutoSetRestore<int> autoAttCharSet(&attachment_charset,
+					rid == rel_mon_statements && fid == f_mon_stmt_sql_text ?
+						ttype_metadata : attachment_charset);
+
 				putField(tdbb, record, dumpField, attachment_charset);
 				fields_processed = true;
 				dbb_processed = true;

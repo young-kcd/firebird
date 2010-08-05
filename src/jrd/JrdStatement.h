@@ -71,15 +71,14 @@ public:
 	ExternalAccessList externalList;	// Access to procedures/triggers to be checked
 	AccessItemList accessList;			// Access items to be checked
 	ResourceList resources;				// Resources (relations and indices)
-	jrd_prc* procedure;					// procedure, if any
-	Function* function;					// function, if any
+	const jrd_prc* procedure;			// procedure, if any
+	const Function* function;			// function, if any
 	Firebird::MetaName triggerName;		// name of request (trigger), if any
 	jrd_nod* topNode;					// top of execution tree
-	Firebird::Array<RecordSource*> fors;	// record sources
+	Firebird::Array<const RecordSource*> fors;	// record sources
 	Firebird::Array<jrd_nod*> execStmts;	// exec_into nodes
 	Firebird::Array<jrd_nod*> invariants;	// invariant nodes
-	SSHORT charset;						// Client charset for this request
-	Firebird::RefStrPtr sqlText;		// SQL text
+	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)
 	Firebird::Array<UCHAR> blr;			// BLR for non-SQL query
 	MapFieldInfo mapFieldInfo;			// Map field name to field info
 	MapItemInfo mapItemInfo;			// Map item to item info
