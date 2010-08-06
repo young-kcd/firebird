@@ -40,12 +40,12 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 SERVER_Other_sources = jrd/pwd.cpp jrd/sha.cpp
-SERVER_Other Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Other_sources))))
+SERVER_Other_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Other_sources))))
 
 SERVER_Files = $(OS_ServerFiles) server.cpp
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files))
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) \
-                 $(LIBFBSERVER_Objects) $(COMMON_Objects) $(SERVER_Other Objects)
+                 $(LIBFBSERVER_Objects) $(COMMON_Objects) $(SERVER_Other_Objects)
 
 
 .PHONY: fbserver
