@@ -127,7 +127,7 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 		raise(status, tdbb, "attach");
 	}
 
-	char buff[8];
+	char buff[16];
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
@@ -151,8 +151,21 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 				m_sqlDialect = m_iscProvider.isc_vax_integer(p, len);
 				break;
 
-			case isc_info_truncated:
 			case isc_info_error:
+				if (*p == isc_info_db_sql_dialect)
+				{
+					const ULONG err = m_iscProvider.isc_vax_integer(p + 1, len - 1);
+					if (err == isc_infunk)
+					{
+						// Remote server don't understand isc_info_db_sql_dialect.
+						// Consider it as pre-IB6 server and use SQL dialect 1 to work with it.
+						m_sqlDialect = 1;	
+						break;
+					}
+				}
+			// fall thru
+
+			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
 
 			case isc_info_end:
