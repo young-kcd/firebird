@@ -4003,7 +4003,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
 		node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
 		csb->csb_current_nodes.pop();
-		break;
+		return node;
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
