@@ -583,7 +583,7 @@ void Transaction::generateTPB(thread_db* tdbb, ClumpletWriter& tpb,
 	tpb.insertTag(readOnly ? isc_tpb_read : isc_tpb_write);
 	tpb.insertTag(wait ? isc_tpb_wait : isc_tpb_nowait);
 
-	if (wait && lockTimeout)
+	if (wait && lockTimeout && lockTimeout != DEFAULT_LOCK_TIMEOUT)
 		tpb.insertInt(isc_tpb_lock_timeout, lockTimeout);
 }
 
@@ -688,8 +688,8 @@ Transaction* Transaction::getTransaction(thread_db* tdbb, Connection* conn, TraS
 				tra_scope,
 				traMode,
 				tran->tra_flags & TRA_readonly,
-				tran->getLockWait() == DEFAULT_LOCK_TIMEOUT,
-				tran->getLockWait()
+				tran->getLockWait() != 0,
+				-tran->getLockWait()
 			);
 		}
 		catch (const Exception&)
