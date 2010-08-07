@@ -419,7 +419,7 @@ void DYN_execute(Global* gbl,
 		break;
 
 	case isc_dyn_def_idx:
-		DYN_define_index(gbl, ptr, relation_name, verb);
+		DYN_define_index(gbl, ptr, relation_name);
 		break;
 
 	case isc_dyn_mod_idx:

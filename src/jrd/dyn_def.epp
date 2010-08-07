@@ -575,8 +575,7 @@ void DYN_define_function_arg(Global* gbl, const UCHAR** ptr, Firebird::MetaName*
 }
 
 
-void DYN_define_index(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* relation_name,
-	UCHAR index_type)
+void DYN_define_index(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* relation_name)
 {
 /**************************************
  *
@@ -589,6 +588,7 @@ void DYN_define_index(Global* gbl, const UCHAR** ptr, const Firebird::MetaName* 
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	const UCHAR index_type = isc_dyn_def_idx;
 	Firebird::MetaName index_name;
 	UCHAR verb;
 	Firebird::MetaName trigger_name;
