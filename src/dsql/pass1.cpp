@@ -4890,6 +4890,8 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 			foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
 		}
 
+		int unionContexts = 0;
+
 		if (foundSubSelect)
 		{
 			DsqlContextStack::const_iterator baseUnion(statement->req_union_context);
@@ -4904,6 +4906,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 				 ++i)
 			{
 				temp.push(i.object());
+				++unionContexts;
 			}
 		}
 		else
@@ -4916,10 +4919,14 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		// Also add the used contexts into the childs stack.
 		while (temp.hasData() && (temp.object() != baseContext))
 		{
-			dsql_ctx* childCtx = temp.object();
+			dsql_ctx* childCtx = temp.pop();
 
-			statement->req_dt_context.push(childCtx);
-			context->ctx_childs_derived_table.push(temp.pop());
+			// Do not put the just pushed union contexts in req_dt_context. Otherwise duplicate
+			// records will appear in RDB$VIEW_RELATIONS.
+			if (--unionContexts < 0)
+				statement->req_dt_context.push(childCtx);
+
+			context->ctx_childs_derived_table.push(childCtx);
 
 			// Collect contexts that will be used for blr_derived_expr generation.
 			// We want all child contexts with minimum ctx_in_outer_join.
