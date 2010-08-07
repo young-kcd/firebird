@@ -159,11 +159,11 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 					{
 						// Remote server don't understand isc_info_db_sql_dialect.
 						// Consider it as pre-IB6 server and use SQL dialect 1 to work with it.
-						m_sqlDialect = 1;	
+						m_sqlDialect = 1;
 						break;
 					}
 				}
-			// fall thru
+				// fall thru
 
 			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
