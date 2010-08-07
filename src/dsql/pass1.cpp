@@ -4890,15 +4890,24 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 			foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
 		}
 
-		if (foundSubSelect) {
+		if (foundSubSelect)
+		{
+			DsqlContextStack::const_iterator baseUnion(statement->req_union_context);
+
 			dsql_nod* union_expr = MAKE_node(nod_list, 1);
 			union_expr->nod_arg[0] = select_expr;
 			union_expr->nod_flags = NOD_UNION_ALL;
 			rse = pass1_union(statement, union_expr, NULL, NULL, 0);
+
+			for (DsqlContextStack::const_iterator i(statement->req_union_context);
+				 i.hasData() && i != baseUnion;
+				 ++i)
+			{
+				temp.push(i.object());
+			}
 		}
-		else {
+		else
 			rse = PASS1_rse(statement, select_expr, NULL);
-		}
 
 		USHORT minOuterJoin = MAX_USHORT;
 
