@@ -2064,6 +2064,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (which_erase_trig == PRE_TRIG)
 				{
 					node = prev_node->nod_arg[e_erase_sub_erase];
+					fb_assert(node->nod_parent == prev_node);
 					node->nod_parent = prev_node;
 				}
 				if (top_node == prev_node && which_erase_trig == POST_TRIG)
@@ -2545,6 +2546,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (which_mod_trig == PRE_TRIG)
 					{
 						node = prev_node->nod_arg[e_mod_sub_mod];
+						fb_assert(node->nod_parent == prev_node);
 						node->nod_parent = prev_node;
 					}
 					if (top_node == prev_node && which_mod_trig == POST_TRIG)
@@ -2655,6 +2657,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (which_sto_trig == PRE_TRIG)
 					{
 						node = prev_node->nod_arg[e_sto_sub_store];
+						fb_assert(node->nod_parent == prev_node);
 						node->nod_parent = prev_node;
 					}
 					if (top_node == prev_node && which_sto_trig == POST_TRIG)
