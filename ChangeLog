@@ -1,3 +1,12 @@
+ 2010-08-07 21:18  hvlad 
+   M src/common/classes/ClumpletReader.cpp
+   M src/jrd/extds/ExtDS.cpp
+Fixed bug CORE-3100 : Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to corresponding parameters of local transaction 
+
+ 2010-08-07 15:49  asfernandes 
+   M src/jrd/exe.cpp
+Hope this assumption to be correct
+
  2010-08-07 02:44  asfernandes 
    M src/jrd/dyn.epp
    M src/jrd/dyn_def.epp
