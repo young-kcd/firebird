@@ -117,14 +117,14 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		**i = CMP_pass1(tdbb, csb, **i);
 	return this;
 }
 
 ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		**i = CMP_pass2(tdbb, csb, **i, node);
 	return this;
 }
@@ -133,7 +133,7 @@ bool ExprNode::jrdVisit(JrdNodeVisitor& visitor)
 {
 	bool ret = false;
 
-	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		ret |= visitor.visit(**i);
 
 	return ret;

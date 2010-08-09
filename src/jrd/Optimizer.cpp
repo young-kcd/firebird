@@ -131,7 +131,7 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		{
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
-			for (NestConst<jrd_nod>** i = exprNode->jrdChildNodes.begin();
+			for (NestConst<NestConst<jrd_nod> >* i = exprNode->jrdChildNodes.begin();
 				 i != exprNode->jrdChildNodes.end(); ++i)
 			{
 				if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
@@ -430,8 +430,8 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		{
 			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
 			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
-			Array<NestConst<jrd_nod>*>& children1 = exprNode1->jrdChildNodes;
-			Array<NestConst<jrd_nod>*>& children2 = exprNode2->jrdChildNodes;
+			Array<NestConst<NestConst<jrd_nod> > >& children1 = exprNode1->jrdChildNodes;
+			Array<NestConst<NestConst<jrd_nod> > >& children2 = exprNode2->jrdChildNodes;
 
 			if (exprNode1->type != exprNode2->type || children1.getCount() != children2.getCount())
 				return false;
@@ -462,7 +462,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
-					for (NestConst<jrd_nod>* const* i = children1.begin(), * const* j = children2.begin();
+					for (NestConst<NestConst<jrd_nod> >* i = children1.begin(), *j = children2.begin();
 						 i != children1.end(); ++i, ++j)
 					{
 						if (!OPT_expression_equal2(tdbb, csb, **i, **j, stream))
@@ -1107,7 +1107,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 	{
 		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
-		for (NestConst<jrd_nod>* const* i = exprNode->jrdChildNodes.begin();
+		for (NestConst<NestConst<jrd_nod> >* i = exprNode->jrdChildNodes.begin();
 			 i != exprNode->jrdChildNodes.end(); ++i)
 		{
 			findDependentFromStreams(**i, streamList);

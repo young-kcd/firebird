@@ -365,7 +365,7 @@ public:
 	const Type type;
 	const char* dsqlCompatDialectVerb;
 	Firebird::Array<dsql_nod**> dsqlChildNodes;
-	Firebird::Array<NestConst<jrd_nod>*> jrdChildNodes;
+	Firebird::Array<NestConst<NestConst<jrd_nod> > > jrdChildNodes;
 };
 
 class AggNode : public TypedNode<ExprNode, ExprNode::TYPE_AGGREGATE>
