@@ -175,7 +175,7 @@ static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
 static contents delete_node(thread_db*, WIN*, UCHAR*);
 static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
-static DSC *eval(thread_db*, jrd_nod*, DSC*, bool*);
+static DSC *eval(thread_db*, const jrd_nod*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, AutoPtr<Sort>&, SelectivityList&);
 
 static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
@@ -202,7 +202,7 @@ static void print_int64_key(SINT64, SSHORT, INT64_KEY);
 static contents remove_node(thread_db*, index_insertion*, WIN*);
 static contents remove_leaf_node(thread_db*, index_insertion*, WIN*);
 static bool scan(thread_db*, UCHAR*, RecordBitmap**, RecordBitmap*, index_desc*,
-				 IndexRetrieval*, USHORT, temporary_key*,
+				 const IndexRetrieval*, USHORT, temporary_key*,
 				 bool&, const temporary_key&);
 static void update_selectivity(index_root_page*, USHORT, const SelectivityList&);
 static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&,
@@ -590,7 +590,7 @@ static void checkForLowerKeySkip(bool& skipLowerKey,
 }
 
 
-void BTR_evaluate(thread_db* tdbb, IndexRetrieval* retrieval, RecordBitmap** bitmap,
+void BTR_evaluate(thread_db* tdbb, const IndexRetrieval* retrieval, RecordBitmap** bitmap,
 				  RecordBitmap* bitmap_and)
 {
 /**************************************
@@ -781,7 +781,7 @@ UCHAR* BTR_find_leaf(btree_page* bucket, temporary_key* key, UCHAR* value,
 
 
 btree_page* BTR_find_page(thread_db* tdbb,
-						  IndexRetrieval* retrieval,
+						  const IndexRetrieval* retrieval,
 						  WIN* window,
 						  index_desc* idx,
 						  temporary_key* lower,
@@ -1397,8 +1397,8 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 
 idx_e BTR_make_key(thread_db* tdbb,
 				   USHORT count,
-				   jrd_nod** exprs,
-				   index_desc* idx,
+				   const jrd_nod* const* exprs,
+				   const index_desc* idx,
 				   temporary_key* key,
 				   bool fuzzy)
 {
@@ -1431,7 +1431,7 @@ idx_e BTR_make_key(thread_db* tdbb,
 	key->key_flags = key_all_nulls;
 	key->key_null_segment = 0;
 
-	index_desc::idx_repeat* tail = idx->idx_rpt;
+	const index_desc::idx_repeat* tail = idx->idx_rpt;
 
 	// If the index is a single segment index, don't sweat the compound
 	// stuff.
@@ -2989,7 +2989,7 @@ static void delete_tree(thread_db* tdbb,
 }
 
 
-static DSC* eval(thread_db* tdbb, jrd_nod* node, DSC* temp, bool* isNull)
+static DSC* eval(thread_db* tdbb, const jrd_nod* node, DSC* temp, bool* isNull)
 {
 /**************************************
  *
@@ -6119,7 +6119,7 @@ static contents remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 
 
 static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordBitmap* bitmap_and,
-				 index_desc* idx, IndexRetrieval* retrieval, USHORT prefix,
+				 index_desc* idx, const IndexRetrieval* retrieval, USHORT prefix,
 				 temporary_key* key,
 				 bool& skipLowerKey, const temporary_key& lowerKey)
 {

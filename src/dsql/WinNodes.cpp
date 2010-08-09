@@ -74,7 +74,7 @@ DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	if (count != 0)
 	{
-		jrd_nod*** arg = node->jrdChildNodes.begin();
+		NestConst<jrd_nod>** arg = node->jrdChildNodes.begin();
 		do
 		{
 			**arg++ = PAR_parse_node(tdbb, csb, VALUE);
@@ -108,7 +108,7 @@ void DenseRankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* d
 	desc->makeInt64(0);
 }
 
-ExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
+ExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	DenseRankWinNode* node = FB_NEW(*tdbb->getDefaultPool()) DenseRankWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -163,7 +163,7 @@ void RankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 	desc->makeInt64(0);
 }
 
-ExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
+ExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	RankWinNode* node = FB_NEW(*tdbb->getDefaultPool()) RankWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -235,7 +235,7 @@ void RowNumberWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* d
 	desc->makeInt64(0);
 }
 
-ExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
+ExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	RowNumberWinNode* node = FB_NEW(*tdbb->getDefaultPool()) RowNumberWinNode(*tdbb->getDefaultPool());
 	return node;
@@ -359,7 +359,7 @@ LagWinNode::LagWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql_n
 {
 }
 
-ExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	LagWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LagWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
@@ -387,7 +387,7 @@ LeadWinNode::LeadWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql
 {
 }
 
-ExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	LeadWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LeadWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);

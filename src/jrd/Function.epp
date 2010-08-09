@@ -657,7 +657,7 @@ void Function::releaseLocks(thread_db* tdbb)
 	}
 }
 
-dsc* Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* value) const
+dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value) const
 {
 	if (isUndefined())
 	{

@@ -89,7 +89,7 @@ private:
 class TraceProcExecute
 {
 public:
-	TraceProcExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, jrd_nod* inputs) :
+	TraceProcExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, const jrd_nod* inputs) :
 		m_tdbb(tdbb),
 		m_request(request)
 	{

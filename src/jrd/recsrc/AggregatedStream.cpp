@@ -136,11 +136,11 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 
 			for (const jrd_nod* const* ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
 			{
-				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 				fb_assert(from->nod_type == nod_class_exprnode_jrd);
 				const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
 
-				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+				const jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
 				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
 				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 
@@ -164,9 +164,11 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 		// If there is no group, we should reassign the map items.
 		if (!m_group)
 		{
-			for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
+			for (const jrd_nod* const* ptr = m_map->nod_arg, *const *end = ptr + m_map->nod_count;
+				 ptr < end;
+				 ++ptr)
 			{
-				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 				const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 				if (!aggNode)
@@ -235,9 +237,11 @@ void AggregatedStream::init(CompilerScratch* csb)
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
 	// Separate nodes that requires the winPass call.
-	for (jrd_nod** ptr = m_map->nod_arg, **end = ptr + m_map->nod_count; ptr < end; ptr++)
+	for (const jrd_nod* const* ptr = m_map->nod_arg, *const *end = ptr + m_map->nod_count;
+		 ptr < end;
+		 ++ptr)
 	{
-		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 		if (aggNode && aggNode->shouldCallWinPass())
@@ -257,7 +261,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	impure_value vtemp;
 	vtemp.vlu_string = NULL;
 
-	jrd_nod** ptr;
+	const jrd_nod* const* ptr;
 	const jrd_nod* const* end;
 
 	// if we found the last record last time, we're all done
@@ -317,7 +321,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		{
 			for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 			{
-				jrd_nod* from = *ptr;
+				const jrd_nod* from = *ptr;
 				impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null)
@@ -331,7 +335,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		{
 			for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 			{
-				jrd_nod* from = *ptr;
+				const jrd_nod* from = *ptr;
 				impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null)
@@ -360,7 +364,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				{
 					for (ptr = m_group->nod_arg, end = ptr + m_group->nod_count; ptr < end; ptr++)
 					{
-						jrd_nod* from = *ptr;
+						const jrd_nod* from = *ptr;
 						impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
 
 						if (impure->vlu_desc.dsc_address)
@@ -397,7 +401,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				{
 					for (ptr = m_order->nod_arg, end = ptr + m_order->nod_count; ptr < end; ptr++)
 					{
-						jrd_nod* from = *ptr;
+						const jrd_nod* from = *ptr;
 						impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
 
 						if (impure->vlu_desc.dsc_address)
@@ -427,7 +431,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 			for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 			{
-				jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 				const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 				if (aggNode)
@@ -457,12 +461,12 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
 		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 			if (aggNode)
 			{
-				jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
+				const jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
 				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
 				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 
@@ -489,7 +493,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 // Finalize a sort for distinct aggregate
 void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 {
-	jrd_nod** ptr;
+	const jrd_nod* const* ptr;
 	const jrd_nod* const* end;
 
 	for (ptr = m_map->nod_arg, end = ptr + m_map->nod_count; ptr < end; ptr++)
@@ -503,8 +507,8 @@ void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 }
 
 
-SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, jrd_nod* aGroup,
-			jrd_req* aRequest)
+SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
+			const jrd_nod* aGroup, jrd_req* aRequest)
 	: tdbb(aTdbb),	// Note: instanciate the class only as local variable
 	  stream(aStream),
 	  group(aGroup),
@@ -569,10 +573,11 @@ bool SlidingWindow::move(SINT64 delta)
 
 			dsc* desc;
 
-			for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end;
+			for (const jrd_nod* const* ptr = group->nod_arg, *const *end = ptr + group->nod_count;
+				 ptr < end;
 				 ++ptr, ++impure)
 			{
-				jrd_nod* from = *ptr;
+				const jrd_nod* from = *ptr;
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -602,9 +607,11 @@ bool SlidingWindow::move(SINT64 delta)
 	impure_value* impure = partitionKeys.begin();
 	dsc* desc;
 
-	for (jrd_nod** ptr = group->nod_arg, **end = ptr + group->nod_count; ptr < end; ++ptr, ++impure)
+	for (const jrd_nod* const* ptr = group->nod_arg, *const *end = ptr + group->nod_count;
+		 ptr < end;
+		 ++ptr, ++impure)
 	{
-		jrd_nod* from = *ptr;
+		const jrd_nod* from = *ptr;
 		desc = EVL_expr(tdbb, from);
 
 		if (request->req_flags & req_null)

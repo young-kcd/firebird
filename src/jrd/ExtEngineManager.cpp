@@ -388,7 +388,7 @@ ExtEngineManager::Function::~Function()
 }
 
 
-void ExtEngineManager::Function::execute(thread_db* tdbb, jrd_nod* args, impure_value* impure)
+void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure)
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,

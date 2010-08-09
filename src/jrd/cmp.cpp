@@ -2351,7 +2351,7 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 		node->nod_arg[e_win_rse] = copy(tdbb, input->nod_arg[e_win_rse]);
 
-		const jrd_nod* inputWindows = input->nod_arg[e_win_windows];
+		jrd_nod* inputWindows = input->nod_arg[e_win_windows];
 
 		jrd_nod* copyWindows = node->nod_arg[e_win_windows] =
 			PAR_make_node(tdbb, inputWindows->nod_count);

@@ -48,7 +48,7 @@ class SysFunction
 public:
 	typedef void (*SetParamsFunc)(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int, dsc**);
 	typedef void (*MakeFunc)(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc*, int, const dsc**);
-	typedef dsc* (*EvlFunc)(Jrd::thread_db*, const SysFunction* function, Jrd::jrd_nod*, Jrd::impure_value*);
+	typedef dsc* (*EvlFunc)(Jrd::thread_db*, const SysFunction* function, const Jrd::jrd_nod*, Jrd::impure_value*);
 
 	const Firebird::MetaName name;
 	int minArgCount;

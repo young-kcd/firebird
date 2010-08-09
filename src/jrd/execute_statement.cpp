@@ -115,7 +115,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 }
 
 
-void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool singleton)
+void ExecuteStatement::open(thread_db* tdbb, const jrd_nod* sql, SSHORT nVars, bool singleton)
 {
 	SET_TDBB(tdbb);
 
@@ -184,7 +184,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 }
 
 
-bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
+bool ExecuteStatement::fetch(thread_db* tdbb, const jrd_nod* const* jrdVar)
 {
 	if (!resultSet->fetch(tdbb))
 	{

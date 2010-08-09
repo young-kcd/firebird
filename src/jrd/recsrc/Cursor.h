@@ -49,15 +49,15 @@ namespace Jrd
 		Cursor(CompilerScratch* csb, const RecordSource* rsb, const VarInvariantArray* invariants,
 			bool scrollable);
 
-		void open(thread_db* tdbb);
-		void close(thread_db* tdbb);
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
 
-		bool fetchNext(thread_db* tdbb);
-		bool fetchPrior(thread_db* tdbb);
-		bool fetchFirst(thread_db* tdbb);
-		bool fetchLast(thread_db* tdbb);
-		bool fetchAbsolute(thread_db* tdbb, SINT64 offset);
-		bool fetchRelative(thread_db* tdbb, SINT64 offset);
+		bool fetchNext(thread_db* tdbb) const;
+		bool fetchPrior(thread_db* tdbb) const;
+		bool fetchFirst(thread_db* tdbb) const;
+		bool fetchLast(thread_db* tdbb) const;
+		bool fetchAbsolute(thread_db* tdbb, SINT64 offset) const;
+		bool fetchRelative(thread_db* tdbb, SINT64 offset) const;
 
 		const RecordSource* getAccessPath() const
 		{
@@ -65,7 +65,7 @@ namespace Jrd
 		}
 
 	private:
-		bool reschedule(thread_db* tdbb);
+		bool reschedule(thread_db* tdbb) const;
 
 		ULONG m_impure;
 		const RecordSource* const m_top;

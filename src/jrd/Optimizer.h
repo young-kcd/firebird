@@ -73,7 +73,7 @@ class jrd_rel;
 class IndexTableScan;
 class River;
 
-bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
+bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, CompilerScratch*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
@@ -184,7 +184,7 @@ public:
 
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
-	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
+	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
 	const Firebird::string& getAlias();
 	InversionCandidate* generateInversion(IndexTableScan** rsb);
 	IndexTableScan* generateNavigation();

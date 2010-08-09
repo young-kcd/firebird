@@ -38,7 +38,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -56,7 +56,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -78,7 +78,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -120,8 +120,8 @@ protected:
 	const int direction;
 	dsql_nod* dsqlRows;
 	dsql_nod* dsqlOutExpr;
-	jrd_nod* rows;
-	jrd_nod* outExpr;
+	NestConst<jrd_nod> rows;
+	NestConst<jrd_nod> outExpr;
 };
 
 // LAG function.
@@ -131,7 +131,7 @@ public:
 	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
 		dsql_nod* aOutExpr = NULL);
 
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 protected:
 	virtual AggNode* dsqlCopy() const;
@@ -144,7 +144,7 @@ public:
 	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
 		dsql_nod* aOutExpr = NULL);
 
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 protected:
 	virtual AggNode* dsqlCopy() const;

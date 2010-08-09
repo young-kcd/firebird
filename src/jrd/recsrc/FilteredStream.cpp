@@ -165,10 +165,10 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 	// on the right.
 
 	// ANY/ALL select node pointer
-	jrd_nod* select_node;
+	const jrd_nod* select_node;
 
 	// ANY/ALL column node pointer
-	jrd_nod* column_node = m_anyBoolean;
+	const jrd_nod* column_node = m_anyBoolean;
 
 	if (column_node && (m_ansiAny || m_ansiAll))
 	{

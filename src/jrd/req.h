@@ -251,7 +251,7 @@ public:
 	jrd_req*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
-	jrd_nod*	req_message;			// Current message for send/receive
+	const jrd_nod*	req_message;		// Current message for send/receive
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
@@ -266,9 +266,9 @@ public:
 	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
 	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
 
-	jrd_nod*	req_next;				// next node for execution
+	const jrd_nod*	req_next;			// next node for execution
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
-	Firebird::Array<Cursor*>	req_cursors;	// named cursors
+	Firebird::Array<const Cursor*>	req_cursors;	// named cursors
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
@@ -278,7 +278,7 @@ public:
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
 	jrd_req* req_proc_caller;	// Procedure's caller request
-	jrd_nod* req_proc_inputs;	// and its node with input parameters
+	const jrd_nod* req_proc_inputs;	// and its node with input parameters
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;

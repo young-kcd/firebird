@@ -441,7 +441,7 @@ IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -530,7 +530,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb,
 }
 
 
-jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	Jrd::Attachment* attachment = request->req_attachment;
 	SLONG* savNumber = request->getImpure<SLONG>(savNumberOffset);
@@ -1090,7 +1090,7 @@ ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-jrd_nod* ExceptionNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* ExceptionNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -1428,7 +1428,7 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	switch (request->req_operation)
 	{
@@ -1453,7 +1453,7 @@ jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		case jrd_req::req_unwind:
 		{
-			jrd_nod* parent = node->nod_parent;
+			const jrd_nod* parent = node->nod_parent;
 
 			if (parent && parent->nod_type == nod_label &&
 				request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label] &&
@@ -1549,7 +1549,7 @@ PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
@@ -1654,7 +1654,7 @@ SavepointNode* SavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*
 }
 
 
-jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request) const
+const jrd_nod* SavepointNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
@@ -1833,7 +1833,7 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 
 // Execute a SEND statement.
-jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
+const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	switch (request->req_operation)
 	{

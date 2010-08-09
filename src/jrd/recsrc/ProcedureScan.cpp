@@ -70,7 +70,7 @@ void ProcedureScan::open(thread_db* tdbb) const
 	{
 		enum jrd_req::req_s saved_state = request->req_operation;
 
-		jrd_nod** ptr = m_inputs->nod_arg;
+		const jrd_nod* const* ptr = m_inputs->nod_arg;
 		for (const jrd_nod* const* const end = ptr + m_inputs->nod_count; ptr < end; ptr++)
 		{
 			EXE_assignment(tdbb, *ptr);

@@ -314,7 +314,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		const UCHAR flag = *(data + item->flagOffset);
 		from = item->desc;
 		from.dsc_address = data + (IPTR) from.dsc_address;
-		jrd_nod* const node = item->node;
+		const jrd_nod* const node = item->node;
 
 		if (node && node->nod_type != nod_field)
 			continue;

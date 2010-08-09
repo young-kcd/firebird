@@ -650,7 +650,7 @@ static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
 static USHORT river_count(USHORT, jrd_nod**);
 static bool search_stack(const jrd_nod*, const NodeStack&);
-static void set_direction(const jrd_nod*, jrd_nod*);
+static void set_direction(jrd_nod*, jrd_nod*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
 static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
 static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
@@ -4357,7 +4357,7 @@ static bool search_stack(const jrd_nod* node, const NodeStack& stack)
 }
 
 
-static void set_direction(const jrd_nod* from_clause, jrd_nod* to_clause)
+static void set_direction(jrd_nod* from_clause, jrd_nod* to_clause)
 {
 /**************************************
  *

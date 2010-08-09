@@ -146,14 +146,14 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 	// Assuming we are done with the current value group, advance each
 	// stream one record. If any comes up dry, we're done.
-	const SortedStream* const* highest_ptr = m_args.begin();
+	const NestConst<SortedStream>* highest_ptr = m_args.begin();
 	size_t highest_index = 0;
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
-		const SortedStream* const* const ptr = &m_args[i];
+		const NestConst<SortedStream>* const ptr = &m_args[i];
 		const SortedStream* const sort_rsb = *ptr;
-		jrd_nod* const sort_key = m_keys[i];
+		const jrd_nod* const sort_key = m_keys[i];
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 		MergeFile* const mfb = &tail->irsb_mrg_file;
@@ -209,9 +209,9 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
-			const SortedStream* const* const ptr = &m_args[i];
+			const NestConst<SortedStream>* const ptr = &m_args[i];
 			const SortedStream* const sort_rsb = *ptr;
-			jrd_nod* const sort_key = m_keys[i];
+			const jrd_nod* const sort_key = m_keys[i];
 			Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 			if (highest_ptr != ptr)
@@ -255,7 +255,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
 	{
-		SortedStream* const sort_rsb = m_args[i];
+		const SortedStream* const sort_rsb = m_args[i];
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 		MergeFile* const mfb = &tail->irsb_mrg_file;
@@ -430,12 +430,12 @@ void MergeJoin::restoreRecords(thread_db* tdbb) const
 	}
 }
 
-int MergeJoin::compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2) const
+int MergeJoin::compare(thread_db* tdbb, const jrd_nod* node1, const jrd_nod* node2) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
-	jrd_nod* const* ptr1 = node1->nod_arg;
-	jrd_nod* const* ptr2 = node2->nod_arg;
+	const jrd_nod* const* ptr1 = node1->nod_arg;
+	const jrd_nod* const* ptr2 = node2->nod_arg;
 
 	for (const jrd_nod* const* const end = ptr1 + node1->nod_count; ptr1 < end; ptr1++, ptr2++)
 	{
@@ -490,7 +490,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index) const
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
-	SortedStream* const sort_rsb = m_args[index];
+	const SortedStream* const sort_rsb = m_args[index];
 	Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[index];
 
 	UCHAR* sort_data = sort_rsb->getData(tdbb);
@@ -533,7 +533,7 @@ bool MergeJoin::fetchRecord(thread_db* tdbb, size_t index) const
 
 	const SSHORT m = tail->irsb_mrg_order;
 	tail = &impure->irsb_mrg_rpt[m];
-	SortedStream* const sort_rsb = m_args[m];
+	const SortedStream* const sort_rsb = m_args[m];
 
 	SLONG record = tail->irsb_mrg_equal_current;
 	++record;

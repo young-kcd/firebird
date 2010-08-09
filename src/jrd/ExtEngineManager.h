@@ -130,7 +130,7 @@ public:
 			const Jrd::Function* aUdf);
 		~Function();
 
-		void execute(thread_db* tdbb, jrd_nod* args, impure_value* impure);
+		void execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure);
 
 	private:
 		ExtEngineManager* extManager;

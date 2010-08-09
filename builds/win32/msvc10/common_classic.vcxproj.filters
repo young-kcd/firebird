@@ -177,6 +177,9 @@
     <ClInclude Include="..\..\..\src\common\classes\MsgPrint.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\NestConst.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\SafeArg.h">
       <Filter>Header files</Filter>
     </ClInclude>

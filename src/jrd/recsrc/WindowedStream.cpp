@@ -87,7 +87,7 @@ namespace
 		}
 
 	public:
-		NestedSource<BufferedStream> m_next;
+		NestConst<BufferedStream> m_next;
 	};
 
 	// Make join between outer stream and already sorted (aggregated) partition.
@@ -420,7 +420,7 @@ namespace
 
 // ------------------------------
 
-WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, RecordSource* next)
+WindowedStream::WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, RecordSource* next)
 	: m_next(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
 	  m_joinedStream(NULL)
 {
@@ -443,7 +443,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb, const jrd_nod* nodWindows, 
 		const jrd_nod* const* ptr = partitionMap->nod_arg;
 		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
 		{
-			jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
 			if (order && aggNode)

@@ -315,11 +315,11 @@ public:
 
 	void prepare(Jrd::thread_db* tdbb, Transaction* tran, const Firebird::string& sql, bool named);
 	void execute(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
-		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params,
-		int out_count, Jrd::jrd_nod** out_params);
+		const Firebird::string* const* in_names, const Jrd::jrd_nod* const* in_params,
+		int out_count, const Jrd::jrd_nod* const* out_params);
 	void open(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
-		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params, bool singleton);
-	bool fetch(Jrd::thread_db* tdbb, int out_count, Jrd::jrd_nod** out_params);
+		const Firebird::string* const* in_names, const Jrd::jrd_nod* const* in_params, bool singleton);
+	bool fetch(Jrd::thread_db* tdbb, int out_count, const Jrd::jrd_nod* const* out_params);
 	void close(Jrd::thread_db* tdbb);
 	void deallocate(Jrd::thread_db* tdbb);
 
@@ -354,11 +354,11 @@ protected:
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop) = 0;
 
 	void setInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
-		Jrd::jrd_nod** params);
-	virtual void getOutParams(Jrd::thread_db* tdbb, int count, Jrd::jrd_nod** params);
+		const Jrd::jrd_nod* const* params);
+	virtual void getOutParams(Jrd::thread_db* tdbb, int count, const Jrd::jrd_nod* const* params);
 
 	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
-		Jrd::jrd_nod** params);
+		const Jrd::jrd_nod* const* params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
 	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);

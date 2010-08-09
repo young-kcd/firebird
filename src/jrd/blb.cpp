@@ -94,7 +94,7 @@ static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
 static void insert_page(thread_db*, blb*);
-static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
+static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const jrd_nod*);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
 static void release_blob(blb*, const bool);
 static void slice_callback(array_slice*, ULONG, dsc*);
@@ -931,7 +931,7 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
 // which in turn calls BLB_create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
 // constant, this is misleading so I didn't make the source descriptor constant.
-void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
+void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* field)
 {
 /**************************************
  *
@@ -2440,7 +2440,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 }
 
 
-static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, jrd_nod* field)
+static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc, const jrd_nod* field)
 {
 /**************************************
  *

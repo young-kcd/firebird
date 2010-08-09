@@ -154,17 +154,15 @@ private:
 
 HashJoin::HashJoin(CompilerScratch* csb, size_t count,
 				   RecordSource* const* args, jrd_nod* const* keys)
-	: m_args(csb->csb_pool, count - 1), m_keys(csb->csb_pool, count - 1),
-	  m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
+	: m_leader(args[0]), m_leaderKeys(keys[0]), m_args(csb->csb_pool, count - 1),
+	  m_keys(csb->csb_pool, count - 1), m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
 {
 	fb_assert(count >= 2);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
 	fb_assert(args[0]);
-	m_leader = args[0];
 	fb_assert(keys[0]);
-	m_leaderKeys = keys[0];
 
 	for (size_t i = 1; i < count; i++)
 	{
@@ -383,7 +381,7 @@ void HashJoin::restoreRecords(thread_db* tdbb) const
 	}
 }
 
-size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, jrd_nod* keys) const
+size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, const jrd_nod* keys) const
 {
 	size_t hash_slot = 0;
 
@@ -480,7 +478,7 @@ bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request) const
 
 bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const
 {
-	BufferedStream* const arg = m_args[stream];
+	const BufferedStream* const arg = m_args[stream];
 	FB_UINT64 position;
 
 	if (table->iterate(stream, position))

@@ -136,7 +136,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	Record* const record = request->req_rpb[m_stream].rpb_record;
 	Record* const mapRecord = request->req_rpb[m_mapStream].rpb_record;
 
-	RecordSource* rsb;
+	const RecordSource* rsb;
 
 	switch (impure->irsb_mode)
 	{
@@ -235,8 +235,8 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	impure->irsb_mode = RECURSE;
 
 	// We've got a record, map it into the target record
-	jrd_nod* const map = (rsb == m_root) ? m_rootMap : m_innerMap;
-	jrd_nod** ptr = map->nod_arg;
+	const jrd_nod* const map = (rsb == m_root) ? m_rootMap : m_innerMap;
+	const jrd_nod* const* ptr = map->nod_arg;
 	for (const jrd_nod *const *end = ptr + map->nod_count; ptr < end; ptr++)
 	{
 		EXE_assignment(tdbb, *ptr);

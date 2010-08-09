@@ -60,15 +60,15 @@ public:
 	virtual void genBlr();
 	virtual IfNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual IfNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlCondition;
 	dsql_nod* dsqlTrueAction;
 	dsql_nod* dsqlFalseAction;
-	jrd_nod* condition;
-	jrd_nod* trueAction;
-	jrd_nod* falseAction;
+	NestConst<jrd_nod> condition;
+	NestConst<jrd_nod> trueAction;
+	NestConst<jrd_nod> falseAction;
 };
 
 
@@ -94,11 +94,11 @@ public:
 	virtual void genBlr();
 	virtual InAutonomousTransactionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual InAutonomousTransactionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlAction;
-	jrd_nod* action;
+	NestConst<jrd_nod> action;
 	SLONG savNumberOffset;
 };
 
@@ -160,7 +160,7 @@ public:
 	virtual void genBlr();
 	virtual ExceptionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExceptionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 private:
 	void setError(thread_db* tdbb) const;
@@ -169,8 +169,8 @@ public:
 	Firebird::MetaName name;
 	dsql_nod* dsqlMessageExpr;
 	dsql_nod* dsqlParameters;
-	jrd_nod* messageExpr;
-	jrd_nod* parameters;
+	NestConst<jrd_nod> messageExpr;
+	NestConst<jrd_nod> parameters;
 	PsqlException* exception;
 };
 
@@ -222,11 +222,11 @@ public:
 
 	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
 	{
-		rsePtr = (RecordSelExpr*) rse;
+		rsePtr = (RecordSelExpr*)(jrd_nod*) rse;
 		cursorPtr = &cursor;
 	}
 
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlSelect;
@@ -235,9 +235,9 @@ public:
 	dsql_nod* dsqlAction;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
-	jrd_nod* stall;
-	jrd_nod* rse;
-	jrd_nod* statement;
+	NestConst<jrd_nod> stall;
+	NestConst<jrd_nod> rse;
+	NestConst<jrd_nod> statement;
 	Cursor* cursor;
 };
 
@@ -265,13 +265,13 @@ public:
 	virtual void genBlr();
 	virtual PostEventNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual PostEventNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	dsql_nod* dsqlEvent;
 	dsql_nod* dsqlArgument;
-	jrd_nod* event;
-	jrd_nod* argument;
+	NestConst<jrd_nod> event;
+	NestConst<jrd_nod> argument;
 };
 
 
@@ -306,7 +306,7 @@ public:
 	virtual void genBlr();
 	virtual SavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SavepointNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	Command command;
@@ -336,12 +336,12 @@ public:
 	virtual void genBlr();
 	virtual SuspendNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SuspendNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	BlockNode* blockNode;
-	jrd_nod* message;
-	jrd_nod* statement;
+	NestConst<jrd_nod> message;
+	NestConst<jrd_nod> statement;
 };
 
 

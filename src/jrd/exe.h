@@ -36,6 +36,7 @@
 #include "../jrd/Relation.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/NestConst.h"
 
 #include "gen/iberror.h"
 
@@ -92,7 +93,7 @@ class RecordSource;
 class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
 {
 public:
-	jrd_nod*	nod_parent;
+	NestConst<jrd_nod>	nod_parent;
 	ULONG		nod_impure;			// Inpure offset from request block
 	nod_t		nod_type;			// Type of node
 	USHORT		nod_flags;
@@ -114,7 +115,22 @@ public:
 	{
 		nod_arg[0] = 0;
 	}*/
+
 	jrd_nod*	nod_arg[1];
+
+	// Replace the line above by this block to check deep const-correctness.
+	/***
+	struct
+	{
+		NestConst<jrd_nod> arg[1];
+
+		jrd_nod*& operator [](size_t index) { return arg[index].ptr; }
+		const jrd_nod* const& operator [](size_t index) const { return arg[index].ptr; }
+
+		operator jrd_nod** () { return &arg[0].ptr; }
+		operator const jrd_nod* const* () const { return &arg[0].ptr; }
+	} nod_arg;
+	***/
 };
 
 const int nod_comparison	= 1;
@@ -137,13 +153,13 @@ class RecordSelExpr : public jrd_node_base
 public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		// inner, left, full
-	jrd_nod*	rse_first;
-	jrd_nod*	rse_skip;
-	jrd_nod*	rse_boolean;
-	jrd_nod*	rse_sorted;
-	jrd_nod*	rse_projection;
-	jrd_nod*	rse_aggregate;	// singleton aggregate for optimizing to index
-	jrd_nod*	rse_plan;		// user-specified access plan
+	NestConst<jrd_nod>	rse_first;
+	NestConst<jrd_nod>	rse_skip;
+	NestConst<jrd_nod>	rse_boolean;
+	NestConst<jrd_nod>	rse_sorted;
+	NestConst<jrd_nod>	rse_projection;
+	NestConst<jrd_nod>	rse_aggregate;	// singleton aggregate for optimizing to index
+	NestConst<jrd_nod>	rse_plan;		// user-specified access plan
 	VarInvariantArray *rse_invariants; // Invariant nodes bound to top-level RSE
 	jrd_nod*	rse_relation[1];
 };
@@ -669,12 +685,12 @@ struct Item
 struct FieldInfo
 {
 	FieldInfo()
-		: nullable(false), defaultValue(0), validation(0)
+		: nullable(false), defaultValue(NULL), validation(NULL)
 	{}
 
 	bool nullable;
-	jrd_nod* defaultValue;
-	jrd_nod* validation;
+	NestConst<jrd_nod> defaultValue;
+	NestConst<jrd_nod> validation;
 };
 
 struct ItemInfo

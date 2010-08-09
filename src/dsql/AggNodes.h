@@ -39,7 +39,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -65,7 +65,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void checkOrderedWindowCapable() const
 	{
@@ -84,7 +84,7 @@ protected:
 
 private:
 	dsql_nod* dsqlDelimiter;
-	jrd_nod* delimiter;
+	NestConst<jrd_nod> delimiter;
 };
 
 class CountAggNode : public AggNode
@@ -97,7 +97,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void genBlr();
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -116,7 +116,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -141,7 +141,7 @@ public:
 
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;

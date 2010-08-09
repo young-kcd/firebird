@@ -471,6 +471,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\NestConst.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h"
 				>
 			</File>

@@ -34,6 +34,6 @@ public:
 };
 
 
-void FUN_evaluate(Jrd::thread_db*, const Jrd::Function*, Jrd::jrd_nod*, Jrd::impure_value*);
+void FUN_evaluate(Jrd::thread_db*, const Jrd::Function*, const Jrd::jrd_nod*, Jrd::impure_value*);
 
 #endif // JRD_FUN_PROTO_H

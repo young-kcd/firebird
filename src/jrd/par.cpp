@@ -1154,7 +1154,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	// Fake RecordSelExpr
 
 	forNode->rse = PAR_make_node(tdbb, 1 + rse_delta + 2);
-	RecordSelExpr* rse = (RecordSelExpr*) forNode->rse;
+	RecordSelExpr* rse = (RecordSelExpr*)(jrd_nod*) forNode->rse;
 	rse->nod_type = nod_rse;
 	rse->nod_count = 0;
 	rse->rse_count = 1;

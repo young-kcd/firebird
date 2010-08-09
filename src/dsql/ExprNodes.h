@@ -47,7 +47,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -57,8 +57,8 @@ protected:
 public:
 	dsql_nod* dsqlArg1;
 	dsql_nod* dsqlArg2;
-	jrd_nod* arg1;
-	jrd_nod* arg2;
+	NestConst<jrd_nod> arg1;
+	NestConst<jrd_nod> arg2;
 };
 
 
@@ -83,7 +83,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
@@ -112,7 +112,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -124,9 +124,9 @@ public:
 	dsql_nod* dsqlExpr;
 	dsql_nod* dsqlPattern;
 	dsql_nod* dsqlEscape;
-	jrd_nod* expr;
-	jrd_nod* pattern;
-	jrd_nod* escape;
+	NestConst<jrd_nod> expr;
+	NestConst<jrd_nod> pattern;
+	NestConst<jrd_nod> escape;
 };
 
 
@@ -144,7 +144,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -156,7 +156,7 @@ public:
 	Firebird::MetaName name;
 	dsql_nod* dsqlArgs;
 	bool dsqlSpecialSyntax;
-	jrd_nod* args;
+	NestConst<jrd_nod> args;
 	const SysFunction* function;
 };
 
@@ -175,7 +175,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -187,7 +187,7 @@ protected:
 public:
 	Firebird::QualifiedName name;
 	dsql_nod* dsqlArgs;
-	jrd_nod* args;
+	NestConst<jrd_nod> args;
 	/*const*/ Function* function;
 
 private:

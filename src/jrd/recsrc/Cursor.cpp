@@ -45,7 +45,7 @@ Cursor::Cursor(CompilerScratch* csb, const RecordSource* rsb,
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
 
-void Cursor::open(thread_db* tdbb)
+void Cursor::open(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* impure = request->getImpure<Impure>(m_impure);
@@ -66,7 +66,7 @@ void Cursor::open(thread_db* tdbb)
 	m_top->open(tdbb);
 }
 
-void Cursor::close(thread_db* tdbb)
+void Cursor::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -78,7 +78,7 @@ void Cursor::close(thread_db* tdbb)
 	}
 }
 
-bool Cursor::fetchNext(thread_db* tdbb)
+bool Cursor::fetchNext(thread_db* tdbb) const
 {
 	if (!reschedule(tdbb))
 	{
@@ -118,7 +118,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	}
 	else
 	{
-		BufferedStream* const buffer = (BufferedStream*) m_top;
+		const BufferedStream* const buffer = static_cast<const BufferedStream*>(m_top);
 		buffer->locate(tdbb, impure->irsb_position);
 
 		if (!buffer->getRecord(tdbb))
@@ -135,7 +135,7 @@ bool Cursor::fetchNext(thread_db* tdbb)
 	return true;
 }
 
-bool Cursor::fetchPrior(thread_db* tdbb)
+bool Cursor::fetchPrior(thread_db* tdbb) const
 {
 	if (!m_scrollable)
 	{
@@ -157,7 +157,7 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 		status_exception::raise(Arg::Gds(isc_cursor_not_open));
 	}
 
-	BufferedStream* const buffer = (BufferedStream*) m_top;
+	const BufferedStream* const buffer = static_cast<const BufferedStream*>(m_top);
 
 	if (impure->irsb_state == BOS)
 	{
@@ -188,7 +188,7 @@ bool Cursor::fetchPrior(thread_db* tdbb)
 	return true;
 }
 
-bool Cursor::fetchFirst(thread_db* tdbb)
+bool Cursor::fetchFirst(thread_db* tdbb) const
 {
 	if (!m_scrollable)
 	{
@@ -199,7 +199,7 @@ bool Cursor::fetchFirst(thread_db* tdbb)
 	return fetchAbsolute(tdbb, 1);
 }
 
-bool Cursor::fetchLast(thread_db* tdbb)
+bool Cursor::fetchLast(thread_db* tdbb) const
 {
 	if (!m_scrollable)
 	{
@@ -210,7 +210,7 @@ bool Cursor::fetchLast(thread_db* tdbb)
 	return fetchAbsolute(tdbb, -1);
 }
 
-bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
+bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset) const
 {
 	if (!m_scrollable)
 	{
@@ -238,7 +238,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 		return false;
 	}
 
-	BufferedStream* const buffer = (BufferedStream*) m_top;
+	const BufferedStream* const buffer = static_cast<const BufferedStream*>(m_top);
 	impure->irsb_position = (offset > 0) ? offset - 1 : buffer->getCount(request) + offset;
 	buffer->locate(tdbb, impure->irsb_position);
 
@@ -255,7 +255,7 @@ bool Cursor::fetchAbsolute(thread_db* tdbb, SINT64 offset)
 	return true;
 }
 
-bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
+bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 {
 	if (!m_scrollable)
 	{
@@ -290,7 +290,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 		return false;
 	}
 
-	BufferedStream* const buffer = (BufferedStream*) m_top;
+	const BufferedStream* const buffer = static_cast<const BufferedStream*>(m_top);
 	impure->irsb_position += offset;
 	buffer->locate(tdbb, impure->irsb_position);
 
@@ -307,7 +307,7 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset)
 	return true;
 }
 
-bool Cursor::reschedule(thread_db* tdbb)
+bool Cursor::reschedule(thread_db* tdbb) const
 {
 	if (--tdbb->tdbb_quantum < 0)
 	{

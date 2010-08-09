@@ -131,9 +131,9 @@ bool Union::getRecord(thread_db* tdbb) const
 
 	// We've got a record, map it into the target record
 
-	jrd_nod* const map = m_maps[impure->irsb_count];
+	const jrd_nod* const map = m_maps[impure->irsb_count];
+	const jrd_nod* const* ptr = map->nod_arg;
 
-	jrd_nod** ptr = map->nod_arg;
 	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
 	{
 		EXE_assignment(tdbb, *ptr);

@@ -28,7 +28,7 @@
 #include "../dsql/node.h"
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
-//#include "../common/classes/ByteChunk.h"
+#include "../common/classes/NestConst.h"
 
 namespace Jrd {
 
@@ -199,7 +199,7 @@ public:
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 
 protected:
-	jrd_nod* node;
+	NestConst<jrd_nod> node;
 };
 
 
@@ -273,7 +273,8 @@ public:
 	}
 
 	static ExprNode* fromLegacy(const dsql_nod* node);
-	static ExprNode* fromLegacy(const jrd_nod* node);
+	static const ExprNode* fromLegacy(const jrd_nod* node);
+	static ExprNode* fromLegacy(jrd_nod* node);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
@@ -341,7 +342,7 @@ public:
 	virtual void make(dsc* desc, dsql_nod* nullReplacement) = 0;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
 
 protected:
@@ -349,7 +350,7 @@ protected:
 	virtual bool dsqlVisit(NonConstDsqlNodeVisitor& visitor);
 	virtual bool jrdVisit(JrdNodeVisitor& visitor);
 
-	void addChildNode(dsql_nod*& dsqlNode, jrd_nod*& jrdNode)
+	void addChildNode(dsql_nod*& dsqlNode, NestConst<jrd_nod>& jrdNode)
 	{
 		dsqlChildNodes.add(&dsqlNode);
 		jrdChildNodes.add(&jrdNode);
@@ -364,7 +365,7 @@ public:
 	const Type type;
 	const char* dsqlCompatDialectVerb;
 	Firebird::Array<dsql_nod**> dsqlChildNodes;
-	Firebird::Array<jrd_nod**> jrdChildNodes;
+	Firebird::Array<NestConst<jrd_nod>*> jrdChildNodes;
 };
 
 class AggNode : public TypedNode<ExprNode, ExprNode::TYPE_AGGREGATE>
@@ -487,7 +488,7 @@ public:
 	bool distinct;
 	bool dialect1;
 	dsql_nod* dsqlArg;
-	jrd_nod* arg;
+	NestConst<jrd_nod> arg;
 	const AggregateSort* asb;
 	bool indexed;
 };
@@ -553,7 +554,7 @@ public:
 	{
 	}
 
-	virtual jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
 };
 
 
@@ -580,7 +581,7 @@ public:
 		return this;
 	}
 
-	jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	const jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 	{
 		fb_assert(false);
 		return NULL;

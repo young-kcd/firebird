@@ -833,7 +833,8 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 }
 
 void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod** out_params)
+	const string* const* in_names, const jrd_nod* const* in_params, int out_count,
+	const jrd_nod* const* out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
@@ -846,7 +847,7 @@ void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
 }
 
 void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, jrd_nod** in_params, bool singleton)
+	const string* const* in_names, const jrd_nod* const* in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -860,7 +861,7 @@ void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
 	m_active = true;
 }
 
-bool Statement::fetch(thread_db* tdbb, int out_count, jrd_nod** out_params)
+bool Statement::fetch(thread_db* tdbb, int out_count, const jrd_nod* const* out_params)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -1213,7 +1214,8 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
+void Statement::setInParams(thread_db* tdbb, int count, const string* const* names,
+	const jrd_nod* const* params)
 {
 	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1227,8 +1229,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	if (m_sqlParamNames.getCount())
 	{
 		const int sqlCount = m_sqlParamsMap.getCount();
-		Array<jrd_nod*> sqlParamsArray(getPool(), 16);
-		jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
+		Array<const jrd_nod*> sqlParamsArray(getPool(), 16);
+		const jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
 
 		for (int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
@@ -1258,7 +1260,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	}
 }
 
-void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/, jrd_nod** params)
+void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/,
+	const jrd_nod* const* params)
 {
 	if (count != getInputs())
 	{
@@ -1270,8 +1273,8 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 	if (!count)
 		return;
 
-	jrd_nod** jrdVar = params;
-	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
+	const jrd_nod* const* jrdVar = params;
+	GenericMap<Pair<NonPooled<const jrd_nod*, dsc*> > > paramDescs(getPool());
 
 	const jrd_req* request = tdbb->getRequest();
 
@@ -1330,7 +1333,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 
 
 // m_outDescs -> jrd_nod
-void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
+void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* params)
 {
 	if (count != getOutputs())
 	{
@@ -1342,7 +1345,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 	if (!count)
 		return;
 
-	jrd_nod** jrdVar = params;
+	const jrd_nod* const* jrdVar = params;
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
 		/*
@@ -1394,7 +1397,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		destBlob->blb_sub_type = src.getBlobSubType();
 		destBlob->blb_charset = src.getCharSet();
 
-		Firebird::Array<UCHAR> buffer;
+		Array<UCHAR> buffer;
 		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
@@ -1436,7 +1439,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 		BLB_gen_bpb_from_descs(&src, &dst, bpb);
 		srcBlob = BLB_open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
-		Firebird::HalfStaticArray<UCHAR, 2048> buffer;
+		HalfStaticArray<UCHAR, 2048> buffer;
 		const int bufSize = srcBlob->blb_max_segment;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 

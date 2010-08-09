@@ -55,7 +55,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
+bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 				const bool idx_use, const bool allowOnlyCurrentStream)
 {
 /**************************************
@@ -99,11 +99,11 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	{
 		case nod_procedure:
 		{
-			const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
+			jrd_nod* inputs = node->nod_arg[e_prc_inputs];
 			if (inputs)
 			{
 				fb_assert(inputs->nod_type == nod_asn_list);
-				const jrd_nod* const* ptr = inputs->nod_arg;
+				jrd_nod* const* ptr = inputs->nod_arg;
 				for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
 				{
 					if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
@@ -116,8 +116,8 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 		case nod_union:
 		{
-			const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
-			const jrd_nod* const* ptr = clauses->nod_arg;
+			jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+			jrd_nod* const* ptr = clauses->nod_arg;
 			for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
 			{
 				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
@@ -129,9 +129,9 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 		case nod_class_exprnode_jrd:
 		{
-			const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
-			for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
+			for (NestConst<jrd_nod>** i = exprNode->jrdChildNodes.begin();
 				 i != exprNode->jrdChildNodes.end(); ++i)
 			{
 				if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
@@ -143,7 +143,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 		default:
 		{
-			const jrd_nod* const* ptr = node->nod_arg;
+			jrd_nod* const* ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 			{
 				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
@@ -155,8 +155,8 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	}
 
 	RecordSelExpr* rse;
-	const jrd_nod* sub;
-	const jrd_nod* value;
+	jrd_nod* sub;
+	jrd_nod* value;
 	USHORT n;
 
 	switch (node->nod_type)
@@ -266,7 +266,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 	}
 
 	// Set sub-streams of rse active
-	const jrd_nod* const* ptr;
+	jrd_nod* const* ptr;
 	const jrd_nod* const* end;
 
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
@@ -430,8 +430,8 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		{
 			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
 			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
-			Array<jrd_nod**>& children1 = exprNode1->jrdChildNodes;
-			Array<jrd_nod**>& children2 = exprNode2->jrdChildNodes;
+			Array<NestConst<jrd_nod>*>& children1 = exprNode1->jrdChildNodes;
+			Array<NestConst<jrd_nod>*>& children2 = exprNode2->jrdChildNodes;
 
 			if (exprNode1->type != exprNode2->type || children1.getCount() != children2.getCount())
 				return false;
@@ -462,7 +462,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
-					for (jrd_nod*** i = children1.begin(), ***j = children2.begin();
+					for (NestConst<jrd_nod>* const* i = children1.begin(), * const* j = children2.begin();
 						 i != children1.end(); ++i, ++j)
 					{
 						if (!OPT_expression_equal2(tdbb, csb, **i, **j, stream))
@@ -640,8 +640,8 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 	    case nod_list:
 			{
-				jrd_nod** ptr1 = node1->nod_arg;
-				jrd_nod** ptr2 = node2->nod_arg;
+				jrd_nod* const* ptr1 = node1->nod_arg;
+				jrd_nod* const* ptr2 = node2->nod_arg;
 
 				if (node1->nod_count != node2->nod_count)
 				{
@@ -1067,8 +1067,7 @@ jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
 	return OPT_make_binary_node(node_type, node1, node2, false);
 }
 
-void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
-	SortedStreamList* streamList) const
+void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const
 {
 /**************************************
  *
@@ -1084,11 +1083,11 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 
 	if (node->nod_type == nod_procedure)
 	{
-		const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
+		jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
 		if (inputs)
 		{
 			fb_assert(inputs->nod_type == nod_asn_list);
-			const jrd_nod* const* ptr = inputs->nod_arg;
+			jrd_nod* const* ptr = inputs->nod_arg;
 			for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
 			{
 				findDependentFromStreams(*ptr, streamList);
@@ -1097,8 +1096,8 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	}
 	else if (node->nod_type == nod_union)
 	{
-		const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
-		const jrd_nod* const* ptr = clauses->nod_arg;
+		jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
+		jrd_nod* const* ptr = clauses->nod_arg;
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
 		{
 			findDependentFromStreams(*ptr, streamList);
@@ -1106,9 +1105,9 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	}
 	else if (node->nod_type == nod_class_exprnode_jrd)
 	{
-		const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
+		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
-		for (const jrd_nod* const* const* i = exprNode->jrdChildNodes.begin();
+		for (NestConst<jrd_nod>* const* i = exprNode->jrdChildNodes.begin();
 			 i != exprNode->jrdChildNodes.end(); ++i)
 		{
 			findDependentFromStreams(**i, streamList);
@@ -1116,7 +1115,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 	}
 	else
 	{
-		const jrd_nod* const* ptr = node->nod_arg;
+		jrd_nod* const* ptr = node->nod_arg;
 		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 		{
 			findDependentFromStreams(*ptr, streamList);
@@ -1229,7 +1228,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 		findDependentFromStreams(sub, streamList);
 	}
 
-	const jrd_nod* const* ptr;
+	jrd_nod* const* ptr;
 	const jrd_nod* const* end;
 	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
@@ -1480,7 +1479,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
-		jrd_nod** ptr = sortPtr->nod_arg;
+		jrd_nod* const* ptr = sortPtr->nod_arg;
 		for (const jrd_nod* const* const end = ptr + sortPtr->nod_count; ptr < end; ptr++, idx_tail++)
 		{
 			jrd_nod* node = *ptr;

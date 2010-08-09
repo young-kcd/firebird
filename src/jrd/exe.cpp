@@ -202,25 +202,25 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 }
 
 static void cleanup_rpb(thread_db*, record_param*);
-static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
+static const jrd_nod* erase(thread_db*, const jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_req::req_s);
 static void exec_sql(thread_db*, jrd_req*, DSC *);
-static void execute_procedure(thread_db*, jrd_nod*);
-static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
+static void execute_procedure(thread_db*, const jrd_nod*);
+static const jrd_nod* execute_statement(thread_db*, jrd_req*, const jrd_nod*);
 static void execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	jrd_req::req_ta, SSHORT);
-static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
+static void get_string(thread_db*, jrd_req*, const jrd_nod*, Firebird::string&);
 static void looper_seh(thread_db*, jrd_req*);
-static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
-static jrd_nod* receive_msg(thread_db*, jrd_nod*);
+static const jrd_nod* modify(thread_db*, const jrd_nod*, SSHORT);
+static const jrd_nod* receive_msg(thread_db*, const jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
 static void release_proc_save_points(jrd_req*);
-static jrd_nod* selct(thread_db*, jrd_nod*);
-static jrd_nod* stall(thread_db*, jrd_nod*);
-static jrd_nod* store(thread_db*, jrd_nod*, SSHORT);
+static const jrd_nod* selct(thread_db*, const jrd_nod*);
+static const jrd_nod* stall(thread_db*, const jrd_nod*);
+static const jrd_nod* store(thread_db*, const jrd_nod*, SSHORT);
 static bool test_and_fixup_error(thread_db*, const PsqlException*, jrd_req*);
 static void trigger_failure(thread_db*, jrd_req*);
-static void validate(thread_db*, jrd_nod*);
+static void validate(thread_db*, const jrd_nod*);
 inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
 	record_param*, jrd_req::req_ta);
 static void stuff_stack_trace(const jrd_req*);
@@ -234,7 +234,7 @@ const int POST_TRIG	= 2;
 const size_t MAX_STACK_TRACE = 2048;
 
 
-void EXE_assignment(thread_db* tdbb, jrd_nod* node)
+void EXE_assignment(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -263,8 +263,8 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* node)
 }
 
 
-void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null,
-	jrd_nod* missing_node, jrd_nod* missing2_node)
+void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool from_null,
+	const jrd_nod* missing_node, const jrd_nod* missing2_node)
 {
 /**************************************
  *
@@ -803,8 +803,9 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	if (!(request->req_flags & req_active))
 		ERR_post(Arg::Gds(isc_req_sync));
 
-	jrd_nod* message;
-	jrd_nod* node;
+	const jrd_nod* message;
+	const jrd_nod* node;
+
 	if (request->req_operation != jrd_req::req_receive)
 		ERR_post(Arg::Gds(isc_req_sync));
 	node = request->req_message;
@@ -829,7 +830,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 			break;
 		case nod_select:
 			{
-				jrd_nod** ptr = node->nod_arg;
+				const jrd_nod* const* ptr = node->nod_arg;
 				for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 				{
 					message = (*ptr)->nod_arg[e_send_message];
@@ -1190,7 +1191,7 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
 	tdbb->getTransaction()->tra_rpblist->PopRpb(rpb, rpblevel);
 }
 
-static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
+static const jrd_nod* erase(thread_db* tdbb, const jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -1388,7 +1389,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 }
 
 
-static void execute_procedure(thread_db* tdbb, jrd_nod* node)
+static void execute_procedure(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -1408,22 +1409,21 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 	jrd_req* request = tdbb->getRequest();
 
-	jrd_nod* temp = node->nod_arg[e_esp_inputs];
+	const jrd_nod* temp = node->nod_arg[e_esp_inputs];
 	if (temp)
 	{
-		jrd_nod** ptr;
-		jrd_nod** end;
+		const jrd_nod* const* ptr;
+		const jrd_nod* const* end;
+
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-		{
 			EXE_assignment(tdbb, *ptr);
-		}
 	}
 
 	const jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 
 	ULONG in_msg_length = 0;
 	UCHAR* in_msg = NULL;
-	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
+	const jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message)
 	{
 		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
@@ -1434,7 +1434,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	const Format* format = NULL;
 	ULONG out_msg_length = 0;
 	UCHAR* out_msg = NULL;
-	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
+	const jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message)
 	{
 		format = (Format*) out_message->nod_arg[e_msg_format];
@@ -1511,8 +1511,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	temp = node->nod_arg[e_esp_outputs];
 	if (temp)
 	{
-		jrd_nod** ptr;
-		jrd_nod** end;
+		const jrd_nod* const* ptr;
+		const jrd_nod* const* end;
 		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
 		{
 			EXE_assignment(tdbb, *ptr);
@@ -1525,7 +1525,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* node)
+static const jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, const jrd_nod* node)
 {
 	SET_TDBB(tdbb);
 	BLKCHK(node, type_nod);
@@ -1536,13 +1536,13 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	const int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
 	const int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
 
-	jrd_nod** node_inputs = inputs ?
+	const jrd_nod* const* node_inputs = inputs ?
 		node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs : NULL;
 
-	jrd_nod** node_outputs = outputs ?
+	const jrd_nod* const* node_outputs = outputs ?
 		node->nod_arg + e_exec_stmt_fixed_count + inputs : NULL;
 
-	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
+	const jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -1607,7 +1607,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 	if (request->req_operation == jrd_req::req_unwind)
 	{
-		jrd_nod* parent = node->nod_parent;
+		const jrd_nod* parent = node->nod_parent;
 		if (parent && parent->nod_type == nod_label &&
 			(request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label]) &&
 			(request->req_flags & req_continue_loop))
@@ -1757,7 +1757,7 @@ static void execute_triggers(thread_db* tdbb,
 }
 
 
-static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebird::string& str)
+static void get_string(thread_db* tdbb, jrd_req* request, const jrd_nod* node, Firebird::string& str)
 {
 	MoveBuffer buffer;
 	UCHAR* p = NULL;
@@ -1831,7 +1831,7 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
+const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_node)
 {
 /**************************************
  *
@@ -1847,8 +1847,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	SSHORT which_erase_trig = 0;
 	SSHORT which_sto_trig   = 0;
 	SSHORT which_mod_trig   = 0;
-	jrd_nod* top_node = 0;
-	jrd_nod* prev_node;
+	const jrd_nod* top_node = NULL;
+	const jrd_nod* prev_node;
 
 	jrd_tra* transaction = request->req_transaction;
 	if (!transaction) {
@@ -1881,7 +1881,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
 
-	jrd_nod* node = in_node;
+	const jrd_nod* node = in_node;
 
 	// Catch errors so we can unwind cleanly
 
@@ -2011,7 +2011,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_asn_list:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				jrd_nod** ptr = node->nod_arg;
+				const jrd_nod* const* ptr = node->nod_arg;
 				for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 				{
 					EXE_assignment(tdbb, *ptr);
@@ -2065,7 +2065,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				{
 					node = prev_node->nod_arg[e_erase_sub_erase];
 					fb_assert(node->nod_parent == prev_node);
-					node->nod_parent = prev_node;
+					///node->nod_parent = prev_node;
 				}
 				if (top_node == prev_node && which_erase_trig == POST_TRIG)
 				{
@@ -2118,7 +2118,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				const UCHAR op = (UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op];
 				const USHORT number = (USHORT) (IPTR) node->nod_arg[e_cursor_stmt_number];
 				fb_assert(number < request->req_cursors.getCount());
-				Cursor* const cursor = request->req_cursors[number];
+				const Cursor* const cursor = request->req_cursors[number];
 				bool fetched = false;
 
 				switch (op)
@@ -2315,16 +2315,16 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						}
 					}
 
-					jrd_nod* handlers = node->nod_arg[e_blk_handlers];
+					const jrd_nod* handlers = node->nod_arg[e_blk_handlers];
 					if (handlers)
 					{
 						node = node->nod_parent;
-						jrd_nod** ptr = handlers->nod_arg;
+						const jrd_nod* const* ptr = handlers->nod_arg;
 						for (const jrd_nod* const* const end = ptr + handlers->nod_count;
 							ptr < end; ptr++)
 						{
 							const PsqlException* xcp_node =
-								reinterpret_cast<PsqlException*>((*ptr)->nod_arg[e_err_conditions]);
+								reinterpret_cast<const PsqlException*>((*ptr)->nod_arg[e_err_conditions]);
 							if (test_and_fixup_error(tdbb, xcp_node, request))
 							{
 								request->req_operation = jrd_req::req_evaluate;
@@ -2509,7 +2509,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 			case jrd_req::req_unwind:
 			{
-				jrd_nod* parent = node->nod_parent;
+				const jrd_nod* parent = node->nod_parent;
 				if (parent && parent->nod_type == nod_label &&
 					(request->req_label == (USHORT)(IPTR) parent->nod_arg[e_lbl_label]) &&
 					(request->req_flags & req_continue_loop))
@@ -2547,7 +2547,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					{
 						node = prev_node->nod_arg[e_mod_sub_mod];
 						fb_assert(node->nod_parent == prev_node);
-						node->nod_parent = prev_node;
+						///node->nod_parent = prev_node;
 					}
 					if (top_node == prev_node && which_mod_trig == POST_TRIG)
 					{
@@ -2658,7 +2658,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					{
 						node = prev_node->nod_arg[e_sto_sub_store];
 						fb_assert(node->nod_parent == prev_node);
-						node->nod_parent = prev_node;
+						///node->nod_parent = prev_node;
 					}
 					if (top_node == prev_node && which_sto_trig == POST_TRIG)
 					{
@@ -2720,7 +2720,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					reinterpret_cast<const ItemInfo*>(node->nod_arg[e_init_var_info]);
 				if (itemInfo)
 				{
-					jrd_nod* var_node = node->nod_arg[e_init_var_variable];
+					const jrd_nod* var_node = node->nod_arg[e_init_var_variable];
 					DSC* to_desc = &request->getImpure<impure_value>(var_node->nod_impure)->vlu_desc;
 
 					to_desc->dsc_flags |= DSC_null;
@@ -2822,7 +2822,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	if (in_node->nod_type != nod_stmt_expr && !node)
 	{
 		// Close active cursors
-		for (Cursor* const* ptr = request->req_cursors.begin();
+		for (const Cursor* const* ptr = request->req_cursors.begin();
 			 ptr < request->req_cursors.end(); ++ptr)
 		{
 			if (*ptr)
@@ -2902,7 +2902,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request)
 }
 
 
-static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
+static const jrd_nod* modify(thread_db* tdbb, const jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -3146,7 +3146,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	return node->nod_arg[e_mod_statement];
 }
 
-static jrd_nod* receive_msg(thread_db* tdbb, jrd_nod* node)
+static const jrd_nod* receive_msg(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3284,7 +3284,7 @@ static void release_proc_save_points(jrd_req* request)
 }
 
 
-static jrd_nod* selct(thread_db* tdbb, jrd_nod* node)
+static const jrd_nod* selct(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3321,7 +3321,7 @@ static jrd_nod* selct(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static jrd_nod* stall(thread_db* tdbb, jrd_nod* node)
+static const jrd_nod* stall(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -3358,7 +3358,7 @@ static jrd_nod* stall(thread_db* tdbb, jrd_nod* node)
 }
 
 
-static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
+static const jrd_nod* store(thread_db* tdbb, const jrd_nod* node, SSHORT which_trig)
 {
 /**************************************
  *
@@ -3638,7 +3638,7 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 }
 
 
-static void validate(thread_db* tdbb, jrd_nod* list)
+static void validate(thread_db* tdbb, const jrd_nod* list)
 {
 /**************************************
  *
@@ -3654,7 +3654,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 	SET_TDBB(tdbb);
 	BLKCHK(list, type_nod);
 
-	jrd_nod** ptr1 = list->nod_arg;
+	const jrd_nod* const* ptr1 = list->nod_arg;
 	for (const jrd_nod* const* const end = ptr1 + list->nod_count; ptr1 < end; ptr1++)
 	{
 		jrd_req* request = tdbb->getRequest();
@@ -3664,7 +3664,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 			const char* value;
 			VaryStr<128> temp;
 
-			jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
+			const jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
 			const dsc* desc = EVL_expr(tdbb, node);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value,

@@ -553,7 +553,7 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	AvgAggNode* node = FB_NEW(*tdbb->getDefaultPool()) AvgAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
@@ -679,7 +679,7 @@ void ListAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 }
 
-ExprNode* ListAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* ListAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ListAggNode* node = FB_NEW(*tdbb->getDefaultPool()) ListAggNode(*tdbb->getDefaultPool(),
 		distinct);
@@ -805,7 +805,7 @@ void CountAggNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
 	desc->dsc_flags = 0;
 }
 
-ExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	CountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CountAggNode(*tdbb->getDefaultPool(),
 		distinct);
@@ -1040,7 +1040,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	ERR_post(Arg::Gds(isc_datype_notsup));	// data type not supported for arithmetic
 }
 
-ExprNode* SumAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* SumAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	SumAggNode* node = FB_NEW(*tdbb->getDefaultPool()) SumAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
@@ -1123,7 +1123,7 @@ void MaxMinAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	CMP_get_desc(tdbb, csb, arg, desc);
 }
 
-ExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	MaxMinAggNode* node = FB_NEW(*tdbb->getDefaultPool()) MaxMinAggNode(*tdbb->getDefaultPool(),
 		type);

@@ -57,7 +57,13 @@ ExprNode* ExprNode::fromLegacy(const dsql_nod* node)
 		reinterpret_cast<ExprNode*>(node->nod_arg[0]) : NULL;
 }
 
-ExprNode* ExprNode::fromLegacy(const jrd_nod* node)
+const ExprNode* ExprNode::fromLegacy(const jrd_nod* node)
+{
+	return node->nod_type == nod_class_exprnode_jrd ?
+		reinterpret_cast<const ExprNode*>(node->nod_arg[0]) : NULL;
+}
+
+ExprNode* ExprNode::fromLegacy(jrd_nod* node)
 {
 	return node->nod_type == nod_class_exprnode_jrd ?
 		reinterpret_cast<ExprNode*>(node->nod_arg[0]) : NULL;
@@ -111,14 +117,14 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (jrd_nod*** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		**i = CMP_pass1(tdbb, csb, **i);
 	return this;
 }
 
 ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (jrd_nod*** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		**i = CMP_pass2(tdbb, csb, **i, node);
 	return this;
 }
@@ -127,7 +133,7 @@ bool ExprNode::jrdVisit(JrdNodeVisitor& visitor)
 {
 	bool ret = false;
 
-	for (jrd_nod*** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NestConst<jrd_nod>** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		ret |= visitor.visit(**i);
 
 	return ret;
@@ -203,7 +209,7 @@ void ConcatenateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
 }
 
-ExprNode* ConcatenateNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* ConcatenateNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ConcatenateNode* node = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(*tdbb->getDefaultPool());
 	node->arg1 = copier.copy(tdbb, arg1);
@@ -591,7 +597,7 @@ void OverNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*des
 	fb_assert(false);
 }
 
-ExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
+ExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/)
 {
 	fb_assert(false);
 	return NULL;
@@ -687,7 +693,7 @@ void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* d
 	CMP_get_desc(tdbb, csb, escape, &tempDesc);
 }
 
-ExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	SubstringSimilarNode* node = FB_NEW(*tdbb->getDefaultPool()) SubstringSimilarNode(
 		*tdbb->getDefaultPool());
@@ -947,7 +953,7 @@ void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		delete *pArgs;
 }
 
-ExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	SysFuncCallNode* node = FB_NEW(*tdbb->getDefaultPool()) SysFuncCallNode(
 		*tdbb->getDefaultPool(), name);
@@ -1169,7 +1175,7 @@ void UdfCallNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* de
 		desc->clear();
 }
 
-ExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
+ExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	UdfCallNode* node = FB_NEW(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
 	node->args = copier.copy(tdbb, args);

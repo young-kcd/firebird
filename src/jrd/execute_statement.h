@@ -41,8 +41,8 @@ class ExecuteStatement
 {
 public:
 	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* desc);
-	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool singleton);
-	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** jrdVar);
+	void open(Jrd::thread_db* tdbb, const Jrd::jrd_nod* sql, SSHORT nVars, bool singleton);
+	bool fetch(Jrd::thread_db* tdbb, const Jrd::jrd_nod* const* jrdVar);
 	void close(Jrd::thread_db* tdbb);
 
 	static void getString(Jrd::thread_db* tdbb, Firebird::string& sql, const dsc* desc,

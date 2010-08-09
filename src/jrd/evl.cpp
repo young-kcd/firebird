@@ -137,12 +137,12 @@ static dsc* add_timestamp(const dsc*, const jrd_nod*, impure_value*);
 static dsc* binary_value(thread_db*, const jrd_nod*, impure_value*);
 static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
-static dsc* eval_statistical(thread_db*, jrd_nod*, impure_value*);
-static dsc* extract(thread_db*, jrd_nod*, impure_value*);
+static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
+static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
 static SINT64 get_day_fraction(const dsc* d);
-static dsc* get_mask(thread_db*, jrd_nod*, impure_value*);
+static dsc* get_mask(thread_db*, const jrd_nod*, impure_value*);
 static SINT64 get_timestamp_to_isc_ticks(const dsc* d);
-static dsc* lock_state(thread_db*, jrd_nod*, impure_value*);
+static dsc* lock_state(thread_db*, const jrd_nod*, impure_value*);
 static dsc* low_up_case(thread_db*, const dsc*, impure_value*,
 	ULONG (TextType::*tt_str_to_case)(ULONG, const UCHAR*, ULONG, UCHAR*));
 static dsc* multiply(const dsc*, impure_value*, const jrd_nod*);
@@ -150,13 +150,13 @@ static dsc* multiply2(const dsc*, impure_value*, const jrd_nod*);
 static dsc* divide2(const dsc*, impure_value*, const jrd_nod*);
 static dsc* negate_dsc(thread_db*, const dsc*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
-static dsc* scalar(thread_db*, jrd_nod*, impure_value*);
-static bool sleuth(thread_db*, jrd_nod*, const dsc*, const dsc*);
-static bool string_boolean(thread_db*, jrd_nod*, dsc*, dsc*, bool);
-static bool string_function(thread_db*, jrd_nod*, SLONG, const UCHAR*, SLONG, const UCHAR*, USHORT, bool);
-static dsc* string_length(thread_db*, jrd_nod*, impure_value*);
+static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
+static bool sleuth(thread_db*, const jrd_nod*, const dsc*, const dsc*);
+static bool string_boolean(thread_db*, const jrd_nod*, dsc*, dsc*, bool);
+static bool string_function(thread_db*, const jrd_nod*, SLONG, const UCHAR*, SLONG, const UCHAR*, USHORT, bool);
+static dsc* string_length(thread_db*, const jrd_nod*, impure_value*);
 static dsc* substring(thread_db*, impure_value*, dsc*, const dsc*, const dsc*);
-static dsc* trim(thread_db*, jrd_nod*, impure_value*);
+static dsc* trim(thread_db*, const jrd_nod*, impure_value*);
 static dsc* internal_info(thread_db*, const dsc*, impure_value*);
 
 
@@ -166,7 +166,7 @@ const SCHAR DIALECT_3_TIMESTAMP_SCALE	= -9;
 const SCHAR DIALECT_1_TIMESTAMP_SCALE	= 0;
 
 
-dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
+dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -179,9 +179,9 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
  *      destination node of an assignment.
  *
  **************************************/
-	dsc* desc;
-	Format* format;
-	jrd_nod* message;
+	const dsc* desc;
+	const Format* format;
+	const jrd_nod* message;
 	Record* record;
 
 	SET_TDBB(tdbb);
@@ -254,7 +254,7 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 }
 
 
-RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_and)
+RecordBitmap** EVL_bitmap(thread_db* tdbb, const jrd_nod* node, RecordBitmap* bitmap_and)
 {
 /**************************************
  *
@@ -294,8 +294,8 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 		{
 			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
 			BTR_evaluate(tdbb,
-						 reinterpret_cast<IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
-						 inv_bitmap, bitmap_and);
+				reinterpret_cast<const IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
+				inv_bitmap, bitmap_and);
 			return inv_bitmap;
 		}
 
@@ -327,7 +327,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 		{
 			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			BTR_evaluate(tdbb, reinterpret_cast<IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
+			BTR_evaluate(tdbb, reinterpret_cast<const IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
 				&impure->inv_bitmap, bitmap_and);
 			return &impure->inv_bitmap;
 		}
@@ -339,7 +339,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 }
 
 
-bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
+bool EVL_boolean(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -365,7 +365,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 	// evaluating argument and checking NULL flags
 
 	jrd_req* request = tdbb->getRequest();
-	jrd_nod** ptr = node->nod_arg;
+	const jrd_nod* const* ptr = node->nod_arg;
 
 	switch (node->nod_type)
 	{
@@ -595,7 +595,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
+			const RecordSource* const rsb = reinterpret_cast<const RecordSource*>(node->nod_arg[e_any_rsb]);
 			rsb->open(tdbb);
 			value = rsb->getRecord(tdbb);
 			rsb->close(tdbb);
@@ -710,7 +710,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 				}
 			}
 
-			RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_any_rsb]);
+			const RecordSource* const rsb =
+				reinterpret_cast<const RecordSource*>(node->nod_arg[e_any_rsb]);
 			rsb->open(tdbb);
 
 			value = rsb->getRecord(tdbb);
@@ -764,7 +765,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 }
 
 
-dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
+dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
  *
@@ -796,7 +797,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	{
 	case nod_class_exprnode_jrd:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			const ExprNode* exprNode = reinterpret_cast<const ExprNode*>(node->nod_arg[0]);
 			dsc* desc = exprNode->execute(tdbb, request);
 
 			if (desc)
@@ -1115,7 +1116,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	{
 		fb_assert(node->nod_count <= 3);
 		dsc** v = values;
-		jrd_nod** ptr = node->nod_arg;
+		const jrd_nod* const* ptr = node->nod_arg;
 		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end;)
 		{
 			*v++ = EVL_expr(tdbb, *ptr++);
@@ -2374,7 +2375,7 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 }
 
 
-static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -2428,7 +2429,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 	}
 
-	RecordSource* const rsb = reinterpret_cast<RecordSource*>(node->nod_arg[e_stat_rsb]);
+	const RecordSource* const rsb = reinterpret_cast<const RecordSource*>(node->nod_arg[e_stat_rsb]);
 	rsb->open(tdbb);
 
 	SLONG count = 0;
@@ -2588,7 +2589,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 // e x t r a c t
 // *************
 // Handles EXTRACT(part FROM date/time/timestamp)
-static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* extract(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 	SET_TDBB(tdbb);
 
@@ -2814,7 +2815,7 @@ static SINT64 get_day_fraction(const dsc* d)
 
 
 
-static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* get_mask(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -2892,7 +2893,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 }
 
 
-static dsc* lock_state(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* lock_state(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3511,7 +3512,7 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 }
 
 
-static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* scalar(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
@@ -3536,13 +3537,13 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	if (desc->dsc_dtype != dtype_array)
 		IBERROR(261);			// msg 261 scalar operator used on field which is not an array
 
-	jrd_nod* list = node->nod_arg[e_scl_subscripts];
+	const jrd_nod* list = node->nod_arg[e_scl_subscripts];
 	if (list->nod_count > MAX_ARRAY_DIMENSIONS)
 		ERR_post(Arg::Gds(isc_array_max_dimensions) << Arg::Num(MAX_ARRAY_DIMENSIONS));
 
 	SLONG subscripts[MAX_ARRAY_DIMENSIONS];
 	int iter = 0;
-	jrd_nod** ptr = list->nod_arg;
+	const jrd_nod* const* ptr = list->nod_arg;
 	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
 	{
 		const dsc* temp = EVL_expr(tdbb, *ptr++);
@@ -3565,7 +3566,7 @@ static dsc* scalar(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 }
 
 
-static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* desc2)
+static bool sleuth(thread_db* tdbb, const jrd_nod* node, const dsc* desc1, const dsc* desc2)
 {
 /**************************************
  *
@@ -3649,7 +3650,7 @@ static bool sleuth(thread_db* tdbb, jrd_nod* node, const dsc* desc1, const dsc* 
 }
 
 
-static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
+static bool string_boolean(thread_db* tdbb, const jrd_nod* node, dsc* desc1,
 							 dsc* desc2, bool computed_invariant)
 {
 /**************************************
@@ -3895,7 +3896,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 
 static bool string_function(thread_db* tdbb,
-							jrd_nod* node,
+							const jrd_nod* node,
 							SLONG l1, const UCHAR* p1,
 							SLONG l2, const UCHAR* p2,
 							USHORT ttype, bool computed_invariant)
@@ -4049,7 +4050,7 @@ static bool string_function(thread_db* tdbb,
 // s t r i n g _ l e n g t h
 // *************************
 // Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
-static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* string_length(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 	SET_TDBB(tdbb);
 
@@ -4186,7 +4187,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 }
 
 
-static dsc* trim(thread_db* tdbb, jrd_nod* node, impure_value* impure)
+static dsc* trim(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
  *
