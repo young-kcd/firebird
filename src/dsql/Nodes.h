@@ -28,7 +28,7 @@
 #include "../dsql/node.h"
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
-#include "../common/classes/ByteChunk.h"
+//#include "../common/classes/ByteChunk.h"
 
 namespace Jrd {
 
@@ -145,15 +145,15 @@ protected:
 	{
 		if (create && alter)
 			return createOrAlterCode;
-		else if (create)
+
+		if (create)
 			return createCode;
-		else if (alter)
+
+		if (alter)
 			return alterCode;
-		else
-		{
-			fb_assert(false);
-			return 0;
-		}
+
+		fb_assert(false);
+		return 0;
 	}
 
 	void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,

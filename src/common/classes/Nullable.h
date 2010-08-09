@@ -28,7 +28,7 @@
 #include "../common/classes/MetaName.h"
 
 
-// Auxiliary template to build a empty value.
+// Auxiliary template to build an empty value.
 template <typename T>	// Generic NullableClear
 class NullableClear
 {

@@ -127,7 +127,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& /*nodes*/) const
 	{
 		text.printf("RecreateNode\n");
 	}
@@ -439,7 +439,7 @@ typedef RecreateNode<CreateAlterProcedureNode, DropProcedureNode, isc_dsql_recre
 class TriggerDefinition
 {
 public:
-	TriggerDefinition(MemoryPool& p)
+	explicit TriggerDefinition(MemoryPool& p)
 		: name(p),
 		  relationName(p),
 		  external(NULL),
@@ -453,11 +453,11 @@ public:
 	bool modify(thread_db* tdbb, jrd_tra* transaction);
 
 protected:
-	virtual void preModify(thread_db* tdbb, jrd_tra* transaction)
+	virtual void preModify(thread_db* /*tdbb*/, jrd_tra* /*transaction*/)
 	{
 	}
 
-	virtual void postModify(thread_db* tdbb, jrd_tra* transaction)
+	virtual void postModify(thread_db* /*tdbb*/, jrd_tra* /*transaction*/)
 	{
 	}
 
@@ -892,7 +892,7 @@ public:
 	class FieldDefinition
 	{
 	public:
-		FieldDefinition(MemoryPool& p)
+		explicit FieldDefinition(MemoryPool& p)
 			: name(p),
 			  relationName(p),
 			  fieldSource(p),
@@ -927,7 +927,7 @@ public:
 		class BlrWriter : public Jrd::BlrWriter
 		{
 		public:
-			BlrWriter(MemoryPool& p)
+			explicit BlrWriter(MemoryPool& p)
 				: Jrd::BlrWriter(p),
 				  dsqlScratch(NULL)
 			{
@@ -956,7 +956,7 @@ public:
 			DsqlCompilerScratch* dsqlScratch;
 		};
 
-		Constraint(MemoryPool& p)
+		explicit Constraint(MemoryPool& p)
 			: PermanentStorage(p),
 			  type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
 			  name(p),
@@ -1017,7 +1017,7 @@ protected:
 	void generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate, BlrWriter& blrWriter);
 	void stuffDefaultBlr(const Firebird::ByteChunk& defaultBlr, BlrWriter& blrWriter);
 	void stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter);
-	void stuffTriggerFiringCondition(Constraint& constraint, BlrWriter& blrWriter);
+	void stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter);
 
 public:
 	dsql_nod* dsqlNode;
@@ -1200,7 +1200,7 @@ public:
 	};
 
 	static void store(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
-		Definition& definition, Firebird::MetaName* referredIndexName = NULL);
+		const Definition& definition, Firebird::MetaName* referredIndexName = NULL);
 };
 
 

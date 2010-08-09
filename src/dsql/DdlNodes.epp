@@ -388,9 +388,7 @@ static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 	// the field, subtract 1 to move the fields to their new positions otherwise,
 	// increase the value in RDB$FIELD_POSITION by one.
 
-	bool moveDown = false;
-	if (existingPosition < newPosition)
-		moveDown = true;
+	const bool moveDown = (existingPosition < newPosition);
 
 	// Retrieve the records for the fields which have a position between the
 	// existing field position and the new field position.
@@ -836,7 +834,7 @@ void TypeClause::resolve(DsqlCompilerScratch* dsqlScratch, bool modifying)
 	setup(dsqlScratch);
 }
 
-void TypeClause::setup(DsqlCompilerScratch* dsqlScratch)
+void TypeClause::setup(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	type = legacyField->fld_dtype;
 	length = legacyField->fld_length;
@@ -4591,7 +4589,7 @@ bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, co
 
 void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = transaction->tra_attachment;
+	//Attachment* attachment = transaction->tra_attachment;
 
 	AutoRequest request;
 
@@ -4869,6 +4867,8 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	}
 	END_FOR
 
+	// Delete de automatically created generator for Identity columns.
+
 	request.reset(tdbb, drq_e_lfield, DYN_REQUESTS);
 
 	found = false;
@@ -4939,7 +4939,7 @@ void RelationNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction)
 void RelationNode::defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
 	SSHORT position, const dsql_nod* pkCols)
 {
-	Attachment* attachment = transaction->tra_attachment;
+	//Attachment* attachment = transaction->tra_attachment;
 	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_dfl_field];
 
 	// Add the field to the relation being defined for parsing purposes.
@@ -5207,7 +5207,7 @@ void RelationNode::defineComputed(thread_db* tdbb, dsql_fld* field, dsql_nod* no
 }
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
-bool RelationNode::defineDefault(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
+bool RelationNode::defineDefault(thread_db* tdbb, dsql_fld* /*field*/, dsql_nod* node,
 	string& source, BlrWriter::BlrData& value)
 {
 	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_dft_default]);
@@ -5496,7 +5496,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, jrd_tra* transaction, Const
 				fb_assert(false);
 		}
 
-		// These constraints requires creation of an index.
+		// These constraints require creation of an index.
 		switch (constraint.type)
 		{
 			case Constraint::TYPE_PK:
@@ -6102,7 +6102,7 @@ void RelationNode::stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter
 
 // Generate blr to express: if (old.primary_key != new.primary_key).
 // Do a column by column comparison.
-void RelationNode::stuffTriggerFiringCondition(Constraint& constraint, BlrWriter& blrWriter)
+void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter)
 {
 	blrWriter.appendUChar(blr_if);
 
@@ -6140,7 +6140,7 @@ void CreateRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void CreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = transaction->tra_attachment;
+	//Attachment* attachment = transaction->tra_attachment;
 
 	saveRelation(tdbb, dsqlScratch, name, false, true);
 
@@ -6280,7 +6280,7 @@ void AlterRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void AlterRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	Attachment* attachment = transaction->tra_attachment;
+	//Attachment* attachment = transaction->tra_attachment;
 
 	saveRelation(tdbb, dsqlScratch, name, false, false);
 
@@ -6566,7 +6566,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, jrd_tra* transaction, const
 {
 	Attachment* attachment = transaction->tra_attachment;
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	//DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_mod_fld_type_field];
 
 	// Add the field to the relation being defined for parsing purposes.
@@ -6634,11 +6634,11 @@ void AlterRelationNode::modifyField(thread_db* tdbb, jrd_tra* transaction, const
 			origDom.dyn_fld_source = RFR.RDB$FIELD_SOURCE;
 
 			// If the original field type is an array, force its blr type to blr_blob.
-			bool hasDimensions = FLD.RDB$DIMENSIONS != 0;
+			const bool hasDimensions = FLD.RDB$DIMENSIONS != 0;
 			if (hasDimensions)
 				origDom.dyn_dtype = blr_blob;
 
-			bool wasInternalDomain = fb_utils::implicit_domain(origDom.dyn_fld_source.c_str()) &&
+			const bool wasInternalDomain = fb_utils::implicit_domain(origDom.dyn_fld_source.c_str()) &&
 				RFR.RDB$BASE_FIELD.NULL;
 			string computedSource;
 			BlrWriter::BlrData computedValue;
@@ -7730,7 +7730,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, jrd_tra* transaction)
 }
 
 // Generate triggers to implement the WITH CHECK OPTION clause for a VIEW.
-void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, jrd_tra* transaction, dsql_nod* items)
+void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, jrd_tra* /*transaction*/, dsql_nod* items)
 {
 	// Specify that the trigger should abort if the condition is not met.
 	dsql_nod* actionNode = MAKE_node(Dsql::nod_list, 1);
@@ -8070,9 +8070,9 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 
 // Store an index.
 void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
-	Definition& definition, MetaName* referredIndexName)
+	const Definition& definition, MetaName* referredIndexName)
 {
-	Attachment* attachment = transaction->tra_attachment;
+	//Attachment* attachment = transaction->tra_attachment;
 
 	if (name.isEmpty())
 		DYN_UTIL_generate_index_name(tdbb, transaction, name, definition.type);
