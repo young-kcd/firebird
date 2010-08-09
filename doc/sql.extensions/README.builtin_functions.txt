@@ -284,7 +284,7 @@ Notes:
     3) All timestamp_part values could be used with timestamp values.
 
 Example:
-    select dateadd(-1 day for current_date) as yesterday
+    select dateadd(-1 day to current_date) as yesterday
 	    from rdb$database;
 
 
