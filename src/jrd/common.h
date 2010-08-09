@@ -182,6 +182,16 @@
 #define RISC_ALIGNMENT
 #endif /* sheb */
 
+#ifdef HPPA
+#define FB_CPU CpuHppa
+#define RISC_ALIGNMENT
+#endif /* hppa */
+
+#ifdef ALPHA
+#define FB_CPU CpuAlpha
+#define RISC_ALIGNMENT
+#endif
+
 #endif /* LINUX */
 
 
