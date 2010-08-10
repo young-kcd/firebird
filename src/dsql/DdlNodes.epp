@@ -4077,10 +4077,10 @@ void AlterDomainNode::execute(thread_db* tdbb, jrd_tra* transaction)
 					dsqlScratch->getBlrData());
 			}
 
-			if (nullFlag.specified)
+			if (notNullFlag.specified)
 			{
 				FLD.RDB$NULL_FLAG.NULL = FALSE;
-				FLD.RDB$NULL_FLAG = nullFlag.value ? 0 : 1;
+				FLD.RDB$NULL_FLAG = notNullFlag.value;
 			}
 
 			if (type)

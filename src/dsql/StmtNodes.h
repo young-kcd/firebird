@@ -171,7 +171,7 @@ public:
 	dsql_nod* dsqlParameters;
 	NestConst<jrd_nod> messageExpr;
 	NestConst<jrd_nod> parameters;
-	PsqlException* exception;
+	NestConst<PsqlException> exception;
 };
 
 

@@ -748,7 +748,7 @@ public:
 	dsql_nod* setDefault;
 	Firebird::MetaName renameTo;
 	Firebird::AutoPtr<TypeClause> type;
-	Nullable<bool> nullFlag;	// true = NULL / false = NOT NULL
+	Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
 };
 
 
@@ -911,7 +911,7 @@ public:
 		Firebird::MetaName fieldSource;
 		Firebird::MetaName identitySequence;
 		Nullable<USHORT> collationId;
-		Nullable<bool> notNullFlag;
+		Nullable<bool> notNullFlag;	// true = NOT NULL / false = NULL
 		Nullable<USHORT> position;
 		Firebird::string defaultSource;
 		Firebird::ByteChunk defaultValue;
