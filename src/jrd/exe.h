@@ -160,7 +160,7 @@ public:
 	NestConst<jrd_nod>	rse_projection;
 	NestConst<jrd_nod>	rse_aggregate;	// singleton aggregate for optimizing to index
 	NestConst<jrd_nod>	rse_plan;		// user-specified access plan
-	VarInvariantArray *rse_invariants; // Invariant nodes bound to top-level RSE
+	VarInvariantArray*	rse_invariants; // Invariant nodes bound to top-level RSE
 	jrd_nod*	rse_relation[1];
 };
 

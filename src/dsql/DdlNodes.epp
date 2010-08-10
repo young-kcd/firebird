@@ -4589,8 +4589,6 @@ bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, co
 
 void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = transaction->tra_attachment;
-
 	AutoRequest request;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
@@ -4867,7 +4865,7 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 	}
 	END_FOR
 
-	// Delete de automatically created generator for Identity columns.
+	// Delete the automatically created generator for Identity columns.
 
 	request.reset(tdbb, drq_e_lfield, DYN_REQUESTS);
 
@@ -4939,7 +4937,6 @@ void RelationNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction)
 void RelationNode::defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
 	SSHORT position, const dsql_nod* pkCols)
 {
-	//Attachment* attachment = transaction->tra_attachment;
 	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_dfl_field];
 
 	// Add the field to the relation being defined for parsing purposes.
@@ -6140,8 +6137,6 @@ void CreateRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void CreateRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = transaction->tra_attachment;
-
 	saveRelation(tdbb, dsqlScratch, name, false, true);
 
 	if (externalFile)
@@ -6280,8 +6275,6 @@ void AlterRelationNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void AlterRelationNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	//Attachment* attachment = transaction->tra_attachment;
-
 	saveRelation(tdbb, dsqlScratch, name, false, false);
 
 	if (!dsqlScratch->relation)
@@ -6566,7 +6559,6 @@ void AlterRelationNode::modifyField(thread_db* tdbb, jrd_tra* transaction, const
 {
 	Attachment* attachment = transaction->tra_attachment;
 
-	//DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 	dsql_fld* field = (dsql_fld*) element->nod_arg[Dsql::e_mod_fld_type_field];
 
 	// Add the field to the relation being defined for parsing purposes.
@@ -8072,8 +8064,6 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& name,
 	const Definition& definition, MetaName* referredIndexName)
 {
-	//Attachment* attachment = transaction->tra_attachment;
-
 	if (name.isEmpty())
 		DYN_UTIL_generate_index_name(tdbb, transaction, name, definition.type);
 
