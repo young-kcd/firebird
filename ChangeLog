@@ -1,3 +1,100 @@
+ 2010-08-10 00:37  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/btr.cpp
+   M src/jrd/exe.h
+Misc
+
+ 2010-08-09 16:06  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/WinNodes.cpp
+   M src/jrd/Optimizer.cpp
+Correct double indirection (jrd_nod**) so const cascades to every dereference
+
+ 2010-08-09 15:48  asfernandes 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/common_classic.vcxproj
+   M builds/win32/msvc10/common_classic.vcxproj.filters
+   M builds/win32/msvc10/common_static.vcxproj
+   M builds/win32/msvc10/common_static.vcxproj.filters
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/common_classic.vcproj
+   M builds/win32/msvc8/common_static.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/common_classic.vcproj
+   M builds/win32/msvc9/common_static.vcproj
+   A src/common/classes/NestConst.h
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/SysFunction.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb_proto.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/exe_proto.h
+   M src/jrd/execute_statement.cpp
+   M src/jrd/execute_statement.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/fun.epp
+   M src/jrd/fun_proto.h
+   M src/jrd/met.epp
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/Cursor.cpp
+   M src/jrd/recsrc/Cursor.h
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/trace/TraceJrdHelpers.h
+Const correction for EVL, EXE and they subsystems. Adjustments to CMP and OPT.
+
+ 2010-08-09 14:50  dimitr 
+   M doc/sql.extensions/README.builtin_functions.txt
+CORE-3102 (minor documentation mistake)
+
+ 2010-08-09 13:56  alexpeshkoff 
+   M configure.in
+   M src/common/classes/DbImplementation.cpp
+   M src/jrd/common.h
+Damian's patch for additional CPUs under linux
+
+ 2010-08-09 11:50  robocop 
+   M src/common/classes/Nullable.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Nodes.h
+   M src/msgs/facilities2.sql
+Misc.
+
  2010-08-07 21:18  hvlad 
    M src/common/classes/ClumpletReader.cpp
    M src/jrd/extds/ExtDS.cpp
