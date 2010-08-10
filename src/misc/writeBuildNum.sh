@@ -96,12 +96,12 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=28557
+BuildNum = $BuildNum
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 
-PackageVersion=$FIREBIRD_PACKAGE_VERSION
-FirebirdVersion=$FIREBIRD_VERSION
+PackageVersion = $FIREBIRD_PACKAGE_VERSION
+FirebirdVersion = $FIREBIRD_VERSION
 eof
 
 }
