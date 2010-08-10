@@ -162,7 +162,6 @@ static void float_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void integer_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
 							   FPTR_ERROR);
-static double power_of_ten(const int);
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
@@ -450,9 +449,9 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
  	    do value *= 10.; while (++scale);
 */
 			if (scale > 0)
-				value /= power_of_ten(scale);
+				value /= CVT_power_of_ten(scale);
 			else if (scale < 0)
-				value *= power_of_ten(-scale);
+				value *= CVT_power_of_ten(-scale);
 		}
 		return value;
 
@@ -483,9 +482,9 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 		(*err) (isc_arith_except, isc_arg_end);
 
 	if (dscale > 0)
-		value *= power_of_ten(dscale);
+		value *= CVT_power_of_ten(dscale);
 	else if (dscale < 0)
-		value /= power_of_ten(-dscale);
+		value /= CVT_power_of_ten(-dscale);
 
 	return value;
 }
@@ -589,9 +588,9 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		}
 #endif
 		if (scale > 0)
-			d /= power_of_ten(scale);
+			d /= CVT_power_of_ten(scale);
 		else if (scale < 0)
-			d *= power_of_ten(-scale);
+			d *= CVT_power_of_ten(-scale);
 
 		if (d > 0)
 			d += 0.5 + eps;
@@ -999,9 +998,9 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		}
 #endif
 		if (scale > 0)
-			d /= power_of_ten(scale);
+			d /= CVT_power_of_ten(scale);
 		else if (scale < 0)
-			d *= power_of_ten(-scale);
+			d *= CVT_power_of_ten(-scale);
 
 		if (d > 0)
 			d += 0.5 + eps;
@@ -1278,6 +1277,56 @@ USHORT CVT_make_string(const dsc*          desc,
 	*address = temp->vary_string;
 
 	return temp->vary_length;
+}
+
+
+double CVT_power_of_ten(const int scale)
+{
+/*************************************
+ *
+ *      p o w e r _ o f _ t e n
+ *
+ *************************************
+ *
+ * Functional description
+ *      return 10.0 raised to the scale power for 0 <= scale < 320.
+ *
+ *************************************/
+
+	/* Note that we could speed things up slightly by making the auxiliary
+	 * arrays global to this source module and replacing this function with
+	 * a macro, but the old code did up to 308 multiplies to our 1, and
+	 * that seems enough of a speed-up for now.
+	 */
+
+	static const double upper_part[] =
+		{ 1.e000, 1.e032, 1.e064, 1.e096, 1.e128,
+		1.e160, 1.e192, 1.e224, 1.e256, 1.e288
+	};
+
+	static const double lower_part[] =
+		{ 1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05,
+		1.e06, 1.e07, 1.e08, 1.e09, 1.e10, 1.e11,
+		1.e12, 1.e13, 1.e14, 1.e15, 1.e16, 1.e17,
+		1.e18, 1.e19, 1.e20, 1.e21, 1.e22, 1.e23,
+		1.e24, 1.e25, 1.e26, 1.e27, 1.e28, 1.e29,
+		1.e30, 1.e31
+	};
+
+	/* The sole caller of this function checks for scale <= 308 before calling,
+	 * but we just fb_assert the weakest precondition which lets the code work.
+	 * If the size of the exponent field, and thus the scaling, of doubles
+	 * gets bigger, increase the size of the upper_part array.
+	 */
+	fb_assert((scale >= 0) && (scale < 320));
+
+	/* Note that "scale >> 5" is another way of writing "scale / 32",
+	 * while "scale & 0x1f" is another way of writing "scale % 32".
+	 * We split the scale into the lower 5 bits and everything else,
+	 * then use the "everything else" to index into the upper_part array,
+	 * whose contents increase in steps of 1e32.
+	 */
+	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
 }
 
 
@@ -2745,54 +2794,3 @@ static void string_to_datetime(
 
 	date->timestamp_time += components[6];
 }
-
-
-double power_of_ten(const int scale)
-{
-/*************************************
- *
- *      p o w e r _ o f _ t e n
- *
- *************************************
- *
- * Functional description
- *      return 10.0 raised to the scale power for 0 <= scale < 320.
- *
- *************************************/
-
-	/* Note that we could speed things up slightly by making the auxiliary
-	 * arrays global to this source module and replacing this function with
-	 * a macro, but the old code did up to 308 multiplies to our 1, and
-	 * that seems enough of a speed-up for now.
-	 */
-
-	static const double upper_part[] =
-		{ 1.e000, 1.e032, 1.e064, 1.e096, 1.e128,
-		1.e160, 1.e192, 1.e224, 1.e256, 1.e288
-	};
-
-	static const double lower_part[] =
-		{ 1.e00, 1.e01, 1.e02, 1.e03, 1.e04, 1.e05,
-		1.e06, 1.e07, 1.e08, 1.e09, 1.e10, 1.e11,
-		1.e12, 1.e13, 1.e14, 1.e15, 1.e16, 1.e17,
-		1.e18, 1.e19, 1.e20, 1.e21, 1.e22, 1.e23,
-		1.e24, 1.e25, 1.e26, 1.e27, 1.e28, 1.e29,
-		1.e30, 1.e31
-	};
-
-	/* The sole caller of this function checks for scale <= 308 before calling,
-	 * but we just fb_assert the weakest precondition which lets the code work.
-	 * If the size of the exponent field, and thus the scaling, of doubles
-	 * gets bigger, increase the size of the upper_part array.
-	 */
-	fb_assert((scale >= 0) && (scale < 320));
-
-	/* Note that "scale >> 5" is another way of writing "scale / 32",
-	 * while "scale & 0x1f" is another way of writing "scale % 32".
-	 * We split the scale into the lower 5 bits and everything else,
-	 * then use the "everything else" to index into the upper_part array,
-	 * whose contents increase in steps of 1e32.
-	 */
-	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
-}
-
