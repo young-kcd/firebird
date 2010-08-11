@@ -1,3 +1,36 @@
+ 2010-08-11 02:59  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+   M src/jrd/nod.h
+   M src/jrd/par.cpp
+Better internal handling of dependencies
+
+ 2010-08-10 15:20  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/StmtNodes.h
+   M src/dsql/parse.y
+Misc
+
+ 2010-08-10 11:08  alexpeshkoff 
+   A mkChangeLog.sh
+BuildNum and ChangeLog generator
+
+ 2010-08-10 10:42  alexpeshkoff 
+   M src/misc/writeBuildNum.sh
+misc
+
+ 2010-08-10 07:49  alexpeshkoff 
+   M ChangeLog
+rolled back test change
+
+ 2010-08-10 07:31  firebirds 
+   M ChangeLog
+nightly update - test commit, please ignore
+
  2010-08-10 00:37  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/jrd/btr.cpp
