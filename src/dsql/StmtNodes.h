@@ -222,8 +222,8 @@ public:
 
 	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
 	{
-		rsePtr = (RecordSelExpr*)(jrd_nod*) rse;
-		cursorPtr = &cursor;
+		rsePtr = reinterpret_cast<RecordSelExpr*>(static_cast<jrd_nod*>(rse));
+		cursorPtr = cursor.getAddress();
 	}
 
 	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
@@ -238,7 +238,7 @@ public:
 	NestConst<jrd_nod> stall;
 	NestConst<jrd_nod> rse;
 	NestConst<jrd_nod> statement;
-	Cursor* cursor;
+	NestConst<Cursor> cursor;
 };
 
 

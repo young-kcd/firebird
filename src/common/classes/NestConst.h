@@ -39,6 +39,9 @@ public:
 		return *this;
 	}
 
+	T** getAddress() { return &ptr; }
+	const T* const* getAddress() const { return &ptr; }
+
 	operator T*() { return ptr; }
 	operator const T*() const { return ptr; }
 
