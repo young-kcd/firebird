@@ -46,7 +46,10 @@ int main(int ac, char** av)
 	const char* branch = NULL;
 	if (av[1])
 	{
-		sprintf(buf, "A %s (from", av[1]);
+		strcpy(s, av[1]);
+		if (s[strlen(s) - 1] == '/')
+		    s[strlen(s) - 1] = '\0';
+		sprintf(buf, "A %s (from", s);
 		branch = buf;
 	}
 
