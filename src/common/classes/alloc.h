@@ -279,7 +279,7 @@ private:
 	/* Returns NULL in case it cannot allocate requested chunk */
 	static void* external_alloc(size_t &size);
 
-	static void external_free(void* blk, size_t &size, bool pool_destroying);
+	static void external_free(void* blk, size_t &size, bool pool_destroying, bool use_cache = true);
 
 	void* tree_alloc(size_t size);
 

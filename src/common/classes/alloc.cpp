@@ -299,8 +299,14 @@ void MemoryPool::cleanup()
 	default_stats_group = 0;
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
+	while (extents_cache.getCount())
+	{
+		size_t extent_size = OS_EXTENT_SIZE;
+		external_free(extents_cache.pop(), extent_size, false, false);
+	}
+
 	cache_mutex->~Mutex();
-#endif
+# endif
 }
 
 void MemoryPool::setStatsGroup(MemoryStats& statsL)
@@ -408,7 +414,7 @@ void* MemoryPool::external_alloc(size_t& size)
 	return result;
 }
 
-void MemoryPool::external_free(void* blk, size_t& size, bool pool_destroying)
+void MemoryPool::external_free(void* blk, size_t& size, bool pool_destroying, bool /*use_cache*/)
 {
 	// Set access protection for block to prevent memory from deleted pool being accessed
 	int handle = VALGRIND_MAKE_NOACCESS(blk, size);
@@ -537,10 +543,10 @@ void* MemoryPool::external_alloc(size_t& size)
 # endif
 }
 
-void MemoryPool::external_free(void* blk, size_t& size, bool /*pool_destroying*/)
+void MemoryPool::external_free(void* blk, size_t& size, bool /*pool_destroying*/, bool use_cache)
 {
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
-	if (size == OS_EXTENT_SIZE) {
+	if (use_cache && size == OS_EXTENT_SIZE) {
 		MutexLockGuard guard(*cache_mutex);
 		if (extents_cache.getCount() < extents_cache.getCapacity()) {
 			extents_cache.add(blk);
