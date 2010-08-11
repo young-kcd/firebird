@@ -984,11 +984,10 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 					PAR_name(csb, node->name);
 					if (!(item.xcp_code = MET_lookup_exception_number(tdbb, node->name)))
 						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(node->name));
-					jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-					dep_node->nod_type = nod_dependency;
-					dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-					dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-					csb->csb_dependencies.push(dep_node);
+
+					CompilerScratch::Dependency dependency(obj_exception);
+					dependency.number = item.xcp_code;
+					csb->csb_dependencies.push(dependency);
 				}
 				break;
 

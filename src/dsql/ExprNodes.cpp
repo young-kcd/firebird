@@ -1102,15 +1102,13 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	node->args = node->function->parseArgs(tdbb, csb);
 
-    // CVC: I will track ufds only if a proc is not being dropped.
-    if (csb->csb_g_flags & csb_get_dependencies)
-    {
-        jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-        dep_node->nod_type = nod_dependency;
-        dep_node->nod_arg [e_dep_object] = (jrd_nod*) node->function;
-        dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_udf;
-        csb->csb_dependencies.push(dep_node);
-    }
+	// CVC: I will track ufds only if a proc is not being dropped.
+	if (csb->csb_g_flags & csb_get_dependencies)
+	{
+		CompilerScratch::Dependency dependency(obj_udf);
+		dependency.function = node->function;
+		csb->csb_dependencies.push(dependency);
+	}
 
 	return node;
 }

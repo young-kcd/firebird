@@ -396,11 +396,9 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 				}
 			}
 
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) name;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_field;
-			csb->csb_dependencies.push(dep_node);
+			CompilerScratch::Dependency dependency(obj_field);
+			dependency.name = name;
+			csb->csb_dependencies.push(dependency);
 
 			break;
 		}
@@ -459,16 +457,10 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 				}
 			}
 
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) MET_lookup_relation(tdbb, *relationName);
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
-
-			dep_node->nod_arg[e_dep_field] = PAR_make_node(tdbb, 1);
-			dep_node->nod_arg[e_dep_field]->nod_type = nod_literal;
-			dep_node->nod_arg[e_dep_field]->nod_arg[0] = (jrd_nod*) fieldName->c_str();
-
-			csb->csb_dependencies.push(dep_node);
+			CompilerScratch::Dependency dependency(obj_relation);
+			dependency.relation = MET_lookup_relation(tdbb, *relationName);
+			dependency.subName = fieldName;
+			csb->csb_dependencies.push(dependency);
 
 			break;
 		}
@@ -479,11 +471,9 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 
 	if (desc->getTextType() != CS_NONE)
 	{
-		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
-		dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
-		csb->csb_dependencies.push(dep_node);
+		CompilerScratch::Dependency dependency(obj_collation);
+		dependency.number = INTL_TEXT_TYPE(*desc);
+		csb->csb_dependencies.push(dependency);
 	}
 
 	if (itemInfo)
@@ -887,11 +877,9 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 
 	if (itemInfo.explicitCollation)
 	{
-		jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
-		dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
-		csb->csb_dependencies.push(dep_node);
+		CompilerScratch::Dependency dependency(obj_collation);
+		dependency.number = INTL_TEXT_TYPE(*desc);
+		csb->csb_dependencies.push(dependency);
 	}
 
 	return node;
@@ -951,11 +939,10 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				PAR_name(csb, name);
 				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-				jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-				dep_node->nod_type = nod_dependency;
-				dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-				dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-				csb->csb_dependencies.push(dep_node);
+
+				CompilerScratch::Dependency dependency(obj_exception);
+				dependency.number = item.xcp_code;
+				csb->csb_dependencies.push(dependency);
 			}
 			break;
 
@@ -1039,40 +1026,30 @@ static void par_dependency(thread_db*   tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = PAR_make_node(tdbb, e_dep_length);
-	node->nod_type = nod_dependency;
+	CompilerScratch::Dependency dependency(0);
+
 	if (csb->csb_rpt[stream].csb_relation)
 	{
-		node->nod_arg[e_dep_object] = (jrd_nod*) csb->csb_rpt[stream].csb_relation;
+		dependency.relation = csb->csb_rpt[stream].csb_relation;
 		// How do I determine reliably this is a view?
 		// At this time, rel_view_rse is still null.
 		//if (is_view)
-		//	node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_view;
+		//	dependency.objType = obj_view;
 		//else
-			node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
+			dependency.objType = obj_relation;
 	}
 	else if (csb->csb_rpt[stream].csb_procedure)
 	{
-		node->nod_arg[e_dep_object] = (jrd_nod*) csb->csb_rpt[stream].csb_procedure;
-		node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
+		dependency.procedure = csb->csb_rpt[stream].csb_procedure;
+		dependency.objType = obj_procedure;
 	}
 
 	if (field_name.length() > 0)
-	{
-		jrd_nod* field_node = PAR_make_node(tdbb, 1);
-		node->nod_arg[e_dep_field] = field_node;
-		field_node->nod_type = nod_literal;
-		field_node->nod_arg[0] = (jrd_nod*) stringDup(*tdbb->getDefaultPool(), field_name.c_str());
-	}
+		dependency.subName = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), field_name);
 	else if (id >= 0)
-	{
-		jrd_nod* field_node = PAR_make_node(tdbb, 1);
-		node->nod_arg[e_dep_field] = field_node;
-		field_node->nod_type = nod_field;
-		field_node->nod_arg[0] = (jrd_nod*) (IPTR) id;
-	}
+		dependency.subNumber = id;
 
-	csb->csb_dependencies.push(node);
+	csb->csb_dependencies.push(dependency);
 }
 
 
@@ -1122,12 +1099,9 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_out_msg],
 						&node->nod_arg[e_esp_outputs], false);
 
-	jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-	dep_node->nod_type = nod_dependency;
-	dep_node->nod_arg[e_dep_object] = (jrd_nod*) procedure;
-	dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_procedure;
-
-	csb->csb_dependencies.push(dep_node);
+	CompilerScratch::Dependency dependency(obj_procedure);
+	dependency.procedure = procedure;
+	csb->csb_dependencies.push(dependency);
 
 	return node;
 }
@@ -1804,9 +1778,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		node_type = (USHORT) csb->csb_blr_reader.getByte();
 		USHORT extra_count = 0;
-		jrd_nod* access_type = 0;
+		jrd_nod* access_type = NULL;
 		Firebird::MetaName name;
-		TEXT* idx_name = 0;
+		MetaName* idx_name = NULL;
 
 		switch (node_type)
 		{
@@ -1847,16 +1821,14 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
 				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-				idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
+				idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
 				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
 
 				if (csb->csb_g_flags & csb_get_dependencies)
 				{
-	                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-	                dep_node->nod_type = nod_dependency;
-	                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
-	                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
-	                csb->csb_dependencies.push(dep_node);
+					CompilerScratch::Dependency dependency(obj_index);
+					dependency.name = idx_name;
+					csb->csb_dependencies.push(dependency);
 	            }
 
 				if (csb->csb_blr_reader.peekByte() == blr_indices)
@@ -1915,16 +1887,14 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 					*arg++ = (jrd_nod*) (IPTR) relation_id;
 					*arg++ = (jrd_nod*) (IPTR) index_id;
-					idx_name = stringDup(*tdbb->getDefaultPool(), name.c_str());
+					idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
 					*arg++ = (jrd_nod*) idx_name;
 
 					if (csb->csb_g_flags & csb_get_dependencies)
 					{
-		                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-		                dep_node->nod_type = nod_dependency;
-		                dep_node->nod_arg[e_dep_object] = (jrd_nod*) idx_name;
-		                dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_index;
-		                csb->csb_dependencies.push(dep_node);
+						CompilerScratch::Dependency dependency(obj_index);
+						dependency.name = idx_name;
+						csb->csb_dependencies.push(dependency);
 		            }
 				}
 			}
@@ -3033,11 +3003,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
             // track only gen_id() in both dialects.
             if ((blr_operator == blr_gen_id) && (csb->csb_g_flags & csb_get_dependencies))
 			{
-                jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-                dep_node->nod_type = nod_dependency;
-                dep_node->nod_arg [e_dep_object] = (jrd_nod*) (IPTR) tmp;
-                dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_generator;
-                csb->csb_dependencies.push(dep_node);
+				CompilerScratch::Dependency dependency(obj_generator);
+				dependency.number = tmp;
+				csb->csb_dependencies.push(dependency);
             }
 
 		}
@@ -3107,11 +3075,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 			if (itemInfo.explicitCollation)
 			{
-				jrd_nod* dep_node = PAR_make_node (tdbb, e_dep_length);
-				dep_node->nod_type = nod_dependency;
-				dep_node->nod_arg [e_dep_object] = (jrd_nod*)(IPTR) INTL_TEXT_TYPE(*desc);
-				dep_node->nod_arg [e_dep_object_type] = (jrd_nod*)(IPTR) obj_collation;
-				csb->csb_dependencies.push(dep_node);
+				CompilerScratch::Dependency dependency(obj_collation);
+				dependency.number = INTL_TEXT_TYPE(*desc);
+				csb->csb_dependencies.push(dependency);
 			}
 		}
 		break;

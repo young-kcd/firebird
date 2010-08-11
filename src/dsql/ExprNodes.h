@@ -188,7 +188,7 @@ public:
 	Firebird::QualifiedName name;
 	dsql_nod* dsqlArgs;
 	NestConst<jrd_nod> args;
-	/*const*/ Function* function;
+	NestConst<Function> function;
 
 private:
 	dsql_udf* dsqlFunction;

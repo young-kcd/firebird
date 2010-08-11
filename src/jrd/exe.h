@@ -371,11 +371,6 @@ const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
 const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor
 
-const int e_dep_object		= 0;	// node for registering dependencies
-const int e_dep_object_type	= 1;
-const int e_dep_field		= 2;
-const int e_dep_length		= 3;
-
 const int e_scl_field		= 0;	// Scalar expression (blr_index)
 const int e_scl_subscripts	= 1;
 const int e_scl_length		= 2;
@@ -771,6 +766,29 @@ class CompilerScratch : public pool_alloc<type_csb>
 	{}
 
 public:
+	struct Dependency
+	{
+		Dependency(int aObjType)
+		{
+			memset(this, 0, sizeof(*this));
+			objType = aObjType;
+		}
+
+		int objType;
+
+		union
+		{
+			jrd_rel* relation;
+			const Function* function;
+			const jrd_prc* procedure;
+			const Firebird::MetaName* name;
+			SLONG number;
+		};
+
+		const Firebird::MetaName* subName;
+		SLONG subNumber;
+	};
+
 	static CompilerScratch* newCsb(MemoryPool& p, size_t len,
 								   const Firebird::MetaName& domain_validation = Firebird::MetaName())
 	{
@@ -809,7 +827,7 @@ public:
 	AccessItemList	csb_access;					// Access items to be checked
 	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
-	NodeStack		csb_dependencies;			// objects this request depends upon
+	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes

@@ -5039,13 +5039,17 @@ static void store_dependencies(thread_db* tdbb,
 
 	while (csb->csb_dependencies.hasData())
 	{
-		jrd_nod* node = csb->csb_dependencies.pop();
-		if (!node->nod_arg[e_dep_object])
-			continue;
+		CompilerScratch::Dependency dependency = csb->csb_dependencies.pop();
 
-		int dpdo_type = (int) (IPTR) node->nod_arg[e_dep_object_type];
+		if (!dependency.relation && !dependency.function && !dependency.procedure &&
+			!dependency.name && !dependency.number)
+		{
+			continue;
+		}
+
+		int dpdo_type = dependency.objType;
 		jrd_rel* relation = NULL;
-		jrd_prc* procedure = NULL;
+		const jrd_prc* procedure = NULL;
 		const MetaName* dpdo_name = NULL;
 		MetaName packageName;
 		SubtypeInfo info;
@@ -5053,7 +5057,7 @@ static void store_dependencies(thread_db* tdbb,
 		switch (dpdo_type)
 		{
 		case obj_relation:
-			relation = (jrd_rel*) node->nod_arg[e_dep_object];
+			relation = dependency.relation;
 			dpdo_name = &relation->rel_name;
 
 			fb_assert(dep_rel || !checkTableScope);
@@ -5087,63 +5091,60 @@ static void store_dependencies(thread_db* tdbb,
 			}
 			break;
 		case obj_procedure:
-			procedure = (jrd_prc*) node->nod_arg[e_dep_object];
+			procedure = dependency.procedure;
 			dpdo_name = &procedure->getName().identifier;
 			packageName = procedure->getName().package;
 			break;
 		case obj_collation:
 			{
-				const USHORT number = (IPTR) node->nod_arg[e_dep_object];
+				const USHORT number = dependency.number;
 				MET_get_char_coll_subtype_info(tdbb, number, &info);
 				dpdo_name = &info.collationName;
 			}
 			break;
 		case obj_exception:
 			{
-				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
+				const SLONG number = dependency.number;
 				MET_lookup_exception(tdbb, number, name, NULL);
 				dpdo_name = &name;
 			}
 			break;
 		case obj_field:
-			dpdo_name = (MetaName*) node->nod_arg[e_dep_object];
+			dpdo_name = dependency.name;
 			break;
 			// CVC: Here I'm going to track those pesky things named generators and UDFs.
 		case obj_generator:
 			{
-				const SLONG number = (IPTR) node->nod_arg[e_dep_object];
+				const SLONG number = dependency.number;
 				MET_lookup_generator_id (tdbb, number, name);
 				dpdo_name = &name;
 			}
 			break;
 		case obj_udf:
 			{
-				Function* const udf = (Function*) node->nod_arg[e_dep_object];
+				const Function* const udf = dependency.function;
 				dpdo_name = &udf->getName().identifier;
 				packageName = udf->getName().package;
 			}
 			break;
 		case obj_index:
-			name = (TEXT*) node->nod_arg[e_dep_object];
+			name = *dependency.name;
 			dpdo_name = &name;
 			break;
 		}
 
-		const jrd_nod* field_node = node->nod_arg[e_dep_field];
-
 		MetaName field_name;
-		if (field_node)
+
+		if (dependency.subNumber || dependency.subName)
 		{
-			if (field_node->nod_type == nod_field)
+			if (dependency.subNumber)
 			{
-				const SSHORT fld_id = (SSHORT) (IPTR) field_node->nod_arg[0];
+				const SSHORT fld_id = (SSHORT) dependency.subNumber;
 				if (relation)
 				{
 					const jrd_fld* field = MET_get_field(relation, fld_id);
 					if (field)
-					{
 						field_name = field->fld_name;
-					}
 				}
 				else if (procedure)
 				{
@@ -5152,18 +5153,14 @@ static void store_dependencies(thread_db* tdbb,
 					// so I thought the missing code was to try to extract
 					// the field name that's in this case an output var from a proc.
 					if (param)
-					{
 						field_name = param->prm_name;
-					}
 				}
 			}
 			else
-			{
-				field_name = (TEXT *) field_node->nod_arg[0];
-			}
+				field_name = *dependency.subName;
 		}
 
-		if (field_name.length() > 0)
+		if (field_name.hasData())
 		{
 			AutoCacheRequest request(tdbb, irq_c_deps_f, IRQ_REQUESTS);
 			bool found = false;
@@ -5214,7 +5211,7 @@ static void store_dependencies(thread_db* tdbb,
 			DEP.RDB$DEPENDED_ON_TYPE = dpdo_type;
 			strcpy(DEP.RDB$DEPENDED_ON_NAME, dpdo_name->c_str());
 
-			if (field_name.length() > 0)
+			if (field_name.hasData())
 			{
 				DEP.RDB$FIELD_NAME.NULL = FALSE;
 				strcpy(DEP.RDB$FIELD_NAME, field_name.c_str());
