@@ -124,11 +124,11 @@ public:
 	{
 		NestConst<jrd_nod> arg[1];
 
-		jrd_nod*& operator [](size_t index) { return arg[index].ptr; }
-		const jrd_nod* const& operator [](size_t index) const { return arg[index].ptr; }
+		jrd_nod*& operator [](size_t index) { return *arg[index].getAddress(); }
+		const jrd_nod* const& operator [](size_t index) const { return *arg[index].getAddress(); }
 
-		operator jrd_nod** () { return &arg[0].ptr; }
-		operator const jrd_nod* const* () const { return &arg[0].ptr; }
+		operator jrd_nod** () { return arg[0].getAddress(); }
+		operator const jrd_nod* const* () const { return arg[0].getAddress(); }
 	} nod_arg;
 	***/
 };
@@ -212,8 +212,6 @@ public:
 	ULONG impure;
 	Firebird::HalfStaticArray<sort_key_def, 2> keyItems;
 };
-
-const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jrd_nod**));
 
 // Inversion (i.e. nod_index) impure area
 

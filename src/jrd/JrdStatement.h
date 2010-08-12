@@ -74,10 +74,10 @@ public:
 	const jrd_prc* procedure;			// procedure, if any
 	const Function* function;			// function, if any
 	Firebird::MetaName triggerName;		// name of request (trigger), if any
-	jrd_nod* topNode;					// top of execution tree
+	const jrd_nod* topNode;				// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
-	Firebird::Array<jrd_nod*> execStmts;	// exec_into nodes
-	Firebird::Array<jrd_nod*> invariants;	// invariant nodes
+	Firebird::Array<const jrd_nod*> execStmts;		// exec_into nodes
+	Firebird::Array<const jrd_nod*> invariants;	// invariant nodes
 	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)
 	Firebird::Array<UCHAR> blr;			// BLR for non-SQL query
 	MapFieldInfo mapFieldInfo;			// Map field name to field info

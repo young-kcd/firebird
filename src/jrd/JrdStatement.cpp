@@ -133,11 +133,13 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	fors = csb->csb_fors;
 
 	// make a vector of all used ExecuteStatements into
-	execStmts = csb->csb_exec_sta;
+	for (Array<jrd_nod*>::iterator i = csb->csb_exec_sta.begin(); i != csb->csb_exec_sta.end(); ++i)
+		execStmts.add(*i);
 
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
-	invariants = csb->csb_invariants;
+	for (Array<jrd_nod*>::iterator i = csb->csb_invariants.begin(); i != csb->csb_invariants.end(); ++i)
+		invariants.add(*i);
 
 	rpbsSetup.grow(csb->csb_n_stream);
 

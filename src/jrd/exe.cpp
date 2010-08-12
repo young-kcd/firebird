@@ -979,7 +979,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_timestamp.validate();
 
 	// Set all invariants to not computed.
-	jrd_nod** ptr, **end;
+	const jrd_nod* const* ptr, * const* end;
 	for (ptr = statement->invariants.begin(), end = statement->invariants.end();
 		 ptr < end; ++ptr)
 	{
@@ -1051,7 +1051,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 				for (size_t i = 0; i < statement->execStmts.getCount(); ++i)
 				{
-					jrd_nod* node = statement->execStmts[i];
+					const jrd_nod* node = statement->execStmts[i];
 					ExecuteStatement* impure = request->getImpure<ExecuteStatement>(node->nod_impure);
 					impure->close(tdbb);
 				}
@@ -1917,7 +1917,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 				{
 					fb_assert(statement->topNode->nod_type == nod_list);
 
-					jrd_nod* outMsgNode = statement->topNode->nod_arg[e_extproc_output_message];
+					const jrd_nod* outMsgNode = statement->topNode->nod_arg[e_extproc_output_message];
 					fb_assert(outMsgNode->nod_type == nod_message);
 
 					const Format* outFormat = (Format*) outMsgNode->nod_arg[e_msg_format];
@@ -1926,11 +1926,11 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 					if (!request->resultSet)
 					{
 						// input message
-						jrd_nod* inMsgNode = statement->topNode->nod_arg[e_extproc_input_message];
+						const jrd_nod* inMsgNode = statement->topNode->nod_arg[e_extproc_input_message];
 						fb_assert(inMsgNode->nod_type == nod_message);
 						fb_assert(request->req_message == inMsgNode);
 
-						jrd_nod* list = statement->topNode->nod_arg[e_extproc_input_assign];
+						const jrd_nod* list = statement->topNode->nod_arg[e_extproc_input_assign];
 						fb_assert(list->nod_type == nod_asn_list ||
 							(list->nod_type == nod_list && list->nod_count == 0));
 
@@ -1979,7 +1979,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 					fb_assert(eofDesc.dsc_dtype == dtype_short);
 					*((SSHORT*) (UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
 
-					jrd_nod* list = statement->topNode->nod_arg[e_extproc_output_assign];
+					const jrd_nod* list = statement->topNode->nod_arg[e_extproc_output_assign];
 					fb_assert(list->nod_type == nod_asn_list ||
 						(list->nod_type == nod_list && list->nod_count == 0));
 

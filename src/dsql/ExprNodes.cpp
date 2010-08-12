@@ -721,7 +721,7 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if ((node->nod_flags & nod_invariant) &&
 		(pattern->nod_type != nod_literal || escape->nod_type != nod_literal))
 	{
-		jrd_node_base **ctx_node, **end;
+		const jrd_node_base* const* ctx_node, *const *end;
 		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 			 ctx_node < end; ctx_node++)
 		{
