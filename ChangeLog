@@ -1,3 +1,20 @@
+ 2010-08-12 00:59  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+More consts
+
+ 2010-08-11 15:33  asfernandes 
+   M src/common/classes/NestConst.h
+   M src/dsql/StmtNodes.h
+Misc
+
+ 2010-08-11 15:22  firebirds 
+   M src/misc/smallog.cpp
+make output in brnches better
+
  2010-08-11 02:59  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
