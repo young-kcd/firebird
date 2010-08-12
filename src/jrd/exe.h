@@ -766,7 +766,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 public:
 	struct Dependency
 	{
-		Dependency(int aObjType)
+		explicit Dependency(int aObjType)
 		{
 			memset(this, 0, sizeof(*this));
 			objType = aObjType;
