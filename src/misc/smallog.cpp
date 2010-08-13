@@ -79,7 +79,7 @@ int main(int ac, char** av)
 			continue;
 		}
 
-		if ((!strcmp(s, IBN)) || (!strcmp(s, NU)))
+		if ((strstr(s, IBN) == s) || (strstr(s, NU) == s))
 		{
 			if (fseek(stdout, retPos, SEEK_SET) < 0)
 			{
