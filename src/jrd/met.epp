@@ -2962,7 +2962,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				const SSHORT pa_default_value_null = PA.RDB$DEFAULT_VALUE.NULL;
 				bid pa_default_value = pa_default_value_null ? F.RDB$DEFAULT_VALUE : PA.RDB$DEFAULT_VALUE;
 
-				Array<Parameter*>& paramArray = PA.RDB$PARAMETER_TYPE ?
+				Array<NestConst<Parameter> >& paramArray = PA.RDB$PARAMETER_TYPE ?
 					procedure->prc_output_fields : procedure->prc_input_fields;
 
 				// should be error if field already exists
@@ -3007,18 +3007,19 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 			END_FOR
 
-			Array<Parameter*>& paramArray = procedure->prc_output_fields;
+			Array<NestConst<Parameter> >& paramArray = procedure->prc_output_fields;
 
 			if (paramArray.hasData() && paramArray[0])
 			{
-				Format* format = procedure->prc_format =
-					Format::newFormat(*dbb->dbb_permanent, procedure->prc_output_fields.getCount());
+				Format* format = Format::newFormat(
+					*dbb->dbb_permanent, procedure->prc_output_fields.getCount());
+				procedure->prc_format = format;
 				ULONG length = FLAG_BYTES(format->fmt_count);
 				Format::fmt_desc_iterator desc = format->fmt_desc.begin();
-				Array<Parameter*>::iterator ptr, end;
+				Array<NestConst<Parameter> >::iterator ptr, end;
 				for (ptr = paramArray.begin(), end = paramArray.end(); ptr < end; ++ptr, ++desc)
 				{
-					Parameter* parameter = *ptr;
+					const Parameter* parameter = *ptr;
 					// check for parameter to be null, this can only happen if the
 					// parameter numbers get out of sync. This was added to fix bug
 					// 10534. -Shaunak Mistry 12-May-99
@@ -3370,22 +3371,22 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 	// deallocate input param structures
 
-	for (Array<Parameter*>::iterator i = procedure->prc_input_fields.begin();
+	for (Array<NestConst<Parameter> >::iterator i = procedure->prc_input_fields.begin();
 		 i != procedure->prc_input_fields.end(); ++i)
 	{
 		if (*i)
-			delete *i;
+			delete i->getObject();
 	}
 
 	procedure->prc_input_fields.clear();
 
 	// deallocate output param structures
 
-	for (Array<Parameter*>::iterator i = procedure->prc_output_fields.begin();
+	for (Array<NestConst<Parameter> >::iterator i = procedure->prc_output_fields.begin();
 		 i != procedure->prc_output_fields.end(); ++i)
 	{
 		if (*i)
-			delete *i;
+			delete i->getObject();
 	}
 
 	procedure->prc_output_fields.clear();
@@ -4345,7 +4346,7 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const MetaName na
 
 // Generate BLR message for external procedures
 static void gen_ext_message(UCharBuffer& blr, UCHAR message,
-	const Array<Parameter*>& parameters)
+	const Array<NestConst<Parameter> >& parameters)
 {
 	size_t count = parameters.getCount();
 	count = count * 2 + message;
@@ -4359,7 +4360,7 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 	dsc shortDesc;
 	shortDesc.makeShort(0);
 
-	for (Parameter* const* i = parameters.begin(); i != parameters.end(); ++i)
+	for (const NestConst<Parameter>* i = parameters.begin(); i != parameters.end(); ++i)
 	{
 		const Parameter* parameter = *i;
 

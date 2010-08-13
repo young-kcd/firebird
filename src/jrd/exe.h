@@ -862,6 +862,7 @@ public:
 			csb_idx(0),
 			csb_message(0),
 			csb_format(0),
+			csb_internal_format(0),
 			csb_fields(0),
 			csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
 			csb_plan(0),
@@ -881,7 +882,8 @@ public:
 
 		IndexDescAlloc* csb_idx;		// Packed description of indices
 		jrd_nod* csb_message;			// Msg for send/receive
-		Format* csb_format;				// Default Format for stream
+		const Format* csb_format;		// Default Format for stream
+		Format* csb_internal_format;	// Statement internal format
 		UInt32Bitmap* csb_fields;		// Fields referenced
 		double csb_cardinality;			// Cardinality of relation
 		jrd_nod* csb_plan;				// user-specified plan for this relation

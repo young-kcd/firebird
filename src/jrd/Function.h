@@ -22,6 +22,7 @@
 
 #include "../jrd/Routine.h"
 #include "../common/classes/array.h"
+#include "../common/classes/NestConst.h"
 #include "../jrd/dsc.h"
 #include "../jrd/val.h"
 
@@ -29,7 +30,7 @@ namespace Jrd
 {
 	struct fun_repeat
 	{
-		Parameter* fun_parameter;	// parameter info
+		NestConst<Parameter> fun_parameter;	// parameter info
 		FUN_T fun_mechanism;		// passing mechanism
 	};
 
@@ -118,7 +119,7 @@ namespace Jrd
 
 		bool fun_legacy;
 		bool fun_invariant;
-		ExtEngineManager::Function* fun_external;
+		const ExtEngineManager::Function* fun_external;
 	};
 
 	const USHORT FUN_scanned			= 1;	// Field expressions scanned

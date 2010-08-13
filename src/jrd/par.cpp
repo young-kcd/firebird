@@ -796,10 +796,10 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *	Look for named field in procedure output fields.
  *
  **************************************/
-	const Array<Parameter*>& list = procedure->prc_output_fields;
+	const Array<NestConst<Parameter> >& list = procedure->prc_output_fields;
 
-	Array<Parameter*>::const_iterator ptr = list.begin();
-	for (const vec<Parameter*>::const_iterator end = list.end(); ptr < end; ++ptr)
+	Array<NestConst<Parameter> >::const_iterator ptr = list.begin();
+	for (const Array<NestConst<Parameter> >::const_iterator end = list.end(); ptr < end; ++ptr)
 	{
 		const Parameter* param = *ptr;
 		if (name == param->prm_name)

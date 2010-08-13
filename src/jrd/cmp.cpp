@@ -406,7 +406,7 @@ void CMP_fini(thread_db* tdbb)
 }
 
 
-Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -4875,7 +4875,10 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		stream = (USHORT)(IPTR) node->nod_arg[e_agg_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		if (node->nod_arg[e_agg_map])
-			process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_format);
+		{
+			process_map(tdbb, csb, node->nod_arg[e_agg_map], &csb->csb_rpt[stream].csb_internal_format);
+			csb->csb_rpt[stream].csb_format = csb->csb_rpt[stream].csb_internal_format;
+		}
 		break;
 
 	case nod_window:
@@ -4894,7 +4897,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			fb_assert(stream <= MAX_STREAMS);
 
 			process_map(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map],
-				&csb->csb_rpt[stream].csb_format);
+				&csb->csb_rpt[stream].csb_internal_format);
+			csb->csb_rpt[stream].csb_format = csb->csb_rpt[stream].csb_internal_format;
 		}
 
 		for (unsigned i = 0; i < nodWindows->nod_count; ++i)
@@ -5158,7 +5162,7 @@ static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 
 	jrd_nod* clauses = node->nod_arg[e_uni_clauses];
 	const USHORT id = (USHORT)(IPTR) node->nod_arg[e_uni_stream];
-	Format** format = &csb->csb_rpt[id].csb_format;
+	Format** format = &csb->csb_rpt[id].csb_internal_format;
 
 	// process alternating RecordSelExpr and map blocks
 
@@ -5170,6 +5174,8 @@ static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		CMP_pass2(tdbb, csb, map, node);
 		process_map(tdbb, csb, map, format);
 	}
+
+	csb->csb_rpt[id].csb_format = *format;
 
 	if (node->nod_flags & nod_recurse)
 	{

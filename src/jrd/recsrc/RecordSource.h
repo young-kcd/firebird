@@ -113,7 +113,7 @@ namespace Jrd
 	class RecordStream : public RecordSource
 	{
 	public:
-		RecordStream(CompilerScratch* csb, UCHAR stream, Format* format = NULL);
+		RecordStream(CompilerScratch* csb, UCHAR stream, const Format* format = NULL);
 
 		virtual bool refetchRecord(thread_db* tdbb) const;
 		virtual bool lockRecord(thread_db* tdbb) const;
@@ -279,7 +279,7 @@ namespace Jrd
 
 	public:
 		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-					  jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
+					  const jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;

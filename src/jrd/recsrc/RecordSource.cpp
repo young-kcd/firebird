@@ -199,7 +199,7 @@ RecordSource::~RecordSource()
 // RecordStream class
 // ------------------
 
-RecordStream::RecordStream(CompilerScratch* csb, UCHAR stream, Format* format)
+RecordStream::RecordStream(CompilerScratch* csb, UCHAR stream, const Format* format)
 	: m_stream(stream), m_format(format ? format : csb->csb_rpt[stream].csb_format)
 {
 	fb_assert(m_format);
