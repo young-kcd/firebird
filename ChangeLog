@@ -1,3 +1,8 @@
+ 2010-08-12 10:32  robocop 
+   M src/jrd/exe.h
+   M src/jrd/par.cpp
+Misc.
+
  2010-08-12 00:59  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/jrd/JrdStatement.cpp
