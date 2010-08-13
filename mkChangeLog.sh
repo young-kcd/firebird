@@ -1,6 +1,7 @@
 #!/bin/sh
 
 PositiveOffset=15462	# will be correct for all branches after FB3
+			# Other values are: 2.5:13714 2.1:9165 2.0:6144 1.5:1748
 
 TempLog=temp.log
 TmpFile=temp.build.num
