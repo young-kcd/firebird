@@ -1,3 +1,28 @@
+ 2010-08-13 15:22  asfernandes 
+   M src/common/classes/NestConst.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.h
+   M src/jrd/ValuesImpl.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/exe.h
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+More consts
+
+ 2010-08-13 09:37  firebirds 
+   M mkChangeLog.sh
+per-branch consts
+
+ 2010-08-13 08:41  firebirds 
+   M src/misc/smallog.cpp
+Better handling of commits to be skipped
+
  2010-08-12 10:32  robocop 
    M src/jrd/exe.h
    M src/jrd/par.cpp
@@ -48,10 +73,6 @@ misc
  2010-08-10 07:49  alexpeshkoff 
    M ChangeLog
 rolled back test change
-
- 2010-08-10 07:31  firebirds 
-   M ChangeLog
-nightly update - test commit, please ignore
 
  2010-08-10 00:37  asfernandes 
    M src/dsql/DdlNodes.epp
