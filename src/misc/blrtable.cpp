@@ -181,6 +181,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_stmtnode_jrd, blr_abort, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_cast, blr_cast, e_cast_length, 1, VALUE, VALUE),
 	PAIR(nod_rse, blr_singular, 0, 0, TYPE_RSE, OTHER),
+	PAIR(nod_rse, blr_scrollable, 0, 0, TYPE_RSE, OTHER),
 	PAIR(nod_start_savepoint, blr_start_savepoint, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_end_savepoint, blr_end_savepoint, 1, 0, STATEMENT, OTHER),
 
