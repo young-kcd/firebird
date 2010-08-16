@@ -1,3 +1,7 @@
+ 2010-08-16 01:47  asfernandes 
+   M src/misc/blrtable.cpp
+Fix wrong nod_type of scrollable cursors
+
  2010-08-13 15:22  asfernandes 
    M src/common/classes/NestConst.h
    M src/jrd/ExtEngineManager.cpp
