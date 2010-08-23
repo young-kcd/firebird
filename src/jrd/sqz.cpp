@@ -219,12 +219,12 @@ UCHAR* SQZ_decompress(const UCHAR*	input,
 		const int len = (signed char) *input++;
 		if (len < 0)
 		{
-			const UCHAR c = *input++;
-
-			if ((output - len) > output_end)
+			if (input >= last || (output - len) > output_end)
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
+
+			const UCHAR c = *input++;
 			memset(output, c, (-1 * len));
 			output -= len;
 		}
@@ -336,7 +336,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 			   when rec1 is at the end of a segment, to avoid wrapping around */
 
 			const SCHAR* yellow = (SCHAR *) MIN((U_IPTR) end1, ((U_IPTR) rec1 + 127)) - 1;
-			while (rec1 <= yellow && (rec1[0] != rec2[0] || (rec1[1] != rec2[1] && rec1 < yellow)))
+			while (rec1 <= yellow && (rec1[0] != rec2[0] || (rec1 < yellow && rec1[1] != rec2[1])))
 			{
 				STUFF(*rec2++);
 				++rec1;
