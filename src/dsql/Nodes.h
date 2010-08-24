@@ -38,7 +38,7 @@ class Cursor;
 class dsql_nod;
 class ExprNode;
 class jrd_nod;
-class RecordSelExpr;
+class RseNode;
 class SlidingWindow;
 class TypeClause;
 
@@ -550,7 +550,7 @@ public:
 	}
 
 public:
-	virtual void pass2Cursor(RecordSelExpr*& /*rsePtr*/, Cursor**& /*cursorPtr*/)
+	virtual void pass2Cursor(RseNode*& /*rsePtr*/, Cursor**& /*cursorPtr*/)
 	{
 	}
 

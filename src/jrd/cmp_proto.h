@@ -28,6 +28,7 @@
 // req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
 #include "../jrd/scl.h"
 
+UCHAR* CMP_alloc_map(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_nod* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length, bool internal_flag,
@@ -59,6 +60,7 @@ inline void CMP_post_access(Jrd::thread_db* tdbb,
 	CMP_post_access(tdbb, csb, security_name, view_id, mask, type_name, name, "");
 }
 
+void CMP_post_procedure_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*);
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);

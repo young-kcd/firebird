@@ -47,8 +47,6 @@ namespace Jrd
 	class BaseBufferedStream;
 	class BufferedStream;
 
-	typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
-
 	// Abstract base class
 
 	class RecordSource
@@ -900,7 +898,7 @@ namespace Jrd
 
 	public:
 		Union(CompilerScratch* csb, UCHAR stream,
-			  size_t argCount, RecordSource* const* args, jrd_nod* const* maps,
+			  size_t argCount, RecordSource* const* args, NestConst<jrd_nod>* maps,
 			  size_t streamCount, const UCHAR* streams);
 
 		void open(thread_db* tdbb) const;

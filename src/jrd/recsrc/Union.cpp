@@ -35,7 +35,7 @@ using namespace Jrd;
 // --------------------------
 
 Union::Union(CompilerScratch* csb, UCHAR stream,
-			 size_t argCount, RecordSource* const* args, jrd_nod* const* maps,
+			 size_t argCount, RecordSource* const* args, NestConst<jrd_nod>* maps,
 			 size_t streamCount, const UCHAR* streams)
 	: RecordStream(csb, stream), m_args(csb->csb_pool), m_maps(csb->csb_pool),
 	  m_streams(csb->csb_pool)

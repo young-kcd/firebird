@@ -80,24 +80,6 @@ double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
 
-inline int STREAM_INDEX(const jrd_nod* node)
-{
-	switch (node->nod_type)
-	{
-		case nod_relation:
-			return e_rel_stream;
-		case nod_procedure:
-			return e_prc_stream;
-		case nod_union:
-			return e_uni_stream;
-		case nod_aggregate:
-			return e_agg_stream;
-		default:
-			fb_assert(false);
-			return 0; // silence compiler warning.
-	}
-}
-
 enum segmentScanType {
 	segmentScanNone,
 	segmentScanGreater,
@@ -146,8 +128,6 @@ public:
 	Firebird::Array<IndexScratchSegment*> segments;
 };
 
-typedef Firebird::SortedArray<int> SortedStreamList;
-
 class InversionCandidate
 {
 public:
@@ -182,9 +162,10 @@ public:
 	InversionCandidate* getCost();
 	InversionCandidate* getInversion(IndexTableScan** rsb);
 
+	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
+
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
-	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
 	const Firebird::string& getAlias();
 	InversionCandidate* generateInversion(IndexTableScan** rsb);
 	IndexTableScan* generateNavigation();

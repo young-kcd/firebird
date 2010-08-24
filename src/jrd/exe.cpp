@@ -102,6 +102,7 @@
 #include "../jrd/execute_statement.h"
 #include "../dsql/dsql_proto.h"
 #include "../jrd/rpb_chain.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceJrdHelpers.h"
@@ -3377,7 +3378,13 @@ static const jrd_nod* store(thread_db* tdbb, const jrd_nod* node, SSHORT which_t
 	jrd_req* request = tdbb->getRequest();
 	jrd_tra* transaction = request->req_transaction;
 	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
-	SSHORT stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+
+	fb_assert(node->nod_arg[e_sto_relation]->nod_type == nod_class_recsrcnode_jrd);
+	const RelationSourceNode* recSource = reinterpret_cast<const RelationSourceNode*>(
+		node->nod_arg[e_sto_relation]->nod_arg[0]);
+	fb_assert(recSource->type == RelationSourceNode::TYPE);
+
+	SSHORT stream = recSource->getStream();
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;
 

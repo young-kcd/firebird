@@ -572,6 +572,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\RecordSourceNodes.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\Relation.cpp"
 				>
 			</File>
@@ -1389,6 +1393,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RecordSourceNodes.h"
 				>
 			</File>
 			<File

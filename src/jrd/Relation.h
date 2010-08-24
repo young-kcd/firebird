@@ -29,6 +29,8 @@
 namespace Jrd
 {
 
+class RseNode;
+
 // view context block to cache view aliases
 
 class ViewContext
@@ -184,7 +186,7 @@ public:
 	Firebird::MetaName	rel_owner_name;	// ascii owner
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RecordSelExpr*	rel_view_rse;		// view record select expression
+	RseNode*		rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
 	Firebird::MetaName	rel_security_name;	// security class name for relation

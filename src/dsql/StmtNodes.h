@@ -220,9 +220,9 @@ public:
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void pass2Cursor(RecordSelExpr*& rsePtr, Cursor**& cursorPtr)
+	virtual void pass2Cursor(RseNode*& rsePtr, Cursor**& cursorPtr)
 	{
-		rsePtr = reinterpret_cast<RecordSelExpr*>(static_cast<jrd_nod*>(rse));
+		rsePtr = rse;
 		cursorPtr = cursor.getAddress();
 	}
 
@@ -236,7 +236,7 @@ public:
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
 	NestConst<jrd_nod> stall;
-	NestConst<jrd_nod> rse;
+	NestConst<RseNode> rse;
 	NestConst<jrd_nod> statement;
 	NestConst<Cursor> cursor;
 };

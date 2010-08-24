@@ -26,6 +26,7 @@
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
@@ -1291,10 +1292,10 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
 	{
-		node->rse = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		node->rse = RseNode::getFrom(PAR_parse_node(tdbb, csb, TYPE_RSE));
 	}
 	else
-		node->rse = PAR_rse(tdbb, csb, blrOp);
+		node->rse = RseNode::getFrom(PAR_rse(tdbb, csb, blrOp));
 
 	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
 
@@ -1414,7 +1415,7 @@ void ForNode::genBlr()
 StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	stall = CMP_pass1(tdbb, csb, stall);
-	rse = CMP_pass1(tdbb, csb, rse);
+	rse->pass1(tdbb, csb, csb->csb_view);
 	statement = CMP_pass1(tdbb, csb, statement);
 	return this;
 }
@@ -1422,7 +1423,7 @@ StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	stall = CMP_pass2(tdbb, csb, stall, node);
-	rse = CMP_pass2(tdbb, csb, rse, node);
+	rse->pass2(tdbb, csb);
 	statement = CMP_pass2(tdbb, csb, statement, node);
 	return this;
 }

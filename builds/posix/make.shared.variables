@@ -42,7 +42,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
 		ValueImpl.cpp ValuesImpl.cpp vio.cpp \
 		nodebug.cpp nbak.cpp $(Physical_IO_Module) TextType.cpp \
-		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
+		unicode_util.cpp RecordSourceNodes.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
 		trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
 		trace/TraceManager.cpp trace/TraceObjects.cpp \

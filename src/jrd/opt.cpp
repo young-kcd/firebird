@@ -76,6 +76,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/DataTypeUtil.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/UserManagement.h"
@@ -242,9 +243,6 @@ bool StreamFinder::visit(jrd_nod* node)
 		case nod_dbkey:
 			return (USHORT)(IPTR) node->nod_arg[0] == stream;
 
-		case nod_procedure:
-			return visit(node->nod_arg[e_prc_inputs]);
-
 		case nod_any:
 		case nod_unique:
 		case nod_ansi_any:
@@ -252,12 +250,13 @@ bool StreamFinder::visit(jrd_nod* node)
 		case nod_exists:
 			return visit(node->nod_arg[e_any_rse]);
 
-		case nod_rse:
+		case nod_class_recsrcnode_jrd:
 		{
-			RecordSelExpr* rse = (RecordSelExpr*) node;
+			RecordSourceNode* recSource = reinterpret_cast<RecordSourceNode*>(node->nod_arg[0]);
 
-			if (rse)
+			if (recSource->type == RseNode::TYPE)
 			{
+				RseNode* rse = static_cast<RseNode*>(recSource);
 				jrd_nod* sub;
 
 				if ((sub = rse->rse_first) && visit(sub))
@@ -275,6 +274,10 @@ bool StreamFinder::visit(jrd_nod* node)
 				if ((sub = rse->rse_projection) && visit(sub))
 					return true;
 			}
+			else if (recSource->type == ProcedureSourceNode::TYPE)
+				return visit(static_cast<ProcedureSourceNode*>(recSource)->inputs);
+			else
+				return visitChildren(node);
 
 			break;
 		}
@@ -366,10 +369,6 @@ bool StreamsCollector::visit(jrd_nod* node)
 			break;
 		}
 
-		case nod_procedure:
-			visit(node->nod_arg[e_prc_inputs]);
-			break;
-
 		case nod_any:
 		case nod_unique:
 		case nod_ansi_any:
@@ -378,17 +377,24 @@ bool StreamsCollector::visit(jrd_nod* node)
 			visit(node->nod_arg[e_any_rse]);
 			break;
 
-		case nod_rse:
+		case nod_class_recsrcnode_jrd:
 		{
-			RecordSelExpr* rse = (RecordSelExpr*) node;
-			if (rse)
+			RecordSourceNode* recSource = reinterpret_cast<RecordSourceNode*>(node->nod_arg[0]);
+
+			if (recSource->type == RseNode::TYPE)
 			{
+				RseNode* rse = static_cast<RseNode*>(recSource);
 				visit(rse->rse_first);
 				visit(rse->rse_skip);
 				visit(rse->rse_boolean);
 				visit(rse->rse_sorted);
 				visit(rse->rse_projection);
 			}
+			else if (recSource->type == ProcedureSourceNode::TYPE)
+				return visit(static_cast<ProcedureSourceNode*>(recSource)->inputs);
+			else
+				return visitChildren(node);
+
 			break;
 		}
 
@@ -623,37 +629,29 @@ namespace Jrd
 
 static bool augment_stack(jrd_nod*, NodeStack&);
 static void check_indices(const CompilerScratch::csb_repeat*);
-static void check_sorts(RecordSelExpr*);
+static void check_sorts(RseNode*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
 static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
-static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
-static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
 static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
 static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, jrd_nod**);
-static RecordSource* gen_aggregate(thread_db*, OptimizerBlk*, jrd_nod*, NodeStack*, UCHAR);
-static void gen_deliver_unmapped(thread_db*, NodeStack*, jrd_nod*, NodeStack*, UCHAR);
 static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
-static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RecordSelExpr*, RiverList&, jrd_nod**);
-static ProcedureScan* gen_procedure(thread_db*, OptimizerBlk*, jrd_nod*);
+static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RseNode*, RiverList&, jrd_nod**);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
-static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
-static void mark_indices(CompilerScratch::csb_repeat*, SSHORT);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
 static USHORT river_count(USHORT, jrd_nod**);
 static bool search_stack(const jrd_nod*, const NodeStack&);
 static void set_direction(jrd_nod*, jrd_nod*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
-static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
-static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
+static void set_rse_inactive(CompilerScratch*, const RseNode*);
 
 
 // macro definitions
@@ -728,8 +726,6 @@ static const UCHAR sort_dtypes[] =
 	SKD_text					// dtype_dbkey - use text sort for backward compatibility
 };
 
-typedef UCHAR stream_array_t[MAX_STREAMS + 1];
-
 
 bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length, ULONG* return_length)
 {
@@ -741,7 +737,7 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
  *
  * Functional description
  *	Returns a formatted access path for all
- *	RecordSelExpr's in the specified request.
+ *	RseNode's in the specified request.
  *
  **************************************/
 	DEV_BLKCHK(request, type_req);
@@ -773,10 +769,8 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 }
 
 
-RecordSource* OPT_compile(thread_db*		tdbb,
-						  CompilerScratch*	csb,
-						  RecordSelExpr*	rse,
-						  NodeStack*		parent_stack)
+RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
+	NodeStack* parent_stack)
 {
 /**************************************
  *
@@ -803,10 +797,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		opt_debug_file = fopen("opt_debug.out", "w");
 #endif
 
-
 	// If there is a boolean, there is some work to be done.  First,
 	// decompose the boolean into conjunctions.  Then get descriptions
-	// of all indices for all relations in the RecordSelExpr.  This will give
+	// of all indices for all relations in the RseNode.  This will give
 	// us the info necessary to allocate a optimizer block big
 	// enough to hold this crud.
 
@@ -848,10 +841,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		parent_stack = NULL;
 	}
 
-	// clear the csb_active flag of all streams in the RecordSelExpr
+	// clear the csb_active flag of all streams in the RseNode
 	set_rse_inactive(csb, rse);
-
-	UCHAR* p = streams + 1;
 
 	// go through the record selection expression generating
 	// record source blocks for all streams
@@ -861,187 +852,19 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// iterations where nod_type != nod_rse are the ones that set up a new stream.
 	// Hope this isn't some kind of logic error.
 	SSHORT stream = -1;
-	jrd_nod** ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
+	NestConst<RecordSourceNode>* ptr = rse->rse_relations.begin();
+	for (NestConst<RecordSourceNode>* const end = rse->rse_relations.end(); ptr != end; ++ptr)
 	{
-		jrd_nod* node = *ptr;
+		RecordSourceNode* node = *ptr;
 
-		// find the stream number and place it at the end of the beds array
-		// (if this is really a stream and not another RecordSelExpr)
-
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			{
-				stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-
-				fb_assert(stream <= MAX_UCHAR);
-				fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR); // debug check
-				//if (beds[0] >= MAX_STREAMS) // all builds check
-				//	ERR_post(Arg::Gds(isc_too_many_contexts));
-
-				beds[++beds[0]] = (UCHAR) stream;
-			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			fb_assert(stream <= MAX_UCHAR);
-			fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR); // debug check
-			//if (beds[0] >= MAX_STREAMS) // all builds check
-			//	ERR_post(Arg::Gds(isc_too_many_contexts));
-
-			beds[++beds[0]] = (UCHAR) stream;
-		}
-
-		// for nodes which are not relations, generate an rsb to
-		// represent that work has to be done to retrieve them;
-		// find all the substreams involved and compile them as well
-
-		rsb = NULL;
 		local_streams[0] = 0;
 
-		switch (node->nod_type)
-		{
-		case nod_union:
-			{
-				const SSHORT i = (SSHORT) key_streams[0];
-				compute_dbkey_streams(csb, node, key_streams);
+		// find the stream number and place it at the end of the beds array
+		// (if this is really a stream and not another RseNode)
 
-				NodeStack::const_iterator stack_end;
-				if (parent_stack) {
-					stack_end = conjunct_stack.merge(*parent_stack);
-				}
-				rsb = gen_union(tdbb, opt, node, key_streams + i + 1,
-								(USHORT) (key_streams[0] - i), &conjunct_stack, stream);
-				if (parent_stack) {
-					conjunct_stack.split(stack_end, *parent_stack);
-				}
-
-				fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-				local_streams[++local_streams[0]] = stream;
-			}
-			break;
-
-		case nod_aggregate:
-			{
-				NodeStack::const_iterator stack_end;
-				if (parent_stack) {
-					stack_end = conjunct_stack.merge(*parent_stack);
-				}
-				rsb = gen_aggregate(tdbb, opt, node, &conjunct_stack, stream);
-				if (parent_stack) {
-					conjunct_stack.split(stack_end, *parent_stack);
-				}
-
-				fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-				local_streams[++local_streams[0]] = stream;
-			}
-			break;
-
-		case nod_procedure:
-			rsb = gen_procedure(tdbb, opt, node);
-			fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-			local_streams[++local_streams[0]] = stream;
-			break;
-
-		case nod_window:
-			{
-				NodeStack deliverStack;
-				rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(csb,
-					node->nod_arg[e_win_windows],
-					OPT_compile(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_win_rse], &deliverStack));
-
-				StreamsArray rsbStreams;
-				rsb->findUsedStreams(rsbStreams);
-
-				for (StreamsArray::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
-				{
-					fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-					local_streams[++local_streams[0]] = *i;
-				}
-			}
-			break;
-
-		case nod_rse:
-			compute_rse_streams(csb, (RecordSelExpr*) node, beds);
-			compute_rse_streams(csb, (RecordSelExpr*) node, local_streams);
-			compute_dbkey_streams(csb, node, key_streams);
-			// pass RecordSelExpr boolean only to inner substreams because join condition
-			// should never exclude records from outer substreams
-			if (rse->rse_jointype == blr_inner ||
-			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 1) )
-			{
-				// AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as
-				// active because the inner-streams (Y) are always "dependent"
-				// on the outer-streams. So that index retrieval nodes could be made.
-				// For an INNER JOIN mark previous generated RecordSource's as active.
-				if (rse->rse_jointype == blr_left)
-				{
-					for (StreamsArray::iterator i = outerStreams.begin(); i != outerStreams.end(); ++i)
-						csb->csb_rpt[*i].csb_flags |= csb_active;
-				}
-
-				//const NodeStack::iterator stackSavepoint(conjunct_stack);
-				NodeStack::const_iterator stack_end;
-				NodeStack deliverStack;
-
-				if (rse->rse_jointype != blr_inner)
-				{
-					// Make list of nodes that can be delivered to an outer-stream.
-					// In fact these are all nodes except when a IS NULL (nod_missing)
-					// comparision is done.
-					// Note! Don't forget that this can be burried inside a expression
-					// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
-					NodeStack::iterator stackItem;
-					if (parent_stack)
-					{
-						stackItem = *parent_stack;
-					}
-					for (; stackItem.hasData(); ++stackItem)
-					{
-						jrd_nod* deliverNode = stackItem.object();
-						if (!PossibleUnknownFinder::find(deliverNode))
-							deliverStack.push(deliverNode);
-					}
-					stack_end = conjunct_stack.merge(deliverStack);
-				}
-				else
-				{
-					if (parent_stack)
-					{
-						stack_end = conjunct_stack.merge(*parent_stack);
-					}
-				}
-
-				rsb = OPT_compile(tdbb, csb, (RecordSelExpr*) node, &conjunct_stack);
-
-				if (rse->rse_jointype != blr_inner)
-				{
-					// Remove previously added parent conjuctions from the stack.
-					conjunct_stack.split(stack_end, deliverStack);
-				}
-				else
-				{
-					if (parent_stack)
-					{
-						conjunct_stack.split(stack_end, *parent_stack);
-					}
-				}
-
-				if (rse->rse_jointype == blr_left)
-				{
-					for (StreamsArray::iterator i = outerStreams.begin(); i != outerStreams.end(); ++i)
-						csb->csb_rpt[*i].csb_flags &= ~csb_active;
-				}
-			}
-			else {
-				rsb = OPT_compile(tdbb, csb, (RecordSelExpr*) node, parent_stack);
-			}
-			break;
-		}
+		rsb = node->compile(tdbb, csb, opt, rse, parent_stack, beds, key_streams,
+			local_streams, conjunct_stack, streams, sort, aggregate, outerStreams,
+			conjunct_count, (ptr - rse->rse_relations.begin() == 1));
 
 		// if an rsb has been generated, we have a non-relation;
 		// so it forms a river of its own since it is separately
@@ -1051,7 +874,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		{
 			// AB: Save all inner-part streams
 			if (rse->rse_jointype == blr_inner ||
-			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relation) == 0))
+			   (rse->rse_jointype == blr_left && (ptr - rse->rse_relations.begin()) == 0))
 			{
 				rsb->findUsedStreams(subStreams);
 				// Save also the outer streams
@@ -1066,52 +889,12 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, count, streams);
 			river->deactivate(csb);
 			rivers.add(river);
-			continue;
-		}
-
-		// we have found a base relation; record its stream
-		// number in the streams array as a candidate for
-		// merging into a river
-
-		// TMN: Is the intention really to allow streams[0] to overflow?
-		// I must assume that is indeed not the intention (not to mention
-		// it would make code later on fail), so I added the following fb_assert.
-		fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-
-		++streams[0];
-		*p++ = (UCHAR) stream;
-
-		if (rse->rse_jointype == blr_left)
-			outerStreams.add(stream);
-
-		// if we have seen any booleans or sort fields, we may be able to
-		// use an index to optimize them; retrieve the current format of
-		// all indices at this time so we can determine if it's possible
-		// AB: if a parent_stack was available and conjunct_count was 0
-		// then no indices where retrieved. Added also OR check on
-		// parent_stack below. SF BUG # [ 508594 ]
-
-		if (conjunct_count || sort || aggregate || parent_stack)
-		{
-			jrd_rel* relation = (jrd_rel*) node->nod_arg[e_rel_relation];
-			if (relation && !relation->rel_file && !relation->isVirtual())
-			{
-				csb->csb_rpt[stream].csb_indices =
-					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx, relation->getPages(tdbb));
-				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
-				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
-			}
-			else
-				csb->csb_rpt[stream].csb_indices = 0;
-
-			const Format* format = CMP_format(tdbb, csb, stream);
-			csb->csb_rpt[stream].csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
 		}
 	}
 
 	// this is an attempt to make sure we have a large enough cache to
 	// efficiently retrieve this query; make sure the cache has a minimum
-	// number of pages for each stream in the RecordSelExpr (the number is just a guess)
+	// number of pages for each stream in the RseNode (the number is just a guess)
 	if (streams[0] > 5) {
 		CCH_expand(tdbb, (ULONG) (streams[0] * CACHE_PAGES_PER_STREAM));
 	}
@@ -1244,7 +1027,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		rse->rse_aggregate = aggregate = NULL;
 	}
 
-	// AB: Mark the previous used streams (sub-RecordSelExpr's) as active
+	// AB: Mark the previous used streams (sub-RseNode's) as active
 	for (StreamsArray::iterator i = subStreams.begin(); i != subStreams.end(); ++i)
 		csb->csb_rpt[*i].csb_flags |= csb_active;
 
@@ -1269,7 +1052,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			while (gen_equi_join(tdbb, opt, rivers))
 				;
 
-			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
+			// AB: Mark the previous used streams (sub-RseNode's) again
 			// as active, because a SORT/MERGE could reset the flags
 			for (StreamsArray::iterator i = subStreams.begin(); i != subStreams.end(); ++i)
 				csb->csb_rpt[*i].csb_flags |= csb_active;
@@ -1442,7 +1225,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		throw;
 	}
 
-	if (rse->nod_flags & rse_writelock)
+	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
 		for (USHORT i = 1; i <= streams[0]; ++i)
 		{
@@ -1546,7 +1329,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 }
 
 
-static void check_sorts(RecordSelExpr* rse)
+static void check_sorts(RseNode* rse)
 {
 /**************************************
  *
@@ -1567,9 +1350,12 @@ static void check_sorts(RecordSelExpr* rse)
 	// if so, the projection can be eliminated; if no projection exists, then
 	// the sort can be eliminated.
 
-	jrd_nod *group, *sub_rse;
-	if ((project || sort) && rse->rse_count == 1 && (sub_rse = rse->rse_relation[0]) &&
-		sub_rse->nod_type == nod_aggregate && (group = sub_rse->nod_arg[e_agg_group]))
+	jrd_nod* group;
+	RecordSourceNode* sub_rse;
+
+	if ((project || sort) && rse->rse_relations.getCount() == 1 && (sub_rse = rse->rse_relations[0]) &&
+		sub_rse->type == AggregateSourceNode::TYPE &&
+		(group = static_cast<AggregateSourceNode*>(sub_rse)->group))
 	{
 		// if all the fields of the project are the same as all the fields
 		// of the group by, get rid of the project.
@@ -1578,19 +1364,20 @@ static void check_sorts(RecordSelExpr* rse)
 		{
 			jrd_nod** project_ptr = project->nod_arg;
 			const jrd_nod* const* const project_end = project_ptr + project->nod_count;
+
 			for (; project_ptr < project_end; project_ptr++)
 			{
 				const jrd_nod* const* group_ptr = group->nod_arg;
 				const jrd_nod* const* const group_end = group_ptr + group->nod_count;
+
 				for (; group_ptr < group_end; group_ptr++)
 				{
-					if (map_equal(*group_ptr, *project_ptr, sub_rse->nod_arg[e_agg_map])) {
+					if (map_equal(*group_ptr, *project_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
 						break;
-					}
 				}
-				if (group_ptr == group_end) {
+
+				if (group_ptr == group_end)
 					break;
-				}
 			}
 
 			// we can now ignore the project, but in case the project is being done
@@ -1608,15 +1395,16 @@ static void check_sorts(RecordSelExpr* rse)
 		{
 			const jrd_nod* const* sort_ptr = sort->nod_arg;
 			const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
+
 			for (; sort_ptr < sort_end; sort_ptr++)
 			{
 				const jrd_nod* const* group_ptr = group->nod_arg;
 				const jrd_nod* const* const group_end = group_ptr + sort->nod_count;
+
 				for (; group_ptr < group_end; group_ptr++)
 				{
-					if (map_equal(*group_ptr, *sort_ptr, sub_rse->nod_arg[e_agg_map])) {
+					if (map_equal(*group_ptr, *sort_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
 						break;
-					}
 				}
 				if (group_ptr == group_end) {
 					break;
@@ -1630,7 +1418,7 @@ static void check_sorts(RecordSelExpr* rse)
 			if (sort_ptr == sort_end)
 			{
 				set_direction(sort, group);
-				set_position(sort, group, sub_rse->nod_arg[e_agg_map]);
+				set_position(sort, group, static_cast<AggregateSourceNode*>(sub_rse)->map);
 				sort = rse->rse_sorted = NULL;
 			}
 		}
@@ -1732,13 +1520,14 @@ static void check_sorts(RecordSelExpr* rse)
 
 		if (usableSort)
 		{
-			RecordSelExpr* new_rse = NULL;
-			jrd_nod* node = (jrd_nod*) rse;
+			RseNode* new_rse = NULL;
+			RecordSourceNode* node = rse;
+
 			while (node)
 			{
-				if (node->nod_type == nod_rse)
+				if (node->type == RseNode::TYPE)
 				{
-					new_rse = (RecordSelExpr*) node;
+					new_rse = static_cast<RseNode*>(node);
 
 					// AB: Don't distribute the sort when a FIRST/SKIP is supplied,
 					// because that will affect the behaviour from the deeper RSE.
@@ -1755,17 +1544,17 @@ static void check_sorts(RecordSelExpr* rse)
 					// matching stream can be found.
 					if (new_rse->rse_jointype == blr_inner)
 					{
-						if (new_rse->rse_count == 1) {
-							node = new_rse->rse_relation[0];
-						}
+						if (new_rse->rse_relations.getCount() == 1)
+							node = new_rse->rse_relations[0];
 						else
 						{
 							bool sortStreamFound = false;
-							for (int i = 0; i < new_rse->rse_count; i++)
+							for (size_t i = 0; i < new_rse->rse_relations.getCount(); i++)
 							{
-								jrd_nod* subNode = (jrd_nod*) new_rse->rse_relation[i];
-								if (subNode->nod_type == nod_relation &&
-									((int)(IPTR) subNode->nod_arg[e_rel_stream]) == sort_stream &&
+								RecordSourceNode* subNode = new_rse->rse_relations[i];
+
+								if (subNode->type == RelationSourceNode::TYPE &&
+									subNode->getStream() == sort_stream &&
 									new_rse != rse)
 								{
 									// We have found the correct stream
@@ -1774,32 +1563,33 @@ static void check_sorts(RecordSelExpr* rse)
 								}
 
 							}
+
 							if (sortStreamFound)
 							{
 								// Set the sort to the found stream and clear the original sort
 								new_rse->rse_sorted = sort;
 								sort = rse->rse_sorted = NULL;
 							}
+
 							node = NULL;
 						}
 					}
-					else if (new_rse->rse_jointype == blr_left) {
-						node = new_rse->rse_relation[0];
-					}
-					else {
+					else if (new_rse->rse_jointype == blr_left)
+						node = new_rse->rse_relations[0];
+					else
 						node = NULL;
-					}
 				}
 				else
 				{
-					if (node->nod_type == nod_relation &&
-						((int)(IPTR)node->nod_arg[e_rel_stream]) == sort_stream &&
+					if (node->type == RelationSourceNode::TYPE &&
+						node->getStream() == sort_stream &&
 						new_rse && new_rse != rse)
 					{
 						// We have found the correct stream, thus apply the sort here
 						new_rse->rse_sorted = sort;
 						sort = rse->rse_sorted = NULL;
 					}
+
 					node = NULL;
 				}
 			}
@@ -1874,97 +1664,6 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
 	return *node1 = OPT_make_binary_node(node_type, *node1, node2, false);
 }
 
-
-static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* node, UCHAR* streams)
-{
-/**************************************
- *
- *	c o m p u t e _ d b k e y _ s t r e a m s
- *
- **************************************
- *
- * Functional description
- *	Identify all of the streams for which a
- *	dbkey may need to be carried through a sort.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	switch (node->nod_type)
-	{
-	case nod_relation:
-		fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-		streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[e_rel_stream];
-		break;
-	case nod_union:
-		{
-			const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-			if (clauses->nod_type != nod_procedure)
-			{
-				const jrd_nod* const* ptr = clauses->nod_arg;
-				for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
-				{
-					compute_dbkey_streams(csb, *ptr, streams);
-				}
-			}
-		}
-		break;
-	case nod_rse:
-		{
-			const RecordSelExpr* rse = (RecordSelExpr*) node;
-			const jrd_nod* const* ptr = rse->rse_relation;
-			for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
-			{
-				compute_dbkey_streams(csb, *ptr, streams);
-			}
-		}
-		break;
-	}
-}
-
-
-static void compute_rse_streams(const CompilerScratch* csb, const RecordSelExpr* rse, UCHAR* streams)
-{
-/**************************************
- *
- *	c o m p u t e _ r s e _ s t r e a m s
- *
- **************************************
- *
- * Functional description
- *	Identify the streams that make up an RecordSelExpr.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(rse, type_nod);
-
-	const jrd_nod* const* ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		const jrd_nod* node = *ptr;
-
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			{
-				const USHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-				fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-				streams[++streams[0]] = (UCHAR) stream;
-			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-			streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-		}
-		else {
-			compute_rse_streams(csb, (const RecordSelExpr*) node, streams);
-		}
-	}
-}
 
 static bool check_for_nod_from(const jrd_nod* node)
 {
@@ -2371,7 +2070,13 @@ static void form_rivers(thread_db*		tdbb,
 		// the stream into the river.
 		fb_assert(plan_node->nod_type == nod_retrieve);
 		const jrd_nod* relation_node = plan_node->nod_arg[e_retrieve_relation];
-		const UCHAR stream = (UCHAR)(IPTR) relation_node->nod_arg[e_rel_stream];
+		fb_assert(relation_node->nod_type == nod_class_recsrcnode_jrd);
+
+		const RecordSourceNode* recSource = reinterpret_cast<const RecordSourceNode*>(
+			relation_node->nod_arg[0]);
+		fb_assert(recSource->type == RelationSourceNode::TYPE);
+
+		const UCHAR stream = recSource->getStream();
 		// dimitr:	the plan may contain more retrievals than the "streams"
 		//			array (some streams could already be joined to the active
 		//			rivers), so we populate the "temp" array only with the
@@ -2505,84 +2210,6 @@ static bool form_river(thread_db*		tdbb,
 }
 
 
-static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node,
-									NodeStack* parent_stack, UCHAR shellStream)
-{
-/**************************************
- *
- *	g e n _ a g g r e g a t e
- *
- **************************************
- *
- * Functional description
- *	Generate an RecordSource (Record Source Block) for each aggregate operation.
- *	Generate an AggregateSort (Aggregate SortedStream Block) for each DISTINCT aggregate.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(node, type_nod);
-	SET_TDBB(tdbb);
-	CompilerScratch* const csb = opt->opt_csb;
-	RecordSelExpr* rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
-	rse->rse_sorted = node->nod_arg[e_agg_group];
-	jrd_nod* map = node->nod_arg[e_agg_map];
-
-	// AB: Try to distribute items from the HAVING CLAUSE to the WHERE CLAUSE.
-	// Zip thru stack of booleans looking for fields that belong to shellStream.
-	// Those fields are mappings. Mappings that hold a plain field may be used
-	// to distribute. Handle the simple cases only.
-	NodeStack deliverStack;
-	gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
-
-	// try to optimize MAX and MIN to use an index; for now, optimize
-	// only the simplest case, although it is probably possible
-	// to use an index in more complex situations
-	jrd_nod** ptr;
-	AggNode* aggNode = NULL;
-
-	if (map && map->nod_count == 1 && (ptr = map->nod_arg) &&
-		(aggNode = ExprNode::as<AggNode>((*ptr)->nod_arg[e_asgn_from])) &&
-		(aggNode->aggInfo.blr == blr_agg_min || aggNode->aggInfo.blr == blr_agg_max))
-	{
-		// generate a sort block which the optimizer will try to map to an index
-
-		jrd_nod* aggregate = PAR_make_node(tdbb, 3);
-		aggregate->nod_type = nod_sort;
-		aggregate->nod_count = 1;
-		aggregate->nod_arg[0] = aggNode->arg;
-		// in the max case, flag the sort as descending
-		if (aggNode->aggInfo.blr == blr_agg_max)
-			aggregate->nod_arg[1] = (jrd_nod*) TRUE;
-		// 10-Aug-2004. Nickolay Samofatov - Unneeded nulls seem to be skipped somehow.
-		aggregate->nod_arg[2] = (jrd_nod*)(IPTR) rse_nulls_default;
-		rse->rse_aggregate = aggregate;
-	}
-
-	RecordSource* const next_rsb = OPT_compile(tdbb, csb, rse, &deliverStack);
-
-	const UCHAR stream = (UCHAR)(IPTR) node->nod_arg[e_agg_stream];
-	fb_assert(stream <= MAX_STREAMS);
-	fb_assert(stream <= MAX_UCHAR);
-
-	// allocate and optimize the record source block
-
-	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(csb, stream,
-		node->nod_arg[e_agg_group], node->nod_arg[e_agg_map], next_rsb);
-
-	if (rse->rse_aggregate)
-	{
-		// The rse_aggregate is still set. That means the optimizer
-		// was able to match the field to an index, so flag that fact
-		// so that it can be handled in EVL_group
-		aggNode->indexed = true;
-	}
-
-	OPT_gen_aggregate_distincts(tdbb, csb, map);
-
-	return rsb;
-}
-
-
 // Generate a separate AggregateSort (Aggregate SortedStream Block) for each distinct operation.
 // Note that this should be optimized to use indices if possible.
 void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map)
@@ -2658,86 +2285,6 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod*
 }
 
 
-static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
-								 jrd_nod* map, NodeStack* parentStack,
-								 UCHAR shellStream)
-{
-/**************************************
- *
- *	g e n _ d e l i v e r _ u n m a p p e d
- *
- **************************************
- *
- * Functional description
- *	Make new boolean nodes from nodes that
- *	contain a field from the given shellStream.
- *  Those fields are references (mappings) to
- *	other nodes and are used by aggregates and
- *	union rse's.
- *
- **************************************/
-	DEV_BLKCHK(map, type_nod);
-	SET_TDBB(tdbb);
-
-	for (NodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
-	{
-		jrd_nod* boolean = stack1.object();
-
-		// Reduce to simple comparisons
-		if (!((boolean->nod_type == nod_eql) ||
-			(boolean->nod_type == nod_gtr) ||
-			(boolean->nod_type == nod_geq) ||
-			(boolean->nod_type == nod_leq) ||
-			(boolean->nod_type == nod_lss) ||
-			(boolean->nod_type == nod_starts) ||
-			(boolean->nod_type == nod_missing)))
-		{
-			continue;
-		}
-
-		// At least 1 mapping should be used in the arguments
-		int indexArg;
-		bool mappingFound = false;
-		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++)
-		{
-			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
-			if ((booleanNode->nod_type == nod_field) &&
-				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream))
-			{
-				mappingFound = true;
-			}
-		}
-		if (!mappingFound) {
-			continue;
-		}
-
-		// Create new node and assign the correct existing arguments
-		jrd_nod* deliverNode = PAR_make_node(tdbb, boolean->nod_count);
-		deliverNode->nod_count = boolean->nod_count;
-		deliverNode->nod_type = boolean->nod_type;
-		deliverNode->nod_flags = boolean->nod_flags;
-		deliverNode->nod_impure = boolean->nod_impure;
-		bool wrongNode = false;
-		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++)
-		{
-			jrd_nod* booleanNode = UnmappedNodeGetter::get(
-				map, shellStream, boolean->nod_arg[indexArg]);
-
-			wrongNode = (booleanNode == NULL);
-			if (!wrongNode) {
-				deliverNode->nod_arg[indexArg] = booleanNode;
-			}
-		}
-		if (wrongNode) {
-			delete deliverNode;
-		}
-		else {
-			deliverStack->push(deliverNode);
-		}
-	}
-}
-
-
 static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
 					 const UCHAR*	streams,
@@ -2789,11 +2336,8 @@ static void gen_join(thread_db*		tdbb,
 }
 
 
-static RecordSource* gen_outer(thread_db* tdbb,
-					 OptimizerBlk* opt,
-					 RecordSelExpr* rse,
-					 RiverList& river_list,
-					 jrd_nod** sort_clause)
+static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
+	RiverList& river_list, jrd_nod** sort_clause)
 {
 /**************************************
  *
@@ -2841,12 +2385,12 @@ static RecordSource* gen_outer(thread_db* tdbb,
 	// reverse order because rivers may have been PUSHed
 	for (int i = 1; i >= 0; i--)
 	{
-		jrd_nod* const node = rse->rse_relation[i];
+		const RecordSourceNode* node = rse->rse_relations[i];
 
-		if (node->nod_type == nod_relation)
+		if (node->type == RelationSourceNode::TYPE)
 		{
 			stream_ptr[i]->stream_rsb = NULL;
-			stream_ptr[i]->stream_num = (USHORT)(IPTR) node->nod_arg[e_rel_stream];
+			stream_ptr[i]->stream_num = node->getStream();
 		}
 		else
 		{
@@ -2946,37 +2490,6 @@ static RecordSource* gen_outer(thread_db* tdbb,
 		NestedLoopJoin(csb, stream_i.stream_rsb, stream_o.stream_rsb, NULL, false, true);
 
 	return FB_NEW(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
-}
-
-
-static ProcedureScan* gen_procedure(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* node)
-{
-/**************************************
- *
- *	g e n _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Compile and optimize a record selection expression into a
- *	set of record source blocks (rsb's).
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(node, type_nod);
-	SET_TDBB(tdbb);
-
-	jrd_prc* const procedure =
-		MET_lookup_procedure_id(tdbb, (SSHORT)(IPTR)node->nod_arg[e_prc_procedure], false, false, 0);
-
-	CompilerScratch* const csb = opt->opt_csb;
-	const UCHAR stream = (UCHAR)(IPTR) node->nod_arg[e_prc_stream];
-	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
-	const string alias = OPT_make_alias(tdbb, csb, csb_tail);
-
-	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
-														 node->nod_arg[e_prc_inputs],
-														 node->nod_arg[e_prc_in_msg]);
 }
 
 
@@ -3834,83 +3347,6 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 }
 
 
-static RecordSource* gen_union(thread_db* tdbb,
-							   OptimizerBlk* opt,
-							   jrd_nod* union_node,
-							   UCHAR* streams,
-							   USHORT nstreams,
-							   NodeStack* parent_stack,
-							   UCHAR shellStream)
-{
-/**************************************
- *
- *	g e n _ u n i o n
- *
- **************************************
- *
- * Functional description
- *	Generate a union complex.
- *
- **************************************/
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(union_node, type_nod);
-
-	SET_TDBB(tdbb);
-	jrd_nod* clauses = union_node->nod_arg[e_uni_clauses];
-	const USHORT count = clauses->nod_count;
-	const bool recurse = (union_node->nod_flags & nod_recurse);
-	const UCHAR stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_stream];
-
-	CompilerScratch* csb = opt->opt_csb;
-
-	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> maps;
-
-	const SLONG base_impure = CMP_impure(csb, 0);
-
-	jrd_nod** ptr = clauses->nod_arg;
-	for (const jrd_nod* const* const end = ptr + count; ptr < end;)
-	{
-
-		RecordSelExpr* const rse = (RecordSelExpr*) * ptr++;
-		jrd_nod* map = (jrd_nod*) * ptr++;
-
-		// AB: Try to distribute booleans from the top rse for an UNION to
-		// the WHERE clause of every single rse.
-		// hvlad: don't do it for recursive unions else they will work wrong !
-		NodeStack deliverStack;
-		if (!recurse)
-		{
-			gen_deliver_unmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
-		}
-
-		rsbs.add(OPT_compile(tdbb, csb, rse, &deliverStack));
-		maps.add(map);
-
-		// hvlad: activate recursive union itself after processing first (non-recursive)
-		// member to allow recursive members be optimized
-		if (recurse)
-		{
-			const SSHORT stream = (USHORT)(IPTR) union_node->nod_arg[e_uni_stream];
-			csb->csb_rpt[stream].csb_flags |= csb_active;
-		}
-	}
-
-	if (recurse)
-	{
-		fb_assert(rsbs.getCount() == 2 && maps.getCount() == 2);
-		// hvlad: save size of inner impure area and context of mapped record
-		// for recursive processing later
-		const UCHAR map_stream = (UCHAR)(IPTR) union_node->nod_arg[e_uni_map_stream];
-		return FB_NEW(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, map_stream,
-									rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, base_impure);
-	}
-
-	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, count / 2, rsbs.begin(),
-		maps.begin(), nstreams, streams);
-}
-
-
 static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 									jrd_nod* arg1, jrd_nod* arg2)
 {
@@ -4034,75 +3470,6 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const jrd_no
 	}
 
 	return false;
-}
-
-
-
-static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_id)
-{
-/**************************************
- *
- *	m a r k _ i n d i c e s
- *
- **************************************
- *
- * Functional description
- *	Mark indices that were not included
- *	in the user-specified access plan.
- *
- **************************************/
-	const jrd_nod* plan = csb_tail->csb_plan;
-	if (!plan)
-		return;
-	if (plan->nod_type != nod_retrieve)
-		return;
-	// find out how many indices were specified; if
-	// there were none, this is a sequential retrieval
-	USHORT plan_count = 0;
-	const jrd_nod* access_type = plan->nod_arg[e_retrieve_access_type];
-	if (access_type)
-		plan_count = access_type->nod_count;
-	// go through each of the indices and mark it unusable
-	// for indexed retrieval unless it was specifically mentioned
-	// in the plan; also mark indices for navigational access
-	index_desc* idx = csb_tail->csb_idx->items;
-	for (USHORT i = 0; i < csb_tail->csb_indices; i++)
-	{
-		if (access_type)
-		{
-			const jrd_nod* const* arg = access_type->nod_arg;
-			const jrd_nod* const* const end = arg + plan_count;
-			for (; arg < end; arg += e_access_type_length)
-			{
-				if (relation_id != (SSHORT)(IPTR) arg[e_access_type_relation])
-				{
-					// index %s cannot be used in the specified plan
-					const char* iname = reinterpret_cast<const char*>(arg[e_access_type_index_name]);
-					ERR_post(Arg::Gds(isc_index_unused) << Arg::Str(iname));
-				}
-				if (idx->idx_id == (USHORT)(IPTR) arg[e_access_type_index])
-				{
-					if (access_type->nod_type == nod_navigational && arg == access_type->nod_arg)
-					{
-						// dimitr:	navigational access can use only one index,
-						//			hence the extra check added (see the line above)
-						idx->idx_runtime_flags |= idx_plan_navigate;
-					}
-					else {
-						// nod_indices
-						break;
-					}
-				}
-			}
-
-			if (arg == end)
-				idx->idx_runtime_flags |= idx_plan_dont_use;
-		}
-		else {
-			idx->idx_runtime_flags |= idx_plan_dont_use;
-		}
-		++idx;
-	}
 }
 
 
@@ -4434,7 +3801,7 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause, const j
 }
 
 
-static void set_rse_inactive(CompilerScratch* csb, const RecordSelExpr* rse)
+static void set_rse_inactive(CompilerScratch* csb, const RseNode* rse)
 {
 /***************************************************
  *
@@ -4443,112 +3810,24 @@ static void set_rse_inactive(CompilerScratch* csb, const RecordSelExpr* rse)
  ***************************************************
  *
  * Functional Description:
- *    Set all the streams involved in an RecordSelExpr as inactive. Do it recursively.
+ *    Set all the streams involved in an RseNode as inactive. Do it recursively.
  *
  ***************************************************/
-	const jrd_nod* const* ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
+	const NestConst<RecordSourceNode>* ptr = rse->rse_relations.begin();
+
+	for (const NestConst<RecordSourceNode>* const end = rse->rse_relations.end(); ptr != end; ++ptr)
 	{
-		const jrd_nod* node = *ptr;
+		const RecordSourceNode* node = *ptr;
 
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* nodWindows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-			{
-				const SSHORT stream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[stream].csb_flags &= ~csb_active;
-			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			csb->csb_rpt[stream].csb_flags &= ~csb_active;
-		}
+		if (node->type == RseNode::TYPE)
+			set_rse_inactive(csb, static_cast<const RseNode*>(node));
 		else
-			set_rse_inactive(csb, (const RecordSelExpr*) node);
-	}
-}
-
-
-static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csb_tail)
-{
-/***************************************************
- *
- *  s o r t _ i n d i c e s _ b y _ s e l e c t i v i t y
- *
- ***************************************************
- *
- * Functional Description:
- *    Sort SortedStream indices based on there selectivity.
- *    Lowest selectivy as first, highest as last.
- *
- ***************************************************/
-
-	if (csb_tail->csb_plan) {
-		return;
-	}
-
-	index_desc* selected_idx = NULL;
-	Firebird::Array<index_desc> idx_sort(csb_tail->csb_indices);
-	bool same_selectivity = false;
-
-	// Walk through the indices and sort them into into idx_sort
-	// where idx_sort[0] contains the lowest selectivity (best) and
-	// idx_sort[csb_tail->csb_indices - 1] the highest (worst)
-
-	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1))
-	{
-		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
 		{
-			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
-			index_desc* idx = csb_tail->csb_idx->items;
-			for (USHORT i = 0; i < csb_tail->csb_indices; i++)
-			{
-				// Prefer ASC indices in the case of almost the same selectivities
-				if (selectivity > idx->idx_selectivity) {
-					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
-				}
-				else {
-					same_selectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
-				}
-				if (!(idx->idx_runtime_flags & idx_marker) &&
-					 (idx->idx_selectivity <= selectivity) &&
-					 !((idx->idx_flags & idx_descending) && same_selectivity))
-				{
-					selectivity = idx->idx_selectivity;
-					selected_idx = idx;
-				}
-				++idx;
-			}
+			StreamsArray sourceStreams;
+			node->getStreams(sourceStreams);
 
-			// If no index was found than pick the first one available out of the list
-			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker))
-			{
-				idx = csb_tail->csb_idx->items;
-				for (USHORT i = 0; i < csb_tail->csb_indices; i++)
-				{
-					if (!(idx->idx_runtime_flags & idx_marker))
-					{
-						selected_idx = idx;
-						break;
-					}
-					++idx;
-				}
-			}
-
-			selected_idx->idx_runtime_flags |= idx_marker;
-			idx_sort.add(*selected_idx);
-		}
-
-		// Finally store the right order in cbs_tail->csb_idx
-		index_desc* idx = csb_tail->csb_idx->items;
-		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
-		{
-			idx->idx_runtime_flags &= ~idx_marker;
-			memcpy(idx, &idx_sort[j], sizeof(index_desc));
-			++idx;
+			for (StreamsArray::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
+				csb->csb_rpt[*i].csb_flags &= ~csb_active;
 		}
 	}
 }

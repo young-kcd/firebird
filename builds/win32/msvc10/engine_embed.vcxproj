@@ -221,6 +221,7 @@
     <ClCompile Include="..\..\..\src\jrd\PreparedStatement.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RandomGenerator.cpp" />
     <ClCompile Include="..\..\..\src\jrd\RecordBuffer.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\RecordSourceNodes.cpp" />
     <ClCompile Include="..\..\..\src\jrd\Relation.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ResultSet.cpp" />
     <ClCompile Include="..\..\..\src\jrd\rlck.cpp" />
@@ -427,6 +428,7 @@
     <ClInclude Include="..\..\..\src\jrd\que.h" />
     <ClInclude Include="..\..\..\src\jrd\RandomGenerator.h" />
     <ClInclude Include="..\..\..\src\jrd\RecordBuffer.h" />
+    <ClInclude Include="..\..\..\src\jrd\RecordSourceNodes.h" />
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h" />
     <ClInclude Include="..\..\..\src\jrd\Relation.h" />
     <ClInclude Include="..\..\..\src\jrd\relations.h" />

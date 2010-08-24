@@ -90,6 +90,7 @@
 #include "../common/utils_proto.h"
 
 #include "../jrd/PreparedStatement.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/DebugInterface.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/Function.h"
@@ -3570,20 +3571,25 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		{
 			// parse the view blr, getting dependencies on relations, etc. at the same time
 
+			jrd_nod* rseNode;
+
 			if (dependencies)
 			{
 				const MetaName depName(REL.RDB$RELATION_NAME);
-				relation->rel_view_rse =
-					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, 0, NULL,
-											&REL.RDB$VIEW_BLR, NULL,
-											&csb, depName, obj_view, 0, depTrans);
+				rseNode = MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &REL.RDB$VIEW_BLR,
+					NULL, &csb, depName, obj_view, 0, depTrans);
 			}
 			else
+				rseNode = MET_parse_blob(tdbb, relation, &REL.RDB$VIEW_BLR, &csb, NULL, false);
+
+			if (rseNode)
 			{
-				relation->rel_view_rse =
-					(RecordSelExpr*) MET_parse_blob(tdbb, relation,
-											&REL.RDB$VIEW_BLR, &csb, NULL, false);
+				fb_assert(rseNode->nod_type == nod_class_recsrcnode_jrd);
+				relation->rel_view_rse = reinterpret_cast<RseNode*>(rseNode->nod_arg[0]);
+				fb_assert(relation->rel_view_rse->type == RseNode::TYPE);
 			}
+			else
+				relation->rel_view_rse = NULL;
 
 			// retrieve the view context names
 

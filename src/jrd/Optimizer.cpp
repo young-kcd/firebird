@@ -36,6 +36,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ods.h"
 #include "../jrd/Optimizer.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
@@ -89,43 +90,16 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_flags & nod_deoptimize) {
+	if (node->nod_flags & nod_deoptimize)
 		return false;
-	}
 
 	// Recurse thru interesting sub-nodes
 
 	switch (node->nod_type)
 	{
-		case nod_procedure:
-		{
-			jrd_nod* inputs = node->nod_arg[e_prc_inputs];
-			if (inputs)
-			{
-				fb_assert(inputs->nod_type == nod_asn_list);
-				jrd_nod* const* ptr = inputs->nod_arg;
-				for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
-				{
-					if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-						return false;
-					}
-				}
-			}
-			break;
-		}
-
-		case nod_union:
-		{
-			jrd_nod* clauses = node->nod_arg[e_uni_clauses];
-			jrd_nod* const* ptr = clauses->nod_arg;
-			for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
-			{
-				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
-					return false;
-				}
-			}
-			break;
-		}
+		case nod_class_recsrcnode_jrd:
+			return reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->computable(
+				csb, stream, idx_use, allowOnlyCurrentStream, NULL);
 
 		case nod_class_exprnode_jrd:
 		{
@@ -146,17 +120,13 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 			jrd_nod* const* ptr = node->nod_arg;
 			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 			{
-				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
+				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream))
 					return false;
-				}
 			}
 			break;
 		}
 	}
 
-	RecordSelExpr* rse;
-	jrd_nod* sub;
-	jrd_nod* value;
 	USHORT n;
 
 	switch (node->nod_type)
@@ -166,15 +136,12 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		if (allowOnlyCurrentStream)
 		{
 			if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
-			{
 				return false;
-			}
 		}
 		else
 		{
-			if (n == stream) {
+			if (n == stream)
 				return false;
-			}
 		}
 		return csb->csb_rpt[n].csb_flags & csb_active;
 
@@ -225,115 +192,24 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 	case nod_total:
 	case nod_count:
 	case nod_from:
-		if ((sub = node->nod_arg[e_stat_default]) &&
-			!OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
 		{
-			return false;
-		}
-		rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-		value = node->nod_arg[e_stat_value];
-		break;
+			jrd_nod* sub;
 
-	case nod_rse:
-		rse = (RecordSelExpr*) node;
-		value = NULL;
-		break;
-
-	case nod_aggregate:
-		rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
-		rse->rse_sorted = node->nod_arg[e_agg_group];
-		value = NULL;
-		break;
-
-	case nod_window:
-		rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
-		value = NULL;
-		break;
-
-	default:
-		return true;
-	}
-
-	// Node is a record selection expression.
-	bool result = true;
-
-	if ((sub = rse->rse_first) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
-		return false;
-	}
-
-    if ((sub = rse->rse_skip) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
-        return false;
-	}
-
-	// Set sub-streams of rse active
-	jrd_nod* const* ptr;
-	const jrd_nod* const* end;
-
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		const jrd_nod* const node = *ptr;
-
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* windows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < windows->nod_count; ++i)
+			if ((sub = node->nod_arg[e_stat_default]) &&
+				!OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
 			{
-				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
+				return false;
 			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			n = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
-		}
-	}
 
-	// Check sub-stream
-	if (((sub = rse->rse_boolean) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_projection) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
-	{
-		result = false;
-	}
+			fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
+			RseNode* rse = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end && result; ptr++)
-	{
-		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
-		{
-			result = false;
+			return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream,
+				node->nod_arg[e_stat_value]);
 		}
 	}
 
-	// Check value expression, if any
-	if (result && value && !OPT_computable(csb, value, stream, idx_use, allowOnlyCurrentStream)) {
-		result = false;
-	}
-
-	// Reset streams inactive
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		const jrd_nod* const node = *ptr;
-
-		if (node->nod_type == nod_window)
-		{
-			const jrd_nod* windows = node->nod_arg[e_win_windows];
-
-			for (unsigned i = 0; i < windows->nod_count; ++i)
-			{
-				n = (USHORT)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream];
-				csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
-			}
-		}
-		else if (node->nod_type != nod_rse)
-		{
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
-		}
-	}
-
-	return result;
+	return true;
 }
 
 
@@ -1067,6 +943,7 @@ jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
 	return OPT_make_binary_node(node_type, node1, node2, false);
 }
 
+
 void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const
 {
 /**************************************
@@ -1081,29 +958,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 
 	// Recurse thru interesting sub-nodes
 
-	if (node->nod_type == nod_procedure)
-	{
-		jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
-		if (inputs)
-		{
-			fb_assert(inputs->nod_type == nod_asn_list);
-			jrd_nod* const* ptr = inputs->nod_arg;
-			for (const jrd_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
-			{
-				findDependentFromStreams(*ptr, streamList);
-			}
-		}
-	}
-	else if (node->nod_type == nod_union)
-	{
-		jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
-		jrd_nod* const* ptr = clauses->nod_arg;
-		for (const jrd_nod* const* const end = ptr + clauses->nod_count; ptr < end; ptr += 2)
-		{
-			findDependentFromStreams(*ptr, streamList);
-		}
-	}
-	else if (node->nod_type == nod_class_exprnode_jrd)
+	if (node->nod_type == nod_class_exprnode_jrd)
 	{
 		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
@@ -1113,18 +968,18 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 			findDependentFromStreams(**i, streamList);
 		}
 	}
+	else if (node->nod_type == nod_class_recsrcnode_jrd)
+	{
+		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->findDependentFromStreams(
+			this, streamList);
+	}
 	else
 	{
 		jrd_nod* const* ptr = node->nod_arg;
-		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-		{
-			findDependentFromStreams(*ptr, streamList);
-		}
-	}
 
-	RecordSelExpr* rse;
-	jrd_nod* sub;
-	jrd_nod* value;
+		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			findDependentFromStreams(*ptr, streamList);
+	}
 
 	switch (node->nod_type)
 	{
@@ -1136,9 +991,8 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 				(csb->csb_rpt[fieldStream].csb_flags & csb_active) &&
 				!(csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
 			{
-				if (!streamList->exist(fieldStream)) {
+				if (!streamList->exist(fieldStream))
 					streamList->add(fieldStream);
-				}
 			}
 			return;
 		}
@@ -1180,67 +1034,26 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 		case nod_total:
 		case nod_count:
 		case nod_from:
-			if (sub = node->nod_arg[e_stat_default]) {
+		{
+			jrd_nod* sub;
+
+			if (sub = node->nod_arg[e_stat_default])
 				findDependentFromStreams(sub, streamList);
-			}
-			rse = (RecordSelExpr*) node->nod_arg[e_stat_rse];
-			value = node->nod_arg[e_stat_value];
+
+			fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
+			RseNode* rse = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
+
+			rse->findDependentFromStreams(this, streamList);
+
+			jrd_nod* value = node->nod_arg[e_stat_value];
+
+			// Check value expression, if any
+			if (value)
+				findDependentFromStreams(value, streamList);
+
 			break;
-
-		case nod_rse:
-			rse = (RecordSelExpr*) node;
-			value = NULL;
-			break;
-
-		case nod_aggregate:
-			rse = (RecordSelExpr*) node->nod_arg[e_agg_rse];
-			rse->rse_sorted = node->nod_arg[e_agg_group];
-			value = NULL;
-			break;
-
-		case nod_window:
-			rse = (RecordSelExpr*) node->nod_arg[e_win_rse];
-			value = NULL;
-			break;
-
-		default:
-			return;
+		}
 	}
-
-	// Node is a record selection expression.
-	if (sub = rse->rse_first) {
-		findDependentFromStreams(sub, streamList);
-	}
-
-    if (sub = rse->rse_skip) {
-        findDependentFromStreams(sub, streamList);
-	}
-
-	if (sub = rse->rse_boolean) {
-		findDependentFromStreams(sub, streamList);
-	}
-
-	if (sub = rse->rse_sorted) {
-		findDependentFromStreams(sub, streamList);
-	}
-
-	if (sub = rse->rse_projection) {
-		findDependentFromStreams(sub, streamList);
-	}
-
-	jrd_nod* const* ptr;
-	const jrd_nod* const* end;
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		findDependentFromStreams(*ptr, streamList);
-	}
-
-	// Check value expression, if any
-	if (value) {
-		findDependentFromStreams(value, streamList);
-	}
-
-	return;
 }
 
 const string& OptimizerRetrieval::getAlias()

@@ -709,7 +709,7 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	// We need to take care of invariantness expressions to be able to pre-compile the pattern.
 	node->nod_flags |= nod_invariant;
-	csb->csb_current_nodes.push(node);
+	csb->csb_current_nodes.push(node.getObject());
 
 	pattern = CMP_pass1(tdbb, csb, pattern);
 	escape = CMP_pass1(tdbb, csb, escape);
@@ -721,11 +721,11 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if ((node->nod_flags & nod_invariant) &&
 		(pattern->nod_type != nod_literal || escape->nod_type != nod_literal))
 	{
-		const jrd_node_base* const* ctx_node, *const *end;
+		const LegacyNodeOrRseNode* ctx_node, *end;
 		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
-			 ctx_node < end; ctx_node++)
+			 ctx_node != end; ++ctx_node)
 		{
-			if ((*ctx_node)->nod_type == nod_rse)
+			if (ctx_node->rseNode)
 				break;
 		}
 

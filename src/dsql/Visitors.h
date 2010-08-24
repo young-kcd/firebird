@@ -427,7 +427,7 @@ protected:
 
 	virtual USHORT getFieldId(jrd_nod* input);
 
-protected:
+public:
 	CompilerScratch* csb;
 	UCHAR* remap;
 	jrd_nod* message;

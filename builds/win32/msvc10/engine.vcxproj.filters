@@ -240,6 +240,9 @@
     <ClCompile Include="..\..\..\src\jrd\RecordBuffer.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\RecordSourceNodes.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\Relation.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -852,6 +855,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\RecordBuffer.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\RecordSourceNodes.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">

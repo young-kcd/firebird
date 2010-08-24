@@ -130,7 +130,6 @@ class IndexBlock;
 class IndexLock;
 class ArrayField;
 struct sort_context;
-class RecordSelExpr;
 class vcl;
 class TextType;
 class Parameter;
