@@ -1,3 +1,11 @@
+ 2010-08-23 11:39  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+Fixed CORE-3116: gsec outputs list of users to stderr instead stdout
+
+ 2010-08-23 10:06  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Applied suggested by Dmitry Kovalenko fix - it helps avoid AV when buffer is allocated exactly at the end of physical memory segment
+
  2010-08-11 10:50  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
