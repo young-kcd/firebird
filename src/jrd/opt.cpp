@@ -519,14 +519,9 @@ namespace Jrd
 			memcpy(m_streams.begin(), streams, count);
 		}
 
-		River(CompilerScratch* csb, RiverList& rivers, RecordSource* rsb = NULL)
-			: m_streams(csb->csb_pool)
+		River(CompilerScratch* csb, RecordSource* rsb, RiverList& rivers)
+			: m_rsb(rsb), m_streams(csb->csb_pool)
 		{
-			const size_t count = rivers.getCount();
-			HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-			rsbs.resize(count);
-			RecordSource** ptr = rsbs.begin();
-
 			for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 			{
 				River* const sub_river = *iter;
@@ -535,20 +530,6 @@ namespace Jrd
 				const size_t delta = sub_river->m_streams.getCount();
 				m_streams.grow(count + delta);
 				memcpy(m_streams.begin() + count, sub_river->m_streams.begin(), delta);
-
-				*ptr++ = sub_river->getRecordSource();
-			}
-
-			rivers.clear();
-
-			if (rsb)
-			{
-				m_rsb = rsb;
-			}
-			else
-			{
-				m_rsb = (count == 1) ? rsbs[0] :
-					FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
 			}
 		}
 
@@ -593,7 +574,7 @@ namespace Jrd
 			return false;
 		}
 
-	private:
+	protected:
 		bool isReferenced(const jrd_nod* node, bool& field_found) const
 		{
 			if (node->nod_type == nod_field)
@@ -624,6 +605,37 @@ namespace Jrd
 
 		RecordSource* m_rsb;
 		StreamList m_streams;
+	};
+
+	class CrossJoin : public River
+	{
+	public:
+		CrossJoin(CompilerScratch* csb, RiverList& rivers)
+			: River(csb, NULL, rivers)
+		{
+			const size_t count = rivers.getCount();
+			fb_assert(count);
+
+			if (count == 1)
+			{
+				m_rsb = rivers[0]->getRecordSource();
+			}
+			else
+			{
+				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
+				rsbs.resize(count);
+				RecordSource** ptr = rsbs.begin();
+
+				for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+				{
+					*ptr++ = (*iter)->getRecordSource();
+				}
+
+				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
+			}
+
+			rivers.clear();
+		}
 	};
 } // namespace
 
@@ -1092,7 +1104,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// Generate one river which holds a cross join rsb between
 				// all currently available rivers
 
-				River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rivers);
+				River* const river = FB_NEW(*tdbb->getDefaultPool()) CrossJoin(csb, rivers);
 				river->activate(csb);
 				rivers.add(river);
 			}
@@ -1119,7 +1131,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		while (gen_equi_join(tdbb, opt, rivers))
 			;
 
-		rsb = River(csb, rivers).getRecordSource();
+		rsb = CrossJoin(csb, rivers).getRecordSource();
 
 		// Assign the sort node back if it wasn't used by the index navigation
 		if (saved_sort_node && !sort_can_be_used)
@@ -3339,7 +3351,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	}
 
 	River* const merged_river =
-		FB_NEW(*tdbb->getDefaultPool()) River(csb, rivers_to_merge, rsb);
+		FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
 
 	org_rivers.insert(lowest_river_position, merged_river);
 
