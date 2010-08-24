@@ -1193,6 +1193,8 @@ bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 ExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	ExprNode::pass1(tdbb, csb);
+
 	if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
 	{
 		const TEXT* secName = function->getSecurityName().nullStr();
