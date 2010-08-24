@@ -3015,7 +3015,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			fb_assert(rseNode->type == RseNode::TYPE);
 			rseNode->ignoreDbKey(tdbb, csb, view);
 			rseNode->pass1(tdbb, csb, csb->csb_view);
-			csb->csb_current_nodes.push(node->nod_arg[e_stat_rse]);
+			csb->csb_current_nodes.push(rseNode);
 			node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
 			node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
 			csb->csb_current_nodes.pop();
