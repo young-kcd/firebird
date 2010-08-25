@@ -2847,6 +2847,21 @@ static jrd_nod* copy(thread_db* tdbb,
 		}
 		return input;
 
+	case nod_init_variable:
+		if (csb->csb_remap_variable != 0)
+		{
+			node = PAR_make_node(tdbb, e_init_var_length);
+			node->nod_type = input->nod_type;
+			node->nod_count = input->nod_count;
+
+			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_init_var_id];
+			node->nod_arg[e_init_var_id] = (jrd_nod*)(IPTR) n;
+			node->nod_arg[e_init_var_variable] = input->nod_arg[e_init_var_variable];
+			node->nod_arg[e_init_var_info] = input->nod_arg[e_init_var_info];
+			return node;
+		}
+		return input;
+
 	case nod_literal:
 		return input;
 
@@ -3222,11 +3237,11 @@ static jrd_nod* copy(thread_db* tdbb,
 			*(dsc*) (node->nod_arg + e_dcl_desc) = *(dsc*) (input->nod_arg + e_dcl_desc);
 
 			csb->csb_variables =
-				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n);
+				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
 
 			return node;
 		}
-		break;
+		return input;
 
 	default:
 		break;
@@ -3682,7 +3697,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	{
 		const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
 		vec<jrd_nod*>* vector = csb->csb_variables;
-		if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
+		if (!vector || n >= vector->count() || !(node->nod_arg[e_init_var_variable] = (*vector)[n]))
 		{
 			PAR_syntax_error(csb, "variable identifier");
 		}
