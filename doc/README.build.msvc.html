@@ -1,24 +1,24 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<HTML>
-<HEAD>
-<TITLE>Build procedure for MSVC compiler</TITLE>
-<META NAME="Generator" CONTENT="Vim">
-<META NAME="Author" CONTENT="">
-<META NAME="Keywords" CONTENT="">
-<META NAME="Description" CONTENT="">
-</HEAD>
+<html>
+<head>
+<title>Build procedure for MSVC compiler</title>
+<meta name="Generator" content="Vim">
+<meta name="Author" content="">
+<meta name="Keywords" content="">
+<meta name="Description" content="">
+</head>
 
-<BODY>
-<H2>VisualStudio build Notes</H2>
+<body>
+<h2>VisualStudio build Notes</h2>
 <hr/>
-Last Update: Aug 25 2009<br>
+Last Update: Aug 25 2010<br>
 Author: Blas Rodriguez Somoza <a href="">blas@puertareal.com</a><br>
-Updated by: Popa Adrian Marius
+Updated by: Popa Adrian Marius (mapopa at gmail.com)
 
 <h3>0.-Introduction</h3>
 <blockquote>
 
-<p>There are two VisualStudio builds, msvc8 and msvc9. The msvc8 build is the official build of FB in win32.</p>
+<p>There are two VisualStudio builds, msvc8 and msvc9. The msvc8 build is used for the official build of Firebird in win32.</p>
 <p>Under the directory where you put Firebird2 sources you will see the following directories</p>
 <ul>
 <li>builds</li>
@@ -49,7 +49,7 @@ Updated by: Popa Adrian Marius
 <ul>
 <li>gen (cpp files generated from epp, exe and fdb's.)</li>
 <li>temp (compiler temporary)</li>
-<li>output (build output)</li>
+<li>output_Win32 (build output)</li>
 </ul>
 </blockquote>
 <h3>1.-TODO</h3>
@@ -65,10 +65,11 @@ Updated by: Popa Adrian Marius
 <li>sed unix utility</li>
 </ul>
 
-<p>If you intend to prepare an installable build, you will need innosetup.</p>
+<p>If you intend to prepare an installable build, you will need <a href=http://www.jrsoftware.org/isdl.php>innosetup 5</a></p>
 <p>To download the utilities use the following links</p>
 <ul>
-<li>My Inno setup extensions 3.0.6.2 <a href="http://www.wintax.nl/isx/">http://www.wintax.nl/isx/</a></li>
+<li>Innosetup <a href=http://www.jrsoftware.org/download.php/is.exe>http://www.jrsoftware.org/download.php/is.exe</a></li>
+<li>Innosetup pack <a href="http://files.jrsoftware.org/ispack/ispack-5.3.10.exe">http://files.jrsoftware.org/ispack/ispack-5.3.10.exe</a></li>
 <li>Sed <a href="http://gnuwin32.sourceforge.net/packages/sed.htm">http://gnuwin32.sourceforge.net/packages/sed.htm</a></li>
 </ul>
 
@@ -79,7 +80,7 @@ Updated by: Popa Adrian Marius
 <h4>2.1.-Visual Studio</h4>
 <ol>
 <li>Install VisualStudio 8/9</li>
-<li>You can try to compile it with <a href=http://www.microsoft.com/express/vc/>Visual Studio Express</a> but it will not be able to build the <a href=http://www.nabble.com/building-head-with-visual-studio-2008-%28vc9%29-td25620414.html>control panel applet</a> but the server building is ok <br>
+<li>You can compile it with <a href=http://www.microsoft.com/express/vc/>Visual Studio Express</a> but it will not be able to build the <a href=http://www.nabble.com/building-head-with-visual-studio-2008-%28vc9%29-td25620414.html>control panel applet</a> but for the firebird server building is ok <br>
 </li>
 </ol>
 
@@ -91,13 +92,19 @@ Updated by: Popa Adrian Marius
 </li> 
 </ol>
 <h4>2.3.-Inno setup</h4>
-
+<ol>
+<li>Run the Installer for Innosetup 5 that you downloaded from above 
+setup-5.3.xx.exe</li>
+<li>Run the Innosetup pack Installer ispack-5.3.10.exe 
+with the default options (next , next , next)</li>
+<ol>
 </blockquote>
 <h3>4.- Building</h3>
 <blockquote>
 
 <h4>4.1.-Standard build</h4>
 <ol>
+<li>Eliminate the fb2control from firebird2 solution if you are using Visual Studio EXpress (doesn't support MFC) and it's only the control pannel applet and try to build it , it should give you no errors when you build the solution.</li>
 <li>Open a command line window.</li>
 <li>Go to the firebird2\builds\win32 directory.</li>
 <li>Run the following batches in order (your version of VisualStudio is detected automatically)</li>
@@ -140,5 +147,5 @@ Where DEBUG means if the build is a debug one or not and CS means classic server
 <li>udf (User defined functions)</li>
 </ul>
 </blockquote>
-</BODY>
-</HTML>
+</body>
+</html>
