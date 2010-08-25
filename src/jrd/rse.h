@@ -71,33 +71,60 @@ const int OPT_STREAM_BITS = 8;
 // in various arrays. Larger numbers will have to be allocated dynamically
 const int OPT_STATIC_ITEMS = 16;
 
+typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
+typedef Firebird::SortedArray<int> SortedStreamList;
+typedef UCHAR stream_array_t[MAX_STREAMS + 1];
+
+class RseNode;
 
 // General optimizer block
 
 class OptimizerBlk : public pool_alloc<type_opt>
 {
 public:
-	CompilerScratch*	opt_csb;					// compiler scratch block
+	OptimizerBlk(MemoryPool* pool, RseNode* aRse, NodeStack* aParentStack)
+		: opt_conjuncts(*pool),
+		  opt_streams(*pool),
+		  rse(aRse),
+		  parentStack(aParentStack),
+		  outerStreams(*pool),
+		  subStreams(*pool),
+		  conjunctStack(*pool),
+		  conjunctCount(0)
+	{
+		compileStreams[0] = beds[0] = localStreams[0] = keyStreams[0] = 0;
+	}
+
+	CompilerScratch* opt_csb;				// compiler scratch block
 	double opt_best_cost;					// cost of best join order
 	USHORT opt_best_count;					// longest length of indexable streams
 	USHORT opt_base_conjuncts;				// number of conjuncts in our rse, next conjuncts are distributed parent
 	USHORT opt_base_parent_conjuncts;		// number of conjuncts in our rse + distributed with parent, next are parent
 	USHORT opt_base_missing_conjuncts;		// number of conjuncts in our and parent rse, but without missing
+
 	struct opt_conjunct
 	{
 		// Conjunctions and their options
 		jrd_nod* opt_conjunct_node;	// conjunction
 		UCHAR opt_conjunct_flags;
 	};
+
 	struct opt_stream
 	{
 		// Streams and their options
 		USHORT opt_best_stream;					// stream in best join order seen so far
 		USHORT opt_stream_number;				// stream in position of join order
 	};
+
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	OptimizerBlk(MemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
+
+	RseNode* const rse;
+	NodeStack* parentStack;
+	StreamsArray outerStreams, subStreams;
+	NodeStack conjunctStack;
+	SLONG conjunctCount;
+	stream_array_t compileStreams, beds, localStreams, keyStreams;
 };
 
 // values for opt_conjunct_flags

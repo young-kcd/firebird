@@ -84,11 +84,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value) = 0;
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList) = 0;
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream) = 0;
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
 
 public:
 	const Type type;
@@ -150,11 +146,7 @@ public:
 	{
 	}
 
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 public:
 	jrd_rel* relation;
@@ -205,11 +197,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
 	ProcedureScan* generate(thread_db* tdbb, OptimizerBlk* opt);
@@ -254,11 +242,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, NodeStack* parentStack,
@@ -303,11 +287,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams, USHORT nstreams,
@@ -360,11 +340,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
 	NestConst<RseNode> rse;
@@ -434,11 +410,7 @@ public:
 		bool allowOnlyCurrentStream, jrd_nod* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
-	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
-		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
-		bool innerSubStream);
+	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
 	void computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const;

@@ -918,10 +918,6 @@ public:
 // declared as varchar
 const int XCP_MESSAGE_LENGTH = 1023 - sizeof(USHORT);
 
-typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
-typedef Firebird::SortedArray<int> SortedStreamList;
-typedef UCHAR stream_array_t[MAX_STREAMS + 1];
-
 } // namespace Jrd
 
 #endif // JRD_EXE_H
