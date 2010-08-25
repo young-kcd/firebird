@@ -2557,7 +2557,10 @@ static void mark_variant(CompilerScratch* csb, USHORT stream)
 			node->rseNode->flags |= RseNode::FLAG_VARIANT;
 		}
 		else
+		{
+			fb_assert(node->legacyNode->nod_type != nod_class_recsrcnode_jrd);
 			node->legacyNode->nod_flags &= ~nod_invariant;
+		}
 	}
 }
 

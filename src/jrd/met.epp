@@ -4374,9 +4374,7 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 			blr.add(blr_not_nullable);
 
 		if (parameter->prm_mechanism == prm_mech_type_of)
-		{
 			PreparedStatement::generateBlr(&parameter->prm_desc, blr);
-		}
 		else
 		{
 			fb_assert(parameter->prm_mechanism == prm_mech_normal);
