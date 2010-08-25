@@ -1,3 +1,73 @@
+ 2010-08-25 01:35  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/opt.cpp
+Misc
+
+ 2010-08-25 01:01  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Remove do-nothing checks from the new file
+
+ 2010-08-25 00:42  asfernandes 
+   M src/jrd/cmp.cpp
+   M src/jrd/met.epp
+Misc
+
+ 2010-08-24 17:49  dimitr 
+   M src/jrd/opt.cpp
+Refactored the rivers management a bit.
+
+ 2010-08-24 16:26  asfernandes 
+   M src/jrd/cmp.cpp
+Correction
+
+ 2010-08-24 11:58  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed incomplete processing of UDF arguments, causing server crashes.
+
+ 2010-08-24 08:27  firebirds 
+   M mkChangeLog.sh
+Fixed correct buildno in 2.5
+
+ 2010-08-24 03:25  asfernandes 
+   M builds/posix/make.shared.variables
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/engine_classic.vcxproj
+   M builds/win32/msvc10/engine_classic.vcxproj.filters
+   M builds/win32/msvc10/engine_embed.vcxproj
+   M builds/win32/msvc10/engine_embed.vcxproj.filters
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/engine_classic.vcproj
+   M builds/win32/msvc9/engine_embed.vcproj
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/jrd/Attachment.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   A src/jrd/RecordSourceNodes.cpp
+   A src/jrd/RecordSourceNodes.h
+   M src/jrd/Relation.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/jrd.h
+   M src/jrd/lls.h
+   M src/jrd/met.epp
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/Union.cpp
+   M src/misc/blrtable.cpp
+Refactor nod_rse, nod_relation, nod_procedure, nod_union, nod_aggregate and nod_window.
+
  2010-08-16 01:47  asfernandes 
    M src/misc/blrtable.cpp
 Fix wrong nod_type of scrollable cursors
