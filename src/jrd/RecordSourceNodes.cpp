@@ -1137,18 +1137,15 @@ WindowSourceNode* WindowSourceNode::parse(thread_db* tdbb, CompilerScratch* csb)
 	node->rse = RseNode::getFrom(PAR_parse_node(tdbb, csb, TYPE_RSE));
 
 	unsigned partitionCount = csb->csb_blr_reader.getByte();
-	NodeStack stack;
 
 	for (unsigned i = 0; i < partitionCount; ++i)
-		stack.push(parsePartitionBy(tdbb, csb));
-
-	node->windows = PAR_make_list(tdbb, stack);
+		node->parsePartitionBy(tdbb, csb);
 
 	return node;
 }
 
 // Parse PARTITION BY subclauses of window functions.
-jrd_nod* WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* csb)
+void WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 
@@ -1156,42 +1153,35 @@ jrd_nod* WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* cs
 		PAR_syntax_error(csb, "blr_partition_by");
 
 	SSHORT context;
-	SSHORT partitionStream = PAR_context(csb, &context);
-
-	jrd_nod* list = PAR_make_node(tdbb, e_part_length);
-	list->nod_type = nod_list;
-	list->nod_count = e_part_count;
+	Partition partition;
+	partition.stream = PAR_context(csb, &context);
 
 	const UCHAR count = csb->csb_blr_reader.getByte();
 
 	if (count != 0)
 	{
-		jrd_nod*& groupNode = list->nod_arg[e_part_group];
-		jrd_nod*& regroupNode = list->nod_arg[e_part_regroup];
-
-		groupNode = PAR_args(tdbb, csb, VALUE, count, count * 3);
-		regroupNode = PAR_args(tdbb, csb, VALUE, count, count);
+		partition.group = PAR_args(tdbb, csb, VALUE, count, count * 3);
+		partition.regroup = PAR_args(tdbb, csb, VALUE, count, count);
 
 		// We have allocated groupNode with bigger length than expressions. This is to use in
 		// OPT_gen_sort. Now fill that info.
 
-		groupNode->nod_type = nod_sort;
+		partition.group->nod_type = nod_sort;
 
 		for (unsigned i = 0; i < count; ++i)
 		{
-			groupNode->nod_arg[count + i] = (jrd_nod*)(IPTR) false;	// ascending
-			groupNode->nod_arg[count * 2 + i] = (jrd_nod*)(IPTR) rse_nulls_first;
+			partition.group->nod_arg[count + i] = (jrd_nod*)(IPTR) false;	// ascending
+			partition.group->nod_arg[count * 2 + i] = (jrd_nod*)(IPTR) rse_nulls_first;
 		}
 	}
 
 	if (csb->csb_blr_reader.getByte() != blr_sort)
 		PAR_syntax_error(csb, "blr_sort");
 
-	list->nod_arg[e_part_order] = PAR_sort(tdbb, csb, true, true);
-	list->nod_arg[e_part_map] = parseMap(tdbb, csb, partitionStream);
-	list->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) partitionStream;
+	partition.order = PAR_sort(tdbb, csb, true, true);
+	partition.map = parseMap(tdbb, csb, partition.stream);
 
-	return list;
+	partitions.add(partition);
 }
 
 WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -1203,33 +1193,25 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
 		*tdbb->getDefaultPool());
 
 	newSource->rse = rse->copy(tdbb, copier);
+	
+	Partition* copyPartition = newSource->partitions.getBuffer(partitions.getCount());
 
-	jrd_nod* inputWindows = windows;
-
-	jrd_nod* copyWindows = newSource->windows = PAR_make_node(tdbb, inputWindows->nod_count);
-	copyWindows->nod_type = inputWindows->nod_type;
-	copyWindows->nod_count = inputWindows->nod_count;
-
-	for (unsigned i = 0; i < inputWindows->nod_count; ++i)
+	for (Partition* inputPartition = partitions.begin();
+		 inputPartition != partitions.end();
+		 ++inputPartition, ++copyPartition)
 	{
-		jrd_nod* inputPartition = inputWindows->nod_arg[i];
+		fb_assert(inputPartition->stream <= MAX_STREAMS);
 
-		jrd_nod* copyPartition = copyWindows->nod_arg[i] = PAR_make_node(tdbb, e_part_length);
-		copyPartition->nod_type = inputPartition->nod_type;
-		copyPartition->nod_count = inputPartition->nod_count;
+		copyPartition->stream = copier.csb->nextStream();
+		// fb_assert(copyPartition->stream <= MAX_UCHAR);
 
-		USHORT oldStream = (USHORT)(IPTR) inputPartition->nod_arg[e_part_stream];
-		fb_assert(oldStream <= MAX_STREAMS);
+		copier.remap[inputPartition->stream] = (UCHAR) copyPartition->stream;
+		CMP_csb_element(copier.csb, copyPartition->stream);
 
-		USHORT newStream = copier.csb->nextStream();
-
-		copyPartition->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) newStream;
-		// fb_assert(newStream <= MAX_UCHAR);
-		copier.remap[oldStream] = (UCHAR) newStream;
-		CMP_csb_element(copier.csb, newStream);
-
-		for (unsigned j = 0; j < copyPartition->nod_count; ++j)
-			copyPartition->nod_arg[j] = copier.copy(tdbb, inputPartition->nod_arg[j]);
+		copyPartition->group = copier.copy(tdbb, inputPartition->group);
+		copyPartition->regroup = copier.copy(tdbb, inputPartition->regroup);
+		copyPartition->order = copier.copy(tdbb, inputPartition->order);
+		copyPartition->map = copier.copy(tdbb, inputPartition->map);
 	}
 
 	return newSource;
@@ -1242,18 +1224,22 @@ void WindowSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const 
 
 void WindowSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 {
-	const jrd_nod* nodWindows = windows;
-
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
 	{
-		USHORT partStream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-		fb_assert(partStream <= MAX_STREAMS);
-		csb->csb_rpt[partStream].csb_flags |= csb_no_dbkey;
+		fb_assert(partition->stream <= MAX_STREAMS);
+		csb->csb_rpt[partition->stream].csb_flags |= csb_no_dbkey;
 	}
 
 	rse->ignoreDbKey(tdbb, csb, view);
 	rse->pass1(tdbb, csb, csb->csb_view);
-	windows = CMP_pass1(tdbb, csb, windows);
+
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
+	{
+		partition->group = CMP_pass1(tdbb, csb, partition->group);
+		partition->regroup = CMP_pass1(tdbb, csb, partition->regroup);
+		partition->order = CMP_pass1(tdbb, csb, partition->order);
+		partition->map = CMP_pass1(tdbb, csb, partition->map);
+	}
 }
 
 void WindowSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -1268,46 +1254,37 @@ void WindowSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	rse->pass2Rse(tdbb, csb);
 
-	jrd_nod* nodWindows = windows;
-
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
 	{
-		CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map], nodWindows->nod_arg[i]);
-		CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_group], nodWindows->nod_arg[i]);
-		CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_order], nodWindows->nod_arg[i]);
+		CMP_pass2(tdbb, csb, partition->map, NULL);
+		CMP_pass2(tdbb, csb, partition->group, NULL);
+		CMP_pass2(tdbb, csb, partition->order, NULL);
 
-		const USHORT partStream = (SSHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-		fb_assert(partStream <= MAX_STREAMS);
+		fb_assert(partition->stream <= MAX_STREAMS);
 
-		processMap(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_map],
-			&csb->csb_rpt[partStream].csb_internal_format);
-		csb->csb_rpt[partStream].csb_format = csb->csb_rpt[partStream].csb_internal_format;
+		processMap(tdbb, csb, partition->map,
+			&csb->csb_rpt[partition->stream].csb_internal_format);
+		csb->csb_rpt[partition->stream].csb_format =
+			csb->csb_rpt[partition->stream].csb_internal_format;
 	}
 
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-		CMP_pass2(tdbb, csb, nodWindows->nod_arg[i]->nod_arg[e_part_regroup], nodWindows->nod_arg[i]);
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
+		CMP_pass2(tdbb, csb, partition->regroup, NULL);
 }
 
 void WindowSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
-	const jrd_nod* nodWindows = windows;
-
 	pass2(tdbb, csb);
 
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
-	{
-		const SSHORT partStream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-		csb->csb_rpt[partStream].csb_flags |= csb_active;
-	}
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
+		csb->csb_rpt[partition->stream].csb_flags |= csb_active;
 }
 
 bool WindowSourceNode::containsStream(USHORT checkStream) const
 {
-	const jrd_nod* nodWindows = windows;
-
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (const Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
 	{
-		if (checkStream == (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream])
+		if (checkStream == partition->stream)
 			return true;		// do not mark as variant
 	}
 
@@ -1319,23 +1296,19 @@ bool WindowSourceNode::containsStream(USHORT checkStream) const
 
 RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
 {
-	const jrd_nod* nodWindows = windows;
-
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
 	{
-		SSHORT partStream = (USHORT)(IPTR) nodWindows->nod_arg[i]->nod_arg[e_part_stream];
-
-		fb_assert(partStream <= MAX_UCHAR);
+		fb_assert(partition->stream <= MAX_UCHAR);
 		fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
 		//if (opt->beds[0] >= MAX_STREAMS) // all builds check
 		//	ERR_post(Arg::Gds(isc_too_many_contexts));
 
-		opt->beds[++opt->beds[0]] = (UCHAR) partStream;
+		opt->beds[++opt->beds[0]] = (UCHAR) partition->stream;
 	}
 
 	NodeStack deliverStack;
 
-	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, windows,
+	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, partitions,
 		OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
 
 	StreamsArray rsbStreams;
@@ -1358,8 +1331,8 @@ bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_
 
 void WindowSourceNode::getStreams(StreamsArray& list) const
 {
-	for (unsigned i = 0; i < windows->nod_count; ++i)
-		list.add((int)(IPTR) windows->nod_arg[i]->nod_arg[e_part_stream]);
+	for (const Partition* partition = partitions.begin(); partition != partitions.end(); ++partition)
+		list.add(partition->stream);
 }
 
 void WindowSourceNode::findDependentFromStreams(const OptimizerRetrieval* optRet,

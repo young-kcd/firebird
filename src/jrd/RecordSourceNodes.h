@@ -18,6 +18,9 @@
  * Adriano dos Santos Fernandes
  */
 
+#ifndef JRD_RECORD_SOURCE_NODES_H
+#define JRD_RECORD_SOURCE_NODES_H
+
 #include "../jrd/common.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -48,7 +51,8 @@ public:
 
 	RecordSourceNode(Type aType, MemoryPool& pool)
 		: PermanentStorage(pool),
-		  type(aType)
+		  type(aType),
+		  stream(MAX_USHORT)
 	{
 	}
 
@@ -303,17 +307,31 @@ private:
 class WindowSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>
 {
 public:
+	struct Partition
+	{
+		Partition()
+			: stream(MAX_USHORT)
+		{
+		}
+
+		USHORT stream;
+		NestConst<jrd_nod> group;
+		NestConst<jrd_nod> regroup;
+		NestConst<jrd_nod> order;
+		NestConst<jrd_nod> map;
+	};
+
 	explicit WindowSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_WINDOW>(pool),
 		  rse(NULL),
-		  windows(NULL)
+		  partitions(pool)
 	{
 	}
 
 	static WindowSourceNode* parse(thread_db* tdbb, CompilerScratch* csb);
 
 private:
-	static jrd_nod* parsePartitionBy(thread_db* tdbb, CompilerScratch* csb);
+	void parsePartitionBy(thread_db* tdbb, CompilerScratch* csb);
 
 public:
 	virtual USHORT getStream() const
@@ -344,7 +362,7 @@ public:
 
 private:
 	NestConst<RseNode> rse;
-	NestConst<jrd_nod> windows;
+	Firebird::Array<Partition> partitions;
 };
 
 class RseNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
@@ -433,3 +451,5 @@ public:
 
 
 } //namespace Jrd
+
+#endif	// JRD_RECORD_SOURCE_NODES_H

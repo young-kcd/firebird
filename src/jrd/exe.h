@@ -425,15 +425,6 @@ const int e_extproc_output_message	= 1;
 const int e_extproc_input_assign	= 2;
 const int e_extproc_output_assign	= 3;
 
-// Window partition.
-const int e_part_group		= 0;
-const int e_part_regroup	= 1;
-const int e_part_order		= 2;
-const int e_part_map		= 3;
-const int e_part_stream		= 4;
-const int e_part_count		= 4;
-const int e_part_length		= 5;
-
 // Request resources
 
 struct Resource

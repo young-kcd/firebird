@@ -25,6 +25,7 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/NestConst.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
@@ -626,7 +627,8 @@ namespace Jrd
 	class WindowedStream : public RecordSource
 	{
 	public:
-		WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, RecordSource* next);
+		WindowedStream(CompilerScratch* csb, Firebird::Array<WindowSourceNode::Partition>& partitions,
+			RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
