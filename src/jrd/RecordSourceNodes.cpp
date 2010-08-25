@@ -619,8 +619,6 @@ RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, CompilerScratch* csb
 // Compile and optimize a record selection expression into a set of record source blocks (rsb's).
 ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 {
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
 
 	jrd_prc* const proc = MET_lookup_procedure_id(tdbb, procedure, false, false, 0);
@@ -802,8 +800,6 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, CompilerScratch* csb
 RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	NodeStack* parent_stack, UCHAR shellStream)
 {
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(node, type_nod);
 	SET_TDBB(tdbb);
 
 	CompilerScratch* const csb = opt->opt_csb;
@@ -988,8 +984,6 @@ void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode
 void UnionSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
 
 	// make up a format block sufficiently large to hold instantiated record
 
@@ -1070,9 +1064,6 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, Op
 RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams,
 	USHORT nstreams, NodeStack* parent_stack, UCHAR shellStream)
 {
-	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(union_node, type_nod);
-
 	SET_TDBB(tdbb);
 
 	CompilerScratch* csb = opt->opt_csb;
@@ -1426,9 +1417,6 @@ RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier)
 // For each relation or aggregate in the RseNode, mark it as not having a dbkey.
 void RseNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const
 {
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(view, type_rel);
-
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
 	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
@@ -1440,9 +1428,6 @@ void RseNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* 
 void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 {
 	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(view, type_rel);
 
 	// for scoping purposes, maintain a stack of RseNode's which are
 	// currently being parsed; if there are none on the stack as
@@ -1574,7 +1559,6 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 void RseNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
-	DEV_BLKCHK(csb, type_csb);
 
 	// Maintain stack of RSEe for scoping purposes
 	csb->csb_current_nodes.push(this);
@@ -1717,8 +1701,6 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 // Identify the streams that make up an RseNode.
 void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const
 {
-	DEV_BLKCHK(csb, type_csb);
-
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
 	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
@@ -1745,8 +1727,6 @@ void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) cons
 // If they are not, there are streams in the RseNode which were not mentioned in the plan.
 void RseNode::planCheck(const CompilerScratch* csb) const
 {
-	DEV_BLKCHK(csb, type_csb);
-
 	// if any streams are not marked with a plan, give an error
 
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
@@ -1774,9 +1754,6 @@ void RseNode::planCheck(const CompilerScratch* csb) const
 // between streams in the query and streams in the plan.
 void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 {
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(plan, type_nod);
-
 	if (plan->nod_type == nod_join)
 	{
 		for (jrd_nod** ptr = plan->nod_arg, **end = ptr + plan->nod_count; ptr < end; ptr++)
@@ -2112,9 +2089,6 @@ static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 {
 	SET_TDBB(tdbb);
 
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(*boolean, type_nod);
-
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -2126,10 +2100,6 @@ static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 // Translate a map block into a format. If the format is missing or incomplete, extend it.
 static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** input_format)
 {
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(map, type_nod);
-	DEV_BLKCHK(*input_format, type_fmt);
-
 	SET_TDBB(tdbb);
 
 	Format* format = *input_format;
@@ -2242,7 +2212,6 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Form
 static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, jrd_nod* map,
 	NodeStack* parentStack, UCHAR shellStream)
 {
-	DEV_BLKCHK(map, type_nod);
 	SET_TDBB(tdbb);
 
 	for (NodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
