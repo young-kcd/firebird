@@ -781,20 +781,10 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 }
 
 
+// Compile and optimize a record selection expression into a set of record source blocks (rsb's).
 RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	NodeStack* parent_stack)
 {
-/**************************************
- *
- *	O P T _ c o m p i l e
- *
- **************************************
- *
- * Functional description
- *	Compile and optimize a record selection expression into a
- *	set of record source blocks (rsb's).
- *
- **************************************/
 	stream_array_t streams, beds, local_streams, key_streams;
 	StreamsArray outerStreams, subStreams;
 
@@ -802,7 +792,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	DEV_BLKCHK(rse, type_nod);
 
 	SET_TDBB(tdbb);
-	//Database* dbb = tdbb->getDatabase();
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)

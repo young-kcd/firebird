@@ -41,11 +41,11 @@ static jrd_nod* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
 static SSHORT strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, jrd_nod** boolean, RecordSourceNodeStack& stack);
-static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** input_format);
+static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** inputFormat);
 static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, jrd_nod* map,
 	NodeStack* parentStack, UCHAR shellStream);
-static void markIndices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_id);
-static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csb_tail);
+static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
+static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 
 //--------------------
@@ -63,7 +63,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		*tdbb->getDefaultPool());
 
 	// Find relation either by id or by name
-	string* alias_string = NULL;
+	string* aliasString = NULL;
 	MetaName name;
 
 	switch (blrOp)
@@ -75,8 +75,8 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 			if (blrOp == blr_rid2)
 			{
-				alias_string = FB_NEW(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
+				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				PAR_name(csb, *aliasString);
 			}
 
 			if (!(node->relation = MET_lookup_relation_id(tdbb, id, false)))
@@ -92,8 +92,8 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 			if (blrOp == blr_relation2)
 			{
-				alias_string = FB_NEW(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
+				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				PAR_name(csb, *aliasString);
 			}
 
 			node->relation = MET_lookup_relation(tdbb, name);
@@ -109,8 +109,8 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 	// if an alias was passed, store with the relation
 
-	if (alias_string)
-		node->alias = stringDup(*tdbb->getDefaultPool(), *alias_string);
+	if (aliasString)
+		node->alias = stringDup(*tdbb->getDefaultPool(), *aliasString);
 
 	// Scan the relation if it hasn't already been scanned for meta data
 
@@ -131,13 +131,13 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		fb_assert(node->stream <= MAX_STREAMS);
 
 		csb->csb_rpt[node->stream].csb_relation = node->relation;
-		csb->csb_rpt[node->stream].csb_alias = alias_string;
+		csb->csb_rpt[node->stream].csb_alias = aliasString;
 
 		if (csb->csb_g_flags & csb_get_dependencies)
 			PAR_dependency(tdbb, csb, node->stream, (SSHORT) -1, "");
 	}
 	else
-		delete alias_string;
+		delete aliasString;
 
 	return node;
 }
@@ -154,7 +154,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	// Get that stream number so that the flags can be copied
 	// into the newly created child stream.
 
-	const int relative_stream = stream ? copier.remap[stream - 1] : stream;
+	const int relativeStream = stream ? copier.remap[stream - 1] : stream;
 	newSource->stream = copier.csb->nextStream();
 	copier.remap[stream] = (UCHAR) newSource->stream;
 
@@ -198,12 +198,12 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 			tagged with whatever flags X possesed leading to various
 			errors.
 
-			We now store the proper stream no in relative_stream and
+			We now store the proper stream no in relativeStream and
 			later use it to copy the flags. -Sudesh (03/05/99)
 	**/
 
 	copier.csb->csb_rpt[newSource->stream].csb_flags |=
-		copier.csb->csb_rpt[relative_stream].csb_flags & csb_no_dbkey;
+		copier.csb->csb_rpt[relativeStream].csb_flags & csb_no_dbkey;
 
 	return newSource;
 }
@@ -231,23 +231,23 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// prepare to check protection of relation when a field in the stream of the
 	// relation is accessed.
 
-	jrd_rel* const parent_view = csb->csb_view;
-	const USHORT view_stream = csb->csb_view_stream;
+	jrd_rel* const parentView = csb->csb_view;
+	const USHORT viewStream = csb->csb_view_stream;
 
 	jrd_rel* relationView = relation;
 	CMP_post_resource(&csb->csb_resources, relationView, Resource::rsc_relation, relationView->rel_id);
-	view = parent_view;
+	view = parentView;
 
 	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
-	element->csb_view = parent_view;
-	fb_assert(view_stream <= MAX_STREAMS);
-	element->csb_view_stream = (UCHAR) view_stream;
+	element->csb_view = parentView;
+	fb_assert(viewStream <= MAX_STREAMS);
+	element->csb_view_stream = (UCHAR) viewStream;
 
 	// in the case where there is a parent view, find the context name
 
-	if (parent_view)
+	if (parentView)
 	{
-		const ViewContexts& ctx = parent_view->rel_view_contexts;
+		const ViewContexts& ctx = parentView->rel_view_contexts;
 		const USHORT key = context;
 		size_t pos;
 
@@ -260,8 +260,8 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	// check for a view - if not, nothing more to do
 
-	RseNode* view_rse = relationView->rel_view_rse;
-	if (!view_rse)
+	RseNode* viewRse = relationView->rel_view_rse;
+	if (!viewRse)
 		return;
 
 	// we've got a view, expand it
@@ -279,12 +279,12 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// 1) If the view has a projection, sort, first/skip or explicit plan.
 	// 2) If it's part of an outer join.
 
-	if (rse->rse_jointype || // view_rse->rse_jointype || ???
-		view_rse->rse_sorted || view_rse->rse_projection || view_rse->rse_first ||
-		view_rse->rse_skip || view_rse->rse_plan)
+	if (rse->rse_jointype || // viewRse->rse_jointype || ???
+		viewRse->rse_sorted || viewRse->rse_projection || viewRse->rse_first ||
+		viewRse->rse_skip || viewRse->rse_plan)
 	{
 		NodeCopier copier(csb, map);
-		RseNode* copy = view_rse->copy(tdbb, copier);
+		RseNode* copy = viewRse->copy(tdbb, copier);
 		DEBUG;
 		copy->pass1(tdbb, csb, csb->csb_view);
 		stack.push(copy);
@@ -298,13 +298,13 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// projection will be copied and correctly mapped later, but we don't have all
 	// the base streams yet
 
-	if (view_rse->rse_projection)
-		rse->rse_projection = view_rse->rse_projection;
+	if (viewRse->rse_projection)
+		rse->rse_projection = viewRse->rse_projection;
 
 	// disect view into component relations
 
-	NestConst<RecordSourceNode>* arg = view_rse->rse_relations.begin();
-	for (const NestConst<RecordSourceNode>* const end = view_rse->rse_relations.end(); arg != end; ++arg)
+	NestConst<RecordSourceNode>* arg = viewRse->rse_relations.begin();
+	for (const NestConst<RecordSourceNode>* const end = viewRse->rse_relations.end(); arg != end; ++arg)
 	{
 		// this call not only copies the node, it adds any streams it finds to the map
 		NodeCopier copier(csb, map);
@@ -323,19 +323,19 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// base table(s) instead of the view's context (see bug #8822), so we are ready to context-
 	// recognize them in CMP_pass1() - that is, replace the field nodes with actual field blocks.
 
-	if (view_rse->rse_projection)
+	if (viewRse->rse_projection)
 	{
 		rse->rse_projection =
-			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, view_rse->rse_projection, map));
+			CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb, csb, viewRse->rse_projection, map));
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
 	// boolean on the parent view, if any
 
-	if (view_rse->rse_boolean)
+	if (viewRse->rse_boolean)
 	{
 		jrd_nod* node = CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb,
-			csb, view_rse->rse_boolean, map));
+			csb, viewRse->rse_boolean, map));
 
 		if (*boolean)
 		{
@@ -363,9 +363,9 @@ void RelationSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 }
 
 RecordSource* RelationSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
 	fb_assert(stream <= MAX_UCHAR);
@@ -392,14 +392,12 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, CompilerScratch* csb,
 	// if we have seen any booleans or sort fields, we may be able to
 	// use an index to optimize them; retrieve the current format of
 	// all indices at this time so we can determine if it's possible
-	// AB: if a parent_stack was available and conjunct_count was 0
+	// AB: if a parentStack was available and conjunctCount was 0
 	// then no indices where retrieved. Added also OR check on
-	// parent_stack below. SF BUG # [ 508594 ]
+	// parentStack below. SF BUG # [ 508594 ]
 
-	if (conjunct_count || sort || aggregate || parent_stack)
+	if (conjunctCount || sort || aggregate || parentStack)
 	{
-		jrd_rel* relation = (jrd_rel*) this->relation;
-
 		if (relation && !relation->rel_file && !relation->isVirtual())
 		{
 			csb->csb_rpt[stream].csb_indices =
@@ -428,7 +426,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	SET_TDBB(tdbb);
 
 	jrd_prc* procedure = NULL;
-	string* alias_string = NULL;
+	string* aliasString = NULL;
 	QualifiedName name;
 
 	switch (blrOp)
@@ -440,8 +438,8 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (blrOp == blr_pid2)
 			{
-				alias_string = FB_NEW(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
+				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				PAR_name(csb, *aliasString);
 			}
 
 			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
@@ -462,8 +460,8 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (blrOp == blr_procedure2 || blrOp == blr_procedure4)
 			{
-				alias_string = FB_NEW(csb->csb_pool) string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
+				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				PAR_name(csb, *aliasString);
 			}
 
 			procedure = MET_lookup_procedure(tdbb, name, false);
@@ -495,7 +493,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	node->stream = PAR_context(csb, &node->context);
 
 	csb->csb_rpt[node->stream].csb_procedure = procedure;
-	csb->csb_rpt[node->stream].csb_alias = alias_string;
+	csb->csb_rpt[node->stream].csb_alias = aliasString;
 
 	PAR_procedure_parms(tdbb, csb, procedure, node->in_msg.getAddress(),
 		node->inputs.getAddress(), true);
@@ -557,20 +555,20 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 	CMP_post_procedure_access(tdbb, csb, proc);
 	CMP_post_resource(&csb->csb_resources, proc, Resource::rsc_procedure, proc->getId());
 
-	jrd_rel* const parent_view = csb->csb_view;
-	const USHORT view_stream = csb->csb_view_stream;
-	view = parent_view;
+	jrd_rel* const parentView = csb->csb_view;
+	const USHORT viewStream = csb->csb_view_stream;
+	view = parentView;
 
 	CompilerScratch::csb_repeat* const element = CMP_csb_element(csb, stream);
-	element->csb_view = parent_view;
-	fb_assert(view_stream <= MAX_STREAMS);
-	element->csb_view_stream = (UCHAR) view_stream;
+	element->csb_view = parentView;
+	fb_assert(viewStream <= MAX_STREAMS);
+	element->csb_view_stream = (UCHAR) viewStream;
 
 	// in the case where there is a parent view, find the context name
 
-	if (parent_view)
+	if (parentView)
 	{
-		const ViewContexts& ctx = parent_view->rel_view_contexts;
+		const ViewContexts& ctx = parentView->rel_view_contexts;
 		const USHORT key = context;
 		size_t pos;
 
@@ -597,9 +595,9 @@ void ProcedureSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 }
 
 RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
 	fb_assert(stream <= MAX_UCHAR);
@@ -610,8 +608,8 @@ RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, CompilerScratch* csb
 	beds[++beds[0]] = (UCHAR) stream;
 
 	RecordSource* rsb = generate(tdbb, opt);
-	fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-	local_streams[++local_streams[0]] = stream;
+	fb_assert(localStreams[0] < MAX_STREAMS && localStreams[0] < MAX_UCHAR);
+	localStreams[++localStreams[0]] = stream;
 
 	return rsb;
 }
@@ -624,8 +622,8 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 	jrd_prc* const proc = MET_lookup_procedure_id(tdbb, procedure, false, false, 0);
 
 	CompilerScratch* const csb = opt->opt_csb;
-	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
-	const string alias = OPT_make_alias(tdbb, csb, csb_tail);
+	CompilerScratch::csb_repeat* const csbTail = &csb->csb_rpt[stream];
+	const string alias = OPT_make_alias(tdbb, csb, csbTail);
 
 	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, proc, inputs, in_msg);
 }
@@ -768,9 +766,9 @@ bool AggregateSourceNode::containsStream(USHORT checkStream) const
 }
 
 RecordSource* AggregateSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
 	fb_assert(stream <= MAX_UCHAR);
@@ -780,17 +778,17 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, CompilerScratch* csb
 
 	beds[++beds[0]] = (UCHAR) stream;
 
-	NodeStack::const_iterator stack_end;
-	if (parent_stack)
-		stack_end = conjunct_stack.merge(*parent_stack);
+	NodeStack::const_iterator stackEnd;
+	if (parentStack)
+		stackEnd = conjunctStack.merge(*parentStack);
 
-	RecordSource* rsb = generate(tdbb, opt, &conjunct_stack, stream);
+	RecordSource* rsb = generate(tdbb, opt, &conjunctStack, stream);
 
-	if (parent_stack)
-		conjunct_stack.split(stack_end, *parent_stack);
+	if (parentStack)
+		conjunctStack.split(stackEnd, *parentStack);
 
-	fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-	local_streams[++local_streams[0]] = stream;
+	fb_assert(localStreams[0] < MAX_STREAMS && localStreams[0] < MAX_UCHAR);
+	localStreams[++localStreams[0]] = stream;
 
 	return rsb;
 }
@@ -798,7 +796,7 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, CompilerScratch* csb
 // Generate an RecordSource (Record Source Block) for each aggregate operation.
 // Generate an AggregateSort (Aggregate SortedStream Block) for each DISTINCT aggregate.
 RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
-	NodeStack* parent_stack, UCHAR shellStream)
+	NodeStack* parentStack, UCHAR shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -810,7 +808,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	// Those fields are mappings. Mappings that hold a plain field may be used
 	// to distribute. Handle the simple cases only.
 	NodeStack deliverStack;
-	genDeliverUnmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
+	genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
 	// only the simplest case, although it is probably possible
@@ -836,7 +834,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 		rse->rse_aggregate = aggregate;
 	}
 
-	RecordSource* const next_rsb = OPT_compile(tdbb, csb, rse, &deliverStack);
+	RecordSource* const nextRsb = OPT_compile(tdbb, csb, rse, &deliverStack);
 
 	fb_assert(stream <= MAX_STREAMS);
 	fb_assert(stream <= MAX_UCHAR);
@@ -844,7 +842,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	// allocate and optimize the record source block
 
 	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(csb, stream,
-		group, map, next_rsb);
+		group, map, nextRsb);
 
 	if (rse->rse_aggregate)
 	{
@@ -894,12 +892,12 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 	fb_assert(node->stream <= MAX_STREAMS);
 
 	// assign separate context for mapped record if union is recursive
-	USHORT map_stream = node->stream;
+	USHORT stream2 = node->stream;
 
 	if (node->recursive)
 	{
-		map_stream = PAR_context(csb, 0);
-		node->mapStream = map_stream;
+		stream2 = PAR_context(csb, 0);
+		node->mapStream = stream2;
 	}
 
 	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
@@ -909,7 +907,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 	while (--count >= 0)
 	{
 		node->clauses.push(RseNode::getFrom(PAR_parse_node(tdbb, csb, TYPE_RSE)));
-		node->maps.push(parseMap(tdbb, csb, map_stream));
+		node->maps.push(parseMap(tdbb, csb, stream2));
 	}
 
 	return node;
@@ -980,7 +978,7 @@ void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode
 	}
 }
 
-// Process a union clause of an RseNode.
+// Process a union clause of a RseNode.
 void UnionSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
@@ -1036,40 +1034,40 @@ bool UnionSourceNode::containsStream(USHORT checkStream) const
 }
 
 RecordSource* UnionSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
-	const SSHORT i = (SSHORT) key_streams[0];
-	computeDbKeyStreams(key_streams);
+	const SSHORT i = (SSHORT) keyStreams[0];
+	computeDbKeyStreams(keyStreams);
 
-	NodeStack::const_iterator stack_end;
-	if (parent_stack)
-		stack_end = conjunct_stack.merge(*parent_stack);
+	NodeStack::const_iterator stackEnd;
+	if (parentStack)
+		stackEnd = conjunctStack.merge(*parentStack);
 
-	RecordSource* rsb = generate(tdbb, opt, key_streams + i + 1,
-		(USHORT) (key_streams[0] - i), &conjunct_stack, stream);
+	RecordSource* rsb = generate(tdbb, opt, keyStreams + i + 1,
+		(USHORT) (keyStreams[0] - i), &conjunctStack, stream);
 
-	if (parent_stack)
-		conjunct_stack.split(stack_end, *parent_stack);
+	if (parentStack)
+		conjunctStack.split(stackEnd, *parentStack);
 
-	fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-	local_streams[++local_streams[0]] = stream;
+	fb_assert(localStreams[0] < MAX_STREAMS && localStreams[0] < MAX_UCHAR);
+	localStreams[++localStreams[0]] = stream;
 
 	return rsb;
 }
 
 // Generate a union complex.
 RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams,
-	USHORT nstreams, NodeStack* parent_stack, UCHAR shellStream)
+	USHORT nstreams, NodeStack* parentStack, UCHAR shellStream)
 {
 	SET_TDBB(tdbb);
 
 	CompilerScratch* csb = opt->opt_csb;
 	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
 
-	const SLONG base_impure = CMP_impure(csb, 0);
+	const SLONG baseImpure = CMP_impure(csb, 0);
 
 	NestConst<RseNode>* ptr = clauses.begin();
 	NestConst<jrd_nod>* ptr2 = maps.begin();
@@ -1084,7 +1082,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHA
 		// hvlad: don't do it for recursive unions else they will work wrong !
 		NodeStack deliverStack;
 		if (!recursive)
-			genDeliverUnmapped(tdbb, &deliverStack, map, parent_stack, shellStream);
+			genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
 
 		rsbs.add(OPT_compile(tdbb, csb, rse, &deliverStack));
 
@@ -1100,7 +1098,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHA
 		// hvlad: save size of inner impure area and context of mapped record
 		// for recursive processing later
 		return FB_NEW(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, mapStream,
-			rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, base_impure);
+			rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, baseImpure);
 	}
 
 	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, clauses.getCount(), rsbs.begin(),
@@ -1173,8 +1171,7 @@ jrd_nod* WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* cs
 		PAR_syntax_error(csb, "blr_partition_by");
 
 	SSHORT context;
-	SSHORT partitionStream;
-	partitionStream = PAR_context(csb, &context);
+	SSHORT partitionStream = PAR_context(csb, &context);
 
 	jrd_nod* list = PAR_make_node(tdbb, e_part_length);
 	list->nod_type = nod_list;
@@ -1336,9 +1333,9 @@ bool WindowSourceNode::containsStream(USHORT checkStream) const
 }
 
 RecordSource* WindowSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
 	const jrd_nod* nodWindows = windows;
@@ -1365,8 +1362,8 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, CompilerScratch* csb, O
 
 	for (StreamsArray::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
 	{
-		fb_assert(local_streams[0] < MAX_STREAMS && local_streams[0] < MAX_UCHAR);
-		local_streams[++local_streams[0]] = *i;
+		fb_assert(localStreams[0] < MAX_STREAMS && localStreams[0] < MAX_UCHAR);
+		localStreams[++localStreams[0]] = *i;
 	}
 
 	return rsb;
@@ -1434,19 +1431,19 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 	// yet, mark the RseNode as variant to make sure that statement-
 	// level aggregates are not treated as invariants -- bug #6535
 
-	bool top_level_rse = true;
+	bool topLevelRse = true;
 
 	for (LegacyNodeOrRseNode* node = csb->csb_current_nodes.begin();
 		 node != csb->csb_current_nodes.end(); ++node)
 	{
 		if (node->rseNode)
 		{
-			top_level_rse = false;
+			topLevelRse = false;
 			break;
 		}
 	}
 
-	if (top_level_rse)
+	if (topLevelRse)
 		flags |= FLAG_VARIANT;
 
 	csb->csb_current_nodes.push(this);
@@ -1514,7 +1511,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	jrd_nod** boolean, RecordSourceNodeStack& stack)
 {
-	// in the case of an RseNode, it is possible that a new RseNode will be generated,
+	// in the case of a RseNode, it is possible that a new RseNode will be generated,
 	// so wait to process the source before we push it on the stack (bug 8039)
 
 	// The addition of the JOIN syntax for specifying inner joins causes an
@@ -1614,9 +1611,9 @@ bool RseNode::containsStream(USHORT checkStream) const
 }
 
 RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-	RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-	stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+	RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+	stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+	jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 	bool innerSubStream)
 {
 	// for nodes which are not relations, generate an rsb to
@@ -1624,8 +1621,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 	// find all the substreams involved and compile them as well
 
 	computeRseStreams(csb, beds);
-	computeRseStreams(csb, local_streams);
-	computeDbKeyStreams(key_streams);
+	computeRseStreams(csb, localStreams);
+	computeDbKeyStreams(keyStreams);
 
 	RecordSource* rsb;
 
@@ -1643,8 +1640,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 				csb->csb_rpt[*i].csb_flags |= csb_active;
 		}
 
-		//const NodeStack::iterator stackSavepoint(conjunct_stack);
-		NodeStack::const_iterator stack_end;
+		//const NodeStack::iterator stackSavepoint(conjunctStack);
+		NodeStack::const_iterator stackEnd;
 		NodeStack deliverStack;
 
 		if (rse->rse_jointype != blr_inner)
@@ -1655,8 +1652,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 			// Note! Don't forget that this can be burried inside a expression
 			// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
 			NodeStack::iterator stackItem;
-			if (parent_stack)
-				stackItem = *parent_stack;
+			if (parentStack)
+				stackItem = *parentStack;
 
 			for (; stackItem.hasData(); ++stackItem)
 			{
@@ -1665,25 +1662,26 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 				if (!PossibleUnknownFinder::find(deliverNode))
 					deliverStack.push(deliverNode);
 			}
-			stack_end = conjunct_stack.merge(deliverStack);
+
+			stackEnd = conjunctStack.merge(deliverStack);
 		}
 		else
 		{
-			if (parent_stack)
-				stack_end = conjunct_stack.merge(*parent_stack);
+			if (parentStack)
+				stackEnd = conjunctStack.merge(*parentStack);
 		}
 
-		rsb = OPT_compile(tdbb, csb, this, &conjunct_stack);
+		rsb = OPT_compile(tdbb, csb, this, &conjunctStack);
 
 		if (rse->rse_jointype != blr_inner)
 		{
 			// Remove previously added parent conjuctions from the stack.
-			conjunct_stack.split(stack_end, deliverStack);
+			conjunctStack.split(stackEnd, deliverStack);
 		}
 		else
 		{
-			if (parent_stack)
-				conjunct_stack.split(stack_end, *parent_stack);
+			if (parentStack)
+				conjunctStack.split(stackEnd, *parentStack);
 		}
 
 		if (rse->rse_jointype == blr_left)
@@ -1693,12 +1691,12 @@ RecordSource* RseNode::compile(thread_db* tdbb, CompilerScratch* csb, OptimizerB
 		}
 	}
 	else
-		rsb = OPT_compile(tdbb, csb, this, parent_stack);
+		rsb = OPT_compile(tdbb, csb, this, parentStack);
 
 	return rsb;
 }
 
-// Identify the streams that make up an RseNode.
+// Identify the streams that make up a RseNode.
 void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const
 {
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
@@ -1768,9 +1766,9 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 		plan->nod_arg[e_retrieve_relation]->nod_arg[0]);
 	fb_assert(recSource->type == RelationSourceNode::TYPE);
 
-	const jrd_rel* view_relation = NULL;
-	const jrd_rel* plan_relation = (jrd_rel*) recSource->relation;
-	const char* plan_alias = (const char *) recSource->alias;
+	const jrd_rel* viewRelation = NULL;
+	const jrd_rel* planRelation = (jrd_rel*) recSource->relation;
+	const char* planAlias = (const char *) recSource->alias;
 
 	// find the tail for the relation specified in the RseNode
 
@@ -1783,7 +1781,7 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 
 	if (tail->csb_map)
 	{
-		const TEXT* p = plan_alias;
+		const TEXT* p = planAlias;
 
 		// if the user has specified an alias, skip past it to find the alias
 		// for the base table (if multiple aliases are specified)
@@ -1799,21 +1797,21 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 		}
 
 		// loop through potentially a stack of views to find the appropriate base table
-		UCHAR* map_base;
+		UCHAR* mapBase;
 
-		while ( (map_base = tail->csb_map) )
+		while ( (mapBase = tail->csb_map) )
 		{
-			map = map_base;
+			map = mapBase;
 			tail = &csb->csb_rpt[*map];
-			view_relation = tail->csb_relation;
+			viewRelation = tail->csb_relation;
 
 			// if the plan references the view itself, make sure that
 			// the view is on a single table; if it is, fix up the plan
 			// to point to the base relation
 
-			if (view_relation->rel_id == plan_relation->rel_id)
+			if (viewRelation->rel_id == planRelation->rel_id)
 			{
-				if (!map_base[2])
+				if (!mapBase[2])
 				{
 					map++;
 					tail = &csb->csb_rpt[*map];
@@ -1821,13 +1819,13 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 				else
 				{
 					// view %s has more than one base relation; use aliases to distinguish
-					ERR_post(Arg::Gds(isc_view_alias) << Arg::Str(plan_relation->rel_name));
+					ERR_post(Arg::Gds(isc_view_alias) << Arg::Str(planRelation->rel_name));
 				}
 
 				break;
 			}
 
-			view_relation = NULL;
+			viewRelation = NULL;
 
 			// if the user didn't specify an alias (or didn't specify one
 			// for this level), check to make sure there is one and only one
@@ -1835,26 +1833,29 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 
 			if (!*p)
 			{
-				const jrd_rel* duplicate_relation = NULL;
-				UCHAR* duplicate_map = map_base;
+				const jrd_rel* duplicateRelation = NULL;
+				UCHAR* duplicateMap = mapBase;
+
 				map = NULL;
-				for (duplicate_map++; *duplicate_map; duplicate_map++)
+
+				for (duplicateMap++; *duplicateMap; ++duplicateMap)
 				{
-					CompilerScratch::csb_repeat* duplicate_tail = &csb->csb_rpt[*duplicate_map];
-					const jrd_rel* relation = duplicate_tail->csb_relation;
-					if (relation && relation->rel_id == plan_relation->rel_id)
+					CompilerScratch::csb_repeat* duplicateTail = &csb->csb_rpt[*duplicateMap];
+					const jrd_rel* relation = duplicateTail->csb_relation;
+
+					if (relation && relation->rel_id == planRelation->rel_id)
 					{
-						if (duplicate_relation)
+						if (duplicateRelation)
 						{
 							// table %s is referenced twice in view; use an alias to distinguish
 							ERR_post(Arg::Gds(isc_duplicate_base_table) <<
-								Arg::Str(duplicate_relation->rel_name));
+								Arg::Str(duplicateRelation->rel_name));
 						}
 						else
 						{
-							duplicate_relation = relation;
-							map = duplicate_map;
-							tail = duplicate_tail;
+							duplicateRelation = relation;
+							map = duplicateMap;
+							tail = duplicateTail;
 						}
 					}
 				}
@@ -1864,7 +1865,7 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 
 			// look through all the base relations for a match
 
-			map = map_base;
+			map = mapBase;
 			for (map++; *map; map++)
 			{
 				tail = &csb->csb_rpt[*map];
@@ -1897,7 +1898,7 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 			if (!*map)
 			{
 				// table %s is referenced in the plan but not the from list
-				ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
+				ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(planRelation->rel_name));
 			}
 		}
 
@@ -1906,7 +1907,7 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 		if (!map || !*map)
 		{
 			// table %s is referenced in the plan but not the from list
-			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
+			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(planRelation->rel_name));
 		}
 
 		recSource->setStream(*map);
@@ -1917,13 +1918,13 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 	if (!tail->csb_relation)
 	{
 		// table %s is referenced in the plan but not the from list
-		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
+		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(planRelation->rel_name));
 	}
 
-	if ((tail->csb_relation->rel_id != plan_relation->rel_id) && !view_relation)
+	if ((tail->csb_relation->rel_id != planRelation->rel_id) && !viewRelation)
 	{
 		// table %s is referenced in the plan but not the from list
-		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
+		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(planRelation->rel_name));
 	}
 
 	// check if we already have a plan for this stream
@@ -2082,7 +2083,7 @@ static SSHORT strcmpSpace(const char* p, const char* q)
 	return (*p > *q) ? 1 : -1;
 }
 
-// Process a single record source stream from an RseNode.
+// Process a single record source stream from a RseNode.
 // Obviously, if the source is a view, there is more work to do.
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, jrd_nod** boolean, RecordSourceNodeStack& stack)
@@ -2098,13 +2099,13 @@ static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 }
 
 // Translate a map block into a format. If the format is missing or incomplete, extend it.
-static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** input_format)
+static void processMap(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, Format** inputFormat)
 {
 	SET_TDBB(tdbb);
 
-	Format* format = *input_format;
+	Format* format = *inputFormat;
 	if (!format)
-		format = *input_format = Format::newFormat(*tdbb->getDefaultPool(), map->nod_count);
+		format = *inputFormat = Format::newFormat(*tdbb->getDefaultPool(), map->nod_count);
 
 	// process alternating rse and map blocks
 	dsc desc2;
@@ -2237,8 +2238,9 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, jrd_nod
 		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++)
 		{
 			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
-			if ((booleanNode->nod_type == nod_field) &&
-				((USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream))
+
+			if (booleanNode->nod_type == nod_field &&
+				(USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)
 			{
 				mappingFound = true;
 			}
@@ -2274,9 +2276,9 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, jrd_nod
 }
 
 // Mark indices that were not included in the user-specified access plan.
-static void markIndices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_id)
+static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 {
-	const jrd_nod* plan = csb_tail->csb_plan;
+	const jrd_nod* plan = csbTail->csb_plan;
 
 	if (!plan)
 		return;
@@ -2285,28 +2287,28 @@ static void markIndices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_i
 
 	// find out how many indices were specified; if
 	// there were none, this is a sequential retrieval
-	USHORT plan_count = 0;
-	const jrd_nod* access_type = plan->nod_arg[e_retrieve_access_type];
+	USHORT planCount = 0;
+	const jrd_nod* accessType = plan->nod_arg[e_retrieve_access_type];
 
-	if (access_type)
-		plan_count = access_type->nod_count;
+	if (accessType)
+		planCount = accessType->nod_count;
 
 	// go through each of the indices and mark it unusable
 	// for indexed retrieval unless it was specifically mentioned
 	// in the plan; also mark indices for navigational access
 
-	index_desc* idx = csb_tail->csb_idx->items;
+	index_desc* idx = csbTail->csb_idx->items;
 
-	for (USHORT i = 0; i < csb_tail->csb_indices; i++)
+	for (USHORT i = 0; i < csbTail->csb_indices; i++)
 	{
-		if (access_type)
+		if (accessType)
 		{
-			const jrd_nod* const* arg = access_type->nod_arg;
-			const jrd_nod* const* const end = arg + plan_count;
+			const jrd_nod* const* arg = accessType->nod_arg;
+			const jrd_nod* const* const end = arg + planCount;
 
 			for (; arg < end; arg += e_access_type_length)
 			{
-				if (relation_id != (SSHORT)(IPTR) arg[e_access_type_relation])
+				if (relationId != (SSHORT)(IPTR) arg[e_access_type_relation])
 				{
 					// index %s cannot be used in the specified plan
 					const char* iname = reinterpret_cast<const char*>(arg[e_access_type_index_name]);
@@ -2315,7 +2317,7 @@ static void markIndices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_i
 
 				if (idx->idx_id == (USHORT)(IPTR) arg[e_access_type_index])
 				{
-					if (access_type->nod_type == nod_navigational && arg == access_type->nod_arg)
+					if (accessType->nod_type == nod_navigational && arg == accessType->nod_arg)
 					{
 						// dimitr:	navigational access can use only one index,
 						//			hence the extra check added (see the line above)
@@ -2340,55 +2342,55 @@ static void markIndices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_i
 }
 
 // Sort SortedStream indices based on there selectivity. Lowest selectivy as first, highest as last.
-static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csb_tail)
+static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail)
 {
-	if (csb_tail->csb_plan)
+	if (csbTail->csb_plan)
 		return;
 
-	index_desc* selected_idx = NULL;
-	Array<index_desc> idx_sort(csb_tail->csb_indices);
-	bool same_selectivity = false;
+	index_desc* selectedIdx = NULL;
+	Array<index_desc> idxSort(csbTail->csb_indices);
+	bool sameSelectivity = false;
 
-	// Walk through the indices and sort them into into idx_sort
-	// where idx_sort[0] contains the lowest selectivity (best) and
-	// idx_sort[csb_tail->csb_indices - 1] the highest (worst)
+	// Walk through the indices and sort them into into idxSort
+	// where idxSort[0] contains the lowest selectivity (best) and
+	// idxSort[csbTail->csb_indices - 1] the highest (worst)
 
-	if (csb_tail->csb_idx && (csb_tail->csb_indices > 1))
+	if (csbTail->csb_idx && (csbTail->csb_indices > 1))
 	{
-		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
+		for (USHORT j = 0; j < csbTail->csb_indices; j++)
 		{
 			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
-			index_desc* idx = csb_tail->csb_idx->items;
+			index_desc* idx = csbTail->csb_idx->items;
 
-			for (USHORT i = 0; i < csb_tail->csb_indices; i++)
+			for (USHORT i = 0; i < csbTail->csb_indices; i++)
 			{
 				// Prefer ASC indices in the case of almost the same selectivities
 				if (selectivity > idx->idx_selectivity)
-					same_selectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
+					sameSelectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
 				else
-					same_selectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
+					sameSelectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
 
 				if (!(idx->idx_runtime_flags & idx_marker) &&
 					 (idx->idx_selectivity <= selectivity) &&
-					 !((idx->idx_flags & idx_descending) && same_selectivity))
+					 !((idx->idx_flags & idx_descending) && sameSelectivity))
 				{
 					selectivity = idx->idx_selectivity;
-					selected_idx = idx;
+					selectedIdx = idx;
 				}
 
 				++idx;
 			}
 
 			// If no index was found than pick the first one available out of the list
-			if ((!selected_idx) || (selected_idx->idx_runtime_flags & idx_marker))
+			if ((!selectedIdx) || (selectedIdx->idx_runtime_flags & idx_marker))
 			{
-				idx = csb_tail->csb_idx->items;
+				idx = csbTail->csb_idx->items;
 
-				for (USHORT i = 0; i < csb_tail->csb_indices; i++)
+				for (USHORT i = 0; i < csbTail->csb_indices; i++)
 				{
 					if (!(idx->idx_runtime_flags & idx_marker))
 					{
-						selected_idx = idx;
+						selectedIdx = idx;
 						break;
 					}
 
@@ -2396,17 +2398,17 @@ static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csb_tail)
 				}
 			}
 
-			selected_idx->idx_runtime_flags |= idx_marker;
-			idx_sort.add(*selected_idx);
+			selectedIdx->idx_runtime_flags |= idx_marker;
+			idxSort.add(*selectedIdx);
 		}
 
 		// Finally store the right order in cbs_tail->csb_idx
-		index_desc* idx = csb_tail->csb_idx->items;
+		index_desc* idx = csbTail->csb_idx->items;
 
-		for (USHORT j = 0; j < csb_tail->csb_indices; j++)
+		for (USHORT j = 0; j < csbTail->csb_indices; j++)
 		{
 			idx->idx_runtime_flags &= ~idx_marker;
-			memcpy(idx, &idx_sort[j], sizeof(index_desc));
+			memcpy(idx, &idxSort[j], sizeof(index_desc));
 			++idx;
 		}
 	}

@@ -62,7 +62,7 @@ public:
 		stream = value;
 	}
 
-	// Identify the streams that make up an RseNode.
+	// Identify the streams that make up a RseNode.
 	virtual void getStreams(StreamsArray& list) const
 	{
 		list.add(getStream());
@@ -85,9 +85,9 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList) = 0;
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream) = 0;
 
 public:
@@ -151,9 +151,9 @@ public:
 	}
 
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 public:
@@ -206,9 +206,9 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 private:
@@ -255,13 +255,13 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 private:
-	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, NodeStack* parent_stack,
+	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, NodeStack* parentStack,
 		UCHAR shellStream);
 
 public:
@@ -304,14 +304,14 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 private:
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams, USHORT nstreams,
-		NodeStack* parent_stack, UCHAR shellStream);
+		NodeStack* parentStack, UCHAR shellStream);
 
 private:
 	Firebird::Array<NestConst<RseNode> > clauses;	// RseNode's for union
@@ -361,9 +361,9 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 private:
@@ -435,9 +435,9 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 	virtual RecordSource* compile(thread_db* tdbb, CompilerScratch* csb, OptimizerBlk* opt,
-		RseNode* rse, NodeStack* parent_stack, stream_array_t& beds, stream_array_t& key_streams,
-		stream_array_t& local_streams, NodeStack& conjunct_stack, stream_array_t& streams,
-		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunct_count,
+		RseNode* rse, NodeStack* parentStack, stream_array_t& beds, stream_array_t& keyStreams,
+		stream_array_t& localStreams, NodeStack& conjunctStack, stream_array_t& streams,
+		jrd_nod* sort, jrd_nod* aggregate, StreamsArray& outerStreams, SLONG conjunctCount,
 		bool innerSubStream);
 
 private:
