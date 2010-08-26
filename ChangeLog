@@ -1,3 +1,7 @@
+ 2010-08-25 08:00  dimitr 
+   M src/jrd/cmp.cpp
+Fixed a few suspicious places related to the variable cloning.
+
  2010-08-23 11:39  alexpeshkoff 
    M src/utilities/gsec/gsec.cpp
 Fixed CORE-3116: gsec outputs list of users to stderr instead stdout
