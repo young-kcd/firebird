@@ -28,18 +28,18 @@
 
 namespace Jrd
 {
-	struct fun_repeat
-	{
-		NestConst<Parameter> fun_parameter;	// parameter info
-		FUN_T fun_mechanism;		// passing mechanism
-	};
-
 	class Function : public Routine
 	{
 		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache function can be altered
 		static const char* const EXCEPTION_MESSAGE;
 
 	public:
+		struct Argument
+		{
+			NestConst<Parameter> fun_parameter;	// parameter info
+			FUN_T fun_mechanism;		// passing mechanism
+		};
+
 		static Function* lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
 		static Function* lookup(thread_db* tdbb, const Firebird::QualifiedName& name, bool noscan);
 
@@ -56,7 +56,7 @@ namespace Jrd
 		dsc* execute(thread_db* tdbb, const jrd_nod* args, impure_value* value) const;
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
-		ULONG allocateImpure(CompilerScratch* csb);
+		ULONG allocateImpure(CompilerScratch* csb) const;
 		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
 		jrd_nod* parseArgs(thread_db* tdbb, CompilerScratch* csb);
 
@@ -108,7 +108,7 @@ namespace Jrd
 		Format fun_in_msg_format;
 		Format fun_out_msg_format;
 
-		Firebird::Array<fun_repeat> fun_args;
+		Firebird::Array<Argument> fun_args;
 
 		USHORT fun_flags;						// flags
 		USHORT fun_use_count;					// requests compiled with function

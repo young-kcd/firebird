@@ -228,7 +228,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 		AutoCacheRequest request_fun(tdbb, irq_l_functions, IRQ_REQUESTS);
 
-		fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
+		Argument temp[MAX_UDF_ARGUMENTS + 1];
 
 		FOR(REQUEST_HANDLE request_fun)
 			X IN RDB$FUNCTIONS
@@ -276,7 +276,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 					function->fun_inputs++;
 
-				fun_repeat* const tail = temp + Y.RDB$ARGUMENT_POSITION;
+				Argument* const tail = temp + Y.RDB$ARGUMENT_POSITION;
 				tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
 
 				Parameter* const parameter = FB_NEW(*dbb->dbb_permanent) Parameter(*dbb->dbb_permanent);
@@ -356,7 +356,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
 			function->fun_temp_length = length;
 			function->fun_args.resize(count + 1);
-			memcpy(function->fun_args.begin(), temp, function->fun_args.getCount() * sizeof(fun_repeat));
+			memcpy(function->fun_args.begin(), temp, function->fun_args.getCount() * sizeof(Argument));
 
 			// Prepare the exception message to be used in case this function ever
 			// causes an exception.  This is done at this time to save us from preparing
@@ -561,7 +561,7 @@ void Function::remove(thread_db* tdbb)
 	}
 }
 
-ULONG Function::allocateImpure(CompilerScratch* csb)
+ULONG Function::allocateImpure(CompilerScratch* csb) const
 {
 	const ULONG impure = CMP_impure(csb, sizeof(impure_value));
 
@@ -668,7 +668,7 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 
 	jrd_req* const request = tdbb->getRequest();
 
-	const fun_repeat* const return_ptr = &fun_args[fun_return_arg];
+	const Argument* const return_ptr = &fun_args[fun_return_arg];
 	value->vlu_desc = return_ptr->fun_parameter->prm_desc;
 
 	// If the return data type is any of the string types,
