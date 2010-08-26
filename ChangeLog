@@ -1,3 +1,39 @@
+ 2010-08-25 15:52  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/exe.h
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/WindowedStream.cpp
+Rework WindowSourceNode to use type-safe partitions
+
+ 2010-08-25 13:36  mapopa 
+   M doc/README.build.msvc.html
+Added links to visual c++ studio 2008 
+
+ 2010-08-25 13:25  mapopa 
+   M doc/README.build.msvc.html
+Added unicode/classic innosetup note (we are not using unicode version for the moment , only for 3.0 maybe in the future)
+
+ 2010-08-25 12:00  mapopa 
+   M doc/README.build.msvc.html
+added innosetup 5 to the build instructions 
+
+ 2010-08-25 10:16  mapopa 
+   M doc/README.build.msvc.html
+added sed instructions 
+
+ 2010-08-25 08:02  dimitr 
+   M src/jrd/cmp.cpp
+Fixed a few suspicious places related to the variable cloning.
+
+ 2010-08-25 03:10  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/exe.h
+   M src/jrd/opt.cpp
+   M src/jrd/rse.h
+Move dozen of parameters of virtual/overriden function to OptimizerBlk
+
  2010-08-25 01:35  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
    M src/jrd/RecordSourceNodes.h
