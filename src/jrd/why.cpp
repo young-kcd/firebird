@@ -1385,7 +1385,11 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
-		CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle);
+		if (CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle))
+		{
+			return status[1];
+		}
+
 		status.setPrimaryHandle(0);
 		delete blob;
 		*blob_handle = 0;
