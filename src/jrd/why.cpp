@@ -1690,7 +1690,11 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(blob);
 
-		CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle);
+		if (CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle))
+		{
+			return status[1];
+		}
+
 		destroy(blob);
 		*blob_handle = 0;
 	}
