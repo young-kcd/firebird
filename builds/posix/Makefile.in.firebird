@@ -44,7 +44,7 @@ ISC_PASSWORD=	masterkey
 TEST_PATH = @FIREBIRD_BUILD_DIR@
 # Firebird libs path set at link time (-R) so do not override local requirements - nmcc 28/12/2002
 #LD_LIBRARY_PATH=$(RealFirebirdPath)/lib
-LD_LIBRARY_PATH=$(LIB)
+LD_LIBRARY_PATH:=$(LIB):$(LD_LIBRARY_PATH)
 
 #export ISC_USER
 #export ISC_PASSWORD
