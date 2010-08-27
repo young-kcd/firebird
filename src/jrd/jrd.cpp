@@ -6305,6 +6305,9 @@ void JRD_ddl(thread_db* tdbb, /*Jrd::Attachment* attachment,*/ jrd_tra* transact
  *
  **************************************/
 
+	if (!transaction)
+		status_exception::raise(Arg::Gds(isc_segstr_wrong_db));
+
 	DYN_ddl(/*attachment,*/ transaction, ddl_length, ddl);
 	JRD_autocommit_ddl(tdbb, transaction);
 }
