@@ -1,3 +1,7 @@
+ 2010-08-26 10:52  alexpeshkoff 
+   M src/jrd/why.cpp
+Fixed CORE-3117: After an error in GDS_CLOSE_BLOB() blob handle becomes invalid
+
  2010-07-09 11:33  alexpeshkoff 
    M src/jrd/isc_sync.cpp
 Backported fix for CORE-3067: Objects not unmapped when shared memory is closed
