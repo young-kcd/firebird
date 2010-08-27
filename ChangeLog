@@ -1,3 +1,32 @@
+ 2010-08-27 02:55  asfernandes 
+   M src/jrd/dyn.epp
+Fixed CORE-3109 - [Crash] isc_dql_exec_immed3_m for "create database ..." and NULL transaction
+
+ 2010-08-27 02:18  asfernandes 
+   M builds/posix/make.shared.variables
+   M src/dsql/DSqlDataTypeUtil.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   A src/dsql/DsqlCompilerScratch.cpp
+   A src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/misc_func.cpp
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+1) Separate DsqlCompilerScratch in its own files.
+2) Move BlockNode functionality to it.
+3) Move some related CTE functions to it.
+
+ 2010-08-26 15:40  asfernandes 
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/fun.epp
+Misc
+
  2010-08-25 15:52  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
    M src/jrd/RecordSourceNodes.h
