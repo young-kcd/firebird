@@ -1,3 +1,11 @@
+ 2010-08-27 02:51  asfernandes 
+   M src/jrd/jrd.cpp
+Fixed CORE-3109 - [Crash] isc_dql_exec_immed3_m for "create database ..." and NULL transaction
+
+ 2010-08-26 10:52  alexpeshkoff 
+   M src/jrd/why.cpp
+Fixed CORE-3117: After an error in GDS_CLOSE_BLOB() blob handle becomes invalid
+
  2010-08-25 08:00  dimitr 
    M src/jrd/cmp.cpp
 Fixed a few suspicious places related to the variable cloning.
