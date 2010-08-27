@@ -24,7 +24,7 @@
 #define DSQL_NODES_H
 
 #include "../jrd/common.h"
-#include "../dsql/dsql.h"
+#include "../dsql/DsqlCompilerScratch.h"
 #include "../dsql/node.h"
 #include "../dsql/Visitors.h"
 #include "../common/classes/array.h"
@@ -608,39 +608,6 @@ public:
 
 private:
 	StmtNode* stmt;
-};
-
-
-// Common node for all "code blocks" (i.e.: procedures, triggers and execute block)
-class BlockNode
-{
-public:
-	explicit BlockNode(MemoryPool& pool, bool aHasEos)
-		: hasEos(aHasEos),
-		  variables(pool),
-		  outputVariables(pool)
-	{
-	}
-
-	virtual ~BlockNode()
-	{
-	}
-
-	static void putDtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field, bool useSubType);
-
-	void putLocalVariables(DsqlCompilerScratch* dsqlScratch, const dsql_nod* parameters,
-		SSHORT locals);
-	void putLocalVariable(DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
-		dsql_nod* hostParam, const dsql_str* collationName);
-	dsql_nod* resolveVariable(const dsql_str* varName);
-	void genReturn(DsqlCompilerScratch* dsqlScratch, bool eosFlag = false);
-
-private:
-	bool hasEos;
-
-protected:
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
 };
 
 

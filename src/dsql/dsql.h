@@ -66,14 +66,14 @@ const char* const TEMP_CONTEXT		= "TEMP";
 
 namespace Jrd
 {
-	class Database;
 	class Attachment;
+	class Database;
+	class DsqlCompilerScratch;
 	class jrd_tra;
 	class jrd_req;
 	class blb;
 	struct bid;
 
-	class BlockNode;
 	class dsql_blb;
 	class dsql_ctx;
 	class dsql_msg;
@@ -102,8 +102,6 @@ namespace Firebird
 #include "../jrd/dsc.h"
 
 namespace Jrd {
-
-class DsqlCompilerScratch;
 
 //! generic data type used to store strings
 class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
@@ -416,7 +414,6 @@ public:
 		  type(TYPE_SELECT),
 		  flags(0),
 		  ddlData(p),
-		  blockNode(NULL),
 		  ddlNode(NULL),
 		  blob(NULL),
 		  sendMsg(NULL),
@@ -447,10 +444,6 @@ public:
 	Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() { return ddlData; }
 	const Firebird::HalfStaticArray<UCHAR, 1024>& getDdlData() const { return ddlData; }
 	void setDdlData(Firebird::HalfStaticArray<UCHAR, 1024>& value) { ddlData = value; }
-
-	BlockNode* getBlockNode() { return blockNode; }
-	const BlockNode* getBlockNode() const { return blockNode; }
-	void setBlockNode(BlockNode* value) { blockNode = value; }
 
 	dsql_nod* getDdlNode() { return ddlNode; }
 	const dsql_nod* getDdlNode() const { return ddlNode; }
@@ -496,7 +489,6 @@ private:
 	ULONG flags;				// generic flag
 	Firebird::RefStrPtr sqlText;
 	Firebird::HalfStaticArray<UCHAR, 1024> ddlData;
-	BlockNode* blockNode;		// Defining block
 	dsql_nod* ddlNode;			// Store metadata statement
 	dsql_blb* blob;				// Blob info for blob statements
 	dsql_msg* sendMsg;			// Message to be sent to start request
@@ -579,236 +571,6 @@ protected:
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
 };
-
-
-// DSQL Compiler scratch block - may be discarded after compilation in the future.
-class DsqlCompilerScratch : public BlrWriter
-{
-public:
-	static const unsigned FLAG_IN_AUTO_TRANS_BLOCK	= 0x001;
-	static const unsigned FLAG_RETURNING_INTO		= 0x002;
-	static const unsigned FLAG_METADATA_SAVED		= 0x004;
-	static const unsigned FLAG_PROCEDURE			= 0x008;
-	static const unsigned FLAG_TRIGGER				= 0x010;
-	static const unsigned FLAG_BLOCK				= 0x020;
-	static const unsigned FLAG_RECURSIVE_CTE		= 0x040;
-	static const unsigned FLAG_UPDATE_OR_INSERT		= 0x080;
-	static const unsigned FLAG_MERGE				= 0x100;
-	static const unsigned FLAG_FUNCTION				= 0x200;
-
-public:
-	explicit DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
-				DsqlCompiledStatement* aStatement)
-		: BlrWriter(p),
-		  dbb(aDbb),
-		  transaction(aTransaction),
-		  statement(aStatement),
-		  flags(0),
-		  ports(p),
-		  relation(NULL),
-		  procedure(NULL),
-		  mainContext(p),
-		  context(&mainContext),
-		  unionContext(p),
-		  derivedContext(p),
-		  outerAggContext(NULL),
-		  contextNumber(0),
-		  derivedContextNumber(0),
-		  scopeLevel(0),
-		  loopLevel(0),
-		  labels(p),
-		  cursorNumber(0),
-		  cursors(p),
-		  inSelectList(0),
-		  inWhereClause(0),
-		  inGroupByClause(0),
-		  inHavingClause(0),
-		  inOrderByClause(0),
-		  errorHandlers(0),
-		  clientDialect(0),
-		  inOuterJoin(0),
-		  aliasRelationPrefix(NULL),
-		  hiddenVars(p),
-		  hiddenVarsNumber(0),
-		  package(p),
-		  currCtes(p),
-		  recursiveCtx(0),
-		  recursiveCtxId(0),
-		  processingWindow(false),
-		  checkConstraintTrigger(false),
-		  ctes(p),
-		  cteAliases(p),
-		  currCteAlias(NULL),
-		  psql(false)
-	{
-		domainValue.clear();
-	}
-
-protected:
-	// DsqlCompilerScratch should never be destroyed using delete.
-	// It dies together with it's pool in release_request().
-	~DsqlCompilerScratch()
-	{
-	}
-
-	virtual bool isDdlDyn()
-	{
-		return (statement->getType() == DsqlCompiledStatement::TYPE_DDL || statement->getDdlNode()) &&
-			!statement->getBlockNode();
-	}
-
-public:
-	virtual bool isVersion4()
-	{
-		return statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4;
-	}
-
-	MemoryPool& getPool()
-	{
-		return PermanentStorage::getPool();
-	}
-
-	dsql_dbb* getAttachment()
-	{
-		return dbb;
-	}
-
-	jrd_tra* getTransaction()
-	{
-		return transaction;
-	}
-
-	void setTransaction(jrd_tra* value)
-	{
-		transaction = value;
-	}
-
-	DsqlCompiledStatement* getStatement()
-	{
-		return statement;
-	}
-
-	DsqlCompiledStatement* getStatement() const
-	{
-		return statement;
-	}
-
-	void addCTEs(dsql_nod* list);
-	dsql_nod* findCTE(const dsql_str* name);
-	void clearCTEs();
-	void checkUnusedCTEs() const;
-
-	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via
-	// CTE name or via alias. We need to substitute this aliases when processing CTE
-	// member to resolve field names. Therefore we store all aliases in order of
-	// occurrence and later use it in backward order (since our parser is right-to-left).
-	// Also we put CTE name after all such aliases to distinguish aliases for
-	// different CTE's.
-	// We also need to repeat this process if main select expression contains union with
-	// recursive CTE
-	void addCTEAlias(const dsql_str* alias)
-	{
-		cteAliases.add(alias);
-	}
-
-	const dsql_str* getNextCTEAlias()
-	{
-		return *(--currCteAlias);
-	}
-
-	void resetCTEAlias(const dsql_str* alias)
-	{
-		const dsql_str* const* begin = cteAliases.begin();
-
-		currCteAlias = cteAliases.end() - 1;
-		fb_assert(currCteAlias >= begin);
-
-		const dsql_str* curr = *(currCteAlias);
-		while (strcmp(curr->str_data, alias->str_data))
-		{
-			currCteAlias--;
-			fb_assert(currCteAlias >= begin);
-
-			curr = *(currCteAlias);
-		}
-	}
-
-	bool isPsql() const { return psql; }
-	void setPsql(bool value) { psql = value; }
-
-private:
-	dsql_dbb* dbb;						// DSQL attachment
-	jrd_tra* transaction;				// Transaction
-	DsqlCompiledStatement* statement;	// Compiled statement
-
-public:
-	unsigned flags;						// flags
-	Firebird::Array<dsql_msg*> ports;	// Port messages
-	dsql_rel* relation;					// relation created by this request (for DDL)
-	dsql_prc* procedure;				// procedure created by this request (for DDL)
-	DsqlContextStack mainContext;
-	DsqlContextStack* context;
-	DsqlContextStack unionContext;		// Save contexts for views of unions
-	DsqlContextStack derivedContext;	// Save contexts for views of derived tables
-	dsql_ctx* outerAggContext;			// agg context for outer ref
-	USHORT contextNumber;				// Next available context number
-	USHORT derivedContextNumber;		// Next available context number for derived tables
-	USHORT scopeLevel;					// Scope level for parsing aliases in subqueries
-	USHORT loopLevel;					// Loop level
-	DsqlStrStack labels;				// Loop labels
-	USHORT cursorNumber;				// Cursor number
-	DsqlNodStack cursors;				// Cursors
-	USHORT inSelectList;				// now processing "select list"
-	USHORT inWhereClause;				// processing "where clause"
-	USHORT inGroupByClause;				// processing "group by clause"
-	USHORT inHavingClause;				// processing "having clause"
-	USHORT inOrderByClause;				// processing "order by clause"
-	USHORT errorHandlers;				// count of active error handlers
-	USHORT clientDialect;				// dialect passed into the API call
-	USHORT inOuterJoin;					// processing inside outer-join part
-	dsql_str* aliasRelationPrefix;		// prefix for every relation-alias.
-	DsqlNodStack hiddenVars;			// hidden variables
-	USHORT hiddenVarsNumber;			// next hidden variable number
-	Firebird::MetaName package;			// package being defined
-	DsqlNodStack currCtes;				// current processing CTE's
-	class dsql_ctx* recursiveCtx;		// context of recursive CTE
-	USHORT recursiveCtxId;				// id of recursive union stream context
-	bool processingWindow;				// processing window functions
-	bool checkConstraintTrigger;		// compiling a check constraint trigger
-	dsc domainValue;					// VALUE in the context of domain's check constraint
-
-private:
-	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions
-	Firebird::HalfStaticArray<const dsql_str*, 4> cteAliases; // CTE aliases in recursive members
-	const dsql_str* const* currCteAlias;
-	bool psql;
-};
-
-
-class PsqlChanger
-{
-public:
-	PsqlChanger(DsqlCompilerScratch* aStatement, bool value)
-		: statement(aStatement),
-		  oldValue(statement->isPsql())
-	{
-		statement->setPsql(value);
-	}
-
-	~PsqlChanger()
-	{
-		statement->setPsql(oldValue);
-	}
-
-private:
-	// copying is prohibited
-	PsqlChanger(const PsqlChanger&);
-	PsqlChanger& operator =(const PsqlChanger&);
-
-	DsqlCompilerScratch* statement;
-	const bool oldValue;
-};
-
 
 // Blob
 class dsql_blb : public pool_alloc<dsql_type_blb>
@@ -904,7 +666,7 @@ public:
 
 	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
 	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch, dsql_nod* partitionNode,
-								  dsql_nod* orderNode);
+		dsql_nod* orderNode);
 };
 
 // Flag values for ctx_flags

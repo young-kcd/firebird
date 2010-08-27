@@ -103,12 +103,11 @@ public:
 };
 
 
-class ExecBlockNode : public DsqlOnlyStmtNode, public BlockNode
+class ExecBlockNode : public DsqlOnlyStmtNode
 {
 public:
 	explicit ExecBlockNode(MemoryPool& pool)
 		: DsqlOnlyStmtNode(pool),
-		  BlockNode(pool, true),
 		  parameters(pool),
 		  returns(pool),
 		  localDeclList(NULL),
@@ -319,7 +318,6 @@ class SuspendNode : public StmtNode
 public:
 	explicit SuspendNode(MemoryPool& pool)
 		: StmtNode(pool),
-		  blockNode(NULL),
 		  message(NULL),
 		  statement(NULL)
 	{
@@ -339,7 +337,6 @@ public:
 	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	BlockNode* blockNode;
 	NestConst<jrd_nod> message;
 	NestConst<jrd_nod> statement;
 };
@@ -361,7 +358,6 @@ public:
 	virtual void genBlr();
 
 public:
-	BlockNode* blockNode;
 	dsql_nod* value;
 };
 

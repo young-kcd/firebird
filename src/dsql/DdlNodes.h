@@ -229,12 +229,11 @@ private:
 };
 
 
-class CreateAlterFunctionNode : public DdlNode, public BlockNode
+class CreateAlterFunctionNode : public DdlNode
 {
 public:
 	CreateAlterFunctionNode(MemoryPool& pool, const Firebird::MetaName& aName)
 		: DdlNode(pool),
-		  BlockNode(pool, false),
 		  name(pool, aName),
 		  create(true),
 		  alter(false),
@@ -334,12 +333,11 @@ typedef RecreateNode<CreateAlterFunctionNode, DropFunctionNode, isc_dsql_recreat
 	RecreateFunctionNode;
 
 
-class CreateAlterProcedureNode : public DdlNode, public BlockNode
+class CreateAlterProcedureNode : public DdlNode
 {
 public:
 	CreateAlterProcedureNode(MemoryPool& pool, const Firebird::MetaName& aName)
 		: DdlNode(pool),
-		  BlockNode(pool, true),
 		  name(pool, aName),
 		  create(true),
 		  alter(false),
@@ -476,12 +474,11 @@ public:
 };
 
 
-class CreateAlterTriggerNode : public DdlNode, public BlockNode, public TriggerDefinition
+class CreateAlterTriggerNode : public DdlNode, public TriggerDefinition
 {
 public:
 	CreateAlterTriggerNode(MemoryPool& p, const Firebird::MetaName& aName)
 		: DdlNode(p),
-		  BlockNode(p, false),
 		  TriggerDefinition(p),
 		  create(true),
 		  alter(false),

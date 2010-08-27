@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../dsql/dsql.h"
+#include "../dsql/DsqlCompilerScratch.h"
 #include "../dsql/misc_func.h"
 
 using namespace Jrd;

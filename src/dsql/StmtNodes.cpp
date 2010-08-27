@@ -52,278 +52,6 @@ using namespace Jrd;
 namespace Jrd {
 
 
-// Write out field data type.
-// Taking special care to declare international text.
-void BlockNode::putDtype(DsqlCompilerScratch* dsqlScratch, const dsql_fld* field, bool useSubType)
-{
-#ifdef DEV_BUILD
-	// Check if the field describes a known datatype
-
-	if (field->fld_dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->fld_dtype])
-	{
-		SCHAR buffer[100];
-
-		sprintf(buffer, "Invalid dtype %d in BlockNode::putDtype", field->fld_dtype);
-		ERRD_bugcheck(buffer);
-	}
-#endif
-
-	if (field->fld_not_nullable)
-		dsqlScratch->appendUChar(blr_not_nullable);
-
-	if (field->fld_type_of_name.hasData())
-	{
-		if (field->fld_type_of_table)
-		{
-			if (field->fld_explicit_collation)
-			{
-				dsqlScratch->appendUChar(blr_column_name2);
-				dsqlScratch->appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				dsqlScratch->appendMetaString(field->fld_type_of_table->str_data);
-				dsqlScratch->appendMetaString(field->fld_type_of_name.c_str());
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-			else
-			{
-				dsqlScratch->appendUChar(blr_column_name);
-				dsqlScratch->appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				dsqlScratch->appendMetaString(field->fld_type_of_table->str_data);
-				dsqlScratch->appendMetaString(field->fld_type_of_name.c_str());
-			}
-		}
-		else
-		{
-			if (field->fld_explicit_collation)
-			{
-				dsqlScratch->appendUChar(blr_domain_name2);
-				dsqlScratch->appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				dsqlScratch->appendMetaString(field->fld_type_of_name.c_str());
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-			else
-			{
-				dsqlScratch->appendUChar(blr_domain_name);
-				dsqlScratch->appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				dsqlScratch->appendMetaString(field->fld_type_of_name.c_str());
-			}
-		}
-
-		return;
-	}
-
-	switch (field->fld_dtype)
-	{
-		case dtype_cstring:
-		case dtype_text:
-		case dtype_varying:
-		case dtype_blob:
-			if (!useSubType)
-				dsqlScratch->appendUChar(blr_dtypes[field->fld_dtype]);
-			else if (field->fld_dtype == dtype_varying)
-			{
-				dsqlScratch->appendUChar(blr_varying2);
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-			else if (field->fld_dtype == dtype_cstring)
-			{
-				dsqlScratch->appendUChar(blr_cstring2);
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-			else if (field->fld_dtype == dtype_blob)
-			{
-				dsqlScratch->appendUChar(blr_blob2);
-				dsqlScratch->appendUShort(field->fld_sub_type);
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-			else
-			{
-				dsqlScratch->appendUChar(blr_text2);
-				dsqlScratch->appendUShort(field->fld_ttype);
-			}
-
-			if (field->fld_dtype == dtype_varying)
-				dsqlScratch->appendUShort(field->fld_length - sizeof(USHORT));
-			else if (field->fld_dtype != dtype_blob)
-				dsqlScratch->appendUShort(field->fld_length);
-			break;
-
-		default:
-			dsqlScratch->appendUChar(blr_dtypes[field->fld_dtype]);
-			if (DTYPE_IS_EXACT(field->fld_dtype) || (dtype_quad == field->fld_dtype))
-				dsqlScratch->appendUChar(field->fld_scale);
-			break;
-	}
-}
-
-// Emit dyn for the local variables declared in a procedure or trigger.
-void BlockNode::putLocalVariables(DsqlCompilerScratch* dsqlScratch, const dsql_nod* parameters,
-	SSHORT locals)
-{
-	if (!parameters)
-		return;
-
-	dsql_nod* const* ptr = parameters->nod_arg;
-	for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
-	{
-		dsql_nod* parameter = *ptr;
-
-		dsqlScratch->putDebugSrcInfo(parameter->nod_line, parameter->nod_column);
-
-		if (parameter->nod_type == Dsql::nod_def_field)
-		{
-			dsql_fld* field = (dsql_fld*) parameter->nod_arg[Dsql::e_dfl_field];
-			const dsql_nod* const* rest = ptr;
-			while (++rest != end)
-			{
-				if ((*rest)->nod_type == Dsql::nod_def_field)
-				{
-					const dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[Dsql::e_dfl_field];
-					if (field->fld_name == rest_field->fld_name)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(field->fld_name));
-					}
-				}
-			}
-
-			dsql_nod* var_node = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
-			variables.add(var_node);
-
-			dsql_var* variable = (dsql_var*) var_node->nod_arg[Dsql::e_var_variable];
-			putLocalVariable(dsqlScratch, variable, parameter,
-				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
-
-			// Some field attributes are calculated inside
-			// putLocalVariable(), so we reinitialize the
-			// descriptor
-			MAKE_desc_from_field(&var_node->nod_desc, field);
-
-			locals++;
-		}
-		else if (parameter->nod_type == Dsql::nod_cursor)
-		{
-			PASS1_statement(dsqlScratch, parameter);
-			GEN_statement(dsqlScratch, parameter);
-		}
-	}
-}
-
-// Write out local variable field data type.
-void BlockNode::putLocalVariable(DsqlCompilerScratch* dsqlScratch, dsql_var* variable,
-	dsql_nod* hostParam, const dsql_str* collationName)
-{
-	dsql_fld* field = variable->var_field;
-
-	dsqlScratch->appendUChar(blr_dcl_variable);
-	dsqlScratch->appendUShort(variable->var_variable_number);
-	DDL_resolve_intl_type(dsqlScratch, field, collationName);
-
-	//const USHORT dtype = field->fld_dtype;
-
-	putDtype(dsqlScratch, field, true);
-	//field->fld_dtype = dtype;
-
-	// Check for a default value, borrowed from define_domain
-	dsql_nod* node = hostParam ? hostParam->nod_arg[Dsql::e_dfl_default] : NULL;
-
-	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
-	{
-		dsqlScratch->appendUChar(blr_assignment);
-
-		if (node)
-		{
-			fb_assert(node->nod_type == Dsql::nod_def_default);
-			PsqlChanger psqlChanger(dsqlScratch, false);
-			node = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_dft_default]);
-			GEN_expr(dsqlScratch, node);
-		}
-		else
-			dsqlScratch->appendUChar(blr_null);	// Initialize variable to NULL
-
-		dsqlScratch->appendUChar(blr_variable);
-		dsqlScratch->appendUShort(variable->var_variable_number);
-	}
-	else
-	{
-		dsqlScratch->appendUChar(blr_init_variable);
-		dsqlScratch->appendUShort(variable->var_variable_number);
-	}
-
-	if (variable->var_name[0])	// Not a function return value
-		dsqlScratch->putDebugVariable(variable->var_variable_number, variable->var_name);
-
-	++dsqlScratch->hiddenVarsNumber;
-}
-
-// Try to resolve variable name against parameters and local variables.
-dsql_nod* BlockNode::resolveVariable(const dsql_str* varName)
-{
-	for (dsql_nod* const* i = variables.begin(); i != variables.end(); ++i)
-	{
-		dsql_nod* var_node = *i;
-		fb_assert(var_node->nod_type == Dsql::nod_variable);
-
-		if (var_node->nod_type == Dsql::nod_variable)
-		{
-			const dsql_var* variable = (dsql_var*) var_node->nod_arg[Dsql::e_var_variable];
-			DEV_BLKCHK(variable, dsql_type_var);
-
-			if (!strcmp(varName->str_data, variable->var_name))
-				return var_node;
-		}
-	}
-
-	return NULL;
-}
-
-// Generate BLR for a return.
-void BlockNode::genReturn(DsqlCompilerScratch* dsqlScratch, bool eosFlag)
-{
-	if (hasEos && !eosFlag)
-		dsqlScratch->appendUChar(blr_begin);
-
-	dsqlScratch->appendUChar(blr_send);
-	dsqlScratch->appendUChar(1);
-	dsqlScratch->appendUChar(blr_begin);
-
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
-	{
-		const dsql_nod* parameter = *i;
-		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		dsqlScratch->appendUChar(blr_assignment);
-		dsqlScratch->appendUChar(blr_variable);
-		dsqlScratch->appendUShort(variable->var_variable_number);
-		dsqlScratch->appendUChar(blr_parameter2);
-		dsqlScratch->appendUChar(variable->var_msg_number);
-		dsqlScratch->appendUShort(variable->var_msg_item);
-		dsqlScratch->appendUShort(variable->var_msg_item + 1);
-	}
-
-	if (hasEos)
-	{
-		dsqlScratch->appendUChar(blr_assignment);
-		dsqlScratch->appendUChar(blr_literal);
-		dsqlScratch->appendUChar(blr_short);
-		dsqlScratch->appendUChar(0);
-		dsqlScratch->appendUShort((eosFlag ? 0 : 1));
-		dsqlScratch->appendUChar(blr_parameter);
-		dsqlScratch->appendUChar(1);
-		dsqlScratch->appendUShort(USHORT(2 * outputVariables.getCount()));
-	}
-
-	dsqlScratch->appendUChar(blr_end);
-
-	if (hasEos && !eosFlag)
-	{
-		dsqlScratch->appendUChar(blr_stall);
-		dsqlScratch->appendUChar(blr_end);
-	}
-}
-
-
-//--------------------
-
-
 DmlNode* DmlNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 {
 	node = aNode;
@@ -678,8 +406,6 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
-	statement->setBlockNode(this);
-
 	if (returns.hasData())
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
 	else
@@ -793,11 +519,6 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ExecBlockNode::genBlr()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
-	// Update blockNode, because we have a reference to the original unprocessed node.
-	statement->setBlockNode(this);
-
 	dsqlScratch->beginDebug();
 
 	// now do the input parameters
@@ -808,10 +529,10 @@ void ExecBlockNode::genBlr()
 		dsql_nod* var = MAKE_variable(parameter.legacyField,
 			parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
 
-		variables.add(var);
+		dsqlScratch->variables.add(var);
 	}
 
-	const unsigned returnsPos = variables.getCount();
+	const unsigned returnsPos = dsqlScratch->variables.getCount();
 
 	// now do the output parameters
 	for (size_t i = 0; i < returns.getCount(); ++i)
@@ -821,9 +542,11 @@ void ExecBlockNode::genBlr()
 		dsql_nod* var = MAKE_variable(parameter.legacyField,
 			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
 
-		variables.add(var);
-		outputVariables.add(var);
+		dsqlScratch->variables.add(var);
+		dsqlScratch->outputVariables.add(var);
 	}
+
+	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	dsqlScratch->appendUChar(blr_begin);
 
@@ -835,10 +558,12 @@ void ExecBlockNode::genBlr()
 	else
 		statement->setSendMsg(NULL);
 
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
+	for (Array<dsql_nod*>::const_iterator i = dsqlScratch->outputVariables.begin();
+		 i != dsqlScratch->outputVariables.end();
+		 ++i)
 	{
 		dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), true, true,
-			(i - outputVariables.begin()) + 1, *i);
+			(i - dsqlScratch->outputVariables.begin()) + 1, *i);
 		param->par_node = *i;
 		MAKE_desc(dsqlScratch, &param->par_desc, *i, NULL);
 		param->par_desc.dsc_flags |= DSC_nullable;
@@ -864,7 +589,7 @@ void ExecBlockNode::genBlr()
 
 	for (unsigned i = 0; i < returnsPos; ++i)
 	{
-		const dsql_nod* parameter = variables[i];
+		const dsql_nod* parameter = dsqlScratch->variables[i];
 		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
 		const dsql_fld* field = variable->var_field;
 
@@ -875,7 +600,7 @@ void ExecBlockNode::genBlr()
 			// connection charset influence. So to validate, we cast them and assign to null.
 			dsqlScratch->appendUChar(blr_assignment);
 			dsqlScratch->appendUChar(blr_cast);
-			BlockNode::putDtype(dsqlScratch, field, true);
+			dsqlScratch->putDtype(field, true);
 			dsqlScratch->appendUChar(blr_parameter2);
 			dsqlScratch->appendUChar(0);
 			dsqlScratch->appendUShort(variable->var_msg_item);
@@ -884,16 +609,18 @@ void ExecBlockNode::genBlr()
 		}
 	}
 
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
+	for (Array<dsql_nod*>::const_iterator i = dsqlScratch->outputVariables.begin();
+		 i != dsqlScratch->outputVariables.end();
+		 ++i)
 	{
 		dsql_nod* parameter = *i;
 		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		putLocalVariable(dsqlScratch, variable, 0, NULL);
+		dsqlScratch->putLocalVariable(variable, 0, NULL);
 	}
 
 	dsqlScratch->setPsql(true);
 
-	putLocalVariables(dsqlScratch, localDeclList, USHORT(returns.getCount()));
+	dsqlScratch->putLocalVariables(localDeclList, USHORT(returns.getCount()));
 
 	dsqlScratch->loopLevel = 0;
 
@@ -912,7 +639,7 @@ void ExecBlockNode::genBlr()
 		statement->setType(DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	dsqlScratch->appendUChar(blr_end);
-	genReturn(dsqlScratch, true);
+	dsqlScratch->genReturn(true);
 	dsqlScratch->appendUChar(blr_end);
 
 	dsqlScratch->endDebug();
@@ -1799,8 +1526,6 @@ SuspendNode* SuspendNode::internalDsqlPass()
 
 	statement->addFlags(DsqlCompiledStatement::FLAG_SELECTABLE);
 
-	blockNode = statement->getBlockNode();
-
 	return this;
 }
 
@@ -1813,8 +1538,7 @@ void SuspendNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void SuspendNode::genBlr()
 {
-	if (blockNode)
-		blockNode->genReturn(dsqlScratch);
+	dsqlScratch->genReturn();
 }
 
 
@@ -1879,7 +1603,6 @@ ReturnNode* ReturnNode::internalDsqlPass()
 
 	ReturnNode* node = FB_NEW(getPool()) ReturnNode(getPool());
 	node->dsqlScratch = dsqlScratch;
-	node->blockNode = statement->getBlockNode();
 	node->value = PASS1_node(dsqlScratch, value);
 
 	return node;
@@ -1899,9 +1622,7 @@ void ReturnNode::genBlr()
 	GEN_expr(dsqlScratch, value);
 	dsqlScratch->appendUChar(blr_variable);
 	dsqlScratch->appendUShort(0);
-
-	blockNode->genReturn(dsqlScratch);
-
+	dsqlScratch->genReturn();
 	dsqlScratch->appendUChar(blr_leave);
 	dsqlScratch->appendUChar(0);
 }

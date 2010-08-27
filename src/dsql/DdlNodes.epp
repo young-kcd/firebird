@@ -1157,8 +1157,6 @@ void CreateAlterFunctionNode::print(string& text, Array<dsql_nod*>& /*nodes*/) c
 
 DdlNode* CreateAlterFunctionNode::internalDsqlPass()
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
-	statement->setBlockNode(this);
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_FUNCTION);
 
 	const dsql_nod* variables = localDeclList;
@@ -1488,7 +1486,6 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 	unsigned pos, const ParameterClause& parameter)
 {
 	Attachment* attachment = transaction->getAttachment();
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_func_args2, DYN_REQUESTS);
 
@@ -1591,7 +1588,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, jrd_tra* transactio
 
 			dsqlScratch->getBlrData().clear();
 
-			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+			if (dsqlScratch->isVersion4())
 				dsqlScratch->appendUChar(blr_version4);
 			else
 				dsqlScratch->appendUChar(blr_version5);
@@ -1618,14 +1615,12 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 	compiled = true;
 	invalid = true;
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	if (body)
 	{
 		dsqlScratch->beginDebug();
 		dsqlScratch->getBlrData().clear();
 
-		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+		if (dsqlScratch->isVersion4())
 			dsqlScratch->appendUChar(blr_version4);
 		else
 			dsqlScratch->appendUChar(blr_version5);
@@ -1650,7 +1645,7 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 				dsqlScratch->appendUChar(blr_short);
 				dsqlScratch->appendUChar(0);
 
-				variables.add(MAKE_variable(parameter.legacyField,
+				dsqlScratch->variables.add(MAKE_variable(parameter.legacyField,
 					parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
 			}
 		}
@@ -1667,8 +1662,8 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		dsqlScratch->appendUChar(0);
 
 		dsql_nod* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
-		variables.add(var);
-		outputVariables.add(var);
+		dsqlScratch->variables.add(var);
+		dsqlScratch->outputVariables.add(var);
 
 		if (parameters.getCount() != 0)
 		{
@@ -1695,14 +1690,15 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 			}
 		}
 
-		dsql_var* const variable = (dsql_var*) outputVariables[0]->nod_arg[Dsql::e_var_variable];
-		putLocalVariable(dsqlScratch, variable, 0, NULL);
+		dsql_var* const variable =
+			(dsql_var*) dsqlScratch->outputVariables[0]->nod_arg[Dsql::e_var_variable];
+		dsqlScratch->putLocalVariable(variable, 0, NULL);
 
 		// ASF: This is here to not change the old logic (proc_flag)
 		// of previous calls to PASS1_node and PASS1_statement.
 		dsqlScratch->setPsql(true);
 
-		putLocalVariables(dsqlScratch, localDeclList, 1);
+		dsqlScratch->putLocalVariables(localDeclList, 1);
 
 		dsqlScratch->appendUChar(blr_stall);
 		// put a label before body of procedure,
@@ -1714,10 +1710,9 @@ void CreateAlterFunctionNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
-		statement->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		dsqlScratch->appendUChar(blr_end);
-		genReturn(dsqlScratch, false);
-
+		dsqlScratch->genReturn(false);
 		dsqlScratch->appendUChar(blr_end);
 		dsqlScratch->appendUChar(blr_eoc);
 
@@ -1902,8 +1897,6 @@ void CreateAlterProcedureNode::print(string& text, Array<dsql_nod*>& /*nodes*/) 
 
 DdlNode* CreateAlterProcedureNode::internalDsqlPass()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	statement->setBlockNode(this);
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE);
 
 	const dsql_nod* variables = localDeclList;
@@ -2340,11 +2333,9 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, jrd_tra* transact
 			string defaultSource = string(defaultString->str_data, defaultString->str_length);
 			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE, defaultSource);
 
-			DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 			dsqlScratch->getBlrData().clear();
 
-			if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+			if (dsqlScratch->isVersion4())
 				dsqlScratch->appendUChar(blr_version4);
 			else
 				dsqlScratch->appendUChar(blr_version5);
@@ -2375,12 +2366,10 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	invalid = true;
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 	dsqlScratch->beginDebug();
 	dsqlScratch->getBlrData().clear();
 
-	if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+	if (dsqlScratch->isVersion4())
 		dsqlScratch->appendUChar(blr_version4);
 	else
 		dsqlScratch->appendUChar(blr_version5);
@@ -2404,7 +2393,7 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 			dsqlScratch->appendUChar(blr_short);
 			dsqlScratch->appendUChar(0);
 
-			variables.add(MAKE_variable(parameter.legacyField,
+			dsqlScratch->variables.add(MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
 		}
 	}
@@ -2429,8 +2418,8 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 			dsql_nod* const var = MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
 
-			variables.add(var);
-			outputVariables.add(var);
+			dsqlScratch->variables.add(var);
+			dsqlScratch->outputVariables.add(var);
 		}
 	}
 
@@ -2463,18 +2452,20 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 		}
 	}
 
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
+	for (Array<dsql_nod*>::const_iterator i = dsqlScratch->outputVariables.begin();
+		 i != dsqlScratch->outputVariables.end();
+		 ++i)
 	{
 		dsql_nod* parameter = *i;
 		dsql_var* const variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		putLocalVariable(dsqlScratch, variable, 0, NULL);
+		dsqlScratch->putLocalVariable(variable, 0, NULL);
 	}
 
 	// ASF: This is here to not change the old logic (proc_flag)
 	// of previous calls to PASS1_node and PASS1_statement.
 	dsqlScratch->setPsql(true);
 
-	putLocalVariables(dsqlScratch, localDeclList, returns.getCount());
+	dsqlScratch->putLocalVariables(localDeclList, returns.getCount());
 
 	dsqlScratch->appendUChar(blr_stall);
 	// put a label before body of procedure,
@@ -2486,10 +2477,9 @@ void CreateAlterProcedureNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/
 
 	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
 
-	statement->setType(DsqlCompiledStatement::TYPE_DDL);
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 	dsqlScratch->appendUChar(blr_end);
-	genReturn(dsqlScratch, true);
-
+	dsqlScratch->genReturn(true);
 	dsqlScratch->appendUChar(blr_end);
 	dsqlScratch->appendUChar(blr_eoc);
 
@@ -2779,8 +2769,6 @@ void CreateAlterTriggerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) co
 
 DdlNode* CreateAlterTriggerNode::internalDsqlPass()
 {
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-	statement->setBlockNode(this);
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_TRIGGER);
 
 	if (type.specified)
@@ -2876,8 +2864,6 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 	if (body)
 	{
-		DsqlCompiledStatement* statement = dsqlScratch->getStatement();
-
 		dsqlScratch->beginDebug();
 		dsqlScratch->getBlrData().clear();
 
@@ -2921,7 +2907,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 
 		// generate the trigger blr
 
-		if (statement->getFlags() & DsqlCompiledStatement::FLAG_BLR_VERSION4)
+		if (dsqlScratch->isVersion4())
 			dsqlScratch->appendUChar(blr_version4);
 		else
 			dsqlScratch->appendUChar(blr_version5);
@@ -2929,8 +2915,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		dsqlScratch->appendUChar(blr_begin);
 
 		dsqlScratch->setPsql(true);
-
-		putLocalVariables(dsqlScratch, localDeclList, 0);
+		dsqlScratch->putLocalVariables(localDeclList, 0);
 
 		dsqlScratch->scopeLevel++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
@@ -2954,7 +2939,7 @@ void CreateAlterTriggerNode::compile(thread_db* tdbb, jrd_tra* /*transaction*/)
 		// The statement type may have been set incorrectly when parsing
 		// the trigger actions, so reset it to reflect the fact that this
 		// is a data definition statement; also reset the ddl node.
-		statement->setType(DsqlCompiledStatement::TYPE_DDL);
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 	}
 
 	invalid = false;

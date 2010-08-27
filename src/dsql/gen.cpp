@@ -1316,7 +1316,7 @@ static void gen_cast( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
 {
 	dsqlScratch->appendUChar(blr_cast);
 	const dsql_fld* field = (dsql_fld*) node->nod_arg[e_cast_target];
-	BlockNode::putDtype(dsqlScratch, field, true);
+	dsqlScratch->putDtype(field, true);
 	GEN_expr(dsqlScratch, node->nod_arg[e_cast_source]);
 }
 
