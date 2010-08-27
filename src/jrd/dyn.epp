@@ -114,6 +114,9 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
  *
  **************************************/
 
+	if (!transaction)
+		status_exception::raise(Arg::Gds(isc_segstr_wrong_db));
+
 	thread_db* const tdbb = JRD_get_thread_data();
 	Database* const dbb = tdbb->getDatabase();
 
