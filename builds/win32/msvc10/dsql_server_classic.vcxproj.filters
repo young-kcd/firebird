@@ -34,6 +34,9 @@
     <ClCompile Include="..\..\..\src\dsql\dsql.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\dsql\DsqlCompilerScratch.cpp">
+      <Filter>DSQL files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\DSqlDataTypeUtil.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
@@ -148,6 +151,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\dsql_proto.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\dsql\DsqlCompilerScratch.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\DSqlDataTypeUtil.h">
