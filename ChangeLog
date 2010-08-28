@@ -1,3 +1,10 @@
+ 2010-08-27 15:14  asfernandes 
+   M builds/win32/msvc10/dsql_server.vcxproj
+   M builds/win32/msvc10/dsql_server.vcxproj.filters
+   M builds/win32/msvc10/dsql_server_classic.vcxproj
+   M builds/win32/msvc10/dsql_server_classic.vcxproj.filters
+Fix MSVC10 build
+
  2010-08-27 02:55  asfernandes 
    M src/jrd/dyn.epp
 Fixed CORE-3109 - [Crash] isc_dql_exec_immed3_m for "create database ..." and NULL transaction
