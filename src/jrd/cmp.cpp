@@ -1912,6 +1912,7 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_count = 1;
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = PAR_make_node(tdbb, 1);
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_type = nod_class_recsrcnode_jrd;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_count = 0;
 	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_arg[0] = (jrd_nod*) innerRse;
 
 	RseNode* newInnerRse = innerRse->clone();
@@ -1921,6 +1922,7 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 	newNode->nod_arg[0]->nod_arg[1]->nod_count = 1;
 	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = PAR_make_node(tdbb, 1);
 	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_type = nod_class_recsrcnode_jrd;
+	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_count = 0;
 	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_arg[0] = (jrd_nod*) newInnerRse;
 
 	jrd_nod* boolean = PAR_make_node(tdbb, 2);
