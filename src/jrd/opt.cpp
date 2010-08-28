@@ -512,15 +512,15 @@ namespace Jrd
 	class River
 	{
 	public:
-		River(CompilerScratch* csb, RecordSource* rsb, size_t count, UCHAR* streams)
-			: m_rsb(rsb), m_streams(csb->csb_pool)
+		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, size_t count, UCHAR* streams)
+			: m_rsb(rsb), m_node(node), m_streams(csb->csb_pool)
 		{
 			m_streams.resize(count);
 			memcpy(m_streams.begin(), streams, count);
 		}
 
 		River(CompilerScratch* csb, RecordSource* rsb, RiverList& rivers)
-			: m_rsb(rsb), m_streams(csb->csb_pool)
+			: m_rsb(rsb), m_node(NULL), m_streams(csb->csb_pool)
 		{
 			for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 			{
@@ -574,6 +574,11 @@ namespace Jrd
 			return false;
 		}
 
+		bool isComputable(CompilerScratch* csb) const
+		{
+			return m_node ? m_node->computable(csb, -1, false, false, NULL) : true;
+		}
+
 	protected:
 		bool isReferenced(const jrd_nod* node, bool& field_found) const
 		{
@@ -604,6 +609,7 @@ namespace Jrd
 		}
 
 		RecordSource* m_rsb;
+		RecordSourceNode* const m_node;
 		StreamList m_streams;
 	};
 
@@ -618,17 +624,27 @@ namespace Jrd
 
 			if (count == 1)
 			{
-				m_rsb = rivers[0]->getRecordSource();
+				m_rsb = rivers.front()->getRecordSource();
 			}
 			else
 			{
 				HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-				rsbs.resize(count);
-				RecordSource** ptr = rsbs.begin();
 
-				for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+				// Reorder input rivers according to their possible inter-dependencies
+
+				while (rsbs.getCount() < count)
 				{
-					*ptr++ = (*iter)->getRecordSource();
+					for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
+					{
+						River* const sub_river = *iter;
+						RecordSource* const sub_rsb = sub_river->getRecordSource();
+
+						if (!rsbs.exist(sub_rsb) && sub_river->isComputable(csb))
+						{
+							rsbs.add(sub_rsb);
+							sub_river->activate(csb);
+						}
+					}
 				}
 
 				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, count, rsbs.begin());
@@ -879,7 +895,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const 
 
 			const size_t count = opt->localStreams[0];
 			UCHAR* const streams = opt->localStreams + 1;
-			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, count, streams);
+			River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, node, count, streams);
 			river->deactivate(csb);
 			rivers.add(river);
 		}
@@ -1085,7 +1101,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const 
 				// all currently available rivers
 
 				River* const river = FB_NEW(*tdbb->getDefaultPool()) CrossJoin(csb, rivers);
-				river->activate(csb);
 				rivers.add(river);
 			}
 			else
@@ -2165,7 +2180,7 @@ static bool form_river(thread_db*		tdbb,
 		FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
 
 	// Allocate a river block and move the best order into it
-	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, count, streams.begin());
+	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, NULL, count, streams.begin());
 	river->deactivate(csb);
 	river_list.push(river);
 
