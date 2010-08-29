@@ -87,6 +87,7 @@ struct index_desc;
 struct IndexDescAlloc;
 class Format;
 class Cursor;
+class PlanNode;
 class RecordSource;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
@@ -317,17 +318,6 @@ const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
 const int e_cast_iteminfo	= 2;
 const int e_cast_length		= 3;
-
-// This is for the plan node
-const int e_retrieve_relation		= 0;
-const int e_retrieve_access_type	= 1;
-const int e_retrieve_length			= 2;
-
-// This is for the plan's access_type subnode
-const int e_access_type_relation	= 0;
-const int e_access_type_index		= 1;
-const int e_access_type_index_name	= 2;
-const int e_access_type_length		= 3;
 
 // SQL Date supporting nodes
 const int e_extract_value	= 0;	// Node
@@ -825,7 +815,7 @@ public:
 		Format* csb_internal_format;	// Statement internal format
 		UInt32Bitmap* csb_fields;		// Fields referenced
 		double csb_cardinality;			// Cardinality of relation
-		jrd_nod* csb_plan;				// user-specified plan for this relation
+		PlanNode* csb_plan;				// user-specified plan for this relation
 		UCHAR* csb_map;					// Stream map for views
 		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
 	};

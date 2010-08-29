@@ -99,14 +99,6 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_start_savepoint, start_savepoint, "")
 		  NODE(nod_end_savepoint, end_savepoint, "")
 
-/* access plan stuff */
-		  NODE(nod_plan, plan, "PLAN")
-		  NODE(nod_join, join, "JOIN")
-		  NODE(nod_sequential, sequential, "SEQUENTIAL")
-		  NODE(nod_navigational, navigational, "NAVIGATIONAL")
-		  NODE(nod_indices, indices, "INDICES")
-		  NODE(nod_retrieve, retrieve, "RETRIEVE")
-
 		  NODE(nod_set_generator, set_generator, "")
 
 /* Required for NULL handling             */

@@ -34,6 +34,7 @@ namespace Jrd {
 
 class OptimizerRetrieval;
 class ProcedureScan;
+class RelationSourceNode;
 class RseNode;
 
 
@@ -78,6 +79,64 @@ public:
 
 	LegacyNodeArray items;	// map items
 };
+
+class PlanNode : public Firebird::PermanentStorage
+{
+public:
+	enum Type
+	{
+		TYPE_JOIN,
+		TYPE_RETRIEVE
+	};
+
+	struct AccessItem
+	{
+		AccessItem(MemoryPool& pool)
+			: relationId(0),
+			  indexId(0),
+			  indexName(pool)
+		{
+		}
+
+		SLONG relationId;
+		SLONG indexId;
+		Firebird::MetaName indexName;
+	};
+
+	struct AccessType
+	{
+		enum Type
+		{
+			TYPE_SEQUENTIAL,
+			TYPE_NAVIGATIONAL,
+			TYPE_INDICES
+		};
+
+		AccessType(MemoryPool& pool, Type aType)
+			: type(aType),
+			  items(pool)
+		{
+		}
+
+		Type const type;
+		Firebird::ObjectsArray<AccessItem> items;
+	};
+
+	PlanNode(MemoryPool& pool, Type aType)
+		: PermanentStorage(pool),
+		  type(aType),
+		  accessType(NULL),
+		  relationNode(NULL),
+		  subNodes(pool)
+	{
+	}
+
+	Type const type;
+	AccessType* accessType;
+	RelationSourceNode* relationNode;
+	Firebird::Array<NestConst<PlanNode> > subNodes;
+};
+
 
 class RecordSourceNode : public Firebird::PermanentStorage
 {
@@ -476,7 +535,7 @@ public:
 private:
 	void computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const;
 	void planCheck(const CompilerScratch* csb) const;
-	static void planSet(CompilerScratch* csb, jrd_nod* plan);
+	static void planSet(CompilerScratch* csb, PlanNode* plan);
 
 public:
 	USHORT rse_jointype;		// inner, left, full
@@ -486,7 +545,7 @@ public:
 	NestConst<SortNode> rse_sorted;
 	NestConst<SortNode> rse_projection;
 	NestConst<SortNode> rse_aggregate;	// singleton aggregate for optimizing to index
-	NestConst<jrd_nod> rse_plan;		// user-specified access plan
+	NestConst<PlanNode> rse_plan;		// user-specified access plan
 	NestConst<VarInvariantArray> rse_invariants; // Invariant nodes bound to top-level RSE
 	Firebird::Array<NestConst<RecordSourceNode> > rse_relations;
 	unsigned flags;

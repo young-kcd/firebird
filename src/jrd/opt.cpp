@@ -673,9 +673,9 @@ static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
-static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, jrd_nod*);
+static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, PlanNode*);
 static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, SortNode**);
-static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, jrd_nod*);
+static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, PlanNode*);
 static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RseNode*, RiverList&, SortNode**);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
 static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, SortNode**, bool, bool, jrd_nod**);
@@ -1290,50 +1290,44 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const jrd_nod* plan = csb_tail->csb_plan;
-	if (!plan) {
+	const PlanNode* plan = csb_tail->csb_plan;
+	if (!plan)
 		return;
-	}
 
-	if (plan->nod_type != nod_retrieve) {
+	if (plan->type != PlanNode::TYPE_RETRIEVE)
 		return;
-	}
 
 	const jrd_rel* relation = csb_tail->csb_relation;
 
 	// if there were no indices fetched at all but the
 	// user specified some, error out using the first index specified
-	const jrd_nod* access_type = 0;
-	if (!csb_tail->csb_indices && (access_type = plan->nod_arg[e_retrieve_access_type]))
+
+	if (!csb_tail->csb_indices && plan->accessType)
 	{
 		// index %s cannot be used in the specified plan
-		const char* iname =
-			reinterpret_cast<const char*>(access_type->nod_arg[e_access_type_index_name]);
-		ERR_post(Arg::Gds(isc_index_unused) << Arg::Str(iname));
+		ERR_post(Arg::Gds(isc_index_unused) << plan->accessType->items[0].indexName);
 	}
 
 	// check to make sure that all indices are either used or marked not to be used,
 	// and that there are no unused navigational indices
-	Firebird::MetaName index_name;
+	MetaName index_name;
 
 	const index_desc* idx = csb_tail->csb_idx->items;
+
 	for (USHORT i = 0; i < csb_tail->csb_indices; i++)
 	{
 		if (!(idx->idx_runtime_flags & (idx_plan_dont_use | idx_used)) ||
 			((idx->idx_runtime_flags & idx_plan_navigate) && !(idx->idx_runtime_flags & idx_navigate)))
 		{
 			if (relation)
-			{
 				MET_lookup_index(tdbb, index_name, relation->rel_name, (USHORT) (idx->idx_id + 1));
-			}
 			else
-			{
 				index_name = "";
-			}
 
 			// index %s cannot be used in the specified plan
 			ERR_post(Arg::Gds(isc_index_unused) << Arg::Str(index_name));
 		}
+
 		++idx;
 	}
 }
@@ -2041,7 +2035,7 @@ static void form_rivers(thread_db*		tdbb,
 						const UCHAR*	streams,
 						RiverList&		river_list,
 						SortNode**		sort_clause,
-						jrd_nod*		plan_clause)
+						PlanNode*		plan_clause)
 {
 /**************************************
  *
@@ -2056,21 +2050,21 @@ static void form_rivers(thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(plan_clause, type_nod);
 
 	stream_array_t temp;
 	temp[0] = 0;
-	USHORT count = plan_clause->nod_count;
 
 	// this must be a join or a merge node, so go through
 	// the substreams and place them into the temp vector
 	// for formation into a river.
-	jrd_nod* plan_node = 0;
-	jrd_nod** ptr = plan_clause->nod_arg;
-	for (const jrd_nod* const* const end = ptr + count; ptr < end; ptr++)
+	PlanNode* plan_node = NULL;
+	NestConst<PlanNode>* ptr = plan_clause->subNodes.begin();
+
+	for (const NestConst<PlanNode>* const end = plan_clause->subNodes.end(); ptr != end; ++ptr)
 	{
 		plan_node = *ptr;
-		if (plan_node->nod_type == nod_join)
+
+		if (plan_node->type == PlanNode::TYPE_JOIN)
 		{
 			form_rivers(tdbb, opt, streams, river_list, sort_clause, plan_node);
 			continue;
@@ -2078,22 +2072,19 @@ static void form_rivers(thread_db*		tdbb,
 
 		// at this point we must have a retrieval node, so put
 		// the stream into the river.
-		fb_assert(plan_node->nod_type == nod_retrieve);
-		const jrd_nod* relation_node = plan_node->nod_arg[e_retrieve_relation];
-		fb_assert(relation_node->nod_type == nod_class_recsrcnode_jrd);
+		fb_assert(plan_node->type == PlanNode::TYPE_RETRIEVE);
 
-		const RecordSourceNode* recSource = reinterpret_cast<const RecordSourceNode*>(
-			relation_node->nod_arg[0]);
-		fb_assert(recSource->type == RelationSourceNode::TYPE);
+		const UCHAR stream = plan_node->relationNode->getStream();
 
-		const UCHAR stream = recSource->getStream();
 		// dimitr:	the plan may contain more retrievals than the "streams"
 		//			array (some streams could already be joined to the active
 		//			rivers), so we populate the "temp" array only with the
 		//			streams that appear in both the plan and the "streams"
 		//			array.
+
 		const UCHAR* ptr_stream = streams + 1;
 		const UCHAR* const end_stream = ptr_stream + streams[0];
+
 		while (ptr_stream < end_stream)
 		{
 			if (*ptr_stream++ == stream)
@@ -2118,6 +2109,7 @@ static void form_rivers(thread_db*		tdbb,
 	{
 		OptimizerInnerJoin* const innerJoin = FB_NEW(*tdbb->getDefaultPool())
 			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, sort_clause, plan_clause);
+		USHORT count;
 
 		do {
 			count = innerJoin->findJoinOrder();
@@ -2297,7 +2289,7 @@ static void gen_join(thread_db*		tdbb,
 					 const UCHAR*	streams,
 					 RiverList&		river_list,
 					 SortNode** sort_clause,
-					 jrd_nod*		plan_clause)
+					 PlanNode*		plan_clause)
 {
 /**************************************
  *
@@ -2312,13 +2304,10 @@ static void gen_join(thread_db*		tdbb,
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
 	if (!streams[0])
-	{
 		return;
-	}
 
 	if (plan_clause && streams[0] > 1)
 	{

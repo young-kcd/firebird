@@ -2941,8 +2941,8 @@ bool InnerJoinStreamInfo::independent() const
 
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-									   SortNode** sort_clause, jrd_nod* plan_clause) :
-	pool(p), innerStreams(p)
+									   SortNode** sort_clause, PlanNode* plan_clause)
+	: pool(p), innerStreams(p)
 {
 /**************************************
  *

@@ -93,7 +93,7 @@ static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_plan(thread_db*, CompilerScratch*);
+static PlanNode* par_plan(thread_db*, CompilerScratch*);
 
 
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
@@ -1607,7 +1607,7 @@ size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
 }
 
 
-static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
+static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1631,11 +1631,11 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	if (node_type == blr_join || node_type == blr_merge)
 	{
 		USHORT count = (USHORT) csb->csb_blr_reader.getByte();
-		jrd_nod* plan = PAR_make_node(tdbb, count);
-		plan->nod_type = nod_join;
+		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
 
-		for (jrd_nod** arg = plan->nod_arg; count--;)
-			*arg++ = par_plan(tdbb, csb);
+		while (count-- > 0)
+			plan->subNodes.add(par_plan(tdbb, csb));
+
 		return plan;
 	}
 
@@ -1643,8 +1643,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_retrieve)
 	{
-		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
-		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
+		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_RETRIEVE);
 
 		// parse the relation name and context--the relation
 		// itself is redundant except in the case of a view,
@@ -1652,47 +1651,35 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
 		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
-		{
 			PAR_syntax_error(csb, elements[RELATION]);
-		}
 
-		// don't have par_relation() parse the context, because
+		// don't make RelationSourceNode::parse() parse the context, because
 		// this would add a new context; while this is a reference to
 		// an existing context
 
-		RelationSourceNode* recSource = RelationSourceNode::parse(tdbb, csb, n, false);
+		plan->relationNode = RelationSourceNode::parse(tdbb, csb, n, false);
 
-		jrd_nod* relation_node = PAR_make_node(tdbb, 1);
-		relation_node->nod_type = nod_class_recsrcnode_jrd;
-		relation_node->nod_count = 0;
-		relation_node->nod_arg[0] = (jrd_nod*) recSource;
-
-		plan->nod_arg[e_retrieve_relation] = relation_node;
-		jrd_rel* relation = (jrd_rel*) recSource->relation;
+		jrd_rel* relation = plan->relationNode->relation;
 
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
 			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 		const SSHORT stream = csb->csb_rpt[n].csb_stream;
 
-		recSource->setStream(stream);
-		recSource->context = n;
+		plan->relationNode->setStream(stream);
+		plan->relationNode->context = n;
 
 		// Access plan types (sequential is default)
 
 		node_type = (USHORT) csb->csb_blr_reader.getByte();
-		USHORT extra_count = 0;
-		jrd_nod* access_type = NULL;
-		Firebird::MetaName name;
-		MetaName* idx_name = NULL;
+		MetaName name;
 
 		switch (node_type)
 		{
 		case blr_navigational:
 			{
-				access_type = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, e_access_type_length);
-				access_type->nod_type = nod_navigational;
+				plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+					PlanNode::AccessType::TYPE_NAVIGATIONAL);
 
 				// pick up the index name and look up the appropriate ids
 
@@ -1723,44 +1710,38 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				// the relation could be a base relation of a view;
 				// save the index name also, for convenience
 
-				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
-				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-				idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
-				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
+				PlanNode::AccessItem& item = plan->accessType->items.add();
+				item.relationId = relation_id;
+				item.indexId = index_id;
+				item.indexName = name;
 
 				if (csb->csb_g_flags & csb_get_dependencies)
 				{
 					CompilerScratch::Dependency dependency(obj_index);
-					dependency.name = idx_name;
+					dependency.name = &item.indexName;
 					csb->csb_dependencies.push(dependency);
 	            }
 
-				if (csb->csb_blr_reader.peekByte() == blr_indices)
-				{
-					// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
-					extra_count = 3;
-				}
-				else
+				if (csb->csb_blr_reader.peekByte() != blr_indices)
 					break;
+
+				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
 			}
 		case blr_indices:
 			{
-				if (extra_count)
+				if (plan->accessType)
 					csb->csb_blr_reader.getByte(); // skip blr_indices
-				USHORT count = (USHORT) csb->csb_blr_reader.getByte();
-				jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, count * e_access_type_length + extra_count);
-				for (USHORT i = 0; i < extra_count; i++) {
-					temp->nod_arg[i] = access_type->nod_arg[i];
+				else
+				{
+					plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+						PlanNode::AccessType::TYPE_INDICES);
 				}
-				temp->nod_type = extra_count ? nod_navigational : nod_indices;
-				if (extra_count)
-					delete access_type;
-				access_type = temp;
+
+				USHORT count = (USHORT) csb->csb_blr_reader.getByte();
 
 				// pick up the index names and look up the appropriate ids
 
-				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;)
+				while (count-- > 0)
 				{
 					PAR_name(csb, name);
 	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
@@ -1789,15 +1770,15 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					// the relation could be a base relation of a view;
 					// save the index name also, for convenience
 
-					*arg++ = (jrd_nod*) (IPTR) relation_id;
-					*arg++ = (jrd_nod*) (IPTR) index_id;
-					idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
-					*arg++ = (jrd_nod*) idx_name;
+					PlanNode::AccessItem& item = plan->accessType->items.add();
+					item.relationId = relation_id;
+					item.indexId = index_id;
+					item.indexName = name;
 
 					if (csb->csb_g_flags & csb_get_dependencies)
 					{
 						CompilerScratch::Dependency dependency(obj_index);
-						dependency.name = idx_name;
+						dependency.name = &item.indexName;
 						csb->csb_dependencies.push(dependency);
 		            }
 				}

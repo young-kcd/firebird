@@ -69,6 +69,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 class IndexTableScan;
+class PlanNode;
 class River;
 class SortNode;
 
@@ -240,7 +241,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-					   SortNode** sort_clause, jrd_nod* plan_clause);
+					   SortNode** sort_clause, PlanNode* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -267,7 +268,7 @@ private:
 	MemoryPool& pool;
 	thread_db* tdbb;
 	SortNode** sort;
-	jrd_nod* plan;
+	PlanNode* plan;
 	CompilerScratch* csb;
 	Database* database;
 	OptimizerBlk* optimizer;

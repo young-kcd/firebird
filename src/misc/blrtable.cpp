@@ -188,14 +188,6 @@ static const VERB verbs[] =
 	PAIR(nod_start_savepoint, blr_start_savepoint, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_end_savepoint, blr_end_savepoint, 1, 0, STATEMENT, OTHER),
 
-	/* nodes for set plan */
-	PAIR(nod_plan, blr_plan, 1, 1, VALUE, VALUE),
-	PAIR(nod_join, blr_join, 0, 0, VALUE, VALUE),
-	PAIR(nod_sequential, blr_sequential, 0, 0, ACCESS_TYPE, OTHER),
-	PAIR(nod_navigational, blr_navigational, 1, 1, ACCESS_TYPE, VALUE),
-	PAIR(nod_indices, blr_indices, 1, 0, ACCESS_TYPE, VALUE),
-	PAIR(nod_retrieve, blr_retrieve, 2, 0, ACCESS_TYPE, VALUE),
-
 	PAIR(nod_class_recsrcnode_jrd, blr_relation2, 1, 0, RELATION, OTHER),
 	PAIR(nod_class_recsrcnode_jrd, blr_rid2, 1, 0, RELATION, OTHER),
 	PAIR2(nod_set_generator, blr_set_generator, e_gen_length, 1, STATEMENT, VALUE),

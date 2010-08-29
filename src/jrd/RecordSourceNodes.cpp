@@ -1500,7 +1500,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 	SortNode* project = rse_projection;
 	jrd_nod* first = rse_first;
 	jrd_nod* skip = rse_skip;
-	jrd_nod* plan = rse_plan;
+	PlanNode* plan = rse_plan;
 
 	// zip thru RseNode expanding views and inner joins
 	NestConst<RecordSourceNode>* arg = rse_relations.begin();
@@ -1798,29 +1798,28 @@ void RseNode::planCheck(const CompilerScratch* csb) const
 // Go through the streams in the plan, find the corresponding streams in the RseNode and store the
 // plan for that stream. Do it once and only once to make sure there is a one-to-one correspondence
 // between streams in the query and streams in the plan.
-void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
+void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 {
-	if (plan->nod_type == nod_join)
+	if (plan->type == PlanNode::TYPE_JOIN)
 	{
-		for (jrd_nod** ptr = plan->nod_arg, **end = ptr + plan->nod_count; ptr < end; ptr++)
+		for (NestConst<PlanNode>* ptr = plan->subNodes.begin(), *end = plan->subNodes.end();
+			 ptr != end;
+			 ++ptr)
+		{
 			planSet(csb, *ptr);
+		}
 	}
 
-	if (plan->nod_type != nod_retrieve)
+	if (plan->type != PlanNode::TYPE_RETRIEVE)
 		return;
 
-	fb_assert(plan->nod_arg[e_retrieve_relation]->nod_type == nod_class_recsrcnode_jrd);
-	RelationSourceNode* recSource = reinterpret_cast<RelationSourceNode*>(
-		plan->nod_arg[e_retrieve_relation]->nod_arg[0]);
-	fb_assert(recSource->type == RelationSourceNode::TYPE);
-
 	const jrd_rel* viewRelation = NULL;
-	const jrd_rel* planRelation = (jrd_rel*) recSource->relation;
-	const char* planAlias = (const char *) recSource->alias;
+	const jrd_rel* planRelation = plan->relationNode->relation;
+	const char* planAlias = plan->relationNode->alias;
 
 	// find the tail for the relation specified in the RseNode
 
-	const USHORT stream = recSource->getStream();
+	const USHORT stream = plan->relationNode->getStream();
 	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation
@@ -1958,7 +1957,7 @@ void RseNode::planSet(CompilerScratch* csb, jrd_nod* plan)
 			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(planRelation->rel_name));
 		}
 
-		recSource->setStream(*map);
+		plan->relationNode->setStream(*map);
 	}
 
 	// make some validity checks
@@ -2319,20 +2318,17 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode
 // Mark indices that were not included in the user-specified access plan.
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 {
-	const jrd_nod* plan = csbTail->csb_plan;
+	const PlanNode* plan = csbTail->csb_plan;
 
-	if (!plan)
-		return;
-	if (plan->nod_type != nod_retrieve)
+	if (!plan || plan->type != PlanNode::TYPE_RETRIEVE)
 		return;
 
 	// find out how many indices were specified; if
 	// there were none, this is a sequential retrieval
-	USHORT planCount = 0;
-	const jrd_nod* accessType = plan->nod_arg[e_retrieve_access_type];
+	size_t planCount = 0;
 
-	if (accessType)
-		planCount = accessType->nod_count;
+	if (plan->accessType)
+		planCount = plan->accessType->items.getCount();
 
 	// go through each of the indices and mark it unusable
 	// for indexed retrieval unless it was specifically mentioned
@@ -2342,23 +2338,23 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 
 	for (USHORT i = 0; i < csbTail->csb_indices; i++)
 	{
-		if (accessType)
+		if (plan->accessType)
 		{
-			const jrd_nod* const* arg = accessType->nod_arg;
-			const jrd_nod* const* const end = arg + planCount;
+			ObjectsArray<PlanNode::AccessItem>::iterator arg = plan->accessType->items.begin();
+			const ObjectsArray<PlanNode::AccessItem>::iterator end = plan->accessType->items.end();
 
-			for (; arg < end; arg += e_access_type_length)
+			for (; arg != end; ++arg)
 			{
-				if (relationId != (SSHORT)(IPTR) arg[e_access_type_relation])
+				if (relationId != arg->relationId)
 				{
 					// index %s cannot be used in the specified plan
-					const char* iname = reinterpret_cast<const char*>(arg[e_access_type_index_name]);
-					ERR_post(Arg::Gds(isc_index_unused) << Arg::Str(iname));
+					ERR_post(Arg::Gds(isc_index_unused) << arg->indexName);
 				}
 
-				if (idx->idx_id == (USHORT)(IPTR) arg[e_access_type_index])
+				if (idx->idx_id == arg->indexId)
 				{
-					if (accessType->nod_type == nod_navigational && arg == accessType->nod_arg)
+					if (plan->accessType->type == PlanNode::AccessType::TYPE_NAVIGATIONAL &&
+						arg == plan->accessType->items.begin())
 					{
 						// dimitr:	navigational access can use only one index,
 						//			hence the extra check added (see the line above)
