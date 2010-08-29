@@ -1,3 +1,11 @@
+ 2010-08-28 12:41  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-2155: Join of SP with view or table may fail with 'No current record for fetch operation'.
+
+ 2010-08-28 08:52  dimitr 
+   M src/jrd/cmp.cpp
+Fixed the engine crash caused by the recent refactoring.
+
  2010-08-27 15:14  asfernandes 
    M builds/win32/msvc10/dsql_server.vcxproj
    M builds/win32/msvc10/dsql_server.vcxproj.filters
