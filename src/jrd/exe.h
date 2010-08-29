@@ -107,17 +107,6 @@ public:
 class jrd_nod : public jrd_node_base
 {
 public:
-/*	jrd_nod()
-	:	nod_parent(0),
-		nod_impure(0),
-		nod_type(nod_nop),
-		nod_flags(0),
-		nod_scale(0),
-		nod_count(0)
-	{
-		nod_arg[0] = 0;
-	}*/
-
 	jrd_nod*	nod_arg[1];
 
 	// Replace the line above by this block to check deep const-correctness.

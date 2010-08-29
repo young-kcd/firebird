@@ -2571,11 +2571,6 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 			}
 			break;
 
-		case nod_nop:
-			request->req_operation = jrd_req::req_return;
-			node = node->nod_parent;
-			break;
-
 		case nod_receive:
 			node = receive_msg(tdbb, node);
 			break;
