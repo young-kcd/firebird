@@ -1981,13 +1981,15 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_sorted = PAR_sort(tdbb, csb, true, false);
+			csb->csb_blr_reader.seekBackward(1);
+			rse->rse_sorted = PAR_sort(tdbb, csb, op, false);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_projection = PAR_sort(tdbb, csb, false, false);
+			csb->csb_blr_reader.seekBackward(1);
+			rse->rse_projection = PAR_sort(tdbb, csb, op, false);
 			break;
 
 		case blr_join_type:
@@ -2049,61 +2051,83 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 }
 
 
-jrd_nod* PAR_sort(thread_db* tdbb, CompilerScratch* csb, bool flag, bool nullForEmpty)
+// Parse a sort clause (sans header byte). This is used for blr_sort, blr_project and blr_group_by.
+SortNode* PAR_sort(thread_db* tdbb, CompilerScratch* csb, UCHAR expectedBlr,
+	bool nullForEmpty)
 {
-/**************************************
- *
- *	P A R _ s o r t
- *
- **************************************
- *
- * Functional description
- *	Parse a sort clause (sans header byte).  This is used for
- *	BLR_SORT, BLR_PROJECT, and BLR_GROUP.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+	UCHAR blrOp = csb->csb_blr_reader.getByte();
+
+	if (blrOp != expectedBlr)
+	{
+		char s[20];
+		sprintf(s, "blr code %d", expectedBlr);
+		PAR_syntax_error(csb, s);
+	}
+
+	USHORT count = csb->csb_blr_reader.getByte();
 
 	if (count == 0 && nullForEmpty)
 		return NULL;
 
-	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
-	if (!flag)
-		clause->nod_flags = nod_unique_sort;
-	clause->nod_type = nod_sort;
-	clause->nod_count = count;
-	jrd_nod** ptr = clause->nod_arg;
-	jrd_nod** ptr2 = ptr + count;
-	jrd_nod** ptr3 = ptr2 + count;
+	SortNode* sort = PAR_sort_internal(tdbb, csb, blrOp, count);
 
-	while (--count >= 0)
+	if (blrOp != blr_sort)
+		sort->unique = true;
+
+	return sort;
+}
+
+
+// Parse the internals of a sort clause. This is used for blr_sort, blr_project, blr_group_by
+// and blr_partition_by.
+SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
+	USHORT count)
+{
+	SET_TDBB(tdbb);
+
+	SortNode* sort = FB_NEW(*tdbb->getDefaultPool()) SortNode(
+		*tdbb->getDefaultPool());
+
+	NestConst<jrd_nod>* ptr = sort->expressions.getBuffer(count);
+	bool* ptr2 = sort->descending.getBuffer(count);
+	int* ptr3 = sort->nullOrder.getBuffer(count);
+
+	while (count-- > 0)
 	{
-		if (flag)
+		if (blrOp == blr_sort)
 		{
 			UCHAR code = csb->csb_blr_reader.getByte();
+
 			switch (code)
 			{
-			case blr_nullsfirst:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_first;
-				code = csb->csb_blr_reader.getByte();
-				break;
-			case blr_nullslast:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_last;
-				code = csb->csb_blr_reader.getByte();
-				break;
-			default:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_default;
+				case blr_nullsfirst:
+					*ptr3++ = rse_nulls_first;
+					code = csb->csb_blr_reader.getByte();
+					break;
+
+				case blr_nullslast:
+					*ptr3++ = rse_nulls_last;
+					code = csb->csb_blr_reader.getByte();
+					break;
+
+				default:
+					*ptr3++ = rse_nulls_default;
 			}
 
-			*ptr2++ = (jrd_nod*) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
+			*ptr2++ = (code == blr_descending);
+		}
+		else
+		{
+			*ptr2++ = false;	// ascending
+			*ptr3++ = rse_nulls_default;
 		}
 
 		*ptr++ = PAR_parse_node(tdbb, csb, VALUE);
 	}
 
-	return clause;
+	return sort;
 }
 
 
@@ -2569,10 +2593,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_aggregate:
 		node->nod_arg[0] = (jrd_nod*) AggregateSourceNode::parse(tdbb, csb);
 		break;
-
-	case blr_group_by:
-		node = PAR_sort(tdbb, csb, false, false);
-		return node->nod_count ? node : NULL;
 
 	case blr_field:
 	case blr_fid:

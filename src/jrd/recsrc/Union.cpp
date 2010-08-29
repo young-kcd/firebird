@@ -35,7 +35,7 @@ using namespace Jrd;
 // --------------------------
 
 Union::Union(CompilerScratch* csb, UCHAR stream,
-			 size_t argCount, RecordSource* const* args, NestConst<jrd_nod>* maps,
+			 size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
 			 size_t streamCount, const UCHAR* streams)
 	: RecordStream(csb, stream), m_args(csb->csb_pool), m_maps(csb->csb_pool),
 	  m_streams(csb->csb_pool)
@@ -131,13 +131,11 @@ bool Union::getRecord(thread_db* tdbb) const
 
 	// We've got a record, map it into the target record
 
-	const jrd_nod* const map = m_maps[impure->irsb_count];
-	const jrd_nod* const* ptr = map->nod_arg;
+	const MapNode* const map = m_maps[impure->irsb_count];
+	const NestConst<jrd_nod>* ptr = map->items.begin();
 
-	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
-	{
+	for (const NestConst<jrd_nod>* const end = map->items.end(); ptr != end; ++ptr)
 		EXE_assignment(tdbb, *ptr);
-	}
 
 	return true;
 }

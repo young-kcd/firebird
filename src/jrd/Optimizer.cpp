@@ -845,8 +845,8 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 
 OptimizerRetrieval::OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt,
 									   SSHORT streamNumber, bool outer,
-									   bool inner, jrd_nod** sortNode) :
-	pool(p), alias(p), indexScratches(p), inversionCandidates(p)
+									   bool inner, SortNode** sortNode)
+	: pool(p), alias(p), indexScratches(p), inversionCandidates(p)
 {
 /**************************************
  *
@@ -1251,10 +1251,9 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
  **************************************/
 	fb_assert(sort);
 
-	jrd_nod* sortPtr = *sort;
-	if (!sortPtr) {
+	SortNode* sortPtr = *sort;
+	if (!sortPtr)
 		return NULL;
-	}
 
 	size_t i = 0;
 	for (; i < indexScratches.getCount(); ++i)
@@ -1267,9 +1266,8 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		// sort--note that in the case where the first field is unique, this
 		// could be optimized, since the sort will be performed correctly by
 		// navigating on a unique index on the first field--deej
-		if (sortPtr->nod_count > idx->idx_count) {
+		if (sortPtr->expressions.getCount() > idx->idx_count)
 			continue;
-		}
 
 		// if the user-specified access plan for this request didn't
 		// mention this index, forget it
@@ -1283,7 +1281,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		// an expression index
 		if (idx->idx_flags & idx_expressn)
 		{
-			if (sortPtr->nod_count != 1)
+			if (sortPtr->expressions.getCount() != 1)
 				continue;
 		}
 
@@ -1292,10 +1290,17 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
-		jrd_nod* const* ptr = sortPtr->nod_arg;
-		for (const jrd_nod* const* const end = ptr + sortPtr->nod_count; ptr < end; ptr++, idx_tail++)
+		NestConst<jrd_nod>* ptr = sortPtr->expressions.begin();
+		bool* descending = sortPtr->descending.begin();
+		int* nullOrder = sortPtr->nullOrder.begin();
+
+		for (const NestConst<jrd_nod>* const end = sortPtr->expressions.end();
+			 ptr != end;
+			 ++ptr, ++descending, ++nullOrder, ++idx_tail)
 		{
+
 			jrd_nod* node = *ptr;
+
 			if (idx->idx_flags & idx_expressn)
 			{
 				if (!OPT_expression_equal(tdbb, csb, idx, node, stream))
@@ -1312,12 +1317,10 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 				break;
 			}
 
-			if ((ptr[sortPtr->nod_count] && !(idx->idx_flags & idx_descending)) ||
-				(!ptr[sortPtr->nod_count] && (idx->idx_flags & idx_descending)) ||
-				((reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_first &&
-					ptr[sortPtr->nod_count]) ||
-				 (reinterpret_cast<IPTR>(ptr[2 * sortPtr->nod_count]) == rse_nulls_last &&
-					!ptr[sortPtr->nod_count])))
+			if ((*descending && !(idx->idx_flags & idx_descending)) ||
+				(!*descending && (idx->idx_flags & idx_descending)) ||
+				((*nullOrder == rse_nulls_first && *descending) ||
+				 (*nullOrder == rse_nulls_last && !*descending)))
 			{
 				usableIndex = false;
 				break;
@@ -1346,8 +1349,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 					// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
 					// multi-level and insensitive collation. In NAV, keys are verified with memcmp
 					// but there we don't know length of each level.
-					if ((sortPtr->nod_flags & nod_unique_sort) &&
-						(tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
+					if (sortPtr->unique && (tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
 					{
 						usableIndex = false;
 						break;
@@ -2939,7 +2941,7 @@ bool InnerJoinStreamInfo::independent() const
 
 
 OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-									   jrd_nod** sort_clause, jrd_nod* plan_clause) :
+									   SortNode** sort_clause, jrd_nod* plan_clause) :
 	pool(p), innerStreams(p)
 {
 /**************************************

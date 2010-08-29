@@ -24,6 +24,7 @@
 #include "../jrd/common.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 #include "../common/classes/NestConst.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
@@ -35,6 +36,48 @@ class OptimizerRetrieval;
 class ProcedureScan;
 class RseNode;
 
+
+typedef Firebird::Array<NestConst<jrd_nod> > LegacyNodeArray;
+
+class SortNode : public Firebird::PermanentStorage
+{
+public:
+	SortNode(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  unique(false),
+		  expressions(pool),
+		  descending(pool),
+		  nullOrder(pool)
+	{
+	}
+
+	SortNode* copy(thread_db* tdbb, NodeCopier& copier);
+	void pass1(thread_db* tdbb, CompilerScratch* csb);
+	void pass2(thread_db* tdbb, CompilerScratch* csb);
+	bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use, bool allowOnlyCurrentStream);
+	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
+
+	bool unique;						// sorts using unique key - for distinct and group by
+	LegacyNodeArray expressions;		// sort expressions
+	Firebird::Array<bool> descending;	// true = descending / false = ascending
+	Firebird::Array<int> nullOrder;		// rse_nulls_*
+};
+
+class MapNode : public Firebird::PermanentStorage
+{
+public:
+	MapNode(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  items(pool)
+	{
+	}
+
+	MapNode* copy(thread_db* tdbb, NodeCopier& copier);
+	void pass1(thread_db* tdbb, CompilerScratch* csb);
+	void pass2(thread_db* tdbb, CompilerScratch* csb);
+
+	LegacyNodeArray items;	// map items
+};
 
 class RecordSourceNode : public Firebird::PermanentStorage
 {
@@ -253,8 +296,8 @@ private:
 		UCHAR shellStream);
 
 public:
-	NestConst<jrd_nod> group;
-	NestConst<jrd_nod> map;
+	NestConst<SortNode> group;
+	NestConst<MapNode> map;
 
 private:
 	NestConst<RseNode> rse;
@@ -299,7 +342,7 @@ private:
 
 private:
 	Firebird::Array<NestConst<RseNode> > clauses;	// RseNode's for union
-	Firebird::Array<NestConst<jrd_nod> > maps;		// RseNode's maps
+	Firebird::Array<NestConst<MapNode> > maps;		// RseNode's maps
 	USHORT mapStream;	// stream for next level record of recursive union
 	bool recursive;		// union node is a recursive union
 };
@@ -309,16 +352,16 @@ class WindowSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TY
 public:
 	struct Partition
 	{
-		Partition()
+		explicit Partition(MemoryPool&)
 			: stream(MAX_USHORT)
 		{
 		}
 
 		USHORT stream;
-		NestConst<jrd_nod> group;
-		NestConst<jrd_nod> regroup;
-		NestConst<jrd_nod> order;
-		NestConst<jrd_nod> map;
+		NestConst<SortNode> group;
+		NestConst<SortNode> regroup;
+		NestConst<SortNode> order;
+		NestConst<MapNode> map;
 	};
 
 	explicit WindowSourceNode(MemoryPool& pool)
@@ -362,7 +405,7 @@ public:
 
 private:
 	NestConst<RseNode> rse;
-	Firebird::Array<Partition> partitions;
+	Firebird::ObjectsArray<Partition> partitions;
 };
 
 class RseNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>
@@ -440,9 +483,9 @@ public:
 	NestConst<jrd_nod> rse_first;
 	NestConst<jrd_nod> rse_skip;
 	NestConst<jrd_nod> rse_boolean;
-	NestConst<jrd_nod> rse_sorted;
-	NestConst<jrd_nod> rse_projection;
-	NestConst<jrd_nod> rse_aggregate;	// singleton aggregate for optimizing to index
+	NestConst<SortNode> rse_sorted;
+	NestConst<SortNode> rse_projection;
+	NestConst<SortNode> rse_aggregate;	// singleton aggregate for optimizing to index
 	NestConst<jrd_nod> rse_plan;		// user-specified access plan
 	NestConst<VarInvariantArray> rse_invariants; // Invariant nodes bound to top-level RSE
 	Firebird::Array<NestConst<RecordSourceNode> > rse_relations;

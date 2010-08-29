@@ -24,6 +24,7 @@
 #define JRD_RECORD_SOURCE_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 #include "../common/classes/NestConst.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/req.h"
@@ -557,8 +558,8 @@ namespace Jrd
 	class SlidingWindow
 	{
 	public:
-		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, const jrd_nod* aGroup,
-			jrd_req* aRequest);
+		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
+			const LegacyNodeArray* aGroup, jrd_req* aRequest);
 		~SlidingWindow();
 
 		bool move(SINT64 delta);
@@ -566,7 +567,7 @@ namespace Jrd
 	private:
 		thread_db* tdbb;
 		const BaseBufferedStream* const stream;
-		const jrd_nod* group;
+		const LegacyNodeArray* group;
 		jrd_req* request;
 		Firebird::Array<impure_value> partitionKeys;
 		bool moved;
@@ -590,11 +591,11 @@ namespace Jrd
 		};
 
 	public:
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* const map, BaseBufferedStream* next, jrd_nod* order);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
+			const MapNode* map, BaseBufferedStream* next, const LegacyNodeArray* order);
 
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
-			jrd_nod* const map, RecordSource* next);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
+			const MapNode* map, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -618,17 +619,17 @@ namespace Jrd
 
 		NestConst<BaseBufferedStream> m_bufferedStream;
 		NestConst<RecordSource> m_next;
-		NestConst<jrd_nod> const m_group;
-		NestConst<jrd_nod> const m_map;
-		NestConst<jrd_nod> const m_order;
+		const LegacyNodeArray* const m_group;
+		const MapNode* const m_map;
+		const LegacyNodeArray* const m_order;
 		Firebird::Array<const jrd_nod*> m_winPassMap;
 	};
 
 	class WindowedStream : public RecordSource
 	{
 	public:
-		WindowedStream(CompilerScratch* csb, Firebird::Array<WindowSourceNode::Partition>& partitions,
-			RecordSource* next);
+		WindowedStream(CompilerScratch* csb,
+			Firebird::ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -798,7 +799,7 @@ namespace Jrd
 
 	public:
 		HashJoin(CompilerScratch* csb, size_t count,
-				 RecordSource* const* args, jrd_nod* const* keys);
+				 RecordSource* const* args, const LegacyNodeArray* const* keys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -818,14 +819,15 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, const jrd_nod* keys) const;
+		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
+			const LegacyNodeArray* keys) const;
 		bool compareKeys(thread_db* tdbb, jrd_req* request) const;
 		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const;
 
 		NestConst<RecordSource> m_leader;
-		NestConst<jrd_nod> m_leaderKeys;
+		const LegacyNodeArray* m_leaderKeys;
 		Firebird::Array<NestConst<BufferedStream> > m_args;
-		Firebird::Array<NestConst<jrd_nod> > m_keys;
+		Firebird::Array<const LegacyNodeArray*> m_keys;
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;
@@ -862,7 +864,8 @@ namespace Jrd
 
 	public:
 		MergeJoin(CompilerScratch* csb, size_t count,
-				  SortedStream* const* args, jrd_nod* const* keys);
+				  SortedStream* const* args,
+				  const LegacyNodeArray* const* keys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -882,13 +885,14 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		int compare(thread_db* tdbb, const jrd_nod* node1, const jrd_nod* node2) const;
+		int compare(thread_db* tdbb, const LegacyNodeArray* node1,
+			const LegacyNodeArray* node2) const;
 		UCHAR* getData(thread_db* tdbb, MergeFile* mfb, SLONG record) const;
 		SLONG getRecord(thread_db* tdbb, size_t index) const;
 		bool fetchRecord(thread_db* tdbb, size_t index) const;
 
 		Firebird::Array<NestConst<SortedStream> > m_args;
-		Firebird::Array<NestConst<jrd_nod> > m_keys;
+		Firebird::Array<const LegacyNodeArray*> m_keys;
 	};
 
 	class Union : public RecordStream
@@ -900,7 +904,7 @@ namespace Jrd
 
 	public:
 		Union(CompilerScratch* csb, UCHAR stream,
-			  size_t argCount, RecordSource* const* args, NestConst<jrd_nod>* maps,
+			  size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
 			  size_t streamCount, const UCHAR* streams);
 
 		void open(thread_db* tdbb) const;
@@ -917,7 +921,7 @@ namespace Jrd
 
 	private:
 		Firebird::Array<NestConst<RecordSource> > m_args;
-		Firebird::Array<NestConst<jrd_nod> > m_maps;
+		Firebird::Array<NestConst<MapNode> > m_maps;
 		StreamsArray m_streams;
 	};
 
@@ -938,7 +942,7 @@ namespace Jrd
 	public:
 		RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapStream,
 					    RecordSource* root, RecordSource* inner,
-					    jrd_nod* rootMap, jrd_nod* innerMap,
+					    const MapNode* rootMap, const MapNode* innerMap,
 					    size_t streamCount, const UCHAR* innerStreams,
 					    size_t saveOffset);
 
@@ -958,8 +962,8 @@ namespace Jrd
 		const UCHAR m_mapStream;
 		NestConst<RecordSource> m_root;
 		NestConst<RecordSource> m_inner;
-		NestConst<jrd_nod> const m_rootMap;
-		NestConst<jrd_nod> const m_innerMap;
+		const MapNode* const m_rootMap;
+		const MapNode* const m_innerMap;
 		StreamsArray m_innerStreams;
 		const size_t m_saveOffset;
 		size_t m_saveSize;

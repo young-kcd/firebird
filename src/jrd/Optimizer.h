@@ -36,10 +36,8 @@
 #define OPTIMIZER_DEBUG_FILE "opt_debug.out"
 //#endif
 
-
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
-
 #include "../jrd/rse.h"
 #include "../jrd/exe.h"
 
@@ -72,6 +70,7 @@ class OptimizerBlk;
 class jrd_rel;
 class IndexTableScan;
 class River;
+class SortNode;
 
 bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, const bool, const bool);
 bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, jrd_nod*, USHORT);
@@ -156,7 +155,7 @@ class OptimizerRetrieval
 {
 public:
 	OptimizerRetrieval(MemoryPool& p, OptimizerBlk* opt, SSHORT streamNumber,
-		bool outer, bool inner, jrd_nod** sortNode);
+		bool outer, bool inner, SortNode** sortNode);
 	~OptimizerRetrieval();
 
 	InversionCandidate* getCost();
@@ -192,7 +191,7 @@ private:
 	thread_db* tdbb;
 	SSHORT stream;
 	Firebird::string alias;
-	jrd_nod** sort;
+	SortNode** sort;
 	jrd_rel* relation;
 	CompilerScratch* csb;
 	Database* database;
@@ -241,7 +240,7 @@ class OptimizerInnerJoin
 {
 public:
 	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
-					   jrd_nod** sort_clause, jrd_nod* plan_clause);
+					   SortNode** sort_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();
 
 	int findJoinOrder();
@@ -267,7 +266,7 @@ protected:
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
-	jrd_nod** sort;
+	SortNode** sort;
 	jrd_nod* plan;
 	CompilerScratch* csb;
 	Database* database;

@@ -165,7 +165,6 @@ static const VERB verbs[] =
 	PAIR(nod_not, blr_not, 1, 1, TYPE_BOOL, TYPE_BOOL),
 	PAIR(nod_class_recsrcnode_jrd, blr_rse, 0, 0, TYPE_RSE, OTHER),
 
-	PAIR(nod_map, blr_map, 0, 0, OTHER, OTHER),
 	PAIR(nod_class_recsrcnode_jrd, blr_union, 1, 0, RELATION, OTHER),
 	PAIR(nod_class_recsrcnode_jrd, blr_recurse, 1, 0, RELATION, OTHER),
 	PAIR(nod_class_recsrcnode_jrd, blr_aggregate, 1, 0, RELATION, OTHER),

@@ -92,8 +92,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_not, not, " NOT ")
 			NODE(nod_validate, validate, "")
 
-			NODE(nod_sort, sort, "")
-		  NODE(nod_map, map, "")
 		  NODE(nod_exec_proc, exec_proc, "")
 		  NODE(nod_block, block, "")
 		  NODE(nod_error_handler, error_handler, "")

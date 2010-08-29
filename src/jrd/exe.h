@@ -144,8 +144,7 @@ const int nod_value			= 16;		// full value area required in impure space
 const int nod_deoptimize	= 32;		// boolean which requires deoptimization
 const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
 const int nod_invariant		= 128;		// node is recognized as being invariant
-const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
-const int nod_ansi_not		= 1024;		// ANY/ALL predicate is prefixed with a NOT one
+const int nod_ansi_not		= 256;		// ANY/ALL predicate is prefixed with a NOT one
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;

@@ -39,7 +39,7 @@ using namespace Jrd;
 
 RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapStream,
 							     RecordSource* root, RecordSource* inner,
-							     jrd_nod* rootMap, jrd_nod* innerMap,
+							     const MapNode* rootMap, const MapNode* innerMap,
 							     size_t streamCount, const UCHAR* innerStreams,
 							     size_t saveOffset)
 	: RecordStream(csb, stream),
@@ -235,12 +235,11 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	impure->irsb_mode = RECURSE;
 
 	// We've got a record, map it into the target record
-	const jrd_nod* const map = (rsb == m_root) ? m_rootMap : m_innerMap;
-	const jrd_nod* const* ptr = map->nod_arg;
-	for (const jrd_nod *const *end = ptr + map->nod_count; ptr < end; ptr++)
-	{
+	const MapNode* const map = (rsb == m_root) ? m_rootMap : m_innerMap;
+	const NestConst<jrd_nod>* ptr = map->items.begin();
+
+	for (const NestConst<jrd_nod>* const end = map->items.end(); ptr != end; ++ptr)
 		EXE_assignment(tdbb, *ptr);
-	}
 
 	// copy target (next level) record into main (current level) record
 	memcpy(record->rec_data, mapRecord->rec_data, record->rec_length);

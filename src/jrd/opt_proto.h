@@ -38,13 +38,15 @@ namespace Jrd {
 	class CompilerScratch;
 	class OptimizerBlk;
 	class SortedStream;
+	class SortNode;
+	class MapNode;
 }
 
 bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 	Jrd::RseNode*, Jrd::NodeStack*);
-void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
+void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::MapNode*);
 Jrd::SortedStream* OPT_gen_sort(Jrd::thread_db*, Jrd::CompilerScratch*, const UCHAR*,
-	const UCHAR*, Jrd::RecordSource*, Jrd::jrd_nod*, bool);
+	const UCHAR*, Jrd::RecordSource*, Jrd::SortNode*, bool);
 
 #endif // JRD_OPT_PROTO_H

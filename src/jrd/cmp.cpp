@@ -2216,10 +2216,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
 		return node;
 
-	case nod_sort:
-		args *= 3;
-		break;
-
 	case nod_domain_validation:
 		node = PAR_make_node(tdbb, e_domval_length);
 		node->nod_type = nod_domain_validation;
@@ -2301,14 +2297,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	{
 		if (*arg1)
 			*arg2 = copy(tdbb, *arg1);
-	}
-
-	// finish off sort
-
-	if (input->nod_type == nod_sort)
-	{
-		for (jrd_nod** end = arg1 + input->nod_count * 2; arg1 < end; arg1++, arg2++)
-			*arg2 = *arg1;
 	}
 
 	return node;
@@ -2890,9 +2878,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 				// ASF: If the view field doesn't reference an item of a stream, evaluate it
 				// based on the view dbkey - CORE-1245.
-				if (sub->nod_type != nod_field &&
-					sub->nod_type != nod_map &&
-					sub->nod_type != nod_dbkey)
+				if (sub->nod_type != nod_field && sub->nod_type != nod_dbkey)
 				{
 					NodeStack stack;
 					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, false);
@@ -3960,16 +3946,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_starts:
 		if (node->nod_flags & nod_invariant) {
 			csb->csb_invariants.push(node);
-		}
-		break;
-
-	case nod_sort:
-		{
-			jrd_nod** ptr = node->nod_arg;
-			for (jrd_nod** end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				(*ptr)->nod_flags |= nod_value;
-			}
 		}
 		break;
 

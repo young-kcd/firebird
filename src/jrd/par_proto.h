@@ -33,6 +33,7 @@ namespace Jrd {
 	class thread_db;
 	struct ItemInfo;
 	class DmlNode;
+	class SortNode;
 }
 
 // blr type classes
@@ -69,7 +70,9 @@ Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_len
 void			PAR_procedure_parms(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*,
 	Jrd::jrd_nod**, Jrd::jrd_nod**, bool);
 Jrd::jrd_nod*	PAR_rse(Jrd::thread_db*, Jrd::CompilerScratch*, SSHORT);
-Jrd::jrd_nod*	PAR_sort(Jrd::thread_db*, Jrd::CompilerScratch*, bool, bool);
+Jrd::SortNode* PAR_sort(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, bool);
+Jrd::SortNode* PAR_sort_internal(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR blrOp,
+	USHORT);
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
 typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool,

@@ -153,7 +153,7 @@ private:
 
 
 HashJoin::HashJoin(CompilerScratch* csb, size_t count,
-				   RecordSource* const* args, jrd_nod* const* keys)
+				   RecordSource* const* args, const LegacyNodeArray* const* keys)
 	: m_leader(args[0]), m_leaderKeys(keys[0]), m_args(csb->csb_pool, count - 1),
 	  m_keys(csb->csb_pool, count - 1), m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
 {
@@ -169,7 +169,7 @@ HashJoin::HashJoin(CompilerScratch* csb, size_t count,
 		fb_assert(args[i]);
 		m_args.add(FB_NEW(csb->csb_pool) BufferedStream(csb, args[i]));
 
-		fb_assert(keys[i] && keys[i]->nod_type == nod_list);
+		fb_assert(keys[i]);
 		m_keys.add(keys[i]);
 	}
 }
@@ -381,13 +381,14 @@ void HashJoin::restoreRecords(thread_db* tdbb) const
 	}
 }
 
-size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, const jrd_nod* keys) const
+size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
+	const LegacyNodeArray* keys) const
 {
 	size_t hash_slot = 0;
 
-	for (size_t i = 0; i < keys->nod_count; i++)
+	for (size_t i = 0; i < keys->getCount(); i++)
 	{
-		const dsc* const desc = EVL_expr(tdbb, keys->nod_arg[i]);
+		const dsc* const desc = EVL_expr(tdbb, (*keys)[i]);
 
 		if (desc && !(request->req_flags & req_null))
 		{
@@ -451,25 +452,21 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, c
 
 bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request) const
 {
-	for (size_t i = 0; i < m_leaderKeys->nod_count; i++)
+	for (size_t i = 0; i < m_leaderKeys->getCount(); ++i)
 	{
-		const dsc* const desc1 = EVL_expr(tdbb, m_leaderKeys->nod_arg[i]);
+		const dsc* const desc1 = EVL_expr(tdbb, (*m_leaderKeys)[i]);
 		const bool null1 = (request->req_flags & req_null);
 
 		for (size_t j = 0; j < m_keys.getCount(); j++)
 		{
-			const dsc* const desc2 = EVL_expr(tdbb, m_keys[j]->nod_arg[i]);
+			const dsc* const desc2 = EVL_expr(tdbb, (*m_keys[j])[i]);
 			const bool null2 = (request->req_flags & req_null);
 
 			if (null1 != null2)
-			{
 				return false;
-			}
 
 			if (!null1 && !null2 && MOV_compare(desc1, desc2) != 0)
-			{
 				return false;
-			}
 		}
 	}
 

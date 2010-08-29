@@ -257,21 +257,27 @@ bool StreamFinder::visit(jrd_nod* node)
 			if (recSource->type == RseNode::TYPE)
 			{
 				RseNode* rse = static_cast<RseNode*>(recSource);
-				jrd_nod* sub;
 
-				if ((sub = rse->rse_first) && visit(sub))
+				if (rse->rse_first && visit(rse->rse_first))
 					return true;
 
-				if ((sub = rse->rse_skip) && visit(sub))
+				if (rse->rse_skip && visit(rse->rse_skip))
 					return true;
 
-				if ((sub = rse->rse_boolean) && visit(sub))
+				if (rse->rse_boolean && visit(rse->rse_boolean))
 					return true;
 
-				if ((sub = rse->rse_sorted) && visit(sub))
-					return true;
+				// ASF: The legacy code used to visit rse_sorted and rse_projection. But note that
+				// visiting them, the visitor always returns true, because nod_sort is not handled
+				// there. So I replaced these lines by the if/return below.
+				//
+				// if (rse->rse_sorted && visit(rse->rse_sorted))
+				//     return true;
+				//
+				// if (rse->rse_projection && visit(rse->rse_projection))
+				//     return true;
 
-				if ((sub = rse->rse_projection) && visit(sub))
+				if (rse->rse_sorted || rse->rse_projection)
 					return true;
 			}
 			else if (recSource->type == ProcedureSourceNode::TYPE)
@@ -387,8 +393,11 @@ bool StreamsCollector::visit(jrd_nod* node)
 				visit(rse->rse_first);
 				visit(rse->rse_skip);
 				visit(rse->rse_boolean);
-				visit(rse->rse_sorted);
-				visit(rse->rse_projection);
+
+				// ASF: The legacy code used to visit rse_sorted and rse_projection, but the visitor
+				// never handled nod_sort.
+				// visit(rse->rse_sorted);
+				// visit(rse->rse_projection);
 			}
 			else if (recSource->type == ProcedureSourceNode::TYPE)
 				return visit(static_cast<ProcedureSourceNode*>(recSource)->inputs);
@@ -441,7 +450,7 @@ bool StreamsCollector::visit(jrd_nod* node)
 }
 
 
-UnmappedNodeGetter::UnmappedNodeGetter(jrd_nod* aMap, UCHAR aShellStream)
+UnmappedNodeGetter::UnmappedNodeGetter(const MapNode* aMap, UCHAR aShellStream)
 	: JrdNodeVisitor(false, &ExprNode::jrdUnmappedNodeGetter),
 	  map(aMap),
 	  shellStream(aShellStream),
@@ -464,7 +473,7 @@ bool UnmappedNodeGetter::visit(jrd_nod* node)
 	if (node->nod_type == nod_field && (USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)
 	{
 		const USHORT fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
-		if (!wasRootNode || fieldId >= map->nod_count)
+		if (!wasRootNode || fieldId >= map->items.getCount())
 		{
 			invalid = true;
 			return false;
@@ -472,7 +481,7 @@ bool UnmappedNodeGetter::visit(jrd_nod* node)
 
 		// Check also the expression inside the map, because aggregate
 		// functions aren't allowed to be delivered to the WHERE clause.
-		if (!visit(map->nod_arg[fieldId]->nod_arg[e_asgn_from]))
+		if (!visit(map->items[fieldId]->nod_arg[e_asgn_from]))
 			invalid = true;
 		return !invalid;
 	}
@@ -664,21 +673,21 @@ static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
 static void find_index_relationship_streams(thread_db*, OptimizerBlk*, const UCHAR*, UCHAR*, UCHAR*);
-static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
-static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, jrd_nod**);
-static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, jrd_nod**, jrd_nod*);
-static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RseNode*, RiverList&, jrd_nod**);
+static void form_rivers(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, jrd_nod*);
+static bool form_river(thread_db*, OptimizerBlk*, USHORT, USHORT, UCHAR*, RiverList&, SortNode**);
+static void gen_join(thread_db*, OptimizerBlk*, const UCHAR*, RiverList&, SortNode**, jrd_nod*);
+static RecordSource* gen_outer(thread_db*, OptimizerBlk*, RseNode*, RiverList&, SortNode**);
 static RecordSource* gen_residual_boolean(thread_db*, OptimizerBlk*, RecordSource*);
-static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, jrd_nod**, bool, bool, jrd_nod**);
+static RecordSource* gen_retrieval(thread_db*, OptimizerBlk*, SSHORT, SortNode**, bool, bool, jrd_nod**);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
-static bool map_equal(const jrd_nod*, const jrd_nod*, const jrd_nod*);
+static bool map_equal(const jrd_nod*, const jrd_nod*, const MapNode*);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
 static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
 static USHORT river_count(USHORT, jrd_nod**);
 static bool search_stack(const jrd_nod*, const NodeStack&);
-static void set_direction(jrd_nod*, jrd_nod*);
-static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
+static void set_direction(SortNode*, SortNode*);
+static void set_position(const SortNode*, SortNode*, const MapNode*);
 static void set_rse_inactive(CompilerScratch*, const RseNode*);
 
 
@@ -798,7 +807,7 @@ bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length,
 
 
 // Compile and optimize a record selection expression into a set of record source blocks (rsb's).
-RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const rse,
+RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	NodeStack* const parent_stack)
 {
 	DEV_BLKCHK(csb, type_csb);
@@ -833,9 +842,9 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const 
 	RiverList rivers;
 
 	check_sorts(rse);
-	jrd_nod* sort = rse->rse_sorted;
-	jrd_nod* project = rse->rse_projection;
-	jrd_nod* aggregate = rse->rse_aggregate;
+	SortNode* sort = rse->rse_sorted;
+	SortNode* project = rse->rse_projection;
+	SortNode* aggregate = rse->rse_aggregate;
 
 	// put any additional booleans on the conjunct stack, and see if we
 	// can generate additional booleans by associativity--this will help
@@ -1028,25 +1037,22 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const 
 	}
 
 	// attempt to optimize aggregates via an index, if possible
-	if (aggregate && !sort) {
+	if (aggregate && !sort)
 		sort = aggregate;
-	}
-	else {
+	else
 		rse->rse_aggregate = aggregate = NULL;
-	}
 
 	// AB: Mark the previous used streams (sub-RseNode's) as active
 	for (StreamsArray::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
 		csb->csb_rpt[*i].csb_flags |= csb_active;
 
 	// outer joins require some extra processing
-	if (rse->rse_jointype != blr_inner) {
+	if (rse->rse_jointype != blr_inner)
 		rsb = gen_outer(tdbb, opt, rse, rivers, &sort);
-	}
 	else
 	{
 		bool sort_can_be_used = true;
-		jrd_nod* const saved_sort_node = sort;
+		SortNode* const saved_sort_node = sort;
 
 		// AB: If previous rsb's are already on the stack we can't use
 		// a navigational-retrieval for an ORDER BY because the next
@@ -1171,14 +1177,12 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* const 
 		opt->keyStreams[0] = k - &opt->keyStreams[1];
 
 		// Handle project clause, if present
-		if (project) {
+		if (project)
 			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, opt->keyStreams, rsb, project, true);
-		}
 
 		// Handle sort clause if present
-		if (sort) {
+		if (sort)
 			rsb = OPT_gen_sort(tdbb, opt->opt_csb, opt->beds, opt->keyStreams, rsb, sort, false);
-		}
 	}
 
     // Handle first and/or skip.  The skip MUST (if present)
@@ -1349,14 +1353,14 @@ static void check_sorts(RseNode* rse)
  **************************************/
 	DEV_BLKCHK(rse, type_nod);
 
-	jrd_nod* sort = rse->rse_sorted;
-	jrd_nod* project = rse->rse_projection;
+	SortNode* sort = rse->rse_sorted;
+	SortNode* project = rse->rse_projection;
 
 	// check if a GROUP BY exists using the same fields as the project or sort:
 	// if so, the projection can be eliminated; if no projection exists, then
 	// the sort can be eliminated.
 
-	jrd_nod* group;
+	SortNode* group;
 	RecordSourceNode* sub_rse;
 
 	if ((project || sort) && rse->rse_relations.getCount() == 1 && (sub_rse = rse->rse_relations[0]) &&
@@ -1366,17 +1370,17 @@ static void check_sorts(RseNode* rse)
 		// if all the fields of the project are the same as all the fields
 		// of the group by, get rid of the project.
 
-		if (project && (project->nod_count == group->nod_count))
+		if (project && (project->expressions.getCount() == group->expressions.getCount()))
 		{
-			jrd_nod** project_ptr = project->nod_arg;
-			const jrd_nod* const* const project_end = project_ptr + project->nod_count;
+			NestConst<jrd_nod>* project_ptr = project->expressions.begin();
+			const NestConst<jrd_nod>* const project_end = project->expressions.end();
 
-			for (; project_ptr < project_end; project_ptr++)
+			for (; project_ptr != project_end; ++project_ptr)
 			{
-				const jrd_nod* const* group_ptr = group->nod_arg;
-				const jrd_nod* const* const group_end = group_ptr + group->nod_count;
+				const NestConst<jrd_nod>* group_ptr = group->expressions.begin();
+				const NestConst<jrd_nod>* const group_end = group->expressions.end();
 
-				for (; group_ptr < group_end; group_ptr++)
+				for (; group_ptr != group_end; ++group_ptr)
 				{
 					if (map_equal(*group_ptr, *project_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
 						break;
@@ -1397,24 +1401,24 @@ static void check_sorts(RseNode* rse)
 
 		// if there is no projection, then we can make a similar optimization
 		// for sort, except that sort may have fewer fields than group by.
-		if (!project && sort && (sort->nod_count <= group->nod_count))
+		if (!project && sort && (sort->expressions.getCount() <= group->expressions.getCount()))
 		{
-			const jrd_nod* const* sort_ptr = sort->nod_arg;
-			const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
+			const NestConst<jrd_nod>* sort_ptr = sort->expressions.begin();
+			const NestConst<jrd_nod>* const sort_end = sort->expressions.end();
 
-			for (; sort_ptr < sort_end; sort_ptr++)
+			for (; sort_ptr != sort_end; ++sort_ptr)
 			{
-				const jrd_nod* const* group_ptr = group->nod_arg;
-				const jrd_nod* const* const group_end = group_ptr + sort->nod_count;
+				const NestConst<jrd_nod>* group_ptr = group->expressions.begin();
+				const NestConst<jrd_nod>* const group_end = group->expressions.end();
 
-				for (; group_ptr < group_end; group_ptr++)
+				for (; group_ptr != group_end; ++group_ptr)
 				{
 					if (map_equal(*group_ptr, *sort_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
 						break;
 				}
-				if (group_ptr == group_end) {
+
+				if (group_ptr == group_end)
 					break;
-				}
 			}
 
 			// if all the fields in the sort list match the first n fields in the
@@ -1436,15 +1440,17 @@ static void check_sorts(RseNode* rse)
 	// ORDER BY can be removed, changing the fields in the DISTINCT to match
 	// the ordering of fields in the ORDER BY.
 
-	if (sort && project && (sort->nod_count <= project->nod_count))
+	if (sort && project && (sort->expressions.getCount() <= project->expressions.getCount()))
 	{
-		const jrd_nod* const* sort_ptr = sort->nod_arg;
-		const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
-		for (; sort_ptr < sort_end; sort_ptr++)
+		const NestConst<jrd_nod>* sort_ptr = sort->expressions.begin();
+		const NestConst<jrd_nod>* const sort_end = sort->expressions.end();
+
+		for (; sort_ptr != sort_end; ++sort_ptr)
 		{
-			const jrd_nod* const* project_ptr = project->nod_arg;
-			const jrd_nod* const* const project_end = project_ptr + sort->nod_count;
-			for (; project_ptr < project_end; project_ptr++)
+			const NestConst<jrd_nod>* project_ptr = project->expressions.begin();
+			const NestConst<jrd_nod>* const project_end = project->expressions.end();
+
+			for (; project_ptr != project_end; ++project_ptr)
 			{
 				if ((*sort_ptr)->nod_type == nod_field &&
 					(*project_ptr)->nod_type == nod_field &&
@@ -1455,9 +1461,8 @@ static void check_sorts(RseNode* rse)
 				}
 			}
 
-			if (project_ptr == project_end) {
+			if (project_ptr == project_end)
 				break;
-			}
 		}
 
 		// if all the fields in the sort list match the first n fields
@@ -1478,18 +1483,19 @@ static void check_sorts(RseNode* rse)
 	{
 		int sort_stream = 0;
 		bool usableSort = true;
-		jrd_nod* const* sort_ptr = sort->nod_arg;
-		const jrd_nod* const* const sort_end = sort_ptr + sort->nod_count;
-		for (; sort_ptr < sort_end; sort_ptr++)
+		NestConst<jrd_nod>* sort_ptr = sort->expressions.begin();
+		const NestConst<jrd_nod>* const sort_end = sort->expressions.end();
+
+		for (; sort_ptr != sort_end; ++sort_ptr)
 		{
 			if ((*sort_ptr)->nod_type == nod_field)
 			{
 				// Get stream for this field at this position.
 				const int current_stream = (int)(IPTR)(*sort_ptr)->nod_arg[e_fld_stream];
+
 				// If this is the first position node, save this stream.
-				if (sort_ptr == sort->nod_arg) {
+				if (sort_ptr == sort->expressions.begin())
 			    	sort_stream = current_stream;
-				}
 				else if (current_stream != sort_stream)
 				{
 					// If the current stream is different then the previous stream
@@ -1502,20 +1508,21 @@ static void check_sorts(RseNode* rse)
 			{
 				// If this is not the first position node, reject this sort.
 				// Two expressions cannot be mapped to a single index.
-				if (sort_ptr > sort->nod_arg)
+				if (sort_ptr > sort->expressions.begin())
 				{
 					usableSort = false;
 					break;
 				}
+
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
-				Firebird::SortedArray<int> streams;
+				SortedArray<int> streams;
 				StreamsCollector::collect(*sort_ptr, streams);
+
 				// We can use this sort only if there's a single stream
 				// referenced by the expression.
-				if (streams.getCount() == 1) {
+				if (streams.getCount() == 1)
 					sort_stream = streams[0];
-				}
 				else
 				{
 					usableSort = false;
@@ -2033,7 +2040,7 @@ static void form_rivers(thread_db*		tdbb,
 						OptimizerBlk*	opt,
 						const UCHAR*	streams,
 						RiverList&		river_list,
-						jrd_nod**		sort_clause,
+						SortNode**		sort_clause,
 						jrd_nod*		plan_clause)
 {
 /**************************************
@@ -2049,9 +2056,6 @@ static void form_rivers(thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(opt, type_opt);
-	if (sort_clause) {
-		DEV_BLKCHK(*sort_clause, type_nod);
-	}
 	DEV_BLKCHK(plan_clause, type_nod);
 
 	stream_array_t temp;
@@ -2130,7 +2134,7 @@ static bool form_river(thread_db*		tdbb,
 					   USHORT			stream_count,
 					   UCHAR*			temp,
 					   RiverList&		river_list,
-					   jrd_nod**		sort_clause)
+					   SortNode** sort_clause)
 {
 /**************************************
  *
@@ -2145,9 +2149,6 @@ static bool form_river(thread_db*		tdbb,
 	fb_assert(count);
 
 	DEV_BLKCHK(opt, type_opt);
-	if (sort_clause) {
-		DEV_BLKCHK(*sort_clause, type_nod);
-	}
 	DEV_BLKCHK(plan_clause, type_nod);
 
 	SET_TDBB(tdbb);
@@ -2218,13 +2219,13 @@ static bool form_river(thread_db*		tdbb,
 
 // Generate a separate AggregateSort (Aggregate SortedStream Block) for each distinct operation.
 // Note that this should be optimized to use indices if possible.
-void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map)
+void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode* map)
 {
 	DSC descriptor;
 	DSC* desc = &descriptor;
-	jrd_nod** ptr = map->nod_arg;
+	NestConst<jrd_nod>* ptr = map->items.begin();
 
-	for (const jrd_nod* const* const end = ptr + map->nod_count; ptr < end; ptr++)
+	for (const NestConst<jrd_nod>* const end = map->items.end(); ptr != end; ++ptr)
 	{
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		AggNode* aggNode = ExprNode::as<AggNode>(from);
@@ -2295,7 +2296,7 @@ static void gen_join(thread_db*		tdbb,
 					 OptimizerBlk*	opt,
 					 const UCHAR*	streams,
 					 RiverList&		river_list,
-					 jrd_nod**		sort_clause,
+					 SortNode** sort_clause,
 					 jrd_nod*		plan_clause)
 {
 /**************************************
@@ -2311,7 +2312,6 @@ static void gen_join(thread_db*		tdbb,
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
-	DEV_BLKCHK(*sort_clause, type_nod);
 	DEV_BLKCHK(plan_clause, type_nod);
 	SET_TDBB(tdbb);
 
@@ -2343,7 +2343,7 @@ static void gen_join(thread_db*		tdbb,
 
 
 static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
-	RiverList& river_list, jrd_nod** sort_clause)
+	RiverList& river_list, SortNode** sort_clause)
 {
 /**************************************
  *
@@ -2367,7 +2367,6 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 
 	DEV_BLKCHK(opt, type_opt);
 	DEV_BLKCHK(rse, type_nod);
-	DEV_BLKCHK(*sort_clause, type_nod);
 	SET_TDBB(tdbb);
 
 	// Determine which stream should be outer and which is inner.
@@ -2539,7 +2538,7 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 static RecordSource* gen_retrieval(thread_db*     tdbb,
 						 OptimizerBlk*      opt,
 						 SSHORT   stream,
-						 jrd_nod** sort_ptr,
+						 SortNode** sort_ptr,
 						 bool     outer_flag,
 						 bool     inner_flag,
 						 jrd_nod** return_boolean)
@@ -2560,12 +2559,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(opt, type_opt);
-	if (sort_ptr) {
-		DEV_BLKCHK(*sort_ptr, type_nod);
-	}
-	if (return_boolean) {
+	if (return_boolean)
 		DEV_BLKCHK(*return_boolean, type_nod);
-	}
 
 	CompilerScratch* const csb = opt->opt_csb;
 	CompilerScratch::csb_repeat* const csb_tail = &csb->csb_rpt[stream];
@@ -2704,7 +2699,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 
 SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* streams,
-	const UCHAR* dbkey_streams, RecordSource* prior_rsb, jrd_nod* sort, bool project_flag)
+	const UCHAR* dbkey_streams, RecordSource* prior_rsb, SortNode* sort, bool project_flag)
 {
 /**************************************
  *
@@ -2720,7 +2715,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
  *
  **************************************/
 	DEV_BLKCHK(prior_rsb, type_rsb);
-	DEV_BLKCHK(sort, type_nod);
 	SET_TDBB(tdbb);
 
 	/* We already know the number of keys, but we also need to compute the
@@ -2737,9 +2731,10 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	const UCHAR* ptr;
 	dsc descriptor;
 
-	ULONG items = sort->nod_count + (streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
+	ULONG items = sort->expressions.getCount() +
+		(streams[0] * 3) + 2 * (dbkey_streams ? dbkey_streams[0] : 0);
 	const UCHAR* const end_ptr = streams + streams[0];
-	const jrd_nod* const* const end_node = sort->nod_arg + sort->nod_count;
+	const NestConst<jrd_nod>* const end_node = sort->expressions.end();
 	HalfStaticArray<SLONG, OPT_STATIC_ITEMS> id_list;
 	StreamList stream_list;
 
@@ -2749,26 +2744,34 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 
 		if (accessor.getFirst())
 		{
-			do {
+			do
+			{
 				const ULONG id = accessor.current();
 				items++;
 				id_list.push(id);
 				stream_list.push(*ptr);
-				for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++)
+
+				for (NestConst<jrd_nod>* node_ptr = sort->expressions.begin();
+					 node_ptr != end_node;
+					 ++node_ptr)
 				{
-					jrd_nod* node = *node_ptr;
+					NestConst<jrd_nod> node = *node_ptr;
+
 					if (node->nod_type == nod_field &&
 						(USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr &&
 						(USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
 					{
 						dsc* desc = &descriptor;
 						CMP_get_desc(tdbb, csb, node, desc);
+
 						// International type text has a computed key
 						if (IS_INTL_DATA(desc))
 							break;
+
 						--items;
 						id_list.pop();
 						stream_list.pop();
+
 						break;
 					}
 				}
@@ -2786,7 +2789,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	if (project_flag)
 		map->flags |= SortedStream::FLAG_PROJECT;
 
-	if (sort->nod_flags & nod_unique_sort)
+	if (sort->unique)
 		map->flags |= SortedStream::FLAG_UNIQUE;
 
     ULONG map_length = 0;
@@ -2796,13 +2799,17 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	// and one for field itself.
 
 	SortedStream::SortMap::Item* map_item = map->items.getBuffer((USHORT) items);
-	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->nod_count);
+	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->expressions.getCount());
+	int* nullOrder = sort->nullOrder.begin();
+	bool* descending = sort->descending.begin();
 
-	for (jrd_nod** node_ptr = sort->nod_arg; node_ptr < end_node; node_ptr++, map_item++)
+	for (NestConst<jrd_nod>* node_ptr = sort->expressions.begin();
+		 node_ptr != end_node;
+		 ++node_ptr, ++nullOrder, ++descending, ++map_item)
 	{
 		// Pick up sort key expression.
 
-		jrd_nod* node = *node_ptr;
+		NestConst<jrd_nod> node = *node_ptr;
 		dsc* desc = &descriptor;
 		CMP_get_desc(tdbb, csb, node, desc);
 
@@ -2821,6 +2828,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 				desc->dsc_dtype = dtype_text;
 				desc->dsc_length--;
 			}
+
 			desc->dsc_length = INTL_key_length(tdbb, INTL_INDEX_TYPE(desc), desc->dsc_length);
 		}
 
@@ -2835,13 +2843,13 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		sort_key->skd_length = 1;
 		// Handle nulls placement
 		sort_key->skd_flags = SKD_ascending;
+
 		// Have SQL-compliant nulls ordering for ODS11+
-		if (((IPTR) *(node_ptr + sort->nod_count * 2) == rse_nulls_default && !*(node_ptr + sort->nod_count)) ||
-			(IPTR) *(node_ptr + sort->nod_count * 2) == rse_nulls_first)
-		{
+		if ((*nullOrder == rse_nulls_default && !*descending) || *nullOrder == rse_nulls_first)
 			sort_key->skd_flags |= SKD_descending;
-		}
+
 		++sort_key;
+
 		// Make key for sort key proper
 #ifndef WORDS_BIGENDIAN
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
@@ -2849,20 +2857,23 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		if (desc->dsc_dtype >= dtype_aligned)
 			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
 #endif
+
 		sort_key->skd_offset = (USHORT) map_length;
 		sort_key->skd_flags = SKD_ascending;
-		if (*(node_ptr + sort->nod_count))
+		if (*descending)
 			sort_key->skd_flags |= SKD_descending;
 		fb_assert(desc->dsc_dtype < FB_NELEM(sort_dtypes));
 		sort_key->skd_dtype = sort_dtypes[desc->dsc_dtype];
-		if (!sort_key->skd_dtype) {
+
+		if (!sort_key->skd_dtype)
 			ERR_post(Arg::Gds(isc_invalid_sort_datatype) << Arg::Str(DSC_dtype_tostring(desc->dsc_dtype)));
-		}
+
 		if (sort_key->skd_dtype == SKD_varying || sort_key->skd_dtype == SKD_cstring)
 		{
 			if (desc->dsc_ttype() == ttype_binary)
 				sort_key->skd_flags |= SKD_binary;
 		}
+
 		sort_key->skd_length = desc->dsc_length;
 		++sort_key;
 		map_item->clear();
@@ -2871,6 +2882,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		map_item->desc = *desc;
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
+
 		if (node->nod_type == nod_field)
 		{
 			map_item->stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
@@ -2881,7 +2893,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 	map->keyLength = (USHORT) map_length >> SHIFTLONG;
 	USHORT flag_offset = (USHORT) map_length;
-	map_length += items - sort->nod_count;
+	map_length += items - sort->expressions.getCount();
 
 	// Now go back and process all to fields involved with the sort.  If the
 	// field has already been mentioned as a sort key, don't bother to repeat it.
@@ -3029,7 +3041,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
  *
  **************************************/
 	ULONG selected_rivers[OPT_STREAM_BITS], selected_rivers2[OPT_STREAM_BITS];
-	jrd_nod **eq_class, **ptr;
+	jrd_nod** eq_class;
 	DEV_BLKCHK(opt, type_opt);
 	SET_TDBB(tdbb);
 
@@ -3182,7 +3194,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	}
 
 	HalfStaticArray<RecordSource*, OPT_STATIC_ITEMS> rsbs;
-	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> keys;
+	HalfStaticArray<LegacyNodeArray*, OPT_STATIC_ITEMS> keys;
 
 	// Unconditionally disable merge joins in favor of hash joins.
 	// This is a temporary debugging measure.
@@ -3233,28 +3245,24 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		river->deactivate(csb);
 
 		if (river_boolean)
-		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, river_boolean);
-		}
 
 		// Collect RSBs and keys to join
 
 		const size_t selected_count = selected_classes.getCount();
 
-		jrd_nod* key = NULL;
+		SortNode* key = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 
 		if (prefer_merge_over_hash)
 		{
-			key = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count * 3) jrd_nod();
-			key->nod_type = nod_sort;
-			key->nod_count = (USHORT) selected_count;
 			jrd_nod*** selected_class;
-			for (selected_class = selected_classes.begin(), ptr = key->nod_arg;
-				selected_class < selected_classes.end(); selected_class++)
+
+			for (selected_class = selected_classes.begin();
+				 selected_class != selected_classes.end(); ++selected_class)
 			{
-				ptr[key->nod_count] = (jrd_nod*) FALSE; // Ascending sort
-				ptr[key->nod_count * 2] = (jrd_nod*)(IPTR) rse_nulls_default; // Default nulls placement
-				*ptr++ = (*selected_class)[number];
+				key->descending.add(false);	// Ascending sort
+				key->nullOrder.add(rse_nulls_default);	// Default nulls placement
+				key->expressions.add((*selected_class)[number]);
 			}
 
 			const size_t stream_count = river->getStreamCount();
@@ -3266,14 +3274,12 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		}
 		else
 		{
-			key = FB_NEW_RPT(*tdbb->getDefaultPool(), selected_count) jrd_nod();
-			key->nod_type = nod_list;
-			key->nod_count = (USHORT) selected_count;
 			jrd_nod*** selected_class;
-			for (selected_class = selected_classes.begin(), ptr = key->nod_arg;
-				selected_class < selected_classes.end(); selected_class++)
+
+			for (selected_class = selected_classes.begin();
+				 selected_class != selected_classes.end(); ++selected_class)
 			{
-				*ptr++ = (*selected_class)[number];
+				key->expressions.add((*selected_class)[number]);
 			}
 		}
 
@@ -3284,12 +3290,12 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		if (prefer_merge_over_hash)
 		{
 			rsbs.add(rsb);
-			keys.add(key);
+			keys.add(&key->expressions);
 		}
 		else
 		{
 			rsbs.insert(0, rsb);
-			keys.insert(0, key);
+			keys.insert(0, &key->expressions);
 		}
 	}
 
@@ -3313,9 +3319,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	// Activate streams of all the rivers being merged
 
 	for (River** iter = rivers_to_merge.begin(); iter < rivers_to_merge.end(); iter++)
-	{
 		(*iter)->activate(csb);
-	}
 
 	// Pick up any boolean that may apply
 
@@ -3429,7 +3433,7 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 }
 
 
-static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const jrd_nod* map)
+static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const MapNode* map)
 {
 /**************************************
  *
@@ -3445,33 +3449,36 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const jrd_no
  **************************************/
 	DEV_BLKCHK(field1, type_nod);
 	DEV_BLKCHK(field2, type_nod);
-	DEV_BLKCHK(map, type_nod);
-	if (field1->nod_type != nod_field) {
+
+	if (field1->nod_type != nod_field)
 		return false;
-	}
-	if (field2->nod_type != nod_field) {
+
+	if (field2->nod_type != nod_field)
 		return false;
-	}
 
 	// look through the mapping and see if we can find an equivalence.
-	const jrd_nod* const* map_ptr = map->nod_arg;
-	for (const jrd_nod* const* const map_end = map_ptr + map->nod_count; map_ptr < map_end; map_ptr++)
+	const NestConst<jrd_nod>* map_ptr = map->items.begin();
+
+	for (const NestConst<jrd_nod>* const map_end = map->items.end(); map_ptr != map_end; ++map_ptr)
 	{
 		const jrd_nod* map_from = (*map_ptr)->nod_arg[e_asgn_from];
 		const jrd_nod* map_to = (*map_ptr)->nod_arg[e_asgn_to];
-		if (map_from->nod_type != nod_field || map_to->nod_type != nod_field) {
+
+		if (map_from->nod_type != nod_field || map_to->nod_type != nod_field)
 			continue;
-		}
+
 		if (field1->nod_arg[e_fld_stream] != map_from->nod_arg[e_fld_stream] ||
 			field1->nod_arg[e_fld_id] != map_from->nod_arg[e_fld_id])
 		{
 			continue;
 		}
+
 		if (field2->nod_arg[e_fld_stream] != map_to->nod_arg[e_fld_stream] ||
 			field2->nod_arg[e_fld_id] != map_to->nod_arg[e_fld_id])
 		{
 			continue;
 		}
+
 		return true;
 	}
 
@@ -3730,7 +3737,7 @@ static bool search_stack(const jrd_nod* node, const NodeStack& stack)
 }
 
 
-static void set_direction(jrd_nod* from_clause, jrd_nod* to_clause)
+static void set_direction(SortNode* fromClause, SortNode* toClause)
 {
 /**************************************
  *
@@ -3744,24 +3751,21 @@ static void set_direction(jrd_nod* from_clause, jrd_nod* to_clause)
  *  for the nulls placement flag.
  *
  **************************************/
-	DEV_BLKCHK(from_clause, type_nod);
-	DEV_BLKCHK(to_clause, type_nod);
-	// Both clauses are allocated with thrice the number of arguments to
-	// leave room at the end for an ascending/descending and nulls placement flags,
-	// one for each field.
-	jrd_nod* const* from_ptr = from_clause->nod_arg;
-	jrd_nod** to_ptr = to_clause->nod_arg;
-	const ULONG fromCount = from_clause->nod_count;
-	const ULONG toCount = to_clause->nod_count;
-	for (const jrd_nod* const* const end = from_ptr + fromCount; from_ptr < end; from_ptr++, to_ptr++)
+	fb_assert(fromClause->expressions.getCount() <= toClause->expressions.getCount());
+	fb_assert(fromClause->expressions.getCount() == fromClause->descending.getCount() &&
+		fromClause->expressions.getCount() == fromClause->nullOrder.getCount());
+	fb_assert(toClause->expressions.getCount() == toClause->descending.getCount() &&
+		toClause->expressions.getCount() == toClause->nullOrder.getCount());
+
+	for (size_t i = 0; i < fromClause->expressions.getCount(); ++i)
 	{
-		to_ptr[toCount] = from_ptr[fromCount];
-		to_ptr[toCount * 2] = from_ptr[fromCount * 2];
+		toClause->descending[i] = fromClause->descending[i];
+		toClause->nullOrder[i] = fromClause->nullOrder[i];
 	}
 }
 
 
-static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause, const jrd_nod* map)
+static void set_position(const SortNode* from_clause, SortNode* to_clause, const MapNode* map)
 {
 /**************************************
  *
@@ -3776,19 +3780,21 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause, const j
  *
  **************************************/
 	DEV_BLKCHK(from_clause, type_nod);
-	DEV_BLKCHK(to_clause, type_nod);
-	DEV_BLKCHK(map, type_nod);
+
 	// Track the position in the from list with "to_swap", and find the corresponding
 	// field in the from list with "to_ptr", then swap the two fields.  By the time
 	// we get to the end of the from list, all fields in the to list will be reordered.
-	jrd_nod** to_swap = to_clause->nod_arg;
-	const jrd_nod* const* from_ptr = from_clause->nod_arg;
-	for (const jrd_nod* const* const from_end = from_ptr + from_clause->nod_count;
-		from_ptr < from_end; from_ptr++)
+
+	NestConst<jrd_nod>* to_swap = to_clause->expressions.begin();
+	const NestConst<jrd_nod>* from_ptr = from_clause->expressions.begin();
+
+	for (const NestConst<jrd_nod>* const from_end = from_clause->expressions.end();
+		 from_ptr != from_end; ++from_ptr)
 	{
-		jrd_nod** to_ptr = to_clause->nod_arg;
-		for (const jrd_nod* const* const to_end = to_ptr + from_clause->nod_count;
-			to_ptr < to_end; to_ptr++)
+		NestConst<jrd_nod>* to_ptr = to_clause->expressions.begin();
+
+		for (const NestConst<jrd_nod>* const to_end = to_clause->expressions.end();
+			 to_ptr != to_end; ++to_ptr)
 		{
 			if ((map && map_equal(*to_ptr, *from_ptr, map)) ||
 				(!map &&
@@ -3801,7 +3807,7 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause, const j
 			}
 		}
 
-		to_swap++;
+		++to_swap;
 	}
 
 }

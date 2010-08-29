@@ -34,6 +34,7 @@ class dsql_nod;
 class ExprNode;
 class jrd_nod;
 class JrdNodeVisitor;
+class MapNode;
 
 
 enum FieldMatchType
@@ -370,10 +371,10 @@ private:
 class UnmappedNodeGetter : public JrdNodeVisitor
 {
 public:
-	UnmappedNodeGetter(jrd_nod* aMap, UCHAR aShellStream);
+	UnmappedNodeGetter(const MapNode* aMap, UCHAR aShellStream);
 
 public:
-	static jrd_nod* get(jrd_nod* map, UCHAR shellStream, jrd_nod* node)
+	static jrd_nod* get(const MapNode* map, UCHAR shellStream, jrd_nod* node)
 	{
 		UnmappedNodeGetter obj(map, shellStream);
 		return obj.visit(node) && !obj.invalid ? obj.nodeFound : NULL;
@@ -383,7 +384,7 @@ protected:
 	virtual bool visit(jrd_nod* node);
 
 public:
-	jrd_nod* const map;
+	const MapNode* map;
 	const UCHAR shellStream;
 	bool rootNode;
 	bool invalid;
