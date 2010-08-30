@@ -27,7 +27,6 @@ NODE(nod_asn_list, asn_list, "")
 	NODE(nod_assignment, assignment, "")
 	NODE(nod_dcl_variable, declare, "")
 	NODE(nod_erase, erase, "")
-	NODE(nod_fetch, fetch, "")
 	NODE(nod_for, for, "")
 	NODE(nod_handler, handler, "")
 		NODE(nod_label, label, "")
@@ -127,7 +126,6 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_total2, total, "SUM")
 
           NODE(nod_current_role, current_role, "")
-          NODE(nod_breakleave, breakleave, "")
 
 /* EXECUTE STATEMENT */
 		  NODE(nod_exec_sql, exec_sql, "EXECUTE STATEMENT")
