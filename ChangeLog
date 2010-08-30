@@ -1,3 +1,44 @@
+ 2010-08-29 20:20  asfernandes 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/misc/blrtable.cpp
+Refactor plan nodes to PlanNode
+
+ 2010-08-29 18:25  asfernandes 
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+Cleanup
+
+ 2010-08-29 18:20  asfernandes 
+   M src/dsql/Visitors.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/misc/blrtable.cpp
+Refactor nod_map and nod_sort to type-safe MapNode and SortNode
+
  2010-08-28 12:41  dimitr 
    M src/jrd/opt.cpp
 Fixed CORE-2155: Join of SP with view or table may fail with 'No current record for fetch operation'.
