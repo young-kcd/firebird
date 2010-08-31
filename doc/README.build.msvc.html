@@ -18,7 +18,7 @@ Updated by: Popa Adrian Marius (mapopa at gmail.com)
 <h3>0.-Introduction</h3>
 <blockquote>
 
-<p>There are two VisualStudio builds, msvc8 and msvc9. The msvc8 build is used for the official build of Firebird in win32.</p>
+<p>There are two VisualStudio builds, msvc8 and msvc9. The msvc8 build is used for the official build of Firebird in Windows.</p>
 <p>Under the directory where you put Firebird2 sources you will see the following directories</p>
 <ul>
 <li>builds</li>
@@ -80,13 +80,13 @@ Updated by: Popa Adrian Marius (mapopa at gmail.com)
 <h4>2.1.-Visual Studio</h4>
 <ol>
 <li>Install VisualStudio 8/9</li>
-<li>You can compile it with <a href=http://www.microsoft.com/express/downloads/#Visual_Studio_2008_Express_Downloads>Visual C++ 2008 Studio Express</a> but it will not be able to build the <a href=http://firebird.1100200.n4.nabble.com/building-head-with-visual-studio-2008-vc9-td1127168.html>control panel applet</a> but for the firebird server and the rest of utilities building is ok<br>
+<li>You can compile it with <a href=http://www.microsoft.com/express/downloads/#Visual_Studio_2008_Express_Downloads>Visual C++ 2008 Studio Express</a> but it will not be able to build the <a href=http://firebird.1100200.n4.nabble.com/building-head-with-visual-studio-2008-vc9-td1127168.html>control panel applet</a> but for the Firebird server and the rest of utilities building is ok<br>
 </li>
 </ol>
 
 <h4>2.2.-Sed</h4>
 <ol>
-<li class="level1"><div class="li"> Download <a href="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download" class="urlextern" title="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download"  rel="nofollow">Sed setup</a> from <a href="http://gnuwin32.sourceforge.net/packages/sed.htm" class="urlextern" title="http://gnuwin32.sourceforge.net/packages/sed.htm"  rel="nofollow">GnuWin32 project</a> I had to run the setup and i extract into c:\gnuwin32 </div> 
+<li class="level1"><div class="li"> Download <a href="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download" class="urlextern" title="http://sourceforge.net/projects/gnuwin32/files/sed/4.2-1/sed-4.2-1-setup.exe/download"  rel="nofollow">Sed setup</a> from <a href="http://gnuwin32.sourceforge.net/packages/sed.htm" class="urlextern" title="http://gnuwin32.sourceforge.net/packages/sed.htm" rel="nofollow">GnuWin32 project</a> I had to run the setup and i extract into c:\gnuwin32 </div> 
 </li> 
 <li class="level1"><div class="li"> Add sed c:\gnuwin32\bin to the PATH environment variable , test it from a new console if it works by typing sed it should show you something abut gnu sed help</div> 
 </li> 
@@ -96,7 +96,7 @@ Updated by: Popa Adrian Marius (mapopa at gmail.com)
 <li>Run the Installer for Innosetup 5 that you downloaded from above 
 setup-5.3.xx.exe</li>
 <li>Run the Innosetup pack Installer ispack-5.3.10.exe 
-with the default options (next , next , next)</li>
+with the default options (next, next, next)</li>
 <ol>
 </blockquote>
 <h3>4.- Building</h3>
@@ -104,7 +104,7 @@ with the default options (next , next , next)</li>
 
 <h4>4.1.-Standard build</h4>
 <ol>
-<li>Eliminate the fb2control from firebird2 solution if you are using Visual Studio Express (doesn't support MFC) and it's only the control pannel applet and try to build it , it should give you no errors when you build the solution.</li>
+<li>Eliminate the fb2control from firebird2 solution if you are using Visual Studio Express (doesn't support MFC) and it's only the control pannel applet and try to build it, it should give you no errors when you build the solution.</li>
 <li>Open a command line window.</li>
 <li>Go to the builds\win32 directory.</li>
 <li>Run the following batches in order (your version of VisualStudio is detected automatically)</li>

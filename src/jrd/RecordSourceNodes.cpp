@@ -1253,7 +1253,7 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
 		*tdbb->getDefaultPool());
 
 	newSource->rse = rse->copy(tdbb, copier);
-	
+
 	for (ObjectsArray<Partition>::iterator inputPartition = partitions.begin();
 		 inputPartition != partitions.end();
 		 ++inputPartition)
