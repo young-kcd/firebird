@@ -97,7 +97,7 @@ namespace Jrd
 
 		static void dumpName(thread_db* tdbb, const Firebird::string& name,
 			Firebird::UCharBuffer& buffer);
-		static void dumpInversion(thread_db* tdbb, const jrd_nod* inversion,
+		static void dumpInversion(thread_db* tdbb, const InversionNode* inversion,
 			Firebird::UCharBuffer& buffer);
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
@@ -159,7 +159,7 @@ namespace Jrd
 
 	public:
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-			jrd_nod* inversion);
+			InversionNode* inversion);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -170,7 +170,7 @@ namespace Jrd
 
 	private:
 		const Firebird::string m_name;
-		NestConst<jrd_nod> const m_inversion;
+		NestConst<InversionNode> const m_inversion;
 	};
 
 	class IndexTableScan : public RecordStream
@@ -192,7 +192,7 @@ namespace Jrd
 
 	public:
 		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-			jrd_nod* index, USHORT keyLength);
+			InversionNode* index, USHORT keyLength);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -201,7 +201,7 @@ namespace Jrd
 
 		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
-		void setInversion(jrd_nod* inversion)
+		void setInversion(InversionNode* inversion)
 		{
 			fb_assert(!m_inversion);
 			m_inversion = inversion;
@@ -218,8 +218,8 @@ namespace Jrd
 		bool setupBitmaps(thread_db* tdbb, Impure* impure) const;
 
 		const Firebird::string m_name;
-		NestConst<jrd_nod> const m_index;
-		NestConst<jrd_nod> m_inversion;
+		NestConst<InversionNode> const m_index;
+		NestConst<InversionNode> m_inversion;
 		const size_t m_length;
 		size_t m_offset;
 	};

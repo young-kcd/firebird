@@ -28,6 +28,7 @@
 
 namespace Jrd
 {
+	class InversionNode;
 	struct Item;
 	struct ItemInfo;
 }
@@ -36,7 +37,7 @@ namespace Jrd
 dsc*		EVL_add(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
 dsc*		EVL_add2(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
-Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, const Jrd::jrd_nod*, Jrd::RecordBitmap*);
+Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, const Jrd::InversionNode*, Jrd::RecordBitmap*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
 dsc*		EVL_expr(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
 bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);

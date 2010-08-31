@@ -254,7 +254,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 }
 
 
-RecordBitmap** EVL_bitmap(thread_db* tdbb, const jrd_nod* node, RecordBitmap* bitmap_and)
+RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitmap* bitmap_and)
 {
 /**************************************
  *
@@ -274,42 +274,40 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const jrd_nod* node, RecordBitmap* bi
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-	switch (node->nod_type)
+	switch (node->type)
 	{
-	case nod_bit_and:
+	case InversionNode::TYPE_AND:
 		{
-			RecordBitmap** bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
+			RecordBitmap** bitmap = EVL_bitmap(tdbb, node->node1, bitmap_and);
 			if (!(*bitmap) || !(*bitmap)->getFirst())
 				return bitmap;
 
-			return EVL_bitmap(tdbb, node->nod_arg[1], *bitmap);
+			return EVL_bitmap(tdbb, node->node2, *bitmap);
 		}
 
-	case nod_bit_or:
+	case InversionNode::TYPE_OR:
 		return RecordBitmap::bit_or(
-			EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and),
-			EVL_bitmap(tdbb, node->nod_arg[1], bitmap_and));
+			EVL_bitmap(tdbb, node->node1, bitmap_and),
+			EVL_bitmap(tdbb, node->node2, bitmap_and));
 
-	case nod_bit_in:
+	case InversionNode::TYPE_IN:
 		{
-			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->nod_arg[0], bitmap_and);
-			BTR_evaluate(tdbb,
-				reinterpret_cast<const IndexRetrieval*>(node->nod_arg[1]->nod_arg[e_idx_retrieval]),
-				inv_bitmap, bitmap_and);
+			RecordBitmap** inv_bitmap = EVL_bitmap(tdbb, node->node1, bitmap_and);
+			BTR_evaluate(tdbb, node->node2->retrieval, inv_bitmap, bitmap_and);
 			return inv_bitmap;
 		}
 
-	case nod_bit_dbkey:
+	case InversionNode::TYPE_DBKEY:
 		{
-			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->nod_impure);
+			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
+			const dsc* desc = EVL_expr(tdbb, node->value);
 
 			if (!(tdbb->getRequest()->req_flags & req_null) &&
 				desc->dsc_length == sizeof(RecordNumber::Packed))
 			{
-				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
-				Firebird::Aligner<RecordNumber::Packed> alignedNumbers(desc->dsc_address, desc->dsc_length);
+				const USHORT id = node->id;
+				Aligner<RecordNumber::Packed> alignedNumbers(desc->dsc_address, desc->dsc_length);
 				const RecordNumber::Packed* numbers = alignedNumbers;
 				RecordNumber rel_dbkey;
 				rel_dbkey.bid_decode(&numbers[id]);
@@ -323,18 +321,18 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const jrd_nod* node, RecordBitmap* bi
 			return &impure->inv_bitmap;
 		}
 
-	case nod_index:
+	case InversionNode::TYPE_INDEX:
 		{
-			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->nod_impure);
+			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			BTR_evaluate(tdbb, reinterpret_cast<const IndexRetrieval*>(node->nod_arg[e_idx_retrieval]),
-				&impure->inv_bitmap, bitmap_and);
+			BTR_evaluate(tdbb, node->retrieval, &impure->inv_bitmap, bitmap_and);
 			return &impure->inv_bitmap;
 		}
 
 	default:
 		BUGCHECK(230);			// msg 230 EVL_bitmap: invalid operation
 	}
+
 	return NULL;
 }
 

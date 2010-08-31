@@ -2573,7 +2573,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 	RecordSource* rsb = NULL;
 	IndexTableScan* nav_rsb = NULL;
-	jrd_nod* inversion = NULL;
+	InversionNode* inversion = NULL;
 
 	if (relation->rel_file)
 	{
@@ -2600,9 +2600,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
 
 		if (candidate && candidate->inversion)
-		{
 			inversion = candidate->inversion;
-		}
 	}
 
 	if (outer_flag)
@@ -2613,9 +2611,11 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		// boolean and mark it used.
 		*return_boolean = NULL;
 		opt_end = opt->opt_conjuncts.begin() + opt->opt_base_conjuncts;
+
 		for (tail = opt->opt_conjuncts.begin(); tail < opt_end; tail++)
 		{
 			jrd_nod* node = tail->opt_conjunct_node;
+
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 				OPT_computable(csb, node, -1, false, false))
 			{

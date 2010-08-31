@@ -899,8 +899,8 @@ OptimizerRetrieval::~OptimizerRetrieval()
 	}
 }
 
-jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
-											  nod_t node_type) const
+InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, InversionNode* node2,
+	InversionNode::Type node_type) const
 {
 /**************************************
  *
@@ -914,33 +914,29 @@ jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
  *
  **************************************/
 
-	if (!node2) {
+	if (!node2)
 		return node1;
-	}
 
-	if (!node1) {
+	if (!node1)
 		return node2;
-	}
 
-	if (node_type == nod_bit_or)
+	if (node_type == InversionNode::TYPE_OR)
 	{
-		if ((node1->nod_type == nod_index) &&
-			(node2->nod_type == nod_index) &&
-			(reinterpret_cast<IndexRetrieval*>(node1->nod_arg[e_idx_retrieval])->irb_index ==
-				reinterpret_cast<IndexRetrieval*>(node2->nod_arg[e_idx_retrieval])->irb_index))
+		if (node1->type == InversionNode::TYPE_INDEX &&
+			node2->type == InversionNode::TYPE_INDEX &&
+			node1->retrieval->irb_index == node2->retrieval->irb_index)
 		{
-			node_type = nod_bit_in;
+			node_type = InversionNode::TYPE_IN;
 		}
-		else if ((node1->nod_type == nod_bit_in) &&
-			(node2->nod_type == nod_index) &&
-			(reinterpret_cast<IndexRetrieval*>(node1->nod_arg[1]->nod_arg[e_idx_retrieval])->irb_index ==
-				reinterpret_cast<IndexRetrieval*>(node2->nod_arg[e_idx_retrieval])->irb_index))
+		else if (node1->type == InversionNode::TYPE_IN &&
+			node2->type == InversionNode::TYPE_INDEX &&
+			node1->node2->retrieval->irb_index == node2->retrieval->irb_index)
 		{
-			node_type = nod_bit_in;
+			node_type = InversionNode::TYPE_IN;
 		}
 	}
 
-	return OPT_make_binary_node(node_type, node1, node2, false);
+	return FB_NEW(pool) InversionNode(node_type, node1, node2);
 }
 
 
@@ -1371,7 +1367,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		idx->idx_runtime_flags |= idx_navigate;
 
 		indexScratches[i].utilized = true;
-		jrd_nod* const index_node = makeIndexScanNode(&indexScratches[i]);
+		InversionNode* const index_node = makeIndexScanNode(&indexScratches[i]);
 		const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx), sizeof(SLONG));
 		return FB_NEW(*tdbb->getDefaultPool())
 				IndexTableScan(csb, getAlias(), stream, index_node, key_length);
@@ -1638,7 +1634,7 @@ jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* pos
 }
 
 
-jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
+InversionNode* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 {
 /**************************************
  *
@@ -1661,21 +1657,19 @@ jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
 			Resource::rsc_index, idx->idx_id);
 	}
 
-	jrd_nod* node = PAR_make_node(tdbb, e_idx_length);
-	node->nod_type = nod_index;
-	node->nod_count = 0;
-
 	IndexRetrieval* retrieval = FB_NEW_RPT(pool, idx->idx_count * 2) IndexRetrieval();
-	node->nod_arg[e_idx_retrieval] = (jrd_nod*) retrieval;
 	retrieval->irb_index = idx->idx_id;
 	memcpy(&retrieval->irb_desc, idx, sizeof(retrieval->irb_desc));
-	if (csb) {
-		node->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
-	}
+
+	InversionNode* node = FB_NEW(pool) InversionNode(retrieval);
+
+	if (csb)
+		node->impure = CMP_impure(csb, sizeof(impure_inversion));
+
 	return node;
 }
 
-jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
+InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 {
 /**************************************
  *
@@ -1688,14 +1682,13 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
  *
  **************************************/
 
-	if (!createIndexScanNodes) {
+	if (!createIndexScanNodes)
 		return NULL;
-	}
 
 	// Allocate both a index retrieval node and block.
 	index_desc* idx = indexScratch->idx;
-	jrd_nod* node = makeIndexNode(idx);
-	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
+	InversionNode* node = makeIndexNode(idx);
+	IndexRetrieval* retrieval = node->retrieval;
 	retrieval->irb_relation = relation;
 
 	// Pick up lower bound segment values
@@ -1717,6 +1710,7 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	int i = 0;
 	bool ignoreNullsOnScan = true;
 	IndexScratchSegment** segment = indexScratch->segments.begin();
+
 	for (i = 0; i < MAX(indexScratch->lowerCount, indexScratch->upperCount); i++)
 	{
 		if (segment[i]->scanType == segmentScanMissing)
@@ -1728,19 +1722,19 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 		}
 		else
 		{
-			if (i < indexScratch->lowerCount) {
+			if (i < indexScratch->lowerCount)
 				*lower++ = segment[i]->lowerValue;
-			}
-			if (i < indexScratch->upperCount) {
+
+			if (i < indexScratch->upperCount)
 				*upper++ = segment[i]->upperValue;
-			}
-			if (segment[i]->scanType == segmentScanEquivalent) {
+
+			if (segment[i]->scanType == segmentScanEquivalent)
 				ignoreNullsOnScan = false;
-			}
 		}
 	}
 
 	i = MAX(indexScratch->lowerCount, indexScratch->upperCount) - 1;
+
 	if (i >= 0)
 	{
 		if (segment[i]->scanType == segmentScanStarting)
@@ -1796,15 +1790,14 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	// which requires NULLs to be found in the index.
 	// A second exception is when this index is used for navigation.
 	if (ignoreNullsOnScan && !(idx->idx_runtime_flags & idx_navigate))
-	{
 		retrieval->irb_generic |= irb_ignore_null_value_key;
-	}
 
 	// Check to see if this is really an equality retrieval
 	if (retrieval->irb_lower_count == retrieval->irb_upper_count)
 	{
 		retrieval->irb_generic |= irb_equality;
 		segment = indexScratch->segments.begin();
+
 		for (i = 0; i < retrieval->irb_lower_count; i++)
 		{
 			if (segment[i]->lowerValue != segment[i]->upperValue)
@@ -1818,15 +1811,13 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	// If we are matching less than the full index, this is a partial match
 	if (idx->idx_flags & idx_descending)
 	{
-		if (retrieval->irb_lower_count < idx->idx_count) {
+		if (retrieval->irb_lower_count < idx->idx_count)
 			retrieval->irb_generic |= irb_partial;
-		}
 	}
 	else
 	{
-		if (retrieval->irb_upper_count < idx->idx_count) {
+		if (retrieval->irb_upper_count < idx->idx_count)
 			retrieval->irb_generic |= irb_partial;
-		}
 	}
 
 	// mark the index as utilized for the purposes of this compile
@@ -1916,15 +1907,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				// we can make the inversion and return it.
 				if (currentInv->unique && currentInv->dependencies)
 				{
-					if (!invCandidate) {
+					if (!invCandidate)
 						invCandidate = FB_NEW(pool) InversionCandidate(pool);
-					}
-					if (!currentInv->inversion && currentInv->scratch) {
+
+					if (!currentInv->inversion && currentInv->scratch)
 						invCandidate->inversion = makeIndexScanNode(currentInv->scratch);
-					}
-					else {
+					else
 						invCandidate->inversion = currentInv->inversion;
-					}
+
 					invCandidate->unique = currentInv->unique;
 					invCandidate->selectivity = currentInv->selectivity;
 					invCandidate->cost = currentInv->cost;
@@ -2156,13 +2146,14 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					if (!bestCandidate->inversion && bestCandidate->scratch)
 					{
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
-							makeIndexScanNode(bestCandidate->scratch), nod_bit_and);
+							makeIndexScanNode(bestCandidate->scratch), InversionNode::TYPE_AND);
 					}
 					else
 					{
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
-							bestCandidate->inversion, nod_bit_and);
+							bestCandidate->inversion, InversionNode::TYPE_AND);
 					}
+
 					invCandidate->unique = (invCandidate->unique || bestCandidate->unique);
 					invCandidate->selectivity = totalSelectivity;
 					invCandidate->cost += bestCandidate->cost;
@@ -2171,19 +2162,20 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->matchedSegments =
 						MAX(bestCandidate->matchedSegments, invCandidate->matchedSegments);
 					invCandidate->dependencies += bestCandidate->dependencies;
+
 					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++)
 					{
-						if (!matches.exist(bestCandidate->matches[j])) {
+						if (!matches.exist(bestCandidate->matches[j]))
 	                        matches.add(bestCandidate->matches[j]);
-						}
 					}
+
 					if (bestCandidate->boolean)
 					{
-						if (!matches.exist(bestCandidate->boolean)) {
+						if (!matches.exist(bestCandidate->boolean))
 							matches.add(bestCandidate->boolean);
-						}
 					}
 				}
+
 				if (invCandidate->unique)
 				{
 					// Single unique full equal match is enough
@@ -2554,12 +2546,8 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
 
 	if (createIndexScanNodes)
 	{
-		jrd_nod* const inversion = PAR_make_node(tdbb, 2);
-		inversion->nod_count = 1;
-		inversion->nod_type = nod_bit_dbkey;
-		inversion->nod_arg[0] = value;
-		inversion->nod_arg[1] = (jrd_nod*)(IPTR) n;
-		inversion->nod_impure = CMP_impure(csb, sizeof(impure_inversion));
+		InversionNode* const inversion = FB_NEW(pool) InversionNode(value, n);
+		inversion->impure = CMP_impure(csb, sizeof(impure_inversion));
 		invCandidate->inversion = inversion;
 	}
 
@@ -2645,8 +2633,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		if (invCandidate2)
 		{
 			InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-			invCandidate->inversion =
-				composeInversion(invCandidate1->inversion, invCandidate2->inversion, nod_bit_or);
+			invCandidate->inversion = composeInversion(invCandidate1->inversion,
+				invCandidate2->inversion, InversionNode::TYPE_OR);
 			invCandidate->unique = (invCandidate1->unique && invCandidate2->unique);
 			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity;
 			invCandidate->cost = invCandidate1->cost + invCandidate2->cost;

@@ -38,6 +38,7 @@
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/rse.h"
 #include "../jrd/exe.h"
 
@@ -69,6 +70,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 class IndexTableScan;
+class InversionNode;
 class PlanNode;
 class River;
 class SortNode;
@@ -140,7 +142,7 @@ public:
 	int				indexes;
 	int				dependencies;
 	jrd_nod*		boolean;
-	jrd_nod*		inversion;
+	InversionNode*	inversion;
 	IndexScratch*	scratch;
 	bool			used;
 	bool			unique;
@@ -165,14 +167,15 @@ public:
 	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
 
 protected:
-	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
+	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
+		InversionNode::Type node_type) const;
 	const Firebird::string& getAlias();
 	InversionCandidate* generateInversion(IndexTableScan** rsb);
 	IndexTableScan* generateNavigation();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
-	jrd_nod* makeIndexNode(const index_desc* idx) const;
-	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
+	InversionNode* makeIndexNode(const index_desc* idx) const;
+	InversionNode* makeIndexScanNode(IndexScratch* indexScratch) const;
 	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
 	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
 	InversionCandidate* matchDbKey(jrd_nod* boolean) const;

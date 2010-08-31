@@ -32,6 +32,7 @@
 
 namespace Jrd {
 
+class IndexRetrieval;
 class OptimizerRetrieval;
 class ProcedureScan;
 class RelationSourceNode;
@@ -135,6 +136,60 @@ public:
 	AccessType* accessType;
 	RelationSourceNode* relationNode;
 	Firebird::Array<NestConst<PlanNode> > subNodes;
+};
+
+class InversionNode
+{
+public:
+	enum Type
+	{
+		TYPE_AND,
+		TYPE_OR,
+		TYPE_IN,
+		TYPE_DBKEY,
+		TYPE_INDEX
+	};
+
+	InversionNode(Type aType, InversionNode* aNode1, InversionNode* aNode2)
+		: type(aType),
+		  impure(0),
+		  retrieval(NULL),
+		  node1(aNode1),
+		  node2(aNode2),
+		  value(NULL),
+		  id(0)
+	{
+	}
+
+	InversionNode(IndexRetrieval* aRetrieval)
+		: type(TYPE_INDEX),
+		  impure(0),
+		  retrieval(aRetrieval),
+		  node1(NULL),
+		  node2(NULL),
+		  value(NULL),
+		  id(0)
+	{
+	}
+
+	InversionNode(jrd_nod* aValue, USHORT aId)
+		: type(TYPE_DBKEY),
+		  impure(0),
+		  retrieval(NULL),
+		  node1(NULL),
+		  node2(NULL),
+		  value(aValue),
+		  id(aId)
+	{
+	}
+
+	Type type;
+	ULONG impure;
+	NestConst<IndexRetrieval> retrieval;
+	NestConst<InversionNode> node1;
+	NestConst<InversionNode> node2;
+	NestConst<jrd_nod> value;
+	USHORT id;
 };
 
 

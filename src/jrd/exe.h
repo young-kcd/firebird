@@ -245,9 +245,6 @@ const int e_asgn_missing	= 2;	// Value for comparison for missing
 const int e_asgn_missing2	= 3;	// Value for substitute for missing
 const int e_asgn_length		= 4;
 
-const int e_idx_retrieval	= 0;
-const int e_idx_length		= 1;
-
 const int e_lbl_statement	= 0;
 const int e_lbl_label		= 1;
 const int e_lbl_length		= 2;
