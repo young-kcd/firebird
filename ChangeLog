@@ -1,3 +1,8 @@
+ 2010-08-31 11:17  dimitr 
+   M builds/win32/msvc9/dsql_server.vcproj
+   M builds/win32/msvc9/dsql_server_classic.vcproj
+Fixed MSVC9 build.
+
  2010-08-31 00:20  asfernandes 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
