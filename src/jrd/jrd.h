@@ -71,7 +71,7 @@
 
 #define BLKCHK(blk, type)       if (!blk->checkHandle()) BUGCHECK(147)
 
-#define DEV_BLKCHK(blk, type)	// nothing
+#define DEV_BLKCHK(blk, type)	do { } while (false)	// nothing
 
 
 // Thread data block / IPC related data blocks
