@@ -15,4 +15,4 @@
 #define FB_REV_NO "0"
 #define FB_BUILD_NO "26074"
 #define FB_BUILD_TYPE "V"
-#define FB_BUILD_SUFFIX "Firebird 2.5 Release Candidate 3"
+#define FB_BUILD_SUFFIX "Firebird 2.5"

@@ -13,7 +13,7 @@ BuildNum=26074
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
-SuffixKind="Release Candidate 3"
+SuffixKind=""
 SuffixVer=""
 BuildSuffix="Firebird 2.5"
 [ "$SuffixKind" = "" ] || BuildSuffix="$BuildSuffix $SuffixKind"
