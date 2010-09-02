@@ -42,12 +42,7 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/pag_proto.h"
-#include "../jrd/tra_proto.h"
 #include "../jrd/os/guid.h"
-#include "../jrd/license.h"
-#include "../jrd/trace/TraceManager.h"
-#include "../jrd/trace/TraceObjects.h"
 #include "../common/classes/FpeControl.h"
 #include <math.h>
 
@@ -113,7 +108,6 @@ void setParamsAsciiVal(DataTypeUtilBase* dataTypeUtil, const SysFunction* functi
 void setParamsCharToUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsDateDiff(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
-void setParamsGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsPosition(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
 void setParamsRoundTrunc(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, int argsCount, dsc** args);
@@ -134,7 +128,6 @@ void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeCeilFloor(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeDateAdd(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
-void makeGetSetContext(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeMod(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
@@ -147,77 +140,42 @@ void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
 // generic stdmath function
-dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
+dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 
 // specific evl functions
-dsc* evlAbs(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAsciiChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAsciiVal(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlExp(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlFloor(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlGenUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlGetContext(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSetContext(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlHash(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLeft(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlMod(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPi(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRand(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlReplace(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlReverse(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRight(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSign(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-
-
-const char
-	RDB_GET_CONTEXT[] = "RDB$GET_CONTEXT",
-	RDB_SET_CONTEXT[] = "RDB$SET_CONTEXT";
-
-// Context namespace names
-const char
-	SYSTEM_NAMESPACE[] = "SYSTEM",
-	DDL_TRIGGER_NAMESPACE[] = "DDL_TRIGGER",
-	USER_SESSION_NAMESPACE[] = "USER_SESSION",
-	USER_TRANSACTION_NAMESPACE[] = "USER_TRANSACTION";
-
-// System context variables names
-const char
-	ENGINE_VERSION[] = "ENGINE_VERSION",
-	NETWORK_PROTOCOL_NAME[] = "NETWORK_PROTOCOL",
-	CLIENT_ADDRESS_NAME[] = "CLIENT_ADDRESS",
-	DATABASE_NAME[] = "DB_NAME",
-	ISOLATION_LEVEL_NAME[] = "ISOLATION_LEVEL",
-	TRANSACTION_ID_NAME[] = "TRANSACTION_ID",
-	SESSION_ID_NAME[] = "SESSION_ID",
-	CURRENT_USER_NAME[] = "CURRENT_USER",
-	CURRENT_ROLE_NAME[] = "CURRENT_ROLE",
-	DDL_EVENT_NAME[] = "DDL_EVENT",
-	OBJECT_NAME[] = "OBJECT_NAME",
-	SQL_TEXT_NAME[] = "SQL_TEXT";
-
-// Isolation values modes
-const char
-	READ_COMMITTED_VALUE[] = "READ COMMITTED",
-	CONSISTENCY_VALUE[] = "CONSISTENCY",
-	SNAPSHOT_VALUE[] = "SNAPSHOT";
+dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlLnLog10(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
+dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args, Jrd::impure_value* impure);
 
 
 void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
@@ -351,19 +309,6 @@ void setParamsDateDiff(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc
 		else if (args[2]->isUnknown())
 			*args[2] = *args[1];
 	}
-}
-
-
-void setParamsGetSetContext(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
-{
-	if (argsCount >= 1 && args[0]->isUnknown())
-		args[0]->makeText(80, ttype_none);
-
-	if (argsCount >= 2 && args[1]->isUnknown())
-		args[1]->makeText(80, ttype_none);
-
-	if (argsCount >= 3 && args[2]->isUnknown())
-		args[2]->makeText(255, ttype_none);
 }
 
 
@@ -703,21 +648,6 @@ void makeDateAdd(DataTypeUtilBase*, const SysFunction*, dsc* result, int argsCou
 }
 
 
-void makeGetSetContext(DataTypeUtilBase* /*dataTypeUtil*/, const SysFunction* function, dsc* result,
-	int argsCount, const dsc** /*args*/)
-{
-	fb_assert(argsCount == function->minArgCount);
-
-	if (argsCount == 3)	// set_context
-		result->makeLong(0);
-	else
-	{
-		result->makeVarying(255, ttype_none);
-		result->setNullable(true);
-	}
-}
-
-
 void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result,
 	int argsCount, const dsc** args)
 {
@@ -1038,8 +968,8 @@ void makeUuidToChar(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 }
 
 
-dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 	fb_assert(function->misc != NULL);
@@ -1139,8 +1069,8 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlAbs(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1185,8 +1115,8 @@ dsc* evlAbs(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1207,8 +1137,8 @@ dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1233,8 +1163,8 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlAtan2(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -1255,8 +1185,8 @@ dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 	fb_assert(function->misc != NULL);
@@ -1304,8 +1234,8 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlBinShift(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 	fb_assert(function->misc != NULL);
@@ -1362,8 +1292,8 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlCeil(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1425,8 +1355,8 @@ string showInvalidChar(const UCHAR c)
 }
 
 
-dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1444,7 +1374,7 @@ dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* 
 
 	USHORT ttype;
 	UCHAR* data_temp;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0, ERR_post);
 	const UCHAR* data = data_temp;
 
 	// validate the UUID
@@ -1530,8 +1460,8 @@ const char* getPartName(int n)
 }
 
 
-dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -1727,8 +1657,8 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -1940,8 +1870,8 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlExp(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -1964,8 +1894,8 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlFloor(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -2019,8 +1949,8 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlGenUuid(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -2037,255 +1967,8 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
-{
-	fb_assert(args->nod_count == 2);
-
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	Database* dbb = tdbb->getDatabase();
-	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
-
-	request->req_flags &= ~req_null;
-	const dsc* nameSpace = EVL_expr(tdbb, args->nod_arg[0]);
-	if (request->req_flags & req_null)	// Complain if namespace is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
-
-	const dsc* name = EVL_expr(tdbb, args->nod_arg[1]);
-	if (request->req_flags & req_null)	// Complain if variable name is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
-
-	const string nameSpaceStr(MOV_make_string2(tdbb, nameSpace, ttype_none));
-	const string nameStr(MOV_make_string2(tdbb, name, ttype_none));
-
-	string resultStr;
-	USHORT resultType = ttype_none;
-	request->req_flags |= req_null;
-
-	if (nameSpaceStr == SYSTEM_NAMESPACE)	// Handle system variables
-	{
-		if (nameStr == ENGINE_VERSION)
-			resultStr.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
-		else if (nameStr == NETWORK_PROTOCOL_NAME)
-		{
-			if (attachment->att_network_protocol.isEmpty())
-				return NULL;
-
-			resultStr = attachment->att_network_protocol;
-		}
-		else if (nameStr == CLIENT_ADDRESS_NAME)
-		{
-			if (attachment->att_remote_address.isEmpty())
-				return NULL;
-
-			resultStr = attachment->att_remote_address;
-		}
-		else if (nameStr == DATABASE_NAME)
-			resultStr = dbb->dbb_database_name.ToString();
-		else if (nameStr == CURRENT_USER_NAME)
-		{
-			if (!attachment->att_user || attachment->att_user->usr_user_name.isEmpty())
-				return NULL;
-
-			resultStr = attachment->att_user->usr_user_name;
-		}
-		else if (nameStr == CURRENT_ROLE_NAME)
-		{
-			if (!attachment->att_user || attachment->att_user->usr_sql_role_name.isEmpty())
-				return NULL;
-
-			resultStr = attachment->att_user->usr_sql_role_name;
-		}
-		else if (nameStr == SESSION_ID_NAME)
-			resultStr.printf("%d", PAG_attachment_id(tdbb));
-		else if (nameStr == TRANSACTION_ID_NAME)
-			resultStr.printf("%d", transaction->tra_number);
-		else if (nameStr == ISOLATION_LEVEL_NAME)
-		{
-			if (transaction->tra_flags & TRA_read_committed)
-				resultStr = READ_COMMITTED_VALUE;
-			else if (transaction->tra_flags & TRA_degree3)
-				resultStr = CONSISTENCY_VALUE;
-			else
-				resultStr = SNAPSHOT_VALUE;
-		}
-		else
-		{
-			// "Context variable %s is not found in namespace %s"
-			ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(nameStr) <<
-														Arg::Str(nameSpaceStr));
-		}
-	}
-	else if (nameSpaceStr == DDL_TRIGGER_NAMESPACE)	// Handle ddl trigger variables
-	{
-		if (!attachment->ddlTriggersContext.hasData())
-			status_exception::raise(Arg::Gds(isc_sysf_invalid_trig_namespace));
-
-		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(
-			attachment->ddlTriggersContext).object();
-
-		if (nameStr == DDL_EVENT_NAME)
-			resultStr = context.ddlEvent;
-		else if (nameStr == OBJECT_NAME)
-		{
-			resultStr = context.objectName.c_str();
-			resultType = ttype_metadata;
-		}
-		else if (nameStr == SQL_TEXT_NAME)
-		{
-			if (context.sqlText.isEmpty())
-				return NULL;
-
-			blb* blob = BLB_create(tdbb, transaction, &impure->vlu_misc.vlu_bid);
-			BLB_put_data(tdbb, blob, reinterpret_cast<const UCHAR*>(context.sqlText.c_str()),
-				context.sqlText.length());
-			BLB_close(tdbb, blob);
-
-			dsc result;
-			result.makeBlob(isc_blob_text, ttype_metadata, (ISC_QUAD*) &impure->vlu_misc.vlu_bid);
-			EVL_make_value(tdbb, &result, impure);
-
-			request->req_flags &= ~req_null;
-			return &impure->vlu_desc;
-		}
-		else
-		{
-			// "Context variable %s is not found in namespace %s"
-			ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(nameStr) <<
-														Arg::Str(nameStr));
-		}
-	}
-	else if (nameSpaceStr == USER_SESSION_NAMESPACE)	// Handle user-defined session variables
-	{
-		if (!attachment->att_context_vars.get(nameStr, resultStr))
-			return NULL;
-	}
-	else if (nameSpaceStr == USER_TRANSACTION_NAMESPACE)	// Handle user-defined trans. variables
-	{
-		if (!transaction->tra_context_vars.get(nameStr, resultStr))
-			return NULL;
-	}
-	else
-	{
-		// "Invalid namespace name %s passed to %s"
-		ERR_post(Arg::Gds(isc_ctx_namespace_invalid) <<
-			Arg::Str(nameSpaceStr) << Arg::Str(RDB_GET_CONTEXT));
-	}
-
-	dsc result;
-	result.makeText(resultStr.length(), resultType,
-		(UCHAR*) const_cast<char*>(resultStr.c_str()));	// safe const_cast
-	EVL_make_value(tdbb, &result, impure);
-
-	request->req_flags &= ~req_null;
-	return &impure->vlu_desc;
-}
-
-
-dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
-{
-	fb_assert(args->nod_count == 3);
-
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	jrd_tra* transaction = tdbb->getTransaction();
-	jrd_req* request = tdbb->getRequest();
-
-	request->req_flags &= ~req_null;
-	const dsc* nameSpace = EVL_expr(tdbb, args->nod_arg[0]);
-	if (request->req_flags & req_null)	// Complain if namespace is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
-
-	const dsc* name = EVL_expr(tdbb, args->nod_arg[1]);
-	if (request->req_flags & req_null)	// Complain if variable name is null
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
-
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[2]);
-
-	const string nameSpaceStr(MOV_make_string2(tdbb, nameSpace, ttype_none));
-	const string nameStr(MOV_make_string2(tdbb, name, ttype_none));
-
-	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
-
-	Firebird::StringMap* contextVars = NULL;
-
-	if (nameSpaceStr == USER_SESSION_NAMESPACE)
-	{
-		if (!attachment)
-		{
-			fb_assert(false);
-			return 0;
-		}
-
-		contextVars = &attachment->att_context_vars;
-	}
-	else if (nameSpaceStr == USER_TRANSACTION_NAMESPACE)
-	{
-		if (!transaction)
-		{
-			fb_assert(false);
-			return 0;
-		}
-
-		contextVars = &transaction->tra_context_vars;
-	}
-	else
-	{
-		// "Invalid namespace name %s passed to %s"
-		ERR_post(Arg::Gds(isc_ctx_namespace_invalid) <<
-			Arg::Str(nameStr) << Arg::Str(RDB_SET_CONTEXT));
-	}
-
-	string valueStr;
-
-	if (!value)
-		impure->vlu_misc.vlu_long = (SLONG) contextVars->remove(nameStr);
-	else
-	{
-		valueStr = MOV_make_string2(tdbb, value, ttype_none);
-
-		if (contextVars->count() == MAX_CONTEXT_VARS)
-		{
-			string* rc = contextVars->get(nameStr);
-			if (rc)
-			{
-				*rc = valueStr;
-				impure->vlu_misc.vlu_long = 1;
-			}
-			else
-				ERR_post(Arg::Gds(isc_ctx_too_big)); // "Too many context variables"
-		}
-		else
-		{
-			if (contextVars->count() >= MAX_CONTEXT_VARS)
-			{
-				// "Too many context variables"
-				ERR_post(Arg::Gds(isc_ctx_too_big));
-			}
-
-			impure->vlu_misc.vlu_long = (SLONG) contextVars->put(nameStr, valueStr);
-		}
-	}
-
-	if (attachment->att_trace_manager->needs().event_set_context)
-	{
-		TraceConnectionImpl conn(attachment);
-		TraceTransactionImpl tran(transaction);
-
-		TraceContextVarImpl ctxvar(nameSpaceStr.c_str(), nameStr.c_str(),
-			(value ? valueStr.c_str() : NULL));
-
-		attachment->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
-	}
-
-	request->req_flags &= ~req_null;
-	return &impure->vlu_desc;
-}
-
-
-dsc* evlHash(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -2346,8 +2029,8 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2369,8 +2052,8 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlLnLog10(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 	fb_assert(function->misc != NULL);
@@ -2411,8 +2094,8 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2450,8 +2133,8 @@ dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value*)
+dsc* evlMaxMinValue(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value*)
 {
 	fb_assert(args->nod_count >= 1);
 	fb_assert(function->misc != NULL);
@@ -2491,8 +2174,8 @@ dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod*
 }
 
 
-dsc* evlMod(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -2540,8 +2223,8 @@ dsc* evlMod(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 3);
 
@@ -2724,8 +2407,8 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 2);
 
@@ -2887,8 +2570,8 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlPi(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlPi(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -2899,8 +2582,8 @@ dsc* evlPi(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 2);
 
@@ -3017,8 +2700,8 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -3064,8 +2747,8 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlRand(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlRand(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
 
@@ -3080,8 +2763,8 @@ dsc* evlRand(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 3);
 
@@ -3229,8 +2912,8 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -3270,7 +2953,6 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 				memcpy(p2 -= size, p1, size);
 			}
 
-			fb_assert(p2 == buffer2.begin());
 			p = p2;
 		}
 		else
@@ -3319,7 +3001,6 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 				fb_assert(read == true);
 				memcpy(p2 -= size, p1, size);
 			}
-			fb_assert(p2 == impure->vlu_desc.dsc_address);
 		}
 		else
 		{
@@ -3332,8 +3013,8 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 2);
 
@@ -3385,8 +3066,8 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -3420,8 +3101,8 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlSign(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -3446,8 +3127,8 @@ dsc* evlSign(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -3472,8 +3153,8 @@ dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count >= 1);
 
@@ -3559,8 +3240,8 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod* args,
+	Jrd::impure_value* impure)
 {
 	fb_assert(args->nod_count == 1);
 
@@ -3579,7 +3260,7 @@ dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* 
 
 	USHORT ttype;
 	UCHAR* data;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
 
 	if (len != sizeof(FB_GUID))
 	{
@@ -3648,8 +3329,6 @@ const SysFunction SysFunction::functions[] =
 		{"POSITION", 2, 3, setParamsPosition, makeLongResult, evlPosition, NULL},
 		{"POWER", 2, 2, setParamsDouble, makeDoubleResult, evlPower, NULL},
 		{"RAND", 0, 0, NULL, makeDoubleResult, evlRand, NULL},
-		{RDB_GET_CONTEXT, 2, 2, setParamsGetSetContext, makeGetSetContext, evlGetContext, NULL},
-		{RDB_SET_CONTEXT, 3, 3, setParamsGetSetContext, makeGetSetContext, evlSetContext, NULL},
 		{"REPLACE", 3, 3, setParamsFromList, makeReplace, evlReplace, NULL},
 		{"REVERSE", 1, 1, NULL, makeReverse, evlReverse, NULL},
 		{"RIGHT", 2, 2, setParamsSecondInteger, makeLeftRight, evlRight, NULL},

@@ -72,7 +72,7 @@ void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 
 	// We can't use safe fb_interpret here as we have no idea what implementation
 	// of ISC API is used by current provider. We can test for existence of
-	// fb_interpret and use it if present, but I don't want to complicate code.
+	// fb_interpret and use it if present, but i don't want to complicate code.
 	// So, buffer should be big enough to please old isc_interprete.
 	// Probably in next version we should use fb_interpret only.
 
@@ -159,11 +159,11 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 					{
 						// Remote server don't understand isc_info_db_sql_dialect.
 						// Consider it as pre-IB6 server and use SQL dialect 1 to work with it.
-						m_sqlDialect = 1;
+						m_sqlDialect = 1;	
 						break;
 					}
 				}
-				// fall thru
+			// fall thru
 
 			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
@@ -1119,7 +1119,7 @@ void ISC_EXPORT IscProvider::isc_event_counts(ISC_ULONG *,
 	return;
 }
 
-// 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED
+/* 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED */
 void ISC_EXPORT_VARARG IscProvider::isc_expand_dpb(char * *,
 								  short *, ...)
 {

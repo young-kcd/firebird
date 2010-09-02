@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <sys/stat.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -75,40 +74,9 @@ __int64 __cdecl _ftelli64(FILE*);
 #define FSEEK64 fseeko
 #endif
 
+using namespace Jrd;
 using namespace Firebird;
 
-namespace Jrd
-{
-	class ExternalFileDirectoryList : public DirectoryList
-	{
-	private:
-		const PathName getConfigString() const
-		{
-			return PathName(config->getExternalFileAccess());
-		}
-
-	public:
-		explicit ExternalFileDirectoryList(const Database* dbb)
-			: DirectoryList(*dbb->dbb_permanent), config(dbb->dbb_config)
-		{
-			initialize();
-		}
-
-		static void create(Database* dbb)
-		{
-			if (!dbb->dbb_external_file_directory_list)
-			{
-				dbb->dbb_external_file_directory_list =
-					FB_NEW(*dbb->dbb_permanent) ExternalFileDirectoryList(dbb);
-			}
-		}
-
-	private:
-		RefPtr<Config> config;
-	};
-}
-
-using namespace Jrd;
 
 namespace {
 
@@ -119,12 +87,29 @@ namespace {
 #endif
 	static const char* const FOPEN_READ_ONLY	= "rb";
 
+	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file);
+
+	class ExternalFileDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString() const
+		{
+			return Firebird::PathName(Config::getExternalFileAccess());
+		}
+	public:
+		explicit ExternalFileDirectoryList(MemoryPool& p)
+			: DirectoryList(p)
+		{
+			initialize();
+		}
+	};
+	Firebird::InitInstance<ExternalFileDirectoryList> iExternalFileDirectoryList;
+
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file)
 	{
 		const char* file_name = ext_file->ext_filename;
 
-		ExternalFileDirectoryList::create(dbb);
-		if (!dbb->dbb_external_file_directory_list->isPathInList(file_name))
+		if (!iExternalFileDirectoryList().isPathInList(file_name))
 		{
 			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("external file") <<
 														 Arg::Str(file_name));
@@ -154,53 +139,18 @@ namespace {
 } // namespace
 
 
-double EXT_cardinality(thread_db* tdbb, jrd_rel* relation)
+void EXT_close(RecordSource*)
 {
 /**************************************
  *
- *	E X T _ c a r d i n a l i t y
+ *	E X T _ c l o s e
  *
  **************************************
  *
  * Functional description
- *	Return cardinality for the external file.
+ *	Close a record stream for an external file.
  *
  **************************************/
-	ExternalFile* const file = relation->rel_file;
-	fb_assert(file);
-
-	bool must_close = false;
-	if (!file->ext_ifi)
-	{
-		ext_fopen(tdbb->getDatabase(), file);
-		must_close = true;
-	}
-
-	FB_UINT64 file_size = 0;
-
-#ifdef WIN_NT
-	struct __stat64 statistics;
-	if (!_fstat64(_fileno(file->ext_ifi), &statistics))
-#else
-	struct stat statistics;
-	if (!fstat(fileno(file->ext_ifi), &statistics))
-#endif
-	{
-		file_size = statistics.st_size;
-	}
-
-	if (must_close)
-	{
-		fclose(file->ext_ifi);
-		file->ext_ifi = NULL;
-	}
-
-	const Format* const format = MET_current(tdbb, relation);
-	fb_assert(format && format->fmt_length);
-	const USHORT offset = (USHORT)(IPTR) format->fmt_desc[0].dsc_address;
-	const ULONG record_length = format->fmt_length - offset;
-
-	return (double) file_size / record_length;
 }
 
 
@@ -250,17 +200,16 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 #endif
 
 	// If file_name has no path part, expand it in ExternalFilesPath.
-	PathName path, name;
-	PathUtils::splitLastComponent(path, name, file_name);
-	if (path.isEmpty())
+	Firebird::PathName Path, Name;
+	PathUtils::splitLastComponent(Path, Name, file_name);
+	if (Path.length() == 0)
 	{
 		// path component not present in file_name
-		ExternalFileDirectoryList::create(dbb);
-		if (!(dbb->dbb_external_file_directory_list->expandFileName(path, name)))
+		if (!(iExternalFileDirectoryList().expandFileName(Path, Name)))
 		{
-			dbb->dbb_external_file_directory_list->defaultName(path, name);
+			iExternalFileDirectoryList().defaultName(Path, Name);
 		}
-		file_name = path.c_str();
+		file_name = Path.c_str();
 	}
 
 	ExternalFile* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
@@ -304,7 +253,7 @@ void EXT_fini(jrd_rel* relation, bool close_only)
 }
 
 
-bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
+bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 {
 /**************************************
  *
@@ -316,12 +265,18 @@ bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
  *	Get a record from an external file.
  *
  **************************************/
-	jrd_rel* const relation = rpb->rpb_relation;
-	ExternalFile* const file = relation->rel_file;
+	jrd_rel* relation = rsb->rsb_relation;
+	ExternalFile* file = relation->rel_file;
+	jrd_req* request = tdbb->getRequest();
+
+	if (request->req_flags & req_abort)
+		return false;
+
 	fb_assert(file->ext_ifi);
 
-	Record* const record = rpb->rpb_record;
-	const Format* const format = record->rec_format;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+	Record* record = rpb->rpb_record;
+	const Format* format = record->rec_format;
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
@@ -331,8 +286,8 @@ bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
 	// call it if it is not necessary. Note that we must flush file buffer if we
 	// do read after write
 	if (file->ext_ifi == NULL ||
-		((FTELL64(file->ext_ifi) != position || !(file->ext_flags & EXT_last_read)) &&
-			(FSEEK64(file->ext_ifi, position, SEEK_SET) != 0)) )
+		((FTELL64(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
+			(FSEEK64(file->ext_ifi, rpb->rpb_ext_pos, SEEK_SET) != 0)) )
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
@@ -341,7 +296,7 @@ bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
 	if (!fread(p, l, 1, file->ext_ifi))
 		return false;
 
-	position += l;
+	rpb->rpb_ext_pos += l;
 
 	file->ext_flags |= EXT_last_read;
 	file->ext_flags &= ~EXT_last_write;
@@ -391,7 +346,7 @@ void EXT_modify(record_param* /*old_rpb*/, record_param* /*new_rpb*/, jrd_tra* /
 }
 
 
-void EXT_open(Database* dbb, ExternalFile* file)
+void EXT_open(thread_db* tdbb, RecordSource* rsb)
 {
 /**************************************
  *
@@ -403,9 +358,100 @@ void EXT_open(Database* dbb, ExternalFile* file)
  *	Open a record stream for an external file.
  *
  **************************************/
+	jrd_rel* relation = rsb->rsb_relation;
+	ExternalFile* file = relation->rel_file;
+	jrd_req* request = tdbb->getRequest();
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
+
 	if (!file->ext_ifi) {
-		ext_fopen(dbb, file);
+		ext_fopen(tdbb->getDatabase(), file);
 	}
+
+	const Format* format;
+	Record* record = rpb->rpb_record;
+	if (!record || !(format = record->rec_format))
+	{
+		format = MET_current(tdbb, relation);
+		VIO_record(tdbb, rpb, format, request->req_pool);
+	}
+
+	rpb->rpb_ext_pos = 0;
+}
+
+
+// Only extvms.cpp needs the third param.
+RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream) //, jrd_nod** sort_ptr)
+{
+/**************************************
+ *
+ *	E X T _ o p t i m i z e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Compile and optimize a record selection expression into a
+ *	set of record source blocks (rsb's).
+ *
+ **************************************/
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+	CompilerScratch* csb = opt->opt_csb;
+	CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	jrd_rel* relation = csb_tail->csb_relation;
+
+	/* Time to find inversions.  For each index on the relation
+	match all unused booleans against the index looking for upper
+	and lower bounds that can be computed by the index.  When
+	all unused conjunctions are exhausted, see if there is enough
+	information for an index retrieval.  If so, build up and
+	inversion component of the boolean.
+	*/
+
+	/*
+	jrd_nod* inversion = NULL;
+	OptimizerBlk::opt_repeat* const opt_end = opt->opt_rpt + opt->opt_count;
+
+	if (opt->opt_count)
+		//const index_desc* idx = csb_tail->csb_idx->items; ???
+	    for (USHORT i = 0; i < csb_tail->csb_indices; i++)
+		{
+			clear_bounds (opt, idx);
+			for (OptimizerBlk::opt_repeat* tail = opt->opt_rpt; tail < opt_end; tail++)
+			{
+			    jrd_nod* node = tail->opt_conjunct;
+			    if (!(tail->opt_flags & opt_used) && OPT_computable(csb, node, -1))
+					match (opt, stream, node, idx);
+			    if (node->nod_type == nod_starts)
+					compose (&inversion, make_starts (opt, node, stream, idx), nod_bit_and);
+			}
+			compose (&inversion, make_index (opt, relation, idx), nod_bit_and);
+			idx = idx->idx_rpt + idx->idx_count;
+		}
+	*/
+
+	RecordSource* rsb = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) RecordSource;
+	rsb->rsb_type = rsb_ext_sequential;
+	rsb->rsb_stream = stream;
+	rsb->rsb_relation = relation;
+	rsb->rsb_impure = CMP_impure(csb, sizeof(irsb));
+
+	return rsb;
+}
+
+
+void EXT_ready(jrd_rel*)
+{
+/**************************************
+ *
+ *	E X T _ r e a d y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open an external file.
+ *
+ **************************************/
 }
 
 
@@ -498,6 +544,65 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	file->ext_flags &= ~EXT_last_read;
 }
 
+
+void EXT_trans_commit(jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a n s _ c o m m i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkin at transaction commit time.
+ *
+ **************************************/
+}
+
+
+void EXT_trans_prepare(jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a n s _ p r e p a r e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkin at transaction prepare time.
+ *
+ **************************************/
+}
+
+
+void EXT_trans_rollback(jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a n s _ r o l l b a c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkin at transaction rollback time.
+ *
+ **************************************/
+}
+
+
+void EXT_trans_start(jrd_tra*)
+{
+/**************************************
+ *
+ *	E X T _ t r a n s _ s t a r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checkin at start transaction time.
+ *
+ **************************************/
+}
 
 void EXT_tra_attach(ExternalFile* file, jrd_tra*)
 {

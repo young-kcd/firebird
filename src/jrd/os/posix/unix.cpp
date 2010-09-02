@@ -1148,7 +1148,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	if (!Ods::isSupported(hp->hdr_ods_version, hp->hdr_ods_minor))
 		goto quit;
 
-	if (hp->hdr_page_size < MIN_NEW_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
+	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
 		goto quit;
 
 	// At this point we think we have identified a database on the device.

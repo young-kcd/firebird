@@ -89,7 +89,7 @@ private:
 class TraceProcExecute
 {
 public:
-	TraceProcExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, const jrd_nod* inputs) :
+	TraceProcExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, jrd_nod* inputs) :
 		m_tdbb(tdbb),
 		m_request(request)
 	{
@@ -231,8 +231,8 @@ public:
 		m_which_trig(which_trig)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = !(m_request->getStatement()->flags & JrdStatement::FLAG_SYS_TRIGGER) &&
-			trace_mgr->needs().event_trigger_execute;
+		m_need_trace = !(m_request->req_flags & req_sys_trigger) &&
+						trace_mgr->needs().event_trigger_execute;
 
 		if (!m_need_trace)
 			return;
@@ -360,11 +360,10 @@ public:
 		m_request(request)
 	{
 		Attachment* attachment = m_tdbb->getAttachment();
-		JrdStatement* statement = m_request->getStatement();
 
 		m_need_trace = attachment->att_trace_manager->needs().event_blr_execute &&
-			!statement->sqlText &&
-			!(statement->flags & JrdStatement::FLAG_INTERNAL) &&
+			!m_request->req_sql_text &&
+			!(m_request->req_flags & req_internal) &&
 			!(attachment->att_flags & ATT_gstat_attachment) &&
 			!(attachment->att_flags & ATT_gbak_attachment) &&
 			!(attachment->att_flags & ATT_gfix_attachment);
@@ -415,6 +414,57 @@ private:
 	SINT64 m_start_clock;
 };
 
+
+class TraceDynExecute
+{
+public:
+	TraceDynExecute(thread_db* tdbb, size_t ddl_length, const UCHAR* ddl) :
+		m_tdbb(tdbb),
+		m_ddl_length(ddl_length),
+		m_ddl(ddl)
+	{
+		Attachment* attachment = m_tdbb->getAttachment();
+
+		m_need_trace = attachment->att_trace_manager->needs().event_dyn_execute &&
+			m_ddl_length && m_ddl;
+
+		if (!m_need_trace)
+			return;
+
+		m_start_clock = fb_utils::query_performance_counter();
+	}
+
+	void finish(ntrace_result_t result)
+	{
+		if (!m_need_trace)
+			return;
+
+		m_need_trace = false;
+
+		m_start_clock = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
+						 fb_utils::query_performance_frequency();
+
+		TraceConnectionImpl conn(m_tdbb->getAttachment());
+		TraceTransactionImpl tran(m_tdbb->getTransaction());
+		TraceDYNRequestImpl request(m_ddl_length, m_ddl);
+
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		trace_mgr->event_dyn_execute(&conn, m_tdbb->getTransaction() ? &tran : NULL, &request,
+			m_start_clock, result);
+	}
+
+	~TraceDynExecute()
+	{
+		finish(res_failed);
+	}
+
+private:
+	bool m_need_trace;
+	thread_db* const m_tdbb;
+	SINT64 m_start_clock;
+	const size_t m_ddl_length;
+	const UCHAR* const m_ddl;
+};
 
 } // namespace Jrd
 

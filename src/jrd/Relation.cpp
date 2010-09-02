@@ -119,10 +119,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
 		return &rel_pages_base;
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	SLONG inst_id;
-
 	if (rel_flags & REL_temp_tran)
 	{
 		if (tran > 0)
@@ -189,16 +187,17 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 #endif
 
 		// create indexes
-		MemoryPool* pool = tdbb->getDefaultPool();
+		MemoryPool *pool = tdbb->getDefaultPool();
 		const bool poolCreated = !pool;
 
 		if (poolCreated)
 			pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, pool);
 
-		jrd_tra* idxTran = tdbb->getTransaction();
-		if (!idxTran)
-			idxTran = attachment->getSysTransaction();
+		jrd_tra *idx_tran = tdbb->getTransaction();
+		if (!idx_tran) {
+			idx_tran = dbb->dbb_sys_trans;
+		}
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
@@ -212,7 +211,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 			idx->idx_root = 0;
 			SelectivityList selectivity(*pool);
-			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idxTran, selectivity);
+			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idx_tran, selectivity);
 
 #ifdef VIO_DEBUG
 			if (debug_flag > DEBUG_WRITES)

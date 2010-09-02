@@ -39,7 +39,6 @@
 #include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../utilities/gsec/secur_proto.h"
-#include "../common/classes/Switches.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -61,11 +60,11 @@ using MsgFormat::SafeArg;
 //const int MAXARGS	= 20;		// max number of args allowed on command line
 const int MAXSTUFF	= 1000;		// longest interactive command line
 
-static void util_output(const SCHAR*, ...);
-
+static void util_output(bool error, const SCHAR*, ...);
+static void gsecMessage(bool error, USHORT number, const char* str = NULL);
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
-static bool get_switches(Firebird::UtilSvc::ArgvType&, const Switches&, tsec*, bool*);
+static bool get_switches(Firebird::UtilSvc::ArgvType&, const in_sw_tab_t*, tsec*, bool*);
 static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType&, tsec*);
 static void printhelp();
 static void get_security_error(ISC_STATUS*, int);
@@ -161,7 +160,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	else
 	{
 		TEXT database_name[MAXPATHLEN];
-		Auth::SecurityDatabase::getPath(database_name);
+		Jrd::SecurityDatabase::getPath(database_name);
 		databaseName = database_name;
 	}
 
@@ -278,8 +277,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				uSvc->started();
 			if (! useServices)
 			{
-				ret = SECURITY_exec_line(status, tdsec->tsec_real_user,
-										 db_handle, user_data, data_print, NULL);
+				ret = SECURITY_exec_line(status, db_handle, user_data, data_print, NULL);
 				if (ret)
 				{
 					GSEC_print(ret, user_data->user_name);
@@ -429,13 +427,13 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 	{
 		if (first)
 		{
-			GSEC_print(GsecMsg26);
-			GSEC_print(GsecMsg27);
+			gsecMessage(false, GsecMsg26);
+			gsecMessage(false, GsecMsg27);
 			// msg26: "    user name                    uid   gid admin     full name"
 			// msg27: "-------------------------------------------------------------------------------------------------"
 		}
 
-		util_output("%-*.*s %5d %5d %-5.5s     %s %s %s\n",
+		util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
 					USERNAME_LENGTH, USERNAME_LENGTH, data->user_name,
 					data->uid, data->gid, data->admin ? "admin" : "",
 					data->first_name, data->middle_name, data->last_name);
@@ -514,8 +512,8 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 
 
 static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
-						 const Switches& switches,
-						 tsec* tdsec, bool* quitflag)
+						const in_sw_tab_t* in_sw_table,
+						tsec* tdsec, bool* quitflag)
 {
 /**************************************
  *
@@ -542,7 +540,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 	for (size_t argc = 1; argc < argv.getCount(); ++argc)
 	{
 		const char* string = argv[argc];
-		if (*string == '?' || strcmp(string, "-?") == 0)
+		if (*string == '?' || (string[0] == '-' && string[1] == '?'))
 			user_data->operation = HELP_OPER;
 		else if (*string != '-')
 		{
@@ -596,8 +594,9 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->gid = atoi(string);
 				user_data->gid_entered = true;
 				break;
-			case IN_SW_GSEC_SYSUSER:
-				// ignore it
+			case IN_SW_GSEC_SYSU:
+				fb_utils::copy_terminate(user_data->sys_user_name, string, sizeof(user_data->sys_user_name));
+				user_data->sys_user_entered = true;
 				break;
 			case IN_SW_GSEC_GROUP:
 				fb_utils::copy_terminate(user_data->group_name, string, sizeof(user_data->group_name));
@@ -648,14 +647,10 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				fb_utils::copy_terminate(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
 				break;
-			case IN_SW_GSEC_DBA_TRUSTED_USER:
+			case IN_SW_GSEC_DBA_TRUST_USER:
 				tdsec->utilSvc->checkService();
 				fb_utils::copy_terminate(user_data->dba_trust_user_name, string, sizeof(user_data->dba_trust_user_name));
 				user_data->dba_trust_user_name_entered = true;
-				break;
-			case IN_SW_GSEC_REAL_USER:
-				tdsec->utilSvc->checkService();
-				tdsec->tsec_real_user = string;
 				break;
 			case IN_SW_GSEC_MAPPING:
 				{
@@ -708,9 +703,39 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 		}
 		else
 		{
-			// leave in_sw = IN_SW_GSEC_AMBIG; out for now
-			const Switches::in_sw_tab_t* rc = switches.findSwitch(string);
-			const USHORT in_sw = rc ? rc->in_sw : IN_SW_GSEC_0;
+			// iterate through the switch table, looking for matches
+
+			USHORT in_sw = IN_SW_GSEC_0;
+			for (const in_sw_tab_t* in_sw_tab = in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
+			{
+				const TEXT* q = in_sw_tab->in_sw_name;
+				const TEXT* p = string + 1;
+
+				// handle orphaned hyphen case
+
+				if (!*p--)
+					break;
+
+				// compare switch to switch name in table
+
+				for (int l = 0; *p; ++l)
+				{
+					if (!*++p)
+					{
+						if (l >= in_sw_tab->in_sw_min_length)
+							in_sw = in_sw_tab->in_sw;
+						else
+							in_sw = IN_SW_GSEC_AMBIG;
+					}
+					if (UPPER(*p) != *q++)
+						break;
+				}
+
+				// end of input means we got a match.  stop looking
+
+				if (!*p)
+					break;
+			}
 
 			// this checks to make sure that the switch is not a duplicate.   if
 			// it is a duplicate, it's an error.   if it's not a duplicate, the
@@ -764,14 +789,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->user_name[0] = '\0';
 				tdsec->tsec_interactive = false;
 				break;
-			case IN_SW_GSEC_DBA_TRUSTED_USER:
-			case IN_SW_GSEC_DBA_TRUSTED_ROLE:
+			case IN_SW_GSEC_DBA_TRUST_USER:
+			case IN_SW_GSEC_DBA_TRUST_ROLE:
 				tdsec->utilSvc->checkService();
 				// fall through ...
 			case IN_SW_GSEC_PASSWORD:
 			case IN_SW_GSEC_UID:
 			case IN_SW_GSEC_GID:
-			case IN_SW_GSEC_SYSUSER:
+			case IN_SW_GSEC_SYSU:
 			case IN_SW_GSEC_GROUP:
 			case IN_SW_GSEC_FNAME:
 			case IN_SW_GSEC_MNAME:
@@ -811,8 +836,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->gid_specified = true;
 					user_data->gid = 0;
 					break;
-				case IN_SW_GSEC_SYSUSER:
-					// ignore it
+				case IN_SW_GSEC_SYSU:
+					if (user_data->sys_user_specified)
+					{
+						err_msg_no = GsecMsg34;
+						break;
+					}
+					user_data->sys_user_specified = true;
+					user_data->sys_user_name[0] = '\0';
 					break;
 				case IN_SW_GSEC_GROUP:
 					if (user_data->group_name_specified)
@@ -868,7 +899,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->dba_user_name_specified = true;
 					user_data->dba_user_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_DBA_TRUSTED_USER:
+				case IN_SW_GSEC_DBA_TRUST_USER:
 					tdsec->utilSvc->checkService();
 					if (user_data->dba_trust_user_name_specified)
 					{
@@ -878,7 +909,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					user_data->dba_trust_user_name_specified = true;
 					user_data->dba_trust_user_name[0] = '\0';
 					break;
-				case IN_SW_GSEC_DBA_TRUSTED_ROLE:
+				case IN_SW_GSEC_DBA_TRUST_ROLE:
 					tdsec->utilSvc->checkService();
 					user_data->trusted_role = true;
 					break;
@@ -913,7 +944,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				{
 					TEXT msg[MSG_LENGTH];
 					msg_get(GsecMsg39, msg);
-					util_output("%s %s\n", msg, GDS_VERSION);
+					util_output(true, "%s %s\n", msg, GDS_VERSION);
 				}
 				tdsec->tsec_sw_version = true;
 				break;
@@ -926,12 +957,10 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				GSEC_diag(GsecMsg40);
 				// gsec - invalid switch specified
 				return false;
-			case IN_SW_GSEC_AMBIG: // Not used for now
+			case IN_SW_GSEC_AMBIG:
 				GSEC_diag(GsecMsg41);
 				// gsec - ambiguous switch specified
 				return false;
-			case IN_SW_GSEC_REAL_USER:
-				break;
 			}
 			last_sw = in_sw;
 		}
@@ -940,7 +969,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 		// is valid, and if not, indicate why not
 
 		if (user_data->uid_entered || user_data->gid_entered ||
-			user_data->group_name_entered ||
+			user_data->sys_user_entered || user_data->group_name_entered ||
 			user_data->password_entered || user_data->first_name_entered ||
 			user_data->middle_name_entered || user_data->last_name_entered)
 		{
@@ -985,177 +1014,177 @@ static void printhelp()
  *
  **************************************/
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg45);
 	// gsec utility - maintains user password database
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg46);
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print_partial(GsecMsg82);
 	GSEC_print(GsecMsg47);
 	// gsec [ <options> ... ] -<command> [ <parameter> ... ]
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg48);
 	// interactive usage:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print(GsecMsg82);
 	// gsec [ <options> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg1);
-	util_output("\n%s", "     ");
+	util_output(true, "\n%s", "     ");
 	GSEC_print(GsecMsg47);
 	// GSEC> <command> [ <parameter> ... ]
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg83);
 	// available options:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg84);
 	// -user <database administrator name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg85);
 	// -password <database administrator password>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg95);
 	// -fetch_password <fetch database administrator password from file>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg86);
 	// -role <database administrator SQL role name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg91);
 	// -trusted (use trusted authentication)
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg87);
 	// -database <database to manage>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg88);
 	// -nz
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg49);
 	// available commands:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg50);
 	// adding a new user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg51);
 	// add <name> [ <parameter> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg52);
 	// deleting a current user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg53);
 	// delete <name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg54);
 	// displaying all users:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg55);
 	// display
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg56);
 	// displaying one user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg57);
 	// display <name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg58);
 	// modifying a user's parameters:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg59);
 	// modify <name> <parameter> [ <parameter> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg98);
 	// changing admins mapping to SYSDBA:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg100);
 	// -ma(pping) {set|drop}
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg60);
 	// help:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg61);
 	// ? (interactive only)
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg62);
 	// help
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg89);
 	// displaying version number:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg90);
 	// z (interactive only)
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg63);
 	// quit interactive session:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg64);
 	// quit (interactive only)
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg65);
 	// available parameters:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg66);
 	// -pw <password>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg67);
 	// -uid <uid>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg68);
 	// -gid <gid>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg71);
 	// -fname <firstname>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg72);
 	// -mname <middlename>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg73);
 	// -lname <lastname>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg102);
 	// -adm(in) {yes|no}
-	util_output("\n", NULL);
+	util_output(true, "\n", NULL);
 }
 
 
@@ -1180,10 +1209,8 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 
 	// Call a subroutine to process the input line.
 
-	const Switches switches(gsec_in_sw_table, FB_NELEM(gsec_in_sw_table), false, true);
-
 	SSHORT ret = 0;
-	if (!get_switches(argv, switches, tdsec, &quitflag))
+	if (!get_switches(argv, gsec_in_sw_table, tdsec, &quitflag))
 	{
 		GSEC_diag(GsecMsg16);
 		// gsec - error in switch specifications
@@ -1245,12 +1272,12 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 		while (fb_interpret(s, sizeof(s), &vector))
 		{
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
-			util_output("%s%s", s, nl);
+			util_output(true, "%s%s", s, nl);
 		}
 	}
 }
 
-static void util_output(const SCHAR* format, ...)
+static void util_output(bool error, const SCHAR* format, ...)
 {
 /**************************************
  *
@@ -1271,7 +1298,14 @@ static void util_output(const SCHAR* format, ...)
 		Firebird::string buf;
 		buf.vprintf(format, arglist);
 
-		tdsec->utilSvc->outputError(buf.c_str());
+		if (error)
+		{
+			tdsec->utilSvc->outputError(buf.c_str());
+		}
+		else
+		{
+			tdsec->utilSvc->outputVerbose(buf.c_str());
+		}
 	}
 	va_end(arglist);
 }
@@ -1359,7 +1393,22 @@ void GSEC_print(USHORT number, const char* str)
  **************************************
  *
  * Functional description
- *	Retrieve a message from the error file, format it, and print it.
+ *	Retrieve a message from the error file, format it, and print it to stderr.
+ *
+ **************************************/
+	gsecMessage(true, number, str);
+}
+
+static void gsecMessage(bool error, USHORT number, const char* str)
+{
+/**************************************
+ *
+ *	g s e c M e s s a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Retrieve a message from the error file, format it, and print.
  *
  **************************************/
 	TEXT buffer[256];
@@ -1369,7 +1418,7 @@ void GSEC_print(USHORT number, const char* str)
 		arg << str;
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	util_output("%s\n", buffer);
+	util_output(error, "%s\n", buffer);
 }
 
 void GSEC_print_partial(USHORT number)
@@ -1388,7 +1437,7 @@ void GSEC_print_partial(USHORT number)
 	TEXT buffer[256];
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, dummy);
-	util_output("%s ", buffer);
+	util_output(true, "%s ", buffer);
 }
 
 

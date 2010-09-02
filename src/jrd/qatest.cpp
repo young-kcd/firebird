@@ -146,14 +146,14 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 	switch (*function)
 	{
 	case QATEST_testing:
-		// Parameter 1: SLONG *testvalue
-		// Entrypoint for testing the QA entrypoint method
+		/* Parameter 1: SLONG *testvalue */
+		/* Entrypoint for testing the QA entrypoint method */
 
 		return 2 * (*(SLONG*) arg1);
 
 	case QATEST_delete_database:
-		// Parameters: NONE
-		// Close current database file & delete
+		/* Parameters: NONE */
+		/* Close current database file & delete */
 
 		if (!(file = dbb->dbb_file))
 			return -1;
@@ -175,8 +175,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		return 0;
 
 	case QATEST_delete_shadow:
-		// Parameter 1: ULONG *shadow_number
-		// Close & delete specified shadow file
+		/* Parameter 1: ULONG *shadow_number */
+		/* Close & delete specified shadow file */
 
 		tdbb = JRD_get_thread_data();
 
@@ -207,8 +207,8 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		return -2;
 
 	case QATEST_exit:
-		// Parameters: NONE
-		// do a process exit - very nasty - crashes MU server
+		/* Parameters: NONE */
+		/* do a process exit - very nasty - crashes MU server */
 
 		exit(1);
 		return 0;

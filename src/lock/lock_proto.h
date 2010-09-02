@@ -34,12 +34,8 @@
 #include "../common/classes/init.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/array.h"
-#include "../common/StatusArg.h"
 #include "../jrd/ThreadStart.h"
-#include "../jrd/isc_s_proto.h"
-#ifdef USE_SHMEM_EXT
-#include "../common/classes/objects_array.h"
-#endif
+#include "../jrd/isc.h"
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -110,15 +106,20 @@ const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 
 const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
+#ifndef SUPERSERVER
+#define USE_BLOCKING_THREAD
+#endif
+
 #ifdef DEV_BUILD
 #define VALIDATE_LOCK_TABLE
 #endif
 
 // Lock header block -- one per lock file, lives up front
 
-struct lhb : public Jrd::MemoryHeader
+struct lhb
 {
-	USHORT lhb_type;				// memory tag - always type_lhb
+	UCHAR lhb_type;					// memory tag - always type_lbh
+	UCHAR lhb_version;				// Version of lock table
 	SRQ_PTR lhb_secondary;			// Secondary lock header block
 	SRQ_PTR lhb_active_owner;		// Active owner, if any
 	srq lhb_owners;					// Que of active owners
@@ -305,15 +306,11 @@ namespace Firebird {
 	class RWLock;
 }
 
-class Config;
-
 namespace Jrd {
 
-class Database;
+class thread_db;
 
-class LockManager : public Firebird::RefCounted,
-					public Firebird::GlobalStorage,
-					public SharedMemory<lhb>
+class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 
@@ -323,18 +320,18 @@ class LockManager : public Firebird::RefCounted,
 	const int PID;
 
 public:
-	static LockManager* create(const Firebird::string&, Firebird::RefPtr<Config>);
+	static LockManager* create(const Firebird::string&);
 
-	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
-	void shutdownOwner(Database*, SRQ_PTR*);
+	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	void shutdownOwner(thread_db*, SRQ_PTR*);
 
-	SLONG enqueue(Database*, Firebird::Arg::StatusVector&, SRQ_PTR, SRQ_PTR, const USHORT,
-		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
-	bool convert(Database*, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
-	UCHAR downgrade(Database*, Firebird::Arg::StatusVector&, const SRQ_PTR);
+	SLONG enqueue(thread_db*, SRQ_PTR, SRQ_PTR, const USHORT, const UCHAR*, const USHORT, UCHAR,
+				  lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
+	bool convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
+	UCHAR downgrade(thread_db*, const SRQ_PTR);
 	bool dequeue(const SRQ_PTR);
 
-	void repost(Database*, lock_ast_t, void*, SRQ_PTR);
+	void repost(thread_db*, lock_ast_t, void*, SRQ_PTR);
 
 	SLONG queryData(SRQ_PTR, const USHORT, const USHORT);
 	SLONG readData(SRQ_PTR);
@@ -342,25 +339,25 @@ public:
 	SLONG writeData(SRQ_PTR, SLONG);
 
 private:
-	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);
+	explicit LockManager(const Firebird::string&);
 	~LockManager();
 
 	bool lockOrdering() const
 	{
-		return (sh_mem_header->lhb_flags & LHB_lock_ordering) ? true : false;
+		return (m_header->lhb_flags & LHB_lock_ordering) ? true : false;
 	}
 
 	void acquire_shmem(SRQ_PTR);
-	UCHAR* alloc(USHORT, Firebird::Arg::StatusVector*);
-	lbl* alloc_lock(USHORT, Firebird::Arg::StatusVector&);
-	void blocking_action(Database*, SRQ_PTR, SRQ_PTR);
+	UCHAR* alloc(USHORT, ISC_STATUS*);
+	lbl* alloc_lock(USHORT, ISC_STATUS*);
+	void blocking_action(thread_db*, SRQ_PTR, SRQ_PTR);
 	void blocking_action_thread();
-	void bug(Firebird::Arg::StatusVector*, const TEXT*);
+	void bug(ISC_STATUS*, const TEXT*);
 #ifdef DEV_BUILD
 	void bug_assert(const TEXT*, ULONG);
 #endif
-	bool create_owner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
-	bool create_process(Firebird::Arg::StatusVector&);
+	bool create_owner(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	bool create_process(ISC_STATUS*);
 	void deadlock_clear();
 	lrq* deadlock_scan(own*, lrq*);
 	lrq* deadlock_walk(lrq*, bool*);
@@ -370,15 +367,15 @@ private:
 	lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
-	SRQ_PTR grant_or_que(Database*, lrq*, lbl*, SSHORT);
+	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
 	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
+	void initialize(sh_mem*, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
-	bool internal_convert(Database* database, Firebird::Arg::StatusVector&, SRQ_PTR, UCHAR, SSHORT,
-		lock_ast_t, void*);
+	bool internal_convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	void internal_dequeue(SRQ_PTR);
 	static USHORT lock_state(const lbl*);
-	void post_blockage(Database*, lrq*, lbl*);
+	void post_blockage(thread_db*, lrq*, lbl*);
 	void post_history(USHORT, SRQ_PTR, SRQ_PTR, SRQ_PTR, bool);
 	void post_pending(lbl*);
 	void post_wakeup(own*);
@@ -390,7 +387,7 @@ private:
 	void release_shmem(SRQ_PTR);
 	void release_mutex();
 	void release_request(lrq*);
-	bool signal_owner(Database*, own*, SRQ_PTR);
+	bool signal_owner(thread_db*, own*, SRQ_PTR);
 //#define VALIDATE_LOCK_TABLE
 #ifdef VALIDATE_LOCK_TABLE
 	void validate_history(const SRQ_PTR history_header);
@@ -401,9 +398,9 @@ private:
 	void validate_request(const SRQ_PTR, USHORT, USHORT);
 	void validate_shb(const SRQ_PTR);
 #endif
-	USHORT wait_for_request(Database*, lrq*, SSHORT);
-	bool attach_shared_file(Firebird::Arg::StatusVector&);
-	void detach_shared_file(Firebird::Arg::StatusVector&);
+	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
+	bool attach_shared_file(ISC_STATUS* status);
+	void detach_shared_file(ISC_STATUS* status);
 	void get_shared_file_name(Firebird::PathName&, ULONG extend = 0) const;
 
 	static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
@@ -413,13 +410,19 @@ private:
 		return 0;
 	}
 
-	bool initialize(bool init);
-	void mutexBug(int osErrorCode, const char* text);
+	static void initialize(void* arg, sh_mem* shmem, bool init)
+	{
+		LockManager* const lockMgr = static_cast<LockManager*>(arg);
+		lockMgr->initialize(shmem, init);
+	}
 
 	bool m_bugcheck;
 	bool m_sharedFileCreated;
+	lhb* volatile m_header;
 	prc* m_process;
 	SRQ_PTR m_processOffset;
+
+	sh_mem m_shmem;
 
 	Firebird::Mutex m_localMutex;
 	Firebird::RWLock m_remapSync;
@@ -429,52 +432,23 @@ private:
 	Firebird::Semaphore m_startupSemaphore;
 
 	Firebird::string m_dbId;
-	Firebird::RefPtr<Config> m_config;
 
-	// configurations parameters - cached values
 	const ULONG m_acquireSpins;
 	const ULONG m_memorySize;
-	const bool m_useBlockingThread;
+
+#ifdef WIN_NT
+	struct mtx m_shmemMutex;
+#else
+	struct mtx* m_lhb_mutex;
+#endif
 
 #ifdef USE_SHMEM_EXT
-	struct SecondaryFile : public Jrd::MemoryHeader
+	struct Extent
 	{
+		lhb* table;
+		sh_mem sh_data;
 	};
-
-	class Extent : public SharedMemory<SecondaryFile>
-	{
-	public:
-		Extent() { }
-		explicit Extent(Firebird::MemoryPool&) { }
-
-		Extent(const SharedMemoryBase& p)
-		{
-			assign(p);
-		}
-
-		Extent(Firebird::MemoryPool&, const SharedMemoryBase& p)
-		{
-			assign(p);
-		}
-
-		~Extent()
-		{
-			sh_mem_header = NULL;	// avoid unmapping in dtor
-		}
-
-		Extent& operator=(const SharedMemoryBase& p)
-		{
-			assign(p);
-			return *this;
-		}
-
-		void assign(const SharedMemoryBase& p);
-
-		bool initialize(bool init);
-		void mutexBug(int osErrorCode, const char* text);
-	};
-
-	Firebird::ObjectsArray<Extent> m_extents;
+	Firebird::Array<Extent> m_extents;
 
 	ULONG getTotalMapped() const
 	{

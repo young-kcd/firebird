@@ -107,36 +107,6 @@
 #include "../common/utils_proto.h"
 #include "../../../common/classes/semaphore.h"
 #include "../../../common/classes/FpeControl.h"
-#include "../jrd/ibase.h"
-
-// hvlad: following code registering plugins is temporary and should be
-// moved at appropriate places
-
-#include "../common/classes/ImplementHelper.h"
-#include "../auth/trusted/AuthSspi.h"
-#include "../auth/SecurityDatabase/LegacyClient.h"
-#include "../auth/SecurityDatabase/LegacyManagement.h"
-#include "../jrd/jrd_pwd.h"
-
-namespace {
-
-	// from AuthSspi
-	char name1[] = "WIN_SSPI";
-	Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, name1> server1;
-//	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name1> client1;
-
-	// from LegacyClient
-	char name2[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, name2> client2;
-
-	// from LegacyManagement
-	char name3[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, name3> manage3;
-
-	// from pwd
-	char name4[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, name4> server4;
-}
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -231,9 +201,15 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR; // see /jrd/common.h
 	}
 
-	server_flag = Config::getMultiClientServer() ? SRVR_multi_client : 0;
+#ifdef SUPERSERVER
+	server_flag = SRVR_multi_client;
+#else
+	server_flag = 0;
+#endif
 
+#ifdef SUPERSERVER
 	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
+#endif
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
@@ -242,6 +218,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 	const HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
+#ifdef SUPERSERVER
 	// get priority class from the config file
 	int priority = Config::getProcessPriorityLevel();
 
@@ -257,6 +234,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	else if (priority < 0) {
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
 	}
+#endif
 
 	TEXT mutex_name[MAXPATHLEN];
 	fb_utils::snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
@@ -579,6 +557,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					*pserver_flag |= (SRVR_debug | SRVR_non_service);
 					break;
 
+#ifndef SUPERSERVER
 				case 'H':
 					while (*p && *p == ' ')
 						p++;
@@ -625,6 +604,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 						}
 					}
 					break;
+#endif
 
 				case 'I':
 					*pserver_flag |= SRVR_inet;

@@ -26,7 +26,7 @@
 #ifndef JRD_EVENT_H
 #define JRD_EVENT_H
 
-#include "../jrd/isc_s_proto.h"
+#include "../jrd/isc.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
 
@@ -34,14 +34,15 @@
 
 const int EVENT_VERSION = 4;
 
-class evh : public Jrd::MemoryHeader
+struct evh
 {
-public:
 	ULONG evh_length;				// Current length of global section
+	UCHAR evh_version;				// Version number of global section
 	srq evh_events;					// Known events
 	srq evh_processes;				// Known processes
 	SRQ_PTR evh_free;				// Free blocks
 	SRQ_PTR evh_current_process;	// Current process, if any
+	struct mtx evh_mutex;			// Mutex controlling access
 	SLONG evh_request_id;			// Next request id
 };
 

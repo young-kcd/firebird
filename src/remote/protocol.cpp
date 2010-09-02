@@ -204,8 +204,7 @@ void xdr_debug_memory(XDR* xdrs,
 						}
 					}
 					else
-					{
-						// XDR_ENCODE or XDR_DECODE
+					{		// XDR_ENCODE or XDR_DECODE
 
 						fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
 						if (packet->p_malloc[j].p_operation == op_void) {
@@ -361,6 +360,15 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_transaction));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_message_number));
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_messages));
+#ifdef SCROLLABLE_CURSORS
+		port = (rem_port*) xdrs->x_public;
+		if ((p->p_operation == op_receive) && (port->port_protocol > PROTOCOL_VERSION8))
+		{
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(data->p_data_direction));
+			MAP(xdr_long, reinterpret_cast<SLONG&>(data->p_data_offset));
+		}
+
+#endif
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -747,16 +755,6 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			return P_TRUE(xdrs, p);
 		}
 
-	case op_cont_auth:
-		{
-			P_AUTH_CONT* auth = &p->p_auth_cont;
-			MAP(xdr_cstring, auth->p_data);
-			MAP(xdr_cstring, auth->p_name);
-			DEBUG_PRINTSIZE(xdrs, p->p_operation);
-
-			return P_TRUE(xdrs, p);
-		}
-
 	case op_cancel:
 		{
 			P_CANCEL_OP* cancel_op = &p->p_cancel_op;
@@ -911,14 +909,13 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
 // The same function is being used to check P_SGMT & P_DDL.
 static inline bool_t xdr_cstring_const(XDR* xdrs, CSTRING_CONST* cstring)
 {
+#ifdef SUPERCLIENT
 #ifdef DEV_BUILD
-	if (xdrs->x_client)
-	{
-		const bool cond =
-			!(xdrs->x_op == XDR_DECODE &&
-				cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
-		fb_assert(cond);
-	}
+	const bool cond =
+		!(xdrs->x_op == XDR_DECODE &&
+			cstring->cstr_length <= cstring->cstr_allocated && cstring->cstr_allocated);
+	fb_assert(cond);
+#endif
 #endif
 	return xdr_cstring(xdrs, reinterpret_cast<CSTRING*>(cstring));
 }
@@ -1135,8 +1132,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 	}
 	else
-	{
-		// XDR_ENCODE or XDR_DECODE
+	{						// XDR_ENCODE or XDR_DECODE
 
 		// Allocate an unused slot in the packet tracking vector
 		// to start recording memory allocations for this packet.
@@ -1233,7 +1229,7 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	const rem_port* port = (rem_port*) xdrs->x_public;
 
 
-	if (!message || !format)
+	if ((!message) || (!format))
 	{
 		return FALSE;
 	}
@@ -1548,6 +1544,9 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+		message->msg_prior = message;
+#endif
 	}
 
 	return TRUE;
@@ -1601,7 +1600,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		// We should not call xdr_message() with NULL
 		return FALSE;
 	}
-
+	
 	statement->rsr_buffer = message->msg_next;
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;

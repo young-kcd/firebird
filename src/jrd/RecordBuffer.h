@@ -34,15 +34,8 @@ public:
 	RecordBuffer(MemoryPool&, const Format*);
 	~RecordBuffer();
 
-	size_t getCount() const
-	{
-		return count;
-	}
-
-	Record* getTempRecord() const
-	{
-		return record;
-	}
+	size_t getCount() const;
+	Record* getTempRecord() const;
 
 	offset_t store(const Record*);
 	bool fetch(offset_t, Record*);

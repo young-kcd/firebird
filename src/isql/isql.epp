@@ -29,7 +29,7 @@
   2001/05/20  Neil McCalden  add planonly option
   2001.09.09  Claudio Valderrama: put double quotes around identifiers
 	in dialect 3 only when needed. Solve mischievous declaration/invocation
-	of IUTILS_copy_SQL_id that made no sense and caused pointer problems.
+	of ISQL_copy_SQL_id that made no sense and caused pointer problems.
   2001/10/03  Neil McCalden  pick up Firebird version from database server
 	and display it with client version when -z used.
   2001.10.09 Claudio Valderrama: try to disconnect gracefully in batch mode.
@@ -46,7 +46,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../dsql/keywords.h"
-//#include "../jrd/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -60,7 +60,6 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
-#include "../jrd/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -108,27 +107,26 @@ enum literal_string_type
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
-#include "../isql/iutils_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/gdsassert.h"
+
+#ifdef SCROLLABLE_CURSORS
+#include "../jrd/scroll_cursors.h"
+#endif
 
 #include "../isql/Extender.h"
 #include "../isql/PtrSentry.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/MsgPrint.h"
 
-using Firebird::PathName;
 using Firebird::TempFile;
 using MsgFormat::SafeArg;
 
 #include "../isql/ColList.h"
 #include "../isql/InputDevices.h"
 #include "../isql/OptionsBase.h"
-
-#include "../common/classes/Switches.h"
-#include "../isql/isqlswi.h"
 
 
 DATABASE DB = COMPILETIME "yachts.lnk";
@@ -154,6 +152,94 @@ const int DATE_ONLY_LEN		= 11;
 const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
+
+
+enum switch_argtype {
+	SWARG_NONE,
+	SWARG_STRING,
+	SWARG_INTEGER
+};
+
+enum switch_id {
+	SWITCH_EXTRACTALL,
+	SWITCH_BAIL,
+	SWITCH_CACHE,
+	SWITCH_CHARSET,
+	SWITCH_DATABASE,
+	SWITCH_ECHO,
+	SWITCH_EXTRACT,
+	SWITCH_FETCHPASS,
+	SWITCH_INPUT,
+	SWITCH_MERGE,
+	SWITCH_MERGE2,
+	SWITCH_NOAUTOCOMMIT,
+	SWITCH_NODBTRIGGERS,
+	SWITCH_NOWARN,
+	SWITCH_OUTPUT,
+	SWITCH_PAGE,
+	SWITCH_PASSWORD,
+	SWITCH_QUIET,
+	SWITCH_ROLE,
+	SWITCH_ROLE2,
+	SWITCH_SQLDIALECT,
+	SWITCH_TERM,
+#ifdef TRUSTED_AUTH
+	SWITCH_TRUSTED,
+#endif
+	SWITCH_USER,
+	SWITCH_VERSION,
+#ifdef DEV_BUILD
+	SWITCH_EXTRACTTBL,
+#endif
+	// this id has to be the last
+	SWITCH_UNKNOWN
+};
+
+struct switch_info
+{
+	switch_id id;				// switch id
+	const char* text;			// canonical switch name
+	size_t abbrlen;				// minimum abbreviation length
+	switch_argtype argtype;		// argument type (SWARG_NONE if none)
+	int usage_id;				// message id for usage text
+	//bool allow_dup;				// switch can be used more then once
+};
+
+const switch_info switches[] =
+{
+#ifdef DEV_BUILD
+	{ SWITCH_EXTRACTTBL,   "xt",             2, SWARG_NONE,     -1 },
+#endif
+	{ SWITCH_EXTRACTALL,   "all",            1, SWARG_NONE,     11 },
+	{ SWITCH_BAIL,         "bail",           1, SWARG_NONE,    104 },
+	{ SWITCH_CACHE,        "cache",          1, SWARG_INTEGER, 111 },
+	{ SWITCH_CHARSET,      "charset",        2, SWARG_STRING,  122 },
+	{ SWITCH_DATABASE,     "database",       1, SWARG_STRING,  123 },
+	{ SWITCH_FETCHPASS,	   "fetch_password", 1, SWARG_STRING,  161 },
+	{ SWITCH_ECHO,         "echo",           1, SWARG_NONE,    124 },
+	{ SWITCH_EXTRACT,      "extract",        2, SWARG_NONE,    125 },
+	{ SWITCH_INPUT,        "input",          1, SWARG_STRING,  126 },
+	{ SWITCH_MERGE,        "merge",          1, SWARG_NONE,    127 },
+	{ SWITCH_MERGE2,       "m2",             2, SWARG_NONE,    128 },
+	{ SWITCH_NOAUTOCOMMIT, "noautocommit",   1, SWARG_NONE,    129 },
+	{ SWITCH_NODBTRIGGERS, "nodbtriggers",   3, SWARG_NONE,    154 },
+	{ SWITCH_NOWARN,       "nowarnings",     3, SWARG_NONE,    130 },
+	{ SWITCH_OUTPUT,       "output",         1, SWARG_STRING,  131 },
+	{ SWITCH_PAGE,         "pagelength",     3, SWARG_INTEGER, 132 },
+	{ SWITCH_PASSWORD,     "password",       1, SWARG_STRING,  133 },
+	{ SWITCH_QUIET,        "quiet",          1, SWARG_NONE,    134 },
+	{ SWITCH_ROLE,         "role",           1, SWARG_STRING,  135 },
+	{ SWITCH_ROLE2,        "r2",             2, SWARG_STRING,  136 },
+	{ SWITCH_SQLDIALECT,   "sqldialect",     1, SWARG_INTEGER, 137 },
+	{ SWITCH_SQLDIALECT,   "sql_dialect",    1, SWARG_INTEGER,  -1 },
+	{ SWITCH_TERM,         "terminator",     1, SWARG_STRING,  138 },
+#ifdef TRUSTED_AUTH
+	{ SWITCH_TRUSTED,      "trusted",        2, SWARG_NONE,    155 },
+#endif
+	{ SWITCH_USER,         "user",           1, SWARG_STRING,  139 },
+	{ SWITCH_EXTRACT,      "x",              1, SWARG_NONE,    140 },
+	{ SWITCH_VERSION,      "z",              1, SWARG_NONE,    141 }
+};
 
 
 static inline bool commit_trans(isc_tr_handle* x)
@@ -249,7 +335,7 @@ static processing_state newdb(TEXT*, const TEXT*, const TEXT*, int, const TEXT*,
 static processing_state newinput(const TEXT*);
 static processing_state newoutput(const TEXT*);
 static processing_state newsize(const TEXT*, const TEXT*);
-static processing_state newMaxRows(const TEXT* newMaxRowsStr);
+static processing_state newRowCount(const TEXT* newRowCountStr);
 static processing_state newtrans(const TEXT*);
 static processing_state parse_arg(int, SCHAR**, SCHAR*); //, FILE**);
 #ifdef DEV_BUILD
@@ -319,10 +405,15 @@ static bool Stats = false;
 static bool Autocommit = true; // Commit ddl
 static bool Nodbtriggers = false; // No database triggers
 static bool Warnings = true; // Print warnings
+#ifdef SCROLLABLE_CURSORS
+static bool Autofetch = true; // automatically fetch all records
+static USHORT fetch_direction = isc_fetch_next;
+static SLONG fetch_offset = 1;
+#endif
 static int Doblob = 1;		// Default to printing only text types
 static bool List = false;
 static bool Docount = false;
-static size_t maxRows = 0;
+static size_t rowCount = 0;
 static bool Plan = false;
 static bool Planonly = false;
 static bool Heading = true;
@@ -333,6 +424,9 @@ static bool Merge_diagnostic = false;
 static FILE* Diag;
 static FILE* Help;
 static const TEXT* const sql_prompt = "SQL> ";
+#ifdef SCROLLABLE_CURSORS
+static const TEXT* const fetch_prompt = "FETCH> ";
+#endif
 
 static bool global_psw = false;
 static bool global_usr = false;
@@ -506,7 +600,7 @@ int ISQL_main(int argc, char* argv[])
 	if (Merge_stderr)
 		isqlGlob.Errfp = isqlGlob.Out;
 
-	IUTILS_make_upper(tabname);
+	ISQL_make_upper(tabname);
 	switch (ret)
 	{
 	case EXTRACT:
@@ -532,14 +626,14 @@ int ISQL_main(int argc, char* argv[])
 
 	case ps_ERR:
 	    {
-			TEXT helpstring[158];
-			IUTILS_msg_get(USAGE, sizeof(helpstring), helpstring);
+			TEXT helpstring[155];
+			ISQL_msg_get(USAGE, sizeof(helpstring), helpstring);
 			STDERROUT(helpstring);
-			for (int i = 0; i < FB_NELEM(isql_in_sw_table); i++)
+			for (int i = 0; i < FB_NELEM(switches); i++)
 			{
-				if (isql_in_sw_table[i].in_sw_msg > 0)
+				if (switches[i].usage_id >= 0)
 				{
-					IUTILS_msg_get(isql_in_sw_table[i].in_sw_msg, sizeof(helpstring), helpstring);
+					ISQL_msg_get(switches[i].usage_id, sizeof(helpstring), helpstring);
 					STDERROUT(helpstring);
 				}
 			}
@@ -626,6 +720,19 @@ void ISQL_array_dimensions(const TEXT* fieldname)
 }
 
 
+// Same than fb_utils::exact_name, but writes the output to the second argument.
+TEXT* ISQL_blankterm2(const TEXT* input, TEXT* output)
+{
+	TEXT* q = output - 1;
+	for (TEXT* p = output; (*p = *input) != 0; ++p, ++input)
+	{
+		if (*p != BLANK)
+			q = p;
+	}
+	*(q + 1) = 0;
+	return output;
+}
+
 
 bool ISQL_dbcheck()
 {
@@ -650,7 +757,7 @@ bool ISQL_dbcheck()
 	{
 		if (!Quiet)
 		{
-			IUTILS_msg_get(NO_DB, errbuf);
+			ISQL_msg_get(NO_DB, errbuf);
 			STDERROUT(errbuf);
 		}
 		return false;
@@ -806,6 +913,63 @@ int getNextInputChar()
 	return (unsigned char)lastInputLine[getColumn++];
 }
 
+void ISQL_copy_SQL_id(const TEXT* in_str, TEXT* output_str, TEXT escape_char)
+{
+/**************************************
+ *
+ *	I S Q L _ c o p y _ S Q L _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ *	Copy/rebuild the SQL identifier by adding escape double quote if
+ *	double quote is part of the SQL identifier and wraps around the
+ *	SQL identifier with delimited double quotes
+ *
+ **************************************/
+
+	/* CVC: Try to detect if we can get rid of double quotes as
+	   requested by Ann. Notice empty names need double quotes.
+	   Assume the caller invoked previously ISQL_blankterm() that's
+	   just another function like DYN_terminate, MET_exact_name, etc.
+	   ISQL_blankterm has been replaced by fb_utils::exact_name. */
+
+	if (escape_char == DBL_QUOTE)
+	{
+		// Cannot rely on ANSI functions that may be localized.
+		bool need_quotes = *in_str < 'A' || *in_str > 'Z';
+		TEXT* q1 = output_str;
+		for (const TEXT* p1 = in_str; *p1 && !need_quotes; ++p1, ++q1)
+		{
+			if ((*p1 < 'A' || *p1 > 'Z') && (*p1 < '0' || *p1 > '9') && *p1 != '_' && *p1 != '$')
+			{
+				need_quotes = true;
+				break;
+			}
+			*q1 = *p1;
+		}
+		if (!need_quotes && !KEYWORD_stringIsAToken(in_str))
+		{
+			*q1 = '\0';
+			return;
+		}
+	}
+
+	TEXT* q1 = output_str;
+	*q1++ = escape_char;
+
+	for (const TEXT* p1 = in_str; *p1; p1++)
+	{
+		*q1++ = *p1;
+		if (*p1 == escape_char) {
+			*q1++ = escape_char;
+		}
+	}
+	*q1++ = escape_char;
+	*q1 = '\0';
+}
+
 
 void ISQL_errmsg(const ISC_STATUS* status)
 {
@@ -834,7 +998,7 @@ void ISQL_errmsg(const ISC_STATUS* status)
 		}
 		FB_SQLSTATE_STRING sqlstate;
 		fb_sqlstate(sqlstate, status);
-		IUTILS_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
+		ISQL_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
 		STDERROUT(errbuf);
 		if (fb_interpret(errbuf, sizeof(errbuf), &vec))
 		{
@@ -896,10 +1060,10 @@ void ISQL_errmsg(const ISC_STATUS* status)
 			if (linenum != -1)
 			{
 				linenum += Ifp.indev_line;
-				IUTILS_msg_get(EXACTLINE, errbuf, SafeArg() << linenum << Ifp.fileName(true).c_str());
+				ISQL_msg_get(EXACTLINE, errbuf, SafeArg() << linenum << Ifp.fileName());
 			}
 			else
-                IUTILS_msg_get(AFTERLINE, errbuf, SafeArg() << Ifp.indev_line << Ifp.fileName(true).c_str());
+                ISQL_msg_get(AFTERLINE, errbuf, SafeArg() << Ifp.indev_line << Ifp.fileName());
 
 			STDERROUT(errbuf);
 		}
@@ -1250,7 +1414,7 @@ SLONG ISQL_get_index_segments(TEXT* segs,
 
 		fb_utils::exact_name(SEG.RDB$FIELD_NAME);
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
-			IUTILS_copy_SQL_id (SEG.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+			ISQL_copy_SQL_id (SEG.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
 		}
 		else {
 			strcpy (SQL_identifier, SEG.RDB$FIELD_NAME);
@@ -1366,55 +1530,27 @@ bool ISQL_get_base_column_null_flag(const TEXT* view_name,
 			error = true;
 		END_ERROR;
 
-		if (!found)
+		if (!found && ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
 		{
-			if (isqlGlob.major_ods >= ODS_VERSION12)
-			{
-				// Copy/paste from DYN_UTIL_find_field_source
-				FOR FIRST 1
-					VRL IN RDB$VIEW_RELATIONS CROSS
-						PPR IN RDB$PROCEDURE_PARAMETERS
-						WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
-						VRL.RDB$VIEW_NAME EQ save_view_name AND
-						VRL.RDB$VIEW_CONTEXT EQ save_view_context AND
-						VRL.RDB$CONTEXT_TYPE EQ VCT_PROCEDURE AND
-						PPR.RDB$PACKAGE_NAME EQUIV VRL.RDB$PACKAGE_NAME AND
-						PPR.RDB$PARAMETER_NAME EQ save_base_field AND
-						PPR.RDB$PARAMETER_TYPE = 1 // output
+			FOR FIRST 1
+				VR IN RDB$VIEW_RELATIONS
+				CROSS NEWPP IN RDB$PROCEDURE_PARAMETERS WITH
+				VR.RDB$VIEW_NAME EQ save_view_name AND
+				VR.RDB$VIEW_CONTEXT EQ save_view_context AND
+				NEWPP.RDB$PROCEDURE_NAME = VR.RDB$RELATION_NAME AND
+				NEWPP.RDB$PARAMETER_NAME = save_base_field AND
+				NEWPP.RDB$PARAMETER_TYPE = 1 // output param
 
-					found = true;
-					if (!PPR.RDB$NULL_FLAG.NULL && PPR.RDB$NULL_FLAG == 1)
-						null_flag = false;
+				found = true;
+				if (!NEWPP.RDB$NULL_FLAG.NULL && NEWPP.RDB$NULL_FLAG == 1)
+					null_flag = false;
 
-					done = true;
-				END_FOR
-				ON_ERROR
-					error = true;
-				END_ERROR;
-			}
-			else if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
-			{
-				FOR FIRST 1
-					VR IN RDB$VIEW_RELATIONS
-					CROSS NEWPP IN RDB$PROCEDURE_PARAMETERS WITH
-					VR.RDB$VIEW_NAME EQ save_view_name AND
-					VR.RDB$VIEW_CONTEXT EQ save_view_context AND
-					NEWPP.RDB$PROCEDURE_NAME = VR.RDB$RELATION_NAME AND
-					NEWPP.RDB$PARAMETER_NAME = save_base_field AND
-					NEWPP.RDB$PARAMETER_TYPE = 1 // output param
-
-					found = true;
-					if (!NEWPP.RDB$NULL_FLAG.NULL && NEWPP.RDB$NULL_FLAG == 1)
-						null_flag = false;
-
-					done = true;
-				END_FOR
-				ON_ERROR
-					error = true;
-				END_ERROR;
-			}
+				done = true;
+			END_FOR
+			ON_ERROR
+				error = true;
+			END_ERROR;
 		}
-
 		if (!found)
 			error = true;
 	}
@@ -1612,80 +1748,62 @@ bool ISQL_is_domain(const TEXT* field_name)
 #endif
 
 
-// Print the numeric type as accurately as possible, depending on the ODS.
-// If it isn't numeric/decimal or is another non-numeric data type, print only the type.
-bool ISQL_printNumericType(const char* fieldName, const int fieldType, const int fieldScale)
+void ISQL_make_upper(TEXT* str)
 {
-	// Look through types array
-	int i = 0;
-	while (Column_types[i].type && fieldType != Column_types[i].type)
-		++i;
+/**************************************
+ *
+ *	I S Q L _ m a k e _ u p p e r
+ *
+ **************************************
+ *
+ *	Force the name of a metadata object to
+ *	uppercase.
+ *
+ **************************************/
+	if (!str)
+		return;
 
-	fb_assert(Column_types[i].type != 0);
-	if (Column_types[i].type == 0)
-	{
-		isqlGlob.printf("Unknown data type %d for field name %s%s", fieldType, fieldName, NEWLINE);
-		return false;
-	}
+	for (UCHAR* p = reinterpret_cast<UCHAR*>(str); *p; p++)
+		*p = UPPER7(*p);
+}
 
-	bool precision_known = false;
 
-	if (isqlGlob.major_ods >= ODS_VERSION10 &&
-		(fieldType == SMALLINT || fieldType == INTEGER || fieldType == BIGINT))
-	{
-		// Handle Integral subtypes NUMERIC and DECIMAL
-		// We are ODS >= 10 and could be any Dialect
-		FOR FLD1 IN RDB$FIELDS WITH
-			FLD1.RDB$FIELD_NAME EQ fieldName
-			AND FLD1.RDB$FIELD_PRECISION NOT MISSING
+void ISQL_msg_get(USHORT number,
+				  TEXT* msg,
+				  const SafeArg& args)
+{
+/**************************************
+ *
+ *	I S Q L _ m s g _ g e t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Retrieve a message from the error file
+ *
+ **************************************/
 
-			// We are Dialect >=3 since FIELD_PRECISION is non-NULL
-			if (FLD1.RDB$FIELD_SUB_TYPE > 0 && FLD1.RDB$FIELD_SUB_TYPE <= MAX_INTSUBTYPES)
-			{
-				isqlGlob.printf("%s(%d, %d)",
-						 Integral_subtypes[FLD1.RDB$FIELD_SUB_TYPE],
-						 FLD1.RDB$FIELD_PRECISION,
-						 -FLD1.RDB$FIELD_SCALE);
-				precision_known = true;
-			}
-		END_FOR
-		ON_ERROR
-			ISQL_errmsg (isc_status);
-			return false;
-		END_ERROR;
-	}
+	fb_msg_format(NULL, ISQL_MSG_FAC, number, MSG_LENGTH, msg, args);
+}
 
-	if (!precision_known)
-	{
-		if (fieldScale < 0)
-		{
-			// Take a stab at numerics and decimals
-			switch (fieldType)
-			{
-			case SMALLINT:
-				isqlGlob.printf("NUMERIC(4, %d)", -fieldScale);
-				break;
-			case INTEGER:
-				isqlGlob.printf("NUMERIC(9, %d)", -fieldScale);
-				break;
-			case DOUBLE_PRECISION:
-				isqlGlob.printf("NUMERIC(15, %d)", -fieldScale);
-				break;
-			default:
-				// BIGINT can't happen there because it would have an explicit field_precision
-				// and then would be caught by the previous if().
-				fb_assert(fieldType != BIGINT);
-				isqlGlob.printf("%s", Column_types[i].type_name);
-			}
-		}
-		else
-		{
-			// This is a non-numeric data type
-			isqlGlob.printf("%s", Column_types[i].type_name);
-		}
-	}
 
-	return true;
+void ISQL_msg_get(USHORT number,
+				  USHORT size,
+				  TEXT* msg,
+				  const SafeArg& args)
+{
+/**************************************
+ *
+ *	I S Q L _ m s g _ g e t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Retrieve a message from the error file
+ *
+ **************************************/
+
+	fb_msg_format(NULL, ISQL_MSG_FAC, number, size, msg, args);
 }
 
 
@@ -1752,18 +1870,53 @@ void ISQL_print_validation(FILE* fp,
 		{
 			firsttime = false;
 			if (!issql) {
-				IUTILS_printf2(fp, "%s ", (isComputedField ? "/* " : "("));
+				ISQL_printf2(fp, "%s ", (isComputedField ? "/* " : "("));
 			}
 		}
 
-		IUTILS_printf(fp, buffer);
+		ISQL_printf(fp, buffer);
 	}
 	if (!issql) {
-		IUTILS_printf2(fp, "%s", (isComputedField ? " */" : ")"));
+		ISQL_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 	}
 
 	if (isc_status[1] && isc_status[1] != isc_segstr_eof)
 		ISQL_errmsg(isc_status);
+}
+
+
+void ISQL_printf(FILE* fp, const char* buffer)
+{
+/**************************************
+ *
+ *	I S Q L _ p r i n t f
+ *
+ **************************************
+ *
+ *	Centralized printing facility
+ *
+ **************************************/
+	fprintf(fp, "%s", buffer);
+	fflush(fp); // John's fix.
+}
+
+
+void ISQL_printf2(FILE* fp, const char* buffer, ...)
+{
+/**************************************
+ *
+ *	I S Q L _ p r i n t f 2
+ *
+ **************************************
+ *
+ *	Centralized printing facility, more flexible
+ *
+ **************************************/
+	va_list args;
+	va_start(args, buffer);
+	vfprintf(fp, buffer, args);
+	va_end(args);
+	fflush(fp); // John's fix.
 }
 
 
@@ -1819,18 +1972,18 @@ static processing_state add_row(TEXT* tabname)
 
 	chop_at(tabname, QUOTEDLENGTH);
 	if (tabname[0] != DBL_QUOTE)
-		IUTILS_make_upper(tabname);
+		ISQL_make_upper(tabname);
 	/*
 	chop_at(tablename, WORDLENGTH);
 	const bool delimited_yes = tablename[0] == DBL_QUOTE;
 	TEXT tabname[QUOTEDLENGTH];
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
-		IUTILS_copy_SQL_id(tablename, tabname, DBL_QUOTE);
+		ISQL_copy_SQL_id(tablename, tabname, DBL_QUOTE);
 	}
 	else
 	{
 		strcpy(tabname, tablename);
-		IUTILS_make_upper(tabname);
+		ISQL_make_upper(tabname);
 	}
 	*/
 
@@ -1902,12 +2055,12 @@ static processing_state add_row(TEXT* tabname)
 				const bool delimited_yes = fldname[0] == DBL_QUOTE;
 				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes)
 				{
-					IUTILS_copy_SQL_id(fldname, fldfixed, DBL_QUOTE);
+					ISQL_copy_SQL_id(fldname, fldfixed, DBL_QUOTE);
 				}
 				else
 				{
 					strcpy(fldfixed, fldname);
-					IUTILS_make_upper(fldfixed);
+					ISQL_make_upper(fldfixed);
 				}
 
 				sprintf(insertstring + strlen(insertstring), "%s,", fldfixed);
@@ -1946,7 +2099,7 @@ static processing_state add_row(TEXT* tabname)
 	// and scanf the resulting string into a buffer of the right type.
 
 	SCHAR infobuf[BUFFER_LENGTH180];
-	IUTILS_msg_get(ADD_PROMPT, sizeof(infobuf), infobuf);
+	ISQL_msg_get(ADD_PROMPT, sizeof(infobuf), infobuf);
 	STDERROUT(infobuf);
 
 	TEXT msg[MSG_LENGTH];
@@ -1980,23 +2133,23 @@ static processing_state add_row(TEXT* tabname)
 			switch (type)
 			{
 			case SQL_BLOB:
-				IUTILS_msg_get(BLOB_PROMPT, msg, SafeArg() << name);
+				ISQL_msg_get(BLOB_PROMPT, msg, SafeArg() << name);
 				// Blob: %s, type 'edit' or filename to load>
 				break;
 			case SQL_TYPE_DATE:
-				IUTILS_msg_get(DATE_PROMPT, msg, SafeArg() << name);
+				ISQL_msg_get(DATE_PROMPT, msg, SafeArg() << name);
 				// Enter %s as Y/M/D>
 				break;
 			case SQL_TYPE_TIME:
-				IUTILS_msg_get(TIME_PROMPT, msg, SafeArg() << name);
+				ISQL_msg_get(TIME_PROMPT, msg, SafeArg() << name);
 				// Enter %s as H:M:S>
 				break;
 			case SQL_TIMESTAMP:
-				IUTILS_msg_get(TIMESTAMP_PROMPT, msg, SafeArg() << name);
+				ISQL_msg_get(TIMESTAMP_PROMPT, msg, SafeArg() << name);
 				// Enter %s as Y/MON/D H:MIN:S[.MSEC]>
 				break;
 			default:
-				IUTILS_msg_get(NAME_PROMPT, msg, SafeArg() << name);
+				ISQL_msg_get(NAME_PROMPT, msg, SafeArg() << name);
 				// Enter %s>
 				break;
 			}
@@ -2014,7 +2167,7 @@ static processing_state add_row(TEXT* tabname)
 			const size_t length = strlen(lastInputLine);
 			if (length > MAX_USHORT - 2)
 			{
-				IUTILS_msg_get(BUFFER_OVERFLOW, msg);
+				ISQL_msg_get(BUFFER_OVERFLOW, msg);
 				STDERROUT(msg);
 				done = true;
 				break;
@@ -2025,7 +2178,7 @@ static processing_state add_row(TEXT* tabname)
 			SCHAR cmd[5];
 			strncpy(cmd, lastInputLine, 4);
 			cmd[4] = '\0';
-			IUTILS_make_upper(cmd);
+			ISQL_make_upper(cmd);
 
 			// If the user writes NULL, put a null in the column
 
@@ -2110,7 +2263,7 @@ static processing_state add_row(TEXT* tabname)
 									&times.tm_mon, &times.tm_mday) ||
 						!check_date(times))
 					{
-						IUTILS_msg_get(DATE_ERR, msg, SafeArg() << lastInputLine);
+						ISQL_msg_get(DATE_ERR, msg, SafeArg() << lastInputLine);
 						STDERROUT(msg);	// Bad date %s\n
 						done = true;
 					}
@@ -2129,7 +2282,7 @@ static processing_state add_row(TEXT* tabname)
 									&times.tm_min, &times.tm_sec) ||
 						!check_time(times))
 					{
-						IUTILS_msg_get(TIME_ERR, msg, SafeArg() << lastInputLine);
+						ISQL_msg_get(TIME_ERR, msg, SafeArg() << lastInputLine);
 						STDERROUT(msg);	// Bad time %s\n
 						done = true;
 					}
@@ -2168,7 +2321,7 @@ static processing_state add_row(TEXT* tabname)
 						done = true;
 					if (done)
 					{
-						IUTILS_msg_get(TIMESTAMP_ERR, msg, SafeArg() << lastInputLine);
+						ISQL_msg_get(TIMESTAMP_ERR, msg, SafeArg() << lastInputLine);
 						STDERROUT(msg);	// Bad timestamp %s\n
 					}
 					else
@@ -2368,7 +2521,7 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 		if (!BLOB_dump(&blobid, DB, M__trans, path))
 		{
 			TEXT errbuf[MSG_LENGTH];
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
 			STDERROUT(errbuf);
 			rc = ps_ERR;
 		}
@@ -2587,11 +2740,11 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 	PtrSentry<Extender> stringbufSentry(stringBuffers, true);
 
 	char bulk_prompt[BUFFER_LENGTH180] = "";
-	IUTILS_msg_get(BULK_PROMPT, sizeof(bulk_prompt), bulk_prompt);
+	ISQL_msg_get(BULK_PROMPT, sizeof(bulk_prompt), bulk_prompt);
 
 	// Lookup the continuation prompt once
 	TEXT con_prompt[MSG_LENGTH];
-	IUTILS_msg_get(CON_PROMPT, con_prompt);
+	ISQL_msg_get(CON_PROMPT, con_prompt);
 
 	TEXT msg[MSG_LENGTH];
 	bool commit_failureM = false;
@@ -2809,7 +2962,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 				// Convert first 4 chars to upper case for comparison.
 				strncpy(cmd, lastPos, 4);
 				cmd[4] = '\0';
-				IUTILS_make_upper(cmd);
+				ISQL_make_upper(cmd);
 			}
 
 			// If the user writes NULL, put a null in the column.
@@ -2903,7 +3056,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 									&times.tm_mon, &times.tm_mday) ||
 						!check_date(times))
 					{
-						IUTILS_msg_get(DATE_ERR, msg, SafeArg() << lastPos);
+						ISQL_msg_get(DATE_ERR, msg, SafeArg() << lastPos);
 						STDERROUT(msg);	// Bad date %s\n
 						done = true;
 					}
@@ -2926,7 +3079,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 									&times.tm_min, &times.tm_sec) ||
 						!check_time(times))
 					{
-						IUTILS_msg_get(TIME_ERR, msg, SafeArg() << lastPos);
+						ISQL_msg_get(TIME_ERR, msg, SafeArg() << lastPos);
 						STDERROUT(msg);	// Bad time %s\n
 						done = true;
 					}
@@ -2970,7 +3123,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 
 					if (done)
 					{
-						IUTILS_msg_get(TIMESTAMP_ERR, msg, SafeArg() << lastPos);
+						ISQL_msg_get(TIMESTAMP_ERR, msg, SafeArg() << lastPos);
 						STDERROUT(msg);	// Bad timestamp %s\n
 					}
 					else
@@ -3287,7 +3440,7 @@ static bool bulk_insert_retriever(const char* prompt)
 		if (length > MAX_USHORT - 2)
 		{
 			TEXT msg[MSG_LENGTH];
-			IUTILS_msg_get(BUFFER_OVERFLOW, msg);
+			ISQL_msg_get(BUFFER_OVERFLOW, msg);
 			STDERROUT(msg);
 			rc = true;
 		}
@@ -3564,7 +3717,7 @@ static processing_state copy_table(TEXT* source,
 	{
 		// If we can't open a temp file then bail
 
-		IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << ftmp.c_str());
+		ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << ftmp.c_str());
 		STDERROUT(errbuf);
 		Exit_value = FINI_ERROR;
 		isqlGlob.Out = holdout;
@@ -3573,41 +3726,41 @@ static processing_state copy_table(TEXT* source,
 
 	chop_at(source, QUOTEDLENGTH);
 	if (source[0] != DBL_QUOTE)
-		IUTILS_make_upper(source);
+		ISQL_make_upper(source);
 	/*
 	chop_at(source_tbl, WORDLENGTH);
 	TEXT source[QUOTEDLENGTH];
 	bool delimited_yes = source_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
-		IUTILS_copy_SQL_id(source_tbl, source, DBL_QUOTE);
+		ISQL_copy_SQL_id(source_tbl, source, DBL_QUOTE);
 	}
 	else
 	{
 		strcpy(source, source_tbl);
-		IUTILS_make_upper(source);
+		ISQL_make_upper(source);
 	}
 	*/
 
 	chop_at(destination, QUOTEDLENGTH);
 	if (destination[0] != DBL_QUOTE)
-		IUTILS_make_upper(destination);
+		ISQL_make_upper(destination);
 	/*
 	chop_at(destination_tbl, WORDLENGTH);
 	TEXT destination[QUOTEDLENGTH];
 	delimited_yes = destination_tbl[0] == DBL_QUOTE;
 	if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION && delimited_yes) {
-		IUTILS_copy_SQL_id(destination_tbl, destination, DBL_QUOTE);
+		ISQL_copy_SQL_id(destination_tbl, destination, DBL_QUOTE);
 	}
 	else
 	{
 		strcpy(destination, destination_tbl);
-		IUTILS_make_upper(destination);
+		ISQL_make_upper(destination);
 	}
 	*/
 
 	if (EXTRACT_list_table(source, destination, domain_flag, -1))
 	{
-		IUTILS_msg_get(NOT_FOUND_MSG, errbuf, SafeArg() << source);
+		ISQL_msg_get(NOT_FOUND_MSG, errbuf, SafeArg() << source);
 		STDERROUT(errbuf);
 		fclose(isqlGlob.Out);
 	}
@@ -3623,7 +3776,7 @@ static processing_state copy_table(TEXT* source,
 		sprintf(cmd, "isql -q %s -i %s", altdb, ftmp.c_str());
 		if (system(cmd))
 		{
-			IUTILS_msg_get(COPY_ERR, errbuf, SafeArg() << destination << altdb);
+			ISQL_msg_get(COPY_ERR, errbuf, SafeArg() << destination << altdb);
 			STDERROUT(errbuf);
 		}
 	}
@@ -3635,7 +3788,8 @@ static processing_state copy_table(TEXT* source,
 }
 
 
-static processing_state create_db(const TEXT* statement, TEXT* d_name)
+static processing_state create_db(const TEXT* statement,
+								TEXT* d_name)
 {
 /**************************************
  *
@@ -3681,7 +3835,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		// Look for the quotes on the database name and find the close quotes.
 		// Use '"' first, if not successful try '''.
 		// CVC: Again, this is wrong with embedded quotes.
-		// Maybe IUTILS_remove_and_unescape_quotes coupled with IUTILS_copy_SQL_id could work.
+		// Maybe ISQL_remove_and_unescape_quotes coupled with ISQL_copy_SQL_id could work.
 		const TEXT* q = strchr(statement, quote);
 		if (!q)
 		{
@@ -3766,7 +3920,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			get_str(temp_local_stmt_str, &str_begin, &str_end, &str_flag);
 			if (str_flag == INCOMPLETE_STRING)
 			{
-				IUTILS_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
+				ISQL_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
 				STDERROUT(errbuf);
 				ISQL_FREE(local_statement);
 				if (new_local_statement)
@@ -3809,7 +3963,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 				get_str(temp_local_stmt_str, &str_begin, &str_end, &str_flag);
 				if (str_flag == INCOMPLETE_STRING)
 				{
-					IUTILS_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
+					ISQL_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
 					STDERROUT(errbuf);
 					ISQL_FREE(local_statement);
 					if (new_local_statement)
@@ -4023,12 +4177,12 @@ static void do_isql()
 		const char* Tmpfile = filename.c_str();
 		FILE* f = fopen(Tmpfile, "w+"); // It was w+b
 		if (f)
-			Filelist->Ofp().init(f, Tmpfile, Tmpfile);
+			Filelist->Ofp().init(f, Tmpfile);
 		else
 		{
 			// If we can't open a temp file then bail
 
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << Tmpfile);
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << Tmpfile);
 			STDERROUT(errbuf);
 			Exit_value = FINI_ERROR;
 			return;
@@ -4128,7 +4282,7 @@ static void do_isql()
 		{
 			if (!Quiet)
 			{
-				IUTILS_msg_get(NO_DB, errbuf);
+				ISQL_msg_get(NO_DB, errbuf);
 				STDERROUT(errbuf);
 			}
 			if (!Interactive && BailOnError)
@@ -4199,7 +4353,7 @@ static void do_isql()
 			break;
 
 		case ERR_BUFFER_OVERFLOW:
-			IUTILS_msg_get(BUFFER_OVERFLOW, errbuf);
+			ISQL_msg_get(BUFFER_OVERFLOW, errbuf);
 			STDERROUT(errbuf);
 
 		case EXTRACT:
@@ -4324,7 +4478,7 @@ static processing_state edit(const TEXT* const* cmd)
 			// Push the current ifp on the indev
 
 			Filelist->insertIfp();
-			Filelist->Ifp().init(fp, path, path);
+			Filelist->Ifp().init(fp, path);
 			gds__edit(path, 0);
 			Input_file = true;
 			getColumn = -1;
@@ -4332,7 +4486,7 @@ static processing_state edit(const TEXT* const* cmd)
 		else
 		{
 			TEXT errbuf[MSG_LENGTH];
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
 			STDERROUT(errbuf);
 			rc = ps_ERR;
 		}
@@ -4345,9 +4499,9 @@ static processing_state edit(const TEXT* const* cmd)
 		// Close the file, edit it, then reopen and read from the top
 		InputDevices::indev& Ofp = Filelist->Ofp();
 		Ofp.close();
-		PathName tmpfile = Ofp.fileName(false);
-		gds__edit(tmpfile.c_str(), 0);
-		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
+		const char* Tmpfile = Ofp.fileName();
+		gds__edit(Tmpfile, 0);
+		Ofp.init(fopen(Tmpfile, "r+"), Tmpfile); // We don't check for failure.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
@@ -4384,13 +4538,13 @@ static processing_state end_trans()
 	{
 		if (Interactive)
 		{
-			IUTILS_msg_get(COMMIT_PROMPT, sizeof(infobuf), infobuf);
+			ISQL_msg_get(COMMIT_PROMPT, sizeof(infobuf), infobuf);
 			readNextInputLine(infobuf);
 			getColumn = -1; // We are bypassing getNextInputChar().
 			if (lastInputLine && isyesno(lastInputLine))
 			{
 				// check for Yes answer
-				IUTILS_msg_get(COMMIT_MSG, sizeof(infobuf), infobuf);
+				ISQL_msg_get(COMMIT_MSG, sizeof(infobuf), infobuf);
 				STDERROUT(infobuf);
 				if (DB && M__trans)
 				{
@@ -4404,7 +4558,7 @@ static processing_state end_trans()
 			}
 			else
 			{
-				IUTILS_msg_get(ROLLBACK_MSG, sizeof(infobuf), infobuf);
+				ISQL_msg_get(ROLLBACK_MSG, sizeof(infobuf), infobuf);
 				STDERROUT(infobuf);
 				if (DB && M__trans)
 				{
@@ -4427,7 +4581,7 @@ static processing_state end_trans()
 				// if the user uses the create database dialog.  Because of this, this should only show up if
 				// the user connects and then disconnects or if the user enters a SET TRANSACTION stat without
 				// ever doing anything that would cause changes to the dictionary.
-				IUTILS_msg_get(ROLLBACK_MSG, sizeof(infobuf), infobuf);
+				ISQL_msg_get(ROLLBACK_MSG, sizeof(infobuf), infobuf);
 				STDERROUT(infobuf);
 				if (isc_rollback_transaction(isc_status, &M__trans))
 				{
@@ -4536,6 +4690,9 @@ static processing_state frontend(const TEXT* statement)
 			pause,
 #endif
 			blobview, output, shell, set, create, drop, connect,
+#ifdef SCROLLABLE_CURSORS
+			next, prior, first, last, absolute, relative,
+#endif
 			edit, input, quit, exit, help,
 #ifdef DEV_BUILD
 			passthrough,
@@ -4564,6 +4721,14 @@ static processing_state frontend(const TEXT* statement)
 		{FrontOptions::create, "CREATE", 0},
 		{FrontOptions::drop, "DROP", 0},
 		{FrontOptions::connect, "CONNECT", 0},
+#ifdef SCROLLABLE_CURSORS
+		{FrontOptions::next, "NEXT", 0},
+		{FrontOptions::prior, "PRIOR", 0},
+		{FrontOptions::first, "FIRST", 0},
+		{FrontOptions::last, "LAST", 0},
+		{FrontOptions::absolute, "ABSOLUTE", 0},
+		{FrontOptions::relative, "RELATIVE", 0},
+#endif
 		{FrontOptions::edit, "EDIT", 0},
 		//{FrontOptions::input, "IN", },
 		{FrontOptions::input, "INPUT", 2},
@@ -4697,24 +4862,18 @@ static processing_state frontend(const TEXT* statement)
 		break;
 
 	case FrontOptions::create:
-		if (!strcmp(parms[1], "DATABASE") ||
-			(!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods > 0 && isqlGlob.major_ods < ODS_VERSION12))
-		{
+		if (!strcmp(parms[1], "DATABASE") || !strcmp(parms[1], "SCHEMA"))
 			ret = create_db(cmd, lparms[2]);
-		}
 		else
 			ret = CONT;
 		break;
 
 	case FrontOptions::drop:
-		if (!strcmp(parms[1], "DATABASE") ||
-			(!strcmp(parms[1], "SCHEMA") && isqlGlob.major_ods > 0 && isqlGlob.major_ods < ODS_VERSION12))
-		{
+		if (!strcmp(parms[1], "DATABASE") || !strcmp(parms[1], "SCHEMA"))
 			if (*parms[2])
 				ret = ps_ERR;
 			else
 				ret = drop_db();
-		}
 		else
 			ret = CONT;
 		break;
@@ -4774,6 +4933,46 @@ static processing_state frontend(const TEXT* statement)
 		}
 		break;
 
+#ifdef SCROLLABLE_CURSORS
+	// Perform scrolling within the currently active cursor
+
+	case FrontOptions::next:
+		fetch_offset = 1;
+		fetch_direction = isc_fetch_next;
+		ret = FETCH;
+		break;
+
+	case FrontOptions::prior:
+		fetch_offset = 1;
+		fetch_direction = isc_fetch_prior;
+		ret = FETCH;
+		break;
+
+	case FrontOptions::first:
+		fetch_offset = 1;
+		fetch_direction = isc_fetch_first;
+		ret = FETCH;
+		break;
+
+	case FrontOptions::last:
+		fetch_offset = 1;
+		fetch_direction = isc_fetch_last;
+		ret = FETCH;
+		break;
+
+	case FrontOptions::absolute:
+		fetch_direction = isc_fetch_absolute;
+		fetch_offset = atoi(parms[1]);
+		ret = FETCH;
+		break;
+
+	case FrontOptions::relative:
+		fetch_direction = isc_fetch_relative;
+		fetch_offset = atoi(parms[1]);
+		ret = FETCH;
+		break;
+#endif
+
 	case FrontOptions::edit:
 		ret = edit(lparms);
 		break;
@@ -4817,9 +5016,9 @@ static processing_state frontend(const TEXT* statement)
 	if (ret == ps_ERR)
 	{
 		if (bad_dialect)
-			IUTILS_msg_get(CMD_ERR, errbuf, SafeArg() << bad_dialect_buf);
+			ISQL_msg_get(CMD_ERR, errbuf, SafeArg() << bad_dialect_buf);
 		else
-			IUTILS_msg_get(CMD_ERR, errbuf, SafeArg() << cmd);
+			ISQL_msg_get(CMD_ERR, errbuf, SafeArg() << cmd);
 		STDERROUT(errbuf);
 	}
 
@@ -4909,7 +5108,7 @@ static void frontend_load_parms(const TEXT* p, TEXT* parms[], TEXT* lparms[],
 			p++;
 		strcpy(lparms[i], parms[i]);
 		if (!role_found)
-			IUTILS_make_upper(parms[i]);
+			ISQL_make_upper(parms[i]);
 	}
 }
 
@@ -4928,12 +5127,15 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		enum set_commands
 		{
 			stat, count, list, plan, planonly, blobdisplay, echo, autoddl,
+#ifdef SCROLLABLE_CURSORS
+			autofetch,
+#endif
 			width, transaction, terminator, names, time,
 //#ifdef DEV_BUILD
 			sqlda_display,
 //#endif
 			sql, warning, generator, statistics, heading, bail,
-			bulk_insert, maxrows, wrong
+			bulk_insert, rowcount, wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -4950,6 +5152,9 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::blobdisplay, "BLOBDISPLAY", 4},
 		{SetOptions::echo, "ECHO", 0},
 		{SetOptions::autoddl, "AUTODDL", 4},
+#ifdef SCROLLABLE_CURSORS
+		{SetOptions::autofetch, "AUTOFETCH", 0},
+#endif
 		{SetOptions::width, "WIDTH", 0},
 		{SetOptions::transaction, "TRANSACTION", 5},
 		{SetOptions::terminator, "TERMINATOR", 4},
@@ -4966,8 +5171,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::heading, "HEADING", 0},
 		{SetOptions::bail, "BAIL", 0},
 		{SetOptions::bulk_insert, "BULK_INSERT", 0},
-		{SetOptions::maxrows, "ROWCOUNT", 0}, // legacy, compatible with FB2.5
-		{SetOptions::maxrows, "MAXROWS", 0},
+		{SetOptions::rowcount, "ROWCOUNT", 0},
 	};
 
 	// Display current set options
@@ -5024,6 +5228,12 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	case SetOptions::autoddl:
 		ret = do_set_command(parms[2], &Autocommit);
 		break;
+
+#ifdef SCROLLABLE_CURSORS
+	case SetOptions::autofetch:
+		ret = do_set_command(parms[2], &Autofetch);
+		break;
+#endif
 
 	case SetOptions::width:
 		ret = newsize(parms[2][0] == '"' ? lparms[2] : parms[2], parms[3]);
@@ -5109,14 +5319,14 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 			ret = ps_ERR;
 		break;
 
-	case SetOptions::maxrows:
-		ret = newMaxRows((*lparms[2]) ? lparms[2] : "0");
+	case SetOptions::rowcount:
+		ret = newRowCount((*lparms[2]) ? lparms[2] : "0");
 		break;
 
 	default:
 		{
 			TEXT msg_string[MSG_LENGTH];
-			IUTILS_msg_get(VALID_OPTIONS, msg_string);
+			ISQL_msg_get(VALID_OPTIONS, msg_string);
 			isqlGlob.printf("%s\n", msg_string);
 		}
 		setoptions.showCommands(isqlGlob.Out);
@@ -5214,8 +5424,7 @@ static processing_state get_dialect(const char* const dialect_str,
 					}
 				}
 				else
-				{
-					// ODS 10 databases
+				{	// ODS 10 databases
 					switch (global_dialect_spoken)
 					{
 					case SQL_DIALECT_V5:
@@ -5254,8 +5463,7 @@ static processing_state get_dialect(const char* const dialect_str,
 		}
 	}
 	else
-	{
-		// handle non numeric invalid "set sql dialect" case
+	{			// handle non numeric invalid "set sql dialect" case
 		isqlGlob.SQL_dialect = old_SQL_dialect;	// restore SQL dialect
 		bad_dialect = true;
 		sprintf(bad_dialect_buf, "%s%s", "invalid SQL dialect ",
@@ -5286,7 +5494,7 @@ static processing_state get_statement(TEXT* const statement,
 
 	// Lookup the continuation prompt once
 	TEXT con_prompt[MSG_LENGTH];
-	IUTILS_msg_get(CON_PROMPT, con_prompt);
+	ISQL_msg_get(CON_PROMPT, con_prompt);
 
 	if (Interactive && !Input_file || Echo) {
 		ISQL_prompt(statement_prompt);
@@ -5317,9 +5525,6 @@ static processing_state get_statement(TEXT* const statement,
 		in_double_quoted_string
 	} state = normal;
 
-	char lastChar = '\0';
-	char altQuoteChar = '\0';
-
 	while (!done)
 	{
 		SSHORT c = getNextInputChar();
@@ -5338,7 +5543,7 @@ static processing_state get_statement(TEXT* const statement,
 			if (valuable_count > 0)
 			{
 				TEXT errbuf[MSG_LENGTH];
-				IUTILS_msg_get(UNEXPECTED_EOF, errbuf);
+				ISQL_msg_get(UNEXPECTED_EOF, errbuf);
 				STDERROUT(errbuf);
 				Exit_value = FINI_ERROR;
 				ret = FAIL;
@@ -5392,13 +5597,11 @@ static processing_state get_statement(TEXT* const statement,
 			if (Interactive && !Input_file || Echo)
 			{
 				if (state == in_block_comment)
-				{
-					//  Block comment prompt.
+				{	//  Block comment prompt.
 					ISQL_prompt("--> ");
 				}
 				else if (valuable_count == 0)
-				{
-					// Ignore a series of nothing at the beginning
+				{	// Ignore a series of nothing at the beginning
 					ISQL_prompt(statement_prompt);
 				}
 				else
@@ -5450,36 +5653,10 @@ static processing_state get_statement(TEXT* const statement,
 			switch (state)
 			{
 				case normal:
-					if (lastChar == 'q' || lastChar == 'Q')
-					{
-						*p++ = lastChar = c;
-						count++;
-						altQuoteChar = c = getNextInputChar();
-
-						switch (altQuoteChar)
-						{
-							case '{':
-								altQuoteChar = '}';
-								break;
-							case '(':
-								altQuoteChar = ')';
-								break;
-							case '[':
-								altQuoteChar = ']';
-								break;
-							case '<':
-								altQuoteChar = '>';
-								break;
-						}
-					}
-					else
-						altQuoteChar = '\0';
-
 					state = in_single_quoted_string;
 					break;
 				case in_single_quoted_string:
-					if (!altQuoteChar || lastChar == altQuoteChar)
-						state = normal;
+					state = normal;
 					break;
 			}
 			break;
@@ -5518,15 +5695,14 @@ static processing_state get_statement(TEXT* const statement,
 		{
 			valuable_count++;
 			if (valuable_count == 1) // this is the first valuable char in stream
-			{
-				// ignore all previous crap
+			{	// ignore all previous crap
 				p = statement;
 				count = 0;
 				non_comment_pos = 0;
 			}
 		}
 
-		*p++ = lastChar = c;
+		*p++ = c;
 		count++;
 
 		if (count > bufsize && !done)
@@ -5742,8 +5918,7 @@ void ISQL_get_version(bool call_by_create_db)
 				}
 			}
 			else
-			{
-				// ODS 10 databases
+			{				// ODS 10 databases
 
 				switch (global_dialect_spoken)
 				{
@@ -5846,16 +6021,16 @@ void ISQL_get_version(bool call_by_create_db)
 	if (isqlGlob.major_ods < ODS_VERSION8)
 	{
 		TEXT errbuf[MSG_LENGTH];
-		IUTILS_msg_get(SERVER_TOO_OLD, errbuf);
+		ISQL_msg_get(SERVER_TOO_OLD, errbuf);
 		STDERROUT(errbuf);
 		return;
 	}
 
-	// If the remote server did not respond to our request for
-	// "dialects spoken", then we can assume it can only speak
-	// the V5 dialect.  We automatically change the connection
-	// dialect to that spoken by the server.  Otherwise the
-	// current dialect is set to whatever the user requested.
+	/* If the remote server did not respond to our request for
+   "dialects spoken", then we can assume it can only speak
+   the V5 dialect.  We automatically change the connection
+   dialect to that spoken by the server.  Otherwise the
+   current dialect is set to whatever the user requested. */
 
 	if (global_dialect_spoken == 0)
 		isqlGlob.SQL_dialect = SQL_DIALECT_V5;
@@ -5868,6 +6043,68 @@ void ISQL_get_version(bool call_by_create_db)
 		isqlGlob.db_SQL_dialect = global_dialect_spoken;
 	else
 		isqlGlob.db_SQL_dialect = SQL_DIALECT_V5;
+}
+
+
+void ISQL_remove_and_unescape_quotes(TEXT* string, const char quote)
+{
+/**************************************
+ *
+ *	I S Q L _ r e m o v e _ a n d _ u n e s c a p e _ q u o t e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Remove the delimited quotes. Blanks could be part of
+ *	delimited SQL identifier. It has to deal with embedded quotes, too.
+ *
+ **************************************/
+	const size_t cmd_len = strlen(string);
+	TEXT* q = string;
+	const TEXT* p = q;
+	const TEXT* const end_of_str = p + cmd_len;
+
+	for (size_t cnt = 1; cnt < cmd_len && p < end_of_str; cnt++)
+	{
+		p++;
+		if (cnt < cmd_len - 1)
+		{
+			*q = *p;
+			if (p + 1 < end_of_str)
+			{
+				if (*(p + 1) == quote)	// skip the escape double quote
+					p++;
+			}
+			else
+			{
+				p++;
+				*q = '\0';
+			}
+		}
+		else
+			*q = '\0';
+
+		q++;
+	}
+	*q = '\0';
+}
+
+
+void ISQL_truncate_term(TEXT* str, USHORT len)
+{
+/**************************************
+ *
+ *	I S Q L _ t r u n c a t e _ t e r m
+ *
+ **************************************
+ *
+ * Functional description
+ *	Truncates the rightmost contiguous spaces on a string.
+ * CVC: Notice isspace may be influenced by locales.
+ **************************************/
+	int i;
+	for (i = len - 1; i >= 0 && ((fb_isspace(str[i])) || (str[i] == 0)); i--);
+	str[i + 1] = 0;
 }
 
 
@@ -6008,10 +6245,13 @@ static processing_state print_sets()
 	print_set("Print statistics:", Stats);
 	print_set("Echo commands:", Echo);
 	print_set("List format:", List);
-	print_set("Show Row Count:", Docount);
+	print_set("List Row Count:", Docount);
 	//print_set("Row Count:", Docount);   // Changed print to the above to avoid confusion with next one
-	isqlGlob.printf("%-25s%lu%s", "Select maxrows limit:", maxRows, NEWLINE);
+	isqlGlob.printf("%-25s%lu%s", "Select rowcount limit:", rowCount, NEWLINE);
 	print_set("Autocommit DDL:", Autocommit);
+#ifdef SCROLLABLE_CURSORS
+	print_set("Autofetch records:", Autofetch);
+#endif
 	print_set("Access Plan:", Plan);
 	print_set("Access Plan only:", Planonly);
 
@@ -6098,11 +6338,14 @@ static processing_state help(const TEXT* what)
 		HLP_SETCOM,				//Set commands:
 		HLP_SET,				//	SET						-- display current SET options
 		HLP_SETAUTO,			//	SET AUTOddl				-- toggle autocommit of DDL statements
+#ifdef SCROLLABLE_CURSORS
+		HLP_SETFETCH,			//	SET AUTOfetch			-- toggle autofetch of records
+#endif
 		HLP_SETBAIL,			//	SET BAIL				-- toggle bailing out on errors in non-interactive mode
 		HLP_SETBLOB,			//	SET BLOB [ALL|<n>]		-- display BLOBS of subtype <n> or ALL
 		HLP_SETBLOB2,			//	SET BLOB				-- turn off BLOB display
 		HLP_SETCOUNT,			//	SET COUNT				-- toggle count of selected rows on/off
-		HLP_SETMAXROWS,			//	SET MAXROWS [<n>]		-- toggle limit of selected rows to <n>, zero is no limit
+		HLP_SETROWCOUNT,		//	SET ROWCOUNT [<n>]		-- toggle limit of selected rows to <n>, zero is no limit
 		HLP_SETECHO,			//	SET ECHO				-- toggle command echo on/off
 		HLP_SETHEADING,			//  SET HEADING 	        -- toggle column titles display on/off
 		HLP_SETLIST,			//	SET LIST				-- toggle column or table display format
@@ -6131,10 +6374,10 @@ static processing_state help(const TEXT* what)
 	{
 		if (*msgid != 0)
 		{
-			IUTILS_msg_get(*msgid, msg);
-			IUTILS_printf(Help, msg);
+			ISQL_msg_get(*msgid, msg);
+			ISQL_printf(Help, msg);
 		}
-		IUTILS_printf(Help, NEWLINE);
+		ISQL_printf(Help, NEWLINE);
 	}
 	return (SKIP);
 }
@@ -6160,7 +6403,7 @@ static bool isyesno(const TEXT* buffer)
 	if (!have_trans)
 	{
 		// get the translation if we don't have it already
-		IUTILS_msg_get(YES_ANS, sizeof(yesword), yesword);
+		ISQL_msg_get(YES_ANS, sizeof(yesword), yesword);
 		have_trans = true;
 	}
 
@@ -6199,11 +6442,12 @@ static processing_state newdb(TEXT* dbname,
 	if (!dbname || !*dbname)
 		return ps_ERR;
 
-	// Since the dbname is set already, in the case where a database is specified
-	// on the command line, we need to save it so ISQL_disconnect does not NULL it
-	// out.  We will restore it after the disconnect.  The save_database buffer
-	// will also be used to translate dbname to the proper character set.
-
+	/*
+	 * Since the dbname is set already, in the case where a database is specified
+	 * on the command line, we need to save it so ISQL_disconnect does not NULL it
+	 * out.  We will restore it after the disconnect.  The save_database buffer
+	 * will also be used to translate dbname to the proper character set.
+	*/
 	const size_t len = chop_at(dbname, MAXPATHLEN);
 	SCHAR* save_database = (SCHAR*) ISQL_ALLOC(len + 1);
 	if (!save_database)
@@ -6230,13 +6474,14 @@ static processing_state newdb(TEXT* dbname,
 	strip_quotes(usr, local_usr);
 	strip_quotes(psw, local_psw);
 
-	// if local user is not specified, see if global options are
-	// specified - don't let a global role setting carry forward if a
-	// specific local user was specified
-	//
-	// Special handling for SQL Roles:
-	//	 V5  client -- strip the quotes
-	//	 V6  client -- pass the role name as it is
+	/* if local user is not specified, see if global options are
+	   specified - don't let a global role setting carry forward if a
+	   specific local user was specified
+
+	   Special handling for SQL Roles:
+	 *	 V5  client -- strip the quotes
+	 *	 V6  client -- pass the role name as it is
+	 */
 
 	if (sql_role_nm)
 	{
@@ -6325,7 +6570,7 @@ static processing_state newdb(TEXT* dbname,
 		{
 		case SQL_DIALECT_V5:
 			// Uppercase the Sql isqlGlob.Role name
-			IUTILS_make_upper(local_sql_role);
+			ISQL_make_upper(local_sql_role);
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
@@ -6333,10 +6578,10 @@ static processing_state newdb(TEXT* dbname,
 			{
 				// Remove the delimited quotes and escape quote from ROLE name.
 				const TEXT end_quote = *local_sql_role;
-				IUTILS_remove_and_unescape_quotes(local_sql_role, end_quote);
+				ISQL_remove_and_unescape_quotes(local_sql_role, end_quote);
 			}
 			else {
-				IUTILS_make_upper(local_sql_role);
+				ISQL_make_upper(local_sql_role);
 			}
 			break;
 		default:
@@ -6444,32 +6689,21 @@ static processing_state newinput(const TEXT* infile)
 
 	TEXT path[MAXPATHLEN];
 	strip_quotes(infile, path);
-
-	PathName file;
-
-	if (PathUtils::isRelative(path))
-	{
-		PathName newPath, temp;
-		PathUtils::splitLastComponent(newPath, temp, Filelist->Ifp().fileName(false));
-
-		PathUtils::concatPath(file, newPath, path);
-	}
-	else
-		file = path;
+	const TEXT* file = path;
 
 	// filelist is a linked list of file pointers.  We must add a node to
 	// the linked list before discarding the current Ifp.
-	// Filelist is a global pointing to base of list.
+	//  Filelist is a global pointing to base of list.
 
-	FILE* fp = fopen(file.c_str(), "r");
+	FILE* fp = fopen(file, "r");
 	if (fp)
 	{
 		Filelist->insertIfp();
-		Filelist->Ifp().init(fp, file.c_str(), path);
+		Filelist->Ifp().init(fp, file);
 	}
 	else
 	{
-		IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << path);
+		ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << file);
 		STDERROUT(errbuf);
 		return FAIL;
 	}
@@ -6515,7 +6749,7 @@ static processing_state newoutput(const TEXT* outfile)
 		else
 		{
 			TEXT errbuf[MSG_LENGTH];
-			IUTILS_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << outfile);
+			ISQL_msg_get(FILE_OPEN_ERR, errbuf, SafeArg() << outfile);
 			STDERROUT(errbuf);
 			ret = FAIL;
 		}
@@ -6556,7 +6790,7 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 	if (colname[0] == DBL_QUOTE)
 	{
 		strcpy(buf, colname);
-		IUTILS_remove_and_unescape_quotes(buf, DBL_QUOTE);
+		ISQL_remove_and_unescape_quotes(buf, DBL_QUOTE);
 		colname = buf;
 	}
 
@@ -6580,57 +6814,54 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 	return SKIP;
 }
 
-static processing_state newMaxRows(const TEXT* newMaxRowsStr)
+static processing_state newRowCount(const TEXT* newRowCountStr)
 {
 /**************************************
  *
- *	newMaxRows
+ *	newRowCount
  *
  **************************************
  *
  * Functional description
- * Sets the new value for the maxRows limit (max rows to be retrieved).
  *
  **************************************/
 
 	char* p;
 
 	errno = 0;
-	const long newMaxRows = strtol(newMaxRowsStr, &p, 10);
-	// I was going to use this one, but "-1" parses as max ulong without error
-	// and it would be politer to give an error.
-	//const ULONG newMaxRows = strtoul(newMaxRowsStr, &p, 10);
+	const long newRowCount = strtol(newRowCountStr, &p, 0);
+	// I was going to use this one, but "-1" parses as max ulong without error and it would be politer to give an error.
+	//const ULONG newRowCount = strtoul(newRowCountStr, &p, 0);
 
-	// CVC: I added this block because Windows wasn't working according to Mark's
-	// expectation: it only produces ERANGE. Thus, garbage like
-	// set maxrows abs;  wasn't caught.
-	if (p == newMaxRowsStr)
+	if (newRowCount < 0)
 	{
-		IUTILS_put_errmsg(MAXROWS_INVALID, SafeArg() << newMaxRowsStr);
+		isqlGlob.printf("The value (%s) for rowcount must be zero or greater", newRowCountStr);
+		isqlGlob.printf(NEWLINE);
 		return ps_ERR;
 	}
 
-	switch (errno)
+	if (errno)
 	{
-	case 0: // everything correct
-		break;
-	case ERANGE:
-		// Only ERANGE is part of the ANSI standard here.
-		IUTILS_put_errmsg(MAXROWS_OUTOF_RANGE, SafeArg() << newMaxRowsStr << SLONG_MAX);
-		return ps_ERR;
-	default:
-		// EINVAL and the like
-		IUTILS_put_errmsg(MAXROWS_INVALID, SafeArg() << newMaxRowsStr);
+		switch (errno)
+		{
+		case ERANGE:
+			isqlGlob.printf("Unable to convert %s to a number for rowcount ", newRowCountStr);
+			isqlGlob.printf(NEWLINE);
+			break;
+		case EINVAL:
+			isqlGlob.printf("Value %s for rowcount is out of range. Max value is %ld", newRowCountStr, SLONG_MAX);
+			isqlGlob.printf(NEWLINE);
+			break;
+		default:
+			isqlGlob.printf("Unable to process %s as new limit for rowcount", newRowCountStr);
+			isqlGlob.printf(NEWLINE);
+			break;
+		}
+
 		return ps_ERR;
 	}
 
-	if (newMaxRows < 0)
-	{
-		IUTILS_put_errmsg(MAXROWS_NEGATIVE, SafeArg() << newMaxRowsStr);
-		return ps_ERR;
-	}
-
-	maxRows = newMaxRows;
+	rowCount = newRowCount;
 	return SKIP;
 }
 
@@ -6719,7 +6950,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 
 	// redirected stdin means act like -i was set
 
-	Filelist->Ifp().init(stdin, "stdin", "stdin");
+	Filelist->Ifp().init(stdin, "stdin");
 
 	// Terminators are initialized
 
@@ -6744,7 +6975,10 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 	bool istable = false;
 #endif
 
-	Switches switches(isql_in_sw_table, FB_NELEM(isql_in_sw_table), true, true);
+	bool switch_used[SWITCH_UNKNOWN];
+	for (int su = 0; su < SWITCH_UNKNOWN; ++su) {
+		switch_used[su] = false;
+	}
 
 	for (int i = 1; i < argc; ++i)
 	{
@@ -6754,64 +6988,64 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 		// for extract switch or error.
 		if (*s == switchchar)
 		{
-			int swid = IN_SW_ISQL_0;
+			switch_id swid = SWITCH_UNKNOWN;
 			int swarg_int = 0;
 			char* swarg_str = NULL;
+			const size_t swlen = strlen(s + 1);
 
-			Firebird::string s2(s);
-			Switches::in_sw_tab_t* option = switches.findSwitchMod(s2);
-			if (option)
+			if (swlen == 1 && s[1] == '?')
 			{
-				swid = option->in_sw;
-				if (option->in_sw_state)
-				{
-					IUTILS_msg_get(USAGE_DUPSW, errbuf, SafeArg() << s);
-					STDERROUT(errbuf);
-					ret = ps_ERR;
-					break;
-				}
-				//option->in_sw_state = true; It's not enough with switches that have multiple spellings
-				switches.activate(swid);
+				ret = ps_ERR;
+				break;
+			}
 
-				switch (option->in_sw_optype)
+			for (int j = 0; j < FB_NELEM(switches); j++)
+			{
+				if (swlen >= switches[j].abbrlen && !fb_utils::strnicmp(s + 1, switches[j].text, swlen))
 				{
-				case iqoArgNone: // nothing to do
-					break;
-				case iqoArgString:
-				case iqoArgInteger:
-					// make sure swarg_str is really a pointer to argv, not something else !!
-					if (++i < argc)
-						swarg_str = argv[i];
-					if (!swarg_str || !*swarg_str)
+					swid = switches[j].id;
+					if (switch_used[swid]) // && !switches[j].allow_dup
 					{
-						IUTILS_msg_get(USAGE_NOARG, errbuf, SafeArg() << s);
+						ISQL_msg_get(USAGE_DUPSW, errbuf, SafeArg() << (s + 1));
 						STDERROUT(errbuf);
 						ret = ps_ERR;
+						break;
 					}
-					else if (option->in_sw_optype == iqoArgInteger)
+					switch_used[swid] = true;
+					if (switches[j].argtype != SWARG_NONE)
 					{
-						char* err;
-						long value = strtol(swarg_str, &err, 10);
-						if (*err)
+						// make sure swarg_str is really a pointer to argv, not something else !!
+						if (++i < argc)
+							swarg_str = argv[i];
+						if (!swarg_str || !*swarg_str)
 						{
-							// conversion error
-							IUTILS_msg_get(USAGE_NOTINT, errbuf, SafeArg() << swarg_str << s);
+							ISQL_msg_get(USAGE_NOARG, errbuf, SafeArg() << (s + 1));
 							STDERROUT(errbuf);
 							ret = ps_ERR;
 						}
-						else if ((value < INT_MIN) || (value > INT_MAX))
+						else if (switches[j].argtype == SWARG_INTEGER)
 						{
-							IUTILS_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << s);
-							STDERROUT(errbuf);
-							ret = ps_ERR;
-						}
-						else {
-							swarg_int = (int) value;
+							char* err;
+							long value = strtol(swarg_str, &err, 10);
+							if (*err)
+							{
+								// conversion error
+								ISQL_msg_get(USAGE_NOTINT, errbuf, SafeArg() << swarg_str << (s + 1));
+								STDERROUT(errbuf);
+								ret = ps_ERR;
+							}
+							else if ((value < INT_MIN) || (value > INT_MAX))
+							{
+								ISQL_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << (s + 1));
+								STDERROUT(errbuf);
+								ret = ps_ERR;
+							}
+							else {
+								swarg_int = (int) value;
+							}
 						}
 					}
-					break;
-				default:
-					fb_assert(false);
+					break; // switch found, exit the loop
 				}
 			}
 
@@ -6822,54 +7056,54 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 			switch (swid)
 			{
 #ifdef DEV_BUILD
-				case IN_SW_ISQL_EXTRACTTBL:
+				case SWITCH_EXTRACTTBL:
 					istable = true;
 					ret = EXTRACT;
 					break;
 #endif
-				case IN_SW_ISQL_EXTRACT:
+				case SWITCH_EXTRACT:
 					ret = EXTRACT;
 					break;
 
-				case IN_SW_ISQL_EXTRACTALL:
+				case SWITCH_EXTRACTALL:
 					ret = EXTRACTALL;
 					break;
 
-				case IN_SW_ISQL_BAIL:
+				case SWITCH_BAIL:
 					BailOnError = true;
 					break;
 
-				case IN_SW_ISQL_ECHO:
+				case SWITCH_ECHO:
 					Echo = true;
 					break;
 
-				case IN_SW_ISQL_MERGE:
+				case SWITCH_MERGE:
 					Merge_stderr = true;
 					break;
 
-				case IN_SW_ISQL_MERGE2:
+				case SWITCH_MERGE2:
 					Merge_diagnostic = true;
 					break;
 
-				case IN_SW_ISQL_NOAUTOCOMMIT:
+				case SWITCH_NOAUTOCOMMIT:
 					Autocommit = false;
 					break;
 
-				case IN_SW_ISQL_NODBTRIGGERS:
+				case SWITCH_NODBTRIGGERS:
 					Nodbtriggers = true;
 					break;
 
-				case IN_SW_ISQL_NOWARN:
+				case SWITCH_NOWARN:
 					Warnings = false;
 					break;
 
-				case IN_SW_ISQL_OUTPUT:
+				case SWITCH_OUTPUT:
 					if (newoutput(swarg_str) == FAIL) {
 						ret = ps_ERR;
 					}
 					break;
 
-				case IN_SW_ISQL_INPUT:
+				case SWITCH_INPUT:
 					if (newinput(swarg_str) == SKIP) {
 						Interactive = false;
 					}
@@ -6880,7 +7114,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					// Input_file = true;
 					break;
 
-				case IN_SW_ISQL_TERM:
+				case SWITCH_TERM:
 					Termlen = strlen(swarg_str);
 					if (Termlen >= MAXTERM_SIZE) {
 						Termlen = MAXTERM_SIZE - 1;
@@ -6888,14 +7122,14 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					fb_utils::copy_terminate(isqlGlob.global_Term, swarg_str, Termlen + 1);
 					break;
 
-				case IN_SW_ISQL_DATABASE:
+				case SWITCH_DATABASE:
 					fb_utils::copy_terminate(isqlGlob.global_Target_db, swarg_str, sizeof(isqlGlob.global_Target_db));
 					break;
 
-				case IN_SW_ISQL_PAGE:
+				case SWITCH_PAGE:
 					if (swarg_int < 0)
 					{
-						IUTILS_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << s);
+						ISQL_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << (s + 1));
 						STDERROUT(errbuf);
 						ret = ps_ERR;
 					}
@@ -6904,13 +7138,13 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					Pagelength = swarg_int;
 					break;
 
-				case IN_SW_ISQL_PASSWORD:
+				case SWITCH_PASSWORD:
 					fb_utils::copy_terminate(Password, fb_utils::get_passwd(swarg_str), sizeof(Password));
 					// make sure swarg_str is really a pointer to argv, not something else !!
 					global_psw = true;
 					break;
 
-				case IN_SW_ISQL_FETCHPASS:
+				case SWITCH_FETCHPASS:
 				{
 					const char* pass = NULL;
 					const fb_utils::FetchPassResult rez = fb_utils::fetchPassword(swarg_str, pass);
@@ -6924,15 +7158,15 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 						switch (rez)
 						{
 						case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
-							IUTILS_msg_get(PASS_FILE_OPEN, errbuf, SafeArg() << swarg_str << errno);
+							ISQL_msg_get(PASS_FILE_OPEN, errbuf, SafeArg() << swarg_str << errno);
 							// could not open password file @1, errno @2
 							break;
 						case fb_utils::FETCH_PASS_FILE_READ_ERROR:
-							IUTILS_msg_get(PASS_FILE_READ, errbuf, SafeArg() << swarg_str << errno);
+							ISQL_msg_get(PASS_FILE_READ, errbuf, SafeArg() << swarg_str << errno);
 							// could not read password file @1, errno @2
 							break;
 						case fb_utils::FETCH_PASS_FILE_EMPTY:
-							IUTILS_msg_get(EMPTY_PASS, errbuf, SafeArg() << swarg_str);
+							ISQL_msg_get(EMPTY_PASS, errbuf, SafeArg() << swarg_str);
 							// empty password file @1
 							break;
 						}
@@ -6942,27 +7176,27 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					break;
 				}
 
-				case IN_SW_ISQL_USER:
+				case SWITCH_USER:
 					fb_utils::copy_terminate(isqlGlob.User, swarg_str, sizeof(isqlGlob.User));
 					global_usr = true;
 					break;
 
-				case IN_SW_ISQL_ROLE:
+				case SWITCH_ROLE:
 					fb_utils::copy_terminate(isqlGlob.Role, swarg_str, sizeof(isqlGlob.Role));
 					global_role = true;
 					break;
 
-				case IN_SW_ISQL_ROLE2:
+				case SWITCH_ROLE2:
 					strcpy(isqlGlob.Role, "\"");
 					fb_utils::copy_terminate(isqlGlob.Role + 1, swarg_str, sizeof(isqlGlob.Role) - 2);
 					strcat(isqlGlob.Role, "\"");
 					global_role = true;
 					break;
 
-				case IN_SW_ISQL_CACHE:
+				case SWITCH_CACHE:
 					if (swarg_int <= 0)
 					{
-						IUTILS_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << s);
+						ISQL_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << (s + 1));
 						STDERROUT(errbuf);
 						ret = ps_ERR;
 					}
@@ -6970,7 +7204,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					has_global_numbufs = true;
 					break;
 
-				case IN_SW_ISQL_CHARSET:
+				case SWITCH_CHARSET:
 					{
 						fb_utils::copy_terminate(Charset, swarg_str, sizeof(Charset));
 						const size_t lgth = strlen(Charset);
@@ -6982,23 +7216,23 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					}
 					break;
 
-				case IN_SW_ISQL_QUIET:
+				case SWITCH_QUIET:
 					Quiet = true;
 					break;
 
 #ifdef TRUSTED_AUTH
-				case IN_SW_ISQL_TRUSTED:
+				case SWITCH_TRUSTED:
 					Trusted_auth = true;
 					break;
 #endif
 
-				case IN_SW_ISQL_VERSION:
+				case SWITCH_VERSION:
 					Version_info = true;
-					IUTILS_msg_get(VERSION, errbuf, SafeArg() << FB_VERSION);
+					ISQL_msg_get(VERSION, errbuf, SafeArg() << FB_VERSION);
 					isqlGlob.printf("%s%s", errbuf, NEWLINE);
 					break;
 
-				case IN_SW_ISQL_SQLDIALECT:
+				case SWITCH_SQLDIALECT:
 					requested_SQL_dialect = swarg_int;
 					if (requested_SQL_dialect < SQL_DIALECT_V5 ||
 						requested_SQL_dialect > SQL_DIALECT_CURRENT)
@@ -7020,12 +7254,8 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					}
 					break;
 
-				case IN_SW_ISQL_HELP:
-					ret = ps_ERR;
-					break;
-
 				default: // unknown switch
-					IUTILS_msg_get(SWITCH, errbuf, SafeArg() << s);
+					ISQL_msg_get(SWITCH, errbuf, SafeArg() << (s + 1));
 					STDERROUT(errbuf);
 					ret = ps_ERR;
 
@@ -7037,7 +7267,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 			if (isqlGlob.global_Db_name[0])
 			{
 				// We already have a database name
-				IUTILS_msg_get(USAGE_DUPDB, errbuf, SafeArg() << isqlGlob.global_Db_name << s);
+				ISQL_msg_get(USAGE_DUPDB, errbuf, SafeArg() << isqlGlob.global_Db_name << s);
 				STDERROUT(errbuf);
 				ret = ps_ERR;
 			}
@@ -7061,7 +7291,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 
 	if (Filelist->readingStdin())
 	{
-		Filelist->insert(stdin, "stdin", "stdin");
+		Filelist->insert(stdin, "stdin");
 		fb_assert(Filelist->count() == 1);
 	}
 
@@ -7535,7 +7765,10 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 }
 
 
-processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDLE trans, int subtype)
+processing_state ISQL_print_item_blob(FILE* fp,
+						   const XSQLVAR* var,
+						   FB_API_HANDLE trans,
+						   int subtype)
 {
 /******************************************
  *
@@ -7559,9 +7792,9 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 
 	if ((var->sqlsubtype != subtype) && (subtype != ALL_BLOBS))
 	{
-		IUTILS_msg_get(BLOB_SUBTYPE, msg, SafeArg() << subtype << var->sqlsubtype);
+		ISQL_msg_get(BLOB_SUBTYPE, msg, SafeArg() << subtype << var->sqlsubtype);
 		// Blob display set to subtype %d. This blob: subtype = %d\n
-		IUTILS_printf(fp, msg);
+		ISQL_printf(fp, msg);
 		return CONT;
 	}
 
@@ -7635,12 +7868,12 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 				else
 					break;
 			}
-			IUTILS_printf2(fp, "%s	%s%s", TAB_AS_SPACES, buffer, NEWLINE);
+			ISQL_printf2(fp, "%s	%s%s", TAB_AS_SPACES, buffer, NEWLINE);
 		}
 		else
 		{
 			buffer[length] = 0;
-			IUTILS_printf(fp, buffer);
+			ISQL_printf(fp, buffer);
 		}
 	}
 
@@ -7653,7 +7886,10 @@ processing_state ISQL_print_item_blob(FILE* fp, const XSQLVAR* var, FB_API_HANDL
 }
 
 
-static void print_item_numeric(SINT64 value, int length, int scale, TEXT* buf)
+static void print_item_numeric(SINT64 value,
+							   int length,
+							   int scale,
+							   TEXT* buf)
 {
 /**************************************
  *
@@ -7765,7 +8001,7 @@ static processing_state print_line(XSQLDA* sqlda, const int pad[], TEXT line[])
 	else if (varnum >= maxblob)
 	{
 		TEXT msg[MSG_LENGTH];
-		IUTILS_msg_get(ONLY_FIRST_BLOBS, msg, SafeArg() << maxblob);
+		ISQL_msg_get(ONLY_FIRST_BLOBS, msg, SafeArg() << maxblob);
 		isqlGlob.printf("%s%s", msg, NEWLINE);
 	}
 
@@ -7807,9 +8043,9 @@ static void print_performance(const perf64* perf_before)
 	perf64_get_info(&DB, &perf_after);
 	if (!have_report)
 	{
-		IUTILS_msg_get(REPORT1, report_1);
+		ISQL_msg_get(REPORT1, report_1);
 		// Current memory = !c\nDelta memory = !d\nMax memory = !x\nElapsed time= !e sec\n
-		IUTILS_msg_get(REPORT2, &report_1[strlen(report_1)]);
+		ISQL_msg_get(REPORT2, &report_1[strlen(report_1)]);
 		// For GUI_TOOLS:  Buffers = !b\nReads = !r\nWrites = !w\nFetches
 		//   = !f\n
 		// Else:  Cpu = !u sec\nBuffers = !b\nReads = !r\nWrites = !w\nFetch
@@ -7818,7 +8054,7 @@ static void print_performance(const perf64* perf_before)
 	}
 	SCHAR statistics[256];
 	perf64_format(perf_before, &perf_after, report_1, statistics, NULL);
-	IUTILS_printf2(Diag, "%s%s", statistics, NEWLINE);
+	ISQL_printf2(Diag, "%s%s", statistics, NEWLINE);
 }
 
 
@@ -7992,7 +8228,7 @@ static void process_plan()
 				ULONG l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
 				if (l > planSize - 3)
 					l = planSize - 3;
-				IUTILS_printf2(Diag, "%.*s%s", l, planPtr + 3, NEWLINE);
+				ISQL_printf2(Diag, "%.*s%s", l, planPtr + 3, NEWLINE);
 			}
 			return;
 		case isc_info_truncated:
@@ -8012,10 +8248,10 @@ static void process_plan()
 				}
 				// else fall into
 			case 2:
-				IUTILS_printf2(Diag, "Plan truncated%s", NEWLINE);
+				ISQL_printf2(Diag, "Plan truncated%s", NEWLINE);
 				return;
 			default:
-				IUTILS_printf2(Diag, "Logical error in isql%s", NEWLINE);
+				ISQL_printf2(Diag, "Logical error in isql%s", NEWLINE);
 				fb_assert(false);
 				return;
 			}
@@ -8023,7 +8259,7 @@ static void process_plan()
 		case isc_info_end:
 			return; // Assume no plan.
 		default:
-			IUTILS_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
+			ISQL_printf2(Diag, "Unknown error while retrieving plan%s", NEWLINE);
 			return;
 		}
 	}
@@ -8107,7 +8343,7 @@ static SSHORT process_request_type()
 			return (SSHORT) gds__vax_integer(b + 3, l);
 		}
 
-		//IUTILS_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg);
+		//ISQL_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg);
 		STDERROUT("Cannot determine statement type");
 	}
 	return 0;
@@ -8402,8 +8638,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			statement_type == isc_info_sql_stmt_update ||
 			statement_type == isc_info_sql_stmt_delete ||
 			statement_type == isc_info_sql_stmt_exec_procedure ||
-			statement_type == isc_info_sql_stmt_select_for_upd ||
-			statement_type == isc_info_sql_stmt_get_segment;
+			statement_type == isc_info_sql_stmt_select_for_upd;
 
 		if (print_sqlda_input(can_have_input_parameters) == ps_ERR)
 			return ps_ERR;
@@ -8515,7 +8750,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 			if (count >= 0)
 			{
 				TEXT rec_count_msg[MSG_LENGTH];
-				IUTILS_msg_get(REC_COUNT, rec_count_msg, SafeArg() << count);
+				ISQL_msg_get(REC_COUNT, rec_count_msg, SafeArg() << count);
 				// Records affected: %ld
 				isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 			}
@@ -8563,6 +8798,22 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 	if (statement_type != isc_info_sql_stmt_exec_procedure)
 	{
 		// Otherwise, open the cursor to start things up
+
+#ifdef SCROLLABLE_CURSORS
+		// Declare the C cursor for what it is worth
+		// CVC: isql doesn't do positioned updates, so I assumed declaring a cursor
+		// may be needed if scrollable cursors are enabled in the engine.
+
+		if (isc_dsql_set_cursor_name(isc_status, &global_Stmt, "C ", 0))
+		{
+			ISQL_errmsg(isc_status);
+			return (ps_ERR);
+		}
+
+		// check for warnings
+		if (isc_status[2] == isc_arg_warning)
+			ISQL_warning(isc_status);
+#endif
 
 		if (isc_dsql_execute(isc_status, &M__trans, &global_Stmt, isqlGlob.SQL_dialect, NULL))
 		{
@@ -8621,8 +8872,7 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		else
 		{
 			if (sqlda->sqld)
-			{
-				// do not output unnecessary white text
+			{ // do not output unnecessary white text
 				isqlGlob.printf(NEWLINE);
 				if (!List && Heading)
 				{
@@ -8659,14 +8909,52 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines)
 		{
 
-			// Check if exceeded maxRows value
-			if (maxRows != 0 && lines >= maxRows)
+			// Check if exceeded rowCount value
+			if (rowCount != 0 && lines >= rowCount)
 				break;
 
 			// Fetch the current cursor
 
-			if (isc_dsql_fetch(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda) == 100)
-				break;
+#ifdef SCROLLABLE_CURSORS
+			if (Autofetch)
+			{
+#endif
+				if (isc_dsql_fetch(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda) == 100)
+					break;
+#ifdef SCROLLABLE_CURSORS
+			}
+			else
+			{
+				TEXT fetch_statement[BUFFER_LENGTH80];
+
+				// if not autofetching, sit and wait for user to input
+				// NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, or RELATIVE <n>
+
+				const SSHORT fetch_ret =
+					get_statement(fetch_statement, sizeof(fetch_statement), fetch_prompt);
+				if (fetch_ret == FETCH)
+				{
+					if (isc_dsql_fetch2(isc_status, &global_Stmt, isqlGlob.SQL_dialect, sqlda,
+										fetch_direction, fetch_offset) == 100)
+					{
+						break;
+					}
+				}
+				else if (fetch_ret == BACKOUT || fetch_ret == EXIT)
+				{
+					lines = 0;
+					break;
+				}
+				else
+				{
+					TEXT errbuf[MSG_LENGTH];
+					ISQL_msg_get(CMD_ERR, errbuf, SafeArg() <<
+								"Expected NEXT, PRIOR, FIRST, LAST, ABSOLUTE <n>, RELATIVE <n>, or QUIT");
+					STDERROUT(errbuf);
+				}
+
+			}
+#endif
 
 			// Print the header every Pagelength number of lines for
 			// command-line ISQL only.  For WISQL, print the column
@@ -8726,8 +9014,8 @@ static int process_statement(const TEXT* string, XSQLDA** sqldap)
 		if (Docount)
 		{
 			TEXT rec_count_msg[MSG_LENGTH];
-			IUTILS_msg_get(REC_COUNT, rec_count_msg, SafeArg() << lines);
-			// Records affected: @1
+			ISQL_msg_get(REC_COUNT, rec_count_msg, SafeArg() << lines);
+			// Records affected: %ld
 			isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 		}
 	}
@@ -8915,3 +9203,5 @@ static const char* sqltype_to_string(USHORT sqltype)
 	}
 }
 //#endif
+
+

@@ -67,7 +67,7 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 	return true;
 }
 
-void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 {
 	Firebird::PathName::size_type pos = name.rfind(".dylib");
 	if (pos != Firebird::PathName::npos && pos == name.length() - 6)
@@ -79,10 +79,9 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 {
 	NSObjectFileImage image;
 
-	// Create an object file image from the given path
-	const NSObjectFileImageReturnCode retVal = modPath.hasData() ?
-		NSCreateObjectFileImageFromFile(modPath.c_str(), &image) : NSObjectFileImageInappropriateFile;
-
+	/* Create an object file image from the given path */
+	const NSObjectFileImageReturnCode retVal =
+		NSCreateObjectFileImageFromFile(modPath.c_str(), &image);
 	switch (retVal)
 	{
 	case NSObjectFileImageSuccess:
@@ -114,7 +113,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		return 0;
 	}
 
-	// link the image
+	/* link the image */
 	NSModule mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
 	NSDestroyObjectFileImage(image);
 
@@ -144,7 +143,7 @@ DarwinModule::~DarwinModule()
 	}
 	else
 	{
-		// Make sure the fini function gets called, if there is one
+		/* Make sure the fini function gets called, if there is one */
 		NSSymbol symbol = NSLookupSymbolInModule(nsModule, "__fini");
 		if (symbol != NULL)
 		{

@@ -37,16 +37,16 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 	try
 	{
 		const char* dbname = initInfo->getDatabaseName();
-		if (!dbname)
-			dbname = "";
 
 		TracePluginConfig config;
-		TraceCfgReader::readTraceConfiguration(initInfo->getConfigText(), dbname, config);
+		TraceCfgReader::readTraceConfiguration(
+			initInfo->getConfigText(),
+			dbname ? dbname : "",
+			config);
 
 		TraceConnection* connection = initInfo->getConnection();
 		if (!config.enabled ||
-			(config.connection_id && connection &&
-				(connection->getConnectionID() != SLONG(config.connection_id))))
+			(config.connection_id && connection && (connection->getConnectionID() != config.connection_id)))
 		{
 			*plugin = NULL;
 			return true; // Plugin is not needed, no error happened.

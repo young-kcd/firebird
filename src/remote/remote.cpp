@@ -272,6 +272,9 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		printf("REMOTE_find_request       allocate message %x\n", msg);
 #endif
 		msg->msg_next = msg;
+#ifdef SCROLLABLE_CURSORS
+		msg->msg_prior = msg;
+#endif
 		msg->msg_number = tail->rrq_message->msg_number;
 		tail->rrq_message = msg;
 	}
@@ -299,9 +302,6 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	{
 		xdrmem_create(&xdr, reinterpret_cast<char*>(packet), sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
-#ifdef DEV_BUILD
-		xdr.x_client = false;
-#endif
 
 		if (partial) {
 			xdr_protocol(&xdr, packet);
@@ -552,6 +552,9 @@ void REMOTE_reset_statement( Rsr* statement)
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
+#ifdef SCROLLABLE_CURSORS
+	message->msg_prior = message;
+#endif
 
 	statement->rsr_buffer = statement->rsr_message;
 
@@ -674,6 +677,7 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
+#ifdef REM_SERVER
 bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 {
 /**************************************
@@ -725,6 +729,28 @@ bool_t REMOTE_getbytes (XDR* xdrs, SCHAR* buff, u_int count)
 
 	return TRUE;
 }
+#endif //REM_SERVER
+
+#ifdef TRUSTED_AUTH
+ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
+					   ServerAuth::Part2* p2, P_OP op)
+	: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
+	  part2(p2), operation(op)
+{
+	fileName.assign(fName, fLen);
+	size_t pbLen = pb.getBufferLength();
+	if (pbLen)
+	{
+		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
+	}
+	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
+}
+
+ServerAuth::~ServerAuth()
+{
+	delete authSspi;
+}
+#endif // TRUSTED_AUTH
 
 void PortsCleanup::registerPort(rem_port* port)
 {
@@ -769,10 +795,6 @@ void PortsCleanup::closePorts()
 	}
 }
 
-ServerAuthBase::~ServerAuthBase()
-{
-}
-
 rem_port::~rem_port()
 {
 	if (port_events_shutdown)
@@ -791,7 +813,9 @@ rem_port::~rem_port()
 	delete port_packet_vector;
 #endif
 
-	delete port_auth;
+#ifdef TRUSTED_AUTH
+	delete port_trusted_auth;
+#endif
 
 #ifdef DEV_BUILD
 	--portCounter;

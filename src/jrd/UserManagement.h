@@ -25,10 +25,7 @@
 
 #include "firebird.h"
 #include "../common/classes/array.h"
-#include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
-#include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/recsrc/RecordSource.h"
 
 struct internal_user_data;
 
@@ -36,20 +33,9 @@ namespace Jrd {
 
 class thread_db;
 class jrd_tra;
-class RecordBuffer;
-
-class UsersTableScan: public VirtualTableScan
-{
-public:
-	UsersTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream)
-		: VirtualTableScan(csb, name, stream)
-	{}
-
-	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
-};
 
 // User management argument for deferred work
-class UserManagement : public DataDump
+class UserManagement
 {
 public:
 	explicit UserManagement(jrd_tra* tra);
@@ -61,19 +47,10 @@ public:
 	void execute(USHORT id);
 	// commit transaction in security database
 	void commit();
-	// return users list for SEC$USERS
-	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 
 private:
 	FB_API_HANDLE database, transaction;
-	RecordBuffer* buffer;
-	thread_db* threadDbb;
-	const char* realUser;
 	Firebird::HalfStaticArray<internal_user_data*, 8> commands;
-
-	static void display(void* arg, const internal_user_data* u, bool firstTime);
-	void display(const internal_user_data* u);
-	static void checkSecurityResult(int errcode, ISC_STATUS* status, const char* userName);
 };
 
 }	// namespace

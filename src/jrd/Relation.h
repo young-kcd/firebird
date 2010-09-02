@@ -29,8 +29,6 @@
 namespace Jrd
 {
 
-class RseNode;
-
 // view context block to cache view aliases
 
 class ViewContext
@@ -38,11 +36,11 @@ class ViewContext
 public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
 						 const TEXT* relation_name, USHORT context,
-						 ViewContextType type)
-	: vcx_context_name(p, context_name, strlen(context_name)),
-	  vcx_relation_name(relation_name),
-	  vcx_context(context),
-	  vcx_type(type)
+						 bool is_relation) :
+		vcx_context_name(p, context_name, strlen(context_name)),
+		vcx_relation_name(relation_name),
+		vcx_context(context),
+		vcx_is_relation(is_relation)
 	{
 	}
 
@@ -51,10 +49,10 @@ public:
 		return vc->vcx_context;
 	}
 
-	const Firebird::string vcx_context_name;
-	const Firebird::MetaName vcx_relation_name;
-	const USHORT vcx_context;
-	const ViewContextType vcx_type;
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
+	const bool		vcx_is_relation;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
@@ -178,15 +176,15 @@ class jrd_rel : public pool_alloc<type_rel>
 {
 public:
 	USHORT			rel_id;
+	USHORT			rel_flags;
 	USHORT			rel_current_fmt;	// Current format number
-	ULONG			rel_flags;
 	Format*			rel_current_format;	// Current record format
 	Firebird::MetaName	rel_name;		// ascii relation name
 	vec<Format*>*	rel_formats;		// Known record formats
 	Firebird::MetaName	rel_owner_name;	// ascii owner
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RseNode*		rel_view_rse;		// view record select expression
+	RecordSelExpr*	rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
 	Firebird::MetaName	rel_security_name;	// security class name for relation
@@ -204,7 +202,6 @@ public:
 
 	Lock*		rel_existence_lock;	// existence lock, if any
 	Lock*		rel_partners_lock;	// partners lock
-	Lock*		rel_rescan_lock;	// lock forcing relation to be scanned
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
 	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger
@@ -284,22 +281,22 @@ public:
 
 // rel_flags
 
-const ULONG REL_scanned					= 0x0001;	// Field expressions scanned (or being scanned)
-const ULONG REL_system					= 0x0002;
-const ULONG REL_deleted					= 0x0004;	// Relation known gonzo
-const ULONG REL_get_dependencies		= 0x0008;	// New relation needs dependencies during scan
-const ULONG REL_force_scan				= 0x0010;	// system relation has been updated since ODS change, force a scan
-const ULONG REL_check_existence			= 0x0020;	// Existence lock released pending drop of relation
-const ULONG REL_blocking				= 0x0040;	// Blocking someone from dropping relation
-const ULONG REL_sys_triggers			= 0x0080;	// The relation has system triggers to compile
-const ULONG REL_sql_relation			= 0x0100;	// Relation defined as sql table
-const ULONG REL_check_partners			= 0x0200;	// Rescan primary dependencies and foreign references
-const ULONG REL_being_scanned			= 0x0400;	// relation scan in progress
-const ULONG REL_sys_trigs_being_loaded	= 0x0800;	// System triggers being loaded
-const ULONG REL_deleting				= 0x1000;	// relation delete in progress
-const ULONG REL_temp_tran				= 0x2000;	// relation is a GTT delete rows
-const ULONG REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
-const ULONG REL_virtual					= 0x8000;	// relation is virtual
+const USHORT REL_scanned				= 0x0001;	// Field expressions scanned (or being scanned)
+const USHORT REL_system					= 0x0002;
+const USHORT REL_deleted				= 0x0004;	// Relation known gonzo
+const USHORT REL_get_dependencies		= 0x0008;	// New relation needs dependencies during scan
+const USHORT REL_force_scan				= 0x0010;	// system relation has been updated since ODS change, force a scan
+const USHORT REL_check_existence		= 0x0020;	// Existence lock released pending drop of relation
+const USHORT REL_blocking				= 0x0040;	// Blocking someone from dropping relation
+const USHORT REL_sys_triggers			= 0x0080;	// The relation has system triggers to compile
+const USHORT REL_sql_relation			= 0x0100;	// Relation defined as sql table
+const USHORT REL_check_partners			= 0x0200;	// Rescan primary dependencies and foreign references
+const USHORT REL_being_scanned			= 0x0400;	// relation scan in progress
+const USHORT REL_sys_trigs_being_loaded	= 0x0800;	// System triggers being loaded
+const USHORT REL_deleting				= 0x1000;	// relation delete in progress
+const USHORT REL_temp_tran				= 0x2000;	// relation is a GTT delete rows
+const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
+const USHORT REL_virtual				= 0x8000;	// relation is virtual
 
 
 inline bool jrd_rel::isSystem() const
@@ -339,11 +336,10 @@ public:
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field
-	Firebird::MetaName	fld_generator_name;	// identity generator name
 
 public:
 	explicit jrd_fld(MemoryPool& p)
-		: fld_name(p), fld_security_name(p), fld_generator_name(p)
+		: fld_name(p), fld_security_name(p)
 	{ }
 };
 

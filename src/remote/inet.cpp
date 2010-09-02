@@ -361,6 +361,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
 static slct_t INET_select = { 0, 0, 0 };
+static int INET_max_clients;
 static rem_port* inet_async_receive = NULL;
 
 
@@ -371,6 +372,7 @@ static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
 rem_port* INET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
+					const TEXT*	user_string,
 					bool	uv_flag,
 					Firebird::ClumpletReader &dpb)
 {
@@ -402,7 +404,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	int eff_gid;
 	int eff_uid;
 
-	ISC_get_user(&buffer, &eff_uid, &eff_gid);
+	ISC_get_user(&buffer, &eff_uid, &eff_gid, user_string);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
@@ -422,6 +424,10 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	}
 
 	// Establish connection to server
+
+	// Note: prior to V3.1E a recievers could not in truth handle more
+	// than 5 protocol descriptions, so we try them in chunks of 5 or less
+
 	// If we want user verification, we can't speak anything less than version 7
 
 	P_CNCT*	cnct = &packet->p_cnct;
@@ -434,8 +440,11 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_rpc, MAX_PTYPE, 5)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
+#endif
 	};
 
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -467,6 +476,31 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
 
 		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try2, cnct->p_cnct_count);
+
+		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
+		if (!port) {
+			return NULL;
+		}
+	}
+
+	if (packet->p_operation == op_reject && !uv_flag)
+	{
+		disconnect(port);
+
+		// try again with next set of known protocols
+
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
+
+		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 2)
+		};
+
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
+
+		copy_p_cnct_repeat_array(cnct->p_cnct_versions, protocols_to_try3, cnct->p_cnct_count);
 
 		port = inet_try_connect(packet, rdb, file_name, node_name, status_vector, dpb);
 		if (!port) {
@@ -963,6 +997,23 @@ rem_port* INET_server(SOCKET sock)
 
 	return port;
 }
+
+void INET_set_clients( int count)
+{
+/**************************************
+ *
+ *	I N E T _ s e t _ c l i e n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set maxinum number of clients served before
+ *	starting new server
+ *
+ **************************************/
+	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
+}
+
 
 static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 {
@@ -1629,7 +1680,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 
 	HANDLE new_handle;
 	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
-						 GetCurrentProcess(), &new_handle,
+						 GetCurrentProcess(), &new_handle, 
 						 0, TRUE, DUPLICATE_SAME_ACCESS))
 	{
 		gds__log("INET/inet_error: fork/DuplicateHandle errno = %d", GetLastError());
@@ -1863,9 +1914,6 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	// this level rather than try to catch them in all places where
 	// this routine is called
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
 		{
@@ -2238,9 +2286,6 @@ static int send_full( rem_port* port, PACKET * packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
@@ -2284,10 +2329,6 @@ static int send_partial( rem_port* port, PACKET * packet)
 			fflush(stdout);
 		}
 	} // end scope
-#endif
-
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
 #endif
 
 	return xdr_protocol(&port->port_send, packet);
@@ -2397,11 +2438,13 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
  *	Get a bunch of bytes from a memory stream if it fits.
  *
  **************************************/
+#ifdef REM_SERVER
 	const rem_port* port = (rem_port*) xdrs->x_public;
 	if ((port->port_flags & PORT_server) && !(port->port_server_flags & SRVR_debug))
 	{
 		return REMOTE_getbytes(xdrs, buff, count);
 	}
+#endif
 
 	SLONG bytecount = count;
 
@@ -2428,7 +2471,7 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 
 		if (!inet_read(xdrs))
 			return FALSE;
-	}
+}
 
 	// Scalar values and bulk transfer remainder fall thru
 	// to be moved byte-by-byte to avoid memcpy setup costs.

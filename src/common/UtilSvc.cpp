@@ -36,12 +36,11 @@
 #include <stdarg.h>
 
 
-namespace Firebird {
-
 namespace {
-	void outputFile(FILE* f, const void* text, size_t len)
+	void outputFile(FILE* std, const char* text)
 	{
-		if (::fwrite(text, 1, len, f) != len)
+		size_t len = strlen(text);
+		if (::fwrite(text, 1, len, std) != len)
 		{
 			// ASF: If the console is configured to UTF-8 (chcp 65001) with TrueType font, the MSVC
 			// runtime returns the number of characters (instead of bytes) written and make
@@ -51,12 +50,10 @@ namespace {
 #endif
 		}
 	}
-
-	void outputFile(FILE* std, const char* text)
-	{
-		outputFile(std, text, strlen(text));
-	}
 }
+
+
+namespace Firebird {
 
 class StandaloneUtilityInterface : public UtilSvc
 {
@@ -73,20 +70,20 @@ public:
 	void outputVerbose(const char* text)
 	{
 		outputFile(usvcDataMode ? stderr : stdout, text);
-  	}
+	}
 
 	void outputError(const char* text)
 	{
 		outputFile(stderr, text);
 	}
 
-	void outputData(const void* data, size_t size)
+	void outputData(const char* text)
 	{
 		fb_assert(usvcDataMode);
-		outputFile(stdout, data, size);
+		outputFile(stdout, text);
 	}
-
-	virtual void printf(bool err, const SCHAR* format, ...)
+	
+    virtual void printf(bool err, const SCHAR* format, ...)
 	{
 		va_list arglist;
 		va_start(arglist, format);

@@ -33,10 +33,11 @@ int		alice(Firebird::UtilSvc*);
 
 class AliceGlobals;
 
-void	ALICE_upper_case(const TEXT*, TEXT*, const size_t);
+void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
 void	ALICE_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_print_status(const ISC_STATUS*);
 void	ALICE_exit(int, AliceGlobals*);
 
 #endif // ALICE_ALICE_PROTO_H
+

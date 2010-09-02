@@ -30,6 +30,8 @@
 #include "../../../common/dllinst.h"
 
 #include "../jrd/os/config_root.h"
+#include "../utilities/install/registry.h"
+#include "../utilities/install/install_nt.h"
 
 using Firebird::PathName;
 
@@ -40,7 +42,31 @@ using Firebird::PathName;
  */
 namespace {
 
-bool getPathFromHInstance(PathName& root)
+bool getRootFromRegistry(PathName& root)
+{
+	HKEY hkey;
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, REG_KEY_ROOT_INSTANCES,
+			0, KEY_QUERY_VALUE, &hkey) != ERROR_SUCCESS)
+	{
+		return false;
+	}
+
+	DWORD bufsize = MAXPATHLEN;
+	char buffer[MAXPATHLEN];
+	DWORD type;
+	const long RegRC = RegQueryValueEx(hkey, FB_DEFAULT_INSTANCE,
+		NULL, &type, reinterpret_cast<UCHAR*>(buffer), &bufsize);
+	RegCloseKey(hkey);
+	if (RegRC == ERROR_SUCCESS) {
+		root = buffer;
+		return true;
+	}
+	return false;
+}
+
+
+bool getBinFromHInstance(PathName& root)
 {
 	const HINSTANCE hDllInst = Firebird::hDllInst;
 	if (!hDllInst)
@@ -61,55 +87,77 @@ bool getPathFromHInstance(PathName& root)
 
 void ConfigRoot::osConfigRoot()
 {
-	root_dir = install_dir;
+	// check the registry first
+#if defined(SUPERCLIENT)
+	if (getRootFromRegistry(root_dir))
+	{
+		addSlash();
+		return;
+	}
+#endif
+
+	// get the pathname of the running dll / executable
+	PathName bin_dir;
+	if (!getBinFromHInstance(bin_dir))
+	{
+		bin_dir = fb_utils::get_process_name();
+	}
+
+	if (bin_dir.hasData())
+	{
+		// get rid of the filename
+		size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		root_dir = bin_dir.substr(0, index);
+
+		// how should we decide to use bin_dir instead of root_dir? any ideas?
+		// ???
+#ifndef EMBEDDED
+		// go to the parent directory
+		index = root_dir.rfind(PathUtils::dir_sep, root_dir.length());
+		if (index)
+		{
+			root_dir = root_dir.substr(0, index);
+		}
+#endif
+		root_dir += PathUtils::dir_sep;
+
+		return;
+	}
+
+	// As a last resort get it from the default install directory
+	root_dir = FB_PREFIX;
 }
 
 void ConfigRoot::osConfigInstallDir()
 {
+
 	// get the pathname of the running dll / executable
-	PathName module_path;
-	if (!getPathFromHInstance(module_path))
+	PathName bin_dir;
+	if (!getBinFromHInstance(bin_dir))
 	{
-		module_path = fb_utils::get_process_name();
+		bin_dir = fb_utils::get_process_name();
 	}
 
-	if (module_path.hasData())
+	if (bin_dir.hasData())
 	{
 		// get rid of the filename
-		PathName bin_dir, file_name;
-		PathUtils::splitLastComponent(bin_dir, file_name, module_path);
+		size_t index = bin_dir.rfind(PathUtils::dir_sep);
+		install_dir = bin_dir.substr(0, index);
 
-		// search for the configuration file in the bin directory
-		PathUtils::concatPath(file_name, bin_dir, CONFIG_FILE);
-		DWORD attributes = GetFileAttributes(file_name.c_str());
-		if (attributes == INVALID_FILE_ATTRIBUTES || attributes == FILE_ATTRIBUTE_DIRECTORY)
+		// how should we decide to use bin_dir instead of root_dir? any ideas?
+		// ???
+#ifndef EMBEDDED
+		// go to the parent directory
+		index = install_dir.rfind(PathUtils::dir_sep, install_dir.length());
+		if (index)
 		{
-			// search for the configuration file in the parent directory
-			PathName parent_dir;
-			PathUtils::splitLastComponent(parent_dir, file_name, bin_dir);
-
-			if (parent_dir.hasData())
-			{
-				PathUtils::concatPath(file_name, parent_dir, CONFIG_FILE);
-				attributes = GetFileAttributes(file_name.c_str());
-				if (attributes != INVALID_FILE_ATTRIBUTES && attributes != FILE_ATTRIBUTE_DIRECTORY)
-				{
-					install_dir = parent_dir;
-				}
-			}
+			install_dir = install_dir.substr(0, index);
 		}
+#endif
 
-		if (install_dir.isEmpty())
-		{
-			install_dir = bin_dir;
-		}
+		return;
 	}
 
-	if (install_dir.isEmpty())
-	{
-		// As a last resort get it from the default install directory
-		install_dir = FB_PREFIX;
-	}
-
-	PathUtils::ensureSeparator(install_dir);
+	// As a last resort get it from the default install directory
+	install_dir = FB_PREFIX;
 }

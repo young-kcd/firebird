@@ -267,14 +267,6 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp"
 				>
 			</File>
@@ -283,19 +275,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\errd.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.cpp"
 				>
 			</File>
 			<File
@@ -350,10 +330,6 @@
 				RelativePath="..\..\..\src\dsql\utld.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.cpp"
-				>
-			</File>
 			<Filter
 				Name="epp files"
 				Filter="epp"
@@ -372,10 +348,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\src\dsql\metd.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\PackageNodes.epp"
 					>
 				</File>
 			</Filter>
@@ -398,10 +370,6 @@
 					RelativePath="..\..\..\gen\$(PlatformName)\dsql\metd.cpp"
 					>
 				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\PackageNodes.cpp"
-					>
-				</File>
 			</Filter>
 		</Filter>
 		<Filter
@@ -418,19 +386,11 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\array_proto.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\blob_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.h"
 				>
 			</File>
 			<File
@@ -454,15 +414,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\errd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.h"
 				>
 			</File>
 			<File
@@ -502,10 +454,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\PackageNodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\parse_proto.h"
 				>
 			</File>
@@ -539,14 +487,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\utld_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Visitors.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.h"
 				>
 			</File>
 		</Filter>

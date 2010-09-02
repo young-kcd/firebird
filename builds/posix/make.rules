@@ -32,7 +32,8 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-WFLAGS:=-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include
+WFLAGS:=-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
+	-DNAMESPACE=Vulcan
 
 ifeq ($(STD_ICU),false)
   WFLAGS:= $(WFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
@@ -64,9 +65,9 @@ WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS)
 #	$(ECHO) $(testgpre)
 
 
-GPRE_FLAGS= -m -z -n
-JRD_GPRE_FLAGS = -n -z -gds_cxx -ids
-DSQL_GPRE_FLAGS = -m -z -n
+GPRE_FLAGS=	-r -m -z -n
+JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
+DSQL_GPRE_FLAGS = -r -m -z -n
 
 
 .SUFFIXES: .c .e .epp .cpp
@@ -89,50 +90,28 @@ $(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
 
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 $(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_PATH)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 ifneq ($(strip $(PLATFORM_FALLBACK)),)
 $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 $(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_FALLBACK)/%.cpp
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 endif
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 $(OBJ)/%.o: $(OBJ)/%.cpp 
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed -i -e "1s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 .SUFFIXES: .epp .e
-
-.SECONDARY: \
-	$(OBJ)/msgs/modify_msgs.epp $(OBJ)/msgs/check_msgs.epp $(OBJ)/msgs/include.epp \
-	$(OBJ)/msgs/load.epp $(OBJ)/msgs/build_file.epp $(OBJ)/msgs/change_msgs.epp \
-	$(OBJ)/msgs/enter_msgs.epp $(OBJ)/jrd/ini.epp $(OBJ)/jrd/dyn_def.epp $(OBJ)/jrd/scl.epp \
-	$(OBJ)/jrd/dyn_del.epp $(OBJ)/jrd/dyn_mod.epp $(OBJ)/jrd/Function.epp $(OBJ)/jrd/grant.epp \
-	$(OBJ)/jrd/fun.epp $(OBJ)/jrd/dyn.epp $(OBJ)/jrd/dfw.epp $(OBJ)/jrd/dyn_util.epp \
-	$(OBJ)/jrd/pcmet.epp $(OBJ)/jrd/met.epp $(OBJ)/jrd/dpm.epp $(OBJ)/utilities/rebuild/rstore.epp \
-	$(OBJ)/utilities/rebuild/rmet.epp $(OBJ)/utilities/gstat/dba.epp $(OBJ)/utilities/stats.epp \
-	$(OBJ)/auth/SecurityDatabase/LegacyManagement.epp $(OBJ)/alice/alice_meta.epp $(OBJ)/qli/meta.epp \
-	$(OBJ)/qli/proc.epp $(OBJ)/qli/show.epp $(OBJ)/qli/help.epp $(OBJ)/misc/codes.epp \
-	$(OBJ)/gpre/gpre_meta.epp $(OBJ)/dsql/blob.epp $(OBJ)/dsql/array.epp \
-	$(OBJ)/dsql/PackageNodes.epp $(OBJ)/dsql/metd.epp $(OBJ)/dsql/DdlNodes.epp $(OBJ)/isql/show.epp \
-	$(OBJ)/isql/extract.epp $(OBJ)/isql/isql.epp $(OBJ)/burp/restore.epp $(OBJ)/burp/backup.epp \
-	$(OBJ)/burp/OdsDetection.epp
 
 # Rules for making resource files
 

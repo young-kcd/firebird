@@ -27,8 +27,6 @@
 #ifndef JRD_SIMILAR_TO_EVALUATOR_H
 #define JRD_SIMILAR_TO_EVALUATOR_H
 
-#include "../jrd/intl_classes.h"
-
 // #define DEBUG_SIMILAR
 
 #ifdef DEBUG_SIMILAR
@@ -39,8 +37,8 @@
 namespace Firebird
 {
 
-template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
-class SimilarToMatcher : public Jrd::BaseSimilarToMatcher
+template <typename StrConverter, typename CharType>
+class SimilarToMatcher : public Jrd::PatternMatcher
 {
 private:
 	typedef Jrd::CharSet CharSet;
@@ -76,7 +74,7 @@ private:
 	public:
 		Evaluator(MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape, bool forSubstring);
+			CharType escapeChar, bool useEscape);
 
 		~Evaluator()
 		{
@@ -237,7 +235,6 @@ private:
 		TextType* textType;
 		CharType escapeChar;
 		bool useEscape;
-		bool forSubstring;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 		const UCHAR* originalPatternStr;
 		SLONG originalPatternLen;
@@ -260,9 +257,9 @@ private:
 
 public:
 	SimilarToMatcher(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-				SLONG strLen, CharType escape, bool useEscape, bool forSubstring)
-		: BaseSimilarToMatcher(pool, ttype),
-		  evaluator(pool, ttype, str, strLen, escape, useEscape, forSubstring)
+			SLONG str_len, CharType escape, bool use_escape)
+		: PatternMatcher(pool, ttype),
+		  evaluator(pool, ttype, str, str_len, escape, use_escape)
 	{
 	}
 
@@ -294,23 +291,21 @@ public:
 	}
 
 	static SimilarToMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
+		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escape_length)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
+		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
 		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
-			forSubstring);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 	}
 
 	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
+		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
 		Evaluator evaluator(pool, ttype, p, pl,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
-			forSubstring);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 		evaluator.processNextChunk(s, sl);
 		return evaluator.getResult();
 	}
@@ -320,16 +315,15 @@ private:
 };
 
 
-template <typename CharType, typename StrConverter>
-SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
+template <typename StrConverter, typename CharType>
+SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 			MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape, bool forSubstring)
+			CharType escapeChar, bool useEscape)
 	: StaticAllocator(pool),
 	  textType(textType),
 	  escapeChar(escapeChar),
 	  useEscape(useEscape),
-	  forSubstring(forSubstring),
 	  buffer(pool),
 	  originalPatternStr(patternStr),
 	  originalPatternLen(patternLen),
@@ -371,9 +365,6 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 	int flags;
 	parseExpr(&flags);
 
-	if (forSubstring && branchNum != 2)
-		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-
 	nodes.push(Node(opEnd));
 
 #ifdef DEBUG_SIMILAR
@@ -390,8 +381,8 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 {
 	const UCHAR* str = buffer.begin();
 	SLONG len = buffer.getCount();
@@ -429,8 +420,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
 {
 	const size_t pos = buffer.getCount();
 	memcpy(buffer.getBuffer(pos + dataLen) + pos, data, dataLen);
@@ -438,8 +429,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::processNextChunk(const
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::reset()
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::reset()
 {
 	buffer.shrink(0);
 	scopes.shrink(0);
@@ -448,8 +439,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::reset()
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseExpr(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 {
 	*flagp = FLAG_NOT_EMPTY;
 
@@ -488,8 +479,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseExpr(int* flagp)
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseTerm(int* flagp)
 {
 	*flagp = 0;
 
@@ -501,14 +492,6 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
 		   (c = *patternPos) != canonicalChar(TextType::CHAR_VERTICAL_BAR) &&
 		   c != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 	{
-		if (forSubstring && branchNum != 0 && patternPos + 1 < patternEnd &&
-			*patternPos == escapeChar &&
-			patternPos[1] == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
-		{
-			++branchNum;
-			break;
-		}
-
 		parseFactor(&flags);
 
 		*flagp |= flags & FLAG_NOT_EMPTY;
@@ -525,8 +508,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp)
 {
 	int atomPos = nodes.getCount();
 
@@ -655,8 +638,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flagp)
 {
 	*flagp = 0;
 
@@ -784,37 +767,36 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 				struct
 				{
+					const char* name;
 					const GetCanonicalFunc* funcs;
-					const ULONG nameLen; // in bytes, not characters because all functions accept length in bytes
-					const USHORT name[10];
 				} static const classes[] =
-					{	// Names are in utf16 in order not to convert them every time for comparsion and thus save some CPU
-						{alNum, 10, {'A','L','N','U','M'}},
-						{alpha, 10, {'A','L','P','H','A'}},
-						{digit, 10, {'D','I','G','I','T'}},
-						{lower, 10, {'L','O','W','E','R'}},
-						{space, 10, {'S','P','A','C','E'}},
-						{upper, 10, {'U','P','P','E','R'}},
-						{whitespace, 20, {'W','H','I','T','E','S','P','A','C','E'}}
+					{
+						{"ALNUM", alNum},
+						{"ALPHA", alpha},
+						{"DIGIT", digit},
+						{"LOWER", lower},
+						{"SPACE", space},
+						{"UPPER", upper},
+						{"WHITESPACE", whitespace}
 					};
 
-				HalfStaticArray<USHORT, 12> className(len);
+				UCharBuffer className;
 
-				ULONG classNameLen = charSet->getConvToUnicode().convert(len, reinterpret_cast<const UCHAR*>(start),
-					className.getCapacity() * sizeof(USHORT), className.begin());
+				className.getBuffer(len);
+				className.resize(charSet->substring(originalPatternLen, originalPatternStr,
+													className.getCapacity(), className.begin(),
+													start - patternStart, len));
 
-				// Bring class name to uppercase for case-insensitivity
-				// Do it in utf16 because original collation can have no uppercase conversion
-				classNameLen = Jrd::UnicodeUtil::utf16UpperCase(classNameLen, className.begin(),
-					className.getCapacity() * sizeof(USHORT), className.begin(), NULL);
 				int classN;
+				UCharBuffer buffer;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
-					INTL_BOOL errorFlag;
+					const string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
+					charSet->getConvFromUnicode().convert(s.length(), (const UCHAR*) s.c_str(), buffer);
 
-					if (Jrd::UnicodeUtil::utf16Compare(classNameLen, className.begin(),
-							classes[classN].nameLen, classes[classN].name, &errorFlag) == 0)
+					if (textType->compare(className.getCount(), className.begin(),
+										  buffer.getCount(), buffer.begin()) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
 						{
@@ -899,9 +881,9 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 		if (rangeBuffer.getCount() > 0)
 		{
-			UCHAR* r = (UCHAR*) alloc(rangeBuffer.getCount());
-			memcpy(r, rangeBuffer.begin(), rangeBuffer.getCount());
-			*nodeRange = r;
+			UCHAR* p = (UCHAR*) alloc(rangeBuffer.getCount());
+			memcpy(p, rangeBuffer.begin(), rangeBuffer.getCount());
+			*nodeRange = p;
 		}
 
 		*nodeRangeLen = rangeBuffer.getCount();
@@ -911,11 +893,10 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 	}
 	else if (op == canonicalChar(TextType::CHAR_OPEN_PAREN))
 	{
+		++branchNum;
+
 		int flags;
 		parseExpr(&flags);
-
-		if (!forSubstring)	// This is used for the trace stuff.
-			++branchNum;
 
 		if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -927,40 +908,14 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 		if (patternPos >= patternEnd)
 			status_exception::raise(Arg::Gds(isc_escape_invalid));
 
-		if (forSubstring && *patternPos == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
+		if (*patternPos != escapeChar &&
+			notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
 		{
-			if (branchNum != 0)
-			{
-				--patternPos;
-				return;
-			}
-
-			++branchNum;
-			++patternPos;
-
-			int flags;
-			parseExpr(&flags);
-
-			if (patternPos + 1 >= patternEnd || *patternPos != escapeChar ||
-				patternPos[1] != canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
-			{
-				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-			}
-
-			patternPos += 2;
-			*flagp |= flags & FLAG_NOT_EMPTY;
+			status_exception::raise(Arg::Gds(isc_escape_invalid));
 		}
-		else
-		{
-			if (*patternPos != escapeChar &&
-				notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
-			{
-				status_exception::raise(Arg::Gds(isc_escape_invalid));
-			}
 
-			nodes.push(Node(opExactly, patternPos++, 1));
-			*flagp |= FLAG_NOT_EMPTY;
-		}
+		nodes.push(Node(opExactly, patternPos++, 1));
+		*flagp |= FLAG_NOT_EMPTY;
 	}
 	else
 	{
@@ -980,8 +935,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::isRep(CharType c) const
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::isRep(CharType c) const
 {
 	return (c == canonicalChar(TextType::CHAR_ASTERISK) ||
 			c == canonicalChar(TextType::CHAR_PLUS) ||
@@ -991,8 +946,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::isRep(CharType c) cons
 
 
 #ifdef DEBUG_SIMILAR
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 {
 	string text;
 
@@ -1064,9 +1019,9 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
 #endif	// DEBUG_SIMILAR
 
 
-template <typename CharType, typename StrConverter>
+template <typename StrConverter, typename CharType>
 #ifdef RECURSIVE_SIMILAR
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int start)
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int start)
 {
 	for (int i = start; i < limit; ++i)
 	{
@@ -1230,7 +1185,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 	return true;
 }
 #else
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 {
 	//
 	// state  description
@@ -1527,8 +1482,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 
 // Returns the number of characters up to first one present in set.
-template <typename CharType, typename StrConverter>
-SLONG SimilarToMatcher<CharType, StrConverter>::Evaluator::notInSet(
+template <typename StrConverter, typename CharType>
+SLONG SimilarToMatcher<StrConverter, CharType>::Evaluator::notInSet(
 	const CharType* str, SLONG strLen, const CharType* set, SLONG setLen)
 {
 	for (const CharType* begin = str; str - begin < strLen; ++str)

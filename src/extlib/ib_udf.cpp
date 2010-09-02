@@ -55,7 +55,7 @@ int MATHERR(struct exception_type*)
 	return 1;
 }
 #undef exception_type
-#endif // SOLARIS
+#endif /* SOLARIS */
 #endif //__ICC
 
 double EXPORT IB_UDF_abs( double *a)
@@ -75,7 +75,7 @@ char *EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 
 	char* b = (char *) ib_util_malloc(2);
 	*b = (char) (*a);
-	// let us not forget to NULL terminate
+	/* let us not forget to NULL terminate */
 	b[1] = '\0';
 	return (b);
 }
@@ -246,7 +246,7 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 	if (!s)
 		return 0;
 
-	while (*s == ' ')		// skip leading blanks
+	while (*s == ' ')		/* skip leading blanks */
 		s++;
 
 	const long length = strlen(s);
@@ -350,7 +350,7 @@ ISC_LONG EXPORT IB_UDF_sign( double *a)
 		return 1;
 	if (*a < 0)
 		return -1;
-	// If neither is true then it equals 0
+	/* If neither is true then it equals 0 */
 	return 0;
 }
 
@@ -388,8 +388,10 @@ char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 	else
 	{
-		// we want from the mth char to the nth char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+		/* we want from the mth char to the
+		   nth char inclusive, so add one to
+		   the length. */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*n > length) {
 			length -= *m - 1;
 		}
@@ -426,8 +428,10 @@ char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 	else
 	{
-		// we want from the mth char to the (m+n)th char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+		/* we want from the mth char to the (m+n)th char inclusive,
+		 * so add one to the length.
+		 */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*m + *n - 1 > length) {
 			length -= *m - 1;
 		}

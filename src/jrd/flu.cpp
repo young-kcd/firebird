@@ -167,6 +167,12 @@ namespace Jrd
 
 	FPTR_INT Module::lookup(const char* module, const char* name, DatabaseModules& interest)
 	{
+		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
+		if (function)
+		{
+			return function;
+		}
+
 		// Try to find loadable module
 		Module m = lookupModule(module, true);
 		if (! m)
@@ -190,6 +196,12 @@ namespace Jrd
 
 	FPTR_INT Module::lookup(const TEXT* module, const TEXT* name)
 	{
+		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
+		if (function)
+		{
+			return function;
+		}
+
 		// Try to find loadable module
 		Module m = lookupModule(module, false);
 		if (! m)

@@ -32,10 +32,7 @@
 
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
-#include "../jrd/Attachment.h"
-#include "../jrd/JrdStatement.h"
 #include "../jrd/RecordNumber.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
@@ -56,7 +53,6 @@ template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
 class RecordSource;
-class Cursor;
 class thread_db;
 
 // record parameter block
@@ -91,6 +87,8 @@ struct record_param
 	USHORT rpb_stream_flags;		// stream flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
 
+	FB_UINT64 rpb_ext_pos;			// position in external file
+
 	inline WIN& getWindow(thread_db* tdbb)
 	{
 		if (rpb_relation) {
@@ -112,7 +110,6 @@ const USHORT rpb_fragment	= 4;
 const USHORT rpb_incomplete	= 8;
 const USHORT rpb_blob		= 16;
 const USHORT rpb_delta		= 32;		// prior version is a differences record
-// rpb_large = 64 is missing
 const USHORT rpb_damaged	= 128;		// record is busted
 const USHORT rpb_gc_active	= 256;		// garbage collecting dead record version
 const USHORT rpb_uk_modified= 512;		// record key field values are changed
@@ -196,51 +193,27 @@ private:
 
 // request block
 
-class jrd_req : public pool_alloc<type_req>
+class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
-	jrd_req(Attachment* attachment, /*const*/ JrdStatement* aStatement,
-			Firebird::MemoryStats* parent_stats)
-		: statement(aStatement),
-		  req_pool(statement->pool),
-		  req_memory_stats(parent_stats),
-		  req_blobs(req_pool),
-		  req_stats(*req_pool),
-		  req_base_stats(*req_pool),
-		  req_ext_stmt(NULL),
-		  req_cursors(*req_pool),
-		  req_domain_validation(NULL),
-		  req_auto_trans(*req_pool),
-		  req_sorts(*req_pool),
-		  req_rpb(*req_pool),
-		  impureArea(*req_pool)
-	{
-		setAttachment(attachment);
-		req_rpb = statement->rpbsSetup;
-		impureArea.grow(statement->impureSize);
-	}
+	jrd_req(MemoryPool* pool, Firebird::MemoryStats* parent_stats)
+	:	req_pool(pool), req_memory_stats(parent_stats),
+		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
+		req_trg_name(*pool), req_stats(*pool), req_base_stats(*pool), req_fors(*pool),
+		req_exec_sta(*pool), req_ext_stmt(NULL), req_invariants(*pool),
+		req_blr(*pool), req_domain_validation(NULL),
+		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool),
+		req_sorts(*pool)
+	{}
 
-	/*const*/ JrdStatement* getStatement() const
-	{
-		return statement;
-	}
-
-	void setAttachment(Attachment* newAttachment)
-	{
-		req_attachment = newAttachment;
-		charSetId = statement->flags & JrdStatement::FLAG_INTERNAL ?
-			CS_METADATA : req_attachment->att_charset;
-	}
-
-private:
-	/*const*/ JrdStatement* const statement;
-
-public:
-	MemoryPool* req_pool;
 	Attachment*	req_attachment;			// database attachment
 	SLONG		req_id;					// request identifier
+	USHORT		req_count;				// number of streams
 	USHORT		req_incarnation;		// incarnation number
+	ULONG		req_impure_size;		// size of impure area
+	MemoryPool* req_pool;
 	Firebird::MemoryStats req_memory_stats;
+	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
@@ -248,10 +221,25 @@ public:
 	jrd_req*	req_tra_next;
 	jrd_req*	req_tra_prev;
 
+	jrd_req*	req_request;			// next request in Database
 	jrd_req*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
-	const jrd_nod*	req_message;		// Current message for send/receive
+	ExternalAccessList req_external;	// Access to procedures/triggers to be checked
+	AccessItemList req_access;			// Access items to be checked
+	//vec<jrd_nod*>*	req_variables;	// Vector of variables, if any CVC: UNUSED
+	ResourceList req_resources;			// Resources (relations and indices)
+	jrd_nod*	req_message;			// Current message for send/receive
+#ifdef SCROLLABLE_CURSORS
+	jrd_nod*	req_async_message;		// Asynchronous message (used in scrolling)
+#endif
+	jrd_prc*	req_procedure;			// procedure, if any
+	Firebird::MetaName	req_trg_name;	// name of request (trigger), if any
+	//USHORT		req_length;			// message length for send/receive
+	//USHORT		req_nmsgs;			// number of message types
+	//USHORT		req_mmsg;			// highest message type
+	//USHORT		req_msend;			// longest send message
+	//USHORT		req_mreceive;		// longest receive message
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
@@ -266,36 +254,37 @@ public:
 	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
 	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
 
-	const jrd_nod*	req_next;			// next node for execution
+	jrd_nod*	req_top_node;			// top of execution tree
+	jrd_nod*	req_next;				// next node for execution
+	Firebird::Array<RecordSource*> req_fors;	// Vector of for loops, if any
+	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
-	Firebird::Array<const Cursor*>	req_cursors;	// named cursors
+	vec<RecordSource*>* 		req_cursors;	// Vector of named cursors, if any
+	Firebird::Array<jrd_nod*>	req_invariants;	// Vector of invariant nodes, if any
 	USHORT		req_label;				// label for leave
 	ULONG		req_flags;				// misc request flags
 	Savepoint*	req_proc_sav_point;		// procedure savepoint list
 	Firebird::TimeStamp	req_timestamp;	// Start time of request
+	Firebird::RefStrPtr req_sql_text;	// SQL text
+	Firebird::Array<UCHAR> req_blr;		// BLR for non-SQL query
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
 	jrd_req* req_proc_caller;	// Procedure's caller request
-	const jrd_nod* req_proc_inputs;	// and its node with input parameters
+	jrd_nod* req_proc_inputs;	// and its node with input parameters
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
+	MapFieldInfo	req_map_field_info;		// Map field name to field info
+	MapItemInfo		req_map_item_info;		// Map item to item info
 	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
-	ExtEngineManager::ResultSet* resultSet;	// external procedure result set
-	ValuesImpl* inputParams;				// external procedure input values
-	ValuesImpl* outputParams;				// external procedure output values
-	SortOwner req_sorts;
-	Firebird::Array<record_param> req_rpb;	// record parameter blocks
-	Firebird::Array<UCHAR> impureArea;		// impure area
-	USHORT charSetId;						// "client" character set of the request
+	SortOwner		req_sorts;
 
 	enum req_ta {
-		// Order should be maintained because the numbers are stored in BLR
-		// and should be in sync with ExternalTrigger::Action.
+		// order should be maintained because the numbers are stored in BLR
 		req_trigger_insert			= 1,
 		req_trigger_update			= 2,
 		req_trigger_delete			= 3,
@@ -303,8 +292,7 @@ public:
 		req_trigger_disconnect		= 5,
 		req_trigger_trans_start		= 6,
 		req_trigger_trans_commit	= 7,
-		req_trigger_trans_rollback	= 8,
-		req_trigger_ddl				= 9
+		req_trigger_trans_rollback	= 8
 	} req_trigger_action;			// action that caused trigger to fire
 
 	enum req_s {
@@ -319,10 +307,7 @@ public:
 
 	StatusXcp req_last_xcp;			// last known exception
 
-	template <typename T> T* getImpure(unsigned offset)
-	{
-		return reinterpret_cast<T*>(&impureArea[offset]);
-	}
+	record_param req_rpb[1];		// record parameter blocks
 
 	void adjustCallerStats()
 	{
@@ -333,19 +318,46 @@ public:
 	}
 };
 
+// Size of request without rpb items at the tail. Used to calculate impure area size
+//
+// 24-Mar-2004, Nickolay Samofatov.
+// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to
+// alignment quirks, but from quick glance on code it looks like it should not be
+// causing problems. Good fix for this kludgy behavior is to use some C++ means
+// to manage impure area and array of record parameter blocks
+const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
+
 // Flags for req_flags
 const ULONG req_active			= 0x1L;
 const ULONG req_stall			= 0x2L;
 const ULONG req_leave			= 0x4L;
-const ULONG req_null			= 0x8L;
-const ULONG req_abort			= 0x10L;
-const ULONG req_error_handler	= 0x20L;		// looper is called to handle error
-const ULONG req_warning			= 0x40L;
-const ULONG req_in_use			= 0x80L;
-const ULONG req_continue_loop	= 0x100L;		// PSQL continue statement
-const ULONG req_proc_fetch		= 0x200L;		// Fetch from procedure in progress
-const ULONG req_same_tx_upd		= 0x400L;		// record was updated by same transaction
-const ULONG req_reserved		= 0x800L;		// Request reserved for client
+#ifdef SCROLLABLE_CURSORS
+const ULONG req_async_processing= 0x8L;
+#endif
+const ULONG req_null			= 0x10L;
+//const ULONG req_broken			= 0x20L;
+const ULONG req_abort			= 0x40L;
+const ULONG req_internal		= 0x80L;
+const ULONG req_warning			= 0x100L;
+const ULONG req_in_use			= 0x200L;
+const ULONG req_sys_trigger		= 0x400L;		// request is a system trigger
+//const ULONG req_count_records	= 0x800L;		// count records accessed
+const ULONG req_proc_fetch		= 0x1000L;		// Fetch from procedure in progress
+const ULONG req_ansi_any		= 0x2000L;		// Request is processing ANSI ANY
+const ULONG req_same_tx_upd		= 0x4000L;		// record was updated by same transaction
+const ULONG req_ansi_all		= 0x8000L;		// Request is processing ANSI ANY
+const ULONG req_ansi_not		= 0x10000L;		// Request is processing ANSI ANY
+const ULONG req_reserved		= 0x20000L;		// Request reserved for client
+const ULONG req_ignore_perm		= 0x40000L;		// ignore permissions checks
+const ULONG req_fetch_required	= 0x80000L;		// need to fetch next record
+const ULONG req_error_handler	= 0x100000L;	// looper is called to handle error
+const ULONG req_blr_version4	= 0x200000L;	// Request is of blr_version4
+
+// Mask for flags preserved in a clone of a request
+const ULONG REQ_FLAGS_CLONE_MASK = (req_sys_trigger | req_internal | req_ignore_perm | req_blr_version4);
+
+// Mask for flags preserved on initialization of a request
+const ULONG REQ_FLAGS_INIT_MASK = (req_in_use | req_internal | req_sys_trigger | req_ignore_perm | req_blr_version4);
 
 // Flags for req_view_flags
 enum {

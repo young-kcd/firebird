@@ -49,7 +49,6 @@
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/Function.h"
 
 #include "../common/utils_proto.h"
 
@@ -66,64 +65,63 @@
 #include <windows.h>
 #endif
 
+#ifdef SUPERSERVER
+static const bool SHARED_DBB = true;
+#else
+static const bool SHARED_DBB = false;
+#endif
+
 
 using namespace Firebird;
 using namespace Jrd;
 
 
-bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
-										 FB_UINT64 position, Record* record) const
-{
-	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
-	return snapshot->getData(relation)->fetch(position, record);
-}
+// SharedData class
 
-
-// MonitoringData class
-
-MonitoringData::MonitoringData(const Database* dbb)
+DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	: process_id(getpid()), local_id(dbb->dbb_monitoring_id)
 {
 	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
-	Arg::StatusVector statusVector;
-	mapFile(statusVector, name.c_str(), DEFAULT_SIZE);
-	if (!sh_mem_header)
+	ISC_STATUS_ARRAY statusVector;
+	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
+	if (!base)
 	{
-		iscLogStatus("Cannot initialize the shared memory region", statusVector.value());
+		iscLogStatus("Cannot initialize the shared memory region", statusVector);
 		status_exception::raise(statusVector);
 	}
 
-	fb_assert(sh_mem_header->mhb_version == MONITOR_VERSION);
+	fb_assert(base->version == MONITOR_VERSION);
 }
 
 
-MonitoringData::~MonitoringData()
+DatabaseSnapshot::SharedData::~SharedData()
 {
 	{ // scope
-		Guard guard(this);
+		DumpGuard guard(this);
 		cleanup();
 
-		if (sh_mem_header->used == sizeof(Header))
-			removeMapFile();
+		if (base->used == sizeof(Header))
+			ISC_remove_map_file(&handle);
 	}
 
-	Arg::StatusVector statusVector;
-	unmapFile(statusVector);
+	ISC_mutex_fini(mutex);
+	ISC_STATUS_ARRAY statusVector;
+	ISC_unmap_file(statusVector, &handle);
 }
 
 
-void MonitoringData::acquire()
+void DatabaseSnapshot::SharedData::acquire()
 {
-	mutexLock();
+	checkMutex("lock", ISC_mutex_lock(mutex));
 
-	if (sh_mem_header->allocated > sh_mem_length_mapped)
+	if (base->allocated > handle.sh_mem_length_mapped)
 	{
-#ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		remapFile(statusVector, sh_mem_header->allocated, false);
-		if (!remapFile(statusVector, sh_mem_header->allocated, false))
+#if (defined HAVE_MMAP || defined WIN_NT)
+		ISC_STATUS_ARRAY statusVector;
+		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false, &mutex);
+		if (!base)
 		{
 			status_exception::raise(statusVector);
 		}
@@ -134,13 +132,13 @@ void MonitoringData::acquire()
 }
 
 
-void MonitoringData::release()
+void DatabaseSnapshot::SharedData::release()
 {
-	mutexUnlock();
+	checkMutex("unlock", ISC_mutex_unlock(mutex));
 }
 
 
-UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
+UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 {
 	ULONG self_dbb_offset = 0;
 
@@ -151,9 +149,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 	// and copy the data there, starting with our own dbb.
 
 	// First pass
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -169,9 +167,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 		}
 		else
 		{
-			fb_assert(sh_mem_header->used >= offset + length);
-			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
-			sh_mem_header->used -= length;
+			fb_assert(base->used >= offset + length);
+			memmove(ptr, ptr + length, base->used - offset - length);
+			base->used -= length;
 		}
 	}
 
@@ -181,14 +179,14 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 
 	fb_assert(self_dbb_offset);
 
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + self_dbb_offset;
+	UCHAR* const ptr = (UCHAR*) base + self_dbb_offset;
 	const Element* const element = (Element*) ptr;
 	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
 	bufferPtr += element->length;
 
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -206,51 +204,51 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 }
 
 
-ULONG MonitoringData::setup()
+ULONG DatabaseSnapshot::SharedData::setup()
 {
 	ensureSpace(sizeof(Element));
 
 	// Put an up-to-date element at the tail
-	const ULONG offset = sh_mem_header->used;
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+	const ULONG offset = base->used;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	element->processId = process_id;
 	element->localId = local_id;
 	element->length = 0;
-	sh_mem_header->used += alignOffset(sizeof(Element));
+	base->used += alignOffset(sizeof(Element));
 	return offset;
 }
 
 
-void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
+void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void* buffer)
 {
 	ensureSpace(length);
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
 	ULONG current = alignOffset(sizeof(Element) + element->length);
-	sh_mem_header->used += (current - previous);
+	base->used += (current - previous);
 }
 
 
-void MonitoringData::cleanup()
+void DatabaseSnapshot::SharedData::cleanup()
 {
 	// Remove information about our dbb
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < sh_mem_header->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) sh_mem_header + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
-			fb_assert(sh_mem_header->used >= offset + length);
-			memmove(ptr, ptr + length, sh_mem_header->used - offset - length);
-			sh_mem_header->used -= length;
+			fb_assert(base->used >= offset + length);
+			memmove(ptr, ptr + length, base->used - offset - length);
+			base->used -= length;
 		}
 		else
 		{
@@ -260,21 +258,22 @@ void MonitoringData::cleanup()
 }
 
 
-void MonitoringData::ensureSpace(ULONG length)
+void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 {
-	ULONG newSize = sh_mem_header->used + length;
+	ULONG newSize = base->used + length;
 
-	if (newSize > sh_mem_header->allocated)
+	if (newSize > base->allocated)
 	{
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
-#ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		if (!remapFile(statusVector, newSize, true))
+#if (defined HAVE_MMAP || defined WIN_NT)
+		ISC_STATUS_ARRAY statusVector;
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true, &mutex);
+		if (!base)
 		{
 			status_exception::raise(statusVector);
 		}
-		sh_mem_header->allocated = sh_mem_length_mapped;
+		base->allocated = handle.sh_mem_length_mapped;
 #else
 		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
@@ -282,36 +281,56 @@ void MonitoringData::ensureSpace(ULONG length)
 }
 
 
-void MonitoringData::mutexBug(int osErrorCode, const char* string)
+void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
 {
-	gds__log("MONITOR: mutex %s error, status = %d", string, osErrorCode);
+	if (state)
+	{
+		TEXT msg[BUFFER_TINY];
 
-	//fprintf(stderr, "%s\n", msg);
-	exit(FINI_ERROR);
+		sprintf(msg, "MONITOR: mutex %s error, status = %d", string, state);
+		gds__log(msg);
+
+		//fprintf(stderr, "%s\n", msg);
+		exit(FINI_ERROR);
+	}
 }
 
 
-bool MonitoringData::initialize(bool initialize)
+void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initialize)
 {
-	if (initialize)
-	{
-		// Initialize the shared data header
-		sh_mem_header->mhb_type = SRAM_DATABASE_SNAPSHOT;
-		sh_mem_header->mhb_version = MONITOR_VERSION;
+	SharedData* const shmem = (SharedData*) arg;
+	fb_assert(shmem);
 
-		sh_mem_header->used = alignOffset(sizeof(Header));
-		sh_mem_header->allocated = sh_mem_length_mapped;
+#ifdef WIN_NT
+	checkMutex("init", ISC_mutex_init(&shmem->winMutex, shmemData->sh_mem_name));
+	shmem->mutex = &shmem->winMutex;
+#endif
+
+	Header* const header = (Header*) shmemData->sh_mem_address;
+
+	if (!initialize)
+	{
+#ifndef WIN_NT
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &shmem->mutex));
+#endif
+		return;
 	}
 
-	return true;
+	// Initialize the shared data header
+	header->version = MONITOR_VERSION;
+	header->used = alignOffset(sizeof(Header));
+	header->allocated = shmemData->sh_mem_length_mapped;
+
+#ifndef WIN_NT
+	checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &shmem->mutex));
+#endif
 }
 
 
-ULONG MonitoringData::alignOffset(ULONG unaligned)
+ULONG DatabaseSnapshot::SharedData::alignOffset(ULONG unaligned)
 {
-	return (ULONG) Firebird::MEM_ALIGN(unaligned);
+	return Firebird::MEM_ALIGN(unaligned);
 }
-
 
 // DatabaseSnapshot class
 
@@ -366,8 +385,13 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 				}
 			}
 
-			// Release the lock and mark dbb as requesting a new one
-			LCK_release(tdbb, lock);
+			// Release the lock, if feasible
+			if (!(dbb->dbb_flags & DBB_monitor_locking))
+			{
+				LCK_release(tdbb, lock);
+			}
+
+			// Mark dbb as requesting a new lock
 			dbb->dbb_ast_flags |= DBB_monitor_off;
 		}
 	}
@@ -379,7 +403,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 
 
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
-	: DataDump(pool), snapshot(pool)
+	: snapshot(pool), idMap(pool), idCounter(0)
 {
 	SET_TDBB(tdbb);
 
@@ -388,16 +412,27 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
+
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	RecordBuffer* const dbb_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+	RecordBuffer* const att_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+	RecordBuffer* const tra_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+	RecordBuffer* const stmt_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+	RecordBuffer* const call_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+	RecordBuffer* const io_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+	RecordBuffer* const rec_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
+	RecordBuffer* const ctx_var_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+	RecordBuffer* const mem_usage_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
 
 	// Release our own lock
 	LCK_release(tdbb, dbb->dbb_monitor_lock);
@@ -433,7 +468,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	{ // scope
 		fb_assert(dbb->dbb_monitoring_data);
-		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+		DumpGuard guard(dbb->dbb_monitoring_data);
 		dataPtr = dbb->dbb_monitoring_data->read(pool, dataSize);
 	}
 
@@ -555,11 +590,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			// generic logic that covers all other relations
 			else if (record && dbb_allowed && att_allowed)
 			{
-				// ASF: The statement text is always dumped in the metadata charset.
-				AutoSetRestore<int> autoAttCharSet(&attachment_charset,
-					rid == rel_mon_statements && fid == f_mon_stmt_sql_text ?
-						ttype_metadata : attachment_charset);
-
 				putField(tdbb, record, dumpField, attachment_charset);
 				fields_processed = true;
 				dbb_processed = true;
@@ -615,7 +645,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, i
 }
 
 
-void DataDump::clearRecord(Record* record)
+void DatabaseSnapshot::clearRecord(Record* record)
 {
 	fb_assert(record);
 
@@ -626,8 +656,8 @@ void DataDump::clearRecord(Record* record)
 }
 
 
-void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
-						int& charset, bool set_charset)
+void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField& field,
+								int& charset, bool set_charset)
 {
 	fb_assert(record);
 
@@ -663,7 +693,9 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		MOV_move(tdbb, &from_desc, &to_desc);
 
 		if (set_charset)
+		{
 			charset = (int) value;
+		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -740,10 +772,10 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	if (!dbb->dbb_monitoring_data)
 	{
-		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) MonitoringData(dbb);
+		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) SharedData(dbb);
 	}
 
-	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+	DumpGuard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup();
 
 	Writer writer(dbb->dbb_monitoring_data);
@@ -756,7 +788,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
+		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
 			continue;
 
 		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
@@ -782,9 +814,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			{
 				request->adjustCallerStats();
 
-				if (!(request->getStatement()->flags &
-						(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
-					request->req_caller)
+				if (!(request->req_flags & (req_internal | req_sys_trigger)) && request->req_caller)
 				{
 					putCall(request, writer, fb_utils::genUniqueId());
 				}
@@ -793,14 +823,9 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 		// Request information
 
-		for (const jrd_req* const* i = attachment->att_requests.begin();
-			 i != attachment->att_requests.end();
-			 ++i)
+		for (request = attachment->att_requests; request; request = request->req_request)
 		{
-			const jrd_req* request = *i;
-
-			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+			if (!(request->req_flags & (req_internal | req_sys_trigger)))
 			{
 				putRequest(request, writer, fb_utils::genUniqueId());
 			}
@@ -906,7 +931,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 	writer.putRecord(record);
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
@@ -918,8 +943,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
-									 Writer& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& writer, int stat_id)
 {
 	fb_assert(attachment);
 
@@ -981,7 +1005,7 @@ bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* att
 	writer.putRecord(record);
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
 		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
@@ -1081,9 +1105,9 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int st
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 	}
 	// sql text
-	if (request->getStatement()->sqlText)
+	if (request->req_sql_text)
 	{
-		record.storeString(f_mon_stmt_sql_text, *request->getStatement()->sqlText);
+		record.storeString(f_mon_stmt_sql_text, *request->req_sql_text);
 	}
 
 	// statistics
@@ -1098,40 +1122,33 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 {
 	fb_assert(request);
 
-	const jrd_req* initialRequest = request->req_caller;
-	while (initialRequest->req_caller)
+	const jrd_req* statement = request->req_caller;
+	while (statement->req_caller)
 	{
-		initialRequest = initialRequest->req_caller;
+		statement = statement->req_caller;
 	}
-	fb_assert(initialRequest);
+	fb_assert(statement);
 
 	DumpRecord record(rel_mon_calls);
 
 	// call id
 	record.storeGlobalId(f_mon_call_id, getGlobalId(request->req_id));
 	// statement id
-	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(initialRequest->req_id));
+	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(statement->req_id));
 	// caller id
-	if (initialRequest != request->req_caller)
+	if (statement != request->req_caller)
 	{
 		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
-
-	JrdStatement* statement = request->getStatement();
-	const Routine* routine = statement->getRoutine();
-
 	// object name/type
-	if (routine)
+	if (request->req_procedure)
 	{
-		if (routine->getName().package.hasData())
-			record.storeString(f_mon_call_pkg_name, routine->getName().package);
-
-		record.storeString(f_mon_call_name, routine->getName().identifier);
-		record.storeInteger(f_mon_call_type, routine->getObjectType());
+		record.storeString(f_mon_call_name, request->req_procedure->prc_name);
+		record.storeInteger(f_mon_call_type, obj_procedure);
 	}
-	else if (!statement->triggerName.isEmpty())
+	else if (!request->req_trg_name.isEmpty())
 	{
-		record.storeString(f_mon_call_name, statement->triggerName);
+		record.storeString(f_mon_call_name, request->req_trg_name);
 		record.storeInteger(f_mon_call_type, obj_trigger);
 	}
 	else
@@ -1139,7 +1156,6 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 		// we should never be here...
 		fb_assert(false);
 	}
-
 	// timestamp
 	record.storeTimestamp(f_mon_call_timestamp, request->req_timestamp);
 	// source line/column

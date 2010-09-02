@@ -49,6 +49,9 @@ ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS*, const SCHAR*, SQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_finish(FB_API_HANDLE*);
 ISC_STATUS API_ROUTINE isc_dsql_release(ISC_STATUS*, const SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_fetch_a(ISC_STATUS*, int*, int*, USHORT, int*);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS*, int*, int*, USHORT, int*, USHORT, SLONG);
+#endif
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_close(ISC_STATUS*, const SCHAR*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_declare(ISC_STATUS*, const SCHAR*, const SCHAR*);
@@ -67,7 +70,15 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_execute_immed(ISC_STATUS*, FB_API_HANDLE*,
 	FB_API_HANDLE*, USHORT, const SCHAR*, USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_embed_dsql_fetch(ISC_STATUS*, const SCHAR*, USHORT, XSQLDA*);
 
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2(ISC_STATUS*, const SCHAR*, USHORT, XSQLDA*, USHORT, SLONG);
+#endif
+
 ISC_STATUS API_ROUTINE isc_embed_dsql_fetch_a(ISC_STATUS*, int*, const SCHAR*, USHORT, XSQLDA*);
+
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS API_ROUTINE isc_embed_dsql_fetch2_a(ISC_STATUS*, int*, const SCHAR*, USHORT, XSQLDA*, USHORT, SLONG);
+#endif
 
 ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS*, const SCHAR*, USHORT, XSQLDA*);
 void   API_ROUTINE isc_embed_dsql_length(const UCHAR*, USHORT*);

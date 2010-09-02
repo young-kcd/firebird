@@ -30,20 +30,19 @@
 #include <math.h>
 
 #include "TracePluginImpl.h"
+#include "TraceUnicodeUtils.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
 #include "../../jrd/isc_f_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/os/path_utils.h"
-#include "../../jrd/inf_pub.h"
-#include "../../dsql/sqlda_pub.h"
 
 
 using namespace Firebird;
 using namespace Jrd;
 
-static const char* const DEFAULT_LOG_NAME = "default_trace.log";
+static const char* DEFAULT_LOG_NAME = "default_trace.log";
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"
@@ -141,7 +140,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 	}
 
-	Jrd::TextType* textType = unicodeCollation.getTextType();
+	Jrd::TextType *textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
 	if (config.include_filter.hasData())
@@ -151,9 +150,9 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			include_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
-				filter.length(), '\\', true, false);
+				filter.length(), '\\', true);
 		}
 		catch (const Exception&)
 		{
@@ -170,9 +169,9 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
-				filter.length(), '\\', true, false);
+				filter.length(), '\\', true);
 		}
 		catch (const Exception&)
 		{
@@ -399,7 +398,7 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceConnection* connect
 		}
 	}
 
-	if (!log)
+	if (!log) 
 	{
 		record = "";
 		return;
@@ -1647,7 +1646,7 @@ bool TracePluginImpl::checkServiceFilter(TraceService* service, bool started)
 {
 	ReadLockGuard lock(servicesLock);
 
-	ServiceData* data = NULL;
+	ServiceData *data = NULL;
 	ServicesTree::Accessor accessor(&services);
 	if (accessor.locate(service->getServiceID()))
 		data = &accessor.current();

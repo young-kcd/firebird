@@ -280,10 +280,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 			case isc_info_truncated:
 				if (!ignoreTruncation)
-				{
-					//printf("%s\n", getMessage(18).c_str());
 					return;
-				}
 				break;
 
 			case isc_info_svc_timeout:

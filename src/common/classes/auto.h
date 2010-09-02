@@ -40,7 +40,7 @@ template <typename What>
 class SimpleDelete
 {
 public:
-	static void clear(What* ptr)
+	static void clear(What *ptr)
 	{
 		delete ptr;
 	}
@@ -83,19 +83,9 @@ public:
 		return ptr;
 	}
 
-	operator const Where*() const
-	{
-		return ptr;
-	}
-
 	bool operator !() const
 	{
 		return !ptr;
-	}
-
-	bool hasData() const
-	{
-		return ptr != NULL;
 	}
 
 	Where* operator->()
@@ -112,8 +102,7 @@ public:
 
 	void reset(Where* v = NULL)
 	{
-		if (v != ptr)
-		{
+		if (v != ptr) {
 			Clear::clear(ptr);
 			ptr = v;
 		}

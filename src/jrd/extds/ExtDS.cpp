@@ -185,7 +185,7 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment* attachment = tdbb->getAttachment();
 
 	if (attachment->att_ext_call_depth >= MAX_CALLBACKS)
 		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
@@ -319,7 +319,7 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment *attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
 	const string& attUser = attachment->att_user->usr_user_name;
@@ -357,7 +357,7 @@ bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,
 	if (m_dbName != dbName)
 		return false;
 
-	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	generateDPB(tdbb, dpb, user, pwd, role);
 
 	return m_dpb.simpleCompare(dpb);
@@ -833,8 +833,7 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 }
 
 void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, const jrd_nod* const* in_params, int out_count,
-	const jrd_nod* const* out_params)
+	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
@@ -847,7 +846,7 @@ void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
 }
 
 void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, const jrd_nod* const* in_params, bool singleton)
+	const string* const* in_names, jrd_nod** in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -861,7 +860,7 @@ void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
 	m_active = true;
 }
 
-bool Statement::fetch(thread_db* tdbb, int out_count, const jrd_nod* const* out_params)
+bool Statement::fetch(thread_db* tdbb, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -1214,8 +1213,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db* tdbb, int count, const string* const* names,
-	const jrd_nod* const* params)
+void Statement::setInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1229,8 +1227,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	if (m_sqlParamNames.getCount())
 	{
 		const int sqlCount = m_sqlParamsMap.getCount();
-		Array<const jrd_nod*> sqlParamsArray(getPool(), 16);
-		const jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
+		Array<jrd_nod*> sqlParamsArray(getPool(), 16);
+		jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
 
 		for (int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
@@ -1260,8 +1258,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	}
 }
 
-void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/,
-	const jrd_nod* const* params)
+void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/, jrd_nod** params)
 {
 	if (count != getInputs())
 	{
@@ -1273,8 +1270,8 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 	if (!count)
 		return;
 
-	const jrd_nod* const* jrdVar = params;
-	GenericMap<Pair<NonPooled<const jrd_nod*, dsc*> > > paramDescs(getPool());
+	jrd_nod** jrdVar = params;
+	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
 
 	const jrd_req* request = tdbb->getRequest();
 
@@ -1294,7 +1291,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 				if (request->req_flags & req_null)
 					src->setNull();
 				else
-					src->clearNull();
+					src->dsc_flags &= ~DSC_null;
 			}
 		}
 
@@ -1333,7 +1330,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 
 
 // m_outDescs -> jrd_nod
-void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* params)
+void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 {
 	if (count != getOutputs())
 	{
@@ -1345,10 +1342,10 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 	if (!count)
 		return;
 
-	const jrd_nod* const* jrdVar = params;
+	jrd_nod** jrdVar = params;
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
-		/*
+/*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
@@ -1356,7 +1353,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 			status_exception::raise(
 				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
 		}
-		*/
+*/
 
 		// build the src descriptor
 		dsc& src = m_outDescs[i * 2];
@@ -1397,7 +1394,7 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		destBlob->blb_sub_type = src.getBlobSubType();
 		destBlob->blb_charset = src.getCharSet();
 
-		Array<UCHAR> buffer;
+		Firebird::Array<UCHAR> buffer;
 		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
@@ -1439,7 +1436,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 		BLB_gen_bpb_from_descs(&src, &dst, bpb);
 		srcBlob = BLB_open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
-		HalfStaticArray<UCHAR, 2048> buffer;
+		Firebird::HalfStaticArray<UCHAR, 2048> buffer;
 		const int bufSize = srcBlob->blb_max_segment;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
@@ -1502,9 +1499,9 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+ 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
 											Arg::Str(rem_err) <<
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
+ 											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
@@ -1557,8 +1554,8 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 
 	if (m_tdbb)
 	{
-		jrd_tra* transaction = m_tdbb->getTransaction();
-		if (transaction)
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) 
 		{
 			if (transaction->tra_callback_count >= MAX_CALLBACKS)
 				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
@@ -1566,7 +1563,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 			transaction->tra_callback_count++;
 		}
 
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		Attachment *attachment = m_tdbb->getAttachment();
 		if (attachment)
 		{
 			m_saveConnection = attachment->att_ext_connection;
@@ -1591,12 +1588,12 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	{
 		m_tdbb->getDatabase()->dbb_sync->lock();
 
-		jrd_tra* transaction = m_tdbb->getTransaction();
+		jrd_tra *transaction = m_tdbb->getTransaction();
 		if (transaction) {
 			transaction->tra_callback_count--;
 		}
 
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		Attachment *attachment = m_tdbb->getAttachment();
 		if (attachment) {
 			attachment->att_ext_connection = m_saveConnection;
 		}

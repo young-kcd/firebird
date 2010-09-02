@@ -16,7 +16,8 @@
 
 ::===========
 :MAIN
-@call :BUILD_EMPBUILD
+@call :BUILD_EMPBUILD || if ERRORLEVEL 1 (set ERRLEV=1 & call :ERROR Failed to create database. & popd & goto :EOF)
+
 
 @echo.
 @echo Building %FB_OBJ_DIR%
@@ -45,21 +46,19 @@ if "%VS_VER%"=="msvc6" (
 
 @echo.
 :: Here we must use cd because isql does not have an option to set a base directory
-@cd %FB_GEN_DIR%\examples
+@pushd %FB_GEN_DIR%\examples
 @echo   Creating empbuild.fdb...
 @echo.
 @del empbuild.fdb 2> nul
 @%FB_GEN_DIR%\examples\isql -i empbld.sql
-
-
 if defined FB2_INTLEMP (
 @echo   Creating intlbuild.fdb...
 @echo.
 @del intlbuild.fdb 2> nul
 @%FB_GEN_DIR%\examples\isql -i intlbld.sql
 )
+@popd
 
-@cd %FB_ROOT_PATH%\builds\win32
 @echo.
 @echo path = %FB_GEN_DB_DIR%\examples
 @echo   Preprocessing empbuild.e...
@@ -71,7 +70,8 @@ if defined FB2_INTLEMP (
 @echo.
 @%FB_GEN_DIR%\gpre_embed.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\intlbld.e %FB_GEN_DIR%\examples\intlbld.c -b %FB_GEN_DB_DIR%/examples/
 )
-
+::End of BUILD_EMPBUILD
+::---------------------
 @goto :EOF
 
 
@@ -112,7 +112,10 @@ if defined FB2_INTLEMP (
 ::@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\examples\intlbuild.exe %FB_GEN_DIR%\examples\intlbuild.exe > nul
 ::)
 ::)
+::End of MOVE
+::-----------
 @goto :EOF
+
 
 ::===========
 :: only to test if it works
@@ -134,8 +137,10 @@ if defined FB2_INTLEMP (
 )
 
 @cd %FB_ROOT_PATH%\builds\win32
-
+::End of BUILD_EMPLOYEE
+::---------------------
 @goto :EOF
+
 
 ::==============
 :MOVE2
@@ -146,15 +151,20 @@ if defined FB2_INTLEMP (
   @copy %FB_GEN_DIR%\examples\intlemp.fdb %FB_OUTPUT_DIR%\examples\empbuild\ > nul
   )
 )
-
+::End of MOVE2
+::------------
 @goto :EOF
+
 
 ::==============
 :HELP_BOOT
 @echo.
 @echo    You must run make_boot.bat before running this script
 @echo.
+::End of HELP_BOOT
+::----------------
 @goto :EOF
+
 
 :ERROR
 ::====
@@ -162,6 +172,7 @@ if defined FB2_INTLEMP (
 @echo   Error  - %*
 @echo.
 cancel_script > nul 2>&1
+exit /B %ERRLEV%
 ::End of ERROR
 ::------------
 @goto :EOF
