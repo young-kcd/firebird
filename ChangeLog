@@ -1,3 +1,7 @@
+ 2010-09-01 15:35  asfernandes 
+   M src/jrd/trig.h
+Fixed CORE-3101 - Cannot alter the domain after migrating from older versions
+
  2010-08-27 02:51  asfernandes 
    M src/jrd/jrd.cpp
 Fixed CORE-3109 - [Crash] isc_dql_exec_immed3_m for "create database ..." and NULL transaction
