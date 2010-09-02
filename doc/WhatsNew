@@ -1,4 +1,69 @@
   **************************
+  * v2.5.0 Final Release
+  **************************
+
+    * Bugfix CORE-3116
+        GSEC outputs list of users to stderr instead of stdout
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3115
+        Bugs in the internal record compression routines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+
+    * Bugfix CORE-3109
+        Server crashes when isc_dql_exec_immed3_m() is called for "create database ..."
+        and NULL transaction
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3103
+        Select statement with more non indexed reads in version 2.5RC3 as in version 2.1.3
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3101
+        Cannot alter the domain after migrating from older versions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3100
+        Wait mode and lock timeout of external transaction of EXECUTE STATEMENT not matched to
+        corresponding parameters of local transaction 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3096
+        Regression introduced with fix for CORE-2893 causes double processing of nodes
+        when preparing a statement. Debug build aborts.
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3094
+        Parameters don't work with NOT IN from a selectable procedure
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3090
+        Incorrect LEFT JOIN result using table and derived constant subquery
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3089
+        Attempt of execute statement on external datasource failed when datasource is InterBase 4.1
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3079
+        Strong slowing down inserts with EVENT-s in a single transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v2.5 Release Candidate 3
   **************************
 
