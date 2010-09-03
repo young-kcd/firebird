@@ -1,3 +1,19 @@
+ 2010-09-02 18:10  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Update.
+
+ 2010-09-02 15:02  dimitr 
+   D builds/win32/msvc7/gds32.vcproj
+   D builds/win32/msvc8/gds32.vcproj
+   M src/jrd/isc_version.h
+   D src/jrd/isc_version.rc
+Cleanup.
+
+ 2010-09-02 13:47  dimitr 
+   M doc/WhatsNew
+Update.
+
  2010-09-01 15:35  asfernandes 
    M src/jrd/trig.h
 Fixed CORE-3101 - Cannot alter the domain after migrating from older versions
