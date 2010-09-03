@@ -1,4 +1,4 @@
-Firebird Database Server 2.5 Release Candidate Two
+Firebird Database Server 2.5 
 ==================================================
 
 This document is a guide to installing this package of
