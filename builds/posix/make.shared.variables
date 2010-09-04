@@ -80,7 +80,7 @@ DSQL_ClientFiles = array.epp blob.epp \
 
 DSQL_ServerFiles=	metd.epp DSqlDataTypeUtil.cpp \
                 ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
-	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp \
+	            movd.cpp parse.cpp Parser.cpp pass1.cpp \
 	            DdlNodes.epp PackageNodes.epp AggNodes.cpp BlrWriter.cpp DsqlCompilerScratch.cpp \
 	            ExprNodes.cpp StmtNodes.cpp WinNodes.cpp
 

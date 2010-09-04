@@ -94,29 +94,11 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"
-#include "../jrd/misc_func_ids.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
 using namespace Jrd;
 using namespace Firebird;
-
-
-// Firebird provides transparent conversion from string to date in
-// contexts where it makes sense.  This macro checks a descriptor to
-// see if it is something that *could* represent a date value
-
-inline bool COULD_BE_DATE(const dsc desc)
-{
-	return ((DTYPE_IS_DATE(desc.dsc_dtype)) || (desc.dsc_dtype <= dtype_any_text));
-}
-
-// One of d1,d2 is time, the other is date
-inline bool IS_DATE_AND_TIME(const dsc d1, const dsc d2)
-{
-	return (((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
-	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date)));
-}
 
 
 namespace
@@ -587,259 +569,21 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			return;
 		}
 
-	case nod_divide:
-		{
-			DSC desc1, desc2;
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			// for compatibility with older versions of the product, we accept
-			// text types for division in blr_version4 (dialect <= 1) only
-			if (!(DTYPE_IS_NUMERIC(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc1.dsc_dtype)))
-			{
-				if (desc1.dsc_dtype != dtype_unknown) {
-					break;		// error, dtype not supported by arithmetic
-				}
-			}
-			if (!(DTYPE_IS_NUMERIC(desc2.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype)))
-			{
-				if (desc2.dsc_dtype != dtype_unknown) {
-					break;		// error, dtype not supported by arithmetic
-				}
-			}
-		}
-		desc->dsc_dtype = DEFAULT_DOUBLE;
-		desc->dsc_length = sizeof(double);
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
 	case nod_average:
-		if (node->nod_type == nod_average) {
-			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
-		}
+		CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
+
 		if (!(DTYPE_IS_NUMERIC(desc->dsc_dtype) || DTYPE_IS_TEXT(desc->dsc_dtype)))
 		{
-			if (desc->dsc_dtype != dtype_unknown) {
+			if (desc->dsc_dtype != dtype_unknown)
 				break;
-			}
 		}
+
 		desc->dsc_dtype = DEFAULT_DOUBLE;
 		desc->dsc_length = sizeof(double);
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
 		return;
-
-	case nod_add:
-	case nod_subtract:
-		{
-			DSC desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-
-			/* 92/05/29 DAVES - don't understand why this is done for ONLY
-			   dtype_text (eg: not dtype_cstring or dtype_varying) Doesn't
-			   appear to hurt.
-
-			   94/04/04 DAVES - NOW I understand it!  QLI will pass floating
-			   point values to the engine as text.  All other numeric constants
-			   it turns into either integers or longs (with scale). */
-
-			USHORT dtype1 = desc1.dsc_dtype;
-			if (dtype_int64 == dtype1) {
-				dtype1 = dtype_double;
-			}
-			USHORT dtype2 = desc2.dsc_dtype;
-			if (dtype_int64 == dtype2) {
-				dtype2 = dtype_double;
-			}
-
-			if (dtype1 == dtype_text || dtype2 == dtype_text) {
-				dtype = MAX(MAX(dtype1, dtype2), (UCHAR) DEFAULT_DOUBLE);
-			}
-			else {
-				dtype = MAX(dtype1, dtype2);
-			}
-
-			switch (dtype)
-			{
-			case dtype_short:
-				desc->dsc_dtype = dtype_long;
-				desc->dsc_length = sizeof(SLONG);
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-				{
-					desc->dsc_scale = 0;
-				}
-				else {
-					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-				}
-				node->nod_scale = desc->dsc_scale;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_sql_date:
-			case dtype_sql_time:
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-				{
-					ERR_post(Arg::Gds(isc_expression_eval_err));
-				}
-				// FALL INTO
-
-			case dtype_timestamp:
-				node->nod_flags |= nod_date;
-
-				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
-
-				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2))
-				{
-					if (node->nod_type == nod_subtract)
-					{
-						// <any date> - <any date>
-
-						/* Legal permutations are:
-						   <timestamp> - <timestamp>
-						   <timestamp> - <date>
-						   <date> - <date>
-						   <date> - <timestamp>
-						   <time> - <time>
-						   <timestamp> - <string>
-						   <string> - <timestamp>
-						   <string> - <string>   */
-
-						if (DTYPE_IS_TEXT(dtype1)) {
-							dtype = dtype_timestamp;
-						}
-						else if (DTYPE_IS_TEXT(dtype2)) {
-							dtype = dtype_timestamp;
-						}
-						else if (dtype1 == dtype2) {
-							dtype = dtype1;
-						}
-						else if (dtype1 == dtype_timestamp && dtype2 == dtype_sql_date)
-						{
-							dtype = dtype_timestamp;
-						}
-						else if (dtype2 == dtype_timestamp && dtype1 == dtype_sql_date)
-						{
-							dtype = dtype_timestamp;
-						}
-						else {
-							ERR_post(Arg::Gds(isc_expression_eval_err));
-						}
-
-						if (dtype == dtype_sql_date)
-						{
-							desc->dsc_dtype = dtype_long;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = 0;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-						else if (dtype == dtype_sql_time)
-						{
-							desc->dsc_dtype = dtype_long;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-						else
-						{
-							fb_assert(dtype == dtype_timestamp);
-							desc->dsc_dtype = DEFAULT_DOUBLE;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = 0;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-					}
-					else if (IS_DATE_AND_TIME(desc1, desc2))
-					{
-						// <date> + <time>
-						// <time> + <date>
-						desc->dsc_dtype = dtype_timestamp;
-						desc->dsc_length = type_lengths[desc->dsc_dtype];
-						desc->dsc_scale = 0;
-						desc->dsc_sub_type = 0;
-						desc->dsc_flags = 0;
-					}
-					else
-					{
-						// <date> + <date>
-						ERR_post(Arg::Gds(isc_expression_eval_err));
-					}
-				}
-				else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
-				{
-					// <date> +/- <non-date> || <non-date> + <date>
-					desc->dsc_dtype = desc1.dsc_dtype;
-					if (!DTYPE_IS_DATE(desc->dsc_dtype)) {
-						desc->dsc_dtype = desc2.dsc_dtype;
-					}
-					fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
-					desc->dsc_length = type_lengths[desc->dsc_dtype];
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
-				}
-				else
-				{
-					// <non-date> - <date>
-					ERR_post(Arg::Gds(isc_expression_eval_err));
-				}
-				return;
-
-			case dtype_text:
-			case dtype_cstring:
-			case dtype_varying:
-			case dtype_long:
-			case dtype_real:
-			case dtype_double:
-				node->nod_flags |= nod_double;
-				desc->dsc_dtype = DEFAULT_DOUBLE;
-				desc->dsc_length = sizeof(double);
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_unknown:
-				desc->dsc_dtype = dtype_unknown;
-				desc->dsc_length = 0;
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_quad:
-				node->nod_flags |= nod_quad;
-				desc->dsc_dtype = dtype_quad;
-				desc->dsc_length = sizeof(SQUAD);
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-				{
-					desc->dsc_scale = 0;
-				}
-				else {
-					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-				}
-				node->nod_scale = desc->dsc_scale;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-#ifdef NATIVE_QUAD
-				return;
-#endif
-			default:
-				fb_assert(false);
-				// FALLINTO
-			case dtype_blob:
-			case dtype_array:
-				break;
-			}
-		}
-		break;
 
 	case nod_gen_id2:
 		desc->dsc_dtype = dtype_int64;
@@ -848,314 +592,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
 		return;
-
-	case nod_add2:
-	case nod_subtract2:
-		{
-			DSC desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			USHORT dtype1 = desc1.dsc_dtype;
-			USHORT dtype2 = desc2.dsc_dtype;
-
-			// In Dialect 2 or 3, strings can never partipate in addition / sub
-			// (use a specific cast instead)
-			if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
-				ERR_post(Arg::Gds(isc_expression_eval_err));
-
-			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
-			// the result dtype. The rule is that two exact numeric operands yield an int64
-			// result, while an approximate numeric and anything yield a double result.
-
-			if (DTYPE_IS_EXACT(desc1.dsc_dtype) && DTYPE_IS_EXACT(desc2.dsc_dtype))
-			{
-				dtype = dtype_int64;
-			}
-			else if (DTYPE_IS_NUMERIC(desc1.dsc_dtype) && DTYPE_IS_NUMERIC(desc2.dsc_dtype))
-			{
-				dtype = dtype_double;
-			}
-			else
-			{
-				// mixed numeric and non-numeric:
-
-				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
-
-				// the MAX(dtype) rule doesn't apply with dtype_int64
-
-				if (dtype_int64 == dtype1) {
-					dtype1 = dtype_double;
-				}
-				if (dtype_int64 == dtype2) {
-					dtype2 = dtype_double;
-				}
-
-				dtype = MAX(dtype1, dtype2);
-			}
-
-			switch (dtype)
-			{
-			case dtype_timestamp:
-			case dtype_sql_date:
-			case dtype_sql_time:
-				node->nod_flags |= nod_date;
-
-				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
-
-				if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
-					(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
-				{
-					if (node->nod_type == nod_subtract2)
-					{
-						// <any date> - <any date>
-
-						/* Legal permutations are:
-						   <timestamp> - <timestamp>
-						   <timestamp> - <date>
-						   <date> - <date>
-						   <date> - <timestamp>
-						   <time> - <time> */
-
-						if (dtype1 == dtype_unknown) {
-							dtype1 = dtype2;
-						}
-						else if (dtype2 == dtype_unknown) {
-							dtype2 = dtype1;
-						}
-						if (dtype1 == dtype2) {
-							dtype = dtype1;
-						}
-						else if ((dtype1 == dtype_timestamp) && (dtype2 == dtype_sql_date))
-						{
-							dtype = dtype_timestamp;
-						}
-						else if ((dtype2 == dtype_timestamp) && (dtype1 == dtype_sql_date))
-						{
-							dtype = dtype_timestamp;
-						}
-						else {
-							ERR_post(Arg::Gds(isc_expression_eval_err));
-						}
-
-						if (dtype == dtype_sql_date)
-						{
-							desc->dsc_dtype = dtype_long;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = 0;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-						else if (dtype == dtype_sql_time)
-						{
-							desc->dsc_dtype = dtype_long;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-						else
-						{
-							fb_assert(dtype == dtype_timestamp || dtype == dtype_unknown);
-							desc->dsc_dtype = DEFAULT_DOUBLE;
-							desc->dsc_length = type_lengths[desc->dsc_dtype];
-							desc->dsc_scale = 0;
-							desc->dsc_sub_type = 0;
-							desc->dsc_flags = 0;
-						}
-					}
-					else if (IS_DATE_AND_TIME(desc1, desc2))
-					{
-						// <date> + <time>
-						// <time> + <date>
-						desc->dsc_dtype = dtype_timestamp;
-						desc->dsc_length = type_lengths[desc->dsc_dtype];
-						desc->dsc_scale = 0;
-						desc->dsc_sub_type = 0;
-						desc->dsc_flags = 0;
-					}
-					else
-					{
-						// <date> + <date>
-						ERR_post(Arg::Gds(isc_expression_eval_err));
-					}
-				}
-				else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
-
-				{
-					// <date> +/- <non-date> || <non-date> + <date>
-					desc->dsc_dtype = desc1.dsc_dtype;
-					if (!DTYPE_IS_DATE(desc->dsc_dtype)) {
-						desc->dsc_dtype = desc2.dsc_dtype;
-					}
-					fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
-					desc->dsc_length = type_lengths[desc->dsc_dtype];
-					desc->dsc_scale = 0;
-					desc->dsc_sub_type = 0;
-					desc->dsc_flags = 0;
-				}
-				else
-				{
-					// <non-date> - <date>
-					ERR_post(Arg::Gds(isc_expression_eval_err));
-				}
-				return;
-
-			case dtype_text:
-			case dtype_cstring:
-			case dtype_varying:
-			case dtype_real:
-			case dtype_double:
-				node->nod_flags |= nod_double;
-				desc->dsc_dtype = DEFAULT_DOUBLE;
-				desc->dsc_length = sizeof(double);
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_short:
-			case dtype_long:
-			case dtype_int64:
-				desc->dsc_dtype = dtype_int64;
-				desc->dsc_length = sizeof(SINT64);
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-				{
-					desc->dsc_scale = 0;
-				}
-				else {
-					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-				}
-				node->nod_scale = desc->dsc_scale;
-				desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_unknown:
-				desc->dsc_dtype = dtype_unknown;
-				desc->dsc_length = 0;
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_quad:
-				node->nod_flags |= nod_quad;
-				desc->dsc_dtype = dtype_quad;
-				desc->dsc_length = sizeof(SQUAD);
-				if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-				{
-					desc->dsc_scale = 0;
-				}
-				else {
-					desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-				}
-				node->nod_scale = desc->dsc_scale;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-#ifdef NATIVE_QUAD
-				return;
-#endif
-			default:
-				fb_assert(false);
-				// FALLINTO
-			case dtype_blob:
-			case dtype_array:
-				break;
-			}
-		}
-		break;
-
-	case nod_multiply:
-		{
-			DSC desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
-
-			switch (dtype)
-			{
-			case dtype_long:
-				desc->dsc_dtype = dtype_long;
-				desc->dsc_length = sizeof(SLONG);
-				desc->dsc_scale = node->nod_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_double:
-				node->nod_flags |= nod_double;
-				desc->dsc_dtype = DEFAULT_DOUBLE;
-				desc->dsc_length = sizeof(double);
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_unknown:
-				desc->dsc_dtype = dtype_unknown;
-				desc->dsc_length = 0;
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			default:
-				fb_assert(false);
-				// FALLINTO
-			case DTYPE_CANNOT:
-				// break to error reporting code
-				break;
-			}
-		}
-		break;
-
-	case nod_multiply2:
-	case nod_divide2:
-		{
-			DSC desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
-
-			switch (dtype)
-			{
-			case dtype_double:
-				node->nod_flags |= nod_double;
-				desc->dsc_dtype = DEFAULT_DOUBLE;
-				desc->dsc_length = sizeof(double);
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_int64:
-				desc->dsc_dtype = dtype_int64;
-				desc->dsc_length = sizeof(SINT64);
-				desc->dsc_scale = node->nod_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-				desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
-				desc->dsc_flags = 0;
-				return;
-
-			case dtype_unknown:
-				desc->dsc_dtype = dtype_unknown;
-				desc->dsc_length = 0;
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-				return;
-
-			default:
-				fb_assert(false);
-				// FALLINTO
-			case DTYPE_CANNOT:
-				// break to error reporting code
-				break;
-			}
-		}
-		break;
 
 	case nod_class_exprnode_jrd:
 		{
@@ -1192,61 +628,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_current_time:
-		desc->dsc_dtype = dtype_sql_time;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_current_timestamp:
-		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_current_date:
-		desc->dsc_dtype = dtype_sql_date;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_user_name:
-	case nod_current_role:
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = ttype_metadata;
-		desc->dsc_length = USERNAME_LENGTH * METADATA_BYTES_PER_CHAR;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_internal_info:
-		{
-			jrd_nod* const arg_node = node->nod_arg[0];
-			fb_assert(arg_node->nod_type == nod_literal);
-
-			dsc arg_desc;
-			CMP_get_desc(tdbb, csb, arg_node, &arg_desc);
-			fb_assert(arg_desc.dsc_dtype == dtype_long);
-
-			const internal_info_id id = *reinterpret_cast<internal_info_id*>(arg_desc.dsc_address);
-
-			if (id == internal_sqlstate)
-			{
-				desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
-			}
-			else
-			{
-				desc->makeLong(0);
-			}
-		}
-		return;
-
 	case nod_extract:
 		switch ((IPTR) node->nod_arg[e_extract_part])
 		{
@@ -1271,11 +652,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
-		return;
-
-	case nod_negate:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		node->nod_flags = node->nod_arg[0]->nod_flags & (nod_double | nod_quad);
 		return;
 
 	case nod_literal:
@@ -1345,15 +721,24 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 			jrd_nod* offset_node = node->nod_arg[1];
 			jrd_nod* decrement_node = NULL;
-			if (offset_node->nod_type == nod_subtract2)
+			ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(offset_node);
+
+			// ASF: This code is very strange. The DSQL node is created as dialect 1,
+			// but only the dialect 3 is verified here.
+			// Also, this task seems unnecessary here, as it must be done during
+			// execution anyway.
+
+			if (arithmeticNode && arithmeticNode->blrOp == blr_subtract &&
+				!arithmeticNode->dialect1)
 			{
 				// This node is created by the DSQL layer, but the
 				// system BLR code bypasses it and uses zero-based
 				// string offsets instead
-				decrement_node = offset_node->nod_arg[1];
+				decrement_node = arithmeticNode->arg2;
 				CMP_get_desc(tdbb, csb, decrement_node, &desc3);
-				offset_node = offset_node->nod_arg[0];
+				offset_node = arithmeticNode->arg1;
 			}
+
 			CMP_get_desc(tdbb, csb, offset_node, &desc1);
 
 			jrd_nod* length_node = node->nod_arg[2];
@@ -1362,9 +747,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
 
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
-			{
 				desc->dsc_flags |= DSC_null;
-			}
 			else
 			{
 				if (offset_node->nod_type == nod_literal && desc1.dsc_dtype == dtype_long)
@@ -2138,15 +1521,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
 		return node;
 	}
-
-	case nod_current_time:
-	case nod_current_timestamp:
-		fb_assert(e_current_time_length == e_current_timestamp_length);
-		node = PAR_make_node(tdbb, e_current_time_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[0] = input->nod_arg[0];
-		return (node);
 
 	case nod_gen_id:
 	case nod_gen_id2:			// 20001013 PJPG
@@ -4154,14 +3528,9 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
-	case nod_negate:
 	case nod_substr:
 	case nod_trim:
-	case nod_divide:
 	case nod_null:
-	case nod_user_name:
-	case nod_current_role:
-	case nod_internal_info:
 	case nod_gen_id:
 	case nod_gen_id2:
 	case nod_upcase:
@@ -4172,26 +3541,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_cast:
 	case nod_extract:
 	case nod_strlen:
-	case nod_current_time:
-	case nod_current_timestamp:
-	case nod_current_date:
 	case nod_derived_expr:
-		{
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(impure_value);
-		}
-		break;
-
-	// compute the target descriptor to compute computational class
-
-	case nod_multiply:
-	case nod_add:
-	case nod_subtract:
-	case nod_add2:
-	case nod_subtract2:
-	case nod_multiply2:
-	case nod_divide2:
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);

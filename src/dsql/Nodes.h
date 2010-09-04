@@ -223,7 +223,15 @@ public:
 	enum Type
 	{
 		TYPE_AGGREGATE,
+		TYPE_ARITHMETIC,
 		TYPE_CONCATENATE,
+		TYPE_CURRENT_DATE,
+		TYPE_CURRENT_TIME,
+		TYPE_CURRENT_TIMESTAMP,
+		TYPE_CURRENT_ROLE,
+		TYPE_CURRENT_USER,
+		TYPE_INTERNAL_INFO,
+		TYPE_NEGATE,
 		TYPE_OVER,
 		TYPE_SUBSTRING_SIMILAR,
 		TYPE_SYSFUNC_CALL,
@@ -324,7 +332,14 @@ public:
 	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
 	{
 		visitor.nodeFound = node;
-		return jrdVisit(visitor);
+
+		for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		{
+			if (!visitor.visit(**i))
+				return false;
+		}
+
+		return true;
 	}
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;

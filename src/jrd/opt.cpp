@@ -113,16 +113,10 @@ bool JrdNodeVisitor::visitChildren(jrd_nod* node)
 		}
 
 		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
 		case nod_gen_id:
 		case nod_gen_id2:
-		case nod_internal_info:
 		case nod_literal:
 		case nod_null:
-		case nod_user_name:
 		case nod_variable:
 			break;
 
@@ -138,15 +132,6 @@ bool JrdNodeVisitor::visitChildren(jrd_nod* node)
 			ret |= visit(node->nod_arg[e_strlen_value]);
 			break;
 
-		case nod_add:
-		case nod_add2:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
 		case nod_upcase:
 		case nod_lowcase:
 		case nod_substr:
@@ -486,31 +471,25 @@ bool UnmappedNodeGetter::visit(jrd_nod* node)
 		return !invalid;
 	}
 
-	nodeFound = node;
-
 	switch (node->nod_type)
 	{
 		case nod_field:
 			break;
 
 		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
 		case nod_gen_id:
 		case nod_gen_id2:
-		case nod_internal_info:
 		case nod_literal:
 		case nod_null:
-		case nod_user_name:
 		case nod_variable:
 			break;
 
 		default:
 			invalid |= !visitChildren(node);
-			return !invalid;
+			break;
 	}
+
+	nodeFound = node;
 
 	return !invalid;
 }

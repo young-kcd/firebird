@@ -322,10 +322,6 @@ const int e_extract_part	= 1;	// Integer
 const int e_extract_count	= 1;	// Number of nodes
 const int e_extract_length	= 2;	// Number of entries in nod_args
 
-const int e_current_date_length		= 1;
-const int e_current_time_length		= 1;
-const int e_current_timestamp_length= 1;
-
 const int e_dcl_cur_rse		= 0;
 const int e_dcl_cur_refs	= 1;
 const int e_dcl_cur_number	= 2;

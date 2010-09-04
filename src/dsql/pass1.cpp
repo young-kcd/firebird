@@ -145,6 +145,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
 #include "../jrd/jrd.h"
@@ -158,7 +159,6 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
-#include "../dsql/misc_func.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../dsql/DSqlDataTypeUtil.h"
@@ -522,7 +522,6 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 
 		case nod_relation:
 		case nod_dbkey:
-		case nod_internal_info:
 		case nod_field:
 		case nod_derived_field:
 			return false;
@@ -598,9 +597,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 
 		case nod_relation:
 		case nod_dbkey:
-			return false;
-
-		case nod_internal_info:
 			return false;
 
 		case nod_field:
@@ -816,7 +812,6 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 			break;
 		}
 
-		case nod_internal_info:
 		case nod_derived_table:
 		case nod_plan_expr:
 			return false;
@@ -923,7 +918,6 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 			visit(&node->nod_arg[e_agg_rse]);
 			break;
 
-		case nod_internal_info:
 		case nod_exists:
 		case nod_singular:
 		{
@@ -999,7 +993,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 		case nod_dbkey:
 		case nod_field:
 		case nod_relation:
-		case nod_internal_info:
 		case nod_field_name:
 			return false;
 
@@ -1656,37 +1649,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_desc = dsqlScratch->domainValue;
 		return node;
-
-	case nod_internal_info:
-		{
-			const internal_info_id id =
-				*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
-			unsigned scratchMask = InternalInfo::getMask(id);
-			if (scratchMask && !(dsqlScratch->flags & scratchMask))
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					// Token unknown
-					Arg::Gds(isc_token_err) <<
-					Arg::Gds(isc_random) << Arg::Str(InternalInfo::getAlias(id)));
-			}
-		}
-		break;
-
-	case nod_current_time:
-	case nod_current_timestamp:
-		{
-			const dsql_nod* const_node = input->nod_arg[0];
-			if (const_node)
-			{
-				fb_assert(const_node->nod_type == nod_constant);
-				const int precision = const_node->getSlong();
-				fb_assert(precision >= 0);
-				if (unsigned(precision) > MAX_TIME_PRECISION) {
-					ERRD_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
-				}
-			}
-		}
-		break;
 
 	case nod_join:
 		return pass1_join(dsqlScratch, input);
@@ -5034,18 +4996,25 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	switch (expr->nod_type)
 	{
 		case nod_constant:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
 		case nod_dbkey:
 		case nod_field:
-		case nod_internal_info:
 		case nod_null:
 		case nod_parameter:
-		case nod_user_name:
 		case nod_variable:
 			return NULL;
+
+		case nod_class_exprnode:
+			switch (ExprNode::fromLegacy(expr)->type)
+			{
+				case ExprNode::TYPE_CURRENT_DATE:
+				case ExprNode::TYPE_CURRENT_TIME:
+				case ExprNode::TYPE_CURRENT_TIMESTAMP:
+				case ExprNode::TYPE_CURRENT_ROLE:
+				case ExprNode::TYPE_CURRENT_USER:
+				case ExprNode::TYPE_INTERNAL_INFO:
+					return NULL;
+			}
+			break;
 	}
 
 	dsql_nod* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
@@ -8318,6 +8287,8 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	thread_db* tdbb = JRD_get_thread_data();
+
 	if (!dsqlScratch->isPsql())
 		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
 
@@ -8516,8 +8487,10 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 
 	// test if ROW_COUNT = 0
 	dsql_nod* eql = MAKE_node(nod_eql, 2);
-	eql->nod_arg[0] = MAKE_node(nod_internal_info, e_internal_info_count);
-	eql->nod_arg[0]->nod_arg[e_internal_info] = MAKE_const_slong(internal_rows_affected);
+	eql->nod_arg[0] = MAKE_node(nod_class_exprnode, 1);
+	eql->nod_arg[0]->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+		FB_NEW(*tdbb->getDefaultPool()) InternalInfoNode(*tdbb->getDefaultPool(),
+			MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED))));
 	eql->nod_arg[1] = MAKE_const_slong(0);
 
 	const ULONG save_flags = dsqlScratch->flags;
@@ -9050,16 +9023,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 			}
 
 		case nod_missing:
-		case nod_add:
-		case nod_add2:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
 		case nod_substr:
-		case nod_subtract:
-		case nod_subtract2:
 		case nod_trim:
 		case nod_upcase:
 		case nod_lowcase:
@@ -9161,7 +9125,9 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 
 			switch (exprNode->type)
 			{
+				case ExprNode::TYPE_ARITHMETIC:
 				case ExprNode::TYPE_CONCATENATE:
+				case ExprNode::TYPE_NEGATE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 					for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
 						 i != exprNode->dsqlChildNodes.end(); ++i)
@@ -9183,16 +9149,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 			return;
 		}
 
-	case nod_add:
-	case nod_add2:
-	case nod_divide:
-	case nod_divide2:
-	case nod_multiply:
-	case nod_multiply2:
-	case nod_negate:
 	case nod_substr:
-	case nod_subtract:
-	case nod_subtract2:
 	case nod_trim:
 	case nod_upcase:
 	case nod_lowcase:
@@ -9203,9 +9160,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 		{
 			dsql_nod** ptr = par_node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + par_node->nod_count; ptr < end; ptr++)
-			{
 				set_parameter_name(*ptr, fld_node, relation);
-			}
 			return;
 		}
 
@@ -9375,9 +9330,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	switch (node->nod_type)
 	{
-	case nod_add:
-		verb = "add";
-		break;
 	case nod_alias:
 		verb = "alias";
 		break;
@@ -9409,15 +9361,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_containing:
 		verb = "containing";
-		break;
-	case nod_current_date:
-		verb = "current_date";
-		break;
-	case nod_current_time:
-		verb = "current_time";
-		break;
-	case nod_current_timestamp:
-		verb = "current_timestamp";
 		break;
 	case nod_cursor:
 		verb = "cursor";
@@ -9454,9 +9397,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_del_index:
 		verb = "delete index";
-		break;
-	case nod_divide:
-		verb = "divide";
 		break;
 	case nod_eql:
 		verb = "eql";
@@ -9503,9 +9443,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_insert:
 		verb = "insert";
 		break;
-	case nod_internal_info:
-		verb = "internal info";
-		break;
 	case nod_join:
 		verb = "join";
 		break;
@@ -9544,12 +9481,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_mod_field:
 		verb = "modify field";
-		break;
-	case nod_multiply:
-		verb = "multiply";
-		break;
-	case nod_negate:
-		verb = "negate";
 		break;
 	case nod_neq:
 		verb = "neq";
@@ -9611,9 +9542,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_substr:
 		verb = "substr";
 		break;
-	case nod_subtract:
-		verb = "subtract";
-		break;
 	case nod_trim:
 		verb = "trim";
 		break;
@@ -9635,13 +9563,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_singular:
 		verb = "singular";
 		break;
-	case nod_user_name:
-		verb = "user_name";
-		break;
-	// CVC: New node current_role.
-	case nod_current_role:
-		verb = "current_role";
-		break;
 	case nod_via:
 		verb = "via";
 		break;
@@ -9658,20 +9579,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "searched_case";
 		break;
 
-	case nod_add2:
-		verb = "add2";
-		break;
-	case nod_divide2:
-		verb = "divide2";
-		break;
 	case nod_gen_id2:
 		verb = "gen_id2";
-		break;
-	case nod_multiply2:
-		verb = "multiply2";
-		break;
-	case nod_subtract2:
-		verb = "subtract2";
 		break;
 	case nod_limit:
 		verb = "limit";

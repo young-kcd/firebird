@@ -337,6 +337,13 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 					// fall into
 
 				case ExprNode::TYPE_CONCATENATE:
+				case ExprNode::TYPE_CURRENT_DATE:
+				case ExprNode::TYPE_CURRENT_TIME:
+				case ExprNode::TYPE_CURRENT_TIMESTAMP:
+				case ExprNode::TYPE_CURRENT_ROLE:
+				case ExprNode::TYPE_CURRENT_USER:
+				case ExprNode::TYPE_INTERNAL_INFO:
+				case ExprNode::TYPE_NEGATE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 					for (NestConst<NestConst<jrd_nod> >* i = children1.begin(), *j = children2.begin();
 						 i != children1.end(); ++i, ++j)
@@ -346,33 +353,57 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 					}
 
 					return true;
+
+				case ExprNode::TYPE_ARITHMETIC:
+				{
+					ArithmeticNode* arithmeticNode1 = static_cast<ArithmeticNode*>(exprNode1);
+					ArithmeticNode* arithmeticNode2 = static_cast<ArithmeticNode*>(exprNode2);
+
+					if (arithmeticNode1->blrOp != arithmeticNode2->blrOp ||
+						arithmeticNode1->dialect1 != arithmeticNode2->dialect1)
+					{
+						return false;
+					}
+
+					if (OPT_expression_equal2(tdbb, csb, arithmeticNode1->arg1, arithmeticNode2->arg1, stream) &&
+						OPT_expression_equal2(tdbb, csb, arithmeticNode1->arg2, arithmeticNode2->arg2, stream))
+					{
+						return true;
+					}
+
+					if (arithmeticNode1->blrOp == blr_add || arithmeticNode1->blrOp == blr_multiply)
+					{
+						// A+B is equivalent to B+A, ditto A*B and B*A
+						// Note: If one expression is A+B+C, but the other is B+C+A we won't
+						// necessarily match them.
+						if (OPT_expression_equal2(tdbb, csb,
+								arithmeticNode1->arg1, arithmeticNode2->arg2, stream) &&
+							OPT_expression_equal2(tdbb, csb,
+								arithmeticNode1->arg2, arithmeticNode2->arg1, stream))
+						{
+							return true;
+						}
+					}
+
+					return false;
+				}
 			}
 
 			break;
 		}
 
-		case nod_add:
-		case nod_multiply:
-		case nod_add2:
-		case nod_multiply2:
 		case nod_equiv:
 	    case nod_eql:
 		case nod_neq:
 	    case nod_and:
 		case nod_or:
-			// A+B is equivalent to B+A, ditto A*B==B*A
-			// Note: If one expression is A+B+C, but the other is B+C+A we won't
-			// necessarily match them.
+			// Order of arguments is not important, as in addition and multiplication.
 			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[1], stream) &&
 				OPT_expression_equal2(tdbb, csb, node1->nod_arg[1], node2->nod_arg[0], stream))
 			{
 				return true;
 			}
 			// Fall into ...
-		case nod_subtract:
-		case nod_divide:
-		case nod_subtract2:
-		case nod_divide2:
 
 		// TODO match A > B to B <= A, etc
 	    case nod_gtr:
@@ -420,11 +451,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			break;
 
 		case nod_null:
-		case nod_user_name:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_date:
-		case nod_current_timestamp:
 			return true;
 
 		case nod_between:
@@ -459,14 +485,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		case nod_gen_id:
 		case nod_gen_id2:
 			if (node1->nod_arg[e_gen_id] == node2->nod_arg[e_gen_id])
-			{
-				return true;
-			}
-			break;
-
-		case nod_negate:
-		case nod_internal_info:
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream))
 			{
 				return true;
 			}

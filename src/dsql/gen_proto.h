@@ -24,6 +24,7 @@
 #ifndef DSQL_GEN_PROTO_H
 #define DSQL_GEN_PROTO_H
 
+void	GEN_constant(Jrd::DsqlCompilerScratch* dsqlScratch, Jrd::dsql_nod* node, bool negateValue);
 void	GEN_descriptor(Jrd::DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool texttype);
 void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch, bool inExpression);

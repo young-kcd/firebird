@@ -33,9 +33,6 @@ namespace Jrd
 	struct ItemInfo;
 }
 
-// Implemented in evl.cpp
-dsc*		EVL_add(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
-dsc*		EVL_add2(const dsc*, const Jrd::jrd_nod*, Jrd::impure_value*);
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
 Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, const Jrd::InversionNode*, Jrd::RecordBitmap*);
 bool		EVL_boolean(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);

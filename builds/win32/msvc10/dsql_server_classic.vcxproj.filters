@@ -58,9 +58,6 @@
     <ClCompile Include="..\..\..\src\dsql\make.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\dsql\misc_func.cpp">
-      <Filter>DSQL files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\movd.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
@@ -178,9 +175,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\metd_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\misc_func.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\movd_proto.h">

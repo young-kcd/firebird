@@ -150,7 +150,6 @@
     <ClCompile Include="..\..\..\src\dsql\hsh.cpp" />
     <ClCompile Include="..\..\..\src\dsql\keywords.cpp" />
     <ClCompile Include="..\..\..\src\dsql\make.cpp" />
-    <ClCompile Include="..\..\..\src\dsql\misc_func.cpp" />
     <ClCompile Include="..\..\..\src\dsql\movd.cpp" />
     <ClCompile Include="..\..\..\src\dsql\parse.cpp" />
     <ClCompile Include="..\..\..\src\dsql\Parser.cpp" />
@@ -194,7 +193,6 @@
     <ClInclude Include="..\..\..\src\dsql\keywords.h" />
     <ClInclude Include="..\..\..\src\dsql\make_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\metd_proto.h" />
-    <ClInclude Include="..\..\..\src\dsql\misc_func.h" />
     <ClInclude Include="..\..\..\src\dsql\movd_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\node.h" />
     <ClInclude Include="..\..\..\src\dsql\Nodes.h" />

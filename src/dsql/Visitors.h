@@ -373,14 +373,12 @@ class UnmappedNodeGetter : public JrdNodeVisitor
 public:
 	UnmappedNodeGetter(const MapNode* aMap, UCHAR aShellStream);
 
-public:
 	static jrd_nod* get(const MapNode* map, UCHAR shellStream, jrd_nod* node)
 	{
 		UnmappedNodeGetter obj(map, shellStream);
 		return obj.visit(node) && !obj.invalid ? obj.nodeFound : NULL;
 	}
 
-protected:
 	virtual bool visit(jrd_nod* node);
 
 public:
@@ -459,11 +457,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_parameter:
 		case nod_variable:
 		case nod_null:
-		case nod_current_date:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_user_name:
-		case nod_current_role:
 		case nod_dom_value:
 			break;
 
@@ -502,16 +495,7 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_similar:
 		case nod_starting:
 		case nod_missing:
-		case nod_add:
-		case nod_add2:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
 		case nod_substr:
-		case nod_subtract:
-		case nod_subtract2:
 		case nod_trim:
 		case nod_upcase:
 		case nod_lowcase:

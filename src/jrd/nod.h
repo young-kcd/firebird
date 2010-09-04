@@ -39,29 +39,23 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_select, select, "")
 			NODE(nod_store, store, "")
 
-			NODE(nod_add, add, " + ")
 			NODE(nod_argument, argument, "")
 			NODE(nod_variable, variable, "")
 			NODE(nod_average, average, "AVG")
 			NODE(nod_count, count, "COUNT")
 			NODE(nod_dbkey, dbkey, "ROWID")
-			NODE(nod_divide, divide, " / ")
 			NODE(nod_field, field, "")
 			NODE(nod_from, from, "")
 			NODE(nod_literal, literal, "")
 			NODE(nod_max, max, "MAX")
 			NODE(nod_min, min, "MIN")
-			NODE(nod_multiply, multiply, " * ")
-			NODE(nod_negate, negate, " -")
 			NODE(nod_scalar, scalar, "")
-			NODE(nod_user_name, UserId, "")
 			NODE(nod_gen_id, recnum, "")
 			NODE(nod_prot_mask, prot_mask, "")
 			NODE(nod_upcase, upcase, "UPPER")
 			NODE(nod_lock_state, lock_state, "")
 			NODE(nod_null, null, "NULL")
 			NODE(nod_substr, substr, "")
-			NODE(nod_subtract, subtract, " - ")
 			NODE(nod_total, total, "SUM")
 			NODE(nod_trim, trim, "")
 			NODE(nod_value_if, value_if, "")
@@ -106,27 +100,14 @@ NODE(nod_asn_list, asn_list, "")
 
 /* Improved date handling */
 		  NODE(nod_extract, extract, "EXTRACT")
-		  NODE(nod_current_date, current_date, "CURRENT DATE")
-		  NODE(nod_current_time, current_time, "CURRENT TIME")
-		  NODE(nod_current_timestamp, current_timestamp, "CURRENT TIMESTAMP")
 
-/* Additions for 64-bit integer support */
-		  NODE(nod_add2, add2, " + ")
-		  NODE(nod_subtract2, subtract2, " - ")
-		  NODE(nod_multiply2, multiply2, " * ")
-		  NODE(nod_divide2, divide2, " / ")
 		  NODE(nod_average2, average2, "AVG")
 		  NODE(nod_gen_id2, recnum, "")
 		  NODE(nod_set_generator2, set_generator, "")
 		  NODE(nod_total2, total, "SUM")
 
-          NODE(nod_current_role, current_role, "")
-
 /* EXECUTE STATEMENT */
 		  NODE(nod_exec_sql, exec_sql, "EXECUTE STATEMENT")
-
-/* Internal engine info */
-		  NODE(nod_internal_info, internal_info, "INTERNAL INFO")
 
 /* EXECUTE VARCHAR INTO ...*/
 		  NODE(nod_exec_into, exec_sql_into, "EXECUTE VARCHAR INTO")

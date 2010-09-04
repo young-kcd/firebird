@@ -51,7 +51,6 @@
 #include "../dsql/gen_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
-#include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/dsc_proto.h"
@@ -67,7 +66,6 @@ static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_cast(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_constant(DsqlCompilerScratch*, const dsc*, bool);
-static void gen_constant(DsqlCompilerScratch*, dsql_nod*, bool);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void gen_field(DsqlCompilerScratch*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
@@ -86,12 +84,6 @@ static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 static void stuff_context(DsqlCompilerScratch*, const dsql_ctx*);
-
-// STUFF is defined in dsql.h for use in common with ddl.c
-
-// The following are passed as the third argument to gen_constant
-const bool NEGATE_VALUE = true;
-const bool USE_VALUE    = false;
 
 
 void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
@@ -167,7 +159,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
 
 	case nod_constant:
-		gen_constant(dsqlScratch, node, USE_VALUE);
+		GEN_constant(dsqlScratch, node, false);
 		return;
 
 	case nod_derived_field:
@@ -241,44 +233,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				  (dsql_ctx*) node->nod_arg[e_fld_context],
 				  (dsql_fld*) node->nod_arg[e_fld_field],
 				  node->nod_arg[e_fld_indices]);
-		return;
-
-	case nod_user_name:
-		dsqlScratch->appendUChar(blr_user_name);
-		return;
-
-	case nod_current_time:
-		if (node->nod_arg[0])
-		{
-			const dsql_nod* const_node = node->nod_arg[0];
-			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int) const_node->getSlong();
-			dsqlScratch->appendUChar(blr_current_time2);
-			dsqlScratch->appendUChar(precision);
-		}
-		else
-			dsqlScratch->appendUChar(blr_current_time);
-		return;
-
-	case nod_current_timestamp:
-		if (node->nod_arg[0])
-		{
-			const dsql_nod* const_node = node->nod_arg[0];
-			fb_assert(const_node->nod_type == nod_constant);
-			const int precision = (int) const_node->getSlong();
-			dsqlScratch->appendUChar(blr_current_timestamp2);
-			dsqlScratch->appendUChar(precision);
-		}
-		else
-			dsqlScratch->appendUChar(blr_current_timestamp);
-		return;
-
-	case nod_current_date:
-		dsqlScratch->appendUChar(blr_current_date);
-		return;
-
-	case nod_current_role:
-		dsqlScratch->appendUChar(blr_current_role);
 		return;
 
 	case nod_variable:
@@ -406,43 +360,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		blr_operator = (node->nod_count == 2) ? blr_like : blr_ansi_like;
 		break;
 
-	case nod_add:
-		blr_operator = blr_add;
-		break;
-	case nod_subtract:
-		blr_operator = blr_subtract;
-		break;
-	case nod_multiply:
-		blr_operator = blr_multiply;
-		break;
-
-	case nod_negate:
-		{
-			dsql_nod* child = node->nod_arg[0];
-			if (child->nod_type == nod_constant && DTYPE_IS_NUMERIC(child->nod_desc.dsc_dtype))
-			{
-				gen_constant(dsqlScratch, child, NEGATE_VALUE);
-				return;
-			}
-		}
-		blr_operator = blr_negate;
-		break;
-
-	case nod_divide:
-		blr_operator = blr_divide;
-		break;
-	case nod_add2:
-		blr_operator = blr_add;
-		break;
-	case nod_subtract2:
-		blr_operator = blr_subtract;
-		break;
-	case nod_multiply2:
-		blr_operator = blr_multiply;
-		break;
-	case nod_divide2:
-		blr_operator = blr_divide;
-		break;
 	case nod_null:
 		blr_operator = blr_null;
 		break;
@@ -459,9 +376,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		blr_operator = blr_via;
 		break;
 
-	case nod_internal_info:
-		blr_operator = blr_internal_info;
-		break;
 	case nod_upcase:
 		blr_operator = blr_upcase;
 		break;
@@ -545,71 +459,32 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	dsql_nod* const* ptr = node->nod_arg;
 	for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-	{
 		GEN_expr(dsqlScratch, *ptr);
-	}
 
 	// Check whether the node we just processed is for a dialect 3
 	// operation which gives a different result than the corresponding
 	// operation in dialect 1.  If it is, and if the client dialect is 2,
 	// issue a warning about the difference.
 
-	switch (node->nod_type)
+	// ASF: Shouldn't we check nod_gen_id2 here too?
+
+	if (node->nod_type == nod_class_exprnode)
 	{
-	case nod_class_exprnode:
-		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
 
-			if (exprNode->dsqlCompatDialectVerb &&
-				dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
-			{
-				dsc desc;
-				MAKE_desc(dsqlScratch, &desc, node, NULL);
-
-				if (desc.dsc_dtype == dtype_int64)
-				{
-					ERRD_post_warning(
-						Arg::Warning(isc_dsql_dialect_warning_expr) <<
-						Arg::Str(exprNode->dsqlCompatDialectVerb));
-				}
-			}
-		}
-		break;
-
-	case nod_add2:
-	case nod_subtract2:
-	case nod_multiply2:
-	case nod_divide2:
-		dsc desc;
-		MAKE_desc(dsqlScratch, &desc, node, NULL);
-
-		if ((node->nod_flags & NOD_COMP_DIALECT) &&
+		if (exprNode->dsqlCompatDialectVerb &&
 			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
 		{
-			const char* s = 0;
-			char message_buf[8];
+			dsc desc;
+			MAKE_desc(dsqlScratch, &desc, node, NULL);
 
-			switch (node->nod_type)
+			if (desc.dsc_dtype == dtype_int64)
 			{
-			case nod_add2:
-				s = "add";
-				break;
-			case nod_subtract2:
-				s = "subtract";
-				break;
-			case nod_multiply2:
-				s = "multiply";
-				break;
-			case nod_divide2:
-				s = "divide";
-				break;
-			default:
-				sprintf(message_buf, "blr %d", (int) blr_operator);
-				s = message_buf;
+				ERRD_post_warning(
+					Arg::Warning(isc_dsql_dialect_warning_expr) <<
+					Arg::Str(exprNode->dsqlCompatDialectVerb));
 			}
-			ERRD_post_warning(Arg::Warning(isc_dsql_dialect_warning_expr) << Arg::Str(s));
 		}
-		break;
 	}
 }
 
@@ -1369,19 +1244,8 @@ static void gen_coalesce( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 }
 
 
-/**
-
- 	gen_constant
-
-    @brief	Generate BLR for a constant.
-
-
-    @param dsqlScratch
-    @param desc
-    @param negate_value
-
- **/
-static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negate_value)
+// Generate BLR for a constant.
+static void gen_constant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue)
 {
 	SLONG value;
 	SINT64 i64value;
@@ -1395,7 +1259,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	case dtype_short:
 		GEN_descriptor(dsqlScratch, desc, true);
 		value = *(SSHORT*) p;
-		if (negate_value)
+		if (negateValue)
 			value = -value;
 		dsqlScratch->appendUShort(value);
 		break;
@@ -1403,7 +1267,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	case dtype_long:
 		GEN_descriptor(dsqlScratch, desc, true);
 		value = *(SLONG*) p;
-		if (negate_value)
+		if (negateValue)
 			value = -value;
 		//printf("gen.cpp = %p %d\n", *((void**)p), value);
 		dsqlScratch->appendUShort(value);
@@ -1426,7 +1290,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 			GEN_descriptor(dsqlScratch, desc, true);
 			// Length of string literal, cast because it could be > 127 bytes.
 			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
-			if (negate_value)
+			if (negateValue)
 			{
 				dsqlScratch->appendUShort(l + 1);
 				dsqlScratch->appendUChar('-');
@@ -1443,7 +1307,7 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 	case dtype_int64:
 		i64value = *(SINT64*) p;
 
-		if (negate_value)
+		if (negateValue)
 			i64value = -i64value;
 		else if (i64value == MIN_SINT64)
 		{
@@ -1514,24 +1378,13 @@ static void gen_constant( DsqlCompilerScratch* dsqlScratch, const dsc* desc, boo
 }
 
 
-/**
-
- 	gen_constant
-
-    @brief	Generate BLR for a constant.
-
-
-    @param dsqlScratch
-    @param node
-    @param negate_value
-
- **/
-static void gen_constant( DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool negate_value)
+// Generate BLR for a constant.
+void GEN_constant(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool negateValue)
 {
 	if (node->nod_desc.dsc_dtype == dtype_text)
 		node->nod_desc.dsc_length = ((dsql_str*) node->nod_arg[0])->str_length;
 
-	gen_constant(dsqlScratch, &node->nod_desc, negate_value);
+	gen_constant(dsqlScratch, &node->nod_desc, negateValue);
 }
 
 
@@ -2412,7 +2265,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 1;
-	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
+	gen_constant(dsqlScratch, &constant_desc, false);
 	gen_parameter(dsqlScratch, statement->getEof());
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
@@ -2448,7 +2301,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	dsqlScratch->appendUChar(message->msg_number);
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 0;
-	gen_constant(dsqlScratch, &constant_desc, USE_VALUE);
+	gen_constant(dsqlScratch, &constant_desc, false);
 	gen_parameter(dsqlScratch, statement->getEof());
 }
 

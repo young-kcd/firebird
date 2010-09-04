@@ -42,9 +42,20 @@
 #include "../gpre/prett_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../gpre/msc_proto.h"
-#include "../jrd/misc_func_ids.h"
-#include "../jrd/misc_func_ids.h"
 #include "../jrd/align.h"
+
+enum internal_info_id
+{
+	internal_unknown = 0,
+	internal_connection_id = 1,
+	internal_transaction_id = 2,
+	internal_gdscode = 3,
+	internal_sqlcode = 4,
+	internal_rows_affected = 5,
+	internal_trigger_action = 6,
+	internal_sqlstate = 7,
+	max_internal_id
+};
 
 static void cmp_array(gpre_nod*, gpre_req*);
 static void cmp_array_element(gpre_nod*, gpre_req*);

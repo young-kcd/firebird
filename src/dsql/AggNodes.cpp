@@ -21,6 +21,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../dsql/AggNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
@@ -586,7 +587,7 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	else
 	{
 		// Initialize the result area as an int64. If the field being aggregated is approximate
-		// numeric, the first call to EVL_add2 will convert the descriptor to double.
+		// numeric, the first call to add will convert the descriptor to double.
 		impure->make_int64(0, node->nod_scale);
 	}
 }
@@ -597,9 +598,9 @@ void AvgAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 	++impure->vlux_count;
 
 	if (dialect1)
-		EVL_add(desc, node, impure);
+		ArithmeticNode::add(desc, impure, node, blr_add);
 	else
-		EVL_add2(desc, node, impure);
+		ArithmeticNode::add2(desc, impure, node, blr_add);
 }
 
 dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
@@ -1059,7 +1060,7 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	else
 	{
 		// Initialize the result area as an int64. If the field being aggregated is approximate
-		// numeric, the first call to EVL_add2 will convert the descriptor to double.
+		// numeric, the first call to add will convert the descriptor to double.
 		impure->make_int64(0, node->nod_scale);
 	}
 }
@@ -1070,9 +1071,9 @@ void SumAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 	++impure->vlux_count;
 
 	if (dialect1)
-		EVL_add(desc, node, impure);
+		ArithmeticNode::add(desc, impure, node, blr_add);
 	else
-		EVL_add2(desc, node, impure);
+		ArithmeticNode::add2(desc, impure, node, blr_add);
 }
 
 dsc* SumAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const

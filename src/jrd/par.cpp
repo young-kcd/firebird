@@ -2209,10 +2209,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_matching:
 	case blr_like:
 	case blr_starting:
-	case blr_add:
-	case blr_subtract:
-	case blr_multiply:
-	case blr_divide:
 
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
@@ -2224,10 +2220,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_lock_state:
 	case blr_upcase:
 	case blr_lowcase:
-	case blr_negate:
 	case blr_not:
 	case blr_missing:
-	case blr_internal_info:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
@@ -2419,28 +2413,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_null:
-	case blr_user_name:
-    case blr_current_role:
-	case blr_current_date:
 	case blr_start_savepoint:
 	case blr_end_savepoint:
-		break;
-
-	case blr_current_time:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIME_PRECISION;
-		break;
-
-	case blr_current_timestamp:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIMESTAMP_PRECISION;
-		break;
-
-	case blr_current_time2:
-	case blr_current_timestamp2:
-		n = csb->csb_blr_reader.getByte();
-		if (n > MAX_TIME_PRECISION) {
-			ERR_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
-		}
-		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
 		break;
 
 	case blr_store:

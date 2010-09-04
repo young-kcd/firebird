@@ -150,11 +150,6 @@ enum nod_t
 	nod_variable,
 	nod_var_name,
 	nod_array,
-	nod_add,
-	nod_subtract,
-	nod_multiply,
-	nod_divide,
-	nod_negate,
 	nod_substr,
 	nod_null,
 	nod_dbkey,
@@ -163,10 +158,6 @@ enum nod_t
 	nod_lowcase,
 	nod_collate,
 	nod_gen_id,
-	nod_add2,
-	nod_subtract2,
-	nod_multiply2,
-	nod_divide2,
 	nod_gen_id2,
 	nod_exists,
 	nod_singular,
@@ -215,19 +206,14 @@ enum nod_t
 	nod_role_name,
 	nod_grant_admin,
 	nod_del_role,
-	nod_current_time,	// SQL time & date support
-	nod_current_date,
-	nod_current_timestamp,
 	nod_extract,
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
-	nod_current_role, // nod_role_name is already taken but only for DDL
 	nod_breakleave,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_limit, // limit support
 	nod_exec_sql, // EXECUTE STATEMENT
-	nod_internal_info, // internal engine info
 	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
@@ -358,9 +344,6 @@ enum node_args {
 	e_named_param_name = 0,	// nod_named_param
 	e_named_param_expr,
 	e_named_param_count,
-
-	e_internal_info = 0,	// nod_internal_info
-	e_internal_info_count,
 
 	e_vrn_name = 0,			// nod_variable_name
 	e_vrn_count,
@@ -705,12 +688,6 @@ enum node_args {
 	e_extract_part = 0,				// constant representing part to extract
 	e_extract_value,				// Must be a time or date value
 	e_extract_count,
-
-	// SQL CURRENT_TIME, CURRENT_DATE, CURRENT_TIMESTAMP
-
-	e_current_time_count = 0,
-	e_current_date_count = 0,
-	e_current_timestamp_count = 0,
 
 	e_mod_fld_name_orig_name = 0,	// nod_mod_field_name
 	e_mod_fld_name_new_name,

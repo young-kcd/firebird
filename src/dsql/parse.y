@@ -92,7 +92,6 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/keywords.h"
-#include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intlobj_new.h"
@@ -766,7 +765,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> rview_clause
 %type <legacyStr>  revoke_admin
 
-%type <legacyNode> savepoint scroll_opt search_condition searched_case searched_when_clause sec_precision_opt
+%type <legacyNode> savepoint scroll_opt search_condition searched_case searched_when_clause
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
@@ -799,6 +798,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> trigger_action_predicate
 %type <legacyNode> trim_function
 %type <legacyNode> trim_specification
+%type <uintVal>	   time_precision_opt timestamp_precision_opt
 
 %type <legacyNode> u_constant u_numeric_constant udf udf_data_type udf_decl_clause undo_savepoint
 %type <legacyNode> unique_constraint unique_opt update update_column_name
@@ -3295,8 +3295,9 @@ alter_sequence_clause
 		}
 	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count,
-				$1, make_node(nod_negate, 1, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)));
+			$$ = make_node(nod_set_generator2, e_gen_id_count, $1,
+				makeClassNode(FB_NEW(getPool()) NegateNode(
+					getPool(), MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))));
 		}
 	;
 
@@ -3937,8 +3938,9 @@ set_generator
 		}
 	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count,
-				$3, make_node(nod_negate, 1, MAKE_constant((dsql_str*) $6, CONSTANT_SINT64)));
+			$$ = make_node(nod_set_generator2, e_gen_id_count, $3,
+				makeClassNode(FB_NEW(getPool()) NegateNode(
+					getPool(), MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))));
 		}
 	;
 
@@ -4603,9 +4605,12 @@ rows_clause	: ROWS value
 			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
 			{
 				$$ = make_node (nod_rows, (int) e_rows_count,
-						make_node (nod_subtract, 2, $2, MAKE_const_slong (1)),
-						make_node (nod_add, 2,
-							make_node (nod_subtract, 2, $4, $2), MAKE_const_slong (1)));
+					makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
+						$2, MAKE_const_slong(1))),
+					makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_add, true,
+						makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
+							$4, $2)),
+						MAKE_const_slong(1))));
 			}
 		|
 			{ $$ = NULL; }
@@ -5009,26 +5014,24 @@ null_predicate	: value IS KW_NULL
 		{ $$ = make_node (nod_not, 1, make_node (nod_missing, 1, $1)); }
 	;
 
-trigger_action_predicate	: INSERTING
+trigger_action_predicate
+	: INSERTING
 		{
-			$$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_trigger_action)),
-						MAKE_const_slong (1));
+			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
+			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(1));
 		}
 	| UPDATING
 		{
-			$$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_trigger_action)),
-						MAKE_const_slong (2));
+			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
+			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(2));
 		}
 	| DELETING
 		{
-			$$ = make_node (nod_eql, 2,
-					make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_trigger_action)),
-						MAKE_const_slong (3));
+			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
+			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(3));
 		}
 	;
 
@@ -5125,15 +5128,13 @@ value	: column_name
 		| next_value_expression
 		| udf
 		| '-' value %prec UMINUS
-			{ $$ = make_node (nod_negate, 1, $2); }
+			{ $$ = makeClassNode(FB_NEW(getPool()) NegateNode(getPool(), $2)); }
 		| '+' value %prec UPLUS
 			{ $$ = $2; }
 		| value '+' value
 			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_add2, 2, $1, $3);
-				else
-					$$ = make_node (nod_add, 2, $1, $3);
+				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
+					getPool(), blr_add, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value CONCATENATE value
 			{ $$ = makeClassNode(FB_NEW(getPool()) ConcatenateNode(getPool(), $1, $3)); }
@@ -5141,24 +5142,18 @@ value	: column_name
 			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
 		| value '-' value
 			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_subtract2, 2, $1, $3);
-				else
-					$$ = make_node (nod_subtract, 2, $1, $3);
+				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
+					getPool(), blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value '*' value
 			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_multiply2, 2, $1, $3);
-				else
-					$$ = make_node (nod_multiply, 2, $1, $3);
+				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
+					getPool(), blr_multiply, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value '/' value
 			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_divide2, 2, $1, $3);
-				else
-					$$ = make_node (nod_divide, 2, $1, $3);
+				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
+					getPool(), blr_divide, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| '(' value ')'
 			{ $$ = $2; }
@@ -5185,15 +5180,17 @@ datetime_value_expression : CURRENT_DATE
 						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
+
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("DATE"));
 			}
-			$$ = make_node (nod_current_date, 0, NULL);
+
+			$$ = makeClassNode(FB_NEW(getPool()) CurrentDateNode(getPool()));
 		}
-	| CURRENT_TIME sec_precision_opt
+	| CURRENT_TIME time_precision_opt
 		{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
@@ -5201,23 +5198,32 @@ datetime_value_expression : CURRENT_DATE
 						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
+
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
 						  												  Arg::Str("TIME"));
 			}
-			$$ = make_node (nod_current_time, 1, $2);
+
+			$$ = makeClassNode(FB_NEW(getPool()) CurrentTimeNode(getPool(), $2));
 		}
-	| CURRENT_TIMESTAMP sec_precision_opt
-		{ $$ = make_node (nod_current_timestamp, 1, $2); }
+	| CURRENT_TIMESTAMP timestamp_precision_opt
+		{ $$ = makeClassNode(FB_NEW(getPool()) CurrentTimeStampNode(getPool(), $2)); }
 	;
 
-sec_precision_opt
-	: '(' nonneg_short_integer ')'
-		{ $$ = MAKE_const_slong($2); }
-	|
-		{ $$ = NULL; }
+time_precision_opt
+	:
+		{ $$ = DEFAULT_TIME_PRECISION; }
+	| '(' nonneg_short_integer ')'
+		{ $$ = $2; }
+	;
+
+timestamp_precision_opt
+	:
+		{ $$ = DEFAULT_TIMESTAMP_PRECISION; }
+	| '(' nonneg_short_integer ')'
+		{ $$ = $2; }
 	;
 
 array_element   : column_name '[' value_list ']'
@@ -5236,10 +5242,11 @@ value_list	: value
 			{ $$ = make_node (nod_list, 2, $1, $3); }
 		;
 
-constant	: u_constant
-		| '-' u_numeric_constant
-			{ $$ = make_node (nod_negate, 1, $2); }
-		;
+constant
+	: u_constant
+	| '-' u_numeric_constant
+		{ $$ = makeClassNode(FB_NEW(getPool()) NegateNode(getPool(), $2)); }
+	;
 
 u_numeric_constant : NUMERIC
 			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
@@ -5296,35 +5303,50 @@ parameter	: '?'
 			{ $$ = make_parameter (); }
 		;
 
-current_user	: USER
-			{ $$ = make_node (nod_user_name, 0, NULL); }
-		| CURRENT_USER
-			{ $$ = make_node (nod_user_name, 0, NULL); }
-		;
+current_user
+	: USER
+		{ $$ = makeClassNode(FB_NEW(getPool()) CurrentUserNode(getPool())); }
+	| CURRENT_USER
+		{ $$ = makeClassNode(FB_NEW(getPool()) CurrentUserNode(getPool())); }
+	;
 
-current_role	: CURRENT_ROLE
-			{ $$ = make_node (nod_current_role, 0, NULL); }
-		;
+current_role
+	: CURRENT_ROLE
+		{ $$ = makeClassNode(FB_NEW(getPool()) CurrentRoleNode(getPool())); }
+	;
 
-internal_info	: CURRENT_CONNECTION
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_connection_id)); }
-		| CURRENT_TRANSACTION
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_transaction_id)); }
-		| GDSCODE
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_gdscode)); }
-		| SQLCODE
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_sqlcode)); }
-		| SQLSTATE
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_sqlstate)); }
-		| ROW_COUNT
-			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
-						MAKE_const_slong (internal_rows_affected)); }
-		;
+internal_info
+	: CURRENT_CONNECTION
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_CONNECTION_ID))));
+		}
+	| CURRENT_TRANSACTION
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRANSACTION_ID))));
+		}
+	| GDSCODE
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_GDSCODE))));
+		}
+	| SQLCODE
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLCODE))));
+		}
+	| SQLSTATE
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLSTATE))));
+		}
+	| ROW_COUNT
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) InternalInfoNode(getPool(),
+				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED))));
+		}
+	;
 
 sql_string
 	: STRING			// string in current charset
@@ -5657,7 +5679,9 @@ substring_function
 			// hence we decrement the first parameter to make it
 			// compatible with the engine's implementation
 			$$ = make_node (nod_substr, (int) e_substr_count, $3,
-				make_node (nod_subtract, 2, $5, MAKE_const_slong (1)), $6);
+				makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
+					$5, MAKE_const_slong(1))),
+				$6);
 		}
 	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
 		{ $$ = makeClassNode(FB_NEW(getPool()) SubstringSimilarNode(getPool(), $3, $5, $7)); }

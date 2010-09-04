@@ -398,7 +398,6 @@
     <ClInclude Include="..\..\..\src\jrd\lls.h" />
     <ClInclude Include="..\..\..\src\jrd\met.h" />
     <ClInclude Include="..\..\..\src\jrd\met_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\misc_func_ids.h" />
     <ClInclude Include="..\..\..\src\jrd\mov_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\msg.h" />
     <ClInclude Include="..\..\..\src\jrd\msg_encode.h" />

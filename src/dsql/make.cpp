@@ -39,6 +39,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
@@ -47,7 +48,6 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
-#include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
 #include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
@@ -64,24 +64,6 @@
 using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
-
-// Firebird provides transparent conversion from string to date in
-// contexts where it makes sense.  This macro checks a descriptor to
-// see if it is something that *could* represent a date value
-static inline bool could_be_date(const dsc& d)
-{
-	return DTYPE_IS_DATE(d.dsc_dtype) || (d.dsc_dtype <= dtype_any_text);
-}
-
-
-// One of d1, d2 is time, the other is date
-static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
-{
-	return ((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
-	((d2.dsc_dtype == dtype_sql_time) && (d1.dsc_dtype == dtype_sql_date));
-}
-
-static void make_null(dsc* const desc);
 
 
 static const char* DB_KEY_NAME = "DB_KEY";
@@ -221,15 +203,18 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				}
 
 				// if value is negative, then GEN_constant (from dsql/gen.cpp)
-				// is going to want 2 nodes: nod_negate (to hold the minus)
+				// is going to want 2 nodes: NegateNode (to hold the minus)
 				// and nod_constant as a child to hold the value.
 				if (value < 0)
 				{
 					value = -value;
 					*(SINT64*) node->nod_desc.dsc_address = value;
-					dsql_nod* sub = node;
-					node = MAKE_node(nod_negate, 1);
-					node->nod_arg[0] = sub;
+
+					NegateNode* negateNode = FB_NEW(*tdbb->getDefaultPool()) NegateNode(
+						*tdbb->getDefaultPool(), node);
+
+					node = MAKE_node(nod_class_exprnode, 1);
+					node->nod_arg[0] = reinterpret_cast<dsql_nod*>(negateNode);
 				}
 				else
 					*(SINT64*) node->nod_desc.dsc_address = value;
@@ -387,7 +372,6 @@ dsql_str* MAKE_cstring(const char* str)
 void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
 	dsc desc1, desc2, desc3;
-	USHORT dtype, dtype1, dtype2;
 	dsql_map* map;
 	dsql_ctx* context;
 	dsql_rel* relation;
@@ -526,441 +510,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 #endif
 
-	case nod_add:
-	case nod_subtract:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL + NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		dtype1 = desc1.dsc_dtype;
-		if (dtype_int64 == dtype1 || DTYPE_IS_TEXT(dtype1))
-			dtype1 = dtype_double;
-
-		dtype2 = desc2.dsc_dtype;
-		if (dtype_int64 == dtype2 || DTYPE_IS_TEXT(dtype2))
-			dtype2 = dtype_double;
-
-		dtype = MAX(dtype1, dtype2);
-
-		if (DTYPE_IS_BLOB(dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-
-		switch (dtype)
-		{
-		case dtype_sql_time:
-		case dtype_sql_date:
-			// CVC: I don't see how this case can happen since dialect 1 doesn't accept DATE or TIME
-			// Forbid <date/time> +- <string>
-			if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-			{
-				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-							Arg::Gds(isc_dsql_nodateortime_pm_string));
-			}
-
-		case dtype_timestamp:
-
-			// Allow <timestamp> +- <string> (historical)
-			if (could_be_date(desc1) && could_be_date(desc2))
-			{
-				if (node->nod_type == nod_subtract)
-				{
-					// <any date> - <any date>
-
-					// Legal permutations are:
-					// <timestamp> - <timestamp>
-					// <timestamp> - <date>
-					// <date> - <date>
-					// <date> - <timestamp>
-					// <time> - <time>
-					// <timestamp> - <string>
-					// <string> - <timestamp>
-					// <string> - <string>
-
-					if (DTYPE_IS_TEXT(desc1.dsc_dtype))
-						dtype = dtype_timestamp;
-					else if (DTYPE_IS_TEXT(desc2.dsc_dtype))
-						dtype = dtype_timestamp;
-					else if (desc1.dsc_dtype == desc2.dsc_dtype)
-						dtype = desc1.dsc_dtype;
-					else if ((desc1.dsc_dtype == dtype_timestamp) && (desc2.dsc_dtype == dtype_sql_date))
-					{
-						dtype = dtype_timestamp;
-					}
-					else if ((desc2.dsc_dtype == dtype_timestamp) && (desc1.dsc_dtype == dtype_sql_date))
-					{
-						dtype = dtype_timestamp;
-					}
-					else
-					{
-						ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_dsql_invalid_datetime_subtract));
-					}
-
-					if (dtype == dtype_sql_date)
-					{
-						desc->dsc_dtype = dtype_long;
-						desc->dsc_length = sizeof(SLONG);
-						desc->dsc_scale = 0;
-					}
-					else if (dtype == dtype_sql_time)
-					{
-						desc->dsc_dtype = dtype_long;
-						desc->dsc_length = sizeof(SLONG);
-						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-						desc->dsc_sub_type = dsc_num_type_numeric;
-					}
-					else
-					{
-						fb_assert(dtype == dtype_timestamp);
-						desc->dsc_dtype = dtype_double;
-						desc->dsc_length = sizeof(double);
-						desc->dsc_scale = 0;
-					}
-				}
-				else if (is_date_and_time(desc1, desc2))
-				{
-					// <date> + <time>
-					// <time> + <date>
-					desc->dsc_dtype = dtype_timestamp;
-					desc->dsc_length = type_lengths[dtype_timestamp];
-					desc->dsc_scale = 0;
-				}
-				else
-				{
-					// <date> + <date>
-					// <time> + <time>
-					// CVC: Hard to see it, since we are in dialect 1.
-					ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-								Arg::Gds(isc_dsql_invalid_dateortime_add));
-				}
-			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
-			{
-				// <date> +/- <non-date>
-				// <non-date> + <date>
-				desc->dsc_dtype = desc1.dsc_dtype;
-				if (!DTYPE_IS_DATE(desc->dsc_dtype))
-					desc->dsc_dtype = desc2.dsc_dtype;
-				fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
-				desc->dsc_length = type_lengths[desc->dsc_dtype];
-				desc->dsc_scale = 0;
-			}
-			else
-			{
-				// <non-date> - <date>
-				fb_assert(node->nod_type == nod_subtract);
-				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-							Arg::Gds(isc_dsql_invalid_type_minus_date));
-			}
-			return;
-
-		case dtype_varying:
-		case dtype_cstring:
-		case dtype_text:
-		case dtype_double:
-		case dtype_real:
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_sub_type = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_length = sizeof(double);
-			return;
-
-		default:
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = MIN(NUMERIC_SCALE(desc1), NUMERIC_SCALE(desc2));
-			break;
-		}
-		return;
-
-	case nod_add2:
-	case nod_subtract2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL + NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		dtype1 = desc1.dsc_dtype;
-		dtype2 = desc2.dsc_dtype;
-
-		// Arrays and blobs can never partipate in addition/subtraction
-		if (DTYPE_IS_BLOB(dtype1) || DTYPE_IS_BLOB(dtype2))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		// In Dialect 2 or 3, strings can never partipate in addition / sub
-		// (use a specific cast instead)
-		if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_nostring_addsub_dial3));
-		}
-
-		// Determine the TYPE of arithmetic to perform, store it
-		// in dtype.  Note:  this is different from the result of
-		// the operation, as <timestamp>-<timestamp> uses
-		// <timestamp> arithmetic, but returns a <double>
-		if (DTYPE_IS_EXACT(dtype1) && DTYPE_IS_EXACT(dtype2))
-		{
-			dtype = dtype_int64;
-		}
-		else if (DTYPE_IS_NUMERIC(dtype1) && DTYPE_IS_NUMERIC(dtype2))
-		{
-			fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
-			dtype = dtype_double;
-		}
-		else
-		{
-			// mixed numeric and non-numeric:
-
-			// The MAX(dtype) rule doesn't apply with dtype_int64
-
-			if (dtype_int64 == dtype1)
-				dtype1 = dtype_double;
-			if (dtype_int64 == dtype2)
-				dtype2 = dtype_double;
-
-			dtype = MAX(dtype1, dtype2);
-		}
-
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-
-		switch (dtype)
-		{
-		case dtype_sql_time:
-		case dtype_sql_date:
-		case dtype_timestamp:
-
-			if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
-				(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
-			{
-				if (node->nod_type == nod_subtract2)
-				{
-					// <any date> - <any date>
-					// Legal permutations are:
-					// <timestamp> - <timestamp>
-					// <timestamp> - <date>
-					// <date> - <date>
-					// <date> - <timestamp>
-					// <time> - <time>
-
-					if (dtype1 == dtype2)
-						dtype = dtype1;
-					else if (dtype1 == dtype_timestamp && dtype2 == dtype_sql_date)
-						dtype = dtype_timestamp;
-					else if (dtype2 == dtype_timestamp && dtype1 == dtype_sql_date)
-						dtype = dtype_timestamp;
-					else
-						ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_dsql_invalid_datetime_subtract));
-
-					if (dtype == dtype_sql_date)
-					{
-						desc->dsc_dtype = dtype_long;
-						desc->dsc_length = sizeof(SLONG);
-						desc->dsc_scale = 0;
-					}
-					else if (dtype == dtype_sql_time)
-					{
-						desc->dsc_dtype = dtype_long;
-						desc->dsc_length = sizeof(SLONG);
-						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-						desc->dsc_sub_type = dsc_num_type_numeric;
-					}
-					else
-					{
-						fb_assert(dtype == dtype_timestamp);
-						desc->dsc_dtype = dtype_int64;
-						desc->dsc_length = sizeof(SINT64);
-						desc->dsc_scale = -9;
-						desc->dsc_sub_type = dsc_num_type_numeric;
-					}
-				}
-				else if (is_date_and_time(desc1, desc2))
-				{
-					// <date> + <time>
-					// <time> + <date>
-					desc->dsc_dtype = dtype_timestamp;
-					desc->dsc_length = type_lengths[dtype_timestamp];
-					desc->dsc_scale = 0;
-				}
-				else
-				{
-					// <date> + <date>
-					// <time> + <time>
-					ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-								Arg::Gds(isc_dsql_invalid_dateortime_add));
-				}
-			}
-			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
-			{
-				// <date> +/- <non-date>
-				// <non-date> + <date>
-				desc->dsc_dtype = desc1.dsc_dtype;
-				if (!DTYPE_IS_DATE(desc->dsc_dtype))
-					desc->dsc_dtype = desc2.dsc_dtype;
-				fb_assert(DTYPE_IS_DATE(desc->dsc_dtype));
-				desc->dsc_length = type_lengths[desc->dsc_dtype];
-				desc->dsc_scale = 0;
-			}
-			else
-			{
-				// <non-date> - <date>
-				fb_assert(node->nod_type == nod_subtract2);
-				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-							Arg::Gds(isc_dsql_invalid_type_minus_date));
-			}
-			return;
-
-		case dtype_varying:
-		case dtype_cstring:
-		case dtype_text:
-		case dtype_double:
-		case dtype_real:
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_sub_type = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_length = sizeof(double);
-			return;
-
-		case dtype_short:
-		case dtype_long:
-		case dtype_int64:
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SINT64);
-
-			// The result type is int64 because both operands are
-			// exact numeric: hence we don't need the NUMERIC_SCALE
-			// macro here.
-			fb_assert(desc1.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc1.dsc_dtype));
-			fb_assert(desc2.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc2.dsc_dtype));
-
-			desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-			node->nod_flags |= NOD_COMP_DIALECT;
-			break;
-
-		default:
-			// a type which cannot participate in an add or subtract
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_invalid_type_addsub_dial3));
-		}
-		return;
-
-	case nod_multiply:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL * NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		// Arrays and blobs can never partipate in multiplication
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-
-		switch (dtype)
-		{
-		case dtype_double:
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_sub_type = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_length = sizeof(double);
-			break;
-
-		case dtype_long:
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SLONG);
-			desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-			break;
-
-		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_invalid_type_multip_dial1));
-		}
-		return;
-
-	case nod_multiply2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL * NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		// In Dialect 2 or 3, strings can never partipate in multiplication
-		// (use a specific cast instead)
-		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_nostring_multip_dial3));
-		}
-
-		// Arrays and blobs can never partipate in multiplication
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-
-		switch (dtype)
-		{
-		case dtype_double:
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_sub_type = 0;
-			desc->dsc_scale = 0;
-			desc->dsc_length = sizeof(double);
-			break;
-
-		case dtype_int64:
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_sub_type = 0;
-			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-			node->nod_flags |= NOD_COMP_DIALECT;
-			break;
-
-		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_invalid_type_multip_dial3));
-		}
-		return;
-
 	/*
 	case nod_count:
 		desc->dsc_dtype = dtype_long;
@@ -970,132 +519,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		desc->dsc_flags = 0;
 		return;
 	*/
-
-	case nod_divide:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL / NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		// Arrays and blobs can never partipate in division
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		dtype1 = desc1.dsc_dtype;
-		if (dtype_int64 == dtype1 || DTYPE_IS_TEXT(dtype1))
-			dtype1 = dtype_double;
-
-		dtype2 = desc2.dsc_dtype;
-		if (dtype_int64 == dtype2 || DTYPE_IS_TEXT(dtype2))
-			dtype2 = dtype_double;
-
-		dtype = MAX(dtype1, dtype2);
-
-		if (!DTYPE_IS_NUMERIC(dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_mustuse_numeric_div_dial1));
-		}
-
-		desc->dsc_dtype = dtype_double;
-		desc->dsc_length = sizeof(double);
-		desc->dsc_scale = 0;
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		return;
-
-	case nod_divide2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], node->nod_arg[0]);
-
-		if (node->nod_arg[0]->nod_type == nod_null && node->nod_arg[1]->nod_type == nod_null)
-		{
-			// NULL / NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		// In Dialect 2 or 3, strings can never partipate in division
-		// (use a specific cast instead)
-		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_nostring_div_dial3));
-		}
-
-		// Arrays and blobs can never partipate in division
-		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-
-		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
-		desc->dsc_dtype = static_cast<UCHAR>(dtype);
-		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-
-		switch (dtype)
-		{
-		case dtype_int64:
-			desc->dsc_length = sizeof(SINT64);
-			desc->dsc_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
-			node->nod_flags |= NOD_COMP_DIALECT;
-			break;
-
-		case dtype_double:
-			desc->dsc_length = sizeof(double);
-			desc->dsc_scale = 0;
-			break;
-
-		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_invalid_type_div_dial3));
-		}
-
-		return;
-
-	case nod_negate:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
-
-		if (node->nod_arg[0]->nod_type == nod_null)
-		{
-			// -NULL = NULL of INT
-			make_null(desc);
-			return;
-		}
-
-		// In Dialect 2 or 3, a string can never partipate in negation
-		// (use a specific cast instead)
-		if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			if (dsqlScratch->clientDialect >= SQL_DIALECT_V6_TRANSITION)
-			{
-				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-							Arg::Gds(isc_dsql_nostring_neg_dial3));
-			}
-			desc->dsc_dtype = dtype_double;
-			desc->dsc_length = sizeof(double);
-		}
-		// Forbid blobs and arrays
-		else if (DTYPE_IS_BLOB(desc->dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_no_blob_array));
-		}
-		// Forbid other not numeric datatypes
-		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype))
-		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_dsql_invalid_type_neg));
-		}
-		return;
 
 	case nod_alias:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value], null_replacement);
@@ -1138,7 +561,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		desc->dsc_scale = 0;
 		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
-		node->nod_flags |= NOD_COMP_DIALECT;
+		node->nod_flags |= NOD_COMP_DIALECT;	// Never checked!
 		return;
 
 	case nod_limit:
@@ -1168,57 +591,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-203) <<
 					  Arg::Gds(isc_dsql_field_ref));
 		}
-		return;
-
-	case nod_user_name:
-	case nod_current_role:
-		desc->dsc_dtype = dtype_varying;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		desc->dsc_ttype() = ttype_metadata;
-		desc->dsc_length =
-			(USERNAME_LENGTH / METADATA_BYTES_PER_CHAR) *
-			METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
-		return;
-
-	case nod_internal_info:
-		{
-			const internal_info_id id =
-				*reinterpret_cast<internal_info_id*>(node->nod_arg[0]->nod_desc.dsc_address);
-
-			if (id == internal_sqlstate)
-			{
-				desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
-			}
-			else
-			{
-				desc->makeLong(0);
-			}
-		}
-		return;
-
-	case nod_current_time:
-		desc->dsc_dtype = dtype_sql_time;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
-		return;
-
-	case nod_current_date:
-		desc->dsc_dtype = dtype_sql_date;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
-		return;
-
-	case nod_current_timestamp:
-		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		desc->dsc_length = type_lengths[desc->dsc_dtype];
 		return;
 
 	case nod_extract:
@@ -1746,25 +1118,6 @@ dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type t
 
 /**
 
-	make_null
-
-	@brief  Prepare a descriptor to signal SQL NULL
-
-	@param desc
-
-**/
-static void make_null(dsc* const desc)
-{
-	desc->dsc_dtype = dtype_long;
-	desc->dsc_sub_type = 0;
-	desc->dsc_length = sizeof(SLONG);
-	desc->dsc_scale = 0;
-	desc->dsc_flags |= DSC_nullable;
-}
-
-
-/**
-
 	MAKE_parameter_names
 
 	@brief  Determine relation/column/alias names (if appropriate)
@@ -1903,83 +1256,9 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_gen_id2:
 		name_alias	= "GEN_ID";
 		break;
-	case nod_user_name:
-		name_alias	= "USER";
-		break;
-	case nod_current_role:
-		name_alias	= "ROLE";
-		break;
-	case nod_internal_info:
-		{
-			const internal_info_id id =
-				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
-			name_alias = InternalInfo::getAlias(id);
-		}
-		break;
 	case nod_constant:
 	case nod_null:
 		name_alias = "CONSTANT";
-		break;
-	case nod_negate:
-		{
-			// CVC: For this to be a thorough check, we need to recurse over all nodes.
-			// This means we should separate the code that sets aliases from
-			// the rest of the functionality here in MAKE_parameter_names().
-			// Otherwise, we need to test here for most of the other node types.
-			// However, we need to be recursive only if we agree things like -gen_id()
-			// should be given the GEN_ID alias, too.
-			int level = 0;
-			const dsql_nod* node = item->nod_arg[0];
-			while (node->nod_type == nod_negate)
-			{
-				node = node->nod_arg[0];
-				++level;
-			}
-
-			switch (node->nod_type)
-			{
-			case nod_constant:
-			case nod_null:
-				name_alias = "CONSTANT";
-				break;
-			/*
-			case nod_add:
-			case nod_add2:
-				name_alias = "ADD";
-				break;
-			case nod_subtract:
-			case nod_subtract2:
-				name_alias = "SUBTRACT";
-				break;
-			*/
-			case nod_multiply:
-			case nod_multiply2:
-				if (!level)
-					name_alias = "MULTIPLY";
-				break;
-			case nod_divide:
-			case nod_divide2:
-				if (!level)
-					name_alias = "DIVIDE";
-				break;
-			}
-		}
-		break;
-	case nod_add:
-	case nod_add2:
-		name_alias = "ADD";
-		break;
-	case nod_subtract:
-	case nod_subtract2:
-		name_alias = "SUBTRACT";
-		break;
-	case nod_multiply:
-	case nod_multiply2:
-		name_alias = "MULTIPLY";
-		break;
-	case nod_divide:
-	case nod_divide2:
-		name_alias = "DIVIDE";
 		break;
 	case nod_substr:
 		name_alias = "SUBSTRING";
@@ -1995,15 +1274,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
     case nod_lowcase:
         name_alias = "LOWER";
-		break;
-	case nod_current_date:
-		name_alias = "CURRENT_DATE";
-		break;
-	case nod_current_time:
-		name_alias = "CURRENT_TIME";
-		break;
-	case nod_current_timestamp:
-		name_alias = "CURRENT_TIMESTAMP";
 		break;
 	case nod_extract:
 		name_alias = "EXTRACT";
