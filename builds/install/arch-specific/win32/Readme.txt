@@ -1,7 +1,7 @@
 
-==========================================
-Firebird 2.5.0 RC2 (Windows Build)
-==========================================
+=======================================================
+Firebird 2.5.0 (Windows Build)
+=======================================================
 
 
 o Introduction
@@ -77,10 +77,10 @@ Before you report a bug:
  o Check you know how Firebird works.
    Maybe it is not a bug at all.
 
- o Perhaps some has already reported this? Browse
+ o Perhaps someone has already reported this? Browse
    existing bug reports here:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+    http://tracker.firebirdsql.org/browse/CORE
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
