@@ -1365,7 +1365,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		switch (blrOp)
 		{
-			case blr_add:				
+			case blr_add:
 			case blr_subtract:
 				return add2(desc2, impure, node, blrOp);
 
