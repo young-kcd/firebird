@@ -1,3 +1,7 @@
+ 2010-09-07 16:17  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Misc
+
  2010-09-04 21:36  asfernandes 
    M builds/posix/make.shared.variables
    M builds/win32/msvc10/dsql_server.vcxproj
