@@ -68,9 +68,10 @@ public:
 		delete[] m_iterators;
 	}
 
-	size_t hash(const UCHAR* address, size_t length)
+	size_t hash(const UCHAR* address, size_t length, ULONG* prior_value = NULL)
 	{
-		size_t hash_value = 0;
+		ULONG hash_value = prior_value ? *prior_value : 0;
+
 		UCHAR* p = NULL;
 		const UCHAR* q = address;
 		for (size_t l = 0; l < length; l++)
@@ -81,6 +82,11 @@ public:
 			}
 
 			*p++ += *q++;
+		}
+
+		if (prior_value)
+		{
+			*prior_value = hash_value;
 		}
 
 		return (hash_value % m_tableSize);
@@ -384,6 +390,7 @@ void HashJoin::restoreRecords(thread_db* tdbb) const
 size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 	const LegacyNodeArray* keys) const
 {
+	ULONG hash_value = 0;
 	size_t hash_slot = 0;
 
 	for (size_t i = 0; i < keys->getCount(); i++)
@@ -443,7 +450,7 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 				}
 			}
 
-			hash_slot ^= table->hash(address, length);
+			hash_slot = table->hash(address, length, &hash_value);
 		}
 	}
 
