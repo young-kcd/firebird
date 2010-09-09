@@ -19,6 +19,7 @@ BuildSuffix="Firebird 2.5"
 [ "$SuffixKind" = "" ] || BuildSuffix="$BuildSuffix $SuffixKind"
 [ "$SuffixVer" = "" ] || BuildSuffix="$BuildSuffix $SuffixVer"
 FIREBIRD_PACKAGE_VERSION="$SuffixKind$SuffixVer"
+[ "$FIREBIRD_PACKAGE_VERSION" = "" ] && FIREBIRD_PACKAGE_VERSION=0
 PRODUCT_VER_STRING="$MajorVer.$MinorVer.$RevNo.$BuildNum"
 else
 # Special builds (daily snapshots, etc)
