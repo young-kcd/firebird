@@ -30,11 +30,13 @@
 
 # Determine root of local checkout
 SRCROOT=`dirname $0`/../..
+pushd $SRCROOT >/dev/null 2>&1
+SRCROOT=`pwd`
+popd >/dev/null 2>&1
+
+# What and where to bundle
 MODULE=$SRCROOT/temp/src
-MEMBERS=''
-for m in `cat $SRCROOT/CVS/Entries* | awk -F / '{print $2;}' | sort | uniq`; do
-	[ -e $SRCROOT/$m ] && MEMBERS="$MEMBERS $m"
-done
+MEMBERS="builds doc examples extern lang_helpers src ChangeLog Makefile.in acx_pthread.m4 autogen.sh binreloc.m4 configure.in"
 
 # Cleanup
 rm -rf $MODULE
@@ -56,8 +58,9 @@ rm -rf $DIRNAME
 mv $MODULE $DIRNAME
 pushd $DIRNAME >/dev/null 2>&1
 
-# Remove CVS information
+# Remove CVS/SVN information
 rm -rf `find . -name CVS -print`
+rm -rf `find . -name .svn -print`
 
 # Clean gpre-generated files and extern
 cd gen
@@ -65,10 +68,10 @@ make clean_all
 cd ..
 rm -rf gen
 
-# Copy configure script
+# Copy pre-generated script
 cp $SRCROOT/configure .
 
 echo "Creating tarball for $PACKNAME"
 cd ..
-tar cjf ../gen/$PACKNAME.tar.bz2 $PACKNAME
+tar cjf $SRCROOT/gen/$PACKNAME.tar.bz2 $PACKNAME
 popd >/dev/null 2>&1
