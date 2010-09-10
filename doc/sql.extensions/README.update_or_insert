@@ -11,8 +11,8 @@ UPDATE OR INSERT statement
   Syntax rules:
     UPDATE OR INSERT INTO <table or view> [(<column_list>)]
         VALUES (<value_list>)
-        [MATCHING <column_list>]
-        [RETURNING <column_list> [INTO <variable_list>]]
+        [MATCHING (<column_list>)]
+        [RETURNING <value_list> [INTO <variable_list>]]
 
   Scope:
     DSQL, PSQL
