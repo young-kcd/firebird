@@ -2438,7 +2438,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	PROCESS_INFORMATION pi;
 
 	const bool cp_result =
-		CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
+		CreateProcess(NULL, cmdLine.begin(), NULL, NULL, FALSE,
 					  (flag & SRVR_high_priority ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS)
 						| DETACHED_PROCESS | CREATE_SUSPENDED,
 					   NULL, NULL, &start_crud, &pi);

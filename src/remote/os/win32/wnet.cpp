@@ -416,7 +416,8 @@ rem_port* WNET_connect(const TEXT*		name,
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		Firebird::string cmdLine;
-		cmdLine.printf("%s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
+		cmdLine.printf("%s -w -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) port->port_handle, 
+			GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
 		PROCESS_INFORMATION pi;
@@ -428,16 +429,21 @@ rem_port* WNET_connect(const TEXT*		name,
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
 
-		if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
+		if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, FALSE,
 						  (flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
 						  NULL, NULL, &start_crud, &pi))
 		{
+			// hvlad: child process will close our handle of client pipe
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}
-		CloseHandle(port->port_handle);
+		else
+		{
+			gds__log("WNET/inet_error: fork/CreateProcess errno = %d", GetLastError());
+			CloseHandle(port->port_handle);
+		}
 	}
 #endif /* REQUESTER */
 }

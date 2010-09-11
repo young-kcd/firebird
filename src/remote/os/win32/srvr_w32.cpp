@@ -587,13 +587,47 @@ static HANDLE parse_args( LPCSTR lpszArgs, USHORT * pserver_flag)
 				case 'H':
 					while (*p && *p == ' ')
 						p++;
-					if (*p) {
-						char *pp = buffer;
-						while (*p && *p != ' ') {
-							*pp++ = *p++;
+					if (*p)
+					{
+						TEXT buffer[32];
+						char* pp = buffer;
+						while (*p && *p != ' ' && (pp - buffer < sizeof(buffer) - 1))
+						{
+							if (*p == '@')
+							{
+								p++;
+								*pp++ = '\0';
+								connection_handle = (HANDLE) _atoi64(buffer);
+								pp = buffer;
+							}
+							else
+								*pp++ = *p++;
 						}
 						*pp++ = '\0';
-						connection_handle = (HANDLE) atol(buffer);
+
+						if (connection_handle == INVALID_HANDLE_VALUE)
+						{
+							connection_handle = (HANDLE) _atoi64(buffer);
+						}
+						else
+						{
+							const DWORD parent_id = atol(buffer);
+							const HANDLE parent_handle = OpenProcess(PROCESS_DUP_HANDLE, FALSE, parent_id);
+							if (!parent_handle)
+							{
+								gds__log("SERVER: OpenProcess failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
+								exit(FINI_ERROR);
+							}
+
+							if (!DuplicateHandle(parent_handle, connection_handle, GetCurrentProcess(), &connection_handle,
+									0, FALSE, DUPLICATE_SAME_ACCESS | DUPLICATE_CLOSE_SOURCE))
+							{
+								gds__log("SERVER: DuplicateHandle failed. Errno = %d, parent PID = %d", GetLastError(), parent_id);
+								exit(FINI_ERROR);
+							}
+
+							CloseHandle(parent_handle);
+						}
 					}
 					break;
 #endif
