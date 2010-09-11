@@ -285,6 +285,16 @@ static int fork(void);
 
 #ifdef WIN_NT
 static int fork(SOCKET, USHORT);
+
+static THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM);
+
+static Firebird::Mutex forkMutex;
+static HANDLE forkEvent = INVALID_HANDLE_VALUE;
+static bool forkThreadStarted = false;
+
+typedef Firebird::Array<SOCKET> SocketsArray;
+static SocketsArray* forkSockets;
+
 #endif
 
 static in_addr get_bind_address();
@@ -949,7 +959,7 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 #ifdef WIN_NT
-		if ((flag & SRVR_debug) || !fork(s, flag))
+		if ((flag & SRVR_debug))
 #else
 		if ((flag & SRVR_debug) || !fork())
 #endif
@@ -960,9 +970,39 @@ rem_port* INET_connect(const TEXT* name,
 			port->port_server_flags |= SRVR_server;
 			return port;
 		}
+
+#ifdef WIN_NT
+		Firebird::MutexLockGuard forkGuard(forkMutex);
+		THREAD_ENTER();
+		if (!forkThreadStarted)
+		{
+			forkThreadStarted = true;
+			forkEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+			forkSockets = new SocketsArray(*getDefaultMemoryPool());
+
+			gds__thread_start(forkThread, (void*) flag, THREAD_medium, 0, 0);
+		}
+		forkSockets->add(s);
+		SetEvent(forkEvent);
+#else
 		THREAD_ENTER();
 		SOCLOSE(s);
+#endif
 	}
+
+#ifdef WIN_NT
+	THREAD_EXIT();
+	Firebird::MutexLockGuard forkGuard(forkMutex);
+	THREAD_ENTER();
+	if (forkThreadStarted)
+	{
+		SetEvent(forkEvent);
+		CloseHandle(forkEvent);
+
+		delete forkSockets;
+		forkSockets = NULL;
+	}
+#endif
 }
 
 rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
@@ -1283,11 +1323,12 @@ static rem_port* alloc_port( rem_port* parent)
 #ifdef WIN_NT
 	if (!INET_initialized) {
 	    const WORD version = MAKEWORD(2, 0);
-		if (WSAStartup(version, &INET_wsadata)) {
+		const int wsaError = WSAStartup(version, &INET_wsadata);
+		if (wsaError) {
 			if (parent)
-				inet_error(parent, "WSAStartup", isc_net_init_error, INET_ERRNO);
+				inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
 			else
-				gds__log("INET/alloc_port: WSAStartup failed, error code = %d", INET_ERRNO);
+				gds__log("INET/alloc_port: WSAStartup failed, error code = %d", wsaError);
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
@@ -1955,9 +1996,13 @@ static int fork( SOCKET old_handle, USHORT flag)
 	GetModuleFileName(NULL, name, sizeof(name));
 
 	HANDLE new_handle;
-	DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
+	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
 					GetCurrentProcess(), &new_handle, 0, TRUE,
-					DUPLICATE_SAME_ACCESS);
+					DUPLICATE_SAME_ACCESS))
+	{
+		gds__log("INET/inet_error: fork/DuplicateHandle errno = %d", GetLastError());
+		return 0;
+	}
 
 	Firebird::string cmdLine;
 	cmdLine.printf("%s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
@@ -1980,10 +2025,40 @@ static int fork( SOCKET old_handle, USHORT flag)
 	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
+		return 1;
 	}
-	CloseHandle(new_handle);
 
-	return 1;
+	gds__log("INET/inet_error: fork/CreateProcess errno = %d", GetLastError());
+	CloseHandle(new_handle);
+	return 0;
+}
+
+
+THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
+{
+	const USHORT flag = (USHORT) arg;
+
+	while (WaitForSingleObject(forkEvent, INFINITE) == WAIT_OBJECT_0)
+	//while (!INET_shutting_down)
+	{
+		while (true) //(!INET_shutting_down)
+		{
+			SOCKET s = 0;
+			{	// scope
+				Firebird::MutexLockGuard forkGuard(forkMutex);
+
+				if (!forkSockets || forkSockets->getCount() == 0)
+					break;
+
+				s = (*forkSockets)[0];
+				forkSockets->remove((size_t) 0);
+			}
+			fork(s, flag);
+			SOCLOSE(s);
+		}
+	}
+
+	return 0;
 }
 #endif
 
