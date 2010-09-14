@@ -24,6 +24,5 @@ Document date:  Fri Dec 28 2007
  Non-privileged (non-SYSDBA) user can use only ALTER USER operator with his own name 
  as name parameter in it.
 
- WARNING! These operators are not under transaction control!
- That means that changes take place in security database at once after execution of a request,
- not waiting for COMMIT, and can not be rolled back.
+ WARNING! These operators do not support 2 phase commit - changes in secure DB 
+ take place when deferred work is performed.
