@@ -1,3 +1,7 @@
+ 2010-09-13 15:00  dimitr 
+   M src/intl/collations/win1257_lv.h
+Fixed CORE-3131: WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
+
  2010-09-10 01:59  asfernandes 
    M doc/sql.extensions/README.update_or_insert
 Fixed doc. mismatch reported by Paul Vinkenoog
