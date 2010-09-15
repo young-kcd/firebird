@@ -1,3 +1,34 @@
+ 2010-09-13 15:02  dimitr 
+   M src/intl/collations/win1257_lv.h
+Fixed CORE-3131: WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
+
+ 2010-09-11 10:35  hvlad 
+   M src/remote/inet.cpp
+   M src/remote/os/win32/srvr_w32.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/xnet.cpp
+Backport fix for bug CORE-2356 : On Windows listener process of Classic Server can't create necessary resources after restart if any worker process was present
+
+ 2010-09-11 09:33  hvlad 
+   M src/remote/inet.cpp
+Backport fix for bug CORE-2107 : Failed to establish TCP\IP connection with Windows Classic Server under high load
+
+ 2010-09-10 01:58  asfernandes 
+   M doc/sql.extensions/README.update_or_insert
+Fixed doc. mismatch reported by Paul Vinkenoog
+
+ 2010-09-09 12:21  alexpeshkoff 
+   M src/misc/src_bundle.sh
+Make it cvs/svn independent
+
+ 2010-08-26 10:52  alexpeshkoff 
+   M src/jrd/why.cpp
+Fixed CORE-3117: After an error in GDS_CLOSE_BLOB() blob handle becomes invalid
+
+ 2010-08-26 08:50  alexpeshkoff 
+   M builds/posix/Makefile.in.firebird
+Porting issue - keep existing LD_LIBRARY_PATH value when adding our paths
+
  2010-08-11 10:48  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
