@@ -7967,9 +7967,32 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 	if (!input || input->getType() != dsql_type_nod)
 		return input;
 
-	const dsql_nod* const* const endo = input->nod_arg + input->nod_count;
+	const dsql_nod* const* endo;
+	dsql_nod** ptr;
 
-	for (dsql_nod** ptr = input->nod_arg; ptr < endo; ++ptr)
+	Array<dsql_nod*> temp;
+
+	if (input->nod_type == nod_class_exprnode)
+	{
+		ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
+
+		for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
+				i != exprNode->dsqlChildNodes.end(); ++i)
+		{
+			if (**i)
+				temp.add(**i);
+		}
+
+		endo = temp.end();
+		ptr = temp.begin();
+	}
+	else
+	{
+		endo = input->nod_arg + input->nod_count;
+		ptr = input->nod_arg;
+	}
+
+	for (; ptr < endo; ++ptr)
 	{
 		if ((*ptr)->nod_type == Dsql::nod_select_expr)
 		{
