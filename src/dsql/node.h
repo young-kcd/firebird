@@ -121,22 +121,7 @@ enum nod_t
 	nod_order,
 	nod_flag,
 	nod_join,
-	nod_eql,
-	nod_neq,
-	nod_gtr,
-	nod_geq,
-	nod_leq,
-	nod_lss,
-	nod_between,
-	nod_like,
-	nod_missing,
-	nod_and,
-	nod_or,
-	nod_any,
-	nod_not,
 	nod_unique,
-	nod_containing,
-	nod_starting,
 	nod_via,
 	nod_field,
 	nod_dom_value,
@@ -159,8 +144,6 @@ enum nod_t
 	nod_collate,
 	nod_gen_id,
 	nod_gen_id2,
-	nod_exists,
-	nod_singular,
 	nod_get_segment,	// blobs
 	nod_put_segment,
 	nod_join_inner,	// join types
@@ -198,8 +181,6 @@ enum nod_t
 	nod_cascade,
 	nod_set_statistics,	// set statistics
 	nod_rec_version,	// record version
-	nod_ansi_any,	// ANY keyword used
-	nod_ansi_all,	// ALL keyword used
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
 	nod_def_role,	// SQL role support
@@ -232,7 +213,6 @@ enum nod_t
 	nod_fetch_scroll,
 	nod_rows,	// ROWS support
 	nod_query_spec,
-	nod_equiv,  // IS DISTINCT FROM
 	nod_mod_udf,
 	nod_strlen,
 	nod_trim,
@@ -247,7 +227,6 @@ enum nod_t
 	nod_merge_update,
 	nod_merge_delete,
 	nod_merge_insert,
-	nod_similar,
 	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
@@ -897,10 +876,7 @@ enum nod_flags_vals {
 	NOD_TRAN_2PC = 3,
 	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON,
 
-	NOD_AGG_WINDOW = 1,				// nod_aggregate
-
-	NOD_ANSI_ANY = 1,
-	NOD_ANSI_ALL = 2
+	NOD_AGG_WINDOW = 1				// nod_aggregate
 };
 
 } // namespace

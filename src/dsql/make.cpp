@@ -401,8 +401,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	{
 	case nod_class_exprnode:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-			exprNode->make(desc, null_replacement);
+			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
+			exprNode->make(dsqlScratch, desc, null_replacement);
 		}
 		return;
 
@@ -1141,7 +1141,7 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	switch (item->nod_type)
 	{
 	case nod_class_exprnode:
-		reinterpret_cast<ExprNode*>(item->nod_arg[0])->setParameterName(parameter);
+		reinterpret_cast<ValueExprNode*>(item->nod_arg[0])->setParameterName(parameter);
 		break;
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];

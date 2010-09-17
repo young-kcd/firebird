@@ -28,6 +28,9 @@
     <ClCompile Include="..\..\..\src\dsql\BlrWriter.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\dsql\BoolNodes.cpp">
+      <Filter>DSQL files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\ddl.cpp">
       <Filter>DSQL files</Filter>
     </ClCompile>
@@ -133,6 +136,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\BlrWriter.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\dsql\BoolNodes.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\chars.h">

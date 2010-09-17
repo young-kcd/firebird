@@ -33,6 +33,9 @@
 namespace Jrd
 {
 
+class TypeClause;
+
+
 // DSQL Compiler scratch block - may be discarded after compilation in the future.
 class DsqlCompilerScratch : public BlrWriter
 {
@@ -148,10 +151,17 @@ public:
 	}
 
 	void putDtype(const dsql_fld* field, bool useSubType);
+	void putType(const TypeClause& type, bool useSubType);
 	void putLocalVariables(const dsql_nod* parameters, SSHORT locals);
 	void putLocalVariable(dsql_var* variable, dsql_nod* hostParam, const dsql_str* collationName);
 	dsql_nod* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);
+
+	void resetContextStack()
+	{
+		context->clear();
+		contextNumber = 0;
+	}
 
 	void addCTEs(dsql_nod* list);
 	dsql_nod* findCTE(const dsql_str* name);

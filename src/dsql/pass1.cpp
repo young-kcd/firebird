@@ -145,6 +145,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
@@ -198,7 +199,6 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch*, dsql_nod* input, dsql_n
 static dsql_nod* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*);
 static dsql_str* pass1_alias_concat(const dsql_str*, const dsql_str*);
-static dsql_nod* pass1_any(DsqlCompilerScratch*, dsql_nod*, NOD_TYPE);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
 static void pass1_blob(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
@@ -220,7 +220,6 @@ static dsql_nod* pass1_join(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch*, const dsql_str*, dsql_nod*, bool);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
 static dsql_nod* pass1_merge(DsqlCompilerScratch*, dsql_nod*);
-static dsql_nod* pass1_not(DsqlCompilerScratch*, const dsql_nod*, bool);
 static void	pass1_put_args_on_stack(DsqlCompilerScratch*, dsql_nod*, DsqlNodStack&);
 static dsql_nod* pass1_relation(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_returning(DsqlCompilerScratch*, const dsql_nod*);
@@ -245,11 +244,6 @@ static dsql_nod* pass1_savepoint(const DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* process_returning(DsqlCompilerScratch*, dsql_nod*);
 
 const char* const DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
-const int MAX_MEMBER_LIST	= 1500;	// Maximum members in "IN" list.
-									// For eg. SELECT * FROM T WHERE
-									//         F IN (1, 2, 3, ...)
-									//
-									// Bug 10061, bsriram - 19-Apr-1999
 
 const int LIKE_PARAM_LEN = 30;	// CVC: This is a guess for the length of the
 								// parameter for LIKE and others, when the
@@ -371,12 +365,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-			fb_assert(false);
-			break;
-
 		case nod_map:
 		{
 			if (window)
@@ -406,12 +394,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 		case nod_aggregate:
 			if (!ignoreSubSelects)
 				aggregate = visit(&node->nod_arg[e_agg_rse]);
-			return aggregate;
-
-		case nod_exists:
-		case nod_singular:
-			if (!ignoreSubSelects)
-				aggregate = visit(&node->nod_arg[0]);
 			return aggregate;
 
 		case nod_coalesce:
@@ -509,8 +491,6 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 			found |= visit(&node->nod_arg[e_agg_group]);
 			break;
 
-		case nod_exists:
-		case nod_singular:
 		case nod_coalesce:
 		case nod_unique:
 		{
@@ -584,8 +564,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 			found |= visit(&node->nod_arg[e_agg_group]);
 			break;
 
-		case nod_exists:
-		case nod_singular:
 		case nod_coalesce:
 		case nod_unique:
 		{
@@ -770,8 +748,6 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 			break;
 
 		case nod_via:
-		case nod_exists:
-		case nod_singular:
 		{
 			const dsql_nod* const* ptr = node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -918,15 +894,6 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 			visit(&node->nod_arg[e_agg_rse]);
 			break;
 
-		case nod_exists:
-		case nod_singular:
-		{
-			dsql_nod** ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				visit(ptr);
-			break;
-		}
-
 		case nod_relation:
 		{
 			dsql_ctx* localRelationContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_rel_context]);
@@ -969,8 +936,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_exists:
-		case nod_singular:
 		case nod_coalesce:
 		case nod_unique:
 		{
@@ -1419,20 +1384,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			return node;
 		}
 
-	case nod_exists:
-	case nod_singular:
-		{
-			const DsqlContextStack::iterator base(*dsqlScratch->context);
-			node = MAKE_node(input->nod_type, 1);
-			input = input->nod_arg[0];
-			node->nod_arg[0] = PASS1_rse(dsqlScratch, input, NULL);
-
-			// Finish off by cleaning up contexts
-
-			dsqlScratch->context->clear(base);
-			return node;
-		}
-
 	case nod_field_name:
 		if (dsqlScratch->isPsql())
 			return pass1_variable(dsqlScratch, input);
@@ -1565,60 +1516,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		} // end scope
 		return node;
 
-	case nod_eql:
-	case nod_neq:
-	case nod_gtr:
-	case nod_geq:
-	case nod_lss:
-	case nod_leq:
-		{
-			dsql_nod* sub2 = input->nod_arg[1];
-
-			if (sub2->nod_type == nod_list)
-			{
-				int list_item_count = 0;
-
-				node = NULL;
-				dsql_nod** ptr = sub2->nod_arg;
-				for (const dsql_nod* const* const end = ptr + sub2->nod_count;
-					 ptr < end; list_item_count++, ptr++)
-				{
-					if (list_item_count >= MAX_MEMBER_LIST)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-								  Arg::Gds(isc_imp_exc) <<
-								  Arg::Gds(isc_dsql_too_many_values) << Arg::Num(MAX_MEMBER_LIST));
-					}
-
-					DEV_BLKCHK(*ptr, dsql_type_nod);
-					dsql_nod* temp = MAKE_node(input->nod_type, 2);
-					temp->nod_arg[0] = input->nod_arg[0];
-					temp->nod_arg[1] = *ptr;
-					node = PASS1_compose(node, PASS1_node(dsqlScratch, temp), nod_or);
-				}
-
-				return node;
-			}
-
-			if (sub2->nod_type == nod_select_expr &&
-				!(sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON))
-			{
-				NOD_TYPE type = nod_any;
-
-				if (input->nod_flags & NOD_ANSI_ANY)
-				{
-					type = nod_ansi_any;
-				}
-				else if (input->nod_flags & NOD_ANSI_ALL)
-				{
-					type = nod_ansi_all;
-				}
-
-				return pass1_any(dsqlScratch, input, type);
-			}
-		}
-		break;
-
 	// access plan node types
 
 	case nod_plan_item:
@@ -1655,9 +1552,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_returning:
 		return pass1_returning(dsqlScratch, input);
-
-	case nod_not:
-		return pass1_not(dsqlScratch, input, true);
 
 	case nod_tran_params:
 		return input;
@@ -1696,21 +1590,10 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	// Try to match parameters against things of known data type.
 	dsql_nod* sub2 = NULL;
-	dsql_nod* sub3 = NULL;
 
 	switch (node->nod_type)
 	{
-	case nod_between:
-		sub3 = node->nod_arg[2];
-		// FALLINTO
 	case nod_assign:
-	case nod_equiv:
-	case nod_eql:
-	case nod_gtr:
-	case nod_geq:
-	case nod_leq:
-	case nod_lss:
-	case nod_neq:
 		sub1 = node->nod_arg[0];
 		sub2 = node->nod_arg[1];
 
@@ -1722,39 +1605,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		// have sub-expressions that should be resolved.
 		PASS1_set_parameter_type(dsqlScratch, sub2, sub1, false);
 
-		// X BETWEEN Y AND ? case
-		if (!PASS1_set_parameter_type(dsqlScratch, sub3, sub1, false))
-		{
-			// ? BETWEEN Y AND ? case
-			PASS1_set_parameter_type(dsqlScratch, sub3, sub2, false);
-		}
-		break;
-
-	case nod_like:
-	case nod_similar:
-		if (node->nod_count == 3) {
-			sub3 = node->nod_arg[2];
-		}
-		// FALLINTO
-	case nod_containing:
-	case nod_starting:
-		sub1 = node->nod_arg[0];
-		sub2 = node->nod_arg[1];
-
-		// Try to force sub1 to be same type as sub2 eg: ? LIKE FIELD case
-		PASS1_set_parameter_type(dsqlScratch, sub1, sub2, true);
-
-		// Try to force sub2 same type as sub 1 eg: FIELD LIKE ? case
-		// Try even when the above call succeeded, because "sub2" may
-		// have sub-expressions that should be resolved.
-		PASS1_set_parameter_type(dsqlScratch, sub2, sub1, true);
-
-		// X LIKE Y ESCAPE ? case
-		PASS1_set_parameter_type(dsqlScratch, sub3, sub2, true);
-		break;
-
-	case nod_missing:
-		PASS1_set_parameter_type(dsqlScratch, node, NULL, false);
 		break;
 
 	case nod_trim:
@@ -2580,10 +2430,14 @@ void PASS1_check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 
 
 // Compose two booleans.
-dsql_nod* PASS1_compose( dsql_nod* expr1, dsql_nod* expr2, NOD_TYPE dsql_operator)
+dsql_nod* PASS1_compose(dsql_nod* expr1, dsql_nod* expr2, UCHAR blrOp)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(expr1, dsql_type_nod);
 	DEV_BLKCHK(expr2, dsql_type_nod);
+
+	fb_assert(blrOp == blr_and || blrOp == blr_or);
 
 	if (!expr1)
 		return expr2;
@@ -2591,9 +2445,11 @@ dsql_nod* PASS1_compose( dsql_nod* expr1, dsql_nod* expr2, NOD_TYPE dsql_operato
 	if (!expr2)
 		return expr1;
 
-	dsql_nod* node = MAKE_node(dsql_operator, 2);
-	node->nod_arg[0] = expr1;
-	node->nod_arg[1] = expr2;
+	BinaryBoolNode* binNode = FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(
+		*tdbb->getDefaultPool(), blrOp, expr1, expr2);
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(binNode);
 
 	return node;
 }
@@ -3258,63 +3114,6 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 
 /**
 
- 	pass1_any
-
-    @brief	Compile a parsed statement into something more interesting.
-
-
-    @param dsqlScratch
-    @param input
-    @param ntype
-
- **/
-static dsql_nod* pass1_any( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, NOD_TYPE ntype)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	PASS1_set_parameter_type(dsqlScratch, input->nod_arg[0], input->nod_arg[1], false);
-
-	// create a derived table representing our subquery
-	dsql_nod* dt = MAKE_node(nod_derived_table, e_derived_table_count);
-	// Ignore validation for columnames that must exist for "user" derived tables.
-	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
-	dt->nod_arg[e_derived_table_rse] = input->nod_arg[1];
-	dsql_nod* from = MAKE_node(nod_list, 1);
-	from->nod_arg[0] = dt;
-	dsql_nod* query_spec = MAKE_node(nod_query_spec, e_qry_count);
-	query_spec->nod_arg[e_qry_from] = from;
-	dsql_nod* select_expr = MAKE_node(nod_select_expr, e_sel_count);
-	select_expr->nod_arg[e_sel_query_spec] = query_spec;
-
-	const DsqlContextStack::iterator base(*dsqlScratch->context);
-	const DsqlContextStack::iterator baseDT(dsqlScratch->derivedContext);
-	const DsqlContextStack::iterator baseUnion(dsqlScratch->unionContext);
-
-	dsql_nod* rse = PASS1_rse(dsqlScratch, select_expr, NULL);
-
-	// create a conjunct to be injected
-	dsql_nod* temp = MAKE_node(input->nod_type, 2);
-	temp->nod_arg[0] = PASS1_node_psql(dsqlScratch, input->nod_arg[0], false);
-	temp->nod_arg[1] = rse->nod_arg[e_rse_items]->nod_arg[0];
-
-	rse->nod_arg[e_rse_boolean] = temp;
-
-	// create output node
-	dsql_nod* node = MAKE_node(ntype, 1);
-	node->nod_arg[0] = rse;
-
-	// Finish off by cleaning up contexts
-	dsqlScratch->unionContext.clear(baseUnion);
-	dsqlScratch->derivedContext.clear(baseDT);
-	dsqlScratch->context->clear(base);
-
-	return node;
-}
-
-
-/**
-
  	pass1_blob
 
     @brief	Process a blob get or put segment.
@@ -3770,6 +3569,9 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	DEV_BLKCHK(cursor, dsql_type_nod);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	// Lookup parent dsqlScratch
 
 	const dsql_str* string = (dsql_str*) cursor->nod_arg[e_cur_name];
@@ -3813,36 +3615,43 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	rse->nod_arg[e_rse_streams] = temp;
 	dsql_nod* relation_node = pass1_relation(dsqlScratch, relation_name);
 	temp->nod_arg[0] = relation_node;
-	dsql_nod* node = MAKE_node(nod_eql, 2);
-	rse->nod_arg[e_rse_boolean] = node;
-	node->nod_arg[0] = temp = MAKE_node(nod_dbkey, 1);
-	temp->nod_arg[0] = relation_node;
 
-	node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
-	temp->nod_count = 0;
+	ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
+		blr_eql, MAKE_node(nod_dbkey, 1), MAKE_node(nod_parameter, e_par_count));
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+
+	rse->nod_arg[e_rse_boolean] = node;
+	eqlNode->dsqlArg1->nod_arg[0] = relation_node;
+
+	eqlNode->dsqlArg2->nod_count = 0;
 	dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 		false, false, 0, NULL);
 	dsqlScratch->getStatement()->setDbKey(parameter);
-	temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-	temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+	eqlNode->dsqlArg2->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
+	eqlNode->dsqlArg2->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 	parameter->par_desc = source->par_desc;
 
 	// record version will be set only for V4 - for the parent select cursor
 	if (rv_source)
 	{
-		node = MAKE_node(nod_eql, 2);
-		node->nod_arg[0] = temp = MAKE_node(nod_rec_version, 1);
-		temp->nod_arg[0] = relation_node;
-		node->nod_arg[1] = temp = MAKE_node(nod_parameter, e_par_count);
-		temp->nod_count = 0;
+		eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
+			blr_eql, MAKE_node(nod_rec_version, 1), MAKE_node(nod_parameter, e_par_count));
+
+		node = MAKE_node(nod_class_exprnode, 1);
+		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+
+		eqlNode->dsqlArg1->nod_arg[0] = relation_node;
+		eqlNode->dsqlArg2->nod_count = 0;
 		parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 			false, false, 0, NULL);
 		dsqlScratch->getStatement()->setRecVersion(parameter);
-		temp->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-		temp->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+		eqlNode->dsqlArg2->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
+		eqlNode->dsqlArg2->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		parameter->par_desc = rv_source->par_desc;
 
-		rse->nod_arg[e_rse_boolean] = PASS1_compose(rse->nod_arg[e_rse_boolean], node, nod_and);
+		rse->nod_arg[e_rse_boolean] = PASS1_compose(rse->nod_arg[e_rse_boolean], node, blr_and);
 	}
 
 	return rse;
@@ -5212,6 +5021,9 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	// Set up an empty context to process the joins
 
 	DsqlContextStack* const base_context = dsqlScratch->context;
@@ -5259,6 +5071,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	// Process boolean
 
 	dsql_nod* boolean = input->nod_arg[e_join_boolean];
+
 	if (boolean && (boolean->nod_type == nod_flag || boolean->nod_type == nod_list))
 	{
 		if (dsqlScratch->clientDialect < SQL_DIALECT_V6)
@@ -5362,11 +5175,16 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				pass1_expand_select_node(dsqlScratch, node->nod_arg[e_join_rght_rel], rightStack, true);
 
 				// create the boolean
-				dsql_nod* eqlNode = MAKE_node(nod_eql, 2);
-				eqlNode->nod_arg[0] =
-					resolve_using_field(dsqlScratch, fldName, leftStack, field, "left", leftCtx);
-				eqlNode->nod_arg[1] =
-					resolve_using_field(dsqlScratch, fldName, rightStack, field, "right", rightCtx);
+
+				ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
+					blr_eql);
+				eqlNode->dsqlArg1 = resolve_using_field(dsqlScratch, fldName, leftStack, field,
+					"left", leftCtx);
+				eqlNode->dsqlArg2 = resolve_using_field(dsqlScratch, fldName, rightStack, field,
+					"right", rightCtx);
+
+				dsql_nod* eqlNod = MAKE_node(nod_class_exprnode, 1);
+				eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
 
 				fb_assert(leftCtx);
 				fb_assert(rightCtx);
@@ -5376,7 +5194,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				if (!leftCtx->ctx_imp_join.get(fldName->str_data, impJoinLeft))
 				{
 					impJoinLeft = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
-					impJoinLeft->value = eqlNode->nod_arg[0];
+					impJoinLeft->value = eqlNode->dsqlArg1;
 					impJoinLeft->visibleInContext = leftCtx;
 				}
 				else
@@ -5386,7 +5204,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				if (!rightCtx->ctx_imp_join.get(fldName->str_data, impJoinRight))
 				{
 					impJoinRight = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
-					impJoinRight->value = eqlNode->nod_arg[1];
+					impJoinRight->value = eqlNode->dsqlArg2;
 				}
 				else
 					fb_assert(impJoinRight->visibleInContext == rightCtx);
@@ -5411,6 +5229,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 					if ((temp = impJoinRight->value)->nod_type == nod_alias)
 						temp = temp->nod_arg[e_alias_value];
+
 					if (temp->nod_type == nod_coalesce)
 					{
 						pass1_put_args_on_stack(dsqlScratch, temp->nod_arg[0], stack);
@@ -5435,15 +5254,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				leftCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
 				rightCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
 
-				if (newBoolean)
-				{
-					temp = MAKE_node(nod_and, 2);
-					temp->nod_arg[0] = newBoolean;
-					temp->nod_arg[1] = eqlNode;
-					newBoolean = temp;
-				}
-				else
-					newBoolean = eqlNode;
+				newBoolean = PASS1_compose(newBoolean, eqlNod, blr_and);
 			}
 
 			boolean = newBoolean;
@@ -5842,9 +5653,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			nodes.add(stmt);
 		}
 
-		// Do not make internalDsqlPass to process 'stmt'. It's already processed.
+		// Do not make dsqlPass to process 'stmt'. It's already processed.
 
-		virtual void genBlr()
+		virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
 		{
 			dsql_msg* message = dsqlScratch->getStatement()->getReceiveMsg();
 
@@ -5863,6 +5674,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
+
+	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	dsql_nod* source = input->nod_arg[e_mrg_using];		// USING
 	dsql_nod* target = input->nod_arg[e_mrg_relation];	// INTO
@@ -5910,45 +5724,36 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 		if (whenNode)	// WHEN MATCHED
 		{
-			whereNode = MAKE_node(nod_not, 1);
-			whereNode->nod_arg[0] = MAKE_node(nod_missing, 1);
-			whereNode->nod_arg[0]->nod_arg[0] = MAKE_node(nod_dbkey, 1);
-			whereNode->nod_arg[0]->nod_arg[0]->nod_arg[0] = targetName;
+			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
+				pool, MAKE_node(nod_dbkey, 1));
+			missingNode->dsqlArg->nod_arg[0] = targetName;
+
+			NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(
+				pool, MAKE_node(nod_class_exprnode, 1));
+			notNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
+
+			whereNode = MAKE_node(nod_class_exprnode, 1);
+			whereNode->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
 		}
 
 		if (updDelCondition)
-		{
-			dsql_nod* temp = MAKE_node(nod_and, 2);
-			temp->nod_arg[0] = whereNode;
-			temp->nod_arg[1] = updDelCondition;
-			whereNode = temp;
-		}
+			whereNode = PASS1_compose(whereNode, updDelCondition, blr_and);
 
 		dsql_nod* temp = NULL;
 
 		if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])	// WHEN NOT MATCHED
 		{
-			temp = MAKE_node(nod_missing, 1);
-			temp->nod_arg[0] = MAKE_node(nod_dbkey, 1);
-			temp->nod_arg[0]->nod_arg[0] = targetName;
+			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
+				pool, MAKE_node(nod_dbkey, 1));
+			missingNode->dsqlArg->nod_arg[0] = targetName;
+
+			temp = MAKE_node(nod_class_exprnode, 1);
+			temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
 
 			if (insCondition)
-			{
-				dsql_nod* temp2 = MAKE_node(nod_and, 2);
-				temp2->nod_arg[0] = temp;
-				temp2->nod_arg[1] = insCondition;
-				temp = temp2;
-			}
+				temp = PASS1_compose(temp, insCondition, blr_and);
 
-			if (whereNode)
-			{
-				dsql_nod* orNode = MAKE_node(nod_or, 2);
-				orNode->nod_arg[0] = whereNode;
-				orNode->nod_arg[1] = temp;
-				whereNode = orNode;
-			}
-			else
-				whereNode = temp;
+			whereNode = PASS1_compose(whereNode, temp, blr_or);
 		}
 	}
 
@@ -5959,8 +5764,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	select->nod_arg[e_select_expr] = select_expr;
 
 	// build a FOR SELECT node
-	ForNode* forNode = FB_NEW(dsqlScratch->getStatement()->getPool()) ForNode(
-		dsqlScratch->getStatement()->getPool(), dsqlScratch);
+	ForNode* forNode = FB_NEW(pool) ForNode(pool);
 	forNode->dsqlSelect = select;
 	forNode->dsqlAction = MAKE_node(nod_list, 0);
 
@@ -6136,13 +5940,15 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		dsqlScratch->scopeLevel--;
 	}
 
-	// build a IF (target.RDB$DB_KEY IS NULL)
-	IfNode* action = FB_NEW(dsqlScratch->getStatement()->getPool()) IfNode(
-		dsqlScratch->getStatement()->getPool(), dsqlScratch);
+	MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(pool,
+		MAKE_node(nod_dbkey, 1));
+	missingNode->dsqlArg->nod_arg[0] = target;
 
-	action->dsqlCondition = MAKE_node(nod_missing, 1);
-	action->dsqlCondition->nod_arg[0] = MAKE_node(nod_dbkey, 1);
-	action->dsqlCondition->nod_arg[0]->nod_arg[0] = target;
+	// build a IF (target.RDB$DB_KEY IS NULL)
+	IfNode* action = FB_NEW(pool) IfNode(pool);
+
+	action->dsqlCondition = MAKE_node(nod_class_exprnode, 1);
+	action->dsqlCondition->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
 
 	if (insert)
 	{
@@ -6152,9 +5958,11 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	else
 	{
 		// negate the condition -> IF (target.RDB$DB_KEY IS NOT NULL)
-		dsql_nod* not_node = MAKE_node(nod_not, 1);
-		not_node->nod_arg[0] = action->dsqlCondition;
-		action->dsqlCondition = not_node;
+
+		NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(pool, action->dsqlCondition);
+
+		action->dsqlCondition = MAKE_node(nod_class_exprnode, 1);
+		action->dsqlCondition->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
 
 		action->dsqlTrueAction = update;	// then UPDATE/DELETE
 	}
@@ -6184,8 +5992,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		for_select = temp;
 	}
 
-	Node* sendNode = (FB_NEW(dsqlScratch->getStatement()->getPool()) MergeSendNode(
-		dsqlScratch->getStatement()->getPool(), for_select))->dsqlPass(dsqlScratch);
+	Node* sendNode = (FB_NEW(pool) MergeSendNode(pool, for_select))->dsqlPass(dsqlScratch);
 
 	dsql_nod* sendNod = MAKE_node(nod_class_stmtnode, 1);
 	sendNod->nod_arg[0] = (dsql_nod*) sendNode;
@@ -6199,156 +6006,6 @@ dsql_nod* PASS1_node_psql(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, boo
 {
 	PsqlChanger changer(dsqlScratch, psql);
 	return PASS1_node(dsqlScratch, input);
-}
-
-
-/**
-
- 	pass1_not
-
-    @brief	Replace NOT with an appropriately inverted condition, if
-			possible. Get rid of redundant nested NOT predicates.
-
-
-    @param dsqlScratch
-    @param input
-	@param invert
-
- **/
-static dsql_nod* pass1_not(DsqlCompilerScratch* dsqlScratch, const dsql_nod* input, bool invert)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	fb_assert(input->nod_type == nod_not);
-	dsql_nod* sub = input->nod_arg[0];
-
-	if (sub->nod_type == nod_not)
-	{
-		// recurse until different node is found
-		// (every even call means no inversion required)
-		return pass1_not(dsqlScratch, sub, !invert);
-	}
-
-	dsql_nod* node;
-	nod_t node_type = input->nod_type;
-	USHORT node_flags = input->nod_flags;
-	bool is_between = false, invert_args = false, no_op = false;
-
-	if (invert)
-	{
-		if (sub->nod_count == 2 && sub->nod_arg[1]->nod_type == nod_list)
-		{
-			// special case: <value> NOT IN <list>
-			no_op = true;
-		}
-		else
-		{
-			// invert the given boolean
-			switch (sub->nod_type)
-			{
-			case nod_eql:
-				node_type = nod_neq;
-				break;
-			case nod_neq:
-				node_type = nod_eql;
-				break;
-			case nod_lss:
-				node_type = nod_geq;
-				break;
-			case nod_gtr:
-				node_type = nod_leq;
-				break;
-			case nod_leq:
-				node_type = nod_gtr;
-				break;
-			case nod_geq:
-				node_type = nod_lss;
-				break;
-			case nod_between:
-				node_type = nod_or;
-				is_between = true;
-				break;
-			case nod_and:
-				node_type = nod_or;
-				invert_args = true;
-				break;
-			case nod_or:
-				node_type = nod_and;
-				invert_args = true;
-				break;
-			default:
-				no_op = true;
-				break;
-			}
-
-			node_flags = sub->nod_flags;
-
-			if (node_flags & NOD_ANSI_ANY)
-			{
-				node_flags &= ~NOD_ANSI_ANY;
-				node_flags |= NOD_ANSI_ALL;
-			}
-			else if (node_flags & NOD_ANSI_ALL)
-			{
-				node_flags &= ~NOD_ANSI_ALL;
-				node_flags |= NOD_ANSI_ANY;
-			}
-		}
-	}
-	else
-	{
-		// subnode type hasn't been changed
-		node_type = sub->nod_type;
-		node_flags = sub->nod_flags;
-	}
-
-	if (no_op)
-	{
-		// no inversion is possible, so just recreate the input node
-		// and return immediately to avoid infinite recursion later
-		fb_assert(node_type == nod_not);
-		node = MAKE_node(input->nod_type, 1);
-		node->nod_flags = input->nod_flags;
-		node->nod_arg[0] = PASS1_node(dsqlScratch, sub);
-		return node;
-	}
-
-	if (is_between)
-	{
-		// handle the special BETWEEN case
-		fb_assert(node_type == nod_or);
-		node = MAKE_node(node_type, 2);
-		node->nod_flags = node_flags;
-		node->nod_arg[0] = MAKE_node(nod_lss, 2);
-		node->nod_arg[0]->nod_arg[0] = sub->nod_arg[0];
-		node->nod_arg[0]->nod_arg[1] = sub->nod_arg[1];
-		node->nod_arg[1] = MAKE_node(nod_gtr, 2);
-		node->nod_arg[1]->nod_arg[0] = sub->nod_arg[0];
-		node->nod_arg[1]->nod_arg[1] = sub->nod_arg[2];
-	}
-	else
-	{
-		// create new (possibly inverted) node
-		node = MAKE_node(node_type, sub->nod_count);
-		node->nod_flags = node_flags;
-		dsql_nod* const* src = sub->nod_arg;
-		dsql_nod** dst = node->nod_arg;
-		for (const dsql_nod* const* end = src + sub->nod_count; src < end; src++)
-		{
-			if (invert_args)
-			{
-				dsql_nod* temp = MAKE_node(nod_not, 1);
-				temp->nod_arg[0] = *src;
-				*dst++ = temp;
-			}
-			else {
-				*dst++ = *src;
-			}
-		}
-	}
-
-	return PASS1_node(dsqlScratch, node);
 }
 
 
@@ -7169,27 +6826,24 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 				false, parent_rse->nod_arg[e_rse_boolean]);
 
 			// AB: Check for invalid contructions inside the HAVING clause
-			list = parent_rse->nod_arg[e_rse_boolean];
-			dsql_nod** ptr = list->nod_arg;
-			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+
+			if (InvalidReferenceFinder::find(parent_context, aggregate->nod_arg[e_agg_group],
+					parent_rse->nod_arg[e_rse_boolean]))
 			{
-				if (InvalidReferenceFinder::find(parent_context,
-						aggregate->nod_arg[e_agg_group], *ptr))
-				{
-					// Invalid expression in the HAVING clause
-					// (neither an aggregate nor contained in the GROUP BY clause)
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_dsql_agg_having_err) << Arg::Str("HAVING clause"));
-				}
+				// Invalid expression in the HAVING clause
+				// (neither an aggregate nor contained in the GROUP BY clause)
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_dsql_agg_having_err) << Arg::Str("HAVING clause"));
 			}
 
-			if (AggregateFinder::find(dsqlScratch, true, list))
+			if (AggregateFinder::find(dsqlScratch, true, parent_rse->nod_arg[e_rse_boolean]))
 			{
 				// Cannot use an aggregate in a WHERE clause, use HAVING instead
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_agg_where_err));
 			}
 		}
+
 		rse = parent_rse;
 
 		parent_context->ctx_context = dsqlScratch->contextNumber++;
@@ -8288,6 +7942,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	if (!dsqlScratch->isPsql())
 		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
@@ -8335,11 +7990,11 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	}
 
 	dsql_nod* matching = input->nod_arg[e_upi_matching];
-	nod_t equality_type;
+	UCHAR equality_type;
 
 	if (matching)
 	{
-		equality_type = nod_equiv;
+		equality_type = blr_equiv;
 
 		dsqlScratch->context->push(context);
 		dsqlScratch->scopeLevel++;
@@ -8353,14 +8008,12 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	}
 	else
 	{
-		equality_type = nod_eql;
+		equality_type = blr_eql;
 
 		matching = METD_get_primary_key(dsqlScratch->getTransaction(), base_name);
 
 		if (!matching)
-		{
 			ERRD_post(Arg::Gds(isc_primary_key_required) << Arg::Str(base_name->str_data));
-		}
 	}
 
 	// build a boolean to use in the UPDATE dsqlScratch
@@ -8437,20 +8090,13 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 					else
 						var = *value_ptr;
 
-					dsql_nod* eql = MAKE_node(equality_type, 2);
-					eql->nod_arg[0] = *field_ptr;
-					eql->nod_arg[1] = var;
+					ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
+						equality_type, *field_ptr, var);
 
-					if (match)
-					{
-						// It's a composed MATCHING. Build an AND.
-						dsql_nod* and_node = MAKE_node(nod_and, 2);
-						and_node->nod_arg[0] = match;
-						and_node->nod_arg[1] = eql;
-						match = and_node;
-					}
-					else
-						match = eql;
+					dsql_nod* eqlNod = MAKE_node(nod_class_exprnode, 1);
+					eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+
+					match = PASS1_compose(match, eqlNod, blr_and);
 				}
 			}
 		}
@@ -8486,23 +8132,25 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	fb_assert(update->nod_type == nod_modify);
 
 	// test if ROW_COUNT = 0
-	dsql_nod* eql = MAKE_node(nod_eql, 2);
-	eql->nod_arg[0] = MAKE_node(nod_class_exprnode, 1);
-	eql->nod_arg[0]->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-		FB_NEW(*tdbb->getDefaultPool()) InternalInfoNode(*tdbb->getDefaultPool(),
-			MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED))));
-	eql->nod_arg[1] = MAKE_const_slong(0);
+
+	ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
+		blr_eql, MAKE_node(nod_class_exprnode, 1), MAKE_const_slong(0));
+
+	eqlNode->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(FB_NEW(pool) InternalInfoNode(pool,
+		MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED))));
+
+	dsql_nod* eqlNod = MAKE_node(nod_class_exprnode, 1);
+	eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
 
 	const ULONG save_flags = dsqlScratch->flags;
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;	// to compile ROW_COUNT
-	eql = PASS1_node(dsqlScratch, eql);
+	eqlNod = PASS1_node(dsqlScratch, eqlNod);
 	dsqlScratch->flags = save_flags;
 
 	// if (ROW_COUNT = 0) then INSERT
-	IfNode* ifNod = FB_NEW(dsqlScratch->getStatement()->getPool()) IfNode(
-		dsqlScratch->getStatement()->getPool(), dsqlScratch);
-	ifNod->dsqlCondition = eql;
-	ifNod->dsqlTrueAction = insert;
+	IfNode* ifNode = FB_NEW(pool) IfNode(pool);
+	ifNode->dsqlCondition = eqlNod;
+	ifNode->dsqlTrueAction = insert;
 
 	// build the temporary vars / UPDATE / IF nodes
 	dsql_nod* list = MAKE_node(nod_list, 3);
@@ -8510,7 +8158,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	list->nod_arg[0]->nod_flags |= NOD_SIMPLE_LIST;
 	list->nod_arg[1] = update;
 	list->nod_arg[2] = MAKE_node(nod_class_stmtnode, 1);
-	list->nod_arg[2]->nod_arg[0] = (dsql_nod*) ifNod;
+	list->nod_arg[2]->nod_arg[0] = (dsql_nod*) ifNode;
 
 	// if RETURNING is present, type is already DsqlCompiledStatement::TYPE_EXEC_PROCEDURE
 	if (!input->nod_arg[e_upi_return])
@@ -8880,7 +8528,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 	{
 		case nod_class_exprnode:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(in_node->nod_arg[0]);
+			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
 			return exprNode->setParameterType(dsqlScratch, node, force_varchar);
 		}
 
@@ -9022,7 +8670,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 				return false;
 			}
 
-		case nod_missing:
 		case nod_substr:
 		case nod_trim:
 		case nod_upcase:
@@ -9333,16 +8980,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_alias:
 		verb = "alias";
 		break;
-	case nod_ansi_all:
 	case nod_all:
 		verb = "all";
-		break;
-	case nod_and:
-		verb = "and";
-		break;
-	case nod_ansi_any:
-	case nod_any:
-		verb = "any";
 		break;
 	case nod_array:
 		verb = "array element";
@@ -9350,17 +8989,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_assign:
 		verb = "assign";
 		break;
-	case nod_between:
-		verb = "between";
-		break;
 	case nod_cast:
 		verb = "cast";
 		break;
 	case nod_collate:
 		verb = "collate";
-		break;
-	case nod_containing:
-		verb = "containing";
 		break;
 	case nod_cursor:
 		verb = "cursor";
@@ -9398,12 +9031,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_del_index:
 		verb = "delete index";
 		break;
-	case nod_eql:
-		verb = "eql";
-		break;
-	case nod_equiv:
-		verb = "equiv";
-		break;
 	case nod_erase:
 		verb = "erase";
 		break;
@@ -9412,9 +9039,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_exec_procedure:
 		verb = "execute procedure";
-		break;
-	case nod_exists:
-		verb = "exists";
 		break;
 	case nod_extract:
 		verb = "extract";
@@ -9428,17 +9052,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_gen_id:
 		verb = "gen_id";
 		break;
-	case nod_geq:
-		verb = "geq";
-		break;
 	case nod_get_segment:
 		verb = "get segment";
 		break;
 	case nod_grant:
 		verb = "grant";
-		break;
-	case nod_gtr:
-		verb = "gtr";
 		break;
 	case nod_insert:
 		verb = "insert";
@@ -9458,20 +9076,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_strlen:
 		verb = "strlen";
 		break;
-	case nod_leq:
-		verb = "leq";
-		break;
-	case nod_like:
-		verb = "like";
-		break;
 	case nod_list:
 		verb = "list";
-		break;
-	case nod_lss:
-		verb = "lss";
-		break;
-	case nod_missing:
-		verb = "missing";
 		break;
 	case nod_modify:
 		verb = "modify";
@@ -9482,17 +9088,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_mod_field:
 		verb = "modify field";
 		break;
-	case nod_neq:
-		verb = "neq";
-		break;
-	case nod_not:
-		verb = "not";
-		break;
 	case nod_null:
 		verb = "null";
-		break;
-	case nod_or:
-		verb = "or";
 		break;
 	case nod_order:
 		verb = "order";
@@ -9530,12 +9127,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_select_expr:
 		verb = "select expr";
 		break;
-	case nod_similar:
-		verb = "similar";
-		break;
-	case nod_starting:
-		verb = "starting";
-		break;
 	case nod_store:
 		verb = "store";
 		break;
@@ -9559,9 +9150,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_lowcase:
 		verb = "lowcase";
-		break;
-	case nod_singular:
-		verb = "singular";
 		break;
 	case nod_via:
 		verb = "via";

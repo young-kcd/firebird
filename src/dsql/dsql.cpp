@@ -2607,6 +2607,10 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			GEN_port(scratch, statement->getBlob()->blb_open_out_msg);
 			GEN_port(scratch, statement->getBlob()->blb_segment_msg);
 			break;
+
+		case DsqlCompiledStatement::TYPE_DDL:
+			statement->setDdlScratch(scratch);
+			break;
 	}
 
 	switch (statement->getType())

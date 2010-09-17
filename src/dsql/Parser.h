@@ -27,6 +27,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/AggNodes.h"
 #include "../dsql/WinNodes.h"

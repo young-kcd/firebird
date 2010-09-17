@@ -70,6 +70,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 class IndexTableScan;
+class ComparativeBoolNode;
 class InversionNode;
 class PlanNode;
 class River;
@@ -189,7 +190,8 @@ protected:
 	void printFinalCandidate(const InversionCandidate* candidate) const;
 #endif
 
-	bool validateStarts(IndexScratch* indexScratch, jrd_nod* boolean, USHORT segment) const;
+	bool validateStarts(IndexScratch* indexScratch, ComparativeBoolNode* cmpNode,
+		USHORT segment) const;
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;

@@ -479,22 +479,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 				ret |= visit(&node->nod_arg[1]);
 			break;
 
-		case nod_or:
-		case nod_and:
-		case nod_not:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_gtr:
-		case nod_geq:
-		case nod_lss:
-		case nod_leq:
-		case nod_between:
-		case nod_like:
-		case nod_containing:
-		case nod_similar:
-		case nod_starting:
-		case nod_missing:
 		case nod_substr:
 		case nod_trim:
 		case nod_upcase:
@@ -503,9 +487,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_strlen:
 		case nod_simple_case:
 		case nod_searched_case:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
 		case nod_list:
 		case nod_join:
 		case nod_join_inner:

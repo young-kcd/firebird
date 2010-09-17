@@ -25,6 +25,8 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../dsql/BoolNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dbg_proto.h"
@@ -422,10 +424,15 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 			// boolean from the view must appear first so that
 			// it gets expanded first in pass1.
 
-			jrd_nod* additional = PAR_make_node(tdbb, 2);
-			additional->nod_type = nod_and;
-			additional->nod_arg[0] = node;
-			additional->nod_arg[1] = *boolean;
+			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
+			andNode->arg1 = node;
+			andNode->arg2 = *boolean;
+
+			jrd_nod* additional = PAR_make_node(tdbb, 1);
+			additional->nod_type = nod_class_exprnode_jrd;
+			additional->nod_count = 0;
+			additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
+
 			*boolean = additional;
 		}
 		else
@@ -1529,10 +1536,15 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 	{
 		if (rse_boolean)
 		{
-			jrd_nod* additional = PAR_make_node(tdbb, 2);
-			additional->nod_type = nod_and;
-			additional->nod_arg[0] = boolean;
-			additional->nod_arg[1] = CMP_pass1(tdbb, csb, rse_boolean);
+			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
+			andNode->arg1 = boolean;
+			andNode->arg2 = CMP_pass1(tdbb, csb, rse_boolean);
+
+			jrd_nod* additional = PAR_make_node(tdbb, 1);
+			additional->nod_type = nod_class_exprnode_jrd;
+			additional->nod_count = 0;
+			additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
+
 			rse_boolean = additional;
 		}
 		else
@@ -1586,10 +1598,16 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 			if (*boolean)
 			{
-				jrd_nod* additional = PAR_make_node(tdbb, 2);
-				additional->nod_type = nod_and;
-				additional->nod_arg[0] = node;
-				additional->nod_arg[1] = *boolean;
+				BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
+					csb->csb_pool, blr_and);
+				andNode->arg1 = node;
+				andNode->arg2 = *boolean;
+
+				jrd_nod* additional = PAR_make_node(tdbb, 1);
+				additional->nod_type = nod_class_exprnode_jrd;
+				additional->nod_count = 0;
+				additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
+
 				*boolean = additional;
 			}
 			else
@@ -1695,8 +1713,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		if (opt->rse->rse_jointype != blr_inner)
 		{
 			// Make list of nodes that can be delivered to an outer-stream.
-			// In fact these are all nodes except when a IS NULL (nod_missing)
-			// comparision is done.
+			// In fact these are all nodes except when a IS NULL comparision is done.
 			// Note! Don't forget that this can be burried inside a expression
 			// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
 			NodeStack::iterator stackItem;
@@ -2260,27 +2277,33 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode
 		jrd_nod* boolean = stack1.object();
 
 		// Reduce to simple comparisons
-		if (!((boolean->nod_type == nod_eql) ||
-			  (boolean->nod_type == nod_gtr) ||
-			  (boolean->nod_type == nod_geq) ||
-			  (boolean->nod_type == nod_leq) ||
-			  (boolean->nod_type == nod_lss) ||
-			  (boolean->nod_type == nod_starts) ||
-			  (boolean->nod_type == nod_missing)))
+
+		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+		MissingBoolNode* missingNode = ExprNode::as<MissingBoolNode>(boolean);
+		HalfStaticArray<jrd_nod*, 2> children;
+
+		if (cmpNode &&
+			(cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_geq ||
+			 cmpNode->blrOp == blr_leq || cmpNode->blrOp == blr_lss || cmpNode->blrOp == blr_starting))
 		{
-			continue;
+			children.add(cmpNode->arg1);
+			children.add(cmpNode->arg2);
 		}
+		else if (missingNode)
+			children.add(missingNode->arg);
+		else
+			continue;
 
 		// At least 1 mapping should be used in the arguments
-		int indexArg;
+		size_t indexArg;
 		bool mappingFound = false;
 
-		for (indexArg = 0; (indexArg < boolean->nod_count) && !mappingFound; indexArg++)
+		for (indexArg = 0; (indexArg < children.getCount()) && !mappingFound; ++indexArg)
 		{
-			jrd_nod* booleanNode = boolean->nod_arg[indexArg];
+			jrd_nod* node = children[indexArg];
 
-			if (booleanNode->nod_type == nod_field &&
-				(USHORT)(IPTR) booleanNode->nod_arg[e_fld_stream] == shellStream)
+			if (node->nod_type == nod_field &&
+				(USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)
 			{
 				mappingFound = true;
 			}
@@ -2290,26 +2313,60 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode
 			continue;
 
 		// Create new node and assign the correct existing arguments
-		jrd_nod* deliverNode = PAR_make_node(tdbb, boolean->nod_count);
-		deliverNode->nod_count = boolean->nod_count;
+		jrd_nod* deliverNode = PAR_make_node(tdbb, 1);
+		deliverNode->nod_count = 0;
 		deliverNode->nod_type = boolean->nod_type;
 		deliverNode->nod_flags = boolean->nod_flags;
 		deliverNode->nod_impure = boolean->nod_impure;
+
+		BoolExprNode* newNode = NULL;
+		HalfStaticArray<jrd_nod**, 2> newChildren;
+
+		if (cmpNode)
+		{
+			ComparativeBoolNode* newCmpNode = FB_NEW(*tdbb->getDefaultPool()) ComparativeBoolNode(
+				*tdbb->getDefaultPool(), cmpNode->blrOp);
+			newCmpNode->setNode(deliverNode);
+
+			newChildren.add(newCmpNode->arg1.getAddress());
+			newChildren.add(newCmpNode->arg2.getAddress());
+
+			newNode = newCmpNode;
+		}
+		else if (missingNode)
+		{
+			MissingBoolNode* newMissingNode = FB_NEW(*tdbb->getDefaultPool()) MissingBoolNode(
+				*tdbb->getDefaultPool());
+			newMissingNode->setNode(deliverNode);
+
+			newChildren.add(newMissingNode->arg.getAddress());
+
+			newNode = newMissingNode;
+		}
+		else
+		{
+			fb_assert(false);
+		}
+
+		deliverNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(newNode);
+
 		bool wrongNode = false;
 
-		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++)
+		for (indexArg = 0; (indexArg < children.getCount()) && !wrongNode; ++indexArg)
 		{
-			jrd_nod* booleanNode = UnmappedNodeGetter::get(
-				map, shellStream, boolean->nod_arg[indexArg]);
+			jrd_nod* node = UnmappedNodeGetter::get(map, shellStream, children[indexArg]);
 
-			wrongNode = (booleanNode == NULL);
+			wrongNode = (node == NULL);
 
 			if (!wrongNode)
-				deliverNode->nod_arg[indexArg] = booleanNode;
+				*newChildren[indexArg] = node;
 		}
 
 		if (wrongNode)
+		{
+			delete newNode;
 			delete deliverNode;
+		}
 		else
 			deliverStack->push(deliverNode);
 	}

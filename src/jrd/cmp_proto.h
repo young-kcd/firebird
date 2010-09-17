@@ -62,6 +62,7 @@ inline void CMP_post_access(Jrd::thread_db* tdbb,
 
 void CMP_post_procedure_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*);
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
+Jrd::RecordSource* CMP_post_rse(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::RseNode*);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
 

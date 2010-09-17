@@ -25,7 +25,7 @@
 #define DSQL_PASS1_PROTO_H
 
 void PASS1_check_unique_fields_names(Jrd::StrArray& names, const Jrd::dsql_nod* fields);
-Jrd::dsql_nod* PASS1_compose(Jrd::dsql_nod*, Jrd::dsql_nod*, Jrd::NOD_TYPE);
+Jrd::dsql_nod* PASS1_compose(Jrd::dsql_nod*, Jrd::dsql_nod*, UCHAR);
 Jrd::dsql_nod* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, USHORT, bool);
 Jrd::dsql_nod* PASS1_label(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label2(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);

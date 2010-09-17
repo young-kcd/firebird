@@ -132,28 +132,28 @@ public:
 		text.printf("RecreateNode\n");
 	}
 
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction)
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 	{
 		// run all statements under savepoint control
 		AutoSavePoint savePoint(tdbb, transaction);
 
-		dropNode.execute(tdbb, transaction);
-		createNode->execute(tdbb, transaction);
+		dropNode.execute(tdbb, dsqlScratch, transaction);
+		createNode->execute(tdbb, dsqlScratch, transaction);
 
 		savePoint.release();	// everything is ok
+	}
+
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		createNode->dsqlPass(dsqlScratch);
+		dropNode.dsqlPass(dsqlScratch);
+		return DdlNode::dsqlPass(dsqlScratch);
 	}
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
 		statusVector << Firebird::Arg::Gds(ERROR_CODE) << createNode->name;
-	}
-
-	virtual DdlNode* internalDsqlPass()
-	{
-		createNode->dsqlPass(dsqlScratch);
-		dropNode.dsqlPass(dsqlScratch);
-		return DdlNode::internalDsqlPass();
 	}
 
 protected:
@@ -175,7 +175,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -206,7 +206,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -254,7 +254,8 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -266,15 +267,14 @@ protected:
 				name;
 	}
 
-	virtual DdlNode* internalDsqlPass();
-
 private:
-	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	bool executeAlter(thread_db* tdbb, jrd_tra* transaction, bool secondPass, bool runTriggers);
+	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		bool secondPass, bool runTriggers);
 
-	void storeArgument(thread_db* tdbb, jrd_tra* transaction,
+	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		unsigned pos, const ParameterClause& parameter);
-	void compile(thread_db* tdbb, jrd_tra* transaction);
+	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 
 public:
 	Firebird::MetaName name;
@@ -312,15 +312,14 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
 		statusVector << Firebird::Arg::Gds(isc_dsql_drop_func_failed) << name;
 	}
-
-	virtual DdlNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
@@ -357,7 +356,8 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -369,14 +369,13 @@ protected:
 				name;
 	}
 
-	virtual DdlNode* internalDsqlPass();
-
 private:
-	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	bool executeAlter(thread_db* tdbb, jrd_tra* transaction, bool secondPass, bool runTriggers);
-	void storeParameter(thread_db* tdbb, jrd_tra* transaction,
+	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		bool secondPass, bool runTriggers);
+	void storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		USHORT type, unsigned pos, const ParameterClause& parameter);
-	void compile(thread_db* tdbb, jrd_tra* transaction);
+	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 
 public:
 	Firebird::MetaName name;
@@ -413,15 +412,14 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
 		statusVector << Firebird::Arg::Gds(isc_dsql_drop_proc_failed) << name;
 	}
-
-	virtual DdlNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
@@ -447,15 +445,17 @@ public:
 	{
 	}
 
-	void store(thread_db* tdbb, jrd_tra* transaction);
-	bool modify(thread_db* tdbb, jrd_tra* transaction);
+	void store(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	bool modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
-	virtual void preModify(thread_db* /*tdbb*/, jrd_tra* /*transaction*/)
+	virtual void preModify(thread_db* /*tdbb*/, DsqlCompilerScratch* /*dsqlScratch*/,
+		jrd_tra* /*transaction*/)
 	{
 	}
 
-	virtual void postModify(thread_db* /*tdbb*/, jrd_tra* /*transaction*/)
+	virtual void postModify(thread_db* /*tdbb*/, DsqlCompilerScratch* /*dsqlScratch*/,
+		jrd_tra* /*transaction*/)
 	{
 	}
 
@@ -492,7 +492,8 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -504,23 +505,27 @@ protected:
 				name;
 	}
 
-	virtual DdlNode* internalDsqlPass();
-
-	virtual void preModify(thread_db* tdbb, jrd_tra* transaction)
+	virtual void preModify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 	{
 		if (alter)
-			executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TRIGGER, name);
+		{
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+				DDL_TRIGGER_ALTER_TRIGGER, name);
+		}
 	}
 
-	virtual void postModify(thread_db* tdbb, jrd_tra* transaction)
+	virtual void postModify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 	{
 		if (alter)
-			executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TRIGGER, name);
+		{
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
+				DDL_TRIGGER_ALTER_TRIGGER, name);
+		}
 	}
 
 private:
-	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	void compile(thread_db* tdbb, jrd_tra* transaction);
+	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
 
 	static inline bool hasOldContext(const unsigned value)
 	{
@@ -560,15 +565,14 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
 		statusVector << Firebird::Arg::Gds(isc_dsql_drop_trigger_failed) << name;
 	}
-
-	virtual DdlNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
@@ -600,7 +604,8 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 	void setAttribute(USHORT attribute)
 	{
@@ -634,8 +639,6 @@ protected:
 		statusVector << Firebird::Arg::Gds(isc_dsql_create_collation_failed) << name;
 	}
 
-	virtual DdlNode* internalDsqlPass();
-
 public:
 	Firebird::MetaName name;
 	Firebird::MetaName forCharSet;
@@ -662,7 +665,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -688,7 +691,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -726,7 +729,7 @@ public:
 		const Firebird::MetaName& newFieldName);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -763,7 +766,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -794,7 +797,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -807,8 +810,8 @@ protected:
 	}
 
 private:
-	void executeCreate(thread_db* tdbb, jrd_tra* transaction);
-	bool executeAlter(thread_db* tdbb, jrd_tra* transaction);
+	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 public:
 	Firebird::MetaName name;
@@ -830,7 +833,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -862,7 +865,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -995,23 +998,28 @@ public:
 
 protected:
 	void storePrivileges(thread_db* tdbb, jrd_tra* transaction);
-	void defineField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element,
-		SSHORT position, const dsql_nod* pkcols);
-	void defineComputed(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
-		Firebird::string& source, BlrWriter::BlrData& value);
-	bool defineDefault(thread_db* tdbb, dsql_fld* field, dsql_nod* node,
-		Firebird::string& source, BlrWriter::BlrData& value);
-	void makeConstraint(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* node,
-		Firebird::ObjectsArray<Constraint>& constraints, bool* notNull = NULL);
-	void defineConstraint(thread_db* tdbb, jrd_tra* transaction, Constraint& constraint);
-	void defineCheckConstraint(Constraint& constraint, dsql_nod* node);
-	void defineCheckConstraintTrigger(Constraint& constraint, dsql_nod* node,
-		FB_UINT64 triggerType);
-	void defineSetDefaultTrigger(Constraint& constraint, bool onUpdate);
-	void defineSetNullTrigger(Constraint& constraint, bool onUpdate);
-	void defineDeleteCascadeTrigger(Constraint& constraint);
-	void defineUpdateCascadeTrigger(Constraint& constraint);
-	void generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate, BlrWriter& blrWriter);
+	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		const dsql_nod* element, SSHORT position, const dsql_nod* pkcols);
+	void defineComputed(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
+		dsql_nod* node, Firebird::string& source, BlrWriter::BlrData& value);
+	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
+		dsql_nod* node, Firebird::string& source, BlrWriter::BlrData& value);
+	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		const dsql_nod* node, Firebird::ObjectsArray<Constraint>& constraints, bool* notNull = NULL);
+	void defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		Constraint& constraint);
+	void defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
+		dsql_nod* node);
+	void defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
+		dsql_nod* node, FB_UINT64 triggerType);
+	void defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
+		bool onUpdate);
+	void defineSetNullTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
+		bool onUpdate);
+	void defineDeleteCascadeTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint);
+	void defineUpdateCascadeTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint);
+	void generateUnnamedTriggerBeginning(Constraint& constraint, bool onUpdate,
+		BlrWriter& blrWriter);
 	void stuffDefaultBlr(const Firebird::ByteChunk& defaultBlr, BlrWriter& blrWriter);
 	void stuffMatchingBlr(Constraint& constraint, BlrWriter& blrWriter);
 	void stuffTriggerFiringCondition(const Constraint& constraint, BlrWriter& blrWriter);
@@ -1036,7 +1044,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -1063,7 +1071,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -1072,7 +1080,8 @@ protected:
 	}
 
 private:
-	void modifyField(thread_db* tdbb, jrd_tra* transaction, const dsql_nod* element);
+	void modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
+		const dsql_nod* element);
 };
 
 
@@ -1092,7 +1101,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -1128,7 +1137,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
@@ -1141,7 +1150,7 @@ protected:
 	}
 
 private:
-	void createCheckTriggers(thread_db* tdbb, jrd_tra* transaction, dsql_nod* items);
+	void createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_nod* items);
 	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* rse, dsql_nod* items, dsql_nod* actions, TriggerType triggerType);
 	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, dsql_nod** baseAndNode,

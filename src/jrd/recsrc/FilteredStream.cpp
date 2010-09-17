@@ -21,6 +21,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
+#include "../dsql/BoolNodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
@@ -174,15 +175,15 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 	{
 		// see if there's a select node to work with
 
-		if (column_node->nod_type == nod_and)
+		const BinaryBoolNode* booleanNode = ExprNode::as<BinaryBoolNode>(column_node);
+
+		if (booleanNode && booleanNode->blrOp == blr_and)
 		{
-			select_node = column_node->nod_arg[0];
-			column_node = column_node->nod_arg[1];
+			select_node = booleanNode->arg1;
+			column_node = booleanNode->arg2;
 		}
 		else
-		{
 			select_node = NULL;
-		}
 	}
 
 	if (column_node && m_ansiAny)

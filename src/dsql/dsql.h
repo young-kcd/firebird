@@ -423,7 +423,8 @@ public:
 		  recVersion(NULL),
 		  parentRecVersion(NULL),
 		  parentDbKey(NULL),
-		  parentRequest(NULL)
+		  parentRequest(NULL),
+		  ddlScratch(NULL)
 	{
 	}
 
@@ -484,6 +485,9 @@ public:
 	dsql_req* getParentRequest() const { return parentRequest; }
 	void setParentRequest(dsql_req* value) { parentRequest = value; }
 
+	DsqlCompilerScratch* getDdlScratch() const { return ddlScratch; }
+	void setDdlScratch(DsqlCompilerScratch* value) { ddlScratch = value; }
+
 private:
 	Type type;					// Type of statement
 	ULONG flags;				// generic flag
@@ -499,6 +503,7 @@ private:
 	dsql_par* parentRecVersion;	// parent record version
 	dsql_par* parentDbKey;		// Parent database key for current of
 	dsql_req* parentRequest;	// Source request, if cursor update
+	DsqlCompilerScratch* ddlScratch;	// DSQL scratch for DDL statements
 };
 
 

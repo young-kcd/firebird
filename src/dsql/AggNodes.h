@@ -37,9 +37,9 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -47,7 +47,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 
 private:
 	USHORT tempImpure;
@@ -61,11 +61,11 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void checkOrderedWindowCapable() const
 	{
@@ -80,7 +80,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 
 private:
 	dsql_nod* dsqlDelimiter;
@@ -94,17 +94,17 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
-	virtual void genBlr();
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 class SumAggNode : public AggNode
@@ -114,16 +114,16 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 class MaxMinAggNode : public AggNode
@@ -139,16 +139,16 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 
 public:
 	const MaxMinType type;

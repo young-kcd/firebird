@@ -33,6 +33,7 @@
 #include "../dsql/Nodes.h"
 #include "../dsql/AggNodes.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"

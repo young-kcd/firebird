@@ -38,6 +38,7 @@
 #include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
@@ -108,8 +109,11 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 			for (NestConst<NestConst<jrd_nod> >* i = exprNode->jrdChildNodes.begin();
 				 i != exprNode->jrdChildNodes.end(); ++i)
 			{
-				if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
-					return false;
+				if (**i)
+				{
+					if (!OPT_computable(csb, **i, stream, idx_use, allowOnlyCurrentStream))
+						return false;
+				}
 			}
 
 			break;
@@ -265,9 +269,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 	SET_TDBB(tdbb);
 
 	if (!node1 || !node2)
-	{
 		BUGCHECK(303);	// msg 303 Invalid expression for evaluation.
-	}
 
 	if (node1->nod_type != node2->nod_type)
 	{
@@ -387,35 +389,102 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 
 					return false;
 				}
+
+				case ExprNode::TYPE_BINARY_BOOL:
+				{
+					BinaryBoolNode* booleanNode1 = static_cast<BinaryBoolNode*>(exprNode1);
+					BinaryBoolNode* booleanNode2 = static_cast<BinaryBoolNode*>(exprNode2);
+
+					if (booleanNode1->blrOp != booleanNode2->blrOp)
+						return false;
+
+					if (OPT_expression_equal2(tdbb, csb, booleanNode1->arg1, booleanNode2->arg1, stream) &&
+						OPT_expression_equal2(tdbb, csb, booleanNode1->arg2, booleanNode2->arg2, stream))
+					{
+						return true;
+					}
+
+					// A AND B is equivalent to B AND A. So as OR.
+					if (OPT_expression_equal2(tdbb, csb,
+							booleanNode1->arg1, booleanNode2->arg2, stream) &&
+						OPT_expression_equal2(tdbb, csb,
+							booleanNode1->arg2, booleanNode2->arg1, stream))
+					{
+						return true;
+					}
+
+					return false;
+				}
+
+				case ExprNode::TYPE_COMPARATIVE_BOOL:
+				{
+					ComparativeBoolNode* cmpNode1 = static_cast<ComparativeBoolNode*>(exprNode1);
+					ComparativeBoolNode* cmpNode2 = static_cast<ComparativeBoolNode*>(exprNode2);
+
+					if (cmpNode1->blrOp != cmpNode2->blrOp)
+						return false;
+
+					NestConst<NestConst<jrd_nod> >* i = cmpNode1->jrdChildNodes.begin();
+					NestConst<NestConst<jrd_nod> >* j = cmpNode2->jrdChildNodes.begin();
+					bool matching = true;
+
+					for (; matching && i != cmpNode1->jrdChildNodes.end(); ++i, ++j)
+					{
+						if (**i && **j)
+							matching = OPT_expression_equal2(tdbb, csb, **i, **j, stream);
+						else
+							matching = !**i && !**j;
+					}
+
+					if (matching)
+						return true;
+
+					// TODO match A > B to B <= A, etc
+
+					if (cmpNode1->blrOp == blr_eql || cmpNode1->blrOp == blr_equiv ||
+						cmpNode1->blrOp == blr_neq)
+					{
+						// A = B is equivalent to B = A.
+						if (OPT_expression_equal2(tdbb, csb, cmpNode1->arg1, cmpNode2->arg2, stream) &&
+							OPT_expression_equal2(tdbb, csb, cmpNode1->arg2, cmpNode2->arg1, stream))
+						{
+							return true;
+						}
+					}
+
+					return false;
+				}
+
+				case ExprNode::TYPE_MISSING_BOOL:
+				{
+					MissingBoolNode* missingNode1 = static_cast<MissingBoolNode*>(exprNode1);
+					MissingBoolNode* missingNode2 = static_cast<MissingBoolNode*>(exprNode2);
+
+					return OPT_expression_equal2(tdbb, csb, missingNode1->arg, missingNode2->arg, stream);
+				}
+
+				case ExprNode::TYPE_NOT_BOOL:
+				{
+					NotBoolNode* notNode1 = static_cast<NotBoolNode*>(exprNode1);
+					NotBoolNode* notNode2 = static_cast<NotBoolNode*>(exprNode2);
+
+					return OPT_expression_equal2(tdbb, csb, notNode1->arg, notNode2->arg, stream);
+				}
+
+				case ExprNode::TYPE_RSE_BOOL:
+				{
+					RseBoolNode* rseNode1 = static_cast<RseBoolNode*>(exprNode1);
+					RseBoolNode* rseNode2 = static_cast<RseBoolNode*>(exprNode2);
+
+					if (rseNode1->blrOp != rseNode2->blrOp)
+						return false;
+
+					return OPT_expression_equal2(tdbb, csb, rseNode1->rse, rseNode2->rse, stream);
+				}
 			}
 
 			break;
 		}
-
-		case nod_equiv:
-	    case nod_eql:
-		case nod_neq:
-	    case nod_and:
-		case nod_or:
-			// Order of arguments is not important, as in addition and multiplication.
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[1], stream) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[1], node2->nod_arg[0], stream))
-			{
-				return true;
-			}
-			// Fall into ...
-
-		// TODO match A > B to B <= A, etc
-	    case nod_gtr:
-		case nod_geq:
-		case nod_leq:
-		case nod_lss:
-			if (OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[1], node2->nod_arg[1], stream))
-			{
-				return true;
-			}
-			break;
 
 		case nod_rec_version:
 		case nod_dbkey:
@@ -453,34 +522,21 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		case nod_null:
 			return true;
 
-		case nod_between:
-		case nod_like:
-		case nod_similar:
-		case nod_missing:
-		case nod_any:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_not:
-		case nod_unique:
-
 		case nod_value_if:
 		case nod_substr:
 		case nod_trim:
+		{
+			if (node1->nod_count != node2->nod_count)
+				return false;
+
+			for (int i = 0; i < node1->nod_count; ++i)
 			{
-				if (node1->nod_count != node2->nod_count)
-				{
+				if (!OPT_expression_equal2(tdbb, csb, node1->nod_arg[i], node2->nod_arg[i], stream))
 					return false;
-				}
-				for (int i = 0; i < node1->nod_count; ++i)
-				{
-					if (!OPT_expression_equal2(tdbb, csb, node1->nod_arg[i], node2->nod_arg[i], stream))
-					{
-						return false;
-					}
-				}
-				return true;
 			}
-			break;
+
+			return true;
+		}
 
 		case nod_gen_id:
 		case nod_gen_id2:
@@ -979,7 +1035,8 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 		for (NestConst<NestConst<jrd_nod> >* i = exprNode->jrdChildNodes.begin();
 			 i != exprNode->jrdChildNodes.end(); ++i)
 		{
-			findDependentFromStreams(**i, streamList);
+			if (**i)
+				findDependentFromStreams(**i, streamList);
 		}
 	}
 	else if (node->nod_type == nod_class_recsrcnode_jrd)
@@ -1131,14 +1188,17 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 			}
 		}
 
-		// First, handle "AND" comparisons (all nodes except nod_or)
+		// First, handle "AND" comparisons (all nodes except OR)
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			if (tail->opt_conjunct_flags & opt_conjunct_matched)
 				continue;
-			}
+
 			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
+			BinaryBoolNode* booleanNode = ExprNode::as<BinaryBoolNode>(node);
+
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node &&
+				(!booleanNode || booleanNode->blrOp != blr_or))
 			{
 				matchOnIndexes(&indexScratches, node, 1);
 			}
@@ -1153,11 +1213,14 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		// Second, handle "OR" comparisons
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched) {
+			if (tail->opt_conjunct_flags & opt_conjunct_matched)
 				continue;
-			}
+
 			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
+			BinaryBoolNode* booleanNode = ExprNode::as<BinaryBoolNode>(node);
+
+			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node &&
+				(booleanNode && booleanNode->blrOp == blr_or))
 			{
 				invCandidate = matchOnIndexes(&indexScratches, node, 1);
 				if (invCandidate)
@@ -1213,7 +1276,9 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 			OPT_computable(csb, node, stream, false, true) &&
 			!invCandidate->matches.exist(node))
 		{
-			const double factor = (node->nod_type == nod_eql) ?
+			const ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(node);
+
+			const double factor = (cmpNode && cmpNode->blrOp == blr_eql) ?
 				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
 			invCandidate->selectivity *= factor;
 		}
@@ -1768,8 +1833,11 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	for (IndexScratchSegment** tail = indexScratch->segments.begin();
 		 tail != indexScratch->segments.end() && ((*tail)->lowerValue || (*tail)->upperValue); ++tail)
 	{
+		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>((*tail)->matches[0]);
+
 		dsc dsc0;
-		CMP_get_desc(tdbb, csb, (*tail)->matches[0]->nod_arg[0], &dsc0);
+		CMP_get_desc(tdbb, csb,
+			(cmpNode ? cmpNode->arg1.getObject() : (*tail)->matches[0]->nod_arg[0]), &dsc0);
 
 		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
 		// when looking for charsets/collations
@@ -2230,11 +2298,31 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
  * Functional description
  *
  **************************************/
+	ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+	MissingBoolNode* missingNode = ExprNode::as<MissingBoolNode>(boolean);
+	NotBoolNode* notNode = ExprNode::as<NotBoolNode>(boolean);
+	RseBoolNode* rseNode = ExprNode::as<RseBoolNode>(boolean);
 	bool forward = true;
+	jrd_nod* value = NULL;
+	jrd_nod* match;
 
-	jrd_nod* match = boolean->nod_arg[0];
-	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
-	jrd_nod* value2 = (boolean->nod_type == nod_between) ? boolean->nod_arg[2] : NULL;
+	if (cmpNode)
+	{
+		match = cmpNode->arg1;
+		value = cmpNode->arg2;
+	}
+	else if (missingNode)
+		match = missingNode->arg;
+	else if (notNode)
+		match = notNode->arg;
+	else if (rseNode)
+		match = rseNode->rse;
+	else
+	{
+		fb_assert(false);
+	}
+
+	jrd_nod* value2 = (cmpNode && cmpNode->blrOp == blr_between) ? cmpNode->arg3 : NULL;
 
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
@@ -2245,12 +2333,13 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 		if (!OPT_expression_equal(tdbb, csb, indexScratch->idx, match, stream) ||
 			(value && !OPT_computable(csb, value, stream, true, false)))
 		{
-			if (boolean->nod_type != nod_starts && value &&
+			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
 				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
 				OPT_computable(csb, match, stream, true, false))
 			{
-				match = boolean->nod_arg[1];
-				value = boolean->nod_arg[0];
+				jrd_nod* temp = match;
+				match = value;
+				value = temp;
 				forward = false;
 			}
 			else
@@ -2266,14 +2355,17 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
 			(value && !OPT_computable(csb, value, stream, true, false)))
 		{
+			jrd_nod* temp = match;
 			match = value;
-			value = boolean->nod_arg[0];
+			value = temp;
+
 			if (!match || match->nod_type != nod_field ||
 				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
 				!OPT_computable(csb, value, stream, true, false))
 			{
 				return false;
 			}
+
 			forward = false;
 		}
 	}
@@ -2326,156 +2418,153 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	const bool isDesc = (indexScratch->idx->idx_flags & idx_descending);
 	int count = 0;
 	IndexScratchSegment** segment = indexScratch->segments.begin();
+
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
-
 		if ((indexScratch->idx->idx_flags & idx_expressn) ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_id] == indexScratch->idx->idx_rpt[i].idx_field)
 		{
-
-			switch (boolean->nod_type)
+			if (cmpNode)
 			{
+				switch (cmpNode->blrOp)
+				{
+					case blr_between:
+						if (!forward || !OPT_computable(csb, value2, stream, true, false))
+							return false;
+						segment[i]->matches.add(boolean);
+						// AB: If we have already an exact match don't
+						// override it with worser matches.
+						if (!((segment[i]->scanType == segmentScanEqual) ||
+							(segment[i]->scanType == segmentScanEquivalent)))
+						{
+							segment[i]->lowerValue = value;
+							segment[i]->upperValue = value2;
+							segment[i]->scanType = segmentScanBetween;
+							segment[i]->excludeLower = false;
+							segment[i]->excludeUpper = false;
+						}
+						break;
 
-				case nod_between:
-					if (!forward || !OPT_computable(csb, value2, stream, true, false))
-					{
-						return false;
-					}
-					segment[i]->matches.add(boolean);
-					// AB: If we have already an exact match don't
-					// override it with worser matches.
-					if (!((segment[i]->scanType == segmentScanEqual) ||
-						(segment[i]->scanType == segmentScanEquivalent)))
-					{
-						segment[i]->lowerValue = value;
-						segment[i]->upperValue = value2;
-						segment[i]->scanType = segmentScanBetween;
-						segment[i]->excludeLower = false;
-						segment[i]->excludeUpper = false;
-					}
-					break;
+					case blr_equiv:
+						segment[i]->matches.add(boolean);
+						// AB: If we have already an exact match don't
+						// override it with worser matches.
+						if (!(segment[i]->scanType == segmentScanEqual))
+						{
+							segment[i]->lowerValue = segment[i]->upperValue = value;
+							segment[i]->scanType = segmentScanEquivalent;
+							segment[i]->excludeLower = false;
+							segment[i]->excludeUpper = false;
+						}
+						break;
 
-				case nod_equiv:
-					segment[i]->matches.add(boolean);
-					// AB: If we have already an exact match don't
-					// override it with worser matches.
-					if (!(segment[i]->scanType == segmentScanEqual))
-					{
+					case blr_eql:
+						segment[i]->matches.add(boolean);
 						segment[i]->lowerValue = segment[i]->upperValue = value;
-						segment[i]->scanType = segmentScanEquivalent;
+						segment[i]->scanType = segmentScanEqual;
 						segment[i]->excludeLower = false;
 						segment[i]->excludeUpper = false;
-					}
-					break;
+						break;
 
-				case nod_eql:
-					segment[i]->matches.add(boolean);
+					case blr_gtr:
+					case blr_geq:
+						segment[i]->matches.add(boolean);
+						if (!((segment[i]->scanType == segmentScanEqual) ||
+							(segment[i]->scanType == segmentScanEquivalent) ||
+							(segment[i]->scanType == segmentScanBetween)))
+						{
+							if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
+								segment[i]->excludeLower = (cmpNode->blrOp == blr_gtr);
+							else
+								segment[i]->excludeUpper = (cmpNode->blrOp == blr_gtr);
+
+							if (forward)
+							{
+								segment[i]->lowerValue = value;
+								if (segment[i]->scanType == segmentScanLess)
+            						segment[i]->scanType = segmentScanBetween;
+								else
+            						segment[i]->scanType = segmentScanGreater;
+							}
+							else
+							{
+								segment[i]->upperValue = value;
+								if (segment[i]->scanType == segmentScanGreater)
+									segment[i]->scanType = segmentScanBetween;
+								else
+									segment[i]->scanType = segmentScanLess;
+							}
+						}
+						break;
+
+					case blr_lss:
+					case blr_leq:
+						segment[i]->matches.add(boolean);
+						if (!((segment[i]->scanType == segmentScanEqual) ||
+							(segment[i]->scanType == segmentScanEquivalent) ||
+							(segment[i]->scanType == segmentScanBetween)))
+						{
+							if (forward != isDesc)
+								segment[i]->excludeUpper = (cmpNode->blrOp == blr_lss);
+							else
+								segment[i]->excludeLower = (cmpNode->blrOp == blr_lss);
+
+							if (forward)
+							{
+								segment[i]->upperValue = value;
+								if (segment[i]->scanType == segmentScanGreater)
+									segment[i]->scanType = segmentScanBetween;
+								else
+									segment[i]->scanType = segmentScanLess;
+							}
+							else
+							{
+								segment[i]->lowerValue = value;
+								if (segment[i]->scanType == segmentScanLess)
+            						segment[i]->scanType = segmentScanBetween;
+								else
+            						segment[i]->scanType = segmentScanGreater;
+							}
+						}
+						break;
+
+					case blr_starting:
+						// Check if validate for using index
+						if (!forward || !validateStarts(indexScratch, cmpNode, i))
+							return false;
+						segment[i]->matches.add(boolean);
+						if (!((segment[i]->scanType == segmentScanEqual) ||
+							(segment[i]->scanType == segmentScanEquivalent)))
+						{
+							segment[i]->lowerValue = segment[i]->upperValue = value;
+							segment[i]->scanType = segmentScanStarting;
+							segment[i]->excludeLower = false;
+							segment[i]->excludeUpper = false;
+						}
+						break;
+
+					default:
+						return false;
+				}
+			}
+			else if (missingNode)
+			{
+				segment[i]->matches.add(boolean);
+				if (!((segment[i]->scanType == segmentScanEqual) ||
+					(segment[i]->scanType == segmentScanEquivalent)))
+				{
 					segment[i]->lowerValue = segment[i]->upperValue = value;
-					segment[i]->scanType = segmentScanEqual;
+					segment[i]->scanType = segmentScanMissing;
 					segment[i]->excludeLower = false;
 					segment[i]->excludeUpper = false;
-					break;
-
-				case nod_gtr:
-				case nod_geq:
-					segment[i]->matches.add(boolean);
-					if (!((segment[i]->scanType == segmentScanEqual) ||
-						(segment[i]->scanType == segmentScanEquivalent) ||
-						(segment[i]->scanType == segmentScanBetween)))
-					{
-						if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
-							segment[i]->excludeLower = (boolean->nod_type == nod_gtr);
-						else
-							segment[i]->excludeUpper = (boolean->nod_type == nod_gtr);
-
-						if (forward)
-						{
-							segment[i]->lowerValue = value;
-							if (segment[i]->scanType == segmentScanLess)
-                        		segment[i]->scanType = segmentScanBetween;
-							else
-                        		segment[i]->scanType = segmentScanGreater;
-						}
-						else
-						{
-							segment[i]->upperValue = value;
-							if (segment[i]->scanType == segmentScanGreater)
-								segment[i]->scanType = segmentScanBetween;
-							else
-								segment[i]->scanType = segmentScanLess;
-						}
-					}
-					break;
-
-				case nod_lss:
-				case nod_leq:
-					segment[i]->matches.add(boolean);
-					if (!((segment[i]->scanType == segmentScanEqual) ||
-						(segment[i]->scanType == segmentScanEquivalent) ||
-						(segment[i]->scanType == segmentScanBetween)))
-					{
-						if (forward != isDesc)
-							segment[i]->excludeUpper = (boolean->nod_type == nod_lss);
-						else
-							segment[i]->excludeLower = (boolean->nod_type == nod_lss);
-
-						if (forward)
-						{
-							segment[i]->upperValue = value;
-							if (segment[i]->scanType == segmentScanGreater)
-								segment[i]->scanType = segmentScanBetween;
-							else
-								segment[i]->scanType = segmentScanLess;
-						}
-						else
-						{
-							segment[i]->lowerValue = value;
-							if (segment[i]->scanType == segmentScanLess)
-                        		segment[i]->scanType = segmentScanBetween;
-							else
-                        		segment[i]->scanType = segmentScanGreater;
-						}
-					}
-					break;
-
-
-				case nod_starts:
-					// Check if validate for using index
-					if (!forward || !validateStarts(indexScratch, boolean, i)) {
-						return false;
-					}
-					segment[i]->matches.add(boolean);
-					if (!((segment[i]->scanType == segmentScanEqual) ||
-						(segment[i]->scanType == segmentScanEquivalent)))
-					{
-						segment[i]->lowerValue = segment[i]->upperValue = value;
-						segment[i]->scanType = segmentScanStarting;
-						segment[i]->excludeLower = false;
-						segment[i]->excludeUpper = false;
-					}
-					break;
-
-				case nod_missing:
-					segment[i]->matches.add(boolean);
-					if (!((segment[i]->scanType == segmentScanEqual) ||
-						(segment[i]->scanType == segmentScanEquivalent)))
-					{
-						segment[i]->lowerValue = segment[i]->upperValue = value;
-						segment[i]->scanType = segmentScanMissing;
-						segment[i]->excludeLower = false;
-						segment[i]->excludeUpper = false;
-					}
-					break;
-
-
-				default:		// If no known boolean type is found return 0
-					return false;
+				}
 			}
+			else
+				return false;
 
 			// A match could be made
-			if (segment[i]->scope < scope) {
+			if (segment[i]->scope < scope)
 				segment[i]->scope = scope;
-			}
 
 			++count;
 
@@ -2488,7 +2577,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 		}
 	}
 
-	return (count >= 1);
+	return count >= 1;
 }
 
 InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
@@ -2505,34 +2594,30 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
  **************************************/
 	// If this isn't an equality, it isn't even interesting
 
-	if (boolean->nod_type != nod_eql)
-	{
+	ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+
+	if (!cmpNode || cmpNode->blrOp != blr_eql)
 		return NULL;
-	}
 
 	// Find the side of the equality that is potentially a dbkey.  If
 	// neither, make the obvious deduction
 
-	jrd_nod* dbkey = boolean->nod_arg[0];
-	jrd_nod* value = boolean->nod_arg[1];
+	jrd_nod* dbkey = cmpNode->arg1;
+	jrd_nod* value = cmpNode->arg2;
 
 	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
 	{
 		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
-		{
 			return NULL;
-		}
 
 		dbkey = value;
-		value = boolean->nod_arg[0];
+		value = cmpNode->arg1;
 	}
 
 	// If the value isn't computable, this has been a waste of time
 
 	if (!OPT_computable(csb, value, stream, false, false))
-	{
 		return NULL;
-	}
 
 	// If this is a concatenation, find an appropriate dbkey
 
@@ -2541,17 +2626,13 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
 	{
 		dbkey = findDbKey(dbkey, stream, &n);
 		if (!dbkey)
-		{
 			return NULL;
-		}
 	}
 
 	// Make sure we have the correct stream
 
 	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
-	{
 		return NULL;
-	}
 
 	// If this is a dbkey for the appropriate stream, it's invertable
 
@@ -2589,9 +2670,10 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
  **************************************/
 	DEV_BLKCHK(boolean, type_nod);
 
+	BinaryBoolNode* booleanNode = ExprNode::as<BinaryBoolNode>(boolean);
 
 	// Handle the "OR" case up front
-	if (boolean->nod_type == nod_or)
+	if (booleanNode && booleanNode->blrOp == blr_or)
 	{
 		InversionCandidateList inversions;
 		inversions.shrink(0);
@@ -2600,52 +2682,64 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 		IndexScratchList indexOrScratches;
 
 		// Copy information from caller
+
 		size_t i = 0;
+
 		for (; i < inputIndexScratches->getCount(); i++)
 		{
 			IndexScratch& scratch = (*inputIndexScratches)[i];
 			indexOrScratches.add(scratch);
 		}
+
 		// We use a scope variable to see on how
 		// deep we are in a nested or conjunction.
 		scope++;
 
 		InversionCandidate* invCandidate1 =
-			matchOnIndexes(&indexOrScratches, boolean->nod_arg[0], scope);
-		if (invCandidate1) {
+			matchOnIndexes(&indexOrScratches, booleanNode->arg1, scope);
+
+		if (invCandidate1)
 			inversions.add(invCandidate1);
-		}
+
+		BinaryBoolNode* childBoolNode = ExprNode::as<BinaryBoolNode>(
+			booleanNode->arg1.getObject());
+
 		// Get usable inversions based on indexOrScratches and scope
-		if (boolean->nod_arg[0]->nod_type != nod_or) {
+		if (!childBoolNode || childBoolNode->blrOp != blr_or)
 			getInversionCandidates(&inversions, &indexOrScratches, scope);
-		}
 
 		invCandidate1 = makeInversion(&inversions);
-		if (!invCandidate1) {
+		if (!invCandidate1)
 			return NULL;
-		}
 
 		// Clear list to remove previously matched conjunctions
 		indexOrScratches.clear();
+
 		// Copy information from caller
+
 		i = 0;
+
 		for (; i < inputIndexScratches->getCount(); i++)
 		{
 			IndexScratch& scratch = (*inputIndexScratches)[i];
 			indexOrScratches.add(scratch);
 		}
+
 		// Clear inversion list
 		inversions.clear();
 
-		InversionCandidate* invCandidate2 =
-			matchOnIndexes(&indexOrScratches, boolean->nod_arg[1], scope);
-		if (invCandidate2) {
+		InversionCandidate* invCandidate2 = matchOnIndexes(
+			&indexOrScratches, booleanNode->arg2, scope);
+
+		if (invCandidate2)
 			inversions.add(invCandidate2);
-		}
+
+		childBoolNode = ExprNode::as<BinaryBoolNode>(booleanNode->arg2.getObject());
+
 		// Make inversion based on indexOrScratches and scope
-		if (boolean->nod_arg[1]->nod_type != nod_or) {
+		if (!childBoolNode || childBoolNode->blrOp != blr_or)
 			getInversionCandidates(&inversions, &indexOrScratches, scope);
-		}
+
 		invCandidate2 = makeInversion(&inversions);
 
 		if (invCandidate2)
@@ -2666,38 +2760,42 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
 			{
 				SortedArray<jrd_nod*> matches;
-				for (size_t j = 0; j < invCandidate1->matches.getCount(); j++) {
+
+				for (size_t j = 0; j < invCandidate1->matches.getCount(); j++)
 					matches.add(invCandidate1->matches[j]);
-				}
+
 				for (size_t j = 0; j < invCandidate2->matches.getCount(); j++)
 				{
-					if (matches.exist(invCandidate2->matches[j])) {
+					if (matches.exist(invCandidate2->matches[j]))
 						invCandidate->matches.add(invCandidate2->matches[j]);
-					}
 				}
 			}
+
 			return invCandidate;
 		}
+
 		return NULL;
 	}
 
-	if (boolean->nod_type == nod_and)
+	if (booleanNode && booleanNode->blrOp == blr_and)
 	{
 		// Recursivly call this procedure for every boolean
 		// and finally get candidate inversions.
-		// Normally we come here from within a nod_or conjunction.
+		// Normally we come here from within a OR conjunction.
 		InversionCandidateList inversions;
 		inversions.shrink(0);
 
-		InversionCandidate* invCandidate =
-			matchOnIndexes(inputIndexScratches, boolean->nod_arg[0], scope);
-		if (invCandidate) {
+		InversionCandidate* invCandidate = matchOnIndexes(
+			inputIndexScratches, booleanNode->arg1, scope);
+
+		if (invCandidate)
 			inversions.add(invCandidate);
-		}
-		invCandidate = matchOnIndexes(inputIndexScratches, boolean->nod_arg[1], scope);
-		if (invCandidate) {
+
+		invCandidate = matchOnIndexes(inputIndexScratches, booleanNode->arg2, scope);
+
+		if (invCandidate)
 			inversions.add(invCandidate);
-		}
+
 		return makeInversion(&inversions);
 	}
 
@@ -2705,6 +2803,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 	for (size_t i = 0; i < inputIndexScratches->getCount(); i++)
 	{
 		IndexScratch& indexScratch = (*inputIndexScratches)[i];
+
 		// Try to match the boolean against a index.
 		if (!(indexScratch.idx->idx_runtime_flags & idx_plan_dont_use) ||
 			(indexScratch.idx->idx_runtime_flags & idx_plan_navigate))
@@ -2712,6 +2811,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			matchBoolean(&indexScratch, boolean, scope);
 		}
 	}
+
 	return NULL;
 }
 
@@ -2800,8 +2900,8 @@ void OptimizerRetrieval::printFinalCandidate(const InversionCandidate* candidate
 #endif
 
 
-bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
-										jrd_nod* boolean, USHORT segment) const
+bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeBoolNode* cmpNode,
+	USHORT segment) const
 {
 /**************************************
  *
@@ -2814,18 +2914,20 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
  *  using it against the given index segment.
  *
  **************************************/
-	if (boolean->nod_type != nod_starts) {
-		return false;
-	}
 
-	jrd_nod* field = boolean->nod_arg[0];
-	jrd_nod* value = boolean->nod_arg[1];
+	fb_assert(cmpNode && cmpNode->blrOp == blr_starting);
+	if (!cmpNode || cmpNode->blrOp != blr_starting)
+		return false;
+
+	jrd_nod* field = cmpNode->arg1;
+	jrd_nod* value = cmpNode->arg2;
 
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
 		// AB: What if the expression contains a number/float etc.. and
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
+
 		if (!(OPT_expression_equal(tdbb, csb, indexScratch->idx, field, stream) ||
 			(value && !OPT_computable(csb, value, stream, true, false))))
 		{
@@ -2836,11 +2938,10 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 				OPT_computable(csb, field, stream, true, false))
 			{
 				field = value;
-				value = boolean->nod_arg[0];
+				value = cmpNode->arg1;
 			}
-			else {
+			else
 				return false;
-			}
 		}
 	}
 	else
@@ -2856,7 +2957,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch,
 			if (value->nod_type != nod_field)
 				return NULL;
 			field = value;
-			value = boolean->nod_arg[0];
+			value = cmpNode->arg1;
 			*/
 		}
 

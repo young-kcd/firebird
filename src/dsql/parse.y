@@ -616,6 +616,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	SLONG int32Val;
 	FB_UINT64 uint64Val;
 	BaseNullable<FB_UINT64> nullableUint64Val;
+	UCHAR blrOp;
+	Jrd::ComparativeBoolNode::DsqlFlag cmpBoolFlag;
 	Jrd::dsql_nod* legacyNode;
 	Jrd::dsql_str* legacyStr;
 	Jrd::dsql_fld* legacyField;
@@ -624,6 +626,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ExternalClause* externalClause;
 	Firebird::Array<Jrd::ParameterClause>* parametersClause;
 	Jrd::ExprNode* exprNode;
+	Jrd::BoolExprNode* boolExprNode;
 	Jrd::StmtNode* stmtNode;
 	Jrd::DdlNode* ddlNode;
 	Jrd::CreateCollationNode* createCollationNode;
@@ -653,7 +656,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> array_spec array_type as_opt assignment assignments
 %type <legacyStr>  admin_opt
 
-%type <legacyNode> begin_string begin_trigger between_predicate bit_length_expression
+%type <legacyNode> begin_string begin_trigger bit_length_expression
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
 %type <legacyNode> blob_subtype_value_io blob_type breakleave
 
@@ -668,9 +671,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <boolVal>	   check_opt
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
-%type <legacyNode> column_singleton commit comparison_predicate complex_proc_statement
+%type <legacyNode> column_singleton commit complex_proc_statement
 %type <legacyNode> computed_by computed_clause conditional constant continue constraint_index_opt
-%type <legacyNode> constraint_name_opt containing_predicate correlation_name create
+%type <legacyNode> constraint_name_opt correlation_name create
 %type <legacyNode> create_clause create_or_alter create_user_clause cross_join current_role
 %type <legacyNode> current_user cursor_clause cursor_declaration_item cursor_def
 %type <legacyNode> cursor_statement
@@ -681,7 +684,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> decimal_keyword declare declare_clause
 %type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
 %type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
-%type <legacyNode> deterministic_opt distinct_clause distinct_predicate
+%type <legacyNode> deterministic_opt distinct_clause
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
 %type <legacyNode> drop_clause drop_user_clause
@@ -690,7 +693,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> end_default err errors event_argument_opt exception_clause
 %type <legacyNode> excp_hndl_statement excp_hndl_statements
 %type <legacyNode> exec_function exec_into exec_procedure exec_sql exec_stmt_inputs
-%type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list exists_predicate
+%type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list
 %type <legacyNode> ext_datasrc ext_privs ext_pwd ext_role ext_tran ext_user extra_indices_opt
 %type <legacyNode> extract_expression execute_privilege
 %type <legacyStr>  end_trigger entry_op
@@ -709,7 +712,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> having_clause
 
-%type <legacyNode> identity_clause in_predicate in_predicate_value
+%type <legacyNode> identity_clause in_predicate_value
 %type <legacyNode> index_definition index_list init_alter_db
 %type <legacyNode> ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt insert integer_keyword internal_info
@@ -721,7 +724,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> keyword_or_column
 
-%type <legacyNode> label_opt length_expression like_predicate limit_clause
+%type <legacyNode> label_opt length_expression limit_clause
 %type <legacyNode> local_declaration local_declaration_item local_declaration_list local_declarations
 %type <legacyNode> lock_clause lock_mode lock_type lock_wait
 %type <legacyStr>  lastname_opt
@@ -735,7 +738,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> national_character_type natural_join
 %type <legacyNode> next_value_expression non_aggregate_function non_array_type
 %type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list
-%type <legacyNode> not_named_param not_named_params_list null_constraint null_predicate
+%type <legacyNode> not_named_param not_named_params_list null_constraint
 %type <legacyNode> null_value nulls_clause nulls_placement numeric_type numeric_value_function
 %type <int32Val>   neg_short_integer nonneg_short_integer
 
@@ -747,13 +750,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> param_mechanism parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
-%type <legacyNode> post_event prec_scale predicate primary_constraint privilege
+%type <legacyNode> post_event prec_scale primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt
 %type <legacyNode> proc_statement proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
 
-%type <legacyNode> qualified_join quantified_predicate query_spec query_term
+%type <legacyNode> qualified_join query_spec query_term
 
 %type <legacyNode> recreate recreate_clause referential_action referential_constraint
 %type <legacyNode> referential_trigger_action release_savepoint replace_clause
@@ -769,10 +772,10 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> sec_shadow_files segment_clause_io segment_length_io select select_expr
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
-%type <legacyNode> similar_predicate simple_case simple_UDF_name
+%type <legacyNode> simple_case simple_UDF_name
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_proc_statement simple_table_name
-%type <legacyNode> simple_type simple_when_clause singleton_select singular_predicate skip_clause
-%type <legacyNode> snap_shot some starting_predicate statement stmt_start_column
+%type <legacyNode> simple_type simple_when_clause singleton_select skip_clause
+%type <legacyNode> snap_shot statement stmt_start_column
 %type <legacyNode> stmt_start_line string_length_opt string_value_function substring_function
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
 %type <legacyNode> symbol_collation_name symbol_column_name symbol_constraint_name symbol_cursor_name
@@ -795,7 +798,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
 %type <legacyNode> timestamp_part top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
-%type <legacyNode> trigger_action_predicate
 %type <legacyNode> trim_function
 %type <legacyNode> trim_specification
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
@@ -866,6 +868,16 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <aggNode> aggregate_function aggregate_window_function window_function
 
 %type <sysFuncCallNode> system_function_special_syntax
+
+// Predicates
+%type <boolExprNode> between_predicate comparison_predicate containing_predicate distinct_predicate
+%type <boolExprNode> exists_predicate in_predicate like_predicate null_predicate predicate
+%type <boolExprNode> quantified_predicate similar_predicate singular_predicate starting_predicate
+%type <boolExprNode> trigger_action_predicate
+%type <boolExprNode> search_condition_impl
+
+%type <blrOp> comparison_operator
+%type <cmpBoolFlag> quantified_flag
 
 %%
 
@@ -4855,163 +4867,210 @@ update_column_name : simple_column_name
 
 // boolean expressions
 
-search_condition : predicate
-		| search_condition OR search_condition
-			{ $$ = make_node (nod_or, 2, $1, $3); }
-		| search_condition AND search_condition
-			{ $$ = make_node (nod_and, 2, $1, $3); }
-		| NOT search_condition
-			{ $$ = make_node (nod_not, 1, $2); }
-		;
+search_condition
+	: search_condition_impl
+		{ $$ = makeClassNode($1); }
+	;
 
-predicate : comparison_predicate
-		| distinct_predicate
-		| between_predicate
-		| like_predicate
-		| in_predicate
-		| null_predicate
-		| quantified_predicate
-		| exists_predicate
-		| containing_predicate
-		| similar_predicate
-		| starting_predicate
-		| singular_predicate
-		| trigger_action_predicate
-		| '(' search_condition ')'
-			{ $$ = $2; }
-		;
+search_condition_impl
+	: predicate
+	| search_condition OR search_condition
+		{ $$ = FB_NEW(getPool()) BinaryBoolNode(getPool(), blr_or, $1, $3); }
+	| search_condition AND search_condition
+		{ $$ = FB_NEW(getPool()) BinaryBoolNode(getPool(), blr_and, $1, $3); }
+	| NOT search_condition
+		{ $$ = FB_NEW(getPool()) NotBoolNode(getPool(), $2); }
+	;
+
+predicate
+	: comparison_predicate
+	| distinct_predicate
+	| between_predicate
+	| like_predicate
+	| in_predicate
+	| null_predicate
+	| quantified_predicate
+	| exists_predicate
+	| containing_predicate
+	| similar_predicate
+	| starting_predicate
+	| singular_predicate
+	| trigger_action_predicate
+	| '(' search_condition_impl ')'
+		{ $$ = $2; }
+	;
 
 
 // comparisons
 
-comparison_predicate : value '=' value
-			{ $$ = make_node (nod_eql, 2, $1, $3); }
-		| value '<' value
-			{ $$ = make_node (nod_lss, 2, $1, $3); }
-		| value '>' value
-			{ $$ = make_node (nod_gtr, 2, $1, $3); }
-		| value GEQ value
-			{ $$ = make_node (nod_geq, 2, $1, $3); }
-		| value LEQ value
-			{ $$ = make_node (nod_leq, 2, $1, $3); }
-		| value NOT_GTR value
-			{ $$ = make_node (nod_leq, 2, $1, $3); }
-		| value NOT_LSS value
-			{ $$ = make_node (nod_geq, 2, $1, $3); }
-		| value NEQ value
-			{ $$ = make_node (nod_neq, 2, $1, $3); }
-		;
+comparison_predicate
+	: value comparison_operator value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3); }
+	;
+
+comparison_operator
+	: '='		{ $$ = blr_eql; }
+	| '<'		{ $$ = blr_lss; }
+	| '>'		{ $$ = blr_gtr; }
+	| GEQ		{ $$ = blr_geq; }
+	| LEQ		{ $$ = blr_leq; }
+	| NOT_GTR	{ $$ = blr_leq; }
+	| NOT_LSS	{ $$ = blr_geq; }
+	| NEQ		{ $$ = blr_neq; }
 
 // quantified comparisons
 
-quantified_predicate : value '=' ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ALL, 2, $1, $5); }
-	| value '<' ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_lss, NOD_ANSI_ALL, 2, $1, $5); }
-	| value '>' ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_gtr, NOD_ANSI_ALL, 2, $1, $5); }
-	| value GEQ ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ALL, 2, $1, $5); }
-	| value LEQ ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ALL, 2, $1, $5); }
-	| value NOT_GTR ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ALL, 2, $1, $5); }
-	| value NOT_LSS ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ALL, 2, $1, $5); }
-	| value NEQ ALL '(' column_select ')'
-		{ $$ = make_flag_node (nod_neq, NOD_ANSI_ALL, 2, $1, $5); }
-	| value '=' some '(' column_select ')'
-		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $5); }
-	| value '<' some '(' column_select ')'
-		{ $$ = make_flag_node (nod_lss, NOD_ANSI_ANY, 2, $1, $5); }
-	| value '>' some '(' column_select ')'
-		{ $$ = make_flag_node (nod_gtr, NOD_ANSI_ANY, 2, $1, $5); }
-	| value GEQ some '(' column_select ')'
-		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ANY, 2, $1, $5); }
-	| value LEQ some '(' column_select ')'
-		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ANY, 2, $1, $5); }
-	| value NOT_GTR some '(' column_select ')'
-		{ $$ = make_flag_node (nod_leq, NOD_ANSI_ANY, 2, $1, $5); }
-	| value NOT_LSS some '(' column_select ')'
-		{ $$ = make_flag_node (nod_geq, NOD_ANSI_ANY, 2, $1, $5); }
-	| value NEQ some '(' column_select ')'
-		{ $$ = make_flag_node (nod_neq, NOD_ANSI_ANY, 2, $1, $5); }
+quantified_predicate
+	: value comparison_operator quantified_flag '(' column_select ')'
+		{
+			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
+				getPool(), $2, $1, $5);
+			node->dsqlFlag = $3;
+			$$ = node;
+		}
 	;
 
-some	: SOME
-	| ANY
+quantified_flag
+	: ALL	{ $$ = ComparativeBoolNode::DFLAG_ANSI_ALL; }
+	| SOME	{ $$ = ComparativeBoolNode::DFLAG_ANSI_ANY; }
+	| ANY	{ $$ = ComparativeBoolNode::DFLAG_ANSI_ANY; }
 	;
 
 
 // other predicates
 
-distinct_predicate : value IS DISTINCT FROM value
-		{ $$ = make_node (nod_not, 1, make_node (nod_equiv, 2, $1, $5)); }
+distinct_predicate
+	: value IS DISTINCT FROM value
+		{
+			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
+				getPool(), blr_equiv, $1, $5);
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+		}
 	| value IS NOT DISTINCT FROM value
-		{ $$ = make_node (nod_equiv, 2, $1, $6); }
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_equiv, $1, $6); }
 	;
 
-between_predicate : value BETWEEN value AND value
-		{ $$ = make_node (nod_between, 3, $1, $3, $5); }
+between_predicate
+	: value BETWEEN value AND value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_between, $1, $3, $5); }
 	| value NOT BETWEEN value AND value
-		{ $$ = make_node (nod_not, 1, make_node (nod_between, 3, $1, $4, $6)); }
+		{
+			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
+				getPool(), blr_between, $1, $4, $6);
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+		}
 	;
 
-like_predicate	: value LIKE value
-		{ $$ = make_node (nod_like, 2, $1, $3); }
+like_predicate
+	: value LIKE value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_like, $1, $3); }
 	| value NOT LIKE value
-		{ $$ = make_node (nod_not, 1, make_node (nod_like, 2, $1, $4)); }
+		{
+			ComparativeBoolNode* likeNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_like, $1, $4);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(likeNode));
+		}
 	| value LIKE value ESCAPE value
-		{ $$ = make_node (nod_like, 3, $1, $3, $5); }
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_like, $1, $3, $5); }
 	| value NOT LIKE value ESCAPE value
-		{ $$ = make_node (nod_not, 1, make_node (nod_like, 3, $1, $4, $6)); }
+		{
+			ComparativeBoolNode* likeNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_like, $1, $4, $6);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(likeNode));
+		}
 	;
 
-in_predicate	: value KW_IN in_predicate_value
-		{ $$ = make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $3); }
+in_predicate
+	: value KW_IN in_predicate_value
+		{
+			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
+				getPool(), blr_eql, $1, $3);
+			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
+			$$ = node;
+		}
 	| value NOT KW_IN in_predicate_value
-		{ $$ = make_node (nod_not, 1, make_flag_node (nod_eql, NOD_ANSI_ANY, 2, $1, $4)); }
+		{
+			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
+				getPool(), blr_eql, $1, $4);
+			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+		}
 	;
 
-containing_predicate	: value CONTAINING value
-		{ $$ = make_node (nod_containing, 2, $1, $3); }
+containing_predicate
+	: value CONTAINING value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_containing, $1, $3); }
 	| value NOT CONTAINING value
-		{ $$ = make_node (nod_not, 1, make_node (nod_containing, 2, $1, $4)); }
+		{
+			ComparativeBoolNode* containingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_containing, $1, $4);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(containingNode));
+		}
 	;
 
 similar_predicate
 	: value SIMILAR TO value
-		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, NULL); }
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_similar, $1, $4); }
 	| value NOT SIMILAR TO value
-		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, NULL)); }
+		{
+			ComparativeBoolNode* similarNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_similar, $1, $5);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(similarNode));
+		}
 	| value SIMILAR TO value ESCAPE value
-		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, $6); }
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_similar, $1, $4, $6); }
 	| value NOT SIMILAR TO value ESCAPE value
-		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, $7)); }
+		{
+			ComparativeBoolNode* similarNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_similar, $1, $5, $7);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(similarNode));
+		}
 	;
 
-starting_predicate	: value STARTING value
-		{ $$ = make_node (nod_starting, 2, $1, $3); }
+starting_predicate
+	: value STARTING value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_starting, $1, $3); }
 	| value NOT STARTING value
-		{ $$ = make_node (nod_not, 1, make_node (nod_starting, 2, $1, $4)); }
+		{
+			ComparativeBoolNode* startingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_starting, $1, $4);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(startingNode));
+		}
 	| value STARTING WITH value
-		{ $$ = make_node (nod_starting, 2, $1, $4); }
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_starting, $1, $4); }
 	| value NOT STARTING WITH value
-		{ $$ = make_node (nod_not, 1, make_node (nod_starting, 2, $1, $5)); }
+		{
+			ComparativeBoolNode* startingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				blr_starting, $1, $5);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(startingNode));
+		}
 	;
 
-exists_predicate : EXISTS '(' select_expr ')'
-		{ $$ = make_node (nod_exists, 1, $3); }
+exists_predicate
+	: EXISTS '(' select_expr ')'
+		{ $$ = FB_NEW(getPool()) RseBoolNode(getPool(), blr_any, $3); }
 	;
 
-singular_predicate : SINGULAR '(' select_expr ')'
-		{ $$ = make_node (nod_singular, 1, $3); }
+singular_predicate
+	: SINGULAR '(' select_expr ')'
+		{ $$ = FB_NEW(getPool()) RseBoolNode(getPool(), blr_unique, $3); }
 	;
 
-null_predicate	: value IS KW_NULL
-		{ $$ = make_node (nod_missing, 1, $1); }
+null_predicate
+	: value IS KW_NULL
+		{ $$ = FB_NEW(getPool()) MissingBoolNode(getPool(), $1); }
 	| value IS NOT KW_NULL
-		{ $$ = make_node (nod_not, 1, make_node (nod_missing, 1, $1)); }
+		{
+			$$ = FB_NEW(getPool()) NotBoolNode(
+				getPool(), makeClassNode(FB_NEW(getPool()) MissingBoolNode(getPool(), $1)));
+		}
 	;
 
 trigger_action_predicate
@@ -5019,19 +5078,22 @@ trigger_action_predicate
 		{
 			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(1));
+			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
+				makeClassNode(infoNode), MAKE_const_slong(1));
 		}
 	| UPDATING
 		{
 			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(2));
+			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
+				makeClassNode(infoNode), MAKE_const_slong(2));
 		}
 	| DELETING
 		{
 			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = make_node(nod_eql, 2, makeClassNode(infoNode), MAKE_const_slong(3));
+			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
+				makeClassNode(infoNode), MAKE_const_slong(3));
 		}
 	;
 
@@ -5746,21 +5808,24 @@ case_expression	: case_abbreviation
 		| case_specification
 		;
 
-case_abbreviation	: NULLIF '(' value ',' value ')'
-			{
-				$$ = make_node (nod_searched_case, 2,
-					make_node (nod_list, 2, make_node (nod_eql, 2, $3, $5),
-					make_node (nod_null, 0, NULL)), $3);
-			}
-		| IIF '(' search_condition ',' value ',' value ')'
-			{ $$ = make_node (nod_searched_case, 2, make_node (nod_list, 2, $3, $5), $7); }
-		| COALESCE '(' value ',' value_list ')'
-			{ $$ = make_node (nod_coalesce, 2, $3, $5); }
-		| DECODE '(' value ',' decode_pairs ')'
-			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), make_node(nod_null, 0, NULL)); }
-		| DECODE '(' value ',' decode_pairs ',' value ')'
-			{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
-		;
+case_abbreviation
+	: NULLIF '(' value ',' value ')'
+		{
+			$$ = make_node(nod_searched_case, 2,
+					make_node(nod_list, 2,
+						makeClassNode(FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql, $3, $5)),
+						make_node(nod_null, 0, NULL)),
+					$3);
+		}
+	| IIF '(' search_condition ',' value ',' value ')'
+		{ $$ = make_node (nod_searched_case, 2, make_node (nod_list, 2, $3, $5), $7); }
+	| COALESCE '(' value ',' value_list ')'
+		{ $$ = make_node (nod_coalesce, 2, $3, $5); }
+	| DECODE '(' value ',' decode_pairs ')'
+		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), make_node(nod_null, 0, NULL)); }
+	| DECODE '(' value ',' decode_pairs ',' value ')'
+		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
+	;
 
 case_specification	: simple_case
 		| searched_case

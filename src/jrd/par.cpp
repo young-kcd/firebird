@@ -67,6 +67,8 @@
 #include "../jrd/BlrReader.h"
 #include "../jrd/Function.h"
 #include "../jrd/Attachment.h"
+#include "../dsql/BoolNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
 
@@ -1130,15 +1132,20 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	// Fake boolean
 
-	jrd_nod* booleanNode = rse->rse_boolean = PAR_make_node(tdbb, 2);
-	booleanNode->nod_type = nod_eql;
-	booleanNode->nod_flags = nod_comparison;
-	booleanNode->nod_arg[1] = PAR_parse_node(tdbb, csb, VALUE);
-	booleanNode->nod_arg[0] = PAR_make_node(tdbb, 1);
-	booleanNode = booleanNode->nod_arg[0];
-	booleanNode->nod_type = nod_dbkey;
-	booleanNode->nod_count = 0;
-	booleanNode->nod_arg[0] = (jrd_nod*)(IPTR) relationSource->getStream();
+	ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+		csb->csb_pool, blr_eql);
+
+	rse->rse_boolean = PAR_make_node(tdbb, 1);
+	rse->rse_boolean->nod_type = nod_class_exprnode_jrd;
+	rse->rse_boolean->nod_flags = nod_comparison;
+	rse->rse_boolean->nod_arg[0] = reinterpret_cast<jrd_nod*>(booleanNode);
+
+	booleanNode->arg2 = PAR_parse_node(tdbb, csb, VALUE);
+
+	jrd_nod* dbKeyNode = booleanNode->arg1 = PAR_make_node(tdbb, 1);
+	dbKeyNode->nod_type = nod_dbkey;
+	dbKeyNode->nod_count = 0;
+	dbKeyNode->nod_arg[0] = (jrd_nod*)(IPTR) relationSource->getStream();
 
 	// Pick up statement
 
@@ -2163,20 +2170,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	switch (blr_operator)
 	{
-	case blr_any:
-	case blr_unique:
-	case blr_ansi_any:
-	case blr_ansi_all:
-	case blr_exists:
-		node->nod_arg[e_any_rse] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-		// Boring operators -- no special handling req'd
-
 	case blr_value_if:
 	case blr_substring:
-	case blr_matching2:
-	case blr_ansi_like:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
@@ -2201,40 +2196,17 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 	}
 
-	case blr_and:
-	case blr_or:
-
 	case blr_prot_mask:
-	case blr_containing:
-	case blr_matching:
-	case blr_like:
-	case blr_starting:
-
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		// Fall into ...
 
 	case blr_handler:
 	case blr_loop:
-
 	case blr_lock_state:
 	case blr_upcase:
 	case blr_lowcase:
-	case blr_not:
-	case blr_missing:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-	case blr_similar:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		if (csb->csb_blr_reader.getByte() != 0)
-			*arg++ = PAR_parse_node(tdbb, csb, sub_type);	// escape
-		else	// without escape
-		{
-			*arg++ = NULL;
-			--node->nod_count;
-		}
 		break;
 
 	case blr_exec_sql:
@@ -2423,23 +2395,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[e_sto_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		if (blr_operator == blr_store2)
 			node->nod_arg[e_sto_statement2] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-		// Comparison operators
-
-	case blr_between:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-
-	case blr_equiv:
-	case blr_eql:
-	case blr_neq:
-	case blr_geq:
-	case blr_gtr:
-	case blr_leq:
-	case blr_lss:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_flags = nod_comparison;
 		break;
 
 	case blr_erase:

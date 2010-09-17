@@ -86,6 +86,7 @@
 #include "../jrd/recsrc/Cursor.h"
 
 #include "../jrd/Optimizer.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
@@ -173,32 +174,6 @@ bool PossibleUnknownFinder::visit(jrd_nod* node)
 		case nod_dbkey:
 			return false;
 
-		case nod_or:
-		case nod_and:
-
-		case nod_like:
-		case nod_between:
-		case nod_contains:
-		case nod_similar:
-		case nod_starts:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-		{
-			jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			for (jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (visit(*ptr))
-					return true;
-			}
-
-			return false;
-		}
-
 		default:
 			return visitChildren(node);
 	}
@@ -227,13 +202,6 @@ bool StreamFinder::visit(jrd_nod* node)
 		case nod_rec_version:
 		case nod_dbkey:
 			return (USHORT)(IPTR) node->nod_arg[0] == stream;
-
-		case nod_any:
-		case nod_unique:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_exists:
-			return visit(node->nod_arg[e_any_rse]);
 
 		case nod_class_recsrcnode_jrd:
 		{
@@ -291,23 +259,7 @@ bool StreamFinder::visit(jrd_nod* node)
 			return false;
 		}
 
-		case nod_like:
-		case nod_between:
-		case nod_contains:
-		case nod_similar:
-		case nod_starts:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-
-		case nod_sleuth:
-		case nod_missing:
 		case nod_value_if:
-		case nod_matches:
-		case nod_equiv:
 		{
 			jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
@@ -360,14 +312,6 @@ bool StreamsCollector::visit(jrd_nod* node)
 			break;
 		}
 
-		case nod_any:
-		case nod_unique:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_exists:
-			visit(node->nod_arg[e_any_rse]);
-			break;
-
 		case nod_class_recsrcnode_jrd:
 		{
 			RecordSourceNode* recSource = reinterpret_cast<RecordSourceNode*>(node->nod_arg[0]);
@@ -402,23 +346,7 @@ bool StreamsCollector::visit(jrd_nod* node)
 			visit(node->nod_arg[e_stat_value]);
 			break;
 
-		case nod_like:
-		case nod_between:
-		case nod_contains:
-		case nod_similar:
-		case nod_starts:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
-
-		case nod_sleuth:
-		case nod_missing:
 		case nod_value_if:
-		case nod_matches:
-		case nod_equiv:
 		{
 			jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
@@ -647,7 +575,7 @@ static bool augment_stack(jrd_nod*, NodeStack&);
 static void check_indices(const CompilerScratch::csb_repeat*);
 static void check_sorts(RseNode*);
 static void class_mask(USHORT, jrd_nod**, ULONG *);
-static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
+static jrd_nod* compose(thread_db*, jrd_nod**, jrd_nod*);
 static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
@@ -662,7 +590,7 @@ static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
 static jrd_nod* make_inference_node(CompilerScratch*, jrd_nod*, jrd_nod*, jrd_nod*);
 static bool map_equal(const jrd_nod*, const jrd_nod*, const MapNode*);
 static bool node_equality(const jrd_nod*, const jrd_nod*);
-static jrd_nod* optimize_like(thread_db*, CompilerScratch*, jrd_nod*);
+static jrd_nod* optimize_like(thread_db*, CompilerScratch*, ComparativeBoolNode*);
 static USHORT river_count(USHORT, jrd_nod**);
 static bool search_stack(const jrd_nod*, const NodeStack&);
 static void set_direction(SortNode*, SortNode*);
@@ -1623,7 +1551,7 @@ static void class_mask(USHORT count, jrd_nod** eq_class, ULONG* mask)
 }
 
 
-static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
+static jrd_nod* compose(thread_db* tdbb, jrd_nod** node1, jrd_nod* node2)
 {
 /**************************************
  *
@@ -1639,15 +1567,23 @@ static jrd_nod* compose(jrd_nod** node1, jrd_nod* node2, nod_t node_type)
 	DEV_BLKCHK(*node1, type_nod);
 	DEV_BLKCHK(node2, type_nod);
 
-	if (!node2) {
+	if (!node2)
 		return *node1;
-	}
 
-	if (!*node1) {
+	if (!*node1)
 		return (*node1 = node2);
-	}
 
-	return *node1 = OPT_make_binary_node(node_type, *node1, node2, false);
+	BinaryBoolNode* booleanNode = FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(
+		*tdbb->getDefaultPool(), blr_and);
+	booleanNode->arg1 = *node1;
+	booleanNode->arg2 = node2;
+
+	*node1 = PAR_make_node(tdbb, 1);
+	(*node1)->nod_type = nod_class_exprnode_jrd;
+	(*node1)->nod_count = 0;
+	(*node1)->nod_arg[0] = reinterpret_cast<jrd_nod*>(booleanNode);
+
+	return *node1;
 }
 
 
@@ -1689,30 +1625,53 @@ static SLONG decompose(thread_db* tdbb, jrd_nod* boolean_node, NodeStack& stack,
 	DEV_BLKCHK(boolean_node, type_nod);
 	DEV_BLKCHK(csb, type_csb);
 
-	if (boolean_node->nod_type == nod_and)
+	BinaryBoolNode* booleanNode = ExprNode::as<BinaryBoolNode>(boolean_node);
+	ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean_node);
+
+	if (booleanNode && booleanNode->blrOp == blr_and)
 	{
-		SLONG count = decompose(tdbb, boolean_node->nod_arg[0], stack, csb);
-		count += decompose(tdbb, boolean_node->nod_arg[1], stack, csb);
+		SLONG count = decompose(tdbb, booleanNode->arg1, stack, csb);
+		count += decompose(tdbb, booleanNode->arg2, stack, csb);
 		return count;
 	}
 
 	// turn a between into (a greater than or equal) AND (a less than  or equal)
 
-	if (boolean_node->nod_type == nod_between)
+	if (cmpNode && cmpNode->blrOp == blr_between)
 	{
-		jrd_nod* arg = boolean_node->nod_arg[0];
-		if (check_for_nod_from(arg))
+		if (check_for_nod_from(cmpNode->arg1))
 		{
 			// Without this ERR_punt(), server was crashing with sub queries
 			// under "between" predicate, Bug No. 73766
 			ERR_post(Arg::Gds(isc_optimizer_between_err));
 			// Msg 493: Unsupported field type specified in BETWEEN predicate
 		}
-		jrd_nod* node = OPT_make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
+
+		ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+			csb->csb_pool, blr_geq);
+		newCmpNode->arg1 = cmpNode->arg1;
+		newCmpNode->arg2 = cmpNode->arg2;
+
+		jrd_nod* node = PAR_make_node(tdbb, 1);
+		node->nod_type = nod_class_exprnode_jrd;
+		node->nod_count = 0;
+		node->nod_flags = nod_comparison;
+		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(newCmpNode);
+		newCmpNode->setNode(node);
 		stack.push(node);
-		arg = CMP_clone_node_opt(tdbb, csb, arg);
-		node = OPT_make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
+
+		newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_leq);
+		newCmpNode->arg1 = CMP_clone_node_opt(tdbb, csb, cmpNode->arg1);
+		newCmpNode->arg2 = cmpNode->arg3;
+
+		node = PAR_make_node(tdbb, 1);
+		node->nod_type = nod_class_exprnode_jrd;
+		node->nod_count = 0;
+		node->nod_flags = nod_comparison;
+		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(newCmpNode);
+		newCmpNode->setNode(node);
 		stack.push(node);
+
 		return 2;
 	}
 
@@ -1720,34 +1679,66 @@ static SLONG decompose(thread_db* tdbb, jrd_nod* boolean_node, NodeStack& stack,
 	// with anything other than a pattern-matching character
 
 	jrd_nod* arg;
-	if (boolean_node->nod_type == nod_like && (arg = optimize_like(tdbb, csb, boolean_node)))
+	if (cmpNode && cmpNode->blrOp == blr_like && (arg = optimize_like(tdbb, csb, cmpNode)))
 	{
-		stack.push(OPT_make_binary_node(nod_starts, boolean_node->nod_arg[0], arg, false));
+		ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+			csb->csb_pool, blr_starting);
+		newCmpNode->arg1 = cmpNode->arg1;
+		newCmpNode->arg2 = arg;
+
+		jrd_nod* node = PAR_make_node(tdbb, 1);
+		node->nod_type = nod_class_exprnode_jrd;
+		node->nod_count = 0;
+		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(newCmpNode);
+		newCmpNode->setNode(node);
+
+		stack.push(node);
 		stack.push(boolean_node);
+
 		return 2;
 	}
 
-	if (boolean_node->nod_type == nod_or)
+	if (booleanNode && booleanNode->blrOp == blr_or)
 	{
 		NodeStack or_stack;
-		if (decompose(tdbb, boolean_node->nod_arg[0], or_stack, csb) >= 2)
+
+		if (decompose(tdbb, booleanNode->arg1, or_stack, csb) >= 2)
 		{
-			boolean_node->nod_arg[0] = or_stack.pop();
+			booleanNode->arg1 = or_stack.pop();
+
 			while (or_stack.hasData())
 			{
-				boolean_node->nod_arg[0] =
-					OPT_make_binary_node(nod_and, or_stack.pop(), boolean_node->nod_arg[0], true);
+				BinaryBoolNode* newBoolNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
+					csb->csb_pool, blr_and);
+				newBoolNode->arg1 = or_stack.pop();
+				newBoolNode->arg2 = booleanNode->arg1;
+
+				booleanNode->arg1 = PAR_make_node(tdbb, 1);
+				booleanNode->arg1->nod_type = nod_class_exprnode_jrd;
+				booleanNode->arg1->nod_count = 0;
+				booleanNode->arg1->nod_flags = nod_comparison;
+				booleanNode->arg1->nod_arg[0] = reinterpret_cast<jrd_nod*>(newBoolNode);
 			}
 		}
 
 		or_stack.clear();
-		if (decompose(tdbb, boolean_node->nod_arg[1], or_stack, csb) >= 2)
+
+		if (decompose(tdbb, booleanNode->arg2, or_stack, csb) >= 2)
 		{
-			boolean_node->nod_arg[1] = or_stack.pop();
+			booleanNode->arg2 = or_stack.pop();
+
 			while (or_stack.hasData())
 			{
-				boolean_node->nod_arg[1] =
-					OPT_make_binary_node(nod_and, or_stack.pop(), boolean_node->nod_arg[1], true);
+				BinaryBoolNode* newBoolNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
+					csb->csb_pool, blr_and);
+				newBoolNode->arg1 = or_stack.pop();
+				newBoolNode->arg2 = booleanNode->arg2;
+
+				booleanNode->arg2 = PAR_make_node(tdbb, 1);
+				booleanNode->arg2->nod_type = nod_class_exprnode_jrd;
+				booleanNode->arg2->nod_count = 0;
+				booleanNode->arg2->nod_flags = nod_comparison;
+				booleanNode->arg2->nod_arg[0] = reinterpret_cast<jrd_nod*>(newBoolNode);
 			}
 		}
 	}
@@ -1777,8 +1768,10 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
  *		operation '$'.
  *
  **************************************/
-	Firebird::ObjectsArray<NodeStack> classes;
-	Firebird::ObjectsArray<NodeStack>::iterator eq_class;
+	thread_db* tdbb = JRD_get_thread_data();
+
+	ObjectsArray<NodeStack> classes;
+	ObjectsArray<NodeStack>::iterator eq_class;
 
 	DEV_BLKCHK(csb, type_csb);
 
@@ -1789,14 +1782,20 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 		jrd_nod* boolean = stack1.object();
 		if (boolean->nod_flags & nod_deoptimize)
 			continue;
-		if (boolean->nod_type != nod_eql)
+
+		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+
+		if (!cmpNode || cmpNode->blrOp != blr_eql)
 			continue;
-		jrd_nod* node1 = boolean->nod_arg[0];
+
+		jrd_nod* node1 = cmpNode->arg1;
 		if (node1->nod_type != nod_field)
 			continue;
-		jrd_nod* node2 = boolean->nod_arg[1];
+
+		jrd_nod* node2 = cmpNode->arg2;
 		if (node2->nod_type != nod_field)
 			continue;
+
 		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class)
 		{
 			if (search_stack(node1, *eq_class))
@@ -1810,6 +1809,7 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 				break;
 			}
 		}
+
 		if (eq_class == classes.end())
 		{
 			NodeStack& s = classes.add();
@@ -1834,9 +1834,8 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 			{
 				if (search_stack(stack2.object(), *eq_class2))
 				{
-					while (eq_class2->hasData()) {
+					while (eq_class2->hasData())
 						augment_stack(eq_class2->pop(), *eq_class);
-					}
 				}
 			}
 		}
@@ -1854,17 +1853,22 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 			{
 				for (NodeStack::iterator inner(outer); (++inner).hasData(); )
 				{
-					jrd_nod* boolean =
-						OPT_make_binary_node(nod_eql, outer.object(), inner.object(), true);
+					ComparativeBoolNode* cmpNode =
+						FB_NEW(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_eql);
+					cmpNode->arg1 = outer.object();
+					cmpNode->arg2 = inner.object();
+
+					jrd_nod* boolean = PAR_make_node(tdbb, 1);
+					boolean->nod_type = nod_class_exprnode_jrd;
+					boolean->nod_count = 0;
+					boolean->nod_flags = nod_comparison;
+					boolean->nod_arg[0] = reinterpret_cast<jrd_nod*>(cmpNode);
+					cmpNode->setNode(boolean);
 
 					if ((base_count + count < MAX_CONJUNCTS) && augment_stack(boolean, org_stack))
-					{
 						count++;
-					}
 					else
-					{
 						delete boolean;
-					}
 				}
 			}
 		}
@@ -1875,37 +1879,42 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 	for (NodeStack::iterator stack3(org_stack); stack3.hasData(); ++stack3)
 	{
 		jrd_nod* boolean = stack3.object();
-		if (boolean->nod_type != nod_eql &&
-			boolean->nod_type != nod_gtr &&
-			boolean->nod_type != nod_geq &&
-			boolean->nod_type != nod_leq &&
-			boolean->nod_type != nod_lss &&
-			boolean->nod_type != nod_matches &&
-			boolean->nod_type != nod_contains &&
-			boolean->nod_type != nod_like &&
-			boolean->nod_type != nod_similar)
+		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+		jrd_nod* node1;
+		jrd_nod* node2;
+
+		if (cmpNode &&
+			(cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_geq ||
+			 cmpNode->blrOp == blr_leq || cmpNode->blrOp == blr_lss ||
+			 cmpNode->blrOp == blr_matching || cmpNode->blrOp == blr_containing ||
+			 cmpNode->blrOp == blr_like || cmpNode->blrOp == blr_similar))
 		{
-			continue;
+			node1 = cmpNode->arg1;
+			node2 = cmpNode->arg2;
 		}
-		const jrd_nod* node1 = boolean->nod_arg[0];
-		const jrd_nod* node2 = boolean->nod_arg[1];
+		else
+			continue;
+
 		bool reverse = false;
+
 		if (node1->nod_type != nod_field)
 		{
-			const jrd_nod* swap_node = node1;
+			jrd_nod* swap_node = node1;
 			node1 = node2;
 			node2 = swap_node;
 			reverse = true;
 		}
-		if (node1->nod_type != nod_field) {
+
+		if (node1->nod_type != nod_field)
 			continue;
-		}
+
 		if (node2->nod_type != nod_literal &&
 			node2->nod_type != nod_variable &&
 			node2->nod_type != nod_argument)
 		{
 			continue;
 		}
+
 		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class)
 		{
 			if (search_stack(node1, *eq_class))
@@ -1916,25 +1925,26 @@ static USHORT distribute_equalities(NodeStack& org_stack, CompilerScratch* csb, 
 					{
 						jrd_nod* arg1;
 						jrd_nod* arg2;
+
 						if (reverse)
 						{
-							arg1 = boolean->nod_arg[0];
+							arg1 = cmpNode->arg1;
 							arg2 = temp.object();
 						}
 						else
 						{
 							arg1 = temp.object();
-							arg2 = boolean->nod_arg[1];
+							arg2 = cmpNode->arg2;
 						}
 
 						// From the conjuncts X(A,B) and A=C, infer the conjunct X(C,B)
 						jrd_nod* new_node = make_inference_node(csb, boolean, arg1, arg2);
+
 						if ((base_count + count < MAX_CONJUNCTS) && augment_stack(new_node, org_stack))
-						{
 							count++;
-						}
 					}
 				}
+
 				break;
 			}
 		}
@@ -2493,7 +2503,7 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 		jrd_nod* node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used))
 		{
-			compose(&boolean, node, nod_and);
+			compose(tdbb, &boolean, node);
 			tail->opt_conjunct_flags |= opt_conjunct_used;
 		}
 	}
@@ -2598,7 +2608,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 				OPT_computable(csb, node, -1, false, false))
 			{
-				compose(return_boolean, node, nod_and);
+				compose(tdbb, return_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 			}
 		}
@@ -2627,7 +2637,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			if ((inversion && StreamFinder::find(csb, stream, node)) ||
 				(!inversion && OPT_computable(csb, node, stream, false, true)))
 			{
-				compose(&boolean, node, nod_and);
+				compose(tdbb, &boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 
 				if (!outer_flag && !(tail->opt_conjunct_flags & opt_conjunct_matched))
@@ -3022,11 +3032,9 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	const USHORT cnt = (USHORT) org_rivers.getCount();
 
 	if (cnt < 2)
-	{
 		return false;
-	}
 
-	Firebird::HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch;
+	HalfStaticArray<jrd_nod*, OPT_STATIC_ITEMS> scratch;
 	scratch.grow(opt->opt_base_conjuncts * cnt);
 	jrd_nod** classes = scratch.begin();
 
@@ -3036,31 +3044,27 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	jrd_nod** last_class = classes;
 	OptimizerBlk::opt_conjunct* tail = opt->opt_conjuncts.begin();
 	const OptimizerBlk::opt_conjunct* const end = tail + opt->opt_base_conjuncts;
+
 	for (; tail < end; tail++)
 	{
 		if (tail->opt_conjunct_flags & opt_conjunct_used)
-		{
 			continue;
-		}
 
 		jrd_nod* const node = tail->opt_conjunct_node;
+		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(node);
 
-		if (node->nod_type != nod_eql && node->nod_type != nod_equiv)
-		{
+		if (!cmpNode || (cmpNode->blrOp != blr_eql && cmpNode->blrOp != blr_equiv))
 			continue;
-		}
 
-		jrd_nod* node1 = node->nod_arg[0];
-		jrd_nod* node2 = node->nod_arg[1];
+		jrd_nod* node1 = cmpNode->arg1;
+		jrd_nod* node2 = cmpNode->arg2;
 
 		dsc desc1, desc2;
 		CMP_get_desc(tdbb, csb, node1, &desc1);
 		CMP_get_desc(tdbb, csb, node2, &desc2);
 
 		if (!DSC_EQUIV(&desc1, &desc2, true) || desc1.isBlob() || desc2.isBlob())
-		{
 			continue;
-		}
 
 		USHORT number1 = 0;
 		for (River** iter1 = org_rivers.begin(); iter1 < org_rivers.end(); iter1++, number1++)
@@ -3070,9 +3074,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			if (!river1->isReferenced(node1))
 			{
 				if (!river1->isReferenced(node2))
-				{
 					continue;
-				}
 
 				jrd_nod* const temp = node1;
 				node1 = node2;
@@ -3080,6 +3082,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			}
 
 			USHORT number2 = number1 + 1;
+
 			for (River** iter2 = iter1 + 1; iter2 < org_rivers.end(); iter2++, number2++)
 			{
 				River* const river2 = *iter2;
@@ -3099,9 +3102,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 					eq_class[number2] = node2;
 
 					if (eq_class == last_class)
-					{
 						last_class += cnt;
-					}
 				}
 			}
 		}
@@ -3113,6 +3114,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 	USHORT river_cnt = 0;
 	HalfStaticArray<jrd_nod**, OPT_STATIC_ITEMS> selected_classes(cnt);
+
 	for (eq_class = classes; eq_class < last_class; eq_class += cnt)
 	{
 		USHORT i = river_count(cnt, eq_class);
@@ -3131,22 +3133,16 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			for (i = 0; i < OPT_STREAM_BITS; i++)
 			{
 				if ((selected_rivers[i] & selected_rivers2[i]) != selected_rivers[i])
-				{
 					break;
-				}
 			}
 
 			if (i == OPT_STREAM_BITS)
-			{
 				selected_classes.add(eq_class);
-			}
 		}
 	}
 
 	if (!river_cnt)
-	{
 		return false;
-	}
 
 	// AB: Inactivate currently all streams from every river, because we
 	// need to know which nodes are computable between the rivers used
@@ -3173,6 +3169,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	RiverList rivers_to_merge;
 	USHORT lowest_river_position = MAX_USHORT;
 	USHORT number = 0;
+
 	for (River** iter = org_rivers.begin(); iter < org_rivers.end(); number++)
 	{
 		River* const river = *iter;
@@ -3184,9 +3181,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		}
 
 		if (number < lowest_river_position)
-		{
 			lowest_river_position = number;
-		}
 
 		rivers_to_merge.add(river);
 		org_rivers.remove(iter);
@@ -3198,6 +3193,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		river->activate(csb);
 
 		jrd_nod* river_boolean = NULL;
+
 		for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
 		{
 			jrd_nod* const node = tail->opt_conjunct_node;
@@ -3205,7 +3201,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 				OPT_computable(csb, node, -1, false, false))
 			{
-				compose(&river_boolean, node, nod_and);
+				compose(tdbb, &river_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
 			}
 		}
@@ -3292,6 +3288,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	// Pick up any boolean that may apply
 
 	jrd_nod* boolean = NULL;
+
 	for (tail = opt->opt_conjuncts.begin(); tail < end; tail++)
 	{
 		jrd_nod* const node = tail->opt_conjunct_node;
@@ -3299,25 +3296,20 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
 			OPT_computable(csb, node, -1, false, false))
 		{
-			compose(&boolean, node, nod_and);
+			compose(tdbb, &boolean, node);
 			tail->opt_conjunct_flags |= opt_conjunct_used;
 		}
 	}
 
 	if (boolean)
-	{
 		rsb = FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean);
-	}
 
 	// Reset all the streams to their original state
 
 	for (stream_nr = 0, fv = flag_vector; stream_nr < csb->csb_n_stream; stream_nr++)
-	{
 		csb->csb_rpt[stream_nr].csb_flags |= *fv++;
-	}
 
-	River* const merged_river =
-		FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
+	River* const merged_river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
 
 	org_rivers.insert(lowest_river_position, merged_river);
 
@@ -3368,10 +3360,12 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	DEV_BLKCHK(boolean, type_nod);
 	DEV_BLKCHK(arg1, type_nod);
 	DEV_BLKCHK(arg2, type_nod);
-	fb_assert(boolean->nod_count >= 2);	// must be a conjunction boolean
+
+	ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
+	fb_assert(cmpNode);	// see our caller
 
 	// Clone the input predicate
-	jrd_nod* node = PAR_make_node(tdbb, boolean->nod_count);
+	jrd_nod* node = PAR_make_node(tdbb, 1);
 	node->nod_type = boolean->nod_type;
 
 	// We may safely copy invariantness flag because
@@ -3381,14 +3375,6 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	// If provisions above change the line below will have to be modified
 	node->nod_flags = boolean->nod_flags;
 
-	// But substitute new values for some of the predicate arguments
-	node->nod_arg[0] = CMP_clone_node_opt(tdbb, csb, arg1);
-	node->nod_arg[1] = CMP_clone_node_opt(tdbb, csb, arg2);
-
-	// Arguments after the first two are just cloned (eg: LIKE ESCAPE clause)
-	for (USHORT n = 2; n < boolean->nod_count; n++)
-		node->nod_arg[n] = CMP_clone_node_opt(tdbb, csb, boolean->nod_arg[n]);
-
 	// Share impure area for cached invariant value used to hold pre-compiled
 	// pattern for new LIKE and CONTAINING algorithms.
 	// Proper cloning of impure area for this node would require careful accounting
@@ -3396,6 +3382,19 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	// cached pattern value for all node clones. This is faster too.
 	if (node->nod_flags & nod_invariant)
 		node->nod_impure = boolean->nod_impure;
+
+	ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+		csb->csb_pool, cmpNode->blrOp);
+	newCmpNode->setNode(node);
+	node->nod_arg[0] = reinterpret_cast<jrd_nod*>(newCmpNode);
+
+	// But substitute new values for some of the predicate arguments
+	newCmpNode->arg1 = CMP_clone_node_opt(tdbb, csb, arg1);
+	newCmpNode->arg2 = CMP_clone_node_opt(tdbb, csb, arg2);
+
+	// Arguments after the first two are just cloned (eg: LIKE ESCAPE clause)
+	if (cmpNode->arg3)
+		newCmpNode->arg3 = CMP_clone_node_opt(tdbb, csb, cmpNode->arg3);
 
 	return node;
 }
@@ -3468,33 +3467,47 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
  **************************************/
 	DEV_BLKCHK(node1, type_nod);
 	DEV_BLKCHK(node2, type_nod);
-	if (!node1 || !node2) {
+
+	if (!node1 || !node2)
 		return false;
-	}
-	if (node1->nod_type != node2->nod_type) {
+
+	if (node1->nod_type != node2->nod_type)
 		return false;
-	}
-	if (node1 == node2) {
+
+	if (node1 == node2)
 		return true;
-	}
+
 	switch (node1->nod_type)
 	{
 		case nod_field:
 			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream] &&
 					node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);
-		case nod_equiv:
-		case nod_eql:
-			if (node_equality(node1->nod_arg[0], node2->nod_arg[0]) &&
-				node_equality(node1->nod_arg[1], node2->nod_arg[1]))
+
+		case nod_class_exprnode_jrd:
+		{
+			const ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(node1);
+			const ComparativeBoolNode* cmpNode2 = ExprNode::as<ComparativeBoolNode>(node2);
+
+			if (cmpNode && cmpNode2 && cmpNode->blrOp == cmpNode2->blrOp &&
+				(cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_equiv))
 			{
-				return true;
+				if (node_equality(cmpNode->arg1, cmpNode2->arg1) &&
+					node_equality(cmpNode->arg2, cmpNode2->arg2))
+				{
+					return true;
+				}
+
+				if (node_equality(cmpNode->arg1, cmpNode2->arg2) &&
+					node_equality(cmpNode->arg2, cmpNode2->arg1))
+				{
+					return true;
+				}
+
+				return false;
 			}
-			if (node_equality(node1->nod_arg[0], node2->nod_arg[1]) &&
-				 node_equality(node1->nod_arg[1], node2->nod_arg[0]))
-			{
-				return true;
-			}
-			return false;
+
+			break;
+		}
 
 		default:
 			break;
@@ -3504,7 +3517,7 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 }
 
 
-static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* like_node)
+static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, ComparativeBoolNode* like_node)
 {
 /**************************************
  *
@@ -3525,18 +3538,15 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
  *
  **************************************/
 	SET_TDBB(tdbb);
-	DEV_BLKCHK(like_node, type_nod);
 
-	jrd_nod* match_node = like_node->nod_arg[0];
-	jrd_nod* pattern_node = like_node->nod_arg[1];
-	jrd_nod* escape_node = (like_node->nod_count > 2) ? like_node->nod_arg[2] : NULL;
+	jrd_nod* match_node = like_node->arg1;
+	jrd_nod* pattern_node = like_node->arg2;
+	jrd_nod* escape_node = like_node->arg3;
 
 	// if the pattern string or the escape string can't be
 	// evaluated at compile time, forget it
 	if ((pattern_node->nod_type != nod_literal) || (escape_node && escape_node->nod_type != nod_literal))
-	{
 		return NULL;
-	}
 
 	dsc match_desc;
 	CMP_get_desc(tdbb, csb, match_node, &match_desc);

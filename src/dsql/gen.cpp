@@ -145,8 +145,30 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	{
 	case nod_class_exprnode:
 		{
-			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			dmlNode->genBlr();
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			exprNode->genBlr(dsqlScratch);
+
+			// Check whether the node we just processed is for a dialect 3
+			// operation which gives a different result than the corresponding
+			// operation in dialect 1. If it is, and if the client dialect is 2,
+			// issue a warning about the difference.
+
+			// ASF: Shouldn't we check nod_gen_id2 too?
+
+			if (exprNode->dsqlCompatDialectVerb &&
+				dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
+			{
+				dsc desc;
+				MAKE_desc(dsqlScratch, &desc, node, NULL);
+
+				if (desc.dsc_dtype == dtype_int64)
+				{
+					ERRD_post_warning(
+						Arg::Warning(isc_dsql_dialect_warning_expr) <<
+						Arg::Str(exprNode->dsqlCompatDialectVerb));
+				}
+			}
+
 			return;
 		}
 
@@ -288,89 +310,8 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_rse(dsqlScratch, node->nod_arg[e_derived_table_rse]);
 		return;
 
-	case nod_exists:
-		dsqlScratch->appendUChar(blr_any);
-		GEN_rse(dsqlScratch, node->nod_arg[0]);
-		return;
-
-	case nod_singular:
-		dsqlScratch->appendUChar(blr_unique);
-		GEN_rse(dsqlScratch, node->nod_arg[0]);
-		return;
-
-	case nod_and:
-		blr_operator = blr_and;
-		break;
-	case nod_or:
-		blr_operator = blr_or;
-		break;
-	case nod_not:
-		blr_operator = blr_not;
-		break;
-	case nod_eql:
-		blr_operator = blr_eql;
-		break;
-	case nod_equiv:
-		blr_operator = blr_equiv;
-		break;
-	case nod_neq:
-		blr_operator = blr_neq;
-		break;
-	case nod_gtr:
-		blr_operator = blr_gtr;
-		break;
-	case nod_leq:
-		blr_operator = blr_leq;
-		break;
-	case nod_geq:
-		blr_operator = blr_geq;
-		break;
-	case nod_lss:
-		blr_operator = blr_lss;
-		break;
-	case nod_between:
-		blr_operator = blr_between;
-		break;
-	case nod_containing:
-		blr_operator = blr_containing;
-		break;
-	case nod_similar:
-		dsqlScratch->appendUChar(blr_similar);
-		GEN_expr(dsqlScratch, node->nod_arg[e_similar_value]);
-		GEN_expr(dsqlScratch, node->nod_arg[e_similar_pattern]);
-
-		if (node->nod_arg[e_similar_escape])
-		{
-			dsqlScratch->appendUChar(1);
-			GEN_expr(dsqlScratch, node->nod_arg[e_similar_escape]);
-		}
-		else
-			dsqlScratch->appendUChar(0);
-
-		return;
-
-	case nod_starting:
-		blr_operator = blr_starting;
-		break;
-	case nod_missing:
-		blr_operator = blr_missing;
-		break;
-
-	case nod_like:
-		blr_operator = (node->nod_count == 2) ? blr_like : blr_ansi_like;
-		break;
-
 	case nod_null:
 		blr_operator = blr_null;
-		break;
-	case nod_any:
-		blr_operator = blr_any;
-		break;
-	case nod_ansi_any:
-		blr_operator = blr_ansi_any;
-		break;
-	case nod_ansi_all:
-		blr_operator = blr_ansi_all;
 		break;
 	case nod_via:
 		blr_operator = blr_via;
@@ -460,32 +401,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	dsql_nod* const* ptr = node->nod_arg;
 	for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 		GEN_expr(dsqlScratch, *ptr);
-
-	// Check whether the node we just processed is for a dialect 3
-	// operation which gives a different result than the corresponding
-	// operation in dialect 1.  If it is, and if the client dialect is 2,
-	// issue a warning about the difference.
-
-	// ASF: Shouldn't we check nod_gen_id2 here too?
-
-	if (node->nod_type == nod_class_exprnode)
-	{
-		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-
-		if (exprNode->dsqlCompatDialectVerb &&
-			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
-		{
-			dsc desc;
-			MAKE_desc(dsqlScratch, &desc, node, NULL);
-
-			if (desc.dsc_dtype == dtype_int64)
-			{
-				ERRD_post_warning(
-					Arg::Warning(isc_dsql_dialect_warning_expr) <<
-					Arg::Str(exprNode->dsqlCompatDialectVerb));
-			}
-		}
-	}
 }
 
 /**
@@ -890,7 +805,7 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_class_stmtnode:
 		{
 			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			dmlNode->genBlr();
+			dmlNode->genBlr(dsqlScratch);
 		}
 		return;
 

@@ -21,6 +21,8 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../dsql/DsqlCompilerScratch.h"
+#include "../dsql/DdlNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
 #include "../dsql/node.h"
@@ -134,6 +136,106 @@ void DsqlCompilerScratch::putDtype(const dsql_fld* field, bool useSubType)
 			appendUChar(blr_dtypes[field->fld_dtype]);
 			if (DTYPE_IS_EXACT(field->fld_dtype) || (dtype_quad == field->fld_dtype))
 				appendUChar(field->fld_scale);
+			break;
+	}
+}
+
+void DsqlCompilerScratch::putType(const TypeClause& type, bool useSubType)
+{
+#ifdef DEV_BUILD
+	// Check if the field describes a known datatype
+	if (type.type > FB_NELEM(blr_dtypes) || !blr_dtypes[type.type])
+	{
+		SCHAR buffer[100];
+
+		sprintf(buffer, "Invalid dtype %d in put_dtype", type.type);
+		ERRD_bugcheck(buffer);
+	}
+#endif
+
+	if (type.notNull)
+		appendUChar(blr_not_nullable);
+
+	if (type.typeOfName.hasData())
+	{
+		if (type.typeOfTable.hasData())
+		{
+			if (type.collateSpecified)
+			{
+				appendUChar(blr_column_name2);
+				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type.typeOfTable.c_str());
+				appendMetaString(type.typeOfName.c_str());
+				appendUShort(type.textType);
+			}
+			else
+			{
+				appendUChar(blr_column_name);
+				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type.typeOfTable.c_str());
+				appendMetaString(type.typeOfName.c_str());
+			}
+		}
+		else
+		{
+			if (type.collateSpecified)
+			{
+				appendUChar(blr_domain_name2);
+				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type.typeOfName.c_str());
+				appendUShort(type.textType);
+			}
+			else
+			{
+				appendUChar(blr_domain_name);
+				appendUChar(type.fullDomain ? blr_domain_full : blr_domain_type_of);
+				appendMetaString(type.typeOfName.c_str());
+			}
+		}
+
+		return;
+	}
+
+	switch (type.type)
+	{
+		case dtype_cstring:
+		case dtype_text:
+		case dtype_varying:
+		case dtype_blob:
+			if (!useSubType)
+				appendUChar(blr_dtypes[type.type]);
+			else if (type.type == dtype_varying)
+			{
+				appendUChar(blr_varying2);
+				appendUShort(type.textType);
+			}
+			else if (type.type == dtype_cstring)
+			{
+				appendUChar(blr_cstring2);
+				appendUShort(type.textType);
+			}
+			else if (type.type == dtype_blob)
+			{
+				appendUChar(blr_blob2);
+				appendUShort(type.subType);
+				appendUShort(type.textType);
+			}
+			else
+			{
+				appendUChar(blr_text2);
+				appendUShort(type.textType);
+			}
+
+			if (type.type == dtype_varying)
+				appendUShort(type.length - sizeof(USHORT));
+			else if (type.type != dtype_blob)
+				appendUShort(type.length);
+			break;
+
+		default:
+			appendUChar(blr_dtypes[type.type]);
+			if (DTYPE_IS_EXACT(type.type) || dtype_quad == type.type)
+				appendUChar(type.scale);
 			break;
 	}
 }
@@ -611,6 +713,7 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* input)
 					Dsql::e_join_count * sizeof(dsql_nod*));
 
 				dsql_nod* joinBool = pass1JoinIsRecursive(*pDstTable);
+
 				if (joinBool)
 				{
 					if (found)
@@ -619,10 +722,11 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* input)
 								  // Recursive member of CTE can't reference itself more than once
 								  Arg::Gds(isc_dsql_cte_mult_references));
 					}
+
 					found = true;
 
-					result->nod_arg[Dsql::e_qry_where] =
-						PASS1_compose(result->nod_arg[Dsql::e_qry_where], joinBool, Dsql::nod_and);
+					result->nod_arg[Dsql::e_qry_where] = PASS1_compose(
+						result->nod_arg[Dsql::e_qry_where], joinBool, blr_and);
 				}
 
 				break;

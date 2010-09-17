@@ -397,7 +397,7 @@ void CreateAlterPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) co
 }
 
 
-DdlNode* CreateAlterPackageNode::internalDsqlPass()
+DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	source.ltrim("\n\r\t ");
 
@@ -437,11 +437,12 @@ DdlNode* CreateAlterPackageNode::internalDsqlPass()
 		}
 	}
 
-	return DdlNode::internalDsqlPass();
+	return DdlNode::dsqlPass(dsqlScratch);
 }
 
 
-void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
+void CreateAlterPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	fb_assert(create || alter);
 
@@ -454,10 +455,10 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (alter)
 	{
-		if (!executeAlter(tdbb, transaction))
+		if (!executeAlter(tdbb, dsqlScratch, transaction))
 		{
 			if (create)	// create or alter
-				executeCreate(tdbb, transaction);
+				executeCreate(tdbb, dsqlScratch, transaction);
 			else
 			{
 				status_exception::raise(
@@ -467,7 +468,7 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		}
 	}
 	else
-		executeCreate(tdbb, transaction);
+		executeCreate(tdbb, dsqlScratch, transaction);
 
 	// items
 	for (unsigned i = 0; i < items->getCount(); ++i)
@@ -476,12 +477,12 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		{
 			case Item::FUNCTION:
 				(*items)[i].function->packageOwner = owner;
-				(*items)[i].function->executeDdl(tdbb, transaction);
+				(*items)[i].function->executeDdl(tdbb, dsqlScratch, transaction);
 				break;
 
 			case Item::PROCEDURE:
 				(*items)[i].procedure->packageOwner = owner;
-				(*items)[i].procedure->executeDdl(tdbb, transaction);
+				(*items)[i].procedure->executeDdl(tdbb, dsqlScratch, transaction);
 				break;
 		}
 	}
@@ -490,11 +491,13 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
-void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction)
+void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->getAttachment();
 
-	executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+		DDL_TRIGGER_CREATE_PACKAGE, name);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_pkg, DYN_REQUESTS);
 
@@ -534,11 +537,12 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, jrd_tra* transaction
 
 	owner = attachment->att_user->usr_user_name;
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, name);
 }
 
 
-bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
+bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->getAttachment();
 	AutoCacheRequest requestHandle(tdbb, drq_m_pkg, DYN_REQUESTS);
@@ -550,7 +554,8 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 	{
 		modified = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_PACKAGE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_ALTER_PACKAGE, name);
 
 		SortedObjectsArray<Signature> existingFuncs(getPool());
 		SortedObjectsArray<Signature> existingProcs(getPool());
@@ -564,7 +569,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 				DropFunctionNode dropNode(getPool(), i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
-				dropNode.executeDdl(tdbb, transaction);
+				dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 			}
 		}
 
@@ -576,7 +581,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 				DropProcedureNode dropNode(getPool(), i->name);
 				dropNode.package = name;
 				dropNode.dsqlPass(dsqlScratch);
-				dropNode.executeDdl(tdbb, transaction);
+				dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 			}
 		}
 
@@ -593,7 +598,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	if (modified)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
 
 	return modified;
 }
@@ -611,7 +616,8 @@ void DropPackageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
+void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -625,7 +631,8 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_DROP_PACKAGE, name);
 
 		ERASE PKG;
 
@@ -656,7 +663,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		DropFunctionNode dropNode(getPool(), i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
-		dropNode.executeDdl(tdbb, transaction);
+		dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 	}
 
 	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
@@ -665,7 +672,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 		DropProcedureNode dropNode(getPool(), i->name);
 		dropNode.package = name;
 		dropNode.dsqlPass(dsqlScratch);
-		dropNode.executeDdl(tdbb, transaction);
+		dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 	}
 
 	requestHandle.reset(tdbb, drq_e_pkg_prv, DYN_REQUESTS);
@@ -681,7 +688,7 @@ void DropPackageNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, name);
 
 	savePoint.release();	// everything is ok
 }
@@ -751,7 +758,7 @@ void CreatePackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) con
 }
 
 
-DdlNode* CreatePackageBodyNode::internalDsqlPass()
+DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	source.ltrim("\n\r\t ");
 
@@ -801,11 +808,12 @@ DdlNode* CreatePackageBodyNode::internalDsqlPass()
 		}
 	}
 
-	return DdlNode::internalDsqlPass();
+	return DdlNode::dsqlPass(dsqlScratch);
 }
 
 
-void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
+void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->getAttachment();
 
@@ -826,7 +834,8 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 				Arg::Gds(isc_dyn_package_body_exists) << Arg::Str(name));
 		}
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 		MODIFY PKG
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = FALSE;
@@ -876,7 +885,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 							func->privateScope = !headerFuncs.exist(Signature(func->name));
 
 						func->packageOwner = owner;
-						func->executeDdl(tdbb, transaction);
+						func->executeDdl(tdbb, dsqlScratch, transaction);
 					}
 					break;
 
@@ -888,7 +897,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 							proc->privateScope = !headerProcs.exist(Signature(proc->name));
 
 						proc->packageOwner = owner;
-						proc->executeDdl(tdbb, transaction);
+						proc->executeDdl(tdbb, dsqlScratch, transaction);
 					}
 					break;
 			}
@@ -978,7 +987,8 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
+		DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 	savePoint.release();	// everything is ok
 }
@@ -996,7 +1006,8 @@ void DropPackageBodyNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
+void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
 {
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -1010,7 +1021,8 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_PACKAGE_BODY, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
+			DDL_TRIGGER_DROP_PACKAGE_BODY, name);
 
 		MODIFY PKG
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
@@ -1041,7 +1053,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			DropFunctionNode dropNode(getPool(), FUN.RDB$FUNCTION_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
-			dropNode.executeDdl(tdbb, transaction);
+			dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 		}
 		else
 		{
@@ -1068,7 +1080,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 			DropProcedureNode dropNode(getPool(), PRC.RDB$PROCEDURE_NAME);
 			dropNode.package = name;
 			dropNode.dsqlPass(dsqlScratch);
-			dropNode.executeDdl(tdbb, transaction);
+			dropNode.executeDdl(tdbb, dsqlScratch, transaction);
 		}
 		else
 		{
@@ -1083,7 +1095,8 @@ void DropPackageBodyNode::execute(thread_db* tdbb, jrd_tra* transaction)
 	}
 	END_FOR
 
-	executeDdlTrigger(tdbb, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE_BODY, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
+		DDL_TRIGGER_DROP_PACKAGE_BODY, name);
 
 	savePoint.release();	// everything is ok
 }

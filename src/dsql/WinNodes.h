@@ -36,16 +36,16 @@ class DenseRankWinNode : public WinFuncNode
 public:
 	explicit DenseRankWinNode(MemoryPool& pool);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 // RANK function.
@@ -54,9 +54,9 @@ class RankWinNode : public WinFuncNode
 public:
 	explicit RankWinNode(MemoryPool& pool);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -64,7 +64,7 @@ public:
 	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 
 private:
 	USHORT tempImpure;
@@ -76,9 +76,9 @@ class RowNumberWinNode : public WinFuncNode
 public:
 	explicit RowNumberWinNode(MemoryPool& pool);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -92,7 +92,7 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 // LAG/LEAD function.
@@ -102,7 +102,7 @@ public:
 	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
 		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL, dsql_nod* aOutExpr = NULL);
 
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
@@ -131,10 +131,10 @@ public:
 	explicit LagWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
 		dsql_nod* aOutExpr = NULL);
 
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 // LEAD function.
@@ -144,10 +144,10 @@ public:
 	explicit LeadWinNode(MemoryPool& pool, dsql_nod* aArg = NULL, dsql_nod* aRows = NULL,
 		dsql_nod* aOutExpr = NULL);
 
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
 protected:
-	virtual AggNode* dsqlCopy() const;
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) const;
 };
 
 

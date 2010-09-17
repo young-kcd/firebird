@@ -59,25 +59,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_total, total, "SUM")
 			NODE(nod_trim, trim, "")
 			NODE(nod_value_if, value_if, "")
-			NODE(nod_eql, eql, " = ")
-			NODE(nod_neq, neq, " != ")
-			NODE(nod_geq, geq, " >= ")
-			NODE(nod_gtr, gtr, " > ")
-			NODE(nod_lss, lss, " < ")
-			NODE(nod_leq, leq, " <= ")
-			NODE(nod_matches, matches, "")
-			NODE(nod_sleuth, sleuth, "")
-			NODE(nod_like, like, " LIKE ")
-			NODE(nod_similar, similar, " SIMILAR TO ")
-			NODE(nod_contains, contains, "")
-			NODE(nod_missing, missing, " IS NULL")
-			NODE(nod_between, between, "")
-			NODE(nod_starts, starts, "")
-			NODE(nod_unique, unique, "")
-			NODE(nod_any, any, "")
-			NODE(nod_and, and, " AND ")
-			NODE(nod_or, or, " OR ")
-			NODE(nod_not, not, " NOT ")
 			NODE(nod_validate, validate, "")
 
 		  NODE(nod_exec_proc, exec_proc, "")
@@ -90,13 +71,9 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_set_generator, set_generator, "")
 
 /* Required for NULL handling             */
-		  NODE(nod_ansi_any, ansi_any, "ANSI ANY")
-		  NODE(nod_exists, exists, "EXISTS")
 
 		  NODE(nod_rec_version, record_version, "RECORD VERSION")
 		  NODE(nod_stall, stall, "SERVER STALL")
-
-		  NODE(nod_ansi_all, ansi_all, "ANSI ALL")
 
 /* Improved date handling */
 		  NODE(nod_extract, extract, "EXTRACT")
@@ -116,7 +93,6 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_dcl_cursor, declare_cursor, "DECLARE CURSOR")
 		  NODE(nod_cursor_stmt, cursor_stmt, "CURSOR STATEMENT")
 		  NODE(nod_lowcase, lowcase, "LOWER")
-		  NODE(nod_equiv, equiv, " == ")
 
 		  NODE(nod_strlen, strlen, "STRLEN")
 

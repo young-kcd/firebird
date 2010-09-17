@@ -249,10 +249,6 @@ const int e_lbl_statement	= 0;
 const int e_lbl_label		= 1;
 const int e_lbl_length		= 2;
 
-const int e_any_rse			= 0;
-const int e_any_rsb			= 1;
-const int e_any_length		= 2;
-
 const int e_val_boolean		= 0;
 const int e_val_value		= 1;
 const int e_val_length		= 2;

@@ -140,6 +140,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\dsql\AggNodes.cpp" />
     <ClCompile Include="..\..\..\src\dsql\BlrWriter.cpp" />
+    <ClCompile Include="..\..\..\src\dsql\BoolNodes.cpp" />
     <ClCompile Include="..\..\..\src\dsql\ddl.cpp" />
     <ClCompile Include="..\..\..\src\dsql\dsql.cpp" />
     <ClCompile Include="..\..\..\src\dsql\DsqlCompilerScratch.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="..\..\..\src\dsql\array_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\blob_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\BlrWriter.h" />
+    <ClInclude Include="..\..\..\src\dsql\BoolNodes.h" />
     <ClInclude Include="..\..\..\src\dsql\chars.h" />
     <ClInclude Include="..\..\..\src\dsql\ddl_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\DdlNodes.h" />

@@ -94,6 +94,7 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
@@ -155,33 +156,9 @@ namespace
 	private:
 		USHORT fldId;
 	};
-
-	// Copy sub expressions (including subqueries).
-	class SubExprNodeCopier : public NodeCopier
-	{
-	public:
-		explicit SubExprNodeCopier(CompilerScratch* aCsb)
-			: NodeCopier(aCsb, localMap)
-		{
-			// Initialize the map so all streams initially resolve to the original number. As soon
-			// copy creates new streams, the map are being overwritten.
-			for (unsigned i = 0; i < JrdStatement::MAP_LENGTH; ++i)
-				localMap[i] = i;
-		}
-
-		static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input)
-		{
-			SubExprNodeCopier obj(csb);
-			return static_cast<NodeCopier&>(obj).copy(tdbb, input);
-		}
-
-	private:
-		UCHAR localMap[JrdStatement::MAP_LENGTH];
-	};
 }	// namespace
 
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
@@ -193,7 +170,6 @@ static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
 static RelationSourceNode* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
 	SecurityClass::flags_t, jrd_rel*, USHORT);
 static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
-static RecordSource* post_rse(thread_db*, CompilerScratch*, RseNode*);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 
 #ifdef CMP_DEBUG
@@ -595,7 +571,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 	case nod_class_exprnode_jrd:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
 			exprNode->getDesc(tdbb, csb, desc);
 			return;
 		}
@@ -1238,105 +1214,6 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 }
 
 
-// Try to convert nodes of expression:
-//   select ... from <t1>
-//     where <x> not in (select <y> from <t2>)
-//   (and its variants that uses the same BLR: {NOT (a = ANY b)} and {a <> ALL b})
-// to:
-//   select ... from <t1>
-//     where not ((x is null and exists (select 1 from <t2>)) or
-//                exists (select <y> from <t2> where <y> = <x> or <y> is null))
-//
-// Because the second form can use indexes.
-// Returns NULL when not converted, and a new node to be processed when converted.
-static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
-{
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	fb_assert(node->nod_type == nod_ansi_all);
-
-	fb_assert(node->nod_arg[e_any_rse]->nod_type == nod_class_recsrcnode_jrd);
-	RseNode* outerRse = reinterpret_cast<RseNode*>(node->nod_arg[e_any_rse]->nod_arg[0]);	// nod_ansi_all rse
-
-	if (!outerRse || outerRse->type != RseNode::TYPE || outerRse->rse_relations.getCount() != 1 ||
-		!outerRse->rse_boolean || outerRse->rse_boolean->nod_type != nod_neq)
-	{
-		return NULL;
-	}
-
-	RseNode* innerRse = static_cast<RseNode*>(outerRse->rse_relations[0].getObject());	// user rse
-
-	// If the rse is different than we expected, do nothing. Do nothing also if it uses FIRST or
-	// SKIP, as we can't inject booleans there without changing the behavior.
-	if (!innerRse || innerRse->type != RseNode::TYPE || innerRse->rse_first || innerRse->rse_skip)
-		return NULL;
-
-	jrd_nod* newNode = PAR_make_node(tdbb, 1);
-	newNode->nod_type = nod_not;
-	newNode->nod_count = 1;
-
-	newNode->nod_arg[0] = PAR_make_node(tdbb, 2);
-	newNode->nod_arg[0]->nod_type = nod_or;
-	newNode->nod_arg[0]->nod_count = 2;
-
-	newNode->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 2);
-	newNode->nod_arg[0]->nod_arg[0]->nod_type = nod_and;
-	newNode->nod_arg[0]->nod_arg[0]->nod_count = 2;
-
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 2);
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_count = 1;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[0];
-
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_count = 1;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = PAR_make_node(tdbb, 1);
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_type = nod_class_recsrcnode_jrd;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_count = 0;
-	newNode->nod_arg[0]->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_arg[0] = (jrd_nod*) innerRse;
-
-	RseNode* newInnerRse = innerRse->clone();
-
-	newNode->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
-	newNode->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
-	newNode->nod_arg[0]->nod_arg[1]->nod_count = 1;
-	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = PAR_make_node(tdbb, 1);
-	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_type = nod_class_recsrcnode_jrd;
-	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_count = 0;
-	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse]->nod_arg[0] = (jrd_nod*) newInnerRse;
-
-	jrd_nod* boolean = PAR_make_node(tdbb, 2);
-	boolean->nod_type = nod_or;
-	boolean->nod_count = 2;
-
-	boolean->nod_arg[0] = PAR_make_node(tdbb, 1);
-	boolean->nod_arg[0]->nod_type = nod_missing;
-	boolean->nod_arg[0]->nod_count = 1;
-	boolean->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[1];
-
-	boolean->nod_arg[1] = outerRse->rse_boolean;
-	boolean->nod_arg[1]->nod_type = nod_eql;
-
-	// If there was a boolean on the stream, append (AND) the new one
-	if (newInnerRse->rse_boolean)
-	{
-		jrd_nod* temp = PAR_make_node(tdbb, 2);
-		temp->nod_type = nod_and;
-		temp->nod_count = 2;
-		temp->nod_arg[0] = newInnerRse->rse_boolean;
-		temp->nod_arg[1] = boolean;
-		boolean = temp;
-	}
-
-	newInnerRse->rse_boolean = boolean;
-
-	return SubExprNodeCopier::copy(tdbb, csb, newNode);
-}
-
-
 USHORT NodeCopier::getFieldId(jrd_nod* input)
 {
 	return (USHORT)(IPTR) input->nod_arg[e_fld_id];
@@ -1371,19 +1248,12 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			{
 				node = PAR_make_node(tdbb, 1);
 				node->nod_type = input->nod_type;
+				node->nod_flags = input->nod_flags;
 				node->nod_count = input->nod_count;
-				node->nod_arg[0] = (jrd_nod*) copy;
+				node->nod_arg[0] = reinterpret_cast<jrd_nod*>(copy);
 			}
 		}
 		return node;
-
-	case nod_ansi_all:
-	case nod_ansi_any:
-	case nod_any:
-	case nod_exists:
-	case nod_unique:
-		args = e_any_length;
-		break;
 
 	case nod_for:
 		///args = e_for_length;
@@ -1409,7 +1279,7 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		//			and we must keep the input message.
 		// ASF: We should only use "message" if its number matches the number
 		// in nod_argument. If it don't, it may be an input parameter cloned
-		// in convertNeqAllToNotAny - see CORE-3094.
+		// in RseBoolNode::convertNeqAllToNotAny - see CORE-3094.
 
 		if (message &&
 			(IPTR) message->nod_arg[e_msg_number] ==
@@ -1990,70 +1860,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_like:
-	case nod_similar:
-		ptr = node->nod_arg;
-		ptr[0] = CMP_pass1(tdbb, csb, ptr[0]);
-		// We need to take care of invariantness of like/similar pattern expression to be
-		// able to pre-compile its pattern
-		node->nod_flags |= nod_invariant;
-		csb->csb_current_nodes.push(node);
-		ptr[1] = CMP_pass1(tdbb, csb, ptr[1]);
-		if (node->nod_count == 3)
-		{
-			// escape symbol also needs to be taken care of
-			ptr[2] = CMP_pass1(tdbb, csb, ptr[2]);
-		}
-		csb->csb_current_nodes.pop();
-
-		// If there is no top-level RSE present and patterns are not constant,
-		// unmark node as invariant because it may be dependent on data or variables.
-		// See the same for nod_contains and nod_starts below.
-		if ((node->nod_flags & nod_invariant) && (ptr[1]->nod_type != nod_literal ||
-			(node->nod_count == 3 && ptr[2]->nod_type != nod_literal)))
-		{
-			LegacyNodeOrRseNode* ctx_node, *end;
-			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
-				 ctx_node != end; ++ctx_node)
-			{
-				if (ctx_node->rseNode)
-					break;
-			}
-
-			if (ctx_node >= end)
-				node->nod_flags &= ~nod_invariant;
-		}
-		return node;
-
-	case nod_contains:
-	case nod_starts:
-		ptr = node->nod_arg;
-		ptr[0] = CMP_pass1(tdbb, csb, ptr[0]);
-		// We need to take care of invariantness of contains and starts
-		// expression to be able to pre-compile it for searching
-		node->nod_flags |= nod_invariant;
-		csb->csb_current_nodes.push(node);
-		ptr[1] = CMP_pass1(tdbb, csb, ptr[1]);
-		csb->csb_current_nodes.pop();
-
-		// If there is no top-level RSE present and patterns are not constant,
-		// unmark node as invariant because it may be dependent on data or variables.
-		// See the same for nod_like above.
-		if ((node->nod_flags & nod_invariant) && (ptr[1]->nod_type != nod_literal))
-		{
-			LegacyNodeOrRseNode* ctx_node, *end;
-			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
-				 ctx_node != end; ++ctx_node)
-			{
-				if (ctx_node->rseNode)
-					break;
-			}
-
-			if (ctx_node >= end)
-				node->nod_flags &= ~nod_invariant;
-		}
-		return node;
-
 	case nod_variable:
 		{
 			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
@@ -2450,14 +2256,21 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 						new_node->nod_type = nod_value_if;
 						new_node->nod_count = 3;
 
+						MissingBoolNode* missingNode = FB_NEW(csb->csb_pool) MissingBoolNode(
+							csb->csb_pool);
+						missingNode->arg = i.object();
+
+						NotBoolNode* notNode = FB_NEW(csb->csb_pool) NotBoolNode(csb->csb_pool);
+						notNode->arg = PAR_make_node(tdbb, 1);
+						notNode->arg->nod_type = nod_class_exprnode_jrd;
+						notNode->arg->nod_count = 0;
+						notNode->arg->nod_arg[0] = reinterpret_cast<jrd_nod*>(missingNode);
+
 						// build an IF (RDB$DB_KEY IS NOT NULL)
 						new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_type = nod_not;
-						new_node->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-						new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = i.object();
+						new_node->nod_arg[0]->nod_type = nod_class_exprnode_jrd;
+						new_node->nod_arg[0]->nod_count = 0;
+						new_node->nod_arg[0]->nod_arg[0] = reinterpret_cast<jrd_nod*>(notNode);
 
 						new_node->nod_arg[1] = i.object();	// THEN
 
@@ -2496,16 +2309,22 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					new_node->nod_type = nod_value_if;
 					new_node->nod_count = 3;
 
+					ComparativeBoolNode* eqlNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+						csb->csb_pool, blr_eql);
+
 					// build an IF (RDB$DB_KEY = '')
-					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
-					new_node->nod_arg[0]->nod_type = nod_eql;
+					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_type = nod_class_exprnode_jrd;
+					new_node->nod_arg[0]->nod_count = 0;
 					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] = NodeCopier::copy(tdbb, csb, node, NULL);
+					new_node->nod_arg[0]->nod_arg[0] = reinterpret_cast<jrd_nod*>(eqlNode);
+
+					eqlNode->arg1 = NodeCopier::copy(tdbb, csb, node, NULL);
 					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
-					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
-					new_node->nod_arg[0]->nod_arg[1]->nod_count = 0;
-					Literal* literal = (Literal*) new_node->nod_arg[0]->nod_arg[1];
+					eqlNode->arg2 = PAR_make_node(tdbb, count);
+					eqlNode->arg2->nod_type = nod_literal;
+					eqlNode->arg2->nod_count = 0;
+					Literal* literal = reinterpret_cast<Literal*>(eqlNode->arg2.getObject());
 					literal->lit_desc.dsc_dtype = dtype_text;
 					literal->lit_desc.dsc_ttype() = CS_BINARY;
 					literal->lit_desc.dsc_scale = 0;
@@ -2540,59 +2359,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
 			return node;
 		}
-
-	case nod_not:
-		sub = node->nod_arg[0];
-		if (sub->nod_type == nod_ansi_any)
-			sub->nod_flags |= nod_deoptimize;
-		if (sub->nod_type == nod_ansi_any || sub->nod_type == nod_ansi_all)
-			sub->nod_flags |= nod_ansi_not;
-		break;
-
-	case nod_ansi_all:
-		{
-			jrd_nod* newNode = convertNeqAllToNotAny(tdbb, csb, node);
-			if (newNode)
-				return CMP_pass1(tdbb, csb, newNode);
-
-			node->nod_flags |= nod_deoptimize;
-		}
-		// fall into
-
-	case nod_ansi_any:
-		if (node->nod_flags & nod_deoptimize)
-		{
-			node->nod_flags &= ~nod_deoptimize;
-
-			fb_assert(node->nod_arg[e_any_rse]->nod_type == nod_class_recsrcnode_jrd);
-			RseNode* rseNode = reinterpret_cast<RseNode*>(node->nod_arg[e_any_rse]->nod_arg[0]);
-			fb_assert(rseNode->type == RseNode::TYPE);
-
-			// Deoptimize the conjunct, not the ALL node itself
-			jrd_nod* boolean = rseNode->rse_boolean;
-			if (boolean)
-			{
-				if (boolean->nod_type == nod_and)
-					boolean = boolean->nod_arg[1];
-
-				// Deoptimize the injected boolean of a quantified predicate
-				// when it's necessary. ALL predicate does not require an index scan.
-				// This fixes bug SF #543106.
-				boolean->nod_flags |= nod_deoptimize;
-			}
-		}
-		// fall into
-
-	case nod_any:
-	case nod_exists:
-	case nod_unique:
-		{
-			fb_assert(node->nod_arg[e_any_rse]->nod_type == nod_class_recsrcnode_jrd);
-			RseNode* rseNode = reinterpret_cast<RseNode*>(node->nod_arg[e_any_rse]->nod_arg[0]);
-			fb_assert(rseNode->type == RseNode::TYPE);
-			rseNode->ignoreDbKey(tdbb, csb, view);
-		}
-		break;
 
 	case nod_src_info:
 		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
@@ -3296,33 +3062,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
 		break;
 
-	case nod_ansi_all:
-	case nod_ansi_any:
-	case nod_any:
-	case nod_exists:
-	case nod_unique:
-		fb_assert(node->nod_arg[e_any_rse]->nod_type == nod_class_recsrcnode_jrd);
-		rse_node = reinterpret_cast<RseNode*>(node->nod_arg[e_any_rse]->nod_arg[0]);
-		fb_assert(rse_node->type == RseNode::TYPE);
-
-		if (!(rse_node->flags & RseNode::FLAG_VARIANT))
-		{
-			node->nod_flags |= nod_invariant;
-			csb->csb_invariants.push(node);
-		}
-
-		rsb_ptr = (RecordSource**) &node->nod_arg[e_any_rsb];
-		break;
-
-	case nod_like:
-	case nod_contains:
-	case nod_similar:
-	case nod_starts:
-		if (node->nod_flags & nod_invariant) {
-			csb->csb_invariants.push(node);
-		}
-		break;
-
 	case nod_src_info:
 		node->nod_arg[e_src_info_node] = CMP_pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
 		return node;
@@ -3423,16 +3162,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_count:
 		node->nod_count = 0;
 		csb->csb_impure += sizeof(impure_value_ex);
-		break;
-
-	case nod_ansi_all:
-	case nod_ansi_any:
-	case nod_any:
-	case nod_exists:
-	case nod_unique:
-		if (node->nod_flags & nod_invariant) {
-			csb->csb_impure += sizeof(impure_value);
-		}
 		break;
 
 	case nod_block:
@@ -3549,71 +3278,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		}
 		break;
 
-	// boolean nodes taking three values as inputs
-	case nod_like:
-	case nod_between:
-	case nod_similar:
-	case nod_sleuth:
-		if (node->nod_count > 2)
-		{
-			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
-				ERR_post(Arg::Gds(isc_bad_dbkey));
-			}
-			dsc descriptor_c;
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_c);
-			if (DTYPE_IS_DATE(descriptor_c.dsc_dtype))
-			{
-				node->nod_arg[0]->nod_flags |= nod_date;
-				node->nod_arg[1]->nod_flags |= nod_date;
-			}
-		}
-		// FALLINTO
-
-		// boolean nodes taking two values as inputs
-	case nod_matches:
-	case nod_contains:
-	case nod_starts:
-	case nod_equiv:
-	case nod_eql:
-	case nod_neq:
-	case nod_geq:
-	case nod_gtr:
-	case nod_lss:
-	case nod_leq:
-		{
-			if ((node->nod_arg[0]->nod_flags & nod_agg_dbkey) ||
-				(node->nod_arg[1]->nod_flags & nod_agg_dbkey))
-			{
-				ERR_post(Arg::Gds(isc_bad_dbkey));
-			}
-			dsc descriptor_a, descriptor_b;
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
-			CMP_get_desc(tdbb, csb, node->nod_arg[1], &descriptor_b);
-			if (DTYPE_IS_DATE(descriptor_a.dsc_dtype))
-				node->nod_arg[1]->nod_flags |= nod_date;
-			else if (DTYPE_IS_DATE(descriptor_b.dsc_dtype))
-				node->nod_arg[0]->nod_flags |= nod_date;
-		}
-		if (node->nod_flags & nod_invariant)
-		{
-			// This may currently happen for nod_like, nod_contains and nod_similar
-			csb->csb_impure += sizeof(impure_value);
-		}
-		break;
-
-	// boolean nodes taking one value as input
-	case nod_missing:
-		{
-			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey) {
-				ERR_post(Arg::Gds(isc_bad_dbkey));
-			}
-
-			// check for syntax errors in the calculation
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
-		}
-		break;
-
 	case nod_exec_into:
 		csb->csb_impure += sizeof(ExecuteStatement);
 		csb->csb_exec_sta.push(node);
@@ -3656,26 +3320,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	if (rse_node)
 	{
-		RecordSource* const rsb = post_rse(tdbb, csb, rse_node);
-
-		// for ansi ANY clauses (and ALL's, which are negated ANY's)
-		// the unoptimized boolean expression must be used, since the
-		// processing of these clauses is order dependant (see FilteredStream.cpp)
-
-		if (node->nod_type == nod_ansi_any || node->nod_type == nod_ansi_all)
-		{
-			const bool ansiAny = (node->nod_type == nod_ansi_any);
-			const bool ansiNot = (node->nod_flags & nod_ansi_not);
-			FilteredStream* const filter = reinterpret_cast<FilteredStream*>(rsb);
-			filter->setAnyBoolean(rse_node->rse_boolean, ansiAny, ansiNot);
-		}
+		RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse_node);
 
 		csb->csb_fors.add(rsb);
 
 		if (rsb_ptr)
-		{
 			*rsb_ptr = rsb;
-		}
 
 		if (cursor_ptr)
 		{
@@ -3734,11 +3384,11 @@ void CMP_post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc* p
 }
 
 
-static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
+RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 {
 /**************************************
  *
- *	p o s t _ r s e
+ *	C M P _ p o s t _ r s e
  *
  **************************************
  *

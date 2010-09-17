@@ -89,11 +89,11 @@ void SavepointEncloseNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void SavepointEncloseNode::genBlr()
+void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_start_savepoint);
-	stmt->genBlr();
+	stmt->genBlr(dsqlScratch);
 	dsqlScratch->appendUChar(blr_end_savepoint);
 	dsqlScratch->appendUChar(blr_end);
 }
@@ -120,9 +120,9 @@ DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, 
 }
 
 
-IfNode* IfNode::internalDsqlPass()
+IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	IfNode* node = FB_NEW(getPool()) IfNode(getPool(), dsqlScratch);
+	IfNode* node = FB_NEW(getPool()) IfNode(getPool());
 	node->dsqlCondition = PASS1_node(dsqlScratch, dsqlCondition);
 	node->dsqlTrueAction = PASS1_statement(dsqlScratch, dsqlTrueAction);
 	node->dsqlFalseAction = PASS1_statement(dsqlScratch, dsqlFalseAction);
@@ -140,7 +140,7 @@ void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void IfNode::genBlr()
+void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, dsqlCondition);
@@ -213,13 +213,12 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 }
 
 
-InAutonomousTransactionNode* InAutonomousTransactionNode::internalDsqlPass()
+InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	const bool autoTrans = dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
 	InAutonomousTransactionNode* node = FB_NEW(getPool()) InAutonomousTransactionNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
 
 	if (!autoTrans)
@@ -236,7 +235,7 @@ void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) c
 }
 
 
-void InAutonomousTransactionNode::genBlr()
+void InAutonomousTransactionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_auto_trans);
 	dsqlScratch->appendUChar(0);	// to extend syntax in the future
@@ -402,7 +401,7 @@ const jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* re
 //--------------------
 
 
-ExecBlockNode* ExecBlockNode::internalDsqlPass()
+ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
@@ -414,7 +413,6 @@ ExecBlockNode* ExecBlockNode::internalDsqlPass()
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_BLOCK;
 
 	ExecBlockNode* node = FB_NEW(getPool()) ExecBlockNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 
 	for (ParameterClause* param = parameters.begin(); param != parameters.end(); ++param)
 	{
@@ -517,7 +515,7 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void ExecBlockNode::genBlr()
+void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->beginDebug();
 
@@ -743,10 +741,9 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 }
 
 
-StmtNode* ExceptionNode::internalDsqlPass()
+StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 	node->name = name;
 	node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
 	node->dsqlParameters = PASS1_node(dsqlScratch, dsqlParameters);
@@ -763,7 +760,7 @@ void ExceptionNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void ExceptionNode::genBlr()
+void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_abort);
 
@@ -996,7 +993,7 @@ void ExitNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-void ExitNode::genBlr()
+void ExitNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_leave);
 	dsqlScratch->appendUChar(0);
@@ -1029,10 +1026,9 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	return node;
 }
 
-StmtNode* ForNode::internalDsqlPass()
+StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ForNode* node = FB_NEW(getPool()) ForNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 
 	node->dsqlCursor = dsqlCursor;
 	node->dsqlSelect = PASS1_statement(dsqlScratch, dsqlSelect);
@@ -1090,7 +1086,7 @@ void ForNode::print(string& text, Array<dsql_nod*>& nodes) const
 	nodes.add(dsqlLabel);
 }
 
-void ForNode::genBlr()
+void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	// CVC: Only put a label if this is not singular; otherwise,
 	// what loop is the user trying to abandon?
@@ -1223,10 +1219,9 @@ DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 }
 
 
-PostEventNode* PostEventNode::internalDsqlPass()
+PostEventNode* PostEventNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 
 	node->dsqlEvent = PASS1_node(dsqlScratch, dsqlEvent);
 	node->dsqlArgument = PASS1_node(dsqlScratch, dsqlArgument);
@@ -1244,7 +1239,7 @@ void PostEventNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void PostEventNode::genBlr()
+void PostEventNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	if (dsqlArgument)
 	{
@@ -1313,7 +1308,7 @@ DmlNode* SavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScr
 }
 
 
-SavepointNode* SavepointNode::internalDsqlPass()
+SavepointNode* SavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
@@ -1361,7 +1356,7 @@ void SavepointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-void SavepointNode::genBlr()
+void SavepointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_user_savepoint);
 	dsqlScratch->appendUChar((UCHAR) command);
@@ -1506,7 +1501,7 @@ DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 }
 
 
-SuspendNode* SuspendNode::internalDsqlPass()
+SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
@@ -1536,7 +1531,7 @@ void SuspendNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 }
 
 
-void SuspendNode::genBlr()
+void SuspendNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->genReturn();
 }
@@ -1583,7 +1578,7 @@ const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 //--------------------
 
 
-ReturnNode* ReturnNode::internalDsqlPass()
+ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
@@ -1602,7 +1597,6 @@ ReturnNode* ReturnNode::internalDsqlPass()
 	}
 
 	ReturnNode* node = FB_NEW(getPool()) ReturnNode(getPool());
-	node->dsqlScratch = dsqlScratch;
 	node->value = PASS1_node(dsqlScratch, value);
 
 	return node;
@@ -1616,7 +1610,7 @@ void ReturnNode::print(string& text, Array<dsql_nod*>& nodes) const
 }
 
 
-void ReturnNode::genBlr()
+void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_assignment);
 	GEN_expr(dsqlScratch, value);

@@ -32,7 +32,7 @@ class SysFunction;
 namespace Jrd {
 
 
-class ArithmeticNode : public TypedNode<ExprNode, ExprNode::TYPE_ARITHMETIC>
+class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
 {
 public:
 	ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
@@ -41,14 +41,15 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -56,9 +57,6 @@ public:
 	// add and add2 are used in somewhat obscure way in aggregation.
 	static dsc* add(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp);
 	static dsc* add2(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp);
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 private:
 	dsc* multiply(const dsc* desc, impure_value* value) const;
@@ -87,7 +85,7 @@ public:
 };
 
 
-class ConcatenateNode : public TypedNode<ExprNode, ExprNode::TYPE_CONCATENATE>
+class ConcatenateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
 {
 public:
 	explicit ConcatenateNode(MemoryPool& pool, dsql_nod* aArg1 = NULL, dsql_nod* aArg2 = NULL);
@@ -95,19 +93,17 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	dsql_nod* dsqlArg1;
@@ -117,11 +113,11 @@ public:
 };
 
 
-class CurrentDateNode : public TypedNode<ExprNode, ExprNode::TYPE_CURRENT_DATE>
+class CurrentDateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>
 {
 public:
 	CurrentDateNode(MemoryPool& pool)
-		: TypedNode<ExprNode, ExprNode::TYPE_CURRENT_DATE>(pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>(pool)
 	{
 	}
 
@@ -129,21 +125,21 @@ public:
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 };
 
 
-class CurrentTimeNode : public TypedNode<ExprNode, ExprNode::TYPE_CURRENT_TIME>
+class CurrentTimeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIME>
 {
 public:
 	CurrentTimeNode(MemoryPool& pool, unsigned aPrecision)
-		: TypedNode<ExprNode, ExprNode::TYPE_CURRENT_TIME>(pool),
+		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIME>(pool),
 		  precision(aPrecision)
 	{
 	}
@@ -151,28 +147,26 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	unsigned precision;
 };
 
 
-class CurrentTimeStampNode : public TypedNode<ExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>
+class CurrentTimeStampNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>
 {
 public:
 	CurrentTimeStampNode(MemoryPool& pool, unsigned aPrecision)
-		: TypedNode<ExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>(pool),
+		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_TIMESTAMP>(pool),
 		  precision(aPrecision)
 	{
 	}
@@ -180,74 +174,68 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	unsigned precision;
 };
 
 
-class CurrentRoleNode : public TypedNode<ExprNode, ExprNode::TYPE_CURRENT_ROLE>
+class CurrentRoleNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>
 {
 public:
 	CurrentRoleNode(MemoryPool& pool)
-		: TypedNode<ExprNode, ExprNode::TYPE_CURRENT_ROLE>(pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>(pool)
 	{
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 };
 
 
-class CurrentUserNode : public TypedNode<ExprNode, ExprNode::TYPE_CURRENT_USER>
+class CurrentUserNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>
 {
 public:
 	CurrentUserNode(MemoryPool& pool)
-		: TypedNode<ExprNode, ExprNode::TYPE_CURRENT_USER>(pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>(pool)
 	{
 	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 };
 
 
-class InternalInfoNode : public TypedNode<ExprNode, ExprNode::TYPE_INTERNAL_INFO>
+class InternalInfoNode : public TypedNode<ValueExprNode, ExprNode::TYPE_INTERNAL_INFO>
 {
 public:
 	// Constants stored in BLR.
@@ -277,17 +265,15 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	dsql_nod* dsqlArg;
@@ -295,7 +281,7 @@ public:
 };
 
 
-class NegateNode : public TypedNode<ExprNode, ExprNode::TYPE_NEGATE>
+class NegateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
 {
 public:
 	NegateNode(MemoryPool& pool, dsql_nod* aArg = NULL);
@@ -303,19 +289,17 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	dsql_nod* dsqlArg;
@@ -325,13 +309,14 @@ public:
 
 // OVER is used only in DSQL. In the engine, normal aggregate functions are used in partitioned
 // maps.
-class OverNode : public TypedNode<ExprNode, ExprNode::TYPE_OVER>
+class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>
 {
 public:
 	explicit OverNode(MemoryPool& pool, dsql_nod* aAggExpr = NULL, dsql_nod* aPartition = NULL,
 		dsql_nod* aOrder = NULL);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
@@ -340,15 +325,12 @@ public:
 	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	dsql_nod* dsqlAggExpr;
@@ -357,7 +339,7 @@ public:
 };
 
 
-class SubstringSimilarNode : public TypedNode<ExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
+class SubstringSimilarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
 {
 public:
 	explicit SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr = NULL,
@@ -366,20 +348,18 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	dsql_nod* dsqlExpr;
@@ -391,7 +371,7 @@ public:
 };
 
 
-class SysFuncCallNode : public TypedNode<ExprNode, ExprNode::TYPE_SYSFUNC_CALL>
+class SysFuncCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SYSFUNC_CALL>
 {
 public:
 	explicit SysFuncCallNode(MemoryPool& pool, const Firebird::MetaName& aName,
@@ -400,18 +380,16 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	Firebird::MetaName name;
@@ -422,7 +400,7 @@ public:
 };
 
 
-class UdfCallNode : public TypedNode<ExprNode, ExprNode::TYPE_UDF_CALL>
+class UdfCallNode : public TypedNode<ValueExprNode, ExprNode::TYPE_UDF_CALL>
 {
 public:
 	explicit UdfCallNode(MemoryPool& pool, const Firebird::QualifiedName& aName,
@@ -431,19 +409,17 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
-	virtual void genBlr();
-	virtual void make(dsc* desc, dsql_nod* nullReplacement);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
-
-protected:
-	virtual ExprNode* internalDsqlPass();
 
 public:
 	Firebird::QualifiedName name;
