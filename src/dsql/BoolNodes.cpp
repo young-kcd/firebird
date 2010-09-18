@@ -302,7 +302,7 @@ DmlNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 	if (blrOp == blr_between || blrOp == blr_ansi_like || blrOp == blr_matching2)
 	{
 		if (blrOp == blr_ansi_like)
-			blrOp = blr_like;
+			node->blrOp = blr_like;
 
 		node->arg3 = PAR_parse_node(tdbb, csb, VALUE);
 	}
