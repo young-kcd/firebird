@@ -870,14 +870,16 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <sysFuncCallNode> system_function_special_syntax
 
 // Predicates
-%type <boolExprNode> between_predicate comparison_predicate containing_predicate distinct_predicate
-%type <boolExprNode> exists_predicate in_predicate like_predicate null_predicate predicate
-%type <boolExprNode> quantified_predicate similar_predicate singular_predicate starting_predicate
+%type <boolExprNode> between_predicate comparison_predicate distinct_predicate
+%type <boolExprNode> exists_predicate in_predicate binary_pattern_predicate ternary_pattern_predicate null_predicate predicate
+%type <boolExprNode> quantified_predicate singular_predicate
 %type <boolExprNode> trigger_action_predicate
 %type <boolExprNode> search_condition_impl
 
-%type <blrOp> comparison_operator
+%type <blrOp> binary_pattern_operator ternary_pattern_operator comparison_operator
 %type <cmpBoolFlag> quantified_flag
+%type <legacyNode> escape_opt
+%type <intVal> trigger_action_code
 
 %%
 
@@ -4886,14 +4888,12 @@ predicate
 	: comparison_predicate
 	| distinct_predicate
 	| between_predicate
-	| like_predicate
+	| binary_pattern_predicate
+	| ternary_pattern_predicate
 	| in_predicate
 	| null_predicate
 	| quantified_predicate
 	| exists_predicate
-	| containing_predicate
-	| similar_predicate
-	| starting_predicate
 	| singular_predicate
 	| trigger_action_predicate
 	| '(' search_condition_impl ')'
@@ -4961,25 +4961,44 @@ between_predicate
 		}
 	;
 
-like_predicate
-	: value LIKE value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_like, $1, $3); }
-	| value NOT LIKE value
+binary_pattern_predicate
+	: value binary_pattern_operator value
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3); }
+	| value NOT binary_pattern_operator value
+		{
+			ComparativeBoolNode* containingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				$3, $1, $4);
+
+			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(containingNode));
+		}
+	;
+
+binary_pattern_operator
+	: CONTAINING	{ $$ = blr_containing; }
+	| STARTING		{ $$ = blr_starting; }
+	| STARTING WITH	{ $$ = blr_starting; }
+	;
+
+ternary_pattern_predicate
+	: value ternary_pattern_operator value escape_opt
+		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3, $4); }
+	| value NOT ternary_pattern_operator value escape_opt
 		{
 			ComparativeBoolNode* likeNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_like, $1, $4);
+				$3, $1, $4, $5);
 
 			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(likeNode));
 		}
-	| value LIKE value ESCAPE value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_like, $1, $3, $5); }
-	| value NOT LIKE value ESCAPE value
-		{
-			ComparativeBoolNode* likeNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_like, $1, $4, $6);
+	;
 
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(likeNode));
-		}
+ternary_pattern_operator
+	: LIKE		{ $$ = blr_like; }
+	| SIMILAR	{ $$ = blr_similar; }
+	;
+
+escape_opt
+	:				{ $$ = NULL; }
+	| ESCAPE value	{ $$ = $2; }
 	;
 
 in_predicate
@@ -4996,60 +5015,6 @@ in_predicate
 				getPool(), blr_eql, $1, $4);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
-		}
-	;
-
-containing_predicate
-	: value CONTAINING value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_containing, $1, $3); }
-	| value NOT CONTAINING value
-		{
-			ComparativeBoolNode* containingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_containing, $1, $4);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(containingNode));
-		}
-	;
-
-similar_predicate
-	: value SIMILAR TO value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_similar, $1, $4); }
-	| value NOT SIMILAR TO value
-		{
-			ComparativeBoolNode* similarNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_similar, $1, $5);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(similarNode));
-		}
-	| value SIMILAR TO value ESCAPE value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_similar, $1, $4, $6); }
-	| value NOT SIMILAR TO value ESCAPE value
-		{
-			ComparativeBoolNode* similarNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_similar, $1, $5, $7);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(similarNode));
-		}
-	;
-
-starting_predicate
-	: value STARTING value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_starting, $1, $3); }
-	| value NOT STARTING value
-		{
-			ComparativeBoolNode* startingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_starting, $1, $4);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(startingNode));
-		}
-	| value STARTING WITH value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_starting, $1, $4); }
-	| value NOT STARTING WITH value
-		{
-			ComparativeBoolNode* startingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				blr_starting, $1, $5);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(startingNode));
 		}
 	;
 
@@ -5074,27 +5039,19 @@ null_predicate
 	;
 
 trigger_action_predicate
-	: INSERTING
+	: trigger_action_code
 		{
 			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
 			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
-				makeClassNode(infoNode), MAKE_const_slong(1));
+				makeClassNode(infoNode), MAKE_const_slong($1));
 		}
-	| UPDATING
-		{
-			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
-				makeClassNode(infoNode), MAKE_const_slong(2));
-		}
-	| DELETING
-		{
-			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
-				makeClassNode(infoNode), MAKE_const_slong(3));
-		}
+	;
+
+trigger_action_code
+	: INSERTING	{ $$ = 1; }
+	| UPDATING	{ $$ = 2; }
+	| DELETING	{ $$ = 3; }
 	;
 
 // set values
