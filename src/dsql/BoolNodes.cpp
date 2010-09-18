@@ -1509,7 +1509,7 @@ static RegisterNode<RseBoolNode> regRseBoolNodeAny(blr_any);
 static RegisterNode<RseBoolNode> regRseBoolNodeUnique(blr_unique);
 static RegisterNode<RseBoolNode> regRseBoolNodeAnsiAny(blr_ansi_any);
 static RegisterNode<RseBoolNode> regRseBoolNodeAnsiAll(blr_ansi_all);
-static RegisterNode<RseBoolNode> regRseBoolNodeExists(blr_exists);	// ASF: Where this is handled?
+static RegisterNode<RseBoolNode> regRseBoolNodeExists(blr_exists);	// ASF: Where is this handled?
 
 RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse)
 	: TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>(pool),

@@ -7872,7 +7872,7 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	dsql_nod* andNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 	andNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode);
-	
+
 	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++)
 	{
 		dsql_nod* fieldNode = *ptr;
