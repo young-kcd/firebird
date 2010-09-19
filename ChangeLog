@@ -1,3 +1,20 @@
+ 2010-09-18 18:19  asfernandes 
+   M src/dsql/parse.y
+Simplificate repetitive code
+
+ 2010-09-18 18:18  asfernandes 
+   M src/dsql/BoolNodes.cpp
+Correction
+
+ 2010-09-18 15:56  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+Misc
+
+ 2010-09-18 06:52  dimitr 
+   M src/jrd/vio.cpp
+Fixed CORE-3137: Partial rollback is possible for a selectable procedure modifying data.
+
  2010-09-17 14:42  asfernandes 
    M src/dsql/DdlNodes.epp
 Fix problem with view WITH CHECK OPTION present since the introduction of ExprNode
