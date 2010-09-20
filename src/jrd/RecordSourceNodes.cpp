@@ -42,10 +42,10 @@ using namespace Jrd;
 static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
 static SSHORT strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	RecordSourceNode* source, jrd_nod** boolean, RecordSourceNodeStack& stack);
+	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack);
 static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Format** inputFormat);
-static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode* map,
-	NodeStack* parentStack, UCHAR shellStream);
+static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
+	BoolExprNodeStack* parentStack, UCHAR shellStream);
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
 static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
@@ -303,7 +303,7 @@ void RelationSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, cons
 }
 
 void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -415,8 +415,10 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 	if (viewRse->rse_boolean)
 	{
-		jrd_nod* node = CMP_pass1(tdbb, csb, NodeCopier::copy(tdbb,
-			csb, viewRse->rse_boolean, map));
+		NodeCopier copier(csb, map);
+		BoolExprNode* node = viewRse->rse_boolean->copy(tdbb, copier);
+
+		node = node->pass1(tdbb, csb);
 
 		if (*boolean)
 		{
@@ -428,12 +430,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 			andNode->arg1 = node;
 			andNode->arg2 = *boolean;
 
-			jrd_nod* additional = PAR_make_node(tdbb, 1);
-			additional->nod_type = nod_class_exprnode_jrd;
-			additional->nod_count = 0;
-			additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
-
-			*boolean = additional;
+			*boolean = andNode;
 		}
 		else
 			*boolean = node;
@@ -628,7 +625,7 @@ void ProcedureSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* 
 }
 
 void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -801,7 +798,7 @@ void AggregateSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* 
 }
 
 void AggregateSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -853,7 +850,7 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, b
 
 	opt->beds[++opt->beds[0]] = (UCHAR) stream;
 
-	NodeStack::const_iterator stackEnd;
+	BoolExprNodeStack::const_iterator stackEnd;
 	if (opt->parentStack)
 		stackEnd = opt->conjunctStack.merge(*opt->parentStack);
 
@@ -871,7 +868,7 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, b
 // Generate an RecordSource (Record Source Block) for each aggregate operation.
 // Generate an AggregateSort (Aggregate SortedStream Block) for each DISTINCT aggregate.
 RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
-	NodeStack* parentStack, UCHAR shellStream)
+	BoolExprNodeStack* parentStack, UCHAR shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -882,7 +879,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	// Zip thru stack of booleans looking for fields that belong to shellStream.
 	// Those fields are mappings. Mappings that hold a plain field may be used
 	// to distribute. Handle the simple cases only.
-	NodeStack deliverStack;
+	BoolExprNodeStack deliverStack;
 	genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
 
 	// try to optimize MAX and MIN to use an index; for now, optimize
@@ -1037,7 +1034,7 @@ void UnionSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const j
 }
 
 void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -1110,7 +1107,7 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool 
 	const SSHORT i = (SSHORT) opt->keyStreams[0];
 	computeDbKeyStreams(opt->keyStreams);
 
-	NodeStack::const_iterator stackEnd;
+	BoolExprNodeStack::const_iterator stackEnd;
 	if (opt->parentStack)
 		stackEnd = opt->conjunctStack.merge(*opt->parentStack);
 
@@ -1128,7 +1125,7 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool 
 
 // Generate a union complex.
 RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams,
-	USHORT nstreams, NodeStack* parentStack, UCHAR shellStream)
+	USHORT nstreams, BoolExprNodeStack* parentStack, UCHAR shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -1148,7 +1145,7 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHA
 		// AB: Try to distribute booleans from the top rse for an UNION to
 		// the WHERE clause of every single rse.
 		// hvlad: don't do it for recursive unions else they will work wrong !
-		NodeStack deliverStack;
+		BoolExprNodeStack deliverStack;
 		if (!recursive)
 			genDeliverUnmapped(tdbb, &deliverStack, map, parentStack, shellStream);
 
@@ -1320,7 +1317,7 @@ void WindowSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* vie
 }
 
 void WindowSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -1399,7 +1396,7 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 		opt->beds[++opt->beds[0]] = (UCHAR) partition->stream;
 	}
 
-	NodeStack deliverStack;
+	BoolExprNodeStack deliverStack;
 
 	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, partitions,
 		OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
@@ -1455,9 +1452,13 @@ RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier)
 	newSource->rse_jointype = rse_jointype;
 	newSource->rse_first = copier.copy(tdbb, rse_first);
 	newSource->rse_skip = copier.copy(tdbb, rse_skip);
-	newSource->rse_boolean = copier.copy(tdbb, rse_boolean);
+
+	if (rse_boolean)
+		newSource->rse_boolean = rse_boolean->copy(tdbb, copier);
+
 	if (rse_sorted)
 		newSource->rse_sorted = rse_sorted->copy(tdbb, copier);
+
 	if (rse_projection)
 		newSource->rse_projection = rse_projection->copy(tdbb, copier);
 
@@ -1502,7 +1503,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 	csb->csb_current_nodes.push(this);
 
 	RecordSourceNodeStack stack;
-	jrd_nod* boolean = NULL;
+	BoolExprNode* boolean = NULL;
 	SortNode* sort = rse_sorted;
 	SortNode* project = rse_projection;
 	jrd_nod* first = rse_first;
@@ -1538,20 +1539,15 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 		{
 			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 			andNode->arg1 = boolean;
-			andNode->arg2 = CMP_pass1(tdbb, csb, rse_boolean);
+			andNode->arg2 = rse_boolean->pass1(tdbb, csb);
 
-			jrd_nod* additional = PAR_make_node(tdbb, 1);
-			additional->nod_type = nod_class_exprnode_jrd;
-			additional->nod_count = 0;
-			additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
-
-			rse_boolean = additional;
+			rse_boolean = andNode;
 		}
 		else
 			rse_boolean = boolean;
 	}
-	else
-		rse_boolean = CMP_pass1(tdbb, csb, rse_boolean);
+	else if (rse_boolean)
+		rse_boolean = rse_boolean->pass1(tdbb, csb);
 
 	if (sort)
 	{
@@ -1573,7 +1569,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 }
 
 void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	jrd_nod** boolean, RecordSourceNodeStack& stack)
+	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	// in the case of a RseNode, it is possible that a new RseNode will be generated,
 	// so wait to process the source before we push it on the stack (bug 8039)
@@ -1594,7 +1590,7 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 		if (rse_boolean)
 		{
-			jrd_nod* node = CMP_pass1(tdbb, csb, rse_boolean);
+			BoolExprNode* node = rse_boolean->pass1(tdbb, csb);
 
 			if (*boolean)
 			{
@@ -1603,12 +1599,7 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				andNode->arg1 = node;
 				andNode->arg2 = *boolean;
 
-				jrd_nod* additional = PAR_make_node(tdbb, 1);
-				additional->nod_type = nod_class_exprnode_jrd;
-				additional->nod_count = 0;
-				additional->nod_arg[0] = reinterpret_cast<jrd_nod*>(andNode);
-
-				*boolean = additional;
+				*boolean = andNode;
 			}
 			else
 				*boolean = node;
@@ -1642,7 +1633,7 @@ void RseNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 		(*ptr)->pass2Rse(tdbb, csb);
 
 	if (rse_boolean)
-		CMP_pass2(tdbb, csb, rse_boolean, NULL);
+		rse_boolean->pass2(tdbb, csb);
 
 	if (rse_sorted)
 		rse_sorted->pass2(tdbb, csb);
@@ -1706,9 +1697,9 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 				opt->opt_csb->csb_rpt[*i].csb_flags |= csb_active;
 		}
 
-		//const NodeStack::iterator stackSavepoint(opt->conjunctStack);
-		NodeStack::const_iterator stackEnd;
-		NodeStack deliverStack;
+		//const BoolExprNodeStack::iterator stackSavepoint(opt->conjunctStack);
+		BoolExprNodeStack::const_iterator stackEnd;
+		BoolExprNodeStack deliverStack;
 
 		if (opt->rse->rse_jointype != blr_inner)
 		{
@@ -1716,15 +1707,16 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 			// In fact these are all nodes except when a IS NULL comparision is done.
 			// Note! Don't forget that this can be burried inside a expression
 			// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
-			NodeStack::iterator stackItem;
+			BoolExprNodeStack::iterator stackItem;
 			if (opt->parentStack)
 				stackItem = *opt->parentStack;
 
 			for (; stackItem.hasData(); ++stackItem)
 			{
-				jrd_nod* deliverNode = stackItem.object();
+				BoolExprNode* deliverNode = stackItem.object();
+				PossibleUnknownFinder finder;
 
-				if (!PossibleUnknownFinder::find(deliverNode))
+				if (!deliverNode->jrdPossibleUnknownFinder(finder))
 					deliverStack.push(deliverNode);
 			}
 
@@ -2039,7 +2031,7 @@ bool RseNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
 	bool result = true;
 
 	// Check sub-stream
-	if ((rse_boolean && !OPT_computable(csb, rse_boolean, stream, idx_use, allowOnlyCurrentStream)) ||
+	if ((rse_boolean && !rse_boolean->computable(csb, stream, idx_use, allowOnlyCurrentStream)) ||
 	    (rse_sorted && !rse_sorted->computable(csb, stream, idx_use, allowOnlyCurrentStream)) ||
 	    (rse_projection && !rse_projection->computable(csb, stream, idx_use, allowOnlyCurrentStream)))
 	{
@@ -2082,7 +2074,7 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
         optRet->findDependentFromStreams(rse_skip, streamList);
 
 	if (rse_boolean)
-		optRet->findDependentFromStreams(rse_boolean, streamList);
+		rse_boolean->findDependentFromStreams(optRet, streamList);
 
 	if (rse_sorted)
 		rse_sorted->findDependentFromStreams(optRet, streamList);
@@ -2143,7 +2135,7 @@ static SSHORT strcmpSpace(const char* p, const char* q)
 // Process a single record source stream from a RseNode.
 // Obviously, if the source is a view, there is more work to do.
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	RecordSourceNode* source, jrd_nod** boolean, RecordSourceNodeStack& stack)
+	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
 	SET_TDBB(tdbb);
 
@@ -2267,19 +2259,19 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 
 // Make new boolean nodes from nodes that contain a field from the given shellStream.
 // Those fields are references (mappings) to other nodes and are used by aggregates and union rse's.
-static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode* map,
-	NodeStack* parentStack, UCHAR shellStream)
+static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
+	BoolExprNodeStack* parentStack, UCHAR shellStream)
 {
 	SET_TDBB(tdbb);
 
-	for (NodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
+	for (BoolExprNodeStack::iterator stack1(*parentStack); stack1.hasData(); ++stack1)
 	{
-		jrd_nod* boolean = stack1.object();
+		BoolExprNode* boolean = stack1.object();
 
 		// Reduce to simple comparisons
 
-		ComparativeBoolNode* cmpNode = ExprNode::as<ComparativeBoolNode>(boolean);
-		MissingBoolNode* missingNode = ExprNode::as<MissingBoolNode>(boolean);
+		ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
+		MissingBoolNode* missingNode = boolean->as<MissingBoolNode>();
 		HalfStaticArray<jrd_nod*, 2> children;
 
 		if (cmpNode &&
@@ -2313,60 +2305,47 @@ static void genDeliverUnmapped(thread_db* tdbb, NodeStack* deliverStack, MapNode
 			continue;
 
 		// Create new node and assign the correct existing arguments
-		jrd_nod* deliverNode = PAR_make_node(tdbb, 1);
-		deliverNode->nod_count = 0;
-		deliverNode->nod_type = boolean->nod_type;
-		deliverNode->nod_flags = boolean->nod_flags;
-		deliverNode->nod_impure = boolean->nod_impure;
 
-		BoolExprNode* newNode = NULL;
+		BoolExprNode* deliverNode = NULL;
 		HalfStaticArray<jrd_nod**, 2> newChildren;
 
 		if (cmpNode)
 		{
 			ComparativeBoolNode* newCmpNode = FB_NEW(*tdbb->getDefaultPool()) ComparativeBoolNode(
 				*tdbb->getDefaultPool(), cmpNode->blrOp);
-			newCmpNode->setNode(deliverNode);
 
 			newChildren.add(newCmpNode->arg1.getAddress());
 			newChildren.add(newCmpNode->arg2.getAddress());
 
-			newNode = newCmpNode;
+			deliverNode = newCmpNode;
 		}
 		else if (missingNode)
 		{
 			MissingBoolNode* newMissingNode = FB_NEW(*tdbb->getDefaultPool()) MissingBoolNode(
 				*tdbb->getDefaultPool());
-			newMissingNode->setNode(deliverNode);
 
 			newChildren.add(newMissingNode->arg.getAddress());
 
-			newNode = newMissingNode;
-		}
-		else
-		{
-			fb_assert(false);
+			deliverNode = newMissingNode;
 		}
 
-		deliverNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(newNode);
+		deliverNode->flags = boolean->flags;
+		deliverNode->impureOffset = boolean->impureOffset;
 
 		bool wrongNode = false;
 
 		for (indexArg = 0; (indexArg < children.getCount()) && !wrongNode; ++indexArg)
 		{
-			jrd_nod* node = UnmappedNodeGetter::get(map, shellStream, children[indexArg]);
+			JrdNode node = UnmappedNodeGetter::get(map, shellStream, children[indexArg]);
 
-			wrongNode = (node == NULL);
+			wrongNode = (!node.jrdNode || !*node.jrdNode);
 
 			if (!wrongNode)
-				*newChildren[indexArg] = node;
+				*newChildren[indexArg] = *node.jrdNode;
 		}
 
 		if (wrongNode)
-		{
-			delete newNode;
 			delete deliverNode;
-		}
 		else
 			deliverStack->push(deliverNode);
 	}

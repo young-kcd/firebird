@@ -29,6 +29,7 @@
 namespace Jrd
 {
 
+class BoolExprNode;
 class RseNode;
 
 // view context block to cache view aliases
@@ -330,8 +331,10 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
-	jrd_nod*	fld_validation;		// validation clause, if any
-	jrd_nod*	fld_not_null;		// if field cannot be NULL
+	BoolExprNode*	fld_validation;		// validation clause, if any
+	jrd_nod*	fld_validation_stmt;	// validation clause, if any - nod_stmt_expr fragment
+	BoolExprNode*	fld_not_null;		// if field cannot be NULL
+	jrd_nod*	fld_not_null_stmt;		// if field cannot be NULL - nod_stmt_expr fragment
 	jrd_nod*	fld_missing_value;	// missing value, if any
 	jrd_nod*	fld_computation;	// computation for virtual field
 	jrd_nod*	fld_source;			// source for view fields

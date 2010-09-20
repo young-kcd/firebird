@@ -26,19 +26,15 @@
 #ifndef JRD_RSE_H
 #define JRD_RSE_H
 
-// This is really funny: class rse is not defined here but in exe.h!!!
-
 #include "../include/fb_blk.h"
-
 #include "../common/classes/array.h"
 #include "../jrd/constants.h"
-
 #include "../jrd/dsc.h"
 #include "../jrd/lls.h"
 #include "../jrd/sbm.h"
-
 #include "../jrd/ExtEngineManager.h"
 #include "../jrd/RecordBuffer.h"
+#include "../dsql/Nodes.h"
 
 struct dsc;
 
@@ -47,33 +43,10 @@ namespace Jrd {
 class jrd_nod;
 struct sort_key_def;
 class CompilerScratch;
+class BoolExprNode;
 
 // Array which stores relative pointers to impure areas of invariant nodes
 typedef Firebird::SortedArray<ULONG> VarInvariantArray;
-
-// Must be less then MAX_SSHORT. Not used for static arrays.
-const int MAX_CONJUNCTS	= 32000;
-
-// Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
-// Here we should really have a compile-time fb_assert, since this hard-coded
-// limit is NOT negotiable so long as we use an array of UCHAR, where index 0
-// tells how many streams are in the array (and the streams themselves are
-// identified by a UCHAR).
-const int MAX_STREAMS = 255;
-
-// This is number of ULONG's needed to store bit-mapped flags for all streams
-// OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
-// This value cannot be increased simple way. Decrease is possible, but it is also
-// hardcoded in several places such as TEST_DEP_ARRAYS macro
-const int OPT_STREAM_BITS = 8;
-
-// Number of streams, conjuncts, indices that will be statically allocated
-// in various arrays. Larger numbers will have to be allocated dynamically
-const int OPT_STATIC_ITEMS = 16;
-
-typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
-typedef Firebird::SortedArray<int> SortedStreamList;
-typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 class RseNode;
 
@@ -82,7 +55,7 @@ class RseNode;
 class OptimizerBlk : public pool_alloc<type_opt>
 {
 public:
-	OptimizerBlk(MemoryPool* pool, RseNode* aRse, NodeStack* aParentStack)
+	OptimizerBlk(MemoryPool* pool, RseNode* aRse, BoolExprNodeStack* aParentStack)
 		: opt_conjuncts(*pool),
 		  opt_streams(*pool),
 		  rse(aRse),
@@ -105,7 +78,7 @@ public:
 	struct opt_conjunct
 	{
 		// Conjunctions and their options
-		jrd_nod* opt_conjunct_node;	// conjunction
+		BoolExprNode* opt_conjunct_node;	// conjunction
 		UCHAR opt_conjunct_flags;
 	};
 
@@ -120,9 +93,9 @@ public:
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
 
 	RseNode* const rse;
-	NodeStack* parentStack;
+	BoolExprNodeStack* parentStack;
 	StreamsArray outerStreams, subStreams;
-	NodeStack conjunctStack;
+	BoolExprNodeStack conjunctStack;
 	SLONG conjunctCount;
 	stream_array_t compileStreams, beds, localStreams, keyStreams;
 };

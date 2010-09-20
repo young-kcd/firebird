@@ -74,10 +74,11 @@ DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	if (count != 0)
 	{
-		NestConst<NestConst<jrd_nod> >* arg = node->jrdChildNodes.begin();
+		JrdNode* arg = node->jrdChildNodes.begin();
 		do
 		{
-			**arg++ = PAR_parse_node(tdbb, csb, VALUE);
+			*arg->jrdNode = PAR_parse_node(tdbb, csb, VALUE);
+			++arg;
 		} while (--count);
 	}
 

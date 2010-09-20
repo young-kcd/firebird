@@ -37,7 +37,7 @@ class BinaryBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL
 public:
 	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg1 = NULL, dsql_nod* aArg2 = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static BoolExprNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -45,6 +45,8 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 private:
@@ -55,8 +57,8 @@ public:
 	UCHAR blrOp;
 	dsql_nod* dsqlArg1;
 	dsql_nod* dsqlArg2;
-	NestConst<jrd_nod> arg1;
-	NestConst<jrd_nod> arg2;
+	NestConst<BoolExprNode> arg1;
+	NestConst<BoolExprNode> arg2;
 };
 
 
@@ -73,7 +75,7 @@ public:
 	ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg1 = NULL,
 		dsql_nod* aArg2 = NULL, dsql_nod* aArg3 = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static BoolExprNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -86,8 +88,11 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
+	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 private:
@@ -117,7 +122,7 @@ class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BO
 public:
 	MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static BoolExprNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -129,8 +134,8 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
-	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
@@ -144,7 +149,7 @@ class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 public:
 	NotBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static BoolExprNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -156,7 +161,7 @@ public:
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
-	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 private:
@@ -164,7 +169,7 @@ private:
 
 public:
 	dsql_nod* dsqlArg;
-	NestConst<jrd_nod> arg;
+	NestConst<BoolExprNode> arg;
 };
 
 
@@ -173,7 +178,7 @@ class RseBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
 public:
 	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static BoolExprNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -192,8 +197,11 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
-	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb);
+	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
 private:

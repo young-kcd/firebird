@@ -334,7 +334,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					try
 					{
 						parameter->prm_default_value =
-							MET_parse_blob(tdbb, NULL, &default_value, NULL, NULL, false);
+							MET_parse_blob(tdbb, NULL, &default_value, NULL, NULL, false, false);
 					}
 					catch (const Exception&)
 					{
@@ -594,7 +594,7 @@ void Function::parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb)
 		statement = NULL;
 	}
 
-	MET_parse_blob(tdbb, NULL, blob_id, &csb, &statement, false);
+	MET_parse_blob(tdbb, NULL, blob_id, &csb, &statement, false, false);
 	statement->function = this;
 	setStatement(statement);
 }

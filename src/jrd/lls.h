@@ -28,10 +28,12 @@
 namespace Jrd {
 	class Record;
 	class jrd_nod;
+	class BoolExprNode;
 	class RecordSourceNode;
 
 	typedef Firebird::Stack<Record*> RecordStack;
 	typedef Firebird::Stack<jrd_nod*> NodeStack;
+	typedef Firebird::Stack<BoolExprNode*> BoolExprNodeStack;
 	typedef Firebird::Stack<RecordSourceNode*> RecordSourceNodeStack;
 	typedef Firebird::Stack<SLONG> PageStack;
 	typedef Firebird::Stack<UCHAR*> UCharStack;

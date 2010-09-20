@@ -38,9 +38,36 @@ class Cursor;
 class dsql_nod;
 class ExprNode;
 class jrd_nod;
+class OptimizerRetrieval;
 class RseNode;
 class SlidingWindow;
 class TypeClause;
+
+
+// Must be less then MAX_SSHORT. Not used for static arrays.
+const int MAX_CONJUNCTS	= 32000;
+
+// Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
+// Here we should really have a compile-time fb_assert, since this hard-coded
+// limit is NOT negotiable so long as we use an array of UCHAR, where index 0
+// tells how many streams are in the array (and the streams themselves are
+// identified by a UCHAR).
+const int MAX_STREAMS = 255;
+
+// This is number of ULONG's needed to store bit-mapped flags for all streams
+// OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)
+// This value cannot be increased simple way. Decrease is possible, but it is also
+// hardcoded in several places such as TEST_DEP_ARRAYS macro
+const int OPT_STREAM_BITS = 8;
+
+// Number of streams, conjuncts, indices that will be statically allocated
+// in various arrays. Larger numbers will have to be allocated dynamically
+const int OPT_STATIC_ITEMS = 16;
+
+
+typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
+typedef Firebird::SortedArray<int> SortedStreamList;
+typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 
 template <typename T>
@@ -48,6 +75,16 @@ class RegisterNode
 {
 public:
 	explicit RegisterNode(UCHAR blr)
+	{
+		PAR_register(blr, T::parse);
+	}
+};
+
+template <typename T>
+class RegisterBoolNode
+{
+public:
+	explicit RegisterBoolNode(UCHAR blr)
 	{
 		PAR_register(blr, T::parse);
 	}
@@ -235,7 +272,8 @@ public:
 		TYPE_RSE_BOOL,
 		TYPE_SUBSTRING_SIMILAR,
 		TYPE_SYSFUNC_CALL,
-		TYPE_UDF_CALL
+		TYPE_UDF_CALL,
+		TYPE_VALUE_IF
 	};
 
 	explicit ExprNode(Type aType, MemoryPool& pool)
@@ -333,9 +371,9 @@ public:
 	{
 		visitor.nodeFound = node;
 
-		for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		{
-			if (!visitor.visit(**i))
+			if (!visitor.visit(*i))
 				return false;
 		}
 
@@ -351,6 +389,12 @@ public:
 		return this;
 	}
 
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+		bool allowOnlyCurrentStream);
+	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
+		SortedStreamList* streamList);
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
@@ -360,10 +404,10 @@ protected:
 	virtual bool dsqlVisit(NonConstDsqlNodeVisitor& visitor);
 	virtual bool jrdVisit(JrdNodeVisitor& visitor);
 
-	void addChildNode(dsql_nod*& dsqlNode, NestConst<jrd_nod>& jrdNode)
+	void addChildNode(dsql_nod*& dsqlNode, const JrdNode& jrdNode)
 	{
 		dsqlChildNodes.add(&dsqlNode);
-		jrdChildNodes.add(&jrdNode);
+		jrdChildNodes.add(jrdNode);
 	}
 
 	void addChildNode(dsql_nod*& dsqlNode)
@@ -375,14 +419,20 @@ public:
 	const Type type;
 	const char* dsqlCompatDialectVerb;
 	Firebird::Array<dsql_nod**> dsqlChildNodes;
-	Firebird::Array<NestConst<NestConst<jrd_nod> > > jrdChildNodes;
+	Firebird::Array<JrdNode> jrdChildNodes;
 };
 
 class BoolExprNode : public ExprNode
 {
 public:
+	static const unsigned FLAG_DEOPTIMIZE	= 0x1;	// Boolean which requires deoptimization.
+	static const unsigned FLAG_ANSI_NOT		= 0x2;	// ANY/ALL predicate is prefixed with a NOT one.
+	static const unsigned FLAG_INVARIANT	= 0x4;	// Node is recognized as being invariant.
+
 	BoolExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool)
+		: ExprNode(aType, pool),
+		  impureOffset(0),
+		  flags(0)
 	{
 	}
 
@@ -392,8 +442,31 @@ public:
 		return this;
 	}
 
+	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+		bool allowOnlyCurrentStream);
+
+	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		ExprNode::pass1(tdbb, csb);
+		return this;
+	}
+
+	virtual BoolExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+
+	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb)
+	{
+	}
+
+	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
+	{
+	}
+
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
+
+public:
+	ULONG impureOffset;
+	unsigned flags;
 };
 
 class ValueExprNode : public ExprNode

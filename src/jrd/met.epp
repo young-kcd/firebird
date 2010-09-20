@@ -1443,7 +1443,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	else
 	{
 		node = MET_parse_blob(tdbb, relation, blob_id, &csb, statementPtr,
-			(type == obj_trigger && relation != NULL));
+			(type == obj_trigger && relation != NULL), type == obj_validation);
 	}
 
 	if (type == obj_computed)
@@ -2615,7 +2615,8 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 				   bid*			blob_id,
 				   CompilerScratch**		csb_ptr,
 				   JrdStatement**	statementPtr,
-				   const bool	trigger)
+				   const bool	trigger,
+				   bool validationExpr)
 {
 /**************************************
  *
@@ -2641,7 +2642,16 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 	UCHAR* temp = tmp.getBuffer(length);
 	length = BLB_get_data(tdbb, blob, temp, length);
 
-	jrd_nod* node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, statementPtr, trigger, 0);
+	jrd_nod* node = NULL;
+
+	if (validationExpr)
+	{
+		// The set of MET parse functions needs a rework.
+		// For now, our caller chain is not interested in the returned node.
+		PAR_validation_blr(tdbb, relation, temp, length, NULL, csb_ptr, 0, NULL, NULL);
+	}
+	else
+		node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, statementPtr, trigger, 0);
 
 	return node;
 }
@@ -2993,8 +3003,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 					try
 					{
-						parameter->prm_default_value =
-							MET_parse_blob(tdbb, NULL, &pa_default_value, NULL, NULL, false);
+						parameter->prm_default_value = MET_parse_blob(tdbb, NULL,
+							&pa_default_value, NULL, NULL, false, false);
 					}
 					catch (const Exception&)
 					{
@@ -3580,7 +3590,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					NULL, &csb, depName, obj_view, 0, depTrans);
 			}
 			else
-				rseNode = MET_parse_blob(tdbb, relation, &REL.RDB$VIEW_BLR, &csb, NULL, false);
+				rseNode = MET_parse_blob(tdbb, relation, &REL.RDB$VIEW_BLR, &csb, NULL, false, false);
 
 			if (rseNode)
 			{
@@ -3748,14 +3758,14 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				// Because a VIEW can't have a validation section i ignored the whole call.
 				if (!csb)
 				{
-					field->fld_validation = PAR_blr(tdbb, relation, p, length, csb,
-						NULL, NULL, false, csb_validation);
+					PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
+						&field->fld_validation, &field->fld_validation_stmt);
 				}
 				break;
 
 			case RSR_field_not_null:
-				field->fld_not_null = PAR_blr(tdbb, relation, p, length, csb, NULL,
-					NULL, false, csb_validation);
+				PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
+					&field->fld_not_null, &field->fld_not_null_stmt);
 				break;
 
 			case RSR_security_class:

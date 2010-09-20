@@ -747,7 +747,7 @@ void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* 
 						 dsql_nod* null_replacement,
 						 const TEXT* expression_name)
 {
-	Firebird::Array<const dsc*> args;
+	Array<const dsc*> args;
 
 	fb_assert(node->nod_type == nod_list);
 

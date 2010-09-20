@@ -5245,7 +5245,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						try
 						{
 							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
-								NULL, &defaultStatement, false);
+								NULL, &defaultStatement, false, false);
 
 							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
 

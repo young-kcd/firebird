@@ -38,6 +38,7 @@ namespace Jrd
 	class jrd_nod;
 	class jrd_prc;
 	class AggNode;
+	class BoolExprNode;
 	class Sort;
 	class CompilerScratch;
 	class RecordBuffer;
@@ -422,7 +423,7 @@ namespace Jrd
 	class FilteredStream : public RecordSource
 	{
 	public:
-		FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod* boolean);
+		FilteredStream(CompilerScratch* csb, RecordSource* next, BoolExprNode* boolean);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -441,7 +442,7 @@ namespace Jrd
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
 
-		void setAnyBoolean(jrd_nod* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
 		{
 			fb_assert(!m_anyBoolean);
 			m_anyBoolean = anyBoolean;
@@ -455,8 +456,8 @@ namespace Jrd
 		bool evaluateBoolean(thread_db* tdbb) const;
 
 		NestConst<RecordSource> m_next;
-		NestConst<jrd_nod> const m_boolean;
-		NestConst<jrd_nod> m_anyBoolean;
+		NestConst<BoolExprNode> const m_boolean;
+		NestConst<BoolExprNode> m_anyBoolean;
 		bool m_ansiAny;
 		bool m_ansiAll;
 		bool m_ansiNot;
@@ -732,7 +733,7 @@ namespace Jrd
 	public:
 		NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource* const* args);
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-					   jrd_nod* boolean, bool semiJoin, bool antiJoin);
+					   BoolExprNode* boolean, bool semiJoin, bool antiJoin);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -758,7 +759,7 @@ namespace Jrd
 		const bool m_semiJoin;
 		const bool m_antiJoin;
 		Firebird::Array<NestConst<RecordSource> > m_args;
-		NestConst<jrd_nod> const m_boolean;
+		NestConst<BoolExprNode> const m_boolean;
 	};
 
 	class FullOuterJoin : public RecordSource

@@ -320,9 +320,6 @@ bool EVL_boolean(thread_db* tdbb, const jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	// Handle and pre-processing possible for various nodes.  This includes
-	// evaluating argument and checking NULL flags
-
 	jrd_req* request = tdbb->getRequest();
 
 	switch (node->nod_type)
@@ -577,10 +574,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			request->req_flags |= req_null;
 		}
 		return request->req_domain_validation;
-
-	case nod_value_if:
-		return EVL_expr(tdbb, (EVL_boolean(tdbb, node->nod_arg[0])) ?
-			node->nod_arg[1] : node->nod_arg[2]);
 
 	case nod_trim:
 		return trim(tdbb, node, impure);

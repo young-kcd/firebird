@@ -125,16 +125,13 @@ public:
 	***/
 };
 
-const int nod_comparison	= 1;
 const int nod_id			= 1;		// marks a field node as a blr_fid guy
 const int nod_quad			= 2;		// compute in quad (default is long)
 const int nod_double		= 4;
 const int nod_date			= 8;
 const int nod_value			= 16;		// full value area required in impure space
-const int nod_deoptimize	= 32;		// boolean which requires deoptimization
-const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
-const int nod_invariant		= 128;		// node is recognized as being invariant
-const int nod_ansi_not		= 256;		// ANY/ALL predicate is prefixed with a NOT one
+const int nod_agg_dbkey		= 32;		// dbkey of an aggregate
+const int nod_invariant		= 64;		// node is recognized as being invariant
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;
@@ -631,17 +628,27 @@ struct LegacyNodeOrRseNode
 {
 	LegacyNodeOrRseNode(jrd_nod* aLegacyNode)
 		: legacyNode(aLegacyNode),
+		  boolExprNode(NULL),
+		  rseNode(NULL)
+	{
+	}
+
+	LegacyNodeOrRseNode(BoolExprNode* aBoolExprNode)
+		: legacyNode(NULL),
+		  boolExprNode(aBoolExprNode),
 		  rseNode(NULL)
 	{
 	}
 
 	LegacyNodeOrRseNode(RseNode* aRseNode)
 		: legacyNode(NULL),
+		  boolExprNode(NULL),
 		  rseNode(aRseNode)
 	{
 	}
 
 	jrd_nod* legacyNode;
+	BoolExprNode* boolExprNode;
 	RseNode* rseNode;
 };
 
@@ -746,7 +753,7 @@ public:
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
-	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
+	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
 	Firebird::Array<LegacyNodeOrRseNode> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
 	USHORT			csb_n_stream;				// Next available stream

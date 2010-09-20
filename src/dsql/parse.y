@@ -5775,7 +5775,7 @@ case_abbreviation
 					$3);
 		}
 	| IIF '(' search_condition ',' value ',' value ')'
-		{ $$ = make_node (nod_searched_case, 2, make_node (nod_list, 2, $3, $5), $7); }
+		{ $$ = makeClassNode(FB_NEW(getPool()) ValueIfNode(getPool(), $3, $5, $7)); }
 	| COALESCE '(' value ',' value_list ')'
 		{ $$ = make_node (nod_coalesce, 2, $3, $5); }
 	| DECODE '(' value ',' decode_pairs ')'

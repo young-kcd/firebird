@@ -31,6 +31,7 @@
 #include "../jrd/Function.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/Optimizer.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -129,6 +130,7 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const dsql_nod* const* const* j = other->dsqlChildNodes.begin();
+
 	for (const dsql_nod* const* const* i = dsqlChildNodes.begin(); i != dsqlChildNodes.end(); ++i, ++j)
 	{
 		if (!PASS1_node_match(**i, **j, ignoreMapCast))
@@ -138,17 +140,106 @@ bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return true;
 }
 
+bool ExprNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream) /*const*/
+{
+	if (other->type != type)
+		return false;
+
+	size_t count = jrdChildNodes.getCount();
+	if (other->jrdChildNodes.getCount() != count)
+		return false;
+
+	JrdNode* j = other->jrdChildNodes.begin();
+
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i, ++j)
+	{
+		if (*i && *j)
+		{
+			if (i->jrdNode && j->jrdNode)
+			{
+				if (!OPT_expression_equal2(tdbb, csb, *i->jrdNode, *j->jrdNode, stream))
+					return false;
+			}
+			else if (i->boolExprNode && j->boolExprNode)
+			{
+				if (!(*i->boolExprNode)->expressionEqual(tdbb, csb, *j->boolExprNode, stream))
+					return false;
+			}
+			else
+				return false;
+		}
+	}
+
+	return true;
+}
+
+bool ExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	bool allowOnlyCurrentStream)
+{
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (*i)
+		{
+			if (i->jrdNode)
+			{
+				if (!OPT_computable(csb, *i->jrdNode, stream, idxUse, allowOnlyCurrentStream))
+					return false;
+			}
+			else if (i->boolExprNode)
+			{
+				if (!(*i->boolExprNode)->computable(csb, stream, idxUse, allowOnlyCurrentStream))
+					return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void ExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
+{
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (*i)
+		{
+			if (i->jrdNode)
+				optRet->findDependentFromStreams(*i->jrdNode, streamList);
+			else if (i->boolExprNode)
+				(*i->boolExprNode)->findDependentFromStreams(optRet, streamList);
+		}
+	}
+}
+
 ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-		**i = CMP_pass1(tdbb, csb, **i);
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (*i)
+		{
+			if (i->jrdNode)
+				*i->jrdNode = CMP_pass1(tdbb, csb, *i->jrdNode);
+			else if (i->boolExprNode)
+				*i->boolExprNode = (*i->boolExprNode)->pass1(tdbb, csb);
+		}
+	}
+
 	return this;
 }
 
 ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-		**i = CMP_pass2(tdbb, csb, **i, node);
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (*i)
+		{
+			if (i->jrdNode)
+				*i->jrdNode = CMP_pass2(tdbb, csb, *i->jrdNode, node);
+			else if (i->boolExprNode)
+				*i->boolExprNode = (*i->boolExprNode)->pass2(tdbb, csb);
+		}
+	}
+
 	return this;
 }
 
@@ -156,8 +247,8 @@ bool ExprNode::jrdVisit(JrdNodeVisitor& visitor)
 {
 	bool ret = false;
 
-	for (NestConst<NestConst<jrd_nod> >* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-		ret |= visitor.visit(**i);
+	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		ret |= visitor.visit(*i);
 
 	return ret;
 }
@@ -1285,6 +1376,35 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	fb_assert(o)
 
 	return dialect1 == o->dialect1 && blrOp == o->blrOp;
+}
+
+bool ArithmeticNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	ArithmeticNode* otherNode = other->as<ArithmeticNode>();
+
+	if (!otherNode || blrOp != otherNode->blrOp || dialect1 != otherNode->dialect1)
+		return false;
+
+	if (OPT_expression_equal2(tdbb, csb, arg1, otherNode->arg1, stream) &&
+		OPT_expression_equal2(tdbb, csb, arg2, otherNode->arg2, stream))
+	{
+		return true;
+	}
+
+	if (blrOp == blr_add || blrOp == blr_multiply)
+	{
+		// A + B is equivalent to B + A, ditto for A * B and B * A.
+		// Note: If one expression is A + B + C, but the other is B + C + A we won't
+		// necessarily match them.
+		if (OPT_expression_equal2(tdbb, csb, arg1, otherNode->arg2, stream) &&
+			OPT_expression_equal2(tdbb, csb, arg2, otherNode->arg1, stream))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 ExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
@@ -3784,7 +3904,7 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 ExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	if (node->nod_flags & nod_invariant)
-		csb->csb_invariants.push(node);
+		csb->csb_invariants.push(&node->nod_impure);
 
 	ExprNode::pass2(tdbb, csb);
 
@@ -4016,6 +4136,18 @@ bool SysFuncCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
+bool SysFuncCallNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	SysFuncCallNode* otherNode = other->as<SysFuncCallNode>();
+	fb_assert(otherNode);
+
+	return function && function == otherNode->function;
+}
+
 ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	ExprNode::pass2(tdbb, csb);
@@ -4234,6 +4366,18 @@ bool UdfCallNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return name == otherNode->name;
 }
 
+bool UdfCallNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	UdfCallNode* otherNode = other->as<UdfCallNode>();
+	fb_assert(otherNode);
+
+	return function && function == otherNode->function;
+}
+
 ExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ExprNode::pass1(tdbb, csb);
@@ -4313,6 +4457,118 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	return node;
+}
+
+
+//--------------------
+
+
+static RegisterNode<ValueIfNode> regValueIfNode(blr_value_if);
+
+ValueIfNode::ValueIfNode(MemoryPool& pool, dsql_nod* aCondition, dsql_nod* aTrueValue,
+			dsql_nod* aFalseValue)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>(pool),
+	  dsqlCondition(aCondition),
+	  dsqlTrueValue(aTrueValue),
+	  dsqlFalseValue(aFalseValue),
+	  condition(NULL),
+	  trueValue(NULL),
+	  falseValue(NULL)
+{
+	addChildNode(dsqlCondition, condition);
+	addChildNode(dsqlTrueValue, trueValue);
+	addChildNode(dsqlFalseValue, falseValue);
+}
+
+DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	ValueIfNode* node = FB_NEW(pool) ValueIfNode(pool);
+	node->condition = PAR_parse_boolean(tdbb, csb);
+	node->trueValue = PAR_parse_node(tdbb, csb, VALUE);
+	node->falseValue = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void ValueIfNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "ValueIfNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* ValueIfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	ValueIfNode* node = FB_NEW(getPool()) ValueIfNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlCondition),
+		PASS1_node(dsqlScratch, dsqlTrueValue),
+		PASS1_node(dsqlScratch, dsqlFalseValue));
+
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlTrueValue, node->dsqlFalseValue, false);
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlFalseValue, node->dsqlTrueValue, false);
+
+	return node;
+}
+
+void ValueIfNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "CASE";
+}
+
+bool ValueIfNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* node, bool forceVarChar) const
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlTrueValue, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlFalseValue, node, forceVarChar);
+}
+
+void ValueIfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_value_if);
+	GEN_expr(dsqlScratch, dsqlCondition);
+	GEN_expr(dsqlScratch, dsqlTrueValue);
+	GEN_expr(dsqlScratch, dsqlFalseValue);
+}
+
+void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+{
+	Array<const dsc*> args;
+
+	MAKE_desc(dsqlScratch, &dsqlTrueValue->nod_desc, dsqlTrueValue, NULL);
+	args.add(&dsqlTrueValue->nod_desc);
+
+	MAKE_desc(dsqlScratch, &dsqlFalseValue->nod_desc, dsqlFalseValue, NULL);
+	args.add(&dsqlFalseValue->nod_desc);
+
+	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, "CASE", args.getCount(), args.begin());
+}
+
+void ValueIfNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, (trueValue->nod_type != nod_null ? trueValue : falseValue), desc);
+}
+
+ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	ValueIfNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueIfNode(*tdbb->getDefaultPool());
+	node->condition = condition->copy(tdbb, copier);
+	node->trueValue = copier.copy(tdbb, trueValue);
+	node->falseValue = copier.copy(tdbb, falseValue);
+	return node;
+}
+
+ExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* ValueIfNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	return EVL_expr(tdbb, (condition->execute(tdbb, request) ? trueValue : falseValue));
 }
 
 

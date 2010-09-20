@@ -248,7 +248,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 			idx->idx_expression = MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false);
+				&idx->idx_expression_statement, false, false);
 		} // end scope
 	}
 	END_FOR

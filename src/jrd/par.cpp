@@ -83,7 +83,8 @@ static const TEXT elements[][14] =
 #include "gen/codetext.h"
 
 
-static NodeParseFunc blr_parsers[256] = {NULL};
+static NodeParseFunc blr_parsers[256] = {NULL};	// TODO: separate statements and value expressions
+static BoolExprNodeParseFunc boolParsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
@@ -98,21 +99,12 @@ static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
 
 
+// Parse blr, returning a compiler scratch block with the results.
+// Caller must do pool handling.
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
 	const bool trigger, USHORT flags)
 {
-/**************************************
- *
- *	P A R _ b l r
- *
- **************************************
- *
- * Functional description
- *	Parse blr, returning a compiler scratch block with the results.
- *	Caller must do pool handling.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 #ifdef CMP_DEBUG
@@ -204,6 +196,100 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		delete csb;
 
 	return node;
+}
+
+
+// PAR_blr equivalent for validation expressions.
+// Validation expressions are boolean expressions, but may be prefixed with a blr_stmt_expr.
+void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags,
+	BoolExprNode** resultExpr, jrd_nod** resultStmt)
+{
+	SET_TDBB(tdbb);
+
+#ifdef CMP_DEBUG
+	cmp_trace("BLR code given for JRD parsing:");
+	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
+	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
+#endif
+
+	CompilerScratch* csb;
+	if (!(csb_ptr && (csb = *csb_ptr)))
+	{
+		size_t count = 5;
+		if (view_csb)
+			count += view_csb->csb_rpt.getCapacity();
+		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
+		csb->csb_g_flags |= flags;
+	}
+
+	// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
+	// the target relation
+
+	if (relation)
+	{
+		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
+		t1->csb_stream = csb->nextStream();
+		t1->csb_relation = relation;
+		t1->csb_flags = csb_used | csb_active;
+	}
+
+	csb->csb_blr_reader = BlrReader(blr, blr_length);
+
+	if (view_csb)
+	{
+		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
+		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
+		// be more then just csb_n_stream-numbers that hold data.
+		// Certainly csb_stream (see PAR_context where the context is retrieved)
+		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
+		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
+		{
+			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
+			t2->csb_relation = ptr->csb_relation;
+			t2->csb_procedure = ptr->csb_procedure;
+			t2->csb_stream = ptr->csb_stream;
+			t2->csb_flags = ptr->csb_flags & csb_used;
+		}
+		csb->csb_n_stream = view_csb->csb_n_stream;
+	}
+
+	const SSHORT version = csb->csb_blr_reader.getByte();
+	switch (version)
+	{
+	case blr_version4:
+		csb->csb_g_flags |= csb_blr_version4;
+		break;
+	case blr_version5:
+		break; // nothing to do
+	default:
+		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
+				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
+	}
+
+	jrd_nod* stmt = NULL;
+
+	if (csb->csb_blr_reader.peekByte() == blr_stmt_expr)
+	{
+		csb->csb_blr_reader.getByte();
+		stmt = PAR_parse_node(tdbb, csb, STATEMENT);
+	}
+
+	BoolExprNode* expr = PAR_parse_boolean(tdbb, csb);
+
+	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
+		PAR_syntax_error(csb, "end_of_command");
+
+	if (csb_ptr)
+		*csb_ptr = csb;
+	else
+		delete csb;
+
+	if (resultExpr)
+		*resultExpr = expr;
+
+	if (resultStmt)
+		*resultStmt = stmt;
 }
 
 
@@ -742,6 +828,13 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 	blr_parsers[blr] = parseFunc;
 }
 
+// Registers a parse function for a boolean BLR code.
+void PAR_register(UCHAR blr, BoolExprNodeParseFunc parseFunc)
+{
+	fb_assert(!boolParsers[blr] || boolParsers[blr] == parseFunc);
+	boolParsers[blr] = parseFunc;
+}
+
 
 void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
 {
@@ -1135,10 +1228,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
 		csb->csb_pool, blr_eql);
 
-	rse->rse_boolean = PAR_make_node(tdbb, 1);
-	rse->rse_boolean->nod_type = nod_class_exprnode_jrd;
-	rse->rse_boolean->nod_flags = nod_comparison;
-	rse->rse_boolean->nod_arg[0] = reinterpret_cast<jrd_nod*>(booleanNode);
+	rse->rse_boolean = booleanNode;
 
 	booleanNode->arg2 = PAR_parse_node(tdbb, csb, VALUE);
 
@@ -1951,7 +2041,7 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		switch (op)
 		{
 		case blr_boolean:
-			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = PAR_parse_boolean(tdbb, csb);
 			break;
 
 		case blr_first:
@@ -2119,18 +2209,28 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
 }
 
 
+// Parse a boolean node.
+BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
+{
+	SET_TDBB(tdbb);
+
+	const USHORT blrOffset = csb->csb_blr_reader.getOffset();
+	const SSHORT blrOp = csb->csb_blr_reader.getByte();
+
+	if (blrOp < 0 || blrOp >= FB_NELEM(type_table) || !boolParsers[blrOp])
+	{
+        // NS: This error string is correct, please do not mangle it again and again.
+		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
+        PAR_syntax_error(csb, "valid BLR code");
+    }
+
+	return boolParsers[blrOp](tdbb, *tdbb->getDefaultPool(), csb, blrOp);
+}
+
+
+// Parse a BLR expression.
 jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
-/**************************************
- *
- *	P A R _ p a r s e _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Parse a BLR expression.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
@@ -2170,7 +2270,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	switch (blr_operator)
 	{
-	case blr_value_if:
 	case blr_substring:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);

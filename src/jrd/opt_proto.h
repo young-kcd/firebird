@@ -44,7 +44,7 @@ namespace Jrd {
 
 bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
-	Jrd::RseNode*, Jrd::NodeStack*);
+	Jrd::RseNode*, Jrd::BoolExprNodeStack* const);
 void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::MapNode*);
 Jrd::SortedStream* OPT_gen_sort(Jrd::thread_db*, Jrd::CompilerScratch*, const UCHAR*,
 	const UCHAR*, Jrd::RecordSource*, Jrd::SortNode*, bool);

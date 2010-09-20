@@ -199,30 +199,35 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 }
 
 
+// Clone a value node for the optimizer.
+// Make a copy of the node (if necessary) and assign impure space.
+
 jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
-/**************************************
- *
- *	C M P _ c l o n e _ n o d e _ o p t
- *
- **************************************
- *
- * Functional description
- *	Clone a value node for the optimizer.  Make a copy of the node
- *	(if necessary) and assign impure space.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_type == nod_argument) {
+	if (node->nod_type == nod_argument)
 		return node;
-	}
 
 	jrd_nod* clone = NodeCopier::copy(tdbb, csb, node, NULL);
 	CMP_pass2(tdbb, csb, clone, 0);
+
+	return clone;
+}
+
+BoolExprNode* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, BoolExprNode* node)
+{
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(csb, type_csb);
+
+	NodeCopier copier(csb, NULL);
+	BoolExprNode* clone = node->copy(tdbb, copier);
+
+	clone->pass2(tdbb, csb);
 
 	return clone;
 }
@@ -786,13 +791,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			*desc = *(DSC*) (value->nod_arg + e_dcl_desc);
 			return;
 		}
-
-	case nod_value_if:
-		CMP_get_desc(tdbb, csb,
-			node->nod_arg[1]->nod_type != nod_null ?
-				node->nod_arg[1] : node->nod_arg[2],
-			desc);
-		return;
 
 	case nod_domain_validation:
 		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
@@ -1752,16 +1750,38 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
 	{
-		jrd_nod* validation;
+		BoolExprNode* validation;
+		jrd_nod* validationStmt;
+
 		if (*ptr1 && (validation = (*ptr1)->fld_validation))
 		{
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
+			RemapFieldNodeCopier copier(csb, map, field_id);
+
+			if ((validationStmt = (*ptr1)->fld_validation_stmt))
+				validationStmt = copier.copy(tdbb, validationStmt);
+
+			validation = validation->copy(tdbb, copier);
+
+			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
+			boolNod->nod_type = nod_class_exprnode_jrd;
+			boolNod->nod_count = 0;
+			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
+
+			if (validationStmt)
+			{
+				jrd_nod* exprStmtNod = PAR_make_node(tdbb, e_stmt_expr_length);
+				exprStmtNod->nod_type = nod_stmt_expr;
+				exprStmtNod->nod_arg[e_stmt_expr_stmt] = validationStmt;
+				exprStmtNod->nod_arg[e_stmt_expr_expr] = boolNod;
+				boolNod = exprStmtNod;
+			}
+
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
-			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
+			node->nod_arg[e_val_boolean] = boolNod;
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -1771,10 +1791,30 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
 				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 
+			RemapFieldNodeCopier copier(csb, map, field_id);
+
+			if ((validationStmt = (*ptr1)->fld_not_null_stmt))
+				validationStmt = copier.copy(tdbb, validationStmt);
+
+			validation = validation->copy(tdbb, copier);
+
+			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
+			boolNod->nod_type = nod_class_exprnode_jrd;
+			boolNod->nod_count = 0;
+			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
+
+			if (validationStmt)
+			{
+				jrd_nod* exprStmtNod = PAR_make_node(tdbb, e_stmt_expr_length);
+				exprStmtNod->nod_type = nod_stmt_expr;
+				exprStmtNod->nod_arg[e_stmt_expr_stmt] = validationStmt;
+				exprStmtNod->nod_arg[e_stmt_expr_expr] = boolNod;
+				boolNod = exprStmtNod;
+			}
+
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
-			node->nod_arg[e_val_boolean] =
-				RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, validation);
+			node->nod_arg[e_val_boolean] = boolNod;
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
 		}
@@ -1805,6 +1845,8 @@ static void mark_variant(CompilerScratch* csb, USHORT stream)
 				break;
 			node->rseNode->flags |= RseNode::FLAG_VARIANT;
 		}
+		else if (node->boolExprNode)
+			node->boolExprNode->flags &= ~BoolExprNode::FLAG_INVARIANT;
 		else
 		{
 			fb_assert(node->legacyNode->nod_type != nod_class_recsrcnode_jrd);
@@ -2252,34 +2294,32 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 						csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
 #endif
 
-						jrd_nod* new_node = PAR_make_node(tdbb, 3);
-						new_node->nod_type = nod_value_if;
-						new_node->nod_count = 3;
+						ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(
+							csb->csb_pool);
+
+						jrd_nod* new_node = PAR_make_node(tdbb, 1);
+						new_node->nod_type = nod_class_exprnode_jrd;
+						new_node->nod_count = 0;
+						new_node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
 
 						MissingBoolNode* missingNode = FB_NEW(csb->csb_pool) MissingBoolNode(
 							csb->csb_pool);
 						missingNode->arg = i.object();
 
 						NotBoolNode* notNode = FB_NEW(csb->csb_pool) NotBoolNode(csb->csb_pool);
-						notNode->arg = PAR_make_node(tdbb, 1);
-						notNode->arg->nod_type = nod_class_exprnode_jrd;
-						notNode->arg->nod_count = 0;
-						notNode->arg->nod_arg[0] = reinterpret_cast<jrd_nod*>(missingNode);
+						notNode->arg = missingNode;
 
 						// build an IF (RDB$DB_KEY IS NOT NULL)
-						new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_type = nod_class_exprnode_jrd;
-						new_node->nod_arg[0]->nod_count = 0;
-						new_node->nod_arg[0]->nod_arg[0] = reinterpret_cast<jrd_nod*>(notNode);
+						valueIfNode->condition = notNode;
 
-						new_node->nod_arg[1] = i.object();	// THEN
+						valueIfNode->trueValue = i.object();	// THEN
 
 						const SSHORT count = lit_delta +
 							(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-						new_node->nod_arg[2] = PAR_make_node(tdbb, count);	// ELSE
-						new_node->nod_arg[2]->nod_type = nod_literal;
-						new_node->nod_arg[2]->nod_count = 0;
-						Literal* literal = (Literal*) new_node->nod_arg[2];
+						valueIfNode->falseValue = PAR_make_node(tdbb, count);	// ELSE
+						valueIfNode->falseValue->nod_type = nod_literal;
+						valueIfNode->falseValue->nod_count = 0;
+						Literal* literal = (Literal*) valueIfNode->falseValue.getObject();
 						literal->lit_desc.dsc_dtype = dtype_text;
 						literal->lit_desc.dsc_ttype() = CS_BINARY;
 						literal->lit_desc.dsc_scale = 0;
@@ -2305,19 +2345,14 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					// ASF: If the view is in null state (with outer joins) we need to transform
 					// the view RDB$KEY to NULL. (CORE-1245)
 
-					jrd_nod* new_node = PAR_make_node(tdbb, 3);
-					new_node->nod_type = nod_value_if;
-					new_node->nod_count = 3;
+					ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(
+						csb->csb_pool);
 
 					ComparativeBoolNode* eqlNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
 						csb->csb_pool, blr_eql);
 
 					// build an IF (RDB$DB_KEY = '')
-					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_type = nod_class_exprnode_jrd;
-					new_node->nod_arg[0]->nod_count = 0;
-					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] = reinterpret_cast<jrd_nod*>(eqlNode);
+					valueIfNode->condition = eqlNode;
 
 					eqlNode->arg1 = NodeCopier::copy(tdbb, csb, node, NULL);
 					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
@@ -2331,11 +2366,14 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					literal->lit_desc.dsc_length = 0;
 					literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
 
-					new_node->nod_arg[1] = PAR_make_node(tdbb, 0);	// THEN: NULL
-					new_node->nod_arg[1]->nod_type = nod_null;
-					new_node->nod_arg[2] = node;					// ELSE: RDB$DB_KEY
+					valueIfNode->trueValue = PAR_make_node(tdbb, 0);	// THEN: NULL
+					valueIfNode->trueValue->nod_type = nod_null;
+					valueIfNode->falseValue = node;					// ELSE: RDB$DB_KEY
 
-					node = new_node;
+					node = PAR_make_node(tdbb, 1);
+					node->nod_type = nod_class_exprnode_jrd;
+					node->nod_count = 0;
+					node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
 				}
 
 #ifdef CMP_DEBUG
@@ -3056,7 +3094,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		if (!(rse_node->flags & RseNode::FLAG_VARIANT))
 		{
 			node->nod_flags |= nod_invariant;
-			csb->csb_invariants.push(node);
+			csb->csb_invariants.push(&node->nod_impure);
 		}
 
 		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
@@ -3140,8 +3178,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	// Handle any residual work
 
-	node->nod_impure = CMP_impure(csb, 0);
-
 	switch (node->nod_type)
 	{
 	case nod_class_recsrcnode_jrd:
@@ -3161,24 +3197,24 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_from:
 	case nod_count:
 		node->nod_count = 0;
-		csb->csb_impure += sizeof(impure_value_ex);
+		node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
 		break;
 
 	case nod_block:
-		csb->csb_impure += sizeof(SLONG);
+		node->nod_impure = CMP_impure(csb, sizeof(SLONG));
 		break;
 
 	case nod_dcl_variable:
 		{
 			const dsc* desc = (DSC*) (node->nod_arg + e_dcl_desc);
-			csb->csb_impure += sizeof(impure_value) + desc->dsc_length;
+			node->nod_impure = CMP_impure(csb, sizeof(impure_value) + desc->dsc_length);
 		}
 		break;
 
 	case nod_total:
 		{
 			node->nod_count = 0;
-			csb->csb_impure += sizeof(impure_value_ex);
+			node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
@@ -3188,9 +3224,9 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		{
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
 			fb_assert(format);
-			csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
-			node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
-			csb->csb_impure += sizeof(USHORT) * format->fmt_count;
+			node->nod_impure = CMP_impure(csb, FB_ALIGN(format->fmt_length, 2));
+			node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR)
+				CMP_impure(csb, sizeof(USHORT) * format->fmt_count);
 		}
 		break;
 
@@ -3206,7 +3242,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 				}
 			}
-			csb->csb_impure += sizeof(impure_state);
+			node->nod_impure = CMP_impure(csb, sizeof(impure_state));
 		}
 		break;
 
@@ -3228,7 +3264,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		// FALL INTO
 
 	case nod_store:
-		csb->csb_impure += sizeof(impure_state);
+		node->nod_impure = CMP_impure(csb, sizeof(impure_state));
 		break;
 
 	case nod_erase:
@@ -3244,14 +3280,14 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
 			if (csb->csb_rpt[stream].csb_relation || csb->csb_rpt[stream].csb_procedure)
 				node->nod_arg[e_fld_format] = (jrd_nod*) CMP_format(tdbb, csb, stream);
-			csb->csb_impure += sizeof(impure_value_ex);
+			node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
 			break;
 		}
 
 	case nod_argument:
 	case nod_variable:
-		csb->csb_impure += (node->nod_flags & nod_value) ?
-			sizeof(impure_value_ex) : sizeof(dsc);
+		node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
+			sizeof(impure_value_ex) : sizeof(dsc));
 		break;
 
 	case nod_literal:
@@ -3274,17 +3310,17 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(impure_value);
+			node->nod_impure = CMP_impure(csb, sizeof(impure_value));
 		}
 		break;
 
 	case nod_exec_into:
-		csb->csb_impure += sizeof(ExecuteStatement);
+		node->nod_impure = CMP_impure(csb, sizeof(ExecuteStatement));
 		csb->csb_exec_sta.push(node);
 		break;
 
 	case nod_exec_stmt:
-		csb->csb_impure += sizeof(void**);
+		node->nod_impure = CMP_impure(csb, sizeof(void**));
 		break;
 
 	case nod_class_exprnode_jrd:
@@ -3303,16 +3339,16 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	{
 		if (csb->csb_current_nodes.hasData())
 		{
-			LegacyNodeOrRseNode& top_rse_node = csb->csb_current_nodes[0];
-			fb_assert(top_rse_node.rseNode);
+			LegacyNodeOrRseNode& topRseNode = csb->csb_current_nodes[0];
+			fb_assert(topRseNode.rseNode);
 
-			if (!top_rse_node.rseNode->rse_invariants)
+			if (!topRseNode.rseNode->rse_invariants)
 			{
-				top_rse_node.rseNode->rse_invariants =
+				topRseNode.rseNode->rse_invariants =
 					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			}
 
-			top_rse_node.rseNode->rse_invariants->add(node->nod_impure);
+			topRseNode.rseNode->rse_invariants->add(node->nod_impure);
 		}
 	}
 

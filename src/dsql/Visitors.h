@@ -26,6 +26,7 @@
 #include "../dsql/node.h"
 #include "../common/classes/array.h"
 #include "../common/classes/auto.h"
+#include "../common/classes/NestConst.h"
 
 namespace Jrd {
 
@@ -283,6 +284,49 @@ public:
 };
 
 
+// Stores a reference to jrd_nod or BoolExprNode.
+class JrdNode
+{
+public:
+	JrdNode(jrd_nod*& aJrdNode)
+		: jrdNode(&aJrdNode),
+		  boolExprNode(NULL)
+	{
+	}
+
+	JrdNode(NestConst<jrd_nod>& aJrdNode)
+		: jrdNode(aJrdNode.getAddress()),
+		  boolExprNode(NULL)
+	{
+	}
+
+	JrdNode(NestConst<BoolExprNode>& aBoolExprNode)
+		: jrdNode(NULL),
+		  boolExprNode(aBoolExprNode.getAddress())
+	{
+	}
+
+	JrdNode()
+		: jrdNode(NULL),
+		  boolExprNode(NULL)
+	{
+	}
+
+	bool operator !() const
+	{
+		return !((jrdNode && *jrdNode) || (boolExprNode && *boolExprNode));
+	}
+
+	operator bool() const
+	{
+		return (jrdNode && *jrdNode) || (boolExprNode && *boolExprNode);
+	}
+
+	jrd_nod** jrdNode;
+	BoolExprNode** boolExprNode;
+};
+
+
 class JrdNodeVisitor
 {
 public:
@@ -295,9 +339,9 @@ public:
 	}
 
 public:
-	bool visitChildren(jrd_nod* node);
+	bool visitChildren(const JrdNode& node);
 
-	virtual bool visit(jrd_nod* node) = 0;
+	virtual bool visit(const JrdNode& node) = 0;
 
 private:
 	bool call(ExprNode* exprNode)
@@ -318,13 +362,13 @@ public:
 	PossibleUnknownFinder();
 
 public:
-	static bool find(jrd_nod* node)
+	static bool find(const JrdNode& node)
 	{
 		return PossibleUnknownFinder().visit(node);
 	}
 
 protected:
-	virtual bool visit(jrd_nod* node);
+	virtual bool visit(const JrdNode& node);
 };
 
 // Search if somewhere in the expression the given stream is used.
@@ -335,13 +379,13 @@ public:
 	StreamFinder(CompilerScratch* aCsb, UCHAR aStream);
 
 public:
-	static bool find(CompilerScratch* csb, UCHAR stream, jrd_nod* node)
+	static bool find(CompilerScratch* csb, UCHAR stream, const JrdNode& node)
 	{
 		return StreamFinder(csb, stream).visit(node);
 	}
 
 protected:
-	virtual bool visit(jrd_nod* node);
+	virtual bool visit(const JrdNode& node);
 
 private:
 	CompilerScratch* const csb;
@@ -355,13 +399,13 @@ public:
 	StreamsCollector(Firebird::SortedArray<int>& aStreams);
 
 public:
-	static bool collect(jrd_nod* node, Firebird::SortedArray<int>& streams)
+	static bool collect(const JrdNode& node, Firebird::SortedArray<int>& streams)
 	{
 		return StreamsCollector(streams).visit(node);
 	}
 
 protected:
-	virtual bool visit(jrd_nod* node);
+	virtual bool visit(const JrdNode& node);
 
 private:
 	Firebird::SortedArray<int>& streams;
@@ -371,22 +415,22 @@ private:
 class UnmappedNodeGetter : public JrdNodeVisitor
 {
 public:
-	UnmappedNodeGetter(const MapNode* aMap, UCHAR aShellStream);
+	UnmappedNodeGetter(/*const*/ MapNode* aMap, UCHAR aShellStream);
 
-	static jrd_nod* get(const MapNode* map, UCHAR shellStream, jrd_nod* node)
+	static JrdNode get(/*const*/ MapNode* map, UCHAR shellStream, const JrdNode& node)
 	{
 		UnmappedNodeGetter obj(map, shellStream);
-		return obj.visit(node) && !obj.invalid ? obj.nodeFound : NULL;
+		return obj.visit(node) && !obj.invalid ? obj.nodeFound : JrdNode();
 	}
 
-	virtual bool visit(jrd_nod* node);
+	virtual bool visit(const JrdNode& node);
 
 public:
-	const MapNode* map;
+	/*const*/ MapNode* map;
 	const UCHAR shellStream;
 	bool rootNode;
 	bool invalid;
-	jrd_nod* nodeFound;
+	JrdNode nodeFound;
 };
 
 

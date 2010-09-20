@@ -109,7 +109,7 @@ DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, 
 {
 	IfNode* node = FB_NEW(pool) IfNode(pool);
 
-	node->condition = PAR_parse_node(tdbb, csb, TYPE_BOOL);
+	node->condition = PAR_parse_boolean(tdbb, csb);
 	node->trueAction = PAR_parse_node(tdbb, csb, STATEMENT);
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_end)
 		csb->csb_blr_reader.getByte(); // skip blr_end
@@ -154,7 +154,7 @@ void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = CMP_pass1(tdbb, csb, condition);
+	condition = condition->pass1(tdbb, csb);
 	trueAction = CMP_pass1(tdbb, csb, trueAction);
 	falseAction = CMP_pass1(tdbb, csb, falseAction);
 	return this;
@@ -163,7 +163,7 @@ IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = CMP_pass2(tdbb, csb, condition, node);
+	condition = condition->pass2(tdbb, csb);
 	trueAction = CMP_pass2(tdbb, csb, trueAction, node);
 	falseAction = CMP_pass2(tdbb, csb, falseAction, node);
 	return this;
@@ -174,7 +174,7 @@ const jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
-		if (EVL_boolean(tdbb, condition))
+		if (condition->execute(tdbb, request))
 		{
 			request->req_operation = jrd_req::req_evaluate;
 			return trueAction;

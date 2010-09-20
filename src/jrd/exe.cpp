@@ -980,11 +980,11 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_timestamp.validate();
 
 	// Set all invariants to not computed.
-	const jrd_nod* const* ptr, * const* end;
+	const ULONG* const* ptr, * const* end;
 	for (ptr = statement->invariants.begin(), end = statement->invariants.end();
 		 ptr < end; ++ptr)
 	{
-		impure_value* impure = request->getImpure<impure_value>((*ptr)->nod_impure);
+		impure_value* impure = request->getImpure<impure_value>(**ptr);
 		impure->vlu_flags = 0;
 	}
 
@@ -3660,6 +3660,7 @@ static void validate(thread_db* tdbb, const jrd_nod* list)
 	for (const jrd_nod* const* const end = ptr1 + list->nod_count; ptr1 < end; ptr1++)
 	{
 		jrd_req* request = tdbb->getRequest();
+
 		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]) && !(request->req_flags & req_null))
 		{
 			// Validation error -- report result

@@ -51,6 +51,8 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -388,6 +390,8 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -417,6 +421,8 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
@@ -429,6 +435,42 @@ public:
 
 private:
 	dsql_udf* dsqlFunction;
+};
+
+
+class ValueIfNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>
+{
+public:
+	ValueIfNode(MemoryPool& pool, dsql_nod* aCondition = NULL, dsql_nod* aTrueValue = NULL,
+		dsql_nod* aFalseValue = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* node, bool forceVarChar) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+
+	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
+	{
+		return true;
+	}
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlCondition;
+	dsql_nod* dsqlTrueValue;
+	dsql_nod* dsqlFalseValue;
+	NestConst<BoolExprNode> condition;
+	NestConst<jrd_nod> trueValue;
+	NestConst<jrd_nod> falseValue;
 };
 
 

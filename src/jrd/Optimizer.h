@@ -81,7 +81,6 @@ bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, jrd_n
 bool OPT_expression_equal2(thread_db*, CompilerScratch*, jrd_nod*, jrd_nod*, USHORT);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
-jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
 
 enum segmentScanType {
 	segmentScanNone,
@@ -108,7 +107,7 @@ public:
 	int scope;					// highest scope level
 	segmentScanType scanType;	// scan type
 
-	Firebird::Array<jrd_nod*> matches;
+	Firebird::Array<BoolExprNode*> matches;
 };
 
 class IndexScratch
@@ -142,13 +141,13 @@ public:
 	USHORT			matchedSegments;
 	int				indexes;
 	int				dependencies;
-	jrd_nod*		boolean;
+	BoolExprNode*	boolean;
 	InversionNode*	inversion;
 	IndexScratch*	scratch;
 	bool			used;
 	bool			unique;
 
-	Firebird::Array<jrd_nod*> matches;
+	Firebird::Array<BoolExprNode*> matches;
 	SortedStreamList dependentFromStreams;
 };
 
@@ -178,10 +177,10 @@ protected:
 	InversionNode* makeIndexNode(const index_desc* idx) const;
 	InversionNode* makeIndexScanNode(IndexScratch* indexScratch) const;
 	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
-	bool matchBoolean(IndexScratch* indexScratch, jrd_nod* boolean, USHORT scope) const;
-	InversionCandidate* matchDbKey(jrd_nod* boolean) const;
+	bool matchBoolean(IndexScratch* indexScratch, BoolExprNode* boolean, USHORT scope) const;
+	InversionCandidate* matchDbKey(BoolExprNode* boolean) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
-		jrd_nod* boolean, USHORT scope) const;
+		BoolExprNode* boolean, USHORT scope) const;
 	jrd_nod* findDbKey(jrd_nod*, USHORT, SLONG*) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL

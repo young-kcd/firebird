@@ -62,7 +62,7 @@ public:
 	dsql_nod* dsqlCondition;
 	dsql_nod* dsqlTrueAction;
 	dsql_nod* dsqlFalseAction;
-	NestConst<jrd_nod> condition;
+	NestConst<BoolExprNode> condition;
 	NestConst<jrd_nod> trueAction;
 	NestConst<jrd_nod> falseAction;
 };

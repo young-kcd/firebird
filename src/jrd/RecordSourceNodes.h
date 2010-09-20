@@ -35,6 +35,7 @@ namespace Jrd {
 class IndexRetrieval;
 class OptimizerRetrieval;
 class ProcedureScan;
+class BoolExprNode;
 class RelationSourceNode;
 class RseNode;
 
@@ -233,7 +234,7 @@ public:
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const = 0;
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view) = 0;
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack) = 0;
+		BoolExprNode** boolean, RecordSourceNodeStack& stack) = 0;
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual bool containsStream(USHORT checkStream) const = 0;
@@ -277,7 +278,7 @@ public:
 	}
 
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb)
 	{
@@ -341,7 +342,7 @@ public:
 
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 
@@ -390,7 +391,7 @@ public:
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const;
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
@@ -406,7 +407,7 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
-	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, NodeStack* parentStack,
+	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, BoolExprNodeStack* parentStack,
 		UCHAR shellStream);
 
 public:
@@ -439,7 +440,7 @@ public:
 	}
 
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
@@ -452,7 +453,7 @@ public:
 
 private:
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams, USHORT nstreams,
-		NodeStack* parentStack, UCHAR shellStream);
+		BoolExprNodeStack* parentStack, UCHAR shellStream);
 
 private:
 	Firebird::Array<NestConst<RseNode> > clauses;	// RseNode's for union
@@ -502,7 +503,7 @@ public:
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const;
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
@@ -572,7 +573,7 @@ public:
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const;
 	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-		jrd_nod** boolean, RecordSourceNodeStack& stack);
+		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb)
 	{
@@ -596,7 +597,7 @@ public:
 	USHORT rse_jointype;		// inner, left, full
 	NestConst<jrd_nod> rse_first;
 	NestConst<jrd_nod> rse_skip;
-	NestConst<jrd_nod> rse_boolean;
+	NestConst<BoolExprNode> rse_boolean;
 	NestConst<SortNode> rse_sorted;
 	NestConst<SortNode> rse_projection;
 	NestConst<SortNode> rse_aggregate;	// singleton aggregate for optimizing to index

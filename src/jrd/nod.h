@@ -58,7 +58,6 @@ NODE(nod_asn_list, asn_list, "")
 			NODE(nod_substr, substr, "")
 			NODE(nod_total, total, "SUM")
 			NODE(nod_trim, trim, "")
-			NODE(nod_value_if, value_if, "")
 			NODE(nod_validate, validate, "")
 
 		  NODE(nod_exec_proc, exec_proc, "")
