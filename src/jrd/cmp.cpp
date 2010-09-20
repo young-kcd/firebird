@@ -1253,11 +1253,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		}
 		return node;
 
-	case nod_for:
-		///args = e_for_length;
-		fb_assert(false);
-		break;
-
 	case nod_argument:
 		if (remapArgument())
 			return input;
