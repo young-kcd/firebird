@@ -2023,26 +2023,33 @@ static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 
 	SET_TDBB(tdbb);
 
-	{
-		Firebird::MetaName name;
+	Firebird::MetaName name;
 
-		if (blr_operator == blr_procedure) {
-			par_name(csb, name);
-			procedure = MET_lookup_procedure(tdbb, name, false);
-		}
-		else {
-			const SSHORT pid = BLR_WORD;
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-				name.printf("id %d", pid);
-		}
-		if (!procedure)
-			error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), isc_arg_end);
+	if (blr_operator == blr_procedure) {
+		par_name(csb, name);
+		procedure = MET_lookup_procedure(tdbb, name, false);
 	}
+	else {
+		const SSHORT pid = BLR_WORD;
+		if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
+			name.printf("id %d", pid);
+	}
+
+	if (!procedure)
+		error(csb, isc_prcnotdef, isc_arg_string, ERR_cstring(name), isc_arg_end);
 
 	if (procedure->prc_type == prc_executable)
 	{
-		error(csb, isc_illegal_prc_type,
-			  isc_arg_string, ERR_string(procedure->prc_name), isc_arg_end);
+		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+		{
+			warning(csb, isc_illegal_prc_type,
+					isc_arg_string, ERR_cstring(name), isc_arg_end);
+		}
+		else
+		{ 
+			error(csb, isc_illegal_prc_type,
+				  isc_arg_string, ERR_cstring(name), isc_arg_end);
+		}
 	}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_prc_length);
