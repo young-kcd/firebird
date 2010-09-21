@@ -1,3 +1,53 @@
+ 2010-09-20 16:26  asfernandes 
+   M src/jrd/cmp.cpp
+   M src/jrd/nod.h
+Misc
+
+ 2010-09-20 16:07  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/make.cpp
+   M src/dsql/parse.y
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/Relation.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/lls.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/rse.h
+   M src/misc/blrtable.cpp
+1) Refactor nod_value_if.
+2) Created ExprNode::expressionEqual method to replace a new big and ugly switch.
+3) Make boolean referencers use BoolExprNode instead of jrd_nod, except nod_validate for now. This includes BinaryBoolNode and NotBoolNode working without jrd_nod references.
+4) Rework in the impure allocation code (replace "csb_impure += ..." by CMP_impure calls).
+
  2010-09-18 18:19  asfernandes 
    M src/dsql/parse.y
 Simplificate repetitive code
