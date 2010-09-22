@@ -1,3 +1,7 @@
+ 2010-09-21 06:18  dimitr 
+   M src/jrd/par.cpp
+Backport CORE-3003: Procedure suspend check may cause restore to fail.
+
  2010-09-18 06:52  dimitr 
    M src/jrd/vio.cpp
 Fixed CORE-3137: Partial rollback is possible for a selectable procedure modifying data.
