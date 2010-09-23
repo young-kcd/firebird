@@ -3183,6 +3183,7 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 static RegisterNode<InternalInfoNode> regInternalInfoNode(blr_internal_info);
 
+// CVC: If this list changes, gpre will need to be updated
 const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO_TYPE] = {
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
@@ -4647,7 +4648,7 @@ static SINT64 getTimeStampToIscTicks(const dsc* d)
 		(SINT64) result_timestamp.timestamp_time;
 }
 
-// One of d1,d2 is time, the other is date
+// One of d1, d2 is time, the other is date
 static bool isDateAndTime(const dsc& d1, const dsc& d2)
 {
 	return ((d1.dsc_dtype == dtype_sql_time && d2.dsc_dtype == dtype_sql_date) ||
