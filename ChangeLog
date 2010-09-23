@@ -1,3 +1,7 @@
+ 2010-09-22 06:06  alexpeshkoff 
+   M src/utilities/gstat/dba.epp
+Fixed CORE-3143: Segmentation fault may occur when user interrupts gstat
+
  2010-09-18 06:52  dimitr 
    M src/jrd/vio.cpp
 Fixed CORE-3137: Partial rollback is possible for a selectable procedure modifying data.
