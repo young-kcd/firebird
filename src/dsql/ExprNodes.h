@@ -118,7 +118,7 @@ public:
 class CurrentDateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>
 {
 public:
-	CurrentDateNode(MemoryPool& pool)
+	explicit CurrentDateNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_DATE>(pool)
 	{
 	}
@@ -194,7 +194,7 @@ public:
 class CurrentRoleNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>
 {
 public:
-	CurrentRoleNode(MemoryPool& pool)
+	explicit CurrentRoleNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_ROLE>(pool)
 	{
 	}
@@ -217,7 +217,7 @@ public:
 class CurrentUserNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>
 {
 public:
-	CurrentUserNode(MemoryPool& pool)
+	explicit CurrentUserNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_CURRENT_USER>(pool)
 	{
 	}
@@ -262,7 +262,7 @@ public:
 
 	static const InfoAttr INFO_TYPE_ATTRIBUTES[MAX_INFO_TYPE];
 
-	InternalInfoNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit InternalInfoNode(MemoryPool& pool, dsql_nod* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -286,7 +286,7 @@ public:
 class NegateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
 {
 public:
-	NegateNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit NegateNode(MemoryPool& pool, dsql_nod* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -441,7 +441,7 @@ private:
 class ValueIfNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_IF>
 {
 public:
-	ValueIfNode(MemoryPool& pool, dsql_nod* aCondition = NULL, dsql_nod* aTrueValue = NULL,
+	explicit ValueIfNode(MemoryPool& pool, dsql_nod* aCondition = NULL, dsql_nod* aTrueValue = NULL,
 		dsql_nod* aFalseValue = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);

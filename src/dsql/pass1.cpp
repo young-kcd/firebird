@@ -8808,6 +8808,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 			dsql_nod** ptr = par_node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + par_node->nod_count; ptr < end; ptr++)
 				set_parameter_name(*ptr, fld_node, relation);
+
 			return;
 		}
 
