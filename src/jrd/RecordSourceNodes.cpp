@@ -372,6 +372,9 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 		return;
 	}
 
+	// ASF: Below we start to do things when viewRse->rse_projection is not NULL.
+	// But we should never come here, as the code above returns in this case.
+
 	// if we have a projection which we can bubble up to the parent rse, set the
 	// parent rse to our projection temporarily to flag the fact that we have already
 	// seen one so that lower-level views will not try to map their projection; the
@@ -406,8 +409,8 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	if (viewRse->rse_projection)
 	{
 		NodeCopier copier(csb, map);
-		viewRse->rse_projection = viewRse->rse_projection->copy(tdbb, copier);
-		viewRse->rse_projection->pass1(tdbb, csb);
+		rse->rse_projection = viewRse->rse_projection->copy(tdbb, copier);
+		rse->rse_projection->pass1(tdbb, csb);
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
