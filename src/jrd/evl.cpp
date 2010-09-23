@@ -1214,9 +1214,9 @@ static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value*
 					continue;
 				}
 				// Note: if the field being SUMed or AVERAGEd is short or long,
-				// impure will stay long, and the first add will
+				// impure will stay long, and the first add() will
 				// set the correct scale; if it is approximate numeric,
-				// the first add will convert impure to double.
+				// the first add() will convert impure to double.
 				ArithmeticNode::add(desc, impure, node, blr_add);
 
 				count++;
@@ -1244,9 +1244,9 @@ static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value*
 				if (request->req_flags & req_null)
 					continue;
 				// Note: if the field being SUMed or AVERAGEd is exact
-				// numeric, impure will stay int64, and the first add will
+				// numeric, impure will stay int64, and the first add() will
 				// set the correct scale; if it is approximate numeric,
-				// the first add will convert impure to double.
+				// the first add() will convert impure to double.
 				ArithmeticNode::add(desc, impure, node, blr_add);
 				count++;
 			}

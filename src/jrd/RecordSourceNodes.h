@@ -45,7 +45,7 @@ typedef Firebird::Array<NestConst<jrd_nod> > LegacyNodeArray;
 class SortNode : public Firebird::PermanentStorage
 {
 public:
-	SortNode(MemoryPool& pool)
+	explicit SortNode(MemoryPool& pool)
 		: PermanentStorage(pool),
 		  unique(false),
 		  expressions(pool),
@@ -69,7 +69,7 @@ public:
 class MapNode : public Firebird::PermanentStorage
 {
 public:
-	MapNode(MemoryPool& pool)
+	explicit MapNode(MemoryPool& pool)
 		: PermanentStorage(pool),
 		  items(pool)
 	{
@@ -93,7 +93,7 @@ public:
 
 	struct AccessItem
 	{
-		AccessItem(MemoryPool& pool)
+		explicit AccessItem(MemoryPool& pool)
 			: relationId(0),
 			  indexId(0),
 			  indexName(pool)
@@ -162,7 +162,7 @@ public:
 	{
 	}
 
-	InversionNode(IndexRetrieval* aRetrieval)
+	explicit InversionNode(IndexRetrieval* aRetrieval)
 		: type(TYPE_INDEX),
 		  impure(0),
 		  retrieval(aRetrieval),
@@ -224,7 +224,7 @@ public:
 		stream = value;
 	}
 
-	// Identify the streams that make up a RseNode.
+	// Identify the streams that make up an RseNode.
 	virtual void getStreams(StreamsArray& list) const
 	{
 		list.add(getStream());

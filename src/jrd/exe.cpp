@@ -3379,7 +3379,7 @@ static const jrd_nod* store(thread_db* tdbb, const jrd_nod* node, SSHORT which_t
 		node->nod_arg[e_sto_relation]->nod_arg[0]);
 	fb_assert(recSource->type == RelationSourceNode::TYPE);
 
-	SSHORT stream = recSource->getStream();
+	const SSHORT stream = recSource->getStream();
 	record_param* rpb = &request->req_rpb[stream];
 	jrd_rel* relation = rpb->rpb_relation;
 

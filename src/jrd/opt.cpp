@@ -3711,13 +3711,15 @@ static void set_direction(SortNode* fromClause, SortNode* toClause)
  *  for the nulls placement flag.
  *
  **************************************/
-	fb_assert(fromClause->expressions.getCount() <= toClause->expressions.getCount());
-	fb_assert(fromClause->expressions.getCount() == fromClause->descending.getCount() &&
-		fromClause->expressions.getCount() == fromClause->nullOrder.getCount());
+	const size_t fromCount = fromClause->expressions.getCount();
+
+	fb_assert(fromCount <= toClause->expressions.getCount());
+	fb_assert(fromCount == fromClause->descending.getCount() &&
+		fromCount == fromClause->nullOrder.getCount());
 	fb_assert(toClause->expressions.getCount() == toClause->descending.getCount() &&
 		toClause->expressions.getCount() == toClause->nullOrder.getCount());
 
-	for (size_t i = 0; i < fromClause->expressions.getCount(); ++i)
+	for (size_t i = 0; i < fromCount; ++i)
 	{
 		toClause->descending[i] = fromClause->descending[i];
 		toClause->nullOrder[i] = fromClause->nullOrder[i];
