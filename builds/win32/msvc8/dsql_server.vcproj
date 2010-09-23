@@ -310,10 +310,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\misc_func.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\movd.cpp"
 				>
 			</File>
@@ -482,10 +478,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\metd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\misc_func.h"
 				>
 			</File>
 			<File
