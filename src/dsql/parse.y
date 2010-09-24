@@ -4992,8 +4992,8 @@ ternary_pattern_predicate
 	;
 
 ternary_pattern_operator
-	: LIKE		{ $$ = blr_like; }
-	| SIMILAR	{ $$ = blr_similar; }
+	: LIKE			{ $$ = blr_like; }
+	| SIMILAR TO	{ $$ = blr_similar; }
 	;
 
 escape_opt
