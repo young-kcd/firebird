@@ -1116,8 +1116,8 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
 		NestConst<jrd_nod>* ptr = sortPtr->expressions.begin();
-		bool* descending = sortPtr->descending.begin();
-		int* nullOrder = sortPtr->nullOrder.begin();
+		const bool* descending = sortPtr->descending.begin();
+		const int* nullOrder = sortPtr->nullOrder.begin();
 
 		for (const NestConst<jrd_nod>* const end = sortPtr->expressions.end();
 			 ptr != end;
@@ -2055,7 +2055,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	RseBoolNode* rseNode = boolean->as<RseBoolNode>();
 	bool forward = true;
 	jrd_nod* value = NULL;
-	jrd_nod* match;
+	jrd_nod* match = NULL;
 
 	if (cmpNode)
 	{

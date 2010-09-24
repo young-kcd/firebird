@@ -258,7 +258,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 			stream #2  from view V1
 
 		During pass1 of procedure request, the engine tries to expand
-		all the views into their base tables. It creates a compilier
+		all the views into their base tables. It creates a compiler
 		scratch block which initially looks like this
 				stream 1  -------- X
 				stream 2  -------- V1
@@ -613,7 +613,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
 	// SKIDDER: Maybe we need to check if we really found a procedure?
 	element->csb_procedure = MET_lookup_procedure_id(tdbb, newSource->procedure, false, false, 0);
-	element->csb_view = (jrd_rel*) newSource->view;
+	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 
 	copier.csb->csb_rpt[newSource->stream].csb_flags |= copier.csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -868,7 +868,7 @@ RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, b
 	return rsb;
 }
 
-// Generate an RecordSource (Record Source Block) for each aggregate operation.
+// Generate a RecordSource (Record Source Block) for each aggregate operation.
 // Generate an AggregateSort (Aggregate SortedStream Block) for each DISTINCT aggregate.
 RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	BoolExprNodeStack* parentStack, UCHAR shellStream)
@@ -973,7 +973,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 		node->mapStream = stream2;
 	}
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+	int count = (unsigned int) csb->csb_blr_reader.getByte();
 
 	// Pick up the sub-RseNode's and maps.
 
@@ -1126,7 +1126,7 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool 
 	return rsb;
 }
 
-// Generate a union complex.
+// Generate an union complex.
 RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams,
 	USHORT nstreams, BoolExprNodeStack* parentStack, UCHAR shellStream)
 {
@@ -1574,7 +1574,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
 void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	BoolExprNode** boolean, RecordSourceNodeStack& stack)
 {
-	// in the case of a RseNode, it is possible that a new RseNode will be generated,
+	// in the case of an RseNode, it is possible that a new RseNode will be generated,
 	// so wait to process the source before we push it on the stack (bug 8039)
 
 	// The addition of the JOIN syntax for specifying inner joins causes an
@@ -1707,7 +1707,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		if (opt->rse->rse_jointype != blr_inner)
 		{
 			// Make list of nodes that can be delivered to an outer-stream.
-			// In fact these are all nodes except when a IS NULL comparision is done.
+			// In fact these are all nodes except when a IS NULL comparison is done.
 			// Note! Don't forget that this can be burried inside a expression
 			// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
 			BoolExprNodeStack::iterator stackItem;
@@ -1835,7 +1835,7 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
 	// if the plan references a view, find the real base relation
-	// we are interested in by searching the view map */
+	// we are interested in by searching the view map
 	UCHAR* map = NULL;
 
 	if (tail->csb_map)
@@ -2104,7 +2104,7 @@ static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	if (csb->csb_blr_reader.getByte() != blr_map)
 		PAR_syntax_error(csb, "blr_map");
 
-	USHORT count = csb->csb_blr_reader.getWord();
+	int count = csb->csb_blr_reader.getWord();
 	MapNode* node = FB_NEW(csb->csb_pool) MapNode(csb->csb_pool);
 
 	while (count-- > 0)
@@ -2135,7 +2135,7 @@ static SSHORT strcmpSpace(const char* p, const char* q)
 	return (*p > *q) ? 1 : -1;
 }
 
-// Process a single record source stream from a RseNode.
+// Process a single record source stream from an RseNode.
 // Obviously, if the source is a view, there is more work to do.
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack)
@@ -2364,10 +2364,10 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 
 	// find out how many indices were specified; if
 	// there were none, this is a sequential retrieval
-	size_t planCount = 0;
+	//size_t planCount = 0;
 
-	if (plan->accessType)
-		planCount = plan->accessType->items.getCount();
+	//if (plan->accessType)
+	//	planCount = plan->accessType->items.getCount();
 
 	// go through each of the indices and mark it unusable
 	// for indexed retrieval unless it was specifically mentioned

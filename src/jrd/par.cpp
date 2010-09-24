@@ -1727,7 +1727,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_join || node_type == blr_merge)
 	{
-		USHORT count = (USHORT) csb->csb_blr_reader.getByte();
+		int count = (USHORT) csb->csb_blr_reader.getByte();
 		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
 
 		while (count-- > 0)
@@ -1834,7 +1834,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 						PlanNode::AccessType::TYPE_INDICES);
 				}
 
-				USHORT count = (USHORT) csb->csb_blr_reader.getByte();
+				int count = (USHORT) csb->csb_blr_reader.getByte();
 
 				// pick up the index names and look up the appropriate ids
 
@@ -2135,7 +2135,7 @@ SortNode* PAR_sort(thread_db* tdbb, CompilerScratch* csb, UCHAR expectedBlr,
 {
 	SET_TDBB(tdbb);
 
-	UCHAR blrOp = csb->csb_blr_reader.getByte();
+	const UCHAR blrOp = csb->csb_blr_reader.getByte();
 
 	if (blrOp != expectedBlr)
 	{
