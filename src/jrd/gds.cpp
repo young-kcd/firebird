@@ -3024,6 +3024,14 @@ static void blr_print_cond(gds_ctl* control)
 			blr_print_char(control);
 		break;
 
+	case blr_exception_msg:
+		blr_format(control, "blr_exception_msg, ");
+		n = blr_print_byte(control);
+		while (--n >= 0)
+			blr_print_char(control);
+		blr_print_verb(control, 0);
+		break;
+
 	case blr_sql_code:
 		blr_format(control, "blr_sql_code, ");
 		blr_print_word(control);
@@ -3031,6 +3039,10 @@ static void blr_print_cond(gds_ctl* control)
 
 	case blr_default_code:
 		blr_format(control, "blr_default_code, ");
+		break;
+
+	case blr_raise:
+		blr_format(control, "blr_raise, ");
 		break;
 
 	default:
