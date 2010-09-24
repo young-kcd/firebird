@@ -282,6 +282,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
 				>
 			</File>

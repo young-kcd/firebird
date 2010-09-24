@@ -274,11 +274,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\BoolNodes.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\dsql.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.cpp"
 				>
 			</File>
 			<File
@@ -422,6 +430,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\BlrWriter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\BoolNodes.h"
 				>
 			</File>
 			<File
