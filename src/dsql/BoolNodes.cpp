@@ -1405,8 +1405,8 @@ bool MissingBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 		request->req_flags &= ~req_null;
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -1462,8 +1462,8 @@ BoolExprNode* NotBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (rseBoolean)
 	{
 		if (rseBoolean->blrOp == blr_ansi_any)
-			rseBoolean->flags |= FLAG_DEOPTIMIZE;
-		if (rseBoolean->blrOp == blr_ansi_any || rseBoolean->blrOp == blr_ansi_all)
+			rseBoolean->flags |= FLAG_DEOPTIMIZE | FLAG_ANSI_NOT;
+		else if (rseBoolean->blrOp == blr_ansi_all)
 			rseBoolean->flags |= FLAG_ANSI_NOT;
 	}
 
@@ -1657,7 +1657,7 @@ bool RseBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const RseBoolNode* o = other->as<RseBoolNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrOp == o->blrOp;
 }
