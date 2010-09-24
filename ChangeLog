@@ -1,3 +1,36 @@
+ 2010-09-23 15:22  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Make refactored code match original one, as see by Claudio.
+The affected code is something that never executes.
+
+ 2010-09-23 11:46  dimitr 
+   M builds/win32/msvc8/dsql_server.vcproj
+   M builds/win32/msvc8/dsql_server_classic.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/engine_classic.vcproj
+   M builds/win32/msvc8/engine_embed.vcproj
+Fixed the MSVC8 build.
+
+ 2010-09-23 09:53  robocop 
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/opt.cpp
+Misc.
+
+ 2010-09-23 09:48  robocop 
+   M src/dsql/ExprNodes.h
+   M src/dsql/pass1.cpp
+Misc.
+
+ 2010-09-23 09:47  robocop 
+   M src/dsql/ExprNodes.cpp
+Misc.
+
+ 2010-09-23 09:09  robocop 
+   M doc/README.build.msvc.html
+Misc.
+
  2010-09-20 16:26  asfernandes 
    M src/jrd/cmp.cpp
    M src/jrd/nod.h
