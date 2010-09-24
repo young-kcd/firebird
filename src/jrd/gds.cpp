@@ -2992,6 +2992,10 @@ static void blr_print_cond(gds_ctl* control)
 		blr_format(control, "blr_default_code, ");
 		break;
 
+	case blr_raise:
+		blr_format(control, "blr_raise, ");
+		break;
+
 	default:
 		blr_error(control, "*** invalid condition type ***");
 		break;
