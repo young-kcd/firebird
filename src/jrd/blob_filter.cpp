@@ -71,7 +71,7 @@ static void open_blob(thread_db*, jrd_tra*, BlobControl**, bid*,
 					  USHORT, BlobFilter*);
 
 
-void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
+void BLF_close_blob(thread_db* /*tdbb*/, BlobControl** filter_handle)
 {
 /**************************************
  *
@@ -147,7 +147,7 @@ void BLF_create_blob(thread_db* tdbb,
 }
 
 
-ISC_STATUS BLF_get_segment(thread_db* tdbb,
+ISC_STATUS BLF_get_segment(thread_db* /*tdbb*/,
 						   BlobControl** filter_handle,
 						   USHORT* length,
 						   USHORT buffer_length,
@@ -258,7 +258,7 @@ void BLF_open_blob(thread_db* tdbb,
 }
 
 
-void BLF_put_segment(thread_db* tdbb,
+void BLF_put_segment(thread_db* /*tdbb*/,
 					 BlobControl** filter_handle,
 					 USHORT length,
 					 const UCHAR* buffer)
@@ -305,7 +305,7 @@ void BLF_put_segment(thread_db* tdbb,
 
 // SEH moved to separate function to avoid conflicts
 // with destructor of BlobControl
-inline void initializeFilter(thread_db *tdbb,
+inline void initializeFilter(thread_db* /*tdbb*/,
 							 ISC_STATUS &status,
 							 BlobControl* control,
 							 BlobFilter* filter,

@@ -307,7 +307,7 @@ ExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
+void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	impure->vlux_count = 0;
@@ -378,7 +378,7 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 	aggPass(tdbb, request, desc);
 }
 
-void AggNode::aggFinish(thread_db* tdbb, jrd_req* request) const
+void AggNode::aggFinish(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	if (asb)
 	{
@@ -589,7 +589,7 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	}
 }
 
-void AvgAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void AvgAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlux_count;
@@ -819,13 +819,13 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->make_long(0);
 }
 
-void CountAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* /*desc*/) const
+void CountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlu_misc.vlu_long;
 }
 
-dsc* CountAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
@@ -1062,7 +1062,7 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	}
 }
 
-void SumAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+void SumAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlux_count;
@@ -1073,7 +1073,7 @@ void SumAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 		ArithmeticNode::add2(desc, impure, node, blr_add);
 }
 
-dsc* SumAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* SumAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 
@@ -1154,7 +1154,7 @@ void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 		EVL_make_value(tdbb, desc, impure);
 }
 
-dsc* MaxMinAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 

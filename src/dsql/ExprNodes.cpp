@@ -853,7 +853,7 @@ void ArithmeticNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		getDescDialect3(tdbb, desc, desc1, desc2);
 }
 
-void ArithmeticNode::getDescDialect1(thread_db* tdbb, dsc* desc, dsc& desc1, dsc& desc2)
+void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1, dsc& desc2)
 {
 	USHORT dtype;
 
@@ -1113,7 +1113,7 @@ void ArithmeticNode::getDescDialect1(thread_db* tdbb, dsc* desc, dsc& desc1, dsc
 	}
 }
 
-void ArithmeticNode::getDescDialect3(thread_db* tdbb, dsc* desc, dsc& desc1, dsc& desc2)
+void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1, dsc& desc2)
 {
 	USHORT dtype;
 
@@ -2697,7 +2697,8 @@ ValueExprNode* ConcatenateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 static RegisterNode<CurrentDateNode> regCurrentDateNode(blr_current_date);
 
-DmlNode* CurrentDateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* CurrentDateNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
+								UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentDateNode(pool);
 }
@@ -2718,7 +2719,7 @@ void CurrentDateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_date);
 }
 
-void CurrentDateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentDateNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_sql_date;
 	desc->dsc_sub_type = 0;
@@ -2727,7 +2728,7 @@ void CurrentDateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-void CurrentDateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CurrentDateNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_sql_date;
 	desc->dsc_sub_type = 0;
@@ -2736,7 +2737,7 @@ void CurrentDateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentDateNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CurrentDateNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentDateNode(*tdbb->getDefaultPool());
 }
@@ -2752,7 +2753,7 @@ ExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-dsc* CurrentDateNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentDateNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
 	request->req_flags &= ~req_null;
@@ -2778,7 +2779,7 @@ dsc* CurrentDateNode::execute(thread_db* tdbb, jrd_req* request) const
 static RegisterNode<CurrentTimeNode> regCurrentTimeNode(blr_current_time);
 static RegisterNode<CurrentTimeNode> regCurrentTimeNode2(blr_current_time2);
 
-DmlNode* CurrentTimeNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* CurrentTimeNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	unsigned precision = DEFAULT_TIME_PRECISION;
 
@@ -2817,7 +2818,7 @@ void CurrentTimeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentTimeNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_sql_time;
 	desc->dsc_sub_type = 0;
@@ -2826,7 +2827,7 @@ void CurrentTimeNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-void CurrentTimeNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CurrentTimeNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_sql_time;
 	desc->dsc_sub_type = 0;
@@ -2835,7 +2836,7 @@ void CurrentTimeNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentTimeNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CurrentTimeNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeNode(*tdbb->getDefaultPool(), precision);
 }
@@ -2851,7 +2852,7 @@ ExprNode* CurrentTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	if (precision > MAX_TIME_PRECISION)
 		ERRD_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
@@ -2859,7 +2860,7 @@ ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentTimeNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
 	request->req_flags &= ~req_null;
@@ -2887,7 +2888,7 @@ dsc* CurrentTimeNode::execute(thread_db* tdbb, jrd_req* request) const
 static RegisterNode<CurrentTimeStampNode> regCurrentTimeStampNode(blr_current_timestamp);
 static RegisterNode<CurrentTimeStampNode> regCurrentTimeStampNode2(blr_current_timestamp2);
 
-DmlNode* CurrentTimeStampNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+DmlNode* CurrentTimeStampNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb,
 	UCHAR blrOp)
 {
 	unsigned precision = DEFAULT_TIMESTAMP_PRECISION;
@@ -2927,7 +2928,7 @@ void CurrentTimeStampNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeStampNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentTimeStampNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_timestamp;
 	desc->dsc_sub_type = 0;
@@ -2936,7 +2937,7 @@ void CurrentTimeStampNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsq
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-void CurrentTimeStampNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CurrentTimeStampNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_timestamp;
 	desc->dsc_sub_type = 0;
@@ -2945,7 +2946,7 @@ void CurrentTimeStampNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* d
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentTimeStampNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CurrentTimeStampNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeStampNode(*tdbb->getDefaultPool(), precision);
 }
@@ -2961,7 +2962,7 @@ ExprNode* CurrentTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	if (precision > MAX_TIME_PRECISION)
 		ERRD_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
@@ -2969,7 +2970,7 @@ ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-dsc* CurrentTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
+dsc* CurrentTimeStampNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
 	request->req_flags &= ~req_null;
@@ -2996,7 +2997,8 @@ dsc* CurrentTimeStampNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<CurrentRoleNode> regCurrentRoleNode(blr_current_role);
 
-DmlNode* CurrentRoleNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* CurrentRoleNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
+								UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentRoleNode(pool);
 }
@@ -3017,7 +3019,7 @@ void CurrentRoleNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_role);
 }
 
-void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3028,7 +3030,7 @@ void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod
 		METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
 }
 
-void CurrentRoleNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CurrentRoleNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_text;
 	desc->dsc_ttype() = ttype_metadata;
@@ -3037,7 +3039,7 @@ void CurrentRoleNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->dsc_flags = 0;
 }
 
-ValueExprNode* CurrentRoleNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CurrentRoleNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentRoleNode(*tdbb->getDefaultPool());
 }
@@ -3079,7 +3081,7 @@ dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return FB_NEW(getPool()) CurrentRoleNode(getPool());
 }
@@ -3090,7 +3092,8 @@ ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 static RegisterNode<CurrentUserNode> regCurrentUserNode(blr_user_name);
 
-DmlNode* CurrentUserNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* CurrentUserNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
+								UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentUserNode(pool);
 }
@@ -3111,7 +3114,7 @@ void CurrentUserNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_user_name);
 }
 
-void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3122,7 +3125,7 @@ void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod
 		METD_get_charset_bpc(dsqlScratch->getTransaction(), ttype_metadata) + sizeof(USHORT);
 }
 
-void CurrentUserNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+void CurrentUserNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_text;
 	desc->dsc_ttype() = ttype_metadata;
@@ -3131,7 +3134,7 @@ void CurrentUserNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->dsc_flags = 0;
 }
 
-ValueExprNode* CurrentUserNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CurrentUserNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentUserNode(*tdbb->getDefaultPool());
 }
@@ -3172,7 +3175,7 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 	return &impure->vlu_desc;
 }
 
-ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return FB_NEW(getPool()) CurrentUserNode(getPool());
 }
@@ -3240,7 +3243,7 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void InternalInfoNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	InfoType infoType = static_cast<InfoType>(dsqlArg->getSlong());
 
@@ -4318,7 +4321,7 @@ void UdfCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void UdfCallNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = static_cast<UCHAR>(dsqlFunction->udf_dtype);
 	desc->dsc_length = dsqlFunction->udf_length;

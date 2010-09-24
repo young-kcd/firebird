@@ -442,6 +442,7 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 	}
 
 	return false; // to cover the first three cases in the switch
+	// This comment seems outdated because this code is unreachable.
 }
 
 
@@ -4295,7 +4296,7 @@ static void pass1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 	else if (node->nod_type == nod_derived_table)
 	{
 		// AB: Derived table support
-		thread_db* tdbb = JRD_get_thread_data(); // unused
+		/*thread_db* tdbb = */JRD_get_thread_data(); // unused
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count; ptr < end; ++ptr)

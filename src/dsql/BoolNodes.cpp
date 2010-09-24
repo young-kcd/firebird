@@ -628,7 +628,7 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-void ComparativeBoolNode::pass2Boolean1(thread_db* tdbb, CompilerScratch* csb)
+void ComparativeBoolNode::pass2Boolean1(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	if (flags & FLAG_INVARIANT)
 		csb->csb_invariants.push(&impureOffset);

@@ -525,7 +525,7 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 	return ext_tran;
 }
 
-void Connection::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
+void Connection::raise(ISC_STATUS* status, thread_db* /*tdbb*/, const char* sWhere)
 {
 	if (!getWrapErrors())
 	{
@@ -557,7 +557,7 @@ Transaction::~Transaction()
 {
 }
 
-void Transaction::generateTPB(thread_db* tdbb, ClumpletWriter& tpb,
+void Transaction::generateTPB(thread_db* /*tdbb*/, ClumpletWriter& tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
 {
 	switch (traMode)

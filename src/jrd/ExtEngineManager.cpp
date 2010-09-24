@@ -612,7 +612,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 }
 
 
-int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
+int ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, MemoryPool& pool,
 	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
 	record_param* rpb) const
 {

@@ -273,14 +273,14 @@ public:
 	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const;
 
-	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
+	virtual void pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, jrd_rel* /*view*/)
 	{
 	}
 
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 
-	virtual void pass2(thread_db* tdbb, CompilerScratch* csb)
+	virtual void pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 	}
 
@@ -297,14 +297,14 @@ public:
 		streams[++streams[0]] = getStream();
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-		bool allowOnlyCurrentStream, jrd_nod* value)
+	virtual bool computable(CompilerScratch* /*csb*/, SSHORT /*stream*/, bool /*idx_use*/,
+		bool /*allowOnlyCurrentStream*/, jrd_nod* /*value*/)
 	{
 		return true;
 	}
 
-	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
-		SortedStreamList* streamList)
+	virtual void findDependentFromStreams(const OptimizerRetrieval* /*optRet*/,
+		SortedStreamList* /*streamList*/)
 	{
 	}
 
@@ -336,7 +336,7 @@ public:
 
 	virtual ProcedureSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 
-	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const
+	virtual void ignoreDbKey(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, const jrd_rel* /*view*/) const
 	{
 	}
 
@@ -346,12 +346,12 @@ public:
 	virtual void pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool containsStream(USHORT checkStream) const
+	virtual bool containsStream(USHORT /*checkStream*/) const
 	{
 		return false;
 	}
 
-	virtual void computeDbKeyStreams(UCHAR* streams) const
+	virtual void computeDbKeyStreams(UCHAR* /*streams*/) const
 	{
 	}
 
@@ -396,7 +396,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
 
-	virtual void computeDbKeyStreams(UCHAR* streams) const
+	virtual void computeDbKeyStreams(UCHAR* /*streams*/) const
 	{
 	}
 
@@ -435,7 +435,7 @@ public:
 	virtual UnionSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* view) const;
 
-	virtual void pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
+	virtual void pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, jrd_rel* /*view*/)
 	{
 	}
 
@@ -508,7 +508,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
 
-	virtual void computeDbKeyStreams(UCHAR* streams) const
+	virtual void computeDbKeyStreams(UCHAR* /*streams*/) const
 	{
 	}
 
@@ -565,7 +565,7 @@ public:
 		return obj;
 	}
 
-	virtual void getStreams(StreamsArray& list) const
+	virtual void getStreams(StreamsArray& /*list*/) const
 	{
 	}
 
@@ -575,7 +575,7 @@ public:
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		BoolExprNode** boolean, RecordSourceNodeStack& stack);
 
-	virtual void pass2(thread_db* tdbb, CompilerScratch* csb)
+	virtual void pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 	}
 

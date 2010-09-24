@@ -984,7 +984,7 @@ void Service::shutdownServices()
 }
 
 
-ISC_STATUS Service::query2(thread_db* tdbb,
+ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 						   USHORT send_item_length,
 						   const UCHAR* send_items,
 						   USHORT recv_item_length,

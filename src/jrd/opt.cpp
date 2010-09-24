@@ -784,11 +784,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// go through the record selection expression generating
 	// record source blocks for all streams
 
-	// CVC: I defined this var here because it's assigned inside an if() shortly
-	// below but it's used later in the loop always, so I assume the idea is that
-	// iterations where nod_type != nod_rse are the ones that set up a new stream.
-	// Hope this isn't some kind of logic error.
-	SSHORT stream = -1;
 	NestConst<RecordSourceNode>* ptr = rse->rse_relations.begin();
 	for (NestConst<RecordSourceNode>* const end = rse->rse_relations.end(); ptr != end; ++ptr)
 	{
@@ -1766,7 +1761,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
  *		operation '$'.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	/*thread_db* tdbb = */JRD_get_thread_data();
 
 	ObjectsArray<NodeStack> classes;
 	ObjectsArray<NodeStack>::iterator eq_class;
@@ -3200,7 +3195,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 		// Collect RSBs and keys to join
 
-		const size_t selected_count = selected_classes.getCount();
+		//const size_t selected_count = selected_classes.getCount();
 
 		SortNode* key = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 

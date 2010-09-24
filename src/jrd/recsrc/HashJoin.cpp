@@ -301,12 +301,12 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool HashJoin::refetchRecord(thread_db* tdbb) const
+bool HashJoin::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool HashJoin::lockRecord(thread_db* tdbb) const
+bool HashJoin::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

@@ -351,12 +351,12 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool MergeJoin::refetchRecord(thread_db* tdbb) const
+bool MergeJoin::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool MergeJoin::lockRecord(thread_db* tdbb) const
+bool MergeJoin::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
@@ -470,7 +470,7 @@ int MergeJoin::compare(thread_db* tdbb, const LegacyNodeArray* node1,
 	return 0;
 }
 
-UCHAR* MergeJoin::getData(thread_db* tdbb, MergeFile* mfb, SLONG record) const
+UCHAR* MergeJoin::getData(thread_db* /*tdbb*/, MergeFile* mfb, SLONG record) const
 {
 	fb_assert(record >= 0 && record < (SLONG) mfb->mfb_equal_records);
 

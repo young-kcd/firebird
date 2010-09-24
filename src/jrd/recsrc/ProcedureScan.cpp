@@ -217,12 +217,12 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool ProcedureScan::refetchRecord(thread_db* tdbb) const
+bool ProcedureScan::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool ProcedureScan::lockRecord(thread_db* tdbb) const
+bool ProcedureScan::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

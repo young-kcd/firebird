@@ -560,7 +560,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 
 // Return page index in difference file that can be used in
 // writeDifference call later.
-ULONG BackupManager::getPageIndex(thread_db* tdbb, ULONG db_page)
+ULONG BackupManager::getPageIndex(thread_db* /*tdbb*/, ULONG db_page)
 {
 	NBAK_TRACE(("get_page_index"));
 
@@ -811,7 +811,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	return true;
 }
 
-void BackupManager::shutdown(thread_db* tdbb)
+void BackupManager::shutdown(thread_db* /*tdbb*/)
 {
 	closeDelta();
 	stateLock->shutdownLock();

@@ -108,12 +108,12 @@ bool VirtualTableScan::getRecord(thread_db* tdbb) const
 	return false;
 }
 
-bool VirtualTableScan::refetchRecord(thread_db* tdbb) const
+bool VirtualTableScan::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool VirtualTableScan::lockRecord(thread_db* tdbb) const
+bool VirtualTableScan::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

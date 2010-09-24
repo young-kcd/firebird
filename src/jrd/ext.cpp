@@ -304,7 +304,7 @@ void EXT_fini(jrd_rel* relation, bool close_only)
 }
 
 
-bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
+bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 {
 /**************************************
  *

@@ -67,8 +67,8 @@ ValuesImpl::IndividualQueue::~IndividualQueue()
 
 void FB_CALL ValuesImpl::IndividualQueue::enqueue(Error* /*error*/)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	size_t recordCount = records.getCount();
+	/*thread_db* tdbb = */JRD_get_thread_data();
+	const size_t recordCount = records.getCount();
 	UCHAR* const buffer = (enqueuePos < recordCount ?
 		records[enqueuePos] : FB_NEW(getPool()) UCHAR[recordSize]);
 	UCHAR* nullsBuffer = buffer + nullsStart;
@@ -161,8 +161,8 @@ ValuesImpl::MsgQueue::~MsgQueue()
 
 void FB_CALL ValuesImpl::MsgQueue::enqueue(Error* /*error*/)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	size_t recordCount = records.getCount();
+	/*thread_db* tdbb = */JRD_get_thread_data();
+	const size_t recordCount = records.getCount();
 	UCHAR* buffer = (enqueuePos < recordCount ?
 		records[enqueuePos] : FB_NEW(getPool()) UCHAR[msgLength]);
 

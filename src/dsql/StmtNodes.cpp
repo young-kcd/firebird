@@ -1195,7 +1195,7 @@ const jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request) const
 			return node->nod_parent;
 	}
 
-	fb_assert(false);
+	fb_assert(false); // unreachable code
 	return NULL;
 }
 
@@ -1580,7 +1580,7 @@ const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 
 ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
+	//DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
 	if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_FUNCTION))
 	{

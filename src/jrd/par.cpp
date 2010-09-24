@@ -2214,7 +2214,7 @@ BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 
-	const USHORT blrOffset = csb->csb_blr_reader.getOffset();
+	//const USHORT blrOffset = csb->csb_blr_reader.getOffset();
 	const SSHORT blrOp = csb->csb_blr_reader.getByte();
 
 	if (blrOp < 0 || blrOp >= FB_NELEM(type_table) || !boolParsers[blrOp])

@@ -104,7 +104,7 @@ void DenseRankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsq
 	desc->makeInt64(0);
 }
 
-void DenseRankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
+void DenseRankWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -126,7 +126,7 @@ void DenseRankWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /
 {
 }
 
-dsc* DenseRankWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* DenseRankWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlu_misc.vlu_int64;
@@ -158,7 +158,7 @@ void RankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod
 	desc->makeInt64(0);
 }
 
-void RankWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
+void RankWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -183,7 +183,7 @@ void RankWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	impure->vlux_count = 0;
 }
 
-void RankWinNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* /*desc*/) const
+void RankWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlux_count;
@@ -229,7 +229,7 @@ void RowNumberWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsq
 	desc->makeInt64(0);
 }
 
-void RowNumberWinNode::getDesc(thread_db* tdbb, CompilerScratch* /*csb*/, dsc* desc)
+void RowNumberWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -251,13 +251,13 @@ void RowNumberWinNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /
 {
 }
 
-dsc* RowNumberWinNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+dsc* RowNumberWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	return &impure->vlu_desc;
 }
 
-dsc* RowNumberWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* /*window*/) const
+dsc* RowNumberWinNode::winPass(thread_db* /*tdbb*/, jrd_req* request, SlidingWindow* /*window*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
 	++impure->vlu_misc.vlu_int64;

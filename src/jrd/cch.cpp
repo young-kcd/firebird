@@ -206,7 +206,7 @@ static inline SharedLatch* allocSharedLatch(thread_db* tdbb, BufferDesc* bdb)
 }
 
 
-static inline void freeSharedLatch(thread_db* tdbb, BufferControl* bcb, SharedLatch* latch)
+static inline void freeSharedLatch(thread_db* /*tdbb*/, BufferControl* bcb, SharedLatch* latch)
 {
 	latch->slt_bdb = NULL;
 	QUE_DELETE(latch->slt_bdb_que);

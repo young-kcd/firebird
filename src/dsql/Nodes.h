@@ -105,7 +105,7 @@ public:
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const = 0;
 
-	virtual Node* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	virtual Node* dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		return this;
 	}
@@ -453,11 +453,11 @@ public:
 
 	virtual BoolExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual void pass2Boolean1(thread_db* tdbb, CompilerScratch* csb)
+	virtual void pass2Boolean1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 	}
 
-	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
+	virtual void pass2Boolean2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 	}
 

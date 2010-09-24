@@ -448,7 +448,7 @@ void RelationSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 	pass2(tdbb, csb);
 }
 
-RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	fb_assert(stream <= MAX_UCHAR);
 	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
@@ -621,14 +621,14 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	return newSource;
 }
 
-void ProcedureSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
+void ProcedureSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* /*view*/)
 {
 	inputs = CMP_pass1(tdbb, csb, inputs);
 	in_msg = CMP_pass1(tdbb, csb, in_msg);
 }
 
-void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	BoolExprNode** boolean, RecordSourceNodeStack& stack)
+void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* /*rse*/,
+	BoolExprNode** /*boolean*/, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -677,7 +677,7 @@ void ProcedureSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 	pass2(tdbb, csb);
 }
 
-RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	fb_assert(stream <= MAX_UCHAR);
 	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
@@ -708,7 +708,7 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 }
 
 bool ProcedureSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-	bool allowOnlyCurrentStream, jrd_nod* value)
+	bool allowOnlyCurrentStream, jrd_nod* /*value*/)
 {
 	if (inputs)
 	{
@@ -800,8 +800,8 @@ void AggregateSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* 
 		group->pass1(tdbb, csb);
 }
 
-void AggregateSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	BoolExprNode** boolean, RecordSourceNodeStack& stack)
+void AggregateSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* /*rse*/,
+	BoolExprNode** /*boolean*/, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -844,7 +844,7 @@ bool AggregateSourceNode::containsStream(USHORT checkStream) const
 	return false;
 }
 
-RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	fb_assert(stream <= MAX_UCHAR);
 	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
@@ -931,7 +931,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 }
 
 bool AggregateSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-	bool allowOnlyCurrentStream, jrd_nod* value)
+	bool allowOnlyCurrentStream, jrd_nod* /*value*/)
 {
 	rse->rse_sorted = group;
 	return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL);
@@ -1036,8 +1036,8 @@ void UnionSourceNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const j
 		(*ptr)->ignoreDbKey(tdbb, csb, view);
 }
 
-void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	BoolExprNode** boolean, RecordSourceNodeStack& stack)
+void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* /*rse*/,
+	BoolExprNode** /*boolean*/, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -1105,7 +1105,7 @@ bool UnionSourceNode::containsStream(USHORT checkStream) const
 	return false;
 }
 
-RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	const SSHORT i = (SSHORT) opt->keyStreams[0];
 	computeDbKeyStreams(opt->keyStreams);
@@ -1183,7 +1183,7 @@ void UnionSourceNode::computeDbKeyStreams(UCHAR* streams) const
 }
 
 bool UnionSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-	bool allowOnlyCurrentStream, jrd_nod* value)
+	bool allowOnlyCurrentStream, jrd_nod* /*value*/)
 {
 	NestConst<RseNode>* ptr = clauses.begin();
 
@@ -1319,8 +1319,8 @@ void WindowSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* vie
 	}
 }
 
-void WindowSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
-	BoolExprNode** boolean, RecordSourceNodeStack& stack)
+void WindowSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* /*rse*/,
+	BoolExprNode** /*boolean*/, RecordSourceNodeStack& stack)
 {
 	stack.push(this);	// Assume that the source will be used. Push it on the final stream stack.
 
@@ -1385,7 +1385,7 @@ bool WindowSourceNode::containsStream(USHORT checkStream) const
 	return false;
 }
 
-RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream)
+RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	for (ObjectsArray<Partition>::iterator partition = partitions.begin();
 		 partition != partitions.end();
@@ -1417,7 +1417,7 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 }
 
 bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-	bool allowOnlyCurrentStream, jrd_nod* value)
+	bool allowOnlyCurrentStream, jrd_nod* /*value*/)
 {
 	return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL);
 }
@@ -1479,7 +1479,7 @@ void RseNode::ignoreDbKey(thread_db* tdbb, CompilerScratch* csb, const jrd_rel* 
 
 // Process a record select expression during pass 1 of compilation.
 // Mostly this involves expanding views.
-void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view)
+void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* /*view*/)
 {
 	SET_TDBB(tdbb);
 

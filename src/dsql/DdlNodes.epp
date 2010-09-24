@@ -863,7 +863,7 @@ void CommentOnNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 // select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
 // gives the list of objects that accept descriptions. At FB2 time, the only
 // subobjects with descriptions are relation's fields and procedure's parameters.
-void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/,
 	jrd_tra* transaction)
 {
 	Attachment* attachment = transaction->tra_attachment;
@@ -1510,7 +1510,7 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 	END_STORE
 }
 
-void CreateAlterFunctionNode::compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch)
+void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch)
 {
 	if (invalid)
 		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_func) << name);
@@ -2264,7 +2264,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 	END_STORE
 }
 
-void CreateAlterProcedureNode::compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch)
+void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch)
 {
 	if (invalid)
 		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_proc) << name);
@@ -2771,7 +2771,7 @@ void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TRIGGER, name);
 }
 
-void CreateAlterTriggerNode::compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch)
+void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch)
 {
 	if (invalid)
 		status_exception::raise(Arg::Gds(isc_dyn_invalid_ddl_trig) << name);
@@ -5041,7 +5041,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 }
 
 // Define a COMPUTED BY clause.
-void RelationNode::defineComputed(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+void RelationNode::defineComputed(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
 	dsql_fld* field, dsql_nod* node, string& source, BlrWriter::BlrData& value)
 {
 	AutoSetRestore2<dsql_nod*, DsqlCompiledStatement> autoDdlNode(dsqlScratch->getStatement(),
@@ -5130,7 +5130,7 @@ void RelationNode::defineComputed(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 }
 
 // Define a DEFAULT clause. Return true for DEFAULT NULL.
-bool RelationNode::defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
 	dsql_fld* /*field*/, dsql_nod* node, string& source, BlrWriter::BlrData& value)
 {
 	dsql_nod* input = PASS1_node(dsqlScratch, node->nod_arg[Dsql::e_dft_default]);
@@ -5156,7 +5156,7 @@ bool RelationNode::defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 }
 
 // Make a constraint object from a legacy node.
-void RelationNode::makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction, const dsql_nod* node, ObjectsArray<Constraint>& constraints, bool* notNull)
 {
 	const dsql_str* string = (dsql_str*) node->nod_arg[Dsql::e_rct_name];

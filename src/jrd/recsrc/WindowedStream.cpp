@@ -563,7 +563,7 @@ bool WindowedStream::refetchRecord(thread_db* tdbb) const
 	return m_joinedStream->refetchRecord(tdbb);
 }
 
-bool WindowedStream::lockRecord(thread_db* tdbb) const
+bool WindowedStream::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

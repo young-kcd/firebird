@@ -1701,7 +1701,7 @@ static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork*
 }
 
 
-static bool user_management(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+static bool user_management(thread_db* /*tdbb*/, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
  *

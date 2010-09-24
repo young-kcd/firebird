@@ -247,12 +247,12 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool RecursiveStream::refetchRecord(thread_db* tdbb) const
+bool RecursiveStream::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool RecursiveStream::lockRecord(thread_db* tdbb) const
+bool RecursiveStream::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

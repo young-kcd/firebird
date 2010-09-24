@@ -2887,7 +2887,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlPi(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const jrd_nod* args,
 	impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);

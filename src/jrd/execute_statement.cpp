@@ -220,7 +220,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, const jrd_nod* const* jrdVar)
 }
 
 
-void ExecuteStatement::close(thread_db* tdbb)
+void ExecuteStatement::close(thread_db* /*tdbb*/)
 {
 	delete resultSet;
 	resultSet = NULL;
