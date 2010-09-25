@@ -1,3 +1,11 @@
+ 2010-09-24 11:33  dimitr 
+   M src/jrd/gds.cpp
+Fixed unregistered error in the BLR printer output.
+
+ 2010-09-24 09:35  dimitr 
+   M doc/README.user.embedded
+Correction.
+
  2010-09-21 06:18  dimitr 
    M src/jrd/par.cpp
 Backport CORE-3003: Procedure suspend check may cause restore to fail.
