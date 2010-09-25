@@ -3892,7 +3892,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					sub->nod_type != nod_dbkey)
 				{
 					NodeStack stack;
-					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, false);
+					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, true);
 					const UCHAR streamCount = (UCHAR) stack.getCount();
 
 					if (streamCount)
