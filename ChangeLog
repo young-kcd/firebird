@@ -1,3 +1,66 @@
+ 2010-09-24 14:55  hvlad 
+   M src/dsql/parse.y
+Fixed SIMILAR TO syntax
+
+ 2010-09-24 09:53  robocop 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/WinNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/pass1.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/ValuesImpl.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/execute_statement.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/svc.cpp
+Warnings.
+
+ 2010-09-24 09:23  robocop 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/par.cpp
+Misc.
+
+ 2010-09-24 08:33  robocop 
+   M src/dsql/BoolNodes.cpp
+Misc.
+
+ 2010-09-24 07:26  dimitr 
+   M builds/win32/msvc8/dsql_server_classic.vcproj
+More fixes for the MSVC8 build.
+
+ 2010-09-24 07:23  dimitr 
+   M builds/win32/msvc8/dsql_server.vcproj
+   M builds/win32/msvc8/dsql_server_classic.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/engine_classic.vcproj
+   M builds/win32/msvc8/engine_embed.vcproj
+More fixes for the MSVC8 build.
+
  2010-09-23 15:22  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Make refactored code match original one, as see by Claudio.
