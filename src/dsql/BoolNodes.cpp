@@ -256,7 +256,7 @@ bool BinaryBoolNode::executeAnd(thread_db* tdbb, jrd_req* request) const
 	const USHORT secondnull = request->req_flags & req_null;
 	request->req_flags &= ~req_null;
 
-	if ((!value1 && !firstnull) || (!value2 && !secondnull))
+	if (!value2 && !secondnull)
 		return false;	// at least one operand was false
 
 	if (value1 && value2)
@@ -284,10 +284,6 @@ bool BinaryBoolNode::executeOr(thread_db* tdbb, jrd_req* request) const
 	// N               F                N
 	// N               T                T
 	// N               N                N
-	//
-	// Also, preserve first operand's value and null state, but still
-	// evaluate second operand, since latter field mappings may
-	// depend on the evaluation.
 
 	const bool value1 = arg1->execute(tdbb, request);
 
