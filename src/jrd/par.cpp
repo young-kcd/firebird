@@ -2221,7 +2221,7 @@ BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
 	{
         // NS: This error string is correct, please do not mangle it again and again.
 		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
-        PAR_syntax_error(csb, "valid BLR code");
+        PAR_syntax_error(csb, "valid boolean BLR code");
     }
 
 	return boolParsers[blrOp](tdbb, *tdbb->getDefaultPool(), csb, blrOp);

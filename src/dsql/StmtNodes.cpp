@@ -1580,8 +1580,6 @@ const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 
 ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	//DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
-
 	if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_FUNCTION))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<

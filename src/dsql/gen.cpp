@@ -523,8 +523,6 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
  **/
 void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 {
-	/*thread_db* tdbb = */JRD_get_thread_data();
-
 	DsqlCompiledStatement* statement = scratch->getStatement();
 
 	if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB ||

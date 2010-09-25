@@ -2362,16 +2362,11 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 	if (!plan || plan->type != PlanNode::TYPE_RETRIEVE)
 		return;
 
-	// find out how many indices were specified; if
-	// there were none, this is a sequential retrieval
-	//size_t planCount = 0;
-
-	//if (plan->accessType)
-	//	planCount = plan->accessType->items.getCount();
-
-	// go through each of the indices and mark it unusable
+	// Go through each of the indices and mark it unusable
 	// for indexed retrieval unless it was specifically mentioned
-	// in the plan; also mark indices for navigational access
+	// in the plan; also mark indices for navigational access.
+
+	// If there were none indices, this is a sequential retrieval.
 
 	index_desc* idx = csbTail->csb_idx->items;
 

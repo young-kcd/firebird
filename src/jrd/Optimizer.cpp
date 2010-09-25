@@ -1586,7 +1586,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	{
 		ComparativeBoolNode* cmpNode = (*tail)->matches[0]->as<ComparativeBoolNode>();
 		fb_assert(cmpNode);
-	
+
 		dsc dsc0;
 		CMP_get_desc(tdbb, csb, cmpNode->arg1.getObject(), &dsc0);
 
