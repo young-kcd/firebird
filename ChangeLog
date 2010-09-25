@@ -1,3 +1,11 @@
+ 2010-09-24 11:34  dimitr 
+   M src/jrd/gds.cpp
+Fixed unregistered error in the BLR printer output.
+
+ 2010-09-24 09:33  dimitr 
+   M doc/README.user.embedded
+Correction.
+
  2010-09-22 06:06  alexpeshkoff 
    M src/utilities/gstat/dba.epp
 Fixed CORE-3143: Segmentation fault may occur when user interrupts gstat
