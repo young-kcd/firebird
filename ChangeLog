@@ -1,3 +1,7 @@
+ 2010-09-24 11:33  dimitr 
+   M src/jrd/gds.cpp
+Fixed unregistered error in the BLR printer output.
+
  2010-09-18 06:52  dimitr 
    M src/jrd/vio.cpp
 Fixed CORE-3137: Partial rollback is possible for a selectable procedure modifying data.
