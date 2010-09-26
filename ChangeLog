@@ -1,3 +1,22 @@
+ 2010-09-25 23:08  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/pass1.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/ValuesImpl.cpp
+   M src/jrd/par.cpp
+Misc
+
+ 2010-09-25 20:26  asfernandes 
+   M src/dsql/BoolNodes.cpp
+Misc things seen by Claudio
+
+ 2010-09-25 20:19  asfernandes 
+   M src/jrd/cmp.cpp
+Fixed CORE-3141 - The last column in a view is returning as a null value even when it's not
+
  2010-09-24 14:55  hvlad 
    M src/dsql/parse.y
 Fixed SIMILAR TO syntax
