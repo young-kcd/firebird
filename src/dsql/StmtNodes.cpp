@@ -1610,6 +1610,7 @@ void ReturnNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_assignment);
 	GEN_expr(dsqlScratch, value);
 	dsqlScratch->appendUChar(blr_variable);
@@ -1617,6 +1618,7 @@ void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->genReturn();
 	dsqlScratch->appendUChar(blr_leave);
 	dsqlScratch->appendUChar(0);
+	dsqlScratch->appendUChar(blr_end);
 }
 
 
