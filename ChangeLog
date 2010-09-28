@@ -1,3 +1,7 @@
+ 2010-09-27 12:29  dimitr 
+   M src/dsql/StmtNodes.cpp
+Fixed one of the problems with PSQL functions reported by Vlad privately.
+
  2010-09-25 23:08  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/gen.cpp
