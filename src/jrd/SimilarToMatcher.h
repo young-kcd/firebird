@@ -163,6 +163,65 @@ private:
 			{
 			}
 
+#ifdef DEBUG_SIMILAR
+			void dump(string& text, int i) const
+			{
+				string temp;
+
+				switch (op)
+				{
+					case opRepeat:
+						temp.printf("opRepeat(%d, %d, %d)", len, len2, ref);
+						break;
+
+					case opBranch:
+						if (branchNum == -1)
+							temp.printf("opBranch(%d)", i + ref);
+						else
+							temp.printf("opBranch(%d, %d)", i + ref, branchNum);
+						break;
+
+					case opStart:
+						temp = "opStart";
+						break;
+
+					case opEnd:
+						temp = "opEnd";
+						break;
+
+					case opRef:
+						if (branchNum == -1)
+							temp.printf("opRef(%d)", i + ref);
+						else
+							temp.printf("opRef(%d, %d)", i + ref, branchNum);
+						break;
+
+					case opNothing:
+						temp = "opNothing";
+						break;
+
+					case opAny:
+						temp = "opAny";
+						break;
+
+					case opAnyOf:
+						temp.printf("opAnyOf(%.*s, %d, %.*s, %d, %.*s, %d, %.*s, %d)",
+							len, str, len, len2, str2, len2, len3, str3, len3, len4, str4, len4);
+						break;
+
+					case opExactly:
+						temp.printf("opExactly(%.*s, %d)", len, str, len);
+						break;
+
+					default:
+						temp = "unknown";
+						break;
+				}
+
+				text.printf("%d: %s", i, temp.c_str());
+			}
+#endif	// DEBUG_SIMILAR
+
 			Op op;
 			const CharType* str;
 			SLONG len;
@@ -233,6 +292,11 @@ private:
 			unsigned start;
 			unsigned length;
 		};
+
+#ifdef DEBUG_SIMILAR
+		Array<char> debugLog;
+		int debugLevel;
+#endif
 
 		TextType* textType;
 		CharType escapeChar;
@@ -326,6 +390,10 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 			const UCHAR* patternStr, SLONG patternLen,
 			CharType escapeChar, bool useEscape, bool forSubstring)
 	: StaticAllocator(pool),
+#ifdef DEBUG_SIMILAR
+	  debugLog(pool),
+	  debugLevel(-1),
+#endif
 	  textType(textType),
 	  escapeChar(escapeChar),
 	  useEscape(useEscape),
@@ -403,6 +471,11 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
+#ifdef DEBUG_SIMILAR
+	debugLog.clear();
+	debugLevel = -1;
+#endif
+
 	const bool matched =
 #ifdef RECURSIVE_SIMILAR
 		match(nodes.getCount(), 0);
@@ -413,15 +486,16 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 #ifdef DEBUG_SIMILAR
 	if (matched)
 	{
-		string s;
 		for (unsigned i = 0; i <= branchNum; ++i)
 		{
 			string x;
-			x.printf("%d: %d, %d\n\t", i, branches[i].start, branches[i].length);
-			s += x;
+			x.printf("%d: %d, %d\n", i, branches[i].start, branches[i].length);
+			debugLog.add(x.c_str(), x.length());
 		}
 
-		gds__log("%s", s.c_str());
+		debugLog.add('\0');
+
+		gds__log("\n%s", debugLog.begin());
 	}
 #endif	// DEBUG_SIMILAR
 
@@ -999,62 +1073,10 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
 	for (unsigned i = 0; i < nodes.getCount(); ++i)
 	{
 		string type;
-
-		switch (nodes[i].op)
-		{
-			case opRepeat:
-				type.printf("opRepeat(%d, %d, %d)", nodes[i].len, nodes[i].len2, nodes[i].ref);
-				break;
-
-			case opBranch:
-				if (nodes[i].branchNum == -1)
-					type.printf("opBranch(%d)", i + nodes[i].ref);
-				else
-					type.printf("opBranch(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
-				break;
-
-			case opStart:
-				type = "opStart";
-				break;
-
-			case opEnd:
-				type = "opEnd";
-				break;
-
-			case opRef:
-				if (nodes[i].branchNum == -1)
-					type.printf("opRef(%d)", i + nodes[i].ref);
-				else
-					type.printf("opRef(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
-				break;
-
-			case opNothing:
-				type = "opNothing";
-				break;
-
-			case opAny:
-				type = "opAny";
-				break;
-
-			case opAnyOf:
-				type.printf("opAnyOf(%.*s, %d, %.*s, %d, %.*s, %d, %.*s, %d)",
-					nodes[i].len, nodes[i].str, nodes[i].len,
-					nodes[i].len2, nodes[i].str2, nodes[i].len2,
-					nodes[i].len3, nodes[i].str3, nodes[i].len3,
-					nodes[i].len4, nodes[i].str4, nodes[i].len4);
-				break;
-
-			case opExactly:
-				type.printf("opExactly(%.*s, %d)", nodes[i].len, nodes[i].str, nodes[i].len);
-				break;
-
-			default:
-				type = "unknown";
-				break;
-		}
+		nodes[i].dump(type, i);
 
 		string s;
-		s.printf("%s%d:%s", (i > 0 ? ", " : ""), i, type.c_str());
+		s.printf("%s%s", (i > 0 ? ", " : ""), type.c_str());
 
 		text += s;
 	}
@@ -1068,9 +1090,24 @@ template <typename CharType, typename StrConverter>
 #ifdef RECURSIVE_SIMILAR
 bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int start)
 {
+#ifdef DEBUG_SIMILAR
+	AutoSetRestore<int> autoDebugLevel(&debugLevel, debugLevel + 1);
+#endif
+
 	for (int i = start; i < limit; ++i)
 	{
 		const Node* node = &nodes[i];
+
+#ifdef DEBUG_SIMILAR
+		string s;
+		node->dump(s, i);
+
+		for (int debugLevelI = 0; debugLevelI < debugLevel; ++debugLevelI)
+			s = "   " + s;
+
+		s = "\n" + s;
+		debugLog.add(s.c_str(), s.length());
+#endif
 
 		switch (node->op)
 		{
@@ -1119,6 +1156,16 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 
 					if (node->ref == 0)
 						break;
+
+#ifdef DEBUG_SIMILAR
+					node->dump(s, i);
+
+					for (int debugLevelI = 0; debugLevelI < debugLevel; ++debugLevelI)
+						s = "   " + s;
+
+					s = "\n" + s;
+					debugLog.add(s.c_str(), s.length());
+#endif
 				}
 
 				break;
@@ -1150,12 +1197,28 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int limit, int s
 				break;
 
 			case opAny:
+#ifdef DEBUG_SIMILAR
+				if (bufferPos >= bufferEnd)
+					s = " -> <end>";
+				else
+					s.printf(" -> %d", *bufferPos);
+				debugLog.add(s.c_str(), s.length());
+#endif
+
 				if (bufferPos >= bufferEnd)
 					return false;
 				++bufferPos;
 				break;
 
 			case opAnyOf:
+#ifdef DEBUG_SIMILAR
+				if (bufferPos >= bufferEnd)
+					s = " -> <end>";
+				else
+					s.printf(" -> %d", *bufferPos);
+				debugLog.add(s.c_str(), s.length());
+#endif
+
 				if (bufferPos >= bufferEnd)
 					return false;
 
