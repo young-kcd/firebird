@@ -1,3 +1,11 @@
+ 2010-09-30 15:40  asfernandes 
+   M src/jrd/SimilarToMatcher.h
+Improve the debug log
+
+ 2010-09-30 08:09  robocop 
+   M doc/README.user.embedded
+Misc.
+
  2010-09-27 12:29  dimitr 
    M src/dsql/StmtNodes.cpp
 Fixed one of the problems with PSQL functions reported by Vlad privately.
