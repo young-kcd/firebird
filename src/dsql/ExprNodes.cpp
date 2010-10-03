@@ -3952,10 +3952,14 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	UCHAR* escapeStr;
 	int escapeLen = MOV_make_string2(tdbb, escapeDesc, textType, &escapeStr, escapeBuffer);
 
+	// Verify the correctness of the escape character.
+	if (escapeLen == 0 || charSet->length(escapeLen, escapeStr, true) != 1)
+		ERR_post(Arg::Gds(isc_escape_invalid));
+
 	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
 
-	AutoPtr<BaseSimilarToMatcher> autoEvaluator;	// deallocate non-invariant evaluator
-	BaseSimilarToMatcher* evaluator;
+	AutoPtr<BaseSubstringSimilarMatcher> autoEvaluator;	// deallocate non-invariant evaluator
+	BaseSubstringSimilarMatcher* evaluator;
 
 	if (node->nod_flags & nod_invariant)
 	{
@@ -3963,39 +3967,39 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			delete impure->vlu_misc.vlu_invariant;
 
-			impure->vlu_misc.vlu_invariant = evaluator = collation->createSimilarToMatcher(
-				*tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen, true);
+			impure->vlu_misc.vlu_invariant = evaluator = collation->createSubstringSimilarMatcher(
+				*tdbb->getDefaultPool(), patternStr, patternLen, escapeStr, escapeLen);
 
 			impure->vlu_flags |= VLU_computed;
 		}
 		else
 		{
-			evaluator = static_cast<BaseSimilarToMatcher*>(impure->vlu_misc.vlu_invariant);
+			evaluator = static_cast<BaseSubstringSimilarMatcher*>(impure->vlu_misc.vlu_invariant);
 			evaluator->reset();
 		}
 	}
 	else
 	{
-		autoEvaluator = evaluator = collation->createSimilarToMatcher(*tdbb->getDefaultPool(),
-			patternStr, patternLen, escapeStr, escapeLen, true);
+		autoEvaluator = evaluator = collation->createSubstringSimilarMatcher(*tdbb->getDefaultPool(),
+			patternStr, patternLen, escapeStr, escapeLen);
 	}
 
 	evaluator->process(exprStr, exprLen);
 
 	if (evaluator->result())
 	{
-		// Get the bounds of the matched substring.
+		// Get the byte bounds of the matched substring.
 		unsigned start = 0;
 		unsigned length = 0;
-		evaluator->getBranchInfo(1, &start, &length);
+		evaluator->getResultInfo(&start, &length);
 
 		dsc desc;
 		desc.makeText((USHORT) exprLen, textType);
 		EVL_make_value(tdbb, &desc, impure);
 
 		// And return it.
-		impure->vlu_desc.dsc_length = charSet->substring(exprLen, exprStr,
-			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address, start, length);
+		memcpy(impure->vlu_desc.dsc_address, exprStr + start, length);
+		impure->vlu_desc.dsc_length = length;
 
 		return &impure->vlu_desc;
 	}

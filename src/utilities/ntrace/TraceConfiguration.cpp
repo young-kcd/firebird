@@ -157,7 +157,7 @@ void TraceCfgReader::readConfig()
 
 					SimilarToMatcher<ULONG, Jrd::CanonicalConverter<SimilarConverter> > matcher(
 						*getDefaultMemoryPool(), textType, (const UCHAR*) pattern.c_str(),
-						pattern.length(), '\\', true, false);
+						pattern.length(), '\\', true);
 
 					regExpOk = true;
 

@@ -153,7 +153,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
-				filter.length(), '\\', true, false);
+				filter.length(), '\\', true);
 		}
 		catch (const Exception&)
 		{
@@ -172,7 +172,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
-				filter.length(), '\\', true, false);
+				filter.length(), '\\', true);
 		}
 		catch (const Exception&)
 		{

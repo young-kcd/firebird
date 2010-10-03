@@ -975,7 +975,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 					else	// nod_similar
 					{
 						impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
-							*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length, false);
+							*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 					}
 				}
 				else
@@ -992,7 +992,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 			else	// nod_similar
 			{
 				evaluator = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-					p2, l2, escape_str, escape_length, false);
+					p2, l2, escape_str, escape_length);
 			}
 
 			while (!(blob->blb_flags & BLB_eof))
@@ -1182,7 +1182,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 				else	// nod_similar
 				{
 					impure->vlu_misc.vlu_invariant = evaluator = obj->createSimilarToMatcher(
-						*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length, false);
+						*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 				}
 			}
 			else
@@ -1200,8 +1200,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			return obj->like(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
 
 		// nod_similar
-		return obj->similarTo(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str,
-			escape_length, false);
+		return obj->similarTo(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
 	}
 
 	// Handle MATCHES

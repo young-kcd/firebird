@@ -35,12 +35,11 @@
 // #define RECURSIVE_SIMILAR	// useless in production due to stack overflow
 #endif
 
-
 namespace Firebird
 {
 
 template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
-class SimilarToMatcher : public Jrd::BaseSimilarToMatcher
+class SimilarToMatcher : public Jrd::PatternMatcher
 {
 private:
 	typedef Jrd::CharSet CharSet;
@@ -74,9 +73,9 @@ private:
 	class Evaluator : private StaticAllocator
 	{
 	public:
-		Evaluator(MemoryPool& pool, TextType* textType,
+		Evaluator(MemoryPool& pool, TextType* aTextType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape, bool forSubstring);
+			CharType aEscapeChar, bool aUseEscape);
 
 		~Evaluator()
 		{
@@ -301,7 +300,6 @@ private:
 		TextType* textType;
 		CharType escapeChar;
 		bool useEscape;
-		bool forSubstring;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 		const UCHAR* originalPatternStr;
 		SLONG originalPatternLen;
@@ -324,9 +322,9 @@ private:
 
 public:
 	SimilarToMatcher(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-				SLONG strLen, CharType escape, bool useEscape, bool forSubstring)
-		: BaseSimilarToMatcher(pool, ttype),
-		  evaluator(pool, ttype, str, strLen, escape, useEscape, forSubstring)
+				SLONG strLen, CharType escape, bool useEscape)
+		: PatternMatcher(pool, ttype),
+		  evaluator(pool, ttype, str, strLen, escape, useEscape)
 	{
 	}
 
@@ -358,23 +356,21 @@ public:
 	}
 
 	static SimilarToMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
+		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen)
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
 		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
-			forSubstring);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0);
 	}
 
 	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
 		Evaluator evaluator(pool, ttype, p, pl,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0,
-			forSubstring);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0);
 		evaluator.processNextChunk(s, sl);
 		return evaluator.getResult();
 	}
@@ -386,18 +382,17 @@ private:
 
 template <typename CharType, typename StrConverter>
 SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
-			MemoryPool& pool, TextType* textType,
+			MemoryPool& pool, TextType* aTextType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType escapeChar, bool useEscape, bool forSubstring)
+			CharType aEscapeChar, bool aUseEscape)
 	: StaticAllocator(pool),
 #ifdef DEBUG_SIMILAR
 	  debugLog(pool),
 	  debugLevel(-1),
 #endif
-	  textType(textType),
-	  escapeChar(escapeChar),
-	  useEscape(useEscape),
-	  forSubstring(forSubstring),
+	  textType(aTextType),
+	  escapeChar(aEscapeChar),
+	  useEscape(aUseEscape),
 	  buffer(pool),
 	  originalPatternStr(patternStr),
 	  originalPatternLen(patternLen),
@@ -438,9 +433,6 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 
 	int flags;
 	parseExpr(&flags);
-
-	if (forSubstring && branchNum != 2)
-		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 	nodes.push(Node(opEnd));
 
@@ -575,14 +567,6 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
 		   (c = *patternPos) != canonicalChar(TextType::CHAR_VERTICAL_BAR) &&
 		   c != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 	{
-		if (forSubstring && branchNum != 0 && patternPos + 1 < patternEnd &&
-			*patternPos == escapeChar &&
-			patternPos[1] == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
-		{
-			++branchNum;
-			break;
-		}
-
 		parseFactor(&flags);
 
 		*flagp |= flags & FLAG_NOT_EMPTY;
@@ -988,8 +972,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 		int flags;
 		parseExpr(&flags);
 
-		if (!forSubstring)	// This is used for the trace stuff.
-			++branchNum;
+		++branchNum;	// This is used for the trace stuff.
 
 		if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -1001,40 +984,14 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 		if (patternPos >= patternEnd)
 			status_exception::raise(Arg::Gds(isc_escape_invalid));
 
-		if (forSubstring && *patternPos == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
+		if (*patternPos != escapeChar &&
+			notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
 		{
-			if (branchNum != 0)
-			{
-				--patternPos;
-				return;
-			}
-
-			++branchNum;
-			++patternPos;
-
-			int flags;
-			parseExpr(&flags);
-
-			if (patternPos + 1 >= patternEnd || *patternPos != escapeChar ||
-				patternPos[1] != canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
-			{
-				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-			}
-
-			patternPos += 2;
-			*flagp |= flags & FLAG_NOT_EMPTY;
+			status_exception::raise(Arg::Gds(isc_escape_invalid));
 		}
-		else
-		{
-			if (*patternPos != escapeChar &&
-				notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
-			{
-				status_exception::raise(Arg::Gds(isc_escape_invalid));
-			}
 
-			nodes.push(Node(opExactly, patternPos++, 1));
-			*flagp |= FLAG_NOT_EMPTY;
-		}
+		nodes.push(Node(opExactly, patternPos++, 1));
+		*flagp |= FLAG_NOT_EMPTY;
 	}
 	else
 	{
@@ -1606,7 +1563,219 @@ SLONG SimilarToMatcher<CharType, StrConverter>::Evaluator::notInSet(
 	return strLen;
 }
 
-} // namespace Firebird
 
+// Given a regular expression R1<escape>#R2#<escape>R3 and the string S:
+// - Find the shortest substring of S that matches R1 while the remainder (S23) matches R2R3;
+// - Find the longest (S2) substring of S23 that matches R2 while the remainder matches R3;
+// - Return S2.
+template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
+class SubstringSimilarMatcher : public Jrd::BaseSubstringSimilarMatcher
+{
+private:
+	typedef Jrd::CharSet CharSet;
+	typedef Jrd::TextType TextType;
+
+public:
+	SubstringSimilarMatcher(MemoryPool& pool, TextType* ttype,
+				const UCHAR* patternStr, SLONG patternLen, CharType aEscapeChar)
+		: BaseSubstringSimilarMatcher(pool, ttype),
+		  escapeChar(aEscapeChar),
+		  originalPatternStr(patternStr),
+		  originalPatternLen(patternLen),
+		  patternCvt(pool, textType, patternStr, patternLen),
+		  buffer(pool)
+	{
+		CharSet* charSet = textType->getCharSet();
+
+		// Make a new string without the <escape><quote>. While doing it, get the byte
+		// length of each segment.
+
+		UCharBuffer newExpr(originalPatternLen);
+		UCHAR* newExprPos = newExpr.begin();
+
+		const UCHAR* originalPatternEnd = originalPatternStr + originalPatternLen;
+		const UCHAR* originalPatternPos = originalPatternStr;
+
+		const CharType* lastStart = reinterpret_cast<const CharType*>(patternStr);
+		const CharType* end = lastStart + patternLen;
+		unsigned lengths[3];
+		unsigned lengthsNum = 0;
+		UCHAR dummy[sizeof(ULONG) * 2];
+
+		for (const CharType* p = lastStart; p < end; ++p)
+		{
+			if (*p != escapeChar)
+				continue;
+
+			if (++p >= end)
+				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
+
+			if (*p == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
+			{
+				if (lengthsNum >= 2)
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
+
+				// Get the byte length since the last segment.
+				ULONG len = charSet->substring(originalPatternEnd - originalPatternPos,
+					originalPatternPos, newExpr.begin() + originalPatternLen - newExprPos,
+					newExprPos, 0, p - lastStart - 1);
+
+				lengths[lengthsNum++] = len;
+				newExprPos += len;
+				originalPatternPos += len;
+
+				// Advance two (<escape><quote>) characters.
+				originalPatternPos += charSet->substring(originalPatternEnd - originalPatternPos,
+					originalPatternPos, sizeof(dummy), dummy, 0, 2);
+
+				lastStart = p + 1;	// Register the start of the next segment.
+			}
+		}
+
+		if (lengthsNum != 2)
+			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
+
+		// Get the byte length of the last segment.
+		lengths[2] = charSet->substring(originalPatternEnd - originalPatternPos,
+			originalPatternPos, newExpr.begin() + originalPatternLen - newExprPos,
+			newExprPos, 0, end - lastStart);
+
+		// Construct the needed regular expressions.
+
+		r1 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+				newExpr.begin(), lengths[0], escapeChar, true);
+
+		r2 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+				newExpr.begin() + lengths[0], lengths[1], escapeChar, true);
+
+		r3 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+				newExpr.begin() + lengths[0] + lengths[1], lengths[2], escapeChar, true);
+
+		r23 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+				newExpr.begin() + lengths[0], lengths[1] + lengths[2], escapeChar, true);
+	}
+
+	static SubstringSimilarMatcher* create(MemoryPool& pool, TextType* ttype,
+		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen)
+	{
+		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
+
+		return FB_NEW(pool) SubstringSimilarMatcher(pool, ttype, str, length,
+			*reinterpret_cast<const CharType*>(escape));
+	}
+
+	void reset()
+	{
+		buffer.shrink(0);
+
+		r1->reset();
+		r2->reset();
+		r3->reset();
+		r23->reset();
+	}
+
+	bool result()
+	{
+		CharSet* charSet = textType->getCharSet();
+		const UCHAR* p = buffer.begin();
+		UCharBuffer temp(buffer.getCount());
+		UCHAR dummy[sizeof(ULONG)];
+
+		// Find the shortest substring that matches R1 while the full expression matches R1R2R3.
+		do
+		{
+			r1->reset();
+			r1->process(buffer.begin(), p - buffer.begin());
+
+			if (r1->result())
+			{
+				// We have a initial substring matching R1. Let's see if the remainder matches R2R3.
+
+				r23->reset();
+				r23->process(p, buffer.end() - p);
+
+				if (r23->result())
+				{
+					// Now we start to find the longest substring that matches R2 while the
+					// remainder matches R3. Once we found it, it's the result string.
+
+					// We already know its start, based on the substring that matched R1.
+					matchedStart = p - buffer.begin();
+
+					const UCHAR* p3 = buffer.end();
+					SLONG charLen23 = -1;
+					memcpy(temp.begin(), p, p3 - p);
+
+					while (true)
+					{
+						r2->reset();
+						r2->process(temp.begin(), p3 - p);
+
+						if (r2->result())
+						{
+							r3->reset();
+							r3->process(p3, buffer.end() - p3);
+
+							if (r3->result())
+							{
+								matchedLength = p3 - buffer.begin() - matchedStart;
+								return true;
+							}
+						}
+
+						if (charLen23 == -1)
+							charLen23 = charSet->length(p3 - p, p, true);
+
+						if (charLen23-- == 0)
+							break;
+
+						// Shrink in one character the string to match R2.
+						// Move back one character to match R3.
+						p3 = p + charSet->substring(buffer.end() - p, p, temp.getCapacity(),
+							temp.begin(), 0, charLen23);
+					}
+				}
+			}
+
+			// Advance a character.
+			p += charSet->substring(buffer.end() - p, p, sizeof(dummy), dummy, 0, 1);
+		} while (p < buffer.end());
+
+		return false;
+	}
+
+	bool process(const UCHAR* str, SLONG length)
+	{
+		const size_t pos = buffer.getCount();
+		memcpy(buffer.getBuffer(pos + length) + pos, str, length);
+		return true;
+	}
+
+	// We return byte-base start and length.
+	void getResultInfo(unsigned* start, unsigned* length)
+	{
+		*start = matchedStart;
+		*length = matchedLength;
+	}
+
+private:
+	CharType canonicalChar(int ch) const
+	{
+		return *reinterpret_cast<const CharType*>(textType->getCanonicalChar(ch));
+	}
+
+private:
+	CharType escapeChar;
+	const UCHAR* originalPatternStr;
+	SLONG originalPatternLen;
+	StrConverter patternCvt;
+	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+	AutoPtr<PatternMatcher> r1, r2, r3, r23;
+	unsigned matchedStart;
+	unsigned matchedLength;
+};
+
+
+} // namespace Firebird
 
 #endif	// JRD_SIMILAR_TO_EVALUATOR_H
