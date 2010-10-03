@@ -1,3 +1,14 @@
+ 2010-10-03 00:50  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Collation.cpp
+   M src/jrd/Collation.h
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/intl_classes.h
+   M src/utilities/ntrace/TraceConfiguration.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Sub-task CORE-3147 - Fix SUBSTRING(SIMILAR) in regard to initial and final shortest matching specified in the standard
+
  2010-09-30 15:40  asfernandes 
    M src/jrd/SimilarToMatcher.h
 Improve the debug log
