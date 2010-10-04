@@ -17,7 +17,12 @@
  * Contributor(s): ______________________________________.
  */
 
+#if defined(__cplusplus) && defined(DARWIN)
+#include "../jrd/common.h"
+#define EXPORT API_ROUTINE
+#else
 #define EXPORT
+#endif 
 #define MATHERR	matherr
 
 #include <stdarg.h>

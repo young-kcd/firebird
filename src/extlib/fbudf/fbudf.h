@@ -32,6 +32,8 @@
 #else
 #define FBUDF_API __declspec(dllimport)
 #endif
+#elif defined(DARWIN)
+#define FBUDF_API API_ROUTINE
 #else
 #define FBUDF_API
 #endif
