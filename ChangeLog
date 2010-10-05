@@ -1,3 +1,12 @@
+ 2010-10-04 14:58  alexpeshkoff 
+   M src/extlib/ib_udf.cpp
+Fix for CORE-3156: Problems using UDFs on Mac
+
+ 2010-10-04 13:07  alexpeshkoff 
+   M src/extlib/fbudf/fbudf.h
+   M src/extlib/ib_udf.h
+Fix for CORE-3156: Problems using UDFs on Mac
+
  2010-09-25 20:12  asfernandes 
    M src/jrd/cmp.cpp
 Fixed CORE-3141 - The last column in a view is returning as a null value even when its not
