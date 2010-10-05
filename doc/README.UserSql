@@ -24,5 +24,5 @@ Document date:  Fri Dec 28 2007
  Non-privileged (non-SYSDBA) user can use only ALTER USER operator with his own name 
  as name parameter in it.
 
- WARNING! These operators do not support 2 phase commit - changes in secure DB 
- take place when deferred work is performed.
+ WARNING! These operators do not support 2 phase commit - changes in secure DB
+ take place at first (prepare) phase, and there is no limbo state in it.
