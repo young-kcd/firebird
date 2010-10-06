@@ -10505,11 +10505,15 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 					}
 					else if (parameter->par_desc.dsc_dtype > dtype_any_text)
 					{
+						const USHORT toCharSetBPC = METD_get_charset_bpc(
+							statement, att->att_charset);
+
 						// The LIKE & similar parameters must be varchar type
 						// strings - so force this parameter to be varchar
 						// and take a guess at a good length for it.
 						parameter->par_desc.dsc_dtype = dtype_varying;
-						parameter->par_desc.dsc_length = LIKE_PARAM_LEN + sizeof(USHORT);
+						parameter->par_desc.dsc_length = LIKE_PARAM_LEN * toCharSetBPC +
+							sizeof(USHORT);
 						parameter->par_desc.dsc_sub_type = 0;
 						parameter->par_desc.dsc_scale = 0;
 						parameter->par_desc.dsc_ttype() = ttype_dynamic;
