@@ -1,3 +1,11 @@
+ 2010-10-05 13:13  alexpeshkoff 
+   M doc/README.UserSql
+Make it better understandable to people - thanks to Claudio
+
+ 2010-10-05 12:17  alexpeshkoff 
+   M builds/posix/darwin.defaults
+Fixed CORE-3156: Problems using UDFs on Mac
+
  2010-10-04 14:58  alexpeshkoff 
    M src/extlib/ib_udf.cpp
 Fix for CORE-3156: Problems using UDFs on Mac
