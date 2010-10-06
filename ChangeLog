@@ -1,3 +1,12 @@
+ 2010-10-05 13:12  alexpeshkoff 
+   M doc/README.UserSql
+Make it better understandable to people - thanks to Claudio
+
+ 2010-10-05 12:43  paulbeach 
+   M builds/posix/darwin.defaults
+   M src/extlib/ib_udf.cpp
+Fix for UDFs on Darwin
+
  2010-10-04 13:21  paulbeach 
    M src/extlib/fbudf/fbudf.h
    M src/extlib/ib_udf.h
