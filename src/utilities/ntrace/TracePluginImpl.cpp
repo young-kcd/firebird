@@ -166,7 +166,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	{
 		try
 		{
-			string filter(config.include_filter);
+			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
 			exclude_matcher = new SimilarToMatcher<UpcaseConverter<NullStrConverter>, UCHAR>(
