@@ -1,3 +1,7 @@
+ 2010-10-07 16:10  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed bug CORE-3168: exclude_filter doesn't work for <services></section> section of the Trace facility
+
  2010-10-06 15:25  asfernandes 
    M src/dsql/pass1.cpp
 Fixed CORE-3164 - Parameterized requests involving blob fields fails when connected using charset UTF8
