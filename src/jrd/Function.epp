@@ -261,7 +261,6 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			memset(temp, 0, sizeof(temp));
 			ULONG length = 0;
 
-			function->setUndefined(false);
 			function->fun_inputs = 0;
 			function->fun_defaults = 0;
 
@@ -364,23 +363,20 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_exception_message.printf(EXCEPTION_MESSAGE,
 				function->getName().toString().c_str(), X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
-			if (!X.RDB$LEGACY_FLAG.NULL)
-			{
-				function->fun_legacy = (X.RDB$LEGACY_FLAG != 0);
-			}
-
 			if (!X.RDB$INVARIANT_FLAG.NULL)
 			{
 				function->fun_invariant = (X.RDB$INVARIANT_FLAG != 0);
 			}
 
+			function->setUndefined(false);
+			function->setImplemented(true);
+
+			function->fun_entrypoint = NULL;
+			function->fun_external = NULL;
+			function->setStatement(NULL);
+
 			if (!X.RDB$ENGINE_NAME.NULL)
 			{
-				fb_assert(!function->fun_legacy);
-
-				function->fun_entrypoint = NULL;
-				function->setStatement(NULL);
-
 				HalfStaticArray<UCHAR, 512> body;
 
 				if (!X.RDB$FUNCTION_SOURCE.NULL)
@@ -395,17 +391,17 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					body.getBuffer(1)[0] = 0;
 				}
 
-				function->fun_external = dbb->dbb_extManager.makeFunction(
-					tdbb, function, X.RDB$ENGINE_NAME,
+				function->fun_external =
+					dbb->dbb_extManager.makeFunction(tdbb, function, X.RDB$ENGINE_NAME,
 					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
+
+				if (!function->fun_external)
+				{
+					function->setImplemented(false);
+				}
 			}
 			else if (!X.RDB$FUNCTION_BLR.NULL)
 			{
-				fb_assert(!function->fun_legacy);
-
-				function->fun_external = NULL;
-				function->fun_entrypoint = NULL;
-
 				MemoryPool* const csb_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
@@ -436,31 +432,27 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 				function->makeFormat();
 			}
+			else if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
+			{
+				function->fun_entrypoint =
+					Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
+
+				// Could not find a function with given MODULE, ENTRYPOINT.
+				// Try the list of internally implemented functions.
+				if (!function->fun_entrypoint)
+				{
+					function->fun_entrypoint =
+						BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+				}
+
+				if (!function->fun_entrypoint)
+				{
+					function->setImplemented(false);
+				}
+			}
 			else
 			{
-				function->fun_external = NULL;
-				function->setStatement(NULL);
-
-				if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
-				{
-					fb_assert(function->fun_legacy);
-
-					function->fun_entrypoint =
-						Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
-
-					// Could not find a function with given MODULE, ENTRYPOINT.
-					// Try the list of internally implemented functions.
-					if (!function->fun_entrypoint)
-					{
-						function->fun_entrypoint =
-							BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
-					}
-				}
-				else
-				{
-					function->fun_entrypoint = NULL;
-					function->setUndefined(true);
-				}
+				function->setUndefined(true);
 			}
 
 			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
@@ -704,9 +696,8 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 	{
 		fun_external->execute(tdbb, args, value);
 	}
-	else
+	else if (getStatement())
 	{
-		fb_assert(getStatement());
 		fb_assert(!fun_return_arg);
 		fb_assert(args->nod_count == fun_inputs);
 
@@ -804,6 +795,10 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 			request->req_flags &= ~req_null;
 			MOV_move(tdbb, &arg_desc, &value->vlu_desc);
 		}
+	}
+	else
+	{
+		fb_assert(false);
 	}
 
 	return (request->req_flags & req_null) ? NULL : &value->vlu_desc;

@@ -76,7 +76,6 @@ namespace Jrd
 			  fun_existence_lock(NULL),
 			  fun_alter_count(0),
 			  fun_exception_message(p),
-			  fun_legacy(true),
 			  fun_invariant(false),
 			  fun_external(NULL)
 		{
@@ -117,7 +116,6 @@ namespace Jrd
 
 		Firebird::string fun_exception_message;	// message containing the exception error message
 
-		bool fun_legacy;
 		bool fun_invariant;
 		const ExtEngineManager::Function* fun_external;
 	};
