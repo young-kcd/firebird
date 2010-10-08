@@ -4261,8 +4261,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	if (node->function)
 	{
-		if (!node->function->isUndefined() && !node->function->fun_entrypoint &&
-			!node->function->fun_external && !node->function->getStatement())
+		if (!node->function->isUndefined() && !node->function->isImplemented())
 		{
 			if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 			{
