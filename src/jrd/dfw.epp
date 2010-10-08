@@ -804,7 +804,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		switch (work->dfw_type)
 		{
 		case dfw_post_event:
-			EventManager::init(dbb);
+			EventManager::init(transaction->tra_attachment);
 
 			dbb->dbb_event_mgr->postEvent(lock->lck_length, (const TEXT*) &lock->lck_key,
 										  work->dfw_name.length(), work->dfw_name.c_str(),

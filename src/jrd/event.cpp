@@ -42,7 +42,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../common/utils_proto.h"
-#include "../jrd/Database.h"
+#include "../jrd/jrd.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -74,15 +74,16 @@ Firebird::GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
 Firebird::GlobalPtr<Firebird::Mutex> EventManager::g_mapMutex;
 
 
-void EventManager::init(Database* dbb)
+void EventManager::init(Attachment* attachment)
 {
-	if (!dbb->dbb_event_mgr)
+	Database* dbb = attachment->att_database;
+	EventManager* eventMgr = dbb->dbb_event_mgr;
+	if (!eventMgr)
 	{
 		const Firebird::string id = dbb->getUniqueFileId();
 
 		Firebird::MutexLockGuard guard(g_mapMutex);
 
-		EventManager* eventMgr = NULL;
 		if (!g_emMap->get(id, eventMgr))
 		{
 			eventMgr = new EventManager(id);
@@ -91,6 +92,11 @@ void EventManager::init(Database* dbb)
 		fb_assert(eventMgr);
 
 		dbb->dbb_event_mgr = eventMgr;
+	}
+
+	if (!attachment->att_event_session)
+	{
+		attachment->att_event_session = eventMgr->create_session();
 	}
 }
 
@@ -198,7 +204,7 @@ void EventManager::get_shared_file_name(Firebird::PathName& name) const
 }
 
 
-SLONG EventManager::createSession()
+SLONG EventManager::create_session()
 {
 /**************************************
  *

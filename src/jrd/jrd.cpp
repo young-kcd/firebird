@@ -2723,12 +2723,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		Database* const dbb = tdbb->getDatabase();
 		Lock* const lock = dbb->dbb_lock;
 
-		EventManager::init(dbb);
-
-		if (!attachment->att_event_session)
-		{
-			attachment->att_event_session = dbb->dbb_event_mgr->createSession();
-		}
+		EventManager::init(attachment);
 
 		*id = dbb->dbb_event_mgr->queEvents(attachment->att_event_session,
 											lock->lck_length, (const TEXT*) &lock->lck_key,
