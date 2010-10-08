@@ -36,7 +36,7 @@ class Config;
 
 namespace Jrd {
 
-class Database;
+class Attachment;
 
 class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
 {
@@ -48,12 +48,11 @@ class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 	const int PID;
 
 public:
-	static void init(Database*);
+	static void init(Attachment*);
 
 	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
 	~EventManager();
 
-	SLONG createSession();
 	void deleteSession(SLONG);
 
 	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
@@ -69,6 +68,7 @@ private:
 	void acquire_shmem();
 	frb* alloc_global(UCHAR type, ULONG length, bool recurse);
 	void create_process();
+	SLONG create_session();
 	void delete_event(evnt*);
 	void delete_process(SLONG);
 	void delete_request(evt_req*);
