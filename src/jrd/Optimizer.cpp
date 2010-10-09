@@ -327,8 +327,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			return true;
 
 		case nod_substr:
-		case nod_trim:
-		{
 			if (node1->nod_count != node2->nod_count)
 				return false;
 
@@ -339,11 +337,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			}
 
 			return true;
-		}
-
-		case nod_upcase:
-		case nod_lowcase:
-			return OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream);
 
 		case nod_cast:
 		{

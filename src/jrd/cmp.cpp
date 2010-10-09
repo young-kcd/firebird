@@ -571,19 +571,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			return;
 		}
 
-	case nod_upcase:
-	case nod_lowcase:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
-		{
-			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
-			desc->dsc_dtype = dtype_text;
-			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_scale = 0;
-			desc->dsc_flags = 0;
-		}
-		return;
-
 	case nod_dbkey:
 		desc->dsc_dtype = dtype_dbkey;
 		desc->dsc_length = type_lengths[dtype_dbkey];
@@ -740,32 +727,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 			return;
 		}
-
-	case nod_trim:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
-
-		if (node->nod_arg[e_trim_characters])
-		{
-			DSC desc1;
-			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_characters], &desc1);
-			desc->dsc_flags |= desc1.dsc_flags & DSC_null;
-		}
-
-		if (desc->dsc_dtype != dtype_blob)
-		{
-			USHORT length = DSC_string_length(desc);
-
-			if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-			{
-				desc->dsc_ttype() = ttype_ascii;
-				desc->dsc_scale = 0;
-			}
-
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_length = length + sizeof(USHORT);
-		}
-
-		return;
 
 	case nod_variable:
 		{
@@ -1355,15 +1316,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_strlen_value] = copy(tdbb, input->nod_arg[e_strlen_value]);
 		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
-		return (node);
-
-	case nod_trim:
-		node = PAR_make_node(tdbb, e_trim_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_trim_characters] = copy(tdbb, input->nod_arg[e_trim_characters]);
-		node->nod_arg[e_trim_value] = copy(tdbb, input->nod_arg[e_trim_value]);
-		node->nod_arg[e_trim_specification] = input->nod_arg[e_trim_specification];
 		return (node);
 
 	case nod_count:
@@ -3209,10 +3161,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_substr:
-	case nod_trim:
 	case nod_null:
-	case nod_upcase:
-	case nod_lowcase:
 	case nod_prot_mask:
 	case nod_lock_state:
 	case nod_scalar:

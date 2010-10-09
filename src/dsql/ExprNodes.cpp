@@ -22,6 +22,7 @@
 #include <math.h>
 #include "../jrd/common.h"
 #include "../common/classes/FpeControl.h"
+#include "../common/classes/VaryStr.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/align.h"
@@ -4309,6 +4310,205 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<StrCaseNode> regStrCaseNodeLower(blr_lowcase);
+static RegisterNode<StrCaseNode> regStrCaseNodeUpper(blr_upcase);
+
+StrCaseNode::StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_STR_CASE>(pool),
+	  blrOp(aBlrOp),
+	  dsqlArg(aArg),
+	  arg(NULL)
+{
+	addChildNode(dsqlArg, arg);
+}
+
+DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	StrCaseNode* node = FB_NEW(pool) StrCaseNode(pool, blrOp);
+	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void StrCaseNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("StrCaseNode (%s)", (blrOp == blr_lowcase ? "lower" : "upper"));
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* StrCaseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return FB_NEW(getPool()) StrCaseNode(getPool(), blrOp, PASS1_node(dsqlScratch, dsqlArg));
+}
+
+void StrCaseNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = (blrOp == blr_lowcase ? "LOWER" : "UPPER");
+}
+
+bool StrCaseNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
+}
+
+void StrCaseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blrOp);
+	GEN_expr(dsqlScratch, dsqlArg);
+}
+
+void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	dsc desc1;
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg, nullReplacement);
+
+	if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
+	{
+		*desc = desc1;
+		return;
+	}
+
+	desc->dsc_dtype = dtype_varying;
+	desc->dsc_scale = 0;
+	desc->dsc_ttype() = ttype_ascii;
+	desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+	desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
+}
+
+void StrCaseNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, arg, desc);
+
+	if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
+	{
+		desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
+		desc->dsc_dtype = dtype_text;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+	}
+}
+
+ValueExprNode* StrCaseNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	StrCaseNode* node = FB_NEW(*tdbb->getDefaultPool()) StrCaseNode(*tdbb->getDefaultPool(), blrOp);
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const StrCaseNode* o = other->as<StrCaseNode>();
+	fb_assert(o)
+
+	return blrOp == o->blrOp;
+}
+
+bool StrCaseNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	StrCaseNode* otherNode = other->as<StrCaseNode>();
+	fb_assert(otherNode);
+
+	return blrOp == otherNode->blrOp;
+}
+
+ExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Low/up case a string.
+dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	request->req_flags &= ~req_null;
+
+	const dsc* value = EVL_expr(tdbb, arg);
+
+	if (request->req_flags & req_null)
+		return NULL;
+
+	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
+	ULONG (TextType::*intlFunction)(ULONG, const UCHAR*, ULONG, UCHAR*) =
+		(blrOp == blr_lowcase ? &TextType::str_to_lower : &TextType::str_to_upper);
+
+	if (value->isBlob())
+	{
+		EVL_make_value(tdbb, value, impure);
+
+		if (value->dsc_sub_type != isc_blob_text)
+			return &impure->vlu_desc;
+
+		CharSet* charSet = textType->getCharSet();
+
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+			reinterpret_cast<bid*>(value->dsc_address));
+
+		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+		if (charSet->isMultiByte())
+			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
+
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
+			&impure->vlu_misc.vlu_bid);
+
+		while (!(blob->blb_flags & BLB_eof))
+		{
+			SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+
+			if (len)
+			{
+				len = (textType->*intlFunction)(len, buffer.begin(), len, buffer.begin());
+				BLB_put_data(tdbb, newBlob, buffer.begin(), len);
+			}
+		}
+
+		BLB_close(tdbb, newBlob);
+		BLB_close(tdbb, blob);
+	}
+	else
+	{
+		UCHAR* ptr;
+		VaryStr<32> temp;
+		USHORT ttype;
+
+		dsc desc;
+		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &ptr, &temp, sizeof(temp));
+		desc.dsc_dtype = dtype_text;
+		desc.dsc_address = NULL;
+		desc.setTextType(ttype);
+		EVL_make_value(tdbb, &desc, impure);
+
+		ULONG len = (textType->*intlFunction)(desc.dsc_length,
+			ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
+
+		if (len == INTL_BAD_STR_LENGTH)
+			status_exception::raise(Arg::Gds(isc_arith_except));
+
+		impure->vlu_desc.dsc_length = (USHORT) len;
+	}
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<SubstringSimilarNode> regSubstringSimilarNode(blr_substring_similar);
 
 SubstringSimilarNode::SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr, dsql_nod* aPattern,
@@ -4733,6 +4933,315 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	return node;
+}
+
+
+//--------------------
+
+
+static RegisterNode<TrimNode> regTrimNode(blr_trim);
+
+TrimNode::TrimNode(MemoryPool& pool, UCHAR aWhere, dsql_nod* aValue, dsql_nod* aTrimChars)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_TRIM>(pool),
+	  where(aWhere),
+	  dsqlValue(aValue),
+	  dsqlTrimChars(aTrimChars),
+	  value(NULL),
+	  trimChars(NULL)
+{
+	addChildNode(dsqlValue, value);
+	addChildNode(dsqlTrimChars, trimChars);
+}
+
+DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	UCHAR where = csb->csb_blr_reader.getByte();
+	UCHAR what = csb->csb_blr_reader.getByte();
+
+	TrimNode* node = FB_NEW(pool) TrimNode(pool, where);
+
+	if (what == blr_trim_characters)
+		node->trimChars = PAR_parse_node(tdbb, csb, VALUE);
+
+	node->value = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+void TrimNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "TrimNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* TrimNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	TrimNode* node = FB_NEW(getPool()) TrimNode(getPool(), where,
+		PASS1_node(dsqlScratch, dsqlValue), PASS1_node(dsqlScratch, dsqlTrimChars));
+
+	// Try to force trimChars to be same type as value: TRIM(? FROM FIELD)
+	PASS1_set_parameter_type(dsqlScratch, node->dsqlTrimChars, node->dsqlValue, false);
+
+	return node;
+}
+
+void TrimNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "TRIM";
+}
+
+bool TrimNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlValue, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlTrimChars, node, forceVarChar);
+}
+
+void TrimNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_trim);
+	dsqlScratch->appendUChar(where);
+
+	if (dsqlTrimChars)
+	{
+		dsqlScratch->appendUChar(blr_trim_characters);
+		GEN_expr(dsqlScratch, dsqlTrimChars);
+	}
+	else
+		dsqlScratch->appendUChar(blr_trim_spaces);
+
+	GEN_expr(dsqlScratch, dsqlValue);
+}
+
+void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	dsc desc1, desc2;
+
+	MAKE_desc(dsqlScratch, &desc1, dsqlValue, nullReplacement);
+
+	if (dsqlTrimChars)
+		MAKE_desc(dsqlScratch, &desc2, dsqlTrimChars, nullReplacement);
+	else
+		desc2.dsc_flags = 0;
+
+	if (desc1.dsc_dtype == dtype_blob)
+	{
+		*desc = desc1;
+		desc->dsc_flags |= (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+	}
+	else if (desc1.dsc_dtype <= dtype_any_text)
+	{
+		*desc = desc1;
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+	}
+	else
+	{
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_scale = 0;
+		desc->dsc_ttype() = ttype_ascii;
+		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
+	}
+}
+
+void TrimNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, value, desc);
+
+	if (trimChars)
+	{
+		dsc desc1;
+		CMP_get_desc(tdbb, csb, trimChars, &desc1);
+		desc->dsc_flags |= desc1.dsc_flags & DSC_null;
+	}
+
+	if (desc->dsc_dtype != dtype_blob)
+	{
+		USHORT length = DSC_string_length(desc);
+
+		if (!DTYPE_IS_TEXT(desc->dsc_dtype))
+		{
+			desc->dsc_ttype() = ttype_ascii;
+			desc->dsc_scale = 0;
+		}
+
+		desc->dsc_dtype = dtype_varying;
+		desc->dsc_length = length + sizeof(USHORT);
+	}
+}
+
+ValueExprNode* TrimNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	TrimNode* node = FB_NEW(*tdbb->getDefaultPool()) TrimNode(*tdbb->getDefaultPool(), where);
+	node->value = copier.copy(tdbb, value);
+	node->trimChars = copier.copy(tdbb, trimChars);
+	return node;
+}
+
+bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const TrimNode* o = other->as<TrimNode>();
+	fb_assert(o)
+
+	return where == o->where;
+}
+
+bool TrimNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	TrimNode* o = other->as<TrimNode>();
+	fb_assert(o);
+
+	return where == o->where;
+}
+
+ExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Perform trim function = TRIM([where what FROM] string).
+dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	request->req_flags &= ~req_null;
+
+	dsc* trimCharsDesc = (trimChars ? EVL_expr(tdbb, trimChars) : NULL);
+	if (request->req_flags & req_null)
+		return NULL;
+
+	dsc* valueDesc = EVL_expr(tdbb, value);
+	if (request->req_flags & req_null)
+		return NULL;
+
+	USHORT ttype = INTL_TEXT_TYPE(*valueDesc);
+	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
+	CharSet* cs = tt->getCharSet();
+
+	const UCHAR* charactersAddress;
+	MoveBuffer charactersBuffer;
+	USHORT charactersLength;
+
+	if (trimCharsDesc)
+	{
+		UCHAR* tempAddress = 0;
+		charactersLength = MOV_make_string2(tdbb, trimCharsDesc, ttype, &tempAddress, charactersBuffer);
+		charactersAddress = tempAddress;
+	}
+	else
+	{
+		charactersLength = tt->getCharSet()->getSpaceLength();
+		charactersAddress = tt->getCharSet()->getSpace();
+	}
+
+	HalfStaticArray<UCHAR, BUFFER_SMALL> charactersCanonical;
+	charactersCanonical.getBuffer(charactersLength / tt->getCharSet()->minBytesPerChar() *
+		tt->getCanonicalWidth());
+	const SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
+		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
+
+	HalfStaticArray<UCHAR, BUFFER_SMALL> blobBuffer;
+	MoveBuffer valueBuffer;
+	UCHAR* valueAddress;
+	ULONG valueLength;
+
+	if (valueDesc->isBlob())
+	{
+		// Source string is a blob, things get interesting.
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+			reinterpret_cast<bid*>(valueDesc->dsc_address));
+
+		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
+		// So go simple way and always read entire blob in memory.
+		valueAddress = blobBuffer.getBuffer(blob->blb_length);
+		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
+	}
+	else
+		valueLength = MOV_make_string2(tdbb, valueDesc, ttype, &valueAddress, valueBuffer);
+
+	HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
+	valueCanonical.getBuffer(valueLength / cs->minBytesPerChar() * tt->getCanonicalWidth());
+	const SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
+		valueCanonical.getCount(), valueCanonical.begin()) * tt->getCanonicalWidth();
+
+	SLONG offsetLead = 0;
+	SLONG offsetTrail = valueCanonicalLen;
+
+	// CVC: Avoid endless loop with zero length trim chars.
+	if (charactersCanonicalLen)
+	{
+		if (where == blr_trim_both || where == blr_trim_leading)
+		{
+			// CVC: Prevent surprises with offsetLead < valueCanonicalLen; it may fail.
+			for (; offsetLead + charactersCanonicalLen <= valueCanonicalLen;
+				 offsetLead += charactersCanonicalLen)
+			{
+				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead],
+						charactersCanonicalLen) != 0)
+				{
+					break;
+				}
+			}
+		}
+
+		if (where == blr_trim_both || where == blr_trim_trailing)
+		{
+			for (; offsetTrail - charactersCanonicalLen >= offsetLead;
+				 offsetTrail -= charactersCanonicalLen)
+			{
+				if (memcmp(charactersCanonical.begin(),
+						&valueCanonical[offsetTrail - charactersCanonicalLen],
+						charactersCanonicalLen) != 0)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	if (valueDesc->isBlob())
+	{
+		// We have valueCanonical already allocated.
+		// Use it to get the substring that will be written to the new blob.
+		const ULONG len = cs->substring(valueLength, valueAddress,
+			valueCanonical.getCapacity(), valueCanonical.begin(),
+			offsetLead / tt->getCanonicalWidth(),
+			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
+
+		EVL_make_value(tdbb, valueDesc, impure);
+
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
+		BLB_close(tdbb, newBlob);
+	}
+	else
+	{
+		dsc desc;
+		desc.makeText(valueLength, ttype);
+		EVL_make_value(tdbb, &desc, impure);
+
+		impure->vlu_desc.dsc_length = cs->substring(valueLength, valueAddress,
+			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
+			offsetLead / tt->getCanonicalWidth(),
+			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
+	}
+
+	return &impure->vlu_desc;
 }
 
 

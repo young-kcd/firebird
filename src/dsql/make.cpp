@@ -426,58 +426,12 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
- 	case nod_upcase:
- 	case nod_lowcase:
- 		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], null_replacement);
-		if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
- 		{
- 			*desc = desc1;
- 			return;
- 		}
-
- 		desc->dsc_dtype = dtype_varying;
- 		desc->dsc_scale = 0;
-		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
-		return;
-
 	case nod_substr:
 		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], null_replacement);
 		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], null_replacement);
 		MAKE_desc(dsqlScratch, &desc3, node->nod_arg[2], null_replacement);
  		DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
   		return;
-
-    case nod_trim:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_trim_value], null_replacement);
-		if (node->nod_arg[e_trim_characters])
-			MAKE_desc(dsqlScratch, &desc2, node->nod_arg[e_trim_characters], null_replacement);
-		else
-			desc2.dsc_flags = 0;
-
-		if (desc1.dsc_dtype == dtype_blob)
-		{
-			*desc = desc1;
-			desc->dsc_flags |= (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
-		else if (desc1.dsc_dtype <= dtype_any_text)
-		{
-			*desc = desc1;
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
-		else
-		{
-			desc->dsc_dtype = dtype_varying;
-			desc->dsc_scale = 0;
-			desc->dsc_ttype() = ttype_ascii;
-			desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
-			desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
-		}
-
-		return;
 
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
@@ -1226,17 +1180,8 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_substr:
 		name_alias = "SUBSTRING";
 		break;
-	case nod_trim:
-		name_alias = "TRIM";
-		break;
 	case nod_cast:
 		name_alias = "CAST";
-		break;
-	case nod_upcase:
-		name_alias = "UPPER";
-		break;
-    case nod_lowcase:
-        name_alias = "LOWER";
 		break;
 	case nod_extract:
 		name_alias = "EXTRACT";

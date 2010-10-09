@@ -311,12 +311,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		blr_operator = blr_via;
 		break;
 
-	case nod_upcase:
-		blr_operator = blr_upcase;
-		break;
-	case nod_lowcase:
-		blr_operator = blr_lowcase;
-		break;
 	case nod_substr:
         blr_operator = blr_substring;
         break;
@@ -331,21 +325,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
     case nod_searched_case:
 		gen_searched_case(dsqlScratch, node);
-		return;
-
-	case nod_trim:
-		dsqlScratch->appendUChar(blr_trim);
-		dsqlScratch->appendUChar(node->nod_arg[e_trim_specification]->getSlong());
-
-		if (node->nod_arg[e_trim_characters])
-		{
-			dsqlScratch->appendUChar(blr_trim_characters);
-			GEN_expr(dsqlScratch, node->nod_arg[e_trim_characters]);
-		}
-		else
-			dsqlScratch->appendUChar(blr_trim_spaces);
-
-		GEN_expr(dsqlScratch, node->nod_arg[e_trim_value]);
 		return;
 
 	case nod_assign:

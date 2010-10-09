@@ -1575,14 +1575,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 		break;
 
-	case nod_trim:
-		sub1 = node->nod_arg[e_trim_characters];
-		sub2 = node->nod_arg[e_trim_value];
-
-		// Try to force sub1 to be same type as sub2 eg: TRIM(? FROM FIELD) case
-		PASS1_set_parameter_type(dsqlScratch, sub1, sub2, false);
-		break;
-
 	default:
 		break;
 	}
@@ -8532,9 +8524,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 			}
 
 		case nod_substr:
-		case nod_trim:
-		case nod_upcase:
-		case nod_lowcase:
 		case nod_extract:
 		case nod_limit:
 		case nod_rows:
@@ -8636,7 +8625,9 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 				case ExprNode::TYPE_ARITHMETIC:
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_NEGATE:
+				case ExprNode::TYPE_STR_CASE:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
+				case ExprNode::TYPE_TRIM:
 					for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
 						 i != exprNode->dsqlChildNodes.end(); ++i)
 					{
@@ -8659,9 +8650,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 		return;
 
 	case nod_substr:
-	case nod_trim:
-	case nod_upcase:
-	case nod_lowcase:
 	case nod_extract:
 	case nod_strlen:
 	case nod_limit:
@@ -8993,9 +8981,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_substr:
 		verb = "substr";
 		break;
-	case nod_trim:
-		verb = "trim";
-		break;
 	case nod_update:
 		verb = "update";
 		break;
@@ -9004,12 +8989,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_unique:
 		verb = "unique";
-		break;
-	case nod_upcase:
-		verb = "upcase";
-		break;
-	case nod_lowcase:
-		verb = "lowcase";
 		break;
 	case nod_via:
 		verb = "via";

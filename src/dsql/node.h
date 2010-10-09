@@ -138,8 +138,6 @@ enum nod_t
 	nod_null,
 	nod_dbkey,
 	nod_cast,
-	nod_upcase,
-	nod_lowcase,
 	nod_collate,
 	nod_get_segment,	// blobs
 	nod_put_segment,
@@ -212,7 +210,6 @@ enum nod_t
 	nod_query_spec,
 	nod_mod_udf,
 	nod_strlen,
-	nod_trim,
 	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,

@@ -124,13 +124,10 @@ static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
 static dsc* get_mask(thread_db*, const jrd_nod*, impure_value*);
 static dsc* lock_state(thread_db*, const jrd_nod*, impure_value*);
-static dsc* low_up_case(thread_db*, const dsc*, impure_value*,
-	ULONG (TextType::*tt_str_to_case)(ULONG, const UCHAR*, ULONG, UCHAR*));
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 static dsc* string_length(thread_db*, const jrd_nod*, impure_value*);
 static dsc* substring(thread_db*, impure_value*, dsc*, const dsc*, const dsc*);
-static dsc* trim(thread_db*, const jrd_nod*, impure_value*);
 
 
 dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
@@ -536,9 +533,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 		}
 		return request->req_domain_validation;
 
-	case nod_trim:
-		return trim(tdbb, node, impure);
-
 	default:   // Shut up some compiler warnings
 		break;
 
@@ -575,12 +569,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	{
 	case nod_substr:
 		return substring(tdbb, impure, values[0], values[1], values[2]);
-
-	case nod_upcase:
-		return low_up_case(tdbb, values[0], impure, &TextType::str_to_upper);
-
-	case nod_lowcase:
-		return low_up_case(tdbb, values[0], impure, &TextType::str_to_lower);
 
 	case nod_cast:
 		return cast(tdbb, values[0], node, impure);
@@ -1541,83 +1529,6 @@ static dsc* lock_state(thread_db* tdbb, const jrd_nod* node, impure_value* impur
 }
 
 
-static dsc* low_up_case(thread_db* tdbb, const dsc* value, impure_value* impure,
-	ULONG (TextType::*tt_str_to_case)(ULONG, const UCHAR*, ULONG, UCHAR*))
-{
-/**************************************
- *
- *      l o w _ u p _ c a s e
- *
- **************************************
- *
- * Functional description
- *      Low/up case a string.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	TextType* textType = INTL_texttype_lookup(tdbb, value->getTextType());
-
-	if (value->isBlob())
-	{
-		EVL_make_value(tdbb, value, impure);
-
-		if (value->dsc_sub_type != isc_blob_text)
-			return &impure->vlu_desc;
-
-		CharSet* charSet = textType->getCharSet();
-
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
-			reinterpret_cast<bid*>(value->dsc_address));
-
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-		if (charSet->isMultiByte())
-			buffer.getBuffer(blob->blb_length);	// alloc space to put entire blob in memory
-
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
-			&impure->vlu_misc.vlu_bid);
-
-		while (!(blob->blb_flags & BLB_eof))
-		{
-			SLONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
-
-			if (len)
-			{
-				len = (textType->*tt_str_to_case)(len, buffer.begin(), len, buffer.begin());
-				BLB_put_data(tdbb, newBlob, buffer.begin(), len);
-			}
-		}
-
-		BLB_close(tdbb, newBlob);
-		BLB_close(tdbb, blob);
-	}
-	else
-	{
-		UCHAR* ptr;
-		VaryStr<32> temp;
-		USHORT ttype;
-
-		dsc desc;
-		desc.dsc_length = MOV_get_string_ptr(value, &ttype, &ptr, &temp, sizeof(temp));
-		desc.dsc_dtype = dtype_text;
-		desc.dsc_address = NULL;
-		desc.setTextType(ttype);
-		EVL_make_value(tdbb, &desc, impure);
-
-		ULONG len = (textType->*tt_str_to_case)(desc.dsc_length,
-			ptr, desc.dsc_length, impure->vlu_desc.dsc_address);
-
-		if (len == INTL_BAD_STR_LENGTH)
-			status_exception::raise(Arg::Gds(isc_arith_except));
-
-		impure->vlu_desc.dsc_length = (USHORT) len;
-	}
-
-	return &impure->vlu_desc;
-}
-
-
 static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 {
 /**************************************
@@ -1868,143 +1779,4 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
  *
  **************************************/
 	return SysFunction::substring(tdbb, impure, value, offset_value, length_value);
-}
-
-
-static dsc* trim(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      t r i m
- *
- **************************************
- *
- * Functional description
- *      Perform trim function = TRIM([where what FROM] string)
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	jrd_req* request = tdbb->getRequest();
-
-	const ULONG specification = (IPTR) node->nod_arg[e_trim_specification];
-
-	request->req_flags &= ~req_null;
-	dsc* characters = (node->nod_arg[e_trim_characters] ? EVL_expr(tdbb, node->nod_arg[e_trim_characters]) : NULL);
-	if (request->req_flags & req_null)
-		return characters;
-
-	request->req_flags &= ~req_null;
-	dsc* value = EVL_expr(tdbb, node->nod_arg[e_trim_value]);
-	if (request->req_flags & req_null)
-		return value;
-
-	USHORT ttype = INTL_TEXT_TYPE(*value);
-	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
-	CharSet* cs = tt->getCharSet();
-
-	const UCHAR* charactersAddress;
-	MoveBuffer charactersBuffer;
-	USHORT charactersLength;
-
-	if (characters)
-	{
-		UCHAR* tempAddress = 0;
-		charactersLength = MOV_make_string2(tdbb, characters, ttype, &tempAddress, charactersBuffer);
-		charactersAddress = tempAddress;
-	}
-	else
-	{
-		charactersLength = tt->getCharSet()->getSpaceLength();
-		charactersAddress = tt->getCharSet()->getSpace();
-	}
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> charactersCanonical;
-	charactersCanonical.getBuffer(charactersLength / tt->getCharSet()->minBytesPerChar() * tt->getCanonicalWidth());
-	const SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
-		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> blobBuffer;
-	MoveBuffer valueBuffer;
-	UCHAR* valueAddress;
-	ULONG valueLength;
-
-	if (value->isBlob())
-	{
-		// Source string is a blob, things get interesting.
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
-			reinterpret_cast<bid*>(value->dsc_address));
-
-		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
-		// So go simple way and always read entire blob in memory.
-		valueAddress = blobBuffer.getBuffer(blob->blb_length);
-		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
-	}
-	else
-		valueLength = MOV_make_string2(tdbb, value, ttype, &valueAddress, valueBuffer);
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> valueCanonical;
-	valueCanonical.getBuffer(valueLength / cs->minBytesPerChar() * tt->getCanonicalWidth());
-	const SLONG valueCanonicalLen = tt->canonical(valueLength, valueAddress,
-		valueCanonical.getCount(), valueCanonical.begin()) * tt->getCanonicalWidth();
-
-	SLONG offsetLead = 0;
-	SLONG offsetTrail = valueCanonicalLen;
-
-	// CVC: Avoid endless loop with zero length trim chars.
-	if (charactersCanonicalLen)
-	{
-		if (specification == blr_trim_both || specification == blr_trim_leading)
-		{
-			// CVC: Prevent surprises with offsetLead < valueCanonicalLen; it may fail.
-			for (; offsetLead + charactersCanonicalLen <= valueCanonicalLen; offsetLead += charactersCanonicalLen)
-			{
-				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetLead], charactersCanonicalLen) != 0)
-					break;
-			}
-		}
-
-		if (specification == blr_trim_both || specification == blr_trim_trailing)
-		{
-			for (; offsetTrail - charactersCanonicalLen >= offsetLead; offsetTrail -= charactersCanonicalLen)
-			{
-				if (memcmp(charactersCanonical.begin(), &valueCanonical[offsetTrail - charactersCanonicalLen],
-					charactersCanonicalLen) != 0)
-				{
-					break;
-				}
-			}
-		}
-	}
-
-	if (value->isBlob())
-	{
-		// We have valueCanonical already allocated.
-		// Use it to get the substring that will be written to the new blob.
-		const ULONG len = cs->substring(valueLength, valueAddress,
-			valueCanonical.getCapacity(), valueCanonical.begin(),
-			offsetLead / tt->getCanonicalWidth(),
-			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
-
-		EVL_make_value(tdbb, value, impure);
-
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
-
-		BLB_put_data(tdbb, newBlob, valueCanonical.begin(), len);
-
-		BLB_close(tdbb, newBlob);
-	}
-	else
-	{
-		dsc desc;
-		desc.makeText(valueLength, ttype);
-		EVL_make_value(tdbb, &desc, impure);
-
-		impure->vlu_desc.dsc_length = cs->substring(valueLength, valueAddress,
-			impure->vlu_desc.dsc_length, impure->vlu_desc.dsc_address,
-			offsetLead / tt->getCanonicalWidth(),
-			(offsetTrail - offsetLead) / tt->getCanonicalWidth());
-	}
-
-	return &impure->vlu_desc;
 }

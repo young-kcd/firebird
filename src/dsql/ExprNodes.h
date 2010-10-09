@@ -449,6 +449,37 @@ public:
 };
 
 
+class StrCaseNode : public TypedNode<ValueExprNode, ExprNode::TYPE_STR_CASE>
+{
+public:
+	StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	UCHAR blrOp;
+	dsql_nod* dsqlArg;
+	NestConst<jrd_nod> arg;
+};
+
+
 class SubstringSimilarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
 {
 public:
@@ -511,6 +542,40 @@ public:
 	bool dsqlSpecialSyntax;
 	NestConst<jrd_nod> args;
 	const SysFunction* function;
+};
+
+
+class TrimNode : public TypedNode<ValueExprNode, ExprNode::TYPE_TRIM>
+{
+public:
+	explicit TrimNode(MemoryPool& pool, UCHAR aWhere,
+		dsql_nod* aValue = NULL, dsql_nod* aTrimChars = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	UCHAR where;
+	dsql_nod* dsqlValue;
+	dsql_nod* dsqlTrimChars;		// may be NULL
+	NestConst<jrd_nod> value;
+	NestConst<jrd_nod> trimChars;	// may be NULL
 };
 
 

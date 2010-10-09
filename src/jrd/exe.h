@@ -326,12 +326,6 @@ const int e_strlen_type		= 1;
 const int e_strlen_count	= 1;
 const int e_strlen_length	= 2;
 
-const int e_trim_value			= 0;
-const int e_trim_characters		= 1;
-const int e_trim_specification	= 2;
-const int e_trim_count			= 2;
-const int e_trim_length			= 3;
-
 // nod_src_info
 const int e_src_info_line		= 0;
 const int e_src_info_col		= 1;

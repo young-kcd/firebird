@@ -799,7 +799,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
 %type <legacyNode> timestamp_part top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
 %type <legacyNode> trim_function
-%type <legacyNode> trim_specification
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
 
 %type <legacyNode> u_constant u_numeric_constant udf udf_data_type udf_decl_clause undo_savepoint
@@ -868,6 +867,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <aggNode> aggregate_function aggregate_window_function window_function
 
 %type <sysFuncCallNode> system_function_special_syntax
+
+%type <blrOp> trim_specification
 
 // Predicates
 %type <boolExprNode> between_predicate comparison_predicate distinct_predicate
@@ -5683,13 +5684,14 @@ system_function_special_syntax
 		{ $$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1), $3); }
 	;
 
-string_value_function	:  substring_function
-		| trim_function
-		| KW_UPPER '(' value ')'
-			{ $$ = make_node (nod_upcase, 1, $3); }
-		| KW_LOWER '(' value ')'
-			{ $$ = make_node (nod_lowcase, 1, $3); }
-		;
+string_value_function
+	:  substring_function
+	| trim_function
+	| KW_UPPER '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrCaseNode(getPool(), blr_upcase, $3)); }
+	| KW_LOWER '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrCaseNode(getPool(), blr_lowcase, $3)); }
+	;
 
 substring_function
 	: SUBSTRING '(' value FROM value string_length_opt ')'
@@ -5706,31 +5708,27 @@ substring_function
 		{ $$ = makeClassNode(FB_NEW(getPool()) SubstringSimilarNode(getPool(), $3, $5, $7)); }
 	;
 
-string_length_opt	: FOR value
-			{ $$ = $2; }
-		|
-			{ $$ = MAKE_const_slong (SHRT_POS_MAX); }
-		;
+string_length_opt
+	:			{ $$ = MAKE_const_slong(SHRT_POS_MAX); }
+	| FOR value { $$ = $2; }
+	;
 
-trim_function	: TRIM '(' trim_specification value FROM value ')'
-			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, $4, $6); }
-		| TRIM '(' value FROM value ')'
-			{ $$ = make_node (nod_trim, (int) e_trim_count,
-				MAKE_const_slong (blr_trim_both), $3, $5); }
-		| TRIM '(' trim_specification FROM value ')'
-			{ $$ = make_node (nod_trim, (int) e_trim_count, $3, NULL, $5); }
-		| TRIM '(' value ')'
-			{ $$ = make_node (nod_trim, (int) e_trim_count,
-				MAKE_const_slong (blr_trim_both), NULL, $3); }
-		;
+trim_function
+	: TRIM '(' trim_specification value FROM value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) TrimNode(getPool(), $3, $6, $4)); }
+	| TRIM '(' value FROM value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) TrimNode(getPool(), blr_trim_both, $5, $3)); }
+	| TRIM '(' trim_specification FROM value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) TrimNode(getPool(), $3, $5, NULL)); }
+	| TRIM '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) TrimNode(getPool(), blr_trim_both, $3, NULL)); }
+	;
 
-trim_specification	: BOTH
-			{ $$ = MAKE_const_slong (blr_trim_both); }
-		| TRAILING
-			{ $$ = MAKE_const_slong (blr_trim_trailing); }
-		| LEADING
-			{ $$ = MAKE_const_slong (blr_trim_leading); }
-		;
+trim_specification
+	: BOTH		{ $$ = blr_trim_both; }
+	| TRAILING	{ $$ = blr_trim_trailing; }
+	| LEADING	{ $$ = blr_trim_leading; }
+	;
 
 udf
 	: symbol_UDF_call_name '(' value_list ')'

@@ -2284,25 +2284,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
-	case blr_trim:
-	{
-		node->nod_count = e_trim_count;
-		node->nod_arg[e_trim_specification] = (jrd_nod*)(U_IPTR) csb->csb_blr_reader.getByte();
-
-		BYTE trimWhat = csb->csb_blr_reader.getByte();
-
-		if (trimWhat == blr_trim_characters)
-			node->nod_arg[e_trim_characters] = PAR_parse_node(tdbb, csb, sub_type);
-		else
-		{
-			node->nod_arg[e_trim_characters] = NULL;
-			--node->nod_count;
-		}
-
-		node->nod_arg[e_trim_value] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-	}
-
 	case blr_prot_mask:
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
@@ -2311,8 +2292,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_handler:
 	case blr_loop:
 	case blr_lock_state:
-	case blr_upcase:
-	case blr_lowcase:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
