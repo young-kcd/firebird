@@ -1,3 +1,56 @@
+ 2010-10-09 01:57  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Parser.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/misc/blrtable.cpp
+Refactor parameters and GEN_ID.
+
+ 2010-10-09 01:50  asfernandes 
+   M src/extlib/ib_udf.h
+   M src/jrd/event.cpp
+Misc
+
+ 2010-10-08 11:57  hvlad 
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/jrd/jrd.cpp
+Fixed bug CORE-3170 : Engine could enter infinite loop if EVENT's are posted but no subscribers exists
+
+ 2010-10-08 09:40  dimitr 
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/Routine.h
+Fixed problems with recursive PSQL functions. Minor refactoring.
+
+ 2010-10-08 09:39  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed problems with recursive PSQL functions. Minor refactoring.
+
  2010-10-07 16:10  hvlad 
    M src/utilities/ntrace/TracePluginImpl.cpp
 Fixed bug CORE-3168: exclude_filter doesn't work for <services></section> section of the Trace facility
