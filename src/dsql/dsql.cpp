@@ -1292,7 +1292,7 @@ static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
 	if (node->nod_type == nod_constant)
 		return (SSHORT) node->getSlong();
 
-	const dsql_par* parameter = (dsql_par*) node->nod_arg[e_par_parameter];
+	const dsql_par* parameter = (dsql_par*) ExprNode::as<ParameterNode>(node)->dsqlParameter;
 	const dsql_par* null = parameter->par_null;
 	dsc desc;
 

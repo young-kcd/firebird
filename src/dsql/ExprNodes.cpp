@@ -35,9 +35,11 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../jrd/dpm_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/par_proto.h"
@@ -322,8 +324,8 @@ void ArithmeticNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = label;
 }
 
-bool ArithmeticNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool ArithmeticNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg1, node, forceVarChar) |
 		PASS1_set_parameter_type(dsqlScratch, dsqlArg2, node, forceVarChar);
@@ -336,7 +338,8 @@ void ArithmeticNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
 
-void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	dsc desc1, desc2;
 
@@ -2468,8 +2471,8 @@ void ConcatenateNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "CONCATENATION";
 }
 
-bool ConcatenateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool ConcatenateNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg1, node, forceVarChar) |
 		PASS1_set_parameter_type(dsqlScratch, dsqlArg2, node, forceVarChar);
@@ -2482,7 +2485,8 @@ void ConcatenateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
 
-void ConcatenateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void ConcatenateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	dsc desc1, desc2;
 
@@ -2719,7 +2723,8 @@ void CurrentDateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_date);
 }
 
-void CurrentDateNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentDateNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_sql_date;
 	desc->dsc_sub_type = 0;
@@ -2818,7 +2823,8 @@ void CurrentTimeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentTimeNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_sql_time;
 	desc->dsc_sub_type = 0;
@@ -2928,7 +2934,8 @@ void CurrentTimeStampNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeStampNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentTimeStampNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/,
+	dsc* desc, dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_timestamp;
 	desc->dsc_sub_type = 0;
@@ -3019,7 +3026,8 @@ void CurrentRoleNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_role);
 }
 
-void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3114,7 +3122,8 @@ void CurrentUserNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_user_name);
 }
 
-void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3184,6 +3193,160 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 //--------------------
 
 
+static RegisterNode<GenIdNode> regGenIdNode(blr_gen_id);
+
+GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1, const MetaName& aName, dsql_nod* aArg)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
+	  dialect1(aDialect1),
+	  name(pool, aName),
+	  dsqlArg(aArg),
+	  arg(NULL),
+	  id(0)
+{
+	addChildNode(dsqlArg, arg);
+}
+
+DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	MetaName name;
+	PAR_name(csb, name);
+
+	const SLONG id = MET_lookup_generator(tdbb, name.c_str());
+	if (id < 0)
+		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
+
+	if (csb->csb_g_flags & csb_get_dependencies)
+	{
+		CompilerScratch::Dependency dependency(obj_generator);
+		dependency.number = id;
+		csb->csb_dependencies.push(dependency);
+	}
+
+	GenIdNode* node = FB_NEW(pool) GenIdNode(pool, (csb->csb_g_flags & csb_blr_version4), name);
+	node->id = id;
+	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+void GenIdNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("GenIdNode %s (%d)", name.c_str(), (dialect1 ? 1 : 3));
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return FB_NEW(getPool()) GenIdNode(getPool(), dialect1, name,
+		PASS1_node(dsqlScratch, dsqlArg));
+}
+
+void GenIdNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "GEN_ID";
+}
+
+bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* node, bool forceVarChar) const
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
+}
+
+void GenIdNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_gen_id);
+	dsqlScratch->appendNullString(name.c_str());
+	GEN_expr(dsqlScratch, dsqlArg);
+}
+
+void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
+{
+	dsc desc1;
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+
+	if (dialect1)
+		desc->makeLong(0);
+	else
+		desc->makeInt64(0);
+
+	desc->setNullable(true);
+}
+
+void GenIdNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	if (dialect1)
+		desc->makeLong(0);
+	else
+		desc->makeInt64(0);
+}
+
+ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	GenIdNode* node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(*tdbb->getDefaultPool(),
+		dialect1, name);
+	node->id = id;
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const GenIdNode* o = other->as<GenIdNode>();
+	fb_assert(o)
+
+	return dialect1 == o->dialect1 && name == o->name;
+}
+
+bool GenIdNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	GenIdNode* otherNode = other->as<GenIdNode>();
+	return otherNode && dialect1 == otherNode->dialect1 && id == otherNode->id;
+}
+
+ExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	request->req_flags &= ~req_null;
+
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	const dsc* value = EVL_expr(tdbb, arg);
+
+	if (request->req_flags & req_null)
+		return NULL;
+
+	if (dialect1)
+	{
+		SLONG temp = (SLONG) DPM_gen_id(tdbb, id, false, MOV_get_int64(value, 0));
+		impure->make_long(temp);
+	}
+	else
+	{
+		SINT64 temp = DPM_gen_id(tdbb, id, false, MOV_get_int64(value, 0));
+		impure->make_int64(temp);
+	}
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<InternalInfoNode> regInternalInfoNode(blr_internal_info);
 
 // CVC: If this list changes, gpre will need to be updated
@@ -3243,7 +3406,8 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	InfoType infoType = static_cast<InfoType>(dsqlArg->getSlong());
 
@@ -3434,8 +3598,8 @@ void NegateNode::setParameterName(dsql_par* parameter) const
 	}
 }
 
-bool NegateNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool NegateNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
 }
@@ -3451,7 +3615,8 @@ void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 
@@ -3758,7 +3923,8 @@ void OverNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlAggExpr);
 }
 
-void OverNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void OverNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlAggExpr, nullReplacement);
 	desc->setNullable(true);
@@ -3787,6 +3953,356 @@ ValueExprNode* OverNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		PASS1_node(dsqlScratch, dsqlAggExpr),
 		PASS1_node(dsqlScratch, dsqlPartition),
 		PASS1_node(dsqlScratch, dsqlOrder));
+}
+
+
+//--------------------
+
+
+static RegisterNode<ParameterNode> regParameterNode(blr_parameter);
+static RegisterNode<ParameterNode> regParameterNode2(blr_parameter2);
+static RegisterNode<ParameterNode> regParameterNode3(blr_parameter3);
+
+ParameterNode::ParameterNode(MemoryPool& pool)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_PARAMETER>(pool),
+	  dsqlParameterIndex(0),
+	  dsqlParameter(NULL),
+	  message(NULL),
+	  argNumber(0),
+	  argFlag(NULL),
+	  argIndicator(NULL),
+	  argInfo(NULL)
+{
+	addChildNode(argFlag);
+	addChildNode(argIndicator);
+}
+
+DmlNode* ParameterNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	jrd_nod* message = NULL;
+	USHORT n = (USHORT) csb->csb_blr_reader.getByte();
+
+	if (n >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[n].csb_message))
+		PAR_error(csb, Arg::Gds(isc_badmsgnum));
+
+	ParameterNode* node = FB_NEW(pool) ParameterNode(pool);
+
+	node->message = message;
+	node->argNumber = csb->csb_blr_reader.getWord();
+
+	const Format* format = (Format*) message->nod_arg[e_msg_format];
+
+	if (node->argNumber >= format->fmt_count)
+		PAR_error(csb, Arg::Gds(isc_badparnum));
+
+	if (blrOp != blr_parameter)
+	{
+		ParameterNode* flagNode = FB_NEW(pool) ParameterNode(pool);
+		flagNode->message = message;
+		flagNode->argNumber = csb->csb_blr_reader.getWord();
+
+		if (flagNode->argNumber >= format->fmt_count)
+			PAR_error(csb, Arg::Gds(isc_badparnum));
+
+		node->argFlag = PAR_make_node(tdbb, 1);
+		node->argFlag->nod_type = nod_class_exprnode_jrd;
+		node->argFlag->nod_count = 0;
+		node->argFlag->nod_arg[0] = reinterpret_cast<jrd_nod*>(flagNode);
+	}
+
+	if (blrOp == blr_parameter3)
+	{
+		ParameterNode* indicatorNode = FB_NEW(pool) ParameterNode(pool);
+		indicatorNode->message = message;
+		indicatorNode->argNumber = csb->csb_blr_reader.getWord();
+
+		if (indicatorNode->argNumber >= format->fmt_count)
+			PAR_error(csb, Arg::Gds(isc_badparnum));
+
+		node->argIndicator = PAR_make_node(tdbb, 1);
+		node->argIndicator->nod_type = nod_class_exprnode_jrd;
+		node->argIndicator->nod_count = 0;
+		node->argIndicator->nod_arg[0] = reinterpret_cast<jrd_nod*>(indicatorNode);
+	}
+
+	return node;
+}
+
+void ParameterNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "ParameterNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* ParameterNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	if (dsqlScratch->isPsql())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_dsql_command_err));
+	}
+
+	dsql_msg* tempMsg = dsqlParameter ?
+		dsqlParameter->par_message : dsqlScratch->getStatement()->getSendMsg();
+
+	ParameterNode* node = FB_NEW(getPool()) ParameterNode(getPool());
+	node->dsqlParameter = MAKE_parameter(tempMsg, true, true, dsqlParameterIndex, NULL);
+	node->dsqlParameterIndex = dsqlParameterIndex;
+
+	return node;
+}
+
+bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (!node)
+		thisNode->nod_desc.makeNullString();
+	else
+	{
+		MAKE_desc(dsqlScratch, &thisNode->nod_desc, node, NULL);
+
+		if (tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
+		{
+			const USHORT fromCharSet = thisNode->nod_desc.getCharSet();
+			const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+				fromCharSet : tdbb->getCharSet();
+
+			if (thisNode->nod_desc.dsc_dtype <= dtype_any_text)
+			{
+				int diff = 0;
+
+				switch (thisNode->nod_desc.dsc_dtype)
+				{
+					case dtype_varying:
+						diff = sizeof(USHORT);
+						break;
+					case dtype_cstring:
+						diff = 1;
+						break;
+				}
+
+				thisNode->nod_desc.dsc_length -= diff;
+
+				if (toCharSet != fromCharSet)
+				{
+					const USHORT fromCharSetBPC = METD_get_charset_bpc(
+						dsqlScratch->getTransaction(), fromCharSet);
+					const USHORT toCharSetBPC = METD_get_charset_bpc(
+						dsqlScratch->getTransaction(), toCharSet);
+
+					thisNode->nod_desc.setTextType(INTL_CS_COLL_TO_TTYPE(toCharSet,
+						(fromCharSet == toCharSet ? INTL_GET_COLLATE(&thisNode->nod_desc) : 0)));
+
+					thisNode->nod_desc.dsc_length = UTLD_char_length_to_byte_length(
+						thisNode->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
+				}
+
+				thisNode->nod_desc.dsc_length += diff;
+			}
+			else if (thisNode->nod_desc.dsc_dtype == dtype_blob &&
+				thisNode->nod_desc.dsc_sub_type == isc_blob_text &&
+				fromCharSet != CS_NONE && fromCharSet != CS_BINARY)
+			{
+				thisNode->nod_desc.setTextType(toCharSet);
+			}
+		}
+	}
+
+	if (!dsqlParameter)
+	{
+		dsqlParameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(), true, true,
+			dsqlParameterIndex, NULL);
+		dsqlParameterIndex = dsqlParameter->par_index;
+	}
+
+	// In case of RETURNING in MERGE and UPDATE OR INSERT, a single parameter is used in
+	// more than one place. So we save it to use below.
+	dsc oldDesc = dsqlParameter->par_desc;
+	bool hasOldDesc = dsqlParameter->par_node != NULL;
+
+	dsqlParameter->par_desc = thisNode->nod_desc;
+	dsqlParameter->par_node = thisNode;
+
+	// Parameters should receive precisely the data that the user
+	// passes in.  Therefore for text strings lets use varying
+	// strings to insure that we don't add trailing blanks.
+
+	// However, there are situations this leads to problems - so
+	// we use the forceVarChar parameter to prevent this
+	// datatype assumption from occuring.
+
+	if (forceVarChar)
+	{
+		if (dsqlParameter->par_desc.dsc_dtype == dtype_text)
+		{
+			dsqlParameter->par_desc.dsc_dtype = dtype_varying;
+			// The error msgs is inaccurate, but causing dsc_length
+			// to be outsise range can be worse.
+			if (dsqlParameter->par_desc.dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+							//Arg::Gds(isc_dsql_datatype_err)
+							Arg::Gds(isc_imp_exc));
+							//Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name)
+			}
+
+			dsqlParameter->par_desc.dsc_length += sizeof(USHORT);
+		}
+		else if (dsqlParameter->par_desc.dsc_dtype > dtype_any_text)
+		{
+			const USHORT toCharSetBPC = METD_get_charset_bpc(
+				dsqlScratch->getTransaction(), tdbb->getCharSet());
+
+			// The LIKE & similar parameters must be varchar type
+			// strings - so force this parameter to be varchar
+			// and take a guess at a good length for it.
+			dsqlParameter->par_desc.dsc_dtype = dtype_varying;
+			dsqlParameter->par_desc.dsc_length = LIKE_PARAM_LEN * toCharSetBPC + sizeof(USHORT);
+			dsqlParameter->par_desc.dsc_sub_type = 0;
+			dsqlParameter->par_desc.dsc_scale = 0;
+			dsqlParameter->par_desc.dsc_ttype() = ttype_dynamic;
+		}
+	}
+
+	if (hasOldDesc)
+	{
+		dsc thisDesc = dsqlParameter->par_desc;
+		const dsc* args[] = {&oldDesc, &thisDesc};
+		DSqlDataTypeUtil(dsqlScratch).makeFromList(&dsqlParameter->par_desc,
+			dsqlParameter->par_name.c_str(), 2, args);
+	}
+
+	return true;
+}
+
+void ParameterNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	GEN_parameter(dsqlScratch, dsqlParameter);
+}
+
+void ParameterNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
+{
+	// We don't actually know the datatype of a parameter -
+	// we have to guess it based on the context that the
+	// parameter appears in. (This is done is pass1.c::set_parameter_type())
+	// However, a parameter can appear as part of an expression.
+	// As MAKE_desc is used for both determination of parameter
+	// types and for expression type checking, we just continue.
+
+	if (thisNode->nod_desc.dsc_dtype)
+		*desc = thisNode->nod_desc;
+}
+
+bool ParameterNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const ParameterNode* o = other->as<ParameterNode>();
+
+	return o && dsqlParameter->par_index == o->dsqlParameter->par_index;
+}
+
+void ParameterNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	const Format* format = (Format*) message->nod_arg[e_msg_format];
+	*desc = format->fmt_desc[argNumber];
+}
+
+ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	if (copier.remapArgument())
+		return this;
+
+	ParameterNode* node = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
+	node->argNumber = argNumber;
+
+	// dimitr:	IMPORTANT!!!
+	// nod_message copying must be done in the only place
+	// (the nod_procedure code). Hence we don't call
+	// copy() here to keep argument->nod_arg[e_arg_message]
+	// and procedure->nod_arg[e_prc_in_msg] in sync. The
+	// message is passed to copy() as a parameter. If the
+	// passed message is NULL, it means nod_argument is
+	// cloned outside nod_procedure (e.g. in the optimizer)
+	// and we must keep the input message.
+	// ASF: We should only use "message" if its number matches the number
+	// in nod_argument. If it don't, it may be an input parameter cloned
+	// in RseBoolNode::convertNeqAllToNotAny - see CORE-3094.
+
+	if (copier.message &&
+		(IPTR) copier.message->nod_arg[e_msg_number] == (IPTR) message->nod_arg[e_msg_number])
+	{
+		node->message = copier.message;
+	}
+	else
+		node->message = message;
+
+	node->argFlag = copier.copy(tdbb, argFlag);
+	node->argIndicator = copier.copy(tdbb, argIndicator);
+
+	return node;
+}
+
+ExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	argInfo = CMP_pass2_validation(tdbb, csb,
+		Item(Item::TYPE_PARAMETER, (IPTR) message->nod_arg[e_msg_number], argNumber));
+
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
+		sizeof(impure_value_ex) : sizeof(dsc));
+
+	return this;
+}
+
+dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	request->req_flags &= ~req_null;
+
+	const dsc* desc;
+
+	if (argFlag)
+	{
+		desc = EVL_expr(tdbb, argFlag);
+		if (MOV_get_long(desc, 0))
+			request->req_flags |= req_null;
+	}
+
+	const Format* format = (Format*) message->nod_arg[e_msg_format];
+	desc = &format->fmt_desc[argNumber];
+
+	impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
+		message->nod_impure + (IPTR) desc->dsc_address);
+	impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
+	impure->vlu_desc.dsc_length = desc->dsc_length;
+	impure->vlu_desc.dsc_scale = desc->dsc_scale;
+	impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
+
+	if (impure->vlu_desc.dsc_dtype == dtype_text)
+		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
+	USHORT* impure_flags = request->getImpure<USHORT>(
+		(IPTR) message->nod_arg[e_msg_impure_flags] +
+		(sizeof(USHORT) * argNumber));
+
+	if (!(*impure_flags & VLU_checked))
+	{
+		if (argInfo)
+		{
+			EVL_validate(tdbb,
+				Item(Item::TYPE_PARAMETER, (IPTR) message->nod_arg[e_msg_number], argNumber),
+				argInfo, &impure->vlu_desc, request->req_flags & req_null);
+		}
+
+		*impure_flags |= VLU_checked;
+	}
+
+	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
 }
 
 
@@ -3831,8 +4347,8 @@ void SubstringSimilarNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "SUBSTRING";
 }
 
-bool SubstringSimilarNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool SubstringSimilarNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlExpr, node, forceVarChar) |
 		PASS1_set_parameter_type(dsqlScratch, dsqlPattern, node, forceVarChar) |
@@ -3847,7 +4363,8 @@ void SubstringSimilarNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlEscape);
 }
 
-void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlExpr, nullReplacement);
 	desc->setNullable(true);
@@ -4085,7 +4602,8 @@ void SysFuncCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	Array<const dsc*> argsArray;
 
@@ -4324,7 +4842,8 @@ void UdfCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->dsc_dtype = static_cast<UCHAR>(dsqlFunction->udf_dtype);
 	desc->dsc_length = dsqlFunction->udf_length;
@@ -4520,8 +5039,8 @@ void ValueIfNode::setParameterName(dsql_par* parameter) const
 	parameter->par_name = parameter->par_alias = "CASE";
 }
 
-bool ValueIfNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool ValueIfNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlTrueValue, node, forceVarChar) |
 		PASS1_set_parameter_type(dsqlScratch, dsqlFalseValue, node, forceVarChar);
@@ -4535,7 +5054,8 @@ void ValueIfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlFalseValue);
 }
 
-void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* /*nullReplacement*/)
+void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	Array<const dsc*> args;
 

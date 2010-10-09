@@ -146,10 +146,6 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
  *      destination node of an assignment.
  *
  **************************************/
-	const dsc* desc;
-	const Format* format;
-	const jrd_nod* message;
-	Record* record;
 
 	SET_TDBB(tdbb);
 
@@ -161,33 +157,43 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 	// The only nodes that can be assigned to are: argument, field and variable.
 
 	int arg_number;
+	const dsc* desc;
+	const Format* format;
+	const jrd_nod* message;
+	Record* record;
+	const ParameterNode* paramNode;
 
-	switch (node->nod_type)
+	if ((paramNode = ExprNode::as<ParameterNode>(node)))
 	{
-	case nod_argument:
-		message = node->nod_arg[e_arg_message];
+		message = paramNode->message;
 		format = (Format*) message->nod_arg[e_msg_format];
-		arg_number = (int) (IPTR) node->nod_arg[e_arg_number];
+		arg_number = paramNode->argNumber;
 		desc = &format->fmt_desc[arg_number];
+
 		impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
 			message->nod_impure + (IPTR) desc->dsc_address);
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
 		impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
+
 		if (DTYPE_IS_TEXT(desc->dsc_dtype) &&
 			((INTL_TTYPE(desc) == ttype_dynamic) || (INTL_GET_CHARSET(desc) == CS_dynamic)))
 		{
-			/* Value is a text value, we're assigning it back to the user
-			   process, user process has not specified a subtype, user
-			   process specified dynamic translation and the dsc isn't from
-			   a 3.3 type request (blr_cstring2 instead of blr_cstring) so
-			   convert the charset to the declared charset of the process. */
+			// Value is a text value, we're assigning it back to the user
+			// process, user process has not specified a subtype, user
+			// process specified dynamic translation and the dsc isn't from
+			// a 3.3 type request (blr_cstring2 instead of blr_cstring) so
+			// convert the charset to the declared charset of the process.
 
 			impure->vlu_desc.setTextType(tdbb->getCharSet());
 		}
-		return &impure->vlu_desc;
 
+		return &impure->vlu_desc;
+	}
+
+	switch (node->nod_type)
+	{
 	case nod_field:
 		record = request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
 		if (!EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id], &impure->vlu_desc))
@@ -382,51 +388,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			return desc;
 		}
 
-	case nod_argument:
-		{
-			const dsc* desc;
-
-			if (node->nod_arg[e_arg_flag])
-			{
-				desc = EVL_expr(tdbb, node->nod_arg[e_arg_flag]);
-				if (MOV_get_long(desc, 0)) {
-					request->req_flags |= req_null;
-				}
-			}
-			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			desc = &format->fmt_desc[(int)(IPTR) node->nod_arg[e_arg_number]];
-
-			impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
-				message->nod_impure + (IPTR) desc->dsc_address);
-			impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
-			impure->vlu_desc.dsc_length = desc->dsc_length;
-			impure->vlu_desc.dsc_scale = desc->dsc_scale;
-			impure->vlu_desc.dsc_sub_type = desc->dsc_sub_type;
-
-			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-
-			USHORT* impure_flags = request->getImpure<USHORT>(
-				(IPTR) message->nod_arg[e_msg_impure_flags] +
-				(sizeof(USHORT) * (IPTR) node->nod_arg[e_arg_number]));
-
-			if (!(*impure_flags & VLU_checked))
-			{
-				if (node->nod_arg[e_arg_info])
-				{
-					EVL_validate(tdbb,
-						Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-							(IPTR) node->nod_arg[e_arg_number]),
-						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_arg_info]),
-						&impure->vlu_desc, request->req_flags & req_null);
-				}
-				*impure_flags |= VLU_checked;
-			}
-
-			return &impure->vlu_desc;
-		}
-
 	case nod_dbkey:
 		return dbkey(tdbb, node, impure);
 
@@ -557,7 +518,7 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			{
 				if (node->nod_arg[e_var_info])
 				{
-					EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
+					EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_var_id]),
 						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_var_info]),
 						&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
 				}
@@ -612,22 +573,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_gen_id:		// return a 32-bit generator value
-		{
-			SLONG temp = (SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
-								false, MOV_get_int64(values[0], 0));
-			impure->make_long(temp);
-		}
-		return &impure->vlu_desc;
-
-	case nod_gen_id2:
-		{
-			SINT64 temp = DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id],
-									 false, MOV_get_int64(values[0], 0));
-			impure->make_int64(temp);
-		}
-		return &impure->vlu_desc;
-
 	case nod_substr:
 		return substring(tdbb, impure, values[0], values[1], values[2]);
 
@@ -882,9 +827,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		fieldInfo.validation)
 	{
 		if (desc && null)
-		{
 			desc->dsc_flags |= DSC_null;
-		}
 
 		const bool desc_is_null = !desc || (desc->dsc_flags & DSC_null);
 
@@ -916,7 +859,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		ISC_STATUS status = isc_not_valid_for_var;
 		const char* arg;
 
-		if (item.type == nod_cast)
+		if (item.type == Item::TYPE_CAST)
 		{
 			status = isc_not_valid_for;
 			arg = "CAST";
@@ -929,7 +872,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 				status = isc_not_valid_for;
 
-				if (item.type == nod_variable)
+				if (item.type == Item::TYPE_VARIABLE)
 				{
 					const jrd_prc* procedure = request->getStatement()->procedure;
 
@@ -946,9 +889,9 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 					else
 						s.printf("variable number %d", index);
 				}
-				else if (item.type == nod_argument && item.subType == 0)
+				else if (item.type == Item::TYPE_PARAMETER && item.subType == 0)
 					s.printf("input parameter number %d", (index - 1) / 2 + 1);
-				else if (item.type == nod_argument && item.subType == 1)
+				else if (item.type == Item::TYPE_PARAMETER && item.subType == 1)
 					s.printf("output parameter number %d", index);
 
 				if (s.isEmpty())
@@ -1020,7 +963,7 @@ static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value*
 		impure->vlu_desc.dsc_address = string->str_data;
 	}
 
-	EVL_validate(tdbb, Item(nod_cast), (ItemInfo*) node->nod_arg[e_cast_iteminfo],
+	EVL_validate(tdbb, Item(Item::TYPE_CAST), (ItemInfo*) node->nod_arg[e_cast_iteminfo],
 		value, value == NULL || (value->dsc_flags & DSC_null));
 
 	if (value == NULL)

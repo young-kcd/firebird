@@ -5318,9 +5318,9 @@ u_constant	: u_numeric_constant
 		{ $$ = MAKE_constant ($2, CONSTANT_TIMESTAMP); }
 		;
 
-parameter	: '?'
-			{ $$ = make_parameter (); }
-		;
+parameter
+	: '?'	{ $$ = makeClassNode(make_parameter()); }
+	;
 
 current_user
 	: USER
@@ -5830,21 +5830,18 @@ decode_pairs
 
 // next value expression
 
-next_value_expression	: NEXT KW_VALUE FOR symbol_generator_name
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_gen_id2, 2, $4, MAKE_const_slong(1));
-				else
-					$$ = make_node (nod_gen_id, 2, $4, MAKE_const_slong(1));
-			}
-		| GEN_ID '(' symbol_generator_name ',' value ')'
-			{
-				if (client_dialect >= SQL_DIALECT_V6_TRANSITION)
-					$$ = make_node (nod_gen_id2, 2, $3, $5);
-				else
-					$$ = make_node (nod_gen_id, 2, $3, $5);
-			}
-		;
+next_value_expression
+	: NEXT KW_VALUE FOR symbol_generator_name
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) GenIdNode(getPool(),
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), toName($4)));
+		}
+	| GEN_ID '(' symbol_generator_name ',' value ')'
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) GenIdNode(getPool(),
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), toName($3), $5));
+		}
+	;
 
 
 timestamp_part	: YEAR
@@ -6364,27 +6361,13 @@ dsql_nod* Parser::make_list (dsql_nod* node)
 }
 
 
-dsql_nod* Parser::make_parameter()
+// Make parameter node.
+ParameterNode* Parser::make_parameter()
 {
-/**************************************
- *
- *	m a k e _ p a r a m e t e r
- *
- **************************************
- *
- * Functional description
- *	Make parameter node
- *	Any change should also be made to function below
- *
- **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_par_count) dsql_nod;
-	node->nod_type = nod_parameter;
-	node->nod_line = (USHORT) lex.lines_bk;
-	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-	node->nod_count = e_par_count;
-	node->nod_arg[e_par_index] = (dsql_nod*)(IPTR) lex.param_number++;
+	ParameterNode* node = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
+	node->dsqlParameterIndex = lex.param_number++;
 
 	return node;
 }

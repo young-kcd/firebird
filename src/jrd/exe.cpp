@@ -74,6 +74,7 @@
 #include "../jrd/sbm.h"
 #include "../jrd/blb.h"
 #include "../jrd/blr.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -302,39 +303,37 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 
 	SSHORT null = from_null ? -1 : 0;
 
-	if (!null && missing && MOV_compare(missing, from_desc) == 0) {
+	if (!null && missing && MOV_compare(missing, from_desc) == 0)
 		null = -1;
-	}
 
 	USHORT* impure_flags = NULL;
+	const ParameterNode* toParam = ExprNode::as<ParameterNode>(to);
 
-	switch (to->nod_type)
+	if (toParam)
 	{
-		case nod_variable:
-			if (to->nod_arg[e_var_info])
-			{
-				EVL_validate(tdbb,
-					Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
-					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
-					from_desc, null == -1);
-			}
-			impure_flags = &request->getImpure<impure_value>(
-				to->nod_arg[e_var_variable]->nod_impure)->vlu_flags;
-			break;
+		if (toParam->argInfo)
+		{
+			EVL_validate(tdbb,
+				Item(Item::TYPE_PARAMETER, (IPTR) toParam->message->nod_arg[e_msg_number],
+					toParam->argNumber),
+				toParam->argInfo, from_desc, null == -1);
+		}
 
-		case nod_argument:
-			if (to->nod_arg[e_arg_info])
-			{
-				EVL_validate(tdbb,
-					Item(nod_argument, (IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-						(IPTR) to->nod_arg[e_arg_number]),
-					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_arg_info]),
-					from_desc, null == -1);
-			}
-			impure_flags = request->getImpure<USHORT>(
-				(IPTR) to->nod_arg[e_arg_message]->nod_arg[e_msg_impure_flags] +
-				(sizeof(USHORT) * (IPTR) to->nod_arg[e_arg_number]));
-			break;
+		impure_flags = request->getImpure<USHORT>(
+			(IPTR) toParam->message->nod_arg[e_msg_impure_flags] +
+			(sizeof(USHORT) * toParam->argNumber));
+	}
+	else if (to->nod_type == nod_variable)
+	{
+		if (to->nod_arg[e_var_info])
+		{
+			EVL_validate(tdbb,
+				Item(Item::TYPE_VARIABLE, (IPTR) to->nod_arg[e_var_id]),
+				reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
+				from_desc, null == -1);
+		}
+		impure_flags = &request->getImpure<impure_value>(
+			to->nod_arg[e_var_variable]->nod_impure)->vlu_flags;
 	}
 
 	if (impure_flags != NULL)
@@ -348,12 +347,12 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 	{
 		// if necessary and appropriate, use the indicator variable
 
-		if (to->nod_type == nod_argument && to->nod_arg[e_arg_indicator])
+		if (toParam && toParam->argIndicator)
 		{
-			dsc* indicator    = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
-			temp.dsc_dtype    = dtype_short;
-			temp.dsc_length   = sizeof(SSHORT);
-			temp.dsc_scale    = 0;
+			dsc* indicator = EVL_assign_to(tdbb, toParam->argIndicator);
+			temp.dsc_dtype = dtype_short;
+			temp.dsc_length = sizeof(SSHORT);
+			temp.dsc_scale = 0;
 			temp.dsc_sub_type = 0;
 
 			SSHORT len;
@@ -363,9 +362,8 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 			{
 				len = TEXT_LEN(from_desc);
 			}
-			else {
+			else
 				len = 0;
-			}
 
 			temp.dsc_address = (UCHAR *) &len;
 			MOV_move(tdbb, &temp, indicator);
@@ -374,12 +372,12 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 			{
 				temp = *from_desc;
 				temp.dsc_length = TEXT_LEN(to_desc);
-				if (temp.dsc_dtype == dtype_cstring) {
+
+				if (temp.dsc_dtype == dtype_cstring)
 					temp.dsc_length += 1;
-				}
-				else if (temp.dsc_dtype == dtype_varying) {
+				else if (temp.dsc_dtype == dtype_varying)
 					temp.dsc_length += 2;
-				}
+
 				from_desc = &temp;
 			}
 		}
@@ -472,9 +470,9 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 			CLEAR_NULL(record, id);
 		}
 	}
-	else if (to->nod_type == nod_argument && to->nod_arg[e_arg_flag])
+	else if (toParam && toParam->argFlag)
 	{
-		to_desc = EVL_assign_to(tdbb, to->nod_arg[e_arg_flag]);
+		to_desc = EVL_assign_to(tdbb, toParam->argFlag);
 
 		// If the null flag is a string with an effective length of one,
 		// then -1 will not fit.  Therefore, store 1 instead.
@@ -482,6 +480,7 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 		if (null && to_desc->dsc_dtype <= dtype_varying)
 		{
 			USHORT minlen;
+
 			switch (to_desc->dsc_dtype)
 			{
 			case dtype_text:
@@ -494,10 +493,9 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 				minlen = 3;
 				break;
 			}
+
 			if (to_desc->dsc_length <= minlen)
-			{
 				null = 1;
-			}
 		}
 
 		temp.dsc_dtype = dtype_short;
@@ -506,9 +504,10 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 		temp.dsc_sub_type = 0;
 		temp.dsc_address = (UCHAR*) &null;
 		MOV_move(tdbb, &temp, to_desc);
-		if (null && to->nod_arg[e_arg_indicator])
+
+		if (null && toParam->argIndicator)
 		{
-			to_desc = EVL_assign_to(tdbb, to->nod_arg[e_arg_indicator]);
+			to_desc = EVL_assign_to(tdbb, toParam->argIndicator);
 			MOV_move(tdbb, &temp, to_desc);
 		}
 	}

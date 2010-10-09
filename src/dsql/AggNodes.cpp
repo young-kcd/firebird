@@ -452,7 +452,8 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 	desc->setNullable(true);
@@ -657,15 +658,16 @@ DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 	desc->setNullable(true);
 }
 
-bool ListAggNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* node, bool forceVarChar) const
+bool ListAggNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar) |
 		PASS1_set_parameter_type(dsqlScratch, dsqlDelimiter, node, forceVarChar);
@@ -781,7 +783,8 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc, dsql_nod* /*nullReplacement*/)
+void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
 {
 	desc->makeLong(0);
 }
@@ -862,7 +865,8 @@ DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 	desc->setNullable(true);
@@ -1110,7 +1114,8 @@ DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement)
+void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 	desc->setNullable(true);

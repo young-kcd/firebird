@@ -245,11 +245,6 @@ static dsql_nod* process_returning(DsqlCompilerScratch*, dsql_nod*);
 
 const char* const DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
 
-const int LIKE_PARAM_LEN = 30;	// CVC: This is a guess for the length of the
-								// parameter for LIKE and others, when the
-								// original dtype isn't string and force_varchar
-								// is true.
-
 namespace
 {
 	class ReturningProcessor
@@ -1292,13 +1287,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_searched_case:
 		return pass1_searched_case(dsqlScratch, input);
 
-	case nod_gen_id:
-	case nod_gen_id2:
-		node = MAKE_node(input->nod_type, e_gen_id_count);
-		node->nod_arg[e_gen_id_value] = PASS1_node(dsqlScratch, input->nod_arg[e_gen_id_value]);
-		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		return node;
-
 	case nod_collate:
 		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_coll_source]);
 		node = pass1_collate(dsqlScratch, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
@@ -1495,27 +1483,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_constant:
 		return pass1_constant(dsqlScratch, input);
-
-	case nod_parameter:
-		if (dsqlScratch->isPsql())
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_command_err));
-		}
-
-		{ // scope
-			node = MAKE_node(input->nod_type, e_par_count);
-			node->nod_count = 0;
-			dsql_msg* tempMsg = input->nod_arg[e_par_parameter] ?
-						(dsql_msg*) ((dsql_par*) input->nod_arg[e_par_parameter])->par_message :
-						dsqlScratch->getStatement()->getSendMsg();
-
-			dsql_par* tempPar =
-				MAKE_parameter(tempMsg, true, true, (USHORT)(IPTR) input->nod_arg[e_par_index], NULL);
-			node->nod_arg[e_par_parameter] = (dsql_nod*) tempPar;
-			node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) tempPar->par_index;
-		} // end scope
-		return node;
 
 	// access plan node types
 
@@ -2498,6 +2465,8 @@ static dsql_nod* explode_fields(dsql_rel* relation)
  **/
 static dsql_nod* explode_outputs( DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(procedure, dsql_type_prc);
 
@@ -2508,13 +2477,20 @@ static dsql_nod* explode_outputs( DsqlCompilerScratch* dsqlScratch, const dsql_p
 	{
 		DEV_BLKCHK(field, dsql_type_fld);
 		DEV_BLKCHK(*ptr, dsql_type_nod);
-		dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
-		*ptr = p_node;
+
+		ParameterNode* paramNode = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(
+			*tdbb->getDefaultPool());
+
+		dsql_nod* p_node = MAKE_node(nod_class_exprnode, 1);
 		p_node->nod_count = 0;
-		dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
+		p_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
+
+		*ptr = p_node;
+		dsql_par* parameter = paramNode->dsqlParameter = MAKE_parameter(
+			dsqlScratch->getStatement()->getReceiveMsg(),
 			true, true, 0, NULL);
-		p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+		paramNode->dsqlParameterIndex = parameter->par_index;
+
 		MAKE_desc_from_field(&parameter->par_desc, field);
 		parameter->par_name = parameter->par_alias = field->fld_name.c_str();
 		parameter->par_rel_name = procedure->prc_name.identifier.c_str();
@@ -2963,16 +2939,13 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
 		}
 
-	case nod_gen_id:
-	case nod_gen_id2:
 	case nod_cast:
-		if (node1->nod_arg[0] != node2->nod_arg[0]) {
+		if (node1->nod_arg[0] != node2->nod_arg[0])
 			return false;
-		}
 
-		if (node1->nod_count == 2) {
+		if (node1->nod_count == 2)
 			return PASS1_node_match(node1->nod_arg[1], node2->nod_arg[1], ignore_map_cast);
-		}
+
 		return true;
 
 	case nod_variable:
@@ -2990,14 +2963,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 				return false;
 			}
 			return true;
-		}
-
-	case nod_parameter:
-		{
-			// Parameters are equal when there index is the same
-			const dsql_par* parameter1 = (dsql_par*) node1->nod_arg[e_par_parameter];
-			const dsql_par* parameter2 = (dsql_par*) node2->nod_arg[e_par_parameter];
-			return (parameter1->par_index == parameter2->par_index);
 		}
 
 	case nod_derived_table:
@@ -3618,7 +3583,7 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	temp->nod_arg[0] = relation_node;
 
 	ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-		blr_eql, MAKE_node(nod_dbkey, 1), MAKE_node(nod_parameter, e_par_count));
+		blr_eql, MAKE_node(nod_dbkey, 1), MAKE_node(nod_class_exprnode, 1));
 
 	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
 	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
@@ -3630,15 +3595,19 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 		false, false, 0, NULL);
 	dsqlScratch->getStatement()->setDbKey(parameter);
-	eqlNode->dsqlArg2->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-	eqlNode->dsqlArg2->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+
+	ParameterNode* paramNode = FB_NEW(pool) ParameterNode(pool);
+	eqlNode->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
+	paramNode->dsqlParameterIndex = parameter->par_index;
+	paramNode->dsqlParameter = parameter;
+
 	parameter->par_desc = source->par_desc;
 
 	// record version will be set only for V4 - for the parent select cursor
 	if (rv_source)
 	{
 		eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-			blr_eql, MAKE_node(nod_rec_version, 1), MAKE_node(nod_parameter, e_par_count));
+			blr_eql, MAKE_node(nod_rec_version, 1), MAKE_node(nod_class_exprnode, 1));
 
 		node = MAKE_node(nod_class_exprnode, 1);
 		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
@@ -3648,8 +3617,12 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 		parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 			false, false, 0, NULL);
 		dsqlScratch->getStatement()->setRecVersion(parameter);
-		eqlNode->dsqlArg2->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-		eqlNode->dsqlArg2->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+
+		paramNode = FB_NEW(pool) ParameterNode(pool);
+		eqlNode->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
+		paramNode->dsqlParameterIndex = parameter->par_index;
+		paramNode->dsqlParameter = parameter;
+
 		parameter->par_desc = rv_source->par_desc;
 
 		rse->nod_arg[e_rse_boolean] = PASS1_compose(rse->nod_arg[e_rse_boolean], node, blr_and);
@@ -4808,7 +4781,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 		case nod_dbkey:
 		case nod_field:
 		case nod_null:
-		case nod_parameter:
 		case nod_variable:
 			return NULL;
 
@@ -4821,6 +4793,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 				case ExprNode::TYPE_CURRENT_ROLE:
 				case ExprNode::TYPE_CURRENT_USER:
 				case ExprNode::TYPE_INTERNAL_INFO:
+				case ExprNode::TYPE_PARAMETER:
 					return NULL;
 			}
 			break;
@@ -6349,6 +6322,8 @@ static dsql_rel* pass1_base_table( DsqlCompilerScratch* dsqlScratch, const dsql_
  **/
 static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_nod* input)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -6419,10 +6394,14 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 			MAKE_desc(dsqlScratch, &parameter->par_desc, *src, NULL);
 			parameter->par_desc.dsc_flags |= DSC_nullable;
 
-			dsql_nod* p_node = MAKE_node(nod_parameter, e_par_count);
+			ParameterNode* paramNode = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(
+				*tdbb->getDefaultPool());
+			paramNode->dsqlParameterIndex = parameter->par_index;
+			paramNode->dsqlParameter = parameter;
+
+			dsql_nod* p_node = MAKE_node(nod_class_exprnode, 1);
 			p_node->nod_count = 0;
-			p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-			p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
+			p_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
 
 			dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
 			temp->nod_arg[e_asgn_value] = *src;
@@ -6432,9 +6411,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 	}
 
 	if (!dsqlScratch->isPsql())
-	{
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
-	}
 
 	return node;
 }
@@ -7097,10 +7074,10 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 	{ // scope block
 		DsqlNodStack stack;
 		dsql_nod** ptr = list->nod_arg;
+
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr += 2)
-		{
 			pass1_put_args_on_stack(dsqlScratch, *ptr, stack);
-		}
+
 		node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
 	} // end scope block
 
@@ -7110,28 +7087,32 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 		DsqlNodStack stack;
 		dsql_nod** ptr = list->nod_arg;
 		const dsql_nod* const* const end = ptr + list->nod_count;
-		for (++ptr; ptr < end; ptr += 2) {
+
+		for (++ptr; ptr < end; ptr += 2)
 			pass1_put_args_on_stack(dsqlScratch, *ptr, stack);
-		}
+
 		pass1_put_args_on_stack(dsqlScratch, input->nod_arg[2], stack);
 		node->nod_arg[e_simple_case_results] = MAKE_list(stack);
 	} // end scope block
 
 	// Check if there is a parameter in the case/when operand list
-	bool setParameters = (node->nod_arg[e_simple_case_case_operand]->nod_type == nod_parameter);
+	bool setParameters = ExprNode::is<ParameterNode>(node->nod_arg[e_simple_case_case_operand]);
+
 	if (!setParameters)
 	{
 		list = node->nod_arg[e_simple_case_when_operands];
 		dsql_nod** ptr = list->nod_arg;
+
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr)
 		{
-			if ((*ptr)->nod_type == nod_parameter)
+			if (ExprNode::is<ParameterNode>(*ptr))
 			{
 				setParameters = true;
 				break;
 			}
 		}
 	}
+
 	// build list for making describe information from
 	// case_operand and when_operands this is used for
 	// setting parameter describers if used in this case.
@@ -7144,10 +7125,10 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 			int i = 0;
 			node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
 			dsql_nod** ptr = list->nod_arg;
+
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr, ++i)
-			{
 				node1->nod_arg[i] = *ptr;
-			}
+
 			MAKE_desc_from_list(dsqlScratch, &node1->nod_desc, node1, NULL, "CASE");
 			// Set parameter describe information
 			PASS1_set_parameter_type(dsqlScratch, node->nod_arg[e_simple_case_case_operand], node1, false);
@@ -7156,10 +7137,9 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 		{ // scope block
 			dsql_nod* simple_when = node->nod_arg[e_simple_case_when_operands];
 			dsql_nod** ptr = simple_when->nod_arg;
+
 			for (const dsql_nod* const* const end = ptr + simple_when->nod_count; ptr < end; ptr++)
-			{
 				PASS1_set_parameter_type(dsqlScratch, *ptr, node1, false);
-			}
 		} // end scope block
 
 		// Clean up temporary used node
@@ -7171,10 +7151,9 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 	// Set parameter describe information for evt. results parameters
 	dsql_nod* simple_res = node->nod_arg[e_simple_case_results];
 	dsql_nod** ptr = simple_res->nod_arg;
+
 	for (const dsql_nod* const* const end = ptr + simple_res->nod_count; ptr < end; ptr++)
-	{
 		PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
-	}
 
 	return node;
 }
@@ -8529,140 +8508,18 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 		case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
-			return exprNode->setParameterType(dsqlScratch, node, force_varchar);
+			return exprNode->setParameterType(dsqlScratch, in_node, node, force_varchar);
 		}
-
-		case nod_parameter:
-			{
-				if (!node)
-					in_node->nod_desc.makeNullString();
-				else
-				{
-					MAKE_desc(dsqlScratch, &in_node->nod_desc, node, NULL);
-
-					if (tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
-					{
-						const USHORT fromCharSet = in_node->nod_desc.getCharSet();
-						const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-							fromCharSet : tdbb->getCharSet();
-
-						if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
-						{
-							int diff = 0;
-							switch (in_node->nod_desc.dsc_dtype)
-							{
-							case dtype_varying:
-								diff = sizeof(USHORT);
-								break;
-							case dtype_cstring:
-								diff = 1;
-								break;
-							}
-							in_node->nod_desc.dsc_length -= diff;
-
-							if (toCharSet != fromCharSet)
-							{
-								const USHORT fromCharSetBPC = METD_get_charset_bpc(
-									dsqlScratch->getTransaction(), fromCharSet);
-								const USHORT toCharSetBPC = METD_get_charset_bpc(
-									dsqlScratch->getTransaction(), toCharSet);
-
-								in_node->nod_desc.setTextType(INTL_CS_COLL_TO_TTYPE(toCharSet,
-									(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));
-
-								in_node->nod_desc.dsc_length =
-									UTLD_char_length_to_byte_length(in_node->nod_desc.dsc_length / fromCharSetBPC, toCharSetBPC);
-							}
-
-							in_node->nod_desc.dsc_length += diff;
-						}
-						else if (in_node->nod_desc.dsc_dtype == dtype_blob &&
-							in_node->nod_desc.dsc_sub_type == isc_blob_text &&
-							fromCharSet != CS_NONE && fromCharSet != CS_BINARY)
-						{
-							in_node->nod_desc.setTextType(toCharSet);
-						}
-					}
-				}
-
-				dsql_par* parameter = (dsql_par*) in_node->nod_arg[e_par_parameter];
-
-				if (!parameter)
-				{
-					parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(), true, true,
-											   (USHORT)(IPTR) in_node->nod_arg[e_par_index], NULL);
-					in_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
-					in_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
-				}
-
-				// In case of RETURNING in MERGE and UPDATE OR INSERT, a single parameter is used in
-				// more than one place. So we save it to use below.
-				dsc oldDesc = parameter->par_desc;
-				bool hasOldDesc = parameter->par_node != NULL;
-
-				parameter->par_desc = in_node->nod_desc;
-				parameter->par_node = in_node;
-
-				// Parameters should receive precisely the data that the user
-				// passes in.  Therefore for text strings lets use varying
-				// strings to insure that we don't add trailing blanks.
-
-				// However, there are situations this leads to problems - so
-				// we use the force_varchar parameter to prevent this
-				// datatype assumption from occuring.
-
-				if (force_varchar)
-				{
-					if (parameter->par_desc.dsc_dtype == dtype_text)
-					{
-						parameter->par_desc.dsc_dtype = dtype_varying;
-						// The error msgs is inaccurate, but causing dsc_length
-						// to be outsise range can be worse.
-						if (parameter->par_desc.dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
-						{
-							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-									  //Arg::Gds(isc_dsql_datatype_err)
-									  Arg::Gds(isc_imp_exc));
-									  //Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name)
-						}
-
-						parameter->par_desc.dsc_length += sizeof(USHORT);
-					}
-					else if (parameter->par_desc.dsc_dtype > dtype_any_text)
-					{
-						const USHORT toCharSetBPC = METD_get_charset_bpc(
-							dsqlScratch->getTransaction(), tdbb->getCharSet());
-
-						// The LIKE & similar parameters must be varchar type
-						// strings - so force this parameter to be varchar
-						// and take a guess at a good length for it.
-						parameter->par_desc.dsc_dtype = dtype_varying;
-						parameter->par_desc.dsc_length = LIKE_PARAM_LEN * toCharSetBPC +
-							sizeof(USHORT);
-						parameter->par_desc.dsc_sub_type = 0;
-						parameter->par_desc.dsc_scale = 0;
-						parameter->par_desc.dsc_ttype() = ttype_dynamic;
-					}
-				}
-
-				if (hasOldDesc)
-				{
-					dsc thisDesc = parameter->par_desc;
-					const dsc* args[] = {&oldDesc, &thisDesc};
-					DSqlDataTypeUtil(dsqlScratch).makeFromList(&parameter->par_desc,
-						parameter->par_name.c_str(), 2, args);
-				}
-
-				return true;
-			}
 
 		case nod_cast:
 			{
 				dsql_nod* par_node = in_node->nod_arg[e_cast_source];
 				dsql_fld* field = (dsql_fld*) in_node->nod_arg[e_cast_target];
-				if (par_node->nod_type == nod_parameter)
+				ParameterNode* paramNode;
+
+				if ((paramNode = ExprNode::as<ParameterNode>(par_node)))
 				{
-					dsql_par* parameter = (dsql_par*) par_node->nod_arg[e_par_parameter];
+					dsql_par* parameter = paramNode->dsqlParameter;
 					if (parameter)
 					{
 						parameter->par_desc = par_node->nod_desc;
@@ -8786,19 +8643,20 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 						set_parameter_name(**i, fld_node, relation);
 					}
 					break;
+
+				case ExprNode::TYPE_PARAMETER:
+				{
+					ParameterNode* paramNode = exprNode->as<ParameterNode>();
+					dsql_par* parameter = paramNode->dsqlParameter;
+					const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
+					DEV_BLKCHK(field, dsql_type_fld);
+					parameter->par_name = field->fld_name.c_str();
+					parameter->par_rel_name = relation->rel_name.c_str();
+					break;
+				}
 			}
 		}
 		return;
-
-	case nod_parameter:
-		{
-			dsql_par* parameter = (dsql_par*) par_node->nod_arg[e_par_parameter];
-			const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
-			DEV_BLKCHK(field, dsql_type_fld);
-			parameter->par_name = field->fld_name.c_str();
-			parameter->par_rel_name = relation->rel_name.c_str();
-			return;
-		}
 
 	case nod_substr:
 	case nod_trim:
@@ -9054,9 +8912,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_foreign:
 		verb = "foreign key";
 		break;
-	case nod_gen_id:
-		verb = "gen_id";
-		break;
 	case nod_get_segment:
 		verb = "get segment";
 		break;
@@ -9172,9 +9027,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "searched_case";
 		break;
 
-	case nod_gen_id2:
-		verb = "gen_id2";
-		break;
 	case nod_limit:
 		verb = "limit";
 		break;
@@ -9583,17 +9435,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		trace_line("%svariable name: \"", buffer);
 		string = (dsql_str*) node->nod_arg[e_vrn_name];
 		trace_line("%s\"\n", string->str_data);
-		return;
-
-	case nod_parameter:
-		if (node->nod_column) {
-			trace_line("%sparameter: %d\n",	buffer, (USHORT)(IPTR)node->nod_arg[e_par_index]);
-		}
-		else
-		{
-			const dsql_par* param = (dsql_par*) node->nod_arg[e_par_parameter];
-			trace_line("%sparameter: %d\n",	buffer, param->par_index);
-		}
 		return;
 
 	case nod_cursor_open:

@@ -47,6 +47,8 @@ Jrd::jrd_nod* CMP_pass1(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jr
 Jrd::jrd_nod* CMP_pass2(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jrd_nod* const node,
 	Jrd::jrd_nod* parent);
 
+Jrd::ItemInfo* CMP_pass2_validation(Jrd::thread_db*, Jrd::CompilerScratch*, const Jrd::Item&);
+
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
 					 Jrd::SecurityClass::flags_t, SLONG type_name, const Firebird::MetaName&,
 					 const Firebird::MetaName&);

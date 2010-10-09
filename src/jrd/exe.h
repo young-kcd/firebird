@@ -191,13 +191,6 @@ struct impure_agg_sort
 
 // Various field positions
 
-const int e_arg_flag		= 0;
-const int e_arg_indicator	= 1;
-const int e_arg_message		= 2;
-const int e_arg_number		= 3;
-const int e_arg_info		= 4;
-const int e_arg_length		= 5;
-
 const int e_msg_number			= 0;
 const int e_msg_format			= 1;
 const int e_msg_impure_flags	= 2;
@@ -540,21 +533,28 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 // The three structs below are used for domains DEFAULT and constraints in PSQL
 struct Item
 {
-	Item(nod_t aType, UCHAR aSubType, USHORT aIndex)
+	enum Type
+	{
+		TYPE_VARIABLE,
+		TYPE_PARAMETER,
+		TYPE_CAST
+	};
+
+	Item(Type aType, UCHAR aSubType, USHORT aIndex)
 		: type(aType),
 		  subType(aSubType),
 		  index(aIndex)
 	{
 	}
 
-	Item(nod_t aType, USHORT aIndex = 0)
+	Item(Type aType, USHORT aIndex = 0)
 		: type(aType),
 		  subType(0),
 		  index(aIndex)
 	{
 	}
 
-	nod_t type;
+	Type type;
 	UCHAR subType;
 	USHORT index;
 

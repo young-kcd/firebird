@@ -402,7 +402,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
-			exprNode->make(dsqlScratch, desc, null_replacement);
+			exprNode->make(dsqlScratch, node, desc, null_replacement);
 		}
 		return;
 
@@ -545,25 +545,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 		return;
 
-	case nod_gen_id:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_gen_id_value], NULL);
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
-		return;
-
-	case nod_gen_id2:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_gen_id_value], NULL);
-		desc->dsc_dtype = dtype_int64;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
-		node->nod_flags |= NOD_COMP_DIALECT;	// Never checked!
-		return;
-
 	case nod_limit:
 	case nod_rows:
 		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
@@ -622,20 +603,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(ULONG);
-		return;
-
-	case nod_parameter:
-		// We don't actually know the datatype of a parameter -
-		// we have to guess it based on the context that the
-		// parameter appears in. (This is done is pass1.c::set_parameter_type())
-		// However, a parameter can appear as part of an expression.
-		// As MAKE_desc is used for both determination of parameter
-		// types and for expression type checking, we just continue.
-
-		if (node->nod_desc.dsc_dtype)
-		{
-			*desc = node->nod_desc;
-		}
 		return;
 
 	case nod_null:
@@ -1252,10 +1219,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
-	case nod_gen_id:
-	case nod_gen_id2:
-		name_alias	= "GEN_ID";
-		break;
 	case nod_constant:
 	case nod_null:
 		name_alias = "CONSTANT";

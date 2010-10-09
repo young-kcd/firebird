@@ -28,6 +28,7 @@ void	GEN_constant(Jrd::DsqlCompilerScratch* dsqlScratch, Jrd::dsql_nod* node, bo
 void	GEN_descriptor(Jrd::DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool texttype);
 void	GEN_expr(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 void	GEN_hidden_variables(Jrd::DsqlCompilerScratch* dsqlScratch, bool inExpression);
+void	GEN_parameter(Jrd::DsqlCompilerScratch*, const Jrd::dsql_par*);
 void	GEN_port(Jrd::DsqlCompilerScratch*, Jrd::dsql_msg*);
 void	GEN_request(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 void	GEN_rse(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);

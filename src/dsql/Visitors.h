@@ -457,7 +457,6 @@ public:
 		return NodeCopier(csb, remap).copy(tdbb, input);
 	}
 
-protected:
 	virtual bool remapArgument()
 	{
 		return false;
@@ -498,7 +497,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		}
 
 		case nod_constant:
-		case nod_parameter:
 		case nod_variable:
 		case nod_null:
 		case nod_dom_value:
@@ -516,8 +514,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 			ret |= visit(&node->nod_arg[e_order_field]);
 			break;
 
-		case nod_gen_id:
-		case nod_gen_id2:
 		case nod_cast:
 			if (node->nod_count == 2)
 				ret |= visit(&node->nod_arg[1]);

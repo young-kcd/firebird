@@ -69,11 +69,9 @@ static void gen_constant(DsqlCompilerScratch*, const dsc*, bool);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void gen_field(DsqlCompilerScratch*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
-static void gen_gen_id(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_map(DsqlCompilerScratch*, dsql_map*);
 static inline void gen_optional_expr(DsqlCompilerScratch*, const UCHAR code, dsql_nod*);
-static void gen_parameter(DsqlCompilerScratch*, const dsql_par*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_relation(DsqlCompilerScratch*, dsql_ctx*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
@@ -294,10 +292,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		}
 		return;
 
-	case nod_parameter:
-		gen_parameter(dsqlScratch, (dsql_par*) node->nod_arg[e_par_parameter]);
-		return;
-
 	case nod_relation:
 		gen_relation(dsqlScratch, (dsql_ctx*) node->nod_arg[e_rel_context]);
 		return;
@@ -328,10 +322,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
         break;
 	case nod_cast:
 		gen_cast(dsqlScratch, node);
-		return;
-	case nod_gen_id:
-	case nod_gen_id2:
-		gen_gen_id(dsqlScratch, node);
 		return;
     case nod_coalesce:
 		gen_coalesce(dsqlScratch, node);
@@ -1621,26 +1611,6 @@ static void gen_field( DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context
 
 /**
 
- gen_gen_id
-
-    @brief      Generate BLR for gen_id
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_gen_id( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	dsqlScratch->appendUChar(blr_gen_id);
-	const dsql_str* string = (dsql_str*) node->nod_arg[e_gen_id_name];
-	dsqlScratch->appendNullString(string->str_data);
-	GEN_expr(dsqlScratch, node->nod_arg[e_gen_id_value]);
-}
-
-
-/**
-
  	gen_join_rse
 
     @brief	Generate a record selection expression
@@ -1718,18 +1688,8 @@ static void gen_optional_expr(DsqlCompilerScratch* dsqlScratch, const UCHAR code
 	}
 }
 
-/**
-
- 	gen_parameter
-
-    @brief	Generate a parameter reference.
-
-
-    @param dsqlScratch
-    @param parameter
-
- **/
-static void gen_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
+// Generate a parameter reference.
+void GEN_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
 {
 	const dsql_msg* message = parameter->par_message;
 
@@ -2179,7 +2139,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 1;
 	gen_constant(dsqlScratch, &constant_desc, false);
-	gen_parameter(dsqlScratch, statement->getEof());
+	GEN_parameter(dsqlScratch, statement->getEof());
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
@@ -2189,7 +2149,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 		{
 			dsqlScratch->appendUChar(blr_assignment);
 			GEN_expr(dsqlScratch, parameter->par_node);
-			gen_parameter(dsqlScratch, parameter);
+			GEN_parameter(dsqlScratch, parameter);
 		}
 
 		if (parameter->par_dbkey_relname.hasData() && paramContexts.get(parameter, context))
@@ -2197,7 +2157,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 			dsqlScratch->appendUChar(blr_assignment);
 			dsqlScratch->appendUChar(blr_dbkey);
 			stuff_context(dsqlScratch, context);
-			gen_parameter(dsqlScratch, parameter);
+			GEN_parameter(dsqlScratch, parameter);
 		}
 
 		if (parameter->par_rec_version_relname.hasData() && paramContexts.get(parameter, context))
@@ -2205,7 +2165,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 			dsqlScratch->appendUChar(blr_assignment);
 			dsqlScratch->appendUChar(blr_record_version);
 			stuff_context(dsqlScratch, context);
-			gen_parameter(dsqlScratch, parameter);
+			GEN_parameter(dsqlScratch, parameter);
 		}
 	}
 
@@ -2215,7 +2175,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 0;
 	gen_constant(dsqlScratch, &constant_desc, false);
-	gen_parameter(dsqlScratch, statement->getEof());
+	GEN_parameter(dsqlScratch, statement->getEof());
 }
 
 

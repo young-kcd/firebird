@@ -37,7 +37,8 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -61,9 +62,10 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
-	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* node, bool forceVarChar) const;
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
@@ -94,7 +96,8 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -114,7 +117,8 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
@@ -139,7 +143,8 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 

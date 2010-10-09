@@ -221,7 +221,7 @@ private:
 
 	const TEXT* lex_position();
 	dsql_nod* make_list (dsql_nod* node);
-	dsql_nod* make_parameter();
+	ParameterNode* make_parameter();
 	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
 	dsql_nod* makeClassNode(ExprNode* node);
 	dsql_nod* makeClassNode(DdlNode* node);

@@ -126,7 +126,6 @@ enum nod_t
 	nod_field,
 	nod_dom_value,
 	nod_field_name,
-	nod_parameter,
 	nod_constant,
 	nod_map,
 	nod_alias,
@@ -142,8 +141,6 @@ enum nod_t
 	nod_upcase,
 	nod_lowcase,
 	nod_collate,
-	nod_gen_id,
-	nod_gen_id2,
 	nod_get_segment,	// blobs
 	nod_put_segment,
 	nod_join_inner,	// join types
@@ -261,7 +258,7 @@ enum nod_t
  *	e_<nodename>_count	== count of arguments in nod_arg
  *	This is often used as the count of sub-nodes, but there
  *	are cases when non-DSQL_NOD arguments are stuffed into nod_arg
- *	entries.  These include nod_udf, nod_gen_id, nod_cast,
+ *	entries.  These include nod_udf, nod_cast,
  *	& nod_collate.
  */
 enum node_args {
@@ -357,10 +354,6 @@ enum node_args {
 	e_rows_skip = 0,		// nod_rows
 	e_rows_length,
 	e_rows_count,
-
-	e_par_index = 0,		// nod_parameter
-	e_par_parameter,
-	e_par_count,
 
 	e_cur_name = 0,			// nod_cursor
 	e_cur_scroll,
@@ -622,7 +615,7 @@ enum node_args {
 	e_filter_module,
 	e_filter_count,
 
-	e_gen_id_name = 0,		// Not a DSQL_NOD   nod_gen_id
+	e_gen_id_name = 0,		// Not a DSQL_NOD   nod_set_generator
 	e_gen_id_value,
 	e_gen_id_count,
 

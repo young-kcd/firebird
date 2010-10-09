@@ -1576,7 +1576,8 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 			csb->csb_dbg_info.argInfoToName.get(
 				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
 
-			csb->csb_map_item_info.put(Item(nod_argument, csb->csb_msg_number, index), itemInfo);
+			csb->csb_map_item_info.put(Item(Item::TYPE_PARAMETER, csb->csb_msg_number, index),
+				itemInfo);
 		}
 	}
 
@@ -1986,19 +1987,26 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 				Parameter* parameter = procedure->prc_input_fields[inputCount - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
-			else {
+			else
 				asgn->nod_arg[asgn_arg1] = PAR_parse_node(tdbb, csb, VALUE);
-			}
-			jrd_nod* prm = asgn->nod_arg[asgn_arg2] = PAR_make_node(tdbb, e_arg_length);
-			prm->nod_type = nod_argument;
-			prm->nod_count = 1;
-			prm->nod_arg[e_arg_message] = message;
-			prm->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
-			jrd_nod* prm_f = prm->nod_arg[e_arg_flag] = PAR_make_node(tdbb, e_arg_length);
-			prm_f->nod_type = nod_argument;
-			prm_f->nod_count = 0;
-			prm_f->nod_arg[e_arg_message] = message;
-			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
+
+			ParameterNode* paramNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramNode->message = message;
+			paramNode->argNumber = i++;
+
+			ParameterNode* paramFlagNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramFlagNode->message = message;
+			paramFlagNode->argNumber = i++;
+
+			jrd_nod* legacyNode = asgn->nod_arg[asgn_arg2] = PAR_make_node(tdbb, 1);
+			legacyNode->nod_type = nod_class_exprnode_jrd;
+			legacyNode->nod_count = 0;
+			legacyNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(paramNode);
+
+			legacyNode = paramNode->argFlag = PAR_make_node(tdbb, 1);
+			legacyNode->nod_type = nod_class_exprnode_jrd;
+			legacyNode->nod_count = 0;
+			legacyNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(paramFlagNode);
 		}
 	}
 	else if (input_flag ? inputCount : procedure->prc_output_fields.getCount())
@@ -2627,29 +2635,17 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 	}
 
-	case blr_gen_id:
 	case blr_set_generator:
 		{
 			Firebird::MetaName name;
-
 			PAR_name(csb, name);
+
 			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
-			if (tmp < 0) {
+			if (tmp < 0)
 				PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
-			}
+
 			node->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
-
-            // CVC: There're thousand ways to go wrong, but I don't see any value
-            // in posting dependencies with set generator since it's DDL, so I will
-            // track only gen_id() in both dialects.
-            if ((blr_operator == blr_gen_id) && (csb->csb_g_flags & csb_get_dependencies))
-			{
-				CompilerScratch::Dependency dependency(obj_generator);
-				dependency.number = tmp;
-				csb->csb_dependencies.push(dependency);
-            }
-
 		}
 		break;
 
@@ -2712,7 +2708,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			if (itemInfo.isSpecial())
 			{
 				csb->csb_dbg_info.varIndexToName.get(n, itemInfo.name);
-				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
+				csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, n), itemInfo);
 			}
 
 			if (itemInfo.explicitCollation)
@@ -2731,51 +2727,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			vec<jrd_nod*>* vector = csb->csb_variables;
 			if (!vector || n >= vector->count())
 				PAR_syntax_error(csb, "variable identifier");
-		}
-		break;
-
-	case blr_parameter:
-	case blr_parameter2:
-	case blr_parameter3:
-		{
-			jrd_nod* message = NULL;
-			n = (USHORT) csb->csb_blr_reader.getByte();
-			if (n >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[n].csb_message))
-			{
-				PAR_error(csb, Arg::Gds(isc_badmsgnum));
-			}
-			node->nod_arg[e_arg_message] = message;
-			n = csb->csb_blr_reader.getWord();
-			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			if (n >= format->fmt_count)
-				PAR_error(csb, Arg::Gds(isc_badparnum));
-			if (blr_operator != blr_parameter)
-			{
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_flag] = temp;
-				node->nod_count = 1;
-				temp->nod_count = 0;
-				temp->nod_type = nod_argument;
-				temp->nod_arg[e_arg_message] = message;
-				n = csb->csb_blr_reader.getWord();
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-				if (n >= format->fmt_count)
-					PAR_error(csb, Arg::Gds(isc_badparnum));
-			}
-			if (blr_operator == blr_parameter3)
-			{
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_indicator] = temp;
-				node->nod_count = 2;
-				temp->nod_count = 0;
-				temp->nod_type = nod_argument;
-				temp->nod_arg[e_arg_message] = message;
-				n = csb->csb_blr_reader.getWord();
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-				if (n >= format->fmt_count)
-					PAR_error(csb, Arg::Gds(isc_badparnum));
-			}
 		}
 		break;
 

@@ -169,7 +169,6 @@ static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
 static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
 static RelationSourceNode* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
 	SecurityClass::flags_t, jrd_rel*, USHORT);
-static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
 static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 
 #ifdef CMP_DEBUG
@@ -209,7 +208,7 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
 
-	if (node->nod_type == nod_argument)
+	if (ExprNode::is<ParameterNode>(node))
 		return node;
 
 	jrd_nod* clone = NodeCopier::copy(tdbb, csb, node, NULL);
@@ -486,7 +485,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 	case nod_prot_mask:
 	case nod_null:
 	case nod_count:
-	case nod_gen_id:
 	case nod_lock_state:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
@@ -561,14 +559,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 		desc->dsc_dtype = DEFAULT_DOUBLE;
 		desc->dsc_length = sizeof(double);
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_gen_id2:
-		desc->dsc_dtype = dtype_int64;
-		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_scale = 0;
 		desc->dsc_sub_type = 0;
 		desc->dsc_flags = 0;
@@ -683,14 +673,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 					desc->dsc_length += sizeof(USHORT);
 				}
 			}
-			return;
-		}
-
-	case nod_argument:
-		{
-			const jrd_nod* message = node->nod_arg[e_arg_message];
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			*desc = format->fmt_desc[(IPTR) node->nod_arg[e_arg_number]];
 			return;
 		}
 
@@ -1253,40 +1235,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		}
 		return node;
 
-	case nod_argument:
-		if (remapArgument())
-			return input;
-		node = PAR_make_node(tdbb, e_arg_length);
-		node->nod_count = input->nod_count;
-		node->nod_flags = input->nod_flags;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_arg_number] = input->nod_arg[e_arg_number];
-		// dimitr:	IMPORTANT!!!
-		//			nod_message copying must be done in the only place
-		//			(the nod_procedure code below). Hence we don't call
-		//			copy() here to keep argument->nod_arg[e_arg_message]
-		//			and procedure->nod_arg[e_prc_in_msg] in sync. The
-		//			message is passed to copy() as a parameter. If the
-		//			passed message is NULL, it means nod_argument is
-		//			cloned outside nod_procedure (e.g. in the optimizer)
-		//			and we must keep the input message.
-		// ASF: We should only use "message" if its number matches the number
-		// in nod_argument. If it don't, it may be an input parameter cloned
-		// in RseBoolNode::convertNeqAllToNotAny - see CORE-3094.
-
-		if (message &&
-			(IPTR) message->nod_arg[e_msg_number] ==
-				(IPTR) input->nod_arg[e_arg_message]->nod_arg[e_msg_number])
-		{
-			node->nod_arg[e_arg_message] = message;
-		}
-		else
-			node->nod_arg[e_arg_message] = input->nod_arg[e_arg_message];
-
-		node->nod_arg[e_arg_flag] = copy(tdbb, input->nod_arg[e_arg_flag]);
-		node->nod_arg[e_arg_indicator] = copy(tdbb, input->nod_arg[e_arg_indicator]);
-		return node;
-
 	case nod_assignment:
 		args = e_asgn_length;
 		break;
@@ -1384,15 +1332,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
 		return node;
 	}
-
-	case nod_gen_id:
-	case nod_gen_id2:			// 20001013 PJPG
-		node = PAR_make_node(tdbb, e_gen_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_gen_value] = copy(tdbb, input->nod_arg[e_gen_value]);
-		node->nod_arg[e_gen_id] = input->nod_arg[e_gen_id];
-		return (node);
 
 	case nod_cast:
 		node = PAR_make_node(tdbb, e_cast_length);
@@ -1671,22 +1610,23 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			{
 				// Make a gen_id(<generator name>, 1) expression.
 
-				jrd_nod* genNode = PAR_make_node(tdbb, e_gen_length);
-				genNode->nod_type = nod_gen_id;
-				genNode->nod_count = 1;
-
-				const SLONG tmp = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
-				genNode->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
+				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
+					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
+				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
 
 				const int count = lit_delta + (sizeof(SLONG) + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-				jrd_nod* literalNode = genNode->nod_arg[e_gen_value] = PAR_make_node(tdbb, count);
+				jrd_nod* literalNode = genNode->arg = PAR_make_node(tdbb, count);
 				literalNode->nod_type = nod_literal;
 				literalNode->nod_count = 0;
 				Literal* literal = (Literal*) literalNode;
 				literal->lit_desc.makeLong(0, (SLONG*) literal->lit_data);
 				*(SLONG*) literal->lit_data = 1;
 
-				node->nod_arg[e_asgn_from] = genNode;
+				jrd_nod* genNod = PAR_make_node(tdbb, 1);
+				genNod->nod_type = nod_class_exprnode_jrd;
+				genNod->nod_count = 0;
+				genNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(genNode);
+				node->nod_arg[e_asgn_from] = genNod;
 			}
 			else //if (value)
 			{
@@ -1917,9 +1857,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				PAR_syntax_error(csb, "variable identifier");
 			}
 		}
-		break;
-
-	case nod_argument:
 		break;
 
 	case nod_cast:
@@ -2249,11 +2186,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb, view);
 		break;
 
-	case nod_gen_id:
-	case nod_gen_id2:
-		node->nod_arg[e_gen_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_gen_value]);
-		return node;
-
 	case nod_rec_version:
 	case nod_dbkey:
 		{
@@ -2432,6 +2364,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	if (node->nod_type == nod_assignment)
 	{
 		sub = node->nod_arg[e_asgn_to];
+
 		switch (sub->nod_type)
 		{
 		case nod_field:
@@ -2451,11 +2384,16 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				ERR_post(Arg::Gds(isc_read_only_field));
 			}
 			break;
-		case nod_argument:
+
 		case nod_variable:
 		case nod_null:
-			// Nothing to do here
-			break;
+			break;	// Nothing to do here
+
+		case nod_class_exprnode_jrd:
+			if (ExprNode::is<ParameterNode>(sub))
+				break;	// Nothing to do here
+			// fall into
+
 		default:
 			ERR_post(Arg::Gds(isc_read_only_field));
 		}
@@ -3001,22 +2939,12 @@ static RelationSourceNode* pass1_update(thread_db* tdbb, CompilerScratch* csb, j
 }
 
 
-static jrd_nod* pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item& item)
+// Copy items' information into appropriate node.
+ItemInfo* CMP_pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item& item)
 {
-/**************************************
- *
- *	p a s s 2 _ v a l i d a t i o n
- *
- **************************************
- *
- * Functional description
- *	Copy items' information into appropriate node
- *
- **************************************/
 	ItemInfo itemInfo;
 	return csb->csb_map_item_info.get(item, itemInfo) ?
-		reinterpret_cast<jrd_nod*>(FB_NEW(*tdbb->getDefaultPool())
-			ItemInfo(*tdbb->getDefaultPool(), itemInfo)) : 0;
+		FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo) : NULL;
 }
 
 
@@ -3100,20 +3028,13 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		return node;
 
 	case nod_variable:
-		node->nod_arg[e_var_info] =
-			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]));
+		node->nod_arg[e_var_info] = reinterpret_cast<jrd_nod*>(CMP_pass2_validation(tdbb,
+			csb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_var_id])));
 		break;
 
 	case nod_init_variable:
-		node->nod_arg[e_init_var_info] =
-			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]));
-		break;
-
-	case nod_argument:
-		node->nod_arg[e_arg_info] =
-			pass2_validation(tdbb, csb, Item(nod_argument,
-				(IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-				(IPTR) node->nod_arg[e_arg_number]));
+		node->nod_arg[e_init_var_info] = reinterpret_cast<jrd_nod*>(CMP_pass2_validation(tdbb,
+			csb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_init_var_id])));
 		break;
 
 	default:
@@ -3279,7 +3200,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			break;
 		}
 
-	case nod_argument:
 	case nod_variable:
 		node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
 			sizeof(impure_value_ex) : sizeof(dsc));
@@ -3291,8 +3211,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_substr:
 	case nod_trim:
 	case nod_null:
-	case nod_gen_id:
-	case nod_gen_id2:
 	case nod_upcase:
 	case nod_lowcase:
 	case nod_prot_mask:

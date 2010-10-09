@@ -341,10 +341,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			return true;
 		}
 
-		case nod_gen_id:
-		case nod_gen_id2:
-			return node1->nod_arg[e_gen_id] == node2->nod_arg[e_gen_id];
-
 		case nod_upcase:
 		case nod_lowcase:
 			return OPT_expression_equal2(tdbb, csb, node1->nod_arg[0], node2->nod_arg[0], stream);
