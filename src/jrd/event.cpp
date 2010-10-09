@@ -79,25 +79,23 @@ void EventManager::init(Attachment* attachment)
 {
 	Database* dbb = attachment->att_database;
 	EventManager* eventMgr = dbb->dbb_event_mgr;
+
 	if (!eventMgr)
 	{
-		const Firebird::string id = dbb->getUniqueFileId();
+		const string id = dbb->getUniqueFileId();
 
-		Firebird::MutexLockGuard guard(g_mapMutex);
+		MutexLockGuard guard(g_mapMutex);
 
 		if (!g_emMap->get(id, eventMgr))
-		{
 			eventMgr = new EventManager(id, dbb->dbb_config);
-		}
 
 		fb_assert(eventMgr);
 
 		dbb->dbb_event_mgr = eventMgr;
 	}
 
-	if (!attachment->att_event_session) {
+	if (!attachment->att_event_session)
 		attachment->att_event_session = eventMgr->create_session();
-	}
 }
 
 

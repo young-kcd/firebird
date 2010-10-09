@@ -22,7 +22,7 @@
 #define EXPORT API_ROUTINE
 #else
 #define EXPORT
-#endif 
+#endif
 #define MATHERR	matherr
 
 #include <stdarg.h>
