@@ -1,3 +1,10 @@
+ 2010-10-08 11:58  hvlad 
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/jrd/jrd.cpp
+Backported fix for bug CORE-3170 : Engine could enter infinite loop if EVENT's are posted but no subscribers exists
+
  2010-10-07 16:14  hvlad 
    M src/utilities/ntrace/TracePluginImpl.cpp
 Backport fix for bug CORE-3168: exclude_filter doesn't work for <services></section> section of the Trace facility
