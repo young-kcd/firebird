@@ -1,7 +1,7 @@
 #ifndef GSEC_PROTO_H
 #define GSEC_PROTO_H
 
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 #include "../common/UtilSvc.h"
 
 // Output reporting utilities

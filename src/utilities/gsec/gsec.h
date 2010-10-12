@@ -24,8 +24,8 @@
 #ifndef UTILITIES_GSEC_H
 #define UTILITIES_GSEC_H
 
-#include "../jrd/ThreadData.h"
-#include "../jrd/jrd_pwd.h"
+#include "../common/ThreadData.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/constants.h"
 
 const USHORT GSEC_MSG_FAC	= 18;

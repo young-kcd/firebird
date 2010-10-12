@@ -30,12 +30,12 @@
 #include <stdarg.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/isc_f_proto.h"
+#include "../common/isc_f_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/gsec_proto.h"
-#include "../jrd/jrd_pwd.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../utilities/gsec/secur_proto.h"
@@ -43,7 +43,7 @@
 #include "../utilities/gsec/gsecswi.h"
 #include "../common/classes/ClumpletWriter.h"
 
-#include "../utilities/gsec/call_service.h"
+#include "../common/call_service.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 
