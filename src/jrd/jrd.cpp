@@ -419,6 +419,7 @@ namespace
 		{
 			currentProvider()->shutdown(5000, fb_shutrsn_exit_called);
 		}
+
 		UnloadHandler()
 		{
 			InstanceControl::registerShutdown(atExitShutdown);
@@ -803,7 +804,7 @@ static ISC_STATUS successful_completion(FbApi::Status* s, ISC_STATUS return_code
 	// Clear the status vector if it doesn't contain a warning
 	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || status[2] != isc_arg_warning)
 	{
-/*		if (return_code != FB_SUCCESS)
+		/*if (return_code != FB_SUCCESS)
 		{
 			s->set(Arg::Gds(return_code).value());
 		}
@@ -831,8 +832,10 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbApi::S
 		return vector->get()[1];
 	}
 
-	ISC_STATUS* const vectorStart = const_cast<ISC_STATUS*>(vector->get());		// OK as long as we do not change vectors length
-																				// for current way of keeping strings in vector!
+	// OK as long as we do not change vectors length
+	// for current way of keeping strings in vector!
+
+	ISC_STATUS* const vectorStart = const_cast<ISC_STATUS*>(vector->get());
 	ISC_STATUS* status = vectorStart;
 	Array<UCHAR*> buffers;
 
@@ -999,9 +1002,9 @@ void Provider::attachDatabase(FbApi::Attachment** handle,
 		bool invalid_client_SQL_dialect = false;
 		PathName file_name, expanded_name;
 		bool is_alias = false;
+
 		try
 		{
-
 			// Process database parameter block
 			options.get(dpb, dpb_length, invalid_client_SQL_dialect);
 
@@ -1082,8 +1085,8 @@ void Provider::attachDatabase(FbApi::Attachment** handle,
 
 		bool initing_security = false;
 
-		try {
-
+		try
+		{
 			// If database to be opened is security database, then only
 			// gsec or SecurityDatabase may open it. This protects from use
 			// of old gsec to write wrong password hashes into it.
@@ -1915,7 +1918,7 @@ void jrd_tra::commitRetaining(Status* user_status)
 
 
 FbApi::Request* Attachment::compileRequest(Status* user_status,
-											  unsigned int blr_length, const unsigned char* blr)
+	unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
  *
@@ -1927,6 +1930,7 @@ FbApi::Request* Attachment::compileRequest(Status* user_status,
  *
  **************************************/
 	JrdStatement* stmt = NULL;
+
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -1968,13 +1972,13 @@ FbApi::Request* Attachment::compileRequest(Status* user_status,
 	}
 
 	successful_completion(user_status);
+
 	return stmt;
 }
 
 
 FbApi::Blob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
-									 unsigned int bpb_length, const unsigned char* bpb,
-									 FbApi::Attachment* apiAtt)
+	unsigned int bpb_length, const unsigned char* bpb, FbApi::Attachment* apiAtt)
 {
 /**************************************
  *
@@ -1987,6 +1991,7 @@ FbApi::Blob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
  *
  **************************************/
 	blb* blob = NULL;
+
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -2018,12 +2023,14 @@ FbApi::Blob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
 	}
 
 	successful_completion(user_status);
+
 	return blob;
 }
 
 
-void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status, FB_API_HANDLE public_handle,
-							  const char* filename, unsigned int dpb_length, const unsigned char* dpb)
+void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status,
+	FB_API_HANDLE public_handle, const char* filename, unsigned int dpb_length,
+	const unsigned char* dpb)
 {
 /**************************************
  *
@@ -2382,13 +2389,13 @@ void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status, F
 	{
 		ex.stuffException(user_status);
 	}
+
 	*handle = NULL;
 }
 
 
-void Attachment::getInfo(Status* user_status,
-							unsigned int item_length, const unsigned char* items,
-							unsigned int buffer_length, unsigned char* buffer)
+void Attachment::getInfo(Status* user_status, unsigned int item_length, const unsigned char* items,
+	unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
  *
@@ -2656,7 +2663,7 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
  *	Abort a partially completed blob.
  *
  **************************************/
-	unsigned int l = 0;
+	unsigned int len = 0;
 
 	try
 	{
@@ -2668,36 +2675,34 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
 
 		try
 		{
-			l = BLB_get_segment(tdbb, this, buffer, buffer_length);
+			len = BLB_get_segment(tdbb, this, buffer, buffer_length);
 
-			if (blb_flags & BLB_eof) {
+			if (blb_flags & BLB_eof)
 				status_exception::raise(Arg::Gds(isc_segstr_eof));
-			}
-			else if (blb_fragment_size) {
+			else if (blb_fragment_size)
 				status_exception::raise(Arg::Gds(isc_segment));
-			}
 		}
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status);
-			return l;
+			return len;
 		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return l;
+		return len;
 	}
 
 	successful_completion(user_status);
-	return l;
+
+	return len;
 }
 
 
-int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id,
-						  unsigned int /*sdl_length*/, const unsigned char* sdl,
-						  unsigned int param_length, const unsigned char* param,
-						  int slice_length, unsigned char* slice, FbApi::Attachment* apiAtt)
+int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdl_length*/,
+	const unsigned char* sdl, unsigned int param_length, const unsigned char* param,
+	int slice_length, unsigned char* slice, FbApi::Attachment* apiAtt)
 {
 /**************************************
  *
@@ -2729,9 +2734,7 @@ int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id,
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 			if (!array_id->gds_quad_low && !array_id->gds_quad_high)
-			{
 				MOVE_CLEAR(slice, slice_length);
-			}
 			else
 			{
 				return_length = BLB_get_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
@@ -2751,13 +2754,13 @@ int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id,
 	}
 
 	successful_completion(user_status);
+
 	return return_length;
 }
 
 
-FbApi::Blob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id,
-								   unsigned int bpb_length, const unsigned char* bpb,
-								   FbApi::Attachment* apiAtt)
+FbApi::Blob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsigned int bpb_length,
+	const unsigned char* bpb, FbApi::Attachment* apiAtt)
 {
 /**************************************
  *
@@ -2769,7 +2772,7 @@ FbApi::Blob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id,
  *	Open an existing blob.
  *
  **************************************/
-	blb *blob = NULL;
+	blb* blob = NULL;
 
 	try
 	{
@@ -2803,12 +2806,12 @@ FbApi::Blob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id,
 	}
 
 	successful_completion(user_status);
+
 	return blob;
 }
 
 
-void jrd_tra::prepare(Status* user_status,
-						  unsigned int msg_length, const unsigned char* msg)
+void jrd_tra::prepare(Status* user_status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -2846,7 +2849,6 @@ void jrd_tra::prepare(Status* user_status,
 	}
 
 	successful_completion(user_status);
-	return;
 }
 
 
@@ -2890,11 +2892,9 @@ void blb::putSegment(Status* user_status, unsigned int buffer_length, const unsi
 }
 
 
-void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id,
-						   unsigned int /*sdlLength*/, const unsigned char* sdl,
-						   unsigned int paramLength, const unsigned char* param,
-						   int sliceLength, unsigned char* slice,
-						   FbApi::Attachment* apiAtt)
+void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdlLength*/,
+	const unsigned char* sdl, unsigned int paramLength, const unsigned char* param,
+	int sliceLength, unsigned char* slice, FbApi::Attachment* apiAtt)
 {
 /**************************************
  *
@@ -2943,7 +2943,7 @@ void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id,
 
 
 FbApi::Events* Attachment::queEvents(Status* user_status, FbApi::EventCallback* callback,
-										unsigned int length, const unsigned char* events)
+	unsigned int length, const unsigned char* events)
 {
 /**************************************
  *
@@ -2990,6 +2990,7 @@ FbApi::Events* Attachment::queEvents(Status* user_status, FbApi::EventCallback* 
 	}
 
 	successful_completion(user_status);
+
 	return ev;
 }
 
@@ -3038,9 +3039,8 @@ void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type
 }
 
 
-FbApi::Transaction* Attachment::reconnectTransaction(Status* user_status,
-														unsigned int length,
-														const unsigned char* id)
+FbApi::Transaction* Attachment::reconnectTransaction(Status* user_status, unsigned int length,
+	const unsigned char* id)
 {
 /**************************************
  *
@@ -3079,6 +3079,7 @@ FbApi::Transaction* Attachment::reconnectTransaction(Status* user_status,
 	}
 
 	successful_completion(user_status);
+
 	return tra;
 }
 
@@ -3123,9 +3124,8 @@ void JrdStatement::detach(Status* user_status)
 }
 
 
-void JrdStatement::getInfo(Status* user_status, int level,
-					  unsigned int itemsLength, const unsigned char* items,
-					  unsigned int bufferLength, unsigned char* buffer)
+void JrdStatement::getInfo(Status* user_status, int level, unsigned int itemsLength,
+	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
  *
@@ -3286,12 +3286,13 @@ int blb::seek(Status* user_status, int mode, int offset)
 	}
 
 	successful_completion(user_status);
+
 	return result;
 }
 
 
 void JrdStatement::send(Status* user_status, int level, unsigned int msg_type,
-				   unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -3348,11 +3349,12 @@ FbApi::Service* Provider::attachServiceManager(Status* user_status, const char* 
  *
  **************************************/
 	Svc* svc = NULL;
+
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		svc = new Svc (new Service(service_name, spbLength, spb));
+		svc = new Svc(new Service(service_name, spbLength, spb));
 	}
 	catch (const Exception& ex)
 	{
@@ -3361,6 +3363,7 @@ FbApi::Service* Provider::attachServiceManager(Status* user_status, const char* 
 	}
 
 	successful_completion(user_status);
+
 	return svc;
 }
 
@@ -3440,6 +3443,7 @@ void Svc::query(Status* user_status,
 			// If there is a status vector from a service thread, copy it into the thread status
 			size_t len, warning;
 			PARSE_STATUS(svc->getStatus(), len, warning);
+
 			if (len)
 			{
 				user_status->set(len, svc->getStatus());
@@ -3501,7 +3505,7 @@ void Svc::start(Status* user_status, unsigned int spbLength, const unsigned char
 
 
 void JrdStatement::startAndSend(Status* user_status, FbApi::Transaction* tra, int level,
-						   unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
+	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -3780,8 +3784,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
 */
 
 FbApi::Transaction* Attachment::startTransaction(Status* user_status,
-													unsigned int tpbLength, const unsigned char* tpb,
-													FB_API_HANDLE public_handle)
+	unsigned int tpbLength, const unsigned char* tpb, FB_API_HANDLE public_handle)
 {
 /**************************************
  *
@@ -3813,15 +3816,16 @@ FbApi::Transaction* Attachment::startTransaction(Status* user_status,
 	}
 
 	successful_completion(user_status);
+
 	return tra;
 }
 
 
 void jrd_tra::transactRequest(Status* user_status,
-								  unsigned int blr_length, const unsigned char* blr,
-								  unsigned int in_msg_length, const unsigned char* in_msg,
-								  unsigned int out_msg_length, unsigned char* out_msg,
-								  FbApi::Attachment* apiAtt)
+	unsigned int blr_length, const unsigned char* blr,
+	unsigned int in_msg_length, const unsigned char* in_msg,
+	unsigned int out_msg_length, unsigned char* out_msg,
+	FbApi::Attachment* apiAtt)
 {
 /**************************************
  *
@@ -3959,8 +3963,8 @@ void jrd_tra::transactRequest(Status* user_status,
 
 
 void jrd_tra::getInfo(Status* user_status,
-						  unsigned int itemsLength, const unsigned char* items,
-						  unsigned int bufferLength, unsigned char* buffer)
+	unsigned int itemsLength, const unsigned char* items,
+	unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
  *
@@ -4072,17 +4076,19 @@ FbApi::Statement* Attachment::allocateStatement(Status* user_status)
 	}
 
 	successful_completion(user_status);
+
 	return stmt;
 }
 
 
 FbApi::Transaction* dsql_req::executeMessage(Status* user_status, FbApi::Transaction* apiTra,
-						unsigned int in_blr_length, const unsigned char* in_blr,
-						unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
-						unsigned int out_blr_length, const unsigned char* out_blr,
-						unsigned int /*out_msg_type*/, unsigned int out_msg_length, unsigned char* out_msg)
+	unsigned int in_blr_length, const unsigned char* in_blr,
+	unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
+	unsigned int out_blr_length, const unsigned char* out_blr,
+	unsigned int /*out_msg_type*/, unsigned int out_msg_length, unsigned char* out_msg)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
+
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -4117,18 +4123,20 @@ FbApi::Transaction* dsql_req::executeMessage(Status* user_status, FbApi::Transac
 	}
 
 	successful_completion(user_status);
+
 	return tra;
 }
 
 
 FbApi::Transaction* Attachment::execute(Status* user_status, FbApi::Transaction* apiTra,
-						unsigned int length, const char* string, unsigned int dialect,
-						unsigned int in_blr_length, const unsigned char* in_blr,
-						unsigned int /*in_msg_type*/, unsigned int in_msg_length, const unsigned char* in_msg,
-						unsigned int out_blr_length, unsigned char* out_blr,
-						unsigned int /*out_msg_type*/, unsigned int out_msg_length, unsigned char* out_msg)
+	unsigned int length, const char* string, unsigned int dialect,
+	unsigned int in_blr_length, const unsigned char* in_blr,
+	unsigned int /*in_msg_type*/, unsigned int in_msg_length, const unsigned char* in_msg,
+	unsigned int out_blr_length, unsigned char* out_blr,
+	unsigned int /*out_msg_type*/, unsigned int out_msg_length, unsigned char* out_msg)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
+
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -4163,13 +4171,14 @@ FbApi::Transaction* Attachment::execute(Status* user_status, FbApi::Transaction*
 	}
 
 	successful_completion(user_status);
+
 	return tra;
 }
 
 
 int dsql_req::fetchMessage(Status* user_status,
-							unsigned int blr_length, const unsigned char* blr,
-							unsigned int /*msg_type*/, unsigned int msg_length, unsigned char* msg)
+	unsigned int blr_length, const unsigned char* blr,
+	unsigned int /*msg_type*/, unsigned int msg_length, unsigned char* msg)
 {
 	int return_code = 0;
 
@@ -4199,6 +4208,7 @@ int dsql_req::fetchMessage(Status* user_status,
 	}
 
 	successful_completion(user_status, return_code);
+
 	return return_code;
 }
 
@@ -4234,7 +4244,7 @@ void dsql_req::free(Status* user_status, unsigned int option)
 
 
 void dsql_req::insertMessage(Status* user_status, unsigned int blr_length, const unsigned char* blr,
-							  unsigned int /*msg_type*/, unsigned int msg_length, const unsigned char* msg)
+	unsigned int /*msg_type*/, unsigned int msg_length, const unsigned char* msg)
 {
 	try
 	{
@@ -4246,8 +4256,7 @@ void dsql_req::insertMessage(Status* user_status, unsigned int blr_length, const
 
 		try
 		{
-			DSQL_insert(tdbb, this, blr_length, blr,
-						/*msg_type,*/ msg_length, msg);
+			DSQL_insert(tdbb, this, blr_length, blr, /*msg_type,*/ msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -4338,8 +4347,8 @@ void dsql_req::setCursor(Status* user_status, const char* cursor, unsigned int /
 
 
 void dsql_req::getInfo(Status* user_status,
-						unsigned int item_length, const unsigned char* items,
-						unsigned int buffer_length, unsigned char* buffer)
+	unsigned int item_length, const unsigned char* items,
+	unsigned int buffer_length, unsigned char* buffer)
 {
 	try
 	{

@@ -75,6 +75,7 @@ int stopTimer(const int, const int mask, void*)
 		}
 		break;
 	}
+
 	return 0;
 }
 
@@ -113,6 +114,7 @@ int fb_alloc_timer()
 		Thread::start(threadTimer, 0, 0);
 		fb_shutdown_callback(0, stopTimer, fb_shut_preproviders | fb_shut_finish, 0);
 	}
+
 	return 1;
 }
 
@@ -125,6 +127,7 @@ void fb_thread_timer(int, int delay, FPTR_VOID_PTR function, void*)
 	{
 		cnt = 1;
 	}
+
 	toRun = function;
 }
 
@@ -213,11 +216,13 @@ SecurityDatabase SecurityDatabase::instance;
 void SecurityDatabase::fini()
 {
 	MutexLockGuard guard(mutex);
+
 	if (lookup_req)
 	{
 		isc_release_request(status, &lookup_req);
 		checkStatus("isc_release_request");
 	}
+
 	if (lookup_db)
 	{
 		isc_detach_database(status, &lookup_db);
@@ -271,7 +276,9 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 
 		if (!user.flag || status[1])
 			break;
+
 		found = true;
+
 		if (pwd)
 		{
 			strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
@@ -321,6 +328,7 @@ void SecurityDatabase::prepare()
 		// ignore status returned in order to keep first error
 		isc_detach_database(localStatus, &lookup_db);
 	}
+
 	checkStatus("isc_compile_request", isc_psw_attach);
 }
 
@@ -333,6 +341,7 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 								ClumpletReader& originalDpb)
 {
 	static AmCache useNative = AM_UNKNOWN;
+
 	if (useNative == AM_UNKNOWN)
 	{
 		// We use PathName for string comparison using platform filename comparison
@@ -340,12 +349,14 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 		const PathName authMethod(Config::getAuthMethod());
 		useNative = (authMethod == AmNative || authMethod == AmMixed) ? AM_ENABLED : AM_DISABLED;
 	}
+
 	if (useNative == AM_DISABLED)
 	{
 		return AUTH_CONTINUE;
 	}
 
 	string login, password, passwordEnc;
+
 	for (originalDpb.rewind(); !originalDpb.isEof(); originalDpb.moveNext())
 	{
 		switch (originalDpb.getClumpTag())

@@ -152,7 +152,7 @@ public:
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message) = 0;	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in) = 0;
-	virtual void insertMessage(Status* status, 
+	virtual void insertMessage(Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
 							   unsigned int msg_length, const unsigned char* message) = 0;
@@ -190,7 +190,7 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 //	virtual Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 // second form is tmp - not to rewrite external engines right now
-	virtual Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb, 
+	virtual Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api) = 0;
 	virtual Transaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id) = 0;
 	virtual Statement* allocateStatement(Status* status) = 0;

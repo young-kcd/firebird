@@ -139,6 +139,7 @@ namespace {
 		{
 			initialize();
 		}
+
 		~UdfDirectoryList()
 		{
 			printf("Destroyed directory list\n");

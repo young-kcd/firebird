@@ -255,8 +255,7 @@ enum nod_t
  *	e_<nodename>_count	== count of arguments in nod_arg
  *	This is often used as the count of sub-nodes, but there
  *	are cases when non-DSQL_NOD arguments are stuffed into nod_arg
- *	entries.  These include nod_udf, nod_cast,
- *	& nod_collate.
+ *	entries.  These include nod_udf, nod_cast and nod_collate.
  */
 enum node_args {
 	e_select_expr = 0,		// nod_select

@@ -1107,7 +1107,7 @@ namespace
 	class ProviderPtr		// this class may be treated as plain data
 	{
 	public:
-		ProviderPtr(FbApi::Provider* v, ModuleLoader::Module* m) 
+		ProviderPtr(FbApi::Provider* v, ModuleLoader::Module* m)
 			: p(v), mod(m) { }
 
 		FbApi::Provider* get() const
@@ -1682,8 +1682,7 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS * user_status,
-								  FB_API_HANDLE * tra_handle)
+ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* user_status, FB_API_HANDLE* tra_handle)
 {
 /**************************************
  *
@@ -1750,8 +1749,7 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS * user_status,
-											FB_API_HANDLE * tra_handle)
+ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* user_status, FB_API_HANDLE* tra_handle)
 {
 /**************************************
  *
@@ -1822,7 +1820,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
 		YEntry entryGuard(attachment);
 		nullCheck(req_handle, isc_bad_req_handle);
 
-		rq = attachment->handle->compileRequest(&status, blr_length, 
+		rq = attachment->handle->compileRequest(&status, blr_length,
 												reinterpret_cast<const unsigned char*>(blr));
 		if (!status.isSuccess())
 		{
@@ -4243,7 +4241,7 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* user_status,
 			if (sub->handle)
 			{
 				sub->handle->rollback(&status);
-				if ((!status.isSuccess()) && 
+				if ((!status.isSuccess()) &&
 				    ( !is_network_error(status) ||
 					 (transaction->flags & HANDLE_TRANSACTION_limbo) ) )
 				{
@@ -4332,7 +4330,7 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(request);
 
-		request->handle->send(&status, level, msg_type, msg_length, 
+		request->handle->send(&status, level, msg_type, msg_length,
 							  reinterpret_cast<const unsigned char*>(msg));
 	}
 	catch (const Exception& e)
@@ -4508,7 +4506,7 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS* user_status,
 		Service service = translate<CService>(handle);
 
 		service->handle->query(&status, send_item_length, reinterpret_cast<const unsigned char*>(send_items),
-							   recv_item_length, reinterpret_cast<const unsigned char*>(recv_items), 
+							   recv_item_length, reinterpret_cast<const unsigned char*>(recv_items),
 							   buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
 	catch (const Exception& e)
@@ -4687,7 +4685,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 			Transaction sub(new CTransaction(tra_handle, ~0));
 			sub->next = transaction;
 		}
-		else 
+		else
 		{
 			*tra_handle = transaction->public_handle;
 		}
@@ -4792,7 +4790,7 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* user_status,
 
 		transaction->handle->transactRequest(&status, blr_length, reinterpret_cast<unsigned char*>(blr),
 											 in_msg_length, reinterpret_cast<unsigned char*>(in_msg),
-											 out_msg_length, reinterpret_cast<unsigned char*>(out_msg), 
+											 out_msg_length, reinterpret_cast<unsigned char*>(out_msg),
 											 attachment->handle);
 	}
 	catch (const Exception& e)
@@ -4860,7 +4858,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* user_status,
 		Transaction transaction = translate<CTransaction>(tra_handle);
 		YEntry entryGuard(transaction);
 
-		if (transaction->handle) 
+		if (transaction->handle)
 		{
 			transaction->handle->getInfo(&status, item_length, items, buffer_length, buffer);
 		}
@@ -5330,7 +5328,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 			transaction->handle->createBlob(&status, blob_id, bpb_length, bpb, attachment->handle) :
 			transaction->handle->openBlob(&status, blob_id, bpb_length, bpb, attachment->handle);
 
-		if (!status.isSuccess()) 
+		if (!status.isSuccess())
 		{
 			return status[1];
 		}

@@ -149,11 +149,13 @@ void MemoryPool::cleanup()
 		defaultMemoryManager->~MemoryPool();
 		defaultMemoryManager = NULL;
 	}
+
 	if (default_stats_group)
 	{
 		default_stats_group->~MemoryStats();
 		default_stats_group = NULL;
 	}
+
 	if (cache_mutex)
 	{
 		cache_mutex->~Mutex();

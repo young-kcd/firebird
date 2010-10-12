@@ -117,7 +117,6 @@ public:
 class SecurityDatabaseServerInstance : public ServerInstance
 {
 public:
-
 	Result startAuthentication(bool isService, const char* dbName,
 							   const unsigned char* dpb, unsigned int dpbSize,
 							   WriterInterface* writerInterface);

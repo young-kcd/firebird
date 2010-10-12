@@ -799,6 +799,7 @@ rem_port::~rem_port()
 	--portCounter;
 #endif
 }
+
 /*
 void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
 {
@@ -817,6 +818,7 @@ ISC_STATUS* Rdb::get_status_vector() throw()
 	return rdb_async_thread_id == getThreadId() ? rdb_async_status_vector : rdb_status_vector;
 }
 */
+
 Rrq::~Rrq()
 {
 }

@@ -32,7 +32,7 @@
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceObjects.h"
 #include "../../common/os/path_utils.h"
-#include "../common/ScanDir.h"
+#include "../../common/ScanDir.h"
 
 #ifdef WIN_NT
 #include <process.h>

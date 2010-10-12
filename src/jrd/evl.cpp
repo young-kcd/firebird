@@ -220,6 +220,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 	default:
 		BUGCHECK(229);			// msg 229 EVL_assign_to: invalid operation
 	}
+
 	return NULL;
 }
 

@@ -504,7 +504,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 
 rem_port* INET_connect(const TEXT* name,
 					   PACKET* packet,
-					   USHORT flag, 
+					   USHORT flag,
 					   Firebird::ClumpletReader* dpb)
 {
 /**************************************

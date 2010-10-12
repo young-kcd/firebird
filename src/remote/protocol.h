@@ -397,7 +397,7 @@ typedef struct bid	// BLOB ID
 	ULONG	bid_quad_high;
 	ULONG	bid_quad_low;
 
-	bid& operator=(const ISC_QUAD& v)
+	bid& operator =(const ISC_QUAD& v)
 	{
 		bid_quad_high = v.gds_quad_high;
 		bid_quad_low = v.gds_quad_low;

@@ -148,8 +148,8 @@ public:
 
 
 // Serialize exception into status_vector
-ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw();
-ISC_STATUS stuff_exception(FbApi::Status *status, const Firebird::Exception& ex) throw();
+ISC_STATUS stuff_exception(ISC_STATUS* status_vector, const Firebird::Exception& ex) throw();
+ISC_STATUS stuff_exception(FbApi::Status* status, const Firebird::Exception& ex) throw();
 
 // Put status vector strings into strings buffer
 void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr = getThreadId()) throw();

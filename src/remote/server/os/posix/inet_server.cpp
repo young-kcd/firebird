@@ -424,7 +424,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 } // extern "C"
 
 
-static void set_signal( int signal_number, void (*handler) (int))
+static void set_signal(int signal_number, void (*handler) (int))
 {
 /**************************************
  *

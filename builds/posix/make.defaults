@@ -91,9 +91,8 @@ CXXFLAGS:= $(CXXFLAGS) $(GLOB_OPTIONS)
 
 #____________________________________________________________________________
 
+# If this is defined then we use special rules useful for developers only
 IsDeveloper = @DEVEL_FLG@
-              # If this is defined then we use special rules
-              # useful for developers only
 
 CpuType=@CPU_TYPE@
 

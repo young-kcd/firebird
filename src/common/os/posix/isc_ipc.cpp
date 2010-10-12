@@ -119,7 +119,7 @@ namespace {
 	public:
 		Firebird::Mutex mutex;
 
-		explicit SignalMutex(Firebird::MemoryPool&) 
+		explicit SignalMutex(Firebird::MemoryPool&)
 		{
 			sigActive = true;
 		}
@@ -128,7 +128,7 @@ namespace {
 			Firebird::MutexLockGuard guard(mutex);
 			sigActive = false;
 
-			for (SIG sig = signals; sig;) 
+			for (SIG sig = signals; sig;)
 			{
 				SIG sig2 = sig;
 				sig = sig->sig_next;

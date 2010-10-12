@@ -43,7 +43,7 @@ namespace Jrd {
 
 void jrd_vtof(const char*, char*, SSHORT);
 
-namespace FbApi 
+namespace FbApi
 {
 	class Provider;
 }

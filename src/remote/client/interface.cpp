@@ -191,12 +191,12 @@ public:
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice,
 						  FbApi::Attachment* att = 0);
-	virtual void transactRequest(Status* status, 
+	virtual void transactRequest(Status* status,
 								 unsigned int blr_length, const unsigned char* blr,
 								 unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_msg_length, unsigned char* out_msg,
 								 FbApi::Attachment* att = 0);
-	virtual void prepare(Status* status, 
+	virtual void prepare(Status* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
 	virtual void ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
 	virtual void commit(Status* status);
@@ -261,7 +261,7 @@ public:
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void insertMessage(Status* status, 
+	virtual void insertMessage(Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
 							   unsigned int msg_length, const unsigned char* message);
@@ -359,12 +359,12 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer);
 //	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb, 
+	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api);
 	virtual FbApi::Transaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
 	virtual FbApi::Statement* allocateStatement(Status* status);
 	virtual FbApi::Request* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* transaction, 
+	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_blr_length, const unsigned char* in_blr,
 								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
@@ -740,7 +740,7 @@ void Events::cancel(Status* status)
 
 		// Make sure protocol supports action
 
-		if (port->port_protocol < PROTOCOL_VERSION6) 
+		if (port->port_protocol < PROTOCOL_VERSION6)
 		{
 			unsupported();
 		}
@@ -2493,7 +2493,7 @@ void Statement::getInfo(Status* status,
 
 		// make sure the protocol supports it
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7) 
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
 		{
 			unsupported();
 		}
@@ -2903,8 +2903,7 @@ FbApi::Blob* Transaction::openBlob(Status* status, ISC_QUAD* id,
 }
 
 
-void Transaction::prepare(Status* status,
-						  unsigned int msg_length, const unsigned char* msg)
+void Transaction::prepare(Status* status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -2932,7 +2931,7 @@ void Transaction::prepare(Status* status,
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4)
 		{
-			if (msg_length) 
+			if (msg_length)
 			{
 				unsupported();
 			}
@@ -3387,8 +3386,7 @@ void Request::receive(Status* status, int level, unsigned int msg_type,
 
 
 FbApi::Transaction* Attachment::reconnectTransaction(Status* status,
-													 unsigned int length,
-													 const unsigned char* id)
+	unsigned int length, const unsigned char* id)
 {
 /**************************************
  *
@@ -3946,7 +3944,7 @@ void Service::start(Status* status,
 
 		// make sure the protocol supports it
 
-		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8) 
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION8)
 		{
 			unsupported();
 		}
@@ -4899,7 +4897,7 @@ static void batch_gds_receive(rem_port*		port,
 
 	// always clear the complete queue for XNET, as we might
 	// have incomplete packets
-	if (id != request->rrq_id || port->port_type == rem_port::XNET) 
+	if (id != request->rrq_id || port->port_type == rem_port::XNET)
 	{
 		clear_queue = true;
 	}
@@ -4925,7 +4923,7 @@ static void batch_gds_receive(rem_port*		port,
 
 			// Walk the que until we find the predecessor of message
 
-			while (message->msg_next != new_msg->msg_next) 
+			while (message->msg_next != new_msg->msg_next)
 			{
 				message = message->msg_next;
 			}
@@ -5458,7 +5456,7 @@ namespace
 
 
 
-static void init(Status* status, 
+static void init(Status* status,
 				 rem_port* port,
 				 P_OP op,
 				 PathName& file_name,

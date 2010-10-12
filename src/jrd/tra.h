@@ -335,12 +335,12 @@ public:
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice,
 						  FbApi::Attachment* att = 0);
-	virtual void transactRequest(Status* status, 
+	virtual void transactRequest(Status* status,
 								 unsigned int blr_length, const unsigned char* blr,
 								 unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_msg_length, unsigned char* out_msg,
 								 FbApi::Attachment* att = 0);
-	virtual void prepare(Status* status, 
+	virtual void prepare(Status* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
 	virtual void ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
 	virtual void commit(Status* status);

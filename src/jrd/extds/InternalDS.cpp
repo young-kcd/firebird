@@ -117,7 +117,9 @@ class IntStatus : public LocalStatus
 {
 public:
 	IntStatus(ISC_STATUS *p)
-		: LocalStatus(), v(p) { }
+		: LocalStatus(), v(p)
+	{}
+
 	~IntStatus()
 	{
 		if (v)
@@ -126,6 +128,7 @@ public:
 			fb_utils::copyStatus(v, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
 		}
 	}
+
 private:
 	ISC_STATUS *v;
 };
@@ -163,9 +166,10 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 			currentProvider()->attachDatabase(&a, &status, 0, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
-		if (!status.isSuccess()) {
+
+		if (!status.isSuccess())
 			raise(status, tdbb, "attach");
-		}
+
 		m_attachment = reinterpret_cast<Jrd::Attachment*>(a);
 	}
 
@@ -196,6 +200,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 		{
 			status.init();
 		}
+
 		if (!status.isSuccess())
 		{
 			m_attachment = att;
@@ -359,6 +364,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	jrd_tra* tran = getIntTransaction()->getJrdTran();
 
 	LocalStatus status;
+
 	if (!m_request)
 	{
 		fb_assert(!m_allocated);
@@ -366,9 +372,9 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_request = reinterpret_cast<Jrd::dsql_req*>(att->allocateStatement(&status));
 		m_allocated = (m_request != 0);
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_allocate_statement", &sql);
-	}
 
 	{
 		EngineCallbackGuard guard(tdbb, *this);
@@ -403,14 +409,14 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		}
 
 		m_request = reinterpret_cast<Jrd::dsql_req*>(m_request->
-						prepare(&status, tran, sql.length(), sql.c_str(), 
+						prepare(&status, tran, sql.length(), sql.c_str(),
 								m_connection.getSqlDialect(), 0, NULL, 0, NULL));
 
 		tran->tra_caller_name = save_caller_name;
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_prepare", &sql);
-	}
 
 	const DsqlCompiledStatement* statement = m_request->getStatement();
 
@@ -495,9 +501,8 @@ void InternalStatement::doExecute(thread_db* tdbb)
 			0, m_out_buffer.getCount(), m_out_buffer.begin());
 	}
 
-	if (!status.isSuccess()) {
+	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_execute");
-	}
 }
 
 
@@ -514,9 +519,8 @@ void InternalStatement::doOpen(thread_db* tdbb)
 			0, NULL, 0, 0, NULL);
 	}
 
-	if (!status.isSuccess()) {
+	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_execute");
-	}
 }
 
 
@@ -530,9 +534,9 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 			m_outBlr.getCount(), m_outBlr.begin(), 0,
 			m_out_buffer.getCount(), m_out_buffer.begin());
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_fetch");
-	}
 
 	return (res != 100);
 }
@@ -550,6 +554,7 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 			m_request = NULL;
 		}
 	}
+
 	if (!status.isSuccess())
 	{
 		m_allocated = m_request = 0;
@@ -609,12 +614,13 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = reinterpret_cast<Jrd::blb*>(transaction->
-								openBlob(&status, &m_blob_id, bpb_len, bpb_buff, att));
+		m_blob = reinterpret_cast<Jrd::blb*>(
+			transaction->openBlob(&status, &m_blob_id, bpb_len, bpb_buff, att));
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		m_connection.raise(status, tdbb, "jrd8_open_blob2");
-	}
+
 	fb_assert(m_blob);
 }
 
@@ -638,9 +644,10 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 			bpb_len, bpb_buff, att));
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		m_connection.raise(status, tdbb, "jrd8_create_blob2");
-	}
+
 	fb_assert(m_blob);
 }
 
@@ -654,6 +661,7 @@ USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 		EngineCallbackGuard guard(tdbb, m_connection);
 		result = m_blob->getSegment(&status, len, buff);
 	}
+
 	switch (status.get()[1])
 	{
 	case isc_segstr_eof:
@@ -678,9 +686,9 @@ void InternalBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 		EngineCallbackGuard guard(tdbb, m_connection);
 		m_blob->putSegment(&status, len, buff);
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		m_connection.raise(status, tdbb, "jrd8_put_segment");
-	}
 }
 
 void InternalBlob::close(thread_db* tdbb)
@@ -691,9 +699,10 @@ void InternalBlob::close(thread_db* tdbb)
 		EngineCallbackGuard guard(tdbb, m_connection);
 		m_blob->close(&status);
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		m_connection.raise(status, tdbb, "jrd8_close_blob");
-	}
+
 	fb_assert(!m_blob);
 }
 
@@ -708,9 +717,10 @@ void InternalBlob::cancel(thread_db* tdbb)
 		EngineCallbackGuard guard(tdbb, m_connection);
 		m_blob->cancel(&status);
 	}
-	if (!status.isSuccess()) {
+
+	if (!status.isSuccess())
 		m_connection.raise(status, tdbb, "jrd8_cancel_blob");
-	}
+
 	fb_assert(!m_blob);
 }
 

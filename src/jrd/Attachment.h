@@ -226,12 +226,12 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer);
 //	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb, 
+	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api);
 	virtual FbApi::Transaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
 	virtual FbApi::Statement* allocateStatement(Status* status);
 	virtual FbApi::Request* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* transaction, 
+	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_blr_length, const unsigned char* in_blr,
 								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,

@@ -72,7 +72,7 @@ private:
 	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
 };
 
-class LocalStatus : public Firebird::BaseStatus
+class LocalStatus : public BaseStatus
 {
 public:
 	virtual void release()

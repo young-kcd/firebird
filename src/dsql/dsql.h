@@ -602,7 +602,7 @@ public:
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void insertMessage(Status* status, 
+	virtual void insertMessage(Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
 							   unsigned int msg_length, const unsigned char* message);

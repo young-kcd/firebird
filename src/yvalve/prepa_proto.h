@@ -28,4 +28,3 @@ bool PREPARSE_execute(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT, const
 	bool*, USHORT);
 
 #endif //  DSQL_PREPA_PROTO_H
-
