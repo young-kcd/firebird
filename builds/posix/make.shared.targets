@@ -61,7 +61,7 @@ $(SRC_ROOT)/gpre/gpre_meta.cpp:  $(SRC_ROOT)/gpre/gpre_meta.epp
 $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
 # Explicit dependence on generated header (parser)
-$(OBJ)/dsql/Parser.o $(OBJ)/dsql/keywords.o $(OBJ)/dsql/dsql.o:	$(SRC_ROOT)/include/gen/parse.h
+$(OBJ)/dsql/Parser.o $(OBJ)/yvalve/keywords.o $(OBJ)/dsql/dsql.o:	$(SRC_ROOT)/include/gen/parse.h
 
 $(OBJ)/dsql/AggNodes.o:		$(SRC_ROOT)/include/gen/blrtable.h
 $(OBJ)/dsql/ExprNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h
