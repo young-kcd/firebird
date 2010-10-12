@@ -30,15 +30,7 @@
 #include <string.h>
 #endif
 
-#include "../dsql/Nodes.h"
-#include "../dsql/AggNodes.h"
-#include "../dsql/DdlNodes.h"
-#include "../dsql/BoolNodes.h"
-#include "../dsql/ExprNodes.h"
-#include "../dsql/PackageNodes.h"
-#include "../dsql/StmtNodes.h"
-#include "../dsql/WinNodes.h"
-#include "../common/classes/Nullable.h"
+#define _yacc_defines_yystype
 #include "gen/parse.h"
 #include "keywords.h"
 
