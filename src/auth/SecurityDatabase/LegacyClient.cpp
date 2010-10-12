@@ -33,7 +33,7 @@
 namespace {
 #ifndef WIN_NT
 	char name[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, name> client;
+	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, 200, name> client;
 #endif
 }
 

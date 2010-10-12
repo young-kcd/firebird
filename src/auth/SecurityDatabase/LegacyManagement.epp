@@ -29,10 +29,10 @@
 #include <ctype.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/jrd_pwd.h"
-#include "../jrd/enc_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../common/enc_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/init.h"
@@ -40,7 +40,8 @@
 #include "../auth/SecurityDatabase/LegacyManagement.h"
 #include "../common/classes/ImplementHelper.h"
 
-DATABASE DB = STATIC FILENAME "security2.fdb";
+// Here we use version-independent symbolic link (or copy) of actual database
+DATABASE DB = STATIC FILENAME "security.fdb";
 
 namespace {
 
@@ -49,7 +50,7 @@ Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre gen
 // register plugin
 #ifndef WIN_NT
 char name[] = "LEGACY_AUTH";
-Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, name> manage;
+Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, 0, name> manage;
 #endif
 
 bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
