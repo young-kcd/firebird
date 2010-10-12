@@ -27,7 +27,7 @@
 #ifndef NBK_PROTO_H
 #define NBK_PROTO_H
 
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 #include "../common/UtilSvc.h"
 
 void nbackup(Firebird::UtilSvc*);

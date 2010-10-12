@@ -30,12 +30,12 @@
 
 #include "firebird.h"
 #include "../jrd/jrd.h"
-#include "../jrd/intlobj_new.h"
+#include "../common/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../jrd/unicode_util.h"
-#include "../jrd/CsConvert.h"
-#include "../jrd/CharSet.h"
-#include "../jrd/TextType.h"
+#include "../common/unicode_util.h"
+#include "../common/CsConvert.h"
+#include "../common/CharSet.h"
+#include "../common/TextType.h"
 
 namespace Jrd {
 
@@ -61,15 +61,16 @@ protected:
 	TextType* textType;
 };
 
-class BaseSubstringSimilarMatcher : public PatternMatcher
+class BaseSimilarToMatcher : public PatternMatcher
 {
 public:
-	BaseSubstringSimilarMatcher(MemoryPool& pool, TextType* ttype)
+	BaseSimilarToMatcher(MemoryPool& pool, TextType* ttype)
 		: PatternMatcher(pool, ttype)
 	{
 	}
 
-	virtual void getResultInfo(unsigned* start, unsigned* length) = 0;
+	virtual unsigned getNumBranches() = 0;
+	virtual void getBranchInfo(unsigned n, unsigned* start, unsigned* length) = 0;
 };
 
 class NullStrConverter

@@ -39,8 +39,8 @@
 #include "../gpre/gpre_meta.h"
 #include "../gpre/movg_proto.h"
 #include "../gpre/par_proto.h"
-#include "../gpre/prett_proto.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/prett_proto.h"
+#include "../common/dsc_proto.h"
 #include "../gpre/msc_proto.h"
 #include "../jrd/align.h"
 

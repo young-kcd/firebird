@@ -109,7 +109,7 @@ void StatusHolder::clear()
 			break;
 		}
 	}
-	memset(m_status_vector, 0, sizeof(m_status_vector));
+	fb_utils::init_status(m_status_vector);
 	m_raised = false;
 }
 

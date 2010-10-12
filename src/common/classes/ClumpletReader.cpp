@@ -34,7 +34,7 @@
 #include "../jrd/ibase.h"
 
 #ifdef DEBUG_CLUMPLETS
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include <ctype.h>
 
 namespace Firebird {

@@ -37,7 +37,7 @@
 #include "../qli/gener_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/mov_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef DEV_BUILD

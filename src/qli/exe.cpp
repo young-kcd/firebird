@@ -27,7 +27,7 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
-#include "../jrd/why_proto.h"
+#include "../yvalve/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -38,8 +38,8 @@
 #include "../qli/forma_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/repor_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/utl_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../yvalve/utl_proto.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
 

@@ -24,9 +24,7 @@
 #define JRD_RECORD_SOURCE_H
 
 #include "../common/classes/array.h"
-#include "../common/classes/objects_array.h"
 #include "../common/classes/NestConst.h"
-#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/inf_pub.h"
@@ -38,7 +36,6 @@ namespace Jrd
 	class jrd_nod;
 	class jrd_prc;
 	class AggNode;
-	class BoolExprNode;
 	class Sort;
 	class CompilerScratch;
 	class RecordBuffer;
@@ -49,6 +46,8 @@ namespace Jrd
 	struct win;
 	class BaseBufferedStream;
 	class BufferedStream;
+
+	typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamsArray;
 
 	// Abstract base class
 
@@ -98,7 +97,7 @@ namespace Jrd
 
 		static void dumpName(thread_db* tdbb, const Firebird::string& name,
 			Firebird::UCharBuffer& buffer);
-		static void dumpInversion(thread_db* tdbb, const InversionNode* inversion,
+		static void dumpInversion(thread_db* tdbb, const jrd_nod* inversion,
 			Firebird::UCharBuffer& buffer);
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
@@ -114,7 +113,7 @@ namespace Jrd
 	class RecordStream : public RecordSource
 	{
 	public:
-		RecordStream(CompilerScratch* csb, UCHAR stream, const Format* format = NULL);
+		RecordStream(CompilerScratch* csb, UCHAR stream, Format* format = NULL);
 
 		virtual bool refetchRecord(thread_db* tdbb) const;
 		virtual bool lockRecord(thread_db* tdbb) const;
@@ -160,7 +159,7 @@ namespace Jrd
 
 	public:
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-			InversionNode* inversion);
+			jrd_nod* inversion);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -171,7 +170,7 @@ namespace Jrd
 
 	private:
 		const Firebird::string m_name;
-		NestConst<InversionNode> const m_inversion;
+		NestConst<jrd_nod> const m_inversion;
 	};
 
 	class IndexTableScan : public RecordStream
@@ -193,7 +192,7 @@ namespace Jrd
 
 	public:
 		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-			InversionNode* index, USHORT keyLength);
+			jrd_nod* index, USHORT keyLength);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -202,7 +201,7 @@ namespace Jrd
 
 		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
 
-		void setInversion(InversionNode* inversion)
+		void setInversion(jrd_nod* inversion)
 		{
 			fb_assert(!m_inversion);
 			m_inversion = inversion;
@@ -219,8 +218,8 @@ namespace Jrd
 		bool setupBitmaps(thread_db* tdbb, Impure* impure) const;
 
 		const Firebird::string m_name;
-		NestConst<InversionNode> const m_index;
-		NestConst<InversionNode> m_inversion;
+		NestConst<jrd_nod> const m_index;
+		NestConst<jrd_nod> m_inversion;
 		const size_t m_length;
 		size_t m_offset;
 	};
@@ -280,7 +279,7 @@ namespace Jrd
 
 	public:
 		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-					  const jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
+					  jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -423,7 +422,7 @@ namespace Jrd
 	class FilteredStream : public RecordSource
 	{
 	public:
-		FilteredStream(CompilerScratch* csb, RecordSource* next, BoolExprNode* boolean);
+		FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod* boolean);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -442,7 +441,7 @@ namespace Jrd
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
 
-		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		void setAnyBoolean(jrd_nod* anyBoolean, bool ansiAny, bool ansiNot)
 		{
 			fb_assert(!m_anyBoolean);
 			m_anyBoolean = anyBoolean;
@@ -456,8 +455,8 @@ namespace Jrd
 		bool evaluateBoolean(thread_db* tdbb) const;
 
 		NestConst<RecordSource> m_next;
-		NestConst<BoolExprNode> const m_boolean;
-		NestConst<BoolExprNode> m_anyBoolean;
+		NestConst<jrd_nod> const m_boolean;
+		NestConst<jrd_nod> m_anyBoolean;
 		bool m_ansiAny;
 		bool m_ansiAll;
 		bool m_ansiNot;
@@ -559,8 +558,8 @@ namespace Jrd
 	class SlidingWindow
 	{
 	public:
-		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
-			const LegacyNodeArray* aGroup, jrd_req* aRequest);
+		SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream, const jrd_nod* aGroup,
+			jrd_req* aRequest);
 		~SlidingWindow();
 
 		bool move(SINT64 delta);
@@ -568,7 +567,7 @@ namespace Jrd
 	private:
 		thread_db* tdbb;
 		const BaseBufferedStream* const stream;
-		const LegacyNodeArray* group;
+		const jrd_nod* group;
 		jrd_req* request;
 		Firebird::Array<impure_value> partitionKeys;
 		bool moved;
@@ -592,11 +591,11 @@ namespace Jrd
 		};
 
 	public:
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
-			const MapNode* map, BaseBufferedStream* next, const LegacyNodeArray* order);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* const map, BaseBufferedStream* next, jrd_nod* order);
 
-		AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
-			const MapNode* map, RecordSource* next);
+		AggregatedStream(CompilerScratch* csb, UCHAR stream, jrd_nod* const group,
+			jrd_nod* const map, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -620,17 +619,16 @@ namespace Jrd
 
 		NestConst<BaseBufferedStream> m_bufferedStream;
 		NestConst<RecordSource> m_next;
-		const LegacyNodeArray* const m_group;
-		const MapNode* const m_map;
-		const LegacyNodeArray* const m_order;
+		NestConst<jrd_nod> const m_group;
+		NestConst<jrd_nod> const m_map;
+		NestConst<jrd_nod> const m_order;
 		Firebird::Array<const jrd_nod*> m_winPassMap;
 	};
 
 	class WindowedStream : public RecordSource
 	{
 	public:
-		WindowedStream(CompilerScratch* csb,
-			Firebird::ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next);
+		WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, RecordSource* next);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -733,7 +731,7 @@ namespace Jrd
 	public:
 		NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource* const* args);
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-					   BoolExprNode* boolean, bool semiJoin, bool antiJoin);
+					   jrd_nod* boolean, bool semiJoin, bool antiJoin);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -759,7 +757,7 @@ namespace Jrd
 		const bool m_semiJoin;
 		const bool m_antiJoin;
 		Firebird::Array<NestConst<RecordSource> > m_args;
-		NestConst<BoolExprNode> const m_boolean;
+		NestConst<jrd_nod> const m_boolean;
 	};
 
 	class FullOuterJoin : public RecordSource
@@ -800,7 +798,7 @@ namespace Jrd
 
 	public:
 		HashJoin(CompilerScratch* csb, size_t count,
-				 RecordSource* const* args, const LegacyNodeArray* const* keys);
+				 RecordSource* const* args, jrd_nod* const* keys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -820,15 +818,14 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-			const LegacyNodeArray* keys) const;
+		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table, const jrd_nod* keys) const;
 		bool compareKeys(thread_db* tdbb, jrd_req* request) const;
 		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const;
 
 		NestConst<RecordSource> m_leader;
-		const LegacyNodeArray* m_leaderKeys;
+		NestConst<jrd_nod> m_leaderKeys;
 		Firebird::Array<NestConst<BufferedStream> > m_args;
-		Firebird::Array<const LegacyNodeArray*> m_keys;
+		Firebird::Array<NestConst<jrd_nod> > m_keys;
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;
@@ -865,8 +862,7 @@ namespace Jrd
 
 	public:
 		MergeJoin(CompilerScratch* csb, size_t count,
-				  SortedStream* const* args,
-				  const LegacyNodeArray* const* keys);
+				  SortedStream* const* args, jrd_nod* const* keys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -886,14 +882,13 @@ namespace Jrd
 		void restoreRecords(thread_db* tdbb) const;
 
 	private:
-		int compare(thread_db* tdbb, const LegacyNodeArray* node1,
-			const LegacyNodeArray* node2) const;
+		int compare(thread_db* tdbb, const jrd_nod* node1, const jrd_nod* node2) const;
 		UCHAR* getData(thread_db* tdbb, MergeFile* mfb, SLONG record) const;
 		SLONG getRecord(thread_db* tdbb, size_t index) const;
 		bool fetchRecord(thread_db* tdbb, size_t index) const;
 
 		Firebird::Array<NestConst<SortedStream> > m_args;
-		Firebird::Array<const LegacyNodeArray*> m_keys;
+		Firebird::Array<NestConst<jrd_nod> > m_keys;
 	};
 
 	class Union : public RecordStream
@@ -905,7 +900,7 @@ namespace Jrd
 
 	public:
 		Union(CompilerScratch* csb, UCHAR stream,
-			  size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
+			  size_t argCount, RecordSource* const* args, jrd_nod* const* maps,
 			  size_t streamCount, const UCHAR* streams);
 
 		void open(thread_db* tdbb) const;
@@ -922,7 +917,7 @@ namespace Jrd
 
 	private:
 		Firebird::Array<NestConst<RecordSource> > m_args;
-		Firebird::Array<NestConst<MapNode> > m_maps;
+		Firebird::Array<NestConst<jrd_nod> > m_maps;
 		StreamsArray m_streams;
 	};
 
@@ -943,7 +938,7 @@ namespace Jrd
 	public:
 		RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapStream,
 					    RecordSource* root, RecordSource* inner,
-					    const MapNode* rootMap, const MapNode* innerMap,
+					    jrd_nod* rootMap, jrd_nod* innerMap,
 					    size_t streamCount, const UCHAR* innerStreams,
 					    size_t saveOffset);
 
@@ -963,8 +958,8 @@ namespace Jrd
 		const UCHAR m_mapStream;
 		NestConst<RecordSource> m_root;
 		NestConst<RecordSource> m_inner;
-		const MapNode* const m_rootMap;
-		const MapNode* const m_innerMap;
+		NestConst<jrd_nod> const m_rootMap;
+		NestConst<jrd_nod> const m_innerMap;
 		StreamsArray m_innerStreams;
 		const size_t m_saveOffset;
 		size_t m_saveSize;

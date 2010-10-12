@@ -36,7 +36,7 @@ using namespace Jrd;
 // ---------------------------------------------
 
 BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
-			InversionNode* inversion)
+			jrd_nod* inversion)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_inversion(inversion)
 {
 	fb_assert(m_inversion);

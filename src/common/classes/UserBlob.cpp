@@ -24,7 +24,7 @@
 #include "UserBlob.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 static const USHORT SEGMENT_LIMIT = 65535;
 //static SLONG fb_vax_integer(const UCHAR* ptr, int length);

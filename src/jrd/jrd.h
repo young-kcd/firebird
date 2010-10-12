@@ -33,7 +33,7 @@
 
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/obj.h"
@@ -42,27 +42,29 @@
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/NestConst.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/utils_proto.h"
+#include "../common/StatusHolder.h"
 #include "../jrd/RandomGenerator.h"
-#include "../jrd/os/guid.h"
+#include "../common/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/scl.h"
 #include "../jrd/Routine.h"
 #include "../jrd/ExtEngineManager.h"
+#include "ProviderInterface.h"
 
 #ifdef DEV_BUILD
-#define DEBUG                   if (debug) DBG_supervisor(debug);
+//#define DEBUG                   if (debug) DBG_supervisor(debug);
 //#define VIO_DEBUG				// remove this for production build
 #else // PROD
-#define DEBUG
+//#define DEBUG
 #undef VIO_DEBUG
 #endif
+#define DEBUG
 
 #define BUGCHECK(number)        ERR_bugcheck (number, __FILE__, __LINE__)
 #define CORRUPT(number)         ERR_corrupt (number)
@@ -71,11 +73,11 @@
 
 #define BLKCHK(blk, type)       if (!blk->checkHandle()) BUGCHECK(147)
 
-#define DEV_BLKCHK(blk, type)	do { } while (false)	// nothing
+#define DEV_BLKCHK(blk, type)	// nothing
 
 
 // Thread data block / IPC related data blocks
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 
 // recursive mutexes
 #include "../common/thd.h"
@@ -130,6 +132,7 @@ class IndexBlock;
 class IndexLock;
 class ArrayField;
 struct sort_context;
+class RecordSelExpr;
 class vcl;
 class TextType;
 class Parameter;
@@ -226,12 +229,12 @@ class jrd_prc : public Routine
 public:
 	USHORT prc_flags;
 	USHORT prc_defaults;
-	const jrd_nod*	prc_output_msg;
-	const Format*	prc_input_fmt;
-	const Format*	prc_output_fmt;
-	const Format*	prc_format;
-	Firebird::Array<NestConst<Parameter> > prc_input_fields;	// array of field blocks
-	Firebird::Array<NestConst<Parameter> > prc_output_fields;	// array of field blocks
+	jrd_nod*	prc_output_msg;
+	Format*		prc_input_fmt;
+	Format*		prc_output_fmt;
+	Format*		prc_format;
+	Firebird::Array<Parameter*> prc_input_fields;	// array of field blocks
+	Firebird::Array<Parameter*> prc_output_fields;	// array of field blocks
 	prc_t		prc_type;					// procedure type
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
@@ -245,7 +248,7 @@ public:
 	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
 
 private:
-	const ExtEngineManager::Procedure* prc_external;
+	ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
@@ -302,7 +305,7 @@ class Parameter : public pool_alloc<type_prm>
 public:
 	USHORT		prm_number;
 	dsc			prm_desc;
-	NestConst<jrd_nod>	prm_default_value;
+	jrd_nod*	prm_default_value;
 	bool		prm_nullable;
 	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
@@ -444,7 +447,7 @@ private:
 //
 struct teb
 {
-	Attachment** teb_database;
+	Attachment* teb_database;
 	int teb_tpb_length;
 	const UCHAR* teb_tpb;
 };
@@ -631,13 +634,24 @@ class ThreadContextHolder
 {
 public:
 	explicit ThreadContextHolder(ISC_STATUS* status = NULL)
-		: context(status ? status : local_status)
+		: context(status ? status : local_status), externStatus(NULL)
 	{
 		context.putSpecific();
 	}
 
+	explicit ThreadContextHolder(FbApi::Status* status)
+		: context(local_status), externStatus(status)
+	{
+		context.putSpecific();
+		externStatus->init();
+	}
+
 	~ThreadContextHolder()
 	{
+		if (externStatus && externStatus->isSuccess())
+		{
+			externStatus->set(context.tdbb_status_vector);
+		}
 		ThreadData::restoreSpecific();
 	}
 
@@ -658,6 +672,7 @@ private:
 
 	ISC_STATUS_ARRAY local_status;
 	thread_db context;
+	FbApi::Status* externStatus;
 };
 
 

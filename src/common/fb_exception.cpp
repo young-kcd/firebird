@@ -1,6 +1,6 @@
 #include "firebird.h"
 
-//#include "fb_exception.h"
+#include "ProviderInterface.h"
 
 #include <string.h>
 #include <errno.h>
@@ -10,6 +10,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../common/thd.h"
+#include "../common/utils_proto.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -204,7 +205,9 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 	}
 	catch (const BadAlloc& ex)
 	{
-		ex.stuff_exception(perm);
+		*perm++ = isc_arg_gds;
+		*perm++ = isc_virmemexh;
+		*perm++ = isc_arg_end;
 	}
 	catch (...)
 	{
@@ -224,6 +227,17 @@ void makePermanentVector(ISC_STATUS* v, FB_THREAD_ID thr) throw()
 // ********************************* Exception *******************************
 
 Exception::~Exception() throw() { }
+
+ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
+{
+	FbApi::Status* status = FbApi::fb_get_status_instance();
+	stuffException(status);
+	const ISC_STATUS* s = status->get();
+	fb_utils::copyStatus(status_vector, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
+	status->release();
+
+	return status_vector[1];
+}
 
 // ********************************* status_exception *******************************
 
@@ -268,23 +282,14 @@ void status_exception::raise(const Arg::StatusVector& statusVector)
 	throw status_exception(statusVector.value());
 }
 
-ISC_STATUS status_exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
+ISC_STATUS status_exception::stuffException(FbApi::Status* status) const throw()
 {
-	const ISC_STATUS *ptr = value();
-	ISC_STATUS *sv = status_vector;
-
-	// Copy status vector
-	while (true)
+	if (status)
 	{
-		const ISC_STATUS type = *sv++ = *ptr++;
-		if (type == isc_arg_end)
-			break;
-		if (type == isc_arg_cstring)
-			*sv++ = *ptr++;
-		*sv++ = *ptr++;
+		status->set(value());
 	}
 
-	return status_vector[1];
+	return value()[1];
 }
 
 // ********************************* BadAlloc ****************************
@@ -294,15 +299,16 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-ISC_STATUS BadAlloc::stuff_exception(ISC_STATUS* const status_vector) const throw()
+ISC_STATUS BadAlloc::stuffException(FbApi::Status* status) const throw()
 {
-	ISC_STATUS *sv = status_vector;
+	const ISC_STATUS sv[] = {isc_arg_gds, isc_virmemexh};
 
-	*sv++ = isc_arg_gds;
-	*sv++ = isc_virmemexh;
-	*sv++ = isc_arg_end;
+	if (status)
+	{
+		status->set(FB_NELEM(sv), sv);
+	}
 
-	return status_vector[1];
+	return sv[1];
 }
 
 const char* BadAlloc::what() const throw()
@@ -317,24 +323,16 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector) const throw()
+ISC_STATUS LongJump::stuffException(FbApi::Status* status) const throw()
 {
-   /*
-	* Do nothing for a while - not all utilities are ready,
-	* status_vector is passed in them by other means.
-	* Ideally status_exception should be always used for it,
-	* and we should activate the following code:
+	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR)"Unexpected Firebird::LongJump"};
 
-	ISC_STATUS *sv = status_vector;
+	if (status)
+	{
+		status->set(FB_NELEM(sv), sv);
+	}
 
-	*sv++ = isc_arg_gds;
-	*sv++ = isc_random;
-	*sv++ = isc_arg_string;
-	*sv++ = (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump";
-	*sv++ = isc_arg_end;
-	*/
-
-	return status_vector[1];
+	return sv[1];
 }
 
 const char* LongJump::what() const throw()
@@ -443,6 +441,11 @@ void fatal_exception::raiseFmt(const char* format, ...)
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw()
 {
 	return ex.stuff_exception(status_vector);
+}
+
+ISC_STATUS stuff_exception(FbApi::Status *status, const Firebird::Exception& ex) throw()
+{
+	return ex.stuffException(status);
 }
 
 }	// namespace Firebird

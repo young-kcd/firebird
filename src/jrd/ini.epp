@@ -48,7 +48,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/idx_proto.h"
 #include "../jrd/ini_proto.h"
 #include "../jrd/jrd_proto.h"

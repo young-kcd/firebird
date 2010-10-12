@@ -38,7 +38,7 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../common/stuff.h"

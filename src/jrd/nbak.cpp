@@ -39,13 +39,13 @@
 #include "pag_proto.h"
 #include "err_proto.h"
 #include "cch_proto.h"
-#include "isc_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/thread_proto.h"
 #include "os/pio_proto.h"
 #include "gen/iberror.h"
-#include "gds_proto.h"
-#include "os/guid.h"
-#include "os/isc_i_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/os/guid.h"
+#include "../common/os/isc_i_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -560,7 +560,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 
 // Return page index in difference file that can be used in
 // writeDifference call later.
-ULONG BackupManager::getPageIndex(thread_db* /*tdbb*/, ULONG db_page)
+ULONG BackupManager::getPageIndex(thread_db* tdbb, ULONG db_page)
 {
 	NBAK_TRACE(("get_page_index"));
 
@@ -811,7 +811,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	return true;
 }
 
-void BackupManager::shutdown(thread_db* /*tdbb*/)
+void BackupManager::shutdown(thread_db* tdbb)
 {
 	closeDelta();
 	stateLock->shutdownLock();

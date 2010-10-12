@@ -114,7 +114,7 @@ public:
 	int getFlags() const { return m_flags; }
 
 	// Interprete status and put error description into passed string
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const = 0;
+	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const = 0;
 
 	static const Firebird::string* generate(const void*, const Provider* item)
 	{
@@ -188,7 +188,8 @@ public:
 
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
-	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
+	void raise(const ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
+	void raise(const FbApi::Status& status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
 	bool getWrapErrors() const	{ return m_wrapErrors; }
@@ -340,6 +341,8 @@ public:
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
 	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere,
+		const Firebird::string* sQuery = NULL);
+	void raise(const FbApi::Status& status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request

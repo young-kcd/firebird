@@ -301,7 +301,7 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_get_slice(ISC_STATUS *,
 									ISC_LONG *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_interprete(char *,
-									 ISC_STATUS * *);
+									 const ISC_STATUS * *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,

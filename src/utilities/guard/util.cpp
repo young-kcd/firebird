@@ -58,8 +58,8 @@
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
 #include "../utilities/guard/util_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../common/utils_proto.h"
 
 

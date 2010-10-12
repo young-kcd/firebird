@@ -54,10 +54,10 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../common/cvt.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/why_proto.h"
+#include "../yvalve/why_proto.h"
 #include "../common/config/config.h"
 #include "../common/StatusArg.h"
 

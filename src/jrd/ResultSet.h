@@ -26,7 +26,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"

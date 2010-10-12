@@ -41,14 +41,14 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../lock/lock_proto.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/jrd.h"
 #include "gen/iberror.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/os/isc_i_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/os/isc_i_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/array.h"
@@ -1774,7 +1774,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	{
 		try
 		{
-			ThreadStart::start(blocking_action_thread, this, THREAD_high, 0);
+			Thread::start(blocking_action_thread, this, THREAD_high);
 		}
 		catch (const Exception& ex)
 		{

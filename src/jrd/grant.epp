@@ -47,7 +47,7 @@
 #include "../jrd/dyn_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"

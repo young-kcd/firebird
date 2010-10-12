@@ -24,7 +24,7 @@
 #ifndef JRD_MOV_PROTO_H
 #define JRD_MOV_PROTO_H
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 

@@ -28,15 +28,15 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 #include "../jrd/event.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 
 class Config;
 
 namespace Jrd {
 
-class Attachment;
+class Database;
 
 class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
 {
@@ -48,15 +48,15 @@ class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 	const int PID;
 
 public:
-	static void init(Attachment*);
+	static void init(Database*);
 
 	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
 	~EventManager();
 
+	SLONG createSession();
 	void deleteSession(SLONG);
 
-	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*,
-				    FPTR_EVENT_CALLBACK, void*);
+	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*, FbApi::EventCallback*);
 	void cancelEvents(SLONG);
 	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
 	void deliverEvents();
@@ -68,7 +68,6 @@ private:
 	void acquire_shmem();
 	frb* alloc_global(UCHAR type, ULONG length, bool recurse);
 	void create_process();
-	SLONG create_session();
 	void delete_event(evnt*);
 	void delete_process(SLONG);
 	void delete_request(evt_req*);

@@ -29,6 +29,11 @@ namespace Firebird
 	class ClumpletReader;
 }
 
+namespace FbApi
+{
+	class Status;
+}
+
 void		REMOTE_cleanup_transaction (struct Rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
 void		REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb);
@@ -41,6 +46,5 @@ void		REMOTE_reset_request (struct Rrq *, struct RMessage*);
 void		REMOTE_reset_statement (struct Rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
 bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
-
 #endif // REMOTE_REMOT_PROTO_H
 

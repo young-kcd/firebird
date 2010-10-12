@@ -732,6 +732,7 @@ const
 	gds_async_active                     = 335545017;
 	gds_private_function                 = 335545018;
 	gds_private_procedure                = 335545019;
+	gds_bad_events_handle                = 335545020;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

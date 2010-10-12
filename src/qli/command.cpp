@@ -36,7 +36,7 @@
 #include "../qli/exe_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using MsgFormat::SafeArg;

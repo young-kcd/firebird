@@ -27,7 +27,7 @@
 #include "../jrd/sqz.h"
 #include "../jrd/req.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 using namespace Jrd;
 
@@ -424,6 +424,7 @@ size_t Compressor::makeDiff(size_t length1,
 	}
 
 	return output - start;
+#undef STUFF
 }
 
 void Compressor::pack(const UCHAR* input, UCHAR* output) const

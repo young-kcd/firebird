@@ -28,6 +28,7 @@
 
 #include "firebird.h"
 #include "../common/StatusArg.h"
+#include "../common/utils_proto.h"
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
@@ -126,25 +127,9 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 	if (!count)
 		return true; // not sure it's the best option here
 
-	unsigned int copied = 0;
-
-	for (unsigned int i = 0; i < count; )
-	{
-		if (from[i] == isc_arg_end)
-		{
-			break;
-		}
-		i += (from[i] == isc_arg_cstring ? 3 : 2);
-		if (m_length + i > FB_NELEM(m_status_vector) - 1)
-		{
-			break;
-		}
-		copied = i;
-	}
-
-	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
+	unsigned int copied =
+		fb_utils::copyStatus(&m_status_vector[m_length], FB_NELEM(m_status_vector) - m_length, from, count);
 	m_length += copied;
-	m_status_vector[m_length] = isc_arg_end;
 
 	return copied == count;
 }

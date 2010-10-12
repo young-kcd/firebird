@@ -25,7 +25,7 @@
    as well as by ini.epp in JRD.  Make sure that any
    changes are compatible in both places. */
 
-#include "../jrd/intlobj_new.h"
+#include "../common/intlobj_new.h"
 #include "../jrd/intl.h"
 #include "../intl/country_codes.h"
 #include "../intl/charsets.h"

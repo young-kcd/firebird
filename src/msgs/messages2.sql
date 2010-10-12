@@ -542,7 +542,7 @@ without specifying a character set.', NULL);
 ('invalid_string_constant', 'yylex', 'dsql/parse.y', NULL, 0, 443, NULL, 'a string constant is delimited by double quotes', NULL, NULL);
 ('transitional_date', 'yylex', 'dsql/parse.y', NULL, 0, 444, NULL, 'DATE must be changed to TIMESTAMP', NULL, NULL);
 ('read_only_database', 'RLCK_reserve_relation', 'rlck.c', NULL, 0, 445, NULL, 'attempted update on read-only database', NULL, NULL);
-('must_be_dialect_2_and_up', 'jrd8_create_database', 'jrd.c', NULL, 0, 446, NULL, 'SQL dialect @1 is not supported in this database', NULL, NULL);
+('must_be_dialect_2_and_up', 'createDatabase', 'jrd.c', NULL, 0, 446, NULL, 'SQL dialect @1 is not supported in this database', NULL, NULL);
 ('blob_filter_exception', 'BLF_put_segment', 'blf.e', NULL, 0, 447, NULL, 'A fatal exception occurred during the execution of a blob filter.', NULL, NULL);
 ('exception_access_violation', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 448, NULL, 'Access violation.  The code attempted to access a virtual address without privilege to do so.', NULL, NULL);
 ('exception_datatype_missalignment', 'POST_EXCEPTIONS and POST_EXTRENA', 'common.h', NULL, 0, 449, NULL, 'Datatype misalignment.  The attempted to read or write a value that was not stored on a memory boundary.', NULL, NULL);
@@ -580,9 +580,9 @@ without specifying a character set.', NULL);
 ('datype_notsup', 'CMP_get_desc', 'cmp.c', NULL, 0, 481, NULL, 'data type not supported for arithmetic', NULL, NULL);
 ('dialect_reset_warning', 'PAG_set_db_SQL_dialect', 'pag.c', NULL, 0, 482, NULL, 'Database dialect being changed from 3 to 1', NULL, NULL);
 ('dialect_not_changed', 'PAG_set_db_sql_dialect', 'pag.c', NULL, 0, 483, NULL, 'Database dialect not changed.', NULL, NULL);
-('database_create_failed', 'jrd8_create_database', 'jrd.c', NULL, 0, 484, NULL, 'Unable to create database @1', NULL, NULL);
+('database_create_failed', 'createDatabase', 'jrd.c', NULL, 0, 484, NULL, 'Unable to create database @1', NULL, NULL);
 ('inv_dialect_specified', NULL, 'pag.c', NULL, 0, 485, NULL, 'Database dialect @1 is not a valid dialect.', NULL, NULL);
-('valid_db_dialects', 'jrd8_create_database', 'jrd.c', NULL, 0, 486, NULL, 'Valid database dialects are @1.', NULL, NULL);
+('valid_db_dialects', 'createDatabase', 'jrd.c', NULL, 0, 486, NULL, 'Valid database dialects are @1.', NULL, NULL);
 ('sqlwarn', NULL, NULL, NULL, 0, 487, NULL, 'SQL warning code = @1', NULL, NULL);
 ('dtype_renamed', 'yylex', 'dsql/parse.y', NULL, 0, 488, NULL, 'DATE data type is now called TIMESTAMP', NULL, NULL);
 ('extern_func_dir_error', 'ISC_lookup_entrypoint', 'flu.c', NULL, 0, 489, NULL, 'Function @1 is in @2, which is not in a permitted directory for external functions.', NULL, NULL);
@@ -807,6 +807,7 @@ Data source : @4', NULL, NULL)
 ('async_active', 'REM_cancel_operation', 'interface.cpp', NULL, 0, 697, NULL, 'Asynchronous call is already running for this attachment', NULL, NULL)
 ('private_function', 'METD_get_function', 'metd.epp', NULL, 0, 698, NULL, 'Function @1 is private to package @2', NULL, NULL)
 ('private_procedure', 'METD_get_procedure', 'metd.epp', NULL, 0, 699, NULL, 'Procedure @1 is private to package @2', NULL, NULL)
+('bad_events_handle', NULL, NULL, NULL, 0, 700, NULL, 'invalid events id (handle)', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

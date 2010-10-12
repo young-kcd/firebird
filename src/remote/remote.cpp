@@ -30,11 +30,12 @@
 #include "../jrd/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../remote/xdr_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../common/xdr_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
+#include "ProviderInterface.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -511,7 +512,8 @@ void REMOTE_reset_request( Rrq* request, RMessage* active_message)
 
 	// Initialize the request status to FB_SUCCESS
 
-	request->rrq_status_vector[1] = 0;
+	//request->rrq_status_vector[1] = 0;
+	request->rrqStatus.clear();
 }
 
 
@@ -797,7 +799,7 @@ rem_port::~rem_port()
 	--portCounter;
 #endif
 }
-
+/*
 void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
 {
 	rdb_async_status_vector = userStatus;
@@ -813,4 +815,38 @@ void Rdb::reset_async_vector() throw()
 ISC_STATUS* Rdb::get_status_vector() throw()
 {
 	return rdb_async_thread_id == getThreadId() ? rdb_async_status_vector : rdb_status_vector;
+}
+*/
+Rrq::~Rrq()
+{
+}
+
+void Rrq::saveStatus(const Firebird::Exception& ex) throw()
+{
+	if (rrqStatus.isSuccess())
+	{
+		ISC_STATUS_ARRAY tmp;
+		ex.stuff_exception(tmp);
+		rrqStatus.save(tmp);
+	}
+}
+
+void Rrq::saveStatus(const FbApi::Status* v) throw()
+{
+	if (rrqStatus.isSuccess())
+	{
+		rrqStatus.save(v->get());
+	}
+}
+
+void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
+{
+	if (!rsr_status) {
+		rsr_status = new Firebird::StatusHolder();
+	}
+	if (overwrite || !rsr_status->getError()) {
+		ISC_STATUS_ARRAY temp;
+		ex.stuff_exception(temp);
+		rsr_status->save(temp);
+	}
 }

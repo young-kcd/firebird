@@ -30,7 +30,7 @@
 // External modules for UDFs/BLOB filters/y-valve loader
 
 #include "../common/classes/objects_array.h"
-#include "../jrd/os/mod_loader.h"
+#include "../common/os/mod_loader.h"
 
 namespace Jrd
 {

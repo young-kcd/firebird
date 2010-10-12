@@ -32,7 +32,7 @@
 #include "../remote/parse_proto.h"
 
 #if !defined(DEV_BUILD) || (defined(DEV_BUILD) && defined(WIN_NT))
-#include "../jrd/gds_proto.h"	// gds__log()
+#include "../yvalve/gds_proto.h"	// gds__log()
 #endif
 
 

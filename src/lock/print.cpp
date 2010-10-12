@@ -40,10 +40,10 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/db_alias.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/db_alias.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/isc_s_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

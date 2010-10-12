@@ -41,7 +41,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/val.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/thread_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H

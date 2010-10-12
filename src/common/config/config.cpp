@@ -24,10 +24,10 @@
 
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
-#include "../jrd/os/config_root.h"
+#include "../common/config/os/config_root.h"
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
-#include "../jrd/os/fbsyslog.h"
+#include "../common/os/fbsyslog.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

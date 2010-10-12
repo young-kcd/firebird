@@ -48,10 +48,10 @@
 #include "../jrd/gdsassert.h"
 #include "../utilities/gstat/ppg_proto.h"
 #include "../utilities/gstat/dbaswi.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_f_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_f_proto.h"
 #include "../common/thd.h"
-#include "../jrd/enc_proto.h"
+#include "../common/enc_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/constants.h"
@@ -193,14 +193,14 @@ static void print_distribution(const SCHAR*, const ULONG*);
 static void print_help();
 
 
-#include "../jrd/db_alias.h"
+#include "../common/db_alias.h"
 
 #include <fcntl.h>
 #if (defined WIN_NT)
 #include <share.h>
 #endif
 
-#include "../jrd/jrd_pwd.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../utilities/gstat/dba_proto.h"
 
 struct open_files
@@ -992,64 +992,69 @@ int gstat(Firebird::UtilSvc* uSvc)
 	dba_exit(FINI_OK, tddba);
 
 	}	// try
+	catch (const Firebird::LongJump&)
+	{
+		// do nothing
+	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
-		// free mem
+	}
 
-		if (status_vector[1])
+	// free mem
+
+	if (status_vector[1])
+	{
+		tddba->uSvc->setServiceStatus(status_vector);
+		const ISC_STATUS* vector = status_vector;
+		SCHAR s[1024];
+		if (fb_interpret(s, sizeof(s), &vector))
 		{
-			tddba->uSvc->setServiceStatus(status_vector);
-			const ISC_STATUS* vector = status_vector;
-			SCHAR s[1024];
-			if (fb_interpret(s, sizeof(s), &vector))
-			{
+			tddba->uSvc->printf(true, "%s\n", s);
+			s[0] = '-';
+			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
 				tddba->uSvc->printf(true, "%s\n", s);
-				s[0] = '-';
-				while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
-					tddba->uSvc->printf(true, "%s\n", s);
-				}
 			}
 		}
-
-		// if there still exists a database handle, disconnect from the server
-		// This is isc_detach_database
-		FINISH;
-
-		uSvc->started();
-		dba_mem* alloced = tddba->head_of_mem_list;
-		while (alloced != 0)
-		{
-			delete[] alloced->memory;
-			alloced = alloced->mem_next;
-		}
-
-		// close files
-		open_files* open_file = tddba->head_of_files_list;
-		while (open_file)
-		{
-			db_close(open_file->desc);
-			open_file = open_file->open_files_next;
-		}
-
-		// free linked lists
-		while (tddba->head_of_files_list != 0)
-		{
-			open_files* tmp1 = tddba->head_of_files_list;
-			tddba->head_of_files_list = tddba->head_of_files_list->open_files_next;
-			delete tmp1;
-		}
-
-		while (tddba->head_of_mem_list != 0)
-		{
-			dba_mem* tmp2 = tddba->head_of_mem_list;
-			tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
-			delete tmp2;
-		}
-
-		exit_code = tddba->exit_code;
-		tdba::restoreSpecific();
 	}
+
+	// if there still exists a database handle, disconnect from the server
+	// This is isc_detach_database
+	FINISH;
+
+	uSvc->started();
+	dba_mem* alloced = tddba->head_of_mem_list;
+	while (alloced != 0)
+	{
+		delete[] alloced->memory;
+		alloced = alloced->mem_next;
+	}
+
+	// close files
+	open_files* open_file = tddba->head_of_files_list;
+	while (open_file)
+	{
+		db_close(open_file->desc);
+		open_file = open_file->open_files_next;
+	}
+
+	// free linked lists
+	while (tddba->head_of_files_list != 0)
+	{
+		open_files* tmp1 = tddba->head_of_files_list;
+		tddba->head_of_files_list = tddba->head_of_files_list->open_files_next;
+		delete tmp1;
+	}
+
+	while (tddba->head_of_mem_list != 0)
+	{
+		dba_mem* tmp2 = tddba->head_of_mem_list;
+		tddba->head_of_mem_list = tddba->head_of_mem_list->mem_next;
+		delete tmp2;
+	}
+
+	exit_code = tddba->exit_code;
+	tdba::restoreSpecific();
 
 	if ((exit_code != FINI_OK) && uSvc->isService())
 	{

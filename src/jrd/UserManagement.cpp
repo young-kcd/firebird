@@ -25,7 +25,7 @@
 #include "../jrd/UserManagement.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
-#include "../jrd/jrd_pwd.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/tra.h"
 #include "../jrd/msg_encode.h"
 #include "../utilities/gsec/gsec.h"

@@ -29,7 +29,7 @@
 #include "iberror.h"
 
 #include "../../dsql/chars.h"
-#include "../dsc.h"
+#include "../common/dsc.h"
 #include "../exe.h"
 #include "ExtDS.h"
 #include "../jrd.h"
@@ -525,7 +525,7 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 	return ext_tran;
 }
 
-void Connection::raise(ISC_STATUS* status, thread_db* /*tdbb*/, const char* sWhere)
+void Connection::raise(const ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
 {
 	if (!getWrapErrors())
 	{
@@ -539,6 +539,12 @@ void Connection::raise(ISC_STATUS* status, thread_db* /*tdbb*/, const char* sWhe
 	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) <<
 											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
+}
+
+
+void Connection::raise(const FbApi::Status& status, thread_db* tdbb, const char* sWhere)
+{
+	raise(status.get(), tdbb, sWhere);
 }
 
 
@@ -557,7 +563,7 @@ Transaction::~Transaction()
 {
 }
 
-void Transaction::generateTPB(thread_db* /*tdbb*/, ClumpletWriter& tpb,
+void Transaction::generateTPB(thread_db* tdbb, ClumpletWriter& tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
 {
 	switch (traMode)
@@ -1500,6 +1506,26 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 			fb_utils::init_status(status);
 		}
 	}
+
+	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
+	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+											Arg::Str(rem_err) <<
+											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
+											Arg::Str(m_connection.getDataSourceName()));
+}
+
+void Statement::raise(const FbApi::Status& status, thread_db* tdbb, const char* sWhere,
+		const string* sQuery)
+{
+	m_error = true;
+
+	if (!m_connection.getWrapErrors())
+	{
+		ERR_post(Arg::StatusVector(status.get()));
+	}
+
+	string rem_err;
+	m_provider.getRemoteError(status.get(), rem_err);
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<

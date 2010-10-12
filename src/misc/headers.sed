@@ -6,4 +6,4 @@ s/#include "..\/dsql\/sqlda_pub.h"//g
 s/#include "inf_pub.h"//g
 s/#include "..\/jrd\/inf_pub.h"//g
 s/#include "dsc_pub.h"//g
-s/#include "..\/jrd\/dsc_pub.h"//g
+s/#include "..\/common\/dsc_pub.h"//g

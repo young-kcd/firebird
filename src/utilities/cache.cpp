@@ -29,8 +29,8 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/license.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/why_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../yvalve/why_proto.h"
 
 #ifdef HAVE_IO_H
 #include <io.h>

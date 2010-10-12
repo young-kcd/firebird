@@ -29,9 +29,6 @@
 namespace Jrd
 {
 
-class BoolExprNode;
-class RseNode;
-
 // view context block to cache view aliases
 
 class ViewContext
@@ -187,7 +184,7 @@ public:
 	Firebird::MetaName	rel_owner_name;	// ascii owner
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RseNode*		rel_view_rse;		// view record select expression
+	RecordSelExpr*	rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
 	Firebird::MetaName	rel_security_name;	// security class name for relation
@@ -331,10 +328,8 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
-	BoolExprNode*	fld_validation;		// validation clause, if any
-	jrd_nod*	fld_validation_stmt;	// validation clause, if any - nod_stmt_expr fragment
-	BoolExprNode*	fld_not_null;		// if field cannot be NULL
-	jrd_nod*	fld_not_null_stmt;		// if field cannot be NULL - nod_stmt_expr fragment
+	jrd_nod*	fld_validation;		// validation clause, if any
+	jrd_nod*	fld_not_null;		// if field cannot be NULL
 	jrd_nod*	fld_missing_value;	// missing value, if any
 	jrd_nod*	fld_computation;	// computation for virtual field
 	jrd_nod*	fld_source;			// source for view fields

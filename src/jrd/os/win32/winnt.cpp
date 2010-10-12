@@ -44,8 +44,8 @@
 #include "gen/iberror.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/isc_f_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/isc_f_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"

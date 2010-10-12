@@ -39,7 +39,6 @@
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
-#include "../dsql/utld_proto.h"
 
 // This is the only one place in dsql code, where we need both
 // dsql.h and err_proto.h.
@@ -54,7 +53,7 @@
 //#undef BUGCHECK
 //#undef IBERROR
 
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
@@ -310,16 +309,12 @@ void ERRD_punt(const ISC_STATUS* local)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	// copy local status into user status
-	if (local) {
-		UTLD_copy_status(local, tdbb->tdbb_status_vector);
+	// Save any strings in a permanent location
+	if (local)
+	{
+		Firebird::makePermanentVector(tdbb->tdbb_status_vector, local);
 	}
 
-	// Save any strings in a permanent location
-
-	UTLD_save_status_strings(tdbb->tdbb_status_vector);
-
 	// Give up whatever we were doing and return to the user.
-
 	status_exception::raise(tdbb->tdbb_status_vector);
 }

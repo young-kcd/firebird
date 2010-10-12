@@ -39,7 +39,7 @@
 #include "../jrd/dfw_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/idx_proto.h"
 #include "../jrd/tra_proto.h"
 
@@ -248,7 +248,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 			idx->idx_expression = MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false, false);
+				&idx->idx_expression_statement, false);
 		} // end scope
 	}
 	END_FOR

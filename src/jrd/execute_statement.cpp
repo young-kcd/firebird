@@ -31,7 +31,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/intl.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
@@ -220,7 +220,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, const jrd_nod* const* jrdVar)
 }
 
 
-void ExecuteStatement::close(thread_db* /*tdbb*/)
+void ExecuteStatement::close(thread_db* tdbb)
 {
 	delete resultSet;
 	resultSet = NULL;

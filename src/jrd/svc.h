@@ -30,7 +30,7 @@
 #include "consts_pub.h"
 
 #include "../jrd/svc_undoc.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 
 #include "../common/classes/semaphore.h"
 #include "../common/classes/array.h"

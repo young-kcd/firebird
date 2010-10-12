@@ -6,7 +6,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/auto.h"
 #include "../jrd/intl.h"
-#include "../jrd/IntlUtil.h"
+#include "../common/IntlUtil.h"
 #include "../intl/country_codes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"

@@ -99,7 +99,7 @@ namespace Firebird
 
 /// Include definition of descriptor
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 
 namespace Jrd {
 
@@ -507,7 +507,7 @@ private:
 };
 
 
-class dsql_req : public pool_alloc<dsql_type_req>
+class dsql_req : public pool_alloc<dsql_type_req>, public FbApi::Statement
 {
 public:
 	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
@@ -575,6 +575,38 @@ protected:
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
+
+public:
+	virtual void release();
+	//virtual Sqlda* describeInput(Status* status);
+	//virtual Sqlda* describeOutput(Status* status);
+	virtual FbApi::Statement* prepare(Status* status, FbApi::Transaction* tra,
+									  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+									  unsigned int item_length, const unsigned char* items,
+	    		                      unsigned int buffer_length, unsigned char* buffer);
+	virtual void getInfo(Status* status,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer);
+	virtual void setCursor(Status* status, const char* name, unsigned int type);
+//	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* tra, Sqlda* in, Sqlda* out);
+	virtual FbApi::Transaction* executeMessage(Status* status, FbApi::Transaction* tra,
+										unsigned int in_blr_length, const unsigned char* in_blr,
+										unsigned int in_msg_type,
+										unsigned int in_msg_length, const unsigned char* in_message,
+										unsigned int out_blr_length, const unsigned char* out_blr,
+										unsigned int out_msg_type,
+										unsigned int out_msg_length, unsigned char* out_message);
+//	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
+	virtual int fetchMessage(Status* status,
+							 unsigned int blr_length, const unsigned char* blr,
+							 unsigned int msg_type,
+							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
+//	virtual void insert(Status* status, Sqlda* in);
+	virtual void insertMessage(Status* status, 
+							   unsigned int blr_length, const unsigned char* blr,
+							   unsigned int msg_type,
+							   unsigned int msg_length, const unsigned char* message);
+	virtual void free(Status* status, unsigned int option);
 };
 
 // Blob

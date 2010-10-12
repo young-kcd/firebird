@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../common/config/config.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -50,16 +50,16 @@
 #include "../jrd/irq.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/fun_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/blb.h"
 #include "../jrd/ExtEngineManager.h"
 #include "../common/classes/auto.h"
@@ -291,10 +291,10 @@ enum UdfError
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(const Function::Argument*, DSC*, scalar_array_desc*, UCharStack&);
+static SLONG get_scalar_array(const fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
 				   const Function* function,
-				   const Function::Argument* return_ptr,
+				   const fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -330,7 +330,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const jrd_nod* node
 
 	SET_TDBB(tdbb);
 
-	const Function::Argument* return_ptr = &function->fun_args[function->fun_return_arg];
+	const fun_repeat* return_ptr = &function->fun_args[function->fun_return_arg];
 
 	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
@@ -368,8 +368,8 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const jrd_nod* node
 	double d;
 
 	// Process arguments
-	const Function::Argument* const end = function->fun_args.end();
-	for (const Function::Argument* tail = function->fun_args.begin() + 1; tail < end; ++tail)
+	const fun_repeat* const end = function->fun_args.end();
+	for (const fun_repeat* tail = function->fun_args.begin() + 1; tail < end; ++tail)
 	{
 		DSC* input;
 		if (tail == return_ptr)
@@ -805,7 +805,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 }
 
 
-static SLONG get_scalar_array(const Function::Argument* arg,
+static SLONG get_scalar_array(const fun_repeat* arg,
 							  DSC*	value,
 							  scalar_array_desc*	scalar_desc,
 							  UCharStack&	stack)
@@ -891,7 +891,7 @@ static SLONG get_scalar_array(const Function::Argument* arg,
 
 static void invoke(thread_db* tdbb,
 				   const Function* function,
-				   const Function::Argument* return_ptr,
+				   const fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,

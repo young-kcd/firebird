@@ -33,8 +33,8 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/objects_array.h"
-#include "../jrd/os/mod_loader.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/mod_loader.h"
+#include "../common/os/path_utils.h"
 
 
 namespace Firebird

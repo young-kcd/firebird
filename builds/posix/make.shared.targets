@@ -41,29 +41,16 @@
 
 # This rule creates parse.cpp from parse.y
 
-$(SRC_ROOT)/dsql/parse.cpp $(SRC_ROOT)/dsql/dsql.tab.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
+$(OBJ)/dsql/parse.cpp $(SRC_ROOT)/include/gen/parse.h: $(SRC_ROOT)/dsql/parse.y $(SRC_ROOT)/dsql/btyacc_fb.ske
 	$(BTYACC) -l -d -S $(SRC_ROOT)/dsql/btyacc_fb.ske $<
-	$(MV) $(GEN_ROOT)/y_tab.c $(SRC_ROOT)/dsql/parse.cpp
-	$(MV) $(GEN_ROOT)/y_tab.h $(SRC_ROOT)/dsql/dsql.tab.h
+	$(MV) $(GEN_ROOT)/y_tab.c $(OBJ)/dsql/parse.cpp
+	$(MV) $(GEN_ROOT)/y_tab.h $(SRC_ROOT)/include/gen/parse.h
 
 
 # gpre_meta needs a special boot build since there is no database.
 
 $(SRC_ROOT)/gpre/gpre_meta.cpp:  $(SRC_ROOT)/gpre/gpre_meta.epp
 	$(GPRE_BOOT) -lang_internal $(GPRE_FLAGS) $< $@
-
-
-buildb: security2.fdb yachts.lnk help.fdb
-
-security2.fdb : $(ISC_GDB)
-	-$(LN) -f $(ISC_GDB) $@
-
-yachts.lnk:
-	-$(LN) -f $(SRC_ROOT)/refDatabases/empty.fdb yachts.lnk
-
-help.fdb:
-	-$(LN) -f $(SRC_ROOT)/refDatabases/help.fdb help.fdb
-
 
 
 # These need to change to $(GEN_SRC) at some stage
@@ -74,8 +61,7 @@ help.fdb:
 $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
 # Explicit dependence on generated header (parser)
-$(SRC_ROOT)/dsql/keywords.cpp: $(SRC_ROOT)/dsql/dsql.tab.h
-$(OBJ)/dsql/Parser.h: $(SRC_ROOT)/dsql/dsql.tab.h
+$(OBJ)/dsql/Parser.o $(OBJ)/dsql/keywords.o $(OBJ)/dsql/dsql.o:	$(SRC_ROOT)/include/gen/parse.h
 
 $(OBJ)/dsql/AggNodes.o:		$(SRC_ROOT)/include/gen/blrtable.h
 $(OBJ)/dsql/ExprNodes.o:	$(SRC_ROOT)/include/gen/blrtable.h

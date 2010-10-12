@@ -45,8 +45,8 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../dsql/keywords.h"
-//#include "../jrd/gds_proto.h"
+#include "../yvalve/keywords.h"
+//#include "../yvalve/gds_proto.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -60,7 +60,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -99,7 +99,7 @@ enum literal_string_type
 #endif
 #include "../jrd/ibase.h"
 #include "../isql/isql.h"
-#include "../jrd/perf.h"
+#include "../yvalve/perf.h"
 #include "../jrd/license.h"
 #include "../jrd/constants.h"
 #include "../jrd/ods.h"
@@ -109,9 +109,9 @@ enum literal_string_type
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
 #include "../isql/iutils_proto.h"
-#include "../jrd/perf_proto.h"
-#include "../jrd/utl_proto.h"
-#include "../jrd/why_proto.h"
+#include "../yvalve/perf_proto.h"
+#include "../yvalve/utl_proto.h"
+#include "../yvalve/why_proto.h"
 #include "../jrd/gdsassert.h"
 
 #include "../isql/Extender.h"

@@ -22,24 +22,23 @@
 
 #include "../jrd/Routine.h"
 #include "../common/classes/array.h"
-#include "../common/classes/NestConst.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/val.h"
 
 namespace Jrd
 {
+	struct fun_repeat
+	{
+		Parameter* fun_parameter;	// parameter info
+		FUN_T fun_mechanism;		// passing mechanism
+	};
+
 	class Function : public Routine
 	{
 		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache function can be altered
 		static const char* const EXCEPTION_MESSAGE;
 
 	public:
-		struct Argument
-		{
-			NestConst<Parameter> fun_parameter;	// parameter info
-			FUN_T fun_mechanism;		// passing mechanism
-		};
-
 		static Function* lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool noscan, USHORT flags);
 		static Function* lookup(thread_db* tdbb, const Firebird::QualifiedName& name, bool noscan);
 
@@ -56,7 +55,7 @@ namespace Jrd
 		dsc* execute(thread_db* tdbb, const jrd_nod* args, impure_value* value) const;
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
-		ULONG allocateImpure(CompilerScratch* csb) const;
+		ULONG allocateImpure(CompilerScratch* csb);
 		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
 		jrd_nod* parseArgs(thread_db* tdbb, CompilerScratch* csb);
 
@@ -76,6 +75,7 @@ namespace Jrd
 			  fun_existence_lock(NULL),
 			  fun_alter_count(0),
 			  fun_exception_message(p),
+			  fun_legacy(true),
 			  fun_invariant(false),
 			  fun_external(NULL)
 		{
@@ -107,7 +107,7 @@ namespace Jrd
 		Format fun_in_msg_format;
 		Format fun_out_msg_format;
 
-		Firebird::Array<Argument> fun_args;
+		Firebird::Array<fun_repeat> fun_args;
 
 		USHORT fun_flags;						// flags
 		USHORT fun_use_count;					// requests compiled with function
@@ -116,8 +116,9 @@ namespace Jrd
 
 		Firebird::string fun_exception_message;	// message containing the exception error message
 
+		bool fun_legacy;
 		bool fun_invariant;
-		const ExtEngineManager::Function* fun_external;
+		ExtEngineManager::Function* fun_external;
 	};
 
 	const USHORT FUN_scanned			= 1;	// Field expressions scanned

@@ -26,15 +26,15 @@
 #include "inf_pub.h"
 #include "../jrd/PluginManager.h"
 #include "../jrd/ErrorImpl.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../common/isc_proto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../common/utils_proto.h"
-#include "../config/ScanDir.h"
+#include "../common/ScanDir.h"
 
 using namespace Firebird;
 using Firebird::uint;

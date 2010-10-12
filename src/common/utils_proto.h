@@ -32,6 +32,7 @@
 #include <string.h>
 #include "../common/classes/fb_string.h"
 #include "gen/iberror.h"
+#include "ProviderInterface.h"
 
 #ifdef SFIO
 #include <stdio.h>
@@ -111,6 +112,16 @@ namespace fb_utils
 		status[1] = FB_SUCCESS;
 		status[2] = isc_arg_end;
 	}
+
+	void inline init_status(FbApi::Status* status)
+	{
+		status->init();
+	}
+
+	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
+							const ISC_STATUS* const from, const unsigned int count) throw();
+
+	unsigned int statusLength(const ISC_STATUS* const status) throw();
 
 	enum FetchPassResult {
 		FETCH_PASS_OK,

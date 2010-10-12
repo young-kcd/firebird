@@ -35,7 +35,7 @@
 #include "../../common/StatusArg.h"
 #include "../../common/thd.h"
 #include "../../jrd/svc.h"
-#include "../../jrd/os/guid.h"
+#include "../../common/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceService.h"

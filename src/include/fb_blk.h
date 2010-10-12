@@ -51,6 +51,7 @@ enum BlockType
 	type_opt,
 	type_prf,
 	type_ctl,
+	type_Events,
 
 	type_PageSpace,
 	type_PageManager,
@@ -80,7 +81,8 @@ enum BlockType
 	rem_type_rrq,
 	rem_type_rtr,
 	rem_type_rbl,
-	rem_type_rsr
+	rem_type_rsr,
+	rem_type_rev
 };
 
 

@@ -42,7 +42,7 @@ using namespace Jrd;
 // ------------------------------------
 
 IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR stream,
-			InversionNode* index, USHORT length)
+			jrd_nod* index, USHORT length)
 	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index), m_inversion(NULL),
 	  m_length(length), m_offset(0)
 {
@@ -139,7 +139,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 
 	temporary_key key;
 	memcpy(key.key_data, impure->irsb_nav_data, impure->irsb_nav_length);
-	const IndexRetrieval* const retrieval = m_index->retrieval;
+	IndexRetrieval* const retrieval = (IndexRetrieval*) m_index->nod_arg[e_idx_retrieval];
 
 	// set the upper (or lower) limit for navigational retrieval
 	temporary_key upper;
@@ -489,7 +489,7 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 	impure->irsb_nav_length = 0;
 
 	// Find the starting leaf page
-	const IndexRetrieval* const retrieval = m_index->retrieval;
+	IndexRetrieval* const retrieval = (IndexRetrieval*) m_index->nod_arg[e_idx_retrieval];
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 	temporary_key lower, upper;
 	Ods::btree_page* page = BTR_find_page(tdbb, retrieval, window, idx, &lower, &upper);

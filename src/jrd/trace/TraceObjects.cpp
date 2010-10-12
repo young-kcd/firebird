@@ -32,20 +32,19 @@
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceObjects.h"
-#include "../../jrd/isc_proto.h"
-#include "../../jrd/isc_s_proto.h"
+#include "../../common/isc_proto.h"
+#include "../../common/isc_s_proto.h"
 #include "../../jrd/jrd.h"
 #include "../../jrd/tra.h"
 #include "../../jrd/DataTypeUtil.h"
-#include "../../dsql/ExprNodes.h"
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
 #include "../../jrd/pag_proto.h"
-#include "../../jrd/os/path_utils.h"
-#include "../../jrd/os/config_root.h"
+#include "../../common/os/path_utils.h"
+#include "../../common/config/os/config_root.h"
 #include "../../dsql/dsql_proto.h"
-#include "../../gpre/prett_proto.h"
+#include "../../common/prett_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -378,31 +377,31 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		dsc desc;
 
 		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
-		const ParameterNode* param = ExprNode::as<ParameterNode>(prm);
-
-		if (param)
-		{
-			//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
-			const jrd_nod* message = param->message;
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			const int arg_number = param->argNumber;
-
-			desc = format->fmt_desc[arg_number];
-			from_desc = &desc;
-			from_desc->dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
-				message->nod_impure + (IPTR) desc.dsc_address);
-
-			// handle null flag if present
-			if (param->argFlag)
-			{
-				const dsc* flag = EVL_expr(tdbb, param->argFlag);
-				if (MOV_get_long(flag, 0))
-					from_desc->dsc_flags |= DSC_null;
-			}
-		}
-
 		switch (prm->nod_type)
 		{
+			case nod_argument:
+			{
+				//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
+				const jrd_nod* message = prm->nod_arg[e_arg_message];
+				const Format* format = (Format*) message->nod_arg[e_msg_format];
+				const int arg_number = (int) (IPTR) prm->nod_arg[e_arg_number];
+
+				desc = format->fmt_desc[arg_number];
+				from_desc = &desc;
+				from_desc->dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
+					message->nod_impure + (IPTR) desc.dsc_address);
+
+				// handle null flag if present
+				if (prm->nod_arg[e_arg_flag])
+				{
+					const dsc* flag = EVL_expr(tdbb, prm->nod_arg[e_arg_flag]);
+					if (MOV_get_long(flag, 0)) {
+						from_desc->dsc_flags |= DSC_null;
+					}
+				}
+				break;
+			}
+
 			case nod_variable:
 			{
 				impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(

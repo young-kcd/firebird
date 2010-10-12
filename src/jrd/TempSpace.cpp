@@ -26,10 +26,10 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/isc_proto.h"
+#include "../common/os/path_utils.h"
 
 #include "../jrd/TempSpace.h"
 

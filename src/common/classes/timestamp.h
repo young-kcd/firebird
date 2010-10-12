@@ -27,7 +27,7 @@
 #ifndef CLASSES_TIMESTAMP_H
 #define CLASSES_TIMESTAMP_H
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 
 // struct tm declaration
 #if defined(TIME_WITH_SYS_TIME)

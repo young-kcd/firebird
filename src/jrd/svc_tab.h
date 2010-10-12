@@ -29,7 +29,7 @@
 #ifndef JRD_SVC_TAB_H
 #define JRD_SVC_TAB_H
 
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 
 namespace Jrd {
 

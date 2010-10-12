@@ -40,21 +40,20 @@
 #include "../jrd/jrd.h"
 #include "../jrd/svc.h"
 #include "../jrd/constants.h"
-#include "../jrd/jrd_pwd.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/ibase.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/inf_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/why_proto.h"
-#include "../jrd/utl_proto.h"
+#include "../yvalve/why_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/enc_proto.h"
+#include "../common/enc_proto.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -686,7 +685,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_remote_pid(0), svc_current_guard(NULL)
 {
 	svc_trace_manager = NULL;
-	memset(svc_status, 0, sizeof svc_status);
+	fb_utils::init_status(svc_status);
 	ThreadIdHolder holdId(svc_thread_strings);
 
 	{	// scope
@@ -879,7 +878,7 @@ void Service::detach()
 	if (localDoShutdown)
 	{
 		// run in separate thread to avoid blocking in remote
-		gds__thread_start(svcShutdownThread, 0, 0, 0, 0);
+		Thread::start(svcShutdownThread, 0, 0);
 	}
 }
 
@@ -984,7 +983,7 @@ void Service::shutdownServices()
 }
 
 
-ISC_STATUS Service::query2(thread_db* /*tdbb*/,
+ISC_STATUS Service::query2(thread_db* tdbb,
 						   USHORT send_item_length,
 						   const UCHAR* send_items,
 						   USHORT recv_item_length,
@@ -1146,7 +1145,6 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				svc_do_shutdown = false;
-				WHY_set_shutdown(false);
 			}
 			else
 				need_admin_privs(status, "isc_info_svc_svr_online");
@@ -1157,7 +1155,6 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				svc_do_shutdown = true;
-				WHY_set_shutdown(true);
 			}
 			else
 				need_admin_privs(status, "isc_info_svc_svr_offline");
@@ -1573,7 +1570,6 @@ void Service::query(USHORT			send_item_length,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				svc_do_shutdown = false;
-				WHY_set_shutdown(false);
 				*info++ = 0;	// Success
 			}
 			else
@@ -1585,7 +1581,6 @@ void Service::query(USHORT			send_item_length,
 			if (svc_user_flag & SVC_user_dba)
 			{
 				svc_do_shutdown = true;
-				WHY_set_shutdown(true);
 				*info++ = 0;	// Success
 			}
 			else
@@ -1995,7 +1990,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	parseSwitches();
 
 	// The service block can be reused hence init a status vector.
-	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
+	fb_utils::init_status(svc_status);
 
 	if (serv->serv_thd)
 	{
@@ -2005,7 +2000,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			svc_flags |= SVC_thd_running;
 		}
 
-		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, 0);
+		Thread::start(serv->serv_thd, this, THREAD_medium);
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
@@ -2016,7 +2011,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			// information to the client.  This will allow isc_service_start
 			// to include in its status vector information about the service's
 			// ability to start.
-			// This is needed since gds__thread_start will almost always succeed.
+			// This is needed since Thread::start() will almost always succeed.
 			if (svcStart.tryEnter(60))
 			{
 				// started() was called
@@ -2122,7 +2117,7 @@ void Service::start(ThreadEntryPoint* service_thread)
 		argv[0] = svc_service->serv_name;
 	}
 
-	gds__thread_start(service_thread, this, THREAD_medium, 0, 0);
+	Thread::start(service_thread, this, THREAD_medium);
 }
 
 

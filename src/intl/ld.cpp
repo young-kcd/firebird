@@ -23,7 +23,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/IntlUtil.h"
+#include "../common/IntlUtil.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
 #include "../intl/cs_icu.h"

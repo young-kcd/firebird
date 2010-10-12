@@ -29,7 +29,7 @@
 #include "../jrd/ValueImpl.h"
 #include "../jrd/ValuesImpl.h"
 #include "../dsql/sqlda_pub.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
@@ -37,7 +37,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/PluginManager.h"
 #include "../jrd/ibase.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
@@ -45,13 +45,13 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/Function.h"
-#include "../jrd/isc_proto.h"
+#include "../common/isc_proto.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/config/config.h"
-#include "../config/ScanDir.h"
+#include "../common/ScanDir.h"
 
 using namespace Firebird;
 
@@ -388,7 +388,7 @@ ExtEngineManager::Function::~Function()
 }
 
 
-void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure) const
+void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure)
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
@@ -564,7 +564,7 @@ ExtEngineManager::Trigger::~Trigger()
 
 
 void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action action,
-	record_param* oldRpb, record_param* newRpb) const
+	record_param* oldRpb, record_param* newRpb)
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, trigger,
@@ -612,9 +612,9 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 }
 
 
-int ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, MemoryPool& pool,
+int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
 	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
-	record_param* rpb) const
+	record_param* rpb)
 {
 	if (!rpb || !rpb->rpb_record)
 		return 0;

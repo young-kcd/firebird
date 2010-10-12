@@ -25,8 +25,8 @@
 #include "firebird.h"
 
 #include "iutils_proto.h"
-#include "../dsql/keywords.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/keywords.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/common.h"
 //#if defined(WIN_NT)
 //#include <windows.h>

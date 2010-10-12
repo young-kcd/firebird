@@ -396,6 +396,21 @@ typedef struct bid	// BLOB ID
 {
 	ULONG	bid_quad_high;
 	ULONG	bid_quad_low;
+
+	bid& operator=(const ISC_QUAD& v)
+	{
+		bid_quad_high = v.gds_quad_high;
+		bid_quad_low = v.gds_quad_low;
+		return *this;
+	}
+
+	operator ISC_QUAD() const
+	{
+		ISC_QUAD rc;
+		rc.gds_quad_high = bid_quad_high;
+		rc.gds_quad_low = bid_quad_low;
+		return rc;
+	}
 } *BID;
 
 
@@ -415,7 +430,7 @@ typedef struct p_resp
 	OBJCT		p_resp_object;		// Object id
 	struct bid	p_resp_blob_id;		// Blob id
 	CSTRING		p_resp_data;		// Data
-	ISC_STATUS*	p_resp_status_vector;
+	ISC_STATUS_ARRAY	p_resp_status_vector;
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number

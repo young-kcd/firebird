@@ -30,8 +30,8 @@
 #include "ld_proto.h"
 #include "lc_icu.h"
 #include "cs_icu.h"
-#include "../jrd/CharSet.h"
-#include "../jrd/IntlUtil.h"
+#include "../common/CharSet.h"
+#include "../common/IntlUtil.h"
 #include "../common/classes/auto.h"
 
 using namespace Firebird;

@@ -44,7 +44,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -1031,6 +1031,48 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	s += name;
 	gds__prefix(tmp, s.c_str());
 	return tmp;
+}
+
+unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
+						const ISC_STATUS* const from, const unsigned int count) throw()
+{
+	unsigned int copied = 0;
+
+	for (unsigned int i = 0; i < count; )
+	{
+		if (from[i] == isc_arg_end)
+		{
+			break;
+		}
+		i += (from[i] == isc_arg_cstring ? 3 : 2);
+		if (i > space - 1)
+		{
+			break;
+		}
+		copied = i;
+	}
+
+	memcpy(to, from, copied * sizeof(to[0]));
+	to[copied] = isc_arg_end;
+
+	return copied;
+}
+
+unsigned int statusLength(const ISC_STATUS* const status) throw()
+{
+	unsigned int l = 0;
+	for(;;)
+	{
+		if (status[l] == isc_arg_end)
+		{
+/*			if (l == 1 && status[2] == isc_arg_warning)
+			{
+				l += 2;
+			} */
+			return l;
+		}
+		l += (status[l] == isc_arg_cstring ? 3 : 2);
+	}
 }
 
 } // namespace fb_utils

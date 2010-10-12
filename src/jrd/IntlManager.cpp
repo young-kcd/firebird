@@ -26,17 +26,17 @@
 
 #include "firebird.h"
 #include "../jrd/IntlManager.h"
-#include "../jrd/os/mod_loader.h"
-#include "../jrd/intlobj_new.h"
+#include "../common/os/mod_loader.h"
+#include "../common/intlobj_new.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../common/isc_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 
-#include "../config/ScanDir.h"
+#include "../common/ScanDir.h"
 #include "../common/config/config_file.h"
 
 using namespace Firebird;

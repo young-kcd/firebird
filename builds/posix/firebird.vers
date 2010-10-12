@@ -80,6 +80,7 @@ gds__open
 gds__open_blob
 gds__open_blob2
 gds__parse_bpb
+gds__parse_bpb2
 gds__prefix
 gds__prefix_lock
 gds__prefix_msg
@@ -123,6 +124,9 @@ gds__version
 gds__vtof
 gds__vtov
 gds__default_printer
+gds__trace
+gds__trace_raw
+gds__trace_printer
 
 gds__alloc_debug
 
@@ -332,11 +336,16 @@ Bopen
 
 fb_shutdown
 fb_shutdown_callback
+fb_ping
 
 # Plugins support
 
 fb_register_plugin
 fb_query_plugin
+
+# COM emulation
+
+fb_get_status_instance
 
 # Other misc functions
 
@@ -354,8 +363,6 @@ isc_vtov
 #-----------------
 # OTHER FUNCTIONS
 #-----------------
-
-CVT_move
 
 KEYWORD_stringIsAToken
 KEYWORD_getTokens

@@ -50,13 +50,13 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/ext_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include "../common/classes/init.h"
 
 #if defined _MSC_VER && _MSC_VER < 1400
@@ -304,7 +304,7 @@ void EXT_fini(jrd_rel* relation, bool close_only)
 }
 
 
-bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
+bool EXT_get(thread_db* tdbb, record_param* rpb, FB_UINT64& position)
 {
 /**************************************
  *

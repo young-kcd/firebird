@@ -29,10 +29,10 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/gdsassert.h"
 

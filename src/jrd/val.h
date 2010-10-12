@@ -35,7 +35,7 @@
 #include "../common/classes/QualifiedName.h"
 
 #include "../jrd/blb.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/ExtEngineManager.h"
 
 #define FLAG_BYTES(n)	(((n + BITS_PER_LONG) & ~((ULONG)BITS_PER_LONG - 1)) >> 3)

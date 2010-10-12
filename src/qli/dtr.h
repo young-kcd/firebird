@@ -25,7 +25,7 @@
 #define QLI_DTR_H
 
 #include "../jrd/common.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/constants.h"
 
 const USHORT QLI_MSG_FAC		= 1;

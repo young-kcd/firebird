@@ -39,7 +39,7 @@
 #include "../jrd/os/pio_proto.h"
 
 // Thread data block
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 
 // recursive mutexes
 #include "../common/thd.h"

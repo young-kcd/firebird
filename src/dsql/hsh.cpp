@@ -25,7 +25,7 @@
 #include <string.h>
 #include "../dsql/dsql.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/parse_proto.h"

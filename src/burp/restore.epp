@@ -47,7 +47,7 @@
 #include "../jrd/constants.h"
 #include "../remote/protocol.h"
 #ifdef DEBUG
-#include "../gpre/prett_proto.h"
+#include "../common/prett_proto.h"
 #endif
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/UserBlob.h"

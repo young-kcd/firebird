@@ -33,10 +33,10 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/common.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
 #include "../common/config/config.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/fb_tls.h"
 
 #include <stdio.h>

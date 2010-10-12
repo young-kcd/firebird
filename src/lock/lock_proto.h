@@ -35,8 +35,8 @@
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/array.h"
 #include "../common/StatusArg.h"
-#include "../jrd/ThreadStart.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/ThreadStart.h"
+#include "../common/isc_s_proto.h"
 #ifdef USE_SHMEM_EXT
 #include "../common/classes/objects_array.h"
 #endif

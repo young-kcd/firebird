@@ -41,7 +41,7 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../jrd/rse.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/UserManagement.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -51,8 +51,8 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/ext_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -62,7 +62,7 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/enc_proto.h"
+#include "../common/enc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TriState.h"
@@ -83,7 +83,7 @@ using namespace Ods;
 using namespace Firebird;
 
 #ifdef GARBAGE_THREAD
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 #endif
 
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> > > RelationLockTypeMap;
@@ -2734,10 +2734,14 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	}
 
 	strcpy(database, pszFilename);
-	if (gds__thread_start(sweep_database, database, THREAD_medium, 0, 0))
+	try
+	{
+		Thread::start(sweep_database, database, THREAD_medium);
+	}
+	catch (const Firebird::Exception& ex)
 	{
 		gds__free(database);
-		ERR_log(0, 0, "cannot start sweep thread");
+		iscLogException("cannot start sweep thread", ex);
 	}
 
 	return; // true;

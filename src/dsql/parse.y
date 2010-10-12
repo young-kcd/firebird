@@ -91,10 +91,10 @@
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
-#include "../dsql/keywords.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/keywords.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/intlobj_new.h"
+#include "../common/intlobj_new.h"
 #include "../jrd/Attachment.h"
 #include "../common/StatusArg.h"
 
@@ -165,7 +165,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 // token declarations
 
 // Tokens are organized chronologically by date added.
-// See dsql/keywords.cpp for a list organized alphabetically
+// See yvalve/keywords.cpp for a list organized alphabetically
 
 // Tokens in v4.0 -- not separated into v3 and v4 tokens
 

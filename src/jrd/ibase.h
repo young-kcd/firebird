@@ -225,7 +225,7 @@ typedef struct paramvary {
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
-#include "../jrd/dsc_pub.h"
+#include "../common/dsc_pub.h"
 
 #endif /* !defined(JRD_DSC_H) */
 

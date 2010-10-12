@@ -34,7 +34,7 @@
 #include "TraceUnicodeUtils.h"
 #include "../../jrd/intl_classes.h"
 #include "../../jrd/evl_string.h"
-#include "../../jrd/TextType.h"
+#include "../../common/TextType.h"
 #include "../../jrd/SimilarToMatcher.h"
 #include "../../common/classes/rwlock.h"
 #include "../../common/classes/GenericMap.h"

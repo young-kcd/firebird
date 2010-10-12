@@ -31,14 +31,14 @@
 #include "../jrd/cch.h"
 #include "../jrd/ini.h"
 #include "../jrd/nbak.h"
-#include "../jrd/os/guid.h"
+#include "../common/os/guid.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/blb_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/isc_f_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/isc_f_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -918,7 +918,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment* attachment,
+bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
 									 Writer& writer, int stat_id)
 {
 	fb_assert(attachment);

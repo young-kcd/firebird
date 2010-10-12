@@ -24,7 +24,7 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
-#include "../jrd/ThreadData.h"
+#include "../common/ThreadData.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/UtilSvc.h"
 

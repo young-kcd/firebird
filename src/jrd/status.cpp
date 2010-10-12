@@ -36,7 +36,7 @@
 #include "../jrd/status.h"
 #include "../jrd/gdsassert.h"
 #include "gen/iberror.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 
 /** Check that we never overrun the status vector.  The status

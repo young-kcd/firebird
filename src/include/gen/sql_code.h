@@ -720,6 +720,7 @@ static const struct {
 	{335545017, -532}, /* 697 async_active */
 	{335545018, -901}, /* 698 private_function */
 	{335545019, -901}, /* 699 private_procedure */
+	{335545020, -901}, /* 700 bad_events_handle */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

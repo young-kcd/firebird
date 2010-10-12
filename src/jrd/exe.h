@@ -40,7 +40,7 @@
 
 #include "gen/iberror.h"
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/rse.h"
 
 #include "../jrd/err_proto.h"
@@ -50,8 +50,6 @@
 
 #include "../jrd/DebugInterface.h"
 #include "../jrd/BlrReader.h"
-#include "../dsql/Nodes.h"
-#include "../dsql/Visitors.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -87,7 +85,6 @@ struct index_desc;
 struct IndexDescAlloc;
 class Format;
 class Cursor;
-class PlanNode;
 class RecordSource;
 
 // NOTE: The definition of structures RecordSelExpr and lit must be defined in
@@ -108,6 +105,17 @@ public:
 class jrd_nod : public jrd_node_base
 {
 public:
+/*	jrd_nod()
+	:	nod_parent(0),
+		nod_impure(0),
+		nod_type(nod_nop),
+		nod_flags(0),
+		nod_scale(0),
+		nod_count(0)
+	{
+		nod_arg[0] = 0;
+	}*/
+
 	jrd_nod*	nod_arg[1];
 
 	// Replace the line above by this block to check deep const-correctness.
@@ -125,13 +133,45 @@ public:
 	***/
 };
 
+const int nod_comparison	= 1;
 const int nod_id			= 1;		// marks a field node as a blr_fid guy
 const int nod_quad			= 2;		// compute in quad (default is long)
 const int nod_double		= 4;
 const int nod_date			= 8;
 const int nod_value			= 16;		// full value area required in impure space
-const int nod_agg_dbkey		= 32;		// dbkey of an aggregate
-const int nod_invariant		= 64;		// node is recognized as being invariant
+const int nod_deoptimize	= 32;		// boolean which requires deoptimization
+const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
+const int nod_invariant		= 128;		// node is recognized as being invariant
+const int nod_recurse		= 256;		// union node is a recursive union
+const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
+const int nod_ansi_not		= 1024;		// ANY/ALL predicate is prefixed with a NOT one
+
+// Special RecordSelExpr node
+
+class RecordSelExpr : public jrd_node_base
+{
+public:
+	USHORT		rse_count;
+	USHORT		rse_jointype;		// inner, left, full
+	NestConst<jrd_nod>	rse_first;
+	NestConst<jrd_nod>	rse_skip;
+	NestConst<jrd_nod>	rse_boolean;
+	NestConst<jrd_nod>	rse_sorted;
+	NestConst<jrd_nod>	rse_projection;
+	NestConst<jrd_nod>	rse_aggregate;	// singleton aggregate for optimizing to index
+	NestConst<jrd_nod>	rse_plan;		// user-specified access plan
+	VarInvariantArray*	rse_invariants; // Invariant nodes bound to top-level RSE
+	jrd_nod*	rse_relation[1];
+};
+
+
+const int rse_variant		= 1;	// variant (not invariant?)
+const int rse_singular		= 2;	// singleton select
+const int rse_writelock		= 4;	// locked for write
+const int rse_scrollable	= 8;	// scrollable cursor
+
+// Number of nodes may fit into nod_arg of normal node to get to rse_relation
+const size_t rse_delta = (sizeof(RecordSelExpr) - sizeof(jrd_nod)) / sizeof(jrd_nod::blk_repeat_type);
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;
@@ -191,6 +231,13 @@ struct impure_agg_sort
 
 // Various field positions
 
+const int e_arg_flag		= 0;
+const int e_arg_indicator	= 1;
+const int e_arg_message		= 2;
+const int e_arg_number		= 3;
+const int e_arg_info		= 4;
+const int e_arg_length		= 5;
+
 const int e_msg_number			= 0;
 const int e_msg_format			= 1;
 const int e_msg_impure_flags	= 2;
@@ -235,13 +282,42 @@ const int e_asgn_missing	= 2;	// Value for comparison for missing
 const int e_asgn_missing2	= 3;	// Value for substitute for missing
 const int e_asgn_length		= 4;
 
+const int e_rel_stream		= 0;
+const int e_rel_relation	= 1;
+const int e_rel_view		= 2;	// parent view for posting access
+const int e_rel_alias		= 3;	// SQL alias for the relation
+const int e_rel_context		= 4;	// user-specified context number for the relation reference
+const int e_rel_length		= 5;
+
+const int e_idx_retrieval	= 0;
+const int e_idx_length		= 1;
+
 const int e_lbl_statement	= 0;
 const int e_lbl_label		= 1;
 const int e_lbl_length		= 2;
 
+const int e_any_rse			= 0;
+const int e_any_rsb			= 1;
+const int e_any_length		= 2;
+
 const int e_val_boolean		= 0;
 const int e_val_value		= 1;
 const int e_val_length		= 2;
+
+const int e_uni_stream		= 0;	// Stream for union
+const int e_uni_clauses		= 1;	// RecordSelExpr's for union
+const int e_uni_map_stream	= 2;	// stream for next level record of recursive union
+const int e_uni_length		= 3;
+
+const int e_agg_stream		= 0;
+const int e_agg_rse			= 1;
+const int e_agg_group		= 2;
+const int e_agg_map			= 3;
+const int e_agg_length		= 4;
+
+const int e_win_rse			= 0;
+const int e_win_windows		= 1;
+const int e_win_length		= 2;
 
 // Statistical expressions
 
@@ -259,6 +335,16 @@ const int e_esp_outputs		= 2;
 const int e_esp_out_msg		= 3;
 const int e_esp_procedure	= 4;
 const int e_esp_length		= 5;
+
+// Stored procedure view
+
+const int e_prc_inputs		= 0;
+const int e_prc_in_msg		= 1;
+const int e_prc_stream		= 2;
+const int e_prc_procedure	= 3;
+const int e_prc_view		= 4;
+const int e_prc_context		= 5;
+const int e_prc_length		= 6;
 
 // Generate id
 
@@ -302,11 +388,26 @@ const int e_cast_fmt		= 1;
 const int e_cast_iteminfo	= 2;
 const int e_cast_length		= 3;
 
+// This is for the plan node
+const int e_retrieve_relation		= 0;
+const int e_retrieve_access_type	= 1;
+const int e_retrieve_length			= 2;
+
+// This is for the plan's access_type subnode
+const int e_access_type_relation	= 0;
+const int e_access_type_index		= 1;
+const int e_access_type_index_name	= 2;
+const int e_access_type_length		= 3;
+
 // SQL Date supporting nodes
 const int e_extract_value	= 0;	// Node
 const int e_extract_part	= 1;	// Integer
 const int e_extract_count	= 1;	// Number of nodes
 const int e_extract_length	= 2;	// Number of entries in nod_args
+
+const int e_current_date_length		= 1;
+const int e_current_time_length		= 1;
+const int e_current_timestamp_length= 1;
 
 const int e_dcl_cur_rse		= 0;
 const int e_dcl_cur_refs	= 1;
@@ -325,6 +426,12 @@ const int e_strlen_value	= 0;
 const int e_strlen_type		= 1;
 const int e_strlen_count	= 1;
 const int e_strlen_length	= 2;
+
+const int e_trim_value			= 0;
+const int e_trim_characters		= 1;
+const int e_trim_specification	= 2;
+const int e_trim_count			= 2;
+const int e_trim_length			= 3;
 
 // nod_src_info
 const int e_src_info_line		= 0;
@@ -375,6 +482,15 @@ const int e_extproc_input_message	= 0;
 const int e_extproc_output_message	= 1;
 const int e_extproc_input_assign	= 2;
 const int e_extproc_output_assign	= 3;
+
+// Window partition.
+const int e_part_group		= 0;
+const int e_part_regroup	= 1;
+const int e_part_order		= 2;
+const int e_part_map		= 3;
+const int e_part_stream		= 4;
+const int e_part_count		= 4;
+const int e_part_length		= 5;
 
 // Request resources
 
@@ -527,28 +643,21 @@ typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAcc
 // The three structs below are used for domains DEFAULT and constraints in PSQL
 struct Item
 {
-	enum Type
-	{
-		TYPE_VARIABLE,
-		TYPE_PARAMETER,
-		TYPE_CAST
-	};
-
-	Item(Type aType, UCHAR aSubType, USHORT aIndex)
+	Item(nod_t aType, UCHAR aSubType, USHORT aIndex)
 		: type(aType),
 		  subType(aSubType),
 		  index(aIndex)
 	{
 	}
 
-	Item(Type aType, USHORT aIndex = 0)
+	Item(nod_t aType, USHORT aIndex = 0)
 		: type(aType),
 		  subType(0),
 		  index(aIndex)
 	{
 	}
 
-	Type type;
+	nod_t type;
 	UCHAR subType;
 	USHORT index;
 
@@ -616,34 +725,6 @@ struct ItemInfo
 	bool nullable;
 	bool explicitCollation;
 	bool fullDomain;
-};
-
-struct LegacyNodeOrRseNode
-{
-	LegacyNodeOrRseNode(jrd_nod* aLegacyNode)
-		: legacyNode(aLegacyNode),
-		  boolExprNode(NULL),
-		  rseNode(NULL)
-	{
-	}
-
-	LegacyNodeOrRseNode(BoolExprNode* aBoolExprNode)
-		: legacyNode(NULL),
-		  boolExprNode(aBoolExprNode),
-		  rseNode(NULL)
-	{
-	}
-
-	LegacyNodeOrRseNode(RseNode* aRseNode)
-		: legacyNode(NULL),
-		  boolExprNode(NULL),
-		  rseNode(aRseNode)
-	{
-	}
-
-	jrd_nod* legacyNode;
-	BoolExprNode* boolExprNode;
-	RseNode* rseNode;
 };
 
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaNamePair, FieldInfo> > >
@@ -747,8 +828,8 @@ public:
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
-	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
-	Firebird::Array<LegacyNodeOrRseNode> csb_current_nodes;	// RseNode's and other invariant
+	Firebird::Array<jrd_nod*> csb_invariants;	// stack of invariant nodes
+	Firebird::Array<jrd_node_base*> csb_current_nodes;	// RecordSelExpr's and other invariant
 												// candidates within whose scope we are
 	USHORT			csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number
@@ -781,7 +862,6 @@ public:
 			csb_idx(0),
 			csb_message(0),
 			csb_format(0),
-			csb_internal_format(0),
 			csb_fields(0),
 			csb_cardinality(0.0),	// TMN: Non-natural cardinality?!
 			csb_plan(0),
@@ -801,11 +881,10 @@ public:
 
 		IndexDescAlloc* csb_idx;		// Packed description of indices
 		jrd_nod* csb_message;			// Msg for send/receive
-		const Format* csb_format;		// Default Format for stream
-		Format* csb_internal_format;	// Statement internal format
+		Format* csb_format;				// Default Format for stream
 		UInt32Bitmap* csb_fields;		// Fields referenced
 		double csb_cardinality;			// Cardinality of relation
-		PlanNode* csb_plan;				// user-specified plan for this relation
+		jrd_nod* csb_plan;				// user-specified plan for this relation
 		UCHAR* csb_map;					// Stream map for views
 		RecordSource** csb_rsb_ptr;		// point to rsb for nod_stream
 	};
@@ -877,6 +956,6 @@ public:
 // declared as varchar
 const int XCP_MESSAGE_LENGTH = 1023 - sizeof(USHORT);
 
-} // namespace Jrd
+} //namespace Jrd
 
 #endif // JRD_EXE_H

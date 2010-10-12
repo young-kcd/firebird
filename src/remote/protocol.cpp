@@ -32,13 +32,13 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "gen/iberror.h"
-#include "../jrd/sdl.h"
+#include "../common/sdl.h"
 #include "../jrd/gdsassert.h"
 #include "../remote/parse_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/sdl_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/sdl_proto.h"
 
 #ifdef DEBUG_XDR_MEMORY
 inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
@@ -110,7 +110,7 @@ static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR*, USHORT);
 
-#include "../remote/xdr_proto.h"
+#include "../common/xdr_proto.h"
 
 
 #ifdef DEBUG

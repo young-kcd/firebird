@@ -49,7 +49,7 @@ No need to worry about blr_blob or ?blr_blob_id
 
 */
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =

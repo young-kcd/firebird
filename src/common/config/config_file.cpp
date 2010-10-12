@@ -26,7 +26,7 @@
 #include "../common/classes/auto.h"
 #include "../common/config/config_file.h"
 #include "../common/config/config.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include <stdio.h>
 
 #ifdef HAVE_STDLIB_H

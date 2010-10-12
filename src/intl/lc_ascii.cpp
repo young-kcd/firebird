@@ -24,8 +24,8 @@
 #include "firebird.h"
 #include "../common/classes/alloc.h"
 #include "../intl/ldcommon.h"
-#include "../jrd/CharSet.h"
-#include "../jrd/IntlUtil.h"
+#include "../common/CharSet.h"
+#include "../common/IntlUtil.h"
 #include "ld_proto.h"
 #include "lc_ascii.h"
 

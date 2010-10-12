@@ -29,7 +29,7 @@
 #include "TraceUnicodeUtils.h"
 #include "../../jrd/evl_string.h"
 #include "../../jrd/SimilarToMatcher.h"
-#include "../../jrd/isc_f_proto.h"
+#include "../../common/isc_f_proto.h"
 
 using namespace Firebird;
 

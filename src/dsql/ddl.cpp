@@ -94,17 +94,17 @@
 #include "../jrd/dyn_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/why_proto.h"
+#include "../yvalve/why_proto.h"
 #include "../common/utils_proto.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/DSqlDataTypeUtil.h"
 #include "../common/StatusArg.h"
 
 #ifdef DSQL_DEBUG
-#include "../gpre/prett_proto.h"
+#include "../common/prett_proto.h"
 #endif
 
 using namespace Jrd;

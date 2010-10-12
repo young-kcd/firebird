@@ -33,7 +33,7 @@
 #include "../qli/err_proto.h"
 #include "../qli/forma_proto.h"
 #include "../qli/meta_proto.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/align.h"
 

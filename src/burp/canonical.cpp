@@ -36,10 +36,10 @@
 #endif
 #include "../burp/burp.h"
 #include "../jrd/align.h"
-#include "../jrd/sdl.h"
+#include "../common/sdl.h"
 #include "../burp/canon_proto.h"
-#include "../jrd/sdl_proto.h"
-#include "../remote/xdr_proto.h"
+#include "../common/sdl_proto.h"
+#include "../common/xdr_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../include/fb_types.h"
 

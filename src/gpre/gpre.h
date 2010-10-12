@@ -1515,7 +1515,7 @@ struct upd {
 
 const size_t UPD_LEN = sizeof(upd);
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "parse.h"
 
 // GPRE wide globals

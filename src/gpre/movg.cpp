@@ -29,7 +29,7 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../gpre/movg_proto.h"
 // TMN: Unfortunately we need to include gpre.h before gpre_proto.h since
 // the latter references a macro from the former, and doesn't include that

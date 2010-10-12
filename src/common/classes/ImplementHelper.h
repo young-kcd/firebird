@@ -31,7 +31,7 @@
 
 #include "../common/classes/Interface.h"
 
-//#include "../jrd/gds_proto.h"
+//#include "../yvalve/gds_proto.h"
 #include "../common/classes/alloc.h"
 
 namespace Firebird {
@@ -71,7 +71,7 @@ void interfaceFree(T* ptr)
 }
 
 // Template to create static instance of plugin
-template <typename C, unsigned int T, char NM[]>
+template <typename C, unsigned int T, unsigned int P, char NM[]>
 class PluginHelper : public C
 {
 public:
@@ -90,18 +90,23 @@ public:
 		return T;
 	}
 
+	virtual unsigned int priority() const
+	{
+		return P;
+	}
+
 	virtual void link(Plugin* chain)
 	{
-		pp = chain;
+		plug = chain;
 	}
 
 	virtual Plugin* next() const
 	{
-		return pp;
+		return plug;
 	}
 
 private:
-	Plugin* pp;
+	Plugin* plug;
 };
 
 } // namespace Firebird

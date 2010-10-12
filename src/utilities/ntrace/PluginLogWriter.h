@@ -31,8 +31,8 @@
 
 #include "../../jrd/ntrace.h"
 #include "../../common/classes/timestamp.h"
-#include "../../jrd/isc_s_proto.h"
-#include "../../jrd/os/path_utils.h"
+#include "../../common/isc_s_proto.h"
+#include "../../common/os/path_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

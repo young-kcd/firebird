@@ -26,9 +26,10 @@
 #ifndef JRD_EVENT_H
 #define JRD_EVENT_H
 
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
+#include "ProviderInterface.h"
 
 // Global section header
 
@@ -121,8 +122,7 @@ struct evt_req
 	SRQ_PTR req_process;			// Parent process block
 	SRQ_PTR req_session;			// Parent session block
 	SRQ_PTR req_interests;			// First interest in request
-	FPTR_EVENT_CALLBACK req_ast;	// Asynchronous routine
-	void* req_ast_arg;				// Argument for ast
+	FbApi::EventCallback* req_ast;	// Asynchronous callback
 	SLONG req_request_id;			// Request id, dummy
 };
 

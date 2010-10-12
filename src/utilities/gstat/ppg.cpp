@@ -31,9 +31,9 @@
 #include "../common/classes/timestamp.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
-#include "../jrd/os/guid.h"
+#include "../common/os/guid.h"
 #include "../jrd/nbak.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/DbImplementation.h"
 
 #include "../utilities/gstat/ppg_proto.h"

@@ -32,10 +32,10 @@
 #include "TracePluginImpl.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
-#include "../../jrd/isc_f_proto.h"
+#include "../../common/isc_f_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
-#include "../../jrd/os/path_utils.h"
+#include "../../common/os/path_utils.h"
 #include "../../jrd/inf_pub.h"
 #include "../../dsql/sqlda_pub.h"
 

@@ -28,7 +28,6 @@
 #  Adriano dos Santos Fernandes
 #
 ROOT=../..
-ObjModuleType=std
 
 CXXFLAGS+= -I$(ROOT)/gen/firebird/include
 

@@ -22,8 +22,8 @@
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/os/path_utils.h"
-#include "../jrd/gds_proto.h"
+#include "../common/os/path_utils.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/TempSpace.h"
 #include "../common/utils_proto.h"
 

@@ -25,7 +25,7 @@
 
 #include "firebird.h"
 #include "../jrd/common.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/intl.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"

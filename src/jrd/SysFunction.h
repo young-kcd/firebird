@@ -33,7 +33,7 @@
 
 #include "../common/classes/MetaName.h"
 #include "../jrd/DataTypeUtil.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 
 namespace Jrd
 {

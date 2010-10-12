@@ -24,7 +24,7 @@
 #ifndef JRD_INTL_H
 #define JRD_INTL_H
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/ibase.h"
 #include "../intl/charsets.h"
 

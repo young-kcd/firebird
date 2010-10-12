@@ -1,388 +1,200 @@
-#
-# jrd
+# Helper functions
+makeObjects= $(addprefix $(OBJ)/$(1)/,$(patsubst %.y,%.o,$(patsubst %.epp,%.o,$(patsubst %.c,%.o,$(2:.cpp=.o)))))
+dirFiles= $(notdir $(wildcard ../src/$(1)/*.cpp)) $(notdir $(wildcard ../src/$(1)/*.c)) \
+		  $(notdir $(wildcard ../src/$(1)/*.epp)) $(notdir $(wildcard ../src/$(1)/*.y))
+dirInPath= $(call makeObjects,$(1),$(call dirFiles,$(1)))
 
-# to get at the database.  why.cpp is the normal one whybk.cpp is the one
-# compiled with a BACKEND flag, it seems to be (from a quick look at
-# the code) to allow the use of another library to talk to data from
-# and earlier version data file.  (Good way to achieve back portability)
-# In the current builds only why.cpp is used, to build using whybk.cpp you
-# will need to look at what is contained in the original makefiles.
-
-WHY_Sources = why.cpp
-
-# why.cpp does the switch to determine the actual implementation to use
-
-
-JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
-		gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
-		perf.cpp sdl.cpp status.cpp \
-		ThreadData.cpp ThreadStart.cpp utl.cpp \
-        $(WHY_Sources)
-
-JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) \
-		common/cvt.cpp common/classes/DbImplementation.cpp
-
-
-JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
-        dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp Function.epp \
-        grant.epp ini.epp met.epp pcmet.epp scl.epp \
-        CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
-        blb.cpp btn.cpp btr.cpp builtin.cpp \
-		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
-		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
-		err.cpp event.cpp ErrorImpl.cpp evl.cpp exe.cpp ext.cpp \
-		execute_statement.cpp ExtEngineManager.cpp filters.cpp flu.cpp \
-		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
-		IntlUtil.cpp isc_sync.cpp \
-		jrd.cpp JrdStatement.cpp Attachment.cpp Database.cpp lck.cpp \
-		mov.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp PluginManager.cpp PreparedStatement.cpp RandomGenerator.cpp \
-		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp \
-		sdw.cpp shut.cpp sort.cpp sqz.cpp \
-		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp \
-		ValueImpl.cpp ValuesImpl.cpp vio.cpp \
-		nodebug.cpp nbak.cpp $(Physical_IO_Module) TextType.cpp \
-		unicode_util.cpp RecordSourceNodes.cpp RuntimeStatistics.cpp DebugInterface.cpp \
-		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp \
-		trace/TraceConfigStorage.cpp trace/TraceLog.cpp \
-		trace/TraceManager.cpp trace/TraceObjects.cpp \
-		recsrc/AggregatedStream.cpp recsrc/BitmapTableScan.cpp \
-		recsrc/BufferedStream.cpp recsrc/Cursor.cpp recsrc/ExternalTableScan.cpp \
-		recsrc/FilteredStream.cpp recsrc/FirstRowsStream.cpp recsrc/FullOuterJoin.cpp \
-		recsrc/FullTableScan.cpp recsrc/HashJoin.cpp recsrc/IndexTableScan.cpp recsrc/LockedStream.cpp \
-		recsrc/MergeJoin.cpp recsrc/NestedLoopJoin.cpp \
-		recsrc/ProcedureScan.cpp recsrc/RecordSource.cpp recsrc/RecursiveStream.cpp \
-		recsrc/SingularStream.cpp recsrc/SkipRowsStream.cpp recsrc/SortedStream.cpp recsrc/Union.cpp \
-		recsrc/VirtualTableScan.cpp recsrc/WindowedStream.cpp
-
-JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
-JRD_ServerSources += gpre/pretty.cpp
-
-JRD_Sources = $(JRD_ClientSources) $(JRD_ServerSources)
-
-# expands list to ../<module>/jrd/xx.o entries
-JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
-
-
-
-#  If your platform needs these then you may need
-# to include something like.
-# JRD_P_Sources := $(subst, flu.lo, , $(JRD_P_Sources))
-
-
-
-#________________________________________________________________________
-#
-# dsql
-
-DSQL_ClientFiles = array.epp blob.epp \
-                   preparse.cpp user_dsql.cpp utld.cpp keywords.cpp
-
-DSQL_ServerFiles=	metd.epp DSqlDataTypeUtil.cpp \
-                ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
-	            movd.cpp parse.cpp Parser.cpp pass1.cpp \
-	            DdlNodes.epp PackageNodes.epp AggNodes.cpp BlrWriter.cpp BoolNodes.cpp \
-	            DsqlCompilerScratch.cpp ExprNodes.cpp StmtNodes.cpp WinNodes.cpp
-
-
-DSQL_Files = $(DSQL_ClientFiles) $(DSQL_ServerFiles)
-
-DSQL_Sources = $(addprefix dsql/, $(DSQL_Files))
-DSQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_Sources))))
-
-
-#________________________________________________________________________
-#
-# lock
-
-
-LOCK_Files = lock.cpp
-
-LOCK_Sources = $(addprefix lock/, $(LOCK_Files))
-LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources))))
-
-
-#________________________________________________________________________
-#
-# remote
-
-REMOTE_CommonFiles =  inet.cpp merge.cpp \
-            parser.cpp protocol.cpp remote.cpp xdr.cpp
-
-REMOTE_ClientFiles =  interface.cpp
-
-INTERFACE_Files=	$(REMOTE_ClientFiles) $(REMOTE_CommonFiles)
-
-
-INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files)) \
-			auth/Auth.cpp auth/AuthDbg.cpp auth/SecurityDatabase/LegacyClient.cpp jrd/enc.cpp
-INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
-
-ifeq ($(PLATFORM),win32)
-REMOTE_CommonFiles += os/win32/wnet.cpp xnet.cpp
-INTERFACE_Objects += $(OBJ)/auth/trusted/AuthSspi.o
+dirMaster= $(call dirInPath,$(1))
+dirOs= $(call dirInPath,$(1)/$(PLATFORM_PATH))
+ifneq ($(strip $(PLATFORM_FALLBACK)),)
+dirBackList= $(filter-out $(call dirFiles,$(1)/$(PLATFORM_PATH)),$(call dirFiles,$(1)/$(PLATFORM_FALLBACK)))
+dirFallBack= $(call makeObjects,$(1)/$(PLATFORM_FALLBACK),$(call dirBackList,$(1)))
+else
+dirFallBack=
 endif
 
-#________________________________________________________________________
-#
-# intl
-
-# none currently.
+dirObjects= $(call dirMaster,$(1)) $(call dirOs,$(1)) $(call dirOs2,$(1))
 
 
-#________________________________________________________________________
-#
+# Collect all object files here
+AllObjects=
+
+
+# Common files
+CO1:= $(call dirObjects,common)
+CO2:= $(call dirObjects,common/classes)
+CO3:= $(call dirObjects,common/config)
+#CO4:= $(call dirObjects,common/exceptions)
+#CO5:= $(call dirObjects,common/sync)
+Common_Objects:= $(CO1) $(CO2) $(CO3) 
+# $(CO4) $(CO5)
+
+AllObjects += $(Common_Objects)
+
+
 # gpre
+GPRE_Common_Objects:= $(call dirObjects,gpre) $(call makeObjects,gpre/languages,@GPRE_LANGUAGE_MODULES@)
+GPRE_std:= $(call dirObjects,gpre/std)
+GPRE_Objects:= $(GPRE_Common_Objects) $(GPRE_std)
+GPRE_boot:= $(call dirObjects,gpre/boot) $(call makeObjects,yvalve,gds.cpp)
+GPRE_Boot_Objects:= $(GPRE_Common_Objects) $(GPRE_boot)
 
-GPRELIB_ClientFiles = pretty.cpp
-
-GPRELIB_Files = $(GPRELIB_ClientFiles) $(GPRELIB_ServerFiles)
-
-GPRELIB_Sources = $(addprefix gpre/, $(GPRELIB_Files))
-GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sources))))
+AllObjects += $(GPRE_Common_Objects) $(GPRE_std) $(GPRE_boot)
 
 
+# Y-Valve
+YValve_Objects:= $(call dirObjects,yvalve)
 
-#________________________________________________________________________
-#
-# alice
+AllObjects += $(YValve_Objects)
 
-ALICE_Files=alice.cpp exe.cpp alice_meta.epp tdr.cpp
-ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
-ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources))))
 
-#________________________________________________________________________
-#
-# burp
+# Remote
+Remote_Common:= $(call dirObjects,remote)
+Remote_Server:= $(call dirObjects,remote/server) $(call makeObjects,auth/SecurityDatabase,pwd.cpp)
+												 # legacy security database pwd.cpp should become SA plugin
+Remote_Client:= $(call dirObjects,remote/client) $(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp)
+Remote_Server_Objects:= $(Remote_Common) $(Remote_Server)
+Remote_Client_Objects:= $(Remote_Common) $(Remote_Client)
 
-BURP_Files=burp.cpp backup.epp restore.epp OdsDetection.epp mvol.cpp misc.cpp canonical.cpp
-BURP_Sources = $(addprefix burp/, $(BURP_Files))
-BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources))))
+AllObjects += $(Remote_Common) $(Remote_Server) $(Remote_Client)
 
-#________________________________________________________________________
-#
+
+# Engine
+Engine_Objects:= $(call dirObjects,jrd) $(call dirObjects,dsql) $(call dirObjects,jrd/extds) \
+				 $(call dirObjects,jrd/recsrc) $(call dirObjects,jrd/trace) \
+				 $(call makeObjects,lock,lock.cpp)
+
+AllObjects += $(Engine_Objects)
+
+
+# services
+
+# gfix
+Svc_GFIX_Objects:= $(call dirObjects,alice)
+GFIX_Objects:= $(Svc_GFIX_Objects) $(call dirObjects,alice/main)
+
+AllObjects += $(GFIX_Objects)
+
+# gbak
+Svc_GBAK_Objects:= $(call dirObjects,burp)
+GBAK_Objects:= $(Svc_GBAK_Objects) $(call dirObjects,burp/main)
+
+AllObjects += $(GBAK_Objects)
+
+# gsec
+Svc_GSEC_Objects:= $(call dirObjects,utilities/gsec)
+GSEC_Objects:= $(Svc_GSEC_Objects) $(call dirObjects,utilities/gsec/main)
+
+AllObjects += $(GSEC_Objects)
+
+# gstat
+Svc_GSTAT_Objects:= $(call dirObjects,utilities/gstat)
+GSTAT_Own_Objects:= $(Svc_GSTAT_Objects) $(call dirObjects,utilities/gstat/main)
+GSTAT_Objects:= $(GSTAT_Own_Objects) $(call makeObjects,jrd,btn.cpp ods.cpp)
+
+AllObjects += $(GSTAT_Own_Objects)
+
 # nbackup
+Svc_NBACKUP_Objects:= $(call dirObjects,utilities/nbackup)
+NBACKUP_Own_Objects:= $(Svc_NBACKUP_Objects) $(call dirObjects,utilities/nbackup/main)
+NBACKUP_Objects:= $(NBACKUP_Own_Objects) $(call makeObjects,jrd,ods.cpp)
 
-NBACKUP_SERVER_Files= nbackup.cpp
-NBACKUP_SERVER_Sources = $(addprefix utilities/, $(NBACKUP_SERVER_Files))
-NBACKUP_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_SERVER_Sources))))
+AllObjects += $(NBACKUP_Own_Objects)
 
-#________________________________________________________________________
-#
-# ntrace
+SVC_Objects:= $(Svc_GFIX_Objects) $(Svc_GBAK_Objects) $(Svc_GSEC_Objects) $(Svc_GSTAT_Objects) \
+			  $(Svc_NBACKUP_Objects)
 
-NTRACE_SERVER_Files= TraceCmdLine.cpp TraceService.cpp
-NTRACE_SERVER_Sources = $(addprefix jrd/trace/, $(NTRACE_SERVER_Files))
-NTRACE_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NTRACE_SERVER_Sources))))
 
-#________________________________________________________________________
-#
-# utilities
+# International support
+INTL_Objects:= $(call dirObjects,intl)
 
-SECURITY_ClientFiles_gsec = call_service.cpp
+AllObjects += $(INTL_Objects)
 
-SECURITY_ServerFiles_gsec:= security.cpp gsec.cpp 
-SECURITY_ServerFiles_gstat:= dba.epp ppg.cpp 
-SECURITY_ServerFiles_common:= 
 
-SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
-SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
-SECURITY_Files_common = $(SECURITY_ServerFiles_common)
-SECURITY_Sources_gsec = $(addprefix utilities/gsec/, $(SECURITY_Files_gsec))
-SECURITY_Sources_gstat = $(addprefix utilities/gstat/, $(SECURITY_Files_gstat))
-SECURITY_Sources_common = $(addprefix utilities/common/, $(SECURITY_Files_common))
+# Lockprint
+LOCKPRINT_Objects:= $(call makeObjects,lock,print.cpp)
 
-SECURITY_Sources = $(SECURITY_Sources_gsec) $(SECURITY_Sources_gstat) $(SECURITY_Sources_common)
-SECURITY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_Sources))))
+AllObjects += $(LOCKPRINT_Objects)
 
-SECURITY_ClientSources_gsec = $(addprefix utilities/gsec/, $(SECURITY_ClientFiles_gsec))
-SECURITY_ClientObjects_gsec = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SECURITY_ClientSources_gsec))))
 
-#________________________________________________________________________
-#
-# common/classes
+# Guardian
+FBGUARD_Objects:= $(call dirObjects,utilities/guard)
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp semaphore.cpp fb_string.cpp timestamp.cpp \
-	PublicHandle.cpp TempFile.cpp
-FBCLASSES_MsgFiles=SafeArg.cpp MsgPrint.cpp BaseStream.cpp
-FBCLASSES_ServerFiles=UserBlob.cpp
+AllObjects += $(FBGUARD_Objects)
 
-FBCLASSES_ClientSources = $(addprefix common/classes/, $(FBCLASSES_ClientFiles))
-FBCLASSES_MsgSources = $(addprefix common/classes/, $(FBCLASSES_MsgFiles))
-FBCLASSES_ServerSources = $(addprefix common/classes/, $(FBCLASSES_ServerFiles))
 
-FBCLASSES_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ClientSources))))
-FBCLASSES_MsgObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_MsgSources))))
-FBCLASSES_ServerObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCLASSES_ServerSources))))
+# Services manager
+FBSVCMGR_Objects:= $(call dirObjects,utilities/fbsvcmgr)
 
-FBCLASSES_Objects = $(FBCLASSES_ClientObjects) $(FBCLASSES_ServerObjects) $(FBCLASSES_MsgObjects)
+AllObjects += $(FBSVCMGR_Objects)
 
-#________________________________________________________________________
-#
-# common/config
 
-FBCONFIG_ClientFiles=config.cpp config_file.cpp dir_list.cpp ConfigCache.cpp
-FBCONFIG_ServerFiles=
+# Trace manager
+FBTRACEMGR_Objects:= $(call dirObjects,utilities/fbtracemgr) $(call makeObjects,jrd/trace,TraceCmdLine.cpp)
 
-FBCONFIG_Files= $(FBCONFIG_ClientFiles) $(FBCONFIG_ServerFiles)
+AllObjects += $(FBTRACEMGR_Objects)
 
-FBCONFIG_Sources = $(addprefix common/config/, $(FBCONFIG_Files))
-FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_Sources))))
 
-#________________________________________________________________________
-#
-# config
+# Trace plugin
+FBTRACE_UTIL_Objects:= $(call dirObjects,utilities/ntrace)
 
-CONFIG_ClientFiles=ScanDir.cpp
-CONFIG_ServerFiles=
+AllObjects += $(FBTRACE_UTIL_Objects)
 
-CONFIG_Files= $(CONFIG_ClientFiles) $(CONFIG_ServerFiles)
 
-CONFIG_Sources = $(addprefix config/, $(CONFIG_Files))
-CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Sources))))
+# Split/merge backup files
+GSPLIT_Objects:= $(call dirObjects,burp/split)
 
-#________________________________________________________________________
-#
-# common
+AllObjects += $(GSPLIT_Objects)
 
-FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp StatusArg.cpp
-FBCOMMON_ServerFiles = utils.cpp
 
-FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
-FBCOMMON_ServerObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ServerFiles))))
+# Interactive sql
+ISQL_Objects:= $(call dirObjects,isql)
 
-FBCOMMON_Objects = $(FBCOMMON_ClientObjects) $(FBCOMMON_ServerObjects)
+AllObjects += $(ISQL_Objects)
 
-#________________________________________________________________________
-#
-# clumplets
 
-CLUMPLETS_ClientFiles = ClumpletReader.cpp ClumpletWriter.cpp
-CLUMPLETS_ServerFiles = 
+# QLI
+QLI_Objects:= $(call dirObjects,qli)
 
-CLUMPLETS_Files = $(CLUMPLETS_ClientFiles) $(CLUMPLETS_ServerFiles)
+AllObjects += $(QLI_Objects)
 
-CLUMPLETS_Sources = $(addprefix common/classes/, $(CLUMPLETS_Files))
-CLUMPLETS_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLUMPLETS_Sources))))
 
+# Legacy users management in security database
+LEGACY_USERS_MANAGE_Objects:= $(call makeObjects,auth/SecurityDatabase,LegacyManagement.epp)
 
-#________________________________________________________________________
-#
-# Platform Manager
+AllObjects += $(LEGACY_USERS_MANAGE_Objects)
 
-# just in case if make.platform defined some files
-OS_SPECIFIC_Files += config_root.cpp path_utils.cpp mod_loader.cpp fbsyslog.cpp guid.cpp os_utils.cpp
 
-OS_SPECIFIC_Sources = $(addprefix jrd/, $(OS_SPECIFIC_Files)) common/dllinst.cpp
-ifneq ($(strip @BINRELOC_CFLAGS@),)
-OS_SPECIFIC_Sources += $(ROOT)/extern/binreloc/binreloc.c
-endif
-OS_SPECIFIC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(OS_SPECIFIC_Sources))))
+# UDR engine
+UDRENG_Objects:= $(call dirObjects,plugins/udr_engine)
 
+AllObjects += $(UDRENG_Objects)
 
-#________________________________________________________________________
-#
 
-# These objects are needed in any target
+# UDF support
+IBUDF_Objects:= $(call makeObjects,extlib,ib_udf.cpp)
+FBUDF_Objects:= $(call makeObjects,extlib/fbudf,fbudf.cpp)
+UTIL_Objects:= $(call makeObjects,extlib,ib_util.cpp)
 
-COMMON_Objects = $(FBCLASSES_Objects) \
-				$(FBCOMMON_Objects) \
-				$(CONFIG_Objects)
+AllObjects += $(IBUDF_Objects) $(FBUDF_Objects) $(UTIL_Objects)
 
 
-#________________________________________________________________________
-#
+# Regenerate error codes
+CODES_Objects:= $(call makeObjects,misc,codes.epp)
+MSG_SCRIPTS = msg.sql facilities2.sql locales.sql sqlstates.sql history2.sql messages2.sql \
+              symbols2.sql system_errors2.sql transmsgs.fr_FR2.sql transmsgs.de_DE2.sql
+MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 
-# These objects are needed for all utilities
+AllObjects += $(CODES_Objects)
 
-FBUTIL_Files = classes/Switches.cpp
 
-FBUTIL_Sources = $(addprefix common/, $(FBUTIL_Files))
-FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Sources))))
+# Create messages file
+BUILD_Objects:= $(call makeObjects,msgs,build_file.epp)
 
+AllObjects += $(BUILD_Objects)
 
-#________________________________________________________________________
-#
 
-# These objects are needed for all services
+# BLR
+BLRTABLE_Objects = $(call makeObjects,misc,blrtable.cpp)
 
-FBSVC_Files = UtilSvc.cpp
-
-FBSVC_Sources = $(addprefix common/, $(FBSVC_Files))
-FBSVC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVC_Sources))))
-
-
-#________________________________________________________________________
-#
-
-# These objects are needed for utilities, that can be used as services
-
-FBUTILSVC_Objects = $(FBUTIL_Objects) $(FBSVC_Objects)
-
-
-#________________________________________________________________________
-#
-
-SVCTAB_Sources = jrd/svc_tab.cpp
-SVCTAB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SVCTAB_Sources))))
-
-# These are the lists of object/shared object files that will go into libgds.$(SHRLIB_EXT).
-
-LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
-                $(JRD_Objects) \
-                $(DSQL_Objects) \
-                $(LOCK_Objects) \
-                $(INTERFACE_Objects) \
-                $(GPRELIB_Objects) \
-                $(SECURITY_Objects) \
-                $(CLUMPLETS_Objects) \
-                $(FBCONFIG_Objects) \
-                $(BURP_Objects) \
-                $(ALICE_Objects) \
-				$(NBACKUP_SERVER_Objects) \
-				$(NTRACE_SERVER_Objects) \
-				$(FBUTIL_Objects) \
-				$(SVCTAB_Objects)
-
-# Objects differences for server (super) and embedded (classic) libraries 
-# have been worked out above in this file, based on macros, so here they
-# both refer to the same thing. (better way always possible) 
-# MOD 29-July-2002
-
-LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
-
-
-# The following library is a 'reduced' set (although not that reduced) 
-# to enable easy compilation of a boot kit containing a simple gpre and 
-# gbak modules.  These are then used to compile the rest of the system.
-# MOD 29-July-2002
-
-# Stub for services entrypoints missing in static library
-STUB_Sources = jrd/svc_stub.cpp utilities/gsec/security.cpp
-STUB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(STUB_Sources))))
-
-
-# Notice that $(SECURITY_Objects) are missing, because that file can't be
-# compiled until later in the build process.
-
-LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
-				$(JRD_Objects) \
-                $(DSQL_Objects) \
-                $(LOCK_Objects) \
-                $(INTERFACE_Objects) \
-                $(GPRELIB_Objects) \
-				$(FBCONFIG_Objects) \
-				$(CLUMPLETS_Objects) \
-				$(SECURITY_ClientObjects_gsec) \
-				$(STUB_Objects)
-
-
-# Not needed since loaded into libfbmemory.a already
-#				$(FBMEMORY_Objects)
-
-#________________________________________________________________________
-#
-# blrtable builder
-
-BLRTABLE_Sources = misc/blrtable.cpp
-BLRTABLE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BLRTABLE_Sources))))
+AllObjects += $(BLRTABLE_Objects)

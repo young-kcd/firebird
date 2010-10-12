@@ -19,7 +19,7 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdio.h>
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include <stdlib.h>
 #include <windows.h>
 #include <shellapi.h>
@@ -43,7 +43,7 @@
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 
 #ifdef WIN_NT
 #include <process.h>			// _beginthread

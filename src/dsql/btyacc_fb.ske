@@ -24,8 +24,8 @@
 #include "../dsql/StmtNodes.h"
 #include "../dsql/WinNodes.h"
 #include "../common/classes/Nullable.h"
-#include "dsql.tab.h"
-#include "Parser.h"
+#include "gen/parse.h"
+#include "../dsql/Parser.h"
 
 #define YYERROR_DETAILED
 

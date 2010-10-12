@@ -31,7 +31,7 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
-#include "../../jrd/isc_s_proto.h"
+#include "../../common/isc_s_proto.h"
 #include "../../jrd/trace/TraceSession.h"
 
 namespace Jrd {

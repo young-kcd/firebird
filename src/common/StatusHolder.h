@@ -29,15 +29,65 @@
 #ifndef FB_STATUS_HOLDER
 #define FB_STATUS_HOLDER
 
+#include "ProviderInterface.h"
+#include "../common/utils_proto.h"
 
 namespace Firebird {
+
+class BaseStatus : public FbApi::Status
+{
+public:
+	virtual void set(const ISC_STATUS* value)
+	{
+		set(fb_utils::statusLength(value), value);
+	}
+
+	virtual void set(size_t length, const ISC_STATUS* value)
+	{
+		fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
+	}
+
+	virtual void init()
+	{
+		fb_utils::init_status(vector);
+	}
+
+	virtual const ISC_STATUS* get() const
+	{
+		return vector;
+	}
+
+	virtual int isSuccess() const
+	{
+		return vector[1] == 0;
+	}
+
+public:
+	BaseStatus()
+	{
+		init();
+	}
+
+private:
+	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
+};
+
+class LocalStatus : public Firebird::BaseStatus
+{
+public:
+	virtual void release()
+	{
+		// do nothing - we are supposed to be on stack or a part of other object
+		fb_assert(false);
+	}
+};
 
 class StatusHolder
 {
 public:
 	explicit StatusHolder(const ISC_STATUS* status = NULL)
 	{
-		memset(m_status_vector, 0, sizeof(m_status_vector));
+		fb_utils::init_status(m_status_vector);
 		m_raised = false;
 
 		if (status)
@@ -53,10 +103,7 @@ public:
 
 	ISC_STATUS getError()
 	{
-		if (m_raised) {
-			clear();
-		}
-		return m_status_vector[1];
+		return value()[1];
 	}
 
 	const ISC_STATUS* value()
@@ -65,6 +112,11 @@ public:
 			clear();
 		}
 		return m_status_vector;
+	}
+
+	bool isSuccess()
+	{
+		return getError() == 0;
 	}
 
 private:

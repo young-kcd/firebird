@@ -42,9 +42,8 @@
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 

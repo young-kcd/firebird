@@ -29,7 +29,6 @@
 #
 #
 ROOT=../..
-ObjModuleType=std
 
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.
@@ -51,14 +50,16 @@ include     $(ROOT)/gen/make.shared.variables
 PATH := ./:$(BIN):$(PATH)
 export PATH
 
-ifeq ($(PLATFORM),DARWIN)
-DYLD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
-export DYLD_LIBRARY_PATH
-else
-LD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
-export LD_LIBRARY_PATH
-endif
+#ifeq ($(PLATFORM),DARWIN)
+#DYLD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+#export DYLD_LIBRARY_PATH
+#else
+#LD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+#export LD_LIBRARY_PATH
+#endif
 GPRE_FLAGS=	-r -m -z -n
+
+LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(if $(subst intl,,$(1)),$(LIB),$(LIB)/../intl))
 
 EXAMPLES_DEST=	$(GEN_ROOT)/examples
 EXAMPLES_SRC=	$(ROOT)/examples
@@ -79,12 +80,13 @@ INTL_Sources =   $(addprefix $(EXAMPLES_DEST)/, $(INTL_Files))
 EMPLOYEE_DB=	$(EXAMPLES_DEST)/employee.fdb
 INTLEMP_DB=	$(EXAMPLES_DEST)/intlemp.fdb
 
-.PHONY: all examples plugins_examples
+.PHONY: all examples
 
-all: examples plugins_examples
+all: examples
 
 # examples: $(EMPLOYEE_DB) $(INTLEMP_DB) $(FIREBIRD)/examples/README
-examples: $(EMPLOYEE_DB) $(FIREBIRD)/examples/README plugins_examples
+examples: $(EMPLOYEE_DB)
+	$(MAKE) -f Makefile.examples $(FIREBIRD)/examples/README
 
 $(FIREBIRD)/examples/README:
 	$(CP) $(ROOT)/examples/readme $(FIREBIRD)/examples/README
@@ -120,14 +122,13 @@ $(EMPLOYEE_DB):	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES
 	./empbuild $(EMPLOYEE_DB)
 	-$(CHMOD_6) $(EMPLOYEE_DB)
 
-# To get past the fact isql is called from the programs, we create a local link
-# to the static one in this directory
+# To get past the fact isql is called from the programs, we create a local link in this directory
 
 $(EXAMPLES_DEST)/isql$(EXEC_EXT):
-	-$(LN) $(ISQL_STATIC) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	-$(LN) $(ISQL) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 
-$(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(EXE_LINK) $(LINK_OPTS) $(EMPBLD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+$(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 $(EXAMPLES_DEST)/empbuild.c:	$(EXAMPLES_DEST)/empbuild.fdb $(EXAMPLES_DEST)/empbuild.e
 
@@ -144,8 +145,8 @@ $(EXAMPLES_DEST)/intlemp.fdb:	$(EXAMPLES_DEST)/intlbld$(EXEC_EXT) $(INTL_Sources
 	./intlbld intlemp.fdb
 	-$(CHMOD_6) intlemp.fdb
 
-$(EXAMPLES_DEST)/intlbld$(EXEC_EXT): $(INTLBLD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A) 
-	$(EXE_LINK) $(LINK_OPTS) $(INTLBLD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+$(EXAMPLES_DEST)/intlbld$(EXEC_EXT): $(INTLBLD_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) @^ -o $@ -L$(LIB) $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
 $(EXAMPLES_DEST)/intlbld.c:	$(EXAMPLES_DEST)/intlbuild.fdb $(EXAMPLES_DEST)/intlbld.e
 
@@ -165,6 +166,3 @@ $(EXAMPLES_DEST)/%.e: $(EXAMPLES_SRC)/empbuild/%.e
 
 $(EXAMPLES_DEST)/%.h: $(EXAMPLES_SRC)/common/%.h
 	$(CP) $^ $@
-
-plugins_examples:                # plugins examples
-	$(MAKE) -f $(GEN_ROOT)/examples/Makefile.plugins_examples

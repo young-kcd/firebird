@@ -99,7 +99,7 @@
 #include "../jrd/intl_classes.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/TextType.h"
+#include "../common/TextType.h"
 
 #include "../jrd/SimilarToMatcher.h"
 
@@ -725,7 +725,6 @@ template <
 	typename pContainsMatcher,
 	typename pLikeMatcher,
 	typename pSimilarToMatcher,
-	typename pSubstringSimilarMatcher,
 	typename pMatchesMatcher,
 	typename pSleuthMatcher
 >
@@ -781,21 +780,16 @@ public:
 	}
 
 	virtual bool similarTo(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape, escapeLen);
+		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape,
+			escapeLen, forSubstring);
 	}
 
-	virtual PatternMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escapeLen)
+	virtual BaseSimilarToMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
+		const UCHAR* escape, SLONG escapeLen, bool forSubstring)
 	{
-		return pSimilarToMatcher::create(pool, this, p, pl, escape, escapeLen);
-	}
-
-	virtual BaseSubstringSimilarMatcher* createSubstringSimilarMatcher(MemoryPool& pool,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
-	{
-		return pSubstringSimilarMatcher::create(pool, this, p, pl, escape, escapeLen);
+		return pSimilarToMatcher::create(pool, this, p, pl, escape, escapeLen, forSubstring);
 	}
 
 	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
@@ -823,7 +817,6 @@ Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs
 		ContainsMatcherUCharDirect,
 		LikeMatcher<T>,
 		SimilarToMatcher<T>,
-		SubstringSimilarMatcher<T>,
 		MatchesMatcher<T>,
 		SleuthMatcher<T>
 	> DirectImpl;
@@ -833,7 +826,6 @@ Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs
 		ContainsMatcher<T>,
 		LikeMatcher<T>,
 		SimilarToMatcher<T>,
-		SubstringSimilarMatcher<T>,
 		MatchesMatcher<T>,
 		SleuthMatcher<T>
 	> NonDirectImpl;

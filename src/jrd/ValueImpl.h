@@ -26,7 +26,7 @@
 #include "FirebirdApi.h"
 #include "FirebirdExternalApi.h"
 #include "../jrd/common.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ErrorImpl.h"
 

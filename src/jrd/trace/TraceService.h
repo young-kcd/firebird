@@ -35,7 +35,7 @@
 #include "../../common/StatusArg.h"
 #include "../../common/UtilSvc.h"
 #include "../../jrd/constants.h"
-#include "../../jrd/ThreadData.h"
+#include "../../common/ThreadData.h"
 #include "../../jrd/trace/TraceSession.h"
 
 

@@ -30,7 +30,7 @@
 #ifndef JRD_COLLATION_H
 #define JRD_COLLATION_H
 
-#include "TextType.h"
+#include "../common/TextType.h"
 
 
 namespace Jrd {
@@ -66,12 +66,9 @@ public:
 		const UCHAR* escape, SLONG escapeLen) = 0;
 
 	virtual bool similarTo(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escapeLen) = 0;
-	virtual PatternMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escapeLen) = 0;
-
-	virtual BaseSubstringSimilarMatcher* createSubstringSimilarMatcher(MemoryPool& pool,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen) = 0;
+		const UCHAR* escape, SLONG escapeLen, bool forSubstring) = 0;
+	virtual BaseSimilarToMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
+		const UCHAR* escape, SLONG escapeLen, bool forSubstring) = 0;
 
 	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl) = 0;
 	virtual PatternMatcher* createContainsMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl) = 0;

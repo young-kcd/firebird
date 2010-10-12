@@ -32,7 +32,7 @@
 
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../jrd/quad.h"
+#include "../common/quad.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
 #include "../jrd/gdsassert.h"
@@ -42,7 +42,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/intl_classes.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 // CVC: I needed them here.
 #include "../jrd/jrd.h"
 #include "../jrd/blb_proto.h"

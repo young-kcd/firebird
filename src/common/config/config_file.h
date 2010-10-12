@@ -43,7 +43,7 @@
 	hash-mark) are ignored as well.
 
 	Now this implementation is used by generic configuration manager
-	(common/config/config.cpp) and server-side alias manager (jrd/db_alias.cpp).
+	(common/config/config.cpp) and server-side alias manager (common/db_alias.cpp).
 **/
 
 class ConfigFile : public Firebird::AutoStorage, public Firebird::RefCounted

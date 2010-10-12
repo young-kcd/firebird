@@ -37,7 +37,7 @@
 #include "../common/classes/stack.h"
 
 #define _yacc_defines_keywords
-#include "../dsql/dsql.tab.h"
+#include "gen/parse.h"
 
 namespace Jrd {
 

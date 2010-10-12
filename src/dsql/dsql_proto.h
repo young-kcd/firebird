@@ -37,13 +37,13 @@ Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*, Jrd::Attachment*);
 void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
 				  USHORT, const UCHAR*,
 				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*,
+				  USHORT, const UCHAR*,
 				  USHORT, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
 							USHORT, const TEXT*, USHORT,
 							USHORT, const UCHAR*,
 							USHORT, const UCHAR*,
-							USHORT, UCHAR*,
+							USHORT, const UCHAR*,
 							USHORT, UCHAR*,
 							bool);
 ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);

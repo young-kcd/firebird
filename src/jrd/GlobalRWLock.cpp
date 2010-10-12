@@ -31,7 +31,7 @@
 #include "firebird.h"
 #include "GlobalRWLock.h"
 #include "../lock/lock_proto.h"
-#include "isc_proto.h"
+#include "../common/isc_proto.h"
 #include "jrd.h"
 #include "lck_proto.h"
 #include "err_proto.h"

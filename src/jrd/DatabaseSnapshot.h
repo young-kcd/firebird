@@ -26,7 +26,7 @@
 
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../jrd/val.h"
 #include "../jrd/recsrc/RecordSource.h"

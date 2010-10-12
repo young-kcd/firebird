@@ -721,6 +721,7 @@ static const struct {
 	{"async_active", 335545017},
 	{"private_function", 335545018},
 	{"private_procedure", 335545019},
+	{"bad_events_handle", 335545020},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

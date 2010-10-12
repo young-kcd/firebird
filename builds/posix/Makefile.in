@@ -1,0 +1,516 @@
+#
+#	PROGRAM:	Firebird single makefile
+#	MODULE:		Makefile.in
+#	DESCRIPTION:	Posix build main file
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# You may obtain a copy of the Licence at
+# http://www.gnu.org/licences/lgpl.html
+# 
+# As a special exception this file can also be included in modules
+# with other source code as long as that source code has been 
+# released under an Open Source Initiative certificed licence.  
+# More information about OSI certification can be found at: 
+# http://www.opensource.org 
+# 
+# This module is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public Licence for more details.
+# 
+# This module was created by members of the firebird development 
+# team.  All individual contributions remain the Copyright (C) of 
+# those individuals and all rights are reserved.  Contributors to 
+# this file are either listed below or can be obtained from a CVS 
+# history command.
+#
+#  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#  Contributor(s):
+#		Alex Peshkoff - created single makefile based on Mark's files
+# 
+
+ROOT=..
+
+include     make.defaults
+include     make.platform
+include     make.rules
+include     make.shared.variables
+
+@SET_MAKE@
+
+ifeq ($(IsDeveloper), Y)
+  DefaultTarget := Debug
+else
+  DefaultTarget := Release
+endif
+
+.PHONY:	master_process firebird Debug Release extern
+
+all:	firebird
+
+firebird:
+	$(MAKE) TARGET=$(DefaultTarget) master_process
+
+Release:
+	$(MAKE) TARGET=Release master_process
+
+Debug:
+	$(MAKE) TARGET=Debug master_process
+
+
+#----------------------------------------------------------------------------
+# jrd/build_no.h contains the version and build# fields used throughout the
+# program and quoted in the tools.  This routine will update the build_no.h
+# file with the auto update build# script file, writeBuildNum.sh.  The
+# writeBuildNum.sh script is autoupdated by CVS checkins.
+#
+
+.PHONY: updateBuildNum
+
+updateBuildNum : $(SRC_ROOT)/jrd/build_no.h $(GEN_ROOT)/Make.Version
+
+$(SRC_ROOT)/jrd/build_no.h : $(SRC_ROOT)/misc/writeBuildNum.sh
+	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
+
+$(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
+	$(SRC_ROOT)/misc/writeBuildNum.sh createMakeVersion $@
+
+
+#___________________________________________________________________________
+# build external software
+#
+
+extern:
+	$(MAKE) -C $(ROOT)/extern/btyacc
+
+
+#___________________________________________________________________________
+# create platform-specific export lists (version scripts) in gen
+#
+
+%.vers: ../builds/posix/%.vers
+	sh vers.sh $(firstword $@)
+
+export_lists: $(ALLVERS)
+
+
+#___________________________________________________________________________
+# main build target for both debug abd release builds
+#
+
+.PHONY:	boot yvalve engine fbintl gpre utilities plugins rest codes
+
+master_process:
+	$(MAKE) updateBuildNum
+	$(MAKE) export_lists
+	$(MAKE) extern
+	$(MAKE) boot
+	$(MAKE) yvalve
+	$(MAKE) engine
+	$(MAKE) fbintl
+	$(MAKE) utilities
+# Now having ready such useful tool as gbak, we may restore required databases
+# and switch to full-featured gpre
+	$(MAKE) gpre
+# Pay attention - after build force gpre_current to point to gpre 
+# even if gpre itself was not rebuilt
+	-$(RM) $(GPRE_CURRENT)
+	(cd $(BIN); $(LN) $(notdir $(GPRE)) $(notdir $(GPRE_CURRENT)))
+ifeq ($(IsDeveloper), Y)
+# In developer mode we must regenerate verious files in include/gen
+	$(MAKE) codes
+endif
+	$(MAKE) plugins
+	$(MAKE) rest
+
+#___________________________________________________________________________
+# static library - various common code, used in different FB projects
+#
+
+$(COMMON_LIB):	$(Common_Objects)
+	-$(RM) $@
+	$(STATICLIB_LINK) $@ $^
+
+
+#___________________________________________________________________________
+# gpre_boot
+#
+
+boot: $(GPRE_BOOT)
+
+$(GPRE_BOOT):	$(GPRE_Boot_Objects) $(COMMON_LIB)
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	-$(RM) $(GPRE_CURRENT)
+	(cd $(@D); $(LN) $(@F) $(notdir $(GPRE_CURRENT)))
+
+
+#___________________________________________________________________________
+# yValve
+#
+
+yvalve: $(LIBFIREBIRD_BASENAME)
+
+ifneq ($(LibraryBaseName),$(LibrarySoName))
+$(LIBFIREBIRD_BASENAME):	$(LIBFIREBIRD_SONAME)
+	(cd $(LIB) && $(LN) -f $(LibrarySoName) $(LibraryBaseName) )
+endif
+
+ifneq ($(LibrarySoName),$(LibraryFullName))
+$(LIBFIREBIRD_SONAME):	$(LIBFIREBIRD_FULLNAME)
+	(cd $(LIB) && $(LN) -f $(LibraryFullName) $(LibrarySoName) )
+endif
+
+# remote redirector is statically linked in main FB library
+$(LIBFIREBIRD_FULLNAME):	$(YValve_Objects) $(Remote_Client_Objects) $(COMMON_LIB)
+	$(LINK_FIREBIRD) -o $@ $^ $(LINK_FIREBIRD_LIBS)
+
+
+#___________________________________________________________________________
+# core part - jrd's engine
+#
+
+engine: $(ENGINE_SONAME)
+
+$(ENGINE_SONAME):	$(Engine_Objects) $(SVC_Objects) $(COMMON_LIB)
+	$(LINK_ENGINE) -o $@ $^ $(LINK_ENGINE_LIBS)
+
+
+#___________________________________________________________________________
+# intl support
+#
+
+fbintl: $(LIBFBINTL_SO)
+
+$(LIBFBINTL_SO):	$(INTL_Objects) $(COMMON_LIB)
+	$(LINK_INTL) -o $@ $^ $(LINK_INTL_LIBS)
+
+
+#___________________________________________________________________________
+# full gpre
+# when switching to it we also build databases needed later
+# and libib_util needed to start engine smart
+#
+
+.PHONY:	databases udfsupport
+
+gpre: $(GPRE) databases udfsupport
+
+$(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+
+databases:		yachts.lnk help.fdb security.fdb msg.timestamp
+
+yachts.lnk:		metadata.fdb
+	-$(RM) $@
+	$(LN) $^ $@
+
+metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
+	$(GBAK) -MODE read_only -R $< $@
+	$(TOUCH) $@
+	$(CHMOD) 0444 $@
+
+help.fdb:		$(FIREBIRD)/help/help.fdb
+	-$(RM) $@
+	$(LN) $^ $@
+
+$(FIREBIRD)/help/help.fdb:	$(BLD_ROOT)/misc/help.gbak
+	$(GBAK) -MODE read_only -R $< $@
+	$(TOUCH) $@
+	$(CHMOD) 0444 $@
+
+security.fdb:	$(SECURITY_FDB)
+	-$(RM) $@
+	$(LN)  $(SECDB) $@
+
+SECDB = security.tmp
+$(SECURITY_FDB):	$(SRC_ROOT)/dbs/security.sql
+	-$(RM) $@
+	-$(RM) $(SECDB)
+	echo create database \'$(SECDB)\'\; | $(ISQL)
+	$(ISQL) -i $^ $(SECDB)
+	$(CHMOD) a=rw $(SECDB)
+	$(CP) $(SECDB) $@
+
+msg.timestamp:	$(MSG_FILES)
+	-$(RM) msg.fdb
+	echo create database \'msg.fdb\'\; | $(ISQL)
+	for sql in $(MSG_FILES); do (echo $$sql; $(ISQL) -i $$sql msg.fdb) || exit; done
+	$(TOUCH) $@
+
+
+.PHONY:	udfs ibutil ibudf fbudf
+
+udfsupport:
+	$(MAKE) ibutil
+	$(MAKE) udfs
+
+udfs:	ibudf fbudf
+
+UDF = $(FIREBIRD)/UDF
+IBUDF_SO = $(UDF)/ib_udf.$(SHRLIB_EXT)
+FBUDF_SO = $(UDF)/fbudf.$(SHRLIB_EXT)
+
+ibudf:	$(IBUDF_SO)
+
+$(IBUDF_SO):	$(IBUDF_Objects)
+	$(call LINK_UDF,ib_udf) -o $@ $^ $(LINK_UDF_LIBS)
+
+fbudf:	$(FBUDF_SO)
+
+$(FBUDF_SO):	$(FBUDF_Objects) $(COMMON_LIB)
+	$(call LINK_UDF,fbudf) -o $@ $^ $(LINK_UDF_LIBS) $(FIREBIRD_LIBRARY_LINK)
+
+ibutil: $(LIBIBUTIL_SO)
+
+$(LIBIBUTIL_SO): $(UTIL_Objects)
+	$(LINK_IB_UTIL) -o $@ $^ $(LINK_IB_UTIL_LIBS)
+
+
+#___________________________________________________________________________
+# most of utilities, including network server
+# qli is not here cause it needs special database (help.fdb), therefore needs gbak
+#
+
+.PHONY:	firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix gsec gsplit gstat isql nbackup
+
+utilities: firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix gsec gsplit gstat isql nbackup
+
+firebird_server:	$(FB_DAEMON)
+
+$(FB_DAEMON):	$(Remote_Server_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+fb_lock_print:	$(LOCKPRINT)
+
+$(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+fbguard:		$(FBGUARD)
+
+$(FBGUARD):		$(FBGUARD_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+fbsvcmgr:		$(FBSVCMGR)
+
+$(FBSVCMGR):	$(FBSVCMGR_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+fbtracemgr:		$(FBTRACEMGR)
+
+$(FBTRACEMGR):	$(FBTRACEMGR_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+gbak:			$(GBAK)
+
+$(GBAK):		$(GBAK_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+gsplit:			$(GSPLIT)
+
+$(GSPLIT):		$(GSPLIT_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+gfix:			$(GFIX)
+
+$(GFIX):		$(GFIX_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+gsec:			$(GSEC)
+
+$(GSEC):		$(GSEC_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+gstat:			$(GSTAT)
+
+$(GSTAT):		$(GSTAT_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+isql:			$(ISQL)
+
+$(ISQL):		$(ISQL_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS) $(LIBEDITLINE)
+
+nbackup:		$(NBACKUP)
+
+$(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+
+#___________________________________________________________________________
+# plugins - some of them are required to build examples, use separate entry for them
+#
+
+.PHONY:	udr legacy_user_management trace
+UDR_PLUGIN = $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT)
+LEGACY_USER_MANAGER = $(PLUGINS)/$(LIB_PREFIX)user_management.$(SHRLIB_EXT)
+
+plugins: udr legacy_user_management trace
+
+udr:	$(UDR_PLUGIN) $(PLUGINS)/udr_engine.conf
+
+$(PLUGINS)/udr_engine.conf: $(ROOT)/src/plugins/udr_engine/udr_engine.conf
+	cp $^ $@
+
+$(UDR_PLUGIN):	$(UDRENG_Objects) $(COMMON_LIB)
+	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
+
+legacy_user_management:	$(LEGACY_USER_MANAGER)
+
+$(LEGACY_USER_MANAGER):	$(LEGACY_USERS_MANAGE_Objects) $(COMMON_LIB)
+	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
+
+trace:	$(FBTRACE)
+
+$(FBTRACE):	$(FBTRACE_UTIL_Objects) $(COMMON_LIB)
+	$(LINK_TRACE) -o $@ $^ $(FIREBIRD_LIBRARY_LINK) $(LINK_TRACE_LIBS)
+
+
+#___________________________________________________________________________
+# codes - developers change them sometimes
+#
+
+.PHONY: gen_codes
+CODES = $(BIN)/codes$(EXEC_EXT)
+IDS = $(SRC_ROOT)/include/gen/ids.h
+
+codes:	gen_codes $(IDS)
+
+gen_codes:	$(CODES) msg.timestamp
+	$(CODES) $(SRC_ROOT)/include/gen $(LNG_ROOT)
+
+$(CODES):	$(CODES_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+$(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
+	m4 $< > $@
+
+
+#___________________________________________________________________________
+# all the rest we need to build
+#
+
+.PHONY:	qli examples message_file
+
+rest:	qli examples message_file
+
+qli:		$(QLI)
+
+$(QLI):		$(QLI_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+examples:
+	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
+	$(MAKE) -f Makefile.plugins_examples -C $(GEN_ROOT)/examples/
+
+message_file:	$(FIREBIRD_MSG)
+
+$(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d msg.fdb -f $@
+	$(CHMOD_6) $@
+
+$(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+
+
+#___________________________________________________________________________
+# track dependencies
+#
+
+include $(ROOT)/gen/make.shared.targets
+
+Dependencies = $(AllObjects:.o=.d) 
+-include $(Dependencies)
+
+#___________________________________________________________________________
+# various cleaning
+#
+.PHONY: clean clean_objects clean_dependancies clean_extern_objects clean_build \
+		clean_gpre_gen clean_icu clean_dbs clean_examples clean_makefiles \
+		clean_editline clean_all
+
+
+clean: clean_objects clean_dependancies clean_extern_objects clean_build \
+		clean_yacc_gen clean_gpre_gen clean_dbs clean_examples
+
+ifeq ($(EDITLINE_FLG),Y)
+ifeq ($(STD_EDITLINE),false)
+clean: clean_editline
+endif
+endif
+
+clean_config clean_all: clean clean_makefiles
+	$(RM) $(ROOT)/configure
+	$(RM) $(ROOT)/aclocal.m4
+	$(RM) $(ROOT)/config.log
+	$(RM) $(ROOT)/config.status
+	$(RM) $(ROOT)/libtool
+	$(RM_R) $(ROOT)/autom4te.cache
+	-$(MAKE) -C $(ROOT)/extern/editline distclean
+#	-$(MAKE) -C $(ROOT)/extern/icu/source distclean
+	-$(MAKE) -C $(ROOT)/extern/btyacc distclean
+
+clean_dbs:
+	$(RM) *.fdb *.FDB msg.timestamp
+	$(RM) yachts.lnk
+
+
+# The examples are a bit different, since the makefile is included in the directory
+# and not in the gen directory, deleting it means, make clean; make doesnt work correctly
+# so the code below deletes all the other stuff but not the Makefile.examples MOD Nov-2007
+
+clean_examples:
+	$(RM) `find $(GEN_ROOT)/examples/ -type f ! -name 'Make*'`
+
+clean_editline:
+	-$(MAKE) -C $(ROOT)/extern/editline clean
+
+#clean_icu:
+#	-$(MAKE) -C $(ROOT)/extern/icu/source clean
+
+clean_objects:
+	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
+
+clean_extern_objects:
+	$(RM) `find $(ROOT)/extern/ -type f -name '*.o' -print`
+
+# Clear out dependancies files created by the gcc compiler
+# since when .o and other files are deleted the dependant
+# targets need to be recalculated
+# MOD 10-July-2002
+
+clean_dependancies:
+	$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.d' -print`
+
+# delete only all of the files of type regular file in $FIREBIRD
+# leave the directories to make dependacies work still
+# MOD 11-July-2002
+
+clean_build:
+	$(RM) `find $(GEN_ROOT)/*/firebird \( -type f -o -type l \) -print`
+#	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
+
+#
+clean_makefiles:
+	$(RM) $(GEN_ROOT)/Make*
+	$(RM) $(GEN_ROOT)/make*
+	$(RM) `find $(GEN_ROOT)/install \( -type f -o -type l \) -print`
+	-$(RM) $(GEN_ROOT)/examples/Make*
+	$(RM) $(ROOT)/Makefile
+	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
+	$(RM) $(SRC_ROOT)/include/gen/blrtable.h
+
+clean_gpre_gen:
+	-$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.cpp' -print`
+
+clean_yacc_gen:
+	$(RM) $(ROOT)/src/dsql/parse.cpp $(ROOT)/src/dsql/dsql.tab.h
+
+#___________________________________________________________________________
+# Extra platform specific targets
+@POSTFIX_INCLUDE@

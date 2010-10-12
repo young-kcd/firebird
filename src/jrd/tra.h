@@ -134,7 +134,7 @@ const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
 
-class jrd_tra : public pool_alloc<type_tra>
+class jrd_tra : public pool_alloc<type_tra>, public FbApi::Transaction
 {
 public:
 	enum wait_t {
@@ -313,6 +313,40 @@ public:
 	}
 
 	UserManagement* getUserManagement();
+
+public:
+	virtual void release();
+	virtual void getInfo(Status* status,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer);
+	virtual FbApi::Blob* createBlob(Status* status, ISC_QUAD* id,
+							 unsigned int bpbLength = 0, const unsigned char* bpb = 0,
+							 FbApi::Attachment* att = 0);
+	virtual FbApi::Blob* openBlob(Status* status, ISC_QUAD* id,
+						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
+						   FbApi::Attachment* att = 0);
+	virtual int getSlice(Status* status, ISC_QUAD* id,
+						 unsigned int sdl_length, const unsigned char* sdl,
+						 unsigned int param_length, const unsigned char* param,
+						 int sliceLength, unsigned char* slice,
+						 FbApi::Attachment* att = 0);
+	virtual void putSlice(Status* status, ISC_QUAD* id,
+						  unsigned int sdl_length, const unsigned char* sdl,
+						  unsigned int param_length, const unsigned char* param,
+						  int sliceLength, unsigned char* slice,
+						  FbApi::Attachment* att = 0);
+	virtual void transactRequest(Status* status, 
+								 unsigned int blr_length, const unsigned char* blr,
+								 unsigned int in_msg_length, const unsigned char* in_msg,
+								 unsigned int out_msg_length, unsigned char* out_msg,
+								 FbApi::Attachment* att = 0);
+	virtual void prepare(Status* status, 
+						 unsigned int msg_length = 0, const unsigned char* message = 0);
+	virtual void ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
+	virtual void commit(Status* status);
+	virtual void commitRetaining(Status* status);
+	virtual void rollback(Status* status);
+	virtual void rollbackRetaining(Status* status);
 };
 
 // System transaction is always transaction 0.

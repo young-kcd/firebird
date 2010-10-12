@@ -93,16 +93,16 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"
 #include "../jrd/dpm_proto.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/ext_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/idx_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/isc_f_proto.h"
+#include "../common/isc_f_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -851,7 +851,7 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 		switch (work->dfw_type)
 		{
 		case dfw_post_event:
-			EventManager::init(transaction->tra_attachment);
+			EventManager::init(dbb);
 
 			dbb->dbb_event_mgr->postEvent(lock->lck_length, (const TEXT*) &lock->lck_key,
 										  work->dfw_name.length(), work->dfw_name.c_str(),
@@ -1701,7 +1701,7 @@ static bool store_view_context_type(thread_db* tdbb, SSHORT phase, DeferredWork*
 }
 
 
-static bool user_management(thread_db* /*tdbb*/, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
+static bool user_management(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -5245,7 +5245,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						try
 						{
 							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
-								NULL, &defaultStatement, false, false);
+								NULL, &defaultStatement, false);
 
 							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
 

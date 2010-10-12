@@ -26,7 +26,7 @@
 #include "../jrd/constants.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../jrd/exe.h"
 #include "../jrd/ini.h"
 #include "../jrd/req.h"

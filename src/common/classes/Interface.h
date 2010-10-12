@@ -49,16 +49,17 @@ class Plugin
 public:
 	virtual const char* name() const = 0;
 	virtual unsigned int type() const = 0;
+	virtual unsigned int priority() const = 0;
 
 	virtual void link(Plugin* chain) = 0;
 	virtual Plugin* next() const = 0;
 
-//	static const unsigned int YValve = 1;
-//	static const unsigned int Engine = 2;
-//	static const unsigned int Redirector = 3;
-	static const unsigned int AuthServer = 4;
-	static const unsigned int AuthClient = 5;
-	static const unsigned int UserManagement = 6;
+	static const unsigned int YValve = 1;
+	static const unsigned int Provider = 2;
+	// leave space for may be some more super-std plugins
+	static const unsigned int AuthServer = 11;
+	static const unsigned int AuthClient = 12;
+	static const unsigned int UserManagement = 13;
 };
 
 } // namespace Firebird

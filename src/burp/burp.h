@@ -32,10 +32,10 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 #include "../burp/misc_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/ThreadData.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/ThreadData.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_pair.h"

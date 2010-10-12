@@ -49,7 +49,7 @@
 #include "firebird.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include "../common/classes/init.h"
 #include "../jrd/jrd.h"
 
@@ -58,7 +58,7 @@
 #include "../jrd/gdsassert.h"
 
 #include "../jrd/flu_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
 
 #include "gen/iberror.h"
@@ -138,6 +138,10 @@ namespace {
 			: DirectoryList(p)
 		{
 			initialize();
+		}
+		~UdfDirectoryList()
+		{
+			printf("Destroyed directory list\n");
 		}
 	};
 	Firebird::InitInstance<UdfDirectoryList> iUdfDirectoryList;

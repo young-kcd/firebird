@@ -26,7 +26,7 @@
 #define FB_INPUT_DEVICES_H
 
 #include "../common/classes/fb_string.h"
-#include "../jrd/os/path_utils.h"
+#include "../common/os/path_utils.h"
 #include <stdio.h>
 
 // This is basically a stack of input files caused by the INPUT command,

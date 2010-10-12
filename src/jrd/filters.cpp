@@ -37,7 +37,7 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/filte_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
 
 using namespace Jrd;

@@ -37,6 +37,11 @@
 #include "../common/StatusArg.h"
 #include "../common/thd.h"
 
+namespace FbApi
+{
+	class Status;
+};
+
 namespace Firebird {
 
 class MemoryPool;
@@ -46,8 +51,9 @@ class Exception
 protected:
 	Exception() throw() { }
 public:
+	ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
 	virtual ~Exception() throw();
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw() = 0;
+	virtual ISC_STATUS stuffException(FbApi::Status* status_vector) const throw() = 0;
 	virtual const char* what() const throw() = 0;
 };
 
@@ -55,7 +61,7 @@ public:
 class LongJump : public Exception
 {
 public:
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
+	virtual ISC_STATUS stuffException(FbApi::Status* status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 	LongJump() throw() : Exception() { }
@@ -65,7 +71,7 @@ public:
 class BadAlloc : public std::bad_alloc, public Exception
 {
 public:
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
+	virtual ISC_STATUS stuffException(FbApi::Status* status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 	BadAlloc() throw() : std::bad_alloc(), Exception() { }
@@ -78,7 +84,7 @@ public:
 	status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
+	virtual ISC_STATUS stuffException(FbApi::Status* status_vector) const throw();
 	virtual const char* what() const throw();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
@@ -143,6 +149,7 @@ public:
 
 // Serialize exception into status_vector
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex) throw();
+ISC_STATUS stuff_exception(FbApi::Status *status, const Firebird::Exception& ex) throw();
 
 // Put status vector strings into strings buffer
 void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID thr = getThreadId()) throw();

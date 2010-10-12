@@ -47,9 +47,9 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
@@ -57,7 +57,7 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
@@ -206,7 +206,7 @@ static inline SharedLatch* allocSharedLatch(thread_db* tdbb, BufferDesc* bdb)
 }
 
 
-static inline void freeSharedLatch(thread_db* /*tdbb*/, BufferControl* bcb, SharedLatch* latch)
+static inline void freeSharedLatch(thread_db* tdbb, BufferControl* bcb, SharedLatch* latch)
 {
 	latch->slt_bdb = NULL;
 	QUE_DELETE(latch->slt_bdb_que);

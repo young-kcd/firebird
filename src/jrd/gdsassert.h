@@ -21,7 +21,7 @@
 #ifndef JRD_GDSASSERT_H
 #define JRD_GDSASSERT_H
 
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 #ifdef DEV_BUILD
 

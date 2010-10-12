@@ -28,7 +28,7 @@
 #include "iberror.h"
 
 #include "../align.h"
-#include "../dsc.h"
+#include "../common//dsc.h"
 #include "../exe.h"
 #include "IscDS.h"
 #include "../tra.h"
@@ -66,7 +66,7 @@ static UCHAR sqlTypeToDscType(SSHORT sqlType);
 
 // 	IscProvider
 
-void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
+void IscProvider::getRemoteError(const ISC_STATUS* status, string& err) const
 {
 	err = "";
 
@@ -77,7 +77,7 @@ void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 	// Probably in next version we should use fb_interpret only.
 
 	char buff[1024];
-	ISC_STATUS* p = status;
+	const ISC_STATUS* p = status;
 	const ISC_STATUS* const end = status + ISC_STATUS_LENGTH;
 
 	while (p < end)
@@ -1169,7 +1169,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_get_slice(ISC_STATUS* user_status,
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_interprete(char *,
-								 ISC_STATUS * *)
+								 const ISC_STATUS * *)
 {
 	return isc_unavailable;
 }

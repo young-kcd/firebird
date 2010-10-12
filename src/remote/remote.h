@@ -32,8 +32,8 @@
 #include "../jrd/common.h"
 #include "gen/iberror.h"
 #include "../remote/remote_def.h"
-#include "../jrd/ThreadData.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadData.h"
+#include "../common/ThreadStart.h"
 #include "../common/thd.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
@@ -74,8 +74,13 @@ const int BLOB_LENGTH		= 16384;
 
 
 // fwd. decl.
+namespace Firebird {
+	class Exception;
+}
+namespace FbApi {
+	class EventCallback;
+}
 struct rem_port;
-
 
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
 
@@ -93,8 +98,8 @@ struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 	PACKET			rdb_packet;				// Communication structure
 
 private:
-	ISC_STATUS*		rdb_status_vector;			// Normally used status vector
-	ISC_STATUS*		rdb_async_status_vector;	// status vector for async thread
+	//ISC_STATUS*		rdb_status_vector;			// Normally used status vector
+	//ISC_STATUS*		rdb_async_status_vector;	// status vector for async thread
 	FB_THREAD_ID	rdb_async_thread_id;		// Id of async thread (when active)
 
 public:
@@ -110,20 +115,21 @@ public:
 	Rdb() :
 		rdb_id(0), rdb_flags(0), rdb_handle(0),
 		rdb_port(0), rdb_transactions(0), rdb_requests(0),
-		rdb_events(0), rdb_sql_requests(0), rdb_status_vector(0),
-		rdb_async_status_vector(0), rdb_async_thread_id(0)
+		rdb_events(0), rdb_sql_requests(0),
+		//rdb_status_vector(0), rdb_async_status_vector(0),
+		rdb_async_thread_id(0)
 	{
 	}
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
 
 	// These 2 functions assume rdb_async_lock to be locked
-	void set_async_vector(ISC_STATUS* userStatus) throw();
-	void reset_async_vector() throw();
+	//void set_async_vector(ISC_STATUS* userStatus) throw();
+	//void reset_async_vector() throw();
 
-	ISC_STATUS* get_status_vector() throw();
+	//ISC_STATUS* get_status_vector() throw();
 
-	void set_status_vector(ISC_STATUS* userStatus) throw()
+	/*void set_status_vector(ISC_STATUS* userStatus) throw()
 	{
 		rdb_status_vector = userStatus;
 	}
@@ -136,7 +142,7 @@ public:
 	void save_status_vector(ISC_STATUS*& save) throw()
 	{
 		save = rdb_status_vector;
-	}
+	}*/
 };
 
 
@@ -199,12 +205,16 @@ public:
 };
 
 
-struct Rvnt : public Firebird::GlobalStorage
+struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 {
 	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
+// if client
+	FbApi::EventCallback* rvnt_callback;
+// else if server
 	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;
+// endif
 	SLONG		rvnt_id;
 	SLONG		rvnt_rid;	// used by server to store client-side id
 	rem_port*	rvnt_port;	// used to id server from whence async came
@@ -213,8 +223,8 @@ struct Rvnt : public Firebird::GlobalStorage
 
 public:
 	Rvnt() :
-		rvnt_next(0), rvnt_rdb(0), rvnt_ast(0),
-		rvnt_arg(0), rvnt_id(0), rvnt_rid(0),
+		rvnt_next(0), rvnt_rdb(0), rvnt_callback(0),
+		rvnt_ast(0), rvnt_arg(0), rvnt_id(0), rvnt_rid(0),
 		rvnt_port(0), rvnt_items(0), rvnt_length(0)
 	{ }
 };
@@ -229,7 +239,7 @@ struct rem_str : public pool_alloc_rpt<SCHAR>
 
 // Include definition of descriptor
 
-#include "../jrd/dsc.h"
+#include "../common/dsc.h"
 
 
 struct rem_fmt : public Firebird::GlobalStorage
@@ -296,7 +306,7 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
-	ISC_STATUS_ARRAY	rrq_status_vector;
+	Firebird::StatusHolder	rrqStatus;
 
 	struct		rrq_repeat
 	{
@@ -315,11 +325,13 @@ public:
 	explicit Rrq(size_t rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
 		rrq_handle(0), rrq_id(0), rrq_max_msg(0), rrq_level(0),
-		rrq_rpt(getPool(), rpt)
+		rrqStatus(0), rrq_rpt(getPool(), rpt)
 	{
-		memset(rrq_status_vector, 0, sizeof rrq_status_vector);
+		//memset(rrq_status_vector, 0, sizeof rrq_status_vector);
 		rrq_rpt.grow(rpt);
 	}
+
+	~Rrq();
 
 	Rrq* clone() const
 	{
@@ -329,6 +341,9 @@ public:
 	}
 
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
+
+	void saveStatus(const Firebird::Exception& ex) throw();
+	void saveStatus(const FbApi::Status* ex) throw();
 };
 
 
@@ -419,6 +434,7 @@ public:
 		{ }
 
 	void saveException(const ISC_STATUS* status, bool overwrite);
+	void saveException(const Firebird::Exception& ex, bool overwrite);
 	void clearException();
 	ISC_STATUS haveException();
 	void raiseException();
@@ -504,7 +520,7 @@ inline void Rsr::releaseException()
 	rsr_status = NULL;
 }
 
-#include "../remote/xdr.h"
+#include "../common/xdr.h"
 
 
 // Generalized port definition.
@@ -604,12 +620,12 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	SLONG			port_connect_timeout;   // Connection timeout value
 	SLONG			port_dummy_packet_interval; // keep alive dummy packet interval
 	SLONG			port_dummy_timeout;	// time remaining until keepalive packet
-	ISC_STATUS*		port_status_vector;
+	//ISC_STATUS*		port_status_vector;
 	SOCKET			port_handle;		// handle for INET socket
 	int				port_channel;		// handle for connection (from by OS)
 	struct linger	port_linger;		// linger value as defined by SO_LINGER
 	Rdb*			port_context;
-	ThreadHandle	port_events_thread;	// handle of thread, handling incoming events
+	Thread::Handle	port_events_thread;	// handle of thread, handling incoming events
 	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
 #ifdef WIN_NT
 	HANDLE			port_pipe;			// port pipe handle
@@ -651,7 +667,7 @@ public:
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
-		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
+		port_dummy_timeout(0), /*port_status_vector(0),*/ port_handle(0), port_channel(0),
 		port_context(0), port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
 		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
@@ -851,7 +867,7 @@ public:
 
 // Queuing structure for Client batch fetches
 
-typedef bool (*t_rmtque_fn)(rem_port*, rmtque*, ISC_STATUS*, USHORT);
+typedef void (*t_rmtque_fn)(rem_port*, rmtque*, USHORT);
 
 struct rmtque : public Firebird::GlobalStorage
 {

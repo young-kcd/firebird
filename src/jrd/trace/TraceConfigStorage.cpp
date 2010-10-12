@@ -31,12 +31,12 @@
 #include "../../common/utils_proto.h"
 #include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
-#include "../../jrd/isc_proto.h"
-#include "../../jrd/isc_s_proto.h"
+#include "../../common/isc_proto.h"
+#include "../../common/isc_s_proto.h"
 #include "../../jrd/jrd.h"
-#include "../../jrd/os/path_utils.h"
-#include "../../jrd/os/config_root.h"
-#include "../../jrd/os/os_utils.h"
+#include "../../common/os/path_utils.h"
+#include "../../common/config/os/config_root.h"
+#include "../../common/os/os_utils.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 
 #ifdef HAVE_UNISTD_H

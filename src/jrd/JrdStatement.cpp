@@ -138,7 +138,8 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
-	invariants.join(csb->csb_invariants);
+	for (Array<jrd_nod*>::iterator i = csb->csb_invariants.begin(); i != csb->csb_invariants.end(); ++i)
+		invariants.add(*i);
 
 	rpbsSetup.grow(csb->csb_n_stream);
 

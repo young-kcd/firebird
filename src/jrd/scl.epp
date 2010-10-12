@@ -44,11 +44,11 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/enc_proto.h"
+//!!!!!!!!!#include "../common/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/grant_proto.h"
 #include "../jrd/scl_proto.h"
@@ -57,7 +57,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/array.h"
 #include "../common/config/config.h"
-#include "../jrd/os/os_utils.h"
+#include "../common/os/os_utils.h"
 
 
 const int UIC_BASE	= 10;

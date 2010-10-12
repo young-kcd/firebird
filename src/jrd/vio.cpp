@@ -61,7 +61,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/exe.h"
 #include "../jrd/rse.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/thread_proto.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
@@ -69,14 +69,13 @@
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
-#include "../jrd/dbg_proto.h"
 #include "../jrd/dfw_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/idx_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
@@ -2149,21 +2148,18 @@ void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint*
 		return;
 	}
 
-	// Merge all savepoints in the sav_point_list at the top
-	// of transaction save points and call VIO_verb_cleanup()
-
-	Savepoint* const org_save_point = transaction->tra_save_point;
-	transaction->tra_save_point = *sav_point_list;
+	// one by one go on putting all savepoints in the sav_point_list on
+	// top of transaction save points and call VIO_verb_cleanup()
 
 	for (Savepoint* sav_point = *sav_point_list; sav_point; sav_point = sav_point->sav_next)
 	{
 		Savepoint* const sav_next = sav_point->sav_next;
 		const SLONG sav_number = sav_point->sav_number;
 
-		if (!sav_point->sav_next)
-		{
-			sav_point->sav_next = org_save_point;
-		}
+		// add it to the front
+
+		sav_point->sav_next = transaction->tra_save_point;
+		transaction->tra_save_point = sav_point;
 
 		VIO_verb_cleanup(tdbb, transaction);
 
@@ -2178,8 +2174,6 @@ void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint*
 		*sav_point_list = sav_point;
 		sav_point_list = &sav_point->sav_next;
 	}
-
-	fb_assert(org_save_point == transaction->tra_save_point);
 }
 
 

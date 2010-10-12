@@ -41,9 +41,9 @@
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
-#include "../jrd/intlobj_new.h"
+#include "../common/intlobj_new.h"
 #include "../jrd/jrd.h"
-#include "../jrd/CharSet.h"
+#include "../common/CharSet.h"
 #include "../dsql/Parser.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/dsql_proto.h"
@@ -56,7 +56,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/ini_proto.h"
 #include "../jrd/intl_proto.h"
@@ -79,13 +79,13 @@ using namespace Firebird;
 
 static void		close_cursor(thread_db*, dsql_req*);
 static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
-						 USHORT, UCHAR*, USHORT, UCHAR*);
+						 USHORT, const UCHAR*, USHORT, UCHAR*);
 static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
 							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, const UCHAR*,
-							  USHORT, UCHAR*, /*USHORT,*/ USHORT, UCHAR*, bool);
+							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, UCHAR*, bool);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
-	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
+	USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
@@ -217,7 +217,7 @@ void DSQL_execute(thread_db* tdbb,
 				  dsql_req* request,
 				  USHORT in_blr_length, const UCHAR* in_blr,
 				  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
-				  USHORT out_blr_length, UCHAR* out_blr,
+				  USHORT out_blr_length, const UCHAR* const out_blr,
 				  USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
@@ -315,7 +315,7 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							USHORT length, const TEXT* string, USHORT dialect,
 							USHORT in_blr_length, const UCHAR* in_blr,
 							USHORT in_msg_length, const UCHAR* in_msg,
-							USHORT out_blr_length, UCHAR* out_blr,
+							USHORT out_blr_length, const UCHAR* out_blr,
 							USHORT out_msg_length, UCHAR* out_msg,
 							bool isInternalRequest)
 {
@@ -872,7 +872,7 @@ static void execute_blob(thread_db* tdbb,
 						 USHORT in_msg_length,
 						 const UCHAR* in_msg,
 						 USHORT out_blr_length,
-						 UCHAR* out_blr,
+						 const UCHAR* out_blr,
 						 USHORT out_msg_length,
 						 UCHAR* out_msg)
 {
@@ -970,7 +970,7 @@ static void execute_immediate(thread_db* tdbb,
 							  USHORT length, const TEXT* string, USHORT dialect,
 							  USHORT in_blr_length, const UCHAR* in_blr,
 							  USHORT in_msg_length, const UCHAR* in_msg,
-							  USHORT out_blr_length, UCHAR* out_blr,
+							  USHORT out_blr_length, const UCHAR* out_blr,
 							  USHORT out_msg_length, UCHAR* out_msg,
 							  bool isInternalRequest)
 {
@@ -1075,7 +1075,7 @@ static void execute_request(thread_db* tdbb,
 							jrd_tra** tra_handle,
 							USHORT in_blr_length, const UCHAR* in_blr,
 							USHORT in_msg_length, const UCHAR* in_msg,
-							USHORT out_blr_length, UCHAR* out_blr,
+							USHORT out_blr_length, const UCHAR* out_blr,
 							USHORT out_msg_length, UCHAR* out_msg,
 							bool singleton)
 {
@@ -1091,21 +1091,21 @@ static void execute_request(thread_db* tdbb,
 		return;
 
 	case DsqlCompiledStatement::TYPE_COMMIT:
-		JRD_commit_transaction(tdbb, &request->req_transaction);
+		JRD_commit_transaction(tdbb, request->req_transaction);
 		*tra_handle = NULL;
 		return;
 
 	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
-		JRD_commit_retaining(tdbb, &request->req_transaction);
+		JRD_commit_retaining(tdbb, request->req_transaction);
 		return;
 
 	case DsqlCompiledStatement::TYPE_ROLLBACK:
-		JRD_rollback_transaction(tdbb, &request->req_transaction);
+		JRD_rollback_transaction(tdbb, request->req_transaction);
 		*tra_handle = NULL;
 		return;
 
 	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
-		JRD_rollback_retaining(tdbb, &request->req_transaction);
+		JRD_rollback_retaining(tdbb, request->req_transaction);
 		return;
 
 	case DsqlCompiledStatement::TYPE_CREATE_DB:

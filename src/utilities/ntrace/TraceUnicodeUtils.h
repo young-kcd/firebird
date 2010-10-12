@@ -31,8 +31,8 @@
 #include "firebird.h"
 #include "../../common/classes/fb_string.h"
 #include "../../jrd/intl_classes.h"
-#include "../../jrd/TextType.h"
-#include "../../jrd/unicode_util.h"
+#include "../../common/TextType.h"
+#include "../../common/unicode_util.h"
 
 
 class UnicodeCollationHolder

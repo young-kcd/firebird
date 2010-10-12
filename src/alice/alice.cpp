@@ -46,7 +46,7 @@
 #include "../alice/alice.h"
 #include "../alice/exe_proto.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/svc.h"
 #include "../alice/alice_proto.h"
 #include "../common/utils_proto.h"

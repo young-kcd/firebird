@@ -31,19 +31,18 @@
 #include "gen/iberror.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
-#include "../jrd/ThreadStart.h"
+#include "../common/ThreadStart.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/event_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../jrd/isc_proto.h"
-#include "../jrd/isc_s_proto.h"
+#include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/isc_s_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/os/isc_i_proto.h"
+#include "../common/os/isc_i_proto.h"
 #include "../common/utils_proto.h"
 #include "../jrd/Database.h"
-#include "../jrd/Attachment.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -75,27 +74,24 @@ GlobalPtr<EventManager::DbEventMgrMap> EventManager::g_emMap;
 GlobalPtr<Mutex> EventManager::g_mapMutex;
 
 
-void EventManager::init(Attachment* attachment)
+void EventManager::init(Database* dbb)
 {
-	Database* dbb = attachment->att_database;
-	EventManager* eventMgr = dbb->dbb_event_mgr;
-
-	if (!eventMgr)
+	if (!dbb->dbb_event_mgr)
 	{
-		const string id = dbb->getUniqueFileId();
+		const Firebird::string id = dbb->getUniqueFileId();
 
-		MutexLockGuard guard(g_mapMutex);
+		Firebird::MutexLockGuard guard(g_mapMutex);
 
+		EventManager* eventMgr = NULL;
 		if (!g_emMap->get(id, eventMgr))
+		{
 			eventMgr = new EventManager(id, dbb->dbb_config);
+		}
 
 		fb_assert(eventMgr);
 
 		dbb->dbb_event_mgr = eventMgr;
 	}
-
-	if (!attachment->att_event_session)
-		attachment->att_event_session = eventMgr->create_session();
 }
 
 
@@ -197,7 +193,7 @@ void EventManager::get_shared_file_name(Firebird::PathName& name) const
 }
 
 
-SLONG EventManager::create_session()
+SLONG EventManager::createSession()
 {
 /**************************************
  *
@@ -251,7 +247,7 @@ void EventManager::deleteSession(SLONG session_id)
 SLONG EventManager::queEvents(SLONG session_id,
 							  USHORT string_length, const TEXT* string,
 							  USHORT events_length, const UCHAR* events,
-							  FPTR_EVENT_CALLBACK ast_routine, void* ast_arg)
+							  FbApi::EventCallback* ast)
 {
 /**************************************
  *
@@ -279,8 +275,7 @@ SLONG EventManager::queEvents(SLONG session_id,
 	insert_tail(&session->ses_requests, &request->req_requests);
 	request->req_session = session_id;
 	request->req_process = m_processOffset;
-	request->req_ast = ast_routine;
-	request->req_ast_arg = ast_arg;
+	request->req_ast = ast;
 	const SLONG id = ++sh_mem_header->evh_request_id;
 	request->req_request_id = id;
 
@@ -691,7 +686,7 @@ void EventManager::create_process()
 
 	release_shmem();
 
-	ThreadStart::start(watcher_thread, this, THREAD_medium, NULL);
+	Thread::start(watcher_thread, this, THREAD_medium);
 }
 
 
@@ -917,8 +912,7 @@ void EventManager::deliver_request(evt_req* request)
 	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 	UCHAR* p = buffer.getBuffer(1);
 
-	FPTR_EVENT_CALLBACK ast = request->req_ast;
-	void* arg = request->req_ast_arg;
+	FbApi::EventCallback* ast = request->req_ast;
 
 	*p++ = EPB_version1;
 
@@ -962,7 +956,7 @@ void EventManager::deliver_request(evt_req* request)
 
 	delete_request(request);
 	release_shmem();
-	(*ast)(arg, p - buffer.begin(), buffer.begin());
+	ast->eventCallbackFunction(p - buffer.begin(), buffer.begin());
 	acquire_shmem();
 }
 

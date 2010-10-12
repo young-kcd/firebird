@@ -31,6 +31,12 @@
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
+#include "ProviderInterface.h"
+namespace Jrd
+{
+	typedef FbApi::Status Status;
+}
+
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -139,7 +145,7 @@ struct bid
 
 // Your basic blob block.
 
-class blb : public pool_alloc<type_blb>
+class blb : public pool_alloc<type_blb>, public FbApi::Blob
 {
 public:
 	blb(MemoryPool& pool, USHORT page_size)
@@ -198,6 +204,17 @@ public:
 		blb_buffer.free();
 		blb_has_buffer = false;
 	}
+
+public:
+	virtual void release();
+	virtual void getInfo(Status* status,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer);
+	virtual unsigned int getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
+	virtual void putSegment(Status* status, unsigned int length, const unsigned char* buffer);
+	virtual void cancel(Status* status);
+	virtual void close(Status* status);
+	virtual int seek(Status* status, int mode, int offset);			// returns position
 };
 
 const int BLB_temporary		= 1;		// Newly created blob

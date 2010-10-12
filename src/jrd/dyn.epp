@@ -68,10 +68,10 @@
 #include "../jrd/dyn_md_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/isc_f_proto.h"
+#include "../common/isc_f_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/thread_proto.h"
@@ -113,9 +113,6 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
  *	Do meta-data.
  *
  **************************************/
-
-	if (!transaction)
-		status_exception::raise(Arg::Gds(isc_segstr_wrong_db));
 
 	thread_db* const tdbb = JRD_get_thread_data();
 	Database* const dbb = tdbb->getDatabase();

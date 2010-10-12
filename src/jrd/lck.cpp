@@ -33,7 +33,7 @@
 #include "../jrd/lck.h"
 #include "gen/iberror.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/gdsassert.h"

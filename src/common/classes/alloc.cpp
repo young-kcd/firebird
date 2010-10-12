@@ -144,12 +144,21 @@ void MemoryPool::cleanup()
 		VALGRIND_MAKE_MEM_DEFINED(defaultMemoryManager, sizeof(MemoryPool)));
 #endif
 
-	defaultMemoryManager->~MemoryPool();
-	defaultMemoryManager = NULL;
-	default_stats_group->~MemoryStats();
-	default_stats_group = NULL;
-	cache_mutex->~Mutex();
-	cache_mutex = NULL;
+	if (defaultMemoryManager)
+	{
+		defaultMemoryManager->~MemoryPool();
+		defaultMemoryManager = NULL;
+	}
+	if (default_stats_group)
+	{
+		default_stats_group->~MemoryStats();
+		default_stats_group = NULL;
+	}
+	if (cache_mutex)
+	{
+		cache_mutex->~Mutex();
+		cache_mutex = NULL;
+	}
 }
 
 MemoryPool::MemoryPool(MemoryStats& s, bool shared, int rounding, int cutoff, int minAlloc)

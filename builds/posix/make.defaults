@@ -40,14 +40,14 @@
 
 #_____________________________________________________________________________
 
-TMP_ROOT=$(ROOT)/temp
+TMP_ROOT=$(ROOT)/temp/$(TARGET)
 GEN_ROOT=$(ROOT)/gen
 SRC_ROOT=$(ROOT)/src
 BLD_ROOT=$(ROOT)/builds
 LNG_ROOT=$(ROOT)/lang_helpers
 EXA_ROOT=$(ROOT)/examples
 
-FIREBIRD=$(GEN_ROOT)/firebird
+FIREBIRD=$(GEN_ROOT)/$(TARGET)/firebird
 INTERBASE=$(FIREBIRD)
 
 export INTERBASE
@@ -65,9 +65,12 @@ RealSrcRootPath = $(shell cd $(SRC_ROOT); pwd)
 #ModuleName:=$(notdir $(CURDIR))
 ModuleName:=$(subst $(RealSrcRootPath)/,,$(CURDIR))
 
-OBJ=$(TMP_ROOT)/$(ObjModuleType)
+OBJ=$(TMP_ROOT)
 
 GEN_SRC=$(OBJ)
+
+# avoid generated cpp files deletion
+.SECONDARY:	$(OBJ)/%.cpp
 
   # This one is not so widely used at the momement.
   # but I would like it to become so.
@@ -88,9 +91,9 @@ CXXFLAGS:= $(CXXFLAGS) $(GLOB_OPTIONS)
 
 #____________________________________________________________________________
 
-IsProdTypeBuild = @PROD_BUILD_FLG@
-                           # If this is defined then we are building a production
-                           # release with debug and optimization
+IsDeveloper = @DEVEL_FLG@
+              # If this is defined then we use special rules
+              # useful for developers only
 
 CpuType=@CPU_TYPE@
 
@@ -173,7 +176,15 @@ SHRLIB_FOREIGN_EXT=	$(SHRLIB_EXT)
 
 # Include file with version variable definitions
 
--include $(ROOT)/gen/Make.Version
+include $(ROOT)/gen/Make.Version
+#MajorVer = 2
+#MinorVer = 5
+#RevNo = 0
+#BuildNum = 28678
+#BuildType = T
+#BuildSuffix = Firebird 3.0 Unstable
+#PackageVersion = Unstable
+#FirebirdVersion = 2.5.0
 
 # Add windows dll to library patterns
 
@@ -193,38 +204,32 @@ vpath %.dll $(LIB)
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
-# The shared library name for the embedded (or classic) library
+# The firebird shared library name 
 # SD: This name is also hard-coded in builds/install/.../linux/classic scripts.
 #     Scold me, but I don't want library names to be in configure.in
 #
 
-SharedLibraryName=libfbembed.${SHRLIB_EXT}.${FirebirdVersion}
-SharedLibrarySoName=libfbembed.${SHRLIB_EXT}.${MajorVer}.${MinorVer}
-SharedLibraryBaseName=libfbembed.${SHRLIB_EXT}
+#LibraryFileName=libfbclient
+LibraryFileName=libfirebird
+LibraryFullName=$(LibraryFileName).${SHRLIB_EXT}.${FirebirdVersion}
+LibrarySoName=$(LibraryFileName).${SHRLIB_EXT}.${MajorVer}
+LibraryBaseName=$(LibraryFileName).${SHRLIB_EXT}
 
-LIBFBEMBED_SO = $(LIB)/$(SharedLibraryName)
-LIBFBEMBED_SOBASENAME = $(LIB)/$(SharedLibrarySoName)
-LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
+LIBFIREBIRD_FULLNAME = $(LIB)/$(LibraryFullName)
+LIBFIREBIRD_SONAME = $(LIB)/$(LibraryBaseName)
+LIBFIREBIRD_BASENAME = $(LIB)/$(LibrarySoName)
 
-# Shared library names for client side of fbserver (or super) version
-# used to link all the utilities to enable them to connect over the wire
-# to the fbserver. MOD 28-July-2002
+# The firebird engine library name
 
-ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
-ClientLibrarySoName = $(ClientLibraryName).2
-ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
-
-LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
-LIBFBCLIENT_SOBASENAME=$(LIB)/$(ClientLibrarySoName)
-LIBFBCLIENT_SONAME=$(LIB)/$(ClientLibraryName)
+EngineFileName=libengine
+EngineSoName=$(EngineFileName).${SHRLIB_EXT}.${OdsVersion}
+ENGINE_SONAME = $(LIB)/$(EngineSoName)
 
 # intl will load dynamically, and having the whole soname set with version
 # confuses the dynamic load process.  So we only have the .$(SHRLIB_EXT) file
 # MOD 28-July-2002
 
 LIBFBINTL_SO = $(FIREBIRD)/intl/$(LIB_PREFIX)fbintl.$(SHRLIB_EXT)
-
-LIBFBSTATIC_A = $(LIB)/libfbstatic.a
 
 ifeq ($(EDITLINE_FLG),Y)
   ifeq ($(STD_EDITLINE), true)
@@ -234,10 +239,6 @@ ifeq ($(EDITLINE_FLG),Y)
   endif
 endif
 
-LIBICU_SO = $(LIB)/$(LIB_PREFIX)icuuc*.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icudata*.$(SHRLIB_FOREIGN_EXT) \
-			$(LIB)/$(LIB_PREFIX)icui18n*.$(SHRLIB_FOREIGN_EXT)
-
 # Shared library name for usage inside of the UDF
 IbUtilLibraryName = $(LIB_PREFIX)ib_util.$(SHRLIB_EXT)
 LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
@@ -246,12 +247,11 @@ LIBIBUTIL_SO = $(LIB)/$(IbUtilLibraryName)
 #
 
 UNDEF_PLATFORM = -Wl,--no-undefined
-ifneq ($(IsProdTypeBuild),Y)
+ifeq ($(TARGET),Debug)
   UNDEF_FLAGS = $(UNDEF_PLATFORM)
 endif
 
 FIREBIRD_VERS = firebird.vers
-FIREBIRD_CLIENT_VERS = firebird.vers
 FBTRACE_VERS = fbtrace.vers
 FBINTL_VERS = fbintl.vers
 IB_UTIL_VERS = ib_util.vers
@@ -262,13 +262,12 @@ ALLVERS = $(FIREBIRD_VERS) $(FBTRACE_VERS) $(FBINTL_VERS) $(IB_UTIL_VERS)
 ALLVERS += $(UDR_ENGINE_VERS) $(EMPTY_VERS)
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(FIREBIRD_VERS)
-LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(FIREBIRD_VERS)
-LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(FIREBIRD_CLIENT_VERS)
 LINK_TRACE_SYMBOLS = $(LIB_LINK_MAPFILE)$(FBTRACE_VERS)
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(FBINTL_VERS)
 LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(IB_UTIL_VERS)
 LINK_UDRENG_SYMBOLS = $(LIB_LINK_MAPFILE)$(UDR_ENGINE_VERS)
 LINK_EMPTY_SYMBOLS = $(LIB_LINK_MAPFILE)$(EMPTY_VERS)
+LINK_PLUGIN_SYMBOLS = $(LINK_EMPTY_SYMBOLS)
 LINK_EXEC_EXPORT=-rdynamic
 
 LIB_PLATFORM_RPATH = -Wl,-rpath,$(1)
@@ -280,45 +279,44 @@ endif
 LIB_PATH_OPTS = $(call LIB_LINK_RPATH,lib) $(call LIB_LINK_RPATH,intl)
 LIB_LINK_SONAME= -Wl,-soname,$(1)
 LIB_LINK_MAPFILE= -Wl,--version-script,
-FBEMBED_LINK= -L$(LIB) -lfbembed
+FIREBIRD_LIBRARY_LINK= -L$(LIB) -lfirebird
 
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared
 
-FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
-FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
-
-STATIC_CXXSUPPORT_LIB=@STATIC_CXXSUPPORT_LIB@
-LIB_LINK_IMPLIB =
-LIB_GUI =
+FB_DAEMON = $(BIN)/firebird$(EXEC_EXT)
 
 # Per-library link rules
-LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT))\
+LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT)) $(UNDEF_FLAGS)\
  $(call LIB_LINK_RPATH,lib) -lm
 LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util
 
-LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS)\
+LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\
  $(call LIB_LINK_SONAME,$(IbUtilLibraryName)) $(call LIB_LINK_RPATH,lib)
 LINK_IB_UTIL_LIBS = $(THR_LIBS)
 
-LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS)\
+LINK_INTL = $(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\
  $(call LIB_LINK_SONAME,libintl.$(SHRLIB_EXT).1) $(call LIB_LINK_RPATH,lib)
-LINK_INTL_LIBS = -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
+LINK_INTL_LIBS = -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS) $(FIREBIRD_LIBRARY_LINK)
 
-LINK_TRACE = $(LIB_LINK) $(LINK_TRACE_SYMBOLS) $(LIB_LINK_OPTIONS)\
+LINK_TRACE = $(LIB_LINK) $(LINK_TRACE_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\
  $(call LIB_LINK_SONAME,$(LIB_PREFIX)fbtrace.$(SHRLIB_EXT).0) $(call LIB_LINK_RPATH,lib)
-LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS)
+LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) -licuuc
 
-LINK_CLIENT = $(CLIENTLIB_LINK) $(LINK_FIREBIRD_CLIENT_SYMBOLS) $(LIB_LINK_OPTIONS)\
- $(LIB_LINK_IMPLIB) $(call LIB_LINK_SONAME,$(ClientLibrarySoName)) $(call LIB_LINK_RPATH,lib)
-LINK_CLIENT_LIBS = $(SO_LINK_LIBS) $(STATIC_CXXSUPPORT_LIB)
+LINK_FIREBIRD = $(LIB_LINK) $(LINK_FIREBIRD_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_FIREBIRD_OPTIONS) $(UNDEF_FLAGS)\
+ $(call LIB_LINK_SONAME,$(LibrarySoName)) $(call LIB_LINK_RPATH,lib)
+LINK_FIREBIRD_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS)
 
-LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_EMBED_LINK_OPTIONS)\
- $(call LIB_LINK_SONAME,$(SharedLibrarySoName)) $(call LIB_LINK_RPATH,lib)
-LINK_EMBED_LIBS = -L$(LIB) $(LIB_GUI) $(SO_LINK_LIBS) $(ICU_LIBS)
+LINK_ENGINE = $(LIB_LINK) $(LINK_PLUGIN_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_FIREBIRD_OPTIONS) $(UNDEF_FLAGS)\
+ $(call LIB_LINK_SONAME,$(EngineSoName)) $(call LIB_LINK_RPATH,lib)
+LINK_ENGINE_LIBS = $(LINK_FIREBIRD_LIBS) $(FIREBIRD_LIBRARY_LINK) -licuuc
 
-LINK_PLUGIN = $(LIB_LINK) $(LINK_EMPTY_SYMBOLS) $(LIB_LINK_OPTIONS) $(call LIB_LINK_RPATH,lib)
+LINK_PLUGIN = $(LIB_LINK) $(LINK_PLUGIN_SYMBOLS) $(LIB_LINK_OPTIONS) $(call LIB_LINK_RPATH,lib) $(UNDEF_FLAGS)
 LINK_PLUG_LIBS = -L$(LIB) $(SO_LINK_LIBS)
+
+# Pay attention - we place common library into obj, not lib dir
+# It's just a set of object files, prepared to be used by ld, not an output library
+COMMON_LIB	= $(OBJ)/common.a
 
 # From utilities
 CREATE_DB	= $(BIN)/create_db$(EXEC_EXT)
@@ -340,9 +338,8 @@ IBGUARD		= $(BIN)/ibguard$(EXEC_EXT)
 FBMGR_BIN	= $(BIN)/fbmgr.bin$(EXEC_EXT)
 INSTREG		= $(BIN)/instreg$(EXEC_EXT)
 INSTSVC		= $(BIN)/instsvc$(EXEC_EXT)
-ISC_GDB		= $(FIREBIRD)/security2.fdb
-ISC_GBAK	= $(BIN)/security.gbak
-MANAGEMENT	= $(PLUGINS)/$(LIB_PREFIX)user_management.$(SHRLIB_EXT)
+
+SECURITY_FDB	= $(FIREBIRD)/security3.fdb
 
 # From qli
 QLI            = $(BIN)/qli$(EXEC_EXT)

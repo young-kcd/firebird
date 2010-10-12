@@ -29,7 +29,7 @@
 #define TRACE_LOG
 
 #include "../../common/classes/fb_string.h"
-#include "../../jrd/isc_s_proto.h"
+#include "../../common/isc_s_proto.h"
 
 namespace Jrd {
 

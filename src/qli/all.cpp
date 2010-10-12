@@ -44,7 +44,7 @@
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/mov_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 
 
 #define BLKDEF(type, root, tail) { sizeof(root), tail },

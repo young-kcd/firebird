@@ -34,7 +34,7 @@
 #include "../qli/mov_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/VaryStr.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../common/classes/FpeControl.h"
 
 const int PRECISION	= 10000;

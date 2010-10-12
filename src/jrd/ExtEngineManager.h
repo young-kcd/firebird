@@ -130,7 +130,7 @@ public:
 			const Jrd::Function* aUdf);
 		~Function();
 
-		void execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure) const;
+		void execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure);
 
 	private:
 		ExtEngineManager* extManager;
@@ -191,12 +191,12 @@ public:
 		~Trigger();
 
 		void execute(thread_db* tdbb, Firebird::ExternalTrigger::Action action,
-			record_param* oldRpb, record_param* newRpb) const;
+			record_param* oldRpb, record_param* newRpb);
 
 	private:
 		int setValues(thread_db* tdbb, Firebird::MemoryPool& pool,
 			Firebird::AutoPtr<ValuesImpl>& values, Firebird::Array<dsc*>& descs,
-			record_param* rpb) const;
+			record_param* rpb);
 
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;

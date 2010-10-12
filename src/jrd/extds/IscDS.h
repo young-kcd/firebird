@@ -50,7 +50,7 @@ public:
 	}
 
 	virtual void jrdAttachmentEnd(Jrd::thread_db* /*tdbb*/, Jrd::Attachment* /*att*/) {}
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const;
+	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const;
 
 protected:
 	ISC_STATUS notImplemented(ISC_STATUS*) const;
@@ -345,7 +345,7 @@ public:
 									ISC_LONG *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_interprete(char *,
-									 ISC_STATUS * *);
+									 const ISC_STATUS * *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,

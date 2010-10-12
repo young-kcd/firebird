@@ -25,7 +25,7 @@
 #include "firebird.h"
 #include "../intl/ldcommon.h"
 #include "../intl/ld_proto.h"
-#include "../jrd/CharSet.h"
+#include "../common/CharSet.h"
 #include "lc_narrow.h"
 #include "lc_dos.h"
 

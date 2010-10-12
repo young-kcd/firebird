@@ -28,7 +28,7 @@ namespace Jrd {
 
 
 // Compiled statement.
-class JrdStatement : public pool_alloc<type_req>
+class JrdStatement : public pool_alloc<type_req>, public FbApi::Request
 {
 public:
 	static const unsigned FLAG_SYS_TRIGGER	= 0x01;
@@ -77,11 +77,26 @@ public:
 	const jrd_nod* topNode;				// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
 	Firebird::Array<const jrd_nod*> execStmts;		// exec_into nodes
-	Firebird::Array<ULONG*> invariants;	// pointer to nodes invariant offsets
+	Firebird::Array<const jrd_nod*> invariants;	// invariant nodes
 	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)
 	Firebird::Array<UCHAR> blr;			// BLR for non-SQL query
 	MapFieldInfo mapFieldInfo;			// Map field name to field info
 	MapItemInfo mapItemInfo;			// Map item to item info
+
+public:
+	virtual void release();
+	virtual void receive(Status* status, int level, unsigned int msg_type,
+						 unsigned int length, unsigned char* message);
+	virtual void send(Status* status, int level, unsigned int msg_type,
+					  unsigned int length, const unsigned char* message);
+	virtual void getInfo(Status* status, int level,
+						 unsigned int itemsLength, const unsigned char* items,
+						 unsigned int bufferLength, unsigned char* buffer);
+	virtual void start(Status* status, FbApi::Transaction* tra, int level);
+	virtual void startAndSend(Status* status, FbApi::Transaction* tra, int level, unsigned int msg_type,
+							  unsigned int length, const unsigned char* message);
+	virtual void unwind(Status* status, int level);
+	virtual void detach(Status* status);
 };
 
 

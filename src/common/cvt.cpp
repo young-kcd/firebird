@@ -46,11 +46,11 @@
 #include "../common/classes/timestamp.h"
 #include "../common/cvt.h"
 #include "../jrd/intl.h"
-#include "../jrd/quad.h"
+#include "../common/quad.h"
 #include "../jrd/val.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/FpeControl.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/dsc_proto.h"
 #include "../common/utils_proto.h"
 
 
@@ -153,10 +153,6 @@ static const SQUAD quad_max_int = { SLONG_MAX, -1 };
 #endif
 #endif
 
-
-#if !defined (NATIVE_QUAD)
-#include "../jrd/quad.cpp"
-#endif
 
 static const double eps_double = 1e-14;
 static const double eps_float  = 1e-5;

@@ -51,10 +51,9 @@
 #include "../jrd/lls.h"
 #include "gen/iberror.h"
 #include "../jrd/blob_filter.h"
-#include "../jrd/sdl.h"
+#include "../common/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
-#include "../dsql/ExprNodes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
@@ -63,19 +62,20 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/filte_proto.h"
-#include "../jrd/gds_proto.h"
+#include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
-#include "../jrd/sdl_proto.h"
-#include "../jrd/dsc_proto.h"
+#include "../common/sdl_proto.h"
+#include "../common/dsc_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/VaryStr.h"
 
 using namespace Jrd;
 using namespace Firebird;
+using Firebird::UCharBuffer;
 
 typedef Ods::blob_page blob_page;
 
@@ -987,15 +987,9 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* fiel
 				simpleMove =
 					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
-
+			case nod_argument:
 			case nod_variable:
 				break;
-
-			case nod_class_exprnode_jrd:
-				if (ExprNode::is<ParameterNode>(field))
-					break;
-				// fall into
-
 			default:
 				BUGCHECK(199);			// msg 199 expected field node
 		}

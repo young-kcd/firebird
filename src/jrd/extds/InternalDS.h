@@ -42,7 +42,7 @@ public:
 
 	virtual void initialize() {}
 	virtual void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const;
+	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const;
 
 protected:
 	virtual Connection* doCreateConnection();
@@ -172,7 +172,7 @@ public:
 private:
 	InternalConnection& m_connection;
 	Jrd::blb* m_blob;
-	Jrd::bid m_blob_id;
+	ISC_QUAD m_blob_id;
 };
 
 } // namespace EDS

@@ -70,38 +70,39 @@ void RecordSource::dumpName(thread_db* tdbb, const Firebird::string& name, UChar
 	buffer.add(namePtr, nameLength);
 }
 
-void RecordSource::dumpInversion(thread_db* tdbb, const InversionNode* inversion, UCharBuffer& buffer)
+void RecordSource::dumpInversion(thread_db* tdbb, const jrd_nod* inversion, UCharBuffer& buffer)
 {
 	// spit out the node type
-	switch (inversion->type)
+	switch (inversion->nod_type)
 	{
-	case InversionNode::TYPE_AND:
+	case nod_bit_and:
 		buffer.add(isc_info_rsb_and);
 		break;
-	case InversionNode::TYPE_OR:
-	case InversionNode::TYPE_IN:
+	case nod_bit_or:
+	case nod_bit_in:
 		buffer.add(isc_info_rsb_or);
 		break;
-	case InversionNode::TYPE_DBKEY:
+	case nod_bit_dbkey:
 		buffer.add(isc_info_rsb_dbkey);
 		break;
-	case InversionNode::TYPE_INDEX:
+	case nod_index:
 		buffer.add(isc_info_rsb_index);
 		break;
 	}
 
 	// dump sub-nodes or the actual index info
-	switch (inversion->type)
+	switch (inversion->nod_type)
 	{
-	case InversionNode::TYPE_AND:
-	case InversionNode::TYPE_OR:
-	case InversionNode::TYPE_IN:
-		dumpInversion(tdbb, inversion->node1, buffer);
-		dumpInversion(tdbb, inversion->node2, buffer);
+	case nod_bit_and:
+	case nod_bit_or:
+	case nod_bit_in:
+		dumpInversion(tdbb, inversion->nod_arg[0], buffer);
+		dumpInversion(tdbb, inversion->nod_arg[1], buffer);
 		break;
-	case InversionNode::TYPE_INDEX:
+	case nod_index:
 		{
-			const IndexRetrieval* const retrieval = inversion->retrieval;
+			const IndexRetrieval* const retrieval =
+				(IndexRetrieval*) inversion->nod_arg[e_idx_retrieval];
 
 			Firebird::MetaName indexName;
 			MET_lookup_index(tdbb, indexName, retrieval->irb_relation->rel_name,
@@ -198,7 +199,7 @@ RecordSource::~RecordSource()
 // RecordStream class
 // ------------------
 
-RecordStream::RecordStream(CompilerScratch* csb, UCHAR stream, const Format* format)
+RecordStream::RecordStream(CompilerScratch* csb, UCHAR stream, Format* format)
 	: m_stream(stream), m_format(format ? format : csb->csb_rpt[stream].csb_format)
 {
 	fb_assert(m_format);
