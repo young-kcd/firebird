@@ -140,7 +140,7 @@ $(COMMON_LIB):	$(Common_Objects)
 # gpre_boot
 #
 
-boot: $(GPRE_BOOT)
+boot: $(GPRE_BOOT) $(SRC_ROOT)/include/gen/blrtable.h
 
 $(GPRE_BOOT):	$(GPRE_Boot_Objects) $(COMMON_LIB)
 	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
