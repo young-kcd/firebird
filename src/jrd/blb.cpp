@@ -54,6 +54,7 @@
 #include "../common/sdl.h"
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
@@ -75,7 +76,6 @@
 
 using namespace Jrd;
 using namespace Firebird;
-using Firebird::UCharBuffer;
 
 typedef Ods::blob_page blob_page;
 
@@ -987,9 +987,15 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* fiel
 				simpleMove =
 					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
-			case nod_argument:
+
 			case nod_variable:
 				break;
+
+			case nod_class_exprnode_jrd:
+				if (ExprNode::is<ParameterNode>(field))
+					break;
+				// fall into
+
 			default:
 				BUGCHECK(199);			// msg 199 expected field node
 		}

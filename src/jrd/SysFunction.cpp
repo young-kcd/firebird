@@ -2208,7 +2208,7 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
 
-	Firebird::StringMap* contextVars = NULL;
+	StringMap* contextVars = NULL;
 
 	if (nameSpaceStr == USER_SESSION_NAMESPACE)
 	{
@@ -2600,7 +2600,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 
 	if (value->isBlob())
 	{
-		Firebird::UCharBuffer bpb;
+		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(value, &impure->vlu_desc, bpb);
 
 		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
@@ -2621,7 +2621,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 
 	if (placing->isBlob())
 	{
-		Firebird::UCharBuffer bpb;
+		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(placing, &impure->vlu_desc, bpb);
 
 		blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
@@ -2887,7 +2887,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlPi(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const jrd_nod* args,
 	impure_value* impure)
 {
 	fb_assert(args->nod_count == 0);
@@ -2957,7 +2957,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 	else
 		value1Length = MOV_make_string2(tdbb, value1, ttype, &value1Address, value1Buffer);
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> value1Canonical;
+	HalfStaticArray<UCHAR, BUFFER_SMALL> value1Canonical;
 	value1Canonical.getBuffer(value1Length / cs->minBytesPerChar() * canonicalWidth);
 	const SLONG value1CanonicalLen = tt->canonical(value1Length, value1Address,
 		value1Canonical.getCount(), value1Canonical.begin()) * canonicalWidth;
@@ -2985,7 +2985,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 	else
 		value2Length = MOV_make_string2(tdbb, value2, ttype, &value2Address, value2Buffer);
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> value2Canonical;
+	HalfStaticArray<UCHAR, BUFFER_SMALL> value2Canonical;
 	value2Canonical.getBuffer(value2Length / cs->minBytesPerChar() * canonicalWidth);
 	const SLONG value2CanonicalLen = tt->canonical(value2Length, value2Address,
 		value2Canonical.getCount(), value2Canonical.begin()) * canonicalWidth;
@@ -3126,7 +3126,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 	if (lengths[1] == 0)
 		return values[0];
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> canonicals[2];	// searched, find
+	HalfStaticArray<UCHAR, BUFFER_SMALL> canonicals[2];	// searched, find
 	for (int i = 0; i < 2; ++i)
 	{
 		canonicals[i].getBuffer(lengths[i] / cs->minBytesPerChar() * canonicalWidth);
@@ -3247,8 +3247,8 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
-		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
+		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 
 		UCHAR* p = buffer.getBuffer(blob->blb_length);
 		const SLONG len = BLB_get_data(tdbb, blob, p, blob->blb_length, true);
@@ -3357,7 +3357,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 		if (charSet->isMultiByte())
 		{
-			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 
 			start = charSet->length(
 				BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false),
@@ -3667,7 +3667,7 @@ const SysFunction SysFunction::functions[] =
 	};
 
 
-const SysFunction* SysFunction::lookup(const Firebird::MetaName& name)
+const SysFunction* SysFunction::lookup(const MetaName& name)
 {
 	for (const SysFunction* f = functions; f->name.length() > 0; ++f)
 	{
@@ -3726,7 +3726,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 							reinterpret_cast<bid*>(value->dsc_address));
 
-		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
 		//const ULONG totLen = length * charSet->maxBytesPerChar();
 
@@ -3735,7 +3735,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 			buffer.getBuffer(MIN(blob->blb_length, (offset + length) * charSet->maxBytesPerChar()));
 			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
 
-			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
+			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 			buffer2.getBuffer(dataLen);
 
 			dataLen = charSet->substring(dataLen, buffer.begin(),

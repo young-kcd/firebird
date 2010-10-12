@@ -62,10 +62,13 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
 #include "../common/utils_proto.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/BlrReader.h"
 #include "../jrd/Function.h"
 #include "../jrd/Attachment.h"
+#include "../dsql/BoolNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 
 
@@ -80,45 +83,28 @@ static const TEXT elements[][14] =
 #include "gen/codetext.h"
 
 
-static NodeParseFunc blr_parsers[256] = {NULL};
+static NodeParseFunc blr_parsers[256] = {NULL};	// TODO: separate statements and value expressions
+static BoolExprNodeParseFunc boolParsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
 static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
-static SSHORT par_context(CompilerScratch*, SSHORT *);
-static void par_dependency(thread_db*, CompilerScratch*, SSHORT, SSHORT, const Firebird::MetaName&);
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_literal(thread_db*, CompilerScratch*);
-static jrd_nod* par_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_partition_by(thread_db*, CompilerScratch*);
-static jrd_nod* par_plan(thread_db*, CompilerScratch*);
-static jrd_nod* par_procedure(thread_db*, CompilerScratch*, SSHORT);
-static void par_procedure_parms(thread_db*, CompilerScratch*, jrd_prc*, jrd_nod**, jrd_nod**, bool);
-static jrd_nod* par_relation(thread_db*, CompilerScratch*, SSHORT, bool);
-static jrd_nod* par_sort(thread_db*, CompilerScratch*, bool, bool);
-static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
+static PlanNode* par_plan(thread_db*, CompilerScratch*);
 
 
+// Parse blr, returning a compiler scratch block with the results.
+// Caller must do pool handling.
 jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
 	const bool trigger, USHORT flags)
 {
-/**************************************
- *
- *	P A R _ b l r
- *
- **************************************
- *
- * Functional description
- *	Parse blr, returning a compiler scratch block with the results.
- *	Caller must do pool handling.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 #ifdef CMP_DEBUG
@@ -169,7 +155,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
 		// be more then just csb_n_stream-numbers that hold data.
-		// Certainly csb_stream (see par_context where the context is retrieved)
+		// Certainly csb_stream (see PAR_context where the context is retrieved)
 		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
 		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
 		{
@@ -210,6 +196,100 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 		delete csb;
 
 	return node;
+}
+
+
+// PAR_blr equivalent for validation expressions.
+// Validation expressions are boolean expressions, but may be prefixed with a blr_stmt_expr.
+void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags,
+	BoolExprNode** resultExpr, jrd_nod** resultStmt)
+{
+	SET_TDBB(tdbb);
+
+#ifdef CMP_DEBUG
+	cmp_trace("BLR code given for JRD parsing:");
+	// CVC: Couldn't find isc_trace_printer, so changed it to gds__trace_printer.
+	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
+#endif
+
+	CompilerScratch* csb;
+	if (!(csb_ptr && (csb = *csb_ptr)))
+	{
+		size_t count = 5;
+		if (view_csb)
+			count += view_csb->csb_rpt.getCapacity();
+		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
+		csb->csb_g_flags |= flags;
+	}
+
+	// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
+	// the target relation
+
+	if (relation)
+	{
+		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
+		t1->csb_stream = csb->nextStream();
+		t1->csb_relation = relation;
+		t1->csb_flags = csb_used | csb_active;
+	}
+
+	csb->csb_blr_reader = BlrReader(blr, blr_length);
+
+	if (view_csb)
+	{
+		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
+		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
+		// be more then just csb_n_stream-numbers that hold data.
+		// Certainly csb_stream (see PAR_context where the context is retrieved)
+		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
+		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream)
+		{
+			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
+			t2->csb_relation = ptr->csb_relation;
+			t2->csb_procedure = ptr->csb_procedure;
+			t2->csb_stream = ptr->csb_stream;
+			t2->csb_flags = ptr->csb_flags & csb_used;
+		}
+		csb->csb_n_stream = view_csb->csb_n_stream;
+	}
+
+	const SSHORT version = csb->csb_blr_reader.getByte();
+	switch (version)
+	{
+	case blr_version4:
+		csb->csb_g_flags |= csb_blr_version4;
+		break;
+	case blr_version5:
+		break; // nothing to do
+	default:
+		PAR_error(csb, Arg::Gds(isc_metadata_corrupt) <<
+				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
+	}
+
+	jrd_nod* stmt = NULL;
+
+	if (csb->csb_blr_reader.peekByte() == blr_stmt_expr)
+	{
+		csb->csb_blr_reader.getByte();
+		stmt = PAR_parse_node(tdbb, csb, STATEMENT);
+	}
+
+	BoolExprNode* expr = PAR_parse_boolean(tdbb, csb);
+
+	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
+		PAR_syntax_error(csb, "end_of_command");
+
+	if (csb_ptr)
+		*csb_ptr = csb;
+	else
+		delete csb;
+
+	if (resultExpr)
+		*resultExpr = expr;
+
+	if (resultStmt)
+		*resultStmt = stmt;
 }
 
 
@@ -588,7 +668,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	}
 
 	if (csb->csb_g_flags & csb_get_dependencies) {
-		par_dependency(tdbb, csb, stream, id, base_field);
+		PAR_dependency(tdbb, csb, stream, id, base_field);
 	}
 
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
@@ -748,6 +828,13 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 	blr_parsers[blr] = parseFunc;
 }
 
+// Registers a parse function for a boolean BLR code.
+void PAR_register(UCHAR blr, BoolExprNodeParseFunc parseFunc)
+{
+	fb_assert(!boolParsers[blr] || boolParsers[blr] == parseFunc);
+	boolParsers[blr] = parseFunc;
+}
+
 
 void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
 {
@@ -796,10 +883,10 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *	Look for named field in procedure output fields.
  *
  **************************************/
-	const Array<Parameter*>& list = procedure->prc_output_fields;
+	const Array<NestConst<Parameter> >& list = procedure->prc_output_fields;
 
-	Array<Parameter*>::const_iterator ptr = list.begin();
-	for (const vec<Parameter*>::const_iterator end = list.end(); ptr < end; ++ptr)
+	Array<NestConst<Parameter> >::const_iterator ptr = list.begin();
+	for (const Array<NestConst<Parameter> >::const_iterator end = list.end(); ptr < end; ++ptr)
 	{
 		const Parameter* param = *ptr;
 		if (name == param->prm_name)
@@ -961,11 +1048,11 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
+SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
 {
 /**************************************
  *
- *	p a r _ c o n t e x t
+ *	P A R _ c o n t e x t
  *
  **************************************
  *
@@ -1007,15 +1094,12 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 }
 
 
-static void par_dependency(thread_db*   tdbb,
-						   CompilerScratch*    csb,
-						   SSHORT stream,
-						   SSHORT id,
-						   const Firebird::MetaName& field_name)
+void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, SSHORT stream, SSHORT id,
+	const MetaName& field_name)
 {
 /**************************************
  *
- *	p a r _ d e p e n d e n c y
+ *	P A R _ d e p e n d e n c y
  *
  **************************************
  *
@@ -1094,10 +1178,10 @@ static jrd_nod* par_exec_proc(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_
 	node->nod_count = count_table[blr_exec_proc];
 	node->nod_arg[e_esp_procedure] = (jrd_nod*) procedure;
 
-	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_in_msg],
-						&node->nod_arg[e_esp_inputs], true);
-	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_out_msg],
-						&node->nod_arg[e_esp_outputs], false);
+	PAR_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_in_msg],
+		&node->nod_arg[e_esp_inputs], true);
+	PAR_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_esp_out_msg],
+		&node->nod_arg[e_esp_outputs], false);
 
 	CompilerScratch::Dependency dependency(obj_procedure);
 	dependency.procedure = procedure;
@@ -1125,27 +1209,33 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	ForNode* forNode = reinterpret_cast<ForNode*>(node->nod_arg[0]);
 
-	// Fake RecordSelExpr
+	// Fake RseNode
 
-	forNode->rse = PAR_make_node(tdbb, 1 + rse_delta + 2);
-	RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(static_cast<jrd_nod*>(forNode->rse));
-	rse->nod_type = nod_rse;
-	rse->nod_count = 0;
-	rse->rse_count = 1;
-	jrd_nod* relation = PAR_parse_node(tdbb, csb, RELATION);
-	rse->rse_relation[0] = relation;
+	RseNode* rse = forNode->rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(
+		*tdbb->getDefaultPool());
+
+	jrd_nod* relationNode = PAR_parse_node(tdbb, csb, RELATION);
+	fb_assert(relationNode->nod_type == nod_class_recsrcnode_jrd);
+
+	RelationSourceNode* relationSource = reinterpret_cast<RelationSourceNode*>(
+		relationNode->nod_arg[0]);
+	fb_assert(relationSource->type == RelationSourceNode::TYPE);
+
+	rse->rse_relations.add(relationSource);
 
 	// Fake boolean
 
-	jrd_nod* booleanNode = rse->rse_boolean = PAR_make_node(tdbb, 2);
-	booleanNode->nod_type = nod_eql;
-	booleanNode->nod_flags = nod_comparison;
-	booleanNode->nod_arg[1] = PAR_parse_node(tdbb, csb, VALUE);
-	booleanNode->nod_arg[0] = PAR_make_node(tdbb, 1);
-	booleanNode = booleanNode->nod_arg[0];
-	booleanNode->nod_type = nod_dbkey;
-	booleanNode->nod_count = 0;
-	booleanNode->nod_arg[0] = relation->nod_arg[e_rel_stream];
+	ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+		csb->csb_pool, blr_eql);
+
+	rse->rse_boolean = booleanNode;
+
+	booleanNode->arg2 = PAR_parse_node(tdbb, csb, VALUE);
+
+	jrd_nod* dbKeyNode = booleanNode->arg1 = PAR_make_node(tdbb, 1);
+	dbKeyNode->nod_type = nod_dbkey;
+	dbKeyNode->nod_count = 0;
+	dbKeyNode->nod_arg[0] = (jrd_nod*)(IPTR) relationSource->getStream();
 
 	// Pick up statement
 
@@ -1303,9 +1393,9 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 	if (csb->csb_g_flags & csb_get_dependencies)
 	{
 		if (blr_operator == blr_fid)
-			par_dependency(tdbb, csb, stream, id, "");
+			PAR_dependency(tdbb, csb, stream, id, "");
 		else
-			par_dependency(tdbb, csb, stream, id, name);
+			PAR_dependency(tdbb, csb, stream, id, name);
 	}
 
 	jrd_nod* node = PAR_gen_field(tdbb, stream, id);
@@ -1434,43 +1524,6 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
-{
-/**************************************
- *
- *	p a r _ m a p
- *
- **************************************
- *
- * Functional description
- *	Parse a MAP clause for a union or global aggregate expression.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (csb->csb_blr_reader.getByte() != blr_map)
-		PAR_syntax_error(csb, "blr_map");
-
-	SSHORT count = csb->csb_blr_reader.getWord();
-	NodeStack map;
-
-	while (--count >= 0)
-	{
-		jrd_nod* assignment = PAR_make_node(tdbb, e_asgn_length);
-		assignment->nod_type = nod_assignment;
-		assignment->nod_count = e_asgn_length;
-		assignment->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, csb->csb_blr_reader.getWord());
-		assignment->nod_arg[e_asgn_from] = PAR_parse_node(tdbb, csb, VALUE);
-		map.push(assignment);
-	}
-
-	jrd_nod* node = PAR_make_list(tdbb, map);
-	node->nod_type = nod_map;
-
-	return node;
-}
-
-
 static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -1523,7 +1576,8 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 			csb->csb_dbg_info.argInfoToName.get(
 				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
 
-			csb->csb_map_item_info.put(Item(nod_argument, csb->csb_msg_number, index), itemInfo);
+			csb->csb_map_item_info.put(Item(Item::TYPE_PARAMETER, csb->csb_msg_number, index),
+				itemInfo);
 		}
 	}
 
@@ -1651,65 +1705,7 @@ size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
 }
 
 
-static jrd_nod* par_partition_by(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ p a r t i t i o n _ b y
- *
- **************************************
- *
- * Functional description
- *	Parse PARTITION BY subclauses of window functions.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (csb->csb_blr_reader.getByte() != blr_partition_by)
-		PAR_syntax_error(csb, "blr_partition_by");
-
-	SSHORT context;
-	SSHORT partitionStream;
-	partitionStream = par_context(csb, &context);
-
-	jrd_nod* list = PAR_make_node(tdbb, e_part_length);
-	list->nod_type = nod_list;
-	list->nod_count = e_part_count;
-
-	const UCHAR count = csb->csb_blr_reader.getByte();
-
-	if (count != 0)
-	{
-		jrd_nod*& groupNode = list->nod_arg[e_part_group];
-		jrd_nod*& regroupNode = list->nod_arg[e_part_regroup];
-
-		groupNode = PAR_args(tdbb, csb, VALUE, count, count * 3);
-		regroupNode = PAR_args(tdbb, csb, VALUE, count, count);
-
-		// We have allocated groupNode with bigger length than expressions. This is to use in
-		// OPT_gen_sort. Now fill that info.
-
-		groupNode->nod_type = nod_sort;
-
-		for (unsigned i = 0; i < count; ++i)
-		{
-			groupNode->nod_arg[count + i] = (jrd_nod*)(IPTR) false;	// ascending
-			groupNode->nod_arg[count * 2 + i] = (jrd_nod*)(IPTR) rse_nulls_first;
-		}
-	}
-
-	if (csb->csb_blr_reader.getByte() != blr_sort)
-		PAR_syntax_error(csb, "blr_sort");
-
-	list->nod_arg[e_part_order] = par_sort(tdbb, csb, true, true);
-	list->nod_arg[e_part_map] = par_map(tdbb, csb, partitionStream);
-	list->nod_arg[e_part_stream] = (jrd_nod*)(IPTR) partitionStream;
-
-	return list;
-}
-
-
-static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
+static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
  *
@@ -1732,12 +1728,12 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_join || node_type == blr_merge)
 	{
-		USHORT count = (USHORT) csb->csb_blr_reader.getByte();
-		jrd_nod* plan = PAR_make_node(tdbb, count);
-		plan->nod_type = nod_join;
+		int count = (USHORT) csb->csb_blr_reader.getByte();
+		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
 
-		for (jrd_nod** arg = plan->nod_arg; count--;)
-			*arg++ = par_plan(tdbb, csb);
+		while (count-- > 0)
+			plan->subNodes.add(par_plan(tdbb, csb));
+
 		return plan;
 	}
 
@@ -1745,8 +1741,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_retrieve)
 	{
-		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
-		plan->nod_type = (nod_t)(USHORT) blr_table[node_type];
+		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_RETRIEVE);
 
 		// parse the relation name and context--the relation
 		// itself is redundant except in the case of a view,
@@ -1754,41 +1749,35 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
 		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
-		{
 			PAR_syntax_error(csb, elements[RELATION]);
-		}
 
-		// don't have par_relation() parse the context, because
+		// don't make RelationSourceNode::parse() parse the context, because
 		// this would add a new context; while this is a reference to
 		// an existing context
 
-		jrd_nod* relation_node = par_relation(tdbb, csb, n, false);
-		plan->nod_arg[e_retrieve_relation] = relation_node;
-		jrd_rel* relation = (jrd_rel*) relation_node->nod_arg[e_rel_relation];
+		plan->relationNode = RelationSourceNode::parse(tdbb, csb, n, false);
+
+		jrd_rel* relation = plan->relationNode->relation;
 
 		n = csb->csb_blr_reader.getByte();
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
 			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 		const SSHORT stream = csb->csb_rpt[n].csb_stream;
 
-		relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
-		relation_node->nod_arg[e_rel_context] = (jrd_nod*) (IPTR) n;
+		plan->relationNode->setStream(stream);
+		plan->relationNode->context = n;
 
 		// Access plan types (sequential is default)
 
 		node_type = (USHORT) csb->csb_blr_reader.getByte();
-		USHORT extra_count = 0;
-		jrd_nod* access_type = NULL;
-		Firebird::MetaName name;
-		MetaName* idx_name = NULL;
+		MetaName name;
 
 		switch (node_type)
 		{
 		case blr_navigational:
 			{
-				access_type = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, e_access_type_length);
-				access_type->nod_type = nod_navigational;
+				plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+					PlanNode::AccessType::TYPE_NAVIGATIONAL);
 
 				// pick up the index name and look up the appropriate ids
 
@@ -1819,44 +1808,38 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				// the relation could be a base relation of a view;
 				// save the index name also, for convenience
 
-				access_type->nod_arg[e_access_type_relation] = (jrd_nod*) (IPTR) relation_id;
-				access_type->nod_arg[e_access_type_index] = (jrd_nod*) (IPTR) index_id;
-				idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
-				access_type->nod_arg[e_access_type_index_name] = (jrd_nod*) idx_name;
+				PlanNode::AccessItem& item = plan->accessType->items.add();
+				item.relationId = relation_id;
+				item.indexId = index_id;
+				item.indexName = name;
 
 				if (csb->csb_g_flags & csb_get_dependencies)
 				{
 					CompilerScratch::Dependency dependency(obj_index);
-					dependency.name = idx_name;
+					dependency.name = &item.indexName;
 					csb->csb_dependencies.push(dependency);
 	            }
 
-				if (csb->csb_blr_reader.peekByte() == blr_indices)
-				{
-					// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
-					extra_count = 3;
-				}
-				else
+				if (csb->csb_blr_reader.peekByte() != blr_indices)
 					break;
+
+				// dimitr:	FALL INTO, if the plan item is ORDER ... INDEX (...)
 			}
 		case blr_indices:
 			{
-				if (extra_count)
+				if (plan->accessType)
 					csb->csb_blr_reader.getByte(); // skip blr_indices
-				USHORT count = (USHORT) csb->csb_blr_reader.getByte();
-				jrd_nod* temp = plan->nod_arg[e_retrieve_access_type] =
-					PAR_make_node(tdbb, count * e_access_type_length + extra_count);
-				for (USHORT i = 0; i < extra_count; i++) {
-					temp->nod_arg[i] = access_type->nod_arg[i];
+				else
+				{
+					plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+						PlanNode::AccessType::TYPE_INDICES);
 				}
-				temp->nod_type = extra_count ? nod_navigational : nod_indices;
-				if (extra_count)
-					delete access_type;
-				access_type = temp;
+
+				int count = (USHORT) csb->csb_blr_reader.getByte();
 
 				// pick up the index names and look up the appropriate ids
 
-				for (jrd_nod** arg = access_type->nod_arg + extra_count; count--;)
+				while (count-- > 0)
 				{
 					PAR_name(csb, name);
 	          		/* Nickolay Samofatov: We can't do this. Index names are identifiers.
@@ -1885,15 +1868,15 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					// the relation could be a base relation of a view;
 					// save the index name also, for convenience
 
-					*arg++ = (jrd_nod*) (IPTR) relation_id;
-					*arg++ = (jrd_nod*) (IPTR) index_id;
-					idx_name = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), name);
-					*arg++ = (jrd_nod*) idx_name;
+					PlanNode::AccessItem& item = plan->accessType->items.add();
+					item.relationId = relation_id;
+					item.indexId = index_id;
+					item.indexName = name;
 
 					if (csb->csb_g_flags & csb_get_dependencies)
 					{
 						CompilerScratch::Dependency dependency(obj_index);
-						dependency.name = idx_name;
+						dependency.name = &item.indexName;
 						csb->csb_dependencies.push(dependency);
 		            }
 				}
@@ -1913,123 +1896,12 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 }
 
 
-static jrd_nod* par_procedure(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
+void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedure,
+	jrd_nod** message_ptr, jrd_nod** parameter_ptr, bool input_flag)
 {
 /**************************************
  *
- *	p a r _ p r o c e d u r e
- *
- **************************************
- *
- * Functional description
- *	Parse an procedural view reference.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	jrd_prc* procedure = NULL;
-	Firebird::string* alias_string = NULL;
-	QualifiedName name;
-
-	switch (blr_operator)
-	{
-	case blr_pid:
-	case blr_pid2:
-		{
-			const SSHORT pid = csb->csb_blr_reader.getWord();
-
-			if (blr_operator == blr_pid2)
-			{
-				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
-			}
-
-			if (!(procedure = MET_lookup_procedure_id(tdbb, pid, false, false, 0)))
-			{
-				name.identifier.printf("id %d", pid);
-			}
-		}
-		break;
-
-	case blr_procedure:
-	case blr_procedure2:
-	case blr_procedure3:
-	case blr_procedure4:
-		{
-			if (blr_operator == blr_procedure3 || blr_operator == blr_procedure4)
-			{
-				PAR_name(csb, name.package);
-			}
-
-			PAR_name(csb, name.identifier);
-
-			if (blr_operator == blr_procedure2 || blr_operator == blr_procedure4)
-			{
-				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
-			}
-
-			procedure = MET_lookup_procedure(tdbb, name, false);
-		}
-		break;
-
-	default:
-		fb_assert(false);
-	}
-
-	if (!procedure)
-	{
-		PAR_error(csb, Arg::Gds(isc_prcnotdef) << Arg::Str(name.toString()));
-	}
-
-	if (procedure->prc_type == prc_executable)
-	{
-		const string name = procedure->getName().toString();
-
-		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-		{
-			PAR_warning(Arg::Warning(isc_illegal_prc_type) << Arg::Str(name));
-		}
-		else
-		{
-			PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));
-		}
-	}
-
-	jrd_nod* const node = PAR_make_node(tdbb, e_prc_length);
-	node->nod_type = nod_procedure;
-	node->nod_count = count_table[blr_procedure];
-	node->nod_arg[e_prc_procedure] = (jrd_nod*)(IPTR) procedure->getId();
-
-	SSHORT context;
-	const SSHORT stream = par_context(csb, &context);
-	node->nod_arg[e_prc_stream] = (jrd_nod*)(IPTR) stream;
-	node->nod_arg[e_prc_context] = (jrd_nod*)(IPTR) context;
-
-	csb->csb_rpt[stream].csb_procedure = procedure;
-	csb->csb_rpt[stream].csb_alias = alias_string;
-
-	par_procedure_parms(tdbb, csb, procedure, &node->nod_arg[e_prc_in_msg],
-						&node->nod_arg[e_prc_inputs], true);
-
-	if (csb->csb_g_flags & csb_get_dependencies)
-	{
-		par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
-	}
-
-	return node;
-}
-
-
-static void par_procedure_parms(thread_db* tdbb,
-								CompilerScratch* csb,
-								jrd_prc* procedure,
-								jrd_nod** message_ptr,
-								jrd_nod** parameter_ptr, bool input_flag)
-{
-/**************************************
- *
- *	p a r _ p r o c e d u r e _ p a r m s
+ *	P A R _ p r o c e d u r e _ p a r m s
  *
  **************************************
  *
@@ -2115,19 +1987,26 @@ static void par_procedure_parms(thread_db* tdbb,
 				Parameter* parameter = procedure->prc_input_fields[inputCount - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
-			else {
+			else
 				asgn->nod_arg[asgn_arg1] = PAR_parse_node(tdbb, csb, VALUE);
-			}
-			jrd_nod* prm = asgn->nod_arg[asgn_arg2] = PAR_make_node(tdbb, e_arg_length);
-			prm->nod_type = nod_argument;
-			prm->nod_count = 1;
-			prm->nod_arg[e_arg_message] = message;
-			prm->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
-			jrd_nod* prm_f = prm->nod_arg[e_arg_flag] = PAR_make_node(tdbb, e_arg_length);
-			prm_f->nod_type = nod_argument;
-			prm_f->nod_count = 0;
-			prm_f->nod_arg[e_arg_message] = message;
-			prm_f->nod_arg[e_arg_number] = (jrd_nod*)(IPTR) i++;
+
+			ParameterNode* paramNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramNode->message = message;
+			paramNode->argNumber = i++;
+
+			ParameterNode* paramFlagNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			paramFlagNode->message = message;
+			paramFlagNode->argNumber = i++;
+
+			jrd_nod* legacyNode = asgn->nod_arg[asgn_arg2] = PAR_make_node(tdbb, 1);
+			legacyNode->nod_type = nod_class_exprnode_jrd;
+			legacyNode->nod_count = 0;
+			legacyNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(paramNode);
+
+			legacyNode = paramNode->argFlag = PAR_make_node(tdbb, 1);
+			legacyNode->nod_type = nod_class_exprnode_jrd;
+			legacyNode->nod_count = 0;
+			legacyNode->nod_arg[0] = reinterpret_cast<jrd_nod*>(paramFlagNode);
 		}
 	}
 	else if (input_flag ? inputCount : procedure->prc_output_fields.getCount())
@@ -2135,125 +2014,6 @@ static void par_procedure_parms(thread_db* tdbb,
 		PAR_error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
 						Arg::Str(procedure->getName().toString()));
 	}
-}
-
-
-static jrd_nod* par_relation(thread_db* tdbb,
-						CompilerScratch* csb, SSHORT blr_operator, bool parse_context)
-{
-/**************************************
- *
- *	p a r _ r e l a t i o n
- *
- **************************************
- *
- * Functional description
- *	Parse a relation reference.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	// Find relation either by id or by name
-	jrd_rel* relation = NULL;
-	Firebird::string* alias_string = NULL;
-	Firebird::MetaName name;
-
-	switch (blr_operator)
-	{
-	case blr_rid:
-	case blr_rid2:
-		{
-			const SSHORT id = csb->csb_blr_reader.getWord();
-
-			if (blr_operator == blr_rid2)
-			{
-				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
-			}
-
-			if (!(relation = MET_lookup_relation_id(tdbb, id, false)))
-			{
-				name.printf("id %d", id);
-			}
-		}
-		break;
-
-	case blr_relation:
-	case blr_relation2:
-		{
-			PAR_name(csb, name);
-
-			if (blr_operator == blr_relation2)
-			{
-				alias_string = FB_NEW(csb->csb_pool) Firebird::string(csb->csb_pool);
-				PAR_name(csb, *alias_string);
-			}
-
-			relation = MET_lookup_relation(tdbb, name);
-		}
-		break;
-
-	default:
-		fb_assert(false);
-	}
-
-	if (!relation)
-	{
-		PAR_error(csb, Arg::Gds(isc_relnotdef) << Arg::Str(name), false);
-	}
-
-	// Make a relation reference node
-
-	jrd_nod* const node = PAR_make_node(tdbb, e_rel_length);
-	node->nod_count = 0;
-
-	// if an alias was passed, store with the relation
-
-	if (alias_string)
-	{
-		node->nod_arg[e_rel_alias] =
-			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), *alias_string);
-	}
-
-	// Scan the relation if it hasn't already been scanned for meta data
-
-	if ((!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned)) &&
-		((relation->rel_flags & REL_force_scan) || !(csb->csb_g_flags & csb_internal)))
-	{
-		relation->rel_flags &= ~REL_force_scan;
-		MET_scan_relation(tdbb, relation);
-	}
-	else if (relation->rel_flags & REL_sys_triggers)
-	{
-		MET_parse_sys_trigger(tdbb, relation);
-	}
-
-	// generate a stream for the relation reference, assuming it is a real reference
-
-	if (parse_context)
-	{
-		SSHORT context;
-		const SSHORT stream = par_context(csb, &context);
-		fb_assert(stream <= MAX_STREAMS);
-		node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) stream;
-		node->nod_arg[e_rel_context] = (jrd_nod*) (IPTR) context;
-
-		csb->csb_rpt[stream].csb_relation = relation;
-		csb->csb_rpt[stream].csb_alias = alias_string;
-
-		if (csb->csb_g_flags & csb_get_dependencies)
-		{
-			par_dependency(tdbb, csb, stream, (SSHORT) -1, "");
-		}
-	}
-	else
-	{
-		delete alias_string;
-	}
-
-	node->nod_arg[e_rel_relation] = (jrd_nod*) relation;
-
-	return node;
 }
 
 
@@ -2272,25 +2032,24 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 	SET_TDBB(tdbb);
 
 	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
-	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, count + rse_delta + 2);
-	rse->nod_count = 0;
-	rse->rse_count = count;
-	jrd_nod** ptr = rse->rse_relation;
+	RseNode* rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
 
 	while (--count >= 0)
 	{
 		// AB: Added TYPE_RSE for derived table support
-		*ptr++ = PAR_parse_node(tdbb, csb, RELATION); // TYPE_RSE);
-		//*ptr++ = PAR_parse_node(tdbb, csb, RELATION);
+		jrd_nod* node = PAR_parse_node(tdbb, csb, RELATION); // TYPE_RSE;
+		fb_assert(node->nod_type == nod_class_recsrcnode_jrd);
+		rse->rse_relations.add(reinterpret_cast<RecordSourceNode*>(node->nod_arg[0]));
 	}
 
 	while (true)
 	{
 		const UCHAR op = csb->csb_blr_reader.getByte();
+
 		switch (op)
 		{
 		case blr_boolean:
-			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = PAR_parse_boolean(tdbb, csb);
 			break;
 
 		case blr_first:
@@ -2308,13 +2067,15 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_sorted = par_sort(tdbb, csb, true, false);
+			csb->csb_blr_reader.seekBackward(1);
+			rse->rse_sorted = PAR_sort(tdbb, csb, op, false);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
 				PAR_syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_projection = par_sort(tdbb, csb, false, false);
+			csb->csb_blr_reader.seekBackward(1);
+			rse->rse_projection = PAR_sort(tdbb, csb, op, false);
 			break;
 
 		case blr_join_type:
@@ -2336,7 +2097,7 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			break;
 
 		case blr_writelock:
-			rse->nod_flags |= rse_writelock;
+			rse->flags |= RseNode::FLAG_WRITELOCK;
 			break;
 
 		default:
@@ -2345,22 +2106,29 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				// An outer join is only allowed when the stream count is 2
 				// and a boolean expression has been supplied
 
-				if (!rse->rse_jointype || (rse->rse_count == 2 && rse->rse_boolean))
+				if (!rse->rse_jointype || (rse->rse_relations.getCount() == 2 && rse->rse_boolean))
 				{
 					// Convert right outer joins to left joins to avoid
 					// RIGHT JOIN handling at lower engine levels
 					if (rse->rse_jointype == blr_right)
 					{
 						// Swap sub-streams
-						jrd_nod* temp = rse->rse_relation[0];
-						rse->rse_relation[0] = rse->rse_relation[1];
-						rse->rse_relation[1] = temp;
+						RecordSourceNode* temp = rse->rse_relations[0];
+						rse->rse_relations[0] = rse->rse_relations[1];
+						rse->rse_relations[1] = temp;
 
 						rse->rse_jointype = blr_left;
 					}
-					return (jrd_nod*) rse;
+
+					jrd_nod* node = PAR_make_node(tdbb, 1);
+					node->nod_type = nod_class_recsrcnode_jrd;
+					node->nod_count = 0;
+					node->nod_arg[0] = reinterpret_cast<jrd_nod*>(rse);
+
+					return node;
 				}
 			}
+
 			PAR_syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
 						 "RecordSelExpr stream clause" :
 						 "record selection expression clause"));
@@ -2369,124 +2137,108 @@ jrd_nod* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 }
 
 
-static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag, bool nullForEmpty)
+// Parse a sort clause (sans header byte). This is used for blr_sort, blr_project and blr_group_by.
+SortNode* PAR_sort(thread_db* tdbb, CompilerScratch* csb, UCHAR expectedBlr,
+	bool nullForEmpty)
 {
-/**************************************
- *
- *	p a r _ s o r t
- *
- **************************************
- *
- * Functional description
- *	Parse a sort clause (sans header byte).  This is used for
- *	BLR_SORT, BLR_PROJECT, and BLR_GROUP.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
+	const UCHAR blrOp = csb->csb_blr_reader.getByte();
+
+	if (blrOp != expectedBlr)
+	{
+		char s[20];
+		sprintf(s, "blr code %d", expectedBlr);
+		PAR_syntax_error(csb, s);
+	}
+
+	USHORT count = csb->csb_blr_reader.getByte();
 
 	if (count == 0 && nullForEmpty)
 		return NULL;
 
-	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
-	if (!flag)
-		clause->nod_flags = nod_unique_sort;
-	clause->nod_type = nod_sort;
-	clause->nod_count = count;
-	jrd_nod** ptr = clause->nod_arg;
-	jrd_nod** ptr2 = ptr + count;
-	jrd_nod** ptr3 = ptr2 + count;
+	SortNode* sort = PAR_sort_internal(tdbb, csb, blrOp, count);
 
-	while (--count >= 0)
+	if (blrOp != blr_sort)
+		sort->unique = true;
+
+	return sort;
+}
+
+
+// Parse the internals of a sort clause. This is used for blr_sort, blr_project, blr_group_by
+// and blr_partition_by.
+SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
+	USHORT count)
+{
+	SET_TDBB(tdbb);
+
+	SortNode* sort = FB_NEW(*tdbb->getDefaultPool()) SortNode(
+		*tdbb->getDefaultPool());
+
+	NestConst<jrd_nod>* ptr = sort->expressions.getBuffer(count);
+	bool* ptr2 = sort->descending.getBuffer(count);
+	int* ptr3 = sort->nullOrder.getBuffer(count);
+
+	while (count-- > 0)
 	{
-		if (flag)
+		if (blrOp == blr_sort)
 		{
 			UCHAR code = csb->csb_blr_reader.getByte();
+
 			switch (code)
 			{
-			case blr_nullsfirst:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_first;
-				code = csb->csb_blr_reader.getByte();
-				break;
-			case blr_nullslast:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_last;
-				code = csb->csb_blr_reader.getByte();
-				break;
-			default:
-				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_default;
+				case blr_nullsfirst:
+					*ptr3++ = rse_nulls_first;
+					code = csb->csb_blr_reader.getByte();
+					break;
+
+				case blr_nullslast:
+					*ptr3++ = rse_nulls_last;
+					code = csb->csb_blr_reader.getByte();
+					break;
+
+				default:
+					*ptr3++ = rse_nulls_default;
 			}
 
-			*ptr2++ = (jrd_nod*) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
+			*ptr2++ = (code == blr_descending);
 		}
+		else
+		{
+			*ptr2++ = false;	// ascending
+			*ptr3++ = rse_nulls_default;
+		}
+
 		*ptr++ = PAR_parse_node(tdbb, csb, VALUE);
 	}
 
-	return clause;
+	return sort;
 }
 
 
-static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
+// Parse a boolean node.
+BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
 {
-/**************************************
- *
- *	p a r _ u n i o n
- *
- **************************************
- *
- * Functional description
- *	Parse a union reference.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
-	// Make the node, parse the context number, get a stream assigned,
-	// and get the number of sub-RecordSelExpr's.
+	//const USHORT blrOffset = csb->csb_blr_reader.getOffset();
+	const SSHORT blrOp = csb->csb_blr_reader.getByte();
 
-	jrd_nod* node = PAR_make_node(tdbb, e_uni_length);
-	node->nod_count = 3;
-	const USHORT stream = par_context(csb, 0);
-	node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) stream;
-
-	// assign separate context for mapped record if union is recursive
-	USHORT map_stream = stream;
-	if (recursive)
+	if (blrOp < 0 || blrOp >= FB_NELEM(type_table) || !boolParsers[blrOp])
 	{
-		node->nod_flags |= nod_recurse;
-		map_stream = par_context(csb, 0);
-		node->nod_arg[e_uni_map_stream] = (jrd_nod*) (IPTR) map_stream;
-	}
+        // NS: This error string is correct, please do not mangle it again and again.
+		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
+        PAR_syntax_error(csb, "valid boolean BLR code");
+    }
 
-	SSHORT count = (unsigned int) csb->csb_blr_reader.getByte();
-
-	// Pick up the sub-RecordSelExpr's and maps
-
-	NodeStack clauses;
-
-	while (--count >= 0)
-	{
-		clauses.push(PAR_parse_node(tdbb, csb, TYPE_RSE));
-		clauses.push(par_map(tdbb, csb, map_stream));
-	}
-
-	node->nod_arg[e_uni_clauses] = PAR_make_list(tdbb, clauses);
-
-	return node;
+	return boolParsers[blrOp](tdbb, *tdbb->getDefaultPool(), csb, blrOp);
 }
 
 
+// Parse a BLR expression.
 jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 {
-/**************************************
- *
- *	P A R _ p a r s e _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Parse a BLR expression.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
@@ -2526,84 +2278,21 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	switch (blr_operator)
 	{
-	case blr_any:
-	case blr_unique:
-	case blr_ansi_any:
-	case blr_ansi_all:
-	case blr_exists:
-		node->nod_arg[e_any_rse] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-		// Boring operators -- no special handling req'd
-
-	case blr_value_if:
 	case blr_substring:
-	case blr_matching2:
-	case blr_ansi_like:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
-
-	case blr_trim:
-	{
-		node->nod_count = e_trim_count;
-		node->nod_arg[e_trim_specification] = (jrd_nod*)(U_IPTR) csb->csb_blr_reader.getByte();
-
-		BYTE trimWhat = csb->csb_blr_reader.getByte();
-
-		if (trimWhat == blr_trim_characters)
-			node->nod_arg[e_trim_characters] = PAR_parse_node(tdbb, csb, sub_type);
-		else
-		{
-			node->nod_arg[e_trim_characters] = NULL;
-			--node->nod_count;
-		}
-
-		node->nod_arg[e_trim_value] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-	}
-
-	case blr_and:
-	case blr_or:
 
 	case blr_prot_mask:
-	case blr_containing:
-	case blr_matching:
-	case blr_like:
-	case blr_starting:
-	case blr_add:
-	case blr_subtract:
-	case blr_multiply:
-	case blr_divide:
-
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		// Fall into ...
 
 	case blr_handler:
 	case blr_loop:
-
 	case blr_lock_state:
-	case blr_upcase:
-	case blr_lowcase:
-	case blr_negate:
-	case blr_not:
-	case blr_missing:
-	case blr_internal_info:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-	case blr_similar:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		if (csb->csb_blr_reader.getByte() != 0)
-			*arg++ = PAR_parse_node(tdbb, csb, sub_type);	// escape
-		else	// without escape
-		{
-			*arg++ = NULL;
-			--node->nod_count;
-		}
 		break;
 
 	case blr_exec_sql:
@@ -2782,28 +2471,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 
 	case blr_null:
-	case blr_user_name:
-    case blr_current_role:
-	case blr_current_date:
 	case blr_start_savepoint:
 	case blr_end_savepoint:
-		break;
-
-	case blr_current_time:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIME_PRECISION;
-		break;
-
-	case blr_current_timestamp:
-		node->nod_arg[0] = (jrd_nod*) (IPTR) DEFAULT_TIMESTAMP_PRECISION;
-		break;
-
-	case blr_current_time2:
-	case blr_current_timestamp2:
-		n = csb->csb_blr_reader.getByte();
-		if (n > MAX_TIME_PRECISION) {
-			ERR_post(Arg::Gds(isc_invalid_time_precision) << Arg::Num(MAX_TIME_PRECISION));
-		}
-		node->nod_arg[0] = (jrd_nod*) (IPTR) n;
 		break;
 
 	case blr_store:
@@ -2812,23 +2481,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[e_sto_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		if (blr_operator == blr_store2)
 			node->nod_arg[e_sto_statement2] = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
-		// Comparison operators
-
-	case blr_between:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-
-	case blr_equiv:
-	case blr_eql:
-	case blr_neq:
-	case blr_geq:
-	case blr_gtr:
-	case blr_leq:
-	case blr_lss:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_flags = nod_comparison;
 		break;
 
 	case blr_erase:
@@ -2856,8 +2508,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_procedure2:
 	case blr_procedure3:
 	case blr_procedure4:
-		node = par_procedure(tdbb, csb, blr_operator);
-		set_type = false;
+		node->nod_arg[0] = (jrd_nod*) ProcedureSourceNode::parse(tdbb, csb, blr_operator);
 		break;
 
 	case blr_index:
@@ -2909,57 +2560,35 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_singular:
 		node = PAR_parse_node(tdbb, csb, TYPE_RSE);
-		((RecordSelExpr*) node)->nod_flags |= rse_singular;
+		fb_assert(node->nod_type == nod_class_recsrcnode_jrd);
+		reinterpret_cast<RseNode*>(node->nod_arg[0])->flags |= RseNode::FLAG_SINGULAR;
 		break;
 
 	case blr_scrollable:
 		node = PAR_parse_node(tdbb, csb, TYPE_RSE);
-		((RecordSelExpr*) node)->nod_flags |= rse_scrollable;
+		fb_assert(node->nod_type == nod_class_recsrcnode_jrd);
+		reinterpret_cast<RseNode*>(node->nod_arg[0])->flags |= RseNode::FLAG_SCROLLABLE;
 		break;
 
 	case blr_relation:
 	case blr_rid:
 	case blr_relation2:
 	case blr_rid2:
-		node = par_relation(tdbb, csb, blr_operator, true);
+		node->nod_arg[0] = (jrd_nod*) RelationSourceNode::parse(tdbb, csb, blr_operator, true);
 		break;
 
 	case blr_union:
-		node = par_union(tdbb, csb, false);
-		break;
-
 	case blr_recurse:
-		node = par_union(tdbb, csb, true);
+		node->nod_arg[0] = (jrd_nod*) UnionSourceNode::parse(tdbb, csb, blr_operator);
 		break;
 
 	case blr_window:
-		{
-			node->nod_arg[e_win_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
-
-			unsigned partitionCount = csb->csb_blr_reader.getByte();
-			NodeStack stack;
-
-			for (unsigned i = 0; i < partitionCount; ++i)
-				stack.push(par_partition_by(tdbb, csb));
-
-			node->nod_arg[e_win_windows] = PAR_make_list(tdbb, stack);
-		}
+		node->nod_arg[0] = (jrd_nod*) WindowSourceNode::parse(tdbb, csb);
 		break;
 
 	case blr_aggregate:
-		{
-			const USHORT stream = par_context(csb, NULL);
-			fb_assert(stream <= MAX_STREAMS);
-			node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) stream;
-			node->nod_arg[e_agg_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
-			node->nod_arg[e_agg_group] = PAR_parse_node(tdbb, csb, OTHER);
-			node->nod_arg[e_agg_map] = par_map(tdbb, csb, stream);
-		}
+		node->nod_arg[0] = (jrd_nod*) AggregateSourceNode::parse(tdbb, csb);
 		break;
-
-	case blr_group_by:
-		node = par_sort(tdbb, csb, false, false);
-		return node->nod_count ? node : NULL;
 
 	case blr_field:
 	case blr_fid:
@@ -2985,29 +2614,17 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		break;
 	}
 
-	case blr_gen_id:
 	case blr_set_generator:
 		{
 			Firebird::MetaName name;
-
 			PAR_name(csb, name);
+
 			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
-			if (tmp < 0) {
+			if (tmp < 0)
 				PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
-			}
+
 			node->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
-
-            // CVC: There're thousand ways to go wrong, but I don't see any value
-            // in posting dependencies with set generator since it's DDL, so I will
-            // track only gen_id() in both dialects.
-            if ((blr_operator == blr_gen_id) && (csb->csb_g_flags & csb_get_dependencies))
-			{
-				CompilerScratch::Dependency dependency(obj_generator);
-				dependency.number = tmp;
-				csb->csb_dependencies.push(dependency);
-            }
-
 		}
 		break;
 
@@ -3070,7 +2687,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			if (itemInfo.isSpecial())
 			{
 				csb->csb_dbg_info.varIndexToName.get(n, itemInfo.name);
-				csb->csb_map_item_info.put(Item(nod_variable, n), itemInfo);
+				csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, n), itemInfo);
 			}
 
 			if (itemInfo.explicitCollation)
@@ -3089,51 +2706,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			vec<jrd_nod*>* vector = csb->csb_variables;
 			if (!vector || n >= vector->count())
 				PAR_syntax_error(csb, "variable identifier");
-		}
-		break;
-
-	case blr_parameter:
-	case blr_parameter2:
-	case blr_parameter3:
-		{
-			jrd_nod* message = NULL;
-			n = (USHORT) csb->csb_blr_reader.getByte();
-			if (n >= csb->csb_rpt.getCount() || !(message = csb->csb_rpt[n].csb_message))
-			{
-				PAR_error(csb, Arg::Gds(isc_badmsgnum));
-			}
-			node->nod_arg[e_arg_message] = message;
-			n = csb->csb_blr_reader.getWord();
-			node->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
-			if (n >= format->fmt_count)
-				PAR_error(csb, Arg::Gds(isc_badparnum));
-			if (blr_operator != blr_parameter)
-			{
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_flag] = temp;
-				node->nod_count = 1;
-				temp->nod_count = 0;
-				temp->nod_type = nod_argument;
-				temp->nod_arg[e_arg_message] = message;
-				n = csb->csb_blr_reader.getWord();
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-				if (n >= format->fmt_count)
-					PAR_error(csb, Arg::Gds(isc_badparnum));
-			}
-			if (blr_operator == blr_parameter3)
-			{
-				jrd_nod* temp = PAR_make_node(tdbb, e_arg_length);
-				node->nod_arg[e_arg_indicator] = temp;
-				node->nod_count = 2;
-				temp->nod_count = 0;
-				temp->nod_type = nod_argument;
-				temp->nod_arg[e_arg_message] = message;
-				n = csb->csb_blr_reader.getWord();
-				temp->nod_arg[e_arg_number] = (jrd_nod*) (IPTR) n;
-				if (n >= format->fmt_count)
-					PAR_error(csb, Arg::Gds(isc_badparnum));
-			}
 		}
 		break;
 

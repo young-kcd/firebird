@@ -90,6 +90,7 @@
 #include "../common/utils_proto.h"
 
 #include "../jrd/PreparedStatement.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/DebugInterface.h"
 #include "../common/classes/MsgPrint.h"
 #include "../jrd/Function.h"
@@ -1442,7 +1443,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	else
 	{
 		node = MET_parse_blob(tdbb, relation, blob_id, &csb, statementPtr,
-			(type == obj_trigger && relation != NULL));
+			(type == obj_trigger && relation != NULL), type == obj_validation);
 	}
 
 	if (type == obj_computed)
@@ -2614,7 +2615,8 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 				   bid*			blob_id,
 				   CompilerScratch**		csb_ptr,
 				   JrdStatement**	statementPtr,
-				   const bool	trigger)
+				   const bool	trigger,
+				   bool validationExpr)
 {
 /**************************************
  *
@@ -2640,7 +2642,16 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 	UCHAR* temp = tmp.getBuffer(length);
 	length = BLB_get_data(tdbb, blob, temp, length);
 
-	jrd_nod* node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, statementPtr, trigger, 0);
+	jrd_nod* node = NULL;
+
+	if (validationExpr)
+	{
+		// The set of MET parse functions needs a rework.
+		// For now, our caller chain is not interested in the returned node.
+		PAR_validation_blr(tdbb, relation, temp, length, NULL, csb_ptr, 0, NULL, NULL);
+	}
+	else
+		node = PAR_blr(tdbb, relation, temp, length, NULL, csb_ptr, statementPtr, trigger, 0);
 
 	return node;
 }
@@ -2962,7 +2973,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				const SSHORT pa_default_value_null = PA.RDB$DEFAULT_VALUE.NULL;
 				bid pa_default_value = pa_default_value_null ? F.RDB$DEFAULT_VALUE : PA.RDB$DEFAULT_VALUE;
 
-				Array<Parameter*>& paramArray = PA.RDB$PARAMETER_TYPE ?
+				Array<NestConst<Parameter> >& paramArray = PA.RDB$PARAMETER_TYPE ?
 					procedure->prc_output_fields : procedure->prc_input_fields;
 
 				// should be error if field already exists
@@ -2992,8 +3003,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 					try
 					{
-						parameter->prm_default_value =
-							MET_parse_blob(tdbb, NULL, &pa_default_value, NULL, NULL, false);
+						parameter->prm_default_value = MET_parse_blob(tdbb, NULL,
+							&pa_default_value, NULL, NULL, false, false);
 					}
 					catch (const Exception&)
 					{
@@ -3007,18 +3018,19 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 			END_FOR
 
-			Array<Parameter*>& paramArray = procedure->prc_output_fields;
+			Array<NestConst<Parameter> >& paramArray = procedure->prc_output_fields;
 
 			if (paramArray.hasData() && paramArray[0])
 			{
-				Format* format = procedure->prc_format =
-					Format::newFormat(*dbb->dbb_permanent, procedure->prc_output_fields.getCount());
+				Format* format = Format::newFormat(
+					*dbb->dbb_permanent, procedure->prc_output_fields.getCount());
+				procedure->prc_format = format;
 				ULONG length = FLAG_BYTES(format->fmt_count);
 				Format::fmt_desc_iterator desc = format->fmt_desc.begin();
-				Array<Parameter*>::iterator ptr, end;
+				Array<NestConst<Parameter> >::iterator ptr, end;
 				for (ptr = paramArray.begin(), end = paramArray.end(); ptr < end; ++ptr, ++desc)
 				{
-					Parameter* parameter = *ptr;
+					const Parameter* parameter = *ptr;
 					// check for parameter to be null, this can only happen if the
 					// parameter numbers get out of sync. This was added to fix bug
 					// 10534. -Shaunak Mistry 12-May-99
@@ -3370,22 +3382,22 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 	// deallocate input param structures
 
-	for (Array<Parameter*>::iterator i = procedure->prc_input_fields.begin();
+	for (Array<NestConst<Parameter> >::iterator i = procedure->prc_input_fields.begin();
 		 i != procedure->prc_input_fields.end(); ++i)
 	{
 		if (*i)
-			delete *i;
+			delete i->getObject();
 	}
 
 	procedure->prc_input_fields.clear();
 
 	// deallocate output param structures
 
-	for (Array<Parameter*>::iterator i = procedure->prc_output_fields.begin();
+	for (Array<NestConst<Parameter> >::iterator i = procedure->prc_output_fields.begin();
 		 i != procedure->prc_output_fields.end(); ++i)
 	{
 		if (*i)
-			delete *i;
+			delete i->getObject();
 	}
 
 	procedure->prc_output_fields.clear();
@@ -3569,20 +3581,25 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		{
 			// parse the view blr, getting dependencies on relations, etc. at the same time
 
+			jrd_nod* rseNode;
+
 			if (dependencies)
 			{
 				const MetaName depName(REL.RDB$RELATION_NAME);
-				relation->rel_view_rse =
-					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, 0, NULL,
-											&REL.RDB$VIEW_BLR, NULL,
-											&csb, depName, obj_view, 0, depTrans);
+				rseNode = MET_get_dependencies(tdbb, relation, NULL, 0, NULL, &REL.RDB$VIEW_BLR,
+					NULL, &csb, depName, obj_view, 0, depTrans);
 			}
 			else
+				rseNode = MET_parse_blob(tdbb, relation, &REL.RDB$VIEW_BLR, &csb, NULL, false, false);
+
+			if (rseNode)
 			{
-				relation->rel_view_rse =
-					(RecordSelExpr*) MET_parse_blob(tdbb, relation,
-											&REL.RDB$VIEW_BLR, &csb, NULL, false);
+				fb_assert(rseNode->nod_type == nod_class_recsrcnode_jrd);
+				relation->rel_view_rse = reinterpret_cast<RseNode*>(rseNode->nod_arg[0]);
+				fb_assert(relation->rel_view_rse->type == RseNode::TYPE);
 			}
+			else
+				relation->rel_view_rse = NULL;
 
 			// retrieve the view context names
 
@@ -3741,14 +3758,14 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				// Because a VIEW can't have a validation section i ignored the whole call.
 				if (!csb)
 				{
-					field->fld_validation = PAR_blr(tdbb, relation, p, length, csb,
-						NULL, NULL, false, csb_validation);
+					PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
+						&field->fld_validation, &field->fld_validation_stmt);
 				}
 				break;
 
 			case RSR_field_not_null:
-				field->fld_not_null = PAR_blr(tdbb, relation, p, length, csb, NULL,
-					NULL, false, csb_validation);
+				PAR_validation_blr(tdbb, relation, p, length, csb, NULL, csb_validation,
+					&field->fld_not_null, &field->fld_not_null_stmt);
 				break;
 
 			case RSR_security_class:
@@ -4345,7 +4362,7 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const MetaName na
 
 // Generate BLR message for external procedures
 static void gen_ext_message(UCharBuffer& blr, UCHAR message,
-	const Array<Parameter*>& parameters)
+	const Array<NestConst<Parameter> >& parameters)
 {
 	size_t count = parameters.getCount();
 	count = count * 2 + message;
@@ -4359,7 +4376,7 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 	dsc shortDesc;
 	shortDesc.makeShort(0);
 
-	for (Parameter* const* i = parameters.begin(); i != parameters.end(); ++i)
+	for (const NestConst<Parameter>* i = parameters.begin(); i != parameters.end(); ++i)
 	{
 		const Parameter* parameter = *i;
 
@@ -4367,9 +4384,7 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 			blr.add(blr_not_nullable);
 
 		if (parameter->prm_mechanism == prm_mech_type_of)
-		{
 			PreparedStatement::generateBlr(&parameter->prm_desc, blr);
-		}
 		else
 		{
 			fb_assert(parameter->prm_mechanism == prm_mech_normal);

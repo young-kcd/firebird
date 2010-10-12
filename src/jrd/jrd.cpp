@@ -331,7 +331,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, Events* const events)
 	{
 		if (!events || !events->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle/* !!!!!!!!!! */));
+			status_exception::raise(Arg::Gds(isc_bad_events_handle));
 
 		validateHandle(tdbb, events->getAttachment());
 	}
@@ -2970,12 +2970,7 @@ FbApi::Events* Attachment::queEvents(Status* user_status, FbApi::EventCallback* 
 			Database* const dbb = tdbb->getDatabase();
 			Lock* const lock = dbb->dbb_lock;
 
-			EventManager::init(dbb);
-
-			if (!att_event_session)
-			{
-				att_event_session = dbb->dbb_event_mgr->createSession();
-			}
+			EventManager::init(this);
 
 			int id = dbb->dbb_event_mgr->queEvents(att_event_session,
 												   lock->lck_length, (const TEXT*) &lock->lck_key,

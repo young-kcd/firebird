@@ -388,7 +388,7 @@ ExtEngineManager::Function::~Function()
 }
 
 
-void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure)
+void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
@@ -564,7 +564,7 @@ ExtEngineManager::Trigger::~Trigger()
 
 
 void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action action,
-	record_param* oldRpb, record_param* newRpb)
+	record_param* oldRpb, record_param* newRpb) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, trigger,
@@ -612,9 +612,9 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 }
 
 
-int ExtEngineManager::Trigger::setValues(thread_db* tdbb, MemoryPool& pool,
+int ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, MemoryPool& pool,
 	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
-	record_param* rpb)
+	record_param* rpb) const
 {
 	if (!rpb || !rpb->rpb_record)
 		return 0;

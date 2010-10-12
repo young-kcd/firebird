@@ -21,6 +21,7 @@
 #include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
+#include "../dsql/BoolNodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/mov_proto.h"
@@ -35,7 +36,7 @@ using namespace Jrd;
 // Data access: predicate driven filter
 // ------------------------------------
 
-FilteredStream::FilteredStream(CompilerScratch* csb, RecordSource* next, jrd_nod* boolean)
+FilteredStream::FilteredStream(CompilerScratch* csb, RecordSource* next, BoolExprNode* boolean)
 	: m_next(next), m_boolean(boolean), m_anyBoolean(NULL),
 	  m_ansiAny(false), m_ansiAll(false), m_ansiNot(false)
 {
@@ -165,24 +166,24 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 	// on the right.
 
 	// ANY/ALL select node pointer
-	const jrd_nod* select_node;
+	const BoolExprNode* select_node;
 
 	// ANY/ALL column node pointer
-	const jrd_nod* column_node = m_anyBoolean;
+	const BoolExprNode* column_node = m_anyBoolean;
 
 	if (column_node && (m_ansiAny || m_ansiAll))
 	{
 		// see if there's a select node to work with
 
-		if (column_node->nod_type == nod_and)
+		const BinaryBoolNode* booleanNode = column_node->as<BinaryBoolNode>();
+
+		if (booleanNode && booleanNode->blrOp == blr_and)
 		{
-			select_node = column_node->nod_arg[0];
-			column_node = column_node->nod_arg[1];
+			select_node = booleanNode->arg1;
+			column_node = booleanNode->arg2;
 		}
 		else
-		{
 			select_node = NULL;
-		}
 	}
 
 	if (column_node && m_ansiAny)
@@ -201,7 +202,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 
 			while (m_next->getRecord(tdbb))
 			{
-				if (EVL_boolean(tdbb, m_boolean))
+				if (m_boolean->execute(tdbb, request))
 				{
 					// found a TRUE value
 
@@ -224,7 +225,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 					request->req_flags &= ~req_null;
 
 					// select for ANY/ALL processing
-					const bool select_value = EVL_boolean(tdbb, select_node);
+					const bool select_value = select_node->execute(tdbb, request);
 
 					// see if any record in select stream
 
@@ -233,7 +234,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 						// see if any nulls
 
 						request->req_flags &= ~req_null;
-						EVL_boolean(tdbb, column_node);
+						column_node->execute(tdbb, request);
 
 						// see if any record is null
 
@@ -257,7 +258,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 		bool result = false;
 		while (m_next->getRecord(tdbb))
 		{
-			if (EVL_boolean(tdbb, m_boolean))
+			if (m_boolean->execute(tdbb, request))
 			{
 				result = true;
 				break;
@@ -282,7 +283,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 
 				// look for a FALSE (and not null either)
 
-				if (!EVL_boolean(tdbb, m_boolean) && !(request->req_flags & req_null))
+				if (!m_boolean->execute(tdbb, request) && !(request->req_flags & req_null))
 				{
 					// make sure it wasn't FALSE because there's no select stream record
 
@@ -291,7 +292,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 						request->req_flags &= ~req_null;
 
 						// select for ANY/ALL processing
-						const bool select_value = EVL_boolean(tdbb, select_node);
+						const bool select_value = select_node->execute(tdbb, request);
 						if (select_value)
 						{
 							any_false = true;
@@ -325,7 +326,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 
 			// look for a FALSE or null
 
-			if (!EVL_boolean(tdbb, m_boolean))
+			if (!m_boolean->execute(tdbb, request))
 			{
 				// make sure it wasn't FALSE because there's no select stream record
 
@@ -334,7 +335,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 					request->req_flags &= ~req_null;
 
 					// select for ANY/ALL processing
-					const bool select_value = EVL_boolean(tdbb, select_node);
+					const bool select_value = select_node->execute(tdbb, request);
 					if (select_value)
 					{
 						any_false = true;
@@ -358,7 +359,7 @@ bool FilteredStream::evaluateBoolean(thread_db* tdbb) const
 	bool result = false;
 	while (m_next->getRecord(tdbb))
 	{
-		if (EVL_boolean(tdbb, m_boolean))
+		if (m_boolean->execute(tdbb, request))
 		{
 			result = true;
 			break;

@@ -44,7 +44,6 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-//!!!!!!!!!#include "../common/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../yvalve/gds_proto.h"

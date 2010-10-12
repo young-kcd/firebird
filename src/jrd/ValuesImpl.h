@@ -99,7 +99,7 @@ public:
 	}
 
 	ValuesImpl(Firebird::MemoryPool& p, const Format* format, UCHAR* aMsg,
-			const Firebird::Array<Parameter*>& parameters)
+			const Firebird::Array<NestConst<Parameter> >& parameters)
 		: PermanentStorage(p),
 		  msg(aMsg),
 		  msgLength(format->fmt_length),

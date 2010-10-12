@@ -50,7 +50,7 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource*
 }
 
 NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-							   jrd_nod* boolean, bool semiJoin, bool antiJoin)
+							   BoolExprNode* boolean, bool semiJoin, bool antiJoin)
 	: m_outerJoin(true), m_semiJoin(semiJoin), m_antiJoin(antiJoin), m_args(csb->csb_pool),
 	  m_boolean(boolean)
 {
@@ -121,7 +121,7 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 					return false;
 				}
 
-				if (m_boolean && !EVL_boolean(tdbb, m_boolean))
+				if (m_boolean && !m_boolean->execute(tdbb, request))
 				{
 					// The boolean pertaining to the left sub-stream is false
 					// so just join sub-stream to a null valued right sub-stream
@@ -208,12 +208,12 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool NestedLoopJoin::refetchRecord(thread_db* tdbb) const
+bool NestedLoopJoin::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool NestedLoopJoin::lockRecord(thread_db* tdbb) const
+bool NestedLoopJoin::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

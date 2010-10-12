@@ -1988,9 +1988,9 @@ static const UCHAR trigger22[] =
 	// ASF: Instead of always throw error here as before, we now check if any (except
 	// RDB$DESCRIPTION and RDB$TRIGGER_SOURCE) field was changed.
 	// We need this to RDB$FIX_METADATA (from metadata charset upgrade script) work.
+	// Also don't check RDB$VALID_BLR - see CORE-3101.
 	blr_if,
 	blr_not,
-	blr_and,
 	blr_and,
 	blr_and,
 	blr_and,
@@ -2023,9 +2023,6 @@ static const UCHAR trigger22[] =
 	blr_equiv,
 	blr_field, 0, 9, 'R','D','B','$','F','L','A','G','S',
 	blr_field, 1, 9, 'R','D','B','$','F','L','A','G','S',
-	blr_equiv,
-	blr_field, 0, 13, 'R','D','B','$','V','A','L','I','D','_','B','L','R',
-	blr_field, 1, 13, 'R','D','B','$','V','A','L','I','D','_','B','L','R',
 	blr_equiv,
 	blr_field, 0, 14, 'R','D','B','$','D','E','B','U','G','_','I','N','F','O',
 	blr_field, 1, 14, 'R','D','B','$','D','E','B','U','G','_','I','N','F','O',

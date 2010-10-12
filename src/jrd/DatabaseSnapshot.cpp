@@ -918,7 +918,7 @@ void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int
 }
 
 
-bool DatabaseSnapshot::putAttachment(thread_db* tdbb, const Jrd::Attachment* attachment,
+bool DatabaseSnapshot::putAttachment(thread_db* /*tdbb*/, const Jrd::Attachment* attachment,
 									 Writer& writer, int stat_id)
 {
 	fb_assert(attachment);

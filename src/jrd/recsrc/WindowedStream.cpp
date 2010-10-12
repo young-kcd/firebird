@@ -90,6 +90,7 @@ namespace
 		NestConst<BufferedStream> m_next;
 	};
 
+#ifdef NOT_USED_OR_REPLACED
 	// Make join between outer stream and already sorted (aggregated) partition.
 	class WindowJoin : public RecordSource
 	{
@@ -106,7 +107,7 @@ namespace
 
 	public:
 		WindowJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-			const jrd_nod* outerKeys, const jrd_nod* innerKeys);
+			const SortNode* outerKeys, const SortNode* innerKeys);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -130,9 +131,10 @@ namespace
 
 		RecordSource* const m_outer;
 		BufferedStream* const m_inner;
-		const jrd_nod* const m_outerKeys;
-		const jrd_nod* const m_innerKeys;
+		const SortNode* const m_outerKeys;
+		const SortNode* const m_innerKeys;
 	};
+#endif	// NOT_USED_OR_REPLACED
 
 	// BufferedStreamWindow implementation
 
@@ -224,16 +226,18 @@ namespace
 		m_next->restoreRecords(tdbb);
 	}
 
+#ifdef NOT_USED_OR_REPLACED
 	// WindowJoin implementation
 
 	WindowJoin::WindowJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
-					   const jrd_nod* outerKeys, const jrd_nod* innerKeys)
+					   const SortNode* outerKeys,
+					   const SortNode* innerKeys)
 		: m_outer(outer), m_inner(FB_NEW(csb->csb_pool) BufferedStream(csb, inner)),
 		  m_outerKeys(outerKeys), m_innerKeys(innerKeys)
 	{
-		fb_assert(m_outer && m_inner && m_innerKeys->nod_count == m_outerKeys->nod_count);
-		fb_assert(m_outerKeys && (m_outerKeys->nod_type == nod_list || m_outerKeys->nod_type == nod_sort));
-		fb_assert(m_innerKeys && (m_innerKeys->nod_type == nod_list || m_innerKeys->nod_type == nod_sort));
+		fb_assert(m_outerKeys && m_innerKeys);
+		fb_assert(m_outer && m_inner &&
+			m_innerKeys->expressions.getCount() == m_outerKeys->expressions.getCount());
 
 		m_impure = CMP_impure(csb, sizeof(Impure));
 	}
@@ -289,16 +293,16 @@ namespace
 		// Evaluate the outer stream keys.
 
 		HalfStaticArray<DscNull, 8> outerValues;
-		DscNull* outerValue = outerValues.getBuffer(m_outerKeys->nod_count);
+		DscNull* outerValue = outerValues.getBuffer(m_outerKeys->expressions.getCount());
 
-		for (unsigned i = 0; i < m_outerKeys->nod_count; ++i)
+		for (unsigned i = 0; i < m_outerKeys->expressions.getCount(); ++i)
 		{
-			outerValue->desc = EVL_expr(tdbb, m_outerKeys->nod_arg[i]);
+			outerValue->desc = EVL_expr(tdbb, m_outerKeys->expressions[i]);
 			outerValue->null = (request->req_flags & req_null);
 			++outerValue;
 		}
 
-		outerValue -= m_outerKeys->nod_count;	// go back to begin
+		outerValue -= m_outerKeys->expressions.getCount();	// go back to begin
 
 		// Join the streams. That should be a 1-to-1 join.
 
@@ -398,10 +402,10 @@ namespace
 	{
 		int cmp;
 
-		for (size_t i = 0; i < m_innerKeys->nod_count; i++)
+		for (size_t i = 0; i < m_innerKeys->expressions.getCount(); i++)
 		{
 			const DscNull& outerValue = outerValues[i];
-			const dsc* const innerDesc = EVL_expr(tdbb, m_innerKeys->nod_arg[i]);
+			const dsc* const innerDesc = EVL_expr(tdbb, m_innerKeys->expressions[i]);
 			const bool innerNull = (request->req_flags & req_null);
 
 			if (outerValue.null && !innerNull)
@@ -416,11 +420,13 @@ namespace
 
 		return 0;
 	}
+#endif	// NOT_USED_OR_REPLACED
 }	// namespace
 
 // ------------------------------
 
-WindowedStream::WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, RecordSource* next)
+WindowedStream::WindowedStream(CompilerScratch* csb,
+			ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next)
 	: m_next(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
 	  m_joinedStream(NULL)
 {
@@ -430,34 +436,31 @@ WindowedStream::WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, Record
 
 	// Process the unpartioned and unordered map, if existent.
 
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (ObjectsArray<WindowSourceNode::Partition>::iterator partition = partitions.begin();
+		 partition != partitions.end();
+		 ++partition)
 	{
-		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
-		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
-		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
-		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
-		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
-
 		// While here, verify not supported functions/clauses.
 
-		const jrd_nod* const* ptr = partitionMap->nod_arg;
-		for (const jrd_nod* const* const end = ptr + partitionMap->nod_count; ptr < end; ++ptr)
+		const NestConst<jrd_nod>* ptr = partition->map->items.begin();
+
+		for (const NestConst<jrd_nod>* const end = partition->map->items.end(); ptr != end; ++ptr)
 		{
 			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 			const AggNode* aggNode = ExprNode::as<AggNode>(from);
 
-			if (order && aggNode)
+			if (partition->order && aggNode)
 				aggNode->checkOrderedWindowCapable();
 		}
 
-		if (!partition && !order)
+		if (!partition->group && !partition->order)
 		{
 			fb_assert(!m_joinedStream);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, NULL,
-				partitionMap, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), NULL);
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, partition->stream, NULL,
+				partition->map, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next), NULL);
 
-			OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
+			OPT_gen_aggregate_distincts(tdbb, csb, partition->map);
 		}
 	}
 
@@ -468,14 +471,10 @@ WindowedStream::WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, Record
 
 	StreamsArray streams;
 
-	for (unsigned i = 0; i < nodWindows->nod_count; ++i)
+	for (ObjectsArray<WindowSourceNode::Partition>::iterator partition = partitions.begin();
+		 partition != partitions.end();
+		 ++partition)
 	{
-		jrd_nod* const nodWindow = nodWindows->nod_arg[i];
-		jrd_nod* const partition = nodWindow->nod_arg[e_part_group];
-		jrd_nod* const partitionMap = nodWindow->nod_arg[e_part_map];
-		jrd_nod* const order = nodWindow->nod_arg[e_part_order];
-		const USHORT stream = (USHORT)(IPTR) nodWindow->nod_arg[e_part_stream];
-
 		// Refresh the stream list based on the last m_joinedStream.
 		streams.clear();
 		m_joinedStream->findUsedStreams(streams);
@@ -483,50 +482,37 @@ WindowedStream::WindowedStream(CompilerScratch* csb, jrd_nod* nodWindows, Record
 
 		// Build the sort key. It's the order items following the partition items.
 
-		jrd_nod* partitionOrder;
+		SortNode* partitionOrder;
 
-		if (partition)
+		if (partition->group)
 		{
-			USHORT orderCount = order ? order->nod_count : 0;
-			partitionOrder = PAR_make_node(tdbb, (partition->nod_count + orderCount) * 3);
-			partitionOrder->nod_type = nod_sort;
-			partitionOrder->nod_count = partition->nod_count + orderCount;
+			partitionOrder = FB_NEW(csb->csb_pool) SortNode(csb->csb_pool);
+			partitionOrder->expressions.join(partition->group->expressions);
+			partitionOrder->descending.join(partition->group->descending);
+			partitionOrder->nullOrder.join(partition->group->nullOrder);
 
-			jrd_nod** node1 = partitionOrder->nod_arg;
-			jrd_nod** node2 = partitionOrder->nod_arg + partition->nod_count + orderCount;
-			jrd_nod** node3 = node2 + partition->nod_count + orderCount;
-
-			for (jrd_nod** node = partition->nod_arg;
-				 node != partition->nod_arg + partition->nod_count;
-				 ++node)
+			if (partition->order)
 			{
-				*node1++ = *node;
-				*node2++ = (jrd_nod*)(IPTR) false;	// ascending
-				*node3++ = (jrd_nod*)(IPTR) rse_nulls_default;
-			}
-
-			if (order)
-			{
-				for (jrd_nod** node = order->nod_arg; node != order->nod_arg + orderCount; ++node)
-				{
-					*node1++ = *node;
-					*node2++ = *(node + orderCount);
-					*node3++ = *(node + orderCount * 2);
-				}
+				partitionOrder->expressions.join(partition->order->expressions);
+				partitionOrder->descending.join(partition->order->descending);
+				partitionOrder->nullOrder.join(partition->order->nullOrder);
 			}
 		}
 		else
-			partitionOrder = order;
+			partitionOrder = partition->order;
 
 		if (partitionOrder)
 		{
 			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams.begin(), NULL,
 				m_joinedStream, partitionOrder, false);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, stream, partition,
-				partitionMap, FB_NEW(csb->csb_pool) BufferedStream(csb, sortedStream), order);
+			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(csb, partition->stream,
+				(partition->group ? &partition->group->expressions : NULL),
+				partition->map,
+				FB_NEW(csb->csb_pool) BufferedStream(csb, sortedStream),
+				(partition->order ? &partition->order->expressions : NULL));
 
-			OPT_gen_aggregate_distincts(tdbb, csb, partitionMap);
+			OPT_gen_aggregate_distincts(tdbb, csb, partition->map);
 		}
 	}
 }
@@ -577,7 +563,7 @@ bool WindowedStream::refetchRecord(thread_db* tdbb) const
 	return m_joinedStream->refetchRecord(tdbb);
 }
 
-bool WindowedStream::lockRecord(thread_db* tdbb) const
+bool WindowedStream::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer

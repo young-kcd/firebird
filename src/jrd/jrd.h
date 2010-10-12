@@ -42,6 +42,7 @@
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/NestConst.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/stack.h"
@@ -73,7 +74,7 @@
 
 #define BLKCHK(blk, type)       if (!blk->checkHandle()) BUGCHECK(147)
 
-#define DEV_BLKCHK(blk, type)	// nothing
+#define DEV_BLKCHK(blk, type)	do { } while (false)	// nothing
 
 
 // Thread data block / IPC related data blocks
@@ -132,7 +133,6 @@ class IndexBlock;
 class IndexLock;
 class ArrayField;
 struct sort_context;
-class RecordSelExpr;
 class vcl;
 class TextType;
 class Parameter;
@@ -229,12 +229,12 @@ class jrd_prc : public Routine
 public:
 	USHORT prc_flags;
 	USHORT prc_defaults;
-	jrd_nod*	prc_output_msg;
-	Format*		prc_input_fmt;
-	Format*		prc_output_fmt;
-	Format*		prc_format;
-	Firebird::Array<Parameter*> prc_input_fields;	// array of field blocks
-	Firebird::Array<Parameter*> prc_output_fields;	// array of field blocks
+	const jrd_nod*	prc_output_msg;
+	const Format*	prc_input_fmt;
+	const Format*	prc_output_fmt;
+	const Format*	prc_format;
+	Firebird::Array<NestConst<Parameter> > prc_input_fields;	// array of field blocks
+	Firebird::Array<NestConst<Parameter> > prc_output_fields;	// array of field blocks
 	prc_t		prc_type;					// procedure type
 	USHORT prc_use_count;					// requests compiled with procedure
 	SSHORT prc_int_use_count;				// number of procedures compiled with procedure, set and
@@ -248,7 +248,7 @@ public:
 	void setExternal(ExtEngineManager::Procedure* value) { prc_external = value; }
 
 private:
-	ExtEngineManager::Procedure* prc_external;
+	const ExtEngineManager::Procedure* prc_external;
 
 public:
 	explicit jrd_prc(MemoryPool& p)
@@ -305,7 +305,7 @@ class Parameter : public pool_alloc<type_prm>
 public:
 	USHORT		prm_number;
 	dsc			prm_desc;
-	jrd_nod*	prm_default_value;
+	NestConst<jrd_nod>	prm_default_value;
 	bool		prm_nullable;
 	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name

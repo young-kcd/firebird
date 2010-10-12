@@ -38,7 +38,8 @@ namespace Jrd
 			  name(p),
 			  securityName(p),
 			  statement(NULL),
-			  undefined(false)
+			  undefined(false),
+			  implemented(true)
 		{
 		}
 
@@ -63,6 +64,9 @@ namespace Jrd
 		bool isUndefined() const { return undefined; }
 		void setUndefined(bool value) { undefined = value; }
 
+		bool isImplemented() const { return implemented; }
+		void setImplemented(bool value) { implemented = value; }
+
 	public:
 		virtual int getObjectType() const = 0;
 		virtual SLONG getSclType() const = 0;
@@ -73,6 +77,7 @@ namespace Jrd
 		Firebird::MetaName securityName;	// security class name
 		JrdStatement* statement;			// compiled routine statement
 		bool undefined;						// Is the packaged routine missing the body/entrypoint?
+		bool implemented;					// routine has its implementation available
 	};
 }
 

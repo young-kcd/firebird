@@ -38,7 +38,7 @@ using namespace Jrd;
 // ---------------------------
 
 ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-							 jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message)
+							 const jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message)
 	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),
 	  m_procedure(procedure), m_inputs(inputs), m_message(message)
 {
@@ -217,12 +217,12 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	return true;
 }
 
-bool ProcedureScan::refetchRecord(thread_db* tdbb) const
+bool ProcedureScan::refetchRecord(thread_db* /*tdbb*/) const
 {
 	return true;
 }
 
-bool ProcedureScan::lockRecord(thread_db* tdbb) const
+bool ProcedureScan::lockRecord(thread_db* /*tdbb*/) const
 {
 	status_exception::raise(Arg::Gds(isc_record_lock_not_supp));
 	return false; // compiler silencer
