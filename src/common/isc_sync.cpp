@@ -1957,7 +1957,7 @@ bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 
   retry:
 	if (retry_count++ > 0)
-		THREAD_SLEEP(10);
+		THD_sleep(10);
 
 	file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,

@@ -282,7 +282,7 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	}
 }
 
-void Thread::waitForCompletion(Handle&)
+void Thread::waitForCompletion(Handle& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
 }
