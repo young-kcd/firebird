@@ -1,3 +1,787 @@
+ 2010-10-12 17:40  asfernandes 
+   M builds/posix/make.defaults
+   M src/auth/SecurityDatabase/jrd_pwd.h
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/common/StatusHolder.h
+   M src/common/classes/alloc.cpp
+   M src/common/os/posix/isc_ipc.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/node.h
+   M src/dsql/utld_proto.h
+   M src/include/ProviderInterface.h
+   M src/include/fb_exception.h
+   M src/jrd/Attachment.h
+   M src/jrd/evl.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/yvalve/prepa_proto.h
+   M src/yvalve/why.cpp
+   M src/yvalve/why_proto.h
+Misc
+
+ 2010-10-12 11:38  alexpeshkoff 
+   M src/yvalve/keywords.cpp
+Avoid a lot of unneeded dependencies with single #define. This makes us yacc-version dependent, but provided we use own version of btyacc that is not big trouble.
+
+ 2010-10-12 11:36  alexpeshkoff 
+   M src/jrd/Attachment.h
+   M src/jrd/Collation.cpp
+   M src/jrd/Collation.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/Relation.h
+   M src/jrd/Routine.h
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/ValuesImpl.cpp
+   M src/jrd/ValuesImpl.h
+   M src/jrd/blb.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/build_no.h
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/dyn.epp
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/execute_statement.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/intl_classes.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lls.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/nbak.cpp
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/rse.h
+   M src/jrd/scl.epp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trig.h
+   M src/jrd/vio.cpp
+Restored a lot of changes, rolled back by me unintentionally
+
+ 2010-10-12 11:34  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+Some more forgotten files
+
+ 2010-10-12 11:33  alexpeshkoff 
+   M builds/posix/Makefile.in
+We have to many dependencies on blrtable - build it explicitly at boot phase
+
+ 2010-10-12 09:35  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec.h
+   M src/utilities/gsec/gsec_proto.h
+   M src/utilities/gsec/security.cpp
+Forgotten changes
+
+ 2010-10-12 09:35  alexpeshkoff 
+   M builds/posix/make.shared.targets
+Forgotten changes
+
+ 2010-10-12 08:15  alexpeshkoff 
+   A src/remote/os
+   A src/remote/os/win32
+   A src/remote/os/win32/wnet.cpp
+   A src/remote/os/win32/wnet_proto.h
+   A src/remote/os/win32/xnet.cpp
+   A src/remote/os/win32/xnet.h
+   A src/remote/os/win32/xnet_proto.h
+   A src/remote/server/os/win32
+   A src/remote/server/os/win32/caution.ico
+   A src/remote/server/os/win32/chop.cpp
+   A src/remote/server/os/win32/chop_proto.h
+   A src/remote/server/os/win32/cntl.cpp
+   A src/remote/server/os/win32/cntl_proto.h
+   A src/remote/server/os/win32/property.cpp
+   A src/remote/server/os/win32/property.rc
+   A src/remote/server/os/win32/property.rh
+   A src/remote/server/os/win32/propty_proto.h
+   A src/remote/server/os/win32/server.ico
+   A src/remote/server/os/win32/srvr_w32.cpp
+   A src/remote/server/os/win32/window.cpp
+   A src/remote/server/os/win32/window.h
+   A src/remote/server/os/win32/window.rc
+   A src/remote/server/os/win32/window.rh
+   A src/remote/server/os/win32/window_proto.h
+Missed in previous commit files
+
+ 2010-10-12 08:02  alexpeshkoff 
+   M binreloc.m4
+   A builds/posix/Makefile.in
+   D builds/posix/Makefile.in.boot.gpre
+   D builds/posix/Makefile.in.client.fbudf
+   D builds/posix/Makefile.in.client.gbak
+   D builds/posix/Makefile.in.client.gfix
+   D builds/posix/Makefile.in.client.gpre
+   D builds/posix/Makefile.in.client.gsec
+   D builds/posix/Makefile.in.client.isql
+   D builds/posix/Makefile.in.client.qli
+   D builds/posix/Makefile.in.client.util
+   D builds/posix/Makefile.in.codes
+   D builds/posix/Makefile.in.embed.fbudf
+   D builds/posix/Makefile.in.embed.gbak
+   D builds/posix/Makefile.in.embed.gfix
+   D builds/posix/Makefile.in.embed.gpre
+   D builds/posix/Makefile.in.embed.isql
+   D builds/posix/Makefile.in.embed.qli
+   D builds/posix/Makefile.in.embed.util
+   M builds/posix/Makefile.in.examples
+   D builds/posix/Makefile.in.extern.icu
+   D builds/posix/Makefile.in.extlib
+   D builds/posix/Makefile.in.fbserver
+   D builds/posix/Makefile.in.fbtrace
+   D builds/posix/Makefile.in.firebird
+   D builds/posix/Makefile.in.intl
+   D builds/posix/Makefile.in.libfbclient
+   D builds/posix/Makefile.in.libfbembed
+   D builds/posix/Makefile.in.libfbstatic
+   D builds/posix/Makefile.in.msgs
+   D builds/posix/Makefile.in.plugins
+   M builds/posix/Makefile.in.plugins_examples
+   D builds/posix/Makefile.in.refDatabases
+   D builds/posix/Makefile.in.smp_server
+   D builds/posix/Makefile.in.static.gbak
+   D builds/posix/Makefile.in.static.gpre
+   D builds/posix/Makefile.in.static.isql
+   D builds/posix/Makefile.in.user.management
+   M builds/posix/firebird.vers
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+   M builds/posix/make.shared.targets
+   M builds/posix/make.shared.variables
+   M configure.in
+   D extern/binreloc
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   D src/alice/aliceMain.cpp
+   M src/alice/alice_meta.epp
+   M src/alice/alice_proto.h
+   M src/alice/exe.cpp
+   A src/alice/main
+   A src/alice/main/aliceMain.cpp (from /firebird/trunk/src/alice/aliceMain.cpp:51439)
+   M src/alice/tdr.cpp
+   D src/auth/Auth.cpp
+   D src/auth/Auth.h
+   A src/auth/SecurityDatabase/jrd_pwd.h
+   A src/auth/SecurityDatabase/pwd.cpp
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   D src/burp/burpMain.cpp
+   M src/burp/burp_proto.h
+   M src/burp/canonical.cpp
+   A src/burp/main
+   A src/burp/main/burpMain.cpp (from /firebird/trunk/src/burp/burpMain.cpp:51439)
+   M src/burp/mvol.cpp
+   M src/burp/restore.epp
+   D src/burp/spit.cpp
+   D src/burp/spit.h
+   A src/burp/split
+   A src/burp/split/spit.cpp (from /firebird/trunk/src/burp/spit.cpp:51439)
+   A src/burp/split/spit.h (from /firebird/trunk/src/burp/spit.h:51439)
+   A src/common/Auth.cpp (from /firebird/trunk/src/auth/Auth.cpp:51439)
+   A src/common/Auth.h (from /firebird/trunk/src/auth/Auth.h:51439)
+   A src/common/CharSet.cpp (from /firebird/trunk/src/jrd/CharSet.cpp:51439)
+   A src/common/CharSet.h (from /firebird/trunk/src/jrd/CharSet.h:51439)
+   A src/common/CsConvert.h (from /firebird/trunk/src/jrd/CsConvert.h:51439)
+   A src/common/IntlUtil.cpp (from /firebird/trunk/src/jrd/IntlUtil.cpp:51439)
+   A src/common/IntlUtil.h (from /firebird/trunk/src/jrd/IntlUtil.h:51439)
+   A src/common/ScanDir.cpp (from /firebird/trunk/src/config/ScanDir.cpp:51439)
+   A src/common/ScanDir.h (from /firebird/trunk/src/config/ScanDir.h:51439)
+   M src/common/StatusArg.cpp
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   A src/common/TextType.cpp (from /firebird/trunk/src/jrd/TextType.cpp:51439)
+   A src/common/TextType.h (from /firebird/trunk/src/jrd/TextType.h:51439)
+   A src/common/ThreadData.cpp (from /firebird/trunk/src/jrd/ThreadData.cpp:51439)
+   A src/common/ThreadData.h (from /firebird/trunk/src/jrd/ThreadData.h:51439)
+   A src/common/ThreadStart.cpp (from /firebird/trunk/src/jrd/ThreadStart.cpp:51439)
+   A src/common/ThreadStart.h (from /firebird/trunk/src/jrd/ThreadStart.h:51439)
+   A src/common/call_service.cpp (from /firebird/trunk/src/utilities/gsec/call_service.cpp:51439)
+   A src/common/call_service.h (from /firebird/trunk/src/utilities/gsec/call_service.h:51439)
+   A src/common/cdbtable.h (from /firebird/trunk/src/gpre/cdbtable.h:51439)
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/Interface.h
+   M src/common/classes/MsgPrint.cpp
+   M src/common/classes/TempFile.cpp
+   M src/common/classes/UserBlob.cpp
+   M src/common/classes/alloc.cpp
+   D src/common/classes/class_perf.cpp
+   D src/common/classes/class_test.cpp
+   A src/common/classes/misc
+   A src/common/classes/misc/class_perf.cpp (from /firebird/trunk/src/common/classes/class_perf.cpp:51427)
+   A src/common/classes/misc/class_test.cpp (from /firebird/trunk/src/common/classes/class_test.cpp:51427)
+   A src/common/classes/misc/string_test.cmd (from /firebird/trunk/src/common/classes/string_test.cmd:51427)
+   A src/common/classes/misc/string_test.cpp (from /firebird/trunk/src/common/classes/string_test.cpp:51427)
+   A src/common/classes/misc/test.sh (from /firebird/trunk/src/common/classes/test.sh:51427)
+   D src/common/classes/string_test.cmd
+   D src/common/classes/string_test.cpp
+   D src/common/classes/test.sh
+   M src/common/classes/timestamp.h
+   M src/common/config/config.cpp
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/config/dir_list.cpp
+   A src/common/config/os
+   A src/common/config/os/config_root.h (from /firebird/trunk/src/jrd/os/config_root.h:51427)
+   A src/common/config/os/darwin
+   A src/common/config/os/darwin/config_root.cpp (from /firebird/trunk/src/jrd/os/darwin/config_root.cpp:51427)
+   A src/common/config/os/posix
+   A src/common/config/os/posix/binreloc.c (from /firebird/trunk/extern/binreloc/binreloc.c:51427)
+   A src/common/config/os/posix/binreloc.h (from /firebird/trunk/extern/binreloc/binreloc.h:51427)
+   A src/common/config/os/posix/config_root.cpp (from /firebird/trunk/src/jrd/os/posix/config_root.cpp:51427)
+   A src/common/config/os/win32
+   A src/common/config/os/win32/config_root.cpp (from /firebird/trunk/src/jrd/os/win32/config_root.cpp:51427)
+   M src/common/cvt.cpp
+   A src/common/db_alias.cpp (from /firebird/trunk/src/jrd/db_alias.cpp:51439)
+   A src/common/db_alias.h (from /firebird/trunk/src/jrd/db_alias.h:51439)
+   A src/common/dsc.cpp (from /firebird/trunk/src/jrd/dsc.cpp:51427)
+   A src/common/dsc.h (from /firebird/trunk/src/jrd/dsc.h:51427)
+   A src/common/dsc_proto.h (from /firebird/trunk/src/jrd/dsc_proto.h:51427)
+   A src/common/dsc_pub.h (from /firebird/trunk/src/jrd/dsc_pub.h:51427)
+   A src/common/dyntable.h (from /firebird/trunk/src/gpre/dyntable.h:51439)
+   A src/common/enc.cpp (from /firebird/trunk/src/jrd/enc.cpp:51439)
+   A src/common/enc_proto.h (from /firebird/trunk/src/jrd/enc_proto.h:51439)
+   M src/common/fb_exception.cpp
+   A src/common/intlobj_new.h (from /firebird/trunk/src/jrd/intlobj_new.h:51439)
+   A src/common/isc.cpp (from /firebird/trunk/src/jrd/isc.cpp:51427)
+   A src/common/isc_f_proto.h (from /firebird/trunk/src/jrd/isc_f_proto.h:51439)
+   A src/common/isc_file.cpp (from /firebird/trunk/src/jrd/isc_file.cpp:51439)
+   A src/common/isc_proto.h (from /firebird/trunk/src/jrd/isc_proto.h:51427)
+   A src/common/isc_s_proto.h (from /firebird/trunk/src/jrd/isc_s_proto.h:51439)
+   A src/common/isc_sync.cpp (from /firebird/trunk/src/jrd/isc_sync.cpp:51439)
+   A src/common/os
+   A src/common/os/darwin
+   A src/common/os/darwin/mod_loader.cpp (from /firebird/trunk/src/jrd/os/darwin/mod_loader.cpp:51427)
+   A src/common/os/divorce.h (from /firebird/trunk/src/jrd/divorce.h:51439)
+   A src/common/os/fbsyslog.h (from /firebird/trunk/src/jrd/os/fbsyslog.h:51427)
+   A src/common/os/guid.h (from /firebird/trunk/src/jrd/os/guid.h:51439)
+   A src/common/os/isc_i_proto.h (from /firebird/trunk/src/jrd/os/isc_i_proto.h:51439)
+   A src/common/os/mod_loader.h (from /firebird/trunk/src/jrd/os/mod_loader.h:51427)
+   A src/common/os/os_utils.h (from /firebird/trunk/src/jrd/os/os_utils.h:51427)
+   A src/common/os/path_utils.h (from /firebird/trunk/src/jrd/os/path_utils.h:51427)
+   A src/common/os/posix
+   A src/common/os/posix/divorce.cpp (from /firebird/trunk/src/jrd/divorce.cpp:51439)
+   A src/common/os/posix/fbsyslog.cpp (from /firebird/trunk/src/jrd/os/posix/fbsyslog.cpp:51427)
+   A src/common/os/posix/guid.cpp (from /firebird/trunk/src/jrd/os/posix/guid.cpp:51439)
+   A src/common/os/posix/isc_ipc.cpp (from /firebird/trunk/src/jrd/os/posix/isc_ipc.cpp:51439)
+   A src/common/os/posix/mod_loader.cpp (from /firebird/trunk/src/jrd/os/posix/mod_loader.cpp:51427)
+   A src/common/os/posix/os_utils.cpp (from /firebird/trunk/src/jrd/os/posix/os_utils.cpp:51427)
+   A src/common/os/posix/path_utils.cpp (from /firebird/trunk/src/jrd/os/posix/path_utils.cpp:51427)
+   A src/common/os/win32
+   A src/common/os/win32/fbsyslog.cpp (from /firebird/trunk/src/jrd/os/win32/fbsyslog.cpp:51427)
+   A src/common/os/win32/guid.cpp (from /firebird/trunk/src/jrd/os/win32/guid.cpp:51439)
+   A src/common/os/win32/isc_ipc.cpp (from /firebird/trunk/src/jrd/os/win32/isc_ipc.cpp:51439)
+   A src/common/os/win32/mod_loader.cpp (from /firebird/trunk/src/jrd/os/win32/mod_loader.cpp:51427)
+   A src/common/os/win32/os_utils.cpp (from /firebird/trunk/src/jrd/os/win32/os_utils.cpp:51427)
+   A src/common/os/win32/path_utils.cpp (from /firebird/trunk/src/jrd/os/win32/path_utils.cpp:51427)
+   A src/common/prett_proto.h (from /firebird/trunk/src/gpre/prett_proto.h:51439)
+   A src/common/pretty.cpp (from /firebird/trunk/src/gpre/pretty.cpp:51439)
+   A src/common/quad.cpp (from /firebird/trunk/src/jrd/quad.cpp:51439)
+   A src/common/quad.h (from /firebird/trunk/src/jrd/quad.h:51439)
+   A src/common/quad_proto.h (from /firebird/trunk/src/jrd/quad_proto.h:51439)
+   A src/common/sdl.cpp (from /firebird/trunk/src/jrd/sdl.cpp:51439)
+   A src/common/sdl.h (from /firebird/trunk/src/jrd/sdl.h:51439)
+   A src/common/sdl_proto.h (from /firebird/trunk/src/jrd/sdl_proto.h:51439)
+   A src/common/sdltable.h (from /firebird/trunk/src/gpre/sdltable.h:51439)
+   A src/common/sha.cpp (from /firebird/trunk/src/jrd/sha.cpp:51439)
+   A src/common/sha.h (from /firebird/trunk/src/jrd/sha.h:51439)
+   A src/common/unicode_util.cpp (from /firebird/trunk/src/jrd/unicode_util.cpp:51439)
+   A src/common/unicode_util.h (from /firebird/trunk/src/jrd/unicode_util.h:51439)
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   A src/common/xdr.cpp (from /firebird/trunk/src/remote/xdr.cpp:51439)
+   A src/common/xdr.h (from /firebird/trunk/src/remote/xdr.h:51439)
+   A src/common/xdr_proto.h (from /firebird/trunk/src/remote/xdr_proto.h:51439)
+   D src/config/ScanDir.cpp
+   D src/config/ScanDir.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Parser.h
+   D src/dsql/array.epp
+   D src/dsql/array_proto.h
+   D src/dsql/blob.epp
+   D src/dsql/blob_proto.h
+   M src/dsql/btyacc_fb.ske
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/dsql/errd.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/hsh.cpp
+   D src/dsql/keywords.cpp
+   D src/dsql/keywords.h
+   M src/dsql/make.cpp
+   M src/dsql/metd.epp
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   D src/dsql/prepa_proto.h
+   D src/dsql/preparse.cpp
+   D src/dsql/user__proto.h
+   D src/dsql/user_dsql.cpp
+   M src/dsql/utld.cpp
+   M src/dsql/utld_proto.h
+   D src/gpre/ada.cpp
+   A src/gpre/boot
+   A src/gpre/boot/gpre_meta_boot.cpp (from /firebird/trunk/src/gpre/gpre_meta_boot.cpp:51427)
+   M src/gpre/c_cxx.cpp
+   D src/gpre/cdbtable.h
+   M src/gpre/cme.cpp
+   D src/gpre/cob.cpp
+   D src/gpre/dyntable.cpp
+   D src/gpre/dyntable.h
+   D src/gpre/fbrmclib.cpp
+   D src/gpre/ftn.cpp
+   M src/gpre/gpre.h
+   D src/gpre/gpre_meta.epp
+   D src/gpre/gpre_meta_boot.cpp
+   M src/gpre/int_cxx.cpp
+   A src/gpre/languages
+   A src/gpre/languages/ada.cpp (from /firebird/trunk/src/gpre/ada.cpp:51427)
+   A src/gpre/languages/cob.cpp (from /firebird/trunk/src/gpre/cob.cpp:51427)
+   A src/gpre/languages/fbrmclib.cpp (from /firebird/trunk/src/gpre/fbrmclib.cpp:51427)
+   A src/gpre/languages/ftn.cpp (from /firebird/trunk/src/gpre/ftn.cpp:51427)
+   A src/gpre/languages/pas.cpp (from /firebird/trunk/src/gpre/pas.cpp:51427)
+   A src/gpre/languages/rmc.cpp (from /firebird/trunk/src/gpre/rmc.cpp:51427)
+   M src/gpre/movg.cpp
+   M src/gpre/msc.cpp
+   D src/gpre/pas.cpp
+   D src/gpre/prett_proto.h
+   D src/gpre/pretty.cpp
+   D src/gpre/rmc.cpp
+   D src/gpre/sdltable.h
+   A src/gpre/std
+   A src/gpre/std/gpre_meta.epp (from /firebird/trunk/src/gpre/gpre_meta.epp:51427)
+   A src/include/ProviderInterface.h
+   M src/include/fb_api_proto.h
+   M src/include/fb_blk.h
+   M src/include/fb_exception.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/intl/lc_ascii.cpp
+   M src/intl/lc_icu.cpp
+   M src/intl/lc_iso8859_1.cpp
+   M src/intl/lc_narrow.cpp
+   M src/intl/ld.cpp
+   M src/intl/ldcommon.h
+   M src/iscguard/cntl_guard.cpp
+   M src/iscguard/cntlg_proto.h
+   M src/iscguard/iscguard.cpp
+   M src/isql/InputDevices.h
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   D src/isql/isql_win.cpp
+   D src/isql/isql_win.h
+   D src/isql/isqlw_proto.h
+   M src/isql/iutils.cpp
+   M src/isql/show.epp
+   M src/jrd/Attachment.h
+   D src/jrd/CharSet.cpp
+   D src/jrd/CharSet.h
+   M src/jrd/Collation.cpp
+   M src/jrd/Collation.h
+   D src/jrd/CsConvert.h
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/IntlManager.cpp
+   D src/jrd/IntlUtil.cpp
+   D src/jrd/IntlUtil.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/PluginManager.cpp
+   M src/jrd/PluginManager.h
+   M src/jrd/PreparedStatement.h
+   M src/jrd/RandomGenerator.cpp
+   D src/jrd/RecordSourceNodes.cpp
+   D src/jrd/RecordSourceNodes.h
+   M src/jrd/Relation.h
+   M src/jrd/ResultSet.h
+   M src/jrd/Routine.h
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/SysFunction.h
+   M src/jrd/TempSpace.cpp
+   D src/jrd/TextType.cpp
+   D src/jrd/TextType.h
+   D src/jrd/ThreadData.cpp
+   D src/jrd/ThreadData.h
+   D src/jrd/ThreadStart.cpp
+   D src/jrd/ThreadStart.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/ValueImpl.h
+   M src/jrd/ValuesImpl.cpp
+   M src/jrd/ValuesImpl.h
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/align.h
+   D src/jrd/alt.cpp
+   D src/jrd/alt_proto.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/blob_filter.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/build_no.h
+   M src/jrd/builtin.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/cvt.cpp
+   M src/jrd/cvt2.cpp
+   D src/jrd/db_alias.cpp
+   D src/jrd/db_alias.h
+   D src/jrd/dbg.cpp
+   D src/jrd/dbg.h
+   D src/jrd/dbg_proto.h
+   D src/jrd/dbt.cpp
+   M src/jrd/dfw.epp
+   D src/jrd/divorce.cpp
+   D src/jrd/divorce.h
+   D src/jrd/dmp.cpp
+   D src/jrd/dmp_proto.h
+   M src/jrd/dpm.epp
+   D src/jrd/dsc.cpp
+   D src/jrd/dsc.h
+   D src/jrd/dsc_proto.h
+   D src/jrd/dsc_pub.h
+   M src/jrd/dyn.epp
+   M src/jrd/dyn.h
+   M src/jrd/dyn_def.epp
+   M src/jrd/dyn_del.epp
+   M src/jrd/dyn_mod.epp
+   M src/jrd/dyn_util.epp
+   D src/jrd/enc.cpp
+   D src/jrd/enc_proto.h
+   D src/jrd/entry.h
+   M src/jrd/err.cpp
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   D src/jrd/evl_string_test.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/execute_statement.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/filters.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/flu.h
+   M src/jrd/fun.epp
+   D src/jrd/gds.cpp
+   D src/jrd/gds_proto.h
+   M src/jrd/gdsassert.h
+   M src/jrd/grant.epp
+   M src/jrd/ibase.h
+   M src/jrd/idx.cpp
+   M src/jrd/inf.cpp
+   M src/jrd/ini.epp
+   M src/jrd/ini.h
+   M src/jrd/intl.cpp
+   M src/jrd/intl.h
+   M src/jrd/intl_builtin.cpp
+   M src/jrd/intl_classes.h
+   D src/jrd/intlobj_new.h
+   D src/jrd/isc.cpp
+   D src/jrd/isc_f_proto.h
+   D src/jrd/isc_file.cpp
+   D src/jrd/isc_proto.h
+   D src/jrd/isc_s_proto.h
+   D src/jrd/isc_sync.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/jrd_proto.h
+   D src/jrd/jrd_pwd.h
+   M src/jrd/lck.cpp
+   M src/jrd/lls.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   A src/jrd/misc
+   A src/jrd/misc/evl_string_test.cpp (from /firebird/trunk/src/jrd/evl_string_test.cpp:51651)
+   M src/jrd/mov_proto.h
+   M src/jrd/nbak.cpp
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   D src/jrd/os/config_root.h
+   D src/jrd/os/darwin/config_root.cpp
+   D src/jrd/os/darwin/mod_loader.cpp
+   D src/jrd/os/fbsyslog.h
+   D src/jrd/os/guid.h
+   D src/jrd/os/isc_i_proto.h
+   D src/jrd/os/mod_loader.h
+   D src/jrd/os/os_utils.h
+   D src/jrd/os/path_utils.h
+   D src/jrd/os/posix/config_root.cpp
+   D src/jrd/os/posix/fbsyslog.cpp
+   D src/jrd/os/posix/guid.cpp
+   D src/jrd/os/posix/isc_ipc.cpp
+   D src/jrd/os/posix/mod_loader.cpp
+   D src/jrd/os/posix/os_utils.cpp
+   D src/jrd/os/posix/path_utils.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/thd_priority.h
+   D src/jrd/os/win32/config_root.cpp
+   D src/jrd/os/win32/fbsyslog.cpp
+   D src/jrd/os/win32/guid.cpp
+   D src/jrd/os/win32/isc_ipc.cpp
+   D src/jrd/os/win32/mod_loader.cpp
+   D src/jrd/os/win32/os_utils.cpp
+   D src/jrd/os/win32/path_utils.cpp
+   M src/jrd/os/win32/thd_priority.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+   D src/jrd/perf.cpp
+   D src/jrd/perf.h
+   D src/jrd/perf_proto.h
+   D src/jrd/pwd.cpp
+   D src/jrd/qatest.cpp
+   D src/jrd/quad.cpp
+   D src/jrd/quad.h
+   D src/jrd/quad_proto.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/rse.h
+   M src/jrd/scl.epp
+   D src/jrd/sdl.cpp
+   D src/jrd/sdl.h
+   D src/jrd/sdl_proto.h
+   M src/jrd/sdw.cpp
+   D src/jrd/sha.cpp
+   D src/jrd/sha.h
+   M src/jrd/sort.cpp
+   M src/jrd/sqz.cpp
+   M src/jrd/status.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   D src/jrd/svc_stub.cpp
+   M src/jrd/svc_tab.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceLog.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/trace/TraceService.cpp
+   M src/jrd/trace/TraceService.h
+   M src/jrd/trig.h
+   D src/jrd/unicode_util.cpp
+   D src/jrd/unicode_util.h
+   D src/jrd/utl.cpp
+   D src/jrd/utl_proto.h
+   M src/jrd/val.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   D src/jrd/why.cpp
+   D src/jrd/why_proto.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/misc/headers.sed
+   M src/misc/writeBuildNum.sh
+   M src/msgs/build_file.epp
+   M src/msgs/check_msgs.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/qli/all.cpp
+   M src/qli/command.cpp
+   M src/qli/compile.cpp
+   M src/qli/dtr.cpp
+   M src/qli/dtr.h
+   M src/qli/err.cpp
+   M src/qli/eval.cpp
+   M src/qli/exe.cpp
+   M src/qli/gener.cpp
+   M src/qli/help.epp
+   M src/qli/lex.cpp
+   M src/qli/meta.epp
+   M src/qli/mov.cpp
+   M src/qli/picstr.cpp
+   M src/qli/show.epp
+   A src/remote/client
+   A src/remote/client/interface.cpp (from /firebird/trunk/src/remote/interface.cpp:51439)
+   M src/remote/inet.cpp
+   M src/remote/inet_proto.h
+   D src/remote/inet_server.cpp
+   D src/remote/inter_proto.h
+   D src/remote/interface.cpp
+   M src/remote/merge.cpp
+   D src/remote/os
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   D src/remote/serve_proto.h
+   A src/remote/server
+   A src/remote/server/os (from /firebird/trunk/src/remote/os:51439)
+   A src/remote/server/os/posix
+   A src/remote/server/os/posix/inet_server.cpp (from /firebird/trunk/src/remote/inet_server.cpp:51439)
+   D src/remote/server/os/win32
+   A src/remote/server/serve_proto.h (from /firebird/trunk/src/remote/serve_proto.h:51439)
+   A src/remote/server/server.cpp (from /firebird/trunk/src/remote/server.cpp:51439)
+   D src/remote/server.cpp
+   D src/remote/xdr.cpp
+   D src/remote/xdr.h
+   D src/remote/xdr_proto.h
+   D src/remote/xnet.cpp
+   D src/remote/xnet.h
+   D src/remote/xnet_proto.h
+   M src/utilities/cache.cpp
+   M src/utilities/drop.cpp
+   A src/utilities/fbsvcmgr
+   A src/utilities/fbsvcmgr/fbsvcmgr.cpp (from /firebird/trunk/src/utilities/fbsvcmgr.cpp:51439)
+   D src/utilities/fbsvcmgr.cpp
+   D src/utilities/gsec/call_service.cpp
+   D src/utilities/gsec/call_service.h
+   D src/utilities/gsec/gsecMain.cpp
+   A src/utilities/gsec/main
+   A src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/dba.epp
+   D src/utilities/gstat/gstatMain.cpp
+   A src/utilities/gstat/main
+   A src/utilities/gstat/main/gstatMain.cpp (from /firebird/trunk/src/utilities/gstat/gstatMain.cpp:51439)
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/guard/guard.cpp
+   M src/utilities/guard/util.cpp
+   M src/utilities/ibmgr/srvrmgr.cpp
+   A src/utilities/nbackup/main
+   A src/utilities/nbackup/main/nbkMain.cpp (from /firebird/trunk/src/utilities/nbackup/nbkMain.cpp:51439)
+   A src/utilities/nbackup/nbackup.cpp (from /firebird/trunk/src/utilities/nbackup.cpp:51439)
+   D src/utilities/nbackup/nbkMain.cpp
+   M src/utilities/nbackup/nbk_proto.h
+   D src/utilities/nbackup.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TraceConfiguration.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/TraceUnicodeUtils.h
+   D src/utilities/ntrace/os/posix/FileObject.cpp
+   A src/utilities/ntrace/os/posix/misc
+   A src/utilities/ntrace/os/posix/misc/FileObject.cpp (from /firebird/trunk/src/utilities/ntrace/os/posix/FileObject.cpp:51439)
+   M src/utilities/print_event.cpp
+   M src/utilities/rebuild/rebuild.cpp
+   M src/utilities/rebuild/rmet.epp
+   M src/utilities/rebuild/rstore.epp
+   M src/utilities/run_service.cpp
+   A src/yvalve
+   A src/yvalve/alt.cpp (from /firebird/trunk/src/jrd/alt.cpp:51439)
+   A src/yvalve/alt_proto.h (from /firebird/trunk/src/jrd/alt_proto.h:51439)
+   A src/yvalve/array.epp (from /firebird/trunk/src/dsql/array.epp:51439)
+   A src/yvalve/array_proto.h (from /firebird/trunk/src/dsql/array_proto.h:51439)
+   A src/yvalve/blob.epp (from /firebird/trunk/src/dsql/blob.epp:51439)
+   A src/yvalve/blob_proto.h (from /firebird/trunk/src/dsql/blob_proto.h:51439)
+   A src/yvalve/gds.cpp (from /firebird/trunk/src/jrd/gds.cpp:51439)
+   A src/yvalve/gds_proto.h (from /firebird/trunk/src/jrd/gds_proto.h:51439)
+   A src/yvalve/keywords.cpp (from /firebird/trunk/src/dsql/keywords.cpp:51439)
+   A src/yvalve/keywords.h (from /firebird/trunk/src/dsql/keywords.h:51439)
+   A src/yvalve/perf.cpp (from /firebird/trunk/src/jrd/perf.cpp:51439)
+   A src/yvalve/perf.h (from /firebird/trunk/src/jrd/perf.h:51439)
+   A src/yvalve/perf_proto.h (from /firebird/trunk/src/jrd/perf_proto.h:51439)
+   A src/yvalve/prepa_proto.h (from /firebird/trunk/src/dsql/prepa_proto.h:51439)
+   A src/yvalve/preparse.cpp (from /firebird/trunk/src/dsql/preparse.cpp:51439)
+   A src/yvalve/user__proto.h (from /firebird/trunk/src/dsql/user__proto.h:51439)
+   A src/yvalve/user_dsql.cpp (from /firebird/trunk/src/dsql/user_dsql.cpp:51439)
+   A src/yvalve/utl.cpp (from /firebird/trunk/src/jrd/utl.cpp:51439)
+   A src/yvalve/utl_proto.h (from /firebird/trunk/src/jrd/utl_proto.h:51439)
+   A src/yvalve/utly.cpp (from /firebird/trunk/src/dsql/utld.cpp:51439)
+   A src/yvalve/utly_proto.h (from /firebird/trunk/src/dsql/utld_proto.h:51439)
+   A src/yvalve/why.cpp (from /firebird/trunk/src/jrd/why.cpp:51439)
+   A src/yvalve/why_proto.h (from /firebird/trunk/src/jrd/why_proto.h:51439)
+OSRI and new posix build
+
  2010-10-09 18:39  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
