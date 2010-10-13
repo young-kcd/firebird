@@ -514,7 +514,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
 
 	const SSHORT id = procedure ? find_proc_field(procedure, base_field) :
-		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, base_field, 0);
+		MET_lookup_field (tdbb, csb->csb_rpt[stream].csb_relation, base_field);
 
 	if (id < 0)
 		return NULL;
@@ -1330,7 +1330,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			}
 
 			par_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0) {
+			if ((id = MET_lookup_field(tdbb, relation, name)) < 0) {
 				if (csb->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;

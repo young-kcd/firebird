@@ -107,7 +107,7 @@ const int irq_get_role_name	= 70;		/* get SQL role name */
 const int irq_format6		= 71;		/* make a new format for a record */
 const int irq_r_gen_id_num	= 72;		/* lookup generator by ID. */
 const int irq_verify_role_name	= 73;	/* ensure role exists in roles & user_privileges. */
-const int irq_l_relation_defsec	= 74;	/* check the default sec class name against rel. */
+//const int irq_l_relation_defsec	= 74;	/* check the default sec class name against rel. */
 const int irq_m_index_seg		= 75;	/* modify per-segment index selectivity */
 
 const int irq_l_subtype		= 76;		/* lookup subtype (charset/collation) */

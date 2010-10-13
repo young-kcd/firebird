@@ -119,7 +119,8 @@ void SCL_check_access(const SecurityClass* s_class,
 					  const Firebird::MetaName& prc_name,
 					  SecurityClass::flags_t mask,
 					  const TEXT* type,
-					  const Firebird::MetaName& name)
+					  const Firebird::MetaName& name,
+					  const Firebird::MetaName& r_name)
 {
 /**************************************
  *
@@ -197,15 +198,18 @@ void SCL_check_access(const SecurityClass* s_class,
 	if (denied_db) {
 		ERR_post(isc_no_priv,
 				isc_arg_string, names->p_names_string,
-				isc_arg_string, "DATABASE",
+				isc_arg_string, object_database,
 				isc_arg_string, "",
 				isc_arg_end);
 	}
 	else {
+		const Firebird::string full_name = r_name.hasData() ?
+			r_name.c_str() + Firebird::string(".") + name.c_str() : name.c_str();
+
 		ERR_post(isc_no_priv,
 				isc_arg_string, names->p_names_string,
 				isc_arg_string, type,
-				isc_arg_string, ERR_cstring(name.c_str()),
+				isc_arg_string, ERR_cstring(full_name),
 				isc_arg_end);
 	}
 }
@@ -315,15 +319,10 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 			WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
 			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 
-        if (!RF.RDB$SECURITY_CLASS.NULL) {
-			s_class = SCL_get_class(RF.RDB$SECURITY_CLASS);
-			SCL_check_access(s_class, 0, NULL, NULL, mask,
-							 object_column, RF.RDB$FIELD_NAME);
-		}
-		else {
-			  SCL_check_access(default_s_class, 0, NULL, NULL, mask,
-							   object_column, RF.RDB$FIELD_NAME);
-		}
+		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
+			SCL_get_class(RF.RDB$SECURITY_CLASS) : default_s_class;
+		SCL_check_access(s_class, 0, NULL, NULL, mask,
+						 object_column, RF.RDB$FIELD_NAME, reln_name);
 
 	END_FOR;
 
@@ -527,7 +526,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 		const jrd_fld* field;
 		SSHORT id;
 		if (field_name &&
-			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
+			(id = MET_lookup_field(tdbb, relation, field_name)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
 			(s_class = SCL_get_class(field->fld_security_name.c_str())))
 		{

@@ -1754,8 +1754,7 @@ SLONG MET_lookup_exception_number(thread_db* tdbb, const Firebird::MetaName& nam
 
 int MET_lookup_field(thread_db* tdbb,
 					 jrd_rel* relation,
-					 const Firebird::MetaName& name,
-					 const Firebird::MetaName* security_name)
+					 const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -1765,9 +1764,6 @@ int MET_lookup_field(thread_db* tdbb,
  *
  * Functional description
  *      Look up a field name.
- *	Additinally, if security_name is a not null pointer,
- *	it's used to include the condition that it should match
- *	the field's security class name, too.
  *
  *	if the field is not found return -1
  *
@@ -1790,14 +1786,7 @@ int MET_lookup_field(thread_db* tdbb,
 				jrd_fld* field = *fieldIter;
 				if (field->fld_name == name)
 				{
-					if (!security_name)
-					{
-						return id;
-					}
-					if (field->fld_security_name == *security_name)
-					{
-						return id;
-					}
+					return id;
 				}
 			}
 		}
@@ -1824,16 +1813,7 @@ int MET_lookup_field(thread_db* tdbb,
             REQUEST(irq_l_field) = request;
 		}
 
-        if (!security_name) {
-            id = X.RDB$FIELD_ID;
-        }
-        else {
-            if ((!X.RDB$SECURITY_CLASS.NULL)
-                && (*security_name == X.RDB$SECURITY_CLASS))
-			{
-                id = X.RDB$FIELD_ID;
-            }
-        }
+		id = X.RDB$FIELD_ID;
 
 	END_FOR;
 
@@ -3330,52 +3310,6 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 
 	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;
-}
-
-
-bool MET_relation_default_class (thread_db* tdbb, const Firebird::MetaName& relation_name,
-                                 const Firebird::MetaName& default_security_class_name)
-{
-/**************************************
- *
- *      M E T _ r e l a t i o n _ d e f a u l t _ c l a s s
- *
- **************************************
- *
- * Functional description
- *      Checks that a given security class is the default for
- *      a given relation, returning TRUE if there's a match.
- *      It can be made obsolete in the future if jrd_rel struct
- *	gets another field, although metadata loading order
- *	would not be safe when compared with this function.
- *
- **************************************/
-    SET_TDBB (tdbb);
-    Database* dbb = tdbb->getDatabase();
-    CHECK_DBB (dbb);
-
-	bool found = false;
-    jrd_req* request = CMP_find_request (tdbb, irq_l_relation_defsec, IRQ_REQUESTS);
-
-    FOR (REQUEST_HANDLE request)
-        REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ relation_name.c_str()
-
-        if (!REQUEST (irq_l_relation_defsec))
-            REQUEST (irq_l_relation_defsec) = request;
-
-        if (!REL.RDB$DEFAULT_CLASS.NULL) {
-            if (default_security_class_name == REL.RDB$DEFAULT_CLASS)
-			{
-                found = true;
-            }
-        }
-
-    END_FOR;
-
-    if (!REQUEST (irq_l_relation_defsec))
-        REQUEST (irq_l_relation_defsec) = request;
-
-    return found;
 }
 
 

@@ -366,8 +366,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 					continue;
 				}
 				if (!strcmp(access->acc_type, object_column)
-					&& (MET_lookup_field(tdbb, owner_relation, access->acc_name, &access->acc_security_name) >= 0
-					|| MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
+					&& (owner_relation->rel_name == access->acc_r_name))
 				{
 					continue;
 				}
@@ -378,7 +377,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
 							t.request->req_trg_name, NULL, access->acc_mask,
-							access->acc_type, access->acc_name);
+							access->acc_type, access->acc_name, access->acc_r_name);
 		}
 	}
 }
@@ -410,7 +409,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			{
 				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, 
-								 access->acc_mask, access->acc_type, access->acc_name);
+								 access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 			}
 		} 
 		else {
@@ -445,7 +444,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	{
 		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL,
-						 access->acc_mask, access->acc_type, access->acc_name);
+						 access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
 
@@ -2219,7 +2218,8 @@ void CMP_post_access(thread_db* tdbb,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
 					 const TEXT* type_name,
-					 const Firebird::MetaName& name)
+					 const Firebird::MetaName& name,
+					 const Firebird::MetaName& r_name)
 {
 /**************************************
  *
@@ -2243,16 +2243,13 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	
-	AccessItem access(security_name, view_id, name, type_name, mask);
+	AccessItem access(security_name, view_id, name, type_name, mask, r_name);
 
 	size_t i;
-
-	if (csb->csb_access.find(access, i))
+	if (!csb->csb_access.find(access, i))
 	{
-		return;
+		csb->csb_access.insert(i, access);
 	}
-
-	csb->csb_access.insert(i, access);
 }
 
 
@@ -3521,7 +3518,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
 									SCL_sql_update, object_column,
-									field->fld_name);
+									field->fld_name, relation->rel_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase) {
@@ -3540,7 +3537,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_column, field->fld_name);
+								SCL_sql_insert, object_column,
+								field->fld_name, relation->rel_name);
 			}
 			else {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -3550,7 +3548,8 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_read, object_column, field->fld_name);
+								SCL_read, object_column,
+								field->fld_name, relation->rel_name);
 			}
 
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {

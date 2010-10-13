@@ -44,7 +44,8 @@ Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*);
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
-					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&);
+					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&,
+					 const Firebird::MetaName& = "");
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);

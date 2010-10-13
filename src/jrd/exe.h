@@ -555,7 +555,7 @@ struct AccessItem
 {
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
-	Firebird::MetaName		acc_name;
+	Firebird::MetaName		acc_name, acc_r_name;
 	const TEXT*				acc_type;
 	SecurityClass::flags_t	acc_mask;
 
@@ -579,13 +579,17 @@ struct AccessItem
 		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
 
+		if ((v = i1.acc_r_name.compare(i2.acc_r_name)) != 0)
+			return v > 0;
+
 		return false; // Equal
 	}
 
 	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
-		const Firebird::MetaName& name, const TEXT* type, SecurityClass::flags_t mask)
+		const Firebird::MetaName& name, const TEXT* type,
+		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
 	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
-		acc_type(type), acc_mask(mask)
+		acc_r_name(relName), acc_type(type), acc_mask(mask)
 	{}
 };
 

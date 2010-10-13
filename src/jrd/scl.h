@@ -125,6 +125,7 @@ public:
  */
 static const char* SYSDBA_USER_NAME	= "SYSDBA";
 
+static const char* object_database	= "DATABASE";
 static const char* object_table		= "TABLE";
 static const char* object_procedure	= "PROCEDURE";
 static const char* object_column	= "COLUMN";

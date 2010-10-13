@@ -35,7 +35,7 @@ struct dsc;
 
 void SCL_check_access(const Jrd::SecurityClass*, SLONG, const Firebird::MetaName&,
 					  const Firebird::MetaName&, Jrd::SecurityClass::flags_t,
-					  const TEXT*, const Firebird::MetaName&);
+					  const TEXT*, const Firebird::MetaName&, const Firebird::MetaName& = "");
 void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
 void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
