@@ -113,7 +113,8 @@ static const P_NAMES p_names[] =
 };
 
 
-void SCL_check_access(const SecurityClass* s_class,
+void SCL_check_access(thread_db* tdbb,
+					  const SecurityClass* s_class,
 					  SLONG view_id,
 					  const Firebird::MetaName& trg_name,
 					  const Firebird::MetaName& prc_name,
@@ -134,7 +135,7 @@ void SCL_check_access(const SecurityClass* s_class,
  *	object in question.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
@@ -263,9 +264,9 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 
             reln_name = REL.RDB$RELATION_NAME;
 		    if (!REL.RDB$SECURITY_CLASS.NULL)
-                s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
+                s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
-                default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
+                default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
         END_FOR;
 
         CMP_release(tdbb, request);
@@ -281,9 +282,9 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
             reln_name = REL.RDB$RELATION_NAME;
             aux_idx_name = IND.RDB$INDEX_NAME;
             if (!REL.RDB$SECURITY_CLASS.NULL)
-                s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
+                s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
-                default_s_class = SCL_get_class(REL.RDB$DEFAULT_CLASS);
+                default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
         END_FOR;
 	
         CMP_release (tdbb, request);
@@ -296,7 +297,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		return;
 	}
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, reln_name);
+	SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_table, reln_name);
 
 	request = NULL;
 
@@ -320,8 +321,8 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 
 		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
-			SCL_get_class(RF.RDB$SECURITY_CLASS) : default_s_class;
-		SCL_check_access(s_class, 0, NULL, NULL, mask,
+			SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS) : default_s_class;
+		SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask,
 						 object_column, RF.RDB$FIELD_NAME, reln_name);
 
 	END_FOR;
@@ -337,7 +338,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 }
 
 
-void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
+void SCL_check_procedure(Jrd::thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
 {
 /**************************************
  *
@@ -351,7 +352,7 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
@@ -370,17 +371,17 @@ void SCL_check_procedure(const dsc* dsc_name, SecurityClass::flags_t mask)
 			REQUEST(irq_p_security) = request;
 
 		if (!SPROC.RDB$SECURITY_CLASS.NULL)
-			s_class = SCL_get_class(SPROC.RDB$SECURITY_CLASS);
+			s_class = SCL_get_class(tdbb, SPROC.RDB$SECURITY_CLASS);
 	END_FOR;
 
 	if (!REQUEST(irq_p_security))
 		REQUEST(irq_p_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, name, mask, object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, NULL, name, mask, object_procedure, name);
 }
 
 
-void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
+void SCL_check_relation(Jrd::thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
 {
 /**************************************
  *
@@ -394,7 +395,7 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
  *	scanned.  This is used exclusively for meta-data operations.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	// Get the name in CSTRING format, ending on NULL or SPACE
 	fb_assert(dsc_name->dsc_dtype == dtype_text);
@@ -414,17 +415,17 @@ void SCL_check_relation(const dsc* dsc_name, SecurityClass::flags_t mask)
 			REQUEST(irq_v_security) = request;
 
         if (!REL.RDB$SECURITY_CLASS.NULL)
-			s_class = SCL_get_class(REL.RDB$SECURITY_CLASS);
+			s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
 	END_FOR;
 
 	if (!REQUEST(irq_v_security))
 		REQUEST(irq_v_security) = request;
 
-	SCL_check_access(s_class, 0, NULL, NULL, mask, object_table, name);
+	SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask, object_table, name);
 }
 
 
-SecurityClass* SCL_get_class(const TEXT* par_string)
+SecurityClass* SCL_get_class(Jrd::thread_db* tdbb, const TEXT* par_string)
 {
 /**************************************
  *
@@ -438,20 +439,21 @@ SecurityClass* SCL_get_class(const TEXT* par_string)
  *	class block.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
 	// Name may be absent or terminated with NULL or blank.  Clean up name.
 
-	if (!par_string) {
+	if (!par_string)
+	{
 		return NULL;
 	}
 
-	Firebird::string string = par_string;
+	const Firebird::MetaName string(par_string);
 
-	fb_utils::exact_name(string);
+	//fb_utils::exact_name(string);
 
-	if (string.empty())
+	if (string.isEmpty())
 	{
 		return NULL;
 	}
@@ -515,7 +517,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 		(relation = MET_lookup_relation(tdbb, relation_name)))
 	{
 		MET_scan_relation(tdbb, relation);
-		if ( (s_class = SCL_get_class(relation->rel_security_name.c_str())) )
+		if ( (s_class = SCL_get_class(tdbb, relation->rel_security_name.c_str())) )
 		{
 			access &= s_class->scl_flags;
 		}
@@ -525,7 +527,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 		if (field_name &&
 			(id = MET_lookup_field(tdbb, relation, field_name)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
-			(s_class = SCL_get_class(field->fld_security_name.c_str())))
+			(s_class = SCL_get_class(tdbb, field->fld_security_name.c_str())))
 		{
 			access &= s_class->scl_flags;
 		}
@@ -670,7 +672,7 @@ void SCL_init(bool create,
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				tdbb->getAttachment()->att_security_class =
-					SCL_get_class(X.RDB$SECURITY_CLASS);
+					SCL_get_class(tdbb, X.RDB$SECURITY_CLASS);
 		END_FOR;
 		CMP_release(tdbb, handle);
 
@@ -744,7 +746,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
  **************************************/
 	SET_TDBB(tdbb);
 
-	SecurityClass* s_class = SCL_get_class(string);
+	SecurityClass* s_class = SCL_get_class(tdbb, string);
 	if (!s_class) {
 		return NULL;
 	}
