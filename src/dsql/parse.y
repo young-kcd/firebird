@@ -4314,17 +4314,12 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_flag_node (nod_agg_list, NOD_AGG_DISTINCT, 2, $4, $5); }
 		;
 
-delimiter_opt	: ',' delimiter_value
-			{ $$ = $2; }
-		|
-			{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
-		;
-
-delimiter_value	: sql_string
-			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
-		| parameter
-		| variable
-		;
+delimiter_opt
+	: ',' value
+		{ $$ = $2; }
+	|
+		{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
+	;
 
 numeric_value_function
 	: extract_expression
