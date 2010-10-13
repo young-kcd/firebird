@@ -110,7 +110,6 @@
 #endif
 #define _WINSOCKAPI_
 #include <share.h>
-#include "err_proto.h"
 #undef leave
 #endif // WIN_NT
 
