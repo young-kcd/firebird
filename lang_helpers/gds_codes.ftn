@@ -1450,8 +1450,10 @@ C --
       PARAMETER (GDS__private_function                 = 335545018)
       INTEGER*4 GDS__private_procedure               
       PARAMETER (GDS__private_procedure                = 335545019)
+      INTEGER*4 GDS__request_outdated                
+      PARAMETER (GDS__request_outdated                 = 335545020)
       INTEGER*4 GDS__bad_events_handle               
-      PARAMETER (GDS__bad_events_handle                = 335545020)
+      PARAMETER (GDS__bad_events_handle                = 335545021)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

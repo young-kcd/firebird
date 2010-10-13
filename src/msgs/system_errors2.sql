@@ -705,7 +705,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-532, 'HY', '018', 0, 697, 'async_active', NULL, NULL)
 (-901, '42', '000', 0, 698, 'private_function', NULL, NULL)
 (-901, '42', '000', 0, 699, 'private_procedure', NULL, NULL)
-(-901, '08', '003', 0, 700, 'bad_events_handle', NULL, 'ERROR')
+(-904, '24', '000', 0, 700, 'request_outdated', NULL, NULL)
+(-901, '08', '003', 0, 701, 'bad_events_handle', NULL, 'ERROR')
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

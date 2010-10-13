@@ -755,7 +755,8 @@ const ISC_STATUS isc_formatted_exception              = 335545016L;
 const ISC_STATUS isc_async_active                     = 335545017L;
 const ISC_STATUS isc_private_function                 = 335545018L;
 const ISC_STATUS isc_private_procedure                = 335545019L;
-const ISC_STATUS isc_bad_events_handle                = 335545020L;
+const ISC_STATUS isc_request_outdated                 = 335545020L;
+const ISC_STATUS isc_bad_events_handle                = 335545021L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1174,7 +1175,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1118;
+const ISC_STATUS isc_err_max                          = 1119;
 
 #else /* c definitions */
 
@@ -1899,7 +1900,8 @@ const ISC_STATUS isc_err_max                          = 1118;
 #define isc_async_active                     335545017L
 #define isc_private_function                 335545018L
 #define isc_private_procedure                335545019L
-#define isc_bad_events_handle                335545020L
+#define isc_request_outdated                 335545020L
+#define isc_bad_events_handle                335545021L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2318,7 +2320,7 @@ const ISC_STATUS isc_err_max                          = 1118;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1118
+#define isc_err_max                          1119
 
 #endif
 
