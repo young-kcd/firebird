@@ -451,7 +451,7 @@ esac
 
 PROD_BUILD_FLG=Y
 AC_ARG_ENABLE(developer,
-  [  --enable-developer      use developer mopde rules (default=no)],
+  [  --enable-developer      use developer mode rules (default=no)],
   [case "$enableval" in
      yes) DEVEL_FLG=Y;;
      no)  DEVEL_FLG=N;;
