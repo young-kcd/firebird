@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/status.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 

@@ -29,7 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class

@@ -27,7 +27,7 @@
 // Utility functions
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -39,7 +39,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"

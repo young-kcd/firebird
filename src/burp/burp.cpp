@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
@@ -54,7 +54,7 @@
 #include "../burp/mvol_proto.h"
 #include "../burp/resto_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/Switches.h"
 #include "../burp/burpswi.h"

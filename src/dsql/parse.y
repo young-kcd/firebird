@@ -79,7 +79,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdarg.h>
 
 #include "gen/iberror.h"

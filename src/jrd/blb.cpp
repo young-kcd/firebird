@@ -38,7 +38,7 @@
 #include "firebird.h"
 #include "memory_routines.h"
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"
@@ -55,7 +55,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/cch.h"
 #include "../dsql/ExprNodes.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/blf_proto.h"
 #include "../jrd/cch_proto.h"

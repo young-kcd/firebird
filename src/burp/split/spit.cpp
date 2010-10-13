@@ -30,8 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include "../jrd/common.h"
-#include "../jrd/gdsassert.h"
+#include "../common/common.h"
+#include "../common/gdsassert.h"
 #include <stdarg.h>
 
 #include <fcntl.h>

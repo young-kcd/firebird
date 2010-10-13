@@ -27,7 +27,7 @@
 #define JRD_EVENT_H
 
 #include "../common/isc_s_proto.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../jrd/que.h"
 #include "ProviderInterface.h"
 

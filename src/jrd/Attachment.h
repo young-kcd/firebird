@@ -26,7 +26,7 @@
 #define JRD_ATTACHMENT_H
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
 #include "../jrd/blb.h"

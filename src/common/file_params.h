@@ -29,8 +29,8 @@
  *
  */
 
-#ifndef JRD_FILE_PARAMS_H
-#define JRD_FILE_PARAMS_H
+#ifndef COMMON_FILE_PARAMS_H
+#define COMMON_FILE_PARAMS_H
 
 static const char* const EVENT_FILE		= "fb_event_%s";
 static const char* const LOCK_FILE		= "fb_lock_%s";
@@ -73,4 +73,4 @@ static const char* const MSG_FILE	= "firebird.msg";
 // Keep in sync with MSG_FILE_LANG
 const int LOCALE_MAX	= 10;
 
-#endif // JRD_FILE_PARAMS_H
+#endif // COMMON_FILE_PARAMS_H

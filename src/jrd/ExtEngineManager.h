@@ -25,7 +25,7 @@
 
 #include "FirebirdApi.h"
 #include "FirebirdExternalApi.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/GenericMap.h"

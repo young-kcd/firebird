@@ -1,4 +1,4 @@
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "intl_classes.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -8,7 +8,7 @@
 #include "../jrd/intl.h"
 #include "../common/IntlUtil.h"
 #include "../intl/country_codes.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/err_proto.h"

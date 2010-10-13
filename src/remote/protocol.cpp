@@ -33,7 +33,7 @@
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../common/sdl.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../remote/parse_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"

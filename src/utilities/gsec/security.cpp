@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../common/enc_proto.h"

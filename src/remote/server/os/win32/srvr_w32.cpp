@@ -101,7 +101,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/isc_s_proto.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
@@ -215,7 +215,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	{
 		MessageBox(NULL, e.what(), "Firebird server failure",
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
-		return STARTUP_ERROR; // see /jrd/common.h
+		return STARTUP_ERROR; // see /common/common.h
 	}
 	catch (Firebird::status_exception& e)
 	{
@@ -228,7 +228,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 		MessageBox(NULL, buffer, "Firebird server failure",
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
-		return STARTUP_ERROR; // see /jrd/common.h
+		return STARTUP_ERROR; // see /common/common.h
 	}
 
 	server_flag = Config::getMultiClientServer() ? SRVR_multi_client : 0;

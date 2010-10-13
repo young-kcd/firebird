@@ -30,7 +30,7 @@
 #include "../common/unicode_util.h"
 #include "../common/CharSet.h"
 #include "../common/IntlUtil.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"

@@ -21,7 +21,7 @@
 #ifndef DSQL_VISITORS_H
 #define DSQL_VISITORS_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../common/classes/array.h"

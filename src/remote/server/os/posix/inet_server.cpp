@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/isc_proto.h"
 #include "../common/os/divorce.h"
 #include "../jrd/ibase.h"
@@ -80,7 +80,7 @@
 #include "../remote/remote.h"
 #include "../jrd/license.h"
 #include "../common/thd.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../remote/inet_proto.h"
 #include "../remote/server/serve_proto.h"
 #include "../yvalve/gds_proto.h"

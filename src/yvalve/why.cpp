@@ -49,11 +49,11 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdarg.h>
 
 #include <stdio.h>
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 // includes specific for DSQL
 

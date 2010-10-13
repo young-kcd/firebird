@@ -53,9 +53,9 @@
 #include "../common/classes/init.h"
 #include "../jrd/jrd.h"
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/flu.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #include "../jrd/flu_proto.h"
 #include "../yvalve/gds_proto.h"

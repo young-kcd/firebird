@@ -29,7 +29,7 @@
 #ifndef REMOTE_REMOTE_H
 #define REMOTE_REMOTE_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../remote/remote_def.h"
 #include "../common/ThreadData.h"

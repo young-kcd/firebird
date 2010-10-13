@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ClumpletWriter.h"

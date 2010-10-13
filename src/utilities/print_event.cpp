@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include "fb_types.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/event.h"
 #include "../jrd/event_proto.h"
 #include "../yvalve/gds_proto.h"

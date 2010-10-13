@@ -26,10 +26,10 @@
 // File functions
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 #include "../common/classes/init.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/os/os_utils.h"
 #include "../jrd/constants.h"
 #include "../common/os/path_utils.h"

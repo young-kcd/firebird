@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
@@ -34,7 +34,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../intl/charsets.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/filte_proto.h"
 #include "../yvalve/gds_proto.h"

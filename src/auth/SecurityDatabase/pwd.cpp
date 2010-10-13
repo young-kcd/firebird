@@ -27,7 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../auth/SecurityDatabase/jrd_pwd.h"

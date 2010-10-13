@@ -26,7 +26,7 @@
 #include "firebird.h"
 #include <string.h>
 #include "../jrd/flu.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/flu_proto.h"
 #include "../yvalve/gds_proto.h"
 

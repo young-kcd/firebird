@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  */
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include "../yvalve/gds_proto.h"
 #include <stdlib.h>

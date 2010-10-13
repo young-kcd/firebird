@@ -48,11 +48,11 @@ int errno = -1;
 
 #include <time.h>
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/os/divorce.h"
 #include "../common/isc_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../utilities/guard/util_proto.h"
 #include "../common/classes/fb_string.h"
 

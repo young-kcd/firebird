@@ -29,7 +29,7 @@
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
 #include "../../common/utils_proto.h"
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 #include "../../jrd/err_proto.h"
 #include "../../common/isc_proto.h"
 #include "../../common/isc_s_proto.h"

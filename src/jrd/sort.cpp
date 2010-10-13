@@ -31,12 +31,12 @@
 #include "firebird.h"
 #include <errno.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/sort.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/val.h"

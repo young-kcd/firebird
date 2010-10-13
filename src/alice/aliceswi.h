@@ -22,7 +22,7 @@
 #ifndef	ALICE_ALICESWI_H
 #define	ALICE_ALICESWI_H
 
-//#include "../jrd/common.h"
+//#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"
 

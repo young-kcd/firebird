@@ -44,11 +44,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/license.h"
 #include <stdarg.h>
 //#include "../common/classes/timestamp.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #include "../jrd/ibase.h"
 #include "../jrd/msg.h"

@@ -31,7 +31,7 @@
 #define FIREBIRD_NTRACE_H
 
 // to define SINT64
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 // Version of API, used for version fields in TracePlugin structure
 #define NTRACE_VERSION 2

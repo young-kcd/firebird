@@ -29,7 +29,7 @@
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "SafeArg.h"
 
 namespace MsgFormat

@@ -57,7 +57,7 @@
 
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -73,7 +73,7 @@
 #include "../jrd/os/pio.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/ibase.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
 #include "../jrd/cch.h"

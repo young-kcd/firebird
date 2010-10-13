@@ -25,13 +25,13 @@
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "BaseStream.h"
 #include "MsgPrint.h"
 #include <string.h>
 #include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 
 
 namespace MsgFormat

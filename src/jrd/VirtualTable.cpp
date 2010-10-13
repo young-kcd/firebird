@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include "ids.h"
 #include "../jrd/constants.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../common/dsc.h"
 #include "../jrd/exe.h"

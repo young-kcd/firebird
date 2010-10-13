@@ -20,7 +20,7 @@
 #ifndef UTILITIES_REBUILD_H
 #define UTILITIES_REBUILD_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ods.h"
 
 const ULONG BIG_NUMBER = (ULONG) -1;

@@ -38,7 +38,7 @@
 # endif
 #endif
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../yvalve/gds_proto.h"
 

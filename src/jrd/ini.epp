@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -39,7 +39,7 @@
 #include "../jrd/dflt.h"
 #include "../jrd/ini.h"
 #include "../jrd/idx.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../dsql/dsql.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"

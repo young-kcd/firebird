@@ -47,8 +47,8 @@
  *
  */
 
-#ifndef JRD_COMMON_H
-#define JRD_COMMON_H
+#ifndef COMMON_COMMON_H
+#define COMMON_COMMON_H
 
 #include "firebird.h"
 
@@ -71,8 +71,8 @@
 #define USE_POSIX_THREADS
 #endif
 
-#include "../include/fb_macros.h"
-#include "../include/fb_types.h"
+#include "fb_macros.h"
+#include "fb_types.h"
 
 /*
   do not use links in source code to maintain platform neutrality
@@ -949,5 +949,5 @@ static const TEXT* const FB_LONG_MONTHS_UPPER[] =
 	0
 };
 
-#endif /* JRD_COMMON_H */
+#endif /* COMMON_COMMON_H */
 

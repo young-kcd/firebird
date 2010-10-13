@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/parse.h"
@@ -39,7 +39,7 @@
 #include "../yvalve/utl_proto.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 
 static SLONG execute_any(qli_nod*);

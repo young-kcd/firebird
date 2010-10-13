@@ -36,10 +36,10 @@
 #endif
 
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../common/stuff.h"
 #include "../utilities/ibmgr/ibmgr.h"

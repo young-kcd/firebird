@@ -35,11 +35,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
-#include "../jrd/file_params.h"
+#include "../common/common.h"
+#include "../common/file_params.h"
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/db_alias.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"

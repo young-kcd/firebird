@@ -39,13 +39,13 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../lock/lock_proto.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/jrd.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/isc_s_proto.h"

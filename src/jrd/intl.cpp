@@ -92,7 +92,7 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
@@ -104,7 +104,7 @@
 #include "../jrd/btr.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 //#include "../jrd/license.h"
 #ifdef INTL_BUILTIN
 #include "../intl/ld_proto.h"

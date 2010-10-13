@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -59,7 +59,7 @@
 #include "../jrd/ini.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
@@ -74,7 +74,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/scl_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/os/path_utils.h"
 #include "../common/utils_proto.h"
 #include "../jrd/IntlManager.h"

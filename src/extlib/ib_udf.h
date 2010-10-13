@@ -18,7 +18,7 @@
  */
 
 #if defined(__cplusplus) && defined(DARWIN)
-#include "../jrd/common.h"
+#include "../common/common.h"
 #define EXPORT API_ROUTINE
 #else
 #define EXPORT

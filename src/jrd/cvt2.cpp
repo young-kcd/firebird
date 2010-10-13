@@ -27,7 +27,7 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"
@@ -35,7 +35,7 @@
 #include "../common/quad.h"
 #include "gen/iberror.h"
 #include "../jrd/intl.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/cvt2_proto.h"
 #include "../common/cvt.h"

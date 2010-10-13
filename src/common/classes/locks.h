@@ -30,7 +30,7 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like

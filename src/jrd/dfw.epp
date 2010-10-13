@@ -66,7 +66,7 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/VaryStr.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -86,7 +86,7 @@
 #include "../jrd/intl.h"
 #include "../intl/charsets.h"
 #include "../jrd/align.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"

@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../yvalve/gds_proto.h"

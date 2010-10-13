@@ -18,8 +18,8 @@
  * CVC: Do not override local fb_assert like the ones in gpre and dsql.
  */
 
-#ifndef JRD_GDSASSERT_H
-#define JRD_GDSASSERT_H
+#ifndef COMMON_GDSASSERT_H
+#define COMMON_GDSASSERT_H
 
 #include "../yvalve/gds_proto.h"
 
@@ -65,4 +65,4 @@ namespace DtorException {
 	}
 }
 
-#endif // JRD_GDSASSERT_H
+#endif // COMMON_GDSASSERT_H

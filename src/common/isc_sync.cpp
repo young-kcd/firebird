@@ -43,22 +43,22 @@
 #include <string.h>
 
 #ifdef SOLARIS
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #endif
 
 #ifdef HPUX
 #include <sys/pstat.h>
 #endif
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/os/os_utils.h"
 #include "../common/isc_s_proto.h"
-#include "../jrd/file_params.h"
-#include "../jrd/gdsassert.h"
+#include "../common/file_params.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"

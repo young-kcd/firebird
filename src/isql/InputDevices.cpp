@@ -34,7 +34,7 @@
 #include <unistd.h>
 #endif
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/utils_proto.h"
 #include "InputDevices.h"
 

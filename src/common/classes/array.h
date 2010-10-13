@@ -27,7 +27,7 @@
 #ifndef CLASSES_ARRAY_H
 #define CLASSES_ARRAY_H
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include <string.h>
 #include "../common/classes/vector.h"
 #include "../common/classes/alloc.h"

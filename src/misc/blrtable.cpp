@@ -27,7 +27,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 #define NODE(type, name, keyword) type,
 enum {

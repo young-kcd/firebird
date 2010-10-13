@@ -29,9 +29,9 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <errno.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/thd.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/semaphore.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"

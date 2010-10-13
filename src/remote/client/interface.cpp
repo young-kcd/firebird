@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../remote/remote.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/jrd_proto.h"
 #include <stdarg.h>
 

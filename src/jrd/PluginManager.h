@@ -24,7 +24,7 @@
 #define JRD_PLUGIN_MANAGER_H
 
 #include "FirebirdPluginApi.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/os/mod_loader.h"
 #include "../common/classes/array.h"
 #include "../common/classes/auto.h"

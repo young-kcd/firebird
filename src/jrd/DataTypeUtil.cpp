@@ -25,7 +25,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"
@@ -34,7 +34,7 @@
 #include "../jrd/intl.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 using namespace Firebird;
 

@@ -33,7 +33,7 @@
 
 
 #include "firebird.h"
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 
 #ifdef HAVE_MATH_H
 #include <math.h>

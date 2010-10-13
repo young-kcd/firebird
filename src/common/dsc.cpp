@@ -26,12 +26,12 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/dsc_proto.h"
 
 

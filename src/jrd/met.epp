@@ -40,7 +40,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdarg.h>
 
 #include "../jrd/ibase.h"
@@ -65,7 +65,7 @@
 #include "../jrd/flu.h"
 #include "../jrd/blob_filter.h"
 #include "../intl/charsets.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dfw_proto.h"

@@ -26,7 +26,7 @@
  */
 
 #include "../../include/firebird.h"
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 
 #if defined(WIN_NT)
 // minimum win32 version: win98 / winnt4 SP3

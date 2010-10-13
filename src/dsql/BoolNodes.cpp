@@ -19,7 +19,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/classes/VaryStr.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/node.h"

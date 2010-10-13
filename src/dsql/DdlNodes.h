@@ -23,7 +23,7 @@
 #ifndef DSQL_DDL_NODES_H
 #define DSQL_DDL_NODES_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../jrd/dyn.h"
 #include "../jrd/msg_encode.h"

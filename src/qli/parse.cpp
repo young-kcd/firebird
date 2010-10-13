@@ -37,7 +37,7 @@
 #include "../qli/mov_proto.h"
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/constants.h"
 
 using MsgFormat::SafeArg;

@@ -50,7 +50,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/os/divorce.h"
 #include "../common/classes/semaphore.h"
 

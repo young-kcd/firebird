@@ -22,9 +22,9 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"

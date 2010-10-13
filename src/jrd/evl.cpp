@@ -63,7 +63,7 @@
 #include "firebird.h"
 #include <string.h>
 #include <math.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"
@@ -84,7 +84,7 @@
 #include "../jrd/sort.h"
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/VaryStr.h"

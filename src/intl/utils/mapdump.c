@@ -18,7 +18,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 #include "cs_w1254.h"
 

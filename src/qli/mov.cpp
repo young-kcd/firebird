@@ -29,7 +29,7 @@
 #include "../jrd/intl.h"
 #include "../qli/err_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../qli/mov_proto.h"
 #include "../common/utils_proto.h"
 

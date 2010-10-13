@@ -27,7 +27,7 @@
 #include ssdef
 #include lckdef
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/vmslo_proto.h"

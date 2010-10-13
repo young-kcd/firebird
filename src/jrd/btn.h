@@ -30,7 +30,7 @@
 #include "firebird.h"			// needed for get_long
 #include "memory_routines.h"	// needed for get_long
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ods.h"
 #include "../common/classes/array.h"
 

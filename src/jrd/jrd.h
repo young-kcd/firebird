@@ -31,8 +31,8 @@
 #ifndef JRD_JRD_H
 #define JRD_JRD_H
 
-#include "../jrd/gdsassert.h"
-#include "../jrd/common.h"
+#include "../common/gdsassert.h"
+#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/btn.h"
 #include "../jrd/jrd_proto.h"

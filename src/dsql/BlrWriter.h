@@ -21,7 +21,7 @@
 #ifndef DSQL_BLR_WRITER_H
 #define DSQL_BLR_WRITER_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"

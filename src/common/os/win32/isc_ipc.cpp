@@ -40,7 +40,7 @@
 #include "firebird.h"
 #include "../../../common/classes/init.h"
 #include "../../../common/utils_proto.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"

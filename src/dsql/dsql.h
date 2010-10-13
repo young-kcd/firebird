@@ -34,7 +34,7 @@
 #ifndef DSQL_DSQL_H
 #define DSQL_DSQL_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Database.h"

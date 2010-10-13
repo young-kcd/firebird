@@ -31,7 +31,7 @@
 
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include "../common/classes/alloc.h"
 #include <errno.h>
@@ -45,7 +45,7 @@
 #include "../jrd/svc.h"
 #include "../jrd/license.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../utilities/gstat/ppg_proto.h"
 #include "../utilities/gstat/dbaswi.h"
 #include "../yvalve/gds_proto.h"

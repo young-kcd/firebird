@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  */
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 const char BLANK				= ' ';
 const int FILE_IS_FULL			= -9;

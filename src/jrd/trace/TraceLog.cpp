@@ -37,7 +37,7 @@
 #include <sys/stat.h>
 #include "../../common/StatusArg.h"
 #include "../../common/classes/TempFile.h"
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 #include "../../common/isc_proto.h"
 #include "../../common/isc_s_proto.h"
 #include "../../common/os/path_utils.h"

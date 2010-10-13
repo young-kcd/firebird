@@ -18,7 +18,7 @@
  */
 #include "firebird.h"
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 DATABASE DB = "msg.fdb";
 

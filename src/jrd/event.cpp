@@ -27,13 +27,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "gen/iberror.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/event.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/event_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"

@@ -30,12 +30,12 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <limits.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../yvalve/perf.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/perf_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #if defined(TIME_WITH_SYS_TIME)
 #include <sys/time.h>

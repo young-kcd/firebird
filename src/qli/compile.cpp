@@ -34,7 +34,7 @@
 #include "../qli/forma_proto.h"
 #include "../qli/meta_proto.h"
 #include "../common/dsc_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/align.h"
 
 const USHORT PROMPT_LENGTH	= 80;

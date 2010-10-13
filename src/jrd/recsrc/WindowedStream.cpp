@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../dsql/Nodes.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/opt_proto.h"

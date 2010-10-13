@@ -24,7 +24,7 @@
 #define JRD_PREPARED_STATEMENT_H
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/intl.h"
 #include "../common/classes/alloc.h"

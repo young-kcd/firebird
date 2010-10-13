@@ -34,7 +34,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/isc_s_proto.h"
 #include "../common/isc_s_proto.h"
 #include "../lock/lock_proto.h"

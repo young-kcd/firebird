@@ -25,7 +25,7 @@
 #include "iberror.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../common/isc_proto.h"

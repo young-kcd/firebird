@@ -27,7 +27,7 @@
 #include "firebird.h"			// needed for get_long
 #include "memory_routines.h"	// needed for get_long
 
-#include "../jrd/common.h"		// needed for SINT64
+#include "../common/common.h"		// needed for SINT64
 #include "../jrd/ods.h"
 #include "../jrd/btn.h"
 

@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/rpb_chain.h"
 
 using namespace Jrd;

@@ -22,13 +22,13 @@
 
 #include "firebird.h"
 #include "fb_types.h"
-#include "../common.h"
+#include "../common/common.h"
 #include "../../include/fb_blk.h"
 #include "fb_exception.h"
 #include "iberror.h"
 
 #include "../align.h"
-#include "../common//dsc.h"
+#include "../common/dsc.h"
 #include "../exe.h"
 #include "IscDS.h"
 #include "../tra.h"

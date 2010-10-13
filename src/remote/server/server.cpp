@@ -29,15 +29,15 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../remote/remote.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/license.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"

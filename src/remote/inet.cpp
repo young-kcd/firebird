@@ -48,8 +48,8 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
-#include "../jrd/file_params.h"
+#include "../common/common.h"
+#include "../common/file_params.h"
 #include <stdarg.h>
 
 #include "../common/classes/timestamp.h"

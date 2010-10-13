@@ -28,7 +28,7 @@
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
 #include "../jrd/align.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../remote/parse_proto.h"
 
 #if !defined(DEV_BUILD) || (defined(DEV_BUILD) && defined(WIN_NT))

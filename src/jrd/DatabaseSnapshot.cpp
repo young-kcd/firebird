@@ -26,7 +26,7 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/locks.h"
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/cch.h"
 #include "../jrd/ini.h"

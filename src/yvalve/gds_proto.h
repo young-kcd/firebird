@@ -27,7 +27,7 @@
 #ifndef JRD_GDS_PROTO_H
 #define JRD_GDS_PROTO_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 const SSHORT IB_PREFIX_TYPE			= 0;
 const SSHORT IB_PREFIX_LOCK_TYPE	= 1;

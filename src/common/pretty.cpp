@@ -30,7 +30,7 @@
 #include "firebird.h"
 #include "dyn_consts.h"
 #include <stdio.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../jrd/constants.h"

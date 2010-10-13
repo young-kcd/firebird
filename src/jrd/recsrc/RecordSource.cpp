@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"

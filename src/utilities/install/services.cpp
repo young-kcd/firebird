@@ -29,7 +29,7 @@
 #include <windows.h>
 #include <ntsecapi.h>
 #include <aclapi.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../utilities/install/install_nt.h"
 #include "../utilities/install/servi_proto.h"
 #include "../utilities/install/registry.h"

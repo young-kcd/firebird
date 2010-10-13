@@ -23,7 +23,7 @@
 #include "dyn_consts.h"
 #include "gen/iberror.h"
 #include "../dsql/BlrWriter.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/errd_proto.h"
 

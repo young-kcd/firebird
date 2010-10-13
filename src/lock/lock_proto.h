@@ -51,8 +51,8 @@
 #include <sys/sem.h>
 #endif
 
-#include "../jrd/common.h"
-#include "../jrd/file_params.h"
+#include "../common/common.h"
+#include "../common/file_params.h"
 #include "../jrd/que.h"
 
 typedef FB_UINT64 LOCK_OWNER_T; // Data type for the Owner ID

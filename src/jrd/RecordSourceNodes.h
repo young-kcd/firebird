@@ -21,7 +21,7 @@
 #ifndef JRD_RECORD_SOURCE_NODES_H
 #define JRD_RECORD_SOURCE_NODES_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"

@@ -25,8 +25,8 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
-#include "../jrd/gdsassert.h"
+#include "../common/common.h"
+#include "../common/gdsassert.h"
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>

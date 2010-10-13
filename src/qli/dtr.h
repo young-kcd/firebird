@@ -24,7 +24,7 @@
 #ifndef QLI_DTR_H
 #define QLI_DTR_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/dsc.h"
 #include "../jrd/constants.h"
 

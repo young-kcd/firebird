@@ -26,7 +26,7 @@
  */
 
 #include "firebird.h"
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 #include "../../common/classes/auto.h"
 #include "../../common/utils_proto.h"
 #include "../../jrd/trace/TraceManager.h"

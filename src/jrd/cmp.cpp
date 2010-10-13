@@ -42,7 +42,7 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>				// abort
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
@@ -59,7 +59,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/sort.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/cmp_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"

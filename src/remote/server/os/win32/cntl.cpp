@@ -23,7 +23,7 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../remote/remote.h"
 #include "../common/ThreadStart.h"
 #include "../utilities/install/install_nt.h"

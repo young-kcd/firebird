@@ -33,7 +33,7 @@
 #endif
 
 #include <stdio.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"

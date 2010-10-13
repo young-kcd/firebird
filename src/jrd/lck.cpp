@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
@@ -36,7 +36,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../lock/lock_proto.h"
 #include "../jrd/Attachment.h"
 

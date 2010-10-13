@@ -26,7 +26,7 @@
 #include <setjmp.h>
 
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../yvalve/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"

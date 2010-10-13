@@ -29,7 +29,7 @@
 #ifndef REMOTE_XDR_H
 #define REMOTE_XDR_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 #include <sys/types.h>
 #ifdef WIN_NT

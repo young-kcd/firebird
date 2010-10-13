@@ -28,7 +28,7 @@
 
 #include "firebird.h"
 
-#include "../../jrd/common.h"
+#include "../../common/common.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceObjects.h"
 #include "../../common/os/path_utils.h"

@@ -29,7 +29,7 @@
  */
 
 #include "firebird.h"
-#include "common.h"
+#include "../common/common.h"
 #include "jrd.h"
 #include "nbak.h"
 #include "ods.h"

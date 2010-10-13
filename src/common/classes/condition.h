@@ -28,7 +28,7 @@
 #ifndef CLASSES_CONDITION_H
 #define CLASSES_CONDITION_H
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 #ifdef WIN_NT
 

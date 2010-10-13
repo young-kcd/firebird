@@ -23,7 +23,7 @@
 #ifndef DSQL_BOOL_NODES_H
 #define DSQL_BOOL_NODES_H
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
 

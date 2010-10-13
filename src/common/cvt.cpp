@@ -36,13 +36,13 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "gen/iberror.h"
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/timestamp.h"
 #include "../common/cvt.h"
 #include "../jrd/intl.h"

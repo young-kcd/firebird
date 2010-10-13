@@ -45,7 +45,7 @@
  */
 
 
-//#include "../jrd/common.h"
+//#include "../common/common.h"
 
 
 // Switch handling constants.  Note that IN_SW_COUNT must always be

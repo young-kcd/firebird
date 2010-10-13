@@ -35,11 +35,11 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
 #include <stdarg.h>
@@ -106,7 +106,7 @@
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/vio_proto.h"
-#include "../jrd/file_params.h"
+#include "../common/file_params.h"
 #include "../jrd/event_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/flags.h"

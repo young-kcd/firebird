@@ -29,11 +29,11 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/msg.h"
 #include "../yvalve/gds_proto.h"
 
@@ -58,7 +58,7 @@ static int global_file;
 
 // keep the LOCALE_PAT names in sync with file_params.h
 // CVC: It's #define MSG_FILE_LANG	"intl/%.8s.msg"
-// in jrd/file_params.h, it seems we are already out of sync!
+// in common/file_params.h, it seems we are already out of sync!
 
 #ifdef WIN_NT
 #include <io.h> // open, lseek, write, close

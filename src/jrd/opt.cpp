@@ -42,7 +42,7 @@
  */
 
 #include "firebird.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
@@ -58,7 +58,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ini.h"
 #include "../jrd/intl.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"

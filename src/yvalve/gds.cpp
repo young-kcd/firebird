@@ -40,9 +40,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../jrd/common.h"
-#include "../jrd/gdsassert.h"
-#include "../jrd/file_params.h"
+#include "../common/common.h"
+#include "../common/gdsassert.h"
+#include "../common/file_params.h"
 #include "../jrd/msg_encode.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/os/path_utils.h"

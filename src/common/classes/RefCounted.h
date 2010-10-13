@@ -26,7 +26,7 @@
 #define COMMON_REF_COUNTED_H
 
 #include "../common/classes/fb_atomic.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 namespace Firebird
 {

@@ -40,7 +40,7 @@
 #include "../burp/canon_proto.h"
 #include "../common/sdl_proto.h"
 #include "../common/xdr_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../include/fb_types.h"
 
 // TMN: Currently we can't include remote/remote.h because we'd get

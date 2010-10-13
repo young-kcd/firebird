@@ -43,7 +43,7 @@
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include <fcntl.h>
 #include <sys/types.h>
 

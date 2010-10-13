@@ -28,11 +28,11 @@
 #include <string.h>
 //#include "../remote/remote.h"
 #include "../common/xdr.h"
-#include "../jrd/common.h"
+#include "../common/common.h"
 //#include "../remote/proto_proto.h"
 #include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 
 inline UCHAR* XDR_ALLOC(ULONG size)
 {

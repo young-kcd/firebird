@@ -30,7 +30,7 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include <string.h>
 
 namespace Firebird {

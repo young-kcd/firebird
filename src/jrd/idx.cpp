@@ -31,7 +31,7 @@
 
 #include "firebird.h"
 #include <string.h>
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/intl.h"
@@ -48,7 +48,7 @@
 #include "../jrd/lck.h"
 #include "../jrd/rse.h"
 #include "../jrd/cch.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"

@@ -6,9 +6,9 @@
 */
 #include "firebird.h"
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 #include "../common/enc_proto.h"
-#include "../jrd/gdsassert.h"
+#include "../common/gdsassert.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"

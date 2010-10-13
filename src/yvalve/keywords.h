@@ -25,7 +25,7 @@
  * MOD 29-Jun-2002
  */
 
-#include "../jrd/common.h"
+#include "../common/common.h"
 
 struct tok
 {

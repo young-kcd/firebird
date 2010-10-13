@@ -26,8 +26,8 @@
 #include <stdlib.h>
 #include "../jrd/ibase.h"
 #include "../remote/remote.h"
-#include "../jrd/file_params.h"
-#include "../jrd/gdsassert.h"
+#include "../common/file_params.h"
+#include "../common/gdsassert.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../common/xdr_proto.h"
