@@ -379,9 +379,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 					continue;
 				}
 				if (!strcmp(access->acc_type, object_column) &&
-					(MET_lookup_field(tdbb, owner_relation, access->acc_name,
-						&access->acc_security_name) >= 0 ||
-					 MET_relation_default_class(tdbb, owner_relation->rel_name, access->acc_security_name)))
+					(owner_relation->rel_name == access->acc_r_name))
 				{
 					continue;
 				}
@@ -2293,12 +2291,10 @@ void CMP_post_access(thread_db* tdbb,
 
 	size_t i;
 
-	if (csb->csb_access.find(access, i))
+	if (!csb->csb_access.find(access, i))
 	{
-		return;
+		csb->csb_access.insert(i, access);
 	}
-
-	csb->csb_access.insert(i, access);
 }
 
 
@@ -6119,7 +6115,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 
 	// this request must have EXECUTE permission on the stored procedure
 	CMP_post_access(tdbb, csb, prc_sec_name, 0, SCL_execute, object_procedure,
-					procedure->prc_name.c_str());
+					procedure->prc_name);
 
 	// Add the procedure to list of external objects accessed
 	ExternalAccess temp(procedure->prc_id);

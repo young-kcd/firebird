@@ -49,17 +49,8 @@ Jrd::jrd_nod* CMP_pass2(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jr
 	Jrd::jrd_nod* parent);
 
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
-					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&, const Firebird::MetaName&);
-inline void CMP_post_access(Jrd::thread_db* tdbb,
-							Jrd::CompilerScratch* csb,
-							const Firebird::MetaName& security_name,
-							SLONG view_id,
-							Jrd::SecurityClass::flags_t mask,
-							const TEXT* type_name,
-							const Firebird::MetaName& name)
-{
-	CMP_post_access(tdbb, csb, security_name, view_id, mask, type_name, name, "");
-}
+					 Jrd::SecurityClass::flags_t, const TEXT*,
+					 const Firebird::MetaName&, const Firebird::MetaName& = "");
 
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);

@@ -147,6 +147,7 @@ public:
 	~UserId();
 };
 
+const char* const object_database	= "DATABASE";
 const char* const object_table		= "TABLE";
 const char* const object_procedure	= "PROCEDURE";
 const char* const object_column		= "COLUMN";

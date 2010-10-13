@@ -3997,7 +3997,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
 		if (relation)
 		{
-			const int id = MET_lookup_field(tdbb, relation, work->dfw_name, 0);
+			const int id = MET_lookup_field(tdbb, relation, work->dfw_name);
 			if (id >= 0)
 			{
 				vec<jrd_fld*>* vector = relation->rel_fields;
