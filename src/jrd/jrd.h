@@ -50,6 +50,7 @@
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
+#include "../jrd/scl.h"
 
 #ifdef DEV_BUILD
 #define DEBUG                   if (debug) DBG_supervisor(debug);
@@ -542,7 +543,7 @@ public:
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	SLONG		att_event_session;			// Event session id, if any
 	SecurityClass*	att_security_class;		// security class for database
-	SecurityClass*	att_security_classes;	// security classes
+	SecurityClassList*	att_security_classes;	// security classes
 	vcl*		att_counts[DBB_max_count];
 	RuntimeStatistics	att_stats;
 	ULONG		att_flags;					// Flags describing the state of the attachment

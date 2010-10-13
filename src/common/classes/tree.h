@@ -109,6 +109,10 @@ public:
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
 	{ }
 
+	explicit BePlusTree(Allocator& _pool)
+		: pool(&_pool), level(0), root(NULL), defaultAccessor(this)
+	{ }
+
 	BePlusTree(Allocator *_pool, const BePlusTree& from)
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
 	{

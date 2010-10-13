@@ -7201,16 +7201,10 @@ static void purge_attachment(thread_db*		tdbb,
 			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);
 			}
-			
-			SecurityClass* sec_class;
-			while ( (sec_class = attachment->att_security_classes) ) {
-				SCL_release(sec_class);
-			}
-			
-			UserId* user = attachment->att_user;
-			if (user) {
-				delete user;
-			}
+
+			SCL_release_all(attachment->att_security_classes);
+
+			delete attachment->att_user;
 			
 			delete attachment;
 		}

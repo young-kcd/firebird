@@ -30,14 +30,30 @@ const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; /* used to read/write acl blob *
 
 /* Security class definition */
 
-class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
+class SecurityClass
 {
-    public:
-    typedef USHORT flags_t;
-	SecurityClass* scl_next;	/* Next security class in system */
-	flags_t scl_flags;			/* Access permissions */
-	TEXT scl_name[2];
+public:
+	typedef USHORT flags_t;
+
+	flags_t scl_flags;			// Access permissions
+	const Firebird::MetaName scl_name;
+
+	explicit SecurityClass(MemoryPool& pool, const Firebird::MetaName& name)
+		: scl_flags(0), scl_name(pool, name)
+	{}
+
+	static const Firebird::MetaName& generate(const void*, const SecurityClass* item)
+	{
+		return item->scl_name;
+	}
 };
+
+typedef Firebird::BePlusTree<
+	SecurityClass*,
+	Firebird::MetaName,
+	Firebird::MemoryPool,
+	SecurityClass
+> SecurityClassList;
 
 const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
 const SecurityClass::flags_t SCL_write			= 2;		/* Write access */

@@ -460,26 +460,23 @@ SecurityClass* SCL_get_class(const TEXT* par_string)
 
 	// Look for the class already known
 
-	SecurityClass* s_class;
-	for (s_class = attachment->att_security_classes;
-		 s_class;
-		 s_class = s_class->scl_next)
-	{
-		if (!strcmp(string.c_str(), s_class->scl_name)) {
-			return s_class;
-		}
-	}
+	SecurityClassList* list = attachment->att_security_classes;
+	if (list && list->locate(string))
+		return list->current();
 
 	// Class isn't known. So make up a new security class block.
 
-	s_class = FB_NEW_RPT(*dbb->dbb_permanent, string.length()) SecurityClass();
-	strcpy(s_class->scl_name, string.c_str());
+	MemoryPool& pool = *dbb->dbb_permanent;
+	SecurityClass* const s_class = FB_NEW(pool) SecurityClass(pool, string);
 	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
-		s_class->scl_next = attachment->att_security_classes;
-		attachment->att_security_classes = s_class;
+		if (!list) {
+			attachment->att_security_classes = list = FB_NEW(pool) SecurityClassList(pool);
+		}
+
+		list->add(s_class);
 		return s_class;
 	}
 
@@ -760,38 +757,41 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 
 	// Class no long exists - get rid of it!
 
-	SCL_release(s_class);
+	SecurityClassList* list = tdbb->getAttachment()->att_security_classes;
+	if (list && list->locate(string))
+	{
+		list->fastRemove();
+		delete s_class;
+	}
 
 	return NULL;
 }
 
 
-void SCL_release(SecurityClass* s_class)
+void SCL_release_all(SecurityClassList*& list)
 {
 /**************************************
  *
- *	S C L _ r e l e a s e
+ *	S C L _ r e l e a s e _ a l l
  *
  **************************************
  *
  * Functional description
- *	Release an unneeded and unloved security class.
+ *	Release all security classes.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* attachment = tdbb->getAttachment();
+	if (!list)
+		return;
 
-	for (SecurityClass** next = &attachment->att_security_classes; *next;
-		 next = &(*next)->scl_next)
+	if (list->getFirst())
 	{
-		if (*next == s_class)
-		{
-			*next = s_class->scl_next;
-			break;
-		}
+		do {
+			delete list->current();
+		} while (list->getNext());
 	}
 
-	delete s_class;
+	delete list;
+	list = NULL;
 }
 
 
@@ -963,7 +963,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 	jrd_req* request = CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
-		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name
+		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name.c_str()
 
         if (!REQUEST(irq_l_security))
 			REQUEST(irq_l_security) = request;

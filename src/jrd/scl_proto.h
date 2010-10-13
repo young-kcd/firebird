@@ -43,7 +43,7 @@ Jrd::SecurityClass* SCL_get_class(const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const Jrd::UserId& tempId, Jrd::thread_db*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
-void SCL_release(Jrd::SecurityClass*);
+void SCL_release_all(Jrd::SecurityClassList*&);
 
 namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;
