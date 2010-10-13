@@ -51,15 +51,18 @@ addLibs() {
 	libTdir=$3
 	libTarget=$libTdir/$libScript
 
-	rm -f $libTarget
-	touch $libTarget
-	for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh linuxLibrary.sh
-	do
-		echo "# $i" >>$libTarget
-		cat $libSdir/$i >>$libTarget
-		echo "" >>$libTarget	# avoid missing linefeed
-	done
-	cat $libSdir/$libScript >>$libTarget
+	if [ -f $libSdir/$libScript ]
+	then
+		rm -f $libTarget
+		touch $libTarget
+		for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh linuxLibrary.sh
+		do
+			echo "# $i" >>$libTarget
+			cat $libSdir/$i >>$libTarget
+			echo "" >>$libTarget	# avoid missing linefeed
+		done
+		cat $libSdir/$libScript >>$libTarget
+	fi
 }
 
 

@@ -1225,10 +1225,14 @@ gen/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postun
 gen/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
 gen/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
 gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
-gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
 gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
 gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in],
 [chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+
+if test $FIREBIRD_ARCH_TYPE = classic; then
+	AC_CONFIG_FILES([gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in],
+	[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+fi
 
 dnl: Platform Specific Files
 
