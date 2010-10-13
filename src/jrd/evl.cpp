@@ -410,42 +410,37 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
 				// AP: for fields that are missing in original format use record's one.
-				if (compileFormat && record->rec_format->fmt_version != compileFormat->fmt_version)
+				if (compileFormat &&
+					record->rec_format->fmt_version != compileFormat->fmt_version &&
+					id < compileFormat->fmt_desc.getCount() &&
+					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
 				{
-					if (record->rec_format->fmt_version > compileFormat->fmt_version)
-					{
-						ERR_post(Arg::Gds(isc_request_outdated) << rpb.rpb_relation->rel_name);
-					}
+					dsc desc = impure->vlu_desc;
+					impure->vlu_desc = compileFormat->fmt_desc[id];
 
-					if (!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
+					if (impure->vlu_desc.isText())
 					{
-						dsc desc = impure->vlu_desc;
-						impure->vlu_desc = compileFormat->fmt_desc[id];
-
-						if (impure->vlu_desc.isText())
+						// Allocate a string block of sufficient size.
+						VaryingString* string = impure->vlu_string;
+						if (string && string->str_length < impure->vlu_desc.dsc_length)
 						{
-							// Allocate a string block of sufficient size.
-							VaryingString* string = impure->vlu_string;
-							if (string && string->str_length < impure->vlu_desc.dsc_length)
-							{
-								delete string;
-								string = NULL;
-							}
-
-							if (!string)
-							{
-								string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
-									impure->vlu_desc.dsc_length) VaryingString();
-								string->str_length = impure->vlu_desc.dsc_length;
-							}
-
-							impure->vlu_desc.dsc_address = string->str_data;
+							delete string;
+							string = NULL;
 						}
-						else
-							impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
 
-						MOV_move(tdbb, &desc, &impure->vlu_desc);
+						if (!string)
+						{
+							string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
+								impure->vlu_desc.dsc_length) VaryingString();
+							string->str_length = impure->vlu_desc.dsc_length;
+						}
+
+						impure->vlu_desc.dsc_address = string->str_data;
 					}
+					else
+						impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
+
+					MOV_move(tdbb, &desc, &impure->vlu_desc);
 				}
 			}
 
