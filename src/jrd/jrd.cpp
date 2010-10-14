@@ -3649,10 +3649,10 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
  *	database.
  *
  **************************************/
+	static volatile bool unloading = false;
+
 	try
 	{
-		static volatile bool unloading = false;
-
 		if (unloading)
 		{
 			return FB_SUCCESS;
@@ -3665,7 +3665,6 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
 		{
 			return FB_SUCCESS;
 		}
-		unloading = true;
 
 		ThreadContextHolder tdbb;
 
@@ -3694,9 +3693,12 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
 		{
 			shutdown_thread(NULL);
 		}
+		unloading = true;
 	}
 	catch (const Exception& ex)
 	{
+		// repeat it here too - FixMe to special class setting flag in dtor
+		unloading = true;
 	 	ISC_STATUS_ARRAY status;
 		ex.stuff_exception(status);
 		gds__log_status(NULL, status);
