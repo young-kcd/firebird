@@ -10,6 +10,7 @@ void	GSEC_error_redirect(const ISC_STATUS*, USHORT);
 void	GSEC_error(USHORT);
 void	GSEC_exit();
 void	GSEC_print(USHORT, const char* str = NULL);
+void	GSEC_message(USHORT, const char* str = NULL);
 void	GSEC_print_partial(USHORT);
 void	GSEC_diag(USHORT);
 

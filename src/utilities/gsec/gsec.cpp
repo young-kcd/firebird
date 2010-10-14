@@ -61,7 +61,7 @@ using MsgFormat::SafeArg;
 //const int MAXARGS	= 20;		// max number of args allowed on command line
 const int MAXSTUFF	= 1000;		// longest interactive command line
 
-static void util_output(const SCHAR*, ...);
+static void util_output(bool error, const SCHAR*, ...);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
@@ -429,13 +429,13 @@ static void data_print(void* /*arg*/, const internal_user_data* data, bool first
 	{
 		if (first)
 		{
-			GSEC_print(GsecMsg26);
-			GSEC_print(GsecMsg27);
+			GSEC_message(GsecMsg26);
+			GSEC_message(GsecMsg27);
 			// msg26: "    user name                    uid   gid admin     full name"
 			// msg27: "-------------------------------------------------------------------------------------------------"
 		}
 
-		util_output("%-*.*s %5d %5d %-5.5s     %s %s %s\n",
+		util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
 					USERNAME_LENGTH, USERNAME_LENGTH, data->user_name,
 					data->uid, data->gid, data->admin ? "admin" : "",
 					data->first_name, data->middle_name, data->last_name);
@@ -913,7 +913,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				{
 					TEXT msg[MSG_LENGTH];
 					msg_get(GsecMsg39, msg);
-					util_output("%s %s\n", msg, GDS_VERSION);
+					util_output(true, "%s %s\n", msg, GDS_VERSION);
 				}
 				tdsec->tsec_sw_version = true;
 				break;
@@ -985,177 +985,177 @@ static void printhelp()
  *
  **************************************/
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg45);
 	// gsec utility - maintains user password database
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg46);
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print_partial(GsecMsg82);
 	GSEC_print(GsecMsg47);
 	// gsec [ <options> ... ] -<command> [ <parameter> ... ]
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg48);
 	// interactive usage:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg2);
 	GSEC_print(GsecMsg82);
 	// gsec [ <options> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print_partial(GsecMsg1);
-	util_output("\n%s", "     ");
+	util_output(true, "\n%s", "     ");
 	GSEC_print(GsecMsg47);
 	// GSEC> <command> [ <parameter> ... ]
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg83);
 	// available options:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg84);
 	// -user <database administrator name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg85);
 	// -password <database administrator password>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg95);
 	// -fetch_password <fetch database administrator password from file>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg86);
 	// -role <database administrator SQL role name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg91);
 	// -trusted (use trusted authentication)
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg87);
 	// -database <database to manage>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg88);
 	// -nz
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg49);
 	// available commands:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg50);
 	// adding a new user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg51);
 	// add <name> [ <parameter> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg52);
 	// deleting a current user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg53);
 	// delete <name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg54);
 	// displaying all users:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg55);
 	// display
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg56);
 	// displaying one user:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg57);
 	// display <name>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg58);
 	// modifying a user's parameters:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg59);
 	// modify <name> <parameter> [ <parameter> ... ]
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg98);
 	// changing admins mapping to SYSDBA:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg100);
 	// -ma(pping) {set|drop}
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg60);
 	// help:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg61);
 	// ? (interactive only)
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg62);
 	// help
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg89);
 	// displaying version number:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg90);
 	// z (interactive only)
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg63);
 	// quit interactive session:
 
-	util_output("%s", "       ");
+	util_output(true, "%s", "       ");
 	GSEC_print(GsecMsg64);
 	// quit (interactive only)
 
-	util_output("\n%s", "   ");
+	util_output(true, "\n%s", "   ");
 	GSEC_print(GsecMsg65);
 	// available parameters:
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg66);
 	// -pw <password>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg67);
 	// -uid <uid>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg68);
 	// -gid <gid>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg71);
 	// -fname <firstname>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg72);
 	// -mname <middlename>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg73);
 	// -lname <lastname>
 
-	util_output("%s", "     ");
+	util_output(true, "%s", "     ");
 	GSEC_print(GsecMsg102);
 	// -adm(in) {yes|no}
-	util_output("\n", NULL);
+	util_output(true, "\n", NULL);
 }
 
 
@@ -1250,7 +1250,7 @@ void GSEC_print_status(const ISC_STATUS* status_vector)
 	}
 }
 
-static void util_output(const SCHAR* format, ...)
+static void util_output(bool error, const SCHAR* format, ...)
 {
 /**************************************
  *
@@ -1271,7 +1271,14 @@ static void util_output(const SCHAR* format, ...)
 		Firebird::string buf;
 		buf.vprintf(format, arglist);
 
-		tdsec->utilSvc->outputError(buf.c_str());
+		if (error)
+		{
+			tdsec->utilSvc->outputError(buf.c_str());
+		}
+		else
+		{
+			tdsec->utilSvc->outputVerbose(buf.c_str());
+		}
 	}
 	va_end(arglist);
 }
@@ -1369,7 +1376,29 @@ void GSEC_print(USHORT number, const char* str)
 		arg << str;
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, arg);
-	util_output("%s\n", buffer);
+	util_output(true, "%s\n", buffer);
+}
+
+void GSEC_message(USHORT number, const char* str)
+{
+/**************************************
+ *
+ *	G S E C _ p r i n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Retrieve a message from the error file, format it, and print it.
+ *
+ **************************************/
+	TEXT buffer[256];
+
+	SafeArg arg;
+	if (str)
+		arg << str;
+
+	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, arg);
+	util_output(false, "%s\n", buffer);
 }
 
 void GSEC_print_partial(USHORT number)
@@ -1388,7 +1417,7 @@ void GSEC_print_partial(USHORT number)
 	TEXT buffer[256];
 
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, dummy);
-	util_output("%s ", buffer);
+	util_output(true, "%s ", buffer);
 }
 
 
