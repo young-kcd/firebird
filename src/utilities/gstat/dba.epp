@@ -285,6 +285,34 @@ void inline dba_exit(int code, tdba* tddba)
 	Firebird::LongJump::raise();
 }
 
+namespace
+{
+// all this stuff gets activated ONLY in utility mode
+// therefore we can safely use static variables here
+
+bool shutdownRequested = false;
+
+int gstatShutdown(const int reason, const int, void*)
+{
+	if (reason == fb_shutrsn_signal)
+	{
+		shutdownRequested = true;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
+
+void checkForShutdown(tdba* tddba)
+{
+	if (shutdownRequested)
+	{
+		dba_exit(FINI_OK, tddba);
+	}
+}
+
+
+}
+
 const USHORT GSTAT_MSG_FAC	= 21;
 
 
@@ -813,6 +841,16 @@ int gstat(Firebird::UtilSvc* uSvc)
 	ON_ERROR
 		dba_exit(FINI_ERROR, tddba);
 	END_ERROR
+
+	if (!tddba->uSvc->isService())
+	{
+		// Now it's time to take care ourself about shutdown handling
+		if (fb_shutdown_callback(status_vector, gstatShutdown, fb_shut_confirmation, NULL))
+		{
+			dba_exit(FINI_ERROR, tddba);
+		}
+	}
+
 	// FINISH; error!
 	FINISH
 	ON_ERROR
@@ -823,6 +861,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	{
 		for (const dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 		{
+			checkForShutdown(tddba);
 			if (relation->rel_id == -1)
 			{
 				tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 44, SafeArg() << relation->rel_name);
@@ -838,6 +877,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	for (dba_rel* relation = tddba->relations; relation; relation = relation->rel_next)
 	{
+		checkForShutdown(tddba);
+
 		// This condition should never happen because relations not found cause an error before.
 		if (relation->rel_id == -1)
 		{
@@ -850,6 +891,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		}
 		for (dba_idx* index = relation->rel_indexes; index; index = index->idx_next)
 		{
+			checkForShutdown(tddba);
 			analyze_index(relation, index);
 		}
 	}
@@ -1010,7 +1052,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		SCHAR s[1024];
 		if (fb_interpret(s, sizeof(s), &vector))
 		{
-			tddba->uSvc->printf(true, "%s\n", s);
+			tddba->uSvc->printf(true, "\n%s\n", s);
 			s[0] = '-';
 			while (fb_interpret(s + 1, sizeof(s) - 1, &vector)) {
 				tddba->uSvc->printf(true, "%s\n", s);
