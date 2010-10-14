@@ -785,14 +785,12 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 
 	// Class no long exists - get rid of it!
 
-	const Firebird::MetaName m_string(string);
 	SecurityClassList* list = tdbb->getAttachment()->att_security_classes;
-	if (list && list->locate(m_string))
+	if (list && list->locate(string))
 	{
 		list->fastRemove();
 		delete s_class;
 	}
-
 
 	return NULL;
 }
