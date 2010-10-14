@@ -1,3 +1,366 @@
+ 2010-10-13 17:48  hvlad 
+   M src/yvalve/gds.cpp
+   M src/yvalve/why.cpp
+Corrections for new build system. Work in progress... 
+
+ 2010-10-13 13:35  alexpeshkoff 
+   M src/jrd/evl.cpp
+Temporary disable suggested by me solution for request format check - needs better checks, as is breaks CREATE DATABASE
+
+ 2010-10-13 10:39  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice_meta.epp
+   M src/alice/aliceswi.h
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/canonical.cpp
+   M src/burp/mvol.cpp
+   M src/burp/restore.epp
+   M src/burp/split/spit.cpp
+   M src/burp/split/spit.h
+   M src/common/ScanDir.cpp
+   M src/common/ThreadData.cpp
+   M src/common/ThreadStart.cpp
+   M src/common/call_service.cpp
+   M src/common/classes/DbImplementation.cpp
+   M src/common/classes/MsgPrint.cpp
+   M src/common/classes/PublicHandle.cpp
+   M src/common/classes/RefCounted.h
+   M src/common/classes/SafeArg.cpp
+   M src/common/classes/TempFile.cpp
+   M src/common/classes/UserBlob.cpp
+   M src/common/classes/alloc.cpp
+   M src/common/classes/array.h
+   M src/common/classes/condition.h
+   M src/common/classes/locks.cpp
+   M src/common/classes/locks.h
+   M src/common/classes/semaphore.h
+   M src/common/classes/timestamp.cpp
+   M src/common/classes/tree.h
+   M src/common/classes/vector.h
+   A src/common/common.h (from /firebird/trunk/src/jrd/common.h:51669)
+   M src/common/config/os/darwin/config_root.cpp
+   M src/common/cvt.cpp
+   M src/common/dsc.cpp
+   M src/common/enc.cpp
+   A src/common/file_params.h (from /firebird/trunk/src/jrd/file_params.h:51669)
+   A src/common/gdsassert.h (from /firebird/trunk/src/jrd/gdsassert.h:51669)
+   M src/common/isc.cpp
+   M src/common/isc_file.cpp
+   M src/common/isc_sync.cpp
+   M src/common/os/posix/divorce.cpp
+   M src/common/os/posix/isc_ipc.cpp
+   M src/common/os/posix/mod_loader.cpp
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/isc_ipc.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/common/pretty.cpp
+   M src/common/sdl.cpp
+   M src/common/thd.cpp
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/common/xdr.cpp
+   M src/common/xdr.h
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/dsql/PackageNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/dsql.h
+   M src/dsql/errd.cpp
+   M src/dsql/movd.cpp
+   M src/dsql/parse.y
+   M src/dsql/sym.h
+   M src/extlib/fbudf/stdafx.h
+   M src/extlib/ib_udf.h
+   M src/extlib/ib_util.cpp
+   M src/gpre/c_cxx.cpp
+   M src/gpre/exp.cpp
+   M src/gpre/gpre.h
+   M src/gpre/gpreswi.h
+   M src/gpre/int_cxx.cpp
+   M src/gpre/jrdmet.cpp
+   M src/gpre/languages/ada.cpp
+   M src/gpre/languages/cob.cpp
+   M src/gpre/languages/ftn.cpp
+   M src/gpre/languages/pas.cpp
+   M src/gpre/languages/rmc.cpp
+   M src/gpre/movg.cpp
+   M src/include/old_fb_blk.h
+   M src/intl/kanji.cpp
+   M src/intl/ldcommon.h
+   M src/intl/utils/mapdump.c
+   M src/intl/utils/mapgen4.c
+   M src/intl/utils/maptest.cpp
+   M src/iscguard/cntl_guard.cpp
+   M src/iscguard/iscguard.cpp
+   M src/isql/InputDevices.cpp
+   M src/isql/OptionsBase.cpp
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   M src/isql/iutils.cpp
+   M src/isql/show.epp
+   M src/jrd/Attachment.h
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/PluginManager.h
+   M src/jrd/PreparedStatement.h
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/ResultSet.h
+   M src/jrd/RuntimeStatistics.cpp
+   M src/jrd/TempSpace.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/ValueImpl.h
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/btn.cpp
+   M src/jrd/btn.h
+   M src/jrd/btr.cpp
+   M src/jrd/builtin.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   D src/jrd/common.h
+   M src/jrd/cvt.cpp
+   M src/jrd/cvt2.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/dyn.epp
+   M src/jrd/dyn_def.epp
+   M src/jrd/dyn_del.epp
+   M src/jrd/dyn_mod.epp
+   M src/jrd/dyn_util.epp
+   M src/jrd/err.cpp
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/execute_statement.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   D src/jrd/file_params.h
+   M src/jrd/filters.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/fun.epp
+   D src/jrd/gdsassert.h
+   M src/jrd/grant.epp
+   M src/jrd/idx.cpp
+   M src/jrd/inf.cpp
+   M src/jrd/ini.epp
+   M src/jrd/intl.cpp
+   M src/jrd/intl_builtin.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lck.cpp
+   M src/jrd/met.epp
+   M src/jrd/mov.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nodebug.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/ods.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/vms/vmsevent.cpp
+   M src/jrd/os/vms/vmslock.cpp
+   M src/jrd/os/win32/thd_priority.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/par.cpp
+   M src/jrd/pcmet.epp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/Cursor.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/FullOuterJoin.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/LockedStream.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/rlck.cpp
+   M src/jrd/rpb_chain.cpp
+   M src/jrd/rpb_chain.h
+   M src/jrd/scl.epp
+   M src/jrd/sdw.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/sort.cpp
+   M src/jrd/sort.h
+   M src/jrd/sqz.cpp
+   M src/jrd/status.cpp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/driver.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/misc/blrtable.cpp
+   M src/misc/codes.epp
+   M src/msgs/build_file.epp
+   M src/msgs/change_msgs.epp
+   M src/msgs/check_msgs.epp
+   M src/msgs/enter_msgs.epp
+   M src/msgs/include.epp
+   M src/msgs/load.epp
+   M src/msgs/modify_msgs.epp
+   M src/qli/compile.cpp
+   M src/qli/dtr.h
+   M src/qli/eval.cpp
+   M src/qli/exe.cpp
+   M src/qli/gener.cpp
+   M src/qli/lex.cpp
+   M src/qli/mov.cpp
+   M src/qli/parse.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/chop.cpp
+   M src/remote/server/os/win32/cntl.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/os/win32/window.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/analyse.cpp
+   M src/utilities/cache.cpp
+   M src/utilities/create_db.cpp
+   M src/utilities/drop.cpp
+   M src/utilities/fbcpl/stdafx.h
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsecswi.h
+   M src/utilities/gsec/security.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/dbaswi.h
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/guard/guard.cpp
+   M src/utilities/guard/util.cpp
+   M src/utilities/ibmgr/ibmgr.cpp
+   M src/utilities/ibmgr/ibmgrswi.h
+   M src/utilities/ibmgr/srvrmgr.cpp
+   M src/utilities/install/install.cpp
+   M src/utilities/install/install_client.cpp
+   M src/utilities/install/install_reg.cpp
+   M src/utilities/install/install_svc.cpp
+   M src/utilities/install/registry.cpp
+   M src/utilities/install/services.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbkswi.h
+   M src/utilities/ntrace/os/FileObject.h
+   M src/utilities/print_event.cpp
+   M src/utilities/print_pool.cpp
+   M src/utilities/rebuild/rebuild.cpp
+   M src/utilities/rebuild/rebuild.h
+   M src/utilities/relay.cpp
+   M src/utilities/run_service.cpp
+   M src/yvalve/alt.cpp
+   M src/yvalve/array.epp
+   M src/yvalve/blob.epp
+   M src/yvalve/gds.cpp
+   M src/yvalve/gds_proto.h
+   M src/yvalve/keywords.h
+   M src/yvalve/perf.cpp
+   M src/yvalve/preparse.cpp
+   M src/yvalve/user_dsql.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Moved some more .h-files to common from jrd as Vlad suggested
+
+ 2010-10-13 09:39  alexpeshkoff 
+   D src/install
+cleanup
+
+ 2010-10-13 09:37  alexpeshkoff 
+   A builds/install/arch-specific/solx86gcc (from /firebird/trunk/src/install/arch-specific/solx86gcc:51665)
+   D src/install/arch-specific/solx86gcc
+cleanup
+
+ 2010-10-13 09:34  alexpeshkoff 
+   D src/config
+cleanup
+
+ 2010-10-13 09:23  hvlad 
+   M src/common/ThreadStart.cpp
+   M src/common/config/os/win32/config_root.cpp
+   M src/common/isc_sync.cpp
+Corrections for new build system. Work in progress... 
+
+ 2010-10-13 09:15  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/evl.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Full fix for CORE-3024
+
+ 2010-10-13 07:42  alexpeshkoff 
+   M configure.in
+Syntax
+
+ 2010-10-13 05:50  alexpeshkoff 
+   A src/jrd/RecordSourceNodes.cpp
+   A src/jrd/RecordSourceNodes.h
+More lost files
+
  2010-10-12 17:40  asfernandes 
    M builds/posix/make.defaults
    M src/auth/SecurityDatabase/jrd_pwd.h
