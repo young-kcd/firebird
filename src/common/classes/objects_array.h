@@ -414,7 +414,7 @@ namespace Firebird
 
 		public:
 			const_iterator() : ptr(NULL) { }
-			const_iterator(const const_iterator& it) : ptr(ptr) { }
+			const_iterator(const const_iterator& it) : ptr(it.ptr) { }
 			explicit const_iterator(const PointersArray& a) : ptr(a.pointers.begin()) { }
 
 			const_iterator& operator++()
@@ -491,7 +491,7 @@ namespace Firebird
 
 		public:
 			iterator() : ptr(NULL) { }
-			iterator(const iterator& it) : ptr(ptr) { }
+			iterator(const iterator& it) : ptr(it.ptr) { }
 			explicit iterator(PointersArray& a) : ptr(a.pointers.begin()) { }
 
 			iterator& operator++()
