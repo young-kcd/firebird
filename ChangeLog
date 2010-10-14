@@ -1,3 +1,24 @@
+ 2010-10-13 12:47  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+   M configure.in
+Fixed CORE-3166: Script changeMultiConnectMode.sh should not be present in SS environment
+
+ 2010-10-13 12:11  dimitr 
+   M src/jrd/blb.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+   M src/jrd/scl_proto.h
+   M src/jrd/vio.cpp
+Fixed the major part of the slowdown in CORE-2827: Very slow prepare for complex interrelated metadata with many triggers indirectly involved in the operation being prepared.
+Code cleanup.
+
  2010-10-08 11:58  hvlad 
    M src/jrd/dfw.epp
    M src/jrd/event.cpp
