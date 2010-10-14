@@ -34,33 +34,8 @@
 struct dsc;
 
 void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, SLONG, const Firebird::MetaName&,
-					  Jrd::SecurityClass::flags_t, SLONG type, const char*);
-void SCL_check_access(Jrd::thread_db*, const Jrd::SecurityClass*, SLONG, SLONG, const Firebird::MetaName&,
 					  Jrd::SecurityClass::flags_t, SLONG type, const Firebird::MetaName&,
-					  const Firebird::MetaName&);
-inline void SCL_check_access(Jrd::thread_db* tdbb,
-							 const Jrd::SecurityClass* s_class,
-							 SLONG view_id,
-							 SLONG obj_type,
-							 const Firebird::MetaName& obj_name,
-							 Jrd::SecurityClass::flags_t mask,
-							 SLONG type,
-							 const Firebird::string& name)
-{
-	SCL_check_access(tdbb, s_class, view_id, obj_type, obj_name, mask, type, name.c_str());
-}
-inline void SCL_check_access(Jrd::thread_db* tdbb,
-							 const Jrd::SecurityClass* s_class,
-							 SLONG view_id,
-							 SLONG obj_type,
-							 const Firebird::MetaName& obj_name,
-							 Jrd::SecurityClass::flags_t mask,
-							 SLONG type,
-							 const Firebird::MetaName& name)
-{
-	SCL_check_access(tdbb, s_class, view_id, obj_type, obj_name, mask, type, name.c_str());
-}
-
+					  const Firebird::MetaName& = "");
 void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
 void SCL_check_package(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_procedure(Jrd::thread_db* tdbb, const dsc*, Jrd::SecurityClass::flags_t);

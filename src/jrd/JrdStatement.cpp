@@ -573,9 +573,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 					continue;
 				}
 				if (access->acc_type == SCL_object_column &&
-					(MET_lookup_field(tdbb, ownerRelation, access->acc_name,
-						&access->acc_security_name) >= 0 ||
-					 MET_relation_default_class(tdbb, ownerRelation->rel_name, access->acc_security_name)))
+					(ownerRelation->rel_name == access->acc_r_name))
 				{
 					continue;
 				}

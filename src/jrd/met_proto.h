@@ -87,7 +87,7 @@ void		MET_lookup_cnstrt_for_index(Jrd::thread_db*, Firebird::MetaName& constrain
 void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebird::MetaName&, const Firebird::MetaName&);
 void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ Firebird::string*);
 SLONG		MET_lookup_exception_number(Jrd::thread_db*, const Firebird::MetaName&);
-int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&, const Firebird::MetaName*);
+int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
 SLONG		MET_lookup_generator(Jrd::thread_db*, const TEXT*);
 void		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&);
@@ -105,7 +105,6 @@ void		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);
-bool		MET_relation_default_class (Jrd::thread_db*, const Firebird::MetaName&, const Firebird::MetaName&);
 void		MET_release_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_release_trigger(Jrd::thread_db*, Jrd::trig_vec**, const Firebird::MetaName&);
 void		MET_release_triggers(Jrd::thread_db*, Jrd::trig_vec**);

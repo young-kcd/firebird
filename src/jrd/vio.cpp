@@ -3550,7 +3550,7 @@ static void check_class(thread_db* tdbb,
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_protect,
-					 SCL_object_database, NULL);
+					 SCL_object_database, "");
 	DFW_post_work(transaction, dfw_compute_security, &desc2, 0);
 }
 
@@ -3573,7 +3573,7 @@ static void check_control(thread_db* tdbb)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	SCL_check_access(tdbb, attachment->att_security_class, 0, 0, NULL, SCL_control,
-					 SCL_object_database, NULL);
+					 SCL_object_database, "");
 }
 
 

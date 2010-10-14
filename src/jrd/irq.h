@@ -106,7 +106,6 @@ enum irq_type_t
 	irq_format6,			// make a new format for a record
 	irq_r_gen_id_num,		// lookup generator by ID.
 	irq_verify_role_name,	// ensure role exists in roles & user_privileges.
-	irq_l_relation_defsec,	// check the default sec class name against rel.
 	irq_m_index_seg,		// modify per-segment index selectivity
 
 	irq_l_subtype,			// lookup subtype (charset/collation)

@@ -162,7 +162,8 @@ void SCL_check_access(thread_db* tdbb,
 					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
 					  SLONG type,
-					  const char* name)
+					  const Firebird::MetaName& name,
+					  const Firebird::MetaName& r_name)
 {
 /**************************************
  *
@@ -245,47 +246,12 @@ void SCL_check_access(thread_db* tdbb,
 	{
 		fb_assert(type != SCL_object_database);
 		const char* typeAsStr = accTypeNumToStr(type);
+		const Firebird::string fullName = r_name.hasData() ?
+			r_name.c_str() + Firebird::string(".") + name.c_str() : name.c_str();
 		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
 										  Arg::Str(typeAsStr) <<
-										  Arg::Str(name));
+										  Arg::Str(fullName));
 	}
-}
-
-
-void SCL_check_access(thread_db* tdbb,
-					  const SecurityClass* s_class,
-					  SLONG view_id,
-					  SLONG obj_type,
-					  const Firebird::MetaName& obj_name,
-					  SecurityClass::flags_t mask,
-					  SLONG type,
-					  const Firebird::MetaName& name,
-					  const Firebird::MetaName& r_name)
-{
-/**************************************
- *
- *	S C L _ c h e c k _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *	Check security class for desired permission.
- *	Alternate entrypoint.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	Firebird::string fullFieldName(name.c_str());
-	if (r_name.hasData())
-	{
-		fullFieldName = r_name.c_str();
-		fullFieldName += '.';
-		fullFieldName += name.c_str();
-	}
-
-	SCL_check_access(tdbb, s_class, view_id, obj_type, obj_name, mask, type,
-					 fullFieldName.c_str());
 }
 
 
@@ -388,20 +354,10 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 			WITH RF.RDB$RELATION_NAME EQ reln_name.c_str()
 			AND ISEG.RDB$INDEX_NAME EQ idx_name_ptr->c_str()
 	{
-		Firebird::string fullFieldName(reln_name.c_str());
-		fullFieldName += '.';
-		fullFieldName += RF.RDB$FIELD_NAME;
-		fullFieldName.rtrim();
-        if (!RF.RDB$SECURITY_CLASS.NULL)
-        {
-			s_class = SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS);
-			SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_column, fullFieldName);
-		}
-		else
-		{
-			SCL_check_access(tdbb, default_s_class, 0, 0, NULL, mask, SCL_object_column,
-							 fullFieldName);
-		}
+		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
+			SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS) : default_s_class;
+		SCL_check_access(tdbb, s_class, 0, NULL, NULL, mask,
+						 SCL_object_column, RF.RDB$FIELD_NAME, reln_name);
 	}
 	END_FOR
 }
@@ -661,7 +617,7 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
 		const jrd_fld* field;
 		SSHORT id;
 		if (field_name &&
-			(id = MET_lookup_field(tdbb, relation, field_name, 0)) >= 0 &&
+			(id = MET_lookup_field(tdbb, relation, field_name)) >= 0 &&
 			(field = MET_get_field(relation, id)) &&
 			(s_class = SCL_get_class(tdbb, field->fld_security_name.c_str())))
 		{
