@@ -1,3 +1,15 @@
+ 2010-10-14 11:34  alexpeshkoff 
+   M src/gpre/c_cxx.cpp
+Ported fix for CORE-3022: gpre C++ compiler warnings with GCC 4.4.1
+
+ 2010-10-14 06:25  alexpeshkoff 
+   M src/common/classes/objects_array.h
+Fixed issue, detected by clang++ compiler
+
+ 2010-10-14 05:18  dimitr 
+   M src/jrd/scl.epp
+Misc.
+
  2010-10-13 12:47  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
    M configure.in
