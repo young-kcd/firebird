@@ -1,3 +1,47 @@
+ 2010-10-15 01:55  asfernandes 
+   M src/jrd/met.epp
+   M src/utilities/gstat/dba.epp
+Misc
+
+ 2010-10-15 00:52  asfernandes 
+   M src/jrd/RandomGenerator.cpp
+Correction
+
+ 2010-10-14 12:28  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Frontported fix for CORE-3115: Bugs in the internal record compression routines
+
+ 2010-10-14 11:39  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec_proto.h
+Frontported fix for CORE-3116: gsec outputs list of users to stderr instead stdout
+
+ 2010-10-14 11:14  alexpeshkoff 
+   M src/utilities/gstat/dba.epp
+Frontported fix for CORE-3143: Segmentation fault may occur when user interrupts gstat
+
+ 2010-10-14 11:13  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Temporal quickfix for working engine shutdown
+
+ 2010-10-14 06:11  alexpeshkoff 
+   M src/common/classes/objects_array.h
+Fixed issue, detected by clang++ compiler
+
+ 2010-10-14 05:27  dimitr 
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/scl.epp
+   M src/jrd/scl_proto.h
+   M src/jrd/vio.cpp
+Front ported my recent changes. I'm unable to verify the compilation now, sorry.
+
  2010-10-13 17:48  hvlad 
    M src/yvalve/gds.cpp
    M src/yvalve/why.cpp
