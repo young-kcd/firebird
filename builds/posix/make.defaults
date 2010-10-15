@@ -40,12 +40,14 @@
 
 #_____________________________________________________________________________
 
-TMP_ROOT=$(ROOT)/temp/$(TARGET)
-GEN_ROOT=$(ROOT)/gen
-SRC_ROOT=$(ROOT)/src
-BLD_ROOT=$(ROOT)/builds
-LNG_ROOT=$(ROOT)/lang_helpers
-EXA_ROOT=$(ROOT)/examples
+ABS_ROOT=$(shell cd $(ROOT);pwd)
+
+TMP_ROOT=$(ABS_ROOT)/temp/$(TARGET)
+GEN_ROOT=$(ABS_ROOT)/gen
+SRC_ROOT=$(ABS_ROOT)/src
+BLD_ROOT=$(ABS_ROOT)/builds
+LNG_ROOT=$(ABS_ROOT)/lang_helpers
+EXA_ROOT=$(ABS_ROOT)/examples
 
 FIREBIRD=$(GEN_ROOT)/$(TARGET)/firebird
 FIREBIRD_LOCK=$(FIREBIRD)
@@ -144,7 +146,7 @@ CAT=			cat
 AR=			ar @AR_OPTIONS@ crsu
 LN=			@LN_S@
 RANLIB=			@RANLIB@
-BTYACC=$(ROOT)/extern/btyacc/btyacc
+BTYACC=$(ABS_ROOT)/extern/btyacc/btyacc
 
 CC =	@CC@
 CXX =	@CXX@
@@ -175,7 +177,7 @@ SHRLIB_FOREIGN_EXT=	$(SHRLIB_EXT)
 
 # Include file with version variable definitions
 
-include $(ROOT)/gen/Make.Version
+include $(ABS_ROOT)/gen/Make.Version
 #MajorVer = 2
 #MinorVer = 5
 #RevNo = 0
