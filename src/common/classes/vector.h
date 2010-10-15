@@ -168,7 +168,7 @@ public:
 	{
 	    size_t pos;
   	    find(KeyOfValue::generate(this, item), pos);
-		insert(pos, item);
+		this->insert(pos, item);
 		return pos;
 	}
 };
