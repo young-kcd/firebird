@@ -182,6 +182,16 @@
 #define RISC_ALIGNMENT
 #endif /* sheb */
 
+#ifdef HPPA
+#define IMPLEMENTATION  isc_info_db_impl_linux_hppa /* 82  */
+#define RISC_ALIGNMENT
+#endif /* hppa */
+
+#ifdef ALPHA
+#define IMPLEMENTATION  isc_info_db_impl_linux_alpha /* 83  */
+#define RISC_ALIGNMENT
+#endif /* alpha */
+
 #endif /* LINUX */
 
 

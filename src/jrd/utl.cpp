@@ -225,7 +225,9 @@ static const TEXT* const impl_implementation[] =
 	"Firebird/linux s390x",			// 78
 	"Firebird/linux s390",			// 79
 	"Firebird/linux SH",			// 80
-	"Firebird/linux SHEB"			// 81
+	"Firebird/linux SHEB",			// 81
+	"Firebird/linux HPPA",			// 82
+	"Firebird/linux ALPHA"			// 83
 };
 
 

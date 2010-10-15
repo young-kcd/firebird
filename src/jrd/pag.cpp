@@ -160,9 +160,11 @@ static const int CLASS_LINUX_S390X = 36;	// LINUX/s390x
 static const int CLASS_LINUX_S390 = 37;		// LINUX/s390
 static const int CLASS_LINUX_SH = 38;		// LINUX/SH (little-endian)
 static const int CLASS_LINUX_SHEB = 39;		// LINUX/SH (big-endian)
+static const int CLASS_LINUX_HPPA = 40;		// LINUX/HPPA
+static const int CLASS_LINUX_ALPHA = 41;	// LINUX/ALPHA
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_SHEB;
+static const int CLASS_MAX = CLASS_LINUX_ALPHA;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -259,7 +261,9 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,	  // CLASS_LINUX_S390X
 	archBigEndian,	  // CLASS_LINUX_S390
 	archLittleEndian, // CLASS_LINUX_SH
-	archBigEndian     // CLASS_LINUX_SHEB
+	archBigEndian,    // CLASS_LINUX_SHEB
+	archBigEndian,    // CLASS_LINUX_HPPA
+	archLittleEndian  // CLASS_LINUX_ALPHA
 };
 
 #ifdef __sun
@@ -319,6 +323,10 @@ const SSHORT CLASS		= CLASS_LINUX_S390;
 const SSHORT CLASS		= CLASS_LINUX_SH;
 #elif defined(SHEB)
 const SSHORT CLASS		= CLASS_LINUX_SHEB;
+#elif defined(HPPA)
+const SSHORT CLASS		= CLASS_LINUX_HPPA;
+#elif defined(ALPHA)
+const SSHORT CLASS		= CLASS_LINUX_ALPHA;
 #else
 #error no support on other hardware for Linux
 #endif
