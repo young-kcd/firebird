@@ -287,31 +287,29 @@ void inline dba_exit(int code, tdba* tddba)
 
 namespace
 {
-// all this stuff gets activated ONLY in utility mode
-// therefore we can safely use static variables here
+	// all this stuff gets activated ONLY in utility mode
+	// therefore we can safely use static variables here
 
-bool shutdownRequested = false;
+	bool shutdownRequested = false;
 
-int gstatShutdown(const int reason, const int, void*)
-{
-	if (reason == fb_shutrsn_signal)
+	int gstatShutdown(const int reason, const int, void*)
 	{
-		shutdownRequested = true;
-		return FB_FAILURE;
+		if (reason == fb_shutrsn_signal)
+		{
+			shutdownRequested = true;
+			return FB_FAILURE;
+		}
+		return FB_SUCCESS;
 	}
-	return FB_SUCCESS;
-}
 
-void checkForShutdown(tdba* tddba)
-{
-	if (shutdownRequested)
+	void checkForShutdown(tdba* tddba)
 	{
-		dba_exit(FINI_OK, tddba);
+		if (shutdownRequested)
+		{
+			dba_exit(FINI_OK, tddba);
+		}
 	}
-}
-
-
-}
+} // namespace
 
 const USHORT GSTAT_MSG_FAC	= 21;
 

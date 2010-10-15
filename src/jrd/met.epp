@@ -1924,9 +1924,7 @@ SLONG MET_lookup_exception_number(thread_db* tdbb, const MetaName& name)
 }
 
 
-int MET_lookup_field(thread_db* tdbb,
-					 jrd_rel* relation,
-					 const MetaName& name)
+int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const MetaName& name)
 {
 /**************************************
  *
