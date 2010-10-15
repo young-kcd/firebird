@@ -127,8 +127,8 @@ const USHORT RPB_s_no_data	= 0x4;		// nobody is going to access the data
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
 #define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
 
-const int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
-									// between two records
+const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
+											// between two records
 
 // Store allocation policy types.  Parameter to DPM_store()
 
