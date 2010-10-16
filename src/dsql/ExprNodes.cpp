@@ -3205,7 +3205,7 @@ ExtractNode::ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg)
 	addChildNode(dsqlArg, arg);
 }
 
-DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
@@ -4864,7 +4864,7 @@ StrLenNode::StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg)
 	addChildNode(dsqlArg, arg);
 }
 
-DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
