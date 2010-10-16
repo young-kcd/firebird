@@ -321,11 +321,6 @@ const int e_cursor_stmt_scroll_val	= 3;
 const int e_cursor_stmt_into		= 4;
 const int e_cursor_stmt_length		= 5;
 
-const int e_strlen_value	= 0;
-const int e_strlen_type		= 1;
-const int e_strlen_count	= 1;
-const int e_strlen_length	= 2;
-
 // nod_src_info
 const int e_src_info_line		= 0;
 const int e_src_info_col		= 1;

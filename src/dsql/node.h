@@ -208,7 +208,6 @@ enum nod_t
 	nod_rows,	// ROWS support
 	nod_query_spec,
 	nod_mod_udf,
-	nod_strlen,
 	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,
@@ -729,10 +728,6 @@ enum node_args {
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
 	e_mod_udf_count,
-
-	e_strlen_type = 0,				// constant representing type of length
-	e_strlen_value,
-	e_strlen_count,
 
 	e_ret_source = 0,				// nod_returning
 	e_ret_target,

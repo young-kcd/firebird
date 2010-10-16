@@ -222,12 +222,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_expr(dsqlScratch, node->nod_arg[e_extract_value]);
 		return;
 
-	case nod_strlen:
-		dsqlScratch->appendUChar(blr_strlen);
-		dsqlScratch->appendUChar(node->nod_arg[e_strlen_type]->getSlong());
-		GEN_expr(dsqlScratch, node->nod_arg[e_strlen_value]);
-		return;
-
 	case nod_dbkey:
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];

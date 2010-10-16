@@ -124,7 +124,6 @@ static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
-static dsc* string_length(thread_db*, const jrd_nod*, impure_value*);
 
 
 dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
@@ -474,9 +473,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 	case nod_extract:
 		return extract(tdbb, node, impure);
-
-	case nod_strlen:
-		return string_length(tdbb, node, impure);
 
 	case nod_max:
 	case nod_min:
@@ -1515,129 +1511,5 @@ static dsc* scalar(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 			   // but vlu_desc is the first member of impure_value and impure is already
 			   // of type impure_value*, so this cast seems nonsense.
 
-	return &impure->vlu_desc;
-}
-
-
-// *************************
-// s t r i n g _ l e n g t h
-// *************************
-// Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
-static dsc* string_length(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	const ULONG length_type = (IPTR) node->nod_arg[e_strlen_type];
-	const dsc* value = EVL_expr(tdbb, node->nod_arg[e_strlen_value]);
-
-	impure->vlu_desc.dsc_dtype = dtype_long;
-	impure->vlu_desc.dsc_scale = 0;
-	impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-	impure->vlu_desc.dsc_length = sizeof(ULONG);
-
-	jrd_req* request = tdbb->getRequest();
-	// CVC: Borland used special signaling for nulls in outer joins.
-	if (!value || (request->req_flags & req_null))
-	{
-		request->req_flags |= req_null;
-		impure->vlu_misc.vlu_long = 0;
-		return &impure->vlu_desc;
-	}
-
-	ULONG length;
-
-	if (value->isBlob())
-	{
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
-							 reinterpret_cast<bid*>(value->dsc_address));
-
-		switch (length_type)
-		{
-			case blr_strlen_bit:
-				{
-					FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
-					if (l > MAX_SINT64)
-					{
-						ERR_post(Arg::Gds(isc_arith_except) <<
-								 Arg::Gds(isc_numeric_out_of_range));
-					}
-
-					length = l;
-				}
-				break;
-
-			case blr_strlen_octet:
-				length = blob->blb_length;
-				break;
-
-			case blr_strlen_char:
-			{
-				CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype());
-
-				if (charSet->isMultiByte())
-				{
-					Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-
-					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
-										  blob->blb_length, false);
-					length = charSet->length(length, buffer.begin(), true);
-				}
-				else
-					length = blob->blb_length / charSet->maxBytesPerChar();
-
-				break;
-			}
-
-			default:
-				fb_assert(false);
-				length = 0;
-		}
-
-		*(ULONG*) impure->vlu_desc.dsc_address = length;
-
-		BLB_close(tdbb, blob);
-
-		return &impure->vlu_desc;
-	}
-
-	VaryStr<32> temp;
-	USHORT ttype;
-	UCHAR* p;
-
-	length = MOV_get_string_ptr(value, &ttype, &p, &temp, sizeof(temp));
-
-	switch (length_type)
-	{
-		case blr_strlen_bit:
-			{
-				FB_UINT64 l = (FB_UINT64) length * 8;
-				if (l > MAX_SINT64)
-				{
-					ERR_post(Arg::Gds(isc_arith_except) <<
-							 Arg::Gds(isc_numeric_out_of_range));
-				}
-
-				length = l;
-			}
-			break;
-
-		case blr_strlen_octet:
-			break;
-
-		case blr_strlen_char:
-		{
-			CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
-			length = charSet->length(length, p, true);
-			break;
-		}
-
-		default:
-			fb_assert(false);
-			length = 0;
-	}
-
-	*(ULONG*) impure->vlu_desc.dsc_address = length;
 	return &impure->vlu_desc;
 }

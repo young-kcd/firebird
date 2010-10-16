@@ -1340,14 +1340,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		return node;
 
-	case nod_strlen:
-		node = MAKE_node(input->nod_type, e_strlen_count);
-		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
-		node->nod_arg[e_strlen_value] = PASS1_node(dsqlScratch, input->nod_arg[e_strlen_value]);
-		if (node->nod_arg[e_strlen_value]->nod_desc.dsc_flags & DSC_nullable)
-			node->nod_desc.dsc_flags |= DSC_nullable;
-		return node;
-
 	case nod_delete:
 	case nod_insert:
 	case nod_merge:
@@ -8625,6 +8617,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_NEGATE:
 				case ExprNode::TYPE_STR_CASE:
+				case ExprNode::TYPE_STR_LEN:
 				case ExprNode::TYPE_SUBSTRING:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 				case ExprNode::TYPE_TRIM:
@@ -8650,7 +8643,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 		return;
 
 	case nod_extract:
-	case nod_strlen:
 	case nod_limit:
 	case nod_rows:
 		{
@@ -8919,9 +8911,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_join_right:
 		verb = "join_right";
-		break;
-	case nod_strlen:
-		verb = "strlen";
 		break;
 	case nod_list:
 		verb = "list";

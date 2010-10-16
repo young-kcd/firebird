@@ -2657,13 +2657,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_count = e_extract_count;
 		break;
 
-	case blr_strlen:
-	    // This forced conversion looks strange, but length_type fits in a byte
-		node->nod_arg[e_strlen_type] = (jrd_nod*)(U_IPTR) csb->csb_blr_reader.getByte();
-		node->nod_arg[e_strlen_value] = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_count = e_strlen_count;
-		break;
-
 	case blr_dcl_variable:
 		{
 			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);

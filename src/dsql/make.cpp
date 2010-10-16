@@ -543,15 +543,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		desc->setNullable(desc1.isNullable());
 		return;
 
-	case nod_strlen:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_strlen_value], NULL);
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(ULONG);
-		return;
-
 	case nod_null:
 		// This occurs when SQL statement specifies a literal NULL, eg:
 		//  SELECT NULL FROM TABLE1;
@@ -1175,31 +1166,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_extract:
 		name_alias = "EXTRACT";
-		break;
-	case nod_strlen:
-		{
-			const ULONG length_type = item->nod_arg[e_strlen_type]->getSlong();
-
-			switch (length_type)
-			{
-				case blr_strlen_bit:
-					name_alias = "BIT_LENGTH";
-					break;
-
-				case blr_strlen_char:
-					name_alias = "CHAR_LENGTH";
-					break;
-
-				case blr_strlen_octet:
-					name_alias = "OCTET_LENGTH";
-					break;
-
-				default:
-					name_alias = "LENGTH";
-					fb_assert(false);
-					break;
-			}
-		}
 		break;
 	case nod_searched_case:
 	case nod_simple_case:

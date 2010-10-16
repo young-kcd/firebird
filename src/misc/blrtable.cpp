@@ -207,7 +207,7 @@ static const VERB verbs[] =
 	PAIR(nod_dcl_cursor, blr_dcl_cursor, e_dcl_cur_length, 2, STATEMENT, OTHER),
 	PAIR(nod_cursor_stmt, blr_cursor_stmt, e_cursor_stmt_length, 0, STATEMENT, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_lowcase, 1, 0, VALUE, VALUE),
-	PAIR(nod_strlen, blr_strlen, e_strlen_length, e_strlen_count, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_strlen, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_trim, 1, 0, VALUE, VALUE),
 	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_sys_function, 1, 0, VALUE, VALUE),

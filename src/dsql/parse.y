@@ -5557,24 +5557,28 @@ extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
 			{ $$ = make_node (nod_extract, (int) e_extract_count, $3, $5); }
 		;
 
-length_expression	: bit_length_expression
-		| char_length_expression
-		| octet_length_expression
-		;
+length_expression
+	: bit_length_expression
+	| char_length_expression
+	| octet_length_expression
+	;
 
-bit_length_expression	: BIT_LENGTH '(' value ')'
-			{ $$ = make_node(nod_strlen, (int) e_strlen_count, MAKE_const_slong(blr_strlen_bit), $3); }
-		;
+bit_length_expression
+	: BIT_LENGTH '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_bit, $3)); }
+	;
 
-char_length_expression	: CHAR_LENGTH '(' value ')'
-			{ $$ = make_node(nod_strlen, (int) e_strlen_count, MAKE_const_slong(blr_strlen_char), $3); }
-		| CHARACTER_LENGTH '(' value ')'
-			{ $$ = make_node(nod_strlen, (int) e_strlen_count, MAKE_const_slong(blr_strlen_char), $3); }
-		;
+char_length_expression
+	: CHAR_LENGTH '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_char, $3)); }
+	| CHARACTER_LENGTH '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_char, $3)); }
+	;
 
-octet_length_expression	: OCTET_LENGTH '(' value ')'
-			{ $$ = make_node(nod_strlen, (int) e_strlen_count, MAKE_const_slong(blr_strlen_octet), $3); }
-		;
+octet_length_expression
+	: OCTET_LENGTH '(' value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_octet, $3)); }
+	;
 
 system_function_expression
 	: system_function_std_syntax '(' value_list_opt ')'

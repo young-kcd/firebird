@@ -4509,6 +4509,247 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<StrLenNode> regStrLenNode(blr_strlen);
+
+StrLenNode::StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_STR_LEN>(pool),
+	  blrSubOp(aBlrSubOp),
+	  dsqlArg(aArg),
+	  arg(NULL)
+{
+	addChildNode(dsqlArg, arg);
+}
+
+DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
+
+	StrLenNode* node = FB_NEW(pool) StrLenNode(pool, blrSubOp);
+	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void StrLenNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("StrLenNode (%d)", blrSubOp);
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* StrLenNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return FB_NEW(getPool()) StrLenNode(getPool(), blrSubOp, PASS1_node(dsqlScratch, dsqlArg));
+}
+
+void StrLenNode::setParameterName(dsql_par* parameter) const
+{
+	const char* alias;
+
+	switch (blrSubOp)
+	{
+		case blr_strlen_bit:
+			alias = "BIT_LENGTH";
+			break;
+
+		case blr_strlen_char:
+			alias = "CHAR_LENGTH";
+			break;
+
+		case blr_strlen_octet:
+			alias = "OCTET_LENGTH";
+			break;
+
+		default:
+			alias = "";
+			fb_assert(false);
+			break;
+	}
+
+	parameter->par_name = parameter->par_alias = alias;
+}
+
+bool StrLenNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
+}
+
+void StrLenNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_strlen);
+	dsqlScratch->appendUChar(blrSubOp);
+	GEN_expr(dsqlScratch, dsqlArg);
+}
+
+void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	dsc desc1;
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+
+	desc->makeLong(0);
+	desc->setNullable(desc1.isNullable());
+}
+
+void StrLenNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeLong(0);
+}
+
+ValueExprNode* StrLenNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	StrLenNode* node = FB_NEW(*tdbb->getDefaultPool()) StrLenNode(*tdbb->getDefaultPool(), blrSubOp);
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const StrLenNode* o = other->as<StrLenNode>();
+	fb_assert(o)
+
+	return blrSubOp == o->blrSubOp;
+}
+
+bool StrLenNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	StrLenNode* o = other->as<StrLenNode>();
+	fb_assert(o);
+
+	return blrSubOp == o->blrSubOp;
+}
+
+ExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
+dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	request->req_flags &= ~req_null;
+
+	const dsc* value = EVL_expr(tdbb, arg);
+
+	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+
+	if (!value || (request->req_flags & req_null))
+		return NULL;
+
+	ULONG length;
+
+	if (value->isBlob())
+	{
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+			reinterpret_cast<bid*>(value->dsc_address));
+
+		switch (blrSubOp)
+		{
+			case blr_strlen_bit:
+				{
+					FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
+					if (l > MAX_SINT64)
+					{
+						ERR_post(Arg::Gds(isc_arith_except) <<
+								 Arg::Gds(isc_numeric_out_of_range));
+					}
+
+					length = l;
+				}
+				break;
+
+			case blr_strlen_octet:
+				length = blob->blb_length;
+				break;
+
+			case blr_strlen_char:
+			{
+				CharSet* charSet = INTL_charset_lookup(tdbb, value->dsc_blob_ttype());
+
+				if (charSet->isMultiByte())
+				{
+					HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+
+					length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
+						blob->blb_length, false);
+					length = charSet->length(length, buffer.begin(), true);
+				}
+				else
+					length = blob->blb_length / charSet->maxBytesPerChar();
+
+				break;
+			}
+
+			default:
+				fb_assert(false);
+				length = 0;
+		}
+
+		*(ULONG*) impure->vlu_desc.dsc_address = length;
+
+		BLB_close(tdbb, blob);
+
+		return &impure->vlu_desc;
+	}
+
+	VaryStr<32> temp;
+	USHORT ttype;
+	UCHAR* p;
+
+	length = MOV_get_string_ptr(value, &ttype, &p, &temp, sizeof(temp));
+
+	switch (blrSubOp)
+	{
+		case blr_strlen_bit:
+			{
+				FB_UINT64 l = (FB_UINT64) length * 8;
+				if (l > MAX_SINT64)
+				{
+					ERR_post(Arg::Gds(isc_arith_except) <<
+							 Arg::Gds(isc_numeric_out_of_range));
+				}
+
+				length = l;
+			}
+			break;
+
+		case blr_strlen_octet:
+			break;
+
+		case blr_strlen_char:
+		{
+			CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
+			length = charSet->length(length, p, true);
+			break;
+		}
+
+		default:
+			fb_assert(false);
+			length = 0;
+	}
+
+	*(ULONG*) impure->vlu_desc.dsc_address = length;
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<SubstringNode> regSubstringNode(blr_substring);
 
 SubstringNode::SubstringNode(MemoryPool& pool, dsql_nod* aExpr, dsql_nod* aStart, dsql_nod* aLength)
