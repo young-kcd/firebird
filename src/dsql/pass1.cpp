@@ -1292,54 +1292,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = pass1_collate(dsqlScratch, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
 		return node;
 
-	case nod_extract:
-
-		// Figure out the data type of the sub parameter, and make
-		// sure the requested type of information can be extracted
-
-		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_extract_value]);
-		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
-
-		switch (input->nod_arg[e_extract_part]->getSlong())
-		{
-		case blr_extract_year:
-		case blr_extract_month:
-		case blr_extract_day:
-		case blr_extract_weekday:
-		case blr_extract_yearday:
-		case blr_extract_week:
-			if (sub1->nod_type != nod_null &&
-				sub1->nod_desc.dsc_dtype != dtype_sql_date &&
-				sub1->nod_desc.dsc_dtype != dtype_timestamp)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-105) <<
-						  Arg::Gds(isc_extract_input_mismatch));
-			}
-			break;
-		case blr_extract_hour:
-		case blr_extract_minute:
-		case blr_extract_second:
-		case blr_extract_millisecond:
-			if (sub1->nod_type != nod_null &&
-				sub1->nod_desc.dsc_dtype != dtype_sql_time &&
-				sub1->nod_desc.dsc_dtype != dtype_timestamp)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-105) <<
-						  Arg::Gds(isc_extract_input_mismatch));
-			}
-			break;
-		default:
-			fb_assert(false);
-			break;
-		}
-		node = MAKE_node(input->nod_type, e_extract_count);
-		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
-		node->nod_arg[e_extract_value] = sub1;
-		if (sub1->nod_desc.dsc_flags & DSC_nullable) {
-			node->nod_desc.dsc_flags |= DSC_nullable;
-		}
-		return node;
-
 	case nod_delete:
 	case nod_insert:
 	case nod_merge:
@@ -8515,7 +8467,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 				return false;
 			}
 
-		case nod_extract:
 		case nod_limit:
 		case nod_rows:
 			{
@@ -8615,6 +8566,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 			{
 				case ExprNode::TYPE_ARITHMETIC:
 				case ExprNode::TYPE_CONCATENATE:
+				case ExprNode::TYPE_EXTRACT:
 				case ExprNode::TYPE_NEGATE:
 				case ExprNode::TYPE_STR_CASE:
 				case ExprNode::TYPE_STR_LEN:
@@ -8642,7 +8594,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 		}
 		return;
 
-	case nod_extract:
 	case nod_limit:
 	case nod_rows:
 		{
@@ -8881,9 +8832,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_exec_procedure:
 		verb = "execute procedure";
-		break;
-	case nod_extract:
-		verb = "extract";
 		break;
 	case nod_flag:
 		verb = "flag";

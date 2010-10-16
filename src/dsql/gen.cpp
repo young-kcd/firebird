@@ -216,12 +216,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_expr(dsqlScratch, node->nod_arg[e_derived_field_value]);
 		return;
 
-	case nod_extract:
-		dsqlScratch->appendUChar(blr_extract);
-		dsqlScratch->appendUChar(node->nod_arg[e_extract_part]->getSlong());
-		GEN_expr(dsqlScratch, node->nod_arg[e_extract_value]);
-		return;
-
 	case nod_dbkey:
 		node = node->nod_arg[0];
 		context = (dsql_ctx*) node->nod_arg[e_rel_context];

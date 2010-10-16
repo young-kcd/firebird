@@ -521,28 +521,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 		return;
 
-	case nod_extract:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_extract_value], NULL);
-
-		switch (node->nod_arg[e_extract_part]->getSlong())
-		{
-			case blr_extract_second:
-				// QUADDATE - maybe this should be DECIMAL(6,4)
-				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
-				break;
-
-			case blr_extract_millisecond:
-				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
-				break;
-
-			default:
-				desc->makeShort(0);
-				break;
-		}
-
-		desc->setNullable(desc1.isNullable());
-		return;
-
 	case nod_null:
 		// This occurs when SQL statement specifies a literal NULL, eg:
 		//  SELECT NULL FROM TABLE1;
@@ -1163,9 +1141,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_cast:
 		name_alias = "CAST";
-		break;
-	case nod_extract:
-		name_alias = "EXTRACT";
 		break;
 	case nod_searched_case:
 	case nod_simple_case:

@@ -797,7 +797,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> table_constraint table_constraint_definition
 %type <legacyNode> table_list table_lock table_name table_or_alias_list table_primary
 %type <legacyNode> table_proc table_proc_inputs table_reference table_subquery tbl_reserve_options
-%type <legacyNode> timestamp_part top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
+%type <legacyNode> top tra_misc_options tra_timeout tran_opt tran_opt_list tran_opt_list_m
 %type <legacyNode> trim_function
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
 
@@ -868,7 +868,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <sysFuncCallNode> system_function_special_syntax
 
-%type <blrOp> trim_specification
+%type <blrOp> timestamp_part trim_specification
 
 // Predicates
 %type <boolExprNode> between_predicate comparison_predicate distinct_predicate
@@ -5553,9 +5553,10 @@ numeric_value_function
 	| length_expression
 	;
 
-extract_expression	: EXTRACT '(' timestamp_part FROM value ')'
-			{ $$ = make_node (nod_extract, (int) e_extract_count, $3, $5); }
-		;
+extract_expression
+	: EXTRACT '(' timestamp_part FROM value ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) ExtractNode(getPool(), $3, $5)); }
+	;
 
 length_expression
 	: bit_length_expression
@@ -5645,25 +5646,25 @@ system_function_special_syntax
 	: DATEADD '(' value timestamp_part TO value ')'
 		{
 			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
-				make_node(nod_list, 3, $3, $4, $6));
+				make_node(nod_list, 3, $3, MAKE_const_slong($4), $6));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEADD '(' timestamp_part ',' value ',' value ')'
 		{
 			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
-				make_node(nod_list, 3, $5, $3, $7));
+				make_node(nod_list, 3, $5, MAKE_const_slong($3), $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part FROM value TO value ')'
 		{
 			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
-				make_node(nod_list, 3, $3, $5, $7));
+				make_node(nod_list, 3, MAKE_const_slong($3), $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part ',' value ',' value ')'
 		{
 			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
-				make_node(nod_list, 3, $3, $5, $7));
+				make_node(nod_list, 3, MAKE_const_slong($3), $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value FOR value ')'
@@ -5846,27 +5847,18 @@ next_value_expression
 	;
 
 
-timestamp_part	: YEAR
-			{ $$ = MAKE_const_slong (blr_extract_year); }
-		| MONTH
-			{ $$ = MAKE_const_slong (blr_extract_month); }
-		| DAY
-			{ $$ = MAKE_const_slong (blr_extract_day); }
-		| HOUR
-			{ $$ = MAKE_const_slong (blr_extract_hour); }
-		| MINUTE
-			{ $$ = MAKE_const_slong (blr_extract_minute); }
-		| SECOND
-			{ $$ = MAKE_const_slong (blr_extract_second); }
-		| MILLISECOND
-			{ $$ = MAKE_const_slong (blr_extract_millisecond); }
-		| WEEK
-			{ $$ = MAKE_const_slong (blr_extract_week); }
-		| WEEKDAY
-			{ $$ = MAKE_const_slong (blr_extract_weekday); }
-		| YEARDAY
-			{ $$ = MAKE_const_slong (blr_extract_yearday); }
-		;
+timestamp_part
+	: YEAR			{ $$ = blr_extract_year; }
+	| MONTH			{ $$ = blr_extract_month; }
+	| DAY			{ $$ = blr_extract_day; }
+	| HOUR			{ $$ = blr_extract_hour; }
+	| MINUTE		{ $$ = blr_extract_minute; }
+	| SECOND		{ $$ = blr_extract_second; }
+	| MILLISECOND	{ $$ = blr_extract_millisecond; }
+	| WEEK			{ $$ = blr_extract_week; }
+	| WEEKDAY		{ $$ = blr_extract_weekday; }
+	| YEARDAY		{ $$ = blr_extract_yearday; }
+	;
 
 all_noise
 	:

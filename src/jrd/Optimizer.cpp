@@ -338,11 +338,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 					node2->nod_arg[e_cast_source], stream);
 		}
 
-		case nod_extract:
-			return node1->nod_arg[e_extract_part] == node2->nod_arg[e_extract_part] &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_extract_value],
-					node2->nod_arg[e_extract_value], stream);
-
 	    case nod_list:
 		{
 			jrd_nod* const* ptr1 = node1->nod_arg;

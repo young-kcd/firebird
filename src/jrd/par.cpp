@@ -2650,13 +2650,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node = par_cast(tdbb, csb);
 		break;
 
-	case blr_extract:
-	    // This forced conversion looks strange, but extract_part fits in a byte
-		node->nod_arg[e_extract_part] = (jrd_nod*)(U_IPTR) csb->csb_blr_reader.getByte();
-		node->nod_arg[e_extract_value] = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_count = e_extract_count;
-		break;
-
 	case blr_dcl_variable:
 		{
 			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);

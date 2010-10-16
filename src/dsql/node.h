@@ -181,7 +181,6 @@ enum nod_t
 	nod_role_name,
 	nod_grant_admin,
 	nod_del_role,
-	nod_extract,
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
@@ -648,12 +647,6 @@ enum node_args {
 
 	e_stat_name = 0,
 	e_stat_count,
-
-	// SQL extract() function
-
-	e_extract_part = 0,				// constant representing part to extract
-	e_extract_value,				// Must be a time or date value
-	e_extract_count,
 
 	e_mod_fld_name_orig_name = 0,	// nod_mod_field_name
 	e_mod_fld_name_new_name,

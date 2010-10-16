@@ -583,24 +583,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_extract:
-		switch ((IPTR) node->nod_arg[e_extract_part])
-		{
-			case blr_extract_second:
-				// QUADDATE - SECOND returns a float, or scaled!
-				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
-				break;
-
-			case blr_extract_millisecond:
-				desc->makeLong(0);
-				break;
-
-			default:
-				desc->makeShort(0);
-				break;
-		}
-		return;
-
 	case nod_literal:
 		*desc = ((Literal*) node)->lit_desc;
 
@@ -1224,14 +1206,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_cast_source] = copy(tdbb, input->nod_arg[e_cast_source]);
 		node->nod_arg[e_cast_fmt] = input->nod_arg[e_cast_fmt];
-		return (node);
-
-	case nod_extract:
-		node = PAR_make_node(tdbb, e_extract_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_extract_value] = copy(tdbb, input->nod_arg[e_extract_value]);
-		node->nod_arg[e_extract_part] = input->nod_arg[e_extract_part];
 		return (node);
 
 	case nod_count:
@@ -3079,7 +3053,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_null:
 	case nod_scalar:
 	case nod_cast:
-	case nod_extract:
 	case nod_derived_expr:
 		{
 			dsc descriptor_a;

@@ -196,7 +196,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_exprnode_jrd, blr_ansi_all, 1, 0, TYPE_BOOL, TYPE_RSE),
 
 	/* Improved Date Support */
-	PAIR(nod_extract, blr_extract, e_extract_length, e_extract_count, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_extract, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_current_date, 1, 0, VALUE, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_current_time, 1, 0, VALUE, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_current_time2, 1, 0, VALUE, OTHER),

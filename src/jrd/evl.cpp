@@ -121,7 +121,6 @@ using namespace Firebird;
 static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
-static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 
@@ -470,9 +469,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	case nod_null:
 		request->req_flags |= req_null;
 		return NULL;
-
-	case nod_extract:
-		return extract(tdbb, node, impure);
 
 	case nod_max:
 	case nod_min:
@@ -1221,185 +1217,6 @@ static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value*
 	}
 
 	return desc;
-}
-
-
-// *************
-// e x t r a c t
-// *************
-// Handles EXTRACT(part FROM date/time/timestamp)
-static dsc* extract(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	const ULONG extract_part = (IPTR) node->nod_arg[e_extract_part];
-	const dsc* value = EVL_expr(tdbb, node->nod_arg[e_extract_value]);
-
-	impure->vlu_desc.dsc_dtype = dtype_short;
-	impure->vlu_desc.dsc_scale = 0;
-	impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
-	impure->vlu_desc.dsc_length = sizeof(SSHORT);
-
-	jrd_req* request = tdbb->getRequest();
-	// CVC: Borland used special signaling for nulls in outer joins.
-	if (!value || (request->req_flags & req_null))
-	{
-		request->req_flags |= req_null;
-		impure->vlu_misc.vlu_short = 0;
-		return &impure->vlu_desc;
-	}
-
-	tm times = {0};
-	int fractions;
-
-	switch (value->dsc_dtype)
-	{
-	case dtype_sql_time:
-		switch (extract_part)
-		{
-		case blr_extract_hour:
-		case blr_extract_minute:
-		case blr_extract_second:
-		case blr_extract_millisecond:
-			Firebird::TimeStamp::decode_time(*(GDS_TIME*) value->dsc_address,
-										 &times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
-			break;
-		default:
-			ERR_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_invalid_extractpart_time));
-		}
-		break;
-
-	case dtype_sql_date:
-		switch (extract_part)
-		{
-		case blr_extract_hour:
-		case blr_extract_minute:
-		case blr_extract_second:
-		case blr_extract_millisecond:
-			ERR_post(Arg::Gds(isc_expression_eval_err) <<
-						Arg::Gds(isc_invalid_extractpart_date));
-			break;
-		default:
-			Firebird::TimeStamp::decode_date(*(GDS_DATE*) value->dsc_address, &times);
-		}
-		break;
-
-	case dtype_timestamp:
-		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP*) value->dsc_address,
-											  &times, &fractions);
-		break;
-
-	default:
-		ERR_post(Arg::Gds(isc_expression_eval_err) <<
-					Arg::Gds(isc_invalidarg_extract));
-		break;
-	}
-
-	USHORT part;
-	switch (extract_part)
-	{
-	case blr_extract_year:
-		part = times.tm_year + 1900;
-		break;
-	case blr_extract_month:
-		part = times.tm_mon + 1;
-		break;
-	case blr_extract_day:
-		part = times.tm_mday;
-		break;
-	case blr_extract_hour:
-		part = times.tm_hour;
-		break;
-	case blr_extract_minute:
-		part = times.tm_min;
-		break;
-
-	case blr_extract_second:
-		impure->vlu_desc.dsc_dtype = dtype_long;
-		impure->vlu_desc.dsc_length = sizeof(ULONG);
-		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-		*(ULONG*) impure->vlu_desc.dsc_address = times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
-		return &impure->vlu_desc;
-
-	case blr_extract_millisecond:
-		impure->vlu_desc.dsc_dtype = dtype_long;
-		impure->vlu_desc.dsc_length = sizeof(ULONG);
-		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
-		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-		(*(ULONG*) impure->vlu_desc.dsc_address) = fractions;
-		return &impure->vlu_desc;
-
-	case blr_extract_week:
-		{
-			// Algorithm for Converting Gregorian Dates to ISO 8601 Week Date by Rick McCarty, 1999
-			// http://personal.ecu.edu/mccartyr/ISOwdALG.txt
-
-			const int y = times.tm_year + 1900;
-			const int dayOfYearNumber = times.tm_yday + 1;
-
-			// Find the jan1Weekday for y (Monday=1, Sunday=7)
-			const int yy = (y - 1) % 100;
-			const int c = (y - 1) - yy;
-			const int g = yy + yy / 4;
-			const int jan1Weekday = 1 + (((((c / 100) % 4) * 5) + g) % 7);
-
-			// Find the weekday for y m d
-			const int h = dayOfYearNumber + (jan1Weekday - 1);
-			const int weekday = 1 + ((h - 1) % 7);
-
-			// Find if y m d falls in yearNumber y-1, weekNumber 52 or 53
-			int yearNumber, weekNumber;
-
-			if ((dayOfYearNumber <= (8 - jan1Weekday)) && (jan1Weekday > 4))
-			{
-				yearNumber = y - 1;
-				weekNumber = ((jan1Weekday == 5) || ((jan1Weekday == 6) &&
-					Firebird::TimeStamp::isLeapYear(yearNumber))) ? 53 : 52;
-			}
-			else
-			{
-				yearNumber = y;
-
-				// Find if y m d falls in yearNumber y+1, weekNumber 1
-				int i = Firebird::TimeStamp::isLeapYear(y) ? 366 : 365;
-
-				if ((i - dayOfYearNumber) < (4 - weekday))
-				{
-					yearNumber = y + 1;
-					weekNumber = 1;
-				}
-			}
-
-			// Find if y m d falls in yearNumber y, weekNumber 1 through 53
-			if (yearNumber == y)
-			{
-				int j = dayOfYearNumber + (7 - weekday) + (jan1Weekday - 1);
-				weekNumber = j / 7;
-				if (jan1Weekday > 4)
-					weekNumber--;
-			}
-
-			part = weekNumber;
-		}
-		break;
-
-	case blr_extract_yearday:
-		part = times.tm_yday;
-		break;
-	case blr_extract_weekday:
-		part = times.tm_wday;
-		break;
-	default:
-		fb_assert(false);
-		part = 0;
-	}
-
-	*(USHORT*) impure->vlu_desc.dsc_address = part;
-	return &impure->vlu_desc;
 }
 
 

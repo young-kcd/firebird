@@ -126,10 +126,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 			ret |= visit(jrdNode->nod_arg[e_cast_source]);
 			break;
 
-		case nod_extract:
-			ret |= visit(jrdNode->nod_arg[e_extract_value]);
-			break;
-
 		case nod_derived_expr:
 		{
 			jrd_nod* /*const*/* ptr = jrdNode->nod_arg;

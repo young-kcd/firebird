@@ -66,7 +66,6 @@ NODE(nod_scalar, scalar, "")
 NODE(nod_null, null, "NULL")
 NODE(nod_cast, cast, "CAST")
 NODE(nod_rec_version, record_version, "RECORD VERSION")
-NODE(nod_extract, extract, "EXTRACT")
 NODE(nod_domain_validation, domain_validation, "")
 NODE(nod_derived_expr, derived_expr, "derived_expr")
 

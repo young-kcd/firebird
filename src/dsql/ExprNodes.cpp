@@ -3194,6 +3194,350 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 //--------------------
 
 
+static RegisterNode<ExtractNode> regExtractNode(blr_extract);
+
+ExtractNode::ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_EXTRACT>(pool),
+	  blrSubOp(aBlrSubOp),
+	  dsqlArg(aArg),
+	  arg(NULL)
+{
+	addChildNode(dsqlArg, arg);
+}
+
+DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
+
+	ExtractNode* node = FB_NEW(pool) ExtractNode(pool, blrSubOp);
+	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void ExtractNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("ExtractNode (%d)", blrSubOp);
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	// Figure out the data type of the sub parameter, and make
+	// sure the requested type of information can be extracted
+
+	dsql_nod* sub1 = PASS1_node(dsqlScratch, dsqlArg);
+	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
+
+	switch (blrSubOp)
+	{
+		case blr_extract_year:
+		case blr_extract_month:
+		case blr_extract_day:
+		case blr_extract_weekday:
+		case blr_extract_yearday:
+		case blr_extract_week:
+			if (sub1->nod_type != Dsql::nod_null &&
+				sub1->nod_desc.dsc_dtype != dtype_sql_date &&
+				sub1->nod_desc.dsc_dtype != dtype_timestamp)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-105) <<
+						  Arg::Gds(isc_extract_input_mismatch));
+			}
+			break;
+
+		case blr_extract_hour:
+		case blr_extract_minute:
+		case blr_extract_second:
+		case blr_extract_millisecond:
+			if (sub1->nod_type != Dsql::nod_null &&
+				sub1->nod_desc.dsc_dtype != dtype_sql_time &&
+				sub1->nod_desc.dsc_dtype != dtype_timestamp)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-105) <<
+						  Arg::Gds(isc_extract_input_mismatch));
+			}
+			break;
+
+		default:
+			fb_assert(false);
+			break;
+	}
+
+	return FB_NEW(getPool()) ExtractNode(getPool(), blrSubOp, sub1);
+}
+
+void ExtractNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "EXTRACT";
+}
+
+bool ExtractNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar);
+}
+
+void ExtractNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_extract);
+	dsqlScratch->appendUChar(blrSubOp);
+	GEN_expr(dsqlScratch, dsqlArg);
+}
+
+void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	dsc desc1;
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+
+	switch (blrSubOp)
+	{
+		case blr_extract_second:
+			// QUADDATE - maybe this should be DECIMAL(6,4)
+			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
+			break;
+
+		case blr_extract_millisecond:
+			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+			break;
+
+		default:
+			desc->makeShort(0);
+			break;
+	}
+
+	desc->setNullable(desc1.isNullable());
+}
+
+void ExtractNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	switch (blrSubOp)
+	{
+		case blr_extract_second:
+			// QUADDATE - SECOND returns a float, or scaled!
+			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
+			break;
+
+		case blr_extract_millisecond:
+			desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+			break;
+
+		default:
+			desc->makeShort(0);
+			break;
+	}
+}
+
+ValueExprNode* ExtractNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	ExtractNode* node = FB_NEW(*tdbb->getDefaultPool()) ExtractNode(*tdbb->getDefaultPool(), blrSubOp);
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const ExtractNode* o = other->as<ExtractNode>();
+	fb_assert(o)
+
+	return blrSubOp == o->blrSubOp;
+}
+
+bool ExtractNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	ExtractNode* o = other->as<ExtractNode>();
+	fb_assert(o);
+
+	return blrSubOp == o->blrSubOp;
+}
+
+ExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Handles EXTRACT(part FROM date/time/timestamp)
+dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	request->req_flags &= ~req_null;
+
+	const dsc* value = EVL_expr(tdbb, arg);
+
+	if (!value || (request->req_flags & req_null))
+		return NULL;
+
+	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
+
+	tm times = {0};
+	int fractions;
+
+	switch (value->dsc_dtype)
+	{
+		case dtype_sql_time:
+			switch (blrSubOp)
+			{
+				case blr_extract_hour:
+				case blr_extract_minute:
+				case blr_extract_second:
+				case blr_extract_millisecond:
+					TimeStamp::decode_time(*(GDS_TIME*) value->dsc_address,
+						&times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
+					break;
+				default:
+					ERR_post(Arg::Gds(isc_expression_eval_err) <<
+							 Arg::Gds(isc_invalid_extractpart_time));
+			}
+			break;
+
+		case dtype_sql_date:
+			switch (blrSubOp)
+			{
+				case blr_extract_hour:
+				case blr_extract_minute:
+				case blr_extract_second:
+				case blr_extract_millisecond:
+					ERR_post(Arg::Gds(isc_expression_eval_err) <<
+							 Arg::Gds(isc_invalid_extractpart_date));
+					break;
+				default:
+					TimeStamp::decode_date(*(GDS_DATE*) value->dsc_address, &times);
+			}
+			break;
+
+		case dtype_timestamp:
+			TimeStamp::decode_timestamp(*(GDS_TIMESTAMP*) value->dsc_address, &times, &fractions);
+			break;
+
+		default:
+			ERR_post(Arg::Gds(isc_expression_eval_err) <<
+					 Arg::Gds(isc_invalidarg_extract));
+			break;
+	}
+
+	USHORT part;
+
+	switch (blrSubOp)
+	{
+		case blr_extract_year:
+			part = times.tm_year + 1900;
+			break;
+		case blr_extract_month:
+			part = times.tm_mon + 1;
+			break;
+		case blr_extract_day:
+			part = times.tm_mday;
+			break;
+		case blr_extract_hour:
+			part = times.tm_hour;
+			break;
+		case blr_extract_minute:
+			part = times.tm_min;
+			break;
+
+		case blr_extract_second:
+			impure->vlu_desc.dsc_dtype = dtype_long;
+			impure->vlu_desc.dsc_length = sizeof(ULONG);
+			impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+			impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+			*(ULONG*) impure->vlu_desc.dsc_address = times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
+			return &impure->vlu_desc;
+
+		case blr_extract_millisecond:
+			impure->vlu_desc.dsc_dtype = dtype_long;
+			impure->vlu_desc.dsc_length = sizeof(ULONG);
+			impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
+			impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+			(*(ULONG*) impure->vlu_desc.dsc_address) = fractions;
+			return &impure->vlu_desc;
+
+		case blr_extract_week:
+		{
+			// Algorithm for Converting Gregorian Dates to ISO 8601 Week Date by Rick McCarty, 1999
+			// http://personal.ecu.edu/mccartyr/ISOwdALG.txt
+
+			const int y = times.tm_year + 1900;
+			const int dayOfYearNumber = times.tm_yday + 1;
+
+			// Find the jan1Weekday for y (Monday=1, Sunday=7)
+			const int yy = (y - 1) % 100;
+			const int c = (y - 1) - yy;
+			const int g = yy + yy / 4;
+			const int jan1Weekday = 1 + (((((c / 100) % 4) * 5) + g) % 7);
+
+			// Find the weekday for y m d
+			const int h = dayOfYearNumber + (jan1Weekday - 1);
+			const int weekday = 1 + ((h - 1) % 7);
+
+			// Find if y m d falls in yearNumber y-1, weekNumber 52 or 53
+			int yearNumber, weekNumber;
+
+			if ((dayOfYearNumber <= (8 - jan1Weekday)) && (jan1Weekday > 4))
+			{
+				yearNumber = y - 1;
+				weekNumber = ((jan1Weekday == 5) || ((jan1Weekday == 6) &&
+					TimeStamp::isLeapYear(yearNumber))) ? 53 : 52;
+			}
+			else
+			{
+				yearNumber = y;
+
+				// Find if y m d falls in yearNumber y+1, weekNumber 1
+				int i = TimeStamp::isLeapYear(y) ? 366 : 365;
+
+				if ((i - dayOfYearNumber) < (4 - weekday))
+				{
+					yearNumber = y + 1;
+					weekNumber = 1;
+				}
+			}
+
+			// Find if y m d falls in yearNumber y, weekNumber 1 through 53
+			if (yearNumber == y)
+			{
+				int j = dayOfYearNumber + (7 - weekday) + (jan1Weekday - 1);
+				weekNumber = j / 7;
+				if (jan1Weekday > 4)
+					weekNumber--;
+			}
+
+			part = weekNumber;
+			break;
+		}
+
+		case blr_extract_yearday:
+			part = times.tm_yday;
+			break;
+		case blr_extract_weekday:
+			part = times.tm_wday;
+			break;
+		default:
+			fb_assert(false);
+			part = 0;
+	}
+
+	*(USHORT*) impure->vlu_desc.dsc_address = part;
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<GenIdNode> regGenIdNode(blr_gen_id);
 
 GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1, const MetaName& aName, dsql_nod* aArg)
