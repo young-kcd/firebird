@@ -1,3 +1,11 @@
+ 2010-10-15 07:20  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Backported fix for CORE-3115: Bugs in the internal record compression routines
+
+ 2010-10-15 06:29  alexpeshkoff 
+   M src/extlib/fbudf/fbudf.h
+misc
+
  2010-10-13 23:11  asfernandes 
    M src/dsql/parse.y
 Backported Improvement CORE-1453 - Allow usage of functions in LIST delimiter parameter
