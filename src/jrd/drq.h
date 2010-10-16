@@ -49,7 +49,6 @@
 
 enum drq_type_t
 {
-	drq_l_prot_mask,		// lookup protection mask
 	drq_s_rel_con,			// store relation constraints
 	drq_s_chk_con,			// store check constraints
 	drq_s_ref_con,			// store ref constraints

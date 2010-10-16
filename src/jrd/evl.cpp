@@ -122,8 +122,6 @@ static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
 static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
-static dsc* get_mask(thread_db*, const jrd_nod*, impure_value*);
-static dsc* lock_state(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 static dsc* string_length(thread_db*, const jrd_nod*, impure_value*);
@@ -471,15 +469,9 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	case nod_literal:
 		return &((Literal*) node)->lit_desc;
 
-	case nod_lock_state:
-		return lock_state(tdbb, node, impure);
-
 	case nod_null:
 		request->req_flags |= req_null;
 		return NULL;
-
-	case nod_prot_mask:
-		return get_mask(tdbb, node, impure);
 
 	case nod_extract:
 		return extract(tdbb, node, impure);
@@ -1415,117 +1407,6 @@ static dsc* extract(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	}
 
 	*(USHORT*) impure->vlu_desc.dsc_address = part;
-	return &impure->vlu_desc;
-}
-
-
-static dsc* get_mask(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      g e t _ m a s k
- *
- **************************************
- *
- * Functional description
- *      Compute protection mask.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	jrd_req* request = tdbb->getRequest();
-	TEXT* p1 = NULL;
-	TEXT* p2 = NULL;
-	SqlIdentifier relation_name, field_name;
-
-	const dsc* value = EVL_expr(tdbb, node->nod_arg[0]);
-	if (!(request->req_flags & req_null))
-	{
-		p1 = relation_name;
-		MOV_get_name(value, p1);
-		value = EVL_expr(tdbb, node->nod_arg[1]);
-		if (!(request->req_flags & req_null))
-		{
-			p2 = field_name;
-			MOV_get_name(value, p2);
-		}
-	}
-
-	request->req_flags &= ~req_null;
-
-	// SecurityClass::flags_t is USHORT for now, so it fits in vlu_long.
-	impure->make_long(SCL_get_mask(tdbb, p1, p2));
-	return &impure->vlu_desc;
-}
-
-
-static dsc* lock_state(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      l o c k _ s t a t e
- *
- **************************************
- *
- * Functional description
- *      Compute state of an attachment id.  The values
- *      returned are:
- *
- *          0 - value is null
- *          1 - attachment is gone
- *          2 - we are that attachment
- *          3 - attachment is active
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	Database* dbb = tdbb->getDatabase();
-
-	DEV_BLKCHK(node, type_nod);
-
-	// Initialize descriptor
-
-	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
-	impure->vlu_desc.dsc_dtype = dtype_long;
-	impure->vlu_desc.dsc_length = sizeof(SLONG);
-	impure->vlu_desc.dsc_scale = 0;
-
-	// Evaluate attachment id
-
-	jrd_req* request = tdbb->getRequest();
-	const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
-
-	if (request->req_flags & req_null)
-		impure->vlu_misc.vlu_long = 0;
-	else
-	{
-		const SLONG id = MOV_get_long(desc, 0);
-		if (id == PAG_attachment_id(tdbb))
-			impure->vlu_misc.vlu_long = 2;
-		else
-		{
-			Lock temp_lock;
-			// fill out a lock block, zeroing it out first
-
-			temp_lock.lck_parent = dbb->dbb_lock;
-			temp_lock.lck_type = LCK_attachment;
-			temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
-			temp_lock.lck_length = sizeof(SLONG);
-			temp_lock.lck_key.lck_long = id;
-			temp_lock.lck_dbb = dbb;
-
-			if (LCK_lock(tdbb, &temp_lock, LCK_write, LCK_NO_WAIT))
-			{
-				impure->vlu_misc.vlu_long = 1;
-				LCK_release(tdbb, &temp_lock);
-			}
-			else
-				impure->vlu_misc.vlu_long = 3;
-		}
-	}
-
 	return &impure->vlu_desc;
 }
 

@@ -35,8 +35,6 @@ void	DYN_UTIL_store_check_constraints(Jrd::thread_db*, Jrd::jrd_tra*,
 bool	DYN_UTIL_find_field_source(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 			const Firebird::MetaName& view_name, USHORT context, const TEXT* local_name,
 			TEXT* output_field_name);
-bool	DYN_UTIL_get_prot(Jrd::thread_db*, Jrd::jrd_tra*, const SCHAR*,
-			const SCHAR*, Jrd::SecurityClass::flags_t*);
 void	DYN_UTIL_generate_generator_name(Jrd::thread_db*, Firebird::MetaName&);
 void	DYN_UTIL_generate_trigger_name(Jrd::thread_db*, Jrd::jrd_tra*, Firebird::MetaName&);
 void	DYN_UTIL_generate_index_name(Jrd::thread_db*, Jrd::jrd_tra*, Firebird::MetaName&, UCHAR);

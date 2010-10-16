@@ -7276,11 +7276,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 			// I think this should be the responsability of DFW or the user will find ways to
 			// circumvent DYN.
-			if (!DYN_UTIL_get_prot(tdbb, transaction, PREL.RDB$RELATION_NAME, "", &priv))
-			{
-				// ASF: DYN_UTIL_get_prot will throw instead of return false.
-				fb_assert(false);
-			}
+			priv = SCL_get_mask(tdbb, PREL.RDB$RELATION_NAME, "");
 
 			if (!(priv & SCL_read))
 			{

@@ -481,10 +481,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
-	case nod_prot_mask:
 	case nod_null:
 	case nod_count:
-	case nod_lock_state:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
 		desc->dsc_scale = 0;
@@ -3161,8 +3159,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_rec_version:
 	case nod_substr:
 	case nod_null:
-	case nod_prot_mask:
-	case nod_lock_state:
 	case nod_scalar:
 	case nod_cast:
 	case nod_extract:

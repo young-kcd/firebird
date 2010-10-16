@@ -127,9 +127,9 @@ static const struct
 	{NULL, NULL},
 	{"function", function},	// 100
 	{"gen_id", gen_id},
-	{"prot_mask", two},
+	{NULL, NULL},
 	{"upcase", one},
-	{"lock_state", one},
+	{NULL, NULL},
 	{"value_if", three},
 	{"matching2", three},
 	{"index", indx},

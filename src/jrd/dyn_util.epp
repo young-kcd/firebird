@@ -82,31 +82,6 @@ static const UCHAR gen_id_blr2[] =
 		blr_parameter, 0, 0, 0, blr_end, blr_end, blr_end, blr_eoc
 };
 
-static const UCHAR prot_blr[] =
-{
-	blr_version5,
-	blr_begin,
-	blr_message, 1, 1, 0,
-	blr_short, 0,
-	blr_message, 0, 2, 0,
-	blr_cstring, 32, 0,
-	blr_cstring, 32, 0,
-	blr_receive, 0,
-	blr_begin,
-	blr_send, 1,
-	blr_begin,
-	blr_assignment,
-	blr_prot_mask,
-	blr_parameter, 0, 0, 0,
-	blr_parameter, 0, 1, 0,
-	blr_parameter, 1, 0, 0,
-	blr_end,
-	blr_end,
-	blr_end,
-	blr_eoc
-};
-
-
 void DYN_UTIL_check_unique_name(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& object_name, int object_type)
 {
@@ -633,49 +608,6 @@ bool DYN_UTIL_find_field_source(thread_db* tdbb,
 	}
 
 	return found;
-}
-
-
-bool DYN_UTIL_get_prot(thread_db* tdbb, jrd_tra* transaction, const SCHAR* rname,
-	const SCHAR* fname, SecurityClass::flags_t* prot_mask)
-{
-/**************************************
- *
- *	D Y N _ U T I L _ g e t _ p r o t
- *
- **************************************
- *
- * Functional description
- *	Get protection mask for relation or relation_field
- *
- **************************************/
-	struct
-	{
-		SqlIdentifier relation_name;
-		SqlIdentifier field_name;
-	} in_msg;
-
-	SET_TDBB(tdbb);
-
-	AutoCacheRequest request(tdbb, drq_l_prot_mask, DYN_REQUESTS);
-
-	try
-	{
-		request.compile(tdbb, prot_blr, sizeof(prot_blr));
-
-		gds__vtov(rname, in_msg.relation_name, sizeof(in_msg.relation_name));
-		gds__vtov(fname, in_msg.field_name, sizeof(in_msg.field_name));
-		EXE_start(tdbb, request, transaction);
-		EXE_send(tdbb, request, 0, sizeof(in_msg), (UCHAR*) &in_msg);
-		EXE_receive(tdbb, request, 1, sizeof(SecurityClass::flags_t), (UCHAR*) prot_mask);
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		return false;
-	}
-
-	return true;
 }
 
 

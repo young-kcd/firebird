@@ -198,9 +198,9 @@
 
 #define blr_function		(unsigned char)100
 #define blr_gen_id		(unsigned char)101
-#define blr_prot_mask		(unsigned char)102
+///#define blr_prot_mask		(unsigned char)102
 #define blr_upcase		(unsigned char)103
-#define blr_lock_state		(unsigned char)104
+///#define blr_lock_state		(unsigned char)104
 #define blr_value_if		(unsigned char)105
 #define blr_matching2		(unsigned char)106
 #define blr_index		(unsigned char)107

@@ -2284,14 +2284,12 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
-	case blr_prot_mask:
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		// Fall into ...
 
 	case blr_handler:
 	case blr_loop:
-	case blr_lock_state:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
