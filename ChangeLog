@@ -1,3 +1,30 @@
+ 2010-10-16 01:15  asfernandes 
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+Fix the UDR engine build
+
+ 2010-10-15 15:53  alexpeshkoff 
+   M src/common/classes/array.h
+   M src/common/classes/stack.h
+   M src/common/classes/vector.h
+Fixed issues, found by clang
+
+ 2010-10-15 15:52  alexpeshkoff 
+   M builds/posix/make.defaults
+CORE-3185: Firebird compilation on a box, already running firebird server
+
+ 2010-10-15 14:54  alexpeshkoff 
+   M builds/posix/make.defaults
+CORE-3185: Firebird compilation on a box, already running firebird server
+
+ 2010-10-15 09:08  alexpeshkoff 
+   M src/common/classes/DbImplementation.cpp
+CORE-3184: Committed Damyan's patch - support HW IDs from 2.5
+
+ 2010-10-15 09:05  alexpeshkoff 
+   M src/jrd/req.h
+warnings
+
  2010-10-15 01:55  asfernandes 
    M src/jrd/met.epp
    M src/utilities/gstat/dba.epp
