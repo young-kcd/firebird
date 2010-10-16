@@ -1,3 +1,21 @@
+ 2010-10-15 15:18  alexpeshkoff 
+   M src/common/classes/array.h
+   M src/common/classes/stack.h
+   M src/common/classes/vector.h
+Fixed issues, found by clang
+
+ 2010-10-15 14:54  alexpeshkoff 
+   M builds/posix/make.defaults
+Backported CORE-3185: Firebird compilation on a box, already running firebird server
+
+ 2010-10-15 09:07  alexpeshkoff 
+   M configure.in
+   M src/jrd/common.h
+   M src/jrd/inf_pub.h
+   M src/jrd/pag.cpp
+   M src/jrd/utl.cpp
+CORE-3184: Committed Damyan's patch - port for linux/hppa and linux/alpha
+
  2010-10-14 11:34  alexpeshkoff 
    M src/gpre/c_cxx.cpp
 Ported fix for CORE-3022: gpre C++ compiler warnings with GCC 4.4.1
