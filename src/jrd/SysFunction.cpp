@@ -36,6 +36,7 @@
 #include "../jrd/exe.h"
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../common/cvt.h"
@@ -2353,7 +2354,7 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 	jrd_req* request = tdbb->getRequest();
 
-	dsc* str = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* str = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if str is NULL
 		return NULL;
 
@@ -2365,7 +2366,7 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 	dsc startDsc;
 	startDsc.makeLong(0, &start);
 
-	return SysFunction::substring(tdbb, impure, str, &startDsc, len);
+	return SubstringNode::perform(tdbb, impure, str, &startDsc, len);
 }
 
 
@@ -3339,11 +3340,11 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 	jrd_req* request = tdbb->getRequest();
 
-	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if len is NULL
 		return NULL;
 
@@ -3381,7 +3382,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 	dsc startDsc;
 	startDsc.makeLong(0, &start);
 
-	return SysFunction::substring(tdbb, impure, value, &startDsc, len);
+	return SubstringNode::perform(tdbb, impure, value, &startDsc, len);
 }
 
 
@@ -3676,166 +3677,6 @@ const SysFunction* SysFunction::lookup(const MetaName& name)
 	}
 
 	return NULL;
-}
-
-
-dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
-	dsc* value, const dsc* offset_value, const dsc* length_value)
-{
-/**************************************
- *
- *      s u b s t r i n g
- *
- **************************************
- *
- * Functional description
- *      Perform substring function.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	const SLONG offset_arg = MOV_get_long(offset_value, 0);
-	const SLONG length_arg = MOV_get_long(length_value, 0);
-
-	if (offset_arg < 0)
-		status_exception::raise(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset_arg + 1));
-	else if (length_arg < 0)
-		status_exception::raise(Arg::Gds(isc_bad_substring_length) << Arg::Num(length_arg));
-
-	dsc desc;
-	DataTypeUtil(tdbb).makeSubstr(&desc, value, offset_value, length_value);
-
-	ULONG offset = (ULONG) offset_arg;
-	ULONG length = (ULONG) length_arg;
-
-	if (desc.isText() && length > MAX_COLUMN_SIZE)
-		length = MAX_COLUMN_SIZE;
-
-	ULONG dataLen;
-
-	if (value->isBlob())
-	{
-		// Source string is a blob, things get interesting.
-
-		fb_assert(desc.dsc_dtype == dtype_blob);
-
-		desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_bid;
-
-		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
-
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
-							reinterpret_cast<bid*>(value->dsc_address));
-
-		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
-		//const ULONG totLen = length * charSet->maxBytesPerChar();
-
-		if (charSet->isMultiByte())
-		{
-			buffer.getBuffer(MIN(blob->blb_length, (offset + length) * charSet->maxBytesPerChar()));
-			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
-
-			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
-			buffer2.getBuffer(dataLen);
-
-			dataLen = charSet->substring(dataLen, buffer.begin(),
-				buffer2.getCapacity(), buffer2.begin(), offset, length);
-			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
-		}
-		else
-		{
-			offset *= charSet->maxBytesPerChar();
-			length *= charSet->maxBytesPerChar();
-
-			while (!(blob->blb_flags & BLB_eof) && offset)
-			{
-				// Both cases are the same for now. Let's see if we can optimize in the future.
-				ULONG l1 = BLB_get_data(tdbb, blob, buffer.begin(),
-					MIN(buffer.getCapacity(), offset), false);
-				offset -= l1;
-			}
-
-			while (!(blob->blb_flags & BLB_eof) && length)
-			{
-				dataLen = BLB_get_data(tdbb, blob, buffer.begin(),
-					MIN(length, buffer.getCapacity()), false);
-				length -= dataLen;
-
-				BLB_put_data(tdbb, newBlob, buffer.begin(), dataLen);
-			}
-		}
-
-		BLB_close(tdbb, blob);
-		BLB_close(tdbb, newBlob);
-
-		EVL_make_value(tdbb, &desc, impure);
-	}
-	else
-	{
-		fb_assert(desc.isText());
-
-		desc.dsc_dtype = dtype_text;
-
-		// CVC: I didn't bother to define a larger buffer because:
-		//		- Native types when converted to string don't reach 31 bytes plus terminator.
-		//		- String types do not need and do not use the buffer ("temp") to be pulled.
-		//		- The types that can cause an error() issued inside the low level MOV/CVT
-		//		routines because the "temp" is not enough are blob and array but at this time
-		//		they aren't accepted, so they will cause error() to be called anyway.
-		VaryStr<32> temp;
-		USHORT ttype;
-		desc.dsc_length =
-			MOV_get_string_ptr(value, &ttype, &desc.dsc_address, &temp, sizeof(temp));
-		desc.setTextType(ttype);
-
-		// CVC: Why bother? If the offset is greater or equal than the length in bytes,
-		// it's impossible that the offset be less than the length in an international charset.
-		if (offset >= desc.dsc_length || !length)
-		{
-			desc.dsc_length = 0;
-			EVL_make_value(tdbb, &desc, impure);
-		}
-		// CVC: God save the king if the engine doesn't protect itself against buffer overruns,
-		//		because intl.h defines UNICODE as the type of most system relations' string fields.
-		//		Also, the field charset can come as 127 (dynamic) when it comes from system triggers,
-		//		but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
-		//		distinguish between user calls and system calls. Unlike the original ASCII substring(),
-		//		this one will get correctly the amount of UNICODE characters requested.
-		else if (ttype == ttype_ascii || ttype == ttype_none || ttype == ttype_binary)
-		{
-			/* Redundant.
-			if (offset >= desc.dsc_length)
-				desc.dsc_length = 0;
-			else */
-			desc.dsc_address += offset;
-			desc.dsc_length -= offset;
-			if (length < desc.dsc_length)
-				desc.dsc_length = length;
-			EVL_make_value(tdbb, &desc, impure);
-		}
-		else
-		{
-			// CVC: ATTENTION:
-			// I couldn't find an appropriate message for this failure among current registered
-			// messages, so I will return empty.
-			// Finally I decided to use arithmetic exception or numeric overflow.
-			const UCHAR* p = desc.dsc_address;
-			const USHORT pcount = desc.dsc_length;
-
-			CharSet* charSet = INTL_charset_lookup(tdbb, desc.getCharSet());
-
-			desc.dsc_address = NULL;
-			const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
-			desc.dsc_length = totLen;
-			EVL_make_value(tdbb, &desc, impure);
-
-			dataLen = charSet->substring(pcount, p, totLen,
-				impure->vlu_desc.dsc_address, offset, length);
-			impure->vlu_desc.dsc_length = static_cast<USHORT>(dataLen);
-		}
-	}
-
-	return &impure->vlu_desc;
 }
 
 

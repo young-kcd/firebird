@@ -326,18 +326,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		case nod_null:
 			return true;
 
-		case nod_substr:
-			if (node1->nod_count != node2->nod_count)
-				return false;
-
-			for (int i = 0; i < node1->nod_count; ++i)
-			{
-				if (!OPT_expression_equal2(tdbb, csb, node1->nod_arg[i], node2->nod_arg[i], stream))
-					return false;
-			}
-
-			return true;
-
 		case nod_cast:
 		{
 			dsc desc1, desc2;

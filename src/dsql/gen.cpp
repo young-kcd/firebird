@@ -311,9 +311,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		blr_operator = blr_via;
 		break;
 
-	case nod_substr:
-        blr_operator = blr_substring;
-        break;
 	case nod_cast:
 		gen_cast(dsqlScratch, node);
 		return;

@@ -519,7 +519,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 				ret |= visit(&node->nod_arg[1]);
 			break;
 
-		case nod_substr:
 		case nod_extract:
 		case nod_strlen:
 		case nod_simple_case:

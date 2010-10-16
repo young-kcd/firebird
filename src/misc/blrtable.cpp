@@ -137,7 +137,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_exprnode_jrd, blr_negate, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_gen_id, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_upcase, 1, 0, VALUE, VALUE),
-	PAIR(nod_substr, blr_substring, 3, 3, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_substring, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_subtract, 1, 0, VALUE, VALUE),
 	PAIR2(nod_total, blr_total, e_stat_length, 2, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_value_if, 1, 0, VALUE, OTHER),

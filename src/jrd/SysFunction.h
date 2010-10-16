@@ -59,8 +59,6 @@ public:
 	void* misc;
 
 	static const SysFunction* lookup(const Firebird::MetaName& name);
-	static dsc* substring(Jrd::thread_db* tdbb, Jrd::impure_value* impure,
-		dsc* value, const dsc* offset_value, const dsc* length_value);
 
 	void checkArgsMismatch(int count) const;
 

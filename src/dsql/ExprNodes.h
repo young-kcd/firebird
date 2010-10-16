@@ -480,6 +480,41 @@ public:
 };
 
 
+class SubstringNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING>
+{
+public:
+	explicit SubstringNode(MemoryPool& pool, dsql_nod* aExpr = NULL,
+		dsql_nod* aStart = NULL, dsql_nod* aLength = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+	static dsc* perform(thread_db* tdbb, impure_value* impure, const dsc* valueDsc,
+		const dsc* startDsc, const dsc* lengthDsc);
+
+public:
+	dsql_nod* dsqlExpr;
+	dsql_nod* dsqlStart;
+	dsql_nod* dsqlLength;
+	NestConst<jrd_nod> expr;
+	NestConst<jrd_nod> start;
+	NestConst<jrd_nod> length;
+};
+
+
 class SubstringSimilarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING_SIMILAR>
 {
 public:

@@ -125,7 +125,6 @@ static dsc* extract(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 static dsc* string_length(thread_db*, const jrd_nod*, impure_value*);
-static dsc* substring(thread_db*, impure_value*, dsc*, const dsc*, const dsc*);
 
 
 dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
@@ -560,9 +559,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_substr:
-		return substring(tdbb, impure, values[0], values[1], values[2]);
-
 	case nod_cast:
 		return cast(tdbb, values[0], node, impure);
 
@@ -1644,21 +1640,4 @@ static dsc* string_length(thread_db* tdbb, const jrd_nod* node, impure_value* im
 
 	*(ULONG*) impure->vlu_desc.dsc_address = length;
 	return &impure->vlu_desc;
-}
-
-
-static dsc* substring(thread_db* tdbb, impure_value* impure,
-					  dsc* value, const dsc* offset_value, const dsc* length_value)
-{
-/**************************************
- *
- *      s u b s t r i n g
- *
- **************************************
- *
- * Functional description
- *      Perform substring function.
- *
- **************************************/
-	return SysFunction::substring(tdbb, impure, value, offset_value, length_value);
 }

@@ -134,7 +134,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 			ret |= visit(jrdNode->nod_arg[e_strlen_value]);
 			break;
 
-		case nod_substr:
 		case nod_derived_expr:
 		{
 			jrd_nod* /*const*/* ptr = jrdNode->nod_arg;

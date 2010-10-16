@@ -4509,6 +4509,332 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<SubstringNode> regSubstringNode(blr_substring);
+
+SubstringNode::SubstringNode(MemoryPool& pool, dsql_nod* aExpr, dsql_nod* aStart, dsql_nod* aLength)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_SUBSTRING>(pool),
+	  dsqlExpr(aExpr),
+	  dsqlStart(aStart),
+	  dsqlLength(aLength),
+	  expr(NULL),
+	  start(NULL),
+	  length(NULL)
+{
+	addChildNode(dsqlExpr, expr);
+	addChildNode(dsqlStart, start);
+	addChildNode(dsqlLength, length);
+}
+
+DmlNode* SubstringNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
+	UCHAR /*blrOp*/)
+{
+	SubstringNode* node = FB_NEW(pool) SubstringNode(pool);
+	node->expr = PAR_parse_node(tdbb, csb, VALUE);
+	node->start = PAR_parse_node(tdbb, csb, VALUE);
+	node->length = PAR_parse_node(tdbb, csb, VALUE);
+	return node;
+}
+
+void SubstringNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "SubstringNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* SubstringNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	SubstringNode* node = FB_NEW(getPool()) SubstringNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlExpr),
+		PASS1_node(dsqlScratch, dsqlStart),
+		PASS1_node(dsqlScratch, dsqlLength));
+
+	return node;
+}
+
+void SubstringNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "SUBSTRING";
+}
+
+bool SubstringNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return PASS1_set_parameter_type(dsqlScratch, dsqlExpr, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlStart, node, forceVarChar) |
+		PASS1_set_parameter_type(dsqlScratch, dsqlLength, node, forceVarChar);
+}
+
+void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_substring);
+	GEN_expr(dsqlScratch, dsqlExpr);
+	GEN_expr(dsqlScratch, dsqlStart);
+	GEN_expr(dsqlScratch, dsqlLength);
+}
+
+void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	dsc desc1, desc2, desc3;
+
+	MAKE_desc(dsqlScratch, &desc1, dsqlExpr, nullReplacement);
+	MAKE_desc(dsqlScratch, &desc2, dsqlStart, nullReplacement);
+	MAKE_desc(dsqlScratch, &desc3, dsqlLength, nullReplacement);
+
+	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
+}
+
+void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	DSC desc0, desc1, desc2, desc3;
+
+	CMP_get_desc(tdbb, csb, expr, &desc0);
+
+	jrd_nod* offsetNode = start;
+	jrd_nod* decrementNode = NULL;
+	ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(offsetNode);
+
+	// ASF: This code is very strange. The DSQL node is created as dialect 1, but only the dialect
+	// 3 is verified here. Also, this task seems unnecessary here, as it must be done during
+	// execution anyway.
+
+	if (arithmeticNode && arithmeticNode->blrOp == blr_subtract &&
+		!arithmeticNode->dialect1)
+	{
+		// This node is created by the DSQL layer, but the system BLR code bypasses it and uses
+		// zero-based string offsets instead.
+		decrementNode = arithmeticNode->arg2;
+		CMP_get_desc(tdbb, csb, decrementNode, &desc3);
+		offsetNode = arithmeticNode->arg1;
+	}
+
+	CMP_get_desc(tdbb, csb, offsetNode, &desc1);
+	CMP_get_desc(tdbb, csb, length, &desc2);
+
+	DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
+
+	if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
+		desc->dsc_flags |= DSC_null;
+	else
+	{
+		if (offsetNode->nod_type == nod_literal && desc1.dsc_dtype == dtype_long)
+		{
+			SLONG offset = MOV_get_long(&desc1, 0);
+
+			if (decrementNode && decrementNode->nod_type == nod_literal &&
+				desc3.dsc_dtype == dtype_long)
+			{
+				offset -= MOV_get_long(&desc3, 0);
+			}
+
+			if (offset < 0)
+				ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
+		}
+
+		if (length->nod_type == nod_literal && desc2.dsc_dtype == dtype_long)
+		{
+			const SLONG length = MOV_get_long(&desc2, 0);
+
+			if (length < 0)
+				ERR_post(Arg::Gds(isc_bad_substring_length) << Arg::Num(length));
+		}
+	}
+}
+
+ValueExprNode* SubstringNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	SubstringNode* node = FB_NEW(*tdbb->getDefaultPool()) SubstringNode(
+		*tdbb->getDefaultPool());
+	node->expr = copier.copy(tdbb, expr);
+	node->start = copier.copy(tdbb, start);
+	node->length = copier.copy(tdbb, length);
+	return node;
+}
+
+ExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+
+	// Run all expression arguments.
+
+	const dsc* exprDesc = EVL_expr(tdbb, expr);
+	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
+
+	const dsc* startDesc = EVL_expr(tdbb, start);
+	startDesc = (request->req_flags & req_null) ? NULL : startDesc;
+
+	const dsc* lengthDesc = EVL_expr(tdbb, length);
+	lengthDesc = (request->req_flags & req_null) ? NULL : lengthDesc;
+
+	if (exprDesc && startDesc && lengthDesc)
+		return perform(tdbb, impure, exprDesc, startDesc, lengthDesc);
+
+	// If any of them is NULL, return NULL.
+	return NULL;
+}
+
+dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* valueDsc,
+	const dsc* startDsc, const dsc* lengthDsc)
+{
+	const SLONG sStart = MOV_get_long(startDsc, 0);
+	const SLONG sLength = MOV_get_long(lengthDsc, 0);
+
+	if (sStart < 0)
+		status_exception::raise(Arg::Gds(isc_bad_substring_offset) << Arg::Num(sStart + 1));
+	else if (sLength < 0)
+		status_exception::raise(Arg::Gds(isc_bad_substring_length) << Arg::Num(sLength));
+
+	dsc desc;
+	DataTypeUtil(tdbb).makeSubstr(&desc, valueDsc, startDsc, lengthDsc);
+
+	ULONG start = (ULONG) sStart;
+	ULONG length = (ULONG) sLength;
+
+	if (desc.isText() && length > MAX_COLUMN_SIZE)
+		length = MAX_COLUMN_SIZE;
+
+	ULONG dataLen;
+
+	if (valueDsc->isBlob())
+	{
+		// Source string is a blob, things get interesting.
+
+		fb_assert(desc.dsc_dtype == dtype_blob);
+
+		desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_bid;
+
+		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
+
+		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+							reinterpret_cast<bid*>(valueDsc->dsc_address));
+
+		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
+		//const ULONG totLen = length * charSet->maxBytesPerChar();
+
+		if (charSet->isMultiByte())
+		{
+			buffer.getBuffer(MIN(blob->blb_length, (start + length) * charSet->maxBytesPerChar()));
+			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
+
+			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
+			buffer2.getBuffer(dataLen);
+
+			dataLen = charSet->substring(dataLen, buffer.begin(),
+				buffer2.getCapacity(), buffer2.begin(), start, length);
+			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
+		}
+		else
+		{
+			start *= charSet->maxBytesPerChar();
+			length *= charSet->maxBytesPerChar();
+
+			while (!(blob->blb_flags & BLB_eof) && start)
+			{
+				// Both cases are the same for now. Let's see if we can optimize in the future.
+				ULONG l1 = BLB_get_data(tdbb, blob, buffer.begin(),
+					MIN(buffer.getCapacity(), start), false);
+				start -= l1;
+			}
+
+			while (!(blob->blb_flags & BLB_eof) && length)
+			{
+				dataLen = BLB_get_data(tdbb, blob, buffer.begin(),
+					MIN(length, buffer.getCapacity()), false);
+				length -= dataLen;
+
+				BLB_put_data(tdbb, newBlob, buffer.begin(), dataLen);
+			}
+		}
+
+		BLB_close(tdbb, blob);
+		BLB_close(tdbb, newBlob);
+
+		EVL_make_value(tdbb, &desc, impure);
+	}
+	else
+	{
+		fb_assert(desc.isText());
+
+		desc.dsc_dtype = dtype_text;
+
+		// CVC: I didn't bother to define a larger buffer because:
+		//		- Native types when converted to string don't reach 31 bytes plus terminator.
+		//		- String types do not need and do not use the buffer ("temp") to be pulled.
+		//		- The types that can cause an error() issued inside the low level MOV/CVT
+		//		routines because the "temp" is not enough are blob and array but at this time
+		//		they aren't accepted, so they will cause error() to be called anyway.
+		VaryStr<32> temp;
+		USHORT ttype;
+		desc.dsc_length =
+			MOV_get_string_ptr(valueDsc, &ttype, &desc.dsc_address, &temp, sizeof(temp));
+		desc.setTextType(ttype);
+
+		// CVC: Why bother? If the start is greater or equal than the length in bytes,
+		// it's impossible that the start be less than the length in an international charset.
+		if (start >= desc.dsc_length || !length)
+		{
+			desc.dsc_length = 0;
+			EVL_make_value(tdbb, &desc, impure);
+		}
+		// CVC: God save the king if the engine doesn't protect itself against buffer overruns,
+		//		because intl.h defines UNICODE as the type of most system relations' string fields.
+		//		Also, the field charset can come as 127 (dynamic) when it comes from system triggers,
+		//		but it's resolved by INTL_obj_lookup() to UNICODE_FSS in the cases I observed. Here I cannot
+		//		distinguish between user calls and system calls. Unlike the original ASCII substring(),
+		//		this one will get correctly the amount of UNICODE characters requested.
+		else if (ttype == ttype_ascii || ttype == ttype_none || ttype == ttype_binary)
+		{
+			/* Redundant.
+			if (start >= desc.dsc_length)
+				desc.dsc_length = 0;
+			else */
+			desc.dsc_address += start;
+			desc.dsc_length -= start;
+			if (length < desc.dsc_length)
+				desc.dsc_length = length;
+			EVL_make_value(tdbb, &desc, impure);
+		}
+		else
+		{
+			// CVC: ATTENTION:
+			// I couldn't find an appropriate message for this failure among current registered
+			// messages, so I will return empty.
+			// Finally I decided to use arithmetic exception or numeric overflow.
+			const UCHAR* p = desc.dsc_address;
+			const USHORT pcount = desc.dsc_length;
+
+			CharSet* charSet = INTL_charset_lookup(tdbb, desc.getCharSet());
+
+			desc.dsc_address = NULL;
+			const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
+			desc.dsc_length = totLen;
+			EVL_make_value(tdbb, &desc, impure);
+
+			dataLen = charSet->substring(pcount, p, totLen,
+				impure->vlu_desc.dsc_address, start, length);
+			impure->vlu_desc.dsc_length = static_cast<USHORT>(dataLen);
+		}
+	}
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<SubstringSimilarNode> regSubstringSimilarNode(blr_substring_similar);
 
 SubstringSimilarNode::SubstringSimilarNode(MemoryPool& pool, dsql_nod* aExpr, dsql_nod* aPattern,

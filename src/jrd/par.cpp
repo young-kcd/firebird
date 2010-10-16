@@ -2278,12 +2278,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	switch (blr_operator)
 	{
-	case blr_substring:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		break;
-
 	case blr_assignment:
 		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		// Fall into ...

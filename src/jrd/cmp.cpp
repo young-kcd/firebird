@@ -660,71 +660,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			return;
 		}
 
-	case nod_substr:
-		{
-			DSC desc0, desc1, desc2, desc3;
-
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc0);
-
-			jrd_nod* offset_node = node->nod_arg[1];
-			jrd_nod* decrement_node = NULL;
-			ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(offset_node);
-
-			// ASF: This code is very strange. The DSQL node is created as dialect 1,
-			// but only the dialect 3 is verified here.
-			// Also, this task seems unnecessary here, as it must be done during
-			// execution anyway.
-
-			if (arithmeticNode && arithmeticNode->blrOp == blr_subtract &&
-				!arithmeticNode->dialect1)
-			{
-				// This node is created by the DSQL layer, but the
-				// system BLR code bypasses it and uses zero-based
-				// string offsets instead
-				decrement_node = arithmeticNode->arg2;
-				CMP_get_desc(tdbb, csb, decrement_node, &desc3);
-				offset_node = arithmeticNode->arg1;
-			}
-
-			CMP_get_desc(tdbb, csb, offset_node, &desc1);
-
-			jrd_nod* length_node = node->nod_arg[2];
-			CMP_get_desc(tdbb, csb, length_node, &desc2);
-
-			DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
-
-			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
-				desc->dsc_flags |= DSC_null;
-			else
-			{
-				if (offset_node->nod_type == nod_literal && desc1.dsc_dtype == dtype_long)
-				{
-					SLONG offset = MOV_get_long(&desc1, 0);
-					if (decrement_node && decrement_node->nod_type == nod_literal &&
-						desc3.dsc_dtype == dtype_long)
-					{
-						offset -= MOV_get_long(&desc3, 0);
-					}
-					// error() is a local routine in par.cpp, so we use plain ERR_post
-					if (offset < 0)
-					{
-						ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
-					}
-				}
-				if (length_node->nod_type == nod_literal && desc2.dsc_dtype == dtype_long)
-				{
-					const SLONG length = MOV_get_long(&desc2, 0);
-					// error() is a local routine in par.cpp, so we use plain ERR_post
-					if (length < 0)
-					{
-						ERR_post(Arg::Gds(isc_bad_substring_length) << Arg::Num(length));
-					}
-				}
-			}
-
-			return;
-		}
-
 	case nod_variable:
 		{
 			const jrd_nod* value = node->nod_arg[e_var_variable];
@@ -3157,7 +3092,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
-	case nod_substr:
 	case nod_null:
 	case nod_scalar:
 	case nod_cast:

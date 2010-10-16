@@ -5699,10 +5699,10 @@ substring_function
 			// SQL spec requires numbering to start with 1,
 			// hence we decrement the first parameter to make it
 			// compatible with the engine's implementation
-			$$ = make_node (nod_substr, (int) e_substr_count, $3,
-				makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
-					$5, MAKE_const_slong(1))),
-				$6);
+			dsql_nod* subtractNode = makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(),
+				blr_subtract, true, $5, MAKE_const_slong(1)));
+
+			$$ = makeClassNode(FB_NEW(getPool()) SubstringNode(getPool(), $3, subtractNode, $6));
 		}
 	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
 		{ $$ = makeClassNode(FB_NEW(getPool()) SubstringSimilarNode(getPool(), $3, $5, $7)); }

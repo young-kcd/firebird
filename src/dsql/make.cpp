@@ -426,13 +426,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
-	case nod_substr:
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[0], null_replacement);
-		MAKE_desc(dsqlScratch, &desc2, node->nod_arg[1], null_replacement);
-		MAKE_desc(dsqlScratch, &desc3, node->nod_arg[2], null_replacement);
- 		DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
-  		return;
-
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
@@ -1176,9 +1169,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_constant:
 	case nod_null:
 		name_alias = "CONSTANT";
-		break;
-	case nod_substr:
-		name_alias = "SUBSTRING";
 		break;
 	case nod_cast:
 		name_alias = "CAST";

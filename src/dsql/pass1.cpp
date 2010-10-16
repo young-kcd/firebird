@@ -8523,7 +8523,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 				return false;
 			}
 
-		case nod_substr:
 		case nod_extract:
 		case nod_limit:
 		case nod_rows:
@@ -8626,6 +8625,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 				case ExprNode::TYPE_CONCATENATE:
 				case ExprNode::TYPE_NEGATE:
 				case ExprNode::TYPE_STR_CASE:
+				case ExprNode::TYPE_SUBSTRING:
 				case ExprNode::TYPE_SUBSTRING_SIMILAR:
 				case ExprNode::TYPE_TRIM:
 					for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
@@ -8649,7 +8649,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 		}
 		return;
 
-	case nod_substr:
 	case nod_extract:
 	case nod_strlen:
 	case nod_limit:
@@ -8977,9 +8976,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_store:
 		verb = "store";
-		break;
-	case nod_substr:
-		verb = "substr";
 		break;
 	case nod_update:
 		verb = "update";
