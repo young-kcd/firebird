@@ -7404,6 +7404,12 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[1];
 				fieldStr = fieldName->str_data;
 			}
+			else
+			{
+				// Generate an error when going out of this loop.
+				++ptr;
+				break;
+			}
 
 			++ptr;
 		}
