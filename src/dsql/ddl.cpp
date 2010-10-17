@@ -3881,7 +3881,14 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 				const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[1];
 				field_string = field_name->str_data;
 			}
-			ptr++;
+			else
+			{
+				// Generate an error when going out of this loop.
+				++ptr;
+				break;
+			}
+
+			++ptr;
 		}
 
 		// if not an expression, point to the proper base relation field,
