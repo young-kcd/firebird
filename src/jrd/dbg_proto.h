@@ -33,7 +33,10 @@ namespace Jrd
 	class SortMap;
 }
 
-class MemoryPool;
+namespace Firebird
+{
+	class MemoryPool;
+}
 struct blk;
 
 int DBG_supervisor(int);
@@ -49,7 +52,7 @@ int DBG_eval(int);
 int DBG_examine(int *);
 int DBG_init();
 int DBG_open();
-int DBG_pool(MemoryPool*);
+int DBG_pool(Firebird::MemoryPool*);
 int DBG_pretty(const Jrd::jrd_nod*, int);
 int DBG_rpb(Jrd::record_param*);
 int DBG_smb(Jrd::SortMap*, int);
