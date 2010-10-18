@@ -874,10 +874,6 @@ namespace Why
 
 using namespace Why;
 
-#ifndef WIN_NT
-#include <dlfcn.h>
-#endif
-
 #ifdef DEV_BUILD
 static void check_status_vector(const ISC_STATUS*);
 #endif
