@@ -32,8 +32,8 @@
 #define rem_port void
 #endif
 
-rem_port* XNET_analyze(const Firebird::PathName&, ISC_STATUS*, bool);
-rem_port* XNET_connect(struct packet*, ISC_STATUS*, USHORT);
-rem_port* XNET_reconnect(ULONG, ISC_STATUS*);
+rem_port* XNET_analyze(const Firebird::PathName&, bool);
+rem_port* XNET_connect(struct packet*, USHORT);
+rem_port* XNET_reconnect(ULONG);
 
 #endif // REMOTE_XNET_PROTO_H

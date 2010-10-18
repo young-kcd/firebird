@@ -114,7 +114,6 @@ static xdr_t::xdr_ops wnet_ops =
 
 
 rem_port* WNET_analyze(const Firebird::PathName& file_name,
-					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					bool	uv_flag)
 {
@@ -187,11 +186,15 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
-	if (!port)
+	rem_port* port = NULL;
+	try
+	{
+		port = WNET_connect(node_name, packet, 0);
+	}
+	catch (const Exception&)
 	{
 		delete rdb;
-		return NULL;
+		throw;
 	}
 
 	// Get response packet from server.
@@ -226,11 +229,14 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		port = WNET_connect(node_name, packet, status_vector, 0);
-		if (!port)
+		try
+		{
+			port = WNET_connect(node_name, packet, 0);
+		}
+		catch (const Exception&)
 		{
 			delete rdb;
-			return NULL;
+			throw;
 		}
 
 		// Get response packet from server.
@@ -265,11 +271,14 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		port = WNET_connect(node_name, packet, status_vector, 0);
-		if (!port)
+		try
+		{
+			port = WNET_connect(node_name, packet, 0);
+		}
+		catch (const Exception&)
 		{
 			delete rdb;
-			return NULL;
+			throw;
 		}
 
 		// Get response packet from server.
@@ -281,12 +290,10 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 	if (packet->p_operation != op_accept)
 	{
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_connect_reject;
-		*status_vector++ = 0;
-		delete rdb;
 		disconnect(port);
-		return NULL;
+		delete rdb;
+
+		Arg::Gds(isc_connect_reject).raise();
 	}
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
@@ -315,7 +322,6 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 rem_port* WNET_connect(const TEXT*		name,
 				  PACKET*	packet,
-				  ISC_STATUS*	status_vector,
 				  USHORT	flag)
 {
 /**************************************
@@ -331,10 +337,6 @@ rem_port* WNET_connect(const TEXT*		name,
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
-	port->port_status_vector = status_vector;
-	status_vector[0] = isc_arg_gds;
-	status_vector[1] = 0;
-	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
@@ -448,13 +450,13 @@ rem_port* WNET_connect(const TEXT*		name,
 	{
 		Arg::Gds temp(isc_net_server_shutdown);
 		temp << Arg::Str("WNET");
-		temp.copyTo(status_vector);
+		temp.raise();
 	}
 	return NULL;
 }
 
 
-rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
+rem_port* WNET_reconnect(HANDLE handle)
 {
 /**************************************
  *
@@ -469,10 +471,6 @@ rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
-	port->port_status_vector = status_vector;
-	status_vector[0] = isc_arg_gds;
-	status_vector[1] = 0;
-	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
 	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
@@ -1098,19 +1096,7 @@ static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
 
 	Arg::Gds error(isc_network_error);
 	error << Arg::Str(node_name) << v;
-
-	ISC_STATUS* status_vector = NULL;
-	if (port->port_context != NULL) {
-		status_vector = port->port_context->get_status_vector();
-	}
-	if (status_vector == NULL) {
-		status_vector = port->port_status_vector;
-	}
-	if (status_vector != NULL)
-	{
-		error.copyTo(status_vector);
-		REMOTE_save_status_strings(status_vector);
-	}
+	error.raise();
 }
 
 

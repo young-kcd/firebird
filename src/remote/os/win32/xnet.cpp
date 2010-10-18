@@ -25,23 +25,22 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../remote/remote.h"
-#include "../jrd/ibase.h"
-#include "../common/thd.h"
-#include "../remote/xnet.h"
-#include "../utilities/install/install_nt.h"
-#include "../remote/proto_proto.h"
-#include "../remote/remot_proto.h"
-#include "../remote/xnet_proto.h"
-#include "../remote/server/serve_proto.h"
-#include "../remote/os/win32/window.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/classes/init.h"
-#include "../common/classes/fb_string.h"
-#include "../common/config/config.h"
-#include "../common/classes/ClumpletWriter.h"
-#include "../common/utils_proto.h"
+#include "../../../remote/remote.h"
+#include "../../../jrd/ibase.h"
+#include "../../../common/thd.h"
+#include "../../../remote/os/win32/xnet.h"
+#include "../../../utilities/install/install_nt.h"
+#include "../../../remote/proto_proto.h"
+#include "../../../remote/remot_proto.h"
+#include "../../../remote/os/win32/xnet_proto.h"
+#include "../../../remote/server/serve_proto.h"
+#include "../../../yvalve/gds_proto.h"
+#include "../../../common/isc_proto.h"
+#include "../../../common/classes/init.h"
+#include "../../../common/classes/fb_string.h"
+#include "../../../common/config/config.h"
+#include "../../../common/classes/ClumpletWriter.h"
+#include "../../../common/utils_proto.h"
 #include <time.h>
 
 #ifdef WIN_NT
@@ -61,8 +60,8 @@ static rem_port* aux_request(rem_port*, PACKET*);
 static void cleanup_comm(XCC);
 static void cleanup_mapping(XPM);
 static void cleanup_port(rem_port*);
-static rem_port* connect_client(PACKET*, ISC_STATUS*);
-static rem_port* connect_server(ISC_STATUS*, USHORT);
+static rem_port* connect_client(PACKET*);
+static rem_port* connect_server(USHORT);
 static void disconnect(rem_port*);
 static void force_close(rem_port*);
 static void exit_handler(rem_port*);
@@ -73,10 +72,10 @@ static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
 
 static void peer_shutdown(rem_port* port);
-static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
+static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG);
 static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
-static bool server_init(ISC_STATUS*, USHORT);
+static bool server_init(USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
 static bool fork(ULONG, USHORT, ULONG*);
 
@@ -135,7 +134,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;
 
-static bool connect_init(ISC_STATUS* status);
+static bool connect_init();
 static void connect_fini();
 static void release_all();
 
@@ -163,16 +162,16 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 
 static void xnet_error(rem_port*, ISC_STATUS, int);
 
-static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
+static void xnet_log_error(const char* err_msg, const Exception& ex)
 {
-	if (status && status[1])
-	{
-		Firebird::string str("XNET error: ");
-		str += err_msg;
-		iscLogStatus(str.c_str(), status);
-	}
-	else
-		gds__log("XNET error: %s", err_msg);
+	Firebird::string str("XNET error: ");
+	str += err_msg;
+	iscLogException(str.c_str(), ex);
+}
+
+static void xnet_log_error(const char* err_msg)
+{
+	gds__log("XNET error: %s", err_msg);
 }
 
 #ifdef DEV_BUILD
@@ -184,7 +183,6 @@ static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 #endif
 
 rem_port* XNET_analyze(const Firebird::PathName& file_name,
-					   ISC_STATUS* status_vector,
 					   bool uv_flag)
 {
 /**************************************
@@ -254,11 +252,15 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = XNET_connect(packet, status_vector, 0);
-	if (!port)
+	rem_port* port = NULL;
+	try
+	{
+		port = XNET_connect(packet, 0);
+	}
+	catch (const Exception&)
 	{
 		delete rdb;
-		return NULL;
+		throw;
 	}
 
 	// Get response packet from server
@@ -293,10 +295,14 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try2[i];
 		}
 
-		if (!(port = XNET_connect(packet, status_vector, 0)))
+		try
+		{
+			port = XNET_connect(packet, 0);
+		}
+		catch (const Exception&)
 		{
 			delete rdb;
-			return NULL;
+			throw;
 		}
 
 		// Get response packet from server
@@ -331,10 +337,14 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 			cnct->p_cnct_versions[i] = protocols_to_try3[i];
 		}
 
-		if (!(port = XNET_connect(packet, status_vector, 0)))
+		try
+		{
+			port = XNET_connect(packet, 0);
+		}
+		catch (const Exception&)
 		{
 			delete rdb;
-			return NULL;
+			throw;
 		}
 
 		// Get response packet from server
@@ -346,12 +356,10 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 	if (packet->p_operation != op_accept)
 	{
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_connect_reject;
-		*status_vector++ = isc_arg_end;
 		disconnect(port);
 		delete rdb;
-		return NULL;
+
+		Arg::Gds(isc_connect_reject).raise();
 	}
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
@@ -380,7 +388,6 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 
 rem_port* XNET_connect(PACKET* packet,
-					   ISC_STATUS* status_vector,
 					   USHORT flag)
 {
 /**************************************
@@ -397,21 +404,19 @@ rem_port* XNET_connect(PACKET* packet,
 	{
 		Arg::StatusVector temp;
 		temp << Arg::Gds(isc_net_server_shutdown) << Arg::Str("XNET");
-		temp.copyTo(status_vector);
-
-		return NULL;
+		temp.raise();
 	}
 
 	if (packet)
 	{
-		return connect_client(packet, status_vector);
+		return connect_client(packet);
 	}
 
-	return connect_server(status_vector, flag);
+	return connect_server(flag);
 }
 
 
-rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
+rem_port* XNET_reconnect(ULONG client_pid)
 {
 /**************************************
  *
@@ -452,12 +457,11 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 
 		xpm = make_xpm(current_process_id, 0);
 
-		port = get_server_port(client_pid, xpm, current_process_id, 0, 0, status_vector);
+		port = get_server_port(client_pid, xpm, current_process_id, 0, 0);
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(status_vector, ex);
-		xnet_log_error("Unable to initialize child process", status_vector);
+		xnet_log_error("Unable to initialize child process", ex);
 
 		if (port)
 		{
@@ -478,7 +482,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 }
 
 
-static bool connect_init(ISC_STATUS* status)
+static bool connect_init()
 {
 /**************************************
  *
@@ -508,10 +512,7 @@ static bool connect_init(ISC_STATUS* status)
 		{
 			if (ERRNO == ERROR_FILE_NOT_FOUND)
 			{
-				Arg::Gds temp(isc_unavailable);
-				temp.copyTo(status);
-
-				return false;
+				Arg::Gds(isc_unavailable).raise();
 			}
 
 			Firebird::system_error::raise(ERR_STR("OpenMutex"));
@@ -543,11 +544,10 @@ static bool connect_init(ISC_STATUS* status)
 
 		return true;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Firebird::Exception&)
 	{
-		stuff_exception(status, ex);
 		connect_fini();
-		return false;
+		throw;
 	}
 }
 
@@ -665,7 +665,6 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = send_length;
-	port->port_status_vector = NULL;
 
 	xdrxnet_create(&port->port_send, port, send_buffer, send_length, XDR_ENCODE);
 	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
@@ -1047,7 +1046,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 }
 
 
-static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
+static rem_port* connect_client(PACKET* packet)
 {
 /**************************************
  *
@@ -1075,11 +1074,6 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		}
 	}
 
-	// set up for unavailable server
-	status_vector[0] = isc_arg_gds;
-	status_vector[1] = isc_unavailable;
-	status_vector[2] = isc_arg_end;
-
 	XNET_RESPONSE response;
 
 	{ // xnet_mutex scope
@@ -1090,15 +1084,18 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		// under restricted account in the same session as the client
 		fb_utils::copy_terminate(xnet_endpoint, Config::getIpcName(), sizeof(xnet_endpoint));
 
-		if (!connect_init(status_vector))
+		try
+		{
+			connect_init();
+		}
+		catch (const Exception&)
 		{
 			// The client may not have permissions to create global objects,
 			// but still be able to connect to a local server that has such permissions.
 			// This is why we try to connect using Global\ namespace unconditionally
 			fb_utils::snprintf(xnet_endpoint, sizeof(xnet_endpoint), "Global\\%s", Config::getIpcName());
 
-			fb_utils::init_status(status_vector);
-			if (!connect_init(status_vector)) {
+			if (!connect_init()) {
 				return NULL;
 			}
 		}
@@ -1122,9 +1119,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			connect_fini();
 
 			temp << SYS_ERR(err);
-			temp.copyTo(status_vector);
-
-			return NULL;
+			temp.raise();
 		}
 
 		// writing connect request
@@ -1151,9 +1146,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			connect_fini();
 
 			temp << SYS_ERR(err);
-			temp.copyTo(status_vector);
-
-			return NULL;
+			temp.raise();
 		}
 
 		memcpy(&response, xnet_connect_map, XNET_CONNECT_RESPONZE_SIZE);
@@ -1167,9 +1160,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 		Arg::StatusVector temp;
 		temp << Arg::Gds(isc_net_connect_err);
-		temp.copyTo(status_vector);
-
-		return NULL;
+		temp.raise();
 	}
 
 	global_pages_per_slot = response.pages_per_slot;
@@ -1314,18 +1305,14 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 					   channel_c2s_client_ptr, xcc->xcc_send_channel->xch_size,
 					   channel_s2c_client_ptr, xcc->xcc_recv_channel->xch_size);
 
-		status_vector[1] = FB_SUCCESS;
-		port->port_status_vector = status_vector;
 		port->port_xcc = xcc;
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
 		send_full(port, packet);
 
 		return port;
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Firebird::Exception&)
 	{
-		stuff_exception(status_vector, ex);
-
 		if (xcc)
 			cleanup_comm(xcc);
 		else if (xpm)
@@ -1337,12 +1324,13 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			}
 			CloseHandle(file_handle);
 		}
-		return NULL;
+
+		throw;
 	}
 }
 
 
-static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
+static rem_port* connect_server(USHORT flag)
 {
 /**************************************
  *
@@ -1356,7 +1344,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
  **************************************/
 	current_process_id = getpid();
 
-	if (!server_init(status_vector, flag))
+	if (!server_init(flag))
 		return NULL;
 
 	XNET_RESPONSE* const presponse = (XNET_RESPONSE*) xnet_connect_map;
@@ -1403,7 +1391,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				presponse->timestamp = timestamp;
 
 				rem_port* port = get_server_port(client_pid, xpm, map_num, slot_num,
-					timestamp, status_vector);
+					timestamp);
 
 				SetEvent(xnet_response_event);
 
@@ -1411,9 +1399,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 			}
 			catch (const Firebird::Exception& ex)
 			{
-				stuff_exception(status_vector, ex);
-				xnet_log_error("Failed to allocate server port for communication", status_vector);
-				fb_utils::init_status(status_vector);
+				xnet_log_error("Failed to allocate server port for communication", ex);
 
 				if (xpm)
 					cleanup_mapping(xpm);
@@ -1439,7 +1425,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 	{
 		Arg::StatusVector temp;
 		temp << Arg::Gds(isc_net_server_shutdown) << Arg::Str("XNET");
-		temp.copyTo(status_vector);
+		temp.raise();
 	}
 
 	return NULL;
@@ -1736,19 +1722,7 @@ static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v
  *
  **************************************/
 	port->port_state = rem_port::BROKEN;
-
-	ISC_STATUS* status_vector = NULL;
-	if (port->port_context != NULL) {
-		status_vector = port->port_context->get_status_vector();
-	}
-	if (status_vector == NULL) {
-		status_vector = port->port_status_vector;
-	}
-	if (status_vector != NULL)
-	{
-		v.copyTo(status_vector);
-		REMOTE_save_status_strings(status_vector);
-	}
+	v.raise();
 }
 
 
@@ -2281,7 +2255,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 }
 
 
-static bool server_init(ISC_STATUS* status, USHORT flag)
+static bool server_init(USHORT flag)
 {
 /**************************************
  *
@@ -2366,9 +2340,8 @@ static bool server_init(ISC_STATUS* status, USHORT flag)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(status, ex);
 		xnet_log_error("XNET server initialization failed. "
-			"Probably another instance of server is already running.", status);
+			"Probably another instance of server is already running.", ex);
 
 		connect_fini();
 		xnet_shutdown = true;
@@ -2376,9 +2349,7 @@ static bool server_init(ISC_STATUS* status, USHORT flag)
 		// the real error is already logged, return isc_net_server_shutdown instead
 		Arg::StatusVector temp;
 		temp << Arg::Gds(isc_net_server_shutdown) << Arg::Str("XNET");
-		temp.copyTo(status);
-
-		return false;
+		temp.raise();
 	}
 
 	xnet_initialized = true;
@@ -2509,8 +2480,7 @@ static rem_port* get_server_port(ULONG client_pid,
 								 XPM xpm,
 								 ULONG map_num,
 								 ULONG slot_num,
-								 ULONG timestamp,
-								 ISC_STATUS* status_vector)
+								 ULONG timestamp)
 {
 /**************************************
  *
@@ -2627,11 +2597,6 @@ static rem_port* get_server_port(ULONG client_pid,
 		port->port_xcc = xcc;
 		port->port_server_flags |= SRVR_server;
 		port->port_flags |= PORT_server;
-
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = FB_SUCCESS;
-		status_vector[2] = isc_arg_end;
-		port->port_status_vector = status_vector;
 
 		xnet_ports->registerPort(port);
 	}
