@@ -2096,9 +2096,13 @@ void VIO_init(thread_db* tdbb)
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector))
 	{
-		if (gds__thread_start(garbage_collector, dbb, THREAD_medium, 0, 0))
+		try 
 		{
-			ERR_bugcheck_msg("cannot start thread");
+			Thread::start(garbage_collector, dbb, THREAD_medium);
+		}
+		catch (const Firebird::Exception&)
+		{
+			ERR_bugcheck_msg("cannot start garbage collector thread");
 		}
 		{ // scope
 			Database::Checkout dcoHolder(dbb);

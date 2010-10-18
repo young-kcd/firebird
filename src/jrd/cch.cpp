@@ -1619,10 +1619,14 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		// writer startup in progress
 		bcb->bcb_flags |= BCB_writer_start;
 
-		if (gds__thread_start(cache_writer, dbb, THREAD_high, 0, 0))
+		try 
+		{
+			Thread::start(cache_writer, dbb, THREAD_high);
+		}
+		catch (const Firebird::Exception&)
 		{
 			bcb->bcb_flags &= ~BCB_writer_start;
-			ERR_bugcheck_msg("cannot start thread");
+			ERR_bugcheck_msg("cannot start cache writer thread");
 		}
 		{ // scope
 			Database::Checkout dcoHolder(dbb);

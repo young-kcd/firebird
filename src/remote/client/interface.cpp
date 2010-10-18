@@ -74,7 +74,7 @@
 
 namespace {
 	char name[] = "WIN_SSPI";
-	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name> client;
+	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, 100, name> client;
 }
 #endif
 
@@ -89,7 +89,7 @@ namespace {
 #if defined(WIN_NT)
 #include "../common/isc_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
-#include "../remote/xnet_proto.h"
+#include "../remote/os/win32/xnet_proto.h"
 #endif
 
 #ifdef WIN_NT
