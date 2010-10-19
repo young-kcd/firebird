@@ -127,6 +127,10 @@ size_t Compressor::applyDiff(size_t diffLength,
 			{
 				BUGCHECK(177);	// msg 177 applied differences will not fit in record
 			}
+			if (differences + l > end)
+			{
+				BUGCHECK(176);	// msg 176 bad difference record
+			}
 			memcpy(p, differences, l);
 			p += l;
 			differences += l;
