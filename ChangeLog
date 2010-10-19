@@ -1,3 +1,24 @@
+ 2010-10-18 17:25  hvlad 
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/wnet_proto.h
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet_proto.h
+Follow Alex changes and remove ISC_STATUS* from various functions
+
+ 2010-10-18 17:23  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+Corrections for new build system. Work in progress... 
+
+ 2010-10-18 17:17  alexpeshkoff 
+   M src/yvalve/why.cpp
+misc
+
+ 2010-10-17 14:22  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-3180 - ALTER VIEW with not matched columns in declaration and selection crashs the server
+
  2010-10-16 18:56  asfernandes 
    M src/dsql/ExprNodes.cpp
 Misc
