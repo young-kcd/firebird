@@ -211,7 +211,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 #
 
 #LibraryFileName=libfbclient
-LibraryFileName=libfirebird
+LibraryFileName=libfbclient
 LibraryFullName=$(LibraryFileName).${SHRLIB_EXT}.${FirebirdVersion}
 LibrarySoName=$(LibraryFileName).${SHRLIB_EXT}.${MajorVer}
 LibraryBaseName=$(LibraryFileName).${SHRLIB_EXT}
@@ -222,8 +222,8 @@ LIBFIREBIRD_BASENAME = $(LIB)/$(LibrarySoName)
 
 # The firebird engine library name
 
-EngineFileName=libengine
-EngineSoName=$(EngineFileName).${SHRLIB_EXT}.${OdsVersion}
+EngineFileName=libengine${OdsVersion}
+EngineSoName=$(EngineFileName).${SHRLIB_EXT}
 ENGINE_SONAME = $(LIB)/$(EngineSoName)
 
 # intl will load dynamically, and having the whole soname set with version
@@ -280,7 +280,7 @@ endif
 LIB_PATH_OPTS = $(call LIB_LINK_RPATH,lib) $(call LIB_LINK_RPATH,intl)
 LIB_LINK_SONAME= -Wl,-soname,$(1)
 LIB_LINK_MAPFILE= -Wl,--version-script,
-FIREBIRD_LIBRARY_LINK= -L$(LIB) -lfirebird
+FIREBIRD_LIBRARY_LINK= -L$(LIB) -lfbclient
 
 LINK_OPTS= $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
 LIB_LINK_OPTIONS= $(LDFLAGS) $(THR_FLAGS) -shared

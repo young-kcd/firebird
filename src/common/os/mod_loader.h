@@ -97,6 +97,21 @@ public:
 	**/
 	static void doctorModuleExtension(Firebird::PathName&);
 
+	/** Almost like loadModule(), but in case of failure invokes doctorModuleExtension()
+		adn retries.
+	**/
+	static Module* fixAndLoadModule(const Firebird::PathName& modName)
+	{
+		Module* mod = loadModule(modName);
+		if (!mod)
+		{
+			Firebird::PathName fixed(modName);
+			doctorModuleExtension(fixed);
+			mod = loadModule(fixed);
+		}
+		return mod;
+	}
+
 	/** isLoadableModule checks the given file to see if it is a loadable
 		module.  This function is required because different operating
 		systems require different checks.

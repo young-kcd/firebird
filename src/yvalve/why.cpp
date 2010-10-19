@@ -1139,7 +1139,7 @@ namespace
 
 			// load engines
 			// temp solution
-			ModuleLoader::Module* engine = ModuleLoader::loadModule("libengine.so.12");
+			ModuleLoader::Module* engine = ModuleLoader::fixAndLoadModule(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, "engine12"));
 			if (engine)
 			{
 				if ( (plug = fb_query_plugin(Plugin::Provider, NULL)) )

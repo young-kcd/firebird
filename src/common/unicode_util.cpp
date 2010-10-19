@@ -801,12 +801,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		icu = FB_NEW(*getDefaultMemoryPool()) ICU();
 
-		icu->ucModule = ModuleLoader::loadModule(filename);
-		if (!icu->ucModule)
-		{
-			ModuleLoader::doctorModuleExtension(filename);
-			icu->ucModule = ModuleLoader::loadModule(filename);
-		}
+		icu->ucModule = ModuleLoader::fixAndLoadModule(filename);
 
 		if (!icu->ucModule)
 		{
@@ -816,12 +811,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		filename.printf(inTemplate, majorVersion.c_str(), minorVersion.c_str());
 
-		icu->inModule = ModuleLoader::loadModule(filename);
-		if (!icu->inModule)
-		{
-			ModuleLoader::doctorModuleExtension(filename);
-			icu->inModule = ModuleLoader::loadModule(filename);
-		}
+		icu->inModule = ModuleLoader::fixAndLoadModule(filename);
 
 		if (!icu->inModule)
 		{
