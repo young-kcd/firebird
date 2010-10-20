@@ -1,3 +1,14 @@
+ 2010-10-19 13:48  alexpeshkoff 
+   M builds/posix/make.defaults
+   M src/common/os/mod_loader.h
+   M src/common/unicode_util.cpp
+   M src/yvalve/why.cpp
+Changed libraries' names. Improved a bit ModLoader.
+
+ 2010-10-19 13:05  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Fixed CORE-3148: possible segfault in SQZ_apply_differences
+
  2010-10-18 17:25  hvlad 
    M src/remote/os/win32/wnet.cpp
    M src/remote/os/win32/wnet_proto.h
