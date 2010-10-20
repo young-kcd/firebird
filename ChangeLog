@@ -1,3 +1,7 @@
+ 2010-10-19 13:28  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Backported fix for CORE-3148: possible segfault in SQZ_apply_differences
+
  2010-10-15 07:52  alexpeshkoff 
    M src/jrd/sqz.cpp
 Backported fix for CORE-3115: Bugs in the internal record compression routines
