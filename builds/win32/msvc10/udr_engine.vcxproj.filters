@@ -12,22 +12,10 @@
     <Filter Include="Resource files">
       <UniqueIdentifier>{52819501-0416-46a9-b273-8911bbaa943f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="JRD files">
-      <UniqueIdentifier>{78865307-a454-4b6b-8aa0-f629478d86a2}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\plugins\udr_engine\UdrEngine.cpp">
       <Filter>Source files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp">
-      <Filter>JRD files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -139,30 +139,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\remote\inet.cpp" />
-    <ClCompile Include="..\..\..\src\remote\interface.cpp" />
     <ClCompile Include="..\..\..\src\remote\merge.cpp" />
+    <ClCompile Include="..\..\..\src\remote\os\win32\xnet.cpp" />
     <ClCompile Include="..\..\..\src\remote\parser.cpp" />
     <ClCompile Include="..\..\..\src\remote\protocol.cpp" />
     <ClCompile Include="..\..\..\src\remote\remote.cpp" />
     <ClCompile Include="..\..\..\src\remote\os\win32\wnet.cpp" />
-    <ClCompile Include="..\..\..\src\remote\xdr.cpp" />
-    <ClCompile Include="..\..\..\src\remote\xnet.cpp" />
-    <ClCompile Include="..\..\..\src\auth\Auth.cpp" />
     <ClCompile Include="..\..\..\src\auth\trusted\AuthSspi.cpp" />
-    <ClCompile Include="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h" />
     <ClInclude Include="..\..\..\src\remote\inet_proto.h" />
     <ClInclude Include="..\..\..\src\remote\merge_proto.h" />
+    <ClInclude Include="..\..\..\src\remote\os\win32\wnet_proto.h" />
+    <ClInclude Include="..\..\..\src\remote\os\win32\xnet.h" />
+    <ClInclude Include="..\..\..\src\remote\os\win32\xnet_proto.h" />
+    <ClInclude Include="..\..\..\src\remote\parse_proto.h" />
     <ClInclude Include="..\..\..\src\remote\protocol.h" />
+    <ClInclude Include="..\..\..\src\remote\proto_proto.h" />
     <ClInclude Include="..\..\..\src\remote\remote.h" />
     <ClInclude Include="..\..\..\src\remote\remote_def.h" />
-    <ClInclude Include="..\..\..\src\remote\serve_proto.h" />
-    <ClInclude Include="..\..\..\src\remote\os\win32\wnet_proto.h" />
-    <ClInclude Include="..\..\..\src\remote\xdr.h" />
-    <ClInclude Include="..\..\..\src\remote\xnet.h" />
-    <ClInclude Include="..\..\..\src\remote\xnet_proto.h" />
+    <ClInclude Include="..\..\..\src\remote\remot_proto.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

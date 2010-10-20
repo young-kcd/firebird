@@ -5,9 +5,6 @@
       <UniqueIdentifier>{3326a9b6-4ba6-4e54-a8cc-b6435d9825de}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
-    <Filter Include="JRD files">
-      <UniqueIdentifier>{14aef85a-e900-417f-8a37-008288a58437}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files">
       <UniqueIdentifier>{6156a2ac-63b7-40e8-be35-fa14af10a050}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
@@ -17,35 +14,14 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\utilities\gsec\call_service.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\utilities\gsec\gsecMain.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\enc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\guid.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\sha.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\ThreadData.cpp">
-      <Filter>JRD files</Filter>
+    <ClCompile Include="..\..\..\src\utilities\gsec\main\gsecMain.cpp">
+      <Filter>UTILITIES files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

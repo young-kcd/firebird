@@ -24,16 +24,10 @@
     <ClCompile Include="..\..\..\src\isql\Extender.cpp">
       <Filter>ISQL files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\isql\extract.cpp">
-      <Filter>ISQL files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\common\fb_exception.cpp">
       <Filter>ISQL files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\isql\InputDevices.cpp">
-      <Filter>ISQL files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\isql\isql.cpp">
       <Filter>ISQL files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\isql\iutils.cpp">
@@ -42,7 +36,13 @@
     <ClCompile Include="..\..\..\src\isql\OptionsBase.cpp">
       <Filter>ISQL files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\isql\show.cpp">
+    <ClCompile Include="..\..\..\gen\isql\extract.cpp">
+      <Filter>ISQL files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\isql\isql.cpp">
+      <Filter>ISQL files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\isql\show.cpp">
       <Filter>ISQL files</Filter>
     </ClCompile>
   </ItemGroup>

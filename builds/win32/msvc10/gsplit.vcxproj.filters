@@ -12,38 +12,14 @@
     <Filter Include="Resource files">
       <UniqueIdentifier>{c31574e3-ec81-43e9-9e68-b4fe5340cef5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="COMMON files">
-      <UniqueIdentifier>{ea095bd7-5274-4488-9784-c06776c4f741}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="JRD files">
-      <UniqueIdentifier>{71bd2275-a5fc-4d31-8dce-884a40997b1d}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\burp\spit.cpp">
+    <ClCompile Include="..\..\..\src\burp\split\spit.cpp">
       <Filter>BURP files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\classes\alloc.cpp">
-      <Filter>COMMON files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\common\fb_exception.cpp">
-      <Filter>COMMON files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\burp\burpswi.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\burp\spit.h">
+    <ClInclude Include="..\..\..\src\burp\split\spit.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

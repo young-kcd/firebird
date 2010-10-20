@@ -36,6 +36,10 @@
   <ItemGroup>
     <None Include="..\..\..\src\extlib\fbudf\fbudf.sql" />
     <None Include="..\..\..\src\extlib\fbudf\fbudf.txt" />
-    <None Include="..\..\..\src\extlib\fbudf\MSReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\src\jrd\version.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

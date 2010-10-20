@@ -8,7 +8,7 @@ set ERRLEV=0
 
 :: verify that boot was run before
 
-@if not exist %FB_GEN_DIR%\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
+@if not exist %FB_GEN_DIR%\dbs\msg.fdb (goto :HELP_BOOT & goto :EOF)
 
 
 @call set_build_target.bat %*
@@ -18,7 +18,7 @@ set ERRLEV=0
 
 @echo Building %FB_OBJ_DIR%
 
-call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 make_all_%FB_TARGET_PLATFORM%.log
+call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 make_all_%FB_TARGET_PLATFORM%.log
 if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log for details
 
 @if "%ERRLEV%"=="1" (
@@ -32,12 +32,11 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 :MOVE
 @echo Copying files to output
 @set FB_OUTPUT_DIR=%FB_ROOT_PATH%\output_%FB_TARGET_PLATFORM%
-@del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\*.exp 2>nul
-@del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\*.lib 2>nul
+@del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\*.exp 2>nul
+@del %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\*.lib 2>nul
 @rmdir /q /s %FB_OUTPUT_DIR% 2>nul
 
 @mkdir %FB_OUTPUT_DIR% 2>nul
-@mkdir %FB_OUTPUT_DIR%\bin 2>nul
 @mkdir %FB_OUTPUT_DIR%\intl 2>nul
 @mkdir %FB_OUTPUT_DIR%\udf 2>nul
 @mkdir %FB_OUTPUT_DIR%\help 2>nul
@@ -48,20 +47,20 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\plugins 2>nul
 
 for %%v in ( icuuc30 icudt30 icuin30 ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_OUTPUT_DIR%\bin >nul
+@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_OUTPUT_DIR% >nul
 )
 
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\* %FB_OUTPUT_DIR%\bin >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\* %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\fbtrace.dll %FB_OUTPUT_DIR%\plugins\fbtrace.dll >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr_engine.dll %FB_OUTPUT_DIR%\plugins\udr_engine.dll >nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\fbclient\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
-for %%v in ( btyacc gbak_embed gpre_boot gpre_embed isql_embed ) do (
-@del %FB_OUTPUT_DIR%\bin\%%v.exe >nul
+for %%v in (gpre_boot build_msg codes) do (
+@del %FB_OUTPUT_DIR%\%%v.exe >nul
 )
 
 :: Firebird.conf, etc
@@ -75,7 +74,7 @@ findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in >
 @copy %FB_ROOT_PATH%\builds\install\misc\IDPLicense.txt %FB_OUTPUT_DIR% >nul
 
 :: DATABASES
-@copy %FB_GEN_DIR%\dbs\SECURITY2.FDB %FB_OUTPUT_DIR%\security2.fdb >nul
+@copy %FB_GEN_DIR%\dbs\security3.FDB %FB_OUTPUT_DIR%\security3.fdb >nul
 @copy %FB_GEN_DIR%\dbs\HELP.fdb %FB_OUTPUT_DIR%\help\help.fdb >nul
 
 :: DOCS
@@ -112,23 +111,26 @@ copy %FB_ROOT_PATH%\src\extlib\ib_udf2.sql %FB_OUTPUT_DIR%\udf > nul
 copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 
 :: Installers
-@copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR%\bin >nul
-@copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR%\bin >nul
-@copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR%\bin >nul
+@copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR% >nul
+@copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR% >nul
+@copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR% >nul
 
 :: MSVC runtime
+if %MSVC_VERSION% == 10 (
+@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC100.CRT\msvcr100.dll" %FB_OUTPUT_DIR% >nul
+) else (
 if %MSVC_VERSION% == 9 (
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\msvcr90.dll" %FB_OUTPUT_DIR%\bin >nul
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\msvcp90.dll" %FB_OUTPUT_DIR%\bin >nul
-@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" %FB_OUTPUT_DIR%\bin >nul
+@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\msvcr90.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\msvcp90.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS90COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" %FB_OUTPUT_DIR% >nul
 ) else (
 if %MSVC_VERSION% == 8 (
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcr80.dll" %FB_OUTPUT_DIR%\bin >nul
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcp80.dll" %FB_OUTPUT_DIR%\bin >nul
-@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" %FB_OUTPUT_DIR%\bin >nul
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcr80.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\msvcp80.dll" %FB_OUTPUT_DIR% >nul
+@copy "%VS80COMNTOOLS%\..\..\VC\redist\%FB_PROCESSOR_ARCHITECTURE%\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest" %FB_OUTPUT_DIR% >nul
 )
 )
-
+)
 
 @goto :EOF
 

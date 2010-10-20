@@ -141,20 +141,17 @@
     <ClCompile Include="..\..\..\src\alice\alice.cpp" />
     <ClCompile Include="..\..\..\src\alice\exe.cpp" />
     <ClCompile Include="..\..\..\src\alice\tdr.cpp" />
-    <ClCompile Include="..\..\..\gen\$(Platform)\alice\alice_meta.cpp" />
+    <ClCompile Include="..\..\..\gen\alice\alice_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\alice\alice_meta.epp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\alice\alice.h" />
+    <ClInclude Include="..\..\..\src\alice\aliceswi.h" />
     <ClInclude Include="..\..\..\src\alice\alice_meta.h" />
     <ClInclude Include="..\..\..\src\alice\alice_proto.h" />
-    <ClInclude Include="..\..\..\src\alice\aliceswi.h" />
-    <ClInclude Include="..\..\..\src\alice\alloc.h" />
     <ClInclude Include="..\..\..\src\alice\exe_proto.h" />
-    <ClInclude Include="..\..\..\src\alice\info.h" />
-    <ClInclude Include="..\..\..\src\alice\lls.h" />
     <ClInclude Include="..\..\..\src\alice\tdr_proto.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -20,45 +20,21 @@
     <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gstat\dba.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\fb_exception.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\utilities\gstat\gstatMain.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\btn.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\enc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\guid.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\ods.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\ThreadData.cpp">
-      <Filter>JRD files</Filter>
+    <ClCompile Include="..\..\..\src\utilities\gstat\main\gstatMain.cpp">
+      <Filter>UTILITIES files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\btn.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\enc_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\os\guid.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\utilities\ppg_proto.h">
@@ -69,5 +45,10 @@
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\src\utilities\gstat\dba.epp">
+      <Filter>UTILITIES files</Filter>
+    </None>
   </ItemGroup>
 </Project>

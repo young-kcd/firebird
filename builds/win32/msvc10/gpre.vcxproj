@@ -89,10 +89,10 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\bin\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\bin\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -110,7 +110,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\bin\$(ProjectName).exe</OutputFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -136,7 +135,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\bin\$(ProjectName).exe</OutputFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -157,7 +155,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\bin\$(ProjectName).exe</OutputFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -180,7 +177,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\bin\$(ProjectName).exe</OutputFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -189,61 +185,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\gpre\ada.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\c_cxx.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\cmd.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\cme.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\cmp.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\cob.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\exp.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\ftn.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\gpre.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\hsh.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\int_cxx.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\jrdmet.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\movg.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\msc.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\par.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\pas.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\pat.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\pretty.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\rmc.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\sqe.cpp" />
-    <ClCompile Include="..\..\..\src\gpre\sql.cpp" />
-    <ClCompile Include="..\..\..\gen\$(Platform)\gpre\gpre_meta.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\dsc.cpp" />
+    <ClCompile Include="..\..\..\gen\gpre\std\gpre_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\src\gpre\gpre_meta.epp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\jrd\dsc.h" />
-    <ClInclude Include="..\..\..\src\jrd\dsc_pub.h" />
-    <ClInclude Include="..\..\..\src\gpre\cdbtable.h" />
-    <ClInclude Include="..\..\..\src\gpre\cmd_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\cme_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\cmp_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\dyntable.h" />
-    <ClInclude Include="..\..\..\src\gpre\exp_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\gpre.h" />
-    <ClInclude Include="..\..\..\src\gpre\gpre_meta.h" />
-    <ClInclude Include="..\..\..\src\gpre\gpre_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\gpreswi.h" />
-    <ClInclude Include="..\..\..\src\gpre\hsh.h" />
-    <ClInclude Include="..\..\..\src\gpre\hsh_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\jrdme_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\lang_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\movg_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\msc_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\par_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\parse.h" />
-    <ClInclude Include="..\..\..\src\gpre\pat.h" />
-    <ClInclude Include="..\..\..\src\gpre\pat_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\prett_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\sdltable.h" />
-    <ClInclude Include="..\..\..\src\gpre\sqe_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\sql_proto.h" />
-    <ClInclude Include="..\..\..\src\gpre\words.h" />
+    <None Include="..\..\..\src\gpre\std\gpre_meta.epp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
@@ -258,9 +203,16 @@
       <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="fbclient.vcxproj">
-      <Project>{492e7bda-8948-408d-a43e-4c0a5b86afb8}</Project>
+    <ProjectReference Include="gpre_common.vcxproj">
+      <Project>{2925b855-5975-44ae-bb00-1217a2a4e511}</Project>
+      <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="yvalve.vcxproj">
+      <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

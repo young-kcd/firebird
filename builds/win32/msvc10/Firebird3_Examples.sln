@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udrcpp_example", "udrcpp_ex
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common.vcxproj", "{15605F44-BFFD-444F-AD4C-55DC9D704465}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", "{4FE03933-98CD-4879-A135-FD9430087A6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -54,6 +56,14 @@ Global
 		{15605F44-BFFD-444F-AD4C-55DC9D704465}.Release|Win32.Build.0 = Release|Win32
 		{15605F44-BFFD-444F-AD4C-55DC9D704465}.Release|x64.ActiveCfg = Release|x64
 		{15605F44-BFFD-444F-AD4C-55DC9D704465}.Release|x64.Build.0 = Release|x64
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Debug|Win32.Build.0 = Debug|Win32
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Debug|x64.ActiveCfg = Debug|x64
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Debug|x64.Build.0 = Debug|x64
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|Win32.ActiveCfg = Release|Win32
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|Win32.Build.0 = Release|Win32
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.ActiveCfg = Release|x64
+		{4FE03933-98CD-4879-A135-FD9430087A6B}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

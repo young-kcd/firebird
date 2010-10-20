@@ -352,6 +352,13 @@ EXPORTS
 
 	fb_register_plugin
 	fb_query_plugin
+	fb_ping
+	fb_get_status_instance
+
+	gds__trace                                                                                                                                     
+	gds__trace_raw                                                                                                                                 
+	gds__trace_printer
+	gds__parse_bpb2
 
 ;-----------------
 ; OTHER FUNCTIONS

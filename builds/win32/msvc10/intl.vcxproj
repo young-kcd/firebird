@@ -210,7 +210,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\jrd\CharSet.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_big5.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_gb2312.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_icu.cpp" />
@@ -226,7 +225,7 @@
     <ClCompile Include="..\..\..\src\intl\cv_ksc.cpp" />
     <ClCompile Include="..\..\..\src\intl\cv_narrow.cpp" />
     <ClCompile Include="..\..\..\src\intl\cv_unicode_fss.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
+    <ClCompile Include="..\..\..\src\intl\kanji.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_ascii.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_big5.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_dos.cpp" />
@@ -240,53 +239,61 @@
     <ClCompile Include="..\..\..\src\intl\lc_narrow.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_unicode_ucs2.cpp" />
     <ClCompile Include="..\..\..\src\intl\ld.cpp" />
-    <ClCompile Include="..\..\..\src\common\dllinst.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\IntlUtil.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\mod_loader.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\unicode_util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\intl\collations\ascii.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\ascii2.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591ca0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591da0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591de0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591es0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591fi0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591fr0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591is0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591it0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591nl0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591no0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591pt0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591sv0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591uk0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\bl88591us0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\blNEXTde0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\blNEXTes0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\blNEXTfr0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\blNEXTit0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\blNEXTus0.h" />
-    <ClInclude Include="..\..\..\src\jrd\CharSet.h" />
+    <ResourceCompile Include="..\..\..\src\jrd\version.rc">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\src\jrd</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\src\jrd</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\src\jrd</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\src\jrd</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\defs\intl.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="common.vcxproj">
+      <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="yvalve.vcxproj">
+      <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\src\intl\charsets.h" />
-    <ClInclude Include="..\..\..\src\intl\countries.h" />
-    <ClInclude Include="..\..\..\src\intl\country_codes.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_437.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_737.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_775.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_850.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_852.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_857.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_858.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_860.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_861.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_862.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_863.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_864.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_865.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_866.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_869.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_big5.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_cyrl.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_gb2312.h" />
-    <ClInclude Include="..\..\..\src\intl\cs_icu.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_1.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_13.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_2.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_3.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_4.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_5.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_6.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_7.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_8.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_iso8859_9.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_jis_0208_1990.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_koi8r.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_koi8u.h" />
@@ -298,7 +305,30 @@
     <ClInclude Include="..\..\..\src\intl\charsets\cs_w1252.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_w1253.h" />
     <ClInclude Include="..\..\..\src\intl\charsets\cs_w1254.h" />
-    <ClInclude Include="..\..\..\src\intl\cv_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_w1255.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_w1256.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_w1257.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets\cs_w1258.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591ca0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591da0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591de0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591es0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591fi0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591fr0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591is0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591it0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591nl0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591no0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591pt0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591ptbr0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591sv0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591uk0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\bl88591us0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\blNEXTde0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\blNEXTes0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\blNEXTfr0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\blNEXTit0.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\blNEXTus0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db437de0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db437es1.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db437fi0.h" />
@@ -319,7 +349,6 @@
     <ClInclude Include="..\..\..\src\intl\collations\db850uk0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db850us0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db852cz0.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\db852hdc.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db852po0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db852sl0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db857tr0.h" />
@@ -328,30 +357,17 @@
     <ClInclude Include="..\..\..\src\intl\collations\db865da0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db865no0.h" />
     <ClInclude Include="..\..\..\src\intl\collations\db866ru0.h" />
-    <ClInclude Include="..\..\..\src\jrd\gds_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\IntlUtil.h" />
-    <ClInclude Include="..\..\..\src\jrd\isc_proto.h" />
-    <ClInclude Include="..\..\..\src\intl\kanji.h" />
-    <ClInclude Include="..\..\..\src\intl\kanji_proto.h" />
     <ClInclude Include="..\..\..\src\intl\collations\koi8r_ru.h" />
     <ClInclude Include="..\..\..\src\intl\collations\koi8u_ua.h" />
-    <ClInclude Include="..\..\..\src\intl\langdrv.h" />
-    <ClInclude Include="..\..\..\src\intl\lc_icu.h" />
-    <ClInclude Include="..\..\..\src\intl\ld.h" />
-    <ClInclude Include="..\..\..\src\intl\ld_proto.h" />
-    <ClInclude Include="..\..\..\src\intl\ldcommon.h" />
-    <ClInclude Include="..\..\..\src\jrd\os\mod_loader.h" />
-    <ClInclude Include="..\..\..\src\jrd\os\os_utils.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd437intl.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd437swedfin.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\pd852czech.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd852hundc.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd852polish.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd852slovene.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\pd857turk.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd861iceland.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd865nordan40.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pd866cyrr.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\ps852czech.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pw1250czech.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pw1250hun.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pw1250hundc.h" />
@@ -365,39 +381,40 @@
     <ClInclude Include="..\..\..\src\intl\collations\pw1252span.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pw1252swfn.h" />
     <ClInclude Include="..\..\..\src\intl\collations\pw1253greek1.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\pw1253turk.h" />
-    <ClInclude Include="..\..\..\src\intl\conversions\tx437_865.h" />
-    <ClInclude Include="..\..\..\src\intl\conversions\tx437_lat1.h" />
-    <ClInclude Include="..\..\..\src\intl\conversions\tx865_lat1.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\undef.h" />
-    <ClInclude Include="..\..\..\src\jrd\unicode_util.h" />
-    <ClInclude Include="..\..\..\src\intl\collations\win1251_ua.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\pw1254turk.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\win1250bsba.h" />
     <ClInclude Include="..\..\..\src\intl\collations\win1257_ee.h" />
     <ClInclude Include="..\..\..\src\intl\collations\win1257_lt.h" />
     <ClInclude Include="..\..\..\src\intl\collations\win1257_lv.h" />
     <ClInclude Include="..\..\..\src\intl\collations\win_cz.h" />
     <ClInclude Include="..\..\..\src\intl\collations\win_cz_ci_ai.h" />
+    <ClInclude Include="..\..\..\src\intl\collations\xx1251_ua.h" />
     <ClInclude Include="..\..\..\src\intl\collations\xx885913lt.h" />
     <ClInclude Include="..\..\..\src\intl\collations\xx88592czech.h" />
     <ClInclude Include="..\..\..\src\intl\collations\xx88592hun.h" />
     <ClInclude Include="..\..\..\src\intl\collations\xx88592plk.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="..\..\..\src\jrd\version.rc">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\src\jrd</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\src\jrd</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\src\jrd</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\src\jrd</AdditionalIncludeDirectories>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\defs\intl.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="common.vcxproj">
-      <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ClInclude Include="..\..\..\src\intl\conversions\tx437_865.h" />
+    <ClInclude Include="..\..\..\src\intl\conversions\tx437_lat1.h" />
+    <ClInclude Include="..\..\..\src\intl\conversions\tx865_lat1.h" />
+    <ClInclude Include="..\..\..\src\intl\country_codes.h" />
+    <ClInclude Include="..\..\..\src\intl\cs_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_big5.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_gb2312.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_jis.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_ksc.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_narrow.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_unicode_fss.h" />
+    <ClInclude Include="..\..\..\src\intl\kanji.h" />
+    <ClInclude Include="..\..\..\src\intl\kanji_proto.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_ascii.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_big5.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_dos.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_narrow.h" />
+    <ClInclude Include="..\..\..\src\intl\ld.h" />
+    <ClInclude Include="..\..\..\src\intl\ldcommon.h" />
+    <ClInclude Include="..\..\..\src\intl\ld_proto.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

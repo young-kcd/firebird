@@ -203,9 +203,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\plugins\udr_engine\UdrEngine.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\include\FirebirdUdr.h" />
@@ -225,6 +222,9 @@
     <ProjectReference Include="common.vcxproj">
       <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="yvalve.vcxproj">
+      <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

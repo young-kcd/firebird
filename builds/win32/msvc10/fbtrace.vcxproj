@@ -179,24 +179,8 @@
     <ClCompile Include="..\..\..\src\utilities\ntrace\traceplugin.cpp" />
     <ClCompile Include="..\..\..\src\utilities\ntrace\TracePluginImpl.cpp" />
     <ClCompile Include="..\..\..\src\utilities\ntrace\TraceUnicodeUtils.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\CharSet.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\fbsyslog.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\IntlUtil.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\isc_ipc.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\isc_sync.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\os\win32\path_utils.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\TextType.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\unicode_util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\utilities\err_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\isc.h" />
-    <ClInclude Include="..\..\..\src\jrd\isc_f_proto.h" />
-    <ClInclude Include="..\..\..\src\jrd\os\os_utils.h" />
     <ClInclude Include="..\..\..\src\utilities\ntrace\paramtable.h" />
     <ClInclude Include="..\..\..\src\utilities\ntrace\os\platform.h" />
     <ClInclude Include="..\..\..\src\utilities\ntrace\PluginLogWriter.h" />
@@ -212,9 +196,8 @@
       <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="config.vcxproj">
-      <Project>{e83187c1-aac2-445d-b8b2-883efc10c39a}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="yvalve.vcxproj">
+      <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

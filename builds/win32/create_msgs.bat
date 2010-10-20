@@ -7,8 +7,8 @@
 
 @if exist "%FB_GEN_DIR%\dbs\msg.fdb" del "%FB_GEN_DIR%\dbs\msg.fdb"
 
-@echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_GEN_DIR%\isql_embed" -q
-@set FB_MSG_ISQL=@"%FB_GEN_DIR%\isql_embed" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
+@echo create database '%FB_GEN_DB_DIR%/dbs/msg.fdb'; | "%FB_BIN_DIR%\isql" -q
+@set FB_MSG_ISQL=@"%FB_BIN_DIR%\isql" -q %FB_GEN_DB_DIR%/dbs/msg.fdb -i %FB_ROOT_PATH%\src\msgs\
 @%FB_MSG_ISQL%msg.sql
 @echo.
 @echo loading facilities
@@ -34,9 +34,11 @@
 
 :MSG
 @echo Building message file...
-::@%FB_GEN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg -L all
-@%FB_GEN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg
+::@%FB_BIN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg -L all
+@%FB_BIN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg
+@copy %FB_GEN_DIR%\firebird.msg %FB_BIN_DIR% > nul
+
 @echo Building codes header...
-@%FB_GEN_DIR%\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
+@%FB_BIN_DIR%\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
 
 :END

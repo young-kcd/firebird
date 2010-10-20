@@ -14,7 +14,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\utilities\fbsvcmgr.cpp">
+    <ClCompile Include="..\..\..\src\utilities\fbsvcmgr\fbsvcmgr.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
   </ItemGroup>

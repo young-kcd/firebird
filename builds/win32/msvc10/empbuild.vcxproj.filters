@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\gen\$(Platform)\examples\empbuild.c">
+    <ClCompile Include="..\..\..\gen\examples\empbuild.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

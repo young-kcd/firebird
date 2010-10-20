@@ -13,12 +13,6 @@
     <Filter Include="JRD files">
       <UniqueIdentifier>{f6c663b8-6259-4bf6-b108-0d891c74d097}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GPRE files">
-      <UniqueIdentifier>{6d9d384c-adbb-4e7d-a405-481e1973a222}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="COMMON files">
-      <UniqueIdentifier>{99e266b0-d8a3-47c6-985c-0b8c3b1a1e78}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files">
       <UniqueIdentifier>{ea691fcc-ce86-44c7-b53b-40b660c82329}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
@@ -76,35 +70,20 @@
     <ClCompile Include="..\..\..\src\qli\report.cpp">
       <Filter>QLI files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\qli\help.cpp">
-      <Filter>QLI files\Generated files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\qli\meta.cpp">
-      <Filter>QLI files\Generated files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\qli\proc.cpp">
-      <Filter>QLI files\Generated files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\$(Platform)\qli\show.cpp">
-      <Filter>QLI files\Generated files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\dsc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\status.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\gpre\pretty.cpp">
-      <Filter>GPRE files</Filter>
+    <ClCompile Include="..\..\..\gen\qli\help.cpp">
+      <Filter>QLI files\Generated files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\fb_exception.cpp">
-      <Filter>COMMON files</Filter>
+    <ClCompile Include="..\..\..\gen\qli\proc.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\qli\meta.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\qli\show.cpp">
+      <Filter>QLI files\Generated files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -120,107 +99,6 @@
     <None Include="..\..\..\src\qli\show.epp">
       <Filter>QLI files\epp files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\qli\all_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\comma_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\compi_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\compile.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\dtr.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\err_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\eval_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\exe.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\exe_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\expan_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\forma_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\format.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\gener_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\help_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\hsh_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\lex_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\meta_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\mov_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\parse.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\parse_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\picst_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\proc_ddl.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\proc_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\procddl1.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\procddl2.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\procddl3.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\procddl4.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\repor_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\report.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\reqs.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\show_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\symbols.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\words.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

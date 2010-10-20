@@ -5,48 +5,18 @@
       <UniqueIdentifier>{e57779c3-749c-414c-a95f-823e769c5117}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
-    <Filter Include="JRD files">
-      <UniqueIdentifier>{36329b8d-f7eb-4747-b8cd-627aeda918bf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource files">
       <UniqueIdentifier>{e96bce9e-7477-442a-bd98-97d8e8dec9dc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header files">
-      <UniqueIdentifier>{8b072945-3e97-4072-90ab-27e2dead0b9e}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\lock\print.cpp">
       <Filter>LOCK files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\gds.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\isc_ipc.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\isc_sync.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\utilities\err_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\os\os_utils.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

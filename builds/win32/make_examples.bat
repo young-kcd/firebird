@@ -6,7 +6,9 @@
 @if errorlevel 1 (goto :EOF)
 
 :: verify that boot was run before
-@if not exist %FB_GEN_DIR%\gpre_boot.exe (goto :HELP_BOOT & goto :EOF)
+@if not exist %FB_BIN_DIR%\isql.exe (goto :HELP_BOOT & goto :EOF)
+@if not exist %FB_BIN_DIR%\gpre.exe (goto :HELP_BOOT & goto :EOF)
+@if not exist %FB_BIN_DIR%\fbclient.dll (goto :HELP_BOOT & goto :EOF)
 
 @call set_build_target.bat %*
 
@@ -16,6 +18,7 @@
 
 ::===========
 :MAIN
+@echo BUILD_EMPBUILD
 @call :BUILD_EMPBUILD
 
 @echo.
@@ -23,9 +26,9 @@
 if "%VS_VER%"=="msvc6" (
     @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2 examples_%FB_TARGET_PLATFORM%.log empbuild intlbld
 ) else (
-    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples empbuild_%FB_TARGET_PLATFORM%.log empbuild
+    @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples empbuild_%FB_TARGET_PLATFORM%.log empbuild
     @if defined FB2_INTLEMP (
-      @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird2_Examples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
+      @call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3_Examples intlbuild_%FB_TARGET_PLATFORM%.log intlbuild
     )
 )
 @echo.
@@ -38,8 +41,6 @@ if "%VS_VER%"=="msvc6" (
 :BUILD_EMPBUILD
 @echo.
 @echo Building empbuild.fdb
-@copy /y %FB_OUTPUT_DIR%\bin\isql.exe %FB_GEN_DIR%\examples\ > nul
-@copy /y %FB_OUTPUT_DIR%\bin\fbclient.dll %FB_GEN_DIR%\examples\ > nul
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.sql   %FB_GEN_DIR%\examples\ > nul
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.inp   %FB_GEN_DIR%\examples\ > nul
 
@@ -49,14 +50,15 @@ if "%VS_VER%"=="msvc6" (
 @echo   Creating empbuild.fdb...
 @echo.
 @del empbuild.fdb 2> nul
-@%FB_GEN_DIR%\examples\isql -i empbld.sql
+@%FB_BIN_DIR%\isql -i empbld.sql
 
 
 if defined FB2_INTLEMP (
 @echo   Creating intlbuild.fdb...
 @echo.
+@copy %FB_ROOT_PATH%\builds\install\misc\fbintl.conf %FB_BIN_DIR%\intl >nul
 @del intlbuild.fdb 2> nul
-@%FB_GEN_DIR%\examples\isql -i intlbld.sql
+@%FB_BIN_DIR%\isql -i intlbld.sql
 )
 
 @cd %FB_ROOT_PATH%\builds\win32
@@ -64,12 +66,12 @@ if defined FB2_INTLEMP (
 @echo path = %FB_GEN_DB_DIR%\examples
 @echo   Preprocessing empbuild.e...
 @echo.
-@%FB_GEN_DIR%\gpre_embed.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\empbuild.e %FB_GEN_DIR%\examples\empbuild.c -b %FB_GEN_DB_DIR%/examples/
+@%FB_BIN_DIR%\gpre.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\empbuild.e %FB_GEN_DIR%\examples\empbuild.c -b %FB_GEN_DB_DIR%/examples/
 
 if defined FB2_INTLEMP (
 @echo   Preprocessing intlbld.e...
 @echo.
-@%FB_GEN_DIR%\gpre_embed.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\intlbld.e %FB_GEN_DIR%\examples\intlbld.c -b %FB_GEN_DB_DIR%/examples/
+@%FB_BIN_DIR%\gpre.exe -r -m -n -z %FB_ROOT_PATH%\examples\empbuild\intlbld.e %FB_GEN_DIR%\examples\intlbld.c -b %FB_GEN_DB_DIR%/examples/
 )
 
 @goto :EOF
@@ -88,6 +90,7 @@ if defined FB2_INTLEMP (
 @mkdir %FB_OUTPUT_DIR%\examples\include
 @mkdir %FB_OUTPUT_DIR%\examples\stat
 @mkdir %FB_OUTPUT_DIR%\examples\udf
+
 @echo Moving files to output directory
 @copy %FB_ROOT_PATH%\examples\* %FB_OUTPUT_DIR%\examples > nul
 @ren %FB_OUTPUT_DIR%\examples\readme readme.txt > nul
@@ -121,6 +124,9 @@ if defined FB2_INTLEMP (
 @echo Building employee.fdb
 :: Here we must use cd because isql does not have an option to set a base directory
 :: and empbuild.exe uses isql
+@set SAVE_PATH=%PATH%
+@set PATH=%FB_BIN_DIR%;%PATH%
+
 @cd %FB_GEN_DIR%\examples
 @del %FB_GEN_DIR%\examples\employee.fdb 2>nul
 @%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\empbuild\empbuild.exe %FB_GEN_DB_DIR%/examples/employee.fdb
@@ -130,9 +136,9 @@ if defined FB2_INTLEMP (
   @del %FB_GEN_DIR%\examples\intlemp.fdb 2>nul
   @del isql.tmp 2>nul
   @echo s;intlemp.fdb;%SERVER_NAME%:%FB_GEN_DIR%\examples\intlemp.fdb;g > isql.tmp
-  @%FB_GEN_DIR%\examples\intlbuild.exe %FB_GEN_DB_DIR%/examples/intlemp.fdb
+  @%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\intlbuild\intlbuild.exe %FB_GEN_DB_DIR%/examples/intlemp.fdb
 )
-
+@set PATH=%SAVE_PATH%
 @cd %FB_ROOT_PATH%\builds\win32
 
 @goto :EOF
