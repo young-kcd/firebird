@@ -1,3 +1,7 @@
+ 2010-10-19 13:28  alexpeshkoff 
+   M src/jrd/sqz.cpp
+Backported fix for CORE-3148: possible segfault in SQZ_apply_differences
+
  2010-10-18 17:23  alexpeshkoff 
    M src/jrd/dbg_proto.h
 Make it build using clang++ - thanks to marius
