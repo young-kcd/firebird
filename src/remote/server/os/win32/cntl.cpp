@@ -28,7 +28,7 @@
 #include "../common/ThreadStart.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/server/serve_proto.h"
-#include "../remote/os/win32/cntl_proto.h"
+#include "../../remote/server/os/win32/cntl_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/thread_proto.h"
@@ -90,12 +90,21 @@ void WINAPI CNTL_main_thread( DWORD /*argc*/, char* /*argv*/[])
 
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
-		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, NULL, 0, 0, 0) &&
-		report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000))
 	{
-		status = 0;
-		temp = WaitForSingleObject(stop_event_handle, INFINITE);
+		try
+		{
+			Thread::start(main_handler, NULL, THREAD_medium);
+			if (report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
+			{
+				status = 0;
+				temp = WaitForSingleObject(stop_event_handle, INFINITE);
+			}
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			iscLogException("CNTL: cannot start service handler thread", ex);
+		}
 	}
 
 	DWORD last_error = 0;

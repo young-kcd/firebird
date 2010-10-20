@@ -84,18 +84,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include "fb_exception.h"
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
 #include "../common/ThreadStart.h"
 #include "../utilities/install/install_nt.h"
-#include "../remote/os/win32/cntl_proto.h"
+#include "../../remote/server/os/win32/cntl_proto.h"
 #include "../remote/inet_proto.h"
 #include "../remote/server/serve_proto.h"
-#include "../remote/os/win32/window_proto.h"
-#include "../remote/os/win32/wnet_proto.h"
-#include "../remote/os/win32/window.rh"
-#include "../remote/xnet_proto.h"
+#include "../../remote/server/os/win32/window_proto.h"
+#include "../../remote/os/win32/wnet_proto.h"
+#include "../../remote/server/os/win32/window.rh"
+#include "../../remote/os/win32/xnet_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -105,8 +106,8 @@
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../../../common/classes/semaphore.h"
-#include "../../../common/classes/FpeControl.h"
+#include "../../../../common/classes/semaphore.h"
+#include "../../../../common/classes/FpeControl.h"
 #include "../jrd/ibase.h"
 
 // hvlad: following code registering plugins is temporary and should be
@@ -122,20 +123,20 @@ namespace {
 
 	// from AuthSspi
 	char name1[] = "WIN_SSPI";
-	Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, name1> server1;
+	Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, 100, name1> server1;
 //	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name1> client1;
 
 	// from LegacyClient
-	char name2[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, name2> client2;
+	//char name2[] = "LEGACY_AUTH";
+	//Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, 100, name2> client2;
 
 	// from LegacyManagement
-	char name3[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, name3> manage3;
+	//char name3[] = "LEGACY_AUTH";
+	//Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, 100, name3> manage3;
 
 	// from pwd
 	char name4[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, name4> server4;
+	Firebird::PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, 100, name4> server4;
 }
 
 
@@ -278,26 +279,31 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	{
 		rem_port* port = 0;
 
-		if (server_flag & SRVR_inet)
+		try
 		{
-			port = INET_reconnect((SOCKET) connection_handle, status_vector);
-
-			if (port)
+			if (server_flag & SRVR_inet)
 			{
-				SRVR_multi_thread(port, server_flag);
-				port = NULL;
+				port = INET_reconnect((SOCKET) connection_handle);
+
+				if (port)
+				{
+					SRVR_multi_thread(port, server_flag);
+					port = NULL;
+				}
+			}
+			else if (server_flag & SRVR_wnet)
+				port = WNET_reconnect(connection_handle);
+			else if (server_flag & SRVR_xnet)
+				port = XNET_reconnect((ULONG) connection_handle);
+
+			if (port) {
+				service_connection(port);
 			}
 		}
-		else if (server_flag & SRVR_wnet)
-			port = WNET_reconnect(connection_handle, status_vector);
-		else if (server_flag & SRVR_xnet)
-			port = XNET_reconnect((ULONG) connection_handle, status_vector);
-
-		if (port) {
-			service_connection(port);
+		catch (const Firebird::Exception& ex)
+		{
+			iscLogException("Server error", ex);
 		}
-		else if (status_vector[1])
-			gds__log_status(0, status_vector);
 
 		fb_shutdown(0, fb_shutrsn_no_connection);
 	}
@@ -385,25 +391,32 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  **************************************/
 	ThreadCounter counter;
 
-	ISC_STATUS_ARRAY status_vector;
 	while (!server_shutdown)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
+		rem_port* port = NULL;
+		try
+		{
+			port = INET_connect(protocol_inet, NULL, server_flag, 0);
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			iscLogException("INET_connect", ex);
+		}
 
 		if (!port)
-		{
-			if (status_vector[1]) {
-				gds__log_status(0, status_vector);
-			}
 			break;
-		}
+
 		if (server_flag & SRVR_multi_client)
 		{
 			SRVR_multi_thread(port, server_flag);
 			break;
 		}
-		if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+
+		try 
+		{
+			Thread::start(process_connection_thread, port, THREAD_medium);
+		}
+		catch (const Firebird::Exception& )
 		{
 			gds__log("INET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -426,23 +439,34 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  **************************************/
 	ThreadCounter counter;
 
-	ISC_STATUS_ARRAY status_vector;
 	while (!server_shutdown)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
+		rem_port* port = NULL;
+		bool wnet_down = false;
 
-		if (!port)
+		try
 		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
-			{
-				if (err == isc_net_server_shutdown)
-					break;
-				gds__log_status(0, status_vector);
+			port = WNET_connect(protocol_wnet, NULL, server_flag);
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			ISC_STATUS_ARRAY status_vector;
+			ex.stuff_exception(status_vector);
+			wnet_down = (status_vector[1] == isc_net_server_shutdown);
+			if (!wnet_down) {
+				iscLogException("WNET_connect", ex);
 			}
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+
+		if (!port && wnet_down) {
+			break;
+		}
+
+		try
+		{
+			Thread::start(process_connection_thread, port, THREAD_medium);
+		}
+		catch (const Firebird::Exception&)
 		{
 			gds__log("WNET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -467,23 +491,35 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  **************************************/
 	ThreadCounter counter;
 
-	ISC_STATUS_ARRAY status_vector;
 	while (!server_shutdown)
 	{
-		fb_utils::init_status(status_vector);
-		rem_port* port = XNET_connect(/*NULL,*/ NULL, status_vector, server_flag);
+		rem_port* port = NULL;
+		bool xnet_down = false;
 
-		if (!port)
+		try
 		{
-			const ISC_STATUS err = status_vector[1];
-			if (err)
-			{
-				if (err == isc_net_server_shutdown)
-					break;
-				gds__log_status(0, status_vector);
+			port = XNET_connect(NULL, server_flag);
+		}
+		catch (const Firebird::Exception& ex)
+		{
+			ISC_STATUS_ARRAY status_vector;
+
+			ex.stuff_exception(status_vector);
+			xnet_down  = (status_vector[1] == isc_net_server_shutdown);
+			if (!xnet_down ) {
+				iscLogException("XNET_connect", ex);
 			}
 		}
-		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+
+		if (!port && xnet_down) {
+			break;
+		}
+
+		try
+		{
+			Thread::start(process_connection_thread, port, THREAD_medium);
+		}
+		catch (const Firebird::Exception&)
 		{
 			gds__log("XNET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -524,13 +560,28 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 	ThreadCounter counter;
 
 	if (server_flag & SRVR_inet) {
-		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
+		try {
+			Thread::start(inet_connect_wait_thread, 0, THREAD_medium);
+		}
+		catch (const Firebird::Exception& ex) {
+			iscLogException("INET: can't start listener thread", ex);
+		}
 	}
 	if (server_flag & SRVR_wnet) {
-		gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0, 0);
+		try {
+			Thread::start(wnet_connect_wait_thread, 0, THREAD_medium);
+		}
+		catch (const Firebird::Exception& ex) {
+			iscLogException("WNET: can't start listener thread", ex);
+		}
 	}
 	if (server_flag & SRVR_xnet) {
-		gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0, 0);
+		try {
+			Thread::start(xnet_connect_wait_thread, 0, THREAD_medium);
+		}
+		catch (const Firebird::Exception& ex) {
+			iscLogException("XNET: can't start listener thread", ex);
+		}
 	}
 	return 0;
 }

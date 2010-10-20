@@ -39,8 +39,8 @@
 #include "../iscguard/iscguard.h"
 #include "../iscguard/cntlg_proto.h"
 #include "../utilities/install/install_nt.h"
-#include "../remote/os/win32/window.h"
-#include "../remote/os/win32/chop_proto.h"
+#include "../remote/server/os/win32/window.h"
+#include "../remote/server/os/win32/chop_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
 #include "../common/os/path_utils.h"
@@ -250,12 +250,16 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
  *
  **************************************/
 
-	unsigned long thread_id = 0;
+	Thread::Handle thread_id = 0;
 
 	// If we're a service, don't create a window
 	if (service_flag)
 	{
-		if (gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id))
+		try
+		{
+			Thread::start(start_and_watch_server, 0, THREAD_medium, &thread_id);
+		}
+		catch (const Firebird::Exception&)
 		{
 			// error starting server thread
 			char szMsgString[256];
@@ -312,7 +316,11 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	hWndGbl = hWnd;
 
 	// begin a new thread for calling the start_and_watch_server
-	if (gds__thread_start(start_and_watch_server, 0, THREAD_medium, 0, &thread_id))
+	try
+	{
+		Thread::start(start_and_watch_server, 0, THREAD_medium, &thread_id);
+	}
+	catch (const Firebird::Exception&)
 	{
 		// error starting server thread
 		char szMsgString[256];
@@ -369,7 +377,7 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	static BOOL bInTaskBar = FALSE;
 	static bool bStartup = false;
 	static HINSTANCE hInstance = NULL;
-	static unsigned long thread_id;
+	static Thread::Handle thread_id;
 	static UINT s_uTaskbarRestart;
 
 	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
@@ -452,10 +460,10 @@ static LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 		{ // scope
 			DWORD thr_exit = 0;
 			if (thread_id == 0 ||
-				!GetExitCodeThread(reinterpret_cast<HANDLE>(thread_id), &thr_exit) ||
+				!GetExitCodeThread(thread_id, &thr_exit) ||
 				thr_exit != STILL_ACTIVE)
 			{
-				gds__thread_start(swap_icons, hWnd, THREAD_medium, 0, &thread_id);
+				Thread::start(swap_icons, hWnd, THREAD_medium, &thread_id);
 			}
 		} // scope
 		break;

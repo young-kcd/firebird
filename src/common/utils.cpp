@@ -965,7 +965,11 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 	{
 		case FB_DIR_BIN:
 		case FB_DIR_SBIN:
+#ifdef WIN_NT
+			s = "";
+#else
 			s = "bin";
+#endif
 			break;
 
 		case FB_DIR_CONF:
@@ -976,7 +980,11 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 			break;
 
 		case FB_DIR_LIB:
+#ifdef WIN_NT
+			s = "";
+#else
 			s = "lib";
+#endif
 			break;
 
 		case FB_DIR_PLUGINS:

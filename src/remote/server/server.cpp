@@ -45,7 +45,7 @@
 #include "../remote/server/serve_proto.h"
 #include "../common/xdr_proto.h"
 #ifdef WIN_NT
-#include "../remote/os/win32/cntl_proto.h"
+#include "../../remote/server/os/win32/cntl_proto.h"
 #include <stdlib.h>
 #endif
 #ifdef HAVE_UNISTD_H

@@ -27,19 +27,19 @@
 #include "../jrd/license.h"
 #include "../common/file_params.h"
 #include "../remote/remote_def.h"
-#include "../remote/os/win32/window.rh"
-#include "../remote/os/win32/property.rh"
+#include "../../remote/server/os/win32/window.rh"
+#include "../../remote/server/os/win32/property.rh"
 
 #include "../jrd/ibase.h"
 #include "../jrd/svc.h"
 #include "../common/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../remote/os/win32/window_proto.h"
-#include "../remote/os/win32/propty_proto.h"
+#include "../../remote/server/os/win32/window_proto.h"
+#include "../../remote/server/os/win32/propty_proto.h"
 #include "../yvalve/gds_proto.h"
 
-#include "../remote/os/win32/window.h"
+#include "../../remote/server/os/win32/window.h"
 #include "../common/isc_proto.h"
 
 #define NO_PORT
@@ -400,8 +400,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
-		JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
-							sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs, &num_svc);
+		//JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
+		//					sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs, &num_svc);
 
 		switch (wParam)
 		{
@@ -529,8 +529,8 @@ BOOL CanEndServer(HWND hWnd)
  *  Description: This function displays a message mox and queries the user if
  *               the server can be shutdown.
  *****************************************************************************/
-	ULONG usNumAtt, usNumDbs, usNumSvc;
-	JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs, &usNumSvc);
+	ULONG usNumAtt = 0, usNumDbs = 0, usNumSvc = 0;
+	//JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs, &usNumSvc);
 
 	if (!usNumAtt && !usNumSvc)				// IF 0 CONNECTIONS, JUST SHUTDOWN
 		return TRUE;
