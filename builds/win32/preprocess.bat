@@ -16,6 +16,7 @@
 :MAIN
 
 @call setenvvar.bat
+@if not defined FB_BIN_DIR (@call set_build_target.bat %*)
 
 @if "%1"=="BOOT" (set BOOTBUILD=1) else (set BOOTBUILD=0)
 @echo.
