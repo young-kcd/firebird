@@ -203,7 +203,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 	{
 		memcpy(perm, ex.value(), sizeof(ISC_STATUS_ARRAY));
 	}
-	catch (const BadAlloc& ex)
+	catch (const BadAlloc& /*ex*/)
 	{
 		*perm++ = isc_arg_gds;
 		*perm++ = isc_virmemexh;
