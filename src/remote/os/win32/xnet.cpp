@@ -64,7 +64,6 @@ static rem_port* connect_client(PACKET*);
 static rem_port* connect_server(USHORT);
 static void disconnect(rem_port*);
 static void force_close(rem_port*);
-static void exit_handler(rem_port*);
 static int cleanup_ports(const int, const int, void* arg);
 
 static rem_port* receive(rem_port*, PACKET*);
@@ -128,6 +127,7 @@ static char xnet_endpoint[BUFFER_TINY] = "";
 
 #endif // WIN_NT
 
+
 static volatile bool xnet_initialized = false;
 static volatile bool xnet_shutdown = false;
 static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
@@ -137,6 +137,20 @@ static ULONG xnet_next_free_map_num = 0;
 static bool connect_init();
 static void connect_fini();
 static void release_all();
+
+class ExitHandler
+{
+public:
+	ExitHandler(MemoryPool&) {};
+
+	~ExitHandler()
+	{
+		xnet_shutdown = true;
+		release_all();
+	}
+};
+static Firebird::GlobalPtr<ExitHandler> xnet_exit_handler;
+
 
 inline void make_obj_name(char* buffer, size_t size, const char* format)
 {
@@ -1066,7 +1080,6 @@ static rem_port* connect_client(PACKET* packet)
 		{
 			xnet_initialized = true;
 			current_process_id = getpid();
-			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 
 			// Allow other (server) process to SYNCHRONIZE with our process
 			// to establish communication
@@ -1306,7 +1319,7 @@ static rem_port* connect_client(PACKET* packet)
 					   channel_s2c_client_ptr, xcc->xcc_recv_channel->xch_size);
 
 		port->port_xcc = xcc;
-		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
+		xnet_ports->registerPort(port);
 		send_full(port, packet);
 
 		return port;
@@ -1453,12 +1466,7 @@ static void disconnect(rem_port* port)
 
 	// If this is a sub-port, unlink it from it's parent
 	port->unlinkParent();
-
-	if (port->port_flags & PORT_server)
-		xnet_ports->unRegisterPort(port);
-	else
-		gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler), port);
-
+	xnet_ports->unRegisterPort(port);
 	cleanup_port(port);
 }
 
@@ -1507,27 +1515,6 @@ static void force_close(rem_port* port)
 	}
 }
 
-
-static void exit_handler(rem_port* main_port)
-{
-/**************************************
- *
- *	e x i t _ h a n d l e r
- *
- **************************************
- *
- * Functional description
- *	Free port resources or everything
- *
- **************************************/
-	xnet_shutdown = true;
-	if (main_port) {
-		disconnect(main_port);
-	}
-	else {
-		release_all();
-	}
-}
 
 static int cleanup_ports(const int, const int, void* /*arg*/)
 {
@@ -1744,7 +1731,7 @@ static void xnet_error(rem_port* port, ISC_STATUS operation, int status)
 	{
 		if (port->port_state != rem_port::BROKEN)
 		{
-			gds__log("WNET/wnet_error: errno = %d", status);
+			gds__log("XNET/xnet_error: errno = %d", status);
 		}
 
 		xnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
@@ -2353,7 +2340,6 @@ static bool server_init(USHORT flag)
 	}
 
 	xnet_initialized = true;
-	gds__register_cleanup((FPTR_VOID_PTR) exit_handler, NULL);
 	fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
 
 	return true;
