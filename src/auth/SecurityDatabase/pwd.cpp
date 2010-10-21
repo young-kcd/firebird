@@ -48,10 +48,8 @@ using namespace Firebird;
 namespace {
 
 // register plugin
-#ifndef WIN_NT
 char name[] = "LEGACY_AUTH";
 PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, 200, name> server;
-#endif
 
 // temporal implementation of timer
 

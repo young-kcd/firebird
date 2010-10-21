@@ -110,35 +110,6 @@
 #include "../../../../common/classes/FpeControl.h"
 #include "../jrd/ibase.h"
 
-// hvlad: following code registering plugins is temporary and should be
-// moved at appropriate places
-
-#include "../common/classes/ImplementHelper.h"
-#include "../auth/trusted/AuthSspi.h"
-#include "../auth/SecurityDatabase/LegacyClient.h"
-#include "../auth/SecurityDatabase/LegacyManagement.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
-
-namespace {
-
-	// from AuthSspi
-	char name1[] = "WIN_SSPI";
-	Firebird::PluginHelper<Auth::WinSspiServer, Firebird::Plugin::AuthServer, 100, name1> server1;
-//	Firebird::PluginHelper<Auth::WinSspiClient, Firebird::Plugin::AuthClient, name1> client1;
-
-	// from LegacyClient
-	//char name2[] = "LEGACY_AUTH";
-	//Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, 100, name2> client2;
-
-	// from LegacyManagement
-	//char name3[] = "LEGACY_AUTH";
-	//Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, 100, name3> manage3;
-
-	// from pwd
-	char name4[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, 100, name4> server4;
-}
-
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);

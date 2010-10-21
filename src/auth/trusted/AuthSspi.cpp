@@ -36,11 +36,9 @@
 using namespace Firebird;
 
 namespace {
-#ifndef WIN_NT
 	char name[] = "WIN_SSPI";
-	PluginHelper<Auth::WinSspiServer, Plugin::AuthServer, name> server;
-	PluginHelper<Auth::WinSspiClient, Plugin::AuthClient, name> client;
-#endif
+	PluginHelper<Auth::WinSspiServer, Plugin::AuthServer, 100, name> server;
+	PluginHelper<Auth::WinSspiClient, Plugin::AuthClient, 100, name> client;
 }
 
 namespace
