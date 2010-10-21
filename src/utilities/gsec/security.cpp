@@ -65,10 +65,11 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			// temporary measure before PluginManager integration
 			PathName plugFile(fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, "user_management"));
 			ModuleLoader::doctorModuleExtension(plugFile);
-			ModuleLoader::loadModule(plugFile);
-
-			plugin = reinterpret_cast<Auth::ManagementPlugin*>(
-				fb_query_plugin(Plugin::UserManagement, NULL));
+			if (ModuleLoader::loadModule(plugFile))
+			{
+				plugin = reinterpret_cast<Auth::ManagementPlugin*>(
+					fb_query_plugin(Plugin::UserManagement, NULL));
+			}
 		}
 
 		if (!plugin)
