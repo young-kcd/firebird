@@ -1,3 +1,142 @@
+ 2010-10-20 22:15  hvlad 
+   M builds/win32/create_msgs.bat
+   D builds/win32/defs/fbclient.def
+   A builds/win32/defs/firebird.def (from /firebird/trunk/builds/win32/defs/fbclient.def:51671)
+   M builds/win32/make_all.bat
+   M builds/win32/make_boot.bat
+   M builds/win32/make_examples.bat
+   D builds/win32/msvc10/Firebird2.sln
+   D builds/win32/msvc10/Firebird2Boot.sln
+   D builds/win32/msvc10/Firebird2_Examples.sln
+   A builds/win32/msvc10/Firebird3.sln (from /firebird/trunk/builds/win32/msvc10/Firebird2.sln:51660)
+   A builds/win32/msvc10/Firebird3Boot.sln (from /firebird/trunk/builds/win32/msvc10/Firebird2Boot.sln:51733)
+   A builds/win32/msvc10/Firebird3_Examples.sln (from /firebird/trunk/builds/win32/msvc10/Firebird2_Examples.sln:51733)
+   M builds/win32/msvc10/alice.vcxproj
+   M builds/win32/msvc10/alice.vcxproj.filters
+   M builds/win32/msvc10/btyacc.vcxproj
+   M builds/win32/msvc10/btyacc.vcxproj.filters
+   M builds/win32/msvc10/build_msg.vcxproj
+   M builds/win32/msvc10/build_msg.vcxproj.filters
+   M builds/win32/msvc10/burp.vcxproj
+   M builds/win32/msvc10/burp.vcxproj.filters
+   M builds/win32/msvc10/codes.vcxproj
+   M builds/win32/msvc10/codes.vcxproj.filters
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   D builds/win32/msvc10/common_classic.vcxproj
+   D builds/win32/msvc10/common_classic.vcxproj.filters
+   D builds/win32/msvc10/common_static.vcxproj
+   D builds/win32/msvc10/common_static.vcxproj.filters
+   D builds/win32/msvc10/config.vcxproj
+   D builds/win32/msvc10/config.vcxproj.filters
+   D builds/win32/msvc10/dsql_server.vcxproj
+   D builds/win32/msvc10/dsql_server.vcxproj.filters
+   D builds/win32/msvc10/dsql_server_classic.vcxproj
+   D builds/win32/msvc10/dsql_server_classic.vcxproj.filters
+   M builds/win32/msvc10/empbuild.vcxproj
+   M builds/win32/msvc10/empbuild.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   D builds/win32/msvc10/engine_classic.vcxproj
+   D builds/win32/msvc10/engine_classic.vcxproj.filters
+   D builds/win32/msvc10/engine_embed.vcxproj
+   D builds/win32/msvc10/engine_embed.vcxproj.filters
+   M builds/win32/msvc10/fb2control.vcxproj
+   D builds/win32/msvc10/fb_inet_server.vcxproj
+   D builds/win32/msvc10/fb_inet_server.vcxproj.filters
+   M builds/win32/msvc10/fb_lock_print.vcxproj
+   M builds/win32/msvc10/fb_lock_print.vcxproj.filters
+   D builds/win32/msvc10/fbclient.vcxproj
+   D builds/win32/msvc10/fbclient.vcxproj.filters
+   D builds/win32/msvc10/fbembed.vcxproj
+   D builds/win32/msvc10/fbembed.vcxproj.filters
+   M builds/win32/msvc10/fbguard.vcxproj
+   M builds/win32/msvc10/fbguard.vcxproj.filters
+   M builds/win32/msvc10/fbrmclib.vcxproj
+   M builds/win32/msvc10/fbrmclib.vcxproj.filters
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj.filters
+   M builds/win32/msvc10/fbsvcmgr.vcxproj
+   M builds/win32/msvc10/fbsvcmgr.vcxproj.filters
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj.filters
+   M builds/win32/msvc10/fbtracemgr.vcxproj
+   M builds/win32/msvc10/fbudf.vcxproj
+   M builds/win32/msvc10/fbudf.vcxproj.filters
+   M builds/win32/msvc10/firebird2.props
+   M builds/win32/msvc10/gbak.vcxproj
+   M builds/win32/msvc10/gbak.vcxproj.filters
+   D builds/win32/msvc10/gbak_embed.vcxproj
+   D builds/win32/msvc10/gbak_embed.vcxproj.filters
+   M builds/win32/msvc10/gfix.vcxproj
+   M builds/win32/msvc10/gfix.vcxproj.filters
+   M builds/win32/msvc10/gpre.vcxproj
+   M builds/win32/msvc10/gpre.vcxproj.filters
+   M builds/win32/msvc10/gpre_boot.vcxproj
+   M builds/win32/msvc10/gpre_boot.vcxproj.filters
+   A builds/win32/msvc10/gpre_common.vcxproj
+   A builds/win32/msvc10/gpre_common.vcxproj.filters
+   D builds/win32/msvc10/gpre_embed.vcxproj
+   D builds/win32/msvc10/gpre_embed.vcxproj.filters
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj.filters
+   M builds/win32/msvc10/gsplit.vcxproj
+   M builds/win32/msvc10/gsplit.vcxproj.filters
+   M builds/win32/msvc10/gstat.vcxproj
+   M builds/win32/msvc10/gstat.vcxproj.filters
+   M builds/win32/msvc10/ib_util.vcxproj
+   M builds/win32/msvc10/instclient.vcxproj
+   M builds/win32/msvc10/instreg.vcxproj
+   M builds/win32/msvc10/instsvc.vcxproj
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc10/intl.vcxproj.filters
+   M builds/win32/msvc10/intlbuild.vcxproj
+   M builds/win32/msvc10/intlbuild.vcxproj.filters
+   M builds/win32/msvc10/isql.vcxproj
+   M builds/win32/msvc10/isql.vcxproj.filters
+   D builds/win32/msvc10/isql_embed.vcxproj
+   D builds/win32/msvc10/isql_embed.vcxproj.filters
+   D builds/win32/msvc10/lock.vcxproj
+   D builds/win32/msvc10/lock.vcxproj.filters
+   D builds/win32/msvc10/lock_classic.vcxproj
+   D builds/win32/msvc10/lock_classic.vcxproj.filters
+   M builds/win32/msvc10/nbackup.vcxproj
+   M builds/win32/msvc10/nbackup.vcxproj.filters
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/qli.vcxproj.filters
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/remote.vcxproj.filters
+   M builds/win32/msvc10/udr_engine.vcxproj
+   M builds/win32/msvc10/udr_engine.vcxproj.filters
+   A builds/win32/msvc10/yvalve.vcxproj
+   A builds/win32/msvc10/yvalve.vcxproj.filters
+   M builds/win32/parse.bat
+   M builds/win32/preprocess.bat
+   M builds/win32/set_build_target.bat
+   M builds/win32/setenvvar.bat
+New build system for Windows. MSVC10 only so far.
+
+ 2010-10-20 22:00  hvlad 
+   M src/common/utils.cpp
+   M src/iscguard/cntl_guard.cpp
+   M src/iscguard/iscguard.cpp
+   M src/remote/server/os/win32/cntl.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/os/win32/window.cpp
+   M src/remote/server/os/win32/window.rc
+   M src/remote/server/server.cpp
+   M src/utilities/fbcpl/fbdialog.h
+Corrections for new build system. Work in progress... 
+
+ 2010-10-20 21:59  hvlad 
+   M src/common/file_params.h
+Change names of monitoring and trace shared memory to allow FB3 to run simultaneously with previous versions of engine
+
+ 2010-10-20 21:54  hvlad 
+   M extern/btyacc/defs.h
+Avoid annoying warnings
+
  2010-10-19 13:48  alexpeshkoff 
    M builds/posix/make.defaults
    M src/common/os/mod_loader.h
