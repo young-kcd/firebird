@@ -5,12 +5,12 @@
 @call setenvvar.bat
 @if errorlevel 1 (goto :EOF)
 
+@call set_build_target.bat %*
+
 :: verify that boot was run before
 @if not exist %FB_BIN_DIR%\isql.exe (goto :HELP_BOOT & goto :EOF)
 @if not exist %FB_BIN_DIR%\gpre.exe (goto :HELP_BOOT & goto :EOF)
 @if not exist %FB_BIN_DIR%\fbclient.dll (goto :HELP_BOOT & goto :EOF)
-
-@call set_build_target.bat %*
 
 ::Uncomment this to build intlemp
 ::set FB2_INTLEMP=1

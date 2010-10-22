@@ -56,6 +56,7 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\system32\* %FB_OUTPUT_DIR%\system32 >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\fbtrace.dll %FB_OUTPUT_DIR%\plugins\fbtrace.dll >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\udr_engine.dll %FB_OUTPUT_DIR%\plugins\udr_engine.dll >nul
+@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\plugins\user_management.dll %FB_OUTPUT_DIR%\plugins\user_management.dll >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\yvalve\fbclient.lib %FB_OUTPUT_DIR%\lib\fbclient_ms.lib >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
