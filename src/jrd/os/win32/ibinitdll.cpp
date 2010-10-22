@@ -36,9 +36,9 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 	{
 		case DLL_PROCESS_ATTACH:
 			hDllInst = h;
-#if defined(EMBEDDED)
+//#if defined(EMBEDDED)
 			bEmbedded = true;
-#endif
+//#endif
 			break;
 	}
 
