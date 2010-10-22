@@ -16,4 +16,3 @@ if %MSVC_VERSION% GEQ 7 (set FB_OBJ_DIR=%FB_TARGET_PLATFORM%\%FB_OBJ_DIR%)
 
 @echo    Executed %0
 @echo.
-

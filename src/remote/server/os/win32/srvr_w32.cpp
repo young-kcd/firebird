@@ -267,9 +267,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 			else if (server_flag & SRVR_xnet)
 				port = XNET_reconnect((ULONG) connection_handle);
 
-			if (port) {
+			if (port)
 				service_connection(port);
-			}
 		}
 		catch (const Firebird::Exception& ex)
 		{
@@ -383,7 +382,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			break;
 		}
 
-		try 
+		try
 		{
 			Thread::start(process_connection_thread, port, THREAD_medium);
 		}
@@ -424,14 +423,13 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			ISC_STATUS_ARRAY status_vector;
 			ex.stuff_exception(status_vector);
 			wnet_down = (status_vector[1] == isc_net_server_shutdown);
-			if (!wnet_down) {
+
+			if (!wnet_down)
 				iscLogException("WNET_connect", ex);
-			}
 		}
 
-		if (!port && wnet_down) {
+		if (!port && wnet_down)
 			break;
-		}
 
 		try
 		{
@@ -477,14 +475,13 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 			ex.stuff_exception(status_vector);
 			xnet_down  = (status_vector[1] == isc_net_server_shutdown);
-			if (!xnet_down ) {
+
+			if (!xnet_down)
 				iscLogException("XNET_connect", ex);
-			}
 		}
 
-		if (!port && xnet_down) {
+		if (!port && xnet_down)
 			break;
-		}
 
 		try
 		{

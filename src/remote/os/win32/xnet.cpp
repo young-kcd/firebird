@@ -130,26 +130,30 @@ static char xnet_endpoint[BUFFER_TINY] = "";
 
 static volatile bool xnet_initialized = false;
 static volatile bool xnet_shutdown = false;
-static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
-static Firebird::GlobalPtr<PortsCleanup>	xnet_ports;
+static GlobalPtr<Mutex> xnet_mutex;
+static GlobalPtr<PortsCleanup>	xnet_ports;
 static ULONG xnet_next_free_map_num = 0;
 
 static bool connect_init();
 static void connect_fini();
 static void release_all();
 
-class ExitHandler
+namespace
 {
-public:
-	ExitHandler(MemoryPool&) {};
-
-	~ExitHandler()
+	class ExitHandler
 	{
-		xnet_shutdown = true;
-		release_all();
-	}
-};
-static Firebird::GlobalPtr<ExitHandler> xnet_exit_handler;
+	public:
+		ExitHandler(MemoryPool&) {};
+
+		~ExitHandler()
+		{
+			xnet_shutdown = true;
+			release_all();
+		}
+	};
+
+	static GlobalPtr<ExitHandler> xnet_exit_handler;
+}
 
 
 inline void make_obj_name(char* buffer, size_t size, const char* format)
@@ -178,7 +182,7 @@ static void xnet_error(rem_port*, ISC_STATUS, int);
 
 static void xnet_log_error(const char* err_msg, const Exception& ex)
 {
-	Firebird::string str("XNET error: ");
+	string str("XNET error: ");
 	str += err_msg;
 	iscLogException(str.c_str(), ex);
 }
@@ -196,8 +200,7 @@ static void xnet_log_error(const char* err_msg)
 #define ERR_STR(str) (str)
 #endif
 
-rem_port* XNET_analyze(const Firebird::PathName& file_name,
-					   bool uv_flag)
+rem_port* XNET_analyze(const PathName& file_name, bool uv_flag)
 {
 /**************************************
  *
@@ -221,8 +224,8 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 
 	// Pick up some user identification information
 
-	Firebird::string buffer;
-	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
+	string buffer;
+	ClumpletWriter user_id(ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
 	ISC_get_user(&buffer, 0, 0);
 	buffer.lower();
@@ -381,7 +384,7 @@ rem_port* XNET_analyze(const Firebird::PathName& file_name,
 	// Once we've decided on a protocol, concatenate the version
 	// string to reflect it...
 
-	Firebird::string temp;
+	string temp;
 	temp.printf("%s/P%d", port->port_version->str_data,
 						  port->port_protocol & FB_PROTOCOL_MASK);
 
@@ -466,14 +469,14 @@ rem_port* XNET_reconnect(ULONG client_pid)
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_response_event) {
-			Firebird::system_error::raise(ERR_STR("OpenEvent"));
+			system_error::raise(ERR_STR("OpenEvent"));
 		}
 
 		xpm = make_xpm(current_process_id, 0);
 
 		port = get_server_port(client_pid, xpm, current_process_id, 0, 0);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
 		xnet_log_error("Unable to initialize child process", ex);
 
@@ -529,36 +532,36 @@ static bool connect_init()
 				Arg::Gds(isc_unavailable).raise();
 			}
 
-			Firebird::system_error::raise(ERR_STR("OpenMutex"));
+			system_error::raise(ERR_STR("OpenMutex"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_EVENT);
 		xnet_connect_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_connect_event) {
-			Firebird::system_error::raise(ERR_STR("OpenEvent"));
+			system_error::raise(ERR_STR("OpenEvent"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_response_event) {
-			Firebird::system_error::raise(ERR_STR("OpenEvent"));
+			system_error::raise(ERR_STR("OpenEvent"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
 		xnet_connect_map_h = OpenFileMapping(FILE_MAP_WRITE, TRUE, name_buffer);
 		if (!xnet_connect_map_h) {
-			Firebird::system_error::raise(ERR_STR("OpenFileMapping"));
+			system_error::raise(ERR_STR("OpenFileMapping"));
 		}
 
 		xnet_connect_map = MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0, 0,
 										 XNET_CONNECT_RESPONZE_SIZE);
 		if (!xnet_connect_map) {
-			Firebird::system_error::raise(ERR_STR("MapViewOfFile"));
+			system_error::raise(ERR_STR("MapViewOfFile"));
 		}
 
 		return true;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		connect_fini();
 		throw;
@@ -748,7 +751,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
-			Firebird::system_call_failed::raise(ERR_STR("OpenEvent"));
+			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
@@ -756,7 +759,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
-			Firebird::system_call_failed::raise(ERR_STR("OpenEvent"));
+			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
@@ -764,7 +767,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_event_recv_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
-			Firebird::system_call_failed::raise(ERR_STR("OpenEvent"));
+			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
@@ -772,7 +775,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		xcc->xcc_event_recv_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
-			Firebird::system_call_failed::raise(ERR_STR("OpenEvent"));
+			system_call_failed::raise(ERR_STR("OpenEvent"));
 		}
 
 		// send and receive events channels
@@ -797,7 +800,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 
 		xnet_log_error("aux_connect() failed");
@@ -871,7 +874,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_recv_channel_filled ||
 			(xcc->xcc_event_recv_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise(ERR_STR("CreateEvent"));
+			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
@@ -881,7 +884,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_recv_channel_empted ||
 			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise(ERR_STR("CreateEvent"));
+			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
@@ -891,7 +894,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_send_channel_filled ||
 			(xcc->xcc_event_send_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise(ERR_STR("CreateEvent"));
+			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
@@ -901,7 +904,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_send_channel_empted ||
 			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise(ERR_STR("CreateEvent"));
+			system_call_failed::raise(ERR_STR("CreateEvent"));
 		}
 
 		// send and receive events channels
@@ -930,7 +933,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 
 		return new_port;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 
 		xnet_log_error("aux_request() failed");
@@ -1002,7 +1005,7 @@ static void cleanup_comm(XCC xcc)
 
 static void cleanup_mapping(XPM xpm)
 {
-	Firebird::MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex);
 
 	// if this was the last area for this map, unmap it
 	xpm->xpm_count--;
@@ -1054,9 +1057,9 @@ static void cleanup_port(rem_port* port)
 static void raise_lostconn_or_syserror(const char* msg)
 {
 	if (ERRNO == ERROR_FILE_NOT_FOUND)
-		Firebird::status_exception::raise(Arg::Gds(isc_conn_lost));
+		status_exception::raise(Arg::Gds(isc_conn_lost));
 	else
-		Firebird::system_error::raise(msg);
+		system_error::raise(msg);
 }
 
 
@@ -1075,7 +1078,7 @@ static rem_port* connect_client(PACKET* packet)
 
 	if (!xnet_initialized)
 	{
-		Firebird::MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex);
 		if (!xnet_initialized)
 		{
 			xnet_initialized = true;
@@ -1090,7 +1093,7 @@ static rem_port* connect_client(PACKET* packet)
 	XNET_RESPONSE response;
 
 	{ // xnet_mutex scope
-		Firebird::MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex);
 
 		// First, try to connect using default kernel namespace.
 		// This should work on Win9X, NT4 and on later OS when server is running
@@ -1125,7 +1128,7 @@ static rem_port* connect_client(PACKET* packet)
 	DWORD err = WaitForSingleObject(xnet_connect_mutex, timeout);
 
 	{ // xnet_mutex scope
-		Firebird::MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex);
 
 		if (err != WAIT_OBJECT_0)
 		{
@@ -1151,7 +1154,7 @@ static rem_port* connect_client(PACKET* packet)
 	err = WaitForSingleObject(xnet_response_event, timeout);
 
 	{ // xnet_mutex scope
-		Firebird::MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex);
 
 		if (err != WAIT_OBJECT_0)
 		{
@@ -1193,7 +1196,7 @@ static rem_port* connect_client(PACKET* packet)
 	try {
 
 		{ // xnet_mutex scope
-			Firebird::MutexLockGuard guard(xnet_mutex);
+			MutexLockGuard guard(xnet_mutex);
 
 			// see if area is already mapped for this client
 
@@ -1221,7 +1224,7 @@ static rem_port* connect_client(PACKET* packet)
 				mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
 											XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 				if (!mapped_address) {
-					Firebird::system_error::raise(ERR_STR("MapViewOfFile"));
+					system_error::raise(ERR_STR("MapViewOfFile"));
 				}
 
 				xpm = new struct xpm;
@@ -1256,7 +1259,7 @@ static rem_port* connect_client(PACKET* packet)
 		// only speak if server has correct protocol
 
 		if (xps->xps_server_protocol != XPI_SERVER_PROTOCOL_VERSION) {
-			Firebird::fatal_exception::raise("Unknown XNET protocol version");
+			fatal_exception::raise("Unknown XNET protocol version");
 		}
 
 		xps->xps_client_protocol = XPI_CLIENT_PROTOCOL_VERSION;
@@ -1266,7 +1269,7 @@ static rem_port* connect_client(PACKET* packet)
 
 		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, xps->xps_server_proc_id);
 		if (!xcc->xcc_proc_h) {
-			Firebird::system_error::raise(ERR_STR("OpenProcess"));
+			system_error::raise(ERR_STR("OpenProcess"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_FILLED,
@@ -1324,7 +1327,7 @@ static rem_port* connect_client(PACKET* packet)
 
 		return port;
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		if (xcc)
 			cleanup_comm(xcc);
@@ -1410,7 +1413,7 @@ static rem_port* connect_server(USHORT flag)
 
 				return port;
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Exception& ex)
 			{
 				xnet_log_error("Failed to allocate server port for communication", ex);
 
@@ -1636,7 +1639,7 @@ static void peer_shutdown(rem_port* port)
 
 		// mark all mapped areas connected to the process with pid == dead_proc_id
 
-		Firebird::MutexLockGuard guard(xnet_mutex);
+		MutexLockGuard guard(xnet_mutex);
 
 		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
 		{
@@ -1694,7 +1697,7 @@ static int xnet_destroy( XDR* /*xdrs*/)
 }
 
 
-static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v)
+static void xnet_gen_error (rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -2137,7 +2140,7 @@ void release_all()
 
 	connect_fini();
 
-	Firebird::MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex);
 
 	// release all map stuff left not released by broken ports
 
@@ -2184,15 +2187,15 @@ static void make_map(ULONG map_number, ULONG timestamp, FILE_ID* map_handle, CAD
 	try
 	{
 		if (!(*map_handle) || (ERRNO == ERROR_ALREADY_EXISTS))
-			Firebird::system_error::raise(ERR_STR("CreateFileMapping"));
+			system_error::raise(ERR_STR("CreateFileMapping"));
 
 		*map_address = MapViewOfFile(*map_handle, FILE_MAP_WRITE, 0, 0,
 									 XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 
 		if (!(*map_address))
-			Firebird::system_error::raise(ERR_STR("MapViewOfFile"));
+			system_error::raise(ERR_STR("MapViewOfFile"));
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		if (*map_handle)
 			CloseHandle(*map_handle);
@@ -2233,7 +2236,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 	}
 	xpm->xpm_flags = 0;
 
-	Firebird::MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex);
 
 	xpm->xpm_next = global_client_maps;
 	global_client_maps = xpm;
@@ -2290,21 +2293,21 @@ static bool server_init(USHORT flag)
 		xnet_connect_mutex = CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
 		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_error::raise(ERR_STR("CreateMutex"));
+			system_error::raise(ERR_STR("CreateMutex"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_EVENT);
 		xnet_connect_event = CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xnet_connect_event || (xnet_connect_event && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xnet_response_event || (xnet_response_event && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
@@ -2316,16 +2319,16 @@ static bool server_init(USHORT flag)
 											   name_buffer);
 		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_error::raise(ERR_STR("CreateFileMapping"));
+			system_error::raise(ERR_STR("CreateFileMapping"));
 		}
 
 		xnet_connect_map = MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0L, 0L,
 										 XNET_CONNECT_RESPONZE_SIZE);
 		if (!xnet_connect_map) {
-			Firebird::system_error::raise(ERR_STR("MapViewOfFile"));
+			system_error::raise(ERR_STR("MapViewOfFile"));
 		}
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
 		xnet_log_error("XNET server initialization failed. "
 			"Probably another instance of server is already running.", ex);
@@ -2362,7 +2365,7 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 	XPM xpm = NULL;
 	ULONG free_slot = 0, free_map = 0;
 
-	Firebird::MutexLockGuard guard(xnet_mutex);
+	MutexLockGuard guard(xnet_mutex);
 
 	// go through list of maps
 
@@ -2426,7 +2429,7 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 	TEXT name[MAXPATHLEN];
 	GetModuleFileName(NULL, name, sizeof(name));
 
-	Firebird::string cmdLine;
+	string cmdLine;
 	cmdLine.printf("%s -x -h %"ULONGFORMAT, name, client_pid);
 
 	STARTUPINFO start_crud;
@@ -2500,7 +2503,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, client_pid);
 		if (!xcc->xcc_proc_h) {
-			Firebird::system_error::raise(ERR_STR("OpenProcess"));
+			system_error::raise(ERR_STR("OpenProcess"));
 		}
 
 		xcc->xcc_map_num = map_num;
@@ -2518,7 +2521,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
@@ -2526,7 +2529,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
@@ -2534,7 +2537,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
@@ -2542,7 +2545,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
-			Firebird::system_error::raise(ERR_STR("CreateEvent"));
+			system_error::raise(ERR_STR("CreateEvent"));
 		}
 
 		// set up the channel structures
@@ -2586,7 +2589,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 		xnet_ports->registerPort(port);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		if (port)
 			cleanup_port(port);

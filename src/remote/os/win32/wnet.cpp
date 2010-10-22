@@ -113,9 +113,7 @@ static xdr_t::xdr_ops wnet_ops =
 };
 
 
-rem_port* WNET_analyze(const Firebird::PathName& file_name,
-					const TEXT*	node_name,
-					bool	uv_flag)
+rem_port* WNET_analyze(const Firebird::PathName& file_name, const TEXT* node_name, bool uv_flag)
 {
 /**************************************
  *
@@ -320,9 +318,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 }
 
 
-rem_port* WNET_connect(const TEXT*		name,
-				  PACKET*	packet,
-				  USHORT	flag)
+rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag)
 {
 /**************************************
  *
@@ -441,9 +437,8 @@ rem_port* WNET_connect(const TEXT*		name,
 			CloseHandle(port->port_pipe);
 		}
 
-		if (wnet_shutdown) {
+		if (wnet_shutdown)
 			disconnect(port);
-		}
 	}
 
 	if (wnet_shutdown)
@@ -452,6 +447,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		temp << Arg::Str("WNET");
 		temp.raise();
 	}
+
 	return NULL;
 }
 

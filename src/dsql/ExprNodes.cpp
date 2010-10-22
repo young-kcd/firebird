@@ -3223,7 +3223,7 @@ void ExtractNode::print(string& text, Array<dsql_nod*>& nodes) const
 ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	// Figure out the data type of the sub parameter, and make
-	// sure the requested type of information can be extracted
+	// sure the requested type of information can be extracted.
 
 	dsql_nod* sub1 = PASS1_node(dsqlScratch, dsqlArg);
 	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
@@ -3397,6 +3397,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 					TimeStamp::decode_time(*(GDS_TIME*) value->dsc_address,
 						&times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
 					break;
+
 				default:
 					ERR_post(Arg::Gds(isc_expression_eval_err) <<
 							 Arg::Gds(isc_invalid_extractpart_time));
@@ -3413,6 +3414,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 					ERR_post(Arg::Gds(isc_expression_eval_err) <<
 							 Arg::Gds(isc_invalid_extractpart_date));
 					break;
+
 				default:
 					TimeStamp::decode_date(*(GDS_DATE*) value->dsc_address, &times);
 			}
@@ -3435,15 +3437,19 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 		case blr_extract_year:
 			part = times.tm_year + 1900;
 			break;
+
 		case blr_extract_month:
 			part = times.tm_mon + 1;
 			break;
+
 		case blr_extract_day:
 			part = times.tm_mday;
 			break;
+
 		case blr_extract_hour:
 			part = times.tm_hour;
 			break;
+
 		case blr_extract_minute:
 			part = times.tm_min;
 			break;
@@ -3521,9 +3527,11 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 		case blr_extract_yearday:
 			part = times.tm_yday;
 			break;
+
 		case blr_extract_weekday:
 			part = times.tm_wday;
 			break;
+
 		default:
 			fb_assert(false);
 			part = 0;
@@ -5003,17 +5011,17 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 		switch (blrSubOp)
 		{
 			case blr_strlen_bit:
+			{
+				FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
+				if (l > MAX_SINT64)
 				{
-					FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
-					if (l > MAX_SINT64)
-					{
-						ERR_post(Arg::Gds(isc_arith_except) <<
-								 Arg::Gds(isc_numeric_out_of_range));
-					}
-
-					length = l;
+					ERR_post(Arg::Gds(isc_arith_except) <<
+							 Arg::Gds(isc_numeric_out_of_range));
 				}
+
+				length = l;
 				break;
+			}
 
 			case blr_strlen_octet:
 				length = blob->blb_length;
@@ -5058,17 +5066,17 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 	switch (blrSubOp)
 	{
 		case blr_strlen_bit:
+		{
+			FB_UINT64 l = (FB_UINT64) length * 8;
+			if (l > MAX_SINT64)
 			{
-				FB_UINT64 l = (FB_UINT64) length * 8;
-				if (l > MAX_SINT64)
-				{
-					ERR_post(Arg::Gds(isc_arith_except) <<
-							 Arg::Gds(isc_numeric_out_of_range));
-				}
-
-				length = l;
+				ERR_post(Arg::Gds(isc_arith_except) <<
+						 Arg::Gds(isc_numeric_out_of_range));
 			}
+
+			length = l;
 			break;
+		}
 
 		case blr_strlen_octet:
 			break;
@@ -5302,7 +5310,7 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction, &impure->vlu_misc.vlu_bid);
 
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
-							reinterpret_cast<bid*>(valueDsc->dsc_address));
+			reinterpret_cast<bid*>(valueDsc->dsc_address));
 
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
@@ -5362,8 +5370,8 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		//		they aren't accepted, so they will cause error() to be called anyway.
 		VaryStr<32> temp;
 		USHORT ttype;
-		desc.dsc_length =
-			MOV_get_string_ptr(valueDsc, &ttype, &desc.dsc_address, &temp, sizeof(temp));
+		desc.dsc_length = MOV_get_string_ptr(valueDsc, &ttype, &desc.dsc_address,
+			&temp, sizeof(temp));
 		desc.setTextType(ttype);
 
 		// CVC: Why bother? If the start is greater or equal than the length in bytes,

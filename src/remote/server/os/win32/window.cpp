@@ -400,6 +400,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 	case WM_DEVICECHANGE:
 		pdbcv = (PDEV_BROADCAST_VOLUME) lParam;
+		//// FIXME: disabled!
 		//JRD_num_attachments(reinterpret_cast<UCHAR*>(&ulInUseMask),
 		//					sizeof(ULONG), JRD_info_drivemask, &num_att, &num_dbs, &num_svc);
 
@@ -530,6 +531,7 @@ BOOL CanEndServer(HWND hWnd)
  *               the server can be shutdown.
  *****************************************************************************/
 	ULONG usNumAtt = 0, usNumDbs = 0, usNumSvc = 0;
+	//// FIXME: disabled!
 	//JRD_num_attachments(NULL, 0, JRD_info_none, &usNumAtt, &usNumDbs, &usNumSvc);
 
 	if (!usNumAtt && !usNumSvc)				// IF 0 CONNECTIONS, JUST SHUTDOWN

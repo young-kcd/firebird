@@ -269,6 +269,7 @@ static void RefreshUserCount(HWND hDlg)
 	ULONG num_att = 0, num_dbs = 0, num_svc = 0;
 	const HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
+	//// FIXME: disabled!
 	//JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs, &num_svc);
 
 	char szText[BUFFER_MEDIUM];
