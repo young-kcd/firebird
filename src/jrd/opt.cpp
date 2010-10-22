@@ -118,7 +118,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 		}
 
 		case nod_literal:
-		case nod_null:
 		case nod_variable:
 			break;
 
@@ -398,7 +397,6 @@ bool UnmappedNodeGetter::visit(const JrdNode& node)
 			break;
 
 		case nod_literal:
-		case nod_null:
 		case nod_variable:
 			break;
 

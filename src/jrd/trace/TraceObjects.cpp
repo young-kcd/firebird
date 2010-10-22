@@ -378,9 +378,9 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		dsc desc;
 
 		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
-		const ParameterNode* param = ExprNode::as<ParameterNode>(prm);
+		const ParameterNode* param;
 
-		if (param)
+		if ((param = ExprNode::as<ParameterNode>(prm)))
 		{
 			//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
 			const jrd_nod* message = param->message;
@@ -400,6 +400,12 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 					from_desc->dsc_flags |= DSC_null;
 			}
 		}
+		else if (ExprNode::is<NullNode>(prm))
+		{
+			desc = ((Literal*) prm)->lit_desc;
+			from_desc = &desc;
+			from_desc->dsc_flags |= DSC_null;
+		}
 
 		switch (prm->nod_type)
 		{
@@ -410,12 +416,6 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 				from_desc = &impure->vlu_desc;
 				break;
 			}
-
-			case nod_null:
-				desc = ((Literal*) prm)->lit_desc;
-				from_desc = &desc;
-				from_desc->dsc_flags |= DSC_null;
-				break;
 
 			case nod_literal:
 				from_desc = &((Literal*) prm)->lit_desc;

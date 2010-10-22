@@ -498,7 +498,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 
 		case nod_constant:
 		case nod_variable:
-		case nod_null:
 		case nod_dom_value:
 			break;
 

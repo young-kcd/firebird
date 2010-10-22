@@ -395,6 +395,29 @@ public:
 };
 
 
+class NullNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NULL>
+{
+public:
+	explicit NullNode(MemoryPool& pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_NULL>(pool)
+	{
+	}
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+};
+
+
 // OVER is used only in DSQL. In the engine, normal aggregate functions are used in partitioned
 // maps.
 class OverNode : public TypedNode<ValueExprNode, ExprNode::TYPE_OVER>

@@ -521,28 +521,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 		return;
 
-	case nod_null:
-		// This occurs when SQL statement specifies a literal NULL, eg:
-		//  SELECT NULL FROM TABLE1;
-		// As we don't have a <dtype_null, SQL_NULL> datatype pairing,
-		// we don't know how to map this NULL to a host-language
-		// datatype.  Therefore we now describe it as a
-		// CHAR(1) CHARACTER SET NONE type.
-		// No value will ever be sent back, as the value of the select
-		// will be NULL - this is only for purposes of DESCRIBING
-		// the statement.  Note that this mapping could be done in dsql.cpp
-		// as part of the DESCRIBE statement - but I suspect other areas
-		// of the code would break if this is declared dtype_unknown.
-
-		if (null_replacement)
-		{
-			MAKE_desc(dsqlScratch, desc, null_replacement, NULL);
-			desc->dsc_flags |= (DSC_nullable | DSC_null);
-		}
-		else
-			desc->makeNullString();
-		return;
-
 	case nod_via:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_via_value_1], null_replacement);
 	    // Set the descriptor flag as nullable. The
@@ -1136,7 +1114,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			break;
 		}
 	case nod_constant:
-	case nod_null:
 		name_alias = "CONSTANT";
 		break;
 	case nod_cast:

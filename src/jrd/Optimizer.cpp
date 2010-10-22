@@ -323,9 +323,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 				!memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
 		}
 
-		case nod_null:
-			return true;
-
 		case nod_cast:
 		{
 			dsc desc1, desc2;
@@ -1516,8 +1513,12 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	{
 		if (segment[i]->scanType == segmentScanMissing)
 		{
-			jrd_nod* value = PAR_make_node(tdbb, 0);
-			value->nod_type = nod_null;
+			jrd_nod* value = PAR_make_node(tdbb, 1);
+			value->nod_type = nod_class_exprnode_jrd;
+			value->nod_count = 0;
+			value->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+				FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+
 			*lower++ = *upper++ = value;
 			ignoreNullsOnScan = false;
 		}

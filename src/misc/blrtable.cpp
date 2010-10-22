@@ -132,7 +132,7 @@ static const VERB verbs[] =
 	PAIR(nod_scalar, blr_index, 2, 2, VALUE, VALUE),
 	PAIR(nod_max, blr_maximum, e_stat_length, 2, VALUE, VALUE),
 	PAIR(nod_min, blr_minimum, e_stat_length, 2, VALUE, VALUE),
-	PAIR(nod_null, blr_null, 1, 0, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_null, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_multiply, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_negate, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_gen_id, 1, 0, VALUE, VALUE),

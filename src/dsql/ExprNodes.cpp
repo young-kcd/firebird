@@ -347,7 +347,7 @@ void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode
 	MAKE_desc(dsqlScratch, &desc1, dsqlArg1, dsqlArg2);
 	MAKE_desc(dsqlScratch, &desc2, dsqlArg2, dsqlArg1);
 
-	if (dsqlArg1->nod_type == Dsql::nod_null && dsqlArg2->nod_type == Dsql::nod_null)
+	if (ExprNode::is<NullNode>(dsqlArg1) && ExprNode::is<NullNode>(dsqlArg2))
 	{
 		// NULL + NULL = NULL of INT
 		desc->makeLong(0);
@@ -3236,7 +3236,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_extract_weekday:
 		case blr_extract_yearday:
 		case blr_extract_week:
-			if (sub1->nod_type != Dsql::nod_null &&
+			if (!ExprNode::is<NullNode>(sub1) &&
 				sub1->nod_desc.dsc_dtype != dtype_sql_date &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
 			{
@@ -3249,7 +3249,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_extract_minute:
 		case blr_extract_second:
 		case blr_extract_millisecond:
-			if (sub1->nod_type != Dsql::nod_null &&
+			if (!ExprNode::is<NullNode>(sub1) &&
 				sub1->nod_desc.dsc_dtype != dtype_sql_time &&
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
 			{
@@ -3926,13 +3926,14 @@ void NegateNode::setParameterName(dsql_par* parameter) const
 	switch (innerNode->nod_type)
 	{
 		case Dsql::nod_constant:
-		case Dsql::nod_null:
 			parameter->par_name = parameter->par_alias = "CONSTANT";
 			break;
 
 		case Dsql::nod_class_exprnode:
 		{
-			if (!level)
+			if (ExprNode::is<NullNode>(innerNode))
+				parameter->par_name = parameter->par_alias = "CONSTANT";
+			else if (!level)
 			{
 				const ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(innerNode);
 
@@ -3973,7 +3974,7 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, 
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
 
-	if (dsqlArg->nod_type == Dsql::nod_null)
+	if (ExprNode::is<NullNode>(dsqlArg))
 	{
 		// NULL + NULL = NULL of INT
 		desc->makeLong(0);
@@ -4089,6 +4090,86 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 ValueExprNode* NegateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	return FB_NEW(getPool()) NegateNode(getPool(), PASS1_node(dsqlScratch, dsqlArg));
+}
+
+
+//--------------------
+
+
+static RegisterNode<NullNode> regNullNode(blr_null);
+
+DmlNode* NullNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
+	UCHAR /*blrOp*/)
+{
+	return FB_NEW(pool) NullNode(pool);
+}
+
+void NullNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("NullNode");
+	ExprNode::print(text, nodes);
+}
+
+void NullNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "CONSTANT";
+}
+
+void NullNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_null);
+}
+
+void NullNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* nullReplacement)
+{
+	// This occurs when SQL statement specifies a literal NULL, eg:
+	//  SELECT NULL FROM TABLE1;
+	// As we don't have a <dtype_null, SQL_NULL> datatype pairing,
+	// we don't know how to map this NULL to a host-language
+	// datatype.  Therefore we now describe it as a
+	// CHAR(1) CHARACTER SET NONE type.
+	// No value will ever be sent back, as the value of the select
+	// will be NULL - this is only for purposes of DESCRIBING
+	// the statement.  Note that this mapping could be done in dsql.cpp
+	// as part of the DESCRIBE statement - but I suspect other areas
+	// of the code would break if this is declared dtype_unknown.
+	//
+	// ASF: We have SQL_NULL now, but don't use it here.
+
+	if (nullReplacement)
+	{
+		MAKE_desc(dsqlScratch, desc, nullReplacement, NULL);
+		desc->dsc_flags |= (DSC_nullable | DSC_null);
+	}
+	else
+		desc->makeNullString();
+}
+
+void NullNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
+{
+	desc->makeLong(0);
+}
+
+ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+{
+	return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+}
+
+ExprNode* NullNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* NullNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+{
+	return NULL;
 }
 
 
@@ -6498,7 +6579,8 @@ void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/,
 
 void ValueIfNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, (trueValue->nod_type != nod_null ? trueValue : falseValue), desc);
+	CMP_get_desc(tdbb, csb,
+		(ExprNode::is<NullNode>(trueValue.getObject()) ? falseValue : trueValue), desc);
 }
 
 ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier)

@@ -481,7 +481,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		}
 		break;
 
-	case nod_null:
 	case nod_count:
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_length = sizeof(SLONG);
@@ -2135,9 +2134,15 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					literal->lit_desc.dsc_length = 0;
 					literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
 
-					valueIfNode->trueValue = PAR_make_node(tdbb, 0);	// THEN: NULL
-					valueIfNode->trueValue->nod_type = nod_null;
-					valueIfNode->falseValue = node;					// ELSE: RDB$DB_KEY
+					// THEN: NULL
+					valueIfNode->trueValue = PAR_make_node(tdbb, 1);
+					valueIfNode->trueValue->nod_type = nod_class_exprnode_jrd;
+					valueIfNode->trueValue->nod_count = 0;
+					valueIfNode->trueValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+						FB_NEW(csb->csb_pool) NullNode(csb->csb_pool));
+
+					// ELSE: RDB$DB_KEY
+					valueIfNode->falseValue = node;
 
 					node = PAR_make_node(tdbb, 1);
 					node->nod_type = nod_class_exprnode_jrd;
@@ -2228,11 +2233,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			break;
 
 		case nod_variable:
-		case nod_null:
 			break;	// Nothing to do here
 
 		case nod_class_exprnode_jrd:
-			if (ExprNode::is<ParameterNode>(sub))
+			if (ExprNode::is<ParameterNode>(sub) || ExprNode::is<NullNode>(sub))
 				break;	// Nothing to do here
 			// fall into
 
@@ -3050,7 +3054,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
-	case nod_null:
 	case nod_scalar:
 	case nod_cast:
 	case nod_derived_expr:

@@ -1348,7 +1348,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
 			{
-					MET_scan_relation(tdbb, relation);
+				MET_scan_relation(tdbb, relation);
 			}
 
 			PAR_name(csb, name);
@@ -1364,8 +1364,11 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 				{
 					if (relation->rel_flags & REL_system)
 					{
-						jrd_nod* node = PAR_make_node(tdbb, 0);
-						node->nod_type = nod_null;
+						jrd_nod* node = PAR_make_node(tdbb, 1);
+						node->nod_type = nod_class_exprnode_jrd;
+						node->nod_count = 0;
+						node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+							FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
 						return node;
  					}
 
@@ -1418,8 +1421,12 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			{
 				if (temp_rel->rel_flags & REL_system)
 				{
-					node = PAR_make_node(tdbb, 0);
-					node->nod_type = nod_null;
+					node = PAR_make_node(tdbb, 1);
+					node->nod_type = nod_class_exprnode_jrd;
+					node->nod_count = 0;
+					node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+						FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+					return node;
 				}
 			}
 		}
@@ -2462,7 +2469,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		}
 		break;
 
-	case blr_null:
 	case blr_start_savepoint:
 	case blr_end_savepoint:
 		break;
@@ -2585,7 +2591,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_field:
 	case blr_fid:
 		node = par_field(tdbb, csb, blr_operator);
-		if (node->nod_type == nod_domain_validation || node->nod_type == nod_null)
+		if (node->nod_type == nod_domain_validation || ExprNode::is<NullNode>(node))
 			set_type = false;	// to not change nod->nod_type to nod_field
 		break;
 

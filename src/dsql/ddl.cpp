@@ -76,6 +76,7 @@
 #include "../common/classes/MetaName.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/Attachment.h"
 #include "../jrd/intl.h"
@@ -2002,9 +2003,10 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
  *
  **************************************/
 
-	if (!input || input->getType() != dsql_type_nod) {
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (!input || input->getType() != dsql_type_nod)
 		return input;
-	}
 
 	const dsql_nod* const* const endo = input->nod_arg + input->nod_count;
 
@@ -2052,8 +2054,12 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 					found = true;
 				}
 			}
-			if (null_them && !found) {
-				(*ptr) = MAKE_node(nod_null, (int) 0);
+
+			if (null_them && !found)
+			{
+				(*ptr) = MAKE_node(nod_class_exprnode, 1);
+				(*ptr)->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
 			}
 		}
 		else

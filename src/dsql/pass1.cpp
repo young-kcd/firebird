@@ -1225,12 +1225,13 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
  **/
 dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	if (input == NULL) {
+	if (!input)
 		return NULL;
-	}
 
 	dsql_nod* node;
 	dsql_fld* field;
@@ -1311,7 +1312,11 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			dsql_nod* rse = PASS1_rse(dsqlScratch, input, NULL);
 			node->nod_arg[e_via_rse] = rse;
 			node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
-			node->nod_arg[e_via_value_2] = MAKE_node(nod_null, (int) 0);
+
+			node->nod_arg[e_via_value_2] = MAKE_node(nod_class_exprnode, 1);
+			node->nod_arg[e_via_value_2]->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+				FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+
 			// Finish off by cleaning up contexts
 			dsqlScratch->context->clear(base);
 			return node;
@@ -2029,9 +2034,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_sqlcode:
 	case nod_gdscode:
 		return input;
-
-	case nod_null:
-		return NULL;
 
 	case nod_set_generator:
 		node = MAKE_node(input->nod_type, e_gen_id_count);
@@ -2946,6 +2948,8 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 // Create a compound statement to initialize returning parameters.
 static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod** list)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	if (list)
@@ -2996,7 +3000,10 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 		++ret_ptr, ++null_ptr)
 	{
 		temp = MAKE_node(nod_assign, e_asgn_count);
-		temp->nod_arg[e_asgn_value] = MAKE_node(nod_null, 0);
+		temp->nod_arg[e_asgn_value] = MAKE_node(nod_class_exprnode, 1);
+		temp->nod_arg[e_asgn_value]->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+			FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+
 		temp->nod_arg[e_asgn_field] = (*ret_ptr)->nod_arg[1];
 		*null_ptr = temp;
 	}
@@ -3581,6 +3588,8 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
  **/
 static dsql_nod* pass1_dbkey( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -3612,7 +3621,13 @@ static dsql_nod* pass1_dbkey( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			}
 
 			if (context->ctx_flags & CTX_null)
-				return MAKE_node(nod_null, 0);
+			{
+				dsql_nod* temp = MAKE_node(nod_class_exprnode, 1);
+				temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+
+				return temp;
+			}
 
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
@@ -3648,7 +3663,13 @@ static dsql_nod* pass1_dbkey( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				}
 
 				if (context->ctx_flags & CTX_null)
-					return MAKE_node(nod_null, 0);
+				{
+					dsql_nod* temp = MAKE_node(nod_class_exprnode, 1);
+					temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+						FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+
+					return temp;
+				}
 
 				dsql_nod* node = MAKE_node(nod_dbkey, 1);
 				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
@@ -4304,6 +4325,8 @@ static void pass1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 							 const bool list, dsql_nod* select_list)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -4499,16 +4522,18 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 						// Anyway, we can't report more than one ambiguity to the status vector.
 						// AB: But only if we're on different scope level, because a
 						// node inside the same context should have priority.
-						if (node) {
+						if (node)
 							continue;
-						}
 
-						if (indices) {
+						if (indices)
 							indices = PASS1_node_psql(dsqlScratch, indices, false);
-						}
 
 						if (context->ctx_flags & CTX_null)
-							node = MAKE_node(nod_null, 0);
+						{
+							node = MAKE_node(nod_class_exprnode, 1);
+							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+								FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+						}
 						else if (field)
 							node = MAKE_field(context, field, indices);
 						else
@@ -4716,7 +4741,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 		case nod_constant:
 		case nod_dbkey:
 		case nod_field:
-		case nod_null:
 		case nod_variable:
 			return NULL;
 
@@ -4729,6 +4753,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 				case ExprNode::TYPE_CURRENT_ROLE:
 				case ExprNode::TYPE_CURRENT_USER:
 				case ExprNode::TYPE_INTERNAL_INFO:
+				case ExprNode::TYPE_NULL:
 				case ExprNode::TYPE_PARAMETER:
 					return NULL;
 			}
@@ -8871,9 +8896,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_mod_field:
 		verb = "modify field";
-		break;
-	case nod_null:
-		verb = "null";
 		break;
 	case nod_order:
 		verb = "order";

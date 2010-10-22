@@ -183,6 +183,8 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 
 		return &impure->vlu_desc;
 	}
+	else if (ExprNode::is<NullNode>(node))
+		return NULL;
 
 	switch (node->nod_type)
 	{
@@ -202,9 +204,6 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(Arg::Gds(isc_read_only_field));
 		return &impure->vlu_desc;
-
-	case nod_null:
-		return NULL;
 
 	case nod_variable:
 		// Calculate descriptor
@@ -465,10 +464,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 	case nod_literal:
 		return &((Literal*) node)->lit_desc;
-
-	case nod_null:
-		request->req_flags |= req_null;
-		return NULL;
 
 	case nod_max:
 	case nod_min:

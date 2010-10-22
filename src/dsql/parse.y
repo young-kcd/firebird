@@ -1462,7 +1462,7 @@ domain_default_opt
 
 null_constraint
 	: NOT KW_NULL
-		{ $$ = make_node (nod_null, (int) 0, NULL); }
+		{ $$ = make_node (nod_not_null, (int) 0, NULL); }
 	;
 
 check_constraint
@@ -4605,11 +4605,10 @@ nulls_clause : NULLS nulls_placement
 			{ $$ = 0; }
 		;
 
-nulls_placement : FIRST
-			{ $$ = MAKE_const_slong(NOD_NULLS_FIRST); }
-		| LAST
-			{ $$ = MAKE_const_slong(NOD_NULLS_LAST); }
-		;
+nulls_placement
+	: FIRST	{ $$ = MAKE_const_slong(NOD_NULLS_FIRST); }
+	| LAST	{ $$ = MAKE_const_slong(NOD_NULLS_LAST); }
+	;
 
 // ROWS clause
 
@@ -4774,9 +4773,15 @@ assignment	: update_column_name '=' value
 
 exec_function
 	: udf
-		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
+		{
+			$$ = make_node (nod_assign, e_asgn_count, $1,
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	| non_aggregate_function
-		{ $$ = make_node (nod_assign, e_asgn_count, $1, make_node (nod_null, 0, NULL)); }
+		{
+			$$ = make_node (nod_assign, e_asgn_count, $1,
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	;
 
 
@@ -5510,15 +5515,27 @@ window_function
 	| LAG '(' value ',' value ',' value ')'
 		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5, $7); }
 	| LAG '(' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5, make_node(nod_null, 0, NULL)); }
+		{
+			$$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5,
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	| LAG '(' value ')'
-		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1), make_node(nod_null, 0, NULL)); }
+		{
+			$$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1),
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	| LEAD '(' value ',' value ',' value ')'
 		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5, $7); }
 	| LEAD '(' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5, make_node(nod_null, 0, NULL)); }
+		{
+			$$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5,
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	| LEAD '(' value ')'
-		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1), make_node(nod_null, 0, NULL)); }
+		{
+			$$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1),
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	;
 
 aggregate_window_function
@@ -5774,7 +5791,7 @@ case_abbreviation
 			$$ = make_node(nod_searched_case, 2,
 					make_node(nod_list, 2,
 						makeClassNode(FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql, $3, $5)),
-						make_node(nod_null, 0, NULL)),
+						makeClassNode(FB_NEW(getPool()) NullNode(getPool()))),
 					$3);
 		}
 	| IIF '(' search_condition ',' value ',' value ')'
@@ -5782,7 +5799,10 @@ case_abbreviation
 	| COALESCE '(' value ',' value_list ')'
 		{ $$ = make_node (nod_coalesce, 2, $3, $5); }
 	| DECODE '(' value ',' decode_pairs ')'
-		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), make_node(nod_null, 0, NULL)); }
+		{
+			$$ = make_node(nod_simple_case, 3, $3, make_list($5),
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
 	| DECODE '(' value ',' decode_pairs ',' value ')'
 		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
 	;
@@ -5791,11 +5811,15 @@ case_specification	: simple_case
 		| searched_case
 		;
 
-simple_case	: CASE case_operand simple_when_clause END
-			{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), make_node (nod_null, 0, NULL)); }
-		| CASE case_operand simple_when_clause ELSE case_result END
-			{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), $5); }
-		;
+simple_case
+	: CASE case_operand simple_when_clause END
+		{
+			$$ = make_node (nod_simple_case, 3, $2, make_list($3),
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
+	| CASE case_operand simple_when_clause ELSE case_result END
+		{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), $5); }
+	;
 
 simple_when_clause	: WHEN when_operand THEN case_result
 				{ $$ = make_node (nod_list, 2, $2, $4); }
@@ -5803,11 +5827,15 @@ simple_when_clause	: WHEN when_operand THEN case_result
 				{ $$ = make_node (nod_list, 2, $1, make_node (nod_list, 2, $3, $5)); }
 			;
 
-searched_case	: CASE searched_when_clause END
-			{ $$ = make_node (nod_searched_case, 2, make_list($2), make_node (nod_null, 0, NULL)); }
-		| CASE searched_when_clause ELSE case_result END
-			{ $$ = make_node (nod_searched_case, 2, make_list($2), $4); }
-		;
+searched_case
+	: CASE searched_when_clause END
+		{
+			$$ = make_node (nod_searched_case, 2, make_list($2),
+				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+		}
+	| CASE searched_when_clause ELSE case_result END
+		{ $$ = make_node (nod_searched_case, 2, make_list($2), $4); }
+	;
 
 searched_when_clause	: WHEN search_condition THEN case_result
 			{ $$ = make_node (nod_list, 2, $2, $4); }
@@ -5870,9 +5898,9 @@ distinct_noise
 	| DISTINCT
 	;
 
-null_value	: KW_NULL
-			{ $$ = make_node (nod_null, 0, NULL); }
-		;
+null_value
+	: KW_NULL	{ $$ = makeClassNode(FB_NEW(getPool()) NullNode(getPool())); }
+	;
 
 
 // Performs special mapping of keywords into symbols

@@ -134,7 +134,7 @@ enum nod_t
 	nod_variable,
 	nod_var_name,
 	nod_array,
-	nod_null,
+	nod_not_null,
 	nod_dbkey,
 	nod_cast,
 	nod_collate,

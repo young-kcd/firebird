@@ -5152,7 +5152,7 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 
 	value.assign(dsqlScratch->getBlrData());
 
-	return input->nod_type == Dsql::nod_null;
+	return input->nod_type == Dsql::nod_not_null;
 }
 
 // Make a constraint object from a legacy node.
@@ -5164,7 +5164,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 	switch (constraintNode->nod_type)
 	{
-		case Dsql::nod_null:
+		case Dsql::nod_not_null:
 		case Dsql::nod_primary:
 			if (notNull && !*notNull)
 			{
@@ -5172,11 +5172,11 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 				Constraint& constraint = constraints.add();
 				constraint.type = Constraint::TYPE_NOT_NULL;
-				if (string && constraintNode->nod_type == Dsql::nod_null)
+				if (string && constraintNode->nod_type == Dsql::nod_not_null)
 					constraint.name = string->str_data;
 			}
 
-			if (constraintNode->nod_type == Dsql::nod_null)
+			if (constraintNode->nod_type == Dsql::nod_not_null)
 				break;
 			// nod_primary falls into
 
@@ -8047,7 +8047,7 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 			}
 
 			if (nullThem && !found)
-				(*ptr) = MAKE_node(Dsql::nod_null, 0);
+				(*ptr) = MAKE_node(Dsql::nod_not_null, 0);
 		}
 		else
 		{
