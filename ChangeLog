@@ -1,3 +1,51 @@
+ 2010-10-22 01:24  asfernandes 
+   M builds/win32/make_boot.bat
+   M builds/win32/make_examples.bat
+   M builds/win32/set_build_target.bat
+   M src/common/fb_exception.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/vio.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/os/win32/window.cpp
+Misc
+
+ 2010-10-21 14:25  hvlad 
+   M src/remote/os/win32/xnet.cpp
+Don't use obsolete gds cleanup in XNET. It also avoids AV in server at shutdown
+
+ 2010-10-21 11:46  hvlad 
+   M src/common/fb_exception.cpp
+Warning
+
+ 2010-10-21 11:46  hvlad 
+   M src/utilities/gsec/security.cpp
+Misc
+
+ 2010-10-21 11:45  hvlad 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Windows-specific hack to register security plugins seems obsolete with new build
+
+ 2010-10-21 11:43  hvlad 
+   M builds/win32/msvc10/Firebird3.sln
+   A builds/win32/msvc10/user_management.vcxproj
+   A builds/win32/msvc10/user_management.vcxproj.filters
+User management plugin. Works with gsec, supports manage of user accounts at security database.
+
+ 2010-10-21 11:41  hvlad 
+   M builds/win32/msvc10/fbtrace.vcxproj
+Misc
+
+ 2010-10-21 11:40  hvlad 
+   M builds/win32/preprocess.bat
+Correction
+
  2010-10-20 22:15  hvlad 
    M builds/win32/create_msgs.bat
    D builds/win32/defs/fbclient.def
