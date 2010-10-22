@@ -17,9 +17,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gstat\dba.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
@@ -32,12 +29,15 @@
     <ClCompile Include="..\..\..\src\utilities\gstat\main\gstatMain.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\gen\utilities\gstat\dba.cpp">
+      <Filter>UTILITIES files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\btn.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\utilities\ppg_proto.h">
+    <ClInclude Include="..\..\..\src\utilities\gstat\ppg_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

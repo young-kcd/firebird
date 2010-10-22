@@ -197,7 +197,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\src\iscguard\cntlg_proto.h" />
     <ClInclude Include="..\..\..\src\iscguard\iscguard.h" />
-    <ClInclude Include="..\..\..\src\misc\status.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\iscguard\iscguard.rc">

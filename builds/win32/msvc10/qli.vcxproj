@@ -223,6 +223,43 @@
       <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\qli\all_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\blk.h" />
+    <ClInclude Include="..\..\..\src\qli\comma_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\compile.h" />
+    <ClInclude Include="..\..\..\src\qli\compi_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\dtr.h" />
+    <ClInclude Include="..\..\..\src\qli\err_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\eval_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\exe.h" />
+    <ClInclude Include="..\..\..\src\qli\exe_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\expan_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\format.h" />
+    <ClInclude Include="..\..\..\src\qli\forma_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\gener_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\help_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\hsh_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\lex_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\meta_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\mov_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\parse.h" />
+    <ClInclude Include="..\..\..\src\qli\parse_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\picst_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\procddl1.h" />
+    <ClInclude Include="..\..\..\src\qli\procddl2.h" />
+    <ClInclude Include="..\..\..\src\qli\procddl3.h" />
+    <ClInclude Include="..\..\..\src\qli\procddl4.h" />
+    <ClInclude Include="..\..\..\src\qli\proc_ddl.h" />
+    <ClInclude Include="..\..\..\src\qli\proc_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\qliswi.h" />
+    <ClInclude Include="..\..\..\src\qli\report.h" />
+    <ClInclude Include="..\..\..\src\qli\repor_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\reqs.h" />
+    <ClInclude Include="..\..\..\src\qli\show_proto.h" />
+    <ClInclude Include="..\..\..\src\qli\symbols.h" />
+    <ClInclude Include="..\..\..\src\qli\words.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

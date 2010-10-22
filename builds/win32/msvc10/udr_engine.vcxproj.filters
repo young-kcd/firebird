@@ -29,8 +29,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\defs\udr_engine.def">
-      <Filter>Source files</Filter>
-    </None>
+    <None Include="..\defs\udr_engine.def" />
   </ItemGroup>
 </Project>

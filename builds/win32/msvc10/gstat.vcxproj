@@ -184,7 +184,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\btn.h" />
-    <ClInclude Include="..\..\..\src\utilities\ppg_proto.h" />
+    <ClInclude Include="..\..\..\src\utilities\gstat\ppg_proto.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

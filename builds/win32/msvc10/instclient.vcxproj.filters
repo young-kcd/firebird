@@ -22,7 +22,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\utilities\install_proto.h">
+    <ClInclude Include="..\..\..\src\utilities\install\install_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

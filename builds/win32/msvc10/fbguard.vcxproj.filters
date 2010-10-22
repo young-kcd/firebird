@@ -34,9 +34,6 @@
     <ClInclude Include="..\..\..\src\iscguard\iscguard.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\misc\status.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\iscguard\iscguard.rc">

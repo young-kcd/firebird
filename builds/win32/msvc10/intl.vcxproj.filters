@@ -12,9 +12,6 @@
     <Filter Include="Resource files">
       <UniqueIdentifier>{8e2ee845-fff9-4741-891d-132cfbad590e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="COMMON files">
-      <UniqueIdentifier>{e97d721f-8964-4061-adb8-983bf7fecb77}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\intl\cs_big5.cpp">
@@ -109,11 +106,6 @@
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
       <Filter>Resource files</Filter>
     </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\defs\intl.def">
-      <Filter>INTL files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\intl\ldcommon.h">
@@ -566,5 +558,8 @@
     <ClInclude Include="..\..\..\src\intl\conversions\tx865_lat1.h">
       <Filter>Header files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\defs\intl.def" />
   </ItemGroup>
 </Project>

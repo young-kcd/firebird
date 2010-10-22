@@ -29,8 +29,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\defs\ib_udf.def">
-      <Filter>EXTLIB files</Filter>
-    </None>
+    <None Include="..\defs\ib_udf.def" />
   </ItemGroup>
 </Project>
