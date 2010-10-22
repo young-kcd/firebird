@@ -18,6 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\requireAdministratorManifest.vsprops"
 			UseOfMFC="0"
@@ -62,8 +63,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -93,6 +92,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\requireAdministratorManifest.vsprops"
 			UseOfMFC="0"
@@ -138,8 +138,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -170,6 +168,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\requireAdministratorManifest.vsprops"
 			UseOfMFC="0"
@@ -210,8 +209,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -241,6 +238,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\requireAdministratorManifest.vsprops"
 			UseOfMFC="0"
@@ -283,8 +281,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -335,7 +331,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\..\src\utilities\install_proto.h"
+				RelativePath="..\..\..\src\utilities\install\install_proto.h"
 				>
 			</File>
 		</Filter>

@@ -48,7 +48,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,8 +64,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
+				AdditionalLibraryDirectories=""
 				SubSystem="1"
 				ProfileGuidedDatabase=""
 			/>
@@ -126,7 +125,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -141,9 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
+				AdditionalLibraryDirectories=""
 				SubSystem="1"
 				ProfileGuidedDatabase=""
 			/>
@@ -199,7 +196,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -215,9 +212,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
+				AdditionalLibraryDirectories=""
 				SubSystem="1"
 				ProfileGuidedDatabase=""
 			/>
@@ -274,7 +269,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -290,9 +285,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
+				AdditionalLibraryDirectories=""
 				SubSystem="1"
 				ProfileGuidedDatabase=""
 			/>
@@ -330,7 +323,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\examples\empbuild.c"
+				RelativePath="..\..\..\gen\examples\empbuild.c"
 				>
 			</File>
 		</Filter>

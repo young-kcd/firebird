@@ -266,19 +266,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\chop.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\cntl.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\inet.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\interface.cpp"
 				>
 			</File>
 			<File
@@ -290,10 +278,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\os\win32\property.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\protocol.cpp"
 				>
 			</File>
@@ -302,27 +286,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\server.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\srvr_w32.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\os\win32\window.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\os\win32\wnet.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\xdr.cpp"
+				RelativePath="..\..\..\src\remote\os\win32\xnet.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\xnet.cpp"
+				RelativePath="..\..\..\src\remote\os\win32\xnet.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\xnet_proto.h"
 				>
 			</File>
 		</Filter>
@@ -343,7 +319,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\remote\parse_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\proto_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\protocol.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\remot_proto.h"
 				>
 			</File>
 			<File
@@ -355,23 +343,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\serve_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xdr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet_proto.h"
 				>
 			</File>
 		</Filter>
@@ -379,19 +351,7 @@
 			Name="AUTH files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\Auth.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pwd.cpp"
 				>
 			</File>
 		</Filter>

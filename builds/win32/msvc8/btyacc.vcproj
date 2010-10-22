@@ -59,8 +59,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="2"
 				AssemblyDebug="1"
 			/>
 			<Tool
@@ -130,8 +128,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="2"
 				AssemblyDebug="1"
 				TargetMachine="17"
 			/>
@@ -199,8 +195,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -267,8 +261,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -394,10 +386,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath=".\ReadMe.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -19,6 +19,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="1"
@@ -67,9 +68,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32\Firebird2Control.cpl"
+				OutputFile="$(OutDir)\Firebird2Control.cpl"
 				Version="1.0"
-				LinkIncremental="1"
 				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
 				SubSystem="2"
 			/>
@@ -100,6 +100,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="1"
@@ -148,9 +149,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32\Firebird2Control.cpl"
+				OutputFile="$(OutDir)\Firebird2Control.cpl"
 				Version="1.0"
-				LinkIncremental="1"
 				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
 				SubSystem="2"
 				TargetMachine="17"
@@ -182,7 +182,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="1"
@@ -229,9 +229,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32\Firebird2Control.cpl"
+				OutputFile="$(OutDir)\Firebird2Control.cpl"
 				Version="1.0"
-				LinkIncremental="1"
 				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
 				SubSystem="2"
 			/>
@@ -262,6 +261,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="2"
@@ -308,9 +308,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\system32\Firebird2Control.cpl"
+				OutputFile="$(OutDir)\Firebird2Control.cpl"
 				Version="1.0"
-				LinkIncremental="1"
 				ModuleDefinitionFile="..\..\..\src\utilities\fbcpl\FBControl.def"
 				SubSystem="2"
 				TargetMachine="17"

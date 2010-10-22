@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="gds32"
-	ProjectGUID="{C02A54D0-689F-49B6-8F63-7C73EF42E312}"
+	Name="gpre_common"
+	ProjectGUID="{2925B855-5975-44AE-BB00-1217A2A4E511}"
+	RootNamespace="gpre"
 	>
 	<Platforms>
 		<Platform
@@ -18,7 +19,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -38,9 +39,6 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				TargetEnvironment="1"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -48,7 +46,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;NDEBUG;_LIB;SUPERSERVER"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -62,17 +60,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
-				LinkIncremental="1"
-				ModuleDefinitionFile="..\defs\gds32.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -82,12 +73,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -95,7 +80,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -115,8 +100,6 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
 				TargetEnvironment="3"
 			/>
 			<Tool
@@ -125,7 +108,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;NDEBUG;_LIB;SUPERSERVER"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -139,18 +122,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
-				LinkIncremental="1"
-				ModuleDefinitionFile="..\defs\gds32.def"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -160,12 +135,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -173,7 +142,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -193,14 +162,12 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				TargetEnvironment="1"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER"
+				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -214,17 +181,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
-				LinkIncremental="1"
-				ModuleDefinitionFile="..\defs\gds32.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -236,18 +196,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -267,14 +221,13 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
 				TargetEnvironment="3"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;GDS32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER"
+				UsePrecompiledHeader="0"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -289,18 +242,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="msvcrt.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).dll"
-				LinkIncremental="1"
-				ModuleDefinitionFile="..\defs\gds32.def"
-				TargetMachine="17"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -312,12 +257,6 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -326,69 +265,185 @@
 	</References>
 	<Files>
 		<Filter
-			Name="JRD files"
+			Name="headers"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp"
+				RelativePath="..\..\..\src\gpre\cmd_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cme_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cmp_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\exp_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpre.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpre_meta.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpre_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpreswi.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\hsh.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\hsh_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\jrdme_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\lang_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\movg_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\msc_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\par_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\parse.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pat.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pat_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sqe_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sql_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\words.h"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Resource files"
+			Name="languages"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_version.rc"
+				RelativePath="..\..\..\src\gpre\languages\ada.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\languages\cob.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\languages\fbrmclib.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\languages\ftn.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\languages\pas.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\languages\rmc.cpp"
+				>
 			</File>
 		</Filter>
 		<Filter
-			Name="COMMON files"
+			Name="source"
 			>
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
+				RelativePath="..\..\..\src\gpre\c_cxx.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
+				RelativePath="..\..\..\src\gpre\cmd.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cme.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cmp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\exp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpre.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\hsh.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\int_cxx.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\jrdmet.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\movg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\msc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\par.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pat.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sqe.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sql.cpp"
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\defs\gds32.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

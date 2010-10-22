@@ -18,6 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -59,8 +60,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -90,6 +89,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -133,8 +133,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -165,6 +163,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -209,8 +208,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -240,6 +237,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -285,8 +283,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -324,8 +320,44 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\burp\spit.cpp"
+				RelativePath="..\..\..\src\burp\split\spit.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\$(InputName)1.obj"
+						XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -337,7 +369,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\burp\spit.h"
+				RelativePath="..\..\..\src\burp\split\spit.h"
 				>
 			</File>
 		</Filter>
@@ -379,34 +411,6 @@
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
 					/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files"
-			>
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			>
-			<File
-				RelativePath="..\..\..\src\jrd\gds.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp"
-				>
 			</File>
 		</Filter>
 	</Files>

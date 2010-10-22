@@ -18,6 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -58,8 +59,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -89,6 +88,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -131,8 +131,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -163,6 +161,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -207,8 +206,6 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -238,6 +235,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -282,8 +280,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -372,6 +368,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\qli\nounix.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\qli\parse.cpp"
 				>
 			</File>
@@ -384,7 +384,7 @@
 				>
 			</File>
 			<Filter
-				Name="epp files"
+				Name="GPRE epp"
 				>
 				<File
 					RelativePath="..\..\..\src\qli\help.epp"
@@ -404,22 +404,22 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Generated files"
+				Name="GPRE cpp"
 				>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\qli\help.cpp"
+					RelativePath="..\..\..\gen\qli\help.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\qli\meta.cpp"
+					RelativePath="..\..\..\gen\qli\meta.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\qli\proc.cpp"
+					RelativePath="..\..\..\gen\qli\proc.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\qli\show.cpp"
+					RelativePath="..\..\..\gen\qli\show.cpp"
 					>
 				</File>
 			</Filter>
@@ -428,35 +428,7 @@
 			Name="JRD files"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\dsc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc_file.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\status.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="GPRE files"
-			>
-			<File
-				RelativePath="..\..\..\src\gpre\pretty.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files"
-			>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
 				>
 			</File>
 		</Filter>

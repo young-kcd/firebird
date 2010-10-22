@@ -18,6 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -59,8 +60,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -90,6 +89,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -133,8 +133,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -165,6 +163,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -209,8 +208,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 			/>
 			<Tool
@@ -240,6 +237,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops;.\asInvokerManifest.vsprops"
 			UseOfMFC="0"
@@ -285,8 +283,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
 				TargetMachine="17"
 			/>
@@ -324,84 +320,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\burp\burp.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\burpMain.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\canonical.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\misc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\burp\mvol.cpp"
-				>
-			</File>
-			<Filter
-				Name="epp files"
-				Filter="epp"
-				>
-				<File
-					RelativePath="..\..\..\src\burp\backup.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\burp\OdsDetection.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\burp\restore.epp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Generated files"
-				>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\burp\OdsDetection.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\burp\restore.cpp"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			>
-			<File
-				RelativePath="..\..\..\src\jrd\sdl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sdl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sdl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="REMOTE files"
-			>
-			<File
-				RelativePath="..\..\..\src\remote\xdr.cpp"
+				RelativePath="..\..\..\src\burp\main\burpMain.cpp"
 				>
 			</File>
 		</Filter>
