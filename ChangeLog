@@ -1,3 +1,132 @@
+ 2010-10-22 21:18  hvlad 
+   D builds/win32/msvc8/Firebird2.sln
+   D builds/win32/msvc8/Firebird2Boot.sln
+   D builds/win32/msvc8/Firebird2_Examples.sln
+   A builds/win32/msvc8/Firebird3.sln (from /firebird/trunk/builds/win32/msvc8/Firebird2.sln:51739)
+   A builds/win32/msvc8/Firebird3Boot.sln (from /firebird/trunk/builds/win32/msvc8/Firebird2Boot.sln:51739)
+   A builds/win32/msvc8/Firebird3_Examples.sln (from /firebird/trunk/builds/win32/msvc8/Firebird2_Examples.sln:51739)
+   M builds/win32/msvc8/alice.vcproj
+   M builds/win32/msvc8/btyacc.vcproj
+   M builds/win32/msvc8/build_msg.vcproj
+   M builds/win32/msvc8/burp.vcproj
+   M builds/win32/msvc8/codes.vcproj
+   M builds/win32/msvc8/common.vcproj
+   D builds/win32/msvc8/common_classic.vcproj
+   D builds/win32/msvc8/common_static.vcproj
+   D builds/win32/msvc8/config.vcproj
+   D builds/win32/msvc8/dsql_server.vcproj
+   D builds/win32/msvc8/dsql_server_classic.vcproj
+   M builds/win32/msvc8/empbuild.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   D builds/win32/msvc8/engine_classic.vcproj
+   D builds/win32/msvc8/engine_embed.vcproj
+   M builds/win32/msvc8/fb2control.vcproj
+   D builds/win32/msvc8/fb_inet_server.vcproj
+   M builds/win32/msvc8/fb_lock_print.vcproj
+   D builds/win32/msvc8/fbclient.vcproj
+   D builds/win32/msvc8/fbclient_static.vcproj
+   D builds/win32/msvc8/fbembed.vcproj
+   M builds/win32/msvc8/fbguard.vcproj
+   M builds/win32/msvc8/fbrmclib.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/fbsvcmgr.vcproj
+   M builds/win32/msvc8/fbtrace.vcproj
+   M builds/win32/msvc8/fbtracemgr.vcproj
+   M builds/win32/msvc8/fbudf.vcproj
+   M builds/win32/msvc8/firebird2.vsprops
+   M builds/win32/msvc8/gbak.vcproj
+   D builds/win32/msvc8/gbak_embed.vcproj
+   D builds/win32/msvc8/gds32.vcproj
+   M builds/win32/msvc8/gfix.vcproj
+   M builds/win32/msvc8/gpre.vcproj
+   M builds/win32/msvc8/gpre_boot.vcproj
+   A builds/win32/msvc8/gpre_common.vcproj
+   D builds/win32/msvc8/gpre_embed.vcproj
+   D builds/win32/msvc8/gpre_static.vcproj
+   M builds/win32/msvc8/gsec.vcproj
+   M builds/win32/msvc8/gsplit.vcproj
+   M builds/win32/msvc8/gstat.vcproj
+   M builds/win32/msvc8/ib_udf.vcproj
+   M builds/win32/msvc8/ib_util.vcproj
+   M builds/win32/msvc8/instclient.vcproj
+   M builds/win32/msvc8/instreg.vcproj
+   M builds/win32/msvc8/instsvc.vcproj
+   M builds/win32/msvc8/intl.vcproj
+   M builds/win32/msvc8/intlbuild.vcproj
+   M builds/win32/msvc8/isql.vcproj
+   D builds/win32/msvc8/isql_embed.vcproj
+   D builds/win32/msvc8/lock.vcproj
+   D builds/win32/msvc8/lock_classic.vcproj
+   M builds/win32/msvc8/nbackup.vcproj
+   M builds/win32/msvc8/qli.vcproj
+   M builds/win32/msvc8/remote.vcproj
+   D builds/win32/msvc8/remote_classic.vcproj
+   M builds/win32/msvc8/udr_engine.vcproj
+   A builds/win32/msvc8/user_management.vcproj
+   D builds/win32/msvc8/utilities.vcproj
+   D builds/win32/msvc8/utilities_embed.vcproj
+   A builds/win32/msvc8/yvalve.vcproj
+New build system for Windows. MSVC8.
+
+ 2010-10-22 21:14  hvlad 
+   M builds/win32/make_all.bat
+   M builds/win32/make_examples.bat
+   M builds/win32/msvc10
+   M builds/win32/msvc10/Firebird3_Examples.sln
+   M builds/win32/msvc10/btyacc.vcxproj
+Corrections
+
+ 2010-10-22 20:48  hvlad 
+   M src/jrd/os/win32/ibinitdll.cpp
+Engine always works in embedded mode
+
+ 2010-10-22 17:55  hvlad 
+   M builds/win32/msvc10/fbguard.vcxproj
+   M builds/win32/msvc10/fbguard.vcxproj.filters
+   M builds/win32/msvc10/gstat.vcxproj
+   M builds/win32/msvc10/gstat.vcxproj.filters
+   M builds/win32/msvc10/ib_udf.vcxproj.filters
+   M builds/win32/msvc10/ib_util.vcxproj.filters
+   M builds/win32/msvc10/instclient.vcxproj
+   M builds/win32/msvc10/instclient.vcxproj.filters
+   M builds/win32/msvc10/intl.vcxproj.filters
+   M builds/win32/msvc10/isql.vcxproj.filters
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/qli.vcxproj.filters
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/remote.vcxproj.filters
+   M builds/win32/msvc10/udr_engine.vcxproj.filters
+   M builds/win32/msvc10/user_management.vcxproj.filters
+Misc
+
+ 2010-10-22 15:00  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/ddl.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/misc/blrtable.cpp
+Refactor NULL expression
+
+ 2010-10-22 13:10  alexpeshkoff 
+   M src/utilities/guard/guard.cpp
+   M src/utilities/guard/util.cpp
+   M src/utilities/guard/util_proto.h
+Fixed fbguard - thanks to Damyan
+
  2010-10-22 01:24  asfernandes 
    M builds/win32/make_boot.bat
    M builds/win32/make_examples.bat
