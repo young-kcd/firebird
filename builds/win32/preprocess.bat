@@ -48,12 +48,12 @@
 
 ::===========
 :GPRE_GDS
-@%GPRE% -n -ids %3 %4 %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DIR%/dbs/
+@%GPRE% -n -ids %3 %4 %FB_ROOT_PATH%\src\%1\%2.epp %FB_GEN_DIR%\preprocessing.cpp -b %FB_GEN_DB_DIR%/dbs/
 goto :EOF
 
 ::===========
 :BOOT_PROCESS
-@echo
+@echo.
 @set GPRE=%FB_BIN_DIR%\gpre_boot -lang_internal
 @for %%i in (array, blob) do @call :PREPROCESS yvalve %%i
 @for %%i in (metd, DdlNodes, PackageNodes) do @call :PREPROCESS dsql %%i -gds_cxx
@@ -69,12 +69,10 @@ goto :EOF
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre/std %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl, Function) do @call :PREPROCESS jrd %%i -gds_cxx
 @for %%i in (stats) do @call :PREPROCESS utilities %%i
-@echo
 @goto :EOF
 
 ::===========
 :MASTER_PROCESS
-@echo
 @set GPRE=%FB_BIN_DIR%\gpre
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (LegacyManagement) do @call :PREPROCESS auth/SecurityDatabase %%i
