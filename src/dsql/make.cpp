@@ -73,17 +73,18 @@ dsql_nod* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
-	node->nod_type = nod_constant;
-	node->nod_flags = 0;
-	node->nod_desc.dsc_dtype = dtype_long;
-	node->nod_desc.dsc_length = sizeof(SLONG);
-	node->nod_desc.dsc_scale = 0;
-	node->nod_desc.dsc_sub_type = 0;
-	node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
+	SLONG* valuePtr = FB_NEW(*tdbb->getDefaultPool()) SLONG(value);
 
-	*((SLONG *) (node->nod_desc.dsc_address)) = value;
-	//printf("make.cpp %p %d\n", node->nod_arg[0], value);
+	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	literal->litDesc.dsc_dtype = dtype_long;
+	literal->litDesc.dsc_length = sizeof(SLONG);
+	literal->litDesc.dsc_scale = 0;
+	literal->litDesc.dsc_sub_type = 0;
+	literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(valuePtr);
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_flags = 0;
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
 
 	return node;
 }
@@ -104,22 +105,14 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(),
-						(numeric_flag == CONSTANT_TIMESTAMP ||
-						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
-	node->nod_type = nod_constant;
+	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_flags = 0;
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
 
 	switch (numeric_flag)
 	{
-/*	case CONSTANT_SLONG:
-		node->nod_desc.dsc_dtype = dtype_long;
-		node->nod_desc.dsc_length = sizeof(SLONG);
-		node->nod_desc.dsc_scale = 0;
-		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
-		*((SLONG *) (node->nod_desc.dsc_address)) = (SLONG) (IPTR) constant;
-		break;
-*/
 	case CONSTANT_DOUBLE:
 		DEV_BLKCHK(constant, dsql_type_str);
 
@@ -129,30 +122,25 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		// Note: Due to the size of dsc_scale we are limited to numeric
 		// constants of less than 256 bytes.
 
-		node->nod_desc.dsc_dtype = dtype_double;
+		literal->litDesc.dsc_dtype = dtype_double;
 		// Scale has no use for double
-		node->nod_desc.dsc_scale = static_cast<signed char>(constant->str_length);
-		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_length = sizeof(double);
-		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-		node->nod_desc.dsc_ttype() = ttype_ascii;
-		node->nod_arg[0] = (dsql_nod*) constant;
+		literal->litDesc.dsc_scale = static_cast<signed char>(constant->str_length);
+		literal->litDesc.dsc_sub_type = 0;
+		literal->litDesc.dsc_length = sizeof(double);
+		literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
+		literal->litDesc.dsc_ttype() = ttype_ascii;
+		literal->dsqlStr = constant;
 		break;
 
 	case CONSTANT_SINT64:
 		{
-			// We convert the string to an int64.  We treat the two adjacent
-			// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-			// 64-bit integer: if we ever port to a platform which requires
-			// 8-byte alignment of int64 data, we will have to force 8-byte
-			// alignment of node->nod_arg, which is now only guaranteed
-			// 4-byte alignment.    -- ChrisJ 1999-02-20
+			// We convert the string to an int64.
 
-			node->nod_desc.dsc_dtype = dtype_int64;
-			node->nod_desc.dsc_length = sizeof(SINT64);
-			node->nod_desc.dsc_scale = 0;
-			node->nod_desc.dsc_sub_type = 0;
-			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
+			literal->litDesc.dsc_dtype = dtype_int64;
+			literal->litDesc.dsc_length = sizeof(SINT64);
+			literal->litDesc.dsc_scale = 0;
+			literal->litDesc.dsc_sub_type = 0;
+			literal->litDesc.dsc_address = (UCHAR*) FB_NEW(*tdbb->getDefaultPool()) SINT64;
 
 			// Now convert the string to an int64.  We can omit testing for
 			// overflow, because we would never have gotten here if yylex
@@ -204,11 +192,11 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 				// if value is negative, then GEN_constant (from dsql/gen.cpp)
 				// is going to want 2 nodes: NegateNode (to hold the minus)
-				// and nod_constant as a child to hold the value.
+				// and LiteralNode as a child to hold the value.
 				if (value < 0)
 				{
 					value = -value;
-					*(SINT64*) node->nod_desc.dsc_address = value;
+					*(SINT64*) literal->litDesc.dsc_address = value;
 
 					NegateNode* negateNode = FB_NEW(*tdbb->getDefaultPool()) NegateNode(
 						*tdbb->getDefaultPool(), node);
@@ -217,18 +205,12 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 					node->nod_arg[0] = reinterpret_cast<dsql_nod*>(negateNode);
 				}
 				else
-					*(SINT64*) node->nod_desc.dsc_address = value;
+					*(SINT64*) literal->litDesc.dsc_address = value;
 			} // hex constant
 			else
 			{
-				// good old-fashioned base-10 number from SQLParse.cpp
-
-				// We convert the string to an int64.  We treat the two adjacent
-				// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-				// 64-bit integer: if we ever port to a platform which requires
-				// 8-byte alignment of int64 data, we will have to force 8-byte
-				// alignment of node->nod_arg, which is now only guaranteed
-				// 4-byte alignment.    -- ChrisJ 1999-02-20
+				// Good old-fashioned base-10 number from the lexer.
+				// We convert the string to an int64.
 
 				while (isdigit(*p))
 					value = 10 * value + (*(p++) - '0');
@@ -238,11 +220,11 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 					while (isdigit(*p))
 					{
 						value = 10 * value + (*p++ - '0');
-						node->nod_desc.dsc_scale--;
+						literal->litDesc.dsc_scale--;
 					}
 				}
 
-				*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
+				*(FB_UINT64*) (literal->litDesc.dsc_address) = value;
 			}
 		}
 		break;
@@ -256,19 +238,20 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			switch (numeric_flag)
 			{
 			case CONSTANT_DATE:
-				node->nod_desc.dsc_dtype = dtype_sql_date;
+				literal->litDesc.dsc_dtype = dtype_sql_date;
 				break;
 			case CONSTANT_TIME:
-				node->nod_desc.dsc_dtype = dtype_sql_time;
+				literal->litDesc.dsc_dtype = dtype_sql_time;
 				break;
 			case CONSTANT_TIMESTAMP:
-				node->nod_desc.dsc_dtype = dtype_timestamp;
+				literal->litDesc.dsc_dtype = dtype_timestamp;
 				break;
 			}
-			node->nod_desc.dsc_sub_type = 0;
-			node->nod_desc.dsc_scale = 0;
-			node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
-			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
+			literal->litDesc.dsc_sub_type = 0;
+			literal->litDesc.dsc_scale = 0;
+			literal->litDesc.dsc_length = type_lengths[literal->litDesc.dsc_dtype];
+			literal->litDesc.dsc_address =
+				FB_NEW(*tdbb->getDefaultPool()) UCHAR[literal->litDesc.dsc_length];
 
 			// Set up a descriptor to point to the string
 
@@ -282,7 +265,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 			// Now invoke the string_to_date/time/timestamp routines
 
-			CVT_move(&tmp, &node->nod_desc, ERRD_post);
+			CVT_move(&tmp, &literal->litDesc, ERRD_post);
 			break;
 		}
 
@@ -290,14 +273,14 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		fb_assert(numeric_flag == CONSTANT_STRING);
 		DEV_BLKCHK(constant, dsql_type_str);
 
-		node->nod_desc.dsc_dtype = dtype_text;
-		node->nod_desc.dsc_sub_type = 0;
-		node->nod_desc.dsc_scale = 0;
-		node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
-		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-		node->nod_desc.dsc_ttype() = ttype_dynamic;
+		literal->litDesc.dsc_dtype = dtype_text;
+		literal->litDesc.dsc_sub_type = 0;
+		literal->litDesc.dsc_scale = 0;
+		literal->litDesc.dsc_length = static_cast<USHORT>(constant->str_length);
+		literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
+		literal->litDesc.dsc_ttype() = ttype_dynamic;
 		// carry a pointer to the constant to resolve character set in pass1
-		node->nod_arg[0] = (dsql_nod*) constant;
+		literal->dsqlStr = constant;
 		break;
 	}
 
@@ -321,19 +304,21 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
-	node->nod_type = nod_constant;
-
 	DEV_BLKCHK(constant, dsql_type_str);
 
-	node->nod_desc.dsc_dtype = dtype_text;
-	node->nod_desc.dsc_sub_type = 0;
-	node->nod_desc.dsc_scale = 0;
-	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
-	node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
-	node->nod_desc.dsc_ttype() = character_set;
-	// carry a pointer to the constant to resolve character set in pass1
-	node->nod_arg[0] = (dsql_nod*) constant;
+	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	literal->litDesc.dsc_dtype = dtype_text;
+	literal->litDesc.dsc_sub_type = 0;
+	literal->litDesc.dsc_scale = 0;
+	literal->litDesc.dsc_length = static_cast<USHORT>(constant->str_length);
+	literal->litDesc.dsc_address = (UCHAR*) constant->str_data;
+	literal->litDesc.dsc_ttype() = character_set;
+
+	literal->dsqlStr = constant;
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_flags = 0;
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(literal);
 
 	return node;
 }
@@ -352,7 +337,6 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
  **/
 dsql_str* MAKE_cstring(const char* str)
 {
-
 	return MAKE_string(str, strlen(str));
 }
 
@@ -406,7 +390,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		}
 		return;
 
-	case nod_constant:
 	case nod_variable:
 		*desc = node->nod_desc;
 		return;
@@ -1089,18 +1072,19 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
-			case nod_constant:
-				name_alias = "CONSTANT";
-				break;
 			case nod_dbkey:
 				name_alias = DB_KEY_NAME;
 				break;
 
 			case nod_class_exprnode:
 				{
-					const AggNode* aggNode = ExprNode::as<AggNode>(map_node);
-					if (aggNode)
+					const AggNode* aggNode;
+					const LiteralNode* literalNode;
+
+					if ((aggNode = ExprNode::as<AggNode>(map_node)))
 						aggNode->setParameterName(parameter);
+					else if ((literalNode = ExprNode::as<LiteralNode>(map_node)))
+						literalNode->setParameterName(parameter);
 				}
 				break;
 			} // switch(map_node->nod_type)
@@ -1113,9 +1097,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
-	case nod_constant:
-		name_alias = "CONSTANT";
-		break;
 	case nod_cast:
 		name_alias = "CAST";
 		break;

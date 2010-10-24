@@ -117,7 +117,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 			return call(exprNode);
 		}
 
-		case nod_literal:
 		case nod_variable:
 			break;
 
@@ -396,7 +395,6 @@ bool UnmappedNodeGetter::visit(const JrdNode& node)
 		case nod_field:
 			break;
 
-		case nod_literal:
 		case nod_variable:
 			break;
 
@@ -1117,7 +1115,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 #endif
 
 	}	// try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		for (USHORT i = 1; i <= opt->compileStreams[0]; ++i)
 		{
@@ -1874,8 +1872,8 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 		if (node1->nod_type != nod_field)
 			continue;
 
-		if (node2->nod_type != nod_literal &&
-			node2->nod_type != nod_variable &&
+		if (!node2->nod_type != nod_variable &&
+			!ExprNode::is<LiteralNode>(node2) &&
 			!ExprNode::is<ParameterNode>(node2))
 		{
 			continue;
@@ -3502,16 +3500,19 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, Comparative
 
 	// if the pattern string or the escape string can't be
 	// evaluated at compile time, forget it
-	if ((pattern_node->nod_type != nod_literal) || (escape_node && escape_node->nod_type != nod_literal))
+	if (!ExprNode::is<LiteralNode>(pattern_node) ||
+		(escape_node && !ExprNode::is<LiteralNode>(escape_node)))
+	{
 		return NULL;
+	}
 
 	dsc match_desc;
 	CMP_get_desc(tdbb, csb, match_node, &match_desc);
 
-	dsc* pattern_desc = &((Literal*) pattern_node)->lit_desc;
+	dsc* pattern_desc = &ExprNode::as<LiteralNode>(pattern_node)->litDesc;
 	dsc* escape_desc = 0;
 	if (escape_node)
-		escape_desc = &((Literal*) escape_node)->lit_desc;
+		escape_desc = &ExprNode::as<LiteralNode>(escape_node)->litDesc;
 
 	// if either is not a character expression, forget it
 	if ((match_desc.dsc_dtype > dtype_any_text) ||
@@ -3568,18 +3569,14 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, Comparative
 	// allocate a literal node to store the starting with string;
 	// assume it will be shorter than the pattern string
 	// CVC: This assumption may not be true if we use "value like field".
-	const SSHORT count = lit_delta + (pattern_desc->dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-	jrd_nod* node = PAR_make_node(tdbb, count);
-	node->nod_type = nod_literal;
-	node->nod_count = 0;
-	Literal* literal = (Literal*) node;
-	literal->lit_desc = *pattern_desc;
-	UCHAR* q = reinterpret_cast<UCHAR*>(literal->lit_data);
-	literal->lit_desc.dsc_address = q;
 
-	// copy the string into the starting with literal, up to the first wildcard character
+	LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+	literal->litDesc = *pattern_desc;
+	literal->litDesc.dsc_length = 0;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> patternCanonical;
+	// Set the string length to point till the first wildcard character.
+
+	HalfStaticArray<UCHAR, BUFFER_SMALL> patternCanonical;
 	ULONG patternCanonicalLen = p_count / matchCharset->minBytesPerChar() * canWidth;
 
 	patternCanonicalLen = matchTextType->canonical(p_count, p,
@@ -3607,12 +3604,18 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, Comparative
 			break;
 		}
 
-		q += patternCharset->substring(pattern_desc->dsc_length, pattern_desc->dsc_address,
-								literal->lit_desc.dsc_length - (q - literal->lit_desc.dsc_address),
-								q, (patternPtrStart - patternCanonical.begin()) / canWidth, 1);
+		UCHAR c[sizeof(SLONG)];
+
+		literal->litDesc.dsc_length += patternCharset->substring(pattern_desc->dsc_length,
+			pattern_desc->dsc_address, sizeof(c), c,
+			(patternPtrStart - patternCanonical.begin()) / canWidth, 1);
 	}
 
-	literal->lit_desc.dsc_length = q - literal->lit_desc.dsc_address;
+	jrd_nod* node = PAR_make_node(tdbb, 1);
+	node->nod_type = nod_class_exprnode_jrd;
+	node->nod_count = 0;
+	node->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+
 	return node;
 }
 

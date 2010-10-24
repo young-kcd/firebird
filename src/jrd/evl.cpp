@@ -462,9 +462,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			return NULL;
 		}
 
-	case nod_literal:
-		return &((Literal*) node)->lit_desc;
-
 	case nod_max:
 	case nod_min:
 	case nod_count:

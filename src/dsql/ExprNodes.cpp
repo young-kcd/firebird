@@ -3730,9 +3730,9 @@ DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 	node->arg = PAR_parse_node(tdbb, csb, VALUE);
 
-	if (node->arg->nod_type != nod_literal ||
-		static_cast<Literal*>(static_cast<jrd_node_base*>(
-			node->arg.getObject()))->lit_desc.dsc_dtype != dtype_long)
+	LiteralNode* literal = ExprNode::as<LiteralNode>(node->arg.getObject());
+
+	if (!literal || literal->litDesc.dsc_dtype != dtype_long)
 	{
 		csb->csb_blr_reader.setPos(blrOffset + 1);	// PAR_syntax_error seeks 1 backward.
         PAR_syntax_error(csb, "integer literal");
@@ -3749,7 +3749,7 @@ void InternalInfoNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void InternalInfoNode::setParameterName(dsql_par* parameter) const
 {
-	SLONG infoType = dsqlArg->getSlong();
+	SLONG infoType = ExprNode::as<LiteralNode>(dsqlArg)->getSlong();
 	parameter->par_name = parameter->par_alias = INFO_TYPE_ATTRIBUTES[infoType].alias;
 }
 
@@ -3762,7 +3762,7 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
 	dsql_nod* /*nullReplacement*/)
 {
-	InfoType infoType = static_cast<InfoType>(dsqlArg->getSlong());
+	InfoType infoType = static_cast<InfoType>(ExprNode::as<LiteralNode>(dsqlArg)->getSlong());
 
 	if (infoType == INFO_TYPE_SQLSTATE)
 		desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
@@ -3772,7 +3772,7 @@ void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*th
 
 void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	fb_assert(arg->nod_type == nod_literal);
+	fb_assert(ExprNode::is<LiteralNode>(arg.getObject()));
 
 	dsc argDesc;
 	CMP_get_desc(tdbb, csb, arg, &argDesc);
@@ -3864,7 +3864,7 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 
 ValueExprNode* InternalInfoNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	SLONG infoType = dsqlArg->getSlong();
+	SLONG infoType = ExprNode::as<LiteralNode>(dsqlArg)->getSlong();
 	const InfoAttr& attr = INFO_TYPE_ATTRIBUTES[infoType];
 
 	if (attr.mask && !(dsqlScratch->flags & attr.mask))
@@ -3876,6 +3876,427 @@ ValueExprNode* InternalInfoNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	return FB_NEW(getPool()) InternalInfoNode(getPool(), PASS1_node(dsqlScratch, dsqlArg));
+}
+
+
+//--------------------
+
+
+static RegisterNode<LiteralNode> regLiteralNode(blr_literal);
+
+LiteralNode::LiteralNode(MemoryPool& pool)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_LITERAL>(pool),
+	  dsqlStr(NULL)
+{
+	litDesc.clear();
+}
+
+// Parse a literal value.
+DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	LiteralNode* node = FB_NEW(pool) LiteralNode(pool);
+
+	PAR_desc(tdbb, csb, &node->litDesc);
+
+	UCHAR* p = FB_NEW(csb->csb_pool) UCHAR[node->litDesc.dsc_length];
+	node->litDesc.dsc_address = p;
+	node->litDesc.dsc_flags = 0;
+	const UCHAR* q = csb->csb_blr_reader.getPos();
+	USHORT l = node->litDesc.dsc_length;
+
+	switch (node->litDesc.dsc_dtype)
+	{
+		case dtype_short:
+			l = 2;
+			*(SSHORT*) p = (SSHORT) gds__vax_integer(q, l);
+			break;
+
+		case dtype_long:
+		case dtype_sql_date:
+		case dtype_sql_time:
+			l = 4;
+			*(SLONG*) p = gds__vax_integer(q, l);
+			break;
+
+		case dtype_timestamp:
+			l = 8;
+			*(SLONG*) p = gds__vax_integer(q, 4);
+			p += 4;
+			q += 4;
+			*(SLONG*) p = gds__vax_integer(q, 4);
+			break;
+
+		case dtype_int64:
+			l = sizeof(SINT64);
+			*(SINT64*) p = isc_portable_integer(q, l);
+			break;
+
+		case dtype_double:
+		{
+			SSHORT scale;
+			UCHAR dtype;
+
+			// The double literal could potentially be used for any numeric literal - the value is
+			// passed as if it were a text string. Convert the numeric string to its binary value
+			// (int64, long or double as appropriate).
+
+			l = csb->csb_blr_reader.getWord();
+			q = csb->csb_blr_reader.getPos();
+			dtype = CVT_get_numeric(q, l, &scale, (double*) p);
+			node->litDesc.dsc_dtype = dtype;
+
+			switch (dtype)
+			{
+				case dtype_double:
+					node->litDesc.dsc_length = sizeof(double);
+					break;
+				case dtype_long:
+					node->litDesc.dsc_length = sizeof(SLONG);
+					node->litDesc.dsc_scale = (SCHAR) scale;
+					break;
+				default:
+					node->litDesc.dsc_length = sizeof(SINT64);
+					node->litDesc.dsc_scale = (SCHAR) scale;
+			}
+			break;
+		}
+
+		case dtype_text:
+			memcpy(p, q, l);
+			break;
+
+		default:
+			fb_assert(FALSE);
+	}
+
+	csb->csb_blr_reader.seekForward(l);
+
+	return node;
+}
+
+// Generate BLR for a constant.
+void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue)
+{
+	SLONG value;
+	SINT64 i64value;
+
+	dsqlScratch->appendUChar(blr_literal);
+
+	const UCHAR* p = desc->dsc_address;
+
+	switch (desc->dsc_dtype)
+	{
+		case dtype_short:
+			GEN_descriptor(dsqlScratch, desc, true);
+			value = *(SSHORT*) p;
+			if (negateValue)
+				value = -value;
+			dsqlScratch->appendUShort(value);
+			break;
+
+		case dtype_long:
+			GEN_descriptor(dsqlScratch, desc, true);
+			value = *(SLONG*) p;
+			if (negateValue)
+				value = -value;
+			dsqlScratch->appendUShort(value);
+			dsqlScratch->appendUShort(value >> 16);
+			break;
+
+		case dtype_sql_time:
+		case dtype_sql_date:
+			GEN_descriptor(dsqlScratch, desc, true);
+			value = *(SLONG*) p;
+			dsqlScratch->appendUShort(value);
+			dsqlScratch->appendUShort(value >> 16);
+			break;
+
+		case dtype_double:
+		{
+			// this is used for approximate/large numeric literal
+			// which is transmitted to the engine as a string.
+
+			GEN_descriptor(dsqlScratch, desc, true);
+			// Length of string literal, cast because it could be > 127 bytes.
+			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
+
+			if (negateValue)
+			{
+				dsqlScratch->appendUShort(l + 1);
+				dsqlScratch->appendUChar('-');
+			}
+			else
+				dsqlScratch->appendUShort(l);
+
+			if (l)
+				dsqlScratch->appendBytes(p, l);
+
+			break;
+		}
+
+		case dtype_int64:
+			i64value = *(SINT64*) p;
+
+			if (negateValue)
+				i64value = -i64value;
+			else if (i64value == MIN_SINT64)
+			{
+				// UH OH!
+				// yylex correctly recognized the digits as the most-negative
+				// possible INT64 value, but unfortunately, there was no
+				// preceding '-' (a fact which the lexer could not know).
+				// The value is too big for a positive INT64 value, and it
+				// didn't contain an exponent so it's not a valid DOUBLE
+				// PRECISION literal either, so we have to bounce it.
+
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_arith_except) <<
+						  Arg::Gds(isc_numeric_out_of_range));
+			}
+
+			// We and the lexer both agree that this is an SINT64 constant,
+			// and if the value needed to be negated, it already has been.
+			// If the value will fit into a 32-bit signed integer, generate
+			// it that way, else as an INT64.
+
+			if ((i64value >= (SINT64) MIN_SLONG) && (i64value <= (SINT64) MAX_SLONG))
+			{
+				dsqlScratch->appendUChar(blr_long);
+				dsqlScratch->appendUChar(desc->dsc_scale);
+				dsqlScratch->appendUShort(i64value);
+				dsqlScratch->appendUShort(i64value >> 16);
+			}
+			else
+			{
+				dsqlScratch->appendUChar(blr_int64);
+				dsqlScratch->appendUChar(desc->dsc_scale);
+				dsqlScratch->appendUShort(i64value);
+				dsqlScratch->appendUShort(i64value >> 16);
+				dsqlScratch->appendUShort(i64value >> 32);
+				dsqlScratch->appendUShort(i64value >> 48);
+			}
+			break;
+
+		case dtype_quad:
+		case dtype_blob:
+		case dtype_array:
+		case dtype_timestamp:
+			GEN_descriptor(dsqlScratch, desc, true);
+			value = *(SLONG*) p;
+			dsqlScratch->appendUShort(value);
+			dsqlScratch->appendUShort(value >> 16);
+			value = *(SLONG*) (p + 4);
+			dsqlScratch->appendUShort(value);
+			dsqlScratch->appendUShort(value >> 16);
+			break;
+
+		case dtype_text:
+		{
+			const USHORT length = desc->dsc_length;
+
+			GEN_descriptor(dsqlScratch, desc, true);
+			if (length)
+				dsqlScratch->appendBytes(p, length);
+
+			break;
+		}
+
+		default:
+			// gen_constant: datatype not understood
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-103) <<
+					  Arg::Gds(isc_dsql_constant_err));
+	}
+}
+
+void LiteralNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("LiteralNode");
+	ExprNode::print(text, nodes);
+}
+
+// Turn an international string reference into internal subtype ID.
+ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (dsqlScratch->inOuterJoin)
+		litDesc.dsc_flags = DSC_nullable;
+
+	if (litDesc.dsc_dtype > dtype_any_text)
+		return this;
+
+	LiteralNode* constant = FB_NEW(getPool()) LiteralNode(getPool());
+	constant->dsqlStr = dsqlStr;
+	constant->litDesc = litDesc;
+
+	const dsql_str* string = constant->dsqlStr;
+
+	if (string && string->str_charset)
+	{
+		const dsql_intlsym* resolved = METD_get_charset(dsqlScratch->getTransaction(),
+			strlen(string->str_charset), string->str_charset);
+
+		if (!resolved)
+		{
+			// character set name is not defined
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					  Arg::Gds(isc_charset_not_found) << Arg::Str(string->str_charset));
+		}
+
+		constant->litDesc.setTextType(resolved->intlsym_ttype);
+	}
+	else
+	{
+		const MetaName charSetName = METD_get_charset_name(
+			dsqlScratch->getTransaction(), constant->litDesc.getCharSet());
+
+		const dsql_intlsym* sym = METD_get_charset(dsqlScratch->getTransaction(),
+			charSetName.length(), charSetName.c_str());
+		fb_assert(sym);
+
+		if (sym)
+			constant->litDesc.setTextType(sym->intlsym_ttype);
+	}
+
+	USHORT adjust = 0;
+
+	if (constant->litDesc.dsc_dtype == dtype_varying)
+		adjust = sizeof(USHORT);
+	else if (constant->litDesc.dsc_dtype == dtype_cstring)
+		adjust = 1;
+
+	constant->litDesc.dsc_length -= adjust;
+
+	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->litDesc));
+
+	if (!charSet->wellFormed(string->str_length, constant->litDesc.dsc_address, NULL))
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_malformed_string));
+	}
+	else
+	{
+		constant->litDesc.dsc_length =
+			charSet->length(string->str_length, constant->litDesc.dsc_address, true) *
+			charSet->maxBytesPerChar();
+	}
+
+	constant->litDesc.dsc_length += adjust;
+
+	return constant;
+}
+
+void LiteralNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "CONSTANT";
+}
+
+bool LiteralNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+	dsql_nod* node, bool forceVarChar)
+{
+	return false;
+}
+
+void LiteralNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	if (litDesc.dsc_dtype == dtype_text)
+		litDesc.dsc_length = dsqlStr->str_length;
+
+	genConstant(dsqlScratch, &litDesc, false);
+}
+
+void LiteralNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
+	dsql_nod* /*nullReplacement*/)
+{
+	*desc = litDesc;
+}
+
+void LiteralNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	*desc = litDesc;
+
+	// ASF: I expect only dtype_text could occur here.
+	// But I'll treat all string types for sure.
+	if (DTYPE_IS_TEXT(desc->dsc_dtype))
+	{
+		const UCHAR* p;
+		USHORT adjust = 0;
+
+		if (desc->dsc_dtype == dtype_varying)
+		{
+			p = desc->dsc_address + sizeof(USHORT);
+			adjust = sizeof(USHORT);
+		}
+		else
+		{
+			p = desc->dsc_address;
+
+			if (desc->dsc_dtype == dtype_cstring)
+				adjust = 1;
+		}
+
+		// Do the same thing which DSQL does.
+		// Increase descriptor size to evaluate dependent expressions correctly.
+		CharSet* cs = INTL_charset_lookup(tdbb, desc->getCharSet());
+		desc->dsc_length = (cs->length(desc->dsc_length - adjust, p, true) *
+			cs->maxBytesPerChar()) + adjust;
+	}
+}
+
+ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	return this;
+}
+
+bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const LiteralNode* o = other->as<LiteralNode>();
+	fb_assert(o)
+
+	if (litDesc.dsc_dtype != o->litDesc.dsc_dtype || litDesc.dsc_length != o->litDesc.dsc_length ||
+		litDesc.dsc_scale != o->litDesc.dsc_scale)
+	{
+		return false;
+	}
+
+	return memcmp(litDesc.dsc_address, o->litDesc.dsc_address, litDesc.dsc_length) == 0;
+}
+
+bool LiteralNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	LiteralNode* o = other->as<LiteralNode>();
+	fb_assert(o);
+
+	dsc desc1, desc2;
+
+	getDesc(tdbb, csb, &desc1);
+	o->getDesc(tdbb, csb, &desc2);
+
+	return DSC_EQUIV(&desc1, &desc2, true) &&
+		memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length) == 0;
+}
+
+ExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* LiteralNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	return const_cast<dsc*>(&litDesc);
 }
 
 
@@ -3925,13 +4346,9 @@ void NegateNode::setParameterName(dsql_par* parameter) const
 
 	switch (innerNode->nod_type)
 	{
-		case Dsql::nod_constant:
-			parameter->par_name = parameter->par_alias = "CONSTANT";
-			break;
-
 		case Dsql::nod_class_exprnode:
 		{
-			if (ExprNode::is<NullNode>(innerNode))
+			if (ExprNode::is<NullNode>(innerNode) || ExprNode::is<LiteralNode>(innerNode))
 				parameter->par_name = parameter->par_alias = "CONSTANT";
 			else if (!level)
 			{
@@ -3960,8 +4377,15 @@ bool NegateNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* th
 
 void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	if (dsqlArg->nod_type == Dsql::nod_constant && DTYPE_IS_NUMERIC(dsqlArg->nod_desc.dsc_dtype))
-		GEN_constant(dsqlScratch, dsqlArg, true);
+	LiteralNode* literal = ExprNode::as<LiteralNode>(dsqlArg);
+
+	if (literal && DTYPE_IS_NUMERIC(dsqlArg->nod_desc.dsc_dtype))
+	{
+		if (literal->litDesc.dsc_dtype == dtype_text)
+			literal->litDesc.dsc_length = literal->dsqlStr->str_length;
+
+		LiteralNode::genConstant(dsqlScratch, &literal->litDesc, true);
+	}
 	else
 	{
 		dsqlScratch->appendUChar(blr_negate);
@@ -5291,11 +5715,11 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->dsc_flags |= DSC_null;
 	else
 	{
-		if (offsetNode->nod_type == nod_literal && desc1.dsc_dtype == dtype_long)
+		if (ExprNode::is<LiteralNode>(offsetNode) && desc1.dsc_dtype == dtype_long)
 		{
 			SLONG offset = MOV_get_long(&desc1, 0);
 
-			if (decrementNode && decrementNode->nod_type == nod_literal &&
+			if (decrementNode && ExprNode::is<LiteralNode>(decrementNode) &&
 				desc3.dsc_dtype == dtype_long)
 			{
 				offset -= MOV_get_long(&desc3, 0);
@@ -5305,7 +5729,7 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
 		}
 
-		if (length->nod_type == nod_literal && desc2.dsc_dtype == dtype_long)
+		if (ExprNode::is<LiteralNode>(length.getObject()) && desc2.dsc_dtype == dtype_long)
 		{
 			const SLONG length = MOV_get_long(&desc2, 0);
 
@@ -5605,9 +6029,10 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 	// because it may be dependent on data or variables.
 	if ((node->nod_flags & nod_invariant) &&
-		(pattern->nod_type != nod_literal || escape->nod_type != nod_literal))
+		(!ExprNode::is<LiteralNode>(pattern.getObject()) || !ExprNode::is<LiteralNode>(escape.getObject())))
 	{
 		const LegacyNodeOrRseNode* ctx_node, *end;
+
 		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 			 ctx_node != end; ++ctx_node)
 		{
@@ -5832,7 +6257,7 @@ void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		// dsc_address is verified in makeFunc to get literals. If the node is not a
 		// literal, set it to NULL, to prevent wrong interpretation of offsets as
 		// pointers - CORE-2612.
-		if ((*p)->nod_type != nod_literal)
+		if (!ExprNode::is<LiteralNode>(*p))
 			targetDesc->dsc_address = NULL;
 	}
 

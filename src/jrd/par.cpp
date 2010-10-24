@@ -93,7 +93,6 @@ static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
-static jrd_nod* par_literal(thread_db*, CompilerScratch*);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
@@ -1436,101 +1435,6 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 }
 
 
-static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ l i t e r a l
- *
- **************************************
- *
- * Functional description
- *	Parse a literal value.
- *
- **************************************/
-	SSHORT scale;
-	UCHAR dtype;
-
-	SET_TDBB(tdbb);
-
-	DSC desc;
-	PAR_desc(tdbb, csb, &desc);
-	const int count = lit_delta + (desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-	jrd_nod* node = PAR_make_node(tdbb, count);
-	Literal* literal = (Literal*) node;
-	node->nod_count = 0;
-	literal->lit_desc = desc;
-	UCHAR* p = reinterpret_cast<UCHAR*>(literal->lit_data);
-	literal->lit_desc.dsc_address = p;
-	literal->lit_desc.dsc_flags = 0;
-	const UCHAR* q = csb->csb_blr_reader.getPos();
-	USHORT l = desc.dsc_length;
-
-	switch (desc.dsc_dtype)
-	{
-	case dtype_short:
-		l = 2;
-		*(SSHORT *) p = (SSHORT) gds__vax_integer(q, l);
-		break;
-
-	case dtype_long:
-	case dtype_sql_date:
-	case dtype_sql_time:
-		l = 4;
-		*(SLONG *) p = gds__vax_integer(q, l);
-		break;
-
-	case dtype_timestamp:
-		l = 8;
-		*(SLONG *) p = gds__vax_integer(q, 4);
-		p += 4;
-		q += 4;
-		*(SLONG *) p = gds__vax_integer(q, 4);
-		break;
-
-	case dtype_int64:
-		l = sizeof(SINT64);
-		*(SINT64 *) p = isc_portable_integer(q, l);
-		break;
-
-	case dtype_double:
-		// the double literal could potentially be used for any
-		// numeric literal - the value is passed as if it were a
-		// text string. Convert the numeric string to its binary
-		// value (int64, long or double as appropriate).
-		l = csb->csb_blr_reader.getWord();
-		q = csb->csb_blr_reader.getPos();
-		dtype = CVT_get_numeric(q, l, &scale, (double *) p);
-		literal->lit_desc.dsc_dtype = dtype;
-		switch (dtype)
-		{
-		case dtype_double:
-			literal->lit_desc.dsc_length = sizeof(double);
-			break;
-		case dtype_long:
-			literal->lit_desc.dsc_length = sizeof(SLONG);
-			literal->lit_desc.dsc_scale = (SCHAR) scale;
-			break;
-		default:
-			literal->lit_desc.dsc_length = sizeof(SINT64);
-			literal->lit_desc.dsc_scale = (SCHAR) scale;
-		}
-		break;
-
-	case dtype_text:
-		memcpy(p, q, l);
-		break;
-
-	default:
-		fb_assert(FALSE);
-	}
-
-	csb->csb_blr_reader.seekForward(l);
-
-	return node;
-}
-
-
 static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 {
 /**************************************
@@ -2646,10 +2550,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_message:
 		node = par_message(tdbb, csb);
-		break;
-
-	case blr_literal:
-		node = par_literal(tdbb, csb);
 		break;
 
 	case blr_cast:

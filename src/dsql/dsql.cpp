@@ -1289,8 +1289,9 @@ static void execute_request(thread_db* tdbb,
  **/
 static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
 {
-	if (node->nod_type == nod_constant)
-		return (SSHORT) node->getSlong();
+	const LiteralNode* literal = ExprNode::as<LiteralNode>(node);
+	if (literal)
+		return (SSHORT) literal->getSlong();
 
 	const dsql_par* parameter = ExprNode::as<ParameterNode>(node)->dsqlParameter;
 	const dsql_par* null = parameter->par_null;

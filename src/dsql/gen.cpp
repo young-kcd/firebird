@@ -39,6 +39,7 @@
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
@@ -65,7 +66,6 @@ using namespace Firebird;
 static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_cast(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_constant(DsqlCompilerScratch*, const dsc*, bool);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void gen_field(DsqlCompilerScratch*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
@@ -176,10 +176,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_aggregate:
 		gen_aggregate(dsqlScratch, node);
-		return;
-
-	case nod_constant:
-		GEN_constant(dsqlScratch, node, false);
 		return;
 
 	case nod_derived_field:
@@ -691,9 +687,9 @@ void GEN_start_transaction( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tr
 						  Arg::Gds(isc_dsql_dup_option));
 
 			sw_lock_timeout = true;
-			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
+			if (ptr->nod_count == 1 && ExprNode::is<LiteralNode>(ptr->nod_arg[0]))
 			{
-				const int lck_timeout = (int) ptr->nod_arg[0]->getSlong();
+				const int lck_timeout = (int) ExprNode::as<LiteralNode>(ptr->nod_arg[0])->getSlong();
 				dsqlScratch->appendUChar(isc_tpb_lock_timeout);
 				dsqlScratch->appendUChar(2);
 				dsqlScratch->appendUShort(lck_timeout);
@@ -905,15 +901,12 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 			// scrolling
 			if (scroll)
 			{
-				dsqlScratch->appendUChar(scroll->nod_arg[0]->getSlong());
+				dsqlScratch->appendUChar(ExprNode::as<LiteralNode>(scroll->nod_arg[0])->getSlong());
+
 				if (scroll->nod_arg[1])
-				{
 					GEN_expr(dsqlScratch, scroll->nod_arg[1]);
-				}
 				else
-				{
 					dsqlScratch->appendUChar(blr_null);
-				}
 			}
 			// assignment
 			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
@@ -1105,150 +1098,6 @@ static void gen_coalesce( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 	{
 		GEN_expr(dsqlScratch, *ptr);
 	}
-}
-
-
-// Generate BLR for a constant.
-static void gen_constant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue)
-{
-	SLONG value;
-	SINT64 i64value;
-
-	dsqlScratch->appendUChar(blr_literal);
-
-	const UCHAR* p = desc->dsc_address;
-
-	switch (desc->dsc_dtype)
-	{
-	case dtype_short:
-		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SSHORT*) p;
-		if (negateValue)
-			value = -value;
-		dsqlScratch->appendUShort(value);
-		break;
-
-	case dtype_long:
-		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG*) p;
-		if (negateValue)
-			value = -value;
-		//printf("gen.cpp = %p %d\n", *((void**)p), value);
-		dsqlScratch->appendUShort(value);
-		dsqlScratch->appendUShort(value >> 16);
-		break;
-
-	case dtype_sql_time:
-	case dtype_sql_date:
-		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG*) p;
-		dsqlScratch->appendUShort(value);
-		dsqlScratch->appendUShort(value >> 16);
-		break;
-
-	case dtype_double:
-		{
-			// this is used for approximate/large numeric literal
-			// which is transmitted to the engine as a string.
-
-			GEN_descriptor(dsqlScratch, desc, true);
-			// Length of string literal, cast because it could be > 127 bytes.
-			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
-			if (negateValue)
-			{
-				dsqlScratch->appendUShort(l + 1);
-				dsqlScratch->appendUChar('-');
-			}
-			else {
-				dsqlScratch->appendUShort(l);
-			}
-
-			if (l)
-				dsqlScratch->appendBytes(p, l);
-		}
-		break;
-
-	case dtype_int64:
-		i64value = *(SINT64*) p;
-
-		if (negateValue)
-			i64value = -i64value;
-		else if (i64value == MIN_SINT64)
-		{
-			// UH OH!
-			// yylex correctly recognized the digits as the most-negative
-			// possible INT64 value, but unfortunately, there was no
-			// preceding '-' (a fact which the lexer could not know).
-			// The value is too big for a positive INT64 value, and it
-			// didn't contain an exponent so it's not a valid DOUBLE
-			// PRECISION literal either, so we have to bounce it.
-
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_arith_except) <<
-					  Arg::Gds(isc_numeric_out_of_range));
-		}
-
-		// We and the lexer both agree that this is an SINT64 constant,
-		// and if the value needed to be negated, it already has been.
-		// If the value will fit into a 32-bit signed integer, generate
-		// it that way, else as an INT64.
-
-		if ((i64value >= (SINT64) MIN_SLONG) && (i64value <= (SINT64) MAX_SLONG))
-		{
-			dsqlScratch->appendUChar(blr_long);
-			dsqlScratch->appendUChar(desc->dsc_scale);
-			dsqlScratch->appendUShort(i64value);
-			dsqlScratch->appendUShort(i64value >> 16);
-		}
-		else
-		{
-			dsqlScratch->appendUChar(blr_int64);
-			dsqlScratch->appendUChar(desc->dsc_scale);
-			dsqlScratch->appendUShort(i64value);
-			dsqlScratch->appendUShort(i64value >> 16);
-			dsqlScratch->appendUShort(i64value >> 32);
-			dsqlScratch->appendUShort(i64value >> 48);
-		}
-		break;
-
-	case dtype_quad:
-	case dtype_blob:
-	case dtype_array:
-	case dtype_timestamp:
-		GEN_descriptor(dsqlScratch, desc, true);
-		value = *(SLONG*) p;
-		dsqlScratch->appendUShort(value);
-		dsqlScratch->appendUShort(value >> 16);
-		value = *(SLONG*) (p + 4);
-		dsqlScratch->appendUShort(value);
-		dsqlScratch->appendUShort(value >> 16);
-		break;
-
-	case dtype_text:
-		{
-			const USHORT length = desc->dsc_length;
-
-			GEN_descriptor(dsqlScratch, desc, true);
-			if (length)
-				dsqlScratch->appendBytes(p, length);
-		}
-		break;
-
-	default:
-		// gen_constant: datatype not understood
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-103) <<
-				  Arg::Gds(isc_dsql_constant_err));
-	}
-}
-
-
-// Generate BLR for a constant.
-void GEN_constant(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, bool negateValue)
-{
-	if (node->nod_desc.dsc_dtype == dtype_text)
-		node->nod_desc.dsc_length = ((dsql_str*) node->nod_arg[0])->str_length;
-
-	gen_constant(dsqlScratch, &node->nod_desc, negateValue);
 }
 
 
@@ -2099,7 +1948,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 1;
-	gen_constant(dsqlScratch, &constant_desc, false);
+	LiteralNode::genConstant(dsqlScratch, &constant_desc, false);
 	GEN_parameter(dsqlScratch, statement->getEof());
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
@@ -2135,7 +1984,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	dsqlScratch->appendUChar(message->msg_number);
 	dsqlScratch->appendUChar(blr_assignment);
 	constant = 0;
-	gen_constant(dsqlScratch, &constant_desc, false);
+	LiteralNode::genConstant(dsqlScratch, &constant_desc, false);
 	GEN_parameter(dsqlScratch, statement->getEof());
 }
 
@@ -2201,9 +2050,10 @@ static void gen_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
 		dsql_nod* nulls_placement = (*ptr)->nod_arg[e_order_nulls];
+
 		if (nulls_placement)
 		{
-			switch (nulls_placement->getSlong())
+			switch (ExprNode::as<LiteralNode>(nulls_placement)->getSlong())
 			{
 				case NOD_NULLS_FIRST:
 					dsqlScratch->appendUChar(blr_nullsfirst);

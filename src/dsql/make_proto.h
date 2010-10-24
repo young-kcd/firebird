@@ -38,12 +38,11 @@ namespace Jrd {
 // Parameters to MAKE_constant
 	enum dsql_constant_type {
 		CONSTANT_STRING		= 0, // stored as a string
-//		CONSTANT_SLONG		= 1, // stored as a SLONG
-		CONSTANT_DOUBLE		= 2, // stored as a string
-		CONSTANT_DATE		= 3, // stored as a SLONG
-		CONSTANT_TIME		= 4, // stored as a ULONG
-		CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
-		CONSTANT_SINT64		= 6  // stored as a SINT64
+		CONSTANT_DOUBLE		= 1, // stored as a string
+		CONSTANT_DATE		= 2, // stored as a SLONG
+		CONSTANT_TIME		= 3, // stored as a ULONG
+		CONSTANT_TIMESTAMP	= 4, // stored as a QUAD
+		CONSTANT_SINT64		= 5  // stored as a SINT64
 	};
 
 	// Parameters to MAKE_variable

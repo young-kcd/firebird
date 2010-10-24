@@ -312,17 +312,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			return (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && fld_stream == stream;
 		}
 
-		case nod_literal:
-		{
-			dsc desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
-
-			return DSC_EQUIV(&desc1, &desc2, true) &&
-				!memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length);
-		}
-
 		case nod_cast:
 		{
 			dsc desc1, desc2;
@@ -2677,14 +2666,14 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 			*/
 		}
 
-		// Every string starts with an empty string so
-		// don't bother using an index in that case.
-		if (value->nod_type == nod_literal)
+		// Every string starts with an empty string so don't bother using an index in that case.
+		LiteralNode* literal;
+
+		if ((literal = ExprNode::as<LiteralNode>(value)))
 		{
-			const dsc* literal_desc = &((Literal*) value)->lit_desc;
-			if ((literal_desc->dsc_dtype == dtype_text && literal_desc->dsc_length == 0) ||
-				(literal_desc->dsc_dtype == dtype_varying &&
-					literal_desc->dsc_length == sizeof(USHORT)))
+			if ((literal->litDesc.dsc_dtype == dtype_text && literal->litDesc.dsc_length == 0) ||
+				(literal->litDesc.dsc_dtype == dtype_varying &&
+					literal->litDesc.dsc_length == sizeof(USHORT)))
 			{
 				return false;
 			}

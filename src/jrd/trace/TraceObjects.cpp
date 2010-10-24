@@ -374,11 +374,12 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 	const jrd_nod* const* end = ptr + m_params->nod_count;
 	for (; ptr < end; ptr++)
 	{
-		dsc* from_desc = NULL;
+		const dsc* from_desc = NULL;
 		dsc desc;
 
 		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
 		const ParameterNode* param;
+		const LiteralNode* literal;
 
 		if ((param = ExprNode::as<ParameterNode>(prm)))
 		{
@@ -389,7 +390,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 			desc = format->fmt_desc[arg_number];
 			from_desc = &desc;
-			from_desc->dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
+			desc.dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
 				message->nod_impure + (IPTR) desc.dsc_address);
 
 			// handle null flag if present
@@ -397,14 +398,16 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 			{
 				const dsc* flag = EVL_expr(tdbb, param->argFlag);
 				if (MOV_get_long(flag, 0))
-					from_desc->dsc_flags |= DSC_null;
+					desc.dsc_flags |= DSC_null;
 			}
 		}
+		else if ((literal = ExprNode::as<LiteralNode>(prm)))
+			from_desc = &literal->litDesc;
 		else if (ExprNode::is<NullNode>(prm))
 		{
-			desc = ((Literal*) prm)->lit_desc;
+			desc.clear();
+			desc.setNull();
 			from_desc = &desc;
-			from_desc->dsc_flags |= DSC_null;
 		}
 
 		switch (prm->nod_type)
@@ -416,10 +419,6 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 				from_desc = &impure->vlu_desc;
 				break;
 			}
-
-			case nod_literal:
-				from_desc = &((Literal*) prm)->lit_desc;
-				break;
 
 			default:
 				break;

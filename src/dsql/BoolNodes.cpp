@@ -22,6 +22,7 @@
 #include "../common/common.h"
 #include "../common/classes/VaryStr.h"
 #include "../dsql/BoolNodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
@@ -606,9 +607,11 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 		// because it may be dependent on data or variables.
 		if ((flags & FLAG_INVARIANT) &&
-			(arg2->nod_type != nod_literal || (arg3 && arg3->nod_type != nod_literal)))
+			(!ExprNode::is<LiteralNode>(arg2.getObject()) ||
+				(arg3 && !ExprNode::is<LiteralNode>(arg3.getObject()))))
 		{
 			const LegacyNodeOrRseNode* ctx_node, *end;
+
 			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 				 ctx_node != end; ++ctx_node)
 			{

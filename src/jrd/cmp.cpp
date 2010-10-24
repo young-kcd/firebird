@@ -582,37 +582,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_literal:
-		*desc = ((Literal*) node)->lit_desc;
-
-		// ASF: I expect only dtype_text could occur here.
-		// But I'll treat all string types for sure.
-		if (DTYPE_IS_TEXT(desc->dsc_dtype))
-		{
-			const UCHAR* p;
-			USHORT adjust = 0;
-
-			if (desc->dsc_dtype == dtype_varying)
-			{
-				p = desc->dsc_address + sizeof(USHORT);
-				adjust = sizeof(USHORT);
-			}
-			else
-			{
-				p = desc->dsc_address;
-
-				if (desc->dsc_dtype == dtype_cstring)
-					adjust = 1;
-			}
-
-			// Do the same thing which DSQL does.
-			// Increase descriptor size to evaluate dependent expressions correctly.
-			CharSet* cs = INTL_charset_lookup(tdbb, desc->getCharSet());
-			desc->dsc_length = (cs->length(desc->dsc_length - adjust, p, true) *
-				cs->maxBytesPerChar()) + adjust;
-		}
-		return;
-
 	case nod_cast:
 		{
 			const Format* format = (Format*) node->nod_arg[e_cast_fmt];
@@ -1090,7 +1059,9 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
 			ExprNode* copy = exprNode->copy(tdbb, *this);
 
-			if (copy != exprNode)
+			if (copy == exprNode)
+				node = input;
+			else
 			{
 				node = PAR_make_node(tdbb, 1);
 				node->nod_type = input->nod_type;
@@ -1141,9 +1112,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			node->nod_arg[e_init_var_info] = input->nod_arg[e_init_var_info];
 			return node;
 		}
-		return input;
-
-	case nod_literal:
 		return input;
 
 	case nod_field:
@@ -1455,13 +1423,14 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
 				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
 
-				const int count = lit_delta + (sizeof(SLONG) + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-				jrd_nod* literalNode = genNode->arg = PAR_make_node(tdbb, count);
-				literalNode->nod_type = nod_literal;
-				literalNode->nod_count = 0;
-				Literal* literal = (Literal*) literalNode;
-				literal->lit_desc.makeLong(0, (SLONG*) literal->lit_data);
-				*(SLONG*) literal->lit_data = 1;
+				LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+				SLONG* increment = FB_NEW(csb->csb_pool) SLONG(1);
+				literal->litDesc.makeLong(0, increment);
+
+				genNode->arg = PAR_make_node(tdbb, 1);
+				genNode->arg->nod_type = nod_class_exprnode_jrd;
+				genNode->arg->nod_count = 0;
+				genNode->arg->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
 
 				jrd_nod* genNod = PAR_make_node(tdbb, 1);
 				genNod->nod_type = nod_class_exprnode_jrd;
@@ -2082,18 +2051,18 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 						valueIfNode->trueValue = i.object();	// THEN
 
-						const SSHORT count = lit_delta +
-							(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-						valueIfNode->falseValue = PAR_make_node(tdbb, count);	// ELSE
-						valueIfNode->falseValue->nod_type = nod_literal;
-						valueIfNode->falseValue->nod_count = 0;
-						Literal* literal = (Literal*) valueIfNode->falseValue.getObject();
-						literal->lit_desc.dsc_dtype = dtype_text;
-						literal->lit_desc.dsc_ttype() = CS_BINARY;
-						literal->lit_desc.dsc_scale = 0;
-						literal->lit_desc.dsc_length = 8;
-						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(
+						LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+						literal->litDesc.dsc_dtype = dtype_text;
+						literal->litDesc.dsc_ttype() = CS_BINARY;
+						literal->litDesc.dsc_scale = 0;
+						literal->litDesc.dsc_length = 8;
+						literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
 							const_cast<char*>("\0\0\0\0\0\0\0\0"));	// safe const_cast
+
+						valueIfNode->falseValue = PAR_make_node(tdbb, 1);	// ELSE
+						valueIfNode->falseValue->nod_type = nod_class_exprnode_jrd;
+						valueIfNode->falseValue->nod_count = 0;
+						valueIfNode->falseValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
 
 						stack2.push(new_node);
 					}
@@ -2123,16 +2092,19 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 					valueIfNode->condition = eqlNode;
 
 					eqlNode->arg1 = NodeCopier::copy(tdbb, csb, node, NULL);
-					const SSHORT count = lit_delta + (0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-					eqlNode->arg2 = PAR_make_node(tdbb, count);
-					eqlNode->arg2->nod_type = nod_literal;
+
+					LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+					literal->litDesc.dsc_dtype = dtype_text;
+					literal->litDesc.dsc_ttype() = CS_BINARY;
+					literal->litDesc.dsc_scale = 0;
+					literal->litDesc.dsc_length = 0;
+					literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
+						const_cast<char*>(""));	// safe const_cast
+
+					eqlNode->arg2 = PAR_make_node(tdbb, 1);
+					eqlNode->arg2->nod_type = nod_class_exprnode_jrd;
 					eqlNode->arg2->nod_count = 0;
-					Literal* literal = reinterpret_cast<Literal*>(eqlNode->arg2.getObject());
-					literal->lit_desc.dsc_dtype = dtype_text;
-					literal->lit_desc.dsc_ttype() = CS_BINARY;
-					literal->lit_desc.dsc_scale = 0;
-					literal->lit_desc.dsc_length = 0;
-					literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
+					eqlNode->arg2->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
 
 					// THEN: NULL
 					valueIfNode->trueValue = PAR_make_node(tdbb, 1);
@@ -3051,7 +3023,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			sizeof(impure_value_ex) : sizeof(dsc));
 		break;
 
-	case nod_literal:
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_scalar:

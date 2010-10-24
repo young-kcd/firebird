@@ -139,18 +139,6 @@ const int rse_nulls_first	= 1;
 const int rse_nulls_last	= 2;
 
 
-// Literal value
-
-class Literal : public jrd_node_base
-{
-public:
-	dsc		lit_desc;
-	SINT64	lit_data[1]; // Defined this way to prevent SIGBUS error in 64-bit ports
-};
-
-const size_t lit_delta	= ((sizeof(Literal) - sizeof(jrd_nod) - sizeof(SINT64)) / sizeof(jrd_nod**));
-
-
 // Aggregate Sort Block (for DISTINCT aggregates)
 
 class AggregateSort : protected Firebird::PermanentStorage
@@ -199,7 +187,7 @@ const int e_msg_length			= 3;
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
 const int e_fld_format		= 2;		// relation or procedure latest format when compiling
-const int e_fld_default_value	= 3;	// hold column default value info if any, (Literal*)
+const int e_fld_default_value	= 3;	// hold column default value info if any
 const int e_fld_length		= 4;
 
 const int e_sto_statement	= 0;

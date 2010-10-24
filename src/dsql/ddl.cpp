@@ -818,14 +818,16 @@ static SSHORT getBlobFilterSubType(DsqlCompilerScratch* dsqlScratch, const dsql_
  *******************************************
  *
  * Function
- *	get sub_type value from nod_constant.
+ *	get sub_type value from LiteralNode.
  *
  **************************************/
-	fb_assert(node->nod_type == nod_constant);
-	switch (node->nod_desc.dsc_dtype)
+ 	const LiteralNode* literal = ExprNode::as<LiteralNode>(node);
+ 	fb_assert(literal);
+
+	switch (literal->litDesc.dsc_dtype)
 	{
 	case dtype_long:
-		return (SSHORT) node->getSlong();
+		return (SSHORT) literal->getSlong();
 	case dtype_text:
 		break;
 	default:
@@ -959,8 +961,10 @@ static void define_shadow(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendNumber(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
 	dsqlScratch->appendNullString(isc_dyn_def_file, ((dsql_str*) (ptr[e_shadow_name]))->str_data);
-	dsqlScratch->appendNumber(isc_dyn_shadow_man_auto, (SSHORT) ptr[e_shadow_man_auto]->getSlong());
-	dsqlScratch->appendNumber(isc_dyn_shadow_conditional, (SSHORT) ptr[e_shadow_conditional]->getSlong());
+	dsqlScratch->appendNumber(isc_dyn_shadow_man_auto,
+		(SSHORT) ExprNode::as<LiteralNode>(ptr[e_shadow_man_auto])->getSlong());
+	dsqlScratch->appendNumber(isc_dyn_shadow_conditional,
+		(SSHORT) ExprNode::as<LiteralNode>(ptr[e_shadow_conditional])->getSlong());
 
 	dsqlScratch->appendFileStart(0);
 
@@ -1033,7 +1037,7 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 		// CVC: This is case of "returns <type> [by value|reference]"
 		// Some data types can not be returned as value
 
-		if (((int) ret_val_ptr[1]->getSlong() == FUN_value) &&
+		if (((int) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong() == FUN_value) &&
 			(field->fld_dtype == dtype_text || field->fld_dtype == dtype_varying ||
 				field->fld_dtype == dtype_cstring || field->fld_dtype == dtype_blob ||
 				field->fld_dtype == dtype_timestamp))
@@ -1069,7 +1073,7 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 
 		// CVC: This is case of "returns parameter <N>"
 
-		position = (SSHORT) ret_val_ptr[1]->getSlong();
+		position = (SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong();
 		// Function modifies an argument whose value is the function return value
 
 		if (!arguments || position > arguments->nod_count || position < 1)
@@ -1089,7 +1093,9 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 		const dsql_nod* const* param_node = ret_arg->nod_arg;
 		if (param_node[e_udf_param_type])
 		{
-			const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
+			const SSHORT arg_mechanism =
+				(SSHORT) ExprNode::as<LiteralNode>(param_node[e_udf_param_type])->getSlong();
+
 			if (arg_mechanism == FUN_scalar_array)
 				post_607(Arg::Gds(isc_random) << Arg::Str("BY SCALAR_ARRAY can't be used as a return parameter"));
 		}
@@ -1106,7 +1112,7 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 		{
 			// CVC: I need to test returning blobs by descriptor before allowing the
 			// change there. For now, I ignore the return type specification.
-			const bool free_it = ((SSHORT) ret_val_ptr[1]->getSlong() < 0);
+			const bool free_it = ((SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong() < 0);
 			dsqlScratch->appendNumber(isc_dyn_def_function_arg, blob_position);
 			dsqlScratch->appendNumber(isc_dyn_func_mechanism,
 					   (SSHORT)(SLONG) ((free_it ? -1 : 1) * FUN_blob_struct));
@@ -1115,7 +1121,8 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 		else
 		{
 			dsqlScratch->appendNumber(isc_dyn_def_function_arg, (SSHORT) 0);
-			dsqlScratch->appendNumber(isc_dyn_func_mechanism, (SSHORT) ret_val_ptr[1]->getSlong());
+			dsqlScratch->appendNumber(isc_dyn_func_mechanism,
+				(SSHORT) ExprNode::as<LiteralNode>(ret_val_ptr[1])->getSlong());
 		}
 
 		dsqlScratch->appendNullString(isc_dyn_function_name, udf_name);
@@ -1149,7 +1156,8 @@ static void define_udf(DsqlCompilerScratch* dsqlScratch)
 
 			if (param_node[e_udf_param_type])
 			{
-				const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
+				const SSHORT arg_mechanism =
+					(SSHORT) ExprNode::as<LiteralNode>(param_node[e_udf_param_type])->getSlong();
 				dsqlScratch->appendNumber(isc_dyn_func_mechanism, arg_mechanism);
 			}
 			else if (field->fld_dtype == dtype_blob) {
@@ -1753,13 +1761,14 @@ static void modify_map(DsqlCompilerScratch* dsqlScratch)
 
 	const dsql_str* ds = (dsql_str*) node->nod_arg[e_mod_role_os_name];
 	fb_assert(ds ||
-			  node->nod_arg[e_mod_role_action]->getSlong() == isc_dyn_automap_role ||
-			  node->nod_arg[e_mod_role_action]->getSlong() == isc_dyn_autounmap_role);
+		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong() == isc_dyn_automap_role ||
+		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong() == isc_dyn_autounmap_role);
 	dsqlScratch->appendNullString(isc_dyn_mapping, ds ? ds->str_data : "");
 
 	ds = (dsql_str*) node->nod_arg[e_mod_role_db_name];
 	fb_assert(ds);
-	dsqlScratch->appendNullString(node->nod_arg[e_mod_role_action]->getSlong(), ds->str_data);
+	dsqlScratch->appendNullString(
+		ExprNode::as<LiteralNode>(node->nod_arg[e_mod_role_action])->getSlong(), ds->str_data);
 
 	dsqlScratch->appendUChar(isc_dyn_end);
 }

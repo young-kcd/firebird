@@ -126,7 +126,6 @@ enum nod_t
 	nod_field,
 	nod_dom_value,
 	nod_field_name,
-	nod_constant,
 	nod_map,
 	nod_alias,
 	nod_user_name,
@@ -785,15 +784,6 @@ public:
 	RPT_ALIGN(dsql_nod* nod_arg[1]);
 
 	dsql_nod() : nod_type(Dsql::nod_unknown_type), nod_count(0), nod_flags(0) {}
-
-	SLONG getSlong() const
-	{
-		fb_assert(nod_type == Dsql::nod_constant);
-		fb_assert(nod_desc.dsc_dtype == dtype_long);
-		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
-		return *((SLONG*) nod_arg);
-	}
-
 };
 
 // values of flags

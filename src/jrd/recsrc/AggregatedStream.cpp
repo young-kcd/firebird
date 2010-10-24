@@ -21,6 +21,7 @@
 #include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
@@ -283,15 +284,13 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 				switch (from->nod_type)
 				{
-					case nod_literal:
-						EXE_assignment(tdbb, *ptr);
-						break;
-
 					case nod_class_exprnode_jrd:
 					{
 						const AggNode* aggNode = ExprNode::as<AggNode>(from);
 						if (aggNode)
 							aggNode->aggInit(tdbb, request);
+						else if (ExprNode::is<LiteralNode>(from))
+							EXE_assignment(tdbb, *ptr);
 						break;
 					}
 

@@ -688,9 +688,9 @@ void DdlNode::storeGlobalField(thread_db* tdbb, jrd_tra* transaction, MetaName& 
 		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr, ++position)
 		{
 			const dsql_nod* element = *ptr++;
-			const SLONG lrange = element->getSlong();
+			const SLONG lrange = ExprNode::as<LiteralNode>(element)->getSlong();
 			element = *ptr;
-			const SLONG hrange = element->getSlong();
+			const SLONG hrange = ExprNode::as<LiteralNode>(element)->getSlong();
 
 			if (lrange >= hrange)
 			{
@@ -6314,7 +6314,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 					const dsql_nod* fieldNode = element->nod_arg[e_mod_fld_null_flag_field];
 					MetaName fieldName = ((dsql_str*) fieldNode->nod_arg[e_fln_name])->str_data;
-					bool flag = element->nod_arg[e_mod_fld_null_flag_value]->getSlong() != 0;
+					bool flag = ExprNode::as<LiteralNode>(
+						element->nod_arg[e_mod_fld_null_flag_value])->getSlong() != 0;
 
 					AutoRequest request;
 					bool found = false;
@@ -6356,7 +6357,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					const dsql_nod* posNode = element->nod_arg[e_mod_fld_pos_new_position];
 
 					// CVC: Since now the parser accepts pos=1..N, let's subtract one here.
-					const SSHORT pos = (SSHORT) posNode->getSlong() - 1;
+					const SSHORT pos = (SSHORT) ExprNode::as<LiteralNode>(posNode)->getSlong() - 1;
 
 					AutoRequest request;
 					bool found = false;

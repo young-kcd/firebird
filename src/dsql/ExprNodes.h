@@ -368,6 +368,43 @@ public:
 };
 
 
+class LiteralNode : public TypedNode<ValueExprNode, ExprNode::TYPE_LITERAL>
+{
+public:
+	LiteralNode(MemoryPool& pool);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static void genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool negateValue);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
+		dsql_nod* nullReplacement);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+	SLONG getSlong() const
+	{
+		fb_assert(litDesc.dsc_dtype == dtype_long);
+		return *reinterpret_cast<SLONG*>(litDesc.dsc_address);
+	}
+
+public:
+	dsql_str* dsqlStr;
+	dsc litDesc;
+};
+
+
 class NegateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_NEGATE>
 {
 public:

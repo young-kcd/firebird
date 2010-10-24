@@ -46,6 +46,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/ext.h"
 #include "../jrd/tra.h"
+#include "../dsql/ExprNodes.h"
 #include "gen/iberror.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/err_proto.h"
@@ -356,17 +357,23 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 		i < format->fmt_count; ++i, ++itr, ++desc_ptr)
 	{
 	    const jrd_fld* field = *itr;
+
 		SET_NULL(record, i);
+
 		if (!desc_ptr->dsc_length || !field)
 			continue;
-		const Literal* literal = (Literal*) field->fld_missing_value;
+
+		const LiteralNode* literal = ExprNode::as<LiteralNode>(field->fld_missing_value);
+
 		if (literal)
 		{
 			desc = *desc_ptr;
 			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
-			if (!MOV_compare(&literal->lit_desc, &desc))
+
+			if (!MOV_compare(&literal->litDesc, &desc))
 				continue;
 		}
+
 		CLEAR_NULL(record, i);
 	}
 
@@ -458,12 +465,13 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 		if (field && !field->fld_computation && desc_ptr->dsc_length && TEST_NULL(record, i))
 		{
 			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
-			Literal* literal = (Literal*) field->fld_missing_value;
+			LiteralNode* literal = ExprNode::as<LiteralNode>(field->fld_missing_value);
+
 			if (literal)
 			{
 				desc = *desc_ptr;
 				desc.dsc_address = p;
-				MOV_move(tdbb, &literal->lit_desc, &desc);
+				MOV_move(tdbb, &literal->litDesc, &desc);
 			}
 			else
 			{

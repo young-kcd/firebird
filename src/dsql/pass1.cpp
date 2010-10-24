@@ -203,7 +203,6 @@ static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const d
 static void pass1_blob(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
-static dsql_nod* pass1_constant(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_cursor_context(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
 static dsql_nod* pass1_cursor_reference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(DsqlCompilerScratch*, dsql_nod*);
@@ -1429,9 +1428,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 			return pass1_relation(dsqlScratch, input);
 		}
-
-	case nod_constant:
-		return pass1_constant(dsqlScratch, input);
 
 	// access plan node types
 
@@ -2858,16 +2854,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 		}
 		return true;
 
-	case nod_constant:
-		if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
-			node1->nod_desc.dsc_length != node2->nod_desc.dsc_length ||
-			node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale)
-		{
-			return false;
-		}
-		return !memcmp(node1->nod_desc.dsc_address, node2->nod_desc.dsc_address,
-					   node1->nod_desc.dsc_length);
-
 	case nod_map:
 		{
 			const dsql_map* map1 = (dsql_map*)node1->nod_arg[e_map_map];
@@ -3220,93 +3206,6 @@ static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1
 	DDL_resolve_intl_type(dsqlScratch, field, collation);
 	MAKE_desc_from_field(&node->nod_desc, field);
 	return node;
-}
-
-
-/**
-
- 	pass1_constant
-
-    @brief	Turn an international string reference into internal
- 	subtype ID.
-
-
-    @param dsqlScratch
-    @param constant
-
- **/
-static dsql_nod* pass1_constant( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	if (dsqlScratch->inOuterJoin)
-		input->nod_desc.dsc_flags = DSC_nullable;
-
-	if (input->nod_desc.dsc_dtype > dtype_any_text) {
-		return input;
-	}
-
-	dsql_nod* constant = MAKE_node(input->nod_type, 1);
-	constant->nod_arg[0] = input->nod_arg[0];
-	constant->nod_desc = input->nod_desc;
-
-	const dsql_str* string = (dsql_str*) constant->nod_arg[0];
-	DEV_BLKCHK(string, dsql_type_str);
-
-	if (string && string->str_charset)
-	{
-		const dsql_intlsym* resolved =
-			METD_get_charset(dsqlScratch->getTransaction(), strlen(string->str_charset), string->str_charset);
-		if (!resolved)
-		{
-			// character set name is not defined
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-					  Arg::Gds(isc_charset_not_found) << Arg::Str(string->str_charset));
-		}
-
-		constant->nod_desc.setTextType(resolved->intlsym_ttype);
-	}
-	else
-	{
-		const Firebird::MetaName charSetName = METD_get_charset_name(
-			dsqlScratch->getTransaction(), constant->nod_desc.getCharSet());
-
-		const dsql_intlsym* sym = METD_get_charset(dsqlScratch->getTransaction(),
-			charSetName.length(), charSetName.c_str());
-		fb_assert(sym);
-
-		if (sym)
-			constant->nod_desc.setTextType(sym->intlsym_ttype);
-	}
-
-	USHORT adjust = 0;
-	if (constant->nod_desc.dsc_dtype == dtype_varying)
-		adjust = sizeof(USHORT);
-	else if (constant->nod_desc.dsc_dtype == dtype_cstring)
-		adjust = 1;
-
-	constant->nod_desc.dsc_length -= adjust;
-
-	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->nod_desc));
-
-	if (!charSet->wellFormed(string->str_length, constant->nod_desc.dsc_address, NULL))
-	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  Arg::Gds(isc_malformed_string));
-	}
-	else
-	{
-		constant->nod_desc.dsc_length =
-			charSet->length(string->str_length, constant->nod_desc.dsc_address, true) *
-			charSet->maxBytesPerChar();
-	}
-
-	constant->nod_desc.dsc_length += adjust;
-
-	return constant;
 }
 
 
@@ -4701,27 +4600,28 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		dsql_nod* sub = (*ptr);
 		dsql_nod* frnode = NULL;
+		LiteralNode* literal;
+
 		if (sub->nod_type == nod_field_name)
 		{
 			// check for alias or field node
 			frnode = pass1_field(dsqlScratch, sub, false, selectList);
 		}
-		else if ((sub->nod_type == nod_constant) && (sub->nod_desc.dsc_dtype == dtype_long))
+		else if ((literal = ExprNode::as<LiteralNode>(sub)) && (literal->litDesc.dsc_dtype == dtype_long))
 		{
-			const ULONG position = sub->getSlong();
-			if ((position < 1) || !selectList ||
-				(position > (ULONG) selectList->nod_count))
+			const ULONG position = literal->getSlong();
+
+			if ((position < 1) || !selectList || (position > (ULONG) selectList->nod_count))
 			{
 				// Invalid column position used in the GROUP BY clause
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_column_pos_err) << Arg::Str("GROUP BY"));
 			}
+
 			frnode = PASS1_node_psql(dsqlScratch, selectList->nod_arg[position - 1], false);
 		}
 		else
-		{
 			frnode = PASS1_node_psql(dsqlScratch, *ptr, false);
-		}
 
 		stack.push(frnode);
 	}
@@ -4738,7 +4638,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	// For some node types, it's better to not create temporary value.
 	switch (expr->nod_type)
 	{
-		case nod_constant:
 		case nod_dbkey:
 		case nod_field:
 		case nod_variable:
@@ -4753,6 +4652,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 				case ExprNode::TYPE_CURRENT_ROLE:
 				case ExprNode::TYPE_CURRENT_USER:
 				case ExprNode::TYPE_INTERNAL_INFO:
+				case ExprNode::TYPE_LITERAL:
 				case ExprNode::TYPE_NULL:
 				case ExprNode::TYPE_PARAMETER:
 					return NULL;
@@ -7188,26 +7088,29 @@ static dsql_nod* pass1_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, 
 			node1 = node1->nod_arg[e_coll_source];
 		}
 
+		LiteralNode* literal;
+
 		if (node1->nod_type == nod_field_name)
 		{
 			// check for alias or field node
 			node1 = pass1_field(dsqlScratch, node1, false, selectList);
 		}
-		else if (node1->nod_type == nod_constant && node1->nod_desc.dsc_dtype == dtype_long)
+		else if ((literal = ExprNode::as<LiteralNode>(node1)) && literal->litDesc.dsc_dtype == dtype_long)
 		{
-			const ULONG position = node1->getSlong();
+			const ULONG position = literal->getSlong();
+
 			if (position < 1 || !selectList || position > (ULONG) selectList->nod_count)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Invalid column position used in the ORDER BY clause
 						  Arg::Gds(isc_dsql_column_pos_err) << Arg::Str("ORDER BY"));
 			}
+
 			// substitute ordinal with appropriate field
 			node1 = PASS1_node_psql(dsqlScratch, selectList->nod_arg[position - 1], false);
 		}
-		else {
+		else
 			node1 = PASS1_node_psql(dsqlScratch, node1, false);
-		}
 
 		if (collate)
 		{
@@ -7393,14 +7296,18 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 				position = position->nod_arg[e_coll_source];
 			}
 
-			if (position->nod_type != nod_constant || position->nod_desc.dsc_dtype != dtype_long)
+			const LiteralNode* literal = ExprNode::as<LiteralNode>(position);
+
+			if (!literal || literal->litDesc.dsc_dtype != dtype_long)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_command_err) <<
 						  // invalid ORDER BY clause.
 						  Arg::Gds(isc_order_by_err));
 			}
-			const SLONG number = position->getSlong();
+
+			const SLONG number = literal->getSlong();
+
 			if (number < 1 || number > union_items->nod_count)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -7414,13 +7321,16 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			*uptr = order2;
 			order2->nod_arg[e_order_field] = union_items->nod_arg[number - 1];
 			order2->nod_arg[e_order_flag] = order1->nod_arg[e_order_flag];
+
 			if (collate)
 			{
 				order2->nod_arg[e_order_field] =
 					pass1_collate(dsqlScratch, order2->nod_arg[e_order_field], collate);
 			}
+
 			order2->nod_arg[e_order_nulls] = order1->nod_arg[e_order_nulls];
 		}
+
 		union_rse->nod_arg[e_rse_sort] = sort;
 	}
 
@@ -9277,18 +9187,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
 			return;
 		}
-
-	case nod_constant:
-		verb = "constant";
-		if (node->nod_desc.dsc_address)
-		{
-			if (node->nod_desc.dsc_dtype == dtype_text)
-				sprintf(s, "constant \"%s\"", node->nod_desc.dsc_address);
-			else
-				sprintf(s, "constant %"SLONGFORMAT, node->getSlong());
-			verb = s;
-		}
-		break;
 
 	case nod_field:
 		{
