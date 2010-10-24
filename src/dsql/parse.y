@@ -4260,48 +4260,61 @@ lock_clause : WITH LOCK
 
 // SELECT expression
 
-select_expr	: with_clause select_expr_body order_clause rows_clause
-				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
- 		;
+select_expr
+	: with_clause select_expr_body order_clause rows_clause
+		{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
+	;
 
-with_clause	: WITH RECURSIVE with_list
-				{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
-			| WITH with_list
-				{ $$ = make_node (nod_with, 1, make_list($2)); }
-		    |
-				{ $$ = NULL; }
- 		;
+with_clause
+    :
+		{ $$ = NULL; }
+	| WITH RECURSIVE with_list
+		{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
+	| WITH with_list
+		{ $$ = make_node (nod_with, 1, make_list($2)); }
+	;
 
-with_list	: with_item
-			| with_item ',' with_list
-				{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+with_list
+	: with_item
+	| with_item ',' with_list
+		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-with_item	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
-				{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
-		;
+with_item
+	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
+		{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
+	;
 
-column_select	: with_clause select_expr_body order_clause rows_clause
-			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE,
-					(int) e_sel_count, $2, $3, $4, $1); }
-		;
+column_select
+	: select_expr
+		{
+			$$ = $1;
+			$$->nod_flags |= NOD_SELECT_EXPR_VALUE;
+		}
+	;
 
-column_singleton	: with_clause select_expr_body order_clause rows_clause
-			{ $$ = make_flag_node (nod_select_expr, NOD_SELECT_EXPR_VALUE | NOD_SELECT_EXPR_SINGLETON,
-					(int) e_sel_count, $2, $3, $4, $1); }
-		;
+column_singleton
+	: column_select
+		{
+			$$ = $1;
+			$$->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
+		}
+	;
 
-select_expr_body	: query_term
-		| select_expr_body UNION distinct_noise query_term
-			{ $$ = make_node (nod_list, 2, $1, $4); }
-		| select_expr_body UNION ALL query_term
-			{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
-		;
+select_expr_body
+	: query_term
+	| select_expr_body UNION distinct_noise query_term
+		{ $$ = make_node (nod_list, 2, $1, $4); }
+	| select_expr_body UNION ALL query_term
+		{ $$ = make_flag_node (nod_list, NOD_UNION_ALL, 2, $1, $4); }
+	;
 
-query_term	: query_spec
-		;
+query_term
+	: query_spec
+	;
 
-query_spec	: SELECT limit_clause
+query_spec
+	: SELECT limit_clause
 			 distinct_clause
 			 select_list
 			 from_clause
@@ -4309,18 +4322,19 @@ query_spec	: SELECT limit_clause
 			 group_clause
 			 having_clause
 			 plan_clause
-			{ $$ = make_node (nod_query_spec, (int) e_qry_count, $2, $3, $4, $5, $6, $7, $8, $9); }
-		;
+		{ $$ = make_node (nod_query_spec, (int) e_qry_count, $2, $3, $4, $5, $6, $7, $8, $9); }
+	;
 
-limit_clause	: first_clause skip_clause
-			{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
-		|   first_clause
-			{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
-		|   skip_clause
-			{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
-		|
-			{ $$ = 0; }
-		;
+limit_clause
+	:
+		{ $$ = NULL; }
+	| first_clause skip_clause
+		{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
+	| first_clause
+		{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
+	| skip_clause
+		{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
+	;
 
 first_clause
 	: FIRST long_integer
