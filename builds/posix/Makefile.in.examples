@@ -125,7 +125,8 @@ $(EMPLOYEE_DB):	$(EXAMPLES_DEST)/empbuild$(EXEC_EXT) $(INPUT_Sources) $(EXAMPLES
 # To get past the fact isql is called from the programs, we create a local link in this directory
 
 $(EXAMPLES_DEST)/isql$(EXEC_EXT):
-	-$(LN) $(ISQL) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	-$(RM) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
+	$(LN) $(ISQL) $(EXAMPLES_DEST)/isql$(EXEC_EXT)
 
 $(EXAMPLES_DEST)/empbuild$(EXEC_EXT): $(EMPBLD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
