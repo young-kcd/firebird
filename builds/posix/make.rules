@@ -39,9 +39,9 @@ ifeq ($(STD_ICU),false)
 endif
 
 ifeq ($(TARGET),Release)
-  WFLAGS:= $(WFLAGS) $(PROD_FLAGS)
+  WFLAGS:= $(PROD_FLAGS) $(WFLAGS)
 else
-  WFLAGS:= $(WFLAGS) $(DEV_FLAGS) -DDEV_BUILD
+  WFLAGS:= $(DEV_FLAGS) $(WFLAGS) -DDEV_BUILD
 endif
 
 WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS)

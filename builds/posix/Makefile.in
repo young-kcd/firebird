@@ -209,6 +209,8 @@ yachts.lnk:		metadata.fdb
 	-$(RM) $@
 	$(LN) $^ $@
 
+export LD_LIBRARY_PATH += :$(FIREBIRD)/lib
+
 metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
 	$(GBAK) -MODE read_only -R $< $@
 	$(TOUCH) $@
@@ -396,14 +398,14 @@ $(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
 
 .PHONY:	qli examples message_file
 
-rest:	qli examples message_file
+rest:	qli examples message_file include_generic
 
 qli:		$(QLI)
 
 $(QLI):		$(QLI_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
-examples:
+examples: include_generic
 	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
 	$(MAKE) -f Makefile.plugins_examples -C $(GEN_ROOT)/examples/
 
@@ -416,6 +418,50 @@ $(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
+#---------------------------------------------------------------------------
+
+# This target builds the include files for disttribution with the release
+# Some of the files differ from the ones used internally to compile the
+# software - mainly they are just flattened out to make the view simpler
+# from an external point of view.
+
+INCLUDE_DEST=   $(FIREBIRD)/include
+
+include_generic: $(INCLUDE_DEST)/ib_util.h  \
+                 $(INCLUDE_DEST)/ibase.h
+
+# ib_util.h actually is a marker for a number of headers
+
+# All these files are #includes in ibase.h here we cat them all together
+# and remove the embedded #includes to make it simpler for external usage.
+
+IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h common/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h
+SRC_IBASE_ExtraFiles = $(addprefix $(SRC_ROOT)/, $(IBASE_ExtraFiles))
+MAKE_HEADER_Src = $(addprefix $(SRC_ROOT)/, misc/makeHeader.cpp)
+MAKE_HEADER_Bin = ./makeHeader
+
+$(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
+	$(STATICEXE_LINK) -o $(MAKE_HEADER_Bin) $(MAKE_HEADER_Src)
+	$(CP) $^ .
+	$(MAKE_HEADER_Bin) <ibase.h >$@
+	$(RM) -f ibase.h
+
+# Copy all the other headers to the distribution directory.  we use
+# ib_util.h as the marker for all the files.
+
+OtherDistribHeaders = extlib/ib_util.h \
+                       yvalve/perf.h  \
+                       include/gen/iberror.h
+
+SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
+
+$(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
+	mkdir -p $(INCLUDE_DEST)
+	$(CP) $^ $(INCLUDE_DEST)/
+
+
+# There are also gds*f and gds*ada header files around if someone
+# wants them.  You might need to hunt around in the old cvs tree for them.
 
 #___________________________________________________________________________
 # track dependencies

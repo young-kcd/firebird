@@ -29,7 +29,7 @@
 #
 ROOT=../..
 
-CXXFLAGS+= -I$(ROOT)/gen/firebird/include
+CXXFLAGS+= -I$(FIREBIRD)/include
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

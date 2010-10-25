@@ -213,7 +213,7 @@ BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 #LibraryFileName=libfbclient
 LibraryFileName=libfbclient
 LibraryFullName=$(LibraryFileName).${SHRLIB_EXT}.${FirebirdVersion}
-LibrarySoName=$(LibraryFileName).${SHRLIB_EXT}.${MajorVer}
+LibrarySoName=$(LibraryFileName).${SHRLIB_EXT}.2
 LibraryBaseName=$(LibraryFileName).${SHRLIB_EXT}
 
 LIBFIREBIRD_FULLNAME = $(LIB)/$(LibraryFullName)
