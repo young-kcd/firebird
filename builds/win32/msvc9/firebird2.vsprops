@@ -7,6 +7,10 @@
 	IntermediateDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 	>
 	<Tool
+		Name="VCBscMakeTool"
+		OutputFile="$(IntDir)/$(ProjectName).bsc"
+	/>
+	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalOptions="/EHsc-"
 		OmitFramePointers="true"
@@ -17,8 +21,7 @@
 		AssemblerListingLocation="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
 		ObjectFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
 		ProgramDataBaseFileName="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)/"
-		BrowseInformation="0"
-		BrowseInformationFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
+		BrowseInformation="1"
 		WarningLevel="3"
 		SuppressStartupBanner="true"
 		DebugInformationFormat="3"
@@ -32,6 +35,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
+		LinkIncremental="1"
 		SuppressStartupBanner="true"
 		GenerateDebugInformation="true"
 		ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"

@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
 	Name="remote"
 	ProjectGUID="{4BCC693D-1745-45ED-8302-E5E2F979549A}"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -43,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -102,7 +101,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -164,7 +163,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -226,7 +225,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -271,10 +270,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\interface.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\merge.cpp"
 				>
 			</File>
@@ -295,11 +290,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\xdr.cpp"
+				RelativePath="..\..\..\src\remote\os\win32\xnet.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\xnet.cpp"
+				RelativePath="..\..\..\src\remote\os\win32\xnet.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\os\win32\xnet_proto.h"
 				>
 			</File>
 		</Filter>
@@ -320,7 +319,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\remote\parse_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\proto_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\protocol.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\remote\remot_proto.h"
 				>
 			</File>
 			<File
@@ -332,23 +343,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\serve_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\os\win32\wnet_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xdr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\xnet_proto.h"
 				>
 			</File>
 		</Filter>
@@ -356,15 +351,7 @@
 			Name="AUTH files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\Auth.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyClient.cpp"
 				>
 			</File>
 		</Filter>

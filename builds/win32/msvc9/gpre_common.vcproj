@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="dsql_server"
-	ProjectGUID="{520DF501-5775-44FD-BDC6-37753A17696A}"
-	TargetFrameworkVersion="131072"
+	Name="gpre_common"
+	ProjectGUID="{2925B855-5975-44AE-BB00-1217A2A4E511}"
+	RootNamespace="gpre"
 	>
 	<Platforms>
 		<Platform
@@ -46,7 +46,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;NDEBUG;_LIB;SUPERSERVER"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -108,7 +108,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,_WINDOWS,SUPERSERVER,WIN32"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;NDEBUG;_LIB;SUPERSERVER"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -166,7 +166,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER"
+				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -225,7 +226,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="DEBUG;_DEBUG;_LIB;_WINDOWS;SUPERSERVER;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="GPRE_FORTRAN;GPRE_PASCAL;GPRE_COBOL;GPRE_ADA;WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER"
+				UsePrecompiledHeader="0"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -263,297 +265,185 @@
 	</References>
 	<Files>
 		<Filter
-			Name="DSQL files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			Name="headers"
 			>
 			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.cpp"
+				RelativePath="..\..\..\src\gpre\cmd_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.cpp"
+				RelativePath="..\..\..\src\gpre\cme_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BoolNodes.cpp"
+				RelativePath="..\..\..\src\gpre\cmp_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\ddl.cpp"
+				RelativePath="..\..\..\src\gpre\exp_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\dsql.cpp"
+				RelativePath="..\..\..\src\gpre\gpre.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.cpp"
+				RelativePath="..\..\..\src\gpre\gpre_meta.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
+				RelativePath="..\..\..\src\gpre\gpre_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\errd.cpp"
+				RelativePath="..\..\..\src\gpre\gpreswi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.cpp"
+				RelativePath="..\..\..\src\gpre\hsh.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\gen.cpp"
+				RelativePath="..\..\..\src\gpre\hsh_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\hsh.cpp"
+				RelativePath="..\..\..\src\gpre\jrdme_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\keywords.cpp"
+				RelativePath="..\..\..\src\gpre\lang_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\make.cpp"
+				RelativePath="..\..\..\src\gpre\movg_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\movd.cpp"
+				RelativePath="..\..\..\src\gpre\msc_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\parse.cpp"
+				RelativePath="..\..\..\src\gpre\par_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Parser.cpp"
+				RelativePath="..\..\..\src\gpre\parse.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\pass1.cpp"
+				RelativePath="..\..\..\src\gpre\pat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\preparse.cpp"
+				RelativePath="..\..\..\src\gpre\pat_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.cpp"
+				RelativePath="..\..\..\src\gpre\sqe_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\user_dsql.cpp"
+				RelativePath="..\..\..\src\gpre\sql_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\utld.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.cpp"
-				>
-			</File>
-			<Filter
-				Name="epp files"
-				Filter="epp"
-				>
-				<File
-					RelativePath="..\..\..\src\dsql\array.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\blob.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\DdlNodes.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\metd.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\PackageNodes.epp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Generated files"
-				>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\array.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\DdlNodes.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\metd.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\dsql\PackageNodes.cpp"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="GPRE files"
-			Filter="c"
-			>
-			<File
-				RelativePath="..\..\..\src\gpre\pretty.cpp"
+				RelativePath="..\..\..\src\gpre\words.h"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Header files"
-			Filter="h;hpp;hxx;hm;inl"
+			Name="languages"
 			>
 			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.h"
+				RelativePath="..\..\..\src\gpre\languages\ada.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\array_proto.h"
+				RelativePath="..\..\..\src\gpre\languages\cob.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\blob_proto.h"
+				RelativePath="..\..\..\src\gpre\languages\fbrmclib.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BlrWriter.h"
+				RelativePath="..\..\..\src\gpre\languages\ftn.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BoolNodes.h"
+				RelativePath="..\..\..\src\gpre\languages\pas.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\chars.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ddl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DdlNodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\dsql.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\dsql_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\errd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\gen_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\hsh_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\keywords.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\make_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\metd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\movd_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\node.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Nodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\PackageNodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\parse_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Parser.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\pass1_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\prepa_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\sqlda.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\sym.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\user__proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\utld_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Visitors.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.h"
+				RelativePath="..\..\..\src\gpre\languages\rmc.cpp"
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="..\..\..\src\dsql\parse.y"
+		<Filter
+			Name="source"
 			>
-		</File>
+			<File
+				RelativePath="..\..\..\src\gpre\c_cxx.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cmd.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cme.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\cmp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\exp.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\gpre.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\hsh.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\int_cxx.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\jrdmet.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\movg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\msc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\par.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\pat.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sqe.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\gpre\sql.cpp"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

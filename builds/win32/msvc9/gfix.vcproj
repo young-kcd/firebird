@@ -4,8 +4,6 @@
 	Version="9,00"
 	Name="gfix"
 	ProjectGUID="{44A9E4AD-B932-4620-B319-431A153BB341}"
-	RootNamespace="gfix"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -20,6 +18,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -60,11 +59,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -85,77 +80,7 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				EnableIntrinsicFunctions="true"
-				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1053"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -163,6 +88,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -205,11 +131,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -231,11 +153,88 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				PreprocessorDefinitions="WIN32,NDEBUG,_CONSOLE,SUPERCLIENT"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1053"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				SubSystem="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
@@ -280,11 +279,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
-				LinkIncremental="1"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -306,6 +301,9 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -318,72 +316,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\src\alice\alice.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\gen\$(PlatformName)\alice\alice_meta.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\aliceMain.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\exe.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\tdr.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="JRD files"
-			>
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\isc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Header files"
-			Filter="h;hpp;hxx;hm;inl"
-			>
-			<File
-				RelativePath="..\..\..\src\alice\alice.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\alice_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\aliceswi.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\exe_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\met_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\alice\tdr_proto.h"
+				RelativePath="..\..\..\src\alice\main\aliceMain.cpp"
 				>
 			</File>
 		</Filter>
@@ -402,7 +335,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|x64"
 					>
 					<Tool
 						Name="VCResourceCompilerTool"
@@ -410,7 +343,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|x64"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCResourceCompilerTool"
@@ -425,14 +358,6 @@
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"
 					/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="COMMON files"
-			>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
 			</File>
 		</Filter>
 	</Files>
