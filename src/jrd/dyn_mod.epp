@@ -1484,23 +1484,22 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 				DYN_REQUEST(drq_m_prm) = request;
 
 			found = true;
-			MODIFY PRM MODIFY FLD
-			{
-				bool onlyDescription = false;
 
-				if (**ptr == isc_dyn_description)
-				{
+			if (**ptr == isc_dyn_description)
+			{
+				MODIFY PRM
 					++*ptr;
 					if (DYN_put_text_blob(gbl, ptr, &PRM.RDB$DESCRIPTION))
 						PRM.RDB$DESCRIPTION.NULL = FALSE;
 					else
 						PRM.RDB$DESCRIPTION.NULL = TRUE;
 
-					if (**ptr == isc_dyn_end)
-						onlyDescription = true;
-				}
-
-				if (!onlyDescription)
+					fb_assert(**ptr == isc_dyn_end)
+				END_MODIFY
+			}
+			else
+			{
+				MODIFY PRM MODIFY FLD
 				{
 					PRM.RDB$PARAMETER_NUMBER.NULL = TRUE;
 					PRM.RDB$PARAMETER_TYPE.NULL = TRUE;
@@ -1522,148 +1521,142 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 					FLD.RDB$COLLATION_ID.NULL = TRUE;
 					FLD.RDB$CHARACTER_SET_ID.NULL = TRUE;
 					FLD.RDB$FIELD_PRECISION.NULL = TRUE;
-				}
 
-				UCHAR verb;
-				while ((verb = *(*ptr)++) != isc_dyn_end)
-				{
-					switch (verb)
+					UCHAR verb;
+					while ((verb = *(*ptr)++) != isc_dyn_end)
 					{
-					case isc_dyn_description:
-						if (DYN_put_text_blob(gbl, ptr, &PRM.RDB$DESCRIPTION))
-							PRM.RDB$DESCRIPTION.NULL = FALSE;
-						else
-							PRM.RDB$DESCRIPTION.NULL = TRUE;
-						break;
-
-					case isc_dyn_prm_number:
-						PRM.RDB$PARAMETER_NUMBER = (SSHORT) DYN_get_number(ptr);
-						PRM.RDB$PARAMETER_NUMBER.NULL = FALSE;
-						break;
-
-					case isc_dyn_prm_type:
-						PRM.RDB$PARAMETER_TYPE = (SSHORT) DYN_get_number(ptr);
-						PRM.RDB$PARAMETER_TYPE.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_not_null:
-						if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
+						switch (verb)
 						{
-							// Feature not supported on ODS version older than %d.%d
-							ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) <<
-								Arg::Num(11) << Arg::Num(1));
-						}
+						case isc_dyn_prm_number:
+							PRM.RDB$PARAMETER_NUMBER = (SSHORT) DYN_get_number(ptr);
+							PRM.RDB$PARAMETER_NUMBER.NULL = FALSE;
+							break;
 
-						PRM.RDB$NULL_FLAG = TRUE;
-						PRM.RDB$NULL_FLAG.NULL = FALSE;
-						break;
+						case isc_dyn_prm_type:
+							PRM.RDB$PARAMETER_TYPE = (SSHORT) DYN_get_number(ptr);
+							PRM.RDB$PARAMETER_TYPE.NULL = FALSE;
+							break;
 
-					case isc_dyn_fld_length:
-						FLD.RDB$FIELD_LENGTH = (USHORT) DYN_get_number(ptr);
-						FLD.RDB$FIELD_LENGTH.NULL = FALSE;
-						break;
+						case isc_dyn_fld_not_null:
+							if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
+							{
+								// Feature not supported on ODS version older than %d.%d
+								ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) <<
+									Arg::Num(11) << Arg::Num(1));
+							}
 
-					case isc_dyn_fld_type:
-						FLD.RDB$FIELD_TYPE = (USHORT) DYN_get_number(ptr);
-						FLD.RDB$FIELD_TYPE.NULL = FALSE;
+							PRM.RDB$NULL_FLAG = TRUE;
+							PRM.RDB$NULL_FLAG.NULL = FALSE;
+							break;
 
-						switch (FLD.RDB$FIELD_TYPE)
-						{
-						case blr_short:
-							FLD.RDB$FIELD_LENGTH = 2;
+						case isc_dyn_fld_length:
+							FLD.RDB$FIELD_LENGTH = (USHORT) DYN_get_number(ptr);
 							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
 							break;
 
-						case blr_long:
-						case blr_float:
-						case blr_sql_time:
-						case blr_sql_date:
-							FLD.RDB$FIELD_LENGTH = 4;
-							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+						case isc_dyn_fld_type:
+							FLD.RDB$FIELD_TYPE = (USHORT) DYN_get_number(ptr);
+							FLD.RDB$FIELD_TYPE.NULL = FALSE;
+
+							switch (FLD.RDB$FIELD_TYPE)
+							{
+							case blr_short:
+								FLD.RDB$FIELD_LENGTH = 2;
+								FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+								break;
+
+							case blr_long:
+							case blr_float:
+							case blr_sql_time:
+							case blr_sql_date:
+								FLD.RDB$FIELD_LENGTH = 4;
+								FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+								break;
+
+							case blr_int64:
+							case blr_quad:
+							case blr_timestamp:
+							case blr_double:
+							case blr_d_float:
+								FLD.RDB$FIELD_LENGTH = 8;
+								FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+								break;
+
+							default:
+								if (FLD.RDB$FIELD_TYPE == blr_blob)
+								{
+									FLD.RDB$FIELD_LENGTH = 8;
+									FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+								}
+								break;
+							}
 							break;
 
-						case blr_int64:
-						case blr_quad:
-						case blr_timestamp:
-						case blr_double:
-						case blr_d_float:
-							FLD.RDB$FIELD_LENGTH = 8;
-							FLD.RDB$FIELD_LENGTH.NULL = FALSE;
+						case isc_dyn_fld_scale:
+							FLD.RDB$FIELD_SCALE = (SSHORT) DYN_get_number(ptr);
+							FLD.RDB$FIELD_SCALE.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_precision:
+							FLD.RDB$FIELD_PRECISION = (SSHORT) DYN_get_number(ptr);
+							FLD.RDB$FIELD_PRECISION.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_sub_type:
+							FLD.RDB$FIELD_SUB_TYPE = (SSHORT) DYN_get_number(ptr);
+							FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_char_length:
+							FLD.RDB$CHARACTER_LENGTH = (USHORT) DYN_get_number(ptr);
+							FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_character_set:
+							FLD.RDB$CHARACTER_SET_ID = (SSHORT) DYN_get_number(ptr);
+							FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_collation:
+							FLD.RDB$COLLATION_ID = (SSHORT) DYN_get_number(ptr);
+							FLD.RDB$COLLATION_ID.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_segment_length:
+							FLD.RDB$SEGMENT_LENGTH = (USHORT) DYN_get_number(ptr);
+							FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_default_value:
+							DYN_put_blr_blob(gbl, ptr, &FLD.RDB$DEFAULT_VALUE);
+							FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
+							break;
+
+						case isc_dyn_fld_default_source:
+							DYN_put_text_blob(gbl, ptr, &FLD.RDB$DEFAULT_SOURCE);
+							FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
+							break;
+
+						case isc_dyn_prm_mechanism:
+							PRM.RDB$PARAMETER_MECHANISM = (prm_mech_t) DYN_get_number(ptr);
+							PRM.RDB$PARAMETER_MECHANISM.NULL = FALSE;
 							break;
 
 						default:
-							if (FLD.RDB$FIELD_TYPE == blr_blob)
-							{
-								FLD.RDB$FIELD_LENGTH = 8;
-								FLD.RDB$FIELD_LENGTH.NULL = FALSE;
-							}
-							break;
+							DYN_unsupported_verb();
 						}
-						break;
-
-					case isc_dyn_fld_scale:
-						FLD.RDB$FIELD_SCALE = (SSHORT) DYN_get_number(ptr);
-						FLD.RDB$FIELD_SCALE.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_precision:
-						FLD.RDB$FIELD_PRECISION = (SSHORT) DYN_get_number(ptr);
-						FLD.RDB$FIELD_PRECISION.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_sub_type:
-						FLD.RDB$FIELD_SUB_TYPE = (SSHORT) DYN_get_number(ptr);
-						FLD.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_char_length:
-						FLD.RDB$CHARACTER_LENGTH = (USHORT) DYN_get_number(ptr);
-						FLD.RDB$CHARACTER_LENGTH.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_character_set:
-						FLD.RDB$CHARACTER_SET_ID = (SSHORT) DYN_get_number(ptr);
-						FLD.RDB$CHARACTER_SET_ID.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_collation:
-						FLD.RDB$COLLATION_ID = (SSHORT) DYN_get_number(ptr);
-						FLD.RDB$COLLATION_ID.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_segment_length:
-						FLD.RDB$SEGMENT_LENGTH = (USHORT) DYN_get_number(ptr);
-						FLD.RDB$SEGMENT_LENGTH.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_default_value:
-						DYN_put_blr_blob(gbl, ptr, &FLD.RDB$DEFAULT_VALUE);
-						FLD.RDB$DEFAULT_VALUE.NULL = FALSE;
-						break;
-
-					case isc_dyn_fld_default_source:
-						DYN_put_text_blob(gbl, ptr, &FLD.RDB$DEFAULT_SOURCE);
-						FLD.RDB$DEFAULT_SOURCE.NULL = FALSE;
-						break;
-
-					case isc_dyn_prm_mechanism:
-						PRM.RDB$PARAMETER_MECHANISM = (prm_mech_t) DYN_get_number(ptr);
-						PRM.RDB$PARAMETER_MECHANISM.NULL = FALSE;
-						break;
-
-					default:
-						DYN_unsupported_verb();
 					}
 				}
+				END_MODIFY END_MODIFY
 			}
-			END_MODIFY END_MODIFY
 		}
-		END_FOR;
+		END_FOR
 
 		if (!DYN_REQUEST(drq_m_prm))
 			DYN_REQUEST(drq_m_prm) = request;
 	}
-	catch (const Exception& ex) {
+	catch (const Exception& ex)
+	{
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 100);
