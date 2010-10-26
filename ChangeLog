@@ -1,3 +1,82 @@
+ 2010-10-25 15:48  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.examples
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+   M builds/posix/prefix.linux_powerpc
+   M builds/posix/prefix.linux_sparc32
+   M src/common/classes/fb_atomic.h
+Patches from Damyan Ivanov
+
+ 2010-10-25 15:14  dimitr 
+   D builds/win32/msvc9/Firebird2.sln
+   D builds/win32/msvc9/Firebird2Boot.sln
+   D builds/win32/msvc9/Firebird2_Examples.sln
+   A builds/win32/msvc9/Firebird3.sln
+   A builds/win32/msvc9/Firebird3Boot.sln
+   A builds/win32/msvc9/Firebird3_Examples.sln
+   M builds/win32/msvc9/alice.vcproj
+   M builds/win32/msvc9/btyacc.vcproj
+   M builds/win32/msvc9/build_msg.vcproj
+   M builds/win32/msvc9/burp.vcproj
+   M builds/win32/msvc9/codes.vcproj
+   M builds/win32/msvc9/common.vcproj
+   D builds/win32/msvc9/common_classic.vcproj
+   D builds/win32/msvc9/common_static.vcproj
+   D builds/win32/msvc9/config.vcproj
+   D builds/win32/msvc9/dsql_server.vcproj
+   D builds/win32/msvc9/dsql_server_classic.vcproj
+   M builds/win32/msvc9/empbuild.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   D builds/win32/msvc9/engine_classic.vcproj
+   D builds/win32/msvc9/engine_embed.vcproj
+   M builds/win32/msvc9/fb2control.vcproj
+   D builds/win32/msvc9/fb_inet_server.vcproj
+   M builds/win32/msvc9/fb_lock_print.vcproj
+   D builds/win32/msvc9/fbclient.vcproj
+   D builds/win32/msvc9/fbembed.vcproj
+   M builds/win32/msvc9/fbguard.vcproj
+   M builds/win32/msvc9/fbrmclib.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/fbsvcmgr.vcproj
+   M builds/win32/msvc9/fbtrace.vcproj
+   M builds/win32/msvc9/fbtracemgr.vcproj
+   M builds/win32/msvc9/fbudf.vcproj
+   M builds/win32/msvc9/firebird2.vsprops
+   M builds/win32/msvc9/gbak.vcproj
+   D builds/win32/msvc9/gbak_embed.vcproj
+   M builds/win32/msvc9/gfix.vcproj
+   M builds/win32/msvc9/gpre.vcproj
+   M builds/win32/msvc9/gpre_boot.vcproj
+   A builds/win32/msvc9/gpre_common.vcproj
+   D builds/win32/msvc9/gpre_embed.vcproj
+   M builds/win32/msvc9/gsec.vcproj
+   M builds/win32/msvc9/gsplit.vcproj
+   M builds/win32/msvc9/gstat.vcproj
+   M builds/win32/msvc9/ib_udf.vcproj
+   M builds/win32/msvc9/ib_util.vcproj
+   M builds/win32/msvc9/instclient.vcproj
+   M builds/win32/msvc9/instreg.vcproj
+   M builds/win32/msvc9/instsvc.vcproj
+   M builds/win32/msvc9/intl.vcproj
+   M builds/win32/msvc9/intlbuild.vcproj
+   M builds/win32/msvc9/isql.vcproj
+   D builds/win32/msvc9/isql_embed.vcproj
+   D builds/win32/msvc9/lock.vcproj
+   D builds/win32/msvc9/lock_classic.vcproj
+   M builds/win32/msvc9/nbackup.vcproj
+   M builds/win32/msvc9/qli.vcproj
+   M builds/win32/msvc9/remote.vcproj
+   M builds/win32/msvc9/udr_engine.vcproj
+   A builds/win32/msvc9/user_management.vcproj
+   A builds/win32/msvc9/yvalve.vcproj
+Fixed MSVC9 build.
+
+ 2010-10-25 15:07  alexpeshkoff 
+   M builds/posix/Makefile.in.examples
+misc examples build
+
  2010-10-24 21:35  asfernandes 
    M src/dsql/parse.y
 Misc
