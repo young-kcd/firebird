@@ -1,3 +1,7 @@
+ 2010-10-26 23:34  asfernandes 
+   M src/jrd/dyn_mod.epp
+Fixed CORE-3157 - COMMENT ON PARAMETER - Statement leads in a consumption of 1.7 GB RAM and a runtime of more than 1 Minute
+
  2010-10-19 13:28  alexpeshkoff 
    M src/jrd/sqz.cpp
 Backported fix for CORE-3148: possible segfault in SQZ_apply_differences
