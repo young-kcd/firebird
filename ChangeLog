@@ -1,3 +1,25 @@
+ 2010-10-27 00:52  asfernandes 
+   M src/jrd/exe.h
+Misc
+
+ 2010-10-27 00:32  asfernandes 
+   M builds/posix/Makefile.in
+   M src/common/classes/fb_atomic.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/pass1.cpp
+Misc
+
+ 2010-10-26 03:34  dimitr 
+   M builds/win32/msvc9/btyacc.vcproj
+   M builds/win32/msvc9/codes.vcproj
+   M builds/win32/msvc9/empbuild.vcproj
+   M builds/win32/msvc9/intlbuild.vcproj
+Fixed MSVC9 build.
+
+ 2010-10-26 03:14  dimitr 
+   M builds/win32/msvc9/build_msg.vcproj
+Fixed MSVC9 build.
+
  2010-10-25 15:48  alexpeshkoff 
    M builds/posix/Makefile.in
    M builds/posix/Makefile.in.examples
