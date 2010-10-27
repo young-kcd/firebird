@@ -4611,7 +4611,7 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		{
 			const ULONG position = literal->getSlong();
 
-			if ((position < 1) || !selectList || (position > (ULONG) selectList->nod_count))
+			if (position < 1 || !selectList || position > (ULONG) selectList->nod_count)
 			{
 				// Invalid column position used in the GROUP BY clause
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<

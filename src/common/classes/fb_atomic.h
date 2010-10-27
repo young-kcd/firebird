@@ -440,7 +440,7 @@ private:
 extern "C" {
 #define AO_REQUIRE_CAS
 #include <atomic_ops.h>
-};
+}
 
 namespace Firebird {
 

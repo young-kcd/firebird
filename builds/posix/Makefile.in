@@ -420,7 +420,7 @@ $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 
 #---------------------------------------------------------------------------
 
-# This target builds the include files for disttribution with the release
+# This target builds the include files for distribution with the release
 # Some of the files differ from the ones used internally to compile the
 # software - mainly they are just flattened out to make the view simpler
 # from an external point of view.
@@ -432,7 +432,7 @@ include_generic: $(INCLUDE_DEST)/ib_util.h  \
 
 # ib_util.h actually is a marker for a number of headers
 
-# All these files are #includes in ibase.h here we cat them all together
+# All these files are #included in ibase.h. Here we cat them all together
 # and remove the embedded #includes to make it simpler for external usage.
 
 IBASE_ExtraFiles = include/types_pub.h include/consts_pub.h dsql/sqlda_pub.h common/dsc_pub.h jrd/ibase.h jrd/inf_pub.h jrd/blr.h include/gen/iberror.h
@@ -446,12 +446,12 @@ $(INCLUDE_DEST)/ibase.h: $(SRC_IBASE_ExtraFiles)
 	$(MAKE_HEADER_Bin) <ibase.h >$@
 	$(RM) -f ibase.h
 
-# Copy all the other headers to the distribution directory.  we use
+# Copy all the other headers to the distribution directory. We use
 # ib_util.h as the marker for all the files.
 
 OtherDistribHeaders = extlib/ib_util.h \
-                       yvalve/perf.h  \
-                       include/gen/iberror.h
+                      yvalve/perf.h  \
+                      include/gen/iberror.h
 
 SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
 
@@ -461,7 +461,7 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 
 
 # There are also gds*f and gds*ada header files around if someone
-# wants them.  You might need to hunt around in the old cvs tree for them.
+# wants them. You might need to hunt around in the old cvs tree for them.
 
 #___________________________________________________________________________
 # track dependencies

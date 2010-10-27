@@ -4400,7 +4400,7 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, 
 
 	if (ExprNode::is<NullNode>(dsqlArg))
 	{
-		// NULL + NULL = NULL of INT
+		// -NULL = NULL of INT
 		desc->makeLong(0);
 		desc->setNullable(true);
 	}
