@@ -163,14 +163,28 @@ void MemoryPool::cleanup()
 	}
 }
 
-MemoryPool::MemoryPool(MemoryStats& s, bool shared, int rounding, int cutoff, int minAlloc)
+MemoryPool::MemoryPool(bool shared, int rounding, int cutoff, int minAlloc)
   :	roundingSize(rounding), threshold(cutoff), minAllocation(minAlloc),
-	threadShared(shared), pool_destroying(false), stats(&s)
+	threadShared(shared), pool_destroying(false), stats(default_stats_group), parent(NULL)
 {
 	size_t vecSize = (cutoff + rounding) / rounding;
 	size_t l = vecSize * sizeof(void*);
-	freeObjects = (MemBlock**) allocRaw(l);
-	memset(freeObjects, 0, l);
+	init(allocRaw(l), l);
+}
+
+MemoryPool::MemoryPool(MemoryPool& p, MemoryStats& s, bool shared, int rounding, int cutoff, int minAlloc)
+  :	roundingSize(rounding), threshold(cutoff), minAllocation(minAlloc),
+	threadShared(shared), pool_destroying(false), stats(&s), parent(&p)
+{
+	size_t vecSize = (cutoff + rounding) / rounding;
+	size_t l = vecSize * sizeof(void*);
+	init(parent->allocate(l), l);
+}
+
+void MemoryPool::init(void* memory, size_t length)
+{
+	freeObjects = (MemBlock**) memory;
+	memset(freeObjects, 0, length);
 	bigHunks = NULL;
 	smallHunks = NULL;
 	freeBlocks.nextLarger = freeBlocks.priorSmaller = &freeBlocks;
@@ -184,11 +198,6 @@ MemoryPool::MemoryPool(MemoryStats& s, bool shared, int rounding, int cutoff, in
 
 	VALGRIND_CREATE_MEMPOOL(this, VALGRIND_REDZONE, 0);
 #endif
-}
-
-MemoryPool* MemoryPool::createPool(MemoryPool* parentPool, MemoryStats&)
-{
-	return FB_NEW(*(parentPool ? parentPool : getDefaultMemoryPool())) MemoryPool();
 }
 
 MemoryPool::~MemoryPool(void)
@@ -214,7 +223,14 @@ MemoryPool::~MemoryPool(void)
 	}
 #endif
 
-	releaseRaw(freeObjects, ((threshold + roundingSize) / roundingSize) * sizeof(void*));
+	if (parent)
+	{
+		MemoryPool::release(freeObjects);
+	}
+	else
+	{
+		releaseRaw(freeObjects, ((threshold + roundingSize) / roundingSize) * sizeof(void*));
+	}
 	freeObjects = NULL;
 
 	for (MemSmallHunk* hunk; hunk = smallHunks;)
@@ -228,6 +244,15 @@ MemoryPool::~MemoryPool(void)
 		bigHunks = hunk->nextHunk;
 		releaseRaw(hunk, hunk->length);
 	}
+}
+
+MemoryPool* MemoryPool::createPool(MemoryPool* parentPool, MemoryStats& stats)
+{
+	if (!parentPool)
+	{
+		parentPool = getDefaultMemoryPool();
+	}
+	return FB_NEW(*parentPool) MemoryPool(*parentPool, stats);
 }
 
 void MemoryPool::setStatsGroup(MemoryStats& newStats) throw ()

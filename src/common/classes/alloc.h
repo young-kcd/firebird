@@ -232,12 +232,16 @@ public:
 
 class MemoryPool
 {
-public:
-	MemoryPool(MemoryStats& stats = *default_stats_group,
+private:
+	MemoryPool(MemoryPool& parent, MemoryStats& stats,
 			   bool shared = true, int rounding = DEFAULT_ROUNDING,
 			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
+	MemoryPool(bool shared = true, int rounding = DEFAULT_ROUNDING,
+			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
+	void init(void* memory, size_t length);
 	virtual ~MemoryPool(void);
 
+public:
 	static MemoryPool* defaultMemoryManager;
 
 private:
@@ -258,6 +262,8 @@ private:
 	static MemoryStats* default_stats_group;
 	// Statistics group for the pool
 	MemoryStats* stats;
+	// Parent pool if present
+	MemoryPool* parent;
 	// Memory used
 	AtomicCounter used_memory, mapped_memory;
 
