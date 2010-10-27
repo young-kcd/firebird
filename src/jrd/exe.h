@@ -90,10 +90,7 @@ class Cursor;
 class PlanNode;
 class RecordSource;
 
-// NOTE: The definition of structures RecordSelExpr and lit must be defined in
-//       exactly the same way as structure jrd_nod through item nod_count.
-//       Now, inheritance takes care of those common data members.
-class jrd_node_base : public pool_alloc_rpt<jrd_nod*, type_nod>
+class jrd_nod : public pool_alloc_rpt<jrd_nod*, type_nod>
 {
 public:
 	NestConst<jrd_nod>	nod_parent;
@@ -102,12 +99,6 @@ public:
 	USHORT		nod_flags;
 	SCHAR		nod_scale;			// Target scale factor
 	USHORT		nod_count;			// Number of arguments
-};
-
-
-class jrd_nod : public jrd_node_base
-{
-public:
 	jrd_nod*	nod_arg[1];
 
 	// Replace the line above by this block to check deep const-correctness.
