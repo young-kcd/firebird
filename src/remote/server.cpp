@@ -1985,6 +1985,11 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		if (this->port_statement->rsr_bind_format)
 		{
 			in_msg_length = this->port_statement->rsr_bind_format->fmt_length;
+			if (!this->port_statement->rsr_message->msg_address)
+			{
+				this->port_statement->rsr_message->msg_address =
+					this->port_statement->rsr_message->msg_buffer;
+			}
 			in_msg = this->port_statement->rsr_message->msg_address;
 		}
 		out_blr_length = exnow->p_sqlst_out_blr.cstr_length;
