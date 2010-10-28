@@ -2296,7 +2296,12 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		if (this->port_statement->rsr_bind_format)
 		{
 			in_msg_length = this->port_statement->rsr_bind_format->fmt_length;
-			in_msg = this->port_statement->rsr_message->msg_address;
+			RMessage* message = this->port_statement->rsr_message;
+			if (!message->msg_address)
+			{
+				message->msg_address = message->msg_buffer;
+			}
+			in_msg = message->msg_address;
 		}
 		out_blr_length = exnow->p_sqlst_out_blr.cstr_length;
 		out_blr = exnow->p_sqlst_out_blr.cstr_address;
@@ -2307,9 +2312,6 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 			RMessage* message = this->port_statement->rsr_message;
 			if (!message->msg_address)
 			{
-				// TMN: Obvious bugfix. Please look at your compilers warnings.
-				// They are not enemies, they're friends!
-				// port->port_statement->rsr_message->msg_address = &port->port_statement->rsr_message->msg_buffer;
 				message->msg_address = message->msg_buffer;
 			}
 			out_msg = message->msg_address;
