@@ -133,7 +133,7 @@ namespace {
 
 namespace Remote {
 
-typedef FbApi::Status Status;
+typedef Firebird::Status Status;
 
 class Blob : public FbApi::Blob, public GlobalStorage
 {
@@ -5489,6 +5489,7 @@ static void init(Status* status,
 	Auth::DpbImplementation di(dpb);
 	unsigned int sequence = 0;
 	Auth::ClientPlugin** list = listArray().begin();
+	LocalStatus s;
 
 	for (bool working = true; working && list[sequence]; ++sequence)
 	{
@@ -5499,13 +5500,13 @@ static void init(Status* status,
 			currentInstance.reset(list[sequence]->instance());
 			nm = list[sequence]->name();
 
-			switch(currentInstance->startAuthentication(op == op_service_attach, file_name.c_str(), &di))
+			switch(currentInstance->startAuthentication(&s, op == op_service_attach, file_name.c_str(), &di))
 			{
 			case Auth::AUTH_SUCCESS:
 				working = false;
 				break;
 			case Auth::AUTH_FAILED:
-				Arg::Gds(isc_login).raise();
+				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 				break;	// compiler silencer
 			default:
 				break;
@@ -5612,7 +5613,7 @@ static void init(Status* status,
 
 			if (currentInstance)
 			{
-				Auth::Result rc = currentInstance->startAuthentication(op == op_service_attach,
+				Auth::Result rc = currentInstance->startAuthentication(&s, op == op_service_attach,
 																	   file_name.c_str(), 0);
 				if (rc == Auth::AUTH_FAILED)
 				{
@@ -5637,7 +5638,7 @@ static void init(Status* status,
 			{
 				break;
 			}
-			if (currentInstance->contAuthentication(d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
+			if (currentInstance->contAuthentication(&s, d->cstr_address, d->cstr_length) == Auth::AUTH_FAILED)
 			{
 				break;
 			}
@@ -5660,7 +5661,7 @@ static void init(Status* status,
 	}
 
 	// If we have exited from the cycle, this mean auth failed
-	Arg::Gds(isc_login).raise();
+	(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
   }
   catch (const Exception&)
   {

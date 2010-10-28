@@ -286,6 +286,7 @@ public:
 	{
 		bool working = true;
 		Auth::ServerPlugin** list = pluginList().begin();
+		Firebird::LocalStatus st;
 
 		while (working && list[sequence])
 		{
@@ -298,10 +299,10 @@ public:
 
 			fb_assert(first || data);
 			Auth::Result ar = first ?
-				authInstance->startAuthentication(operation == op_service_attach, fileName.c_str(),
+				authInstance->startAuthentication(&st, operation == op_service_attach, fileName.c_str(),
 												  wrt.getBuffer(), wrt.getBufferLength(),
 												  &authBlockInterface) :
-				authInstance->contAuthentication(&authBlockInterface,
+				authInstance->contAuthentication(&st, &authBlockInterface,
 												 data->cstr_address, data->cstr_length);
 
 			cstring* s;
@@ -398,7 +399,7 @@ public:
 			THREAD_SLEEP(FAILURE_DELAY * 1000);
 		}
 
-		Arg::Gds(isc_login).raise();
+		(Arg::Gds(isc_login) << Arg::StatusVector(st.get())).raise();
 		return false;	// compiler warning silencer
 	}
 

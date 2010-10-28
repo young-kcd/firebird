@@ -452,15 +452,25 @@ ServerInstance* SecurityDatabaseServer::instance()
 	return Firebird::interfaceAlloc<SecurityDatabaseServerInstance>();
 }
 
-Result SecurityDatabaseServerInstance::startAuthentication(bool isService, const char*,
+Result SecurityDatabaseServerInstance::startAuthentication(Firebird::Status* status,
+											  bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
 											  WriterInterface* writerInterface)
 {
-	ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
-	return SecurityDatabase::verify(writerInterface, rdr);
+	try
+	{
+		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
+		return SecurityDatabase::verify(writerInterface, rdr);
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+		return AUTH_FAILED;
+	}
 }
 
-Result SecurityDatabaseServerInstance::contAuthentication(WriterInterface* /*writerInterface*/,
+Result SecurityDatabaseServerInstance::contAuthentication(Firebird::Status*,
+											  WriterInterface* /*writerInterface*/,
 											  const unsigned char* /*data*/, unsigned int /*size*/)
 {
 	return AUTH_FAILED;

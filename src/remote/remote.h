@@ -343,7 +343,7 @@ public:
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
 
 	void saveStatus(const Firebird::Exception& ex) throw();
-	void saveStatus(const FbApi::Status* ex) throw();
+	void saveStatus(const Firebird::Status* ex) throw();
 };
 
 

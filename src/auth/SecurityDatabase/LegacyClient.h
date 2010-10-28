@@ -43,8 +43,8 @@ public:
 class SecurityDatabaseClientInstance : public ClientInstance
 {
 public:
-	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(const unsigned char* data, unsigned int size);
+	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
 };

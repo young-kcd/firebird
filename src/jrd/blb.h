@@ -34,7 +34,7 @@
 #include "ProviderInterface.h"
 namespace Jrd
 {
-	typedef FbApi::Status Status;
+	typedef Firebird::Status Status;
 }
 
 namespace Jrd {

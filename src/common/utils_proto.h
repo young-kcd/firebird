@@ -113,7 +113,7 @@ namespace fb_utils
 		status[2] = isc_arg_end;
 	}
 
-	void inline init_status(FbApi::Status* status)
+	void inline init_status(Firebird::Status* status)
 	{
 		status->init();
 	}

@@ -62,6 +62,18 @@ public:
 	static const unsigned int UserManagement = 13;
 };
 
+// Interface to work with status vector
+class Status : public Interface
+{
+public:
+	virtual void set(size_t length, const ISC_STATUS* value) = 0;
+	virtual void set(const ISC_STATUS* value) = 0;
+	virtual void init() = 0;
+
+	virtual const ISC_STATUS* get() const = 0;
+	virtual int isSuccess() const = 0;
+};
+
 } // namespace Firebird
 
 extern "C"

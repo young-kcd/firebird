@@ -151,6 +151,13 @@ public:
 		return *this;
 	}
 
+	// StatusVector case - append multiple args
+	StatusVector& operator<<(const StatusVector& arg) throw()
+	{
+		implementation->append(arg);
+		return *this;
+	}
+
 	// warning special case - to setup first warning location
 	StatusVector& operator<<(const Warning& arg) throw()
 	{

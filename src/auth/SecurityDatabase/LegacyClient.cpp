@@ -44,14 +44,14 @@ ClientInstance* SecurityDatabaseClient::instance()
 	return Firebird::interfaceAlloc<SecurityDatabaseClientInstance>();
 }
 
-Result SecurityDatabaseClientInstance::startAuthentication(bool, const char*, DpbInterface* dpb)
+Result SecurityDatabaseClientInstance::startAuthentication(Firebird::Status*, bool, const char*, DpbInterface* dpb)
 {
 	return dpb->find(isc_dpb_user_name) &&
 		(dpb->find(isc_dpb_password) || dpb->find(isc_dpb_password_enc)) ?
 			AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
-Result SecurityDatabaseClientInstance::contAuthentication(const unsigned char*, unsigned int)
+Result SecurityDatabaseClientInstance::contAuthentication(Firebird::Status*, const unsigned char*, unsigned int)
 {
 	return AUTH_FAILED;
 }

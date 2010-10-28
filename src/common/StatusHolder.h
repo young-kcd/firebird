@@ -34,7 +34,7 @@
 
 namespace Firebird {
 
-class BaseStatus : public FbApi::Status
+class BaseStatus : public Status
 {
 public:
 	virtual void set(const ISC_STATUS* value)

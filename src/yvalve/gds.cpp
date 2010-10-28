@@ -3659,7 +3659,7 @@ public:
 	}
 };
 
-FbApi::Status* API_ROUTINE FbApi::fb_get_status_instance()
+Firebird::Status* API_ROUTINE FbApi::fb_get_status_instance()
 {
 	return Firebird::interfaceAlloc<UserStatus>();
 }

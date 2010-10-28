@@ -639,7 +639,7 @@ public:
 		context.putSpecific();
 	}
 
-	explicit ThreadContextHolder(FbApi::Status* status)
+	explicit ThreadContextHolder(Firebird::Status* status)
 		: context(local_status), externStatus(status)
 	{
 		context.putSpecific();
@@ -672,7 +672,7 @@ private:
 
 	ISC_STATUS_ARRAY local_status;
 	thread_db context;
-	FbApi::Status* externStatus;
+	Firebird::Status* externStatus;
 };
 
 

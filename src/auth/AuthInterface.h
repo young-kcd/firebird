@@ -35,6 +35,10 @@
 struct internal_user_data;
 #include "../utilities/gsec/secur_proto.h"
 
+namespace Firebird {
+class Status;
+}
+
 namespace Auth {
 
 enum Result {AUTH_SUCCESS, AUTH_CONTINUE, AUTH_FAILED, AUTH_MORE_DATA};
@@ -57,10 +61,10 @@ public:
 class ServerInstance : public Firebird::Interface
 {
 public:
-	virtual Result startAuthentication(bool isService, const char* dbName,
+	virtual Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
 									   const unsigned char* dpb, unsigned int dpbSize,
 									   WriterInterface* writerInterface) = 0;
-	virtual Result contAuthentication(WriterInterface* writerInterface,
+	virtual Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
 									  const unsigned char* data, unsigned int size) = 0;
 	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
@@ -74,8 +78,8 @@ public:
 class ClientInstance : public Firebird::Interface
 {
 public:
-	virtual Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb) = 0;
-	virtual Result contAuthentication(const unsigned char* data, unsigned int size) = 0;
+	virtual Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb) = 0;
+	virtual Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size) = 0;
 	virtual void getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 

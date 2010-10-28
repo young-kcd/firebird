@@ -117,10 +117,10 @@ public:
 class SecurityDatabaseServerInstance : public ServerInstance
 {
 public:
-	Result startAuthentication(bool isService, const char* dbName,
+	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
 							   const unsigned char* dpb, unsigned int dpbSize,
 							   WriterInterface* writerInterface);
-	Result contAuthentication(WriterInterface* writerInterface,
+	Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
 							  const unsigned char* data, unsigned int size);
 	void getData(const unsigned char** data, unsigned short* dataSize);
 	void release();

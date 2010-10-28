@@ -928,10 +928,10 @@ const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_de
 namespace
 {
 	// Status:	Provides correct status vector for operation and init() it.
-	class Status : public FbApi::Status
+	class StatusVector : public Firebird::Status
 	{
 	public:
-		explicit Status(ISC_STATUS* v) throw()
+		explicit StatusVector(ISC_STATUS* v) throw()
 			: local_vector(v ? v : local_status)
 		{
 			init();
@@ -942,7 +942,7 @@ namespace
 			return local_vector;
 		}
 
-		~Status()
+		~StatusVector()
 		{
 #ifdef DEV_BUILD
 			check_status_vector(local_vector);
@@ -1325,12 +1325,12 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
  *	that recognizes it.
  *
  **************************************/
-	Status temp(NULL);
+	StatusVector temp(NULL);
 	Attachment attachment(0);
 	FbApi::Provider* provider = 0;
 
-	Status status(user_status);
-	Status* ptr = &status;
+	StatusVector status(user_status);
+	StatusVector* ptr = &status;
 
 	try
 	{
@@ -1499,7 +1499,7 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1539,7 +1539,7 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS * user_status,
 		return FB_SUCCESS;
 	}
 
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1576,7 +1576,7 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* user_status,
  *	Try to cancel an event.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1618,7 +1618,7 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS * user_status,
  *	Try to cancel an operation.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1657,7 +1657,7 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS * user_status,
  *	Close a blob opened either for reading or writing (creation).
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1692,7 +1692,7 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* user_status, FB_API_HA
  *	Commit a transaction.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1763,7 +1763,7 @@ ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* user_status, FB_API_HAND
  * is still running.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1808,7 +1808,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	Attachment attachment(NULL);
 	FbApi::Request* rq = NULL;
 
@@ -1856,7 +1856,7 @@ ISC_STATUS API_ROUTINE isc_compile_request2(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1940,10 +1940,10 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
  *	Create a nice, squeaky clean database, uncorrupted by user data.
  *
  **************************************/
-	Status temp(NULL);
+	StatusVector temp(NULL);
 	Attachment attachment(0);
 
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -1966,7 +1966,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_bad_dpb_form));
 		}
 
-		Status* ptr = &status;
+		StatusVector* ptr = &status;
 
 		// copy the file name to a temp buffer, since some of the following utilities can modify it
 
@@ -2088,7 +2088,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
  *	Register an attachment specific cleanup handler.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2123,7 +2123,7 @@ ISC_STATUS API_ROUTINE isc_database_info(ISC_STATUS* user_status,
  *	Provide information on database object.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2158,7 +2158,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
  *	Do meta-data update.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2207,7 +2207,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
  *	Common code for that calls.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2300,7 +2300,7 @@ ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS * user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2335,7 +2335,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	Attachment attachment(NULL);
 	FbApi::Statement* stmt_handle = NULL;
 
@@ -2384,7 +2384,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
  *	Describe output parameters for a prepared statement.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2452,7 +2452,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
  *	Describe input parameters for a prepared statement.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2543,7 +2543,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2644,7 +2644,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -2760,7 +2760,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	ISC_STATUS s = 0;
 	sqlda_sup dasup;
 	memset(&dasup, 0, sizeof(sqlda_sup));
@@ -2899,7 +2899,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	bool stmt_eaten;
 	if (PREPARSE_execute(status, db_handle, tra_handle, length, string, &stmt_eaten, dialect))
@@ -2997,7 +2997,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3066,7 +3066,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3128,7 +3128,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3167,7 +3167,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* user_status,
  *	release request for an sql statement
  *
  *****************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3211,7 +3211,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3259,7 +3259,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
  *	Insert next record into a dynamic SQL cursor
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3299,7 +3299,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3436,7 +3436,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
  *	Prepare a statement for execution.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3494,7 +3494,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* user_status,
  *	Set a cursor name for a dynamic request.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3529,7 +3529,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* user_status,
  *	Provide information on sql statement.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3604,7 +3604,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* user_status,
  *	Que request for event notification.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	RefPtr<WaitEvents> evnt;
 
 	try
@@ -3656,7 +3656,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* user_status,
  *	Get a segment from a blob opened for reading.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3700,7 +3700,7 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3736,7 +3736,7 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
  *	Clean up a dangling transaction handle.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3836,7 +3836,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS* user_status,
  *	phase commit.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3881,7 +3881,7 @@ ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS* user_status,
  *	Put a segment in a blob opened for writing (creation).
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3920,7 +3920,7 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* user_status,
  *	Put a slice in an array.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -3959,7 +3959,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* user_status,
  *	Que request for event notification.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	Events evnt;
 
 	try
@@ -4007,7 +4007,7 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4042,7 +4042,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
  *	Connect to a transaction in limbo.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	FbApi::Transaction* handle = 0;
 
 	try
@@ -4086,7 +4086,7 @@ ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* user_status,
  *	Release a request.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4127,7 +4127,7 @@ ISC_STATUS API_ROUTINE isc_request_info(ISC_STATUS* user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4184,7 +4184,7 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* user_status,
  *	Abort a transaction, but keep all cursors open.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4227,7 +4227,7 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* user_status,
  *	Abort a transaction.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4282,7 +4282,7 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS* user_status,
  *	Seek a blob.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4321,7 +4321,7 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4359,8 +4359,8 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
  *
  **************************************/
 	Service service(0);
-	Status temp(NULL);
-	Status status(user_status);
+	StatusVector temp(NULL);
+	StatusVector status(user_status);
 	FbApi::Service* handle = 0;
 
 	try
@@ -4387,7 +4387,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 		string svcname(service_name, service_length ? service_length : strlen(service_name));
 		svcname.rtrim();
 
-		Status* ptr = &status;
+		StatusVector* ptr = &status;
 		for (USHORT n = 0; n < providers().count(); ++n)
 		{
 			FbApi::Provider* p = providers().get(n);
@@ -4446,7 +4446,7 @@ ISC_STATUS API_ROUTINE isc_service_detach(ISC_STATUS* user_status, FB_API_HANDLE
  *	Close down a service.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4496,7 +4496,7 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS* user_status,
  *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4537,7 +4537,7 @@ ISC_STATUS API_ROUTINE isc_service_start(ISC_STATUS* user_status,
  *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4573,7 +4573,7 @@ ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4608,7 +4608,7 @@ ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS* user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4648,7 +4648,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 	Transaction transaction(NULL);
 	Attachment attachment(NULL);
 
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4699,7 +4699,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 
 		while (transaction)
 		{
-			Status temp(NULL);
+			StatusVector temp(NULL);
 			Transaction sub = transaction;
 			transaction = sub->next;
 			if (sub->handle)
@@ -4729,7 +4729,7 @@ ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS* user_status,
  *	Start a transaction.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4778,7 +4778,7 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* user_status,
  *	Execute a procedure.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4815,7 +4815,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* user_status,
  *	Register a transaction specific cleanup handler.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -4848,7 +4848,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* user_status,
  *	Provide information on transaction object.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 	const unsigned char* items = reinterpret_cast<const unsigned char*>(p_items);
 
 	try
@@ -4913,7 +4913,7 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* user_status,
  *	asynchronously.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -5214,7 +5214,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
  *	description record.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -5312,7 +5312,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
  *	Open an existing blob (extended edition).
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -5355,7 +5355,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
  *	for a multi-database transaction.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	Transaction sub;
 	HalfStaticArray<unsigned char, 1024> tdr_buffer;
@@ -5591,7 +5591,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		return FB_SUCCESS;
 	}
 
-	Status status(NULL);
+	StatusVector status(NULL);
 	int rc = FB_SUCCESS;
 
 #ifdef DEV_BUILD
@@ -5665,7 +5665,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
  *	Register client callback to be called when FB is going down.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{
@@ -5692,7 +5692,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
  *	Check the attachment handle for persistent errors.
  *
  **************************************/
-	Status status(user_status);
+	StatusVector status(user_status);
 
 	try
 	{

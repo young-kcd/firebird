@@ -673,14 +673,14 @@ static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
 
-static void 		handle_error(FbApi::Status*, ISC_STATUS);
+static void 		handle_error(Firebird::Status*, ISC_STATUS);
 
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
-static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, FbApi::Status* userStatus,
+static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::Status* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
 #ifdef WIN_NT
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
@@ -792,7 +792,7 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static ISC_STATUS successful_completion(FbApi::Status* s, ISC_STATUS return_code = FB_SUCCESS)
+static ISC_STATUS successful_completion(Firebird::Status* s, ISC_STATUS return_code = FB_SUCCESS)
 {
 	fb_assert(s);
 
@@ -819,7 +819,7 @@ static ISC_STATUS successful_completion(FbApi::Status* s, ISC_STATUS return_code
 
 
 // Stuff exception transliterated to the client charset.
-ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbApi::Status* vector) throw()
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::Status* vector) throw()
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	USHORT charSet;
@@ -5211,7 +5211,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 }
 
 
-static void handle_error(FbApi::Status* user_status, ISC_STATUS code)
+static void handle_error(Firebird::Status* user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -6447,7 +6447,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 }
 
-static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, FbApi::Status* userStatus,
+static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::Status* userStatus,
 	Jrd::Attachment* attachment, Database* dbb)
 {
 	transliterateException(tdbb, ex, userStatus);
