@@ -120,7 +120,7 @@ goto :EOF
 :engine
 @echo.
 @echo Building engine (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 engine_%FB_TARGET_PLATFORM%.log engine12
+@call compile.bat %FB_ROOT_PATH%\builds\win32\%VS_VER%\Firebird3 engine_%FB_TARGET_PLATFORM%.log engine12 ib_util
 if errorlevel 1 call :boot2 engine
 @goto :EOF
 
