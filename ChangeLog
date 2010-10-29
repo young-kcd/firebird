@@ -1,3 +1,7 @@
+ 2010-10-28 18:13  dimitr 
+   M src/remote/server.cpp
+Fixed CORE-3202: execute_immediate API call family may crash the remote server.
+
  2010-10-27 17:42  asfernandes 
    M src/jrd/SysFunction.cpp
 Fix backport error - still untested
