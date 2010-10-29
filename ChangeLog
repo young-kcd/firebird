@@ -1,3 +1,44 @@
+ 2010-10-29 00:28  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Misc
+
+ 2010-10-29 00:23  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Fixed CORE-3140 - Preserve comments for parameters after altering procedures
+
+ 2010-10-28 18:16  dimitr 
+   M src/remote/server/server.cpp
+Fixed CORE-3202: execute_immediate API call family may crash the remote server.
+
+ 2010-10-28 08:02  alexpeshkoff 
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/jrd_pwd.h
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.h
+   M src/common/classes/Interface.h
+   M src/common/fb_exception.cpp
+   M src/common/utils_proto.h
+   M src/include/ProviderInterface.h
+   M src/include/fb_exception.h
+   M src/jrd/Attachment.h
+   M src/jrd/blb.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/gds.cpp
+   M src/yvalve/why.cpp
+Avoid throwing C++ exceptions from authentication plugins
+
  2010-10-27 09:49  alexpeshkoff 
    M src/common/classes/alloc.cpp
    M src/common/classes/alloc.h
