@@ -2027,9 +2027,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			 P.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (!P.RDB$SYSTEM_FLAG.NULL && P.RDB$SYSTEM_FLAG)
-		{
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysproc) << P.RDB$PROCEDURE_NAME);
-		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
 		{
@@ -2117,21 +2115,31 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 	if (!secondPass && modified)
 	{
-		// delete all old input and output parameters
+		// Get all comments from the old parameter list.
+		MetaNameBidMap comments;
+		collectParamComments(tdbb, transaction, comments);
+
+		// Delete all old input and output parameters.
 		DropProcedureNode::dropParameters(tdbb, transaction, name, package);
 
-		// and insert the new ones
+		// And insert the new ones.
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
-			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter);
+			bid comment;
+
+			// Find the original comment to recreate in the new parameter.
+			if (!comments.get(parameter.name, comment))
+				comment.clear();
+
+			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &comment);
 		}
 
 		for (unsigned i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause& parameter = returns[i];
-			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter);
+			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, NULL);
 		}
 
 		AutoCacheRequest requestHandle2(tdbb, drq_m_prm_view, DYN_REQUESTS);
@@ -2162,7 +2170,8 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 }
 
 void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, USHORT type, unsigned pos, const ParameterClause& parameter)
+	jrd_tra* transaction, USHORT type, unsigned pos, const ParameterClause& parameter,
+	const bid* comment)
 {
 	Attachment* attachment = transaction->getAttachment();
 
@@ -2260,6 +2269,10 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 			attachment->storeBinaryBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
 				dsqlScratch->getBlrData());
 		}
+
+		PRM.RDB$DESCRIPTION.NULL = !comment || comment->isEmpty();
+		if (!PRM.RDB$DESCRIPTION.NULL)
+			PRM.RDB$DESCRIPTION = *comment;
 	}
 	END_STORE
 }
@@ -2399,6 +2412,23 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	dsqlScratch->endDebug();
 
 	invalid = false;
+}
+
+void CreateAlterProcedureNode::collectParamComments(thread_db* tdbb, jrd_tra* transaction,
+	MetaNameBidMap& items)
+{
+	Jrd::Attachment* attachment = transaction->getAttachment();
+	AutoRequest requestHandle;
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		PRM IN RDB$PROCEDURE_PARAMETERS
+		WITH PRM.RDB$PROCEDURE_NAME EQ name.c_str() AND
+			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
+	{
+		if (!PRM.RDB$DESCRIPTION.NULL)
+			items.put(PRM.RDB$PARAMETER_NAME, PRM.RDB$DESCRIPTION);
+	}
+	END_FOR
 }
 
 
