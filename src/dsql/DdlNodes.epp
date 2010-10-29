@@ -2417,7 +2417,6 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 void CreateAlterProcedureNode::collectParamComments(thread_db* tdbb, jrd_tra* transaction,
 	MetaNameBidMap& items)
 {
-	Jrd::Attachment* attachment = transaction->getAttachment();
 	AutoRequest requestHandle;
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)

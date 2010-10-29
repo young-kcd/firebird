@@ -377,12 +377,9 @@ private:
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);
 	void storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		USHORT type, unsigned pos, const ParameterClause& parameter,
-		const bid* comment);
+		USHORT type, unsigned pos, const ParameterClause& parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
-
-	void collectParamComments(thread_db* tdbb, jrd_tra* transaction,
-		MetaNameBidMap& items);
+	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
 public:
 	Firebird::MetaName name;
