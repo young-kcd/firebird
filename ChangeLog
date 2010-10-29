@@ -1,3 +1,7 @@
+ 2010-10-28 18:14  dimitr 
+   M src/remote/server.cpp
+Fixed CORE-3202: execute_immediate API call family may crash the remote server.
+
  2010-10-19 13:28  alexpeshkoff 
    M src/jrd/sqz.cpp
 Backported fix for CORE-3148: possible segfault in SQZ_apply_differences
