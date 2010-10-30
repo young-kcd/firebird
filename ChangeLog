@@ -1,3 +1,17 @@
+ 2010-10-29 21:40  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/remote.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj
+Fixed linker warnings
+
+ 2010-10-29 21:39  hvlad 
+   M builds/win32/msvc10/firebird2.props
+Switched on multi-processor compilation 
+
+ 2010-10-29 21:38  hvlad 
+   M builds/win32/make_boot.bat
+Fixed errors about missed ib_util.dll in firebird.log during boot build 
+
  2010-10-29 00:28  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
