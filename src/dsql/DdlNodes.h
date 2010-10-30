@@ -64,7 +64,7 @@ public:
 class TypeClause
 {
 public:
-	TypeClause(dsql_fld* aField, const Firebird::MetaName& aCollate);
+	TypeClause(MemoryPool& pool, dsql_fld* aField, const Firebird::MetaName& aCollate);
 	virtual ~TypeClause() {}
 
 public:
@@ -101,8 +101,8 @@ public:
 class ParameterClause : public TypeClause
 {
 public:
-	ParameterClause(dsql_fld* field, const Firebird::MetaName& aCollate, dsql_nod* dflt,
-		dsql_nod* aLegacyParameter);
+	ParameterClause(MemoryPool& pool, dsql_fld* field, const Firebird::MetaName& aCollate,
+		dsql_nod* dflt, dsql_nod* aLegacyParameter);
 
 public:
 	void print(Firebird::string& text) const;
@@ -240,7 +240,7 @@ public:
 		  external(NULL),
 		  invariant(false),
 		  parameters(pool),
-		  returnType(NULL, NULL),
+		  returnType(pool, NULL, NULL),
 		  localDeclList(NULL),
 		  source(pool),
 		  body(NULL),

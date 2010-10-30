@@ -134,6 +134,44 @@ public:
 		return stmt_ambiguous;
 	}
 
+	// newNode overloads
+
+	template <typename T>
+	T* newNode()
+	{
+		return FB_NEW(getPool()) T(getPool());
+	}
+
+	template <typename T, typename T1>
+	T* newNode(T1 a1)
+	{
+		return FB_NEW(getPool()) T(getPool(), a1);
+	}
+
+	template <typename T, typename T1, typename T2>
+	T* newNode(T1 a1, T2 a2)
+	{
+		return FB_NEW(getPool()) T(getPool(), a1, a2);
+	}
+
+	template <typename T, typename T1, typename T2, typename T3>
+	T* newNode(T1 a1, T2 a2, T3 a3)
+	{
+		return FB_NEW(getPool()) T(getPool(), a1, a2, a3);
+	}
+
+	template <typename T, typename T1, typename T2, typename T3, typename T4>
+	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4)
+	{
+		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4);
+	}
+
+	template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5>
+	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+	{
+		return FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4, a5);
+	}
+
 private:
 	void transformString(const char* start, unsigned length, Firebird::string& dest);
 

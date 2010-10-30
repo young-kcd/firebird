@@ -1275,9 +1275,9 @@ recreate 	: RECREATE recreate_clause
 
 recreate_clause
 	: PROCEDURE procedure_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateProcedureNode(getPool(), $2)); }
+		{ $$ = makeClassNode(newNode<RecreateProcedureNode>($2)); }
 	| FUNCTION function_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateFunctionNode(getPool(), $2)); }
+		{ $$ = makeClassNode(newNode<RecreateFunctionNode>($2)); }
 	| TABLE rtable_clause
 		{ $$ = $2; }
 	| GLOBAL TEMPORARY TABLE gtt_recreate_clause
@@ -1285,11 +1285,11 @@ recreate_clause
 	| VIEW rview_clause
 		{ $$ = $2; }
 	| TRIGGER trigger_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateTriggerNode(getPool(), $2)); }
+		{ $$ = makeClassNode(newNode<RecreateTriggerNode>($2)); }
 	| PACKAGE package_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreatePackageNode(getPool(), $2)); }
+		{ $$ = makeClassNode(newNode<RecreatePackageNode>($2)); }
 	| PACKAGE BODY package_body_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreatePackageBodyNode(getPool(), $3)); }
+		{ $$ = makeClassNode(newNode<RecreatePackageBodyNode>($3)); }
 	| EXCEPTION rexception_clause
 		{ $$ = $2; }
 	;
@@ -1318,27 +1318,23 @@ replace_clause
 
 exception_clause
 	: symbol_exception_name sql_string
-		{
-			$$ = makeClassNode(FB_NEW(getPool()) CreateAlterExceptionNode(
-				getPool(), toName($1), toString($2)));
-		}
+		{ $$ = makeClassNode(newNode<CreateAlterExceptionNode>(toName($1), toString($2))); }
 	;
 
 rexception_clause
 	: symbol_exception_name sql_string
 		{
-			CreateAlterExceptionNode* createNode = FB_NEW(getPool()) CreateAlterExceptionNode(
-				getPool(), toName($1), toString($2));
-			$$ = makeClassNode(FB_NEW(getPool()) RecreateExceptionNode(
-				getPool(), createNode));
+			CreateAlterExceptionNode* createNode = newNode<CreateAlterExceptionNode>(
+				toName($1), toString($2));
+			$$ = makeClassNode(newNode<RecreateExceptionNode>(createNode));
 		}
 	;
 
 replace_exception_clause
 	: symbol_exception_name sql_string
 		{
-			CreateAlterExceptionNode* node = FB_NEW(getPool()) CreateAlterExceptionNode(
-				getPool(), toName($1), toString($2));
+			CreateAlterExceptionNode* node = newNode<CreateAlterExceptionNode>(
+				toName($1), toString($2));
 			node->alter = true;
 			$$ = makeClassNode(node);
 		}
@@ -1347,8 +1343,8 @@ replace_exception_clause
 alter_exception_clause
 	: symbol_exception_name sql_string
 		{
-			CreateAlterExceptionNode* node = FB_NEW(getPool()) CreateAlterExceptionNode(
-				getPool(), toName($1), toString($2));
+			CreateAlterExceptionNode* node = newNode<CreateAlterExceptionNode>(
+				toName($1), toString($2));
 			node->create = false;
 			node->alter = true;
 			$$ = makeClassNode(node);
@@ -1418,8 +1414,8 @@ db_file_list	: db_file
 domain_clause
 	: column_def_name as_opt data_type domain_default_opt
 			{
-				$<createDomainNode>$ = FB_NEW(getPool()) CreateDomainNode(getPool(),
-					ParameterClause((dsql_fld*) $1, "", $4, NULL));
+				$<createDomainNode>$ = newNode<CreateDomainNode>(
+					ParameterClause(getPool(), (dsql_fld*) $1, "", $4, NULL));
 			}
 		domain_constraints_opt($5) collate_clause
 			{
@@ -1478,9 +1474,7 @@ check_constraint
 
 generator_clause
 	: symbol_generator_name
-		{
-			$$ = FB_NEW(getPool()) CreateSequenceNode(getPool(), toName($1));
-		}
+		{ $$ = newNode<CreateSequenceNode>(toName($1)); }
 	;
 
 
@@ -1495,10 +1489,7 @@ role_clause : symbol_role_name
 
 collation_clause
 	: symbol_collation_name FOR symbol_character_set_name
-			{
-				$<createCollationNode>$ = FB_NEW(getPool()) CreateCollationNode(
-					getPool(), toName($1), toName($3));
-			}
+			{ $<createCollationNode>$ = newNode<CreateCollationNode>(toName($1), toName($3)); }
 		collation_sequence_definition($4)
 		collation_attribute_list_opt($4) collation_specific_attribute_opt($4)
 			{ $$ = $4; }
@@ -1563,9 +1554,7 @@ collation_specific_attribute_opt($createCollation)
 
 alter_charset_clause
 	: symbol_character_set_name SET DEFAULT COLLATION symbol_collation_name
-		{
-			$$ = FB_NEW(getPool()) AlterCharSetNode(getPool(), toName($1), toName($5));
-		}
+		{ $$ = newNode<AlterCharSetNode>(toName($1), toName($5)); }
 	;
 
 // CREATE DATABASE
@@ -1690,19 +1679,19 @@ page_noise
 
 table_clause
 	: simple_table_name external_file
-			{ $<createRelationNode>$ = FB_NEW(getPool()) CreateRelationNode(getPool(), $1, $2); }
+			{ $<createRelationNode>$ = newNode<CreateRelationNode>($1, $2); }
 		'(' table_elements($3) ')'
 			{ $$ = $3; }
 	;
 
 rtable_clause
 	: table_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateTableNode(getPool(), $1)); }
+		{ $$ = makeClassNode(newNode<RecreateTableNode>($1)); }
 	;
 
 gtt_table_clause
 	: simple_table_name
-			{ $<createRelationNode>$ = FB_NEW(getPool()) CreateRelationNode(getPool(), $1); }
+			{ $<createRelationNode>$ = newNode<CreateRelationNode>($1); }
 		'(' table_elements($2) ')' gtt_scope
 			{
 				$$ = $2;
@@ -1712,7 +1701,7 @@ gtt_table_clause
 
 gtt_recreate_clause
 	: gtt_table_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateTableNode(getPool(), $1)); }
+		{ $$ = makeClassNode(newNode<RecreateTableNode>($1)); }
 	;
 
 gtt_scope
@@ -1728,9 +1717,9 @@ external_file
 	:
 		{ $$ = NULL; }
 	| EXTERNAL KW_FILE sql_string
-		{ $$ = FB_NEW(getPool()) PathName(getPool(), $3->str_data, $3->str_length); }
+		{ $$ = newNode<PathName>($3->str_data, $3->str_length); }
 	| EXTERNAL sql_string
-		{ $$ = FB_NEW(getPool()) PathName(getPool(), $2->str_data, $2->str_length); }
+		{ $$ = newNode<PathName>($2->str_data, $2->str_length); }
 	;
 
 table_elements($createRelationNode)
@@ -1985,7 +1974,7 @@ procedure_clause
 
 procedure_clause_start
 	: symbol_procedure_name
-			{ $$ = FB_NEW(getPool()) CreateAlterProcedureNode(getPool(), toName($1)); }
+			{ $$ = newNode<CreateAlterProcedureNode>(toName($1)); }
 		input_parameters(&$2->parameters) output_parameters(&$2->returns)
 			{ $$ = $2; }
 	;
@@ -2025,7 +2014,7 @@ input_proc_parameters($parameters)
 
 input_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause default_par_opt
-		{ $parameters->add(ParameterClause($1, toName($3), $4, NULL)); }
+		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), $4, NULL)); }
 	;
 
 output_proc_parameters($parameters)
@@ -2035,7 +2024,7 @@ output_proc_parameters($parameters)
 
 output_proc_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause
-		{ $parameters->add(ParameterClause($1, toName($3), NULL, NULL)); }
+		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), NULL, NULL)); }
 	;
 
 default_par_opt	: DEFAULT begin_trigger default_value end_default
@@ -2068,13 +2057,13 @@ function_clause
 
 function_clause_start
 	: symbol_UDF_name
-			{ $$ = FB_NEW(getPool()) CreateAlterFunctionNode(getPool(), toName($1)); }
+			{ $$ = newNode<CreateAlterFunctionNode>(toName($1)); }
 		input_parameters(&$2->parameters)
 		RETURNS { $<legacyField>$ = lex.g_field = make_field(NULL); }
 		domain_or_non_array_type collate_clause deterministic_opt
 			{
 				$$ = $2;
-				$$->returnType = TypeClause($<legacyField>5, toName($7));
+				$$->returnType = TypeClause(getPool(), $<legacyField>5, toName($7));
 				$$->invariant = ($8 != NULL);
 			}
 	;
@@ -2091,13 +2080,13 @@ deterministic_opt
 external_clause
 	: EXTERNAL NAME sql_string ENGINE valid_symbol_name
 		{
-			$$ = FB_NEW(getPool()) ExternalClause(getPool());
+			$$ = newNode<ExternalClause>();
 			$$->name = toString($3);
 			$$->engine = toName($5);
 		}
 	| EXTERNAL ENGINE valid_symbol_name
 		{
-			$$ = FB_NEW(getPool()) ExternalClause(getPool());
+			$$ = newNode<ExternalClause>();
 			$$->engine = toName($3);
 		}
 	;
@@ -2133,8 +2122,7 @@ package_clause
 	: symbol_package_name AS begin_string stmt_start_line stmt_start_column
 			BEGIN package_items_opt END end_trigger
 		{
-			CreateAlterPackageNode* node = FB_NEW(getPool()) CreateAlterPackageNode(
-				getPool(), toName($1));
+			CreateAlterPackageNode* node = newNode<CreateAlterPackageNode>(toName($1));
 			node->source = toString($9);
 			node->items = $7;
 
@@ -2145,13 +2133,13 @@ package_clause
 package_items_opt
 	: package_items
 	|
-		{ $$ = FB_NEW(getPool()) Array<CreateAlterPackageNode::Item>(getPool()); }
+		{ $$ = newNode<Array<CreateAlterPackageNode::Item> >(); }
 	;
 
 package_items
 	: package_item
 		{
-			$$ = FB_NEW(getPool()) Array<CreateAlterPackageNode::Item>(getPool());
+			$$ = newNode<Array<CreateAlterPackageNode::Item> >();
 			$$->add($1);
 		}
 	| package_items package_item
@@ -2196,8 +2184,7 @@ package_body_clause
 	: symbol_package_name AS begin_string stmt_start_line stmt_start_column
 			BEGIN package_items package_body_items_opt END end_trigger
 		{
-			CreatePackageBodyNode* node = FB_NEW(getPool()) CreatePackageBodyNode(
-				getPool(), toName($1));
+			CreatePackageBodyNode* node = newNode<CreatePackageBodyNode>(toName($1));
 			node->source = toString($10);
 			node->declaredItems = $7;
 			node->items = $8;
@@ -2207,8 +2194,7 @@ package_body_clause
 	| symbol_package_name AS begin_string stmt_start_line stmt_start_column
 			BEGIN package_body_items_opt END end_trigger
 		{
-			CreatePackageBodyNode* node = FB_NEW(getPool()) CreatePackageBodyNode(
-				getPool(), toName($1));
+			CreatePackageBodyNode* node = newNode<CreatePackageBodyNode>(toName($1));
 			node->source = toString($9);
 			node->items = $7;
 
@@ -2217,15 +2203,15 @@ package_body_clause
 	;
 
 package_body_items_opt
-	: package_body_items
-	|
-		{ $$ = FB_NEW(getPool()) Array<CreateAlterPackageNode::Item>(getPool()); }
+	:
+		{ $$ = newNode<Array<CreateAlterPackageNode::Item> >(); }
+	| package_body_items
 	;
 
 package_body_items
 	: package_body_item
 		{
-			$$ = FB_NEW(getPool()) Array<CreateAlterPackageNode::Item>(getPool());
+			$$ = newNode<Array<CreateAlterPackageNode::Item> >();
 			$$->add($1);
 		}
 	| package_body_items package_body_item
@@ -2356,11 +2342,11 @@ simple_proc_statement	: assignment
 		| breakleave
 		| continue
 		| SUSPEND
-			{ $$ = makeClassNode(FB_NEW(getPool()) SuspendNode(getPool())); }
+			{ $$ = makeClassNode(newNode<SuspendNode>()); }
 		| EXIT
-			{ $$ = makeClassNode(FB_NEW(getPool()) ExitNode(getPool())); }
+			{ $$ = makeClassNode(newNode<ExitNode>()); }
 		| RETURN value
-			{ $$ = makeClassNode(FB_NEW(getPool()) ReturnNode(getPool(), $2)); }
+			{ $$ = makeClassNode(newNode<ReturnNode>($2)); }
 		;
 
 complex_proc_statement
@@ -2376,8 +2362,7 @@ complex_proc_statement
 in_autonomous_transaction
 	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
 		{
-			InAutonomousTransactionNode* node = FB_NEW(getPool())
-				InAutonomousTransactionNode(getPool());
+			InAutonomousTransactionNode* node = newNode<InAutonomousTransactionNode>();
 			node->dsqlAction = $5;
 			$$ = node;
 		}
@@ -2385,22 +2370,22 @@ in_autonomous_transaction
 
 excp_statement
 	: EXCEPTION symbol_exception_name
-		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2)); }
+		{ $$ = newNode<ExceptionNode>(toName($2)); }
 	| EXCEPTION symbol_exception_name value
-		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2), $3); }
+		{ $$ = newNode<ExceptionNode>(toName($2), $3); }
 	| EXCEPTION symbol_exception_name USING '(' value_list ')'
-		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool(), toName($2), NULL, make_list($5)); }
+		{ $$ = newNode<ExceptionNode>(toName($2), (dsql_nod*) NULL, make_list($5)); }
 	;
 
 raise_statement
 	: EXCEPTION
-		{ $$ = FB_NEW(getPool()) ExceptionNode(getPool()); }
+		{ $$ = newNode<ExceptionNode>(); }
 	;
 
 for_select
 	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 		{
-			ForNode* node = FB_NEW(getPool()) ForNode(getPool());
+			ForNode* node = newNode<ForNode>();
 			node->dsqlLabel = $1;
 			node->dsqlSelect = $3;
 			node->dsqlInto = make_list($5);
@@ -2531,7 +2516,7 @@ ext_privs
 if_then_else
 	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 		{
-			IfNode* node = FB_NEW(getPool()) IfNode(getPool());
+			IfNode* node = newNode<IfNode>();
 			node->dsqlCondition = $3;
 			node->dsqlTrueAction = $6;
 			node->dsqlFalseAction = $8;
@@ -2539,7 +2524,7 @@ if_then_else
 		}
 	| IF '(' search_condition ')' THEN proc_block
 		{
-			IfNode* node = FB_NEW(getPool()) IfNode(getPool());
+			IfNode* node = newNode<IfNode>();
 			node->dsqlCondition = $3;
 			node->dsqlTrueAction = $6;
 			$$ = node;
@@ -2549,7 +2534,7 @@ if_then_else
 post_event
 	: POST_EVENT value event_argument_opt
 		{
-			PostEventNode* node = FB_NEW(getPool()) PostEventNode(getPool());
+			PostEventNode* node = newNode<PostEventNode>();
 			node->dsqlEvent = $2;
 			node->dsqlArgument = $3;
 			$$ = makeClassNode(node);
@@ -2566,7 +2551,7 @@ event_argument_opt
 singleton_select
 	: select INTO variable_list
 		{
-			ForNode* node = FB_NEW(getPool()) ForNode(getPool());
+			ForNode* node = newNode<ForNode>();
 			node->dsqlSelect = $1;
 			node->dsqlInto = make_list($3);
 			$$ = makeClassNode(node);
@@ -2720,7 +2705,7 @@ proc_outputs_opt	: RETURNING_VALUES variable_list
 
 exec_block
 	: EXECUTE BLOCK
-			{ $<execBlockNode>$ = FB_NEW(getPool()) ExecBlockNode(getPool()); }
+			{ $<execBlockNode>$ = newNode<ExecBlockNode>(); }
 			block_input_params(&$3->parameters)
 			output_parameters(&$3->returns) AS
 			local_declaration_list
@@ -2745,7 +2730,7 @@ block_parameters($parameters)
 
 block_parameter($parameters)
 	: simple_column_def_name domain_or_non_array_type collate_clause '=' parameter
-		{ $parameters->add(ParameterClause($1, toName($3), NULL, $5)); }
+		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), NULL, $5)); }
 	;
 
 // CREATE VIEW
@@ -2753,8 +2738,7 @@ block_parameter($parameters)
 view_clause
 	: simple_table_name column_parens_opt AS begin_string select_expr check_opt end_trigger
 		{
-			CreateAlterViewNode* node = FB_NEW(getPool()) CreateAlterViewNode(getPool(),
-				$1, $2, $5);
+			CreateAlterViewNode* node = newNode<CreateAlterViewNode>($1, $2, $5);
 			node->source = toString($7);
 			node->withCheckOption = $6;
 			$$ = node;
@@ -2763,7 +2747,7 @@ view_clause
 
 rview_clause
 	: view_clause
-		{ $$ = makeClassNode(FB_NEW(getPool()) RecreateViewNode( getPool(), $1)); }
+		{ $$ = makeClassNode(newNode<RecreateViewNode>($1)); }
 	;
 
 replace_view_clause
@@ -2840,7 +2824,7 @@ trigger_clause
 	  full_proc_block
 	  end_trigger
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
@@ -2854,7 +2838,7 @@ trigger_clause
 	  trigger_position
 	  external_clause external_body_clause_opt
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
@@ -2872,7 +2856,7 @@ trigger_clause
 	  full_proc_block
 	  end_trigger
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
@@ -2888,7 +2872,7 @@ trigger_clause
 	  ON symbol_table_name
 	  external_clause external_body_clause_opt
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
@@ -2907,7 +2891,7 @@ trigger_clause
 	  full_proc_block
 	  end_trigger
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $4;
 			$$->type = $5;
 			$$->position = $6;
@@ -2923,7 +2907,7 @@ trigger_clause
 	  trigger_position
 	  external_clause external_body_clause_opt
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $4;
 			$$->type = $5;
 			$$->position = $6;
@@ -3085,7 +3069,7 @@ alter_clause
 		{ $$ = $2; }
 	| TABLE simple_table_name alter_ops
 		{
-			AlterRelationNode* node = FB_NEW(getPool()) AlterRelationNode(getPool(), $2);
+			AlterRelationNode* node = newNode<AlterRelationNode>($2);
 
 			dsql_nod* list = make_list($3);
 			for (dsql_nod** ptr = list->nod_arg; ptr != list->nod_arg + list->nod_count; ++ptr)
@@ -3123,7 +3107,7 @@ alter_clause
 
 alter_domain
 	: keyword_or_column
-			{ $<alterDomainNode>$ = FB_NEW(getPool()) AlterDomainNode(getPool(), toName($1)); }
+			{ $<alterDomainNode>$ = newNode<AlterDomainNode>(toName($1)); }
 		alter_domain_ops($2)
 			{ $$ = $2; }
 	;
@@ -3154,7 +3138,7 @@ alter_domain_op($alterDomainNode)
 		{
 			//// FIXME: ALTER DOMAIN doesn't support collations, and altered domain's
 			//// collation is always lost.
-			TypeClause* type = FB_NEW(getPool()) TypeClause($2, NULL);
+			TypeClause* type = newNode<TypeClause>($2, MetaName());
 			setClause($alterDomainNode->type, "DOMAIN TYPE", type);
 		}
 	;
@@ -3315,8 +3299,7 @@ alter_sequence_clause
 	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 		{
 			$$ = make_node(nod_set_generator2, e_gen_id_count, $1,
-				makeClassNode(FB_NEW(getPool()) NegateNode(
-					getPool(), MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))));
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))));
 		}
 	;
 
@@ -3403,7 +3386,7 @@ alter_trigger_clause
 	  full_proc_block
 	  end_trigger
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
 			$$->create = false;
 			$$->active = $2;
@@ -3419,7 +3402,7 @@ alter_trigger_clause
 	  trigger_position
 	  external_clause external_body_clause_opt
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
 			$$->create = false;
 			$$->active = $2;
@@ -3434,7 +3417,7 @@ alter_trigger_clause
 	  trigger_type_opt
 	  trigger_position
 		{
-			$$ = FB_NEW(getPool()) CreateAlterTriggerNode(getPool(), toName($1));
+			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
 			$$->create = false;
 			$$->active = $2;
@@ -3459,25 +3442,25 @@ drop		: DROP drop_clause
 
 drop_clause
 	: EXCEPTION symbol_exception_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropExceptionNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropExceptionNode>(toName($2))); }
 	| INDEX symbol_index_name
 		{ $$ = make_node (nod_del_index, (int) 1, $2); }
 	| PROCEDURE symbol_procedure_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropProcedureNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropProcedureNode>(toName($2))); }
 	| TABLE symbol_table_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropRelationNode(getPool(), toName($2), false)); }
+		{ $$ = makeClassNode(newNode<DropRelationNode>(toName($2), false)); }
 	| TRIGGER symbol_trigger_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropTriggerNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropTriggerNode>(toName($2))); }
 	| VIEW symbol_view_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropRelationNode(getPool(), toName($2), true)); }
+		{ $$ = makeClassNode(newNode<DropRelationNode>(toName($2), true)); }
 	| FILTER symbol_filter_name
 		{ $$ = make_node (nod_del_filter, (int) 1, $2); }
 	| DOMAIN symbol_domain_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropDomainNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropDomainNode>(toName($2))); }
 	| EXTERNAL FUNCTION symbol_UDF_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), toName($3))); }
+		{ $$ = makeClassNode(newNode<DropFunctionNode>(toName($3))); }
 	| FUNCTION symbol_UDF_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropFunctionNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropFunctionNode>(toName($2))); }
 	| SHADOW pos_short_integer
 		{ $$ = make_node (nod_del_shadow, (int) 1, (dsql_nod*)(IPTR) $2); }
 	| ROLE symbol_role_name
@@ -3487,13 +3470,13 @@ drop_clause
 	| SEQUENCE symbol_generator_name
 		{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 	| COLLATION symbol_collation_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropCollationNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropCollationNode>(toName($2))); }
 	| USER drop_user_clause
 		{ $$ = $2; }
 	| PACKAGE symbol_package_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageNode(getPool(), toName($2))); }
+		{ $$ = makeClassNode(newNode<DropPackageNode>(toName($2))); }
 	| PACKAGE BODY symbol_package_name
-		{ $$ = makeClassNode(FB_NEW(getPool()) DropPackageBodyNode(getPool(), toName($3))); }
+		{ $$ = makeClassNode(newNode<DropPackageBodyNode>(toName($3))); }
 	;
 
 
@@ -3958,8 +3941,7 @@ set_generator
 	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 		{
 			$$ = make_node(nod_set_generator2, e_gen_id_count, $3,
-				makeClassNode(FB_NEW(getPool()) NegateNode(
-					getPool(), MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))));
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))));
 		}
 	;
 
@@ -3974,7 +3956,7 @@ savepoint	: set_savepoint
 set_savepoint
 	: SAVEPOINT symbol_savepoint_name
 		{
-			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			SavepointNode* node = newNode<SavepointNode>();
 			node->command = SavepointNode::CMD_SET;
 			node->name = toName($2);
 			$$ = makeClassNode(node);
@@ -3984,7 +3966,7 @@ set_savepoint
 release_savepoint
 	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
 		{
-			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			SavepointNode* node = newNode<SavepointNode>();
 			node->command = ($4 ? SavepointNode::CMD_RELEASE_ONLY : SavepointNode::CMD_RELEASE);
 			node->name = toName($3);
 			$$ = makeClassNode(node);
@@ -4001,7 +3983,7 @@ release_only_opt
 undo_savepoint
 	: ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
 		{
-			SavepointNode* node = FB_NEW(getPool()) SavepointNode(getPool());
+			SavepointNode* node = newNode<SavepointNode>();
 			node->command = SavepointNode::CMD_ROLLBACK;
 			node->name = toName($5);
 			$$ = makeClassNode(node);
@@ -4159,17 +4141,17 @@ set_statistics	: SET STATISTICS INDEX symbol_index_name
 comment
 	: COMMENT ON ddl_type0 IS ddl_desc
 		{
-			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), $3,
+			$$ = newNode<CommentOnNode>($3,
 				"", "", ($5 ? toString($5) : ""), ($5 ? $5->str_charset : NULL));
 		}
 	| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
 		{
-			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), $3,
+			$$ = newNode<CommentOnNode>($3,
 				toName($4), "", ($6 ? toString($6) : ""), ($6 ? $6->str_charset : NULL));
 		}
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
 		{
-			$$ = FB_NEW(getPool()) CommentOnNode(getPool(), $3,
+			$$ = newNode<CommentOnNode>($3,
 				toName($4), toName($5), ($7 ? toString($7) : ""), ($7 ? $7->str_charset : NULL));
 		}
 	;
@@ -4637,10 +4619,10 @@ rows_clause	: ROWS value
 			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
 			{
 				$$ = make_node (nod_rows, (int) e_rows_count,
-					makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
+					makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
 						$2, MAKE_const_slong(1))),
-					makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_add, true,
-						makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(), blr_subtract, true,
+					makeClassNode(newNode<ArithmeticNode>(blr_add, true,
+						makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
 							$4, $2)),
 						MAKE_const_slong(1))));
 			}
@@ -4793,12 +4775,12 @@ exec_function
 	: udf
 		{
 			$$ = make_node (nod_assign, e_asgn_count, makeClassNode($1),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+				makeClassNode(newNode<NullNode>()));
 		}
 	| non_aggregate_function
 		{
 			$$ = make_node (nod_assign, e_asgn_count, makeClassNode($1),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+				makeClassNode(newNode<NullNode>()));
 		}
 	;
 
@@ -4901,11 +4883,11 @@ search_condition
 search_condition_impl
 	: predicate
 	| search_condition OR search_condition
-		{ $$ = FB_NEW(getPool()) BinaryBoolNode(getPool(), blr_or, $1, $3); }
+		{ $$ = newNode<BinaryBoolNode>(blr_or, $1, $3); }
 	| search_condition AND search_condition
-		{ $$ = FB_NEW(getPool()) BinaryBoolNode(getPool(), blr_and, $1, $3); }
+		{ $$ = newNode<BinaryBoolNode>(blr_and, $1, $3); }
 	| NOT search_condition
-		{ $$ = FB_NEW(getPool()) NotBoolNode(getPool(), $2); }
+		{ $$ = newNode<NotBoolNode>($2); }
 	;
 
 predicate
@@ -4929,7 +4911,7 @@ predicate
 
 comparison_predicate
 	: value comparison_operator value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3); }
+		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
 	;
 
 comparison_operator
@@ -4947,8 +4929,7 @@ comparison_operator
 quantified_predicate
 	: value comparison_operator quantified_flag '(' column_select ')'
 		{
-			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
-				getPool(), $2, $1, $5);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1, $5);
 			node->dsqlFlag = $3;
 			$$ = node;
 		}
@@ -4966,34 +4947,30 @@ quantified_flag
 distinct_predicate
 	: value IS DISTINCT FROM value
 		{
-			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
-				getPool(), blr_equiv, $1, $5);
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $5);
+			$$ = newNode<NotBoolNode>(makeClassNode(node));
 		}
 	| value IS NOT DISTINCT FROM value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_equiv, $1, $6); }
+		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $6); }
 	;
 
 between_predicate
 	: value BETWEEN value AND value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_between, $1, $3, $5); }
+		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
 	| value NOT BETWEEN value AND value
 		{
-			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
-				getPool(), blr_between, $1, $4, $6);
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
+			$$ = newNode<NotBoolNode>(makeClassNode(node));
 		}
 	;
 
 binary_pattern_predicate
 	: value binary_pattern_operator value
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3); }
+		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
 	| value NOT binary_pattern_operator value
 		{
-			ComparativeBoolNode* containingNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				$3, $1, $4);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(containingNode));
+			ComparativeBoolNode* containingNode = newNode<ComparativeBoolNode>($3, $1, $4);
+			$$ = newNode<NotBoolNode>(makeClassNode(containingNode));
 		}
 	;
 
@@ -5005,13 +4982,11 @@ binary_pattern_operator
 
 ternary_pattern_predicate
 	: value ternary_pattern_operator value escape_opt
-		{ $$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), $2, $1, $3, $4); }
+		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3, $4); }
 	| value NOT ternary_pattern_operator value escape_opt
 		{
-			ComparativeBoolNode* likeNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-				$3, $1, $4, $5);
-
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(likeNode));
+			ComparativeBoolNode* likeNode = newNode<ComparativeBoolNode>($3, $1, $4, $5);
+			$$ = newNode<NotBoolNode>(makeClassNode(likeNode));
 		}
 	;
 
@@ -5028,46 +5003,41 @@ escape_opt
 in_predicate
 	: value KW_IN in_predicate_value
 		{
-			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
-				getPool(), blr_eql, $1, $3);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $3);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			$$ = node;
 		}
 	| value NOT KW_IN in_predicate_value
 		{
-			ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
-				getPool(), blr_eql, $1, $4);
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $4);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
-			$$ = FB_NEW(getPool()) NotBoolNode(getPool(), makeClassNode(node));
+			$$ = newNode<NotBoolNode>(makeClassNode(node));
 		}
 	;
 
 exists_predicate
 	: EXISTS '(' select_expr ')'
-		{ $$ = FB_NEW(getPool()) RseBoolNode(getPool(), blr_any, $3); }
+		{ $$ = newNode<RseBoolNode>(blr_any, $3); }
 	;
 
 singular_predicate
 	: SINGULAR '(' select_expr ')'
-		{ $$ = FB_NEW(getPool()) RseBoolNode(getPool(), blr_unique, $3); }
+		{ $$ = newNode<RseBoolNode>(blr_unique, $3); }
 	;
 
 null_predicate
 	: value IS KW_NULL
-		{ $$ = FB_NEW(getPool()) MissingBoolNode(getPool(), $1); }
+		{ $$ = newNode<MissingBoolNode>($1); }
 	| value IS NOT KW_NULL
-		{
-			$$ = FB_NEW(getPool()) NotBoolNode(
-				getPool(), makeClassNode(FB_NEW(getPool()) MissingBoolNode(getPool(), $1)));
-		}
+		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
 	;
 
 trigger_action_predicate
 	: trigger_action_code
 		{
-			InternalInfoNode* infoNode = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			InternalInfoNode* infoNode = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql,
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
 				makeClassNode(infoNode), MAKE_const_slong($1));
 		}
 	;
@@ -5174,32 +5144,32 @@ value	: column_name
 		| udf
 			{ $$ = makeClassNode($1); }
 		| '-' value %prec UMINUS
-			{ $$ = makeClassNode(FB_NEW(getPool()) NegateNode(getPool(), $2)); }
+			{ $$ = makeClassNode(newNode<NegateNode>($2)); }
 		| '+' value %prec UPLUS
 			{ $$ = $2; }
 		| value '+' value
 			{
-				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
-					getPool(), blr_add, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+				$$ = makeClassNode(newNode<ArithmeticNode>(blr_add,
+					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value CONCATENATE value
-			{ $$ = makeClassNode(FB_NEW(getPool()) ConcatenateNode(getPool(), $1, $3)); }
+			{ $$ = makeClassNode(newNode<ConcatenateNode>($1, $3)); }
 		| value COLLATE symbol_collation_name
 			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
 		| value '-' value
 			{
-				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
-					getPool(), blr_subtract, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+				$$ = makeClassNode(newNode<ArithmeticNode>(blr_subtract,
+					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value '*' value
 			{
-				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
-					getPool(), blr_multiply, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+				$$ = makeClassNode(newNode<ArithmeticNode>(blr_multiply,
+					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| value '/' value
 			{
-				$$ = makeClassNode(FB_NEW(getPool()) ArithmeticNode(
-					getPool(), blr_divide, (client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+				$$ = makeClassNode(newNode<ArithmeticNode>(blr_divide,
+					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
 		| '(' value ')'
 			{ $$ = $2; }
@@ -5239,7 +5209,7 @@ datetime_value_expression : CURRENT_DATE
 						  												  Arg::Str("DATE"));
 			}
 
-			$$ = FB_NEW(getPool()) CurrentDateNode(getPool());
+			$$ = newNode<CurrentDateNode>();
 		}
 	| CURRENT_TIME time_precision_opt
 		{
@@ -5257,10 +5227,10 @@ datetime_value_expression : CURRENT_DATE
 						  												  Arg::Str("TIME"));
 			}
 
-			$$ = FB_NEW(getPool()) CurrentTimeNode(getPool(), $2);
+			$$ = newNode<CurrentTimeNode>($2);
 		}
 	| CURRENT_TIMESTAMP timestamp_precision_opt
-		{ $$ = FB_NEW(getPool()) CurrentTimeStampNode(getPool(), $2); }
+		{ $$ = newNode<CurrentTimeStampNode>($2); }
 	;
 
 time_precision_opt
@@ -5296,7 +5266,7 @@ value_list	: value
 constant
 	: u_constant
 	| '-' u_numeric_constant
-		{ $$ = makeClassNode(FB_NEW(getPool()) NegateNode(getPool(), $2)); }
+		{ $$ = makeClassNode(newNode<NegateNode>($2)); }
 	;
 
 u_numeric_constant : NUMERIC
@@ -5355,43 +5325,43 @@ parameter
 	;
 
 current_user
-	: USER			{ $$ = FB_NEW(getPool()) CurrentUserNode(getPool()); }
-	| CURRENT_USER	{ $$ = FB_NEW(getPool()) CurrentUserNode(getPool()); }
+	: USER			{ $$ = newNode<CurrentUserNode>(); }
+	| CURRENT_USER	{ $$ = newNode<CurrentUserNode>(); }
 	;
 
 current_role
-	: CURRENT_ROLE	{ $$ = FB_NEW(getPool()) CurrentRoleNode(getPool()); }
+	: CURRENT_ROLE	{ $$ = newNode<CurrentRoleNode>(); }
 	;
 
 internal_info
 	: CURRENT_CONNECTION
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_CONNECTION_ID)));
 		}
 	| CURRENT_TRANSACTION
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRANSACTION_ID)));
 		}
 	| GDSCODE
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_GDSCODE)));
 		}
 	| SQLCODE
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLCODE)));
 		}
 	| SQLSTATE
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_SQLSTATE)));
 		}
 	| ROW_COUNT
 		{
-			$$ = FB_NEW(getPool()) InternalInfoNode(getPool(),
+			$$ = newNode<InternalInfoNode>(
 				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_ROWS_AFFECTED)));
 		}
 	;
@@ -5488,75 +5458,75 @@ non_aggregate_function
 
 aggregate_function
 	: COUNT '(' '*' ')'
-		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), false); }
+		{ $$ = newNode<CountAggNode>(false); }
 	| COUNT '(' all_noise value ')'
-		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), false, $4); }
+		{ $$ = newNode<CountAggNode>(false, $4); }
 	| COUNT '(' DISTINCT value ')'
-		{ $$ = FB_NEW(getPool()) CountAggNode(getPool(), true, $4); }
+		{ $$ = newNode<CountAggNode>(true, $4); }
 	| SUM '(' all_noise value ')'
 		{
-			$$ = FB_NEW(getPool()) SumAggNode(getPool(), false,
+			$$ = newNode<SumAggNode>(false,
 				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
 		}
 	| SUM '(' DISTINCT value ')'
 		{
-			$$ = FB_NEW(getPool()) SumAggNode(getPool(), true,
+			$$ = newNode<SumAggNode>(true,
 				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
 		}
 	| AVG '(' all_noise value ')'
 		{
-			$$ = FB_NEW(getPool()) AvgAggNode(getPool(), false,
+			$$ = newNode<AvgAggNode>(false,
 				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
 		}
 	| AVG '(' DISTINCT value ')'
 		{
-			$$ = FB_NEW(getPool()) AvgAggNode(getPool(), true,
+			$$ = newNode<AvgAggNode>(true,
 				(client_dialect < SQL_DIALECT_V6_TRANSITION), $4);
 		}
 	| MINIMUM '(' all_noise value ')'
-		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MIN, $4); }
+		{ $$ = newNode<MaxMinAggNode>(MaxMinAggNode::TYPE_MIN, $4); }
 	| MINIMUM '(' DISTINCT value ')'
-		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MIN, $4); }
+		{ $$ = newNode<MaxMinAggNode>(MaxMinAggNode::TYPE_MIN, $4); }
 	| MAXIMUM '(' all_noise value ')'
-		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MAX, $4); }
+		{ $$ = newNode<MaxMinAggNode>(MaxMinAggNode::TYPE_MAX, $4); }
 	| MAXIMUM '(' DISTINCT value ')'
-		{ $$ = FB_NEW(getPool()) MaxMinAggNode(getPool(), MaxMinAggNode::TYPE_MAX, $4); }
+		{ $$ = newNode<MaxMinAggNode>(MaxMinAggNode::TYPE_MAX, $4); }
 	| LIST '(' all_noise value delimiter_opt ')'
-		{ $$ = FB_NEW(getPool()) ListAggNode(getPool(), false, $4, $5); }
+		{ $$ = newNode<ListAggNode>(false, $4, $5); }
 	| LIST '(' DISTINCT value delimiter_opt ')'
-		{ $$ = FB_NEW(getPool()) ListAggNode(getPool(), true, $4, $5); }
+		{ $$ = newNode<ListAggNode>(true, $4, $5); }
 	;
 
 window_function
 	: DENSE_RANK '(' ')'
-		{ $$ = FB_NEW(getPool()) DenseRankWinNode(getPool()); }
+		{ $$ = newNode<DenseRankWinNode>(); }
 	| RANK '(' ')'
-		{ $$ = FB_NEW(getPool()) RankWinNode(getPool()); }
+		{ $$ = newNode<RankWinNode>(); }
 	| ROW_NUMBER '(' ')'
-		{ $$ = FB_NEW(getPool()) RowNumberWinNode(getPool()); }
+		{ $$ = newNode<RowNumberWinNode>(); }
 	| LAG '(' value ',' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5, $7); }
+		{ $$ = newNode<LagWinNode>($3, $5, $7); }
 	| LAG '(' value ',' value ')'
 		{
-			$$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, $5,
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+			$$ = newNode<LagWinNode>($3, $5,
+				makeClassNode(newNode<NullNode>()));
 		}
 	| LAG '(' value ')'
 		{
-			$$ = FB_NEW(getPool()) LagWinNode(getPool(), $3, MAKE_const_slong(1),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+			$$ = newNode<LagWinNode>($3, MAKE_const_slong(1),
+				makeClassNode(newNode<NullNode>()));
 		}
 	| LEAD '(' value ',' value ',' value ')'
-		{ $$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5, $7); }
+		{ $$ = newNode<LeadWinNode>($3, $5, $7); }
 	| LEAD '(' value ',' value ')'
 		{
-			$$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, $5,
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+			$$ = newNode<LeadWinNode>($3, $5,
+				makeClassNode(newNode<NullNode>()));
 		}
 	| LEAD '(' value ')'
 		{
-			$$ = FB_NEW(getPool()) LeadWinNode(getPool(), $3, MAKE_const_slong(1),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+			$$ = newNode<LeadWinNode>($3, MAKE_const_slong(1),
+				makeClassNode(newNode<NullNode>()));
 		}
 	;
 
@@ -5567,7 +5537,7 @@ aggregate_window_function
 
 over_clause
 	: aggregate_window_function OVER '(' window_partition_opt order_clause ')'
-		{ $$ = FB_NEW(getPool()) OverNode(getPool(), makeClassNode($1), make_list($4), $5); }
+		{ $$ = newNode<OverNode>(makeClassNode($1), make_list($4), $5); }
 	;
 
 window_partition_opt
@@ -5591,7 +5561,7 @@ numeric_value_function
 
 extract_expression
 	: EXTRACT '(' timestamp_part FROM value ')'
-		{ $$ = FB_NEW(getPool()) ExtractNode(getPool(), $3, $5); }
+		{ $$ = newNode<ExtractNode>($3, $5); }
 	;
 
 length_expression
@@ -5602,24 +5572,24 @@ length_expression
 
 bit_length_expression
 	: BIT_LENGTH '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_bit, $3); }
+		{ $$ = newNode<StrLenNode>(blr_strlen_bit, $3); }
 	;
 
 char_length_expression
 	: CHAR_LENGTH '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_char, $3); }
+		{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
 	| CHARACTER_LENGTH '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_char, $3); }
+		{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
 	;
 
 octet_length_expression
 	: OCTET_LENGTH '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrLenNode(getPool(), blr_strlen_octet, $3); }
+		{ $$ = newNode<StrLenNode>(blr_strlen_octet, $3); }
 	;
 
 system_function_expression
 	: system_function_std_syntax '(' value_list_opt ')'
-		{ $$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1), $3); }
+		{ $$ = newNode<SysFuncCallNode>(toName($1), $3); }
 	| system_function_special_syntax
 		{ $$ = $1; }
 	;
@@ -5681,57 +5651,57 @@ system_function_std_syntax
 system_function_special_syntax
 	: DATEADD '(' value timestamp_part TO value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 3, $3, MAKE_const_slong($4), $6));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEADD '(' timestamp_part ',' value ',' value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 3, $5, MAKE_const_slong($3), $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part FROM value TO value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 3, MAKE_const_slong($3), $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| DATEDIFF '(' timestamp_part ',' value ',' value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 3, MAKE_const_slong($3), $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value FOR value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 4, $3, $5, $7, $9));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| OVERLAY '(' value PLACING value FROM value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 3, $3, $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| POSITION '(' value KW_IN value ')'
 		{
-			$$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1),
+			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 2, $3, $5));
 			$$->dsqlSpecialSyntax = true;
 		}
 	| POSITION '(' value_list_opt ')'
-		{ $$ = FB_NEW(getPool()) SysFuncCallNode(getPool(), toName($1), $3); }
+		{ $$ = newNode<SysFuncCallNode>(toName($1), $3); }
 	;
 
 string_value_function
 	: substring_function
 	| trim_function
 	| KW_UPPER '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrCaseNode(getPool(), blr_upcase, $3); }
+		{ $$ = newNode<StrCaseNode>(blr_upcase, $3); }
 	| KW_LOWER '(' value ')'
-		{ $$ = FB_NEW(getPool()) StrCaseNode(getPool(), blr_lowcase, $3); }
+		{ $$ = newNode<StrCaseNode>(blr_lowcase, $3); }
 	;
 
 substring_function
@@ -5740,13 +5710,13 @@ substring_function
 			// SQL spec requires numbering to start with 1,
 			// hence we decrement the first parameter to make it
 			// compatible with the engine's implementation
-			dsql_nod* subtractNode = makeClassNode(FB_NEW(getPool()) ArithmeticNode(getPool(),
+			dsql_nod* subtractNode = makeClassNode(newNode<ArithmeticNode>(
 				blr_subtract, true, $5, MAKE_const_slong(1)));
 
-			$$ = FB_NEW(getPool()) SubstringNode(getPool(), $3, subtractNode, $6);
+			$$ = newNode<SubstringNode>($3, subtractNode, $6);
 		}
 	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
-		{ $$ = FB_NEW(getPool()) SubstringSimilarNode(getPool(), $3, $5, $7); }
+		{ $$ = newNode<SubstringSimilarNode>($3, $5, $7); }
 	;
 
 string_length_opt
@@ -5756,13 +5726,13 @@ string_length_opt
 
 trim_function
 	: TRIM '(' trim_specification value FROM value ')'
-		{ $$ = FB_NEW(getPool()) TrimNode(getPool(), $3, $6, $4); }
+		{ $$ = newNode<TrimNode>($3, $6, $4); }
 	| TRIM '(' value FROM value ')'
-		{ $$ = FB_NEW(getPool()) TrimNode(getPool(), blr_trim_both, $5, $3); }
+		{ $$ = newNode<TrimNode>(blr_trim_both, $5, $3); }
 	| TRIM '(' trim_specification FROM value ')'
-		{ $$ = FB_NEW(getPool()) TrimNode(getPool(), $3, $5, NULL); }
+		{ $$ = newNode<TrimNode>($3, $5); }
 	| TRIM '(' value ')'
-		{ $$ = FB_NEW(getPool()) TrimNode(getPool(), blr_trim_both, $3, NULL); }
+		{ $$ = newNode<TrimNode>(blr_trim_both, $3); }
 	;
 
 trim_specification
@@ -5773,25 +5743,13 @@ trim_specification
 
 udf
 	: symbol_UDF_call_name '(' value_list ')'
-		{
-			$$ = FB_NEW(getPool()) UdfCallNode(
-				getPool(), QualifiedName(toName($1), ""), make_list($3));
-		}
+		{ $$ = newNode<UdfCallNode>(QualifiedName(toName($1), ""), make_list($3)); }
 	| symbol_UDF_call_name '(' ')'
-		{
-			$$ = FB_NEW(getPool()) UdfCallNode(
-				getPool(), QualifiedName(toName($1), ""), make_node(nod_list, 0));
-		}
+		{ $$ = newNode<UdfCallNode>(QualifiedName(toName($1), ""), make_node(nod_list, 0)); }
 	| symbol_package_name '.' symbol_UDF_name '(' value_list ')'
-		{
-			$$ = FB_NEW(getPool()) UdfCallNode(
-				getPool(), QualifiedName(toName($3), toName($1)), make_list($5));
-		}
+		{ $$ = newNode<UdfCallNode>(QualifiedName(toName($3), toName($1)), make_list($5)); }
 	| symbol_package_name '.' symbol_UDF_name '(' ')'
-		{
-			$$ = FB_NEW(getPool()) UdfCallNode(
-				getPool(), QualifiedName(toName($3), toName($1)), make_node(nod_list, 0));
-		}
+		{ $$ = newNode<UdfCallNode>(QualifiedName(toName($3), toName($1)), make_node(nod_list, 0)); }
 	;
 
 cast_specification	: CAST '(' value AS data_type_descriptor ')'
@@ -5809,18 +5767,18 @@ case_abbreviation
 		{
 			$$ = make_node(nod_searched_case, 2,
 					make_node(nod_list, 2,
-						makeClassNode(FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql, $3, $5)),
-						makeClassNode(FB_NEW(getPool()) NullNode(getPool()))),
+						makeClassNode(newNode<ComparativeBoolNode>(blr_eql, $3, $5)),
+						makeClassNode(newNode<NullNode>())),
 					$3);
 		}
 	| IIF '(' search_condition ',' value ',' value ')'
-		{ $$ = makeClassNode(FB_NEW(getPool()) ValueIfNode(getPool(), $3, $5, $7)); }
+		{ $$ = makeClassNode(newNode<ValueIfNode>($3, $5, $7)); }
 	| COALESCE '(' value ',' value_list ')'
 		{ $$ = make_node (nod_coalesce, 2, $3, $5); }
 	| DECODE '(' value ',' decode_pairs ')'
 		{
 			$$ = make_node(nod_simple_case, 3, $3, make_list($5),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+				makeClassNode(newNode<NullNode>()));
 		}
 	| DECODE '(' value ',' decode_pairs ',' value ')'
 		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
@@ -5834,7 +5792,7 @@ simple_case
 	: CASE case_operand simple_when_clause END
 		{
 			$$ = make_node (nod_simple_case, 3, $2, make_list($3),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+				makeClassNode(newNode<NullNode>()));
 		}
 	| CASE case_operand simple_when_clause ELSE case_result END
 		{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), $5); }
@@ -5850,7 +5808,7 @@ searched_case
 	: CASE searched_when_clause END
 		{
 			$$ = make_node (nod_searched_case, 2, make_list($2),
-				makeClassNode(FB_NEW(getPool()) NullNode(getPool())));
+				makeClassNode(newNode<NullNode>()));
 		}
 	| CASE searched_when_clause ELSE case_result END
 		{ $$ = make_node (nod_searched_case, 2, make_list($2), $4); }
@@ -5882,15 +5840,9 @@ decode_pairs
 
 next_value_expression
 	: NEXT KW_VALUE FOR symbol_generator_name
-		{
-			$$ = FB_NEW(getPool()) GenIdNode(getPool(),
-				(client_dialect < SQL_DIALECT_V6_TRANSITION), toName($4));
-		}
+		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), toName($4)); }
 	| GEN_ID '(' symbol_generator_name ',' value ')'
-		{
-			$$ = FB_NEW(getPool()) GenIdNode(getPool(),
-				(client_dialect < SQL_DIALECT_V6_TRANSITION), toName($3), $5);
-		}
+		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), toName($3), $5); }
 	;
 
 
@@ -5918,7 +5870,7 @@ distinct_noise
 	;
 
 null_value
-	: KW_NULL	{ $$ = FB_NEW(getPool()) NullNode(getPool()); }
+	: KW_NULL	{ $$ = newNode<NullNode>(); }
 	;
 
 
