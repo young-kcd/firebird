@@ -553,6 +553,7 @@ static USHORT	check_statement_type(Rsr*);
 
 static bool		get_next_msg_no(Rrq*, USHORT, USHORT*);
 static Rtr*		make_transaction(Rdb*, FB_API_HANDLE);
+static void		ping_connection(rem_port*, PACKET*);
 static bool		process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_port** result);
 static void		release_blob(Rbl*);
 static void		release_event(Rvnt*);
@@ -3222,6 +3223,30 @@ static Rtr* make_transaction (Rdb* rdb, FB_API_HANDLE handle)
 }
 
 
+static void ping_connection(rem_port* port, PACKET* send)
+{
+/**************************************
+ *
+ *	p i n g _ c o n n e c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check the connection for persistent errors.
+ *
+ **************************************/
+	ISC_STATUS_ARRAY status_vector;
+
+	Rdb* rdb = port->port_context;
+	if (!bad_db(status_vector, rdb))
+	{
+		fb_ping(status_vector, &rdb->rdb_handle);
+	}
+
+	port->send_response(send, 0, 0, status_vector, false);
+}
+
+
 ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 {
 /**************************************
@@ -3703,6 +3728,10 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 
 		case op_cancel:
 			cancel_operation(port, receive->p_cancel_op.p_co_kind);
+			break;
+
+		case op_ping:
+			ping_connection(port, sendL);
 			break;
 
 		default:

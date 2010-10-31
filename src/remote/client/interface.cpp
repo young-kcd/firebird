@@ -4347,8 +4347,28 @@ void Attachment::ping(Status* status)
  *	Check the attachment handle for persistent errors.
  *
  **************************************/
+	try
+	{
+		reset(status);
 
-	reset(status);
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		// Make sure protocol support action
+
+		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION13)
+			unsupported();
+
+		PACKET* packet = &rdb->rdb_packet;
+		packet->p_operation = op_ping;
+
+		send_and_receive(status, rdb, packet);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
 }
 
 static Rvnt* add_event( rem_port* port)
@@ -6628,7 +6648,7 @@ void Attachment::cancelOperation(Status* status, int kind)
 
 		if (port->port_protocol < PROTOCOL_VERSION12 || port->port_type != rem_port::INET)
 		{
-			Arg::Gds(isc_wish_list).raise();
+			unsupported();
 		}
 
 		MutexEnsureUnlock guard(rdb->rdb_async_lock);	// This is async operation

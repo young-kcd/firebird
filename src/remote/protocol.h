@@ -298,6 +298,8 @@ enum P_OP
 
 	op_cont_auth			= 92,
 
+	op_ping					= 93,
+
 	op_max
 };
 
