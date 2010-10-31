@@ -255,13 +255,7 @@ void DSQL_execute(thread_db* tdbb,
 	}
 
 	// A select with a non zero output length is a singleton select
-	bool singleton;
-	if (request->req_type == REQ_SELECT && out_msg_length != 0) {
-		singleton = true;
-	}
-	else {
-		singleton = false;
-	}
+	const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
 
 	if (request->req_type != REQ_EMBED_SELECT)
 	{
@@ -362,11 +356,14 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 	// if the cursor isn't open, we've got a problem
-	if (!(request->req_flags & REQ_cursor_open))
+	if (reqTypeWithCursor(request->req_type))
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_open));
+		if (!(request->req_flags & REQ_cursor_open))
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					  Arg::Gds(isc_dsql_cursor_err) <<
+					  Arg::Gds(isc_dsql_cursor_not_open));
+		}
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -505,7 +502,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	}
 
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-		message->msg_buffer, 0);
+				message->msg_buffer, 0);
 
 	const dsql_par* const eof = request->req_eof;
 
@@ -552,12 +549,16 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 	}
 	else if (option & DSQL_close) {
 		// Just close the cursor associated with the request
-		if (!(request->req_flags & REQ_cursor_open))
+		if (reqTypeWithCursor(request->req_type))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
-					  Arg::Gds(isc_dsql_cursor_close_err));
+			if (!(request->req_flags & REQ_cursor_open))
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
+						  Arg::Gds(isc_dsql_cursor_close_err));
+			}
+
+			close_cursor(tdbb, request);
 		}
-		close_cursor(tdbb, request);
 	}
 }
 
@@ -1142,10 +1143,13 @@ static void execute_immediate(thread_db* tdbb,
 
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
+		// A select with a non zero output length is a singleton select
+		const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
+
 		execute_request(tdbb, request, tra_handle,
 						in_blr_length, in_blr, in_msg_length, in_msg,
 						out_blr_length, out_blr, out_msg_length, out_msg,
-						false);
+						singleton);
 
 		release_request(tdbb, request, true);
 	}
