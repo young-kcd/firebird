@@ -1,3 +1,14 @@
+ 2010-10-30 18:57  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Make node creation more directly
+
+ 2010-10-30 16:51  asfernandes 
+   M src/dsql/parse.y
+Misc
+
  2010-10-29 21:40  hvlad 
    M builds/win32/msvc10/common.vcxproj
    M builds/win32/msvc10/remote.vcxproj
