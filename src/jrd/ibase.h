@@ -1148,6 +1148,12 @@ ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
 										  isc_db_handle*,
 										  ISC_USHORT);
 
+/***********************/
+/* Ping the connection */
+/***********************/
+
+ISC_STATUS ISC_EXPORT fb_ping(ISC_STATUS*, isc_db_handle*);
+
 /********************************/
 /* Client information functions */
 /********************************/
