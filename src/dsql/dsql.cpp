@@ -553,14 +553,8 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			}
 		}
 
-// A select with a non zero output length is a singleton select 
-		bool singleton;
-		if (request->req_type == REQ_SELECT && out_msg_length != 0) {
-			singleton = true;
-		}
-		else {
-			singleton = false;
-		}
+		// A select with a non zero output length is a singleton select 
+		const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
 
 		if (request->req_type != REQ_EMBED_SELECT)
 		{
@@ -721,9 +715,12 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 					isc_arg_string, err_str, isc_arg_end);
 			}
 
+			// A select with a non zero output length is a singleton select 
+			const bool singleton = (request->req_type == REQ_SELECT && out_msg_length != 0);
+
 			execute_request(request, trans_handle, in_blr_length, in_blr,
 							in_msg_length, in_msg, out_blr_length, out_blr,
-							out_msg_length,	out_msg, false);
+							out_msg_length,	out_msg, singleton);
 
 			release_request(request, true);
 		}	// try
