@@ -110,10 +110,10 @@ public:
 class WinSspiServerInstance : public ServerInstance
 {
 public:
-    Result startAuthentication(bool isService, const char* dbName,
+    Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
                                WriterInterface* writerInterface);
-    Result contAuthentication(WriterInterface* writerInterface,
+    Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
@@ -128,8 +128,10 @@ private:
 class WinSspiClientInstance : public ClientInstance
 {
 public:
-	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(const unsigned char* data, unsigned int size);
+	Result startAuthentication(Firebird::Status* status, bool isService,
+							   const char* dbName, DpbInterface* dpb);
+	Result contAuthentication(Firebird::Status* status,
+							  const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     void release();
 

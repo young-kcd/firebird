@@ -352,9 +352,11 @@ WinSspiClientInstance::WinSspiClientInstance()
 	: sspiData(*getDefaultMemoryPool())
 { }
 
-Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*dbName*/,
-												const unsigned char* dpb, unsigned int dpbSize,
-												WriterInterface* /*writerInterface*/)
+Result WinSspiServerInstance::startAuthentication(Firebird::Status* status,
+												  bool isService,
+												  const char* /*dbName*/,
+												  const unsigned char* dpb, unsigned int dpbSize,
+												  WriterInterface* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
 	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
@@ -373,8 +375,9 @@ Result WinSspiServerInstance::startAuthentication(bool isService, const char* /*
 	return AUTH_MORE_DATA;
 }
 
-Result WinSspiServerInstance::contAuthentication(WriterInterface* writerInterface,
-											   const unsigned char* data, unsigned int size)
+Result WinSspiServerInstance::contAuthentication(Firebird::Status* status,
+												 WriterInterface* writerInterface,
+											     const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
 	sspiData.add(data, size);
@@ -411,7 +414,10 @@ void WinSspiServerInstance::release()
 	interfaceFree(this);
 }
 
-Result WinSspiClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
+Result WinSspiClientInstance::startAuthentication(Firebird::Status* status,
+												  bool isService,
+												  const char* /*dbName*/,
+												  DpbInterface* dpb)
 {
 	sspi.request(sspiData);
 
@@ -437,7 +443,8 @@ Result WinSspiClientInstance::startAuthentication(bool isService, const char*, D
 	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
-Result WinSspiClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
+Result WinSspiClientInstance::contAuthentication(Firebird::Status* status,
+												 const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
 	sspiData.add(data, size);
