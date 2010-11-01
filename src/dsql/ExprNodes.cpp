@@ -4404,13 +4404,8 @@ void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	LiteralNode* literal = ExprNode::as<LiteralNode>(dsqlArg);
 
-	if (literal && DTYPE_IS_NUMERIC(dsqlArg->nod_desc.dsc_dtype))
-	{
-		if (literal->litDesc.dsc_dtype == dtype_text)
-			literal->litDesc.dsc_length = literal->dsqlStr->str_length;
-
+	if (literal && DTYPE_IS_NUMERIC(literal->litDesc.dsc_dtype))
 		LiteralNode::genConstant(dsqlScratch, &literal->litDesc, true);
-	}
 	else
 	{
 		dsqlScratch->appendUChar(blr_negate);
