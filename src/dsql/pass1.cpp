@@ -229,7 +229,8 @@ static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_simple_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sort(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
-static void pass1_union_auto_cast(dsql_nod*, const dsc&, SSHORT, bool in_select_list = false);
+static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
+	bool in_select_list = false);
 static dsql_nod* pass1_update(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_variable(DsqlCompilerScratch*, dsql_nod*);
@@ -1257,6 +1258,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = MAKE_node(input->nod_type, e_alias_count);
 		node->nod_arg[e_alias_value] = sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_alias_value]);
 		node->nod_arg[e_alias_alias] = input->nod_arg[e_alias_alias];
+		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 		node->nod_desc = sub1->nod_desc;
 		return node;
 
@@ -3932,6 +3934,8 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 			derived_field->nod_arg[e_derived_field_value] = select_item;
 			derived_field->nod_arg[e_derived_field_name] = list->nod_arg[count];
 			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
+
+			MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
 			derived_field->nod_desc = select_item->nod_desc;
 
 			rse->nod_arg[e_rse_items]->nod_arg[count] = derived_field;
@@ -3964,7 +3968,10 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) field_alias;
 				derived_field->nod_arg[e_derived_field_scope] =
 					(dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
+
+				MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
 				derived_field->nod_desc = select_item->nod_desc;
+
 				select_item = derived_field;
 			}
 
@@ -7248,9 +7255,8 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		// Only mark upper node as a NULL node when all sub-nodes are NULL
 		items->nod_arg[j]->nod_desc.dsc_flags &= ~DSC_null;
 		items->nod_arg[j]->nod_desc.dsc_flags |= (desc.dsc_flags & DSC_null);
-		for (int i = 0; i < union_node->nod_count; i++) {
-			pass1_union_auto_cast(union_node->nod_arg[i], desc, j);
-		}
+		for (int i = 0; i < union_node->nod_count; i++)
+			pass1_union_auto_cast(dsqlScratch, union_node->nod_arg[i], desc, j);
 	}
 	items = union_node->nod_arg[0]->nod_arg[e_rse_items];
 
@@ -7388,8 +7394,8 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
     @param in_select_list
 
  **/
-static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT position,
-	bool in_select_list)
+static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
+	const dsc& desc, SSHORT position, bool in_select_list)
 {
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -7409,6 +7415,8 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT posit
 				else
 				{
 					dsql_nod* select_item = input->nod_arg[position];
+					MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
+
 					if ((select_item->nod_desc.dsc_dtype != desc.dsc_dtype) ||
 						(select_item->nod_desc.dsc_length != desc.dsc_length) ||
 						(select_item->nod_desc.dsc_scale != desc.dsc_scale) ||
@@ -7534,17 +7542,17 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT posit
 			else
 			{
 				dsql_nod** ptr = input->nod_arg;
+
 				for (const dsql_nod* const* const end = ptr + input->nod_count; ptr < end; ptr++)
-				{
-					pass1_union_auto_cast(*ptr, desc, position);
-				}
+					pass1_union_auto_cast(dsqlScratch, *ptr, desc, position);
 			}
 			break;
 
 		case nod_rse:
 			{
 				dsql_nod* streams = input->nod_arg[e_rse_streams];
-				pass1_union_auto_cast(streams, desc, position);
+				pass1_union_auto_cast(dsqlScratch, streams, desc, position);
+
 				if (streams->nod_type == nod_union)
 				{
 					// We're now in a UNION under a UNION so don't change the existing mappings.
@@ -7555,8 +7563,10 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc, SSHORT posit
 					map->map_node = sub_rse_items->nod_arg[position];
 					union_items->nod_arg[position]->nod_desc = desc;
 				}
-				else {
-					pass1_union_auto_cast(input->nod_arg[e_rse_items], desc, position, true);
+				else
+				{
+					pass1_union_auto_cast(dsqlScratch, input->nod_arg[e_rse_items],
+						desc, position, true);
 				}
 			}
 			break;
@@ -8128,6 +8138,8 @@ dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_
 		map->map_node = node;
 		map->map_partition = partitionMap;
 	}
+
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
 
 	dsql_nod* new_node = MAKE_node(nod_map, e_map_count);
 	new_node->nod_count = 0;
