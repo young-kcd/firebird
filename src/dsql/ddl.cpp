@@ -668,7 +668,7 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 	// try to calculate size of the computed field. The calculated size
 	// may be ignored, but it will catch self references
 	dsc desc;
-	MAKE_desc(dsqlScratch, &desc, input, NULL);
+	MAKE_desc(dsqlScratch, &desc, input);
 
 	// generate the blr expression
 

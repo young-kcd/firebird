@@ -339,13 +339,24 @@ void ArithmeticNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
 
-void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void ArithmeticNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg1, dsqlArg2);
-	MAKE_desc(dsqlScratch, &desc2, dsqlArg2, dsqlArg1);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg1);
+	MAKE_desc(dsqlScratch, &desc2, dsqlArg2);
+
+	if (desc1.isNull())
+	{
+		desc1 = desc2;
+		desc1.setNull();
+	}
+
+	if (desc2.isNull())
+	{
+		desc2 = desc1;
+		desc2.setNull();
+	}
 
 	if (ExprNode::is<NullNode>(dsqlArg1) && ExprNode::is<NullNode>(dsqlArg2))
 	{
@@ -850,6 +861,18 @@ void ArithmeticNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 	CMP_get_desc(tdbb, csb, arg1, &desc1);
 	CMP_get_desc(tdbb, csb, arg2, &desc2);
+
+	if (desc1.isNull())
+	{
+		desc1 = desc2;
+		desc1.setNull();
+	}
+
+	if (desc2.isNull())
+	{
+		desc2 = desc1;
+		desc2.setNull();
+	}
 
 	if (dialect1)
 		getDescDialect1(tdbb, desc, desc1, desc2);
@@ -2486,13 +2509,24 @@ void ConcatenateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg2);
 }
 
-void ConcatenateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void ConcatenateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg1, dsqlArg2);
-	MAKE_desc(dsqlScratch, &desc2, dsqlArg2, dsqlArg1);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg1);
+	MAKE_desc(dsqlScratch, &desc2, dsqlArg2);
+
+	if (desc1.isNull())
+	{
+		desc1.makeText(0, desc2.getTextType());
+		desc1.setNull();
+	}
+
+	if (desc2.isNull())
+	{
+		desc2.makeText(0, desc1.getTextType());
+		desc2.setNull();
+	}
 
 	DSqlDataTypeUtil(dsqlScratch).makeConcatenate(desc, &desc1, &desc2);
 }
@@ -2724,8 +2758,7 @@ void CurrentDateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_date);
 }
 
-void CurrentDateNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void CurrentDateNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_sql_date;
 	desc->dsc_sub_type = 0;
@@ -2824,8 +2857,7 @@ void CurrentTimeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void CurrentTimeNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_sql_time;
 	desc->dsc_sub_type = 0;
@@ -2935,8 +2967,7 @@ void CurrentTimeStampNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void CurrentTimeStampNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/,
-	dsc* desc, dsql_nod* /*nullReplacement*/)
+void CurrentTimeStampNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_timestamp;
 	desc->dsc_sub_type = 0;
@@ -3027,8 +3058,7 @@ void CurrentRoleNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_current_role);
 }
 
-void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void CurrentRoleNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3123,8 +3153,7 @@ void CurrentUserNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_user_name);
 }
 
-void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void CurrentUserNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = dtype_varying;
 	desc->dsc_scale = 0;
@@ -3226,7 +3255,7 @@ ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// sure the requested type of information can be extracted.
 
 	dsql_nod* sub1 = PASS1_node(dsqlScratch, dsqlArg);
-	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
+	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 
 	switch (blrSubOp)
 	{
@@ -3284,11 +3313,10 @@ void ExtractNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void ExtractNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg);
 
 	switch (blrSubOp)
 	{
@@ -3612,11 +3640,10 @@ void GenIdNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg);
 
 	if (dialect1)
 		desc->makeLong(0);
@@ -3759,8 +3786,7 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	InfoType infoType = static_cast<InfoType>(ExprNode::as<LiteralNode>(dsqlArg)->getSlong());
 
@@ -4205,8 +4231,7 @@ void LiteralNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	genConstant(dsqlScratch, &litDesc, false);
 }
 
-void LiteralNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void LiteralNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	*desc = litDesc;
 }
@@ -4393,10 +4418,9 @@ void NegateNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 
 	if (ExprNode::is<NullNode>(dsqlArg))
 	{
@@ -4544,8 +4568,7 @@ void NullNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_null);
 }
 
-void NullNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void NullNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	// This occurs when SQL statement specifies a literal NULL, eg:
 	//  SELECT NULL FROM TABLE1;
@@ -4561,18 +4584,13 @@ void NullNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, ds
 	//
 	// ASF: We have SQL_NULL now, but don't use it here.
 
-	if (nullReplacement)
-	{
-		MAKE_desc(dsqlScratch, desc, nullReplacement, NULL);
-		desc->dsc_flags |= (DSC_nullable | DSC_null);
-	}
-	else
-		desc->makeNullString();
+	desc->makeNullString();
 }
 
 void NullNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	desc->makeLong(0);
+	desc->setNull();
 }
 
 ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
@@ -4781,10 +4799,9 @@ void OverNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlAggExpr);
 }
 
-void OverNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void OverNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlAggExpr, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlAggExpr);
 	desc->setNullable(true);
 }
 
@@ -4919,7 +4936,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		thisNode->nod_desc.makeNullString();
 	else
 	{
-		MAKE_desc(dsqlScratch, &thisNode->nod_desc, node, NULL);
+		MAKE_desc(dsqlScratch, &thisNode->nod_desc, node);
 
 		if (tdbb->getCharSet() != CS_NONE && tdbb->getCharSet() != CS_BINARY)
 		{
@@ -5040,8 +5057,7 @@ void ParameterNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_parameter(dsqlScratch, dsqlParameter);
 }
 
-void ParameterNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void ParameterNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc)
 {
 	// We don't actually know the datatype of a parameter -
 	// we have to guess it based on the context that the
@@ -5214,11 +5230,10 @@ void StrCaseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg);
 
 	if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
 	{
@@ -5437,11 +5452,10 @@ void StrLenNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, dsqlArg, NULL);
+	MAKE_desc(dsqlScratch, &desc1, dsqlArg);
 
 	desc->makeLong(0);
 	desc->setNullable(desc1.isNullable());
@@ -5670,14 +5684,13 @@ void SubstringNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlLength);
 }
 
-void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void SubstringNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1, desc2, desc3;
 
-	MAKE_desc(dsqlScratch, &desc1, dsqlExpr, nullReplacement);
-	MAKE_desc(dsqlScratch, &desc2, dsqlStart, nullReplacement);
-	MAKE_desc(dsqlScratch, &desc3, dsqlLength, nullReplacement);
+	MAKE_desc(dsqlScratch, &desc1, dsqlExpr);
+	MAKE_desc(dsqlScratch, &desc2, dsqlStart);
+	MAKE_desc(dsqlScratch, &desc3, dsqlLength);
 
 	DSqlDataTypeUtil(dsqlScratch).makeSubstr(desc, &desc1, &desc2, &desc3);
 }
@@ -5987,10 +6000,9 @@ void SubstringSimilarNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlEscape);
 }
 
-void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlExpr, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlExpr);
 	desc->setNullable(true);
 }
 
@@ -6227,14 +6239,13 @@ void SysFuncCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	Array<const dsc*> argsArray;
 
 	for (dsql_nod** p = dsqlArgs->nod_arg; p < dsqlArgs->nod_arg + dsqlArgs->nod_count; ++p)
 	{
-		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p);
 		argsArray.add(&(*p)->nod_desc);
 	}
 
@@ -6342,7 +6353,7 @@ ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (unsigned int i = 0; i < inArgs->nod_count; ++i)
 		{
 			dsql_nod* p = inArgs->nod_arg[i];
-			MAKE_desc(dsqlScratch, &p->nod_desc, p, p);
+			MAKE_desc(dsqlScratch, &p->nod_desc, p);
 			argsArray.add(&p->nod_desc);
 		}
 
@@ -6438,15 +6449,14 @@ void TrimNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlValue);
 }
 
-void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	MAKE_desc(dsqlScratch, &desc1, dsqlValue, nullReplacement);
+	MAKE_desc(dsqlScratch, &desc1, dsqlValue);
 
 	if (dsqlTrimChars)
-		MAKE_desc(dsqlScratch, &desc2, dsqlTrimChars, nullReplacement);
+		MAKE_desc(dsqlScratch, &desc2, dsqlTrimChars);
 	else
 		desc2.dsc_flags = 0;
 
@@ -6776,8 +6786,7 @@ void UdfCallNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, *ptr);
 }
 
-void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->dsc_dtype = static_cast<UCHAR>(dsqlFunction->udf_dtype);
 	desc->dsc_length = dsqlFunction->udf_length;
@@ -6988,15 +6997,14 @@ void ValueIfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlFalseValue);
 }
 
-void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	Array<const dsc*> args;
 
-	MAKE_desc(dsqlScratch, &dsqlTrueValue->nod_desc, dsqlTrueValue, NULL);
+	MAKE_desc(dsqlScratch, &dsqlTrueValue->nod_desc, dsqlTrueValue);
 	args.add(&dsqlTrueValue->nod_desc);
 
-	MAKE_desc(dsqlScratch, &dsqlFalseValue->nod_desc, dsqlFalseValue, NULL);
+	MAKE_desc(dsqlScratch, &dsqlFalseValue->nod_desc, dsqlFalseValue);
 	args.add(&dsqlFalseValue->nod_desc);
 
 	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, "CASE", args.getCount(), args.begin());

@@ -563,7 +563,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), true, true,
 			(i - dsqlScratch->outputVariables.begin()) + 1, *i);
 		param->par_node = *i;
-		MAKE_desc(dsqlScratch, &param->par_desc, *i, NULL);
+		MAKE_desc(dsqlScratch, &param->par_desc, *i);
 		param->par_desc.dsc_flags |= DSC_nullable;
 	}
 

@@ -48,8 +48,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -103,8 +102,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -132,8 +130,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -157,8 +154,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -185,8 +181,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -212,8 +207,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -236,8 +230,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -259,8 +252,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -291,8 +283,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
 		dsql_nod* node, bool forceVarChar) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual bool jrdVisit(JrdNodeVisitor& visitor)
 	{
@@ -354,8 +345,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -382,8 +372,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -418,8 +407,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -445,8 +433,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -474,8 +461,7 @@ public:
 
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -510,8 +496,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual bool jrdVisit(JrdNodeVisitor& visitor)
@@ -553,8 +538,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -584,8 +568,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -616,8 +599,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -651,8 +633,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -682,8 +663,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -716,8 +696,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -748,8 +727,7 @@ public:
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -785,8 +763,7 @@ public:
 	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
 		dsql_nod* node, bool forceVarChar);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc,
-		dsql_nod* nullReplacement);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
 
 	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
 	{

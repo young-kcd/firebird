@@ -1270,7 +1270,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		MAKE_desc_from_field(&node->nod_desc, field);
 		PASS1_set_parameter_type(dsqlScratch, node, NULL, false);
 		// If the source is nullable, so is the target
-		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
+		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 		if (sub1->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
@@ -3064,7 +3064,7 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	dsql_msg* temp_msg = (input->nod_type == nod_get_segment) ?
 		blob->blb_open_in_msg : blob->blb_open_out_msg;
 	blob->blb_blob_id = parameter = MAKE_parameter(temp_msg, true, true, 0, NULL);
-	MAKE_desc(dsqlScratch, &parameter->par_desc, field, NULL);
+	MAKE_desc(dsqlScratch, &parameter->par_desc, field);
 	parameter->par_desc.dsc_dtype = dtype_quad;
 	parameter->par_desc.dsc_scale = 0;
 
@@ -3145,7 +3145,7 @@ static dsql_nod* pass1_coalesce( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	node->nod_arg[1] = MAKE_list(stack2);
 
 	// Set descriptor for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node, NULL);
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
 
 	// Set parameter-types if parameters are there
 	ptr = node->nod_arg[0]->nod_arg;
@@ -3189,7 +3189,7 @@ static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1
 	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
 	node->nod_arg[e_cast_target] = (dsql_nod*) field;
 	node->nod_arg[e_cast_source] = sub1;
-	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1, NULL);
+	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 
 	if (sub1->nod_desc.dsc_dtype <= dtype_any_text ||
 		(sub1->nod_desc.dsc_dtype == dtype_blob && sub1->nod_desc.dsc_sub_type == isc_blob_text))
@@ -4661,7 +4661,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	}
 
 	dsql_nod* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
-	MAKE_desc(dsqlScratch, &var->nod_desc, expr, NULL);
+	MAKE_desc(dsqlScratch, &var->nod_desc, expr);
 
 	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
 	newExpr->nod_arg[e_hidden_var_expr] = expr;
@@ -6252,7 +6252,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 			dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
 				true, true, 0, *src);
 			parameter->par_node = *src;
-			MAKE_desc(dsqlScratch, &parameter->par_desc, *src, NULL);
+			MAKE_desc(dsqlScratch, &parameter->par_desc, *src);
 			parameter->par_desc.dsc_flags |= DSC_nullable;
 
 			ParameterNode* paramNode = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(
@@ -6852,7 +6852,7 @@ static dsql_nod* pass1_searched_case( DsqlCompilerScratch* dsqlScratch, dsql_nod
 	} // end scope block
 
 	// Set describer for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node, NULL);
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
 
 	// Set parameter-types if parameters are there in the result nodes
 	dsql_nod* case_results = node->nod_arg[e_searched_case_results];
@@ -6990,7 +6990,7 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr, ++i)
 				node1->nod_arg[i] = *ptr;
 
-			MAKE_desc_from_list(dsqlScratch, &node1->nod_desc, node1, NULL, "CASE");
+			MAKE_desc_from_list(dsqlScratch, &node1->nod_desc, node1, "CASE");
 			// Set parameter describe information
 			PASS1_set_parameter_type(dsqlScratch, node->nod_arg[e_simple_case_case_operand], node1, false);
 		} // end scope block
@@ -7008,7 +7008,7 @@ static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* 
 	}
 
 	// Set describer for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node, NULL);
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
 	// Set parameter describe information for evt. results parameters
 	dsql_nod* simple_res = node->nod_arg[e_simple_case_results];
 	dsql_nod** ptr = simple_res->nod_arg;
@@ -7228,7 +7228,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		for (int i = 0; i < union_node->nod_count; i++)
 		{
 			dsql_nod* nod1 = union_node->nod_arg[i]->nod_arg[e_rse_items];
-			MAKE_desc(dsqlScratch, &nod1->nod_arg[j]->nod_desc, nod1->nod_arg[j], NULL);
+			MAKE_desc(dsqlScratch, &nod1->nod_arg[j]->nod_desc, nod1->nod_arg[j]);
 			tmp_list->nod_arg[i] = nod1->nod_arg[j];
 
 			// We look only at the items->nod_arg[] when creating the
@@ -7244,7 +7244,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			}
 		}
 		dsc desc;
-		MAKE_desc_from_list(dsqlScratch, &desc, tmp_list, NULL, "UNION");
+		MAKE_desc_from_list(dsqlScratch, &desc, tmp_list, "UNION");
 		// Only mark upper node as a NULL node when all sub-nodes are NULL
 		items->nod_arg[j]->nod_desc.dsc_flags &= ~DSC_null;
 		items->nod_arg[j]->nod_desc.dsc_flags |= (desc.dsc_flags & DSC_null);

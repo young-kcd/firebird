@@ -99,8 +99,7 @@ DenseRankWinNode::DenseRankWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void DenseRankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void DenseRankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -154,8 +153,7 @@ RankWinNode::RankWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void RankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void RankWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -226,8 +224,7 @@ RowNumberWinNode::RowNumberWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
-void RowNumberWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void RowNumberWinNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->makeInt64(0);
 }
@@ -292,10 +289,9 @@ LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aD
 	addChildNode(dsqlOutExpr, outExpr);
 }
 
-void LagLeadWinNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void LagLeadWinNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
 }
 

@@ -157,7 +157,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
 			{
 				dsc desc;
-				MAKE_desc(dsqlScratch, &desc, node, NULL);
+				MAKE_desc(dsqlScratch, &desc, node);
 
 				if (desc.dsc_dtype == dtype_int64)
 				{
@@ -1850,7 +1850,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 	{
 		dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), true, true, 0, *ptr);
 		parameter->par_node = *ptr;
-		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr, NULL);
+		MAKE_desc(dsqlScratch, &parameter->par_desc, *ptr);
 	}
 
 	// Set up parameter to handle EOF

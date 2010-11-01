@@ -452,10 +452,9 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
 
 	if (dialect1)
@@ -658,10 +657,9 @@ DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 	desc->setNullable(true);
 }
@@ -783,8 +781,7 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* /*nullReplacement*/)
+void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
 {
 	desc->makeLong(0);
 }
@@ -865,10 +862,9 @@ DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
 
 	if (dialect1)
@@ -1114,10 +1110,9 @@ DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc,
-	dsql_nod* nullReplacement)
+void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
 {
-	MAKE_desc(dsqlScratch, desc, dsqlArg, nullReplacement);
+	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
 }
 

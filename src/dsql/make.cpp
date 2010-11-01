@@ -350,10 +350,9 @@ dsql_str* MAKE_cstring(const char* str)
 
     @param desc
     @param node
-	@param null_replacement
 
  **/
-void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
+void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 {
 	dsc desc1, desc2, desc3;
 	dsql_map* map;
@@ -364,18 +363,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	DEV_BLKCHK(node, dsql_type_nod);
 
 	// If we already know the datatype, don't worry about anything.
-	//
-	// dimitr: But let's re-evaluate descriptors for expression arguments
-	//		   (when a NULL replacement node is provided) to always
-	//		   choose the correct resulting datatype. Example:
-	//		   NULLIF(NULL, 0) => CHAR(1), but
-	//		   1 + NULLIF(NULL, 0) => INT
-	//		   This is required because of MAKE_desc() being called
-	//		   from custom pass1 handlers for some node types and thus
-	//		   causing an incorrect datatype (determined without
-	//		   context) to be cached in nod_desc.
 
-	if (node->nod_desc.dsc_dtype && !null_replacement)
+	if (node->nod_desc.dsc_dtype)
 	{
 		*desc = node->nod_desc;
 		return;
@@ -386,7 +375,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
-			exprNode->make(dsqlScratch, node, desc, null_replacement);
+			exprNode->make(dsqlScratch, node, desc);
 		}
 		return;
 
@@ -397,7 +386,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
 		context = (dsql_ctx*) node->nod_arg[e_map_context];
-		MAKE_desc(dsqlScratch, desc, map->map_node, null_replacement);
+		MAKE_desc(dsqlScratch, desc, map->map_node);
 
 		// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
 		if (context->ctx_flags & CTX_outer_join)
@@ -406,31 +395,28 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_derived_field:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value], null_replacement);
+		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value]);
 		return;
 
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_cast_source], NULL);
+		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_cast_source]);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
 	case nod_simple_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_simple_case_results],
-							null_replacement, "CASE");
+		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_simple_case_results], "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_searched_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_searched_case_results],
-							null_replacement, "CASE");
+		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_searched_case_results], "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_coalesce:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[0],
-							null_replacement, "COALESCE");
+		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[0], "COALESCE");
 		*desc = desc1;
 		return;
 
@@ -451,7 +437,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 	*/
 
 	case nod_alias:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value], null_replacement);
+		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
 		return;
 
 	case nod_dbkey:
@@ -505,7 +491,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_via:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_via_value_1], null_replacement);
+		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_via_value_1]);
 	    // Set the descriptor flag as nullable. The
 	    // select expression may or may not return
 	    // this row based on the WHERE clause. Setting this
@@ -516,7 +502,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		return;
 
 	case nod_hidden_var:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr], null_replacement);
+		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr]);
 		return;
 
 	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
@@ -524,7 +510,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node, dsql
 		fb_assert(node->nod_type == nod_query_spec);
 		node = node->nod_arg[e_qry_list];
 		fb_assert(node->nod_type == nod_list && node->nod_count > 0);
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(dsqlScratch, desc, node->nod_arg[0]);
 		return;
 
 	default:
@@ -588,8 +574,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
  **/
 void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node,
-						 dsql_nod* null_replacement,
-						 const TEXT* expression_name)
+	const TEXT* expression_name)
 {
 	Array<const dsc*> args;
 
@@ -597,20 +582,11 @@ void MAKE_desc_from_list(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* 
 
 	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
 	{
-		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p, NULL);
+		MAKE_desc(dsqlScratch, &(*p)->nod_desc, *p);
 		args.add(&(*p)->nod_desc);
 	}
 
 	DSqlDataTypeUtil(dsqlScratch).makeFromList(desc, expression_name, args.getCount(), args.begin());
-
-	// If we have literal NULLs only, let the result be either
-	// CHAR(1) CHARACTER SET NONE or the context-provided datatype
-	if (desc->isNull() && null_replacement)
-	{
-		MAKE_desc(dsqlScratch, desc, null_replacement, NULL);
-		desc->dsc_flags |= DSC_null | DSC_nullable;
-		return;
-	}
 }
 
 
