@@ -1,3 +1,8 @@
+ 2010-10-31 08:47  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3205: isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err.
+Also, restore the legacy behavior for EXECUTE PROCEDURE and RETURNING queries. This is expected to fix CORE-3203.
+
  2010-10-28 18:09  dimitr 
    M src/remote/server.cpp
 Fixed CORE-3202: execute_immediate API call family may crash the remote server.
