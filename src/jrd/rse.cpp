@@ -3793,8 +3793,6 @@ void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 {
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
 
 	while (irsb->irsb_level > 1) 
 	{
