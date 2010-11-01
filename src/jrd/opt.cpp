@@ -1872,7 +1872,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 		if (node1->nod_type != nod_field)
 			continue;
 
-		if (!node2->nod_type != nod_variable &&
+		if (node2->nod_type != nod_variable &&
 			!ExprNode::is<LiteralNode>(node2) &&
 			!ExprNode::is<ParameterNode>(node2))
 		{
