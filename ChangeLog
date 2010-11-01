@@ -1,3 +1,46 @@
+ 2010-11-01 00:42  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/pass1.cpp
+   M src/jrd/cmp.cpp
+Simplify the internal "null replacement" logic
+
+ 2010-10-31 13:51  dimitr 
+   M src/jrd/ibase.h
+Expose the fb_ping() API call to the external world.
+
+ 2010-10-31 13:46  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/server/server.cpp
+Basic network support for the fb_ping() API call. Untested yet.
+
+ 2010-10-31 13:40  dimitr 
+   M builds/win32/parse.bat
+Correction.
+
+ 2010-10-31 13:17  dimitr 
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+Fixed Windows build.
+
+ 2010-10-31 11:26  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3205: isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err.
+Also, restore the legacy behavior for EXECUTE PROCEDURE and RETURNING queries. This is expected to fix CORE-3203.
+
  2010-10-30 18:57  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DdlNodes.h
