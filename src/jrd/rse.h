@@ -174,6 +174,9 @@ public:
 	};
 
 	static const USHORT MAX_RECURSE_LEVEL;
+
+private:
+	static void cleanup_level(jrd_req*, RecordSource*, irsb_recurse*);
 };
 
 // Impure area formats for the various RecordSource types

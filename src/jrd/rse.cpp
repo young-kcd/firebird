@@ -3684,26 +3684,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		}
 
 		RSE_close(tdbb, *rsb_ptr);
-		delete[] irsb->irsb_data;
-
-		char* const tmp = irsb->irsb_stack;
-		memcpy(irsb, tmp, inner_size);
-
-		char* p = tmp + inner_size;
-		RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
-		const RecordSource* const* end = ptr + streams;
-		for (; ptr < end; ptr++)
-		{
-			record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
-			Record* rec = rpb->rpb_record;
-			memmove(rpb, p, sizeof(record_param));
-			p += sizeof(record_param);
-
-			// We just restored record of current recursion level, delete record
-			// from upper level. It may be optimized in the future if needed.
-			delete rec;
-		}
-		delete[] tmp;
+		cleanup_level(request, rsb, irsb);
 
 		if (irsb->irsb_level > 1)
 		{
@@ -3736,18 +3717,41 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 {
 	SET_TDBB(tdbb);
-	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
+	jrd_req* request = tdbb->getRequest();
 
 	while (irsb->irsb_level > 1)
 	{
 		RSE_close(tdbb, rsb->rsb_arg[2]);
-
-		delete[] irsb->irsb_data;
-
-		char* tmp = irsb->irsb_stack;
-		memcpy(irsb, tmp, inner_size);
-		delete[] tmp;
+		cleanup_level(request, rsb, irsb);
 	}
     RSE_close(tdbb, rsb->rsb_arg[0]);
+}
+
+
+void RSBRecurse::cleanup_level(jrd_req* request, RecordSource* rsb, irsb_recurse* irsb)
+{
+	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
+	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
+
+	delete[] irsb->irsb_data;
+
+	char* tmp = irsb->irsb_stack;
+	memcpy(irsb, tmp, inner_size);
+
+	char* p = tmp + inner_size;
+	RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
+	const RecordSource* const* end = ptr + streams;
+	for (; ptr < end; ptr++)
+	{
+		record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
+		Record* rec = rpb->rpb_record;
+		memmove(rpb, p, sizeof(record_param));
+		p += sizeof(record_param);
+
+		// We just restored record of current recursion level, delete record
+		// from upper level. It may be optimized in the future if needed.
+		delete rec;
+	}
+
+	delete[] tmp;
 }
