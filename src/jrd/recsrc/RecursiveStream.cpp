@@ -96,11 +96,9 @@ void RecursiveStream::open(thread_db* tdbb) const
 void RecursiveStream::close(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	invalidateRecords(request);
-
-	Impure* const impure = request->getImpure<Impure>(m_impure);
-	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
 
 	if (impure->irsb_flags & irsb_open)
 	{
@@ -109,12 +107,7 @@ void RecursiveStream::close(thread_db* tdbb) const
 		while (impure->irsb_level > 1)
 		{
 			m_inner->close(tdbb);
-
-			delete[] impure->irsb_data;
-
-			UCHAR* const tmp = impure->irsb_stack;
-			memcpy(saveImpure, tmp, m_saveSize);
-			delete[] tmp;
+			cleanupLevel(request, impure);
 		}
 
 		m_root->close(tdbb);
@@ -199,25 +192,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 		}
 
 		rsb->close(tdbb);
-		delete[] impure->irsb_data;
-
-		UCHAR* const tmp = impure->irsb_stack;
-		memcpy(saveImpure, tmp, m_saveSize);
-
-		UCHAR* p = tmp + m_saveSize;
-		for (size_t i = 0; i < m_innerStreams.getCount(); i++)
-		{
-			const UCHAR stream = m_innerStreams[i];
-			record_param* const rpb = &request->req_rpb[stream];
-			Record* const tempRecord = rpb->rpb_record;
-			memmove(rpb, p, sizeof(record_param));
-			p += sizeof(record_param);
-
-			// We just restored record of current recursion level, delete record
-			// from upper level. It may be optimized in the future if needed.
-			delete tempRecord;
-		}
-		delete[] tmp;
+		cleanupLevel(request, impure);
 
 		if (impure->irsb_level > 1)
 		{
@@ -282,4 +257,29 @@ void RecursiveStream::invalidateRecords(jrd_req* request) const
 {
 	m_root->invalidateRecords(request);
 	m_inner->invalidateRecords(request);
+}
+
+void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
+{
+	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
+
+	delete[] impure->irsb_data;
+
+	UCHAR* const tmp = impure->irsb_stack;
+	memcpy(saveImpure, tmp, m_saveSize);
+
+	UCHAR* p = tmp + m_saveSize;
+	for (size_t i = 0; i < m_innerStreams.getCount(); i++)
+	{
+		const UCHAR stream = m_innerStreams[i];
+		record_param* const rpb = &request->req_rpb[stream];
+		Record* const tempRecord = rpb->rpb_record;
+		memmove(rpb, p, sizeof(record_param));
+		p += sizeof(record_param);
+
+		// We just restored record of current recursion level, delete record
+		// from upper level. It may be optimized in the future if needed.
+		delete tempRecord;
+	}
+	delete[] tmp;
 }

@@ -960,6 +960,8 @@ namespace Jrd
 		void invalidateRecords(jrd_req* request) const;
 
 	private:
+		void cleanupLevel(jrd_req* request, Impure* impure) const;
+
 		const UCHAR m_mapStream;
 		NestConst<RecordSource> m_root;
 		NestConst<RecordSource> m_inner;
