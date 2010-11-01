@@ -610,8 +610,6 @@ void DSQL_prepare(thread_db* tdbb,
 		length = strlen(string);
 	}
 
-	const DsqlCompiledStatement* statement = request->getStatement();
-
 	try {
 
 		// Figure out which parser version to use
@@ -658,6 +656,8 @@ void DSQL_prepare(thread_db* tdbb,
 			isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
+
+		const DsqlCompiledStatement* statement = request->getStatement();
 
 		if (statement->getType() == DsqlCompiledStatement::TYPE_CREATE_DB)
 		{
