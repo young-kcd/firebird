@@ -64,7 +64,6 @@ using namespace Dsql;
 using namespace Firebird;
 
 static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_cast(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
@@ -292,9 +291,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		blr_operator = blr_via;
 		break;
 
-	case nod_cast:
-		gen_cast(dsqlScratch, node);
-		return;
     case nod_coalesce:
 		gen_coalesce(dsqlScratch, node);
 		return;
@@ -1030,26 +1026,6 @@ static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* nod
 
 		gen_map(dsqlScratch, context->ctx_map);
 	}
-}
-
-
-/**
-
- gen_cast
-
-    @brief      Generate BLR for a data-type cast operation
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_cast( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	dsqlScratch->appendUChar(blr_cast);
-	const dsql_fld* field = (dsql_fld*) node->nod_arg[e_cast_target];
-	dsqlScratch->putDtype(field, true);
-	GEN_expr(dsqlScratch, node->nod_arg[e_cast_source]);
 }
 
 

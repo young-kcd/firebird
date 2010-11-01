@@ -512,11 +512,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 			ret |= visit(&node->nod_arg[e_order_field]);
 			break;
 
-		case nod_cast:
-			if (node->nod_count == 2)
-				ret |= visit(&node->nod_arg[1]);
-			break;
-
 		case nod_simple_case:
 		case nod_searched_case:
 		case nod_list:

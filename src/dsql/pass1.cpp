@@ -1234,7 +1234,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		return NULL;
 
 	dsql_nod* node;
-	dsql_fld* field;
 	dsql_nod* sub1;
 
 	// Dispatch on node type.  Fall thru on easy ones
@@ -1260,21 +1259,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node->nod_arg[e_alias_alias] = input->nod_arg[e_alias_alias];
 		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 		node->nod_desc = sub1->nod_desc;
-		return node;
-
-	case nod_cast:
-		node = MAKE_node(input->nod_type, e_cast_count);
-		node->nod_arg[e_cast_source] = sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_cast_source]);
-		node->nod_arg[e_cast_target] = input->nod_arg[e_cast_target];
-		field = (dsql_fld*) node->nod_arg[e_cast_target];
-		DEV_BLKCHK(field, dsql_type_fld);
-		DDL_resolve_intl_type(dsqlScratch, field, NULL);
-		MAKE_desc_from_field(&node->nod_desc, field);
-		PASS1_set_parameter_type(dsqlScratch, node, NULL, false);
-		// If the source is nullable, so is the target
-		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
-		if (sub1->nod_desc.dsc_flags & DSC_nullable)
-			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
 
 	case nod_coalesce:
@@ -2709,13 +2693,11 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
 
-	if (!node1 && !node2) {
+	if (!node1 && !node2)
 		return true;
-	}
 
-	if (!node1 || !node2) {
+	if (!node1 || !node2)
 		return false;
-	}
 
 	if (node1->nod_type == nod_hidden_var)
 		node1 = node1->nod_arg[e_hidden_var_expr];
@@ -2723,33 +2705,38 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	if (node2->nod_type == nod_hidden_var)
 		node2 = node2->nod_arg[e_hidden_var_expr];
 
-	if (ignore_map_cast && node1->nod_type == nod_cast)
+	const CastNode* castNode1 = ExprNode::as<CastNode>(node1);
+
+	if (ignore_map_cast && castNode1)
 	{
+		const CastNode* castNode2 = ExprNode::as<CastNode>(node2);
+
 		// If node2 is also cast and same type continue with both sources.
-		if (node2->nod_type == nod_cast &&
-			node1->nod_desc.dsc_dtype == node2->nod_desc.dsc_dtype &&
-			node1->nod_desc.dsc_scale == node2->nod_desc.dsc_scale &&
-			node1->nod_desc.dsc_length == node2->nod_desc.dsc_length &&
-			node1->nod_desc.dsc_sub_type == node2->nod_desc.dsc_sub_type)
+		if (castNode2 &&
+			castNode1->castDesc.dsc_dtype == castNode2->castDesc.dsc_dtype &&
+			castNode1->castDesc.dsc_scale == castNode2->castDesc.dsc_scale &&
+			castNode1->castDesc.dsc_length == castNode2->castDesc.dsc_length &&
+			castNode1->castDesc.dsc_sub_type == castNode2->castDesc.dsc_sub_type)
 		{
-			return PASS1_node_match(node1->nod_arg[e_cast_source], node2->nod_arg[e_cast_source],
-				ignore_map_cast);
+			return PASS1_node_match(castNode1->dsqlSource, castNode2->dsqlSource, ignore_map_cast);
 		}
 
-		return PASS1_node_match(node1->nod_arg[e_cast_source], node2, ignore_map_cast);
+		return PASS1_node_match(castNode1->dsqlSource, node2, ignore_map_cast);
 	}
 
 	if (ignore_map_cast && node1->nod_type == nod_map)
 	{
 		const dsql_map* map1 = (dsql_map*)node1->nod_arg[e_map_map];
 		DEV_BLKCHK(map1, dsql_type_map);
+
 		if (node2->nod_type == nod_map)
 		{
 			const dsql_map* map2 = (dsql_map*)node2->nod_arg[e_map_map];
 			DEV_BLKCHK(map2, dsql_type_map);
-			if (node1->nod_arg[e_map_context] != node2->nod_arg[e_map_context]) {
+
+			if (node1->nod_arg[e_map_context] != node2->nod_arg[e_map_context])
 				return false;
-			}
+
 			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
 		}
 
@@ -2792,17 +2779,15 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 							  node2->nod_arg[e_derived_field_value], ignore_map_cast);
 		}
 
-		if (node1->nod_type == nod_derived_field) {
+		if (node1->nod_type == nod_derived_field)
 			return PASS1_node_match(node1->nod_arg[e_derived_field_value], node2, ignore_map_cast);
-		}
-		if (node2->nod_type == nod_derived_field) {
+
+		if (node2->nod_type == nod_derived_field)
 			return PASS1_node_match(node1, node2->nod_arg[e_derived_field_value], ignore_map_cast);
-		}
 	}
 
-	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count)) {
+	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count))
 		return false;
-	}
 
 	// This is to get rid of assertion failures when trying
 	// to PASS1_node_match nod_aggregate's children. This was happening because not
@@ -2864,15 +2849,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 			DEV_BLKCHK(map2, dsql_type_map);
 			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
 		}
-
-	case nod_cast:
-		if (node1->nod_arg[0] != node2->nod_arg[0])
-			return false;
-
-		if (node1->nod_count == 2)
-			return PASS1_node_match(node1->nod_arg[1], node2->nod_arg[1], ignore_map_cast);
-
-		return true;
 
 	case nod_variable:
 		{
@@ -3187,11 +3163,14 @@ static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* node = MAKE_node(nod_cast, e_cast_count);
 	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-	node->nod_arg[e_cast_target] = (dsql_nod*) field;
-	node->nod_arg[e_cast_source] = sub1;
+	CastNode* castNode = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool(),
+		sub1, field);
+
 	MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
+
+	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(castNode);
 
 	if (sub1->nod_desc.dsc_dtype <= dtype_any_text ||
 		(sub1->nod_desc.dsc_dtype == dtype_blob && sub1->nod_desc.dsc_sub_type == isc_blob_text))
@@ -3205,8 +3184,10 @@ static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1
 				  Arg::Gds(isc_dsql_datatype_err) <<
 				  Arg::Gds(isc_collation_requires_text));
 	}
+
 	DDL_resolve_intl_type(dsqlScratch, field, collation);
 	MAKE_desc_from_field(&node->nod_desc, field);
+
 	return node;
 }
 
@@ -7417,61 +7398,65 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 					dsql_nod* select_item = input->nod_arg[position];
 					MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
 
-					if ((select_item->nod_desc.dsc_dtype != desc.dsc_dtype) ||
-						(select_item->nod_desc.dsc_length != desc.dsc_length) ||
-						(select_item->nod_desc.dsc_scale != desc.dsc_scale) ||
-						(select_item->nod_desc.dsc_sub_type != desc.dsc_sub_type))
+					if (select_item->nod_desc.dsc_dtype != desc.dsc_dtype ||
+						select_item->nod_desc.dsc_length != desc.dsc_length ||
+						select_item->nod_desc.dsc_scale != desc.dsc_scale ||
+						select_item->nod_desc.dsc_sub_type != desc.dsc_sub_type)
 					{
-
 						// Because this select item has a different descriptor then
 						// our finally descriptor CAST it.
 						dsql_nod* cast_node = NULL;
 						dsql_nod* alias_node = NULL;
 
 						// Pick a existing cast if available else make a new one.
-						if ((select_item->nod_type == nod_alias) &&
-							(select_item->nod_arg[e_alias_value]) &&
-							(select_item->nod_arg[e_alias_value]->nod_type == nod_cast))
+						if (select_item->nod_type == nod_alias &&
+							select_item->nod_arg[e_alias_value] &&
+							ExprNode::is<CastNode>(select_item->nod_arg[e_alias_value]))
 						{
 							cast_node = select_item->nod_arg[e_alias_value];
 						}
-						else if ((select_item->nod_type == nod_derived_field) &&
-							(select_item->nod_arg[e_derived_field_value]) &&
-							(select_item->nod_arg[e_derived_field_value]->nod_type == nod_cast))
+						else if (select_item->nod_type == nod_derived_field &&
+							select_item->nod_arg[e_derived_field_value] &&
+							ExprNode::is<CastNode>(select_item->nod_arg[e_derived_field_value]))
 						{
 							cast_node = select_item->nod_arg[e_derived_field_value];
 						}
-						else if (select_item->nod_type == nod_cast) {
+						else if (ExprNode::is<CastNode>(select_item))
 							cast_node = select_item;
-						}
 						else
 						{
 							thread_db* tdbb = JRD_get_thread_data();
-							cast_node = MAKE_node(nod_cast, e_cast_count);
-							dsql_fld* afield =
-								FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
-							cast_node->nod_arg[e_cast_target] = (dsql_nod*) afield;
+
+							CastNode* castNode = FB_NEW(*tdbb->getDefaultPool()) CastNode(
+								*tdbb->getDefaultPool());
+
+							castNode->dsqlField = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(
+								*tdbb->getDefaultPool());
+
+							cast_node = MAKE_node(nod_class_exprnode, 1);
+							cast_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(castNode);
+
 							// We want to leave the ALIAS node on his place, because a UNION
 							// uses the select_items from the first sub-rse to determine the
 							// columnname.
-							if (select_item->nod_type == nod_alias) {
-								cast_node->nod_arg[e_cast_source] = select_item->nod_arg[e_alias_value];
-							}
-							else if (select_item->nod_type == nod_derived_field) {
-								cast_node->nod_arg[e_cast_source] = select_item->nod_arg[e_derived_field_value];
-							}
-							else {
-								cast_node->nod_arg[e_cast_source] = select_item;
-							}
+							if (select_item->nod_type == nod_alias)
+								castNode->dsqlSource = select_item->nod_arg[e_alias_value];
+							else if (select_item->nod_type == nod_derived_field)
+								castNode->dsqlSource = select_item->nod_arg[e_derived_field_value];
+							else
+								castNode->dsqlSource = select_item;
+
 							// When a cast is created we're losing our fieldname, thus
 							// create an alias to keep it.
 							const dsql_nod* name_node = select_item;
+
 							while (name_node->nod_type == nod_map)
 							{
 								// skip all the nod_map nodes
 								const dsql_map* map = (dsql_map*) name_node->nod_arg[e_map_map];
 								name_node = map->map_node;
 							}
+
 							if (name_node->nod_type == nod_field)
 							{
 								dsql_fld* sub_field = (dsql_fld*) name_node->nod_arg[e_fld_field];
@@ -7479,14 +7464,14 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 								alias_node = MAKE_node(nod_alias, e_alias_count);
 								// Copy fieldname to a new string.
 								dsql_str* str_alias = FB_NEW_RPT(*tdbb->getDefaultPool(),
-															sub_field->fld_name.length()) dsql_str;
+									sub_field->fld_name.length()) dsql_str;
 								strcpy(str_alias->str_data, sub_field->fld_name.c_str());
 								str_alias->str_length = sub_field->fld_name.length();
 								alias_node->nod_arg[e_alias_alias] = (dsql_nod*) str_alias;
 							}
 						}
 
-						dsql_fld* field = (dsql_fld*) cast_node->nod_arg[e_cast_target];
+						dsql_fld* field = ExprNode::as<CastNode>(cast_node)->dsqlField;
 						// Copy the descriptor to a field, because the gen_cast
 						// uses a dsql field type.
 						field->fld_dtype = desc.dsc_dtype;
@@ -7494,6 +7479,7 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						field->fld_sub_type = desc.dsc_sub_type;
 						field->fld_length = desc.dsc_length;
 						field->fld_flags = (desc.dsc_flags & DSC_nullable) ? FLD_nullable : 0;
+
 						if (desc.dsc_dtype <= dtype_any_text)
 						{
 							field->fld_ttype = desc.dsc_sub_type;
@@ -7509,9 +7495,10 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						// Finally copy the descriptors to the root nodes and swap
 						// the necessary nodes.
 						cast_node->nod_desc = desc;
-						if (select_item->nod_desc.dsc_flags & DSC_nullable) {
+
+						if (select_item->nod_desc.dsc_flags & DSC_nullable)
 							cast_node->nod_desc.dsc_flags |= DSC_nullable;
-						}
+
 						if (select_item->nod_type == nod_alias)
 						{
 							select_item->nod_arg[e_alias_value] = cast_node;
@@ -7532,9 +7519,8 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 								alias_node->nod_desc = cast_node->nod_desc;
 								input->nod_arg[position] = alias_node;
 							}
-							else {
+							else
 								input->nod_arg[position] = cast_node;
-							}
 						}
 					}
 				}
@@ -8394,26 +8380,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 			return exprNode->setParameterType(dsqlScratch, in_node, node, force_varchar);
 		}
 
-		case nod_cast:
-			{
-				dsql_nod* par_node = in_node->nod_arg[e_cast_source];
-				dsql_fld* field = (dsql_fld*) in_node->nod_arg[e_cast_target];
-				ParameterNode* paramNode;
-
-				if ((paramNode = ExprNode::as<ParameterNode>(par_node)))
-				{
-					dsql_par* parameter = paramNode->dsqlParameter;
-					if (parameter)
-					{
-						parameter->par_desc = par_node->nod_desc;
-						parameter->par_node = par_node;
-						MAKE_desc_from_field(&parameter->par_desc, field);
-						return true;
-					}
-				}
-				return false;
-			}
-
 		case nod_limit:
 		case nod_rows:
 			{
@@ -8728,9 +8694,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_assign:
 		verb = "assign";
-		break;
-	case nod_cast:
-		verb = "cast";
 		break;
 	case nod_collate:
 		verb = "collate";

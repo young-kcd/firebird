@@ -88,7 +88,6 @@ static BoolExprNodeParseFunc boolParsers[256] = {NULL};
 
 
 static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
-static jrd_nod* par_cast(thread_db*, CompilerScratch*);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
@@ -925,50 +924,6 @@ jrd_nod* PAR_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	SET_TDBB(tdbb);
 	UCHAR count = csb->csb_blr_reader.getByte();
 	return PAR_args(tdbb, csb, expected, count, count);
-}
-
-
-static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ c a s t
- *
- **************************************
- *
- * Functional description
- *	Parse a datatype cast
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	jrd_nod* node = PAR_make_node(tdbb, e_cast_length);
-	node->nod_count = count_table[blr_cast];
-
-	Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
-	node->nod_arg[e_cast_fmt] = (jrd_nod*) format;
-
-	dsc* desc = &format->fmt_desc[0];
-	ItemInfo itemInfo;
-	PAR_desc(tdbb, csb, desc, &itemInfo);
-	format->fmt_length = desc->dsc_length;
-
-	node->nod_arg[e_cast_source] = PAR_parse_node(tdbb, csb, VALUE);
-
-	if (itemInfo.isSpecial())
-	{
-		ItemInfo* p = FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo);
-		node->nod_arg[e_cast_iteminfo] = (jrd_nod*) p;
-	}
-
-	if (itemInfo.explicitCollation)
-	{
-		CompilerScratch::Dependency dependency(obj_collation);
-		dependency.number = INTL_TEXT_TYPE(*desc);
-		csb->csb_dependencies.push(dependency);
-	}
-
-	return node;
 }
 
 
@@ -2550,10 +2505,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	case blr_message:
 		node = par_message(tdbb, csb);
-		break;
-
-	case blr_cast:
-		node = par_cast(tdbb, csb);
 		break;
 
 	case blr_dcl_variable:

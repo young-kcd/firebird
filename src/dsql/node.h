@@ -135,7 +135,6 @@ enum nod_t
 	nod_array,
 	nod_not_null,
 	nod_dbkey,
-	nod_cast,
 	nod_collate,
 	nod_get_segment,	// blobs
 	nod_put_segment,
@@ -251,7 +250,7 @@ enum nod_t
  *	e_<nodename>_count	== count of arguments in nod_arg
  *	This is often used as the count of sub-nodes, but there
  *	are cases when non-DSQL_NOD arguments are stuffed into nod_arg
- *	entries.  These include nod_udf, nod_cast and nod_collate.
+ *	entries.  These include nod_udf and nod_collate.
  */
 enum node_args {
 	e_select_expr = 0,		// nod_select
@@ -569,10 +568,6 @@ enum node_args {
 	e_cnstr_actions,
 	e_cnstr_source,
 	e_cnstr_count,
-
-	e_cast_target = 0,		// Not a DSQL_NOD   nod_cast
-	e_cast_source,
-	e_cast_count,
 
 	e_coll_target = 0,		// Not a DSQL_NOD   nod_collate
 	e_coll_source,

@@ -120,10 +120,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 		case nod_variable:
 			break;
 
-		case nod_cast:
-			ret |= visit(jrdNode->nod_arg[e_cast_source]);
-			break;
-
 		case nod_derived_expr:
 		{
 			jrd_nod* /*const*/* ptr = jrdNode->nod_arg;
@@ -1586,15 +1582,18 @@ static bool check_for_nod_from(const jrd_nod* node)
  **************************************
  *
  * Functional description
- *	Check for nod_from under >=0 nod_cast nodes.
+ *	Check for nod_from under >=0 CastNode nodes.
  *
  **************************************/
+	const CastNode* castNode = ExprNode::as<CastNode>(node);
+
+	if (castNode)
+		return check_for_nod_from(castNode->source);
+	
 	switch (node->nod_type)
 	{
 	case nod_from:
 		return true;
-	case nod_cast:
-		return check_for_nod_from(node->nod_arg[e_cast_source]);
 	default:
 		return false;
 	}

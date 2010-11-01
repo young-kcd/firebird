@@ -89,6 +89,40 @@ public:
 };
 
 
+class CastNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
+{
+public:
+	CastNode(MemoryPool& pool, dsql_nod* aDsqlSource = NULL, dsql_fld* aDsqlField = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlSource;
+	dsql_fld* dsqlField;
+	dsc castDesc;
+	NestConst<jrd_nod> source;
+	NestConst<Format> format;
+	NestConst<ItemInfo> itemInfo;
+};
+
+
 class ConcatenateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
 {
 public:

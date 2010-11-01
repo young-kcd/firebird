@@ -180,7 +180,7 @@ static const VERB verbs[] =
 	PAIR(nod_block, blr_block, e_blk_length, e_blk_length, STATEMENT, STATEMENT),
 	PAIR(nod_error_handler, blr_error_handler, e_err_length, 1, STATEMENT, OTHER),
 	PAIR(nod_class_stmtnode_jrd, blr_abort, 1, 0, STATEMENT, OTHER),
-	PAIR(nod_cast, blr_cast, e_cast_length, 1, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_cast, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_recsrcnode_jrd, blr_singular, 0, 0, TYPE_RSE, OTHER),
 	PAIR(nod_class_recsrcnode_jrd, blr_scrollable, 0, 0, TYPE_RSE, OTHER),
 	PAIR(nod_start_savepoint, blr_start_savepoint, 1, 0, STATEMENT, OTHER),

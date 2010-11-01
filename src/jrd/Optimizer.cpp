@@ -260,26 +260,27 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 	if (node1->nod_type != node2->nod_type)
 	{
 		dsc desc1, desc2;
+		CastNode* castNode;
 
-		if (node1->nod_type == nod_cast && node2->nod_type == nod_field)
+		if ((castNode = ExprNode::as<CastNode>(node1)) && node2->nod_type == nod_field)
 		{
 			CMP_get_desc(tdbb, csb, node1, &desc1);
 			CMP_get_desc(tdbb, csb, node2, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source], node2, stream))
+				OPT_expression_equal2(tdbb, csb, castNode->source, node2, stream))
 			{
 				return true;
 			}
 		}
 
-		if (node1->nod_type == nod_field && node2->nod_type == nod_cast)
+		if (node1->nod_type == nod_field && (castNode = ExprNode::as<CastNode>(node2)))
 		{
 			CMP_get_desc(tdbb, csb, node1, &desc1);
 			CMP_get_desc(tdbb, csb, node2, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1, node2->nod_arg[e_cast_source], stream))
+				OPT_expression_equal2(tdbb, csb, node1, castNode->source, stream))
 			{
 				return true;
 			}
@@ -310,18 +311,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		{
 			const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
 			return (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && fld_stream == stream;
-		}
-
-		case nod_cast:
-		{
-			dsc desc1, desc2;
-
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
-
-			return DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1->nod_arg[e_cast_source],
-					node2->nod_arg[e_cast_source], stream);
 		}
 
 	    case nod_list:
@@ -2099,23 +2088,27 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 			format->fmt_length = desc1.dsc_length;
 			format->fmt_desc[0] = desc1;
 
-			jrd_nod* cast = PAR_make_node(tdbb, e_cast_length);
-			cast->nod_type = nod_cast;
-			cast->nod_count = 1;
-			cast->nod_arg[e_cast_source] = value;
-			cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
-			cast->nod_impure = CMP_impure(csb, sizeof(impure_value));
-			value = cast;
+			CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+			cast->source = value;
+			cast->format = format;
+
+			value = PAR_make_node(tdbb, 1);
+			value->nod_type = nod_class_exprnode_jrd;
+			value->nod_count = 0;
+			value->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
+			value->nod_impure = CMP_impure(csb, sizeof(impure_value));
 
 			if (value2)
 			{
-				cast = PAR_make_node(tdbb, e_cast_length);
-				cast->nod_type = nod_cast;
-				cast->nod_count = 1;
-				cast->nod_arg[e_cast_source] = value2;
-				cast->nod_arg[e_cast_fmt] = (jrd_nod*) format;
-				cast->nod_impure = CMP_impure(csb, sizeof(impure_value));
-				value2 = cast;
+				cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				cast->source = value2;
+				cast->format = format;
+
+				value2 = PAR_make_node(tdbb, 1);
+				value2->nod_type = nod_class_exprnode_jrd;
+				value2->nod_count = 0;
+				value2->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
+				value2->nod_impure = CMP_impure(csb, sizeof(impure_value));
 			}
 		}
 	}

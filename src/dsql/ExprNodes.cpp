@@ -2463,6 +2463,281 @@ ValueExprNode* ArithmeticNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
+static RegisterNode<CastNode> regCastNode(blr_cast);
+
+CastNode::CastNode(MemoryPool& pool, dsql_nod* aDsqlSource, dsql_fld* aDsqlField)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_CAST>(pool),
+	  dsqlSource(aDsqlSource),
+	  dsqlField(aDsqlField),
+	  source(NULL),
+	  format(NULL),
+	  itemInfo(NULL)
+{
+	castDesc.clear();
+	addChildNode(dsqlSource, source);
+}
+
+// Parse a datatype cast.
+DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	CastNode* node = FB_NEW(pool) CastNode(pool);
+
+	Format* format = Format::newFormat(*tdbb->getDefaultPool(), 1);
+	node->format = format;
+
+	dsc* desc = &format->fmt_desc[0];
+	ItemInfo itemInfo;
+	PAR_desc(tdbb, csb, desc, &itemInfo);
+	format->fmt_length = desc->dsc_length;
+
+	node->source = PAR_parse_node(tdbb, csb, VALUE);
+
+	if (itemInfo.isSpecial())
+		node->itemInfo = FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo);
+
+	if (itemInfo.explicitCollation)
+	{
+		CompilerScratch::Dependency dependency(obj_collation);
+		dependency.number = INTL_TEXT_TYPE(*desc);
+		csb->csb_dependencies.push(dependency);
+	}
+
+	return node;
+}
+
+void CastNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("CastNode");
+	ExprNode::print(text, nodes);
+}
+
+// Turn an international string reference into internal subtype ID.
+ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	CastNode* node = FB_NEW(getPool()) CastNode(getPool());
+	node->dsqlSource = PASS1_node(dsqlScratch, dsqlSource);
+	node->dsqlField = dsqlField;
+
+	DDL_resolve_intl_type(dsqlScratch, node->dsqlField, NULL);
+	node->setParameterType(dsqlScratch, NULL, NULL, false);
+
+	MAKE_desc_from_field(&node->castDesc, node->dsqlField);
+	MAKE_desc(dsqlScratch, &node->dsqlSource->nod_desc, node->dsqlSource);
+
+	node->castDesc.dsc_flags = node->dsqlSource->nod_desc.dsc_flags & DSC_nullable;
+
+	return node;
+}
+
+void CastNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "CAST";
+}
+
+bool CastNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/,
+	dsql_nod* /*node*/, bool /*forceVarChar*/)
+{
+	// ASF: Attention: CastNode::dsqlPass call us with both thisNode and node as NULL.
+
+	ParameterNode* paramNode = ExprNode::as<ParameterNode>(dsqlSource);
+
+	if (paramNode)
+	{
+		dsql_par* parameter = paramNode->dsqlParameter;
+
+		if (parameter)
+		{
+			parameter->par_node = dsqlSource;
+			MAKE_desc_from_field(&parameter->par_desc, dsqlField);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// Generate BLR for a data-type cast operation.
+void CastNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_cast);
+	dsqlScratch->putDtype(dsqlField, true);
+	GEN_expr(dsqlScratch, dsqlSource);
+}
+
+void CastNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
+{
+	*desc = castDesc;
+}
+
+void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	// ASF: Commented out code here appears correct and makes the expression
+	// "1 + NULLIF(NULL, 0)" (failing since v2.1) to work. While this is natural as others
+	// nodes calling CMP_get_desc on sub nodes, it's causing some problem with contexts of
+	// views.
+
+	dsc desc1;
+	////CMP_get_desc(tdbb, csb, source, &desc1);
+
+	*desc = format->fmt_desc[0];
+
+	if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
+		(desc->dsc_dtype == dtype_varying && desc->dsc_length <= sizeof(USHORT)))
+	{
+		// Remove this call if enable the one above.
+		CMP_get_desc(tdbb, csb, source, &desc1);
+
+		desc->dsc_length = DSC_string_length(&desc1);
+
+		if (desc->dsc_dtype == dtype_cstring)
+			desc->dsc_length++;
+		else if (desc->dsc_dtype == dtype_varying)
+			desc->dsc_length += sizeof(USHORT);
+	}
+
+	////if (desc1.isNull())
+	////	desc->setNull();
+}
+
+ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	CastNode* node = FB_NEW(getPool()) CastNode(getPool());
+
+	node->source = copier.copy(tdbb, source);
+	node->format = format;
+	node->itemInfo = itemInfo;
+
+	return node;
+}
+
+bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const CastNode* o = other->as<CastNode>();
+	fb_assert(o)
+
+	return dsqlField == o->dsqlField;
+}
+
+bool CastNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	CastNode* o = other->as<CastNode>();
+	fb_assert(o);
+
+	dsc desc1, desc2;
+
+	getDesc(tdbb, csb, &desc1);
+	o->getDesc(tdbb, csb, &desc2);
+
+	return DSC_EQUIV(&desc1, &desc2, true) &&
+		OPT_expression_equal2(tdbb, csb, source, o->source, stream);
+}
+
+ExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+
+	const USHORT ttype = INTL_TEXT_TYPE(desc);
+
+	// Are we using a collation?
+	if (TTYPE_TO_COLLATION(ttype) != 0)
+	{
+		CMP_post_resource(&csb->csb_resources, INTL_texttype_lookup(tdbb, ttype),
+			Resource::rsc_collation, ttype);
+	}
+
+	return ExprNode::pass1(tdbb, csb);
+}
+
+ExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Cast from one datatype to another.
+dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* value = EVL_expr(tdbb, source);
+	value = request->req_flags & req_null ? NULL : value;
+
+	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+
+	impure->vlu_desc = format->fmt_desc[0];
+	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
+
+	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype))
+	{
+		USHORT length = DSC_string_length(&impure->vlu_desc);
+
+		if (length <= 0 && value)
+		{
+			// cast is a subtype cast only
+
+			length = DSC_string_length(value);
+
+			if (impure->vlu_desc.dsc_dtype == dtype_cstring)
+				++length;	// for NULL byte
+			else if (impure->vlu_desc.dsc_dtype == dtype_varying)
+				length += sizeof(USHORT);
+
+			impure->vlu_desc.dsc_length = length;
+		}
+
+		length = impure->vlu_desc.dsc_length;
+
+		// Allocate a string block of sufficient size.
+
+		VaryingString* string = impure->vlu_string;
+
+		if (string && string->str_length < length)
+		{
+			delete string;
+			string = NULL;
+		}
+
+		if (!string)
+		{
+			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
+			string->str_length = length;
+		}
+
+		impure->vlu_desc.dsc_address = string->str_data;
+	}
+
+	EVL_validate(tdbb, Item(Item::TYPE_CAST), itemInfo,
+		value, value == NULL || (value->dsc_flags & DSC_null));
+
+	if (!value)
+		return NULL;
+
+	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
+		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
+	else
+		MOV_move(tdbb, value, &impure->vlu_desc);
+
+	if (impure->vlu_desc.dsc_dtype == dtype_text)
+		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<ConcatenateNode> regConcatenateNode(blr_concatenate);
 
 ConcatenateNode::ConcatenateNode(MemoryPool& pool, dsql_nod* aArg1, dsql_nod* aArg2)

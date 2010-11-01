@@ -5752,9 +5752,10 @@ udf
 		{ $$ = newNode<UdfCallNode>(QualifiedName(toName($3), toName($1)), make_node(nod_list, 0)); }
 	;
 
-cast_specification	: CAST '(' value AS data_type_descriptor ')'
-			{ $$ = make_node (nod_cast, (int) e_cast_count, $5, $3); }
-		;
+cast_specification
+	: CAST '(' value AS data_type_descriptor ')'
+		{ $$ = makeClassNode(FB_NEW(getPool()) CastNode(getPool(), $3, $5)); }
+	;
 
 // case expressions
 

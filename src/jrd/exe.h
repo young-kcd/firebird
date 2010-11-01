@@ -274,13 +274,6 @@ const int e_err_action		= 0;
 const int e_err_conditions	= 1;
 const int e_err_length		= 2;
 
-// Datatype cast operator
-
-const int e_cast_source		= 0;
-const int e_cast_fmt		= 1;
-const int e_cast_iteminfo	= 2;
-const int e_cast_length		= 3;
-
 const int e_dcl_cur_rse		= 0;
 const int e_dcl_cur_refs	= 1;
 const int e_dcl_cur_number	= 2;

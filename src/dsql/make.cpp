@@ -358,7 +358,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 	dsql_map* map;
 	dsql_ctx* context;
 	dsql_rel* relation;
-	dsql_fld* field;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -396,13 +395,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 
 	case nod_derived_field:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value]);
-		return;
-
-	case nod_cast:
-		field = (dsql_fld*) node->nod_arg[e_cast_target];
-		MAKE_desc_from_field(desc, field);
-		MAKE_desc(dsqlScratch, &desc1, node->nod_arg[e_cast_source]);
-		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
 	case nod_simple_case:
@@ -1073,9 +1065,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
-	case nod_cast:
-		name_alias = "CAST";
-		break;
 	case nod_searched_case:
 	case nod_simple_case:
 		name_alias = "CASE";

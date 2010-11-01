@@ -118,7 +118,6 @@
 using namespace Jrd;
 using namespace Firebird;
 
-static dsc* cast(thread_db*, dsc*, const jrd_nod*, impure_value*);
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
@@ -509,45 +508,12 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 		}
 		return request->req_domain_validation;
 
-	default:   // Shut up some compiler warnings
-		break;
-
 	case nod_stmt_expr:
 		EXE_looper(tdbb, request, node);
 		return EVL_expr(tdbb, node->nod_arg[e_stmt_expr_expr]);
-	}
-
-	// Evaluate arguments
-
-	dsc* values[3];
-
-	if (node->nod_count)
-	{
-		fb_assert(node->nod_count <= 3);
-		dsc** v = values;
-		const jrd_nod* const* ptr = node->nod_arg;
-		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end;)
-		{
-			*v++ = EVL_expr(tdbb, *ptr++);
-
-			if (request->req_flags & req_null)
-			{
-				// ASF: CAST target type may be constrained
-				if (node->nod_type == nod_cast)
-					*(v - 1) = NULL;
-				else
-					return NULL;
-			}
-		}
-	}
-
-	switch (node->nod_type)
-	{
-	case nod_cast:
-		return cast(tdbb, values[0], node, impure);
 
 	default:
-		BUGCHECK(232);		// msg 232 EVL_expr: invalid operation
+		BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
 
 	return NULL;
@@ -866,82 +832,6 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 		ERR_post(Arg::Gds(status) << Arg::Str(arg) << Arg::Str(value));
 	}
-}
-
-
-static dsc* cast(thread_db* tdbb, dsc* value, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      c a s t
- *
- **************************************
- *
- * Functional description
- *      Cast from one datatype to another.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	// value is present; make the conversion
-
-	const Format* format = (Format*) node->nod_arg[e_cast_fmt];
-	impure->vlu_desc = format->fmt_desc[0];
-	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc;
-	if (DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype))
-	{
-		USHORT length = DSC_string_length(&impure->vlu_desc);
-		if (length <= 0 && value)
-		{
-			// cast is a subtype cast only
-
-			length = DSC_string_length(value);
-			if (impure->vlu_desc.dsc_dtype == dtype_cstring)
-				length++;		// for NULL byte
-			else if (impure->vlu_desc.dsc_dtype == dtype_varying)
-				length += sizeof(USHORT);
-			impure->vlu_desc.dsc_length = length;
-		}
-		length = impure->vlu_desc.dsc_length;
-
-		// Allocate a string block of sufficient size.
-
-		VaryingString* string = impure->vlu_string;
-		if (string && string->str_length < length)
-		{
-			delete string;
-			string = NULL;
-		}
-
-		if (!string)
-		{
-			string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
-			string->str_length = length;
-		}
-
-		impure->vlu_desc.dsc_address = string->str_data;
-	}
-
-	EVL_validate(tdbb, Item(Item::TYPE_CAST), (ItemInfo*) node->nod_arg[e_cast_iteminfo],
-		value, value == NULL || (value->dsc_flags & DSC_null));
-
-	if (value == NULL)
-	{
-		tdbb->getRequest()->req_flags |= req_null;
-		return NULL;
-	}
-
-	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
-		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
-	else
-		MOV_move(tdbb, value, &impure->vlu_desc);
-
-	if (impure->vlu_desc.dsc_dtype == dtype_text)
-		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-
-	return &impure->vlu_desc;
 }
 
 

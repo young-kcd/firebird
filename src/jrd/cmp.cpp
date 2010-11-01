@@ -582,39 +582,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_cast:
-		{
-			// ASF: Commented out code here appears correct and makes the expression
-			// "1 + NULLIF(NULL, 0)" (failing since v2.1) to work. While this is natural as others
-			// nodes calling CMP_get_desc on sub nodes, it's causing some problem with contexts of
-			// views.
-
-		    dsc desc1;
-			////CMP_get_desc(tdbb, csb, node->nod_arg[e_cast_source], &desc1);
-
-			const Format* format = (Format*) node->nod_arg[e_cast_fmt];
-			*desc = format->fmt_desc[0];
-
-			if ((desc->dsc_dtype <= dtype_any_text && !desc->dsc_length) ||
-				(desc->dsc_dtype == dtype_varying && desc->dsc_length <= sizeof(USHORT)))
-			{
-				// Remove this call if enable the one above.
-				CMP_get_desc(tdbb, csb, node->nod_arg[e_cast_source], &desc1);
-
-				desc->dsc_length = DSC_string_length(&desc1);
-
-				if (desc->dsc_dtype == dtype_cstring)
-					desc->dsc_length++;
-				else if (desc->dsc_dtype == dtype_varying)
-					desc->dsc_length += sizeof(USHORT);
-			}
-
-			////if (desc1.isNull())
-			////	desc->setNull();
-
-			return;
-		}
-
 	case nod_variable:
 		{
 			const jrd_nod* value = node->nod_arg[e_var_variable];
@@ -1180,14 +1147,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		return node;
 	}
 
-	case nod_cast:
-		node = PAR_make_node(tdbb, e_cast_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_cast_source] = copy(tdbb, input->nod_arg[e_cast_source]);
-		node->nod_arg[e_cast_fmt] = input->nod_arg[e_cast_fmt];
-		return (node);
-
 	case nod_count:
 	case nod_max:
 	case nod_min:
@@ -1681,23 +1640,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			}
 		}
 		break;
-
-	case nod_cast:
-		{
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			const USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				CMP_post_resource(&csb->csb_resources, INTL_texttype_lookup(tdbb, ttype),
-								  Resource::rsc_collation, ttype);
-			}
-
-			break;
-		}
 
 	case nod_field:
 		{
@@ -3039,7 +2981,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_scalar:
-	case nod_cast:
 	case nod_derived_expr:
 		{
 			dsc descriptor_a;
