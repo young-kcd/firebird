@@ -1108,7 +1108,7 @@ static void execute_request(thread_db* tdbb,
 	switch (statement->getType())
 	{
 	case DsqlCompiledStatement::TYPE_START_TRANS:
-		JRD_start_transaction(tdbb, &request->req_transaction, 1, &request->req_dbb->dbb_attachment,
+		JRD_start_transaction(tdbb, &request->req_transaction, 1, request->req_dbb->dbb_attachment,
 			statement->getDdlData().getCount(), statement->getDdlData().begin());
 		*tra_handle = request->req_transaction;
 		return;
