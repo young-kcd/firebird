@@ -1,3 +1,12 @@
+ 2010-11-01 19:22  dimitr 
+   M src/jrd/rse.cpp
+Misc.
+
+ 2010-11-01 19:20  dimitr 
+   M src/jrd/rse.cpp
+   M src/jrd/rse.h
+Fixed CORE-3208: Significant memory leaks with recursive queries.
+
  2010-10-31 08:55  dimitr 
    M src/dsql/dsql.cpp
 Fixed CORE-3205: isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err.
