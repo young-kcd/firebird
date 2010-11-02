@@ -6123,52 +6123,7 @@ static void get_expression_streams(const jrd_nod* node,
 			break;
 
 		// go into the node arguments
-		case nod_add:
-		case nod_add2:
-		case nod_agg_average:
-		case nod_agg_average2:
-		case nod_agg_average_distinct:
-		case nod_agg_average_distinct2:
-		case nod_agg_max:
-		case nod_agg_min:
-		case nod_agg_total:
-		case nod_agg_total2:
-		case nod_agg_total_distinct:
-		case nod_agg_total_distinct2:
-		case nod_agg_list:
-		case nod_agg_list_distinct:
-		case nod_concatenate:
-		case nod_divide:
-		case nod_divide2:
-		case nod_multiply:
-		case nod_multiply2:
-		case nod_negate:
-		case nod_subtract:
-		case nod_subtract2:
-
-		case nod_upcase:
-		case nod_lowcase:
-		case nod_substr:
-		case nod_trim:
-		case nod_sys_function:
-		case nod_derived_expr:
-
-		case nod_like:
-		case nod_between:
-		case nod_similar:
-		case nod_sleuth:
-		case nod_missing:
-		case nod_value_if:
-		case nod_matches:
-		case nod_contains:
-		case nod_starts:
-		case nod_equiv:
-		case nod_eql:
-		case nod_neq:
-		case nod_geq:
-		case nod_gtr:
-		case nod_lss:
-		case nod_leq:
+		default:
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
@@ -6178,9 +6133,6 @@ static void get_expression_streams(const jrd_nod* node,
 			}
 			break;
 		}
-
-		default:
-			break;
 	}
 
 	if (rse) {
