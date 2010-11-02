@@ -378,10 +378,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		}
 		return;
 
-	case nod_variable:
-		*desc = node->nod_desc;
-		return;
-
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
 		context = (dsql_ctx*) node->nod_arg[e_map_context];
@@ -890,39 +886,25 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 }
 
 
-/**
-
- 	MAKE_variable
-
-    @brief	Make up a field node.
-
-
-    @param field
-    @param name
-    @param type
-    @param msg_number
-    @param item_number
-    @param local_number
-
- **/
-dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type type,
-				 		USHORT msg_number, USHORT item_number, USHORT local_number)
+// Make a variable node.
+VariableNode* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type type,
+	USHORT msg_number, USHORT item_number, USHORT local_number)
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_var* variable = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(name)) dsql_var;
-	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
-	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
-	variable->var_msg_number = msg_number;
-	variable->var_msg_item = item_number;
-	variable->var_variable_number = local_number;
-	variable->var_field = field;
-	strcpy(variable->var_name, name);
-	variable->var_type = type;
+	VariableNode* node = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
+	node->dsqlVar = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(name)) dsql_var;
+	node->dsqlVar->var_msg_number = msg_number;
+	node->dsqlVar->var_msg_item = item_number;
+	node->dsqlVar->var_variable_number = local_number;
+	node->dsqlVar->var_field = field;
+	strcpy(node->dsqlVar->var_name, name);
+	node->dsqlVar->var_type = type;
+
 	if (field)
-		MAKE_desc_from_field(&node->nod_desc, field);
+		MAKE_desc_from_field(&node->varDesc, field);
 
 	return node;
 }
@@ -1058,13 +1040,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			} // switch(map_node->nod_type)
 			break;
 		} // case nod_map
-	case nod_variable:
-		{
-			dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
-			if (variable->var_field)
-				name_alias = variable->var_field->fld_name.c_str();
-			break;
-		}
 	case nod_searched_case:
 	case nod_simple_case:
 		name_alias = "CASE";

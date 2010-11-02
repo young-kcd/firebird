@@ -582,13 +582,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_variable:
-		{
-			const jrd_nod* value = node->nod_arg[e_var_variable];
-			*desc = *(DSC*) (value->nod_arg + e_dcl_desc);
-			return;
-		}
-
 	case nod_domain_validation:
 		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
 		return;
@@ -1063,21 +1056,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	case nod_modify:
 		args = e_mod_length;
 		break;
-
-	case nod_variable:
-		if (csb->csb_remap_variable != 0)
-		{
-			node = PAR_make_node(tdbb, e_var_length);
-			node->nod_type = input->nod_type;
-			node->nod_count = input->nod_count;
-
-			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_var_id];
-			node->nod_arg[e_var_id] = (jrd_nod*)(IPTR) n;
-			node->nod_arg[e_var_variable] = input->nod_arg[e_var_variable];
-			node->nod_arg[e_var_info] = input->nod_arg[e_var_info];
-			return node;
-		}
-		return input;
 
 	case nod_init_variable:
 		if (csb->csb_remap_variable != 0)
@@ -1619,17 +1597,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_variable:
-		{
-			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() || !(node->nod_arg[e_var_variable] = (*vector)[n]))
-			{
-				PAR_syntax_error(csb, "variable identifier");
-			}
-		}
-		break;
-
 	case nod_init_variable:
 		{
 			const USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
@@ -2159,12 +2126,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			}
 			break;
 
-		case nod_variable:
-			break;	// Nothing to do here
-
 		case nod_class_exprnode_jrd:
-			if (ExprNode::is<ParameterNode>(sub) || ExprNode::is<NullNode>(sub))
+			if (ExprNode::is<ParameterNode>(sub) || ExprNode::is<VariableNode>(sub) ||
+				ExprNode::is<NullNode>(sub))
+			{
 				break;	// Nothing to do here
+			}
 			// fall into
 
 		default:
@@ -2800,11 +2767,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		node->nod_arg[e_src_info_node] = CMP_pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
 		return node;
 
-	case nod_variable:
-		node->nod_arg[e_var_info] = reinterpret_cast<jrd_nod*>(CMP_pass2_validation(tdbb,
-			csb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_var_id])));
-		break;
-
 	case nod_init_variable:
 		node->nod_arg[e_init_var_info] = reinterpret_cast<jrd_nod*>(CMP_pass2_validation(tdbb,
 			csb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_init_var_id])));
@@ -2972,11 +2934,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
 			break;
 		}
-
-	case nod_variable:
-		node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
-			sizeof(impure_value_ex) : sizeof(dsc));
-		break;
 
 	case nod_dbkey:
 	case nod_rec_version:

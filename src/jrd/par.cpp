@@ -2534,16 +2534,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		}
 		break;
 
-	case blr_variable:
-		{
-			n = csb->csb_blr_reader.getWord();
-			node->nod_arg[e_var_id] = (jrd_nod*)(IPTR) n;
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count())
-				PAR_syntax_error(csb, "variable identifier");
-		}
-		break;
-
 	case blr_stall:
 		break;
 

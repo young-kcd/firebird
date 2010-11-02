@@ -253,11 +253,6 @@ const int e_pro_length		= 2;
 
 // Variable declaration
 
-const int e_var_id			= 0;
-const int e_var_variable	= 1;
-const int e_var_info		= 2;
-const int e_var_length		= 3;
-
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
 const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor

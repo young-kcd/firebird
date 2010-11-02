@@ -107,11 +107,12 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
 
 	for (DsqlNodStack::const_iterator i(dsqlScratch->hiddenVars); i.hasData(); ++i)
 	{
-		const dsql_nod* varNode = i.object()->nod_arg[1];
-		const dsql_var* var = (dsql_var*) varNode->nod_arg[e_var_variable];
+		const dsql_nod* varNod = i.object()->nod_arg[e_hidden_var_var];
+		const VariableNode* varNode = ExprNode::as<VariableNode>(varNod);
+		const dsql_var* var = varNode->dsqlVar;
 		dsqlScratch->appendUChar(blr_dcl_variable);
 		dsqlScratch->appendUShort(var->var_variable_number);
-		GEN_descriptor(dsqlScratch, &varNode->nod_desc, true);
+		GEN_descriptor(dsqlScratch, &varNode->varDesc, true);
 	}
 
 	if (inExpression && dsqlScratch->hiddenVars.getCount() > 1)
@@ -238,24 +239,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				  node->nod_arg[e_fld_indices]);
 		return;
 
-	case nod_variable:
-		{
-			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-			if (variable->var_type == VAR_input)
-			{
-				dsqlScratch->appendUChar(blr_parameter2);
-				dsqlScratch->appendUChar(variable->var_msg_number);
-				dsqlScratch->appendUShort(variable->var_msg_item);
-				dsqlScratch->appendUShort(variable->var_msg_item + 1);
-			}
-			else
-			{
-				dsqlScratch->appendUChar(blr_variable);
-				dsqlScratch->appendUShort(variable->var_variable_number);
-			}
-		}
-		return;
-
 	case nod_join:
 		gen_join_rse(dsqlScratch, node);
 		return;
@@ -313,12 +296,13 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		// If it was not pre-declared, declare it now.
 		if (dsqlScratch->hiddenVars.hasData())
 		{
-			const dsql_var* var = (dsql_var*) node->nod_arg[e_hidden_var_var]->nod_arg[e_var_variable];
+			const VariableNode* varNode = ExprNode::as<VariableNode>(node->nod_arg[e_hidden_var_var]);
+			const dsql_var* var = varNode->dsqlVar;
 
 			dsqlScratch->appendUChar(blr_begin);
 			dsqlScratch->appendUChar(blr_dcl_variable);
 			dsqlScratch->appendUShort(var->var_variable_number);
-			GEN_descriptor(dsqlScratch, &node->nod_arg[e_hidden_var_var]->nod_desc, true);
+			GEN_descriptor(dsqlScratch, &varNode->varDesc, true);
 		}
 
 		dsqlScratch->appendUChar(blr_assignment);

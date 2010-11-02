@@ -117,9 +117,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 			return call(exprNode);
 		}
 
-		case nod_variable:
-			break;
-
 		case nod_derived_expr:
 		{
 			jrd_nod* /*const*/* ptr = jrdNode->nod_arg;
@@ -389,9 +386,6 @@ bool UnmappedNodeGetter::visit(const JrdNode& node)
 	switch (jrdNode->nod_type)
 	{
 		case nod_field:
-			break;
-
-		case nod_variable:
 			break;
 
 		default:
@@ -1871,9 +1865,9 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 		if (node1->nod_type != nod_field)
 			continue;
 
-		if (node2->nod_type != nod_variable &&
-			!ExprNode::is<LiteralNode>(node2) &&
-			!ExprNode::is<ParameterNode>(node2))
+		if (!ExprNode::is<LiteralNode>(node2) &&
+			!ExprNode::is<ParameterNode>(node2) &&
+			!ExprNode::is<VariableNode>(node2))
 		{
 			continue;
 		}

@@ -1326,12 +1326,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		else
 			return pass1_field(dsqlScratch, input, false, NULL);
 
-	case nod_variable:
-		node = MAKE_node (input->nod_type, e_var_count);
-		node->nod_arg[0] = input->nod_arg[0];
-		node->nod_desc = input->nod_desc;
-		return node;
-
 	case nod_var_name:
 		return pass1_variable(dsqlScratch, input);
 
@@ -2848,23 +2842,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 			DEV_BLKCHK(map1, dsql_type_map);
 			DEV_BLKCHK(map2, dsql_type_map);
 			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
-		}
-
-	case nod_variable:
-		{
-			const dsql_var* var1 = reinterpret_cast<dsql_var*>(node1->nod_arg[e_var_variable]);
-			const dsql_var* var2 = reinterpret_cast<dsql_var*>(node2->nod_arg[e_var_variable]);
-			DEV_BLKCHK(var1, dsql_type_var);
-			DEV_BLKCHK(var2, dsql_type_var);
-			if ((strcmp(var1->var_name, var2->var_name))					||
-				(var1->var_field != var2->var_field)						||
-				(var1->var_variable_number != var2->var_variable_number)	||
-				(var1->var_msg_item != var2->var_msg_item)					||
-				(var1->var_msg_number != var2->var_msg_number))
-			{
-				return false;
-			}
-			return true;
 		}
 
 	case nod_derived_table:
@@ -4628,7 +4605,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	{
 		case nod_dbkey:
 		case nod_field:
-		case nod_variable:
 			return NULL;
 
 		case nod_class_exprnode:
@@ -4643,22 +4619,28 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 				case ExprNode::TYPE_LITERAL:
 				case ExprNode::TYPE_NULL:
 				case ExprNode::TYPE_PARAMETER:
+				case ExprNode::TYPE_VARIABLE:
 					return NULL;
 			}
 			break;
 	}
 
-	dsql_nod* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
-	MAKE_desc(dsqlScratch, &var->nod_desc, expr);
+	VariableNode* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
+
+	dsql_nod* varNod = MAKE_node(nod_class_exprnode, 1);
+	varNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(var);
+
+	MAKE_desc(dsqlScratch, &var->varDesc, expr);
+	varNod->nod_desc = var->varDesc;
 
 	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
 	newExpr->nod_arg[e_hidden_var_expr] = expr;
-	newExpr->nod_arg[e_hidden_var_var] = var;
+	newExpr->nod_arg[e_hidden_var_var] = varNod;
 	expr = newExpr;
 
 	dsqlScratch->hiddenVars.push(newExpr);
 
-	return var;
+	return varNod;
 }
 
 
@@ -8025,7 +8007,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
     @param input
 
  **/
-static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
+static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	// CVC: I commented this variable and its usage because it wasn't useful for
 	// anything. I didn't delete it in case it's an implementation in progress
@@ -8035,7 +8017,8 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	const dsql_str* var_name = 0;
+	const dsql_str* var_name = NULL;
+
 	if (input->nod_type == nod_field_name)
 	{
 		if (input->nod_arg[e_fln_context])
@@ -8045,6 +8028,7 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 			field_unknown(0, 0, input);
 		}
+
 		var_name = (dsql_str*) input->nod_arg[e_fln_name];
 	}
 	else
@@ -8052,9 +8036,14 @@ static dsql_nod* pass1_variable( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	dsql_nod* varNode = dsqlScratch->resolveVariable(var_name);
+	VariableNode* varNode = dsqlScratch->resolveVariable(var_name);
+
 	if (varNode)
-		return varNode;
+	{
+		dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
+		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(varNode);
+		return node;
+	}
 
 	// field unresolved
 	// CVC: That's all [the fix], folks!
@@ -9225,16 +9214,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 				trace_line("%sUNKNOWN DB OBJECT, context %d\n",
 					buffer, context->ctx_context);
 			}
-			return;
-		}
-
-	case nod_variable:
-		{
-			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-			// Adding variable->var_variable_number to display, obviously something
-			// is missing from the printf, and Im assuming this was it.
-			// (anyway can't be worse than it was MOD 05-July-2002.
-			trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
 			return;
 		}
 

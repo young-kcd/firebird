@@ -7315,6 +7315,168 @@ dsc* ValueIfNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<VariableNode> regVariableNode(blr_variable);
+
+VariableNode::VariableNode(MemoryPool& pool)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>(pool),
+	  dsqlVar(NULL),
+	  varId(0),
+	  varDecl(NULL),
+	  varInfo(NULL)
+{
+	varDesc.clear();
+}
+
+DmlNode* VariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	USHORT n = csb->csb_blr_reader.getWord();
+	vec<jrd_nod*>* vector = csb->csb_variables;
+
+	if (!vector || n >= vector->count())
+		PAR_syntax_error(csb, "variable identifier");
+
+	VariableNode* node = FB_NEW(pool) VariableNode(pool);
+	node->varId = n;
+
+	return node;
+}
+
+void VariableNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "VariableNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
+	node->dsqlVar = dsqlVar;
+	node->varDesc = varDesc;
+
+	return node;
+}
+
+void VariableNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = dsqlVar->var_field->fld_name.c_str();
+}
+
+void VariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	if (dsqlVar->var_type == VAR_input)
+	{
+		dsqlScratch->appendUChar(blr_parameter2);
+		dsqlScratch->appendUChar(dsqlVar->var_msg_number);
+		dsqlScratch->appendUShort(dsqlVar->var_msg_item);
+		dsqlScratch->appendUShort(dsqlVar->var_msg_item + 1);
+	}
+	else
+	{
+		dsqlScratch->appendUChar(blr_variable);
+		dsqlScratch->appendUShort(dsqlVar->var_variable_number);
+	}
+}
+
+void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
+{
+	*desc = varDesc;
+}
+
+bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const VariableNode* o = other->as<VariableNode>();
+	if (!o)
+		return false;
+
+	if (strcmp(dsqlVar->var_name, o->dsqlVar->var_name) ||
+		dsqlVar->var_field != o->dsqlVar->var_field ||
+		dsqlVar->var_variable_number != o->dsqlVar->var_variable_number ||
+		dsqlVar->var_msg_item != o->dsqlVar->var_msg_item ||
+		dsqlVar->var_msg_number != o->dsqlVar->var_msg_number)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void VariableNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	*desc = *(DSC*) (varDecl->nod_arg + e_dcl_desc);
+}
+
+ValueExprNode* VariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	if (copier.csb->csb_remap_variable != 0)
+	{
+		VariableNode* node = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
+		node->varId = copier.csb->csb_remap_variable + varId;
+		node->varDecl = varDecl;
+		node->varInfo = varInfo;
+
+		return node;
+	}
+
+	return this;
+}
+
+ExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass1(tdbb, csb);
+
+	vec<jrd_nod*>* vector = csb->csb_variables;
+
+	if (!vector || varId >= vector->count() || !(varDecl = (*vector)[varId]))
+		PAR_syntax_error(csb, "variable identifier");
+
+	return this;
+}
+
+ExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	varInfo = CMP_pass2_validation(tdbb, csb, Item(Item::TYPE_VARIABLE, varId));
+
+	ExprNode::pass2(tdbb, csb);
+
+	node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
+		sizeof(impure_value_ex) : sizeof(dsc));
+
+	return this;
+}
+
+dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure2 = request->getImpure<impure_value>(varDecl->nod_impure);
+
+	request->req_flags &= ~req_null;
+
+	if (impure2->vlu_desc.dsc_flags & DSC_null)
+		request->req_flags |= req_null;
+
+	impure->vlu_desc = impure2->vlu_desc;
+
+	if (impure->vlu_desc.dsc_dtype == dtype_text)
+		INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
+
+	if (!(impure2->vlu_flags & VLU_checked))
+	{
+		if (varInfo)
+		{
+			EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, varId), varInfo,
+				&impure->vlu_desc, (impure->vlu_desc.dsc_flags & DSC_null));
+		}
+
+		impure2->vlu_flags |= VLU_checked;
+	}
+
+	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 // Firebird provides transparent conversion from string to date in
 // contexts where it makes sense.  This macro checks a descriptor to
 // see if it is something that *could* represent a date value

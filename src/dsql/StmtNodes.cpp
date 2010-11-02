@@ -22,6 +22,7 @@
 #include "../common/common.h"
 #include "../common/classes/BaseStream.h"
 #include "../common/classes/MsgPrint.h"
+#include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
@@ -524,7 +525,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = parameters[i];
 
-		dsql_nod* var = MAKE_variable(parameter.legacyField,
+		VariableNode* var = MAKE_variable(parameter.legacyField,
 			parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
 
 		dsqlScratch->variables.add(var);
@@ -537,7 +538,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = returns[i];
 
-		dsql_nod* var = MAKE_variable(parameter.legacyField,
+		VariableNode* var = MAKE_variable(parameter.legacyField,
 			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
 
 		dsqlScratch->variables.add(var);
@@ -556,14 +557,17 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	else
 		statement->setSendMsg(NULL);
 
-	for (Array<dsql_nod*>::const_iterator i = dsqlScratch->outputVariables.begin();
+	for (Array<VariableNode*>::const_iterator i = dsqlScratch->outputVariables.begin();
 		 i != dsqlScratch->outputVariables.end();
 		 ++i)
 	{
+		dsql_nod* varNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+		varNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(*i);
+
 		dsql_par* param = MAKE_parameter(statement->getReceiveMsg(), true, true,
-			(i - dsqlScratch->outputVariables.begin()) + 1, *i);
-		param->par_node = *i;
-		MAKE_desc(dsqlScratch, &param->par_desc, *i);
+			(i - dsqlScratch->outputVariables.begin()) + 1, varNod);
+		param->par_node = varNod;
+		MAKE_desc(dsqlScratch, &param->par_desc, varNod);
 		param->par_desc.dsc_flags |= DSC_nullable;
 	}
 
@@ -587,8 +591,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	for (unsigned i = 0; i < returnsPos; ++i)
 	{
-		const dsql_nod* parameter = dsqlScratch->variables[i];
-		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		const VariableNode* parameter = dsqlScratch->variables[i];
+		const dsql_var* variable = parameter->dsqlVar;
 		const dsql_fld* field = variable->var_field;
 
 		if (field->fld_full_domain || field->fld_not_nullable)
@@ -607,13 +611,11 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	for (Array<dsql_nod*>::const_iterator i = dsqlScratch->outputVariables.begin();
+	for (Array<VariableNode*>::const_iterator i = dsqlScratch->outputVariables.begin();
 		 i != dsqlScratch->outputVariables.end();
 		 ++i)
 	{
-		dsql_nod* parameter = *i;
-		dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
-		dsqlScratch->putLocalVariable(variable, 0, NULL);
+		dsqlScratch->putLocalVariable((*i)->dsqlVar, 0, NULL);
 	}
 
 	dsqlScratch->setPsql(true);

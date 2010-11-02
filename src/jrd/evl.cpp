@@ -153,6 +153,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 	const jrd_nod* message;
 	Record* record;
 	const ParameterNode* paramNode;
+	const VariableNode* varNode;
 
 	if ((paramNode = ExprNode::as<ParameterNode>(node)))
 	{
@@ -184,6 +185,12 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 	}
 	else if (ExprNode::is<NullNode>(node))
 		return NULL;
+	else if ((varNode = ExprNode::as<VariableNode>(node)))
+	{
+		// Calculate descriptor
+		impure = request->getImpure<impure_value>(varNode->varDecl->nod_impure);
+		return &impure->vlu_desc;
+	}
 
 	switch (node->nod_type)
 	{
@@ -202,12 +209,6 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 		}
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(Arg::Gds(isc_read_only_field));
-		return &impure->vlu_desc;
-
-	case nod_variable:
-		// Calculate descriptor
-		node = node->nod_arg[e_var_variable];
-		impure = request->getImpure<impure_value>(node->nod_impure);
 		return &impure->vlu_desc;
 
 	default:
@@ -472,33 +473,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 	case nod_scalar:
 		return scalar(tdbb, node, impure);
-
-	case nod_variable:
-		{
-			const jrd_nod* node2 = node->nod_arg[e_var_variable];
-
-			impure_value* impure2 = request->getImpure<impure_value>(node2->nod_impure);
-			if (impure2->vlu_desc.dsc_flags & DSC_null)
-				request->req_flags |= req_null;
-
-			impure->vlu_desc = impure2->vlu_desc;
-
-			if (impure->vlu_desc.dsc_dtype == dtype_text)
-				INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-
-			if (!(impure2->vlu_flags & VLU_checked))
-			{
-				if (node->nod_arg[e_var_info])
-				{
-					EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_var_id]),
-						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_var_info]),
-						&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
-				}
-				impure2->vlu_flags |= VLU_checked;
-			}
-
-			return &impure->vlu_desc;
-		}
 
 	case nod_domain_validation:
 		if (request->req_domain_validation == NULL ||

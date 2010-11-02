@@ -34,6 +34,7 @@ namespace Jrd
 {
 
 class TypeClause;
+class VariableNode;
 
 
 // DSQL Compiler scratch block - may be discarded after compilation in the future.
@@ -154,7 +155,7 @@ public:
 	void putType(const TypeClause& type, bool useSubType);
 	void putLocalVariables(const dsql_nod* parameters, SSHORT locals);
 	void putLocalVariable(dsql_var* variable, dsql_nod* hostParam, const dsql_str* collationName);
-	dsql_nod* resolveVariable(const dsql_str* varName);
+	VariableNode* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);
 
 	void resetContextStack()
@@ -252,8 +253,8 @@ public:
 	bool processingWindow;				// processing window functions
 	bool checkConstraintTrigger;		// compiling a check constraint trigger
 	dsc domainValue;					// VALUE in the context of domain's check constraint
-	Firebird::Array<dsql_nod*> variables;
-	Firebird::Array<dsql_nod*> outputVariables;
+	Firebird::Array<VariableNode*> variables;
+	Firebird::Array<VariableNode*> outputVariables;
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions

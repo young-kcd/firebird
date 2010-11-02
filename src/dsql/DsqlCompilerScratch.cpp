@@ -272,17 +272,17 @@ void DsqlCompilerScratch::putLocalVariables(const dsql_nod* parameters, SSHORT l
 				}
 			}
 
-			dsql_nod* varNode = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
+			VariableNode* varNode = MAKE_variable(field, field->fld_name.c_str(), VAR_local,
+				0, 0, locals);
 			variables.add(varNode);
 
-			dsql_var* variable = (dsql_var*) varNode->nod_arg[Dsql::e_var_variable];
+			dsql_var* variable = varNode->dsqlVar;
 			putLocalVariable(variable, parameter,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
 
-			// Some field attributes are calculated inside
-			// putLocalVariable(), so we reinitialize the
-			// descriptor
-			MAKE_desc_from_field(&varNode->nod_desc, field);
+			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
+			// the descriptor.
+			MAKE_desc_from_field(&varNode->varDesc, field);
 
 			++locals;
 		}
@@ -342,21 +342,15 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostPar
 }
 
 // Try to resolve variable name against parameters and local variables.
-dsql_nod* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
+VariableNode* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
 {
-	for (dsql_nod* const* i = variables.begin(); i != variables.end(); ++i)
+	for (VariableNode* const* i = variables.begin(); i != variables.end(); ++i)
 	{
-		dsql_nod* varNode = *i;
-		fb_assert(varNode->nod_type == Dsql::nod_variable);
+		const dsql_var* variable = (*i)->dsqlVar;
+		DEV_BLKCHK(variable, dsql_type_var);
 
-		if (varNode->nod_type == Dsql::nod_variable)
-		{
-			const dsql_var* variable = (dsql_var*) varNode->nod_arg[Dsql::e_var_variable];
-			DEV_BLKCHK(variable, dsql_type_var);
-
-			if (!strcmp(varName->str_data, variable->var_name))
-				return varNode;
-		}
+		if (!strcmp(varName->str_data, variable->var_name))
+			return *i;
 	}
 
 	return NULL;
@@ -374,10 +368,9 @@ void DsqlCompilerScratch::genReturn(bool eosFlag)
 	appendUChar(1);
 	appendUChar(blr_begin);
 
-	for (Array<dsql_nod*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
+	for (Array<VariableNode*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		const dsql_nod* parameter = *i;
-		const dsql_var* variable = (dsql_var*) parameter->nod_arg[Dsql::e_var_variable];
+		const dsql_var* variable = (*i)->dsqlVar;
 		appendUChar(blr_assignment);
 		appendUChar(blr_variable);
 		appendUShort(variable->var_variable_number);

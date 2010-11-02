@@ -819,6 +819,45 @@ public:
 };
 
 
+class VariableNode : public TypedNode<ValueExprNode, ExprNode::TYPE_VARIABLE>
+{
+public:
+	VariableNode(MemoryPool& pool);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+
+	virtual bool jrdVisit(JrdNodeVisitor& visitor)
+	{
+		return false;
+	}
+
+	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
+	{
+		return false;
+	}
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_var* dsqlVar;
+	dsc varDesc;
+	USHORT varId;
+	NestConst<jrd_nod> varDecl;
+	NestConst<ItemInfo> varInfo;
+};
+
+
 } // namespace
 
 #endif // DSQL_EXPR_NODES_H

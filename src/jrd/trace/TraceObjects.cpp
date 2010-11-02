@@ -379,6 +379,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
 		const ParameterNode* param;
+		const VariableNode* var;
 		const LiteralNode* literal;
 
 		if ((param = ExprNode::as<ParameterNode>(prm)))
@@ -401,6 +402,12 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 					desc.dsc_flags |= DSC_null;
 			}
 		}
+		else if ((var = ExprNode::as<VariableNode>(prm)))
+		{
+			impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
+				prm->nod_impure);
+			from_desc = &impure->vlu_desc;
+		}
 		else if ((literal = ExprNode::as<LiteralNode>(prm)))
 			from_desc = &literal->litDesc;
 		else if (ExprNode::is<NullNode>(prm))
@@ -408,20 +415,6 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 			desc.clear();
 			desc.setNull();
 			from_desc = &desc;
-		}
-
-		switch (prm->nod_type)
-		{
-			case nod_variable:
-			{
-				impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
-					prm->nod_impure);
-				from_desc = &impure->vlu_desc;
-				break;
-			}
-
-			default:
-				break;
 		}
 
 		if (from_desc)

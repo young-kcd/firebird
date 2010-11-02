@@ -57,7 +57,6 @@ NODE(nod_init_variable, init_variable, "")
 NODE(nod_set_generator, set_generator, "")
 NODE(nod_set_generator2, set_generator, "")
 
-NODE(nod_variable, variable, "")
 NODE(nod_dbkey, dbkey, "ROWID")
 NODE(nod_field, field, "")
 NODE(nod_from, from, "")

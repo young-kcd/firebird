@@ -307,9 +307,10 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 		null = -1;
 
 	USHORT* impure_flags = NULL;
-	const ParameterNode* toParam = ExprNode::as<ParameterNode>(to);
+	const ParameterNode* toParam;
+	const VariableNode* toVar;
 
-	if (toParam)
+	if ((toParam = ExprNode::as<ParameterNode>(to)))
 	{
 		if (toParam->argInfo)
 		{
@@ -323,17 +324,16 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 			(IPTR) toParam->message->nod_arg[e_msg_impure_flags] +
 			(sizeof(USHORT) * toParam->argNumber));
 	}
-	else if (to->nod_type == nod_variable)
+	else if ((toVar = ExprNode::as<VariableNode>(to)))
 	{
-		if (to->nod_arg[e_var_info])
+		if (toVar->varInfo)
 		{
-			EVL_validate(tdbb,
-				Item(Item::TYPE_VARIABLE, (IPTR) to->nod_arg[e_var_id]),
-				reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
-				from_desc, null == -1);
+			EVL_validate(tdbb, Item(Item::TYPE_VARIABLE, toVar->varId),
+				toVar->varInfo, from_desc, null == -1);
 		}
+
 		impure_flags = &request->getImpure<impure_value>(
-			to->nod_arg[e_var_variable]->nod_impure)->vlu_flags;
+			toVar->varDecl->nod_impure)->vlu_flags;
 	}
 
 	if (impure_flags != NULL)

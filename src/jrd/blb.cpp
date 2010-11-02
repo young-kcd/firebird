@@ -988,11 +988,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* fiel
 					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
 				break;
 
-			case nod_variable:
-				break;
-
 			case nod_class_exprnode_jrd:
-				if (ExprNode::is<ParameterNode>(field))
+				if (ExprNode::is<ParameterNode>(field) || ExprNode::is<VariableNode>(field))
 					break;
 				// fall into
 

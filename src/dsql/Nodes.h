@@ -283,7 +283,8 @@ public:
 		TYPE_SYSFUNC_CALL,
 		TYPE_TRIM,
 		TYPE_UDF_CALL,
-		TYPE_VALUE_IF
+		TYPE_VALUE_IF,
+		TYPE_VARIABLE
 	};
 
 	explicit ExprNode(Type aType, MemoryPool& pool)

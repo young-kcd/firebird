@@ -130,7 +130,6 @@ enum nod_t
 	nod_alias,
 	nod_user_name,
 	nod_user_group,
-	nod_variable,
 	nod_var_name,
 	nod_array,
 	nod_not_null,
@@ -277,9 +276,6 @@ enum node_args {
 	e_err_errs = 0,			// nod_on_error
 	e_err_action,
 	e_err_count,
-
-	e_var_variable = 0,		// nod_variable
-	e_var_count,
 
 	e_exec_sql_stmnt = 0,	// nod_exec_sql
 	e_exec_sql_count,
