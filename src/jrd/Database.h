@@ -326,22 +326,6 @@ public:
 		return TypedHandle<type_dbb>::checkHandle();
 	}
 
-	/* CVC: Nobody's using this actively now.
-	void checkOdsForDsql(USHORT encodedVersion)
-	{
-		using namespace Firebird;
-
-		if (ENCODE_ODS(dbb_ods_version, dbb_minor_version) < encodedVersion)
-		{
-			// Feature not supported on ODS version older than %d.%d
-			status_exception::raise(
-				Arg::Gds(isc_dsql_feature_not_supported_ods) <<
-				Arg::Num(DECODE_ODS_MAJOR(encodedVersion)) <<
-				Arg::Num(DECODE_ODS_MINOR(encodedVersion)));
-		}
-	}
-	*/
-
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
 	Firebird::RefPtr<LockManager>	dbb_lock_mgr;
