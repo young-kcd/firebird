@@ -1,3 +1,37 @@
+ 2010-11-02 17:05  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/node.h
+   M src/dsql/pass1.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/misc/blrtable.cpp
+Refactor variables
+
+ 2010-11-02 11:30  dimitr 
+   M src/jrd/Database.h
+Cleanup.
+
+ 2010-11-02 09:35  dimitr 
+   M src/dsql/dsql.cpp
+Fixed SET TRANSACTION statement.
+
  2010-11-01 23:57  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
