@@ -58,7 +58,12 @@ namespace Firebird
 		enum {INLINE_BUFFER_SIZE = 32, INIT_RESERVE = 16/*, KEEP_SIZE = 512*/};
 
 	protected:
-		typedef USHORT internal_size_type; // 16 bits!
+		typedef ULONG internal_size_type; // 32 bits!
+
+	private:
+		const internal_size_type max_length;
+
+	protected:
 		char_type inlineBuffer[INLINE_BUFFER_SIZE];
 		char_type* stringBuffer;
 		internal_size_type stringLength, bufferSize;
@@ -71,9 +76,9 @@ namespace Firebird
 			}
 		}
 
-		static void checkLength(size_type len)
+		void checkLength(size_type len)
 		{
-			if (len > max_length()) {
+			if (len > getMaxLength()) {
 				fatal_exception::raise("Firebird::string - length exceeds predefined limit");
 			}
 		}
@@ -95,8 +100,9 @@ namespace Firebird
 					newSize = size_t(bufferSize) * 2u;
 
 				// Do not grow buffer beyond string length limit
-				if (newSize > max_length() + 1)
-					newSize = max_length() + 1;
+				size_type max_length = getMaxLength() + 1;
+				if (newSize > max_length)
+					newSize = max_length;
 
 				// Allocate new buffer
 				char_type *newBuffer = FB_NEW(getPool()) char_type[newSize];
@@ -130,8 +136,9 @@ namespace Firebird
 				size_type newSize = len + 1 + INIT_RESERVE;
 
 				// Do not grow buffer beyond string length limit
-				if (newSize > max_length() + 1)
-					newSize = max_length() + 1;
+				size_type max_length = getMaxLength() + 1;
+				if (newSize > max_length)
+					newSize = max_length;
 
 				// Allocate new buffer
 				stringBuffer = FB_NEW(getPool()) char_type[newSize];
@@ -147,36 +154,36 @@ namespace Firebird
 		}
 
 	protected:
-		AbstractString(const size_type sizeL, const void* datap);
+		AbstractString(const size_type limit, const size_type sizeL, const void* datap);
 
-		AbstractString(const_pointer p1, const size_type n1,
+		AbstractString(const size_type limit, const_pointer p1, const size_type n1,
 					 const_pointer p2, const size_type n2);
 
-		AbstractString(const AbstractString& v);
+		AbstractString(const size_type limit, const AbstractString& v);
 
-		AbstractString() :
-			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+		AbstractString(const size_type limit) :
+			max_length(limit), stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
 			stringBuffer[0] = 0;
 		}
 
-		AbstractString(const size_type sizeL, char_type c);
+		AbstractString(const size_type limit, const size_type sizeL, char_type c);
 
-		explicit AbstractString(MemoryPool& p) : AutoStorage(p),
-			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+		AbstractString(const size_type limit, MemoryPool& p) : AutoStorage(p),
+			max_length(limit), stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
 			stringBuffer[0] = 0;
 		}
 
-		AbstractString(MemoryPool& p, const AbstractString& v)
-			: AutoStorage(p)
+		AbstractString(const size_type limit, MemoryPool& p, const AbstractString& v)
+			: AutoStorage(p), max_length(limit)
 		{
 			initialize(v.length());
 			memcpy(stringBuffer, v.c_str(), stringLength);
 		}
 
-		AbstractString(MemoryPool& p, const void* s, const size_type l)
-			: AutoStorage(p)
+		AbstractString(const size_type limit, MemoryPool& p, const void* s, const size_type l)
+			: AutoStorage(p), max_length(limit)
 		{
 			initialize(l);
 			memcpy(stringBuffer, s, l);
@@ -201,6 +208,11 @@ namespace Firebird
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
 		void baseTrim(const TrimType whereTrim, const_pointer toTrim);
+
+		size_type getMaxLength()
+		{
+			return max_length;
+		}
 
 	public:
 		const_pointer c_str() const
@@ -350,10 +362,6 @@ namespace Firebird
 		size_type size() const
 		{
 			return length();
-		}
-		static size_type max_length()
-		{
-			return 0xfffe; // Max length of character field in Firebird
 		}
 		size_type capacity() const
 		{
@@ -574,47 +582,71 @@ namespace Firebird
 		{
 			return memcmp(s1, s2, n);
 		}
+
+		static AbstractString::size_type getMaxLength()
+		{
+			return 0xFFFFFFFEu;
+		}
 	};
+
 	class PathNameComparator
 	{
 	public:
 		static int compare(AbstractString::const_pointer s1,
 						   AbstractString::const_pointer s2,
 						   const AbstractString::size_type n);
+
+		static AbstractString::size_type getMaxLength()
+		{
+			return 0xFFFEu;
+		}
 	};
+
 	class IgnoreCaseComparator
 	{
 	public:
 		static int compare(AbstractString::const_pointer s1,
 						   AbstractString::const_pointer s2,
 						   const AbstractString::size_type n);
+
+		static AbstractString::size_type getMaxLength()
+		{
+			return 0xFFFFFFFEu;
+		}
 	};
 
 	template<typename Comparator>
 	class StringBase : public AbstractString
 	{
-		typedef StringBase<Comparator> StringType;
+		typedef StringBase StringType;
 	protected:
-		StringBase<Comparator>(const_pointer p1, size_type n1,
-						  const_pointer p2, size_type n2) :
-			   AbstractString(p1, n1, p2, n2) {}
+		StringBase(const_pointer p1, size_type n1,
+				   const_pointer p2, size_type n2) :
+			   AbstractString(Comparator::getMaxLength(), p1, n1, p2, n2) {}
 	private:
 		StringType add(const_pointer s, size_type n) const
 		{
 			return StringBase<Comparator>(c_str(), length(), s, n);
 		}
 	public:
-		StringBase<Comparator>() : AbstractString() {}
-		StringBase<Comparator>(const StringType& v) : AbstractString(v) {}
-		StringBase<Comparator>(const void* s, size_type n) : AbstractString(n, s) {}
-		StringBase<Comparator>(const_pointer s) : AbstractString(strlen(s), s) {}
-		explicit StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
-		StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
-		//explicit StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
-		StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
-		explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
-		StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
-		StringBase<Comparator>(MemoryPool& p, const char_type* s, size_type l) : AbstractString(p, s, l) {}
+		StringBase() : AbstractString(Comparator::getMaxLength()) {}
+		StringBase(const StringType& v) : AbstractString(Comparator::getMaxLength(), v) {}
+		StringBase(const void* s, size_type n) : AbstractString(Comparator::getMaxLength(), n, s) {}
+		StringBase(const_pointer s) : AbstractString(Comparator::getMaxLength(), strlen(s), s) {}
+		explicit StringBase(const unsigned char* s) :
+			AbstractString(Comparator::getMaxLength(), strlen((char*)s), (char*)s) {}
+		StringBase(size_type n, char_type c) : AbstractString(Comparator::getMaxLength(), n, c) {}
+		StringBase(const_iterator first, const_iterator last) :
+			AbstractString(Comparator::getMaxLength(), last - first, first) {}
+		explicit StringBase(MemoryPool& p) : AbstractString(Comparator::getMaxLength(), p) {}
+		StringBase(MemoryPool& p, const AbstractString& v) : AbstractString(Comparator::getMaxLength(), p, v) {}
+		StringBase(MemoryPool& p, const char_type* s, size_type l) :
+			AbstractString(Comparator::getMaxLength(), p, s, l) {}
+
+		static size_type max_length()
+		{
+			return Comparator::getMaxLength();
+		}
 
 		StringType& assign(const StringType& str)
 		{

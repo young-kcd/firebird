@@ -87,20 +87,23 @@ namespace Firebird
 {
 	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
 
-	AbstractString::AbstractString(const AbstractString& v)
+	AbstractString::AbstractString(const size_type limit, const AbstractString& v)
+		: max_length(limit)
 	{
 		initialize(v.length());
 		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
-	AbstractString::AbstractString(const size_type sizeL, const void* dataL)
+	AbstractString::AbstractString(const size_type limit, const size_type sizeL, const void* dataL)
+		: max_length(limit)
 	{
 		initialize(sizeL);
 		memcpy(stringBuffer, dataL, sizeL);
 	}
 
-	AbstractString::AbstractString(const_pointer p1, const size_type n1,
+	AbstractString::AbstractString(const size_type limit, const_pointer p1, const size_type n1,
 				 const_pointer p2, const size_type n2)
+		: max_length(limit)
 	{
 		// CVC: npos must be maximum size_type value for all platforms.
 		// fb_assert(n2 < npos - n1 && n1 + n2 <= max_length());
@@ -114,7 +117,8 @@ namespace Firebird
 		memcpy(stringBuffer + n1, p2, n2);
 	}
 
-	AbstractString::AbstractString(const size_type sizeL, char_type c)
+	AbstractString::AbstractString(const size_type limit, const size_type sizeL, char_type c)
+		: max_length(limit)
 	{
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);
@@ -175,8 +179,8 @@ namespace Firebird
 	void AbstractString::reserve(size_type n)
 	{
 		// Do not allow to reserve huge buffers
-		if (n > max_length())
-			n = max_length();
+		if (n > getMaxLength())
+			n = getMaxLength();
 
 		reserveBuffer(n);
 	}
@@ -426,16 +430,16 @@ extern "C" {
 			while (true)
 			{
 				n *= 2;
-				if (n > max_length())
-					n = max_length();
+				if (n > getMaxLength())
+					n = getMaxLength();
 				FB_VA_COPY(paramsCopy, params);
 				l = VSNPRINTF(baseAssign(n), n + 1, format, paramsCopy);
 				FB_CLOSE_VACOPY(paramsCopy);
 				if (l >= 0)
 					break;
-				if (n >= max_length())
+				if (n >= getMaxLength())
 				{
-					stringBuffer[max_length()] = 0;
+					stringBuffer[getMaxLength()] = 0;
 					return;
 				}
 			}
