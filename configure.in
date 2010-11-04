@@ -494,6 +494,14 @@ if test "$RAW_DEVICES_FLG" = "Y"; then
     [Define this if databases on raw devices should be supported])
 fi
 
+AC_ARG_ENABLE(rpath,
+  [  --enable-rpath          enable linking with RPATH (default)],
+  [],
+  [enable_rpath=yes])
+if test "x$enable_rpath" != "xno" || test "x$enable_rpath" = "x" ; then
+  AC_SUBST(USE_RPATH, 1)
+fi
+
 AC_ARG_WITH(editline,
   [  --with-editline         support fancy command line editing],
   [case "$withval" in
