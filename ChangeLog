@@ -1,3 +1,12 @@
+ 2010-11-04 01:03  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-3211 - String truncation occurs when selecting from a view containing NOT IN inside
+
+ 2010-11-03 08:33  dimitr 
+   M builds/win32/make_boot.bat
+Fixed MSVC8 build.
+
  2010-11-02 17:05  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DsqlCompilerScratch.cpp
