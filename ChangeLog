@@ -1,3 +1,7 @@
+ 2010-11-04 01:10  asfernandes 
+   M src/jrd/cmp.cpp
+Fixed CORE-3211 - String truncation occurs when selecting from a view containing NOT IN inside
+
  2010-11-02 11:20  dimitr 
    M src/jrd/opt.cpp
 Fixed CORE-3210: The cursor identified in the UPDATE or DELETE statement is not positioned on a row. no current record for fetch operation in SELECT query.
