@@ -242,7 +242,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	newSource->view = view;
 
 	CompilerScratch::csb_repeat* element = CMP_csb_element(copier.csb, newSource->stream);
-	element->csb_relation = (jrd_rel*) newSource->relation;
+	element->csb_relation = newSource->relation;
 	element->csb_view = newSource->view;
 	element->csb_view_stream = copier.remap[0];
 

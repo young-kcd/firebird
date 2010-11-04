@@ -1887,6 +1887,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 	andNode->arg2 = rseBoolNode;
 
 	RseNode* newInnerRse = innerRse->clone();
+	newInnerRse->ignoreDbKey(tdbb, csb, csb->csb_view);
 
 	rseBoolNode = FB_NEW(csb->csb_pool) RseBoolNode(csb->csb_pool, blr_any);
 	rseBoolNode->rse = PAR_make_node(tdbb, 1);
