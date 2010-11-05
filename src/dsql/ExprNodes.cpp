@@ -1617,7 +1617,7 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const jrd_nod* n
 	fb_assert(
 		(arithmeticNode && !arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
-		ExprNode::is<AggNode>(node) || node->nod_type == nod_average2);
+		ExprNode::is<AggNode>(node));
 
 	dsc* result = &value->vlu_desc;
 

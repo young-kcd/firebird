@@ -72,8 +72,6 @@ NODE(nod_count, count, "COUNT")
 NODE(nod_max, max, "MAX")
 NODE(nod_min, min, "MIN")
 NODE(nod_total, total, "SUM")
-NODE(nod_average2, average2, "AVG")
-NODE(nod_total2, total, "SUM")
 
 NODE(nod_class_exprnode_jrd, class_exprnode_jrd, "class_exprnode_jrd")
 NODE(nod_class_stmtnode_jrd, class_stmtnode_jrd, "class_stmtnode_jrd")

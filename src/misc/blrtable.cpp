@@ -115,7 +115,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_exprnode_jrd, blr_parameter3, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_variable, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_user_name, 1, 0, VALUE, VALUE),
-	PAIR2(nod_average, blr_average, e_stat_length, 2, VALUE, VALUE),
+	PAIR(nod_average, blr_average, e_stat_length, 2, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_concatenate, 1, 0, VALUE, VALUE),
 	PAIR(nod_count, blr_count, e_stat_length, 1, VALUE, VALUE),
 /* count2
@@ -139,7 +139,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_exprnode_jrd, blr_upcase, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_substring, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_subtract, 1, 0, VALUE, VALUE),
-	PAIR2(nod_total, blr_total, e_stat_length, 2, VALUE, VALUE),
+	PAIR(nod_total, blr_total, e_stat_length, 2, VALUE, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_value_if, 1, 0, VALUE, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_equiv, 1, 0, TYPE_BOOL, VALUE),
 	PAIR(nod_class_exprnode_jrd, blr_eql, 1, 0, TYPE_BOOL, VALUE),
