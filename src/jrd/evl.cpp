@@ -466,7 +466,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	case nod_min:
 	case nod_count:
 	case nod_average:
-	case nod_average2:
 	case nod_total:
 	case nod_from:
 		return eval_statistical(tdbb, node, impure);
@@ -903,21 +902,10 @@ static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value*
 		}
 	}
 
-	if (nod_average2 == node->nod_type)
-	{
-		impure->vlu_misc.vlu_int64 = 0;
-		impure->vlu_desc.dsc_dtype = dtype_int64;
-		impure->vlu_desc.dsc_length = sizeof(SINT64);
-		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_int64;
-		impure->vlu_desc.dsc_scale = 0;
-	}
-	else
-	{
-		impure->vlu_misc.vlu_long = 0;
-		impure->vlu_desc.dsc_dtype = dtype_long;
-		impure->vlu_desc.dsc_length = sizeof(SLONG);
-		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
-	}
+	impure->vlu_misc.vlu_long = 0;
+	impure->vlu_desc.dsc_dtype = dtype_long;
+	impure->vlu_desc.dsc_length = sizeof(SLONG);
+	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
 
 	const RecordSource* const rsb = reinterpret_cast<const RecordSource*>(node->nod_arg[e_stat_rsb]);
 	rsb->open(tdbb);
@@ -1002,33 +990,6 @@ static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value*
 			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
 			impure->vlu_desc.dsc_length = sizeof(double);
 			impure->vlu_desc.dsc_scale = 0;
-			flag = 0;
-			break;
-
-		case nod_average2:			// average with dialect-3 semantics
-			while (rsb->getRecord(tdbb))
-			{
-				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-				if (request->req_flags & req_null)
-					continue;
-				// Note: if the field being SUMed or AVERAGEd is exact
-				// numeric, impure will stay int64, and the first add() will
-				// set the correct scale; if it is approximate numeric,
-				// the first add() will convert impure to double.
-				ArithmeticNode::add(desc, impure, node, blr_add);
-				count++;
-			}
-			desc = &impure->vlu_desc;
-			if (!count)
-				break;
-			// We know the sum, but we want the average.  To get it, divide
-			// the sum by the count.  Since count is exact, dividing an int64
-			// sum by count should leave an int64 average, while dividing a
-			// double sum by count should leave a double average.
-			if (dtype_int64 == impure->vlu_desc.dsc_dtype)
-				impure->vlu_misc.vlu_int64 /= count;
-			else
-				impure->vlu_misc.vlu_double /= count;
 			flag = 0;
 			break;
 
