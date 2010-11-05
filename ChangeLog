@@ -1,3 +1,17 @@
+ 2010-11-04 17:06  alexpeshkoff 
+   M builds/posix/make.defaults
+   M configure.in
+Damyan's patch for distro-untegrated posix builds
+
+ 2010-11-04 16:22  alexpeshkoff 
+   M src/common/classes/fb_string.cpp
+   M src/common/classes/fb_string.h
+Make fb_string's length limit type-dependent
+
+ 2010-11-04 15:28  alexpeshkoff 
+   M src/common/classes/fb_string.h
+Clean up usage of inline keyword in my old code
+
  2010-11-04 01:03  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/jrd/RecordSourceNodes.cpp
