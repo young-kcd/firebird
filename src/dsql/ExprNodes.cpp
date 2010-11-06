@@ -2511,7 +2511,6 @@ void CastNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-// Turn an international string reference into internal subtype ID.
 ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	CastNode* node = FB_NEW(getPool()) CastNode(getPool());

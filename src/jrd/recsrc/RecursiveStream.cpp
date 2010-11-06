@@ -269,6 +269,7 @@ void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
 	memcpy(saveImpure, tmp, m_saveSize);
 
 	UCHAR* p = tmp + m_saveSize;
+
 	for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 	{
 		const UCHAR stream = m_innerStreams[i];
@@ -281,5 +282,6 @@ void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
 		// from upper level. It may be optimized in the future if needed.
 		delete tempRecord;
 	}
+
 	delete[] tmp;
 }

@@ -443,7 +443,7 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception&
 	return ex.stuff_exception(status_vector);
 }
 
-ISC_STATUS stuff_exception(Status *status, const Firebird::Exception& ex) throw()
+ISC_STATUS stuff_exception(Status* status, const Firebird::Exception& ex) throw()
 {
 	return ex.stuffException(status);
 }

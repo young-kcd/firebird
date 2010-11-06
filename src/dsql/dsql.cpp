@@ -255,7 +255,7 @@ void DSQL_execute(thread_db* tdbb,
 		}
 	}
 
-	// A select with a non zero output length is a singleton select 
+	// A select with a non zero output length is a singleton select
 	const bool singleton =
 		(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
 
@@ -1048,7 +1048,7 @@ static void execute_immediate(thread_db* tdbb,
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
-		// A select with a non zero output length is a singleton select 
+		// A select with a non zero output length is a singleton select
 		const bool singleton =
 			(statement->getType() == DsqlCompiledStatement::TYPE_SELECT && out_msg_length != 0);
 

@@ -1583,7 +1583,7 @@ static bool check_for_nod_from(const jrd_nod* node)
 
 	if (castNode)
 		return check_for_nod_from(castNode->source);
-	
+
 	switch (node->nod_type)
 	{
 	case nod_from:
