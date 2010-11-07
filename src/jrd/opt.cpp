@@ -231,24 +231,6 @@ bool StreamFinder::visit(const JrdNode& node)
 			break;
 		}
 
-		case nod_average:
-		case nod_count:
-		case nod_from:
-		case nod_max:
-		case nod_min:
-		case nod_total:
-		{
-			jrd_nod* nodeDefault = jrdNode->nod_arg[e_stat_rse];
-			if (nodeDefault && visit(nodeDefault))
-				return true;
-
-			jrd_nod* value = jrdNode->nod_arg[e_stat_value];
-			if (value && visit(value))
-				return true;
-
-			return false;
-		}
-
 		default:
 			return visitChildren(node);
 	}
@@ -319,16 +301,6 @@ bool StreamsCollector::visit(const JrdNode& node)
 
 			break;
 		}
-
-		case nod_average:
-		case nod_count:
-		case nod_from:
-		case nod_max:
-		case nod_min:
-		case nod_total:
-			visit(jrdNode->nod_arg[e_stat_rse]);
-			visit(jrdNode->nod_arg[e_stat_value]);
-			break;
 
 		default:
 			return visitChildren(node);
@@ -1579,18 +1551,15 @@ static bool check_for_nod_from(const jrd_nod* node)
  *	Check for nod_from under >=0 CastNode nodes.
  *
  **************************************/
-	const CastNode* castNode = ExprNode::as<CastNode>(node);
+	const CastNode* castNode;
+	const SubQueryNode* subQueryNode;
 
-	if (castNode)
+	if ((castNode = ExprNode::as<CastNode>(node)))
 		return check_for_nod_from(castNode->source);
-
-	switch (node->nod_type)
-	{
-	case nod_from:
+	else if ((subQueryNode = ExprNode::as<SubQueryNode>(node)) && subQueryNode->blrOp == blr_via)
 		return true;
-	default:
-		return false;
-	}
+
+	return false;
 }
 
 static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStack& stack,

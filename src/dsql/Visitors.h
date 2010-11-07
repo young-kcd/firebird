@@ -384,7 +384,6 @@ public:
 		return StreamFinder(csb, stream).visit(node);
 	}
 
-protected:
 	virtual bool visit(const JrdNode& node);
 
 private:
@@ -404,7 +403,6 @@ public:
 		return StreamsCollector(streams).visit(node);
 	}
 
-protected:
 	virtual bool visit(const JrdNode& node);
 
 private:

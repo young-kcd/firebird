@@ -119,7 +119,6 @@ using namespace Jrd;
 using namespace Firebird;
 
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
-static dsc* eval_statistical(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
 static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 
@@ -461,14 +460,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			request->req_flags |= req_null;
 			return NULL;
 		}
-
-	case nod_max:
-	case nod_min:
-	case nod_count:
-	case nod_average:
-	case nod_total:
-	case nod_from:
-		return eval_statistical(tdbb, node, impure);
 
 	case nod_scalar:
 		return scalar(tdbb, node, impure);
@@ -861,179 +852,6 @@ static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_ttype() = ttype_binary;
 
 	return &impure->vlu_desc;
-}
-
-
-static dsc* eval_statistical(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      e v a l _ s t a t i s t i c a l
- *
- **************************************
- *
- * Functional description
- *      Evaluate a statistical expression.
- *
- **************************************/
-	USHORT* invariant_flags;
-
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	// Get started by opening stream
-
-	jrd_req* request = tdbb->getRequest();
-	dsc* desc = &impure->vlu_desc;
-
-	if (node->nod_flags & nod_invariant)
-	{
-		invariant_flags = &impure->vlu_flags;
-		if (*invariant_flags & VLU_computed)
-		{
-			// An invariant node has already been computed.
-
-			if (*invariant_flags & VLU_null)
-				request->req_flags |= req_null;
-			else
-				request->req_flags &= ~req_null;
-			return desc;
-		}
-	}
-
-	impure->vlu_misc.vlu_long = 0;
-	impure->vlu_desc.dsc_dtype = dtype_long;
-	impure->vlu_desc.dsc_length = sizeof(SLONG);
-	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
-
-	const RecordSource* const rsb = reinterpret_cast<const RecordSource*>(node->nod_arg[e_stat_rsb]);
-	rsb->open(tdbb);
-
-	SLONG count = 0;
-	ULONG flag = req_null;
-	double d;
-
-	try
-	{
-		// Handle each variety separately
-
-		switch (node->nod_type)
-		{
-		case nod_count:
-			flag = 0;
-			while (rsb->getRecord(tdbb))
-			{
-				++impure->vlu_misc.vlu_long;
-			}
-			break;
-
-		case nod_min:
-		case nod_max:
-			while (rsb->getRecord(tdbb))
-			{
-				dsc* value = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-				if (request->req_flags & req_null) {
-					continue;
-				}
-				int result;
-				if (flag || ((result = MOV_compare(value, desc)) < 0 && node->nod_type == nod_min) ||
-					(node->nod_type != nod_min && result > 0))
-				{
-					flag = 0;
-					EVL_make_value(tdbb, value, impure);
-				}
-			}
-			break;
-
-		case nod_from:
-			if (rsb->getRecord(tdbb))
-			{
-				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-			}
-			else
-			{
-				if (node->nod_arg[e_stat_default])
-					desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
-				else
-					ERR_post(Arg::Gds(isc_from_no_match));
-			}
-			flag = request->req_flags;
-			break;
-
-		case nod_average:			// total or average with dialect-1 semantics
-		case nod_total:
-			while (rsb->getRecord(tdbb))
-			{
-				desc = EVL_expr(tdbb, node->nod_arg[e_stat_value]);
-				if (request->req_flags & req_null) {
-					continue;
-				}
-				// Note: if the field being SUMed or AVERAGEd is short or long,
-				// impure will stay long, and the first add() will
-				// set the correct scale; if it is approximate numeric,
-				// the first add() will convert impure to double.
-				ArithmeticNode::add(desc, impure, node, blr_add);
-
-				count++;
-			}
-			desc = &impure->vlu_desc;
-			if (node->nod_type == nod_total)
-			{
-				flag = 0;
-				break;
-			}
-			if (!count)
-				break;
-			d = MOV_get_double(&impure->vlu_desc);
-			impure->vlu_misc.vlu_double = d / count;
-			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
-			impure->vlu_desc.dsc_length = sizeof(double);
-			impure->vlu_desc.dsc_scale = 0;
-			flag = 0;
-			break;
-
-		default:
-			BUGCHECK(233);			// msg 233 eval_statistical: invalid operation
-		}
-	}
-	catch (const Firebird::Exception&)
-	{
-		// close stream
-		// ignore any error during it to keep original
-		try
-		{
-			rsb->close(tdbb);
-			request->req_flags &= ~req_null;
-			request->req_flags |= flag;
-		}
-		catch (const Firebird::Exception&)
-		{} // no-op
-
-		throw;
-	}
-
-	// Close stream and return value
-
-	rsb->close(tdbb);
-	request->req_flags &= ~req_null;
-	request->req_flags |= flag;
-
-	// If this is an invariant node, save the return value.  If the
-	// descriptor does not point to the impure area for this node then
-	// point this node's descriptor to the correct place; copy the whole
-	// structure to be absolutely sure
-
-	if (node->nod_flags & nod_invariant)
-	{
-		*invariant_flags |= VLU_computed;
-		if (request->req_flags & req_null)
-			*invariant_flags |= VLU_null;
-		if (desc && (desc != &impure->vlu_desc))
-			impure->vlu_desc = *desc;
-	}
-
-	return desc;
 }
 
 

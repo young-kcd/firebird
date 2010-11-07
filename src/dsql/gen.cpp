@@ -270,10 +270,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_rse(dsqlScratch, node->nod_arg[e_derived_table_rse]);
 		return;
 
-	case nod_via:
-		blr_operator = blr_via;
-		break;
-
     case nod_coalesce:
 		gen_coalesce(dsqlScratch, node);
 		return;

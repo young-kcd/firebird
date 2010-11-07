@@ -175,28 +175,6 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 				return false;
 		}
 		return csb->csb_rpt[n].csb_flags & csb_active;
-
-	case nod_min:
-	case nod_max:
-	case nod_average:
-	case nod_total:
-	case nod_count:
-	case nod_from:
-		{
-			jrd_nod* sub;
-
-			if ((sub = node->nod_arg[e_stat_default]) &&
-				!OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
-			{
-				return false;
-			}
-
-			fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
-			RseNode* rse = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
-
-			return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream,
-				node->nod_arg[e_stat_value]);
-		}
 	}
 
 	return true;
@@ -786,32 +764,6 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 			}
 
 			return;
-		}
-
-		case nod_min:
-		case nod_max:
-		case nod_average:
-		case nod_total:
-		case nod_count:
-		case nod_from:
-		{
-			jrd_nod* sub;
-
-			if (sub = node->nod_arg[e_stat_default])
-				findDependentFromStreams(sub, streamList);
-
-			fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
-			RseNode* rse = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
-
-			rse->findDependentFromStreams(this, streamList);
-
-			jrd_nod* value = node->nod_arg[e_stat_value];
-
-			// Check value expression, if any
-			if (value)
-				findDependentFromStreams(value, streamList);
-
-			break;
 		}
 	}
 }

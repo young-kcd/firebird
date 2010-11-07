@@ -412,83 +412,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 	switch (node->nod_type)
 	{
-	case nod_max:
-	case nod_min:
-	case nod_from:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
-		return;
-
-	case nod_total:
-		if (node->nod_type == nod_total)
-			CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
-		else
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		switch (dtype = desc->dsc_dtype)
-		{
-		case dtype_short:
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_length = sizeof(SLONG);
-			node->nod_scale = desc->dsc_scale;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			return;
-
-		case dtype_unknown:
-			desc->dsc_dtype = dtype_unknown;
-			desc->dsc_length = 0;
-			node->nod_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			return;
-
-		case dtype_long:
-		case dtype_int64:
-		case dtype_real:
-		case dtype_double:
-		case dtype_text:
-		case dtype_cstring:
-		case dtype_varying:
-			desc->dsc_dtype = DEFAULT_DOUBLE;
-			desc->dsc_length = sizeof(double);
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_flags |= nod_double;
-			return;
-
-		case dtype_quad:
-			desc->dsc_dtype = dtype_quad;
-			desc->dsc_length = sizeof(SQUAD);
-			desc->dsc_sub_type = 0;
-			desc->dsc_flags = 0;
-			node->nod_scale = desc->dsc_scale;
-			node->nod_flags |= nod_quad;
-#ifdef NATIVE_QUAD
-			return;
-#endif
-
-		default:
-			fb_assert(false);
-			// FALLINTO
-		case dtype_sql_time:
-		case dtype_sql_date:
-		case dtype_timestamp:
-		case dtype_blob:
-		case dtype_array:
-		case dtype_dbkey:
-			// break to error reporting code
-			break;
-		}
-		break;
-
-	case nod_count:
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
-
 	case nod_field:
 		{
 			const USHORT stream = (USHORT) (IPTR) node->nod_arg[e_fld_stream];
@@ -543,22 +466,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				IBERROR(306); // Found array data type with more than 16 dimensions
 			return;
 		}
-
-	case nod_average:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_stat_value], desc);
-
-		if (!(DTYPE_IS_NUMERIC(desc->dsc_dtype) || DTYPE_IS_TEXT(desc->dsc_dtype)))
-		{
-			if (desc->dsc_dtype != dtype_unknown)
-				break;
-		}
-
-		desc->dsc_dtype = DEFAULT_DOUBLE;
-		desc->dsc_length = sizeof(double);
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
-		return;
 
 	case nod_class_exprnode_jrd:
 		{
@@ -1124,15 +1031,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
 		return node;
 	}
-
-	case nod_count:
-	case nod_max:
-	case nod_min:
-	case nod_total:
-	case nod_average:
-	case nod_from:
-		args = e_stat_length;
-		break;
 
 	case nod_class_recsrcnode_jrd:
 		node = PAR_make_node(tdbb, 1);
@@ -1894,25 +1792,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[e_cursor_stmt_scroll_val] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val]);
 		node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
 		break;
-
-	case nod_max:
-	case nod_min:
-	case nod_average:
-	case nod_from:
-	case nod_count:
-	case nod_total:
-		{
-			fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
-			RseNode* rseNode = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
-			fb_assert(rseNode->type == RseNode::TYPE);
-			rseNode->ignoreDbKey(tdbb, csb, view);
-			rseNode->pass1(tdbb, csb, csb->csb_view);
-			csb->csb_current_nodes.push(rseNode);
-			node->nod_arg[e_stat_value] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_value]);
-			node->nod_arg[e_stat_default] = CMP_pass1(tdbb, csb, node->nod_arg[e_stat_default]);
-			csb->csb_current_nodes.pop();
-		}
-		return node;
 
 	case nod_class_recsrcnode_jrd:
 		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb, view);
@@ -2719,7 +2598,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	DEBUG;
 	RseNode* rse_node = NULL;
-	RecordSource** rsb_ptr = NULL;
 	Cursor** cursor_ptr = NULL;
 
 	switch (node->nod_type)
@@ -2738,29 +2616,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_cursor_stmt:
 		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val], node);
 		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
-		break;
-
-	case nod_max:
-	case nod_min:
-	case nod_count:
-	case nod_average:
-	case nod_total:
-	case nod_from:
-		fb_assert(node->nod_arg[e_stat_rse]->nod_type == nod_class_recsrcnode_jrd);
-		rse_node = reinterpret_cast<RseNode*>(node->nod_arg[e_stat_rse]->nod_arg[0]);
-
-		if (!rse_node)
-			ERR_post(Arg::Gds(isc_wish_list));
-
-		fb_assert(rse_node->type == RseNode::TYPE);
-
-		if (!(rse_node->flags & RseNode::FLAG_VARIANT))
-		{
-			node->nod_flags |= nod_invariant;
-			csb->csb_invariants.push(&node->nod_impure);
-		}
-
-		rsb_ptr = (RecordSource**) &node->nod_arg[e_stat_rsb];
 		break;
 
 	case nod_src_info:
@@ -2839,18 +2694,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		CMP_pass2(tdbb, csb, node->nod_arg[e_asgn_missing2], node);
 		break;
 
-	case nod_average:
-		node->nod_flags |= nod_double;
-		// FALL INTO
-
-	case nod_max:
-	case nod_min:
-	case nod_from:
-	case nod_count:
-		node->nod_count = 0;
-		node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
-		break;
-
 	case nod_block:
 		node->nod_impure = CMP_impure(csb, sizeof(SLONG));
 		break;
@@ -2859,15 +2702,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		{
 			const dsc* desc = (DSC*) (node->nod_arg + e_dcl_desc);
 			node->nod_impure = CMP_impure(csb, sizeof(impure_value) + desc->dsc_length);
-		}
-		break;
-
-	case nod_total:
-		{
-			node->nod_count = 0;
-			node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 		}
 		break;
 
@@ -2991,9 +2825,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse_node);
 
 		csb->csb_fors.add(rsb);
-
-		if (rsb_ptr)
-			*rsb_ptr = rsb;
 
 		if (cursor_ptr)
 		{

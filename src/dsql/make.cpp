@@ -478,17 +478,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		}
 		return;
 
-	case nod_via:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_via_value_1]);
-	    // Set the descriptor flag as nullable. The
-	    // select expression may or may not return
-	    // this row based on the WHERE clause. Setting this
-	    // flag warns the client to expect null values.
-	    // (bug 10379)
-
-		desc->dsc_flags |= DSC_nullable;
-		return;
-
 	case nod_hidden_var:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr]);
 		return;
@@ -961,10 +950,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			parameter->par_name = DB_KEY_NAME;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 		}
-		break;
-	case nod_via:
-		// subquery, aka sub-select
-		MAKE_parameter_names(parameter, item->nod_arg[e_via_value_1]);
 		break;
 	case nod_derived_field:
 		string = (dsql_str*) item->nod_arg[e_derived_field_name];

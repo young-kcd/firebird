@@ -2582,20 +2582,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[0] = (jrd_nod*)(IPTR) csb->csb_blr_reader.getByte();
 		break;
 
-	case blr_maximum:
-	case blr_minimum:
-	case blr_count:
-	case blr_average:
-	case blr_total:
-	case blr_from:
-	case blr_via:
-		node->nod_arg[e_stat_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
-		if (blr_operator != blr_count)
-			node->nod_arg[e_stat_value] = PAR_parse_node(tdbb, csb, VALUE);
-		if (blr_operator == blr_via)
-			node->nod_arg[e_stat_default] = PAR_parse_node(tdbb, csb, VALUE);
-		break;
-
 	case blr_init_variable:
 		{
 			n = csb->csb_blr_reader.getWord();

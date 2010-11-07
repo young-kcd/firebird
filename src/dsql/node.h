@@ -122,7 +122,6 @@ enum nod_t
 	nod_flag,
 	nod_join,
 	nod_unique,
-	nod_via,
 	nod_field,
 	nod_dom_value,
 	nod_field_name,
@@ -491,11 +490,6 @@ enum node_args {
 	e_join_rght_rel,
 	e_join_boolean,
 	e_join_count,
-
-	e_via_rse = 0, 			// nod_via
-	e_via_value_1,
-	e_via_value_2,
-	e_via_count,
 
 	e_while_cond = 0,		// nod_while
 	e_while_action,

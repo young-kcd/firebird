@@ -32,6 +32,7 @@ class SysFunction;
 namespace Jrd {
 
 struct ItemInfo;
+class RecordSource;
 
 
 class ArithmeticNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ARITHMETIC>
@@ -616,6 +617,71 @@ public:
 	UCHAR blrSubOp;
 	dsql_nod* dsqlArg;
 	NestConst<jrd_nod> arg;
+};
+
+
+// This node is used for DSQL subqueries and for legacy (BLR-only) functionality.
+class SubQueryNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>
+{
+public:
+	explicit SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse = NULL,
+		dsql_nod* aValue1 = NULL, dsql_nod* aValue2 = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool jrdVisit(JrdNodeVisitor& visitor)
+	{
+		return false;
+	}
+
+	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
+	{
+		return false;
+	}
+
+	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
+	{
+		return true;
+	}
+
+	virtual bool jrdStreamFinder(StreamFinder& visitor);
+	virtual bool jrdStreamsCollector(StreamsCollector& visitor);
+
+	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+		bool allowOnlyCurrentStream);
+
+	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
+		SortedStreamList* streamList);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+		USHORT stream) /*const*/;
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	UCHAR blrOp;
+	dsql_nod* dsqlRse;
+	dsql_nod* dsqlValue1;
+	dsql_nod* dsqlValue2;
+	NestConst<jrd_nod> rse;
+	NestConst<jrd_nod> value1;
+	NestConst<jrd_nod> value2;
+	NestConst<RecordSource> rsb;
 };
 
 

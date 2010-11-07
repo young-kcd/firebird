@@ -373,11 +373,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 			return visit(&lmap->map_node);
 		}
 
-		case nod_via:
-			if (!ignoreSubSelects)
-				aggregate = visit(&node->nod_arg[e_via_rse]);
-			return aggregate;
-
 		case nod_rse:
 			++currentLevel;
 			aggregate |= visit(&node->nod_arg[e_rse_streams]);
@@ -468,11 +463,6 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 			break;
 		}
 
-		case nod_via:
-			// Pass only the rse from the nod_via
-			found |= visit(&node->nod_arg[e_via_rse]);
-			break;
-
 		case nod_rse:
 		{
 			AutoSetRestore<bool> autoCurrentScopeLevelEqual(&currentScopeLevelEqual, false);
@@ -543,11 +533,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 			found |= visit(&map->map_node);
 			break;
 		}
-
-		case nod_via:
-			// Pass only the rse from the nod_via
-			found |= visit(&node->nod_arg[e_via_rse]);
-			break;
 
 		case nod_rse:
 			// Pass rse_boolean (where clause) and rse_items (select items)
@@ -743,14 +728,6 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 			}
 			break;
 
-		case nod_via:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				invalid |= visit(ptr);
-			break;
-		}
-
 		case nod_coalesce:
 		case nod_unique:
 		case nod_rse:
@@ -864,11 +841,6 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 			break;
 		}
 
-		case nod_via:
-			visit(&node->nod_arg[e_via_rse]);
-			node->nod_arg[e_via_value_1] = node->nod_arg[e_via_rse]->nod_arg[e_rse_items]->nod_arg[0];
-			break;
-
 		case nod_rse:
 		{
 			AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, currentLevel + 1);
@@ -943,9 +915,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 			}
 			break;
 		}
-
-		case nod_via:
-			return true;
 
 		case nod_aggregate:
 		case nod_map:
@@ -1293,17 +1262,20 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_select_expr:
 		{
 			const DsqlContextStack::iterator base(*dsqlScratch->context);
-			node = MAKE_node(nod_via, e_via_count);
-			dsql_nod* rse = PASS1_rse(dsqlScratch, input, NULL);
-			node->nod_arg[e_via_rse] = rse;
-			node->nod_arg[e_via_value_1] = rse->nod_arg[e_rse_items]->nod_arg[0];
 
-			node->nod_arg[e_via_value_2] = MAKE_node(nod_class_exprnode, 1);
-			node->nod_arg[e_via_value_2]->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+			dsql_nod* rse = PASS1_rse(dsqlScratch, input, NULL);
+
+			SubQueryNode* subQueryNode = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(),
+				blr_via, rse, rse->nod_arg[e_rse_items]->nod_arg[0], MAKE_node(nod_class_exprnode, 1));
+			subQueryNode->dsqlValue2->nod_arg[0] = reinterpret_cast<dsql_nod*>(
 				FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
 
 			// Finish off by cleaning up contexts
 			dsqlScratch->context->clear(base);
+
+			node = MAKE_node(nod_class_exprnode, 1);
+			node->nod_arg[0] = reinterpret_cast<dsql_nod*>(subQueryNode);
+
 			return node;
 		}
 
@@ -5405,19 +5377,24 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 				return select_item;
 			}
 
-		case nod_via:
+		case nod_class_exprnode:
 			{
-				// Try to generate derived field from sub-select
-				dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb,
-					select_item->nod_arg[e_via_value_1]);
+				SubQueryNode* subQueryNode;
 
-				if (derived_field->nod_type == nod_derived_field)
+				if ((subQueryNode = ExprNode::as<SubQueryNode>(select_item)))
 				{
-					derived_field->nod_arg[e_derived_field_value] = select_item;
-					return derived_field;
+					// Try to generate derived field from sub-select
+					dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb,
+						subQueryNode->dsqlValue1);
+
+					if (derived_field->nod_type == nod_derived_field)
+					{
+						derived_field->nod_arg[e_derived_field_value] = select_item;
+						return derived_field;
+					}
 				}
 
-				return select_item;
+				break;
 			}
 
 		default:
@@ -8818,9 +8795,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_unique:
 		verb = "unique";
-		break;
-	case nod_via:
-		verb = "via";
 		break;
 
 	case nod_coalesce:

@@ -222,14 +222,6 @@ const int e_val_boolean		= 0;
 const int e_val_value		= 1;
 const int e_val_length		= 2;
 
-// Statistical expressions
-
-const int e_stat_rse		= 0;
-const int e_stat_value		= 1;
-const int e_stat_default	= 2;
-const int e_stat_rsb		= 3;
-const int e_stat_length		= 4;
-
 // Execute stored procedure
 
 const int e_esp_inputs		= 0;

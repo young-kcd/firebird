@@ -59,19 +59,12 @@ NODE(nod_set_generator2, set_generator, "")
 
 NODE(nod_dbkey, dbkey, "ROWID")
 NODE(nod_field, field, "")
-NODE(nod_from, from, "")
 NODE(nod_scalar, scalar, "")
 NODE(nod_rec_version, record_version, "RECORD VERSION")
 NODE(nod_domain_validation, domain_validation, "")
 NODE(nod_derived_expr, derived_expr, "derived_expr")
 
 NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
-
-NODE(nod_average, average, "AVG")
-NODE(nod_count, count, "COUNT")
-NODE(nod_max, max, "MAX")
-NODE(nod_min, min, "MIN")
-NODE(nod_total, total, "SUM")
 
 NODE(nod_class_exprnode_jrd, class_exprnode_jrd, "class_exprnode_jrd")
 NODE(nod_class_stmtnode_jrd, class_stmtnode_jrd, "class_stmtnode_jrd")
