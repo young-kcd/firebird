@@ -191,9 +191,12 @@ protected:
 
 	bool validateStarts(IndexScratch* indexScratch, ComparativeBoolNode* cmpNode,
 		USHORT segment) const;
+
 private:
 	MemoryPool& pool;
 	thread_db* tdbb;
+
+public:
 	SSHORT stream;
 	Firebird::string alias;
 	SortNode** sort;

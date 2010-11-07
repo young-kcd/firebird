@@ -274,6 +274,54 @@ public:
 };
 
 
+class DerivedExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
+{
+public:
+	DerivedExprNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	// This is a non-DSQL node.
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void setParameterName(dsql_par* parameter) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+		fb_assert(false);
+	}
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	{
+		fb_assert(false);
+	}
+
+	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+		bool allowOnlyCurrentStream);
+
+	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
+		SortedStreamList* streamList);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlArg;
+	NestConst<jrd_nod> arg;
+	Firebird::Array<USHORT> streamList;
+};
+
+
 class DomainValidationNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DOMAIN_VALIDATION>
 {
 public:

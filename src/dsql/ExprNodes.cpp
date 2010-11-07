@@ -3510,6 +3510,167 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 //--------------------
 
 
+static RegisterNode<DerivedExprNode> regDerivedExprNode(blr_derived_expr);
+
+DerivedExprNode::DerivedExprNode(MemoryPool& pool, dsql_nod* aArg)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>(pool),
+	  dsqlArg(aArg),
+	  arg(NULL),
+	  streamList(pool)
+{
+	addChildNode(dsqlArg, arg);
+}
+
+DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	DerivedExprNode* node = FB_NEW(pool) DerivedExprNode(pool);
+
+	const UCHAR streamCount = csb->csb_blr_reader.getByte();
+
+	for (UCHAR i = 0; i < streamCount; ++i)
+	{
+		USHORT n = csb->csb_blr_reader.getByte();
+		node->streamList.add(csb->csb_rpt[n].csb_stream);
+	}
+
+	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	bool allowOnlyCurrentStream)
+{
+	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	{
+		USHORT n = *i;
+
+		if (allowOnlyCurrentStream)
+		{
+			if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
+				return false;
+		}
+		else
+		{
+			if (n == stream)
+				return false;
+		}
+
+		if (!(csb->csb_rpt[n].csb_flags & csb_active))
+			return false;
+	}
+
+	return true;
+}
+
+void DerivedExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
+	SortedStreamList* streamList)
+{
+	for (USHORT* i = this->streamList.begin(); i != this->streamList.end(); ++i)
+	{
+		int derivedStream = *i;
+
+		if (derivedStream != optRet->stream &&
+			(optRet->csb->csb_rpt[derivedStream].csb_flags & csb_active))
+		{
+			if (!streamList->exist(derivedStream))
+				streamList->add(derivedStream);
+		}
+	}
+}
+
+void DerivedExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, arg, desc);
+}
+
+ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	DerivedExprNode* node = FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
+	node->arg = copier.copy(tdbb, arg);
+	node->streamList = streamList;
+
+	if (copier.remap)
+	{
+#ifdef CMP_DEBUG
+		csb->dump("remap nod_derived_expr:\n");
+		for (USHORT* i = node->streamList.begin(); i != node->streamList.end(); ++i)
+			csb->dump("\t%d: %d -> %d\n", i, *i, copier.remap[*i]);
+#endif
+
+		for (USHORT* i = node->streamList.begin(); i != node->streamList.end(); ++i)
+			*i = copier.remap[*i];
+	}
+
+	return node;
+}
+
+ExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	NodeStack stack;
+
+#ifdef CMP_DEBUG
+	csb->dump("expand nod_derived_expr:");
+	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+		csb->dump(" %d", *i);
+	csb->dump("\n");
+#endif
+
+	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	{
+		CMP_mark_variant(csb, *i);
+		CMP_expand_view_nodes(tdbb, csb, *i, stack, nod_dbkey, true);
+	}
+
+	streamList.clear();
+
+#ifdef CMP_DEBUG
+	for (NodeStack::iterator i(stack); i.hasData(); ++i)
+		csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
+	csb->dump("\n");
+#endif
+
+	for (NodeStack::iterator i(stack); i.hasData(); ++i)
+		streamList.add((USHORT)(IPTR) i.object()->nod_arg[0]);
+
+	return ExprNode::pass1(tdbb, csb);
+}
+
+ExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* value = NULL;
+
+	for (const USHORT* i = streamList.begin(); i != streamList.end(); ++i)
+	{
+		if (request->req_rpb[*i].rpb_number.isValid())
+		{
+			value = EVL_expr(tdbb, arg);
+
+			if (request->req_flags & req_null)
+				value = NULL;
+
+			break;
+		}
+	}
+
+	return value;
+}
+
+
+//--------------------
+
+
 void DomainValidationNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = domDesc;

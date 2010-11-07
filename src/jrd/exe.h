@@ -307,13 +307,6 @@ const int e_stmt_expr_stmt		= 0;
 const int e_stmt_expr_expr		= 1;
 const int e_stmt_expr_length	= 2;
 
-// nod_derived_expr
-const int e_derived_expr_expr			= 0;
-const int e_derived_expr_stream_count	= 1;
-const int e_derived_expr_stream_list	= 2;
-const int e_derived_expr_count			= 1;
-const int e_derived_expr_length			= 3;
-
 // index (in nod_list) for external procedure blr
 const int e_extproc_input_message	= 0;
 const int e_extproc_output_message	= 1;

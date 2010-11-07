@@ -117,16 +117,6 @@ bool JrdNodeVisitor::visitChildren(const JrdNode& node)
 			return call(exprNode);
 		}
 
-		case nod_derived_expr:
-		{
-			jrd_nod* /*const*/* ptr = jrdNode->nod_arg;
-			// Check all sub-nodes of this node.
-			for (jrd_nod* const* end = ptr + jrdNode->nod_count; ptr < end; ptr++)
-				ret |= visit(*ptr);
-
-			return ret;
-		}
-
 		default:
 			return returnOnOthers;
 	}

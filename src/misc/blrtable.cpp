@@ -211,7 +211,7 @@ static const VERB verbs[] =
 	PAIR(nod_class_stmtnode_jrd, blr_auto_trans, 1, 0, STATEMENT, STATEMENT),
 	PAIR(nod_class_exprnode_jrd, blr_similar, 1, 0, TYPE_BOOL, VALUE),
 	PAIR(nod_stmt_expr, blr_stmt_expr, e_stmt_expr_length, 2, VALUE, OTHER),
-	PAIR(nod_derived_expr, blr_derived_expr, e_derived_expr_length, e_derived_expr_count, VALUE, VALUE),
+	PAIR(nod_class_exprnode_jrd, blr_derived_expr, 1, 0, VALUE, VALUE),
 	PAIR(nod_class_recsrcnode_jrd, blr_window, 1, 0, RELATION, OTHER),
 	PAIR(nod_continue_loop, blr_continue_loop, 1, 0, STATEMENT, OTHER),
 	PAIR(nod_class_exprnode_jrd, blr_agg_function, 1, 0, VALUE, VALUE),

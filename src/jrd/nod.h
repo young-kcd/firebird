@@ -61,7 +61,6 @@ NODE(nod_dbkey, dbkey, "ROWID")
 NODE(nod_field, field, "")
 NODE(nod_scalar, scalar, "")
 NODE(nod_rec_version, record_version, "RECORD VERSION")
-NODE(nod_derived_expr, derived_expr, "derived_expr")
 
 NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
 

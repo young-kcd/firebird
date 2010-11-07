@@ -158,10 +158,8 @@ namespace
 }	// namespace
 
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
-static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, nod_t, bool);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
-static void mark_variant(CompilerScratch* csb, USHORT stream);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
@@ -491,10 +489,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 	case nod_stmt_expr:
 		CMP_get_desc(tdbb, csb, node->nod_arg[e_stmt_expr_expr], desc);
-		return;
-
-	case nod_derived_expr:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_derived_expr_expr], desc);
 		return;
 
 	default:
@@ -997,37 +991,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			return temp_node;
 		}
 
-	case nod_derived_expr:
-	{
-		node = PAR_make_node(tdbb, e_derived_expr_length);
-		node->nod_count = e_derived_expr_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_derived_expr_expr] = copy(tdbb, input->nod_arg[e_derived_expr_expr]);
-
-		if (remap)
-		{
-			const UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
-			const USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
-			USHORT* newStreamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
-
-#ifdef CMP_DEBUG
-			csb->dump("remap nod_derived_expr:\n");
-			for (UCHAR i = 0; i < streamCount; ++i)
-				csb->dump("\t%d: %d -> %d\n", i, oldStreamList[i], remap[oldStreamList[i]]);
-#endif
-
-			for (UCHAR i = 0; i < streamCount; ++i)
-				newStreamList[i] = remap[oldStreamList[i]];
-
-			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) newStreamList;
-		}
-		else
-			node->nod_arg[e_derived_expr_stream_list] = input->nod_arg[e_derived_expr_stream_list];
-
-		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
-		return node;
-	}
-
 	case nod_class_recsrcnode_jrd:
 		node = PAR_make_node(tdbb, 1);
 		node->nod_type = input->nod_type;
@@ -1125,23 +1088,10 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 }
 
 
-static void expand_view_nodes(thread_db* tdbb,
-							  CompilerScratch* csb,
-							  USHORT stream,
-							  NodeStack& stack,
-							  nod_t type,
-							  bool allStreams)
+// Expand dbkey for view.
+void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream, NodeStack& stack,
+	nod_t type, bool allStreams)
 {
-/**************************************
- *
- *	e x p a n d _ v i e w _ n o d e s
- *
- **************************************
- *
- * Functional description
- *	Expand dbkey for view.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
@@ -1157,7 +1107,7 @@ static void expand_view_nodes(thread_db* tdbb,
 	{
 		++map;
 		while (*map)
-			expand_view_nodes(tdbb, csb, *map++, stack, type, allStreams);
+			CMP_expand_view_nodes(tdbb, csb, *map++, stack, type, allStreams);
 		return;
 	}
 
@@ -1413,7 +1363,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 // referencing, and mark them as variant - the rule is that if a field from one RseNode is
 // referenced within the scope of another RseNode, the inner RseNode can't be invariant.
 // This won't optimize all cases, but it is the simplest operating assumption for now.
-static void mark_variant(CompilerScratch* csb, USHORT stream)
+void CMP_mark_variant(CompilerScratch* csb, USHORT stream)
 {
 	if (csb->csb_current_nodes.isEmpty())
 		return;
@@ -1499,7 +1449,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
-			mark_variant(csb, stream);
+			CMP_mark_variant(csb, stream);
 
 			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
@@ -1654,25 +1604,22 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				if (sub->nod_type != nod_field && sub->nod_type != nod_dbkey)
 				{
 					NodeStack stack;
-					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, true);
+					CMP_expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, true);
 					const UCHAR streamCount = (UCHAR) stack.getCount();
 
 					if (streamCount)
 					{
-						jrd_nod* new_node = PAR_make_node(tdbb, e_derived_expr_length);
-						new_node->nod_type = nod_derived_expr;
-						new_node->nod_count = e_derived_expr_count;
-						new_node->nod_arg[e_derived_expr_expr] = sub;
-
-						USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
-
-						new_node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
-						new_node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
+						DerivedExprNode* derivedNode =
+							FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
+						derivedNode->arg = sub;
 
 						for (NodeStack::iterator i(stack); i.hasData(); ++i)
-							*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
+							derivedNode->streamList.add((USHORT)(IPTR) i.object()->nod_arg[0]);
 
-						sub = new_node;
+						sub = PAR_make_node(tdbb, 1);
+						sub->nod_type = nod_class_exprnode_jrd;
+						sub->nod_count = 0;
+						sub->nod_arg[0] = reinterpret_cast<jrd_nod*>(derivedNode);
 					}
 				}
 
@@ -1681,42 +1628,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			return CMP_pass1(tdbb, csb, sub);
 		}
-
-	case nod_derived_expr:
-		{
-			UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-			USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
-			NodeStack stack;
-
-#ifdef CMP_DEBUG
-			csb->dump("expand nod_derived_expr:");
-			for (UCHAR i = 0; i < streamCount; ++i)
-				csb->dump(" %d", streamList[i]);
-			csb->dump("\n");
-#endif
-
-			for (UCHAR i = 0; i < streamCount; ++i)
-			{
-				mark_variant(csb, streamList[i]);
-				expand_view_nodes(tdbb, csb, streamList[i], stack, nod_dbkey, true);
-			}
-
-			streamCount = (UCHAR) stack.getCount();
-			streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
-
-			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
-			node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
-
-#ifdef CMP_DEBUG
-			for (NodeStack::iterator i(stack); i.hasData(); ++i)
-				csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
-			csb->dump("\n");
-#endif
-
-			for (NodeStack::iterator i(stack); i.hasData(); ++i)
-				*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
-		}
-		break;
 
 	case nod_assignment:
 		{
@@ -1792,12 +1703,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			const nod_t type = node->nod_type;
 			stream = (USHORT)(IPTR) node->nod_arg[0];
 
-			mark_variant(csb, stream);
+			CMP_mark_variant(csb, stream);
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;
 			NodeStack stack;
-			expand_view_nodes(tdbb, csb, stream, stack, type, false);
+			CMP_expand_view_nodes(tdbb, csb, stream, stack, type, false);
 
 #ifdef CMP_DEBUG
 			csb->dump("expand nod_dbkey: %d\n", stream);
@@ -2761,7 +2672,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_dbkey:
 	case nod_rec_version:
 	case nod_scalar:
-	case nod_derived_expr:
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);

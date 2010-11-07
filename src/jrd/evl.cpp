@@ -446,21 +446,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			return &impure->vlu_desc;
 		}
 
-	case nod_derived_expr:
-		{
-			const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-			const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
-
-			for (UCHAR i = 0; i < streamCount; ++i)
-			{
-				if (request->req_rpb[streamList[i]].rpb_number.isValid())
-					return EVL_expr(tdbb, node->nod_arg[e_derived_expr_expr]);
-			}
-
-			request->req_flags |= req_null;
-			return NULL;
-		}
-
 	case nod_scalar:
 		return scalar(tdbb, node, impure);
 
