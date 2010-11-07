@@ -500,14 +500,14 @@ public:
 		return this;
 	}
 
-	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/,
+	virtual bool setParameterType(DsqlCompilerScratch* /*dsqlScratch*/,
 		dsql_nod* /*node*/, bool /*forceVarChar*/)
 	{
 		return false;
 	}
 
 	virtual void setParameterName(dsql_par* parameter) const = 0;
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc) = 0;
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc) = 0;
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;

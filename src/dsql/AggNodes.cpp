@@ -452,7 +452,7 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
+void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
@@ -657,14 +657,14 @@ DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
+void ListAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 	desc->setNullable(true);
 }
 
-bool ListAggNode::setParameterType(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode,
+bool ListAggNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	dsql_nod* node, bool forceVarChar)
 {
 	return PASS1_set_parameter_type(dsqlScratch, dsqlArg, node, forceVarChar) |
@@ -781,7 +781,7 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsql_nod* /*thisNode*/, dsc* desc)
+void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
 	desc->makeLong(0);
 }
@@ -862,7 +862,7 @@ DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
+void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
@@ -1110,7 +1110,7 @@ DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsql_nod* /*thisNode*/, dsc* desc)
+void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);

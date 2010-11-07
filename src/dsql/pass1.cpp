@@ -8343,7 +8343,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 		case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
-			return exprNode->setParameterType(dsqlScratch, in_node, node, force_varchar);
+			return exprNode->setParameterType(dsqlScratch, node, force_varchar);
 		}
 
 		case nod_limit:

@@ -36,7 +36,7 @@ class DenseRankWinNode : public WinFuncNode
 public:
 	explicit DenseRankWinNode(MemoryPool& pool);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
@@ -54,7 +54,7 @@ class RankWinNode : public WinFuncNode
 public:
 	explicit RankWinNode(MemoryPool& pool);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -76,7 +76,7 @@ class RowNumberWinNode : public WinFuncNode
 public:
 	explicit RowNumberWinNode(MemoryPool& pool);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 
@@ -102,7 +102,7 @@ public:
 	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
 		dsql_nod* aArg = NULL, dsql_nod* aRows = NULL, dsql_nod* aOutExpr = NULL);
 
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsql_nod* thisNode, dsc* desc);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;

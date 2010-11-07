@@ -374,7 +374,7 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 	case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
-			exprNode->make(dsqlScratch, node, desc);
+			exprNode->make(dsqlScratch, desc);
 		}
 		return;
 
