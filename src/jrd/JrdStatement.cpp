@@ -200,10 +200,19 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 			csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
 
-			fieldInfo.validation = NodeCopier::copy(tdbb, csb, fieldInfo.validation, local_map);
+			fieldInfo.validationStmt = NodeCopier::copy(tdbb, csb, fieldInfo.validationStmt, local_map);
+
+			if (fieldInfo.validationExpr)
+			{
+				NodeCopier copier(csb, local_map);
+				fieldInfo.validationExpr = fieldInfo.validationExpr->copy(tdbb, copier);
+			}
 
 			fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
-			fieldInfo.validation = CMP_pass1(tdbb, csb, fieldInfo.validation);
+			fieldInfo.validationStmt = CMP_pass1(tdbb, csb, fieldInfo.validationStmt);
+
+			if (fieldInfo.validationExpr)
+				fieldInfo.validationExpr = fieldInfo.validationExpr->pass1(tdbb, csb);
 		}
 
 		csb->csb_exec_sta.clear();
@@ -215,7 +224,10 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		{
 			FieldInfo& fieldInfo = accessor.current()->second;
 			fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-			fieldInfo.validation = CMP_pass2(tdbb, csb, fieldInfo.validation, 0);
+			fieldInfo.validationStmt = CMP_pass2(tdbb, csb, fieldInfo.validationStmt, 0);
+
+			if (fieldInfo.validationExpr)
+				fieldInfo.validationExpr = fieldInfo.validationExpr->pass2(tdbb, csb);
 		}
 
 		if (csb->csb_impure > MAX_REQUEST_SIZE)

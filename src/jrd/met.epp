@@ -119,7 +119,9 @@ static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, trig_vec**, const TEXT
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
-static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const MetaName name = MetaName());
+static jrd_nod* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
+static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
+	BoolExprNode** expr, jrd_nod** stmt);
 static void parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*, bool);
 static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
@@ -225,12 +227,19 @@ void MET_get_domain(thread_db* tdbb, const MetaName& name, dsc* desc, FieldInfo*
 					if (FLD.RDB$DEFAULT_VALUE.NULL)
 						fieldInfo->defaultValue = NULL;
 					else
-						fieldInfo->defaultValue = parse_field_blr(tdbb, &FLD.RDB$DEFAULT_VALUE);
+						fieldInfo->defaultValue = parse_field_default_blr(tdbb, &FLD.RDB$DEFAULT_VALUE);
 
 					if (FLD.RDB$VALIDATION_BLR.NULL)
-						fieldInfo->validation = NULL;
+					{
+						fieldInfo->validationExpr = NULL;
+						fieldInfo->validationStmt = NULL;
+					}
 					else
-						fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, name);
+					{
+						parse_field_validation_blr(tdbb, &FLD.RDB$VALIDATION_BLR, name,
+							fieldInfo->validationExpr.getAddress(),
+							fieldInfo->validationStmt.getAddress());
+					}
 				}
 				catch (const Exception&)
 				{
@@ -309,14 +318,21 @@ MetaName MET_get_relation_field(thread_db* tdbb,
 						defaultId = &FLD.RDB$DEFAULT_VALUE;
 
 					if (defaultId)
-						fieldInfo->defaultValue = parse_field_blr(tdbb, defaultId);
+						fieldInfo->defaultValue = parse_field_default_blr(tdbb, defaultId);
 					else
 						fieldInfo->defaultValue = NULL;
 
-					if (!FLD.RDB$VALIDATION_BLR.NULL)
-						fieldInfo->validation = parse_field_blr(tdbb, &FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE);
+					if (FLD.RDB$VALIDATION_BLR.NULL)
+					{
+						fieldInfo->validationExpr = NULL;
+						fieldInfo->validationStmt = NULL;
+					}
 					else
-						fieldInfo->validation = NULL;
+					{
+						parse_field_validation_blr(tdbb, &FLD.RDB$VALIDATION_BLR, RFL.RDB$FIELD_SOURCE,
+							fieldInfo->validationExpr.getAddress(),
+							fieldInfo->validationStmt.getAddress());
+					}
 				}
 				catch (const Exception&)
 				{
@@ -4271,16 +4287,13 @@ static void make_relation_scope_name(const TEXT* rel_name, const USHORT rel_flag
 }
 
 
-// ***********************************************************
-// *    p a r s e _ f i e l d _ b l r
-// ***********************************************************
-// Parses default BLR and validation BLR for a field.
-static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const MetaName name)
+// Parses default BLR for a field.
+static jrd_nod* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
 	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
 	SLONG length = blob->blb_length + 10;
@@ -4294,6 +4307,28 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const MetaName na
 	delete csb;
 
 	return node;
+}
+
+
+// Parses validation BLR for a field.
+static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
+	BoolExprNode** expr, jrd_nod** stmt)
+{
+	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
+
+	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
+	SLONG length = blob->blb_length + 10;
+	HalfStaticArray<UCHAR, 512> temp;
+
+	length = BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
+
+	PAR_validation_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, 0, expr, stmt);
+
+	csb->csb_blr_reader = BlrReader();
+	delete csb;
 }
 
 

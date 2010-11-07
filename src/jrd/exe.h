@@ -286,10 +286,6 @@ const int e_init_var_variable	= 1;
 const int e_init_var_info		= 2;
 const int e_init_var_length		= 3;
 
-// nod_domain_validation
-const int e_domval_desc			= 0;
-const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for descriptor
-
 // nod_exec_stmt
 const int e_exec_stmt_stmt_sql		= 0;
 const int e_exec_stmt_data_src		= 1;
@@ -517,12 +513,13 @@ struct Item
 struct FieldInfo
 {
 	FieldInfo()
-		: nullable(false), defaultValue(NULL), validation(NULL)
+		: nullable(false), defaultValue(NULL), validationExpr(NULL), validationStmt(NULL)
 	{}
 
 	bool nullable;
 	NestConst<jrd_nod> defaultValue;
-	NestConst<jrd_nod> validation;
+	NestConst<BoolExprNode> validationExpr;
+	NestConst<jrd_nod> validationStmt;
 };
 
 struct ItemInfo

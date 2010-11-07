@@ -1233,14 +1233,17 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			PAR_name(csb, name);
 		}
 
-		jrd_nod* node = PAR_make_node(tdbb, e_domval_length);
-		node->nod_type = nod_domain_validation;
-		node->nod_count = 0;
+		DomainValidationNode* node =
+			FB_NEW(*tdbb->getDefaultPool()) DomainValidationNode(*tdbb->getDefaultPool());
 
-		dsc* desc = (dsc*) (node->nod_arg + e_domval_desc);
-		MET_get_domain(tdbb, csb->csb_domain_validation, desc, NULL);
+		MET_get_domain(tdbb, csb->csb_domain_validation, &node->domDesc, NULL);
 
-		return node;
+		jrd_nod* nod = PAR_make_node(tdbb, 1);
+		nod->nod_type = nod_class_exprnode_jrd;
+		nod->nod_count = 0;
+		nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(node);
+
+		return nod;
 	}
 
 	if (context >= csb->csb_rpt.getCount())/* ||
@@ -2450,7 +2453,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 	case blr_field:
 	case blr_fid:
 		node = par_field(tdbb, csb, blr_operator);
-		if (node->nod_type == nod_domain_validation || ExprNode::is<NullNode>(node))
+		if (ExprNode::is<DomainValidationNode>(node) || ExprNode::is<NullNode>(node))
 			set_type = false;	// to not change nod->nod_type to nod_field
 		break;
 

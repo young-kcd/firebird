@@ -274,6 +274,47 @@ public:
 };
 
 
+class DomainValidationNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DOMAIN_VALIDATION>
+{
+public:
+	explicit DomainValidationNode(MemoryPool& pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_DOMAIN_VALIDATION>(pool)
+	{
+		domDesc.clear();
+	}
+
+	// This is a non-DSQL node.
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void setParameterName(dsql_par* parameter) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+		fb_assert(false);
+	}
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	{
+		fb_assert(false);
+	}
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsc domDesc;
+};
+
+
 class ExtractNode : public TypedNode<ValueExprNode, ExprNode::TYPE_EXTRACT>
 {
 public:

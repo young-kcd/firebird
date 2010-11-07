@@ -489,10 +489,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		desc->dsc_flags = 0;
 		return;
 
-	case nod_domain_validation:
-		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
-		return;
-
 	case nod_stmt_expr:
 		CMP_get_desc(tdbb, csb, node->nod_arg[e_stmt_expr_expr], desc);
 		return;
@@ -1047,13 +1043,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
-		return node;
-
-	case nod_domain_validation:
-		node = PAR_make_node(tdbb, e_domval_length);
-		node->nod_type = nod_domain_validation;
-		node->nod_count = 0;
-		*(dsc*) (node->nod_arg + e_domval_desc) = *(dsc*) (input->nod_arg + e_domval_desc);
 		return node;
 
 	case nod_dbkey:

@@ -136,7 +136,6 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
  **/
 void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
-	UCHAR blr_operator;
 	const dsql_ctx* context;
 
 	switch (node->nod_type)
@@ -318,12 +317,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				  Arg::Gds(isc_expression_eval_err) <<
 				  Arg::Gds(isc_dsql_eval_unknode) << Arg::Num(node->nod_type));
 	}
-
-	dsqlScratch->appendUChar(blr_operator);
-
-	dsql_nod* const* ptr = node->nod_arg;
-	for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-		GEN_expr(dsqlScratch, *ptr);
 }
 
 /**

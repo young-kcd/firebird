@@ -464,14 +464,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	case nod_scalar:
 		return scalar(tdbb, node, impure);
 
-	case nod_domain_validation:
-		if (request->req_domain_validation == NULL ||
-			(request->req_domain_validation->dsc_flags & DSC_null))
-		{
-			request->req_flags |= req_null;
-		}
-		return request->req_domain_validation;
-
 	case nod_stmt_expr:
 		EXE_looper(tdbb, request, node);
 		return EVL_expr(tdbb, node->nod_arg[e_stmt_expr_expr]);
@@ -715,7 +707,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 	MapFieldInfo::ValueType fieldInfo;
 	if (!err && itemInfo->fullDomain &&
 		request->getStatement()->mapFieldInfo.get(itemInfo->field, fieldInfo) &&
-		fieldInfo.validation)
+		fieldInfo.validationExpr)
 	{
 		if (desc && null)
 			desc->dsc_flags |= DSC_null;
@@ -725,7 +717,10 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		request->req_domain_validation = desc;
 		const USHORT flags = request->req_flags;
 
-		if (!EVL_boolean(tdbb, fieldInfo.validation) && !(request->req_flags & req_null))
+		if (fieldInfo.validationStmt)
+			EXE_looper(tdbb, request, fieldInfo.validationStmt);
+
+		if (!fieldInfo.validationExpr->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
 			const USHORT length = desc_is_null ? 0 :
 				MOV_make_string(desc, ttype_dynamic, &value, &temp, sizeof(temp) - 1);

@@ -3510,6 +3510,45 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 //--------------------
 
 
+void DomainValidationNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
+{
+	*desc = domDesc;
+}
+
+ValueExprNode* DomainValidationNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+{
+	DomainValidationNode* node =
+		FB_NEW(*tdbb->getDefaultPool()) DomainValidationNode(*tdbb->getDefaultPool());
+	node->domDesc = domDesc;
+	return node;
+}
+
+ExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* DomainValidationNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
+{
+	if (request->req_domain_validation == NULL ||
+		(request->req_domain_validation->dsc_flags & DSC_null))
+	{
+		return NULL;
+	}
+
+	return request->req_domain_validation;
+}
+
+
+//--------------------
+
+
 static RegisterNode<ExtractNode> regExtractNode(blr_extract);
 
 ExtractNode::ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, dsql_nod* aArg)
