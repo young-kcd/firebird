@@ -1614,6 +1614,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	try
 	{
 		transaction = transaction_start(tdbb, temp);
+		delete temp;
 	}
 	catch (const Exception&)
 	{
@@ -1666,6 +1667,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	{
 		transaction_options(tdbb, temp, tpb, tpb_length);
 		transaction = transaction_start(tdbb, temp);
+		delete temp;
 	}
 	catch (const Exception&)
 	{
@@ -3322,7 +3324,6 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	trans->tra_top = number;
 	trans->tra_oldest = oldest;
 	trans->tra_oldest_active = active;
-	delete temp;
 
 	trans->tra_lock = lock;
 	lock->lck_key.lck_long = number;
