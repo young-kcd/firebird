@@ -1283,6 +1283,12 @@ static void execute_request(thread_db* tdbb,
 						   0);
 	}
 
+	if (request->req_type == REQ_SELECT_BLOCK)
+	{
+		fb_assert(request->req_request);
+		request->req_request->req_flags |= req_proc_fetch;
+	}
+
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
