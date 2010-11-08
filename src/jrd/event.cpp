@@ -77,7 +77,7 @@ GlobalPtr<Mutex> EventManager::g_mapMutex;
 
 void EventManager::init(Attachment* attachment)
 {
-	Database* dbb = attachment->att_database;
+	Database* const dbb = attachment->att_database;
 	EventManager* eventMgr = dbb->dbb_event_mgr;
 
 	if (!eventMgr)
@@ -87,15 +87,42 @@ void EventManager::init(Attachment* attachment)
 		MutexLockGuard guard(g_mapMutex);
 
 		if (!g_emMap->get(id, eventMgr))
+		{
 			eventMgr = new EventManager(id, dbb->dbb_config);
+
+			if (g_emMap->put(id, eventMgr))
+			{
+				fb_assert(false);
+			}
+		}
 
 		fb_assert(eventMgr);
 
+		eventMgr->addRef();
 		dbb->dbb_event_mgr = eventMgr;
 	}
 
 	if (!attachment->att_event_session)
 		attachment->att_event_session = eventMgr->create_session();
+}
+
+
+void EventManager::destroy(EventManager* eventMgr)
+{
+	if (eventMgr)
+	{
+		const Firebird::string id = eventMgr->m_dbId;
+
+		Firebird::MutexLockGuard guard(g_mapMutex);
+
+		if (!eventMgr->release())
+		{
+			if (!g_emMap->remove(id))
+			{
+				fb_assert(false);
+			}
+		}
+	}
 }
 
 
@@ -109,13 +136,6 @@ EventManager::EventManager(const Firebird::string& id, Firebird::RefPtr<Config> 
 	  m_exiting(false)
 {
 	attach_shared_file();
-
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (g_emMap->put(m_dbId, this))
-	{
-		fb_assert(false);
-	}
 }
 
 
@@ -153,13 +173,6 @@ EventManager::~EventManager()
 	release_shmem();
 
 	detach_shared_file();
-
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (!g_emMap->remove(m_dbId))
-	{
-		fb_assert(false);
-	}
 }
 
 

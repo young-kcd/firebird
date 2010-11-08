@@ -173,11 +173,36 @@ LockManager* LockManager::create(const Firebird::string& id, RefPtr<Config> conf
 	if (!g_lmMap->get(id, lockMgr))
 	{
 		lockMgr = new LockManager(id, conf);
+
+		if (g_lmMap->put(id, lockMgr))
+		{
+			fb_assert(false);
+		}
 	}
 
 	fb_assert(lockMgr);
 
+	lockMgr->addRef();
 	return lockMgr;
+}
+
+
+void LockManager::destroy(LockManager* lockMgr)
+{
+	if (lockMgr)
+	{
+		const Firebird::string id = lockMgr->m_dbId;
+
+		Firebird::MutexLockGuard guard(g_mapMutex);
+
+		if (!lockMgr->release())
+		{
+			if (!g_lmMap->remove(id))
+			{
+				fb_assert(false);
+			}
+		}
+	}
 }
 
 
@@ -199,13 +224,6 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	Arg::StatusVector localStatus;
 	if (!attach_shared_file(localStatus))
 		localStatus.raise();
-
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (g_lmMap->put(m_dbId, this))
-	{
-		fb_assert(false);
-	}
 }
 
 
@@ -217,7 +235,7 @@ LockManager::~LockManager()
 		m_processOffset = 0;
 	}
 
-	Arg::StatusVector localStatus;;
+	Arg::StatusVector localStatus;
 
 	if (m_process)
 	{
@@ -267,13 +285,6 @@ LockManager::~LockManager()
 		m_extents[i].unmapFile(localStatus);
 	}
 #endif //USE_SHMEM_EXT
-
-	Firebird::MutexLockGuard guard(g_mapMutex);
-
-	if (!g_lmMap->remove(m_dbId))
-	{
-		fb_assert(false);
-	}
 }
 
 

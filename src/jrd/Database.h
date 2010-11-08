@@ -328,8 +328,8 @@ public:
 
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive
 
-	Firebird::RefPtr<LockManager>	dbb_lock_mgr;
-	Firebird::RefPtr<EventManager>	dbb_event_mgr;
+	LockManager*	dbb_lock_mgr;
+	EventManager*	dbb_event_mgr;
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments

@@ -93,7 +93,8 @@ namespace Jrd
 		Checkout dcoHolder(this);
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
-		dbb_lock_mgr = NULL;
+		LockManager::destroy(dbb_lock_mgr);
+		EventManager::destroy(dbb_event_mgr);
 	}
 
 	void Database::deletePool(MemoryPool* pool)

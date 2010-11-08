@@ -311,7 +311,7 @@ namespace Jrd {
 
 class Database;
 
-class LockManager : public Firebird::RefCounted,
+class LockManager : private Firebird::RefCounted,
 					public Firebird::GlobalStorage,
 					public SharedMemory<lhb>
 {
@@ -324,6 +324,7 @@ class LockManager : public Firebird::RefCounted,
 
 public:
 	static LockManager* create(const Firebird::string&, Firebird::RefPtr<Config>);
+	static void destroy(LockManager*);
 
 	bool initializeOwner(Firebird::Arg::StatusVector&, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(Database*, SRQ_PTR*);

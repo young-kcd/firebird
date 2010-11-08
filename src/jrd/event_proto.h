@@ -38,7 +38,7 @@ namespace Jrd {
 
 class Attachment;
 
-class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
+class EventManager : private Firebird::RefCounted, public Firebird::GlobalStorage, public SharedMemory<evh>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, EventManager*> > > DbEventMgrMap;
 
@@ -49,6 +49,7 @@ class EventManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 
 public:
 	static void init(Attachment*);
+	static void destroy(EventManager*);
 
 	EventManager(const Firebird::string& id, Firebird::RefPtr<Config> conf);
 	~EventManager();
