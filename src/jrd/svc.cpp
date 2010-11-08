@@ -1998,6 +1998,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			MutexLockGuard guard(globalServicesMutex);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
+
+			svc_stdout_head = 0;
+			svc_stdout_tail = 0;
 		}
 
 		Thread::start(serv->serv_thd, this, THREAD_medium);
