@@ -4685,6 +4685,24 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				return true;
 			}
 		}
+
+		// Check the thread state for already posted system errors. If any still persists,
+		// then someone tries to ignore our attempts to interrupt him. Let's insist.
+
+		if (tdbb->tdbb_flags & TDBB_sys_error)
+		{
+			if (punt) {
+				CCH_unwind(tdbb, false);
+				ERR_post(isc_cancelled, isc_arg_end);
+			}
+			else {
+				ISC_STATUS* status = tdbb->tdbb_status_vector;
+				*status++ = isc_arg_gds;
+				*status++ = isc_cancelled;
+				*status++ = isc_arg_end;
+				return true;
+			}
+		}
 	}
 
 	// Enable signal handler for the monitoring stuff
