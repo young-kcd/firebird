@@ -1190,6 +1190,14 @@ static void execute_request(thread_db* tdbb,
 			message->msg_length, msgBuffer);
 	}
 
+	// Selectable execute block should get the "proc fetch" flag assigned,
+	// which ensures that the savepoint stack is preserved while suspending
+	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_BLOCK)
+	{
+		fb_assert(request->req_request);
+		request->req_request->req_flags |= req_proc_fetch;
+	}
+
 	// TYPE_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but TYPE_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
