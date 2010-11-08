@@ -395,6 +395,14 @@ int CCH_down_grade_dbb(void* ast_object)
 			return 0;
 		}
 
+		// Re-check the dbb state, as there could be a checkout inside the call above
+
+		if (dbb->dbb_flags & DBB_not_in_use)
+		{
+			dbb->dbb_ast_flags &= ~DBB_blocking;
+			return 0;
+		}
+
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
 		// and we can't give it anyway
