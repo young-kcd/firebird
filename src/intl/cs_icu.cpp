@@ -28,7 +28,7 @@
 #include "../intl/ldcommon.h"
 #include "cs_icu.h"
 #include "cv_icu.h"
-#include "unicode/ucnv.h"
+#include <unicode/ucnv.h>
 
 
 static void charset_destroy(charset* cs)

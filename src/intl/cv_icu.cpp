@@ -28,7 +28,7 @@
 #include "../intl/ldcommon.h"
 #include "ld_proto.h"
 #include "cv_icu.h"
-#include "unicode/ucnv.h"
+#include <unicode/ucnv.h>
 
 
 static UConverter* create_converter(csconvert* cv, UErrorCode* status)

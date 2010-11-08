@@ -58,7 +58,7 @@
 LIB_PATH_OPTS= -blibpath:@FB_LIBDIR@:@FB_INTLDIR@:/usr/local/lib:/usr/lib:/lib
 
 ifeq ($(STD_ICU),true)
-   ICU_LIBS= -L/usr/local/lib -licuuc -licudata -licui18n
+   ICU_LIBS= -L/usr/local/lib -licuuc
 endif
 
 # non-firebird libraries have .a extension

@@ -52,11 +52,9 @@ INSTALL_PREFIX=""
 
 dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
-ICU_PLATFORM=LinuxRedHat
 
-dnl Should system editline and/or icu be used
+dnl Should system editline be used
 STD_EDITLINE=false
-STD_ICU=false
 RPM64=
 
 dnl Test for special ar options?
@@ -73,7 +71,6 @@ dnl    MAKEFILE_PREFIX=darwin_i386
 	XE_APPEND(-framework CoreFoundation,LIBS)
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
-    ICU_PLATFORM=MacOSX
     CPU_TYPE=x86_64
 	EXPORT_SYMBOLS_STYLE=darwin
     ;;
@@ -88,7 +85,6 @@ dnl MAKEFILE_PREFIX=darwin_ppc64
 	XE_APPEND(-framework CoreFoundation,LIBS)
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
-    ICU_PLATFORM=MacOSX
 dnl CPU_TYPE=ppc64
 	EXPORT_SYMBOLS_STYLE=darwin
     ;;
@@ -100,10 +96,8 @@ dnl CPU_TYPE=ppc64
         AR_OPT_CHECK=true
         TLS_OPTIONS="-qtls=default"
         MAKEFILE_PREFIX=aix_powerpc_xlc
-        ICU_PLATFORM=AIX4.3VA
     else
         MAKEFILE_PREFIX=aix_powerpc
-        ICU_PLATFORM=AIXGCC
     fi
     MAKEFILE_POSTFIX=aix
     PLATFORM=AIX
@@ -214,7 +208,6 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     STD_EDITLINE=true
-    STD_ICU=true
     ;;
 
   sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
@@ -318,7 +311,6 @@ dnl CPU_TYPE=ppc64
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
-           ICU_PLATFORM=HP-UX11ACC ;
            PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux_ia64 ;
@@ -337,7 +329,6 @@ dnl CPU_TYPE=ppc64
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
        aCC) MAKEFILE_PREFIX=hpux_aCC ;
-           ICU_PLATFORM=HP-UX11ACC ;
            PTHREAD_CFLAGS=-mt
            ;;
        *)  MAKEFILE_PREFIX=hpux ;
@@ -357,12 +348,10 @@ dnl CPU_TYPE=ppc64
     comp=`echo "$CXX" | cut -c1-2`
     case $comp in
        CC) MAKEFILE_PREFIX=solaris
-           ICU_PLATFORM=SOLARISX86
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
            ;;
        *)  MAKEFILE_PREFIX=solx86gcc ;
-           ICU_PLATFORM=SOLARISX86GCC ;
            PTHREAD_CFLAGS=-pthreads ;;
     esac
     dnl if this is amd64 system, we should install our libraries in /usr/lib/amd64
@@ -383,7 +372,6 @@ dnl CPU_TYPE=ppc64
     comp=`echo "$CXX" | cut -c1-3`
     case $comp in
        CC) MAKEFILE_PREFIX=solaris ;
-           ICU_PLATFORM=SOLARISCC 
            dnl inline assembly for atomic operations on Solaris 9 w SSPRO
            PTHREAD_CFLAGS=-mt
            PTHREAD_LIBS=-lpthread
@@ -392,7 +380,6 @@ dnl CPU_TYPE=ppc64
            fi
            ;;
        *)  MAKEFILE_PREFIX=solaris-64gcc ;
-           ICU_PLATFORM=SOLARISGCC ;;
     esac
     CAS_OPTIONS=`pwd`"/src/common/classes/fb_cas.il";
     INSTALL_PREFIX=solaris
@@ -410,7 +397,6 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
-	ICU_PLATFORM=MinGW
     ;;
 
   *)
@@ -428,7 +414,6 @@ AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(AR_OPTIONS)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
-AC_SUBST(ICU_PLATFORM)
 AC_DEFINE(CASE_SENSITIVITY, true, [Define this if paths are case sensitive])
 AC_SUBST(RPM64)
 
@@ -534,15 +519,6 @@ LIBS=$saveLIBS
 AC_SUBST(READLINE)
 AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
-
-AC_ARG_WITH(system-icu,
-  [  --with-system-icu       use OS supplied ICU],
-  [case "$withval" in
-     yes) STD_ICU=true;;
-     no)  STD_ICU=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-icu);;
-   esac])
-AC_SUBST(STD_ICU)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -684,6 +660,11 @@ AC_CHECK_HEADERS(semaphore.h)
 AC_CHECK_HEADERS(float.h)
 AC_CHECK_HEADERS(atomic.h)
 AC_CHECK_HEADERS(atomic_ops.h)
+
+dnl check for ICU presence
+AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
+dnl setting ICU_OK here is done to only avoid default action
+AC_CHECK_LIB(icuuc, main, ICU_OK=yes, AC_MSG_ERROR(ICU support not found - please install development ICU package))
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
@@ -1192,7 +1173,6 @@ case "$PLATFORM" in
   solx86|SOLARIS)
     AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
                      gen/install/prototype.main:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
-                     gen/install/prototype.icu:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.icu.in
                      gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
                      gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
                      gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
@@ -1238,14 +1218,7 @@ Makefile:Makefile.in
 if test "$STD_EDITLINE" = "false"; then
   AC_CONFIG_FILES(gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline)
 fi
-if test "$STD_ICU" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
-fi
 
-
-if test "$PROD_BUILD_FLG" = N; then
-  DEBUG_ICU=--enable-debug
-fi
 
 case "$PLATFORM" in
   SOLARIS | solx86 )
@@ -1255,14 +1228,7 @@ gen/make.platform.solaris.examples:${MAKE_SRC_DIR}/make.platform.solaris.example
 ;;
 esac
 
-if test "$STD_ICU" = "true"; then
 AC_OUTPUT
-else
-AC_OUTPUT
-(cd extern/icu/source
-chmod +x runConfigureICU configure install-sh
-./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
-fi
 
 dnl Print out the build configuration (the most interesting thing)
 echo

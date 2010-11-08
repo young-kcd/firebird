@@ -36,11 +36,12 @@
 #include "../common/classes/init.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
-#include "unicode/ustring.h"
-#include "unicode/utrans.h"
-#include "unicode/uchar.h"
-#include "unicode/ucnv.h"
-#include "unicode/ucol.h"
+
+#include <unicode/ustring.h>
+#include <unicode/utrans.h>
+#include <unicode/uchar.h>
+#include <unicode/ucnv.h>
+#include <unicode/ucol.h>
 
 
 using namespace Firebird;
