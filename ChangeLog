@@ -1,3 +1,45 @@
+ 2010-11-07 22:12  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/misc/blrtable.cpp
+Refactor blr_derived_expr
+
+ 2010-11-07 20:26  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/gen.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+   M src/jrd/nod.h
+   M src/jrd/par.cpp
+Refactor nod_domain_validation
+
+ 2010-11-07 03:03  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/make.cpp
+   M src/dsql/pass1.cpp
+Cleanup: removed thisNode parameter from make and setParameterType methods
+
  2010-11-07 02:18  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
