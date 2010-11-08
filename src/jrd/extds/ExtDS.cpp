@@ -967,6 +967,7 @@ void Statement::deallocate(thread_db* tdbb)
 		}
 		catch (const Exception&) {
 			// ignore
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
 	}
 	fb_assert(!isAllocated());
