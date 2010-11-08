@@ -1870,6 +1870,10 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	}
 
 	if (serv->serv_thd) {
+		// reset stdout buffer - fix for CORE-3220
+		service->svc_stdout_head = 1;
+		service->svc_stdout_tail = SVC_STDOUT_BUFFER_SIZE;
+
 		service->svc_flags &= ~SVC_evnt_fired;
 		THREAD_EXIT();
 
