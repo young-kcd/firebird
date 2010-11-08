@@ -310,7 +310,7 @@ namespace Jrd {
 
 class thread_db;
 
-class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
+class LockManager : private Firebird::RefCounted, public Firebird::GlobalStorage
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::string, LockManager*> > > DbLockMgrMap;
 
@@ -321,6 +321,7 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 
 public:
 	static LockManager* create(const Firebird::string&);
+	static void destroy(LockManager*);
 
 	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	void shutdownOwner(thread_db*, SRQ_PTR*);
