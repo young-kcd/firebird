@@ -3512,15 +3512,6 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 
 static RegisterNode<DerivedExprNode> regDerivedExprNode(blr_derived_expr);
 
-DerivedExprNode::DerivedExprNode(MemoryPool& pool, dsql_nod* aArg)
-	: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>(pool),
-	  dsqlArg(aArg),
-	  arg(NULL),
-	  streamList(pool)
-{
-	addChildNode(dsqlArg, arg);
-}
-
 DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	DerivedExprNode* node = FB_NEW(pool) DerivedExprNode(pool);
@@ -5660,6 +5651,90 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
+static RegisterNode<ScalarNode> regScalarNode1(blr_index);
+
+DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	ScalarNode* node = FB_NEW(pool) ScalarNode(pool);
+	node->field = PAR_parse_node(tdbb, csb, VALUE);
+	node->subscripts = PAR_args(tdbb, csb, VALUE);
+	return node;
+}
+
+void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
+{
+	jrd_rel* relation = csb->csb_rpt[(USHORT)(IPTR) field->nod_arg[e_fld_stream]].csb_relation;
+	const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+	const jrd_fld* field = MET_get_field(relation, id);
+	const ArrayField* array;
+
+	if (!field || !(array = field->fld_array))
+		IBERROR(223);	// msg 223 argument of scalar operation must be an array
+
+	*desc = array->arr_desc.iad_rpt[0].iad_desc;
+
+	if (array->arr_desc.iad_dimensions > MAX_ARRAY_DIMENSIONS)
+		IBERROR(306); // Found array data type with more than 16 dimensions
+}
+
+ValueExprNode* ScalarNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	ScalarNode* node = FB_NEW(*tdbb->getDefaultPool()) ScalarNode(*tdbb->getDefaultPool());
+	node->field = copier.copy(tdbb, field);
+	node->subscripts = copier.copy(tdbb, subscripts);
+	return node;
+}
+
+ExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+// Evaluate a scalar item from an array.
+dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	const dsc* desc = EVL_expr(tdbb, field);
+
+	if (request->req_flags & req_null)
+		return NULL;
+
+	if (desc->dsc_dtype != dtype_array)
+		IBERROR(261);	// msg 261 scalar operator used on field which is not an array
+
+	if (subscripts->nod_count > MAX_ARRAY_DIMENSIONS)
+		ERR_post(Arg::Gds(isc_array_max_dimensions) << Arg::Num(MAX_ARRAY_DIMENSIONS));
+
+	SLONG numSubscripts[MAX_ARRAY_DIMENSIONS];
+	int iter = 0;
+	const jrd_nod* const* ptr = subscripts->nod_arg;
+
+	for (const jrd_nod* const* const end = ptr + subscripts->nod_count; ptr < end;)
+	{
+		const dsc* temp = EVL_expr(tdbb, *ptr++);
+
+		if (temp && !(request->req_flags & req_null))
+			numSubscripts[iter++] = MOV_get_long(temp, 0);
+		else
+			return NULL;
+	}
+
+	BLB_scalar(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc->dsc_address),
+		subscripts->nod_count, numSubscripts, impure);
+
+	return &impure->vlu_desc;
 }
 
 

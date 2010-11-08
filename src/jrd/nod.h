@@ -59,7 +59,6 @@ NODE(nod_set_generator2, set_generator, "")
 
 NODE(nod_dbkey, dbkey, "ROWID")
 NODE(nod_field, field, "")
-NODE(nod_scalar, scalar, "")
 NODE(nod_rec_version, record_version, "RECORD VERSION")
 
 NODE(nod_stmt_expr, stmt_expr, "stmt_expr")

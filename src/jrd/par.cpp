@@ -2371,11 +2371,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[0] = (jrd_nod*) ProcedureSourceNode::parse(tdbb, csb, blr_operator);
 		break;
 
-	case blr_index:
-		node->nod_arg[0] = PAR_parse_node(tdbb, csb, sub_type);
-		node->nod_arg[1] = PAR_args(tdbb, csb, sub_type);
-		break;
-
 	case blr_dcl_cursor:
 		{
 			node->nod_arg[e_dcl_cur_number] = (jrd_nod*) (IPTR) csb->csb_blr_reader.getWord();

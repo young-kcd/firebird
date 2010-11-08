@@ -449,22 +449,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			return;
 		}
 
-	case nod_scalar:
-		{
-			jrd_nod* sub = node->nod_arg[e_scl_field];
-			jrd_rel* relation = csb->csb_rpt[(USHORT)(IPTR) sub->nod_arg[e_fld_stream]].csb_relation;
-			const USHORT id = (USHORT)(IPTR) sub->nod_arg[e_fld_id];
-			const jrd_fld* field = MET_get_field(relation, id);
-			const ArrayField* array;
-			if (!field || !(array = field->fld_array)) {
-				IBERROR(223);	// msg 223 argument of scalar operation must be an array
-			}
-			*desc = array->arr_desc.iad_rpt[0].iad_desc;
-			if (array->arr_desc.iad_dimensions > MAX_ARRAY_DIMENSIONS)
-				IBERROR(306); // Found array data type with more than 16 dimensions
-			return;
-		}
-
 	case nod_class_exprnode_jrd:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
@@ -2671,7 +2655,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_dbkey:
 	case nod_rec_version:
-	case nod_scalar:
 		{
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);

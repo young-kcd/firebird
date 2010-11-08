@@ -120,7 +120,6 @@ using namespace Firebird;
 
 static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
 static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
-static dsc* scalar(thread_db*, const jrd_nod*, impure_value*);
 
 
 dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
@@ -445,9 +444,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 
 			return &impure->vlu_desc;
 		}
-
-	case nod_scalar:
-		return scalar(tdbb, node, impure);
 
 	case nod_stmt_expr:
 		EXE_looper(tdbb, request, node);
@@ -888,60 +884,6 @@ static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* i
 	impure->vlu_desc.dsc_dtype = dtype_text;
 	impure->vlu_desc.dsc_length = 4;
 	impure->vlu_desc.dsc_ttype() = ttype_binary;
-
-	return &impure->vlu_desc;
-}
-
-
-static dsc* scalar(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      s c a l a r
- *
- **************************************
- *
- * Functional description
- *      Evaluate a scalar item from an array.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_scl_field]);
-	jrd_req* request = tdbb->getRequest();
-
-	if (request->req_flags & req_null)
-		return NULL;
-
-	if (desc->dsc_dtype != dtype_array)
-		IBERROR(261);			// msg 261 scalar operator used on field which is not an array
-
-	const jrd_nod* list = node->nod_arg[e_scl_subscripts];
-	if (list->nod_count > MAX_ARRAY_DIMENSIONS)
-		ERR_post(Arg::Gds(isc_array_max_dimensions) << Arg::Num(MAX_ARRAY_DIMENSIONS));
-
-	SLONG subscripts[MAX_ARRAY_DIMENSIONS];
-	int iter = 0;
-	const jrd_nod* const* ptr = list->nod_arg;
-	for (const jrd_nod* const* const end = ptr + list->nod_count; ptr < end;)
-	{
-		const dsc* temp = EVL_expr(tdbb, *ptr++);
-		if (temp && !(request->req_flags & req_null))
-			subscripts[iter++] = MOV_get_long(temp, 0);
-		else
-			return NULL;
-	}
-
-	BLB_scalar(tdbb,
-			   request->req_transaction,
-			   reinterpret_cast<bid*>(desc->dsc_address),
-			   list->nod_count,
-			   subscripts, impure);
-			   // It was subscripts, reinterpret_cast<impure_value*>(&impure->vlu_desc));
-			   // but vlu_desc is the first member of impure_value and impure is already
-			   // of type impure_value*, so this cast seems nonsense.
 
 	return &impure->vlu_desc;
 }

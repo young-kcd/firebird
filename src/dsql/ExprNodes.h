@@ -277,7 +277,13 @@ public:
 class DerivedExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
 {
 public:
-	DerivedExprNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	DerivedExprNode(MemoryPool& pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>(pool),
+		  arg(NULL),
+		  streamList(pool)
+	{
+		addChildNode(arg);
+	}
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -316,7 +322,6 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_nod* dsqlArg;
 	NestConst<jrd_nod> arg;
 	Firebird::Array<USHORT> streamList;
 };
@@ -646,6 +651,53 @@ public:
 	NestConst<jrd_nod> argFlag;
 	NestConst<jrd_nod> argIndicator;
 	NestConst<ItemInfo> argInfo;
+};
+
+
+class ScalarNode : public TypedNode<ValueExprNode, ExprNode::TYPE_SCALAR>
+{
+public:
+	explicit ScalarNode(MemoryPool& pool)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_SCALAR>(pool),
+		  field(NULL),
+		  subscripts(NULL)
+	{
+		addChildNode(field);
+		addChildNode(subscripts);
+	}
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	// This is a non-DSQL node.
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void setParameterName(dsql_par* parameter) const
+	{
+		fb_assert(false);
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
+	{
+		fb_assert(false);
+	}
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+	{
+		fb_assert(false);
+	}
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	NestConst<jrd_nod> field;
+	NestConst<jrd_nod> subscripts;
 };
 
 

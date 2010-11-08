@@ -249,10 +249,6 @@ const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
 const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor
 
-const int e_scl_field		= 0;	// Scalar expression (blr_index)
-const int e_scl_subscripts	= 1;
-const int e_scl_length		= 2;
-
 const int e_blk_action		= 0;
 const int e_blk_handlers	= 1;
 const int e_blk_length		= 2;
