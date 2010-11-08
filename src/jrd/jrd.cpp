@@ -739,7 +739,7 @@ static void cancel_attachments(thread_db* tdbb)
 						Database::Checkout dcoHolder(dbb);
 						if (!cancel_disable)
 						{
-							ISC_STATUS_ARRAY status;
+							ThreadStatusGuard temp_status(tdbb);
 							JRD_cancel_operation(tdbb, att, fb_cancel_enable);
 							JRD_cancel_operation(tdbb, att, fb_cancel_raise);
 						}
