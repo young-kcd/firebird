@@ -1283,6 +1283,8 @@ static void execute_request(thread_db* tdbb,
 						   0);
 	}
 
+	// Selectable execute block should get the "proc fetch" flag assigned,
+	// which ensures that the savepoint stack is preserved while suspending
 	if (request->req_type == REQ_SELECT_BLOCK)
 	{
 		fb_assert(request->req_request);
