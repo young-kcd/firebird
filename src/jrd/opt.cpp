@@ -3772,7 +3772,7 @@ static void find_used_streams(const RecordSource* rsb, UCHAR* streams)
 			break;
 	}
 
-	if (rsb->rsb_next) {
+	if (!found && rsb->rsb_next) {
 		find_used_streams(rsb->rsb_next, streams);
 	}
 
