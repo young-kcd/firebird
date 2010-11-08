@@ -703,6 +703,10 @@ void* MemoryPool::allocate_nothrow(size_t size
 			hdr->mbk_pool = this;
 			hdr->mbk_flags = MBK_USED;
 			hdr->mbk_type = TYPE_LEAFPAGE;
+#ifdef DEBUG_GDS_ALLOC
+			hdr->mbk_file = NULL;
+			hdr->mbk_line = 0;
+#endif
 			hdr->mbk_small.mbk_length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
 			hdr->mbk_small.mbk_prev_length = 0;
 			spareLeafs.add((char*)hdr + MEM_ALIGN(sizeof(MemoryBlock)));
@@ -720,6 +724,10 @@ void* MemoryPool::allocate_nothrow(size_t size
 
 			blk->mbk_flags = MBK_LAST;
 			blk->mbk_type = 0;
+#ifdef DEBUG_GDS_ALLOC
+			blk->mbk_file = NULL;
+			blk->mbk_line = 0;
+#endif
 			blk->mbk_small.mbk_length = blockLength;
 			blk->mbk_small.mbk_prev_length = hdr->mbk_small.mbk_length;
 			blk->mbk_prev_fragment = NULL;
@@ -1242,6 +1250,10 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 		poolBlk->mbk_pool = pool;
 		poolBlk->mbk_flags = MBK_USED;
 		poolBlk->mbk_type = TYPE_POOL;
+#ifdef DEBUG_GDS_ALLOC
+		poolBlk->mbk_file = NULL;
+		poolBlk->mbk_line = 0;
+#endif
 		poolBlk->mbk_small.mbk_length = MEM_ALIGN(sizeof(MemoryPool));
 		poolBlk->mbk_small.mbk_prev_length = 0;
 
@@ -1252,6 +1264,10 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 		hdr->mbk_pool = pool;
 		hdr->mbk_flags = MBK_USED;
 		hdr->mbk_type = TYPE_LEAFPAGE;
+#ifdef DEBUG_GDS_ALLOC
+		hdr->mbk_file = NULL;
+		hdr->mbk_line = 0;
+#endif
 		hdr->mbk_small.mbk_length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
 		hdr->mbk_small.mbk_prev_length = poolBlk->mbk_small.mbk_length;
 
@@ -1272,6 +1288,10 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 
 		blk->mbk_flags = MBK_LAST;
 		blk->mbk_type = 0;
+#ifdef DEBUG_GDS_ALLOC
+		blk->mbk_file = NULL;
+		blk->mbk_line = 0;
+#endif
 		blk->mbk_small.mbk_length = blockLength;
 		blk->mbk_small.mbk_prev_length = hdr->mbk_small.mbk_length;
 		blk->mbk_prev_fragment = NULL;
