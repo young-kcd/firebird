@@ -2146,6 +2146,10 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			MutexLockGuard guard(globalServicesMutex);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
+
+			// reset stdout buffer - fix for CORE-3220
+			svc_stdout_head = 0;
+			svc_stdout_tail = 0;
 		}
 
 		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, 0);
