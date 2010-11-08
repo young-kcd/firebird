@@ -4539,6 +4539,14 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				transaction->tra_flags &= ~TRA_cancel_request;
 				status_exception::raise(Arg::Gds(isc_cancelled));
 			}
+
+			// Check the thread state for already posted system errors. If any still persists,
+			// then someone tries to ignore our attempts to interrupt him. Let's insist.
+
+			if (tdbb->tdbb_flags & TDBB_sys_error)
+			{
+				status_exception::raise(Arg::Gds(isc_cancelled));
+			}
 		}
 		catch (const status_exception& ex)
 		{
