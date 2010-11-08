@@ -261,7 +261,7 @@ public:
 	explicit RelationSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>(pool),
 		  relation(NULL),
-		  context(NULL),
+		  context(0),
 		  alias(NULL),
 		  view(NULL)
 	{
@@ -326,9 +326,9 @@ public:
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>(pool),
 		  inputs(NULL),
 		  in_msg(NULL),
-		  procedure(NULL),
+		  procedure(0),
 		  view(NULL),
-		  context(NULL)
+		  context(0)
 	{
 	}
 
@@ -425,7 +425,7 @@ public:
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>(pool),
 		  clauses(pool),
 		  maps(pool),
-		  mapStream(NULL),
+		  mapStream(0),
 		  recursive(false)
 	{
 	}
