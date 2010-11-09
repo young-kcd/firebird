@@ -1,3 +1,58 @@
+ 2010-11-08 23:17  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/nod.h
+   M src/jrd/par.cpp
+   M src/misc/blrtable.cpp
+Refactor blr_index (nod_scalar)
+
+ 2010-11-08 18:12  alexpeshkoff 
+   M builds/posix/make.defaults
+   M builds/posix/prefix.aix_powerpc
+   M builds/posix/prefix.aix_powerpc_xlc
+   M configure.in
+   M src/common/unicode_util.cpp
+   M src/intl/cs_icu.cpp
+   M src/intl/cv_icu.cpp
+Check for presence of ICU development package in configure, related cleanup
+
+ 2010-11-08 16:37  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3029: Bugcheck "Too many savepoints (287)" at rollback after exception at EXECUTE BLOCK with exception handler.
+
+ 2010-11-08 16:16  alexpeshkoff 
+   M src/jrd/svc.cpp
+Fixed CORE-3220: isc_info_svc_get_users returns error message in the result cluster
+
+ 2010-11-08 14:43  asfernandes 
+   M src/jrd/RecordSourceNodes.h
+Warnings
+
+ 2010-11-08 10:21  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Fixed CORE-3217: Server crashes inside the lock manager when multiple connections attaching/detaching simultaneously.
+
+ 2010-11-08 09:23  dimitr 
+   M src/jrd/jrd.cpp
+Correction.
+
+ 2010-11-08 09:16  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-3218: Statement cancellation request might be silently ignored by the currently running SQL code.
+
+ 2010-11-08 07:23  dimitr 
+   M src/jrd/extds/ExtDS.cpp
+If we swallow the exception, let's zap it inside the status vector as well. This fixes the assertion in the debug build.
+
  2010-11-07 22:12  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
