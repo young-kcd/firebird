@@ -6332,6 +6332,8 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 
 	for (dsql_nod** ptr = input->nod_arg; ptr < endo; ++ptr)
 	{
+		if (!*ptr)
+			continue;
 
 		if ((*ptr)->nod_type == nod_select_expr)
 		{
