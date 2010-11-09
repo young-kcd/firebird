@@ -161,7 +161,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			if (*p == 'X')
 			{
 				// oh no, a hex string!
-				*p++; // skip the 'X' part.
+				++p; // skip the 'X' part.
 				UCHAR byte = 0;
 				bool nibble = ((strlen(constant->str_data) - 1) & 1);
 				SSHORT c;
@@ -187,7 +187,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 						nibble = true;
 					}
 
-					*p++;
+					++p;
 				}
 
 				// if value is negative, then GEN_constant (from dsql/gen.cpp)
