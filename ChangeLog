@@ -1,3 +1,11 @@
+ 2010-11-08 16:17  alexpeshkoff 
+   M src/jrd/svc.cpp
+Backported fix for CORE-3220: isc_info_svc_get_users returns error message in the result cluster
+
+ 2010-11-08 10:30  dimitr 
+   M src/jrd/opt.cpp
+Fixed an old error which handles aggregates wrongly. So far it seems harmless for versions prior to v3.0 where it has been fixed, but let's be on the safe side.
+
  2010-10-31 08:54  dimitr 
    M src/dsql/dsql.cpp
 Fixed CORE-3205: isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err.
