@@ -1,3 +1,48 @@
+ 2010-11-08 19:43  dimitr 
+   M src/jrd/tra.cpp
+Avoid destructing the temporary transaction twice. This is expected to fix the crash reported in CORE-3207.
+
+ 2010-11-08 16:32  dimitr 
+   M src/dsql/dsql.cpp
+Comment.
+
+ 2010-11-08 16:30  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3029: Bugcheck "Too many savepoints (287)" at rollback after exception at EXECUTE BLOCK with exception handler.
+
+ 2010-11-08 16:17  alexpeshkoff 
+   M src/jrd/svc.cpp
+Backported fix for CORE-3220: isc_info_svc_get_users returns error message in the result cluster
+
+ 2010-11-08 10:34  dimitr 
+   M src/common/classes/alloc.cpp
+Fixed unregistered crash when database pools are being printed into the file. We don't have such code enabled by default, so this isn't going to affect production systems.
+
+ 2010-11-08 10:31  dimitr 
+   M src/jrd/opt.cpp
+Fixed an old error which handles aggregates wrongly. So far it seems harmless for versions prior to v3.0 where it has been fixed, but let's be on the safe side.
+
+ 2010-11-08 10:10  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/event.cpp
+   M src/jrd/event_proto.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Fixed CORE-3217: Server crashes inside the lock manager when multiple connections attaching/detaching simultaneously.
+
+ 2010-11-08 09:16  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-3218: Statement cancellation request might be silently ignored by the currently running SQL code.
+
+ 2010-11-08 08:48  dimitr 
+   M src/jrd/cch.cpp
+Hopefully, this should fix a (supposedly rare) crash I've seen in the debugger once.
+
+ 2010-11-08 07:22  dimitr 
+   M src/jrd/extds/ExtDS.cpp
+If we swallow the exception, let's zap it inside the status vector as well. This fixes the assertion in the debug build.
+
  2010-11-04 01:10  asfernandes 
    M src/jrd/cmp.cpp
 Fixed CORE-3211 - String truncation occurs when selecting from a view containing NOT IN inside
