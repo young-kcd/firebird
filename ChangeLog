@@ -1,3 +1,15 @@
+ 2010-11-08 16:17  alexpeshkoff 
+   M src/jrd/svc.cpp
+Backported fix for CORE-3220: isc_info_svc_get_users returns error message in the result cluster
+
+ 2010-11-08 10:31  dimitr 
+   M src/jrd/opt.cpp
+Fixed an old error which handles aggregates wrongly. So far it seems harmless for versions prior to v3.0 where it has been fixed, but let's be on the safe side.
+
+ 2010-11-08 09:14  dimitr 
+   M src/jrd/jrd.cpp
+Fixed CORE-3218: Statement cancellation request might be silently ignored by the currently running SQL code.
+
  2010-11-01 19:22  dimitr 
    M src/jrd/rse.cpp
 Misc.
