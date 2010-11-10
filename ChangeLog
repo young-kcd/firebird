@@ -1,3 +1,7 @@
+ 2010-11-09 17:27  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed CORE-3222 - View with "WITH CHECK OPTION" doesn't like TRIM function in WHERE
+
  2010-11-08 19:43  dimitr 
    M src/jrd/tra.cpp
 Avoid destructing the temporary transaction twice. This is expected to fix the crash reported in CORE-3207.
