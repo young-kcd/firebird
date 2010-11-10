@@ -32,6 +32,17 @@ AC_ARG_WITH([$1],
 AC_SUBST([$3])
 ])
 
+define([XE_CONF_FILE],[
+AC_ARG_WITH([$1],
+	[AC_HELP_STRING([--with-$1], [$2])],
+	[[$3]="$withval"
+	 AC_DEFINE_UNQUOTED([$3], "$[$3]", [$2])],
+	[[$3]="$4"
+	 AC_DEFINE_UNQUOTED([$3], ["$4"], [$2])]
+)
+AC_SUBST([$3])
+])
+
 sinclude(acx_pthread.m4)
 sinclude(binreloc.m4)
 
@@ -556,6 +567,7 @@ XE_CONF_DIR(fbmisc, [misc DIR (PREFIX/misc)], FB_MISCDIR, /misc)
 XE_CONF_DIR(fbsecure-db, [security database DIR (PREFIX)], FB_SECDBDIR)
 XE_CONF_DIR(fbmsg, [message files DIR (PREFIX)], FB_MSGDIR)
 XE_CONF_DIR(fblog, [log files DIR (PREFIX)], FB_LOGDIR)
+XE_CONF_FILE(fblogfilename, [log file name within log dir (firebird.log)], FB_LOGFILENAME, firebird.log)
 XE_CONF_DIR(fbglock, [guardian lock DIR (PREFIX)], FB_GUARDDIR)
 XE_CONF_DIR(fbplugins, [plugins DIR (PREFIX)], FB_PLUGDIR, /plugins)
 

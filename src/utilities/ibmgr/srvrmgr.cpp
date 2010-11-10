@@ -273,7 +273,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 		rs = "can not quit now, use shut -ign";
 		break;
 	case MSG_STARTERR:
-		rs = "check $FIREBIRD/firebird.log file for errors";
+		rs = "check "FB_LOGFILENAME" for errors";
 		break;
 	case MSG_STARTFAIL:
 		rs = "can not start server";
