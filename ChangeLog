@@ -1,3 +1,15 @@
+ 2010-11-11 00:05  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ddl.cpp
+1) Frontport fix for CORE-3222 - View with "WITH CHECK OPTION" doesn't like TRIM function in WHERE
+2) Other related fix and cleanup
+
+ 2010-11-10 12:43  alexpeshkoff 
+   M configure.in
+   M src/common/file_params.h
+   M src/utilities/ibmgr/srvrmgr.cpp
+Damyan's patch to enable changing firebird.log filename
+
  2010-11-09 15:03  asfernandes 
    M src/dsql/make.cpp
 Warnings
