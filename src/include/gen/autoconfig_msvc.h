@@ -330,6 +330,8 @@
 #define FB_SECDBDIR ""
 #define FB_UDFDIR ""
 
+#define FB_LOGFILENAME "firebird.log"
+
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;
 #endif
