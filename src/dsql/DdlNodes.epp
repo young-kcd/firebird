@@ -7998,37 +7998,40 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,
 	dsql_nod* replaceFields, bool nullThem, const char* contextName)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	if (!input || input->getType() != dsql_type_nod)
 		return input;
 
-	const dsql_nod* const* endo;
-	dsql_nod** ptr;
-
-	Array<dsql_nod*> temp;
+	Array<dsql_nod**> temp;
 
 	if (input->nod_type == nod_class_exprnode)
 	{
 		ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
 
 		for (dsql_nod*** i = exprNode->dsqlChildNodes.begin();
-				i != exprNode->dsqlChildNodes.end(); ++i)
+			 i != exprNode->dsqlChildNodes.end(); ++i)
 		{
 			if (**i)
-				temp.add(**i);
+				temp.add(*i);
 		}
-
-		endo = temp.end();
-		ptr = temp.begin();
 	}
 	else
 	{
-		endo = input->nod_arg + input->nod_count;
-		ptr = input->nod_arg;
+		for (dsql_nod** ptr = input->nod_arg; ptr != input->nod_arg + input->nod_count; ++ptr)
+			temp.add(ptr);
 	}
 
-	for (; ptr < endo; ++ptr)
+	dsql_nod*** endo = temp.end();
+
+	for (dsql_nod*** ptr = temp.begin(); ptr != temp.end(); ++ptr)
 	{
-		if ((*ptr)->nod_type == Dsql::nod_select_expr)
+		dsql_nod**& ptrNode = *ptr;
+
+		if (!*ptrNode)
+			continue;
+
+		if ((*ptrNode)->nod_type == Dsql::nod_select_expr)
 		{
 			// No subqueries permitted for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -8037,11 +8040,11 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 				Arg::Gds(isc_subquery_err));
 		}
 
-		if ((*ptr)->nod_type == Dsql::nod_field_name)
+		if ((*ptrNode)->nod_type == Dsql::nod_field_name)
 		{
 			// Found a field node, check if it needs to be replaced.
 
-			const dsql_str* fieldName = (dsql_str*) (*ptr)->nod_arg[Dsql::e_fln_name];
+			const dsql_str* fieldName = (dsql_str*) (*ptrNode)->nod_arg[Dsql::e_fln_name];
 			dsql_nod** search = searchFields->nod_arg;
 			const dsql_nod* const* const end = search + searchFields->nod_count;
 			dsql_nod** replace = NULL;
@@ -8065,10 +8068,9 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 					found = true;
 
 					if (replaceFields)
-						(*ptr)->nod_arg[e_fln_name] = (*replace)->nod_arg[Dsql::e_fln_name];
+						(*ptrNode)->nod_arg[e_fln_name] = (*replace)->nod_arg[Dsql::e_fln_name];
 
-					(*ptr)->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(contextName);
-
+					(*ptrNode)->nod_arg[Dsql::e_fln_context] = (dsql_nod*) MAKE_cstring(contextName);
 				}
 
 				if (nullThem && replaceFields &&
@@ -8079,12 +8081,16 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 			}
 
 			if (nullThem && !found)
-				(*ptr) = MAKE_node(Dsql::nod_not_null, 0);
+			{
+				(*ptrNode) = MAKE_node(nod_class_exprnode, 1);
+				(*ptrNode)->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
+			}
 		}
 		else
 		{
 			// Recursively go through the input tree looking for field name nodes.
-			replaceFieldNames(*ptr, searchFields, replaceFields, nullThem, contextName);
+			replaceFieldNames(*ptrNode, searchFields, replaceFields, nullThem, contextName);
 		}
 	}
 

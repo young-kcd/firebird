@@ -136,7 +136,6 @@ static void modify_udf(DsqlCompilerScratch*);
 static void modify_map(DsqlCompilerScratch*);
 static void process_role_nm_list(DsqlCompilerScratch*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
 static void put_field(DsqlCompilerScratch*, dsql_fld*, bool);
-static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
 static void set_statistics(DsqlCompilerScratch*);
 static void define_user(DsqlCompilerScratch*, UCHAR);
 static void put_grantor(DsqlCompilerScratch* dsqlScratch, const dsql_nod* grantor);
@@ -1990,96 +1989,6 @@ static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool u
 			dsqlScratch->appendNumber(isc_dyn_fld_sub_type, field->fld_sub_type);
 		}
 	}
-}
-
-
-static dsql_nod* replace_field_names(dsql_nod*		input,
-							   dsql_nod*		search_fields,
-							   dsql_nod*		replace_fields,
-							   bool	null_them,
-							   const char* context_name)
-{
-/**************************************
- *
- *	r e p l a c e _ f i e l d _ n a m e s
- *
- **************************************
- *
- * Function
- *	Given an input node tree, find any field name nodes
- *	and replace them according to the mapping provided.
- *	Used to create view WITH CHECK OPTION.
- *
- **************************************/
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	if (!input || input->getType() != dsql_type_nod)
-		return input;
-
-	const dsql_nod* const* const endo = input->nod_arg + input->nod_count;
-
-	for (dsql_nod** ptr = input->nod_arg; ptr < endo; ++ptr)
-	{
-
-		if ((*ptr)->nod_type == nod_select_expr)
-		{
-			// No subqueries permitted for VIEW WITH CHECK OPTION
-			post_607(Arg::Gds(isc_subquery_err));
-		}
-
-		if ((*ptr)->nod_type == nod_field_name)
-		{
-			// found a field node, check if it needs to be replaced
-
-			const dsql_str* field_name = (dsql_str*) (*ptr)->nod_arg[e_fln_name];
-			dsql_nod** search = search_fields->nod_arg;
-			const dsql_nod* const* const end = search + search_fields->nod_count;
-			dsql_nod** replace = NULL;
-			if (replace_fields) {
-				replace = replace_fields->nod_arg;
-			}
-			bool found = false;
-			for (; search < end; search++, replace_fields ? replace++ : NULL)
-			{
-				const dsql_str* replace_name = 0;
-				if (replace_fields) {
-					replace_name = (dsql_str*) (*replace)->nod_arg[e_fln_name];
-				}
-				const dsql_nod* field_node = *search;
-				const dsql_fld* field = (dsql_fld*) field_node->nod_arg[e_fld_field];
-
-				if (field->fld_name == field_name->str_data)
-				{
-					found = true;
-					if (replace_fields) {
-						(*ptr)->nod_arg[e_fln_name] = (*replace)->nod_arg[e_fln_name];
-					}
-					(*ptr)->nod_arg[e_fln_context] = (dsql_nod*) MAKE_cstring(context_name);
-
-				}
-				if (null_them && replace_fields && !strcmp(field_name->str_data, replace_name->str_data))
-				{
-					found = true;
-				}
-			}
-
-			if (null_them && !found)
-			{
-				(*ptr) = MAKE_node(nod_class_exprnode, 1);
-				(*ptr)->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-			}
-		}
-		else
-		{
-			// recursively go through the input tree
-			// looking for field name nodes
-			replace_field_names(*ptr, search_fields, replace_fields, null_them, context_name);
-		}
-	}
-
-	return input;
 }
 
 
