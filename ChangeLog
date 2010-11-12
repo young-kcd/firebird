@@ -1,3 +1,11 @@
+ 2010-11-11 13:56  alexpeshkoff 
+   M src/jrd/isc_sync.cpp
+Backported fix for CORE-3212: Error compile 2.5 for FreeBSD
+
+ 2010-11-11 07:50  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+Added LSB header
+
  2010-11-09 17:27  asfernandes 
    M src/dsql/ddl.cpp
 Fixed CORE-3222 - View with "WITH CHECK OPTION" doesn't like TRIM function in WHERE
