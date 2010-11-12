@@ -170,11 +170,22 @@ int openCreateSharedFile(const char* pathname, int flags)
 		// Security check - avoid symbolic links in /tmp.
 		// Malicious user can create a symlink with this name pointing to say
 		// security2.fdb and when the lock file is created the file will be damaged.
-		struct stat fst, lst;
-		if ((fstat(fd, &fst) != 0) || (lstat(pathname, &lst) != 0) || (fst.st_ino != lst.st_ino))
+
+		struct stat st;
+		int rc;
+		do {
+			rc = fstat(fd, &st);
+		} while (fd != 0 && SYSCALL_INTERRUPTED(errno));
+		if (rc != 0)
 		{
 			close(fd);
-			errno = EMLINK;
+			return -1;
+		}
+
+		if (S_ISLNK(st.st_mode))
+		{
+			close(fd);
+			errno = ELOOP;
 			return -1;
 		}
 
