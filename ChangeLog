@@ -1,3 +1,19 @@
+ 2010-11-11 13:56  alexpeshkoff 
+   M src/common/isc_sync.cpp
+Fixed CORE-3212: Error compile 2.5 for FreeBSD
+
+ 2010-11-11 07:41  dimitr 
+   M src/include/gen/autoconfig_msvc.h
+Fixed the Windows build.
+
+ 2010-11-11 07:41  dimitr 
+   M src/jrd/tra.cpp
+Front ported fix for CORE-3207.
+
+ 2010-11-11 07:41  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
+Added LSB header
+
  2010-11-11 00:05  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/ddl.cpp
