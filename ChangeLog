@@ -1,3 +1,7 @@
+ 2010-11-12 12:20  alexpeshkoff 
+   M src/jrd/os/posix/os_utils.cpp
+Backported fix for CORE-3229: Records: "operating system directive open failed, Too many links" in firebird.log
+
  2010-11-11 13:56  alexpeshkoff 
    M src/jrd/isc_sync.cpp
 Backported fix for CORE-3212: Error compile 2.5 for FreeBSD
