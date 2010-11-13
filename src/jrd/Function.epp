@@ -363,9 +363,9 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			function->fun_exception_message.printf(EXCEPTION_MESSAGE,
 				function->getName().toString().c_str(), X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
 
-			if (!X.RDB$INVARIANT_FLAG.NULL)
+			if (!X.RDB$DETERMINISTIC_FLAG.NULL)
 			{
-				function->fun_invariant = (X.RDB$INVARIANT_FLAG != 0);
+				function->fun_deterministic = (X.RDB$DETERMINISTIC_FLAG != 0);
 			}
 
 			function->setUndefined(false);
@@ -649,7 +649,7 @@ void Function::releaseLocks(thread_db* tdbb)
 	}
 }
 
-dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value) const
+dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value, bool invariant) const
 {
 	if (isUndefined())
 	{
@@ -690,10 +690,10 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 
 	USHORT& invariant_flags = value->vlu_flags;
 
-	// If the function is declared as invariant,
+	// If the function is known as being both deterministic and invariant,
 	// check whether it has already been evaluated
 
-	if (fun_invariant)
+	if (fun_deterministic && invariant)
 	{
 		if (invariant_flags & VLU_computed)
 		{
@@ -823,7 +823,7 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 
 	// If the function is declared as invariant, mark it as computed
 
-	if (fun_invariant)
+	if (fun_deterministic && invariant)
 	{
 		invariant_flags |= VLU_computed;
 

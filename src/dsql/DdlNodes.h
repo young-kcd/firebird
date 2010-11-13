@@ -238,7 +238,7 @@ public:
 		  create(true),
 		  alter(false),
 		  external(NULL),
-		  invariant(false),
+		  deterministic(false),
 		  parameters(pool),
 		  returnType(pool, NULL, NULL),
 		  localDeclList(NULL),
@@ -281,7 +281,7 @@ public:
 	bool create;
 	bool alter;
 	ExternalClause* external;
-	bool invariant;
+	bool deterministic;
 	Firebird::Array<ParameterClause> parameters;
 	TypeClause returnType;
 	dsql_nod* localDeclList;

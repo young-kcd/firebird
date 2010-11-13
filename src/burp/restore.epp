@@ -4206,7 +4206,7 @@ bool get_function(BurpGlobals* tdgbl)
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
 			X.RDB$LEGACY_FLAG.NULL = TRUE;
-			X.RDB$INVARIANT_FLAG.NULL = TRUE;
+			X.RDB$DETERMINISTIC_FLAG.NULL = TRUE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4362,11 +4362,11 @@ bool get_function(BurpGlobals* tdgbl)
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
 
-				case att_function_invariant_flag:
+				case att_function_deterministic_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$INVARIANT_FLAG = get_numeric(tdgbl);
-						X.RDB$INVARIANT_FLAG.NULL = FALSE;
+						X.RDB$DETERMINISTIC_FLAG = get_numeric(tdgbl);
+						X.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
@@ -4484,7 +4484,7 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_legacy_flag:
-				case att_function_invariant_flag:
+				case att_function_deterministic_flag:
 					if (tdgbl->RESTORE_format >= 10)
 						get_numeric(tdgbl);
 					else

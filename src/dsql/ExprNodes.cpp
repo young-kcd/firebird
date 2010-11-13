@@ -7939,7 +7939,8 @@ ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
-	return function->execute(tdbb, args, impure);
+	const bool invariant = (node->nod_flags & nod_invariant);
+	return function->execute(tdbb, args, impure, invariant);
 }
 
 ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)

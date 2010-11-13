@@ -1319,8 +1319,8 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				if (!FUN.RDB$FUNCTION_SOURCE.NULL)
 					attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
 
-				FUN.RDB$INVARIANT_FLAG.NULL = FALSE;
-				FUN.RDB$INVARIANT_FLAG = invariant ? TRUE : FALSE;
+				FUN.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
+				FUN.RDB$DETERMINISTIC_FLAG = deterministic ? TRUE : FALSE;
 			}
 
 			if (external)

@@ -421,7 +421,7 @@ enum att_type {
 	att_function_security_class,
 	att_function_owner_name,
 	att_function_legacy_flag,
-	att_function_invariant_flag,
+	att_function_deterministic_flag,
 
 	// Function argument attributes
 

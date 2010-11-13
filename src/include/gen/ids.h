@@ -238,7 +238,7 @@
 	const USHORT  f_fun_class = 16;
 	const USHORT  f_fun_owner = 17;
 	const USHORT  f_fun_legacy_flag = 18;
-	const USHORT  f_fun_invariant_flag = 19;
+	const USHORT  f_fun_deterministic_flag = 19;
 
 
 // Relation 15 (RDB$FUNCTION_ARGUMENTS)

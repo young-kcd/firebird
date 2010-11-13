@@ -53,7 +53,7 @@ namespace Jrd
 
 		USHORT incrementAlterCount();
 
-		dsc* execute(thread_db* tdbb, const jrd_nod* args, impure_value* value) const;
+		dsc* execute(thread_db* tdbb, const jrd_nod* args, impure_value* value, bool invariant) const;
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
 		ULONG allocateImpure(CompilerScratch* csb) const;
@@ -76,7 +76,7 @@ namespace Jrd
 			  fun_existence_lock(NULL),
 			  fun_alter_count(0),
 			  fun_exception_message(p),
-			  fun_invariant(false),
+			  fun_deterministic(false),
 			  fun_external(NULL)
 		{
 		}
@@ -116,7 +116,7 @@ namespace Jrd
 
 		Firebird::string fun_exception_message;	// message containing the exception error message
 
-		bool fun_invariant;
+		bool fun_deterministic;
 		const ExtEngineManager::Function* fun_external;
 	};
 
