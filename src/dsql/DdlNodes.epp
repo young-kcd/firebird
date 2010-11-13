@@ -1212,9 +1212,6 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 				FUN.RDB$LEGACY_FLAG.NULL = FALSE;
 				FUN.RDB$LEGACY_FLAG = 0;
 
-				FUN.RDB$INVARIANT_FLAG.NULL = FALSE;
-				FUN.RDB$INVARIANT_FLAG = invariant ? TRUE : FALSE;
-
 				FUN.RDB$RETURN_ARGUMENT.NULL = FALSE;
 				FUN.RDB$RETURN_ARGUMENT = 0;
 
@@ -1321,6 +1318,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 				FUN.RDB$FUNCTION_SOURCE.NULL = !(source.hasData() && (external || package.isEmpty()));
 				if (!FUN.RDB$FUNCTION_SOURCE.NULL)
 					attachment->storeMetaDataBlob(tdbb, transaction, &FUN.RDB$FUNCTION_SOURCE, source);
+
+				FUN.RDB$INVARIANT_FLAG.NULL = FALSE;
+				FUN.RDB$INVARIANT_FLAG = invariant ? TRUE : FALSE;
 			}
 
 			if (external)
