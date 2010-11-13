@@ -2064,7 +2064,7 @@ function_clause_start
 			{
 				$$ = $2;
 				$$->returnType = TypeClause(getPool(), $<legacyField>5, toName($7));
-				$$->invariant = ($8 != NULL);
+				$$->deterministic = ($8 != NULL);
 			}
 	;
 
