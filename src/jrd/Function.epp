@@ -688,6 +688,26 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc;
 	}
 
+	USHORT& invariant_flags = value->vlu_flags;
+
+	// If the function is declared as invariant,
+	// check whether it has already been evaluated
+
+	if (fun_invariant)
+	{
+		if (invariant_flags & VLU_computed)
+		{
+			if (invariant_flags & VLU_null)
+				request->req_flags |= req_null;
+			else
+				request->req_flags &= ~req_null;
+
+			return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
+		}
+	}
+
+	// Evaluate the function
+
 	if (fun_entrypoint)
 	{
 		FUN_evaluate(tdbb, this, args, value);
@@ -799,6 +819,16 @@ dsc* Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* value
 	else
 	{
 		fb_assert(false);
+	}
+
+	// If the function is declared as invariant, mark it as computed
+
+	if (fun_invariant)
+	{
+		invariant_flags |= VLU_computed;
+
+		if (request->req_flags & req_null)
+			invariant_flags |= VLU_null;
 	}
 
 	return (request->req_flags & req_null) ? NULL : &value->vlu_desc;
