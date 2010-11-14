@@ -1,3 +1,32 @@
+ 2010-11-13 15:04  dimitr 
+   M src/dsql/parse.y
+Let's clearly distinguish between deterministic and invariant functions, they're not the same thing actually. Runtime optimization usage is to be re-considered, if necessary.
+Warning: this includes an ODS change, please boot-build.
+
+ 2010-11-13 15:03  dimitr 
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/include/gen/ids.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/dyn_def.epp
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Let's clearly distinguish between deterministic and invariant functions, they're not the same thing actually. Runtime optimization usage is to be re-considered, if necessary.
+Warning: this includes an ODS change, please boot-build.
+
+ 2010-11-13 08:56  dimitr 
+   M src/jrd/Function.epp
+Implemented support for deterministic (invariant) functions.
+
+ 2010-11-13 08:54  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed inability to alter the [[NOT] DETERMINISTIC] clause.
+
  2010-11-13 01:50  asfernandes 
    M src/common/os/posix/os_utils.cpp
 Misc
