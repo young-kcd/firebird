@@ -321,7 +321,8 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			for (ptr = m_group->begin(), end = m_group->end(); ptr != end; ++ptr)
 			{
 				const jrd_nod* from = *ptr;
-				impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
+				const ExprNode* fromExpr = from->asExpr();
+				impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
 
 				desc = EVL_expr(tdbb, from);
 
@@ -337,7 +338,8 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			for (ptr = m_order->begin(), end = m_order->end(); ptr != end; ++ptr)
 			{
 				const jrd_nod* from = *ptr;
-				impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
+				const ExprNode* fromExpr = from->asExpr();
+				impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
 
 				desc = EVL_expr(tdbb, from);
 
@@ -368,7 +370,8 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					for (ptr = m_group->begin(), end = m_group->end(); ptr != end; ++ptr)
 					{
 						const jrd_nod* from = *ptr;
-						impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
+						const ExprNode* fromExpr = from->asExpr();
+						impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
@@ -405,7 +408,8 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					for (ptr = m_order->begin(), end = m_order->end(); ptr != end; ++ptr)
 					{
 						const jrd_nod* from = *ptr;
-						impure_value* impure = request->getImpure<impure_value>(from->nod_impure);
+						const ExprNode* fromExpr = from->asExpr();
+						impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);

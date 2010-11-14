@@ -53,22 +53,6 @@ using namespace Jrd;
 namespace Jrd {
 
 
-DmlNode* DmlNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
-{
-	node = aNode;
-	return pass1(tdbb, csb);
-}
-
-DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
-{
-	node = aNode;
-	return pass2(tdbb, csb);
-}
-
-
-//--------------------
-
-
 StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node)
 {
 	if (dsqlScratch->errorHandlers)

@@ -96,8 +96,6 @@ public:
 	NestConst<jrd_nod>	nod_parent;
 	ULONG		nod_impure;			// Inpure offset from request block
 	nod_t		nod_type;			// Type of node
-	USHORT		nod_flags;
-	SCHAR		nod_scale;			// Target scale factor
 	USHORT		nod_count;			// Number of arguments
 	jrd_nod*	nod_arg[1];
 
@@ -114,13 +112,19 @@ public:
 		operator const jrd_nod* const* () const { return arg[0].getAddress(); }
 	} nod_arg;
 	***/
-};
 
-const int nod_quad			= 1;		// compute in quad (default is long)
-const int nod_double		= 2;
-const int nod_date			= 4;
-const int nod_value			= 8;		// full value area required in impure space
-const int nod_invariant		= 16;		// node is recognized as being invariant
+	const ExprNode* asExpr() const
+	{
+		fb_assert(nod_type == nod_class_exprnode_jrd);
+		return reinterpret_cast<const ExprNode*>(nod_arg[0]);
+	}
+
+	ExprNode* asExpr()
+	{
+		fb_assert(nod_type == nod_class_exprnode_jrd);
+		return reinterpret_cast<ExprNode*>(nod_arg[0]);
+	}
+};
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;
@@ -540,31 +544,21 @@ struct ItemInfo
 	bool fullDomain;
 };
 
-struct LegacyNodeOrRseNode
+struct RseOrExprNode
 {
-	LegacyNodeOrRseNode(jrd_nod* aLegacyNode)
-		: legacyNode(aLegacyNode),
-		  boolExprNode(NULL),
+	RseOrExprNode(ExprNode* aExprNode)
+		: exprNode(aExprNode),
 		  rseNode(NULL)
 	{
 	}
 
-	LegacyNodeOrRseNode(BoolExprNode* aBoolExprNode)
-		: legacyNode(NULL),
-		  boolExprNode(aBoolExprNode),
-		  rseNode(NULL)
-	{
-	}
-
-	LegacyNodeOrRseNode(RseNode* aRseNode)
-		: legacyNode(NULL),
-		  boolExprNode(NULL),
+	RseOrExprNode(RseNode* aRseNode)
+		: exprNode(NULL),
 		  rseNode(aRseNode)
 	{
 	}
 
-	jrd_nod* legacyNode;
-	BoolExprNode* boolExprNode;
+	ExprNode* exprNode;
 	RseNode* rseNode;
 };
 
@@ -670,7 +664,7 @@ public:
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
-	Firebird::Array<LegacyNodeOrRseNode> csb_current_nodes;	// RseNode's and other invariant
+	Firebird::Array<RseOrExprNode> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
 	USHORT			csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number

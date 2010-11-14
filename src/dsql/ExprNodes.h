@@ -60,8 +60,8 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 	// add and add2 are used in somewhat obscure way in aggregation.
-	static dsc* add(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp);
-	static dsc* add2(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp);
+	static dsc* add(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp);
+	static dsc* add2(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp);
 
 private:
 	dsc* multiply(const dsc* desc, impure_value* value) const;

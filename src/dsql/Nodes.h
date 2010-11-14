@@ -206,32 +206,14 @@ class DmlNode : public Node
 {
 public:
 	explicit DmlNode(MemoryPool& pool)
-		: Node(pool),
-		  node(NULL)
+		: Node(pool)
 	{
 	}
-
-	jrd_nod* getNode()
-	{
-		return node;
-	}
-
-	void setNode(jrd_nod* value)
-	{
-		node = value;
-	}
-
-public:
-	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode);
-	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode);
 
 public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch) = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-
-protected:
-	NestConst<jrd_nod> node;
 };
 
 
@@ -296,9 +278,24 @@ public:
 		TYPE_VARIABLE
 	};
 
+	// Generic flags.
+	static const unsigned FLAG_INVARIANT	= 0x01;	// Node is recognized as being invariant.
+
+	// Boolean flags.
+	static const unsigned FLAG_DEOPTIMIZE	= 0x02;	// Boolean which requires deoptimization.
+	static const unsigned FLAG_ANSI_NOT		= 0x04;	// ANY/ALL predicate is prefixed with a NOT one.
+
+	// Value flags.
+	static const unsigned FLAG_QUAD			= 0x08;	// Compute in quad (default is long).
+	static const unsigned FLAG_DOUBLE		= 0x10;
+	static const unsigned FLAG_DATE			= 0x20;
+	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
+
 	explicit ExprNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
 		  type(aType),
+		  nodFlags(0),
+		  impureOffset(0),
 		  dsqlCompatDialectVerb(NULL),
 		  dsqlChildNodes(pool),
 		  jrdChildNodes(pool)
@@ -440,6 +437,8 @@ protected:
 
 public:
 	const Type type;
+	unsigned nodFlags;
+	ULONG impureOffset;
 	const char* dsqlCompatDialectVerb;
 	Firebird::Array<dsql_nod**> dsqlChildNodes;
 	Firebird::Array<JrdNode> jrdChildNodes;
@@ -448,14 +447,8 @@ public:
 class BoolExprNode : public ExprNode
 {
 public:
-	static const unsigned FLAG_DEOPTIMIZE	= 0x1;	// Boolean which requires deoptimization.
-	static const unsigned FLAG_ANSI_NOT		= 0x2;	// ANY/ALL predicate is prefixed with a NOT one.
-	static const unsigned FLAG_INVARIANT	= 0x4;	// Node is recognized as being invariant.
-
 	BoolExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool),
-		  impureOffset(0),
-		  flags(0)
+		: ExprNode(aType, pool)
 	{
 	}
 
@@ -486,17 +479,14 @@ public:
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
-
-public:
-	ULONG impureOffset;
-	unsigned flags;
 };
 
 class ValueExprNode : public ExprNode
 {
 public:
 	ValueExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool)
+		: ExprNode(aType, pool),
+		  nodScale(0)
 	{
 	}
 
@@ -518,6 +508,9 @@ public:
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
+
+public:
+	SCHAR nodScale;
 };
 
 class AggNode : public TypedNode<ValueExprNode, ExprNode::TYPE_AGGREGATE>
@@ -698,16 +691,30 @@ class StmtNode : public DmlNode
 {
 public:
 	explicit StmtNode(MemoryPool& pool)
-		: DmlNode(pool)
+		: DmlNode(pool),
+		  node(NULL)
 	{
 	}
 
 public:
+	jrd_nod* getNode()
+	{
+		return node;
+	}
+
+	void setNode(jrd_nod* value)
+	{
+		node = value;
+	}
+
 	virtual void pass2Cursor(RseNode*& /*rsePtr*/, Cursor**& /*cursorPtr*/)
 	{
 	}
 
 	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
+
+protected:
+	NestConst<jrd_nod> node;
 };
 
 

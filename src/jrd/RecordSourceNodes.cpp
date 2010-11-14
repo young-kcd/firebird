@@ -75,7 +75,7 @@ void SortNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 void SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	for (NestConst<jrd_nod>* i = expressions.begin(); i != expressions.end(); ++i)
-		(*i)->nod_flags |= nod_value;
+		(*i)->asExpr()->nodFlags |= ExprNode::FLAG_VALUE;
 
 	for (NestConst<jrd_nod>* i = expressions.begin(); i != expressions.end(); ++i)
 		CMP_pass2(tdbb, csb, *i, NULL);
@@ -1489,7 +1489,7 @@ void RseNode::pass1(thread_db* tdbb, CompilerScratch* csb, jrd_rel* /*view*/)
 
 	bool topLevelRse = true;
 
-	for (LegacyNodeOrRseNode* node = csb->csb_current_nodes.begin();
+	for (RseOrExprNode* node = csb->csb_current_nodes.begin();
 		 node != csb->csb_current_nodes.end(); ++node)
 	{
 		if (node->rseNode)
@@ -2328,7 +2328,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 			deliverNode = newMissingNode;
 		}
 
-		deliverNode->flags = boolean->flags;
+		deliverNode->nodFlags = boolean->nodFlags;
 		deliverNode->impureOffset = boolean->impureOffset;
 
 		bool okNode = true;

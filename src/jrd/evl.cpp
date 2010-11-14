@@ -137,8 +137,10 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
+	const ExprNode* exprNode = node->asExpr();
+
 	jrd_req* request = tdbb->getRequest();
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(exprNode->impureOffset);
 
 	// The only nodes that can be assigned to are: argument, field and variable.
 
@@ -316,32 +318,20 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
+	const ValueExprNode* exprNode = static_cast<const ValueExprNode*>(node->asExpr());
+
 	jrd_req* const request = tdbb->getRequest();
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(exprNode->impureOffset);
 	request->req_flags &= ~req_null;
 
-	// Do a preliminary screen for either simple nodes or nodes that are special cased elsewhere
+	dsc* desc = exprNode->execute(tdbb, request);
 
-	switch (node->nod_type)
-	{
-	case nod_class_exprnode_jrd:
-		{
-			const ValueExprNode* exprNode = reinterpret_cast<const ValueExprNode*>(node->nod_arg[0]);
-			dsc* desc = exprNode->execute(tdbb, request);
+	if (desc)
+		request->req_flags &= ~req_null;
+	else
+		request->req_flags |= req_null;
 
-			if (desc)
-				request->req_flags &= ~req_null;
-			else
-				request->req_flags |= req_null;
-
-			return desc;
-		}
-
-	default:
-		BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
-	}
-
-	return NULL;
+	return desc;
 }
 
 

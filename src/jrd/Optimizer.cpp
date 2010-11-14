@@ -1910,7 +1910,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 		CMP_get_desc(tdbb, csb, match, &desc1);
 		CMP_get_desc(tdbb, csb, value, &desc2);
 
-		if (!BTR_types_comparable(desc1, desc2, value->nod_flags))
+		if (!BTR_types_comparable(desc1, desc2, value->asExpr()->nodFlags))
 			return false;
 
 		// if the indexed column is of type int64, we need to inject an
@@ -1925,24 +1925,24 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 			CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 			cast->source = value;
 			cast->format = format;
+			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 			value = PAR_make_node(tdbb, 1);
 			value->nod_type = nod_class_exprnode_jrd;
 			value->nod_count = 0;
 			value->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
-			value->nod_impure = CMP_impure(csb, sizeof(impure_value));
 
 			if (value2)
 			{
 				cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = value2;
 				cast->format = format;
+				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 				value2 = PAR_make_node(tdbb, 1);
 				value2->nod_type = nod_class_exprnode_jrd;
 				value2->nod_count = 0;
 				value2->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
-				value2->nod_impure = CMP_impure(csb, sizeof(impure_value));
 			}
 		}
 	}

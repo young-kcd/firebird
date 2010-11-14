@@ -87,7 +87,7 @@ namespace
 bool BoolExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
 	bool allowOnlyCurrentStream)
 {
-	if (flags & FLAG_DEOPTIMIZE)
+	if (nodFlags & FLAG_DEOPTIMIZE)
 		return false;
 
 	return ExprNode::computable(csb, stream, idxUse, allowOnlyCurrentStream);
@@ -99,13 +99,13 @@ BoolExprNode* BoolExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	ExprNode::pass2(tdbb, csb);
 	pass2Boolean2(tdbb, csb);
 
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		// Bind values of invariant nodes to top-level RSE (if present)
 
 		if (csb->csb_current_nodes.hasData())
 		{
-			LegacyNodeOrRseNode& topRseNode = csb->csb_current_nodes[0];
+			RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
 			fb_assert(topRseNode.rseNode);
 
 			if (!topRseNode.rseNode->rse_invariants)
@@ -201,7 +201,7 @@ BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	BinaryBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(),
 		blrOp);
-	node->flags = flags;
+	node->nodFlags = nodFlags;
 	node->arg1 = arg1->copy(tdbb, copier);
 	node->arg2 = arg2->copy(tdbb, copier);
 	return node;
@@ -562,7 +562,7 @@ BoolExprNode* ComparativeBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ComparativeBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) ComparativeBoolNode(
 		*tdbb->getDefaultPool(), blrOp);
-	node->flags = flags;
+	node->nodFlags = nodFlags;
 	node->arg1 = copier.copy(tdbb, arg1);
 	node->arg2 = copier.copy(tdbb, arg2);
 
@@ -591,7 +591,7 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (invariantCheck)
 	{
 		// We need to take care of invariantness expressions to be able to pre-compile the pattern.
-		flags |= FLAG_INVARIANT;
+		nodFlags |= FLAG_INVARIANT;
 		csb->csb_current_nodes.push(this);
 	}
 
@@ -606,11 +606,11 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 		// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 		// because it may be dependent on data or variables.
-		if ((flags & FLAG_INVARIANT) &&
+		if ((nodFlags & FLAG_INVARIANT) &&
 			(!ExprNode::is<LiteralNode>(arg2.getObject()) ||
 				(arg3 && !ExprNode::is<LiteralNode>(arg3.getObject()))))
 		{
-			const LegacyNodeOrRseNode* ctx_node, *end;
+			const RseOrExprNode* ctx_node, *end;
 
 			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 				 ctx_node != end; ++ctx_node)
@@ -620,7 +620,7 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			}
 
 			if (ctx_node >= end)
-				flags &= ~FLAG_INVARIANT;
+				nodFlags &= ~FLAG_INVARIANT;
 		}
 	}
 
@@ -629,7 +629,7 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 void ComparativeBoolNode::pass2Boolean1(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 		csb->csb_invariants.push(&impureOffset);
 }
 
@@ -647,8 +647,8 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 
 		if (DTYPE_IS_DATE(descriptor_c.dsc_dtype))
 		{
-			arg1->nod_flags |= nod_date;
-			arg2->nod_flags |= nod_date;
+			arg1->asExpr()->nodFlags |= FLAG_DATE;
+			arg2->asExpr()->nodFlags |= FLAG_DATE;
 		}
 	}
 
@@ -663,11 +663,11 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	CMP_get_desc(tdbb, csb, arg2, &descriptor_b);
 
 	if (DTYPE_IS_DATE(descriptor_a.dsc_dtype))
-		arg2->nod_flags |= nod_date;
+		arg2->asExpr()->nodFlags |= FLAG_DATE;
 	else if (DTYPE_IS_DATE(descriptor_b.dsc_dtype))
-		arg1->nod_flags |= nod_date;
+		arg1->asExpr()->nodFlags |= FLAG_DATE;
 
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		// This may currently happen for nod_like, nod_contains and nod_similar
 		impureOffset = CMP_impure(csb, sizeof(impure_value));
@@ -694,7 +694,7 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	force_equal |= request->req_flags & req_same_tx_upd;
 
 	// Currently only nod_like, nod_contains, nod_starts and nod_similar may be marked invariant
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
@@ -935,7 +935,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 				if (request->req_flags & req_null)
 				{
-					if (flags & FLAG_INVARIANT)
+					if (nodFlags & FLAG_INVARIANT)
 					{
 						impure_value* impure = request->getImpure<impure_value>(impureOffset);
 						impure->vlu_flags |= VLU_computed;
@@ -968,7 +968,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 			PatternMatcher* evaluator;
 
-			if (flags & FLAG_INVARIANT)
+			if (nodFlags & FLAG_INVARIANT)
 			{
 				impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
@@ -1014,7 +1014,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 			ret_val = evaluator->result();
 
-			if (!(flags & FLAG_INVARIANT))
+			if (!(nodFlags & FLAG_INVARIANT))
 				delete evaluator;
 
 			break;
@@ -1025,7 +1025,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 		{
 			PatternMatcher* evaluator;
 
-			if (flags & FLAG_INVARIANT)
+			if (nodFlags & FLAG_INVARIANT)
 			{
 				impure_value* impure = request->getImpure<impure_value>(impureOffset);
 				if (!(impure->vlu_flags & VLU_computed))
@@ -1068,7 +1068,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 
 			ret_val = evaluator->result();
 
-			if (!(flags & FLAG_INVARIANT))
+			if (!(nodFlags & FLAG_INVARIANT))
 				delete evaluator;
 
 			break;
@@ -1093,7 +1093,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 	// Handle contains and starts
 	if (blrOp == blr_containing || blrOp == blr_starting)
 	{
-		if (flags & FLAG_INVARIANT)
+		if (nodFlags & FLAG_INVARIANT)
 		{
 			impure_value* impure = request->getImpure<impure_value>(impureOffset);
 			PatternMatcher* evaluator;
@@ -1145,7 +1145,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			dsc* desc = EVL_expr(tdbb, arg3);
 			if (request->req_flags & req_null)
 			{
-				if (flags & FLAG_INVARIANT)
+				if (nodFlags & FLAG_INVARIANT)
 				{
 					impure_value* impure = request->getImpure<impure_value>(impureOffset);
 					impure->vlu_flags |= VLU_computed;
@@ -1174,7 +1174,7 @@ bool ComparativeBoolNode::stringFunction(thread_db* tdbb, jrd_req* request,
 			}
 		}
 
-		if (flags & FLAG_INVARIANT)
+		if (nodFlags & FLAG_INVARIANT)
 		{
 			impure_value* impure = request->getImpure<impure_value>(impureOffset);
 			PatternMatcher* evaluator;
@@ -1381,7 +1381,7 @@ BoolExprNode* MissingBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	MissingBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) MissingBoolNode(
 		*tdbb->getDefaultPool());
-	node->flags = flags;
+	node->nodFlags = nodFlags;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
 }
@@ -1457,7 +1457,7 @@ void NotBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 BoolExprNode* NotBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	NotBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) NotBoolNode(*tdbb->getDefaultPool());
-	node->flags = flags;
+	node->nodFlags = nodFlags;
 	node->arg = arg->copy(tdbb, copier);
 	return node;
 }
@@ -1469,9 +1469,9 @@ BoolExprNode* NotBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (rseBoolean)
 	{
 		if (rseBoolean->blrOp == blr_ansi_any)
-			rseBoolean->flags |= FLAG_DEOPTIMIZE | FLAG_ANSI_NOT;
+			rseBoolean->nodFlags |= FLAG_DEOPTIMIZE | FLAG_ANSI_NOT;
 		else if (rseBoolean->blrOp == blr_ansi_all)
-			rseBoolean->flags |= FLAG_ANSI_NOT;
+			rseBoolean->nodFlags |= FLAG_ANSI_NOT;
 	}
 
 	return BoolExprNode::pass1(tdbb, csb);
@@ -1685,7 +1685,7 @@ BoolExprNode* RseBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	RseBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) RseBoolNode(
 		*tdbb->getDefaultPool(), blrOp);
-	node->flags = flags;
+	node->nodFlags = nodFlags;
 	node->rse = copier.copy(tdbb, rse);
 
 	return node;
@@ -1701,14 +1701,14 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			if (newNode)
 				return newNode->pass1(tdbb, csb);
 
-			flags |= FLAG_DEOPTIMIZE;
+			nodFlags |= FLAG_DEOPTIMIZE;
 		}
 		// fall into
 
 		case blr_ansi_any:
-			if (flags & FLAG_DEOPTIMIZE)
+			if (nodFlags & FLAG_DEOPTIMIZE)
 			{
-				flags &= ~FLAG_DEOPTIMIZE;
+				nodFlags &= ~FLAG_DEOPTIMIZE;
 
 				fb_assert(rse->nod_type == nod_class_recsrcnode_jrd);
 				RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
@@ -1726,7 +1726,7 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 					// Deoptimize the injected boolean of a quantified predicate
 					// when it's necessary. ALL predicate does not require an index scan.
 					// This fixes bug SF #543106.
-					boolean->flags |= FLAG_DEOPTIMIZE;
+					boolean->nodFlags |= FLAG_DEOPTIMIZE;
 				}
 			}
 			// fall into
@@ -1754,7 +1754,7 @@ void RseBoolNode::pass2Boolean1(thread_db* tdbb, CompilerScratch* csb)
 
 	if (!(rseNode->flags & RseNode::FLAG_VARIANT))
 	{
-		flags |= FLAG_INVARIANT;
+		nodFlags |= FLAG_INVARIANT;
 		csb->csb_invariants.push(&impureOffset);
 	}
 
@@ -1767,7 +1767,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
 	fb_assert(rseNode->type == RseNode::TYPE);
 
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 		impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	rsb = CMP_post_rse(tdbb, csb, rseNode);
@@ -1779,7 +1779,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	if (blrOp == blr_ansi_any || blrOp == blr_ansi_all)
 	{
 		const bool ansiAny = blrOp == blr_ansi_any;
-		const bool ansiNot = flags & FLAG_ANSI_NOT;
+		const bool ansiNot = nodFlags & FLAG_ANSI_NOT;
 		FilteredStream* const filter = static_cast<FilteredStream*>(rsb.getObject());
 		filter->setAnyBoolean(rseNode->rse_boolean, ansiAny, ansiNot);
 	}
@@ -1792,7 +1792,7 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	USHORT* invariant_flags;
 	impure_value* impure;
 
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		impure = request->getImpure<impure_value>(impureOffset);
 		invariant_flags = &impure->vlu_flags;
@@ -1823,7 +1823,7 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	// If this is an invariant node, save the return value.
 
-	if (flags & FLAG_INVARIANT)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		*invariant_flags |= VLU_computed;
 

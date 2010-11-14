@@ -301,15 +301,15 @@ ExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	ExprNode::pass2(tdbb, csb);
 
 	dsc desc;
-	CMP_get_desc(tdbb, csb, node, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
+	getDesc(tdbb, csb, &desc);
+	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
 	return this;
 }
 
 void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->vlux_count = 0;
 
 	if (distinct)
@@ -390,7 +390,7 @@ void AggNode::aggFinish(thread_db* /*tdbb*/, jrd_req* request) const
 
 dsc* AggNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (impure->vlu_blob)
 	{
@@ -521,7 +521,7 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
-			node->nod_scale = desc->dsc_scale;
+			nodScale = desc->dsc_scale;
 			break;
 
 		case dtype_unknown:
@@ -546,7 +546,7 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
-			node->nod_flags |= nod_double;
+			nodFlags |= FLAG_DOUBLE;
 			break;
 	}
 }
@@ -555,6 +555,7 @@ ValueExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	AvgAggNode* node = FB_NEW(*tdbb->getDefaultPool()) AvgAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
+	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
 }
@@ -562,7 +563,7 @@ ValueExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 ExprNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	if (dialect1)
-		node->nod_flags |= nod_double;
+		nodFlags |= FLAG_DOUBLE;
 
 	// We need a second descriptor in the impure area for AVG.
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
@@ -574,7 +575,7 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (dialect1)
 	{
@@ -585,24 +586,24 @@ void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	{
 		// Initialize the result area as an int64. If the field being aggregated is approximate
 		// numeric, the first call to add will convert the descriptor to double.
-		impure->make_int64(0, node->nod_scale);
+		impure->make_int64(0, nodScale);
 	}
 }
 
 void AvgAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlux_count;
 
 	if (dialect1)
-		ArithmeticNode::add(desc, impure, node, blr_add);
+		ArithmeticNode::add(desc, impure, this, blr_add);
 	else
-		ArithmeticNode::add2(desc, impure, node, blr_add);
+		ArithmeticNode::add2(desc, impure, this, blr_add);
 }
 
 dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (!impure->vlux_count)
 		return NULL;
@@ -681,6 +682,7 @@ ValueExprNode* ListAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ListAggNode* node = FB_NEW(*tdbb->getDefaultPool()) ListAggNode(*tdbb->getDefaultPool(),
 		distinct);
+	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	node->delimiter = copier.copy(tdbb, delimiter);
 	return node;
@@ -692,14 +694,14 @@ void ListAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 	// We don't know here what should be the sub-type and text-type.
 	// Defer blob creation for when first record is found.
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->vlu_blob = NULL;
 	impure->vlu_desc.dsc_dtype = 0;
 }
 
 void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (!impure->vlu_blob)
 	{
@@ -736,7 +738,7 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (distinct)
 	{
@@ -807,6 +809,7 @@ ValueExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	CountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CountAggNode(*tdbb->getDefaultPool(),
 		distinct);
+	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
 }
@@ -815,19 +818,19 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->make_long(0);
 }
 
 void CountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlu_misc.vlu_long;
 }
 
 dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (!impure->vlu_desc.dsc_dtype)
 		return NULL;
@@ -921,7 +924,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
-				node->nod_scale = desc->dsc_scale;
+				nodScale = desc->dsc_scale;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 				return;
@@ -929,7 +932,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			case dtype_unknown:
 				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
-				node->nod_scale = 0;
+				nodScale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 				return;
@@ -946,7 +949,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_flags |= nod_double;
+				nodFlags |= FLAG_DOUBLE;
 				return;
 
 			case dtype_quad:
@@ -954,8 +957,8 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_length = sizeof(SQUAD);
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_scale = desc->dsc_scale;
-				node->nod_flags |= nod_quad;
+				nodScale = desc->dsc_scale;
+				nodFlags |= FLAG_QUAD;
 #ifdef NATIVE_QUAD
 				return;
 #endif
@@ -982,14 +985,14 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			case dtype_int64:
 				desc->dsc_dtype = dtype_int64;
 				desc->dsc_length = sizeof(SINT64);
-				node->nod_scale = desc->dsc_scale;
+				nodScale = desc->dsc_scale;
 				desc->dsc_flags = 0;
 				return;
 
 			case dtype_unknown:
 				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
-				node->nod_scale = 0;
+				nodScale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 				return;
@@ -1004,7 +1007,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_flags |= nod_double;
+				nodFlags |= FLAG_DOUBLE;
 				return;
 
 			case dtype_quad:
@@ -1012,8 +1015,8 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_length = sizeof(SQUAD);
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_scale = desc->dsc_scale;
-				node->nod_flags |= nod_quad;
+				nodScale = desc->dsc_scale;
+				nodFlags |= FLAG_QUAD;
 #ifdef NATIVE_QUAD
 				return;
 #endif
@@ -1042,6 +1045,7 @@ ValueExprNode* SumAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	SumAggNode* node = FB_NEW(*tdbb->getDefaultPool()) SumAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
+	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
 }
@@ -1050,7 +1054,7 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (dialect1)
 		impure->make_long(0);
@@ -1058,24 +1062,24 @@ void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	{
 		// Initialize the result area as an int64. If the field being aggregated is approximate
 		// numeric, the first call to add will convert the descriptor to double.
-		impure->make_int64(0, node->nod_scale);
+		impure->make_int64(0, nodScale);
 	}
 }
 
 void SumAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	++impure->vlux_count;
 
 	if (dialect1)
-		ArithmeticNode::add(desc, impure, node, blr_add);
+		ArithmeticNode::add(desc, impure, this, blr_add);
 	else
-		ArithmeticNode::add2(desc, impure, node, blr_add);
+		ArithmeticNode::add2(desc, impure, this, blr_add);
 }
 
 dsc* SumAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (!impure->vlux_count)
 		return NULL;
@@ -1125,6 +1129,7 @@ ValueExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	MaxMinAggNode* node = FB_NEW(*tdbb->getDefaultPool()) MaxMinAggNode(*tdbb->getDefaultPool(),
 		type);
+	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
 }
@@ -1133,13 +1138,13 @@ void MaxMinAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
 
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 	impure->vlu_desc.dsc_dtype = 0;
 }
 
 void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	++impure->vlux_count;
 	if (!impure->vlu_desc.dsc_dtype)
@@ -1156,7 +1161,7 @@ void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value_ex* impure = request->getImpure<impure_value_ex>(node->nod_impure);
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
 	if (!impure->vlux_count)
 		return NULL;

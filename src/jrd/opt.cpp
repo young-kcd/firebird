@@ -804,7 +804,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	// Deoptimize some conjuncts in advance
 	for (size_t iter = 0; iter < opt->opt_conjuncts.getCount(); iter++)
 	{
-		if (opt->opt_conjuncts[iter].opt_conjunct_node->flags & BoolExprNode::FLAG_DEOPTIMIZE)
+		if (opt->opt_conjuncts[iter].opt_conjunct_node->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
 		{
 			// Fake an index match for them
 			opt->opt_conjuncts[iter].opt_conjunct_flags |= opt_conjunct_matched;
@@ -1637,7 +1637,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 	{
 		BoolExprNode* boolean = stack1.object();
 
-		if (boolean->flags & BoolExprNode::FLAG_DEOPTIMIZE)
+		if (boolean->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
 			continue;
 
 		ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
@@ -3217,14 +3217,14 @@ static BoolExprNode* make_inference_node(CompilerScratch* csb, BoolExprNode* boo
 	// (2) invariantness of second argument of STARTING WITH or LIKE is solely
 	//    determined by its dependency on any of the fields
 	// If provisions above change the line below will have to be modified
-	newCmpNode->flags = cmpNode->flags;
+	newCmpNode->nodFlags = cmpNode->nodFlags;
 
 	// Share impure area for cached invariant value used to hold pre-compiled
 	// pattern for new LIKE and CONTAINING algorithms.
 	// Proper cloning of impure area for this node would require careful accounting
 	// of new invariant dependencies - we avoid such hassles via using single
 	// cached pattern value for all node clones. This is faster too.
-	if (newCmpNode->flags & BoolExprNode::FLAG_INVARIANT)
+	if (newCmpNode->nodFlags & ExprNode::FLAG_INVARIANT)
 		newCmpNode->impureOffset = cmpNode->impureOffset;
 
 	// But substitute new values for some of the predicate arguments

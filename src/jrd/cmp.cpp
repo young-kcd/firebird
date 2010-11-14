@@ -815,9 +815,10 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 				node = input;
 			else
 			{
+				copy->nodFlags = exprNode->nodFlags;
+
 				node = PAR_make_node(tdbb, 1);
 				node->nod_type = input->nod_type;
-				node->nod_flags = input->nod_flags;
 				node->nod_count = input->nod_count;
 				node->nod_arg[0] = reinterpret_cast<jrd_nod*>(copy);
 			}
@@ -889,7 +890,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	case nod_dcl_cursor:
 		node = PAR_make_node(tdbb, e_dcl_cur_length);
 		node->nod_count = input->nod_count;
-		node->nod_flags = input->nod_flags;
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_dcl_cur_rse] = copy(tdbb, input->nod_arg[e_dcl_cur_rse]);
 		node->nod_arg[e_dcl_cur_refs] = copy(tdbb, input->nod_arg[e_dcl_cur_refs]);
@@ -899,7 +899,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	case nod_cursor_stmt:
 		node = PAR_make_node(tdbb, e_cursor_stmt_length);
 		node->nod_count = input->nod_count;
-		node->nod_flags = input->nod_flags;
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
 		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
@@ -917,7 +916,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 	node = PAR_make_node(tdbb, args);
 	node->nod_count = input->nod_count;
 	node->nod_type = input->nod_type;
-	node->nod_flags = input->nod_flags;
 
 	jrd_nod** arg1 = input->nod_arg;
 	jrd_nod** arg2 = node->nod_arg;
@@ -1199,7 +1197,7 @@ void CMP_mark_variant(CompilerScratch* csb, USHORT stream)
 	if (csb->csb_current_nodes.isEmpty())
 		return;
 
-	for (LegacyNodeOrRseNode* node = csb->csb_current_nodes.end() - 1;
+	for (RseOrExprNode* node = csb->csb_current_nodes.end() - 1;
 		 node != csb->csb_current_nodes.begin(); --node)
 	{
 		if (node->rseNode)
@@ -1208,13 +1206,8 @@ void CMP_mark_variant(CompilerScratch* csb, USHORT stream)
 				break;
 			node->rseNode->flags |= RseNode::FLAG_VARIANT;
 		}
-		else if (node->boolExprNode)
-			node->boolExprNode->flags &= ~BoolExprNode::FLAG_INVARIANT;
-		else
-		{
-			fb_assert(node->legacyNode->nod_type != nod_class_recsrcnode_jrd);
-			node->legacyNode->nod_flags &= ~nod_invariant;
-		}
+		else if (node->exprNode)
+			node->exprNode->nodFlags &= ~ExprNode::FLAG_INVARIANT;
 	}
 }
 
@@ -1352,10 +1345,17 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return node;
 
 	case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(exprNode->pass1(tdbb, csb));
+		}
+		return node;
+
 	case nod_class_stmtnode_jrd:
 		{
-			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
-			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(dmlNode->pass1(tdbb, csb, node));
+			StmtNode* stmtNode = reinterpret_cast<StmtNode*>(node->nod_arg[0]);
+			stmtNode->setNode(node);
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(stmtNode->pass1(tdbb, csb));
 		}
 		return node;
 
@@ -2161,32 +2161,42 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_class_exprnode_jrd:
+		{
+			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0])->pass2(tdbb, csb);
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(exprNode);
+
+			// Bind values of invariant nodes to top-level RSE (if present)
+			if (exprNode->nodFlags & ExprNode::FLAG_INVARIANT)
+			{
+				if (csb->csb_current_nodes.hasData())
+				{
+					RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
+					fb_assert(topRseNode.rseNode);
+
+					if (!topRseNode.rseNode->rse_invariants)
+					{
+						topRseNode.rseNode->rse_invariants =
+							FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
+					}
+
+					topRseNode.rseNode->rse_invariants->add(exprNode->impureOffset);
+				}
+			}
+
+			break;
+		}
+
 	case nod_class_stmtnode_jrd:
-		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass2(tdbb, csb, node));
+		{
+			StmtNode* stmtNode = reinterpret_cast<StmtNode*>(node->nod_arg[0]);
+			stmtNode->setNode(node);
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(stmtNode->pass2(tdbb, csb));
+		}
 		break;
 
 	default:
 		// note: no fb_assert(false); here as too many nodes are missing
 		break;
-	}
-
-	// Bind values of invariant nodes to top-level RSE (if present)
-	if (node->nod_flags & nod_invariant)
-	{
-		if (csb->csb_current_nodes.hasData())
-		{
-			LegacyNodeOrRseNode& topRseNode = csb->csb_current_nodes[0];
-			fb_assert(topRseNode.rseNode);
-
-			if (!topRseNode.rseNode->rse_invariants)
-			{
-				topRseNode.rseNode->rse_invariants =
-					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
-			}
-
-			topRseNode.rseNode->rse_invariants->add(node->nod_impure);
-		}
 	}
 
 	// finish up processing of record selection expressions

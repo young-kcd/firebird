@@ -239,7 +239,7 @@ ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		if (*i)
 		{
 			if (i->jrdNode)
-				*i->jrdNode = CMP_pass2(tdbb, csb, *i->jrdNode, node);
+				*i->jrdNode = CMP_pass2(tdbb, csb, *i->jrdNode, NULL);
 			else if (i->boolExprNode)
 				*i->boolExprNode = (*i->boolExprNode)->pass2(tdbb, csb);
 		}
@@ -922,7 +922,7 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					else
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 
-					node->nod_scale = desc->dsc_scale;
+					nodScale = desc->dsc_scale;
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 					return;
@@ -934,7 +934,7 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					// fall into
 
 				case dtype_timestamp:
-					node->nod_flags |= nod_date;
+					nodFlags |= FLAG_DATE;
 
 					fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
 
@@ -1035,7 +1035,7 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				case dtype_long:
 				case dtype_real:
 				case dtype_double:
-					node->nod_flags |= nod_double;
+					nodFlags |= FLAG_DOUBLE;
 					desc->dsc_dtype = DEFAULT_DOUBLE;
 					desc->dsc_length = sizeof(double);
 					desc->dsc_scale = 0;
@@ -1052,14 +1052,14 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_quad:
-					node->nod_flags |= nod_quad;
+					nodFlags |= FLAG_QUAD;
 					desc->dsc_dtype = dtype_quad;
 					desc->dsc_length = sizeof(SQUAD);
 					if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 						desc->dsc_scale = 0;
 					else
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-					node->nod_scale = desc->dsc_scale;
+					nodScale = desc->dsc_scale;
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 #ifdef NATIVE_QUAD
@@ -1085,13 +1085,13 @@ void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				case dtype_long:
 					desc->dsc_dtype = dtype_long;
 					desc->dsc_length = sizeof(SLONG);
-					desc->dsc_scale = node->nod_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
+					desc->dsc_scale = nodScale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 					return;
 
 				case dtype_double:
-					node->nod_flags |= nod_double;
+					nodFlags |= FLAG_DOUBLE;
 					desc->dsc_dtype = DEFAULT_DOUBLE;
 					desc->dsc_length = sizeof(double);
 					desc->dsc_scale = 0;
@@ -1194,7 +1194,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				case dtype_timestamp:
 				case dtype_sql_date:
 				case dtype_sql_time:
-					node->nod_flags |= nod_date;
+					nodFlags |= FLAG_DATE;
 
 					fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) || DTYPE_IS_DATE(desc2.dsc_dtype));
 
@@ -1292,7 +1292,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				case dtype_varying:
 				case dtype_real:
 				case dtype_double:
-					node->nod_flags |= nod_double;
+					nodFlags |= FLAG_DOUBLE;
 					desc->dsc_dtype = DEFAULT_DOUBLE;
 					desc->dsc_length = sizeof(double);
 					desc->dsc_scale = 0;
@@ -1309,7 +1309,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 						desc->dsc_scale = 0;
 					else
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-					node->nod_scale = desc->dsc_scale;
+					nodScale = desc->dsc_scale;
 					desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
 					desc->dsc_flags = 0;
 					return;
@@ -1323,14 +1323,14 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 					return;
 
 				case dtype_quad:
-					node->nod_flags |= nod_quad;
+					nodFlags |= FLAG_QUAD;
 					desc->dsc_dtype = dtype_quad;
 					desc->dsc_length = sizeof(SQUAD);
 					if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 						desc->dsc_scale = 0;
 					else
 						desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
-					node->nod_scale = desc->dsc_scale;
+					nodScale = desc->dsc_scale;
 					desc->dsc_sub_type = 0;
 					desc->dsc_flags = 0;
 #ifdef NATIVE_QUAD
@@ -1356,7 +1356,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 			switch (dtype)
 			{
 				case dtype_double:
-					node->nod_flags |= nod_double;
+					nodFlags |= FLAG_DOUBLE;
 					desc->dsc_dtype = DEFAULT_DOUBLE;
 					desc->dsc_length = sizeof(double);
 					desc->dsc_scale = 0;
@@ -1367,7 +1367,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 				case dtype_int64:
 					desc->dsc_dtype = dtype_int64;
 					desc->dsc_length = sizeof(SINT64);
-					desc->dsc_scale = node->nod_scale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
+					desc->dsc_scale = nodScale = NUMERIC_SCALE(desc1) + NUMERIC_SCALE(desc2);
 					desc->dsc_sub_type = MAX(desc1.dsc_sub_type, desc2.dsc_sub_type);
 					desc->dsc_flags = 0;
 					return;
@@ -1402,6 +1402,7 @@ ValueExprNode* ArithmeticNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ArithmeticNode* node = FB_NEW(*tdbb->getDefaultPool()) ArithmeticNode(*tdbb->getDefaultPool(),
 		blrOp, dialect1);
+	node->nodScale = nodScale;
 	node->arg1 = copier.copy(tdbb, arg1);
 	node->arg2 = copier.copy(tdbb, arg2);
 	return node;
@@ -1453,14 +1454,14 @@ ExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
 
 dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
 	request->req_flags &= ~req_null;
 
@@ -1490,7 +1491,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			case blr_add:
 			case blr_subtract:
-				return add(desc2, impure, node, blrOp);
+				return add(desc2, impure, this, blrOp);
 
 			case blr_divide:
 			{
@@ -1527,7 +1528,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			case blr_add:
 			case blr_subtract:
-				return add2(desc2, impure, node, blrOp);
+				return add2(desc2, impure, this, blrOp);
 
 			case blr_multiply:
 				return multiply2(desc2, impure);
@@ -1543,24 +1544,22 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 
 // Add (or subtract) the contents of a descriptor to value block, with dialect-1 semantics.
  // This function can be removed when dialect-3 becomes the lowest supported dialect. (Version 7.0?)
-dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp)
+dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp)
 {
-	DEV_BLKCHK(node, type_nod);
-
-	const ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(node);
-	const SubQueryNode* subQueryNode = ExprNode::as<SubQueryNode>(node);
+	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
+	const SubQueryNode* subQueryNode = node->as<SubQueryNode>();
 
 	fb_assert(
 		(arithmeticNode && arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
-		ExprNode::is<AggNode>(node) ||
+		node->is<AggNode>() ||
 		(subQueryNode && (subQueryNode->blrOp == blr_total || subQueryNode->blrOp == blr_average)));
 
 	dsc* const result = &value->vlu_desc;
 
 	// Handle date arithmetic
 
-	if (node->nod_flags & nod_date)
+	if (node->nodFlags & FLAG_DATE)
 	{
 		fb_assert(arithmeticNode);
 		return arithmeticNode->addDateTime(desc, value);
@@ -1568,7 +1567,7 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const jrd_nod* no
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double)
+	if (node->nodFlags & FLAG_DOUBLE)
 	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
@@ -1589,14 +1588,14 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const jrd_nod* no
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad)
+	if (node->nodFlags & FLAG_QUAD)
 	{
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
+		const SQUAD q1 = MOV_get_quad(desc, node->nodScale);
+		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nodScale);
 
 		result->dsc_dtype = dtype_quad;
 		result->dsc_length = sizeof(SQUAD);
-		result->dsc_scale = node->nod_scale;
+		result->dsc_scale = node->nodScale;
 		value->vlu_misc.vlu_quad = (blrOp == blr_subtract) ?
 			QUAD_SUBTRACT(q2, q1, ERR_post) : QUAD_ADD(q1, q2, ERR_post);
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
@@ -1609,36 +1608,34 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const jrd_nod* no
 	// CVC: Maybe we should upgrade the sum to double if it doesn't fit?
 	// This is what was done for multiplicaton in dialect 1.
 
-	const SLONG l1 = MOV_get_long(desc, node->nod_scale);
-	const SINT64 l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
+	const SLONG l1 = MOV_get_long(desc, node->nodScale);
+	const SINT64 l2 = MOV_get_long(&value->vlu_desc, node->nodScale);
 	SINT64 rc = (blrOp == blr_subtract) ? l2 - l1 : l2 + l1;
 
 	if (rc < MIN_SLONG || rc > MAX_SLONG)
 		ERR_post(Arg::Gds(isc_exception_integer_overflow));
 
-	value->make_long(rc, node->nod_scale);
+	value->make_long(rc, node->nodScale);
 
 	return result;
 }
 
 // Add (or subtract) the contents of a descriptor to value block, with dialect-3 semantics, as in
 // the blr_add, blr_subtract, and blr_agg_total verbs following a blr_version5.
-dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const jrd_nod* node, UCHAR blrOp)
+dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp)
 {
-	DEV_BLKCHK(node, type_nod);
-
-	const ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(node);
+	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
 
 	fb_assert(
 		(arithmeticNode && !arithmeticNode->dialect1 &&
 			(arithmeticNode->blrOp == blr_add || arithmeticNode->blrOp == blr_subtract)) ||
-		ExprNode::is<AggNode>(node));
+		node->is<AggNode>());
 
 	dsc* result = &value->vlu_desc;
 
 	// Handle date arithmetic
 
-	if (node->nod_flags & nod_date)
+	if (node->nodFlags & FLAG_DATE)
 	{
 		fb_assert(arithmeticNode);
 		return arithmeticNode->addDateTime(desc, value);
@@ -1646,7 +1643,7 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const jrd_nod* n
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double)
+	if (node->nodFlags & FLAG_DOUBLE)
 	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
@@ -1667,14 +1664,14 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const jrd_nod* n
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad)
+	if (node->nodFlags & FLAG_QUAD)
 	{
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale);
-		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nod_scale);
+		const SQUAD q1 = MOV_get_quad(desc, node->nodScale);
+		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, node->nodScale);
 
 		result->dsc_dtype = dtype_quad;
 		result->dsc_length = sizeof(SQUAD);
-		result->dsc_scale = node->nod_scale;
+		result->dsc_scale = node->nodScale;
 		value->vlu_misc.vlu_quad = (blrOp == blr_subtract) ?
 			QUAD_SUBTRACT(q2, q1, ERR_post) : QUAD_ADD(q1, q2, ERR_post);
 		result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
@@ -1684,12 +1681,12 @@ dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const jrd_nod* n
 
 	// Everything else defaults to int64
 
-	SINT64 i1 = MOV_get_int64(desc, node->nod_scale);
-	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, node->nod_scale);
+	SINT64 i1 = MOV_get_int64(desc, node->nodScale);
+	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, node->nodScale);
 
 	result->dsc_dtype = dtype_int64;
 	result->dsc_length = sizeof(SINT64);
-	result->dsc_scale = node->nod_scale;
+	result->dsc_scale = node->nodScale;
 	value->vlu_misc.vlu_int64 = (blrOp == blr_subtract) ? i2 - i1 : i1 + i2;
 	result->dsc_address = (UCHAR*) &value->vlu_misc.vlu_int64;
 	result->dsc_sub_type = MAX(desc->dsc_sub_type, value->vlu_desc.dsc_sub_type);
@@ -1729,7 +1726,7 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double)
+	if (nodFlags & FLAG_DOUBLE)
 	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
@@ -1751,14 +1748,14 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad)
+	if (nodFlags & FLAG_QUAD)
 	{
 		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
+		const SQUAD q1 = MOV_get_quad(desc, nodScale - scale);
 		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
 		value->vlu_desc.dsc_dtype = dtype_quad;
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
-		value->vlu_desc.dsc_scale = node->nod_scale;
+		value->vlu_desc.dsc_scale = nodScale;
 		value->vlu_misc.vlu_quad = QUAD_MULTIPLY(q1, q2, ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
 
@@ -1776,11 +1773,11 @@ dsc* ArithmeticNode::multiply(const dsc* desc, impure_value* value) const
 	// SLONG l1, l2;
 	//{
 	const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-	const SINT64 i1 = MOV_get_long(desc, node->nod_scale - scale);
+	const SINT64 i1 = MOV_get_long(desc, nodScale - scale);
 	const SINT64 i2 = MOV_get_long(&value->vlu_desc, scale);
 	value->vlu_desc.dsc_dtype = dtype_long;
 	value->vlu_desc.dsc_length = sizeof(SLONG);
-	value->vlu_desc.dsc_scale = node->nod_scale;
+	value->vlu_desc.dsc_scale = nodScale;
 	const SINT64 rc = i1 * i2;
 	if (rc < MIN_SLONG || rc > MAX_SLONG)
 	{
@@ -1819,7 +1816,7 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double)
+	if (nodFlags & FLAG_DOUBLE)
 	{
 		const double d1 = MOV_get_double(desc);
 		const double d2 = MOV_get_double(&value->vlu_desc);
@@ -1841,15 +1838,15 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 
 	// Handle (oh, ugh) quad arithmetic
 
-	if (node->nod_flags & nod_quad)
+	if (nodFlags & FLAG_QUAD)
 	{
 		const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-		const SQUAD q1 = MOV_get_quad(desc, node->nod_scale - scale);
+		const SQUAD q1 = MOV_get_quad(desc, nodScale - scale);
 		const SQUAD q2 = MOV_get_quad(&value->vlu_desc, scale);
 
 		value->vlu_desc.dsc_dtype = dtype_quad;
 		value->vlu_desc.dsc_length = sizeof(SQUAD);
-		value->vlu_desc.dsc_scale = node->nod_scale;
+		value->vlu_desc.dsc_scale = nodScale;
 		value->vlu_misc.vlu_quad = QUAD_MULTIPLY(q1, q2, ERR_post);
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_quad;
 
@@ -1859,7 +1856,7 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 	// Everything else defaults to int64
 
 	const SSHORT scale = NUMERIC_SCALE(value->vlu_desc);
-	const SINT64 i1 = MOV_get_int64(desc, node->nod_scale - scale);
+	const SINT64 i1 = MOV_get_int64(desc, nodScale - scale);
 	const SINT64 i2 = MOV_get_int64(&value->vlu_desc, scale);
 
 	/*
@@ -1897,7 +1894,7 @@ dsc* ArithmeticNode::multiply2(const dsc* desc, impure_value* value) const
 
 	value->vlu_desc.dsc_dtype = dtype_int64;
 	value->vlu_desc.dsc_length = sizeof(SINT64);
-	value->vlu_desc.dsc_scale = node->nod_scale;
+	value->vlu_desc.dsc_scale = nodScale;
 	value->vlu_misc.vlu_int64 = i1 * i2;
 	value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_int64;
 
@@ -1912,7 +1909,7 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 
 	// Handle floating arithmetic
 
-	if (node->nod_flags & nod_double)
+	if (nodFlags & FLAG_DOUBLE)
 	{
 		const double d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
@@ -1978,7 +1975,7 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 				 Arg::Gds(isc_exception_integer_divide_by_zero));
 	}
 
-	SINT64 i1 = MOV_get_int64(&value->vlu_desc, node->nod_scale - desc->dsc_scale);
+	SINT64 i1 = MOV_get_int64(&value->vlu_desc, nodScale - desc->dsc_scale);
 
 	// MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64.
 	if ((i1 == MIN_SINT64) && (i2 == -1))
@@ -2015,7 +2012,7 @@ dsc* ArithmeticNode::divide2(const dsc* desc, impure_value* value) const
 
 	value->vlu_desc.dsc_dtype = dtype_int64;
 	value->vlu_desc.dsc_length = sizeof(SINT64);
-	value->vlu_desc.dsc_scale = node->nod_scale;
+	value->vlu_desc.dsc_scale = nodScale;
 	value->vlu_misc.vlu_int64 = i1 / i2;
 	value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_int64;
 
@@ -2054,7 +2051,7 @@ dsc* ArithmeticNode::addDateTime(const dsc* desc, impure_value* value) const
 {
 	BYTE dtype;					// Which addition routine to use?
 
-	fb_assert(node->nod_flags & nod_date);
+	fb_assert(nodFlags & FLAG_DATE);
 
 	// Value is the LHS of the operand.  desc is the RHS
 
@@ -2308,7 +2305,7 @@ dsc* ArithmeticNode::addTimeStamp(const dsc* desc, impure_value* value) const
 		something that looks & smells like it could be a timestamp, then
 		we must be doing <timestamp> - <timestamp> subtraction.
 		Notes that this COULD be as strange as <string> - <string>, but
-		because nod_date is set in the nod_flags we know we're supposed
+		because FLAG_DATE is set in the nod_flags we know we're supposed
 		to use some form of date arithmetic */
 
 		if (blrOp == blr_subtract &&
@@ -2383,7 +2380,7 @@ dsc* ArithmeticNode::addTimeStamp(const dsc* desc, impure_value* value) const
 		legal cases are:
 		<timestamp> +/-  <numeric>
 		<numeric>   +    <timestamp>
-		However, the nod_date flag might have been set on any type of
+		However, the FLAG_DATE flag might have been set on any type of
 		nod_add / nod_subtract equation -- so we must detect any invalid
 		operands.   Any <string> value is assumed to be convertable to
 		a timestamp */
@@ -2676,7 +2673,7 @@ ExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -2687,7 +2684,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 	dsc* value = EVL_expr(tdbb, source);
 	value = request->req_flags & req_null ? NULL : value;
 
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
 	impure->vlu_desc = format->fmt_desc[0];
 	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
@@ -2844,7 +2841,7 @@ ExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -2863,7 +2860,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return NULL;
 
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	dsc desc;
 
 	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
@@ -3076,14 +3073,14 @@ ExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
 
 dsc* CurrentDateNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
@@ -3175,7 +3172,7 @@ ExprNode* CurrentTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3190,7 +3187,7 @@ ValueExprNode* CurrentTimeNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 
 dsc* CurrentTimeNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
@@ -3285,7 +3282,7 @@ ExprNode* CurrentTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3300,7 +3297,7 @@ ValueExprNode* CurrentTimeStampNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch
 
 dsc* CurrentTimeStampNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	// Use the request timestamp.
@@ -3378,7 +3375,7 @@ ExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3386,7 +3383,7 @@ ExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // CVC: Current role will get a validated role; IE one that exists.
 dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	impure->vlu_desc.dsc_dtype = dtype_text;
@@ -3473,14 +3470,14 @@ ExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
 
 dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	impure->vlu_desc.dsc_dtype = dtype_text;
@@ -3635,7 +3632,7 @@ ExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3683,7 +3680,7 @@ ExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3872,7 +3869,7 @@ ExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -3880,7 +3877,7 @@ ExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Handles EXTRACT(part FROM date/time/timestamp)
 dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, arg);
@@ -4557,14 +4554,14 @@ ExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	if (csb->csb_rpt[fieldStream].csb_relation || csb->csb_rpt[fieldStream].csb_procedure)
 		format = CMP_format(tdbb, csb, fieldStream);
 
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
+	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
 	return this;
 }
 
 dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
 	record_param& rpb = request->req_rpb[fieldStream];
 	Record* record = rpb.rpb_record;
@@ -4745,7 +4742,7 @@ ExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -4754,7 +4751,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	request->req_flags &= ~req_null;
 
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const dsc* value = EVL_expr(tdbb, arg);
 
 	if (request->req_flags & req_null)
@@ -4876,7 +4873,7 @@ ExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -4884,7 +4881,7 @@ ExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Return a given element of the internal engine data.
 dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, arg);
@@ -5365,7 +5362,7 @@ ExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -5887,7 +5884,7 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 void NegateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	CMP_get_desc(tdbb, csb, arg, desc);
-	node->nod_flags = arg->nod_flags & (nod_double | nod_quad);
+	nodFlags = arg->asExpr()->nodFlags & (FLAG_DOUBLE | FLAG_QUAD);
 }
 
 ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -5903,7 +5900,7 @@ ExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -5916,7 +5913,7 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return NULL;
 
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	EVL_make_value(tdbb, desc, impure);
 
 	switch (impure->vlu_desc.dsc_dtype)
@@ -6032,7 +6029,7 @@ ExprNode* NullNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -6556,15 +6553,14 @@ ExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
-		sizeof(impure_value_ex) : sizeof(dsc));
+	impureOffset = CMP_impure(csb, (nodFlags & FLAG_VALUE) ? sizeof(impure_value_ex) : sizeof(dsc));
 
 	return this;
 }
 
 dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	const dsc* desc;
@@ -7076,14 +7072,14 @@ ExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
 
 dsc* RecordKeyNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const record_param* rpb = &request->req_rpb[recStream];
 
 	if (blrOp == blr_dbkey)
@@ -7226,7 +7222,7 @@ ExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -7234,7 +7230,7 @@ ExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Evaluate a scalar item from an array.
 dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	const dsc* desc = EVL_expr(tdbb, field);
 
 	if (request->req_flags & req_null)
@@ -7303,13 +7299,13 @@ ExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	stmt = CMP_pass2(tdbb, csb, stmt, node);
+	stmt = CMP_pass2(tdbb, csb, stmt, NULL);
 
 	ExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -7442,7 +7438,7 @@ ExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -7450,7 +7446,7 @@ ExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Low/up case a string.
 dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, arg);
@@ -7646,7 +7642,7 @@ ExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -7654,7 +7650,7 @@ ExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Handles BIT_LENGTH(s), OCTET_LENGTH(s) and CHAR[ACTER]_LENGTH(s)
 dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	const dsc* value = EVL_expr(tdbb, arg);
@@ -7943,7 +7939,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
 				desc->dsc_length = sizeof(SLONG);
-				node->nod_scale = desc->dsc_scale;
+				nodScale = desc->dsc_scale;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 				return;
@@ -7951,7 +7947,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 			case dtype_unknown:
 				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
-				node->nod_scale = 0;
+				nodScale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 				return;
@@ -7968,7 +7964,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_flags |= nod_double;
+				nodFlags |= FLAG_DOUBLE;
 				return;
 
 			case dtype_quad:
@@ -7976,8 +7972,8 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 				desc->dsc_length = sizeof(SQUAD);
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
-				node->nod_scale = desc->dsc_scale;
-				node->nod_flags |= nod_quad;
+				nodScale = desc->dsc_scale;
+				nodFlags |= FLAG_QUAD;
 #ifdef NATIVE_QUAD
 				return;
 #endif
@@ -8006,6 +8002,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	SubQueryNode* node = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(), blrOp);
+	node->nodScale = nodScale;
 	node->rse = copier.copy(tdbb, rse);
 	node->value1 = copier.copy(tdbb, value1);
 	node->value2 = copier.copy(tdbb, value2);
@@ -8049,18 +8046,18 @@ ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	if (!(rseNode->flags & RseNode::FLAG_VARIANT))
 	{
-		node->nod_flags |= nod_invariant;
-		csb->csb_invariants.push(&node->nod_impure);
+		nodFlags |= FLAG_INVARIANT;
+		csb->csb_invariants.push(&impureOffset);
 	}
 
 	rseNode->pass2Rse(tdbb, csb);
 
 	ExprNode::pass2(tdbb, csb);
 
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
+	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
 	if (blrOp == blr_average)
-		node->nod_flags |= nod_double;
+		nodFlags |= FLAG_DOUBLE;
 	else if (blrOp == blr_total)
 	{
 		dsc desc;
@@ -8068,9 +8065,9 @@ ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	// Bind values of invariant nodes to top-level RSE (if present).
-	if ((node->nod_flags & nod_invariant) && csb->csb_current_nodes.hasData())
+	if ((nodFlags & FLAG_INVARIANT) && csb->csb_current_nodes.hasData())
 	{
-		LegacyNodeOrRseNode& topRseNode = csb->csb_current_nodes[0];
+		RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
 		fb_assert(topRseNode.rseNode);
 
 		if (!topRseNode.rseNode->rse_invariants)
@@ -8079,7 +8076,7 @@ ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 				FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 		}
 
-		topRseNode.rseNode->rse_invariants->add(node->nod_impure);
+		topRseNode.rseNode->rse_invariants->add(impureOffset);
 	}
 
 	// Finish up processing of record selection expressions.
@@ -8093,13 +8090,13 @@ ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Evaluate a subquery expression.
 dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	dsc* desc = &impure->vlu_desc;
 	USHORT* invariant_flags;
 
-	if (node->nod_flags & nod_invariant)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		invariant_flags = &impure->vlu_flags;
 
@@ -8170,7 +8167,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 					// impure will stay long, and the first add() will
 					// set the correct scale; if it is approximate numeric,
 					// the first add() will convert impure to double.
-					ArithmeticNode::add(desc, impure, node, blr_add);
+					ArithmeticNode::add(desc, impure, this, blr_add);
 
 					++count;
 				}
@@ -8238,7 +8235,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	// impure area for this node then point this node's descriptor to the correct place;
 	// Copy the whole structure to be absolutely sure.
 
-	if (node->nod_flags & nod_invariant)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		*invariant_flags |= VLU_computed;
 
@@ -8402,14 +8399,14 @@ ExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
 
 dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
 	// Run all expression arguments.
 
@@ -8664,8 +8661,8 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	expr = CMP_pass1(tdbb, csb, expr);
 
 	// We need to take care of invariantness expressions to be able to pre-compile the pattern.
-	node->nod_flags |= nod_invariant;
-	csb->csb_current_nodes.push(node.getObject());
+	nodFlags |= FLAG_INVARIANT;
+	csb->csb_current_nodes.push(this);
 
 	pattern = CMP_pass1(tdbb, csb, pattern);
 	escape = CMP_pass1(tdbb, csb, escape);
@@ -8674,10 +8671,10 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 	// because it may be dependent on data or variables.
-	if ((node->nod_flags & nod_invariant) &&
+	if ((nodFlags & FLAG_INVARIANT) &&
 		(!ExprNode::is<LiteralNode>(pattern.getObject()) || !ExprNode::is<LiteralNode>(escape.getObject())))
 	{
-		const LegacyNodeOrRseNode* ctx_node, *end;
+		const RseOrExprNode* ctx_node, *end;
 
 		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 			 ctx_node != end; ++ctx_node)
@@ -8687,7 +8684,7 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		}
 
 		if (ctx_node >= end)
-			node->nod_flags &= ~nod_invariant;
+			nodFlags &= ~FLAG_INVARIANT;
 	}
 
 	return this;
@@ -8695,14 +8692,14 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (node->nod_flags & nod_invariant)
-		csb->csb_invariants.push(&node->nod_impure);
+	if (nodFlags & FLAG_INVARIANT)
+		csb->csb_invariants.push(&impureOffset);
 
 	ExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -8744,12 +8741,12 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (escapeLen == 0 || charSet->length(escapeLen, escapeStr, true) != 1)
 		ERR_post(Arg::Gds(isc_escape_invalid));
 
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 
 	AutoPtr<BaseSubstringSimilarMatcher> autoEvaluator;	// deallocate non-invariant evaluator
 	BaseSubstringSimilarMatcher* evaluator;
 
-	if (node->nod_flags & nod_invariant)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		if (!(impure->vlu_flags & VLU_computed))
 		{
@@ -8950,7 +8947,7 @@ ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	function->checkArgsMismatch(args->nod_count);
 
@@ -8959,7 +8956,7 @@ ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* SysFuncCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	return function->evlFunc(tdbb, function, args, impure);
 }
 
@@ -9179,7 +9176,7 @@ ExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -9187,7 +9184,7 @@ ExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Perform trim function = TRIM([where what FROM] string).
 dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
 	dsc* trimCharsDesc = (trimChars ? EVL_expr(tdbb, trimChars) : NULL);
@@ -9517,15 +9514,15 @@ ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = function->allocateImpure(csb);
+	impureOffset = function->allocateImpure(csb);
 
 	return this;
 }
 
 dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* impure = request->getImpure<impure_value>(node->nod_impure);
-	const bool invariant = (node->nod_flags & nod_invariant);
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
+	const bool invariant = (nodFlags & FLAG_INVARIANT);
 	return function->execute(tdbb, args, impure, invariant);
 }
 
@@ -9666,7 +9663,7 @@ ExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
-	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
 	return this;
 }
@@ -9803,15 +9800,14 @@ ExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	ExprNode::pass2(tdbb, csb);
 
-	node->nod_impure = CMP_impure(csb, (node->nod_flags & nod_value) ?
-		sizeof(impure_value_ex) : sizeof(dsc));
+	impureOffset = CMP_impure(csb, (nodFlags & FLAG_VALUE) ? sizeof(impure_value_ex) : sizeof(dsc));
 
 	return this;
 }
 
 dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	impure_value* impure2 = request->getImpure<impure_value>(varDecl->nod_impure);
 
 	request->req_flags &= ~req_null;

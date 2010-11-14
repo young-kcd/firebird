@@ -384,7 +384,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 		if ((param = ExprNode::as<ParameterNode>(prm)))
 		{
-			//const impure_value* impure = request->getImpure<impure_value>(prm->nod_impure)
+			//const impure_value* impure = request->getImpure<impure_value>(param->impureOffset)
 			const jrd_nod* message = param->message;
 			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			const int arg_number = param->argNumber;
@@ -405,7 +405,7 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		else if ((var = ExprNode::as<VariableNode>(prm)))
 		{
 			impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
-				prm->nod_impure);
+				var->impureOffset);
 			from_desc = &impure->vlu_desc;
 		}
 		else if ((literal = ExprNode::as<LiteralNode>(prm)))
