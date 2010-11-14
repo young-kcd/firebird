@@ -68,6 +68,8 @@ const size_t MAX_SQL_IDENTIFIER_LEN = METADATA_IDENTIFIER_CHAR_LEN * METADATA_BY
 const size_t MAX_SQL_IDENTIFIER_SIZE = MAX_SQL_IDENTIFIER_LEN + 1;
 typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 
+const char* const DB_KEY_NAME = "DB_KEY";
+
 const char* const NULL_STRING_MARK = "*** null ***";
 const char* const UNKNOWN_STRING_MARK = "*** unknown ***";
 

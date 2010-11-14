@@ -2165,8 +2165,8 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 	for (const NestConst<jrd_nod>* const end = map->items.end(); ptr != end; ++ptr)
 	{
 		jrd_nod* assignment = *ptr;
-		jrd_nod* field = assignment->nod_arg[e_asgn_to];
-		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
+		FieldNode* field = ExprNode::as<FieldNode>(assignment->nod_arg[e_asgn_to]);
+		const USHORT id = field->fieldId;
 
 		if (id >= format->fmt_count)
 			format->fmt_desc.resize(id + 1);
@@ -2294,13 +2294,10 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 
 		for (indexArg = 0; (indexArg < children.getCount()) && !mappingFound; ++indexArg)
 		{
-			jrd_nod* node = children[indexArg];
+			FieldNode* fieldNode = ExprNode::as<FieldNode>(children[indexArg]);
 
-			if (node->nod_type == nod_field &&
-				(USHORT)(IPTR) node->nod_arg[e_fld_stream] == shellStream)
-			{
+			if (fieldNode && fieldNode->fieldStream == shellStream)
 				mappingFound = true;
-			}
 		}
 
 		if (!mappingFound)
@@ -2334,19 +2331,42 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 		deliverNode->flags = boolean->flags;
 		deliverNode->impureOffset = boolean->impureOffset;
 
-		bool wrongNode = false;
+		bool okNode = true;
 
-		for (indexArg = 0; (indexArg < children.getCount()) && !wrongNode; ++indexArg)
+		for (indexArg = 0; (indexArg < children.getCount()) && okNode; ++indexArg)
 		{
-			JrdNode node = UnmappedNodeGetter::get(map, shellStream, children[indexArg]);
+			// Check if node is a mapping and if so unmap it, but only for root nodes (not contained
+			// in another node). This can be expanded by checking complete expression (Then don't
+			// forget to leave aggregate-functions alone in case of aggregate rse).
+			// Because this is only to help using an index we keep it simple.
 
-			wrongNode = (!node.jrdNode || !*node.jrdNode);
+			FieldNode* fieldNode = ExprNode::as<FieldNode>(children[indexArg]);
 
-			if (!wrongNode)
-				*newChildren[indexArg] = *node.jrdNode;
+			if (fieldNode && fieldNode->fieldStream == shellStream)
+			{
+				const USHORT fieldId = fieldNode->fieldId;
+
+				if (fieldId >= map->items.getCount())
+					okNode = false;
+				else
+				{
+					// Check also the expression inside the map, because aggregate
+					// functions aren't allowed to be delivered to the WHERE clause.
+					okNode = UnmappedNodeGetter::check(map, shellStream,
+						map->items[fieldId]->nod_arg[e_asgn_from]);
+
+					if (okNode)
+						*newChildren[indexArg] = map->items[fieldId]->nod_arg[e_asgn_from];
+				}
+			}
+			else
+			{
+				if ((okNode = UnmappedNodeGetter::check(map, shellStream, children[indexArg])))
+					*newChildren[indexArg] = children[indexArg];
+			}
 		}
 
-		if (wrongNode)
+		if (!okNode)
 			delete deliverNode;
 		else
 			deliverStack->push(deliverNode);

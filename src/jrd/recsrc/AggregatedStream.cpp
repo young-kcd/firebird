@@ -141,9 +141,9 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 				fb_assert(from->nod_type == nod_class_exprnode_jrd);
 				const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
 
-				const jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-				Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+				const FieldNode* field = ExprNode::as<FieldNode>((*ptr)->nod_arg[e_asgn_to]);
+				const USHORT id = field->fieldId;
+				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
 				desc = aggNode->winPass(tdbb, request, &window);
 
@@ -151,7 +151,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 					SET_NULL(record, id);
 				else
 				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, (*ptr)->nod_arg[e_asgn_to]));
 					CLEAR_NULL(record, id);
 				}
 			}
@@ -469,16 +469,16 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 			if (aggNode)
 			{
-				const jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
-				const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-				Record* record = request->req_rpb[(int)(IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+				const FieldNode* field = ExprNode::as<FieldNode>((*ptr)->nod_arg[e_asgn_to]);
+				const USHORT id = field->fieldId;
+				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
 				desc = aggNode->execute(tdbb, request);
 				if (!desc || !desc->dsc_dtype)
 					SET_NULL(record, id);
 				else
 				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, field));
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, (*ptr)->nod_arg[e_asgn_to]));
 					CLEAR_NULL(record, id);
 				}
 			}

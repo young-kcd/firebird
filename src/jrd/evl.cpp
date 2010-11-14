@@ -118,9 +118,6 @@
 using namespace Jrd;
 using namespace Firebird;
 
-static dsc* dbkey(thread_db*, const jrd_nod*, impure_value*);
-static dsc* record_version(thread_db*, const jrd_nod*, impure_value*);
-
 
 dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 {
@@ -152,6 +149,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 	Record* record;
 	const ParameterNode* paramNode;
 	const VariableNode* varNode;
+	const FieldNode* fieldNode;
 
 	if ((paramNode = ExprNode::as<ParameterNode>(node)))
 	{
@@ -189,30 +187,26 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 		impure = request->getImpure<impure_value>(varNode->varDecl->nod_impure);
 		return &impure->vlu_desc;
 	}
-
-	switch (node->nod_type)
+	else if ((fieldNode = ExprNode::as<FieldNode>(node)))
 	{
-	case nod_field:
-		record = request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
-		if (!EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id], &impure->vlu_desc))
+		record = request->req_rpb[fieldNode->fieldStream].rpb_record;
+
+		if (!EVL_field(0, record, fieldNode->fieldId, &impure->vlu_desc))
 		{
 			// The below condition means that EVL_field() returned
 			// a read-only dummy value which cannot be assigned to.
 			// The usual reason is a field being unexpectedly dropped.
-			if (impure->vlu_desc.dsc_address &&
-				!(impure->vlu_desc.dsc_flags & DSC_null))
-			{
+			if (impure->vlu_desc.dsc_address && !(impure->vlu_desc.dsc_flags & DSC_null))
 				ERR_post(Arg::Gds(isc_field_disappeared));
-			}
 		}
+
 		if (!impure->vlu_desc.dsc_address)
 			ERR_post(Arg::Gds(isc_read_only_field));
-		return &impure->vlu_desc;
 
-	default:
-		BUGCHECK(229);			// msg 229 EVL_assign_to: invalid operation
+		return &impure->vlu_desc;
 	}
 
+	BUGCHECK(229);	// msg 229 EVL_assign_to: invalid operation
 	return NULL;
 }
 
@@ -300,41 +294,6 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 }
 
 
-bool EVL_boolean(thread_db* tdbb, const jrd_nod* node)
-{
-/**************************************
- *
- *      E V L _ b o o l e a n
- *
- **************************************
- *
- * Functional description
- *      Evaluate a boolean.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	jrd_req* request = tdbb->getRequest();
-
-	switch (node->nod_type)
-	{
-		case nod_class_exprnode_jrd:
-			return reinterpret_cast<BoolExprNode*>(node->nod_arg[0])->execute(tdbb, request);
-
-		case nod_stmt_expr:
-			EXE_looper(tdbb, request, node);
-			return EVL_boolean(tdbb, node->nod_arg[e_stmt_expr_expr]);
-
-		default:
-			BUGCHECK(231);			// msg 231 EVL_boolean: invalid operation
-	}
-
-	return false;
-}
-
-
 dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 {
 /**************************************
@@ -378,77 +337,6 @@ dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
 			return desc;
 		}
 
-	case nod_dbkey:
-		return dbkey(tdbb, node, impure);
-
-	case nod_rec_version:
-		return record_version(tdbb, node, impure);
-
-	case nod_field:
-		{
-			const USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
-			record_param& rpb = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]];
-			Record* record = rpb.rpb_record;
-			jrd_rel* relation = rpb.rpb_relation;
-			// In order to "map a null to a default" value (in EVL_field()),
-			// the relation block is referenced.
-			// Reference: Bug 10116, 10424
-
-			if (!EVL_field(relation, record, id, &impure->vlu_desc))
-				request->req_flags |= req_null;
-			else
-			{
-				const Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
-
-				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
-				// AP: for fields that are missing in original format use record's one.
-				if (compileFormat &&
-					record->rec_format->fmt_version != compileFormat->fmt_version &&
-					id < compileFormat->fmt_desc.getCount() &&
-					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
-				{
-					dsc desc = impure->vlu_desc;
-					impure->vlu_desc = compileFormat->fmt_desc[id];
-
-					if (impure->vlu_desc.isText())
-					{
-						// Allocate a string block of sufficient size.
-						VaryingString* string = impure->vlu_string;
-						if (string && string->str_length < impure->vlu_desc.dsc_length)
-						{
-							delete string;
-							string = NULL;
-						}
-
-						if (!string)
-						{
-							string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
-								impure->vlu_desc.dsc_length) VaryingString();
-							string->str_length = impure->vlu_desc.dsc_length;
-						}
-
-						impure->vlu_desc.dsc_address = string->str_data;
-					}
-					else
-						impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
-
-					MOV_move(tdbb, &desc, &impure->vlu_desc);
-				}
-			}
-
-			if (!relation || !(relation->rel_flags & REL_system))
-			{
-				if (impure->vlu_desc.dsc_dtype == dtype_text)
-					INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
-			}
-
-			return &impure->vlu_desc;
-		}
-
-	case nod_stmt_expr:
-		EXE_looper(tdbb, request, node);
-		return EVL_expr(tdbb, node->nod_arg[e_stmt_expr_expr]);
-
 	default:
 		BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
@@ -487,16 +375,16 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		*desc = format->fmt_desc[id];
 	}
 
-/*
+	/*
 	dimitr: fixed bug SF #562417
 
 	AFAIU, there was an assumption here that if a field descriptor is not
 	filled, then a field doesn't exist. This is not true, because in fact
 	an empty string has dsc_length = 0, and being part of an aggregate it
-	becomes nod_field with zero length, hence we had NULL as a result.
+	becomes FieldNode with zero length, hence we had NULL as a result.
 
 	if (!format || id >= format->fmt_count || !desc->dsc_length)
-*/
+	*/
 	if (!format || id >= format->fmt_count || !desc->dsc_dtype)
 	{
 		/* Map a non-existent field to a default value, if available.
@@ -699,7 +587,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		const USHORT flags = request->req_flags;
 
 		if (fieldInfo.validationStmt)
-			EXE_looper(tdbb, request, fieldInfo.validationStmt);
+			EXE_looper(tdbb, request, fieldInfo.validationStmt, true);
 
 		if (!fieldInfo.validationExpr->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
@@ -772,118 +660,4 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 
 		ERR_post(Arg::Gds(status) << Arg::Str(arg) << Arg::Str(value));
 	}
-}
-
-
-static dsc* dbkey(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      d b k e y       ( J R D )
- *
- **************************************
- *
- * Functional description
- *      Make up a dbkey for a record stream.  A dbkey is expressed
- *      as an 8 byte character string.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	// Get request, record parameter block, and relation for stream
-
-	jrd_req* request = tdbb->getRequest();
-	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
-
-	const jrd_rel* relation = rpb->rpb_relation;
-
-	// If it doesn't point to a valid record, return NULL
-	if (!rpb->rpb_number.isValid() || !relation)
-	{
-		request->req_flags |= req_null;
-		return NULL;
-	}
-
-	// Format dbkey as vector of relation id, record number
-
-	// Initialize first 32 bits of DB_KEY
-	impure->vlu_misc.vlu_dbkey[0] = 0;
-
-	// Now, put relation ID into first 16 bits of DB_KEY
-	// We do not assign it as SLONG because of big-endian machines.
-	*(USHORT*) impure->vlu_misc.vlu_dbkey = relation->rel_id;
-
-	// Encode 40-bit record number. Before that, increment the value
-	// because users expect the numbering to start with one.
-	RecordNumber temp(rpb->rpb_number.getValue() + 1);
-	temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
-
-	// Initialize descriptor
-
-	impure->vlu_desc.dsc_address = (UCHAR *) impure->vlu_misc.vlu_dbkey;
-	impure->vlu_desc.dsc_dtype = dtype_dbkey;
-	impure->vlu_desc.dsc_length = type_lengths[dtype_dbkey];
-	impure->vlu_desc.dsc_ttype() = ttype_binary;
-
-	return &impure->vlu_desc;
-}
-
-
-static dsc* record_version(thread_db* tdbb, const jrd_nod* node, impure_value* impure)
-{
-/**************************************
- *
- *      r e c o r d _ v e r s i o n
- *
- **************************************
- *
- * Functional description
- *      Make up a record version for a record stream.
- *      The tid of the record will be used.  This will be returned
- *      as a 4 byte character string.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(node, type_nod);
-
-	// Get request, record parameter block for stream
-
-	jrd_req* request = tdbb->getRequest();
-	const record_param* rpb = &request->req_rpb[(int) (IPTR) node->nod_arg[0]];
-
-	/* If the current transaction has updated the record, the record version
-	 * coming in from DSQL will have the original transaction # (or current
-	 * transaction if the current transaction updated the record in a different
-	 * request.).  In these cases, mark the request so that the boolean
-	 * to check equality of record version will be forced to evaluate to true.
-	 */
-
-	if (tdbb->getRequest()->req_transaction->tra_number == rpb->rpb_transaction_nr)
-		request->req_flags |= req_same_tx_upd;
-	else
-	{
-		// If the transaction is a commit retain, check if the record was
-		// last updated in one of its own prior transactions
-
-		if (request->req_transaction->tra_commit_sub_trans)
-		{
-			if (request->req_transaction->tra_commit_sub_trans->test(rpb->rpb_transaction_nr))
-			{
-				 request->req_flags |= req_same_tx_upd;
-			}
-		}
-	}
-
-	// Initialize descriptor
-
-	impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
-	impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
-	impure->vlu_desc.dsc_dtype = dtype_text;
-	impure->vlu_desc.dsc_length = 4;
-	impure->vlu_desc.dsc_ttype() = ttype_binary;
-
-	return &impure->vlu_desc;
 }

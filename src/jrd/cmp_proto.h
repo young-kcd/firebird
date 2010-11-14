@@ -37,7 +37,7 @@ Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length, 
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 void CMP_expand_view_nodes(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, Jrd::NodeStack&,
-	Jrd::nod_t, bool);
+	UCHAR, bool);
 void CMP_fini(Jrd::thread_db*);
 const Jrd::Format* CMP_format(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);

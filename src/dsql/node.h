@@ -125,14 +125,12 @@ enum nod_t
 	nod_field,
 	nod_dom_value,
 	nod_field_name,
-	nod_map,
 	nod_alias,
 	nod_user_name,
 	nod_user_group,
 	nod_var_name,
 	nod_array,
 	nod_not_null,
-	nod_dbkey,
 	nod_collate,
 	nod_get_segment,	// blobs
 	nod_put_segment,
@@ -170,7 +168,6 @@ enum nod_t
 	nod_restrict,	// drop behaviour
 	nod_cascade,
 	nod_set_statistics,	// set statistics
-	nod_rec_version,	// record version
 	nod_ref_upd_del,	// referential integrity actions
 	nod_ref_trig_action,
 	nod_def_role,	// SQL role support
@@ -195,7 +192,6 @@ enum nod_t
 	nod_begin_backup,
 	nod_end_backup,
 	nod_derived_table, // Derived table support
-	nod_derived_field,  // Derived table support
 	nod_cursor_open,
 	nod_cursor_fetch,
 	nod_cursor_close,
@@ -458,10 +454,6 @@ enum node_args {
 	e_upd_rse_flags,
 	e_upd_count,
 
-	e_map_context = 0,		// nod_map
-	e_map_map,
-	e_map_count,
-
 	e_blb_field = 0,		// nod_get_segment & nod_put_segment
 	e_blb_relation,
 	e_blb_filter,
@@ -650,18 +642,6 @@ enum node_args {
 	e_breakleave_label = 0,			// nod_breakleave
 	e_breakleave_count,
 
-	// SQL substring() function
-
-	e_substr_value = 0,	// Anything that can be treated as a string
-	e_substr_start,		// Where the slice starts
-	e_substr_length,	// The length of the slice
-	e_substr_count,
-
-	e_trim_specification = 0,
-	e_trim_characters,
-	e_trim_value,
-	e_trim_count,
-
 	e_udf_param_field = 0,
 	e_udf_param_type,		// Basically, by_reference or by_descriptor
 	e_udf_param_count,
@@ -690,12 +670,6 @@ enum node_args {
 	e_derived_table_context,		// Context for derived table
 	e_derived_table_count,
 
-	e_derived_field_value = 0,		// Contains the source expression
-	e_derived_field_name,			// Name for derived table field
-	e_derived_field_scope,			// Scope-level
-	e_derived_field_context,		// context of derived table
-	e_derived_field_count,
-
 	e_cur_stmt_id = 0,
 	e_cur_stmt_scroll,
 	e_cur_stmt_into,
@@ -709,11 +683,6 @@ enum node_args {
 	e_ret_source = 0,				// nod_returning
 	e_ret_target,
 	e_ret_count,
-
-	e_similar_value = 0,
-	e_similar_pattern,
-	e_similar_escape,
-	e_similar_count,
 
 	e_src_info_line = 0,			// nod_src_info
 	e_src_info_column,

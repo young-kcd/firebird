@@ -124,7 +124,7 @@ namespace
 			jrd_fld* field = MET_get_field(relation, fldId);
 
 			if (field->fld_source)
-				fldId = (USHORT)(IPTR) field->fld_source->nod_arg[e_fld_id];
+				fldId = ExprNode::as<FieldNode>(field->fld_source)->fieldId;
 
 			return fldId;
 		}
@@ -141,15 +141,12 @@ namespace
 		}
 
 	protected:
-		virtual USHORT getFieldId(jrd_nod* input)
+		virtual USHORT getFieldId(FieldNode* field)
 		{
-			if ((input->nod_flags & nod_id) && !input->nod_arg[e_fld_id] &&
-				!input->nod_arg[e_fld_stream])
-			{
+			if (field->byId && field->fieldId == 0 && field->fieldStream == 0)
 				return fldId;
-			}
 
-			return NodeCopier::getFieldId(input);
+			return NodeCopier::getFieldId(field);
 		}
 
 	private:
@@ -157,7 +154,6 @@ namespace
 	};
 }	// namespace
 
-static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
@@ -401,8 +397,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
  *	Compute descriptor for value expression.
  *
  **************************************/
-	USHORT dtype = dtype_unknown;
-
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
@@ -410,45 +404,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 
 	switch (node->nod_type)
 	{
-	case nod_field:
-		{
-			const USHORT stream = (USHORT) (IPTR) node->nod_arg[e_fld_stream];
-			const USHORT id = (USHORT) (IPTR) node->nod_arg[e_fld_id];
-			const Format* format = CMP_format(tdbb, csb, stream);
-
-			if (id >= format->fmt_count)
-			{
-				desc->dsc_dtype = dtype_unknown;
-				desc->dsc_length = 0;
-				desc->dsc_scale = 0;
-				desc->dsc_sub_type = 0;
-				desc->dsc_flags = 0;
-			}
-			else
-			{
-				*desc = format->fmt_desc[id];
-
-				// fix UNICODE_FSS wrong length used in system tables
-				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-
-				if (relation && (relation->rel_flags & REL_system) &&
-					desc->isText() && desc->getCharSet() == CS_UNICODE_FSS)
-				{
-					USHORT adjust = 0;
-
-					if (desc->dsc_dtype == dtype_varying)
-						adjust = sizeof(USHORT);
-					else if (desc->dsc_dtype == dtype_cstring)
-						adjust = 1;
-
-					desc->dsc_length -= adjust;
-					desc->dsc_length *= 3;
-					desc->dsc_length += adjust;
-				}
-			}
-			return;
-		}
-
 	case nod_class_exprnode_jrd:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
@@ -456,34 +411,11 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 			return;
 		}
 
-	case nod_dbkey:
-		desc->dsc_dtype = dtype_dbkey;
-		desc->dsc_length = type_lengths[dtype_dbkey];
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_rec_version:
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		return;
-
-	case nod_stmt_expr:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_stmt_expr_expr], desc);
-		return;
-
 	default:
 		fb_assert(false);
+		ERR_post(Arg::Gds(isc_datype_notsup));	// data type not supported for arithmetic
 		break;
 	}
-
-	if (dtype == dtype_quad)
-		IBERROR(224);				// msg 224 quad word arithmetic not supported
-
-	ERR_post(Arg::Gds(isc_datype_notsup));	// data type not supported for arithmetic
 }
 
 
@@ -849,43 +781,9 @@ UCHAR* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 }
 
 
-static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
+USHORT NodeCopier::getFieldId(FieldNode* field)
 {
-/**************************************
- *
- *	c a t e n a t e _ n o d e s
- *
- **************************************
- *
- * Functional description
- *	Take a stack of nodes
- *	and turn them into a tree of concatenations.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	jrd_nod* node1 = stack.pop();
-
-	if (stack.isEmpty())
-		return node1;
-
-	ConcatenateNode* concatNode = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(
-		*tdbb->getDefaultPool());
-	concatNode->arg1 = node1;
-	concatNode->arg2 = catenate_nodes(tdbb, stack);
-
-	jrd_nod* node = PAR_make_node(tdbb, 1);
-	node->nod_type = nod_class_exprnode_jrd;
-	node->nod_count = 0;
-	node->nod_arg[0] = (jrd_nod*) concatNode;
-
-	return node;
-}
-
-
-USHORT NodeCopier::getFieldId(jrd_nod* input)
-{
-	return (USHORT)(IPTR) input->nod_arg[e_fld_id];
+	return field->fieldId;
 }
 
 // Copy an expression tree remapping field streams. If the map isn't present, don't remap.
@@ -953,28 +851,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		}
 		return input;
 
-	case nod_field:
-		{
-			USHORT fldId = getFieldId(input);
-
-			stream = (USHORT)(IPTR) input->nod_arg[e_fld_stream];
-			fldId = remapField(stream, fldId);
-
-			if (remap)
-			{
-#ifdef CMP_DEBUG
-				csb->dump("remap nod_field: %d -> %d\n", stream, remap[stream]);
-#endif
-				stream = remap[stream];
-			}
-
-			jrd_nod* temp_node = PAR_gen_field(tdbb, stream, fldId);
-			if (input->nod_type == nod_field && input->nod_arg[e_fld_default_value])
-				temp_node->nod_arg[e_fld_default_value] = input->nod_arg[e_fld_default_value];
-
-			return temp_node;
-		}
-
 	case nod_class_recsrcnode_jrd:
 		node = PAR_make_node(tdbb, 1);
 		node->nod_type = input->nod_type;
@@ -990,22 +866,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
 		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
-		return node;
-
-	case nod_dbkey:
-		stream = (USHORT)(IPTR) input->nod_arg[0];
-		if (remap)
-		{
-#ifdef CMP_DEBUG
-			csb->dump("remap nod_dbkey: %d -> %d\n", stream, remap[stream]);
-#endif
-			stream = remap[stream];
-		}
-
-		node = PAR_make_node(tdbb, 1);
-		node->nod_type = input->nod_type;
-		node->nod_count = 0;
-		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
 		return node;
 
 	case nod_dcl_variable:
@@ -1074,7 +934,7 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 // Expand dbkey for view.
 void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream, NodeStack& stack,
-	nod_t type, bool allStreams)
+	UCHAR blrOp, bool allStreams)
 {
 	SET_TDBB(tdbb);
 
@@ -1091,7 +951,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 	{
 		++map;
 		while (*map)
-			CMP_expand_view_nodes(tdbb, csb, *map++, stack, type, allStreams);
+			CMP_expand_view_nodes(tdbb, csb, *map++, stack, blrOp, allStreams);
 		return;
 	}
 
@@ -1099,11 +959,14 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 
 	if (allStreams || csb->csb_rpt[stream].csb_relation)
 	{
-		jrd_nod* node = PAR_make_node(tdbb, 1);
-		node->nod_count = 0;
-		node->nod_type = type;
-		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
-		stack.push(node);
+		RecordKeyNode* node = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blrOp);
+		node->recStream = stream;
+
+		jrd_nod* nod = PAR_make_node(tdbb, 1);
+		nod->nod_count = 0;
+		nod->nod_type = nod_class_exprnode_jrd;
+		nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(node);
+		stack.push(nod);
 	}
 }
 
@@ -1167,10 +1030,10 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 				{
 					const jrd_nod* to = assign->nod_arg[e_asgn_to];
 
-					fb_assert(to->nod_type == nod_field);
-					if (to->nod_type == nod_field &&
-						(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
-						(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
+					const FieldNode* fieldNode = ExprNode::as<FieldNode>(to);
+					fb_assert(fieldNode);
+
+					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == field_id)
 					{
 						inList = true;
 						break;
@@ -1286,17 +1149,9 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			boolNod->nod_count = 0;
 			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
 
-			if (validationStmt)
-			{
-				jrd_nod* exprStmtNod = PAR_make_node(tdbb, e_stmt_expr_length);
-				exprStmtNod->nod_type = nod_stmt_expr;
-				exprStmtNod->nod_arg[e_stmt_expr_stmt] = validationStmt;
-				exprStmtNod->nod_arg[e_stmt_expr_expr] = boolNod;
-				boolNod = exprStmtNod;
-			}
-
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
+			node->nod_arg[e_val_stmt] = validationStmt;
 			node->nod_arg[e_val_boolean] = boolNod;
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
@@ -1319,17 +1174,9 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			boolNod->nod_count = 0;
 			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
 
-			if (validationStmt)
-			{
-				jrd_nod* exprStmtNod = PAR_make_node(tdbb, e_stmt_expr_length);
-				exprStmtNod->nod_type = nod_stmt_expr;
-				exprStmtNod->nod_arg[e_stmt_expr_stmt] = validationStmt;
-				exprStmtNod->nod_arg[e_stmt_expr_expr] = boolNod;
-				boolNod = exprStmtNod;
-			}
-
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
+			node->nod_arg[e_val_stmt] = validationStmt;
 			node->nod_arg[e_val_boolean] = boolNod;
 			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
 			stack.push(node);
@@ -1429,211 +1276,30 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		}
 		break;
 
-	case nod_field:
-		{
-			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-
-			CMP_mark_variant(csb, stream);
-
-			jrd_fld* field;
-			tail = &csb->csb_rpt[stream];
-			jrd_rel* relation = tail->csb_relation;
-			if (!relation ||
-				!(field = MET_get_field(relation, (USHORT)(IPTR) node->nod_arg[e_fld_id])))
-			{
-				break;
-			}
-
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			const USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				Jrd::Collation* collation = NULL;
-
-				try
-				{
-					ThreadStatusGuard local_status(tdbb);
-
-					collation = INTL_texttype_lookup(tdbb, ttype);
-				}
-				catch (Firebird::Exception&)
-				{
-					// ASF: Swallow the exception if we fail to load the collation here.
-					// This allows us to backup databases when the collation isn't available.
-					if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
-						throw;
-				}
-
-				if (collation)
-				{
-					CMP_post_resource(&csb->csb_resources, collation, Resource::rsc_collation, ttype);
-				}
-			}
-
-			// if this is a modify or store, check REFERENCES access to any foreign keys
-
-/* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
-				time the FK is defined in DDL, not when a DML is going to be executed.
-			if (((tail->csb_flags & csb_modify) || (tail->csb_flags & csb_store)) &&
-				!(relation->rel_view_rse || relation->rel_file))
-			{
-				IDX_check_access(tdbb, csb, tail->csb_view, relation);
-			}
-*/
-
-			// posting the required privilege access to the current relation and field
-
-			// If this is in a "validate_subtree" then we must not
-			// post access checks to the table and the fields in the table.
-			// If any node of the parse tree is a nod_validate type node,
-			// the nodes in the subtree are involved in a validation
-			// clause only, the subtree is a validate_subtree in our notation.
-
-			const SLONG viewId = (tail->csb_view) ? tail->csb_view->rel_id :
-										(view ? view->rel_id : 0);
-
-			if (tail->csb_flags & csb_modify)
-			{
-				if (!csb->csb_validate_expr)
-				{
-					CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-									SCL_sql_update, SCL_object_table,
-									relation->rel_name);
-					CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-									SCL_sql_update, SCL_object_column,
-									field->fld_name, relation->rel_name);
-				}
-			}
-			else if (tail->csb_flags & csb_erase)
-			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_sql_delete, SCL_object_table,
-								relation->rel_name);
-			}
-			else if (tail->csb_flags & csb_store)
-			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_sql_insert, SCL_object_table,
-								relation->rel_name);
-				CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-								SCL_sql_insert, SCL_object_column,
-								field->fld_name, relation->rel_name);
-			}
-			else
-			{
-				CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
-								SCL_read, SCL_object_table, relation->rel_name);
-				CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
-								SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
-			}
-
-			if (!(sub = field->fld_computation) && !(sub = field->fld_source))
-			{
-
-				if (!relation->rel_view_rse)
-					break;
-
-				ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) <<
-														  Arg::Str(relation->rel_name));
-				// Msg 364 "cannot access column %s in view %s"
-			}
-
-			// The previous test below is an apparent temporary fix
-			// put in by Root & Harrison in Summer/Fall 1991.
-			// Old Code:
-			// if (tail->csb_flags & (csb_view_update | csb_trigger))
-			//   break;
-			// If the field is a computed field - we'll go on and make
-			// the substitution.
-			// Comment 1994-August-08 David Schnepper
-
-			if (tail->csb_flags & (csb_view_update | csb_trigger))
-			{
-				// dimitr:	added an extra check for views, because we don't
-				//			want their old/new contexts to be substituted
-				if (relation->rel_view_rse || !field->fld_computation)
-					break;
-			}
-
-			UCHAR local_map[JrdStatement::MAP_LENGTH];
-			UCHAR* map = tail->csb_map;
-			if (!map)
-			{
-				map = local_map;
-				fb_assert(stream + 2 <= MAX_STREAMS);
-				local_map[0] = (UCHAR) stream;
-				map[1] = stream + 1;
-				map[2] = stream + 2;
-			}
-
-			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
-
-			sub = NodeCopier::copy(tdbb, csb, sub, map);
-
-			if (relation->rel_view_rse)
-			{
-				// dimitr:	if we reference view columns, we need to pass them
-				//			as belonging to a view (in order to compute the access
-				//			permissions properly).
-				AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
-				AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
-
-				// ASF: If the view field doesn't reference an item of a stream, evaluate it
-				// based on the view dbkey - CORE-1245.
-				if (sub->nod_type != nod_field && sub->nod_type != nod_dbkey)
-				{
-					NodeStack stack;
-					CMP_expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey, true);
-					const UCHAR streamCount = (UCHAR) stack.getCount();
-
-					if (streamCount)
-					{
-						DerivedExprNode* derivedNode =
-							FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
-						derivedNode->arg = sub;
-
-						for (NodeStack::iterator i(stack); i.hasData(); ++i)
-							derivedNode->streamList.add((USHORT)(IPTR) i.object()->nod_arg[0]);
-
-						sub = PAR_make_node(tdbb, 1);
-						sub->nod_type = nod_class_exprnode_jrd;
-						sub->nod_count = 0;
-						sub->nod_arg[0] = reinterpret_cast<jrd_nod*>(derivedNode);
-					}
-				}
-
-				return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
-			}
-
-			return CMP_pass1(tdbb, csb, sub);
-		}
-
 	case nod_assignment:
 		{
 			sub = node->nod_arg[e_asgn_from];
-			if (sub->nod_type == nod_field)
+			FieldNode* fieldNode;
+
+			if ((fieldNode = ExprNode::as<FieldNode>(sub)))
 			{
-				stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
-				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation,
-									 		   (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
+				stream = fieldNode->fieldStream;
+				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation, fieldNode->fieldId);
 				if (field)
 					node->nod_arg[e_asgn_missing2] = field->fld_missing_value;
 			}
 
 			sub = node->nod_arg[e_asgn_to];
-			if (sub->nod_type != nod_field)
+			if (!(fieldNode = ExprNode::as<FieldNode>(sub)))
 				break;
-			stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
+
+			stream = fieldNode->fieldStream;
 			tail = &csb->csb_rpt[stream];
-			jrd_fld* field = MET_get_field(tail->csb_relation, (USHORT)(IPTR) sub->nod_arg[e_fld_id]);
-			if (!field) {
+			jrd_fld* field = MET_get_field(tail->csb_relation, fieldNode->fieldId);
+
+			if (!field)
 				break;
-			}
+
 			if (field->fld_missing_value)
 			{
 				node->nod_arg[e_asgn_missing] = field->fld_missing_value;
@@ -1681,154 +1347,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb, view);
 		break;
 
-	case nod_rec_version:
-	case nod_dbkey:
-		{
-			const nod_t type = node->nod_type;
-			stream = (USHORT)(IPTR) node->nod_arg[0];
-
-			CMP_mark_variant(csb, stream);
-
-			if (!csb->csb_rpt[stream].csb_map)
-				return node;
-			NodeStack stack;
-			CMP_expand_view_nodes(tdbb, csb, stream, stack, type, false);
-
-#ifdef CMP_DEBUG
-			csb->dump("expand nod_dbkey: %d\n", stream);
-#endif
-
-			if (stack.hasData())
-			{
-				const size_t stackCount = stack.getCount();
-
-				// If that is a DB_KEY of a view, it's possible (in case of
-				// outer joins) that some sub-stream have a NULL DB_KEY.
-				// In this case, we build a COALESCE(DB_KEY, _OCTETS x"0000000000000000"),
-				// for the concatenation of sub DB_KEYs not result in NULL.
-				if (type == nod_dbkey && stackCount > 1)
-				{
-					NodeStack stack2;
-
-					for (NodeStack::iterator i(stack); i.hasData(); ++i)
-					{
-#ifdef CMP_DEBUG
-						csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
-#endif
-
-						ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(
-							csb->csb_pool);
-
-						jrd_nod* new_node = PAR_make_node(tdbb, 1);
-						new_node->nod_type = nod_class_exprnode_jrd;
-						new_node->nod_count = 0;
-						new_node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
-
-						MissingBoolNode* missingNode = FB_NEW(csb->csb_pool) MissingBoolNode(
-							csb->csb_pool);
-						missingNode->arg = i.object();
-
-						NotBoolNode* notNode = FB_NEW(csb->csb_pool) NotBoolNode(csb->csb_pool);
-						notNode->arg = missingNode;
-
-						// build an IF (RDB$DB_KEY IS NOT NULL)
-						valueIfNode->condition = notNode;
-
-						valueIfNode->trueValue = i.object();	// THEN
-
-						LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
-						literal->litDesc.dsc_dtype = dtype_text;
-						literal->litDesc.dsc_ttype() = CS_BINARY;
-						literal->litDesc.dsc_scale = 0;
-						literal->litDesc.dsc_length = 8;
-						literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
-							const_cast<char*>("\0\0\0\0\0\0\0\0"));	// safe const_cast
-
-						valueIfNode->falseValue = PAR_make_node(tdbb, 1);	// ELSE
-						valueIfNode->falseValue->nod_type = nod_class_exprnode_jrd;
-						valueIfNode->falseValue->nod_count = 0;
-						valueIfNode->falseValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
-
-						stack2.push(new_node);
-					}
-
-					stack.clear();
-
-					// stack2 is in reverse order, pushing everything in stack
-					// will correct the order.
-					for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
-						stack.push(i2.object());
-				}
-
-				node = catenate_nodes(tdbb, stack);
-
-				if (type == nod_dbkey && stackCount > 1)
-				{
-					// ASF: If the view is in null state (with outer joins) we need to transform
-					// the view RDB$KEY to NULL. (CORE-1245)
-
-					ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(
-						csb->csb_pool);
-
-					ComparativeBoolNode* eqlNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
-						csb->csb_pool, blr_eql);
-
-					// build an IF (RDB$DB_KEY = '')
-					valueIfNode->condition = eqlNode;
-
-					eqlNode->arg1 = NodeCopier::copy(tdbb, csb, node, NULL);
-
-					LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
-					literal->litDesc.dsc_dtype = dtype_text;
-					literal->litDesc.dsc_ttype() = CS_BINARY;
-					literal->litDesc.dsc_scale = 0;
-					literal->litDesc.dsc_length = 0;
-					literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
-						const_cast<char*>(""));	// safe const_cast
-
-					eqlNode->arg2 = PAR_make_node(tdbb, 1);
-					eqlNode->arg2->nod_type = nod_class_exprnode_jrd;
-					eqlNode->arg2->nod_count = 0;
-					eqlNode->arg2->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
-
-					// THEN: NULL
-					valueIfNode->trueValue = PAR_make_node(tdbb, 1);
-					valueIfNode->trueValue->nod_type = nod_class_exprnode_jrd;
-					valueIfNode->trueValue->nod_count = 0;
-					valueIfNode->trueValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-						FB_NEW(csb->csb_pool) NullNode(csb->csb_pool));
-
-					// ELSE: RDB$DB_KEY
-					valueIfNode->falseValue = node;
-
-					node = PAR_make_node(tdbb, 1);
-					node->nod_type = nod_class_exprnode_jrd;
-					node->nod_count = 0;
-					node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
-				}
-
-#ifdef CMP_DEBUG
-				csb->dump("\n");
-#endif
-
-				return node;
-			}
-
-#ifdef CMP_DEBUG
-			csb->dump("\n");
-#endif
-
-			// The user is asking for the dbkey/record version of an aggregate.
-			// Humor him with a key filled with zeros.
-
-			node = PAR_make_node(tdbb, 1);
-			node->nod_count = 0;
-			node->nod_type = type;
-			node->nod_flags |= nod_agg_dbkey;
-			node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
-			return node;
-		}
-
 	case nod_src_info:
 		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
 		return node;
@@ -1868,36 +1386,27 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	if (node->nod_type == nod_assignment)
 	{
 		sub = node->nod_arg[e_asgn_to];
+		FieldNode* fieldNode;
 
-		switch (sub->nod_type)
+		if ((fieldNode = ExprNode::as<FieldNode>(sub)))
 		{
-		case nod_field:
-			stream = (USHORT)(IPTR) sub->nod_arg[e_fld_stream];
+			stream = fieldNode->fieldStream;
 			tail = &csb->csb_rpt[stream];
-			// assignments to the OLD context are prohibited
-			// for all trigger types
+
+			// assignments to the OLD context are prohibited for all trigger types
 			if ((tail->csb_flags & csb_trigger) && stream == 0)
-			{
 				ERR_post(Arg::Gds(isc_read_only_field));
-			}
-			// assignments to the NEW context are prohibited
-			// for post-action triggers
+
+			// assignments to the NEW context are prohibited for post-action triggers
 			if ((tail->csb_flags & csb_trigger) && stream == 1 &&
 				(csb->csb_g_flags & csb_post_trigger))
 			{
 				ERR_post(Arg::Gds(isc_read_only_field));
 			}
-			break;
-
-		case nod_class_exprnode_jrd:
-			if (ExprNode::is<ParameterNode>(sub) || ExprNode::is<VariableNode>(sub) ||
-				ExprNode::is<NullNode>(sub))
-			{
-				break;	// Nothing to do here
-			}
-			// fall into
-
-		default:
+		}
+		else if (!(ExprNode::is<ParameterNode>(sub) || ExprNode::is<VariableNode>(sub) ||
+					ExprNode::is<NullNode>(sub)))
+		{
 			ERR_post(Arg::Gds(isc_read_only_field));
 		}
 	}
@@ -2054,23 +1563,24 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 			if (remap)
 			{
 				const jrd_fld* field = MET_get_field(relation, id);
-				if (field->fld_source) {
-					new_id = (USHORT)(IPTR) (field->fld_source)->nod_arg[e_fld_id];
-				}
-				else {
+
+				if (field->fld_source)
+					new_id = ExprNode::as<FieldNode>(field->fld_source)->fieldId;
+				else
 					new_id = id;
-				}
 			}
-			else {
+			else
 				new_id = id;
-			}
+
 			jrd_nod* node = PAR_gen_field(tdbb, new_stream, new_id);
 			CMP_get_desc(tdbb, csb, node, &desc);
+
 			if (!desc.dsc_address)
 			{
 				delete node;
 				continue;
 			}
+
 			jrd_nod* assign = PAR_make_node(tdbb, e_asgn_length);
 			assign->nod_type = nod_assignment;
 			assign->nod_arg[e_asgn_to] = node;
@@ -2639,27 +2149,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_erase:
 		stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_update;
-		break;
-
-	case nod_field:
-		{
-			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			// SMB_SET uses ULONG, not USHORT
-			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
-			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
-			if (csb->csb_rpt[stream].csb_relation || csb->csb_rpt[stream].csb_procedure)
-				node->nod_arg[e_fld_format] = (jrd_nod*) CMP_format(tdbb, csb, stream);
-			node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
-			break;
-		}
-
-	case nod_dbkey:
-	case nod_rec_version:
-		{
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			node->nod_impure = CMP_impure(csb, sizeof(impure_value));
-		}
 		break;
 
 	case nod_exec_into:

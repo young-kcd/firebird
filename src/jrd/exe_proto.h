@@ -38,7 +38,8 @@ void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::jrd_nod* to, dsc* from_desc
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 	bool preTriggers, int action);
-const Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request, const Jrd::jrd_nod* in_node);
+const Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
+	const Jrd::jrd_nod* in_node, bool stmtExpr = false);
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, UCHAR*, bool = false);
 void EXE_release(Jrd::thread_db*, Jrd::jrd_req*);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, const UCHAR*);

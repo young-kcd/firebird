@@ -66,9 +66,6 @@ using namespace Dsql;
 using namespace Firebird;
 
 
-static const char* DB_KEY_NAME = "DB_KEY";
-
-
 dsql_nod* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -354,10 +351,7 @@ dsql_str* MAKE_cstring(const char* str)
  **/
 void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 {
-	dsc desc1, desc2, desc3;
-	dsql_map* map;
-	dsql_ctx* context;
-	dsql_rel* relation;
+	dsc desc1;
 
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -376,21 +370,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
 			exprNode->make(dsqlScratch, desc);
 		}
-		return;
-
-	case nod_map:
-		map = (dsql_map*) node->nod_arg[e_map_map];
-		context = (dsql_ctx*) node->nod_arg[e_map_context];
-		MAKE_desc(dsqlScratch, desc, map->map_node);
-
-		// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
-		if (context->ctx_flags & CTX_outer_join)
-			desc->dsc_flags |= DSC_nullable;
-
-		return;
-
-	case nod_derived_field:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_derived_field_value]);
 		return;
 
 	case nod_simple_case:
@@ -414,39 +393,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		return;
 #endif
 
-	/*
-	case nod_count:
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_flags = 0;
-		return;
-	*/
-
 	case nod_alias:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
-		return;
-
-	case nod_dbkey:
-		// Fix for bug 10072 check that the target is a relation
-		context = (dsql_ctx*) node->nod_arg[0]->nod_arg[0];
-		relation = context->ctx_relation;
-		if (relation != 0)
-		{
-			desc->dsc_dtype = dtype_text;
-			if (relation->rel_flags & REL_creating)
-				desc->dsc_length = 8;
-			else
-				desc->dsc_length = relation->rel_dbkey_length;
-			desc->dsc_flags = DSC_nullable;
-			desc->dsc_ttype() = ttype_binary;
-		}
-		else
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_dbkey_from_non_table));
-		}
 		return;
 
 	case nod_limit:
@@ -920,6 +868,7 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	fb_assert(parameter && item);
 
 	const char* name_alias = NULL;
+	const RecordKeyNode* dbKeyNode;
 
 	switch (item->nod_type)
 	{
@@ -931,100 +880,22 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		name_alias = field->fld_name.c_str();
 		context = (dsql_ctx*) item->nod_arg[e_fld_context];
 		break;
-	case nod_dbkey:
-		parameter->par_name = parameter->par_alias = DB_KEY_NAME;
-		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
-		break;
 	case nod_alias:
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
-		parameter->par_alias = string->str_data;
 		alias = item->nod_arg[e_alias_value];
+
 		if (alias->nod_type == nod_field)
 		{
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
 			parameter->par_name = field->fld_name.c_str();
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
-		else if (alias->nod_type == nod_dbkey)
-		{
-			parameter->par_name = DB_KEY_NAME;
-			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-		}
-		break;
-	case nod_derived_field:
-		string = (dsql_str*) item->nod_arg[e_derived_field_name];
+		else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(alias)))
+			dbKeyNode->setParameterName(parameter);
+
 		parameter->par_alias = string->str_data;
-		alias = item->nod_arg[e_derived_field_value];
-		if (alias->nod_type == nod_field)
-		{
-			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
-			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-		}
-		else if (alias->nod_type == nod_dbkey)
-		{
-			parameter->par_name = DB_KEY_NAME;
-			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
-		}
 		break;
-	case nod_map:
-		{
-			const dsql_map* map = (dsql_map*) item->nod_arg[e_map_map];
-			const dsql_nod* map_node = map->map_node;
-			while (map_node->nod_type == nod_map)
-			{
-				// skip all the nod_map nodes
-				map = (dsql_map*) map_node->nod_arg[e_map_map];
-				map_node = map->map_node;
-			}
 
-			switch (map_node->nod_type)
-			{
-			case nod_field:
-				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
-				name_alias = field->fld_name.c_str();
-				context = (dsql_ctx*) map_node->nod_arg[e_fld_context];
-				break;
-			case nod_alias:
-				string = (dsql_str*) map_node->nod_arg[e_alias_alias];
-				parameter->par_alias = string->str_data;
-				alias = map_node->nod_arg[e_alias_value];
-				if (alias->nod_type == nod_field)
-				{
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name.c_str();
-					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-				}
-				break;
-			case nod_derived_field:
-				string = (dsql_str*) map_node->nod_arg[e_derived_field_name];
-				parameter->par_alias = string->str_data;
-				alias = map_node->nod_arg[e_derived_field_value];
-				if (alias->nod_type == nod_field)
-				{
-					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name.c_str();
-					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
-				}
-				break;
-			case nod_dbkey:
-				name_alias = DB_KEY_NAME;
-				break;
-
-			case nod_class_exprnode:
-				{
-					const AggNode* aggNode;
-					const LiteralNode* literalNode;
-
-					if ((aggNode = ExprNode::as<AggNode>(map_node)))
-						aggNode->setParameterName(parameter);
-					else if ((literalNode = ExprNode::as<LiteralNode>(map_node)))
-						literalNode->setParameterName(parameter);
-				}
-				break;
-			} // switch(map_node->nod_type)
-			break;
-		} // case nod_map
 	case nod_searched_case:
 	case nod_simple_case:
 		name_alias = "CASE";

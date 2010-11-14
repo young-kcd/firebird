@@ -635,9 +635,11 @@ void ComparativeBoolNode::pass2Boolean1(thread_db* /*tdbb*/, CompilerScratch* cs
 
 void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 {
+	RecordKeyNode* keyNode;
+
 	if (arg3)
 	{
-		if (arg3->nod_flags & nod_agg_dbkey)
+		if ((keyNode = ExprNode::as<RecordKeyNode>(arg3.getObject())) && keyNode->aggregate)
 			ERR_post(Arg::Gds(isc_bad_dbkey));
 
 		dsc descriptor_c;
@@ -650,8 +652,11 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 		}
 	}
 
-	if ((arg1->nod_flags & nod_agg_dbkey) || (arg2->nod_flags & nod_agg_dbkey))
+	if (((keyNode = ExprNode::as<RecordKeyNode>(arg1.getObject())) && keyNode->aggregate) ||
+		((keyNode = ExprNode::as<RecordKeyNode>(arg2.getObject())) && keyNode->aggregate))
+	{
 		ERR_post(Arg::Gds(isc_bad_dbkey));
+	}
 
 	dsc descriptor_a, descriptor_b;
 	CMP_get_desc(tdbb, csb, arg1, &descriptor_a);
@@ -795,7 +800,9 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	// If we are checking equality of record_version
 	// and same transaction updated the record, force equality.
 
-	if (rec_version->nod_type == nod_rec_version && force_equal)
+	const RecordKeyNode* recVersionNode = ExprNode::as<RecordKeyNode>(rec_version);
+
+	if (recVersionNode && recVersionNode->blrOp == blr_record_version && force_equal)
 		comparison = 0;
 
 	request->req_flags &= ~(req_null | req_same_tx_upd);
@@ -1386,7 +1393,9 @@ BoolExprNode* MissingBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 void MissingBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (arg->nod_flags & nod_agg_dbkey)
+	RecordKeyNode* keyNode;
+
+	if ((keyNode = ExprNode::as<RecordKeyNode>(arg.getObject())) && keyNode->aggregate)
 		ERR_post(Arg::Gds(isc_bad_dbkey));
 
 	// check for syntax errors in the calculation

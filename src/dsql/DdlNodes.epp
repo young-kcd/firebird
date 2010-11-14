@@ -7355,30 +7355,34 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		// Determine the proper field name, replacing the default if necessary.
 
 		const dsql_nod* nameNode = fieldNode;
-		const dsql_str* aliasName = NULL;
+		const char* aliasName = NULL;
 
 		while (nameNode->nod_type == Dsql::nod_alias ||
-			nameNode->nod_type == Dsql::nod_derived_field ||
-			nameNode->nod_type == Dsql::nod_map)
+			ExprNode::is<DerivedFieldNode>(nameNode) ||
+			ExprNode::is<DsqlMapNode>(nameNode))
 		{
 			switch (nameNode->nod_type)
 			{
 				case Dsql::nod_alias:
 					if (!aliasName)
-						aliasName = (dsql_str*) nameNode->nod_arg[Dsql::e_alias_alias];
+						aliasName = ((dsql_str*) nameNode->nod_arg[Dsql::e_alias_alias])->str_data;
 					nameNode = nameNode->nod_arg[Dsql::e_alias_value];
 					break;
 
-				case Dsql::nod_derived_field:
-					if (!aliasName)
-						aliasName = (dsql_str*) nameNode->nod_arg[Dsql::e_derived_field_name];
-					nameNode = nameNode->nod_arg[Dsql::e_derived_field_value];
-					break;
-
-				case Dsql::nod_map:
+				case Dsql::nod_class_exprnode:
 				{
-					const dsql_map* map = (dsql_map*) nameNode->nod_arg[Dsql::e_map_map];
-					nameNode = map->map_node;
+					const DsqlMapNode* mapNode;
+					const DerivedFieldNode* derivedField;
+
+					if ((mapNode = ExprNode::as<DsqlMapNode>(nameNode)))
+						nameNode = mapNode->map->map_node;
+					else if ((derivedField = ExprNode::as<DerivedFieldNode>(nameNode)))
+					{
+						if (!aliasName)
+							aliasName = derivedField->name.c_str();
+						nameNode = derivedField->dsqlValue;
+					}
+
 					break;
 				}
 
@@ -7395,7 +7399,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		const TEXT* fieldStr = NULL;
 
 		if (aliasName)
-			fieldStr = aliasName->str_data;
+			fieldStr = aliasName;
 		else if (nameField)
 			fieldStr = nameField->fld_name.c_str();
 

@@ -24,15 +24,24 @@
 #ifndef DSQL_PASS1_PROTO_H
 #define DSQL_PASS1_PROTO_H
 
+namespace Jrd
+{
+	class ValueExprNode;
+}
+
+void PASS1_ambiguity_check(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, const Jrd::DsqlContextStack&);
 void PASS1_check_unique_fields_names(Jrd::StrArray& names, const Jrd::dsql_nod* fields);
 Jrd::dsql_nod* PASS1_compose(Jrd::dsql_nod*, Jrd::dsql_nod*, UCHAR);
 Jrd::dsql_nod* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, USHORT, bool);
+void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label2(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
 Jrd::dsql_ctx* PASS1_make_context(Jrd::DsqlCompilerScratch* statement, const Jrd::dsql_nod* relation_node);
 Jrd::dsql_nod* PASS1_node(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 bool PASS1_node_match(const Jrd::dsql_nod*, const Jrd::dsql_nod*, bool);
 Jrd::dsql_nod* PASS1_node_psql(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, bool);
+Jrd::dsql_nod* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jrd::dsql_ctx*,
+	Jrd::dsql_nod*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_ctx*,
 	Jrd::dsql_nod*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);

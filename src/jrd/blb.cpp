@@ -977,19 +977,22 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* fiel
 	bool simpleMove = true;
 
 	// If the target node is a field, we need more work to do.
+
+	const FieldNode* fieldNode;
+
 	if (field)
 	{
 		switch (field->nod_type)
 		{
-			case nod_field:
-				// We should not materialize the blob if the destination field
-				// stream (nod_union, for example) doesn't have a relation.
-				simpleMove =
-					tdbb->getRequest()->req_rpb[(IPTR)field->nod_arg[e_fld_stream]].rpb_relation == NULL;
-				break;
-
 			case nod_class_exprnode_jrd:
-				if (ExprNode::is<ParameterNode>(field) || ExprNode::is<VariableNode>(field))
+				if ((fieldNode = ExprNode::as<FieldNode>(field)))
+				{
+					// We should not materialize the blob if the destination field
+					// stream (nod_union, for example) doesn't have a relation.
+					simpleMove = tdbb->getRequest()->req_rpb[fieldNode->fieldStream].rpb_relation == NULL;
+					break;
+				}
+				else if (ExprNode::is<ParameterNode>(field) || ExprNode::is<VariableNode>(field))
 					break;
 				// fall into
 
@@ -1048,8 +1051,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const jrd_nod* fiel
 	}
 
 	jrd_req* request = tdbb->getRequest();
-	const USHORT id = (USHORT) (IPTR) field->nod_arg[e_fld_id];
-	record_param* rpb = &request->req_rpb[(IPTR)field->nod_arg[e_fld_stream]];
+	const USHORT id = fieldNode->fieldId;
+	record_param* rpb = &request->req_rpb[fieldNode->fieldStream];
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {

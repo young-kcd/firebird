@@ -184,14 +184,11 @@ static void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 
-static dsql_nod* ambiguity_check(DsqlCompilerScratch*, dsql_nod*, const dsql_str*,
-	const DsqlContextStack&);
 static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
 static dsql_nod* explode_fields(dsql_rel*);
 static dsql_nod* explode_outputs(DsqlCompilerScratch*, const dsql_prc*);
 static void field_appears_once(const dsql_nod*, const dsql_nod*, const bool, const char*);
 static void field_duplication(const TEXT*, const TEXT*, const dsql_nod*, const char*);
-static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
@@ -205,7 +202,6 @@ static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static dsql_ctx* pass1_cursor_context(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
 static dsql_nod* pass1_cursor_reference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_dbkey(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_delete(DsqlCompilerScratch*, dsql_nod*);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, dsql_str*);
@@ -243,7 +239,6 @@ static void set_parameter_name(dsql_nod*, const dsql_nod*, const dsql_rel*);
 static dsql_nod* pass1_savepoint(const DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* process_returning(DsqlCompilerScratch*, dsql_nod*);
 
-const char* const DB_KEY_STRING	= "DB_KEY"; // NTX: pseudo field name
 
 namespace
 {
@@ -360,19 +355,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_map:
-		{
-			if (window)
-				return false;
-
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-			if (lcontext->ctx_scope_level == dsqlScratch->scopeLevel)
-				return true;
-
-			const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-			return visit(&lmap->map_node);
-		}
-
 		case nod_rse:
 			++currentLevel;
 			aggregate |= visit(&node->nod_arg[e_rse_streams]);
@@ -417,16 +399,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 			return false;
 		}
 
-		case nod_derived_field:
-		{
-			// This is a derived table, so don't look further,
-			// but don't forget to check for the deepest scope_level.
-			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-			if (deepestLevel < localScopeLevel)
-				deepestLevel = localScopeLevel;
-			return aggregate;
-		}
-
 		default:
 			return visitChildren(node);
 	}
@@ -456,13 +428,6 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_map:
-		{
-			const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-			found |= visit(&map->map_node);
-			break;
-		}
-
 		case nod_rse:
 		{
 			AutoSetRestore<bool> autoCurrentScopeLevelEqual(&currentScopeLevelEqual, false);
@@ -478,7 +443,7 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 			break;
 
 		case nod_coalesce:
-		case nod_unique:
+		///case nod_unique:
 		{
 			const dsql_nod* const* ptr = node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -487,9 +452,7 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 		}
 
 		case nod_relation:
-		case nod_dbkey:
 		case nod_field:
-		case nod_derived_field:
 			return false;
 
 		default:
@@ -527,13 +490,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 			fb_assert(false);
 			break;
 
-		case nod_map:
-		{
-			const dsql_map* map = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-			found |= visit(&map->map_node);
-			break;
-		}
-
 		case nod_rse:
 			// Pass rse_boolean (where clause) and rse_items (select items)
 			found |= visit(&node->nod_arg[e_rse_boolean]);
@@ -546,7 +502,7 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 			break;
 
 		case nod_coalesce:
-		case nod_unique:
+		///case nod_unique:
 		{
 			const dsql_nod* const* ptr = node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
@@ -555,7 +511,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 		}
 
 		case nod_relation:
-		case nod_dbkey:
 			return false;
 
 		case nod_field:
@@ -585,36 +540,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 				default:
 					fb_assert(false);
 			}
-			break;
-		}
-
-		case nod_derived_field:
-		{
-			// This is a "virtual" field
-			field = true;
-			const USHORT dfScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-
-			switch (matchType)
-			{
-				case FIELD_MATCH_TYPE_EQUAL:
-					return dfScopeLevel == checkScopeLevel;
-
-				case FIELD_MATCH_TYPE_LOWER:
-					return dfScopeLevel < checkScopeLevel;
-
-				case FIELD_MATCH_TYPE_LOWER_EQUAL:
-					return dfScopeLevel <= checkScopeLevel;
-
-				///case FIELD_MATCH_TYPE_HIGHER:
-				///	return dfScopeLevel > checkScopeLevel;
-
-				///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-				///	return dfScopeLevel >= checkScopeLevel;
-
-				default:
-					fb_assert(false);
-			}
-
 			break;
 		}
 
@@ -667,30 +592,6 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_map:
-		{
-			const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-			const dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-
-			// If that map is of the current scopeLevel, we prevent the visiting of the aggregate
-			// expression. This is because a field embedded in an aggregate function is valid even
-			// not being in the group by list. Examples:
-			//   select count(n) from table group by m
-			//   select count(n) from table
-
-			AutoSetRestore<bool> autoInsideOwnMap(&insideOwnMap,
-				lcontext->ctx_scope_level == context->ctx_scope_level);
-
-			// If the context scope is greater than our own, someone should have already inspected
-			// nested aggregates, so set insideHigherMap to true.
-
-			AutoSetRestore<bool> autoInsideHigherMap(&insideHigherMap,
-				lcontext->ctx_scope_level > context->ctx_scope_level);
-
-			invalid |= visit(&lmap->map_node);
-			break;
-		}
-
 		case nod_aggregate:
 			invalid |= visit(&node->nod_arg[e_agg_rse]);
 			break;
@@ -717,36 +618,13 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 			break;
 		}
 
-		case nod_dbkey:
-			if (node->nod_arg[0] && node->nod_arg[0]->nod_type == nod_relation)
-			{
-				const dsql_ctx* localContext =
-					reinterpret_cast<dsql_ctx*>(node->nod_arg[0]->nod_arg[e_rel_context]);
-
-				if (localContext && localContext->ctx_scope_level == context->ctx_scope_level)
-					invalid = true;
-			}
-			break;
-
 		case nod_coalesce:
-		case nod_unique:
+		///case nod_unique:
 		case nod_rse:
 		{
 			const dsql_nod* const* ptr = node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 				invalid |= visit(ptr);
-			break;
-		}
-
-		case nod_derived_field:
-		{
-			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-
-			if (localScopeLevel == context->ctx_scope_level)
-				invalid |= true;
-			else if (context->ctx_scope_level < localScopeLevel)
-				invalid |= visit(&node->nod_arg[e_derived_field_value]);
-
 			break;
 		}
 
@@ -796,46 +674,10 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_derived_field:
-		{
-			// If we got a field from a derived table we should not remap anything
-			// deeper in the alias, but this "virtual" field should be mapped to
-			// the given context (of course only if we're in the same scope-level).
-			const USHORT localScopeLevel = (USHORT)(U_IPTR) node->nod_arg[e_derived_field_scope];
-
-			if (localScopeLevel == context->ctx_scope_level)
-			{
-				replaceNode(PASS1_post_map(dsqlScratch, node, context, partitionNode, orderNode));
-				break;
-			}
-
-			if (context->ctx_scope_level < localScopeLevel)
-				visit(&node->nod_arg[e_derived_field_value]);
-
-			break;
-		}
-
 		case nod_field:
 		{
 			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
 			if (localContext->ctx_scope_level == context->ctx_scope_level)
-				replaceNode(PASS1_post_map(dsqlScratch, node, context, partitionNode, orderNode));
-
-			break;
-		}
-
-		case nod_map:
-		{
-			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_map_context]);
-			if (localContext->ctx_scope_level != context->ctx_scope_level)
-			{
-				dsql_map* lmap = reinterpret_cast<dsql_map*>(node->nod_arg[e_map_map]);
-
-				AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, localContext->ctx_scope_level);
-				visit(&lmap->map_node);
-			}
-
-			if (window && localContext->ctx_scope_level == context->ctx_scope_level)
 				replaceNode(PASS1_post_map(dsqlScratch, node, context, partitionNode, orderNode));
 
 			break;
@@ -878,10 +720,6 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 			break;
 		}
 
-		case nod_dbkey:
-			replaceNode(PASS1_post_map(dsqlScratch, node, context, partitionNode, orderNode));
-			break;
-
 		default:
 			return visitChildren(node);
 	}
@@ -905,7 +743,7 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 	switch (node->nod_type)
 	{
 		case nod_coalesce:
-		case nod_unique:
+		///case nod_unique:
 		{
 			const dsql_nod* const* ptr = node->nod_arg;
 			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
@@ -917,10 +755,7 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 		}
 
 		case nod_aggregate:
-		case nod_map:
 
-		case nod_derived_field:
-		case nod_dbkey:
 		case nod_field:
 		case nod_relation:
 		case nod_field_name:
@@ -1233,9 +1068,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_coalesce:
 		return pass1_coalesce(dsqlScratch, input);
 
-	case nod_derived_field:
-		return input;
-
 	case nod_simple_case:
 		return pass1_simple_case(dsqlScratch, input);
 
@@ -1300,9 +1132,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	case nod_var_name:
 		return pass1_variable(dsqlScratch, input);
-
-	case nod_dbkey:
-		return pass1_dbkey(dsqlScratch, input);
 
 	case nod_relation_name:
 	case nod_rel_proc_name:
@@ -1428,12 +1257,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
 		node->nod_arg[e_named_param_expr] = PASS1_node(dsqlScratch, input->nod_arg[e_named_param_expr]);
-		return node;
-
-	case nod_map:
-		node = MAKE_node(input->nod_type, e_map_count);
-		node->nod_arg[e_map_context] = input->nod_arg[e_map_context];
-		node->nod_arg[e_map_map] = input->nod_arg[e_map_map];
 		return node;
 
 	default:
@@ -2098,36 +1921,21 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 }
 
 
-/**
-
- 	ambiguity
-
-    @brief	Check for ambiguity in a field
-   reference. The list with contexts where the
-   field was found is checked and the necessary
-   message is build from it.
-
-
-    @param dsqlScratch
-    @param node
-    @param name
-    @param ambiguous_contexts
-
- **/
-static dsql_nod* ambiguity_check(DsqlCompilerScratch* dsqlScratch, dsql_nod* node,
+// Check for ambiguity in a field reference. The list with contexts where the field was found is
+// checked and the necessary message is build from it.
+void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
 	const dsql_str* name, const DsqlContextStack& ambiguous_contexts)
 {
 	// If there are no relations or only 1 there's no ambiguity, thus return.
-	if (ambiguous_contexts.getCount() < 2) {
-		return node;
-	}
+	if (ambiguous_contexts.getCount() < 2)
+		return;
 
 	TEXT buffer[1024];
 	USHORT loop = 0;
 
 	buffer[0] = 0;
 	TEXT* b = buffer;
-	TEXT* p = 0;
+	TEXT* p = NULL;
 
 	for (DsqlContextStack::const_iterator stack(ambiguous_contexts); stack.hasData(); ++stack)
 	{
@@ -2180,19 +1988,15 @@ static dsql_nod* ambiguity_check(DsqlCompilerScratch* dsqlScratch, dsql_nod* nod
 
 	if (dsqlScratch->clientDialect >= SQL_DIALECT_V6)
 	{
-		delete node;
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 				  Arg::Gds(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) << Arg::Str(++p) <<
 				  Arg::Gds(isc_random) << Arg::Str(name->str_data));
-		return NULL;
 	}
 
 	ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(204) <<
 					  Arg::Warning(isc_dsql_ambiguous_field_name) << Arg::Str(buffer) <<
 																	 Arg::Str(++p) <<
 					  Arg::Gds(isc_random) << Arg::Str(name->str_data));
-
-	return node;
 }
 
 
@@ -2472,19 +2276,8 @@ static void field_duplication(const TEXT* qualifier_name, const TEXT* field_name
 }
 
 
-/**
-
- 	field_unknown
-
-    @brief	Report a field parsing recognition error.
-
-
-    @param qualifier_name
-    @param field_name
-    @param flawed_node
-
- **/
-static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
+// Report a field parsing recognition error.
+void PASS1_field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 	const dsql_nod* flawed_node)
 {
 	TEXT field_buffer[MAX_SQL_IDENTIFIER_SIZE * 2];
@@ -2690,23 +2483,21 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 		return PASS1_node_match(castNode1->dsqlSource, node2, ignore_map_cast);
 	}
 
-	if (ignore_map_cast && node1->nod_type == nod_map)
+	const DsqlMapNode* mapNode1 = ExprNode::as<DsqlMapNode>(node1);
+
+	if (ignore_map_cast && mapNode1)
 	{
-		const dsql_map* map1 = (dsql_map*)node1->nod_arg[e_map_map];
-		DEV_BLKCHK(map1, dsql_type_map);
+		const DsqlMapNode* mapNode2 = ExprNode::as<DsqlMapNode>(node2);
 
-		if (node2->nod_type == nod_map)
+		if (mapNode2)
 		{
-			const dsql_map* map2 = (dsql_map*)node2->nod_arg[e_map_map];
-			DEV_BLKCHK(map2, dsql_type_map);
-
-			if (node1->nod_arg[e_map_context] != node2->nod_arg[e_map_context])
+			if (mapNode1->context != mapNode2->context)
 				return false;
 
-			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
+			return PASS1_node_match(mapNode1->map->map_node, mapNode2->map->map_node, ignore_map_cast);
 		}
 
-		return PASS1_node_match(map1->map_node, node2, ignore_map_cast);
+		return PASS1_node_match(mapNode1->map->map_node, node2, ignore_map_cast);
 	}
 
 	// We don't care about the alias itself but only about its field.
@@ -2727,32 +2518,32 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	}
 
 	// Handle derived fields.
-	if ((node1->nod_type == nod_derived_field) || (node2->nod_type == nod_derived_field))
+
+	const DerivedFieldNode* derivedField1 = ExprNode::as<DerivedFieldNode>(node1);
+	const DerivedFieldNode* derivedField2 = ExprNode::as<DerivedFieldNode>(node2);
+
+	if (derivedField1 || derivedField2)
 	{
-		if ((node1->nod_type == nod_derived_field) && (node2->nod_type == nod_derived_field))
+		if (derivedField1 && derivedField2)
 		{
-			const USHORT scope_level1 = (USHORT)(U_IPTR)node1->nod_arg[e_derived_field_scope];
-			const USHORT scope_level2 = (USHORT)(U_IPTR)node2->nod_arg[e_derived_field_scope];
-			if (scope_level1 != scope_level2)
+			if (derivedField1->scope != derivedField2->scope ||
+				derivedField1->name != derivedField2->name)
+			{
 				return false;
+			}
 
-			const dsql_str* alias1 = (dsql_str*) node1->nod_arg[e_derived_field_name];
-			const dsql_str* alias2 = (dsql_str*) node2->nod_arg[e_derived_field_name];
-			if (strcmp(alias1->str_data, alias2->str_data))
-				return false;
-
-			return PASS1_node_match(node1->nod_arg[e_derived_field_value],
-							  node2->nod_arg[e_derived_field_value], ignore_map_cast);
+			return PASS1_node_match(derivedField1->dsqlValue, derivedField2->dsqlValue,
+				ignore_map_cast);
 		}
 
-		if (node1->nod_type == nod_derived_field)
-			return PASS1_node_match(node1->nod_arg[e_derived_field_value], node2, ignore_map_cast);
+		if (derivedField1)
+			return PASS1_node_match(derivedField1->dsqlValue, node2, ignore_map_cast);
 
-		if (node2->nod_type == nod_derived_field)
-			return PASS1_node_match(node1, node2->nod_arg[e_derived_field_value], ignore_map_cast);
+		if (derivedField2)
+			return PASS1_node_match(node1, derivedField2->dsqlValue, ignore_map_cast);
 	}
 
-	if ((node1->nod_type != node2->nod_type) || (node1->nod_count != node2->nod_count))
+	if (node1->nod_type != node2->nod_type || node1->nod_count != node2->nod_count)
 		return false;
 
 	// This is to get rid of assertion failures when trying
@@ -2806,15 +2597,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 				node2->nod_arg[e_fld_indices], ignore_map_cast);
 		}
 		return true;
-
-	case nod_map:
-		{
-			const dsql_map* map1 = (dsql_map*)node1->nod_arg[e_map_map];
-			const dsql_map* map2 = (dsql_map*)node2->nod_arg[e_map_map];
-			DEV_BLKCHK(map1, dsql_type_map);
-			DEV_BLKCHK(map2, dsql_type_map);
-			return PASS1_node_match(map1->map_node, map2->map_node, ignore_map_cast);
-		}
 
 	case nod_derived_table:
 		{
@@ -3357,20 +3139,24 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	temp->nod_arg[0] = relation_node;
 
 	ComparativeBoolNode* eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-		blr_eql, MAKE_node(nod_dbkey, 1), MAKE_node(nod_class_exprnode, 1));
+		blr_eql, MAKE_node(nod_class_exprnode, 1), MAKE_node(nod_class_exprnode, 1));
 
 	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
 	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
 
 	rse->nod_arg[e_rse_boolean] = node;
-	eqlNode->dsqlArg1->nod_arg[0] = relation_node;
 
-	eqlNode->dsqlArg2->nod_count = 0;
+	RecordKeyNode* dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_dbkey);
+	dbKeyNode->dsqlRelation = relation_node;
+	eqlNode->dsqlArg1->nod_count = 0;
+	eqlNode->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(dbKeyNode);
+
 	dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 		false, false, 0, NULL);
 	dsqlScratch->getStatement()->setDbKey(parameter);
 
 	ParameterNode* paramNode = FB_NEW(pool) ParameterNode(pool);
+	eqlNode->dsqlArg2->nod_count = 0;
 	eqlNode->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
 	paramNode->dsqlParameterIndex = parameter->par_index;
 	paramNode->dsqlParameter = parameter;
@@ -3381,18 +3167,22 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	if (rv_source)
 	{
 		eqlNode = FB_NEW(pool) ComparativeBoolNode(pool,
-			blr_eql, MAKE_node(nod_rec_version, 1), MAKE_node(nod_class_exprnode, 1));
+			blr_eql, MAKE_node(nod_class_exprnode, 1), MAKE_node(nod_class_exprnode, 1));
 
 		node = MAKE_node(nod_class_exprnode, 1);
 		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
 
-		eqlNode->dsqlArg1->nod_arg[0] = relation_node;
-		eqlNode->dsqlArg2->nod_count = 0;
+		dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_record_version);
+		dbKeyNode->dsqlRelation = relation_node;
+		eqlNode->dsqlArg1->nod_count = 0;
+		eqlNode->dsqlArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(dbKeyNode);
+
 		parameter = MAKE_parameter(dsqlScratch->getStatement()->getSendMsg(),
 			false, false, 0, NULL);
 		dsqlScratch->getStatement()->setRecVersion(parameter);
 
 		paramNode = FB_NEW(pool) ParameterNode(pool);
+		eqlNode->dsqlArg2->nod_count = 0;
 		eqlNode->dsqlArg2->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
 		paramNode->dsqlParameterIndex = parameter->par_index;
 		paramNode->dsqlParameter = parameter;
@@ -3403,124 +3193,6 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	}
 
 	return rse;
-}
-
-
-/**
-
- 	pass1_dbkey
-
-    @brief	Resolve a dbkey to an available context.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_dbkey( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	const dsql_str* qualifier = (dsql_str*) input->nod_arg[0];
-	if (!qualifier)
-	{
-		DEV_BLKCHK(qualifier, dsql_type_str);
-
-		DsqlContextStack contexts;
-
-		for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
-		{
-			dsql_ctx* context = stack.object();
-			if (context->ctx_scope_level != dsqlScratch->scopeLevel)
-				continue;
-
-			if (context->ctx_relation)
-				contexts.push(context);
-		}
-
-		if (contexts.hasData())
-		{
-			dsql_ctx* context = contexts.object();
-
-			if (!context->ctx_relation)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_dbkey_from_non_table));
-			}
-
-			if (context->ctx_flags & CTX_null)
-			{
-				dsql_nod* temp = MAKE_node(nod_class_exprnode, 1);
-				temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-					FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-
-				return temp;
-			}
-
-			dsql_nod* node = MAKE_node(nod_dbkey, 1);
-			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-			rel_node->nod_arg[0] = (dsql_nod*) context;
-			node->nod_arg[0] = rel_node;
-
-			return ambiguity_check(dsqlScratch, node, MAKE_cstring("RDB$DB_KEY"), contexts);
-		}
-	}
-	else
-	{
-		const bool cfgRlxAlias = Config::getRelaxedAliasChecking();
-		bool rlxAlias = false;
-		for (;;)
-		{
-			for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
-			{
-				dsql_ctx* context = stack.object();
-
-				if ((!context->ctx_relation ||
-						context->ctx_relation->rel_name != qualifier->str_data ||
-						!rlxAlias && context->ctx_internal_alias) &&
-					(!context->ctx_internal_alias ||
-						strcmp(qualifier->str_data, context->ctx_internal_alias) != 0))
-				{
-					continue;
-				}
-
-				if (!context->ctx_relation)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-							  Arg::Gds(isc_dsql_dbkey_from_non_table));
-				}
-
-				if (context->ctx_flags & CTX_null)
-				{
-					dsql_nod* temp = MAKE_node(nod_class_exprnode, 1);
-					temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-						FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-
-					return temp;
-				}
-
-				dsql_nod* node = MAKE_node(nod_dbkey, 1);
-				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-				rel_node->nod_arg[0] = (dsql_nod*) context;
-				node->nod_arg[0] = rel_node;
-				return node;
-			}
-
-			if (rlxAlias == cfgRlxAlias)
-				break;
-
-			rlxAlias = cfgRlxAlias;
-		}
-	}
-
-	// field unresolved
-
-	field_unknown(qualifier ? qualifier->str_data : 0, DB_KEY_STRING, input);
-
-	return NULL;
 }
 
 
@@ -3665,6 +3337,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	dsql_nod* node = MAKE_node (nod_derived_table, e_derived_table_count);
 	dsql_str* alias = (dsql_str*) input->nod_arg[e_derived_table_alias];
@@ -3859,16 +3532,17 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		for (int count = 0; count < list->nod_count; count++)
 		{
 			dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
-			// Make new derived field node
-			dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-			derived_field->nod_arg[e_derived_field_value] = select_item;
-			derived_field->nod_arg[e_derived_field_name] = list->nod_arg[count];
-			derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
-
 			MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
-			derived_field->nod_desc = select_item->nod_desc;
 
-			rse->nod_arg[e_rse_items]->nod_arg[count] = derived_field;
+			// Make new derived field node.
+
+			DerivedFieldNode* derivedField = FB_NEW(pool) DerivedFieldNode(pool,
+				((dsql_str*) list->nod_arg[count])->str_data, dsqlScratch->scopeLevel, select_item);
+
+			dsql_nod* nod = rse->nod_arg[e_rse_items]->nod_arg[count] =
+				MAKE_node(nod_class_exprnode, 1);
+			nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(derivedField);
+			nod->nod_desc = select_item->nod_desc;
 		}
 	}
 	else
@@ -3877,32 +3551,28 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		// to generate one from the field_name.
 		for (int count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++)
 		{
-			dsql_nod* select_item =
-				pass1_make_derived_field(dsqlScratch, tdbb, rse->nod_arg[e_rse_items]->nod_arg[count]);
+			dsql_nod* select_item = pass1_make_derived_field(dsqlScratch, tdbb,
+				rse->nod_arg[e_rse_items]->nod_arg[count]);
 
 			// Auto-create dummy column name for pass1_any()
-			if (ignoreColumnChecks && (select_item->nod_type != nod_derived_field))
+			if (ignoreColumnChecks && !ExprNode::is<DerivedFieldNode>(select_item))
 			{
-				// Make new derived field node
-				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-				derived_field->nod_arg[e_derived_field_value] = select_item;
+				MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
 
 				// Construct dummy fieldname
 				char fieldname[25];
-				sprintf (fieldname, "f%d", count);
-				dsql_str* field_alias =
-					FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(fieldname)) dsql_str;
-				strcpy(field_alias->str_data, fieldname);
-				field_alias->str_length = strlen(fieldname);
+				sprintf(fieldname, "f%d", count);
 
-				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) field_alias;
-				derived_field->nod_arg[e_derived_field_scope] =
-					(dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
+				// Make new derived field node.
 
-				MAKE_desc(dsqlScratch, &select_item->nod_desc, select_item);
-				derived_field->nod_desc = select_item->nod_desc;
+				DerivedFieldNode* derivedField = FB_NEW(pool) DerivedFieldNode(pool,
+					fieldname, dsqlScratch->scopeLevel, select_item);
 
-				select_item = derived_field;
+				dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+				nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(derivedField);
+				nod->nod_desc = select_item->nod_desc;
+
+				select_item = nod;
 			}
 
 			rse->nod_arg[e_rse_items]->nod_arg[count] = select_item;
@@ -3914,11 +3584,10 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++)
 	{
 		dsql_nod* select_item = rse->nod_arg[e_rse_items]->nod_arg[count];
+		DerivedFieldNode* derivedField;
 
-		if (select_item->nod_type == nod_derived_field)
-		{
-			select_item->nod_arg[e_derived_field_context] = reinterpret_cast<dsql_nod*>(context);
-		}
+		if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
+			derivedField->context = context;
 		else
 		{
 			// no column name specified for column number %d in derived table %s
@@ -3931,21 +3600,23 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 	}
 
 	// Check for ambiguous column names inside this derived table.
-	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++)
+	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; ++count)
 	{
-		const dsql_nod* select_item1 = rse->nod_arg[e_rse_items]->nod_arg[count];
-		for (int count2 = (count + 1); count2 < rse->nod_arg[e_rse_items]->nod_count; count2++)
+		const DerivedFieldNode* selectItem1 =
+			ExprNode::as<DerivedFieldNode>(rse->nod_arg[e_rse_items]->nod_arg[count]);
+
+		for (int count2 = (count + 1); count2 < rse->nod_arg[e_rse_items]->nod_count; ++count2)
 		{
-			const dsql_nod* select_item2 = rse->nod_arg[e_rse_items]->nod_arg[count2];
-			const dsql_str* name1 = (dsql_str*) select_item1->nod_arg[e_derived_field_name];
-			const dsql_str* name2 = (dsql_str*) select_item2->nod_arg[e_derived_field_name];
-			if (!strcmp(name1->str_data, name2->str_data))
+			const DerivedFieldNode* selectItem2 =
+				ExprNode::as<DerivedFieldNode>(rse->nod_arg[e_rse_items]->nod_arg[count2]);
+
+			if (selectItem1->name == selectItem2->name)
 			{
 				// column %s was specified multiple times for derived table %s
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_dsql_derived_field_dup_name) << Arg::Str(name1->str_data) <<
-																	   Arg::Str(aliasname));
+						  Arg::Gds(isc_dsql_derived_field_dup_name) << selectItem1->name <<
+								aliasname);
 			}
 		}
 	}
@@ -3991,10 +3662,12 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		// secondary context number to it
 		dsql_nod* items = rse->nod_arg[e_rse_items];
 		dsql_nod* map_item = items->nod_arg[0];
-		if (map_item->nod_type == nod_derived_field) {
-			map_item = map_item->nod_arg[e_derived_field_value];
-		}
-		dsql_ctx* map_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
+		DerivedFieldNode* derivedField;
+
+		if ((derivedField = ExprNode::as<DerivedFieldNode>(map_item)))
+			map_item = derivedField->dsqlValue;
+
+		dsql_ctx* map_context = ExprNode::as<DsqlMapNode>(map_item)->context;
 
 		map_context->ctx_flags |= CTX_recursive;
 		map_context->ctx_recursive = recursive_map_ctx;
@@ -4068,8 +3741,12 @@ static void pass1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		{
 			// Create a new alias else mappings would be mangled.
 			dsql_nod* select_item = *ptr;
+
 			// select-item should always be a derived field!
-			if (select_item->nod_type != nod_derived_field)
+
+			DerivedFieldNode* derivedField;
+
+			if (!(derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 			{
 				// Internal dsql error: alias type expected by pass1_expand_select_node
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -4077,15 +3754,11 @@ static void pass1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 						  Arg::Gds(isc_dsql_derived_alias_select));
 			}
 
-			dsql_ctx* context = (dsql_ctx*) select_item->nod_arg[e_derived_field_context];
+			dsql_ctx* context = derivedField->context;
 			DEV_BLKCHK(context, dsql_type_ctx);
 
-			if (!hide_using ||
-				context->getImplicitJoinField(reinterpret_cast<dsql_str*>(
-					select_item->nod_arg[e_derived_field_name])->str_data, select_item))
-			{
+			if (!hide_using || context->getImplicitJoinField(derivedField->name, select_item))
 				stack.push(select_item);
-			}
 		}
 	}
 	else if (node->nod_type == nod_relation)
@@ -4200,7 +3873,7 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
     /* CVC: PLEASE READ THIS EXPLANATION IF YOU NEED TO CHANGE THIS CODE.
        You should ensure that this function:
        1.- Never returns NULL. In such case, it such fall back to an invocation
-       to field_unknown() near the end of this function. None of the multiple callers
+       to PASS1_field_unknown() near the end of this function. None of the multiple callers
        of this function (inside this same module) expect a null pointer, hence they
        will crash the engine in such case.
        2.- Doesn't allocate more than one field in "node". Either you put a break,
@@ -4246,7 +3919,6 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			return node;
 		}
 	}
-
 
 	// Try to resolve field against various contexts;
 	// if there is an alias, check only against the first matching
@@ -4415,16 +4087,15 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 					// through the list and return the correct node when found.
 					const dsql_nod* rse_items = context->ctx_rse->nod_arg[e_rse_items];
 					dsql_nod* const* ptr = rse_items->nod_arg;
-					for (const dsql_nod* const* const end = ptr + rse_items->nod_count;
-						ptr < end; ptr++)
-					{
-						dsql_nod* node_select_item = *ptr;
-						// select-item should always be a alias!
-						if (node_select_item->nod_type == nod_derived_field)
-						{
-							const dsql_str* string =
-								(dsql_str*) node_select_item->nod_arg[e_derived_field_name];
 
+					for (const dsql_nod* const* const end = ptr + rse_items->nod_count;
+						 ptr < end; ptr++)
+					{
+						DerivedFieldNode* selectItem = ExprNode::as<DerivedFieldNode>(*ptr);
+
+						// select-item should always be a alias!
+						if (selectItem)
+						{
 							dsql_nod* using_field = NULL;
 
 							if (!qualifier)
@@ -4433,18 +4104,17 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 									break;
 							}
 
-							if (!strcmp(name->str_data, string->str_data) || using_field)
+							if (!strcmp(name->str_data, selectItem->name.c_str()) || using_field)
 							{
 
 								// This is a matching item so add the context to the ambiguous list.
 								ambiguous_ctx_stack.push(context);
 
 								// Stop here if this is our second or more iteration.
-								if (node) {
+								if (node)
 									break;
-								}
 
-								node = using_field ? using_field : node_select_item;
+								node = using_field ? using_field : *ptr;
 								break;
 							}
 						}
@@ -4483,9 +4153,8 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	// call this function pass1_field() don't expect a NULL pointer, hence will crash.
 	// Don't check ambiguity if we don't have a field.
 
-	if (node && name) {
-		node = ambiguity_check(dsqlScratch, node, name, ambiguous_ctx_stack);
-	}
+	if (node && name)
+		PASS1_ambiguity_check(dsqlScratch, name, ambiguous_ctx_stack);
 
 	// Clean up stack
 	ambiguous_ctx_stack.clear();
@@ -4495,9 +4164,9 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		return node;
 	}
 
-	field_unknown(qualifier ? qualifier->str_data : NULL, name ? name->str_data : NULL, input);
+	PASS1_field_unknown((qualifier ? qualifier->str_data : NULL), (name ? name->str_data : NULL), input);
 
-	// CVC: field_unknown() calls ERRD_post() that never returns, so the next line
+	// CVC: PASS1_field_unknown() calls ERRD_post() that never returns, so the next line
 	// is only to make the compiler happy.
 	return NULL;
 }
@@ -4575,7 +4244,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	// For some node types, it's better to not create temporary value.
 	switch (expr->nod_type)
 	{
-		case nod_dbkey:
 		case nod_field:
 			return NULL;
 
@@ -4591,6 +4259,7 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 				case ExprNode::TYPE_LITERAL:
 				case ExprNode::TYPE_NULL:
 				case ExprNode::TYPE_PARAMETER:
+				case ExprNode::TYPE_RECORD_KEY:
 				case ExprNode::TYPE_VARIABLE:
 					return NULL;
 			}
@@ -4679,6 +4348,7 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 
 			const dsql_ctx* tmp_ctx = NULL;
 			const TEXT* tmp_name = NULL;
+			const DerivedFieldNode* derivedField;
 
 			if (temp2->nod_type == nod_field)
 			{
@@ -4686,11 +4356,10 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 				tmp_name = (temp2->nod_arg[e_fld_field] ?
 					((dsql_fld*) temp2->nod_arg[e_fld_field])->fld_name.c_str() : NULL);
 			}
-			else if (temp2->nod_type == nod_derived_field)
+			else if ((derivedField = ExprNode::as<DerivedFieldNode>(temp2)))
 			{
-				tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_derived_field_context];
-				tmp_name = (temp2->nod_arg[e_derived_field_name] ?
-					((dsql_str*) temp2->nod_arg[e_derived_field_name])->str_data : NULL);
+				tmp_ctx = derivedField->context;
+				tmp_name = derivedField->name.nullStr();
 			}
 
 			if (tmp_ctx &&
@@ -4702,8 +4371,8 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 				// the same variable, so we refer again to input->nod_arg[e_ins_fields].
 				// CVC: After three years, made old_fields for that purpose.
 
-				field_unknown(bad_rel ? bad_rel->rel_name.c_str() : NULL,
-								tmp_name, old_fields->nod_arg[ptr - fields->nod_arg]);
+				PASS1_field_unknown((bad_rel ? bad_rel->rel_name.c_str() : NULL),
+					tmp_name, old_fields->nod_arg[ptr - fields->nod_arg]);
 			}
 		}
 		// end IBO hack
@@ -4873,6 +4542,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				{
 					const TEXT* name = NULL;
 					dsql_nod* item = j.object();
+					DerivedFieldNode* derivedField;
 
 					switch (item->nod_type)
 					{
@@ -4884,11 +4554,9 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 							name = reinterpret_cast<dsql_fld*>(item->nod_arg[e_fld_field])->fld_name.c_str();
 							break;
 
-						case nod_derived_field:
-							name = reinterpret_cast<dsql_str*>(item->nod_arg[e_derived_field_name])->str_data;
-							break;
-
 						default:
+							if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
+								name = derivedField->name.c_str();
 							break;
 					}
 
@@ -4899,9 +4567,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 						else	// right
 						{
 							if (leftNames.exist(name))
-							{
 								matched.push(MAKE_field_name(name));
-							}
 						}
 					}
 				}
@@ -5198,6 +4864,8 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 	{
 		dsql_nod* matchingNode = NULL;
 		dsql_nod* node = *ptr;
+		DerivedFieldNode* derivedField;
+
 		switch (node->nod_type)
 		{
 			case nod_alias:
@@ -5217,18 +4885,15 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 				}
 				break;
 
-			case nod_derived_field:
+			default:
+				if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
 				{
-					const dsql_str* alias = (dsql_str*) node->nod_arg[e_derived_field_name];
-					if (!strcmp(alias->str_data, name->str_data)) {
+					if (strcmp(derivedField->name.c_str(), name->str_data) == 0)
 						matchingNode = node;
-					}
 				}
 				break;
-
-			default:
-				break;
 		}
+
 		if (matchingNode)
 		{
 			if (process)
@@ -5249,17 +4914,17 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 						strcat(buffer1, "an alias");
 						break;
 
-					case nod_derived_field:
-						strcat(buffer1, "a derived field");
-						break;
-
 					default:
-						strcat(buffer1, "an item");
+						if ((derivedField = ExprNode::as<DerivedFieldNode>(returnNode)))
+							strcat(buffer1, "a derived field");
+						else
+							strcat(buffer1, "an item");
 						break;
 				}
 
 				TEXT buffer2[256];
 				buffer2[0] = 0;
+
 				switch (matchingNode->nod_type)
 				{
 					case nod_field:
@@ -5270,14 +4935,14 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 						strcat(buffer2, "an alias");
 						break;
 
-					case nod_derived_field:
-						strcat(buffer2, "a derived field");
-						break;
-
 					default:
-						strcat(buffer2, "an item");
+						if ((derivedField = ExprNode::as<DerivedFieldNode>(matchingNode)))
+							strcat(buffer1, "a derived field");
+						else
+							strcat(buffer1, "an item");
 						break;
 				}
+
 				strcat(buffer2, " in the select list with name");
 
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
@@ -5285,6 +4950,7 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 																	 Arg::Str(buffer2) <<
 						  Arg::Gds(isc_random) << Arg::Str(name->str_data));
 			}
+
 			returnNode = matchingNode;
 		}
 	}
@@ -5309,77 +4975,48 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 {
 	DEV_BLKCHK(select_item, dsql_type_nod);
 
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	switch (select_item->nod_type)
 	{
-		case nod_derived_field:
-			{
-				// Create a derived field that points to a derived field
-				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-				derived_field->nod_arg[e_derived_field_value] = select_item;
-				derived_field->nod_arg[e_derived_field_name] = select_item->nod_arg[e_derived_field_name];
-				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
-				derived_field->nod_desc = select_item->nod_desc;
-				return derived_field;
-			}
-
 		case nod_field:
 			{
 				const dsql_fld* field = (dsql_fld*) select_item->nod_arg[e_fld_field];
 				DEV_BLKCHK(field, dsql_type_fld);
 
-				// Copy fieldname to a new string.
-				dsql_str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), field->fld_name.length()) dsql_str;
-				strcpy(alias->str_data, field->fld_name.c_str());
-				alias->str_length = field->fld_name.length();
-
 				// Create a derived field and hook in.
-				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-				derived_field->nod_arg[e_derived_field_value] = select_item;
-				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
-				derived_field->nod_desc = select_item->nod_desc;
-				return derived_field;
+
+				DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool, field->fld_name,
+					dsqlScratch->scopeLevel, select_item);
+
+				dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+				nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+				nod->nod_desc = select_item->nod_desc;
+
+				return nod;
 			}
 
 		case nod_alias:
 			{
-				// Copy aliasname to a new string.
 				const dsql_str* alias_alias = (dsql_str*) select_item->nod_arg[e_alias_alias];
-				dsql_str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(alias_alias->str_data)) dsql_str;
-				strcpy(alias->str_data, alias_alias->str_data);
-				alias->str_length = strlen(alias_alias->str_data);
 
 				// Create a derived field and ignore alias node.
-				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
-				derived_field->nod_arg[e_derived_field_value] = select_item->nod_arg[e_alias_value];
-				derived_field->nod_arg[e_derived_field_name] = (dsql_nod*) alias;
-				derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
-				derived_field->nod_desc = select_item->nod_desc;
-				return derived_field;
-			}
 
-		case nod_map:
-			{
-				// Aggregate's have map on top.
-				dsql_map* map = (dsql_map*) select_item->nod_arg[e_map_map];
-				dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb, map->map_node);
+				DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+					alias_alias->str_data, dsqlScratch->scopeLevel, select_item->nod_arg[e_alias_value]);
 
-				// If we had succesfully made a derived field node change it
-				// with orginal map.
-				if (derived_field->nod_type == nod_derived_field)
-				{
-					derived_field->nod_arg[e_derived_field_value] = select_item;
-					derived_field->nod_arg[e_derived_field_scope] = (dsql_nod*)(IPTR) dsqlScratch->scopeLevel;
-					derived_field->nod_desc = select_item->nod_desc;
-					return derived_field;
-				}
+				dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+				nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+				nod->nod_desc = select_item->nod_desc;
 
-				return select_item;
+				return nod;
 			}
 
 		case nod_class_exprnode:
 			{
 				SubQueryNode* subQueryNode;
+				DsqlMapNode* mapNode;
+				DerivedFieldNode* derivedField;
 
 				if ((subQueryNode = ExprNode::as<SubQueryNode>(select_item)))
 				{
@@ -5387,11 +5024,38 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 					dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb,
 						subQueryNode->dsqlValue1);
 
-					if (derived_field->nod_type == nod_derived_field)
+					if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
 					{
-						derived_field->nod_arg[e_derived_field_value] = select_item;
+						derivedField->dsqlValue = select_item;
 						return derived_field;
 					}
+				}
+				else if ((mapNode = ExprNode::as<DsqlMapNode>(select_item)))
+				{
+					// Aggregate's have map on top.
+					dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb, mapNode->map->map_node);
+
+					// If we had succesfully made a derived field node change it with orginal map.
+					if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
+					{
+						derivedField->dsqlValue = select_item;
+						derivedField->scope = dsqlScratch->scopeLevel;
+						derived_field->nod_desc = select_item->nod_desc;
+						return derived_field;
+					}
+				}
+				else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
+				{
+					// Create a derived field that points to a derived field.
+
+					DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+						derivedField->name, dsqlScratch->scopeLevel, select_item);
+
+					dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+					nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+					nod->nod_desc = select_item->nod_desc;
+
+					return nod;
 				}
 
 				break;
@@ -5499,15 +5163,16 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	{
 		dsql_nod*& whereNode = query_spec->nod_arg[e_qry_where];
 
-		dsql_nod* targetName = target->nod_arg[e_rln_alias];
+		dsql_str* targetName = (dsql_str*) target->nod_arg[e_rln_alias];
 		if (!targetName)
-			targetName = target->nod_arg[e_rln_name];
+			targetName = (dsql_str*) target->nod_arg[e_rln_name];
 
 		if (whenNode)	// WHEN MATCHED
 		{
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
-				pool, MAKE_node(nod_dbkey, 1));
-			missingNode->dsqlArg->nod_arg[0] = targetName;
+				pool, MAKE_node(nod_class_exprnode, 1));
+			missingNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName->str_data));
 
 			NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(
 				pool, MAKE_node(nod_class_exprnode, 1));
@@ -5525,8 +5190,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])	// WHEN NOT MATCHED
 		{
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
-				pool, MAKE_node(nod_dbkey, 1));
-			missingNode->dsqlArg->nod_arg[0] = targetName;
+				pool, MAKE_node(nod_class_exprnode, 1));
+			missingNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName->str_data));
 
 			temp = MAKE_node(nod_class_exprnode, 1);
 			temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
@@ -5721,9 +5387,12 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		dsqlScratch->scopeLevel--;
 	}
 
-	MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(pool,
-		MAKE_node(nod_dbkey, 1));
-	missingNode->dsqlArg->nod_arg[0] = target;
+	MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
+		pool, MAKE_node(nod_class_exprnode, 1));
+
+	RecordKeyNode* dbKeyNode = FB_NEW(pool) RecordKeyNode(pool, blr_dbkey);
+	dbKeyNode->dsqlRelation = target;
+	missingNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(dbKeyNode);
 
 	// build a IF (target.RDB$DB_KEY IS NULL)
 	IfNode* action = FB_NEW(pool) IfNode(pool);
@@ -7208,18 +6877,18 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		dsql_nod** ptr = union_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + union_items->nod_count; ptr < end; ptr++)
 		{
-		    dsql_nod* map_node = MAKE_node(nod_map, e_map_count);
-			*ptr = map_node;
-			map_node->nod_arg[e_map_context] = (dsql_nod*) union_context;
-			dsql_map* map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
-			map_node->nod_arg[e_map_map] = (dsql_nod*) map;
-
-			// set up the dsql_map* between the sub-rses and the union context.
+			// Set up the dsql_map* between the sub-rses and the union context.
+			dsql_map* map = union_context->ctx_map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 			map->map_position = count++;
 			map->map_node = *uptr++;
 			map->map_next = union_context->ctx_map;
 			map->map_partition = NULL;
-			union_context->ctx_map = map;
+
+			DsqlMapNode* mapNode = FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(),
+				union_context, map);
+
+		    *ptr = MAKE_node(nod_class_exprnode, 1);
+		    (*ptr)->nod_arg[0] = reinterpret_cast<dsql_nod*>(mapNode);
 		}
 		union_rse->nod_arg[e_rse_items] = union_items;
 	} // end scope block
@@ -7366,6 +7035,7 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						// our finally descriptor CAST it.
 						dsql_nod* cast_node = NULL;
 						dsql_nod* alias_node = NULL;
+						DerivedFieldNode* derivedField;
 
 						// Pick a existing cast if available else make a new one.
 						if (select_item->nod_type == nod_alias &&
@@ -7374,11 +7044,10 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						{
 							cast_node = select_item->nod_arg[e_alias_value];
 						}
-						else if (select_item->nod_type == nod_derived_field &&
-							select_item->nod_arg[e_derived_field_value] &&
-							ExprNode::is<CastNode>(select_item->nod_arg[e_derived_field_value]))
+						else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)) &&
+							ExprNode::is<CastNode>(derivedField->dsqlValue))
 						{
-							cast_node = select_item->nod_arg[e_derived_field_value];
+							cast_node = derivedField->dsqlValue;
 						}
 						else if (ExprNode::is<CastNode>(select_item))
 							cast_node = select_item;
@@ -7400,20 +7069,20 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 							// columnname.
 							if (select_item->nod_type == nod_alias)
 								castNode->dsqlSource = select_item->nod_arg[e_alias_value];
-							else if (select_item->nod_type == nod_derived_field)
-								castNode->dsqlSource = select_item->nod_arg[e_derived_field_value];
+							else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
+								castNode->dsqlSource = derivedField->dsqlValue;
 							else
 								castNode->dsqlSource = select_item;
 
 							// When a cast is created we're losing our fieldname, thus
 							// create an alias to keep it.
 							const dsql_nod* name_node = select_item;
+							const DsqlMapNode* mapNode;
 
-							while (name_node->nod_type == nod_map)
+							while ((mapNode = ExprNode::as<DsqlMapNode>(name_node)))
 							{
-								// skip all the nod_map nodes
-								const dsql_map* map = (dsql_map*) name_node->nod_arg[e_map_map];
-								name_node = map->map_node;
+								// Skip all the DsqlMapNodes.
+								name_node = mapNode->map->map_node;
 							}
 
 							if (name_node->nod_type == nod_field)
@@ -7463,9 +7132,9 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 							select_item->nod_arg[e_alias_value] = cast_node;
 							select_item->nod_desc = desc;
 						}
-						else if (select_item->nod_type == nod_derived_field)
+						else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 						{
-							select_item->nod_arg[e_derived_field_value] = cast_node;
+							derivedField->dsqlValue = cast_node;
 							select_item->nod_desc = desc;
 						}
 						else
@@ -7504,7 +7173,7 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 					// Only replace the node where the map points to, because they could be changed.
 					dsql_nod* union_items = input->nod_arg[e_rse_items];
 					dsql_nod* sub_rse_items = streams->nod_arg[0]->nod_arg[e_rse_items];
-					dsql_map* map = (dsql_map*) union_items->nod_arg[position]->nod_arg[e_map_map];
+					dsql_map* map = ExprNode::as<DsqlMapNode>(union_items->nod_arg[position])->map;
 					map->map_node = sub_rse_items->nod_arg[position];
 					union_items->nod_arg[position]->nod_desc = desc;
 				}
@@ -8003,7 +7672,7 @@ static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* inpu
 			if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER) // triggers only
 				return pass1_field(dsqlScratch, input, false, NULL);
 
-			field_unknown(0, 0, input);
+			PASS1_field_unknown(NULL, NULL, input);
 		}
 
 		var_name = (dsql_str*) input->nod_arg[e_fln_name];
@@ -8026,25 +7695,24 @@ static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* inpu
 	// CVC: That's all [the fix], folks!
 
 	if (var_name)
-		field_unknown(0, var_name->str_data, input);
+		PASS1_field_unknown(NULL, var_name->str_data, input);
 	else
-		field_unknown(0, 0, input);
+		PASS1_field_unknown(NULL, NULL, input);
 
 	return NULL;
 }
 
 
-/**
+// Post an item to a map for a context.
+dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, ValueExprNode* node, dsql_ctx* context,
+	dsql_nod* partitionNode, dsql_nod* orderNode)
+{
+    dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+    nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
+    return PASS1_post_map(dsqlScratch, nod, context, partitionNode, orderNode);
+}
 
-	PASS1_post_map
-
-    @brief	Post an item to a map for a context.
-
-
-    @param node
-    @param context
-
- **/
+// Post an item to a map for a context.
 dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_ctx* context,
 	dsql_nod* partitionNode, dsql_nod* orderNode)
 {
@@ -8093,10 +7761,11 @@ dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_
 
 	MAKE_desc(dsqlScratch, &node->nod_desc, node);
 
-	dsql_nod* new_node = MAKE_node(nod_map, e_map_count);
-	new_node->nod_count = 0;
-	new_node->nod_arg[e_map_context] = (dsql_nod*) context;
-	new_node->nod_arg[e_map_map] = (dsql_nod*) map;
+	DsqlMapNode* mapNode = FB_NEW(*tdbb->getDefaultPool()) DsqlMapNode(*tdbb->getDefaultPool(),
+		context, map);
+
+    dsql_nod* new_node = MAKE_node(nod_class_exprnode, 1);
+    new_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(mapNode);
 	new_node->nod_desc = node->nod_desc;
 
 	return new_node;
@@ -8290,16 +7959,21 @@ static dsql_nod* resolve_using_field(DsqlCompilerScratch* dsqlScratch, dsql_str*
 
 	if (!node)
 	{
-		Firebird::string qualifier;
+		string qualifier;
 		qualifier.printf("<%s side of USING>", side);
-		field_unknown(qualifier.c_str(), name->str_data, flawedNode);
+		PASS1_field_unknown(qualifier.c_str(), name->str_data, flawedNode);
+	}
+
+	DerivedFieldNode* derivedField;
+
+	if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
+	{
+		ctx = derivedField->context;
+		return node;
 	}
 
 	switch (node->nod_type)
 	{
-	case nod_derived_field:
-		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_derived_field_context]);
-		break;
 	case nod_field:
 		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fln_context]);
 		break;
@@ -8666,12 +8340,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_cursor:
 		verb = "cursor";
-		break;
-	case nod_dbkey:
-		verb = "dbkey";
-		break;
-	case nod_rec_version:
-		verb = "record_version";
 		break;
 	case nod_def_database:
 		verb = "define database";
@@ -9084,14 +8752,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			(int)(IPTR)node->nod_arg[e_label_number]);
 		return;
 
-	case nod_derived_field:
-		verb = "derived_field";
-		trace_line("%s%s\n", buffer, verb.c_str());
-		DSQL_pretty(node->nod_arg[e_derived_field_value], column + 1);
-		DSQL_pretty(node->nod_arg[e_derived_field_name], column + 1);
-		trace_line("%s   scope %d\n", buffer, (USHORT)(U_IPTR)node->nod_arg[e_derived_field_scope]);
-		return;
-
 	case nod_aggregate:
 		{
 			verb = "aggregate";
@@ -9153,20 +8813,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 			trace_line("%s\"\n", "*");
 		}
 		return;
-
-	case nod_map:
-		{
-			verb = "map";
-			trace_line("%s%s\n", buffer, verb.c_str());
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
-			trace_line("%s   context %d\n", buffer, context->ctx_context);
-			for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map; map = map->map_next)
-			{
-				trace_line("%s   position %d\n", buffer, map->map_position);
-				DSQL_pretty(map->map_node, column + 1);
-			}
-			return;
-		}
 
 	case nod_relation:
 		{

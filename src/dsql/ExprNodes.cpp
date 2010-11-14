@@ -24,6 +24,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../common/classes/VaryStr.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/BoolNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
@@ -39,6 +40,7 @@
 #include "../jrd/dpm_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -3610,19 +3612,19 @@ ExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
 	{
 		CMP_mark_variant(csb, *i);
-		CMP_expand_view_nodes(tdbb, csb, *i, stack, nod_dbkey, true);
+		CMP_expand_view_nodes(tdbb, csb, *i, stack, blr_dbkey, true);
 	}
 
 	streamList.clear();
 
 #ifdef CMP_DEBUG
 	for (NodeStack::iterator i(stack); i.hasData(); ++i)
-		csb->dump(" %d", (USHORT)(IPTR) i.object()->nod_arg[0]);
+		csb->dump(" %d", ExprNode::as<RecordKeyNode>(i.object())->recStream);
 	csb->dump("\n");
 #endif
 
 	for (NodeStack::iterator i(stack); i.hasData(); ++i)
-		streamList.add((USHORT)(IPTR) i.object()->nod_arg[0]);
+		streamList.add(ExprNode::as<RecordKeyNode>(i.object())->recStream);
 
 	return ExprNode::pass1(tdbb, csb);
 }
@@ -4044,6 +4046,577 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	*(USHORT*) impure->vlu_desc.dsc_address = part;
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
+static RegisterNode<FieldNode> regFieldNodeFid(blr_fid);
+static RegisterNode<FieldNode> regFieldNodeField(blr_field);
+
+FieldNode::FieldNode(MemoryPool& pool)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
+	  byId(false),
+	  fieldStream(0),
+	  fieldId(0),
+	  format(NULL),
+	  defaultValue(NULL)
+{
+}
+
+// Parse a field.
+DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	const USHORT context = csb->csb_blr_reader.getByte();
+
+	// check if this is a VALUE of domain's check constraint
+	if (!csb->csb_domain_validation.isEmpty() && context == 0 &&
+		(blrOp == blr_fid || blrOp == blr_field))
+	{
+		if (blrOp == blr_fid)
+		{
+#ifdef DEV_BUILD
+			SSHORT id =
+#endif
+				csb->csb_blr_reader.getWord();
+			fb_assert(id == 0);
+		}
+		else
+		{
+			MetaName name;
+			PAR_name(csb, name);
+		}
+
+		DomainValidationNode* node = FB_NEW(pool) DomainValidationNode(pool);
+
+		MET_get_domain(tdbb, csb->csb_domain_validation, &node->domDesc, NULL);
+
+		return node;
+	}
+
+	if (context >= csb->csb_rpt.getCount())/* ||
+		!(csb->csb_rpt[context].csb_flags & csb_used) )
+
+		dimitr:	commented out to support system triggers implementing
+				WITH CHECK OPTION. They reference the relation stream (#2)
+				directly, without a DSQL context. It breaks the layering,
+				but we must support legacy BLR.
+		*/
+	{
+		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
+	}
+
+	MetaName name;
+	SSHORT id;
+	const SSHORT stream = csb->csb_rpt[context].csb_stream;
+	SSHORT flags = 0;
+	bool is_column = false;
+	bool byId = false;
+
+	if (blrOp == blr_fid)
+	{
+		id = csb->csb_blr_reader.getWord();
+		byId = true;
+		is_column = true;
+	}
+	else if (blrOp == blr_field)
+	{
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+		const jrd_prc* procedure = tail->csb_procedure;
+
+		// make sure procedure has been scanned before using it
+
+		if (procedure &&
+			(!(procedure->prc_flags & PRC_scanned) ||
+				(procedure->prc_flags & PRC_being_scanned) ||
+				(procedure->prc_flags & PRC_being_altered)))
+		{
+			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->getId(), false, 0);
+
+			if (scan_proc != procedure)
+				procedure = NULL;
+		}
+
+		if (procedure)
+		{
+			PAR_name(csb, name);
+
+			if ((id = PAR_find_proc_field(procedure, name)) == -1)
+			{
+				PAR_error(csb, Arg::Gds(isc_fldnotdef2) <<
+					Arg::Str(name) << Arg::Str(procedure->getName().toString()));
+			}
+		}
+		else
+		{
+			jrd_rel* relation = tail->csb_relation;
+			if (!relation)
+				PAR_error(csb, Arg::Gds(isc_ctxnotdef));
+
+			// make sure relation has been scanned before using it
+
+			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
+				MET_scan_relation(tdbb, relation);
+
+			PAR_name(csb, name);
+
+			if ((id = MET_lookup_field(tdbb, relation, name)) < 0)
+			{
+				if (csb->csb_g_flags & csb_validation)
+				{
+					id = 0;
+					byId = true;
+					is_column = true;
+				}
+				else
+				{
+					if (relation->rel_flags & REL_system)
+						return FB_NEW(pool) NullNode(pool);
+
+ 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+					{
+						PAR_warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
+																   Arg::Str(relation->rel_name));
+					}
+					else if (!(relation->rel_flags & REL_deleted))
+					{
+						PAR_error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) <<
+																  Arg::Str(relation->rel_name));
+					}
+					else
+						PAR_error(csb, Arg::Gds(isc_ctxnotdef));
+				}
+			}
+		}
+	}
+
+	// check for dependencies -- if a field name was given,
+	// use it because when restoring the database the field
+	// id's may not be valid yet
+
+	if (csb->csb_g_flags & csb_get_dependencies)
+	{
+		if (blrOp == blr_fid)
+			PAR_dependency(tdbb, csb, stream, id, "");
+		else
+			PAR_dependency(tdbb, csb, stream, id, name);
+	}
+
+	FieldNode* node = ExprNode::as<FieldNode>(PAR_gen_field(tdbb, stream, id));
+	fb_assert(node);
+
+	node->byId = byId;
+
+	if (is_column)
+	{
+		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
+
+		if (temp_rel)
+		{
+			jrd_fld* field;
+
+			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
+			{
+				if (field->fld_default_value && field->fld_not_null)
+					node->defaultValue = field->fld_default_value;
+			}
+			else
+			{
+				if (temp_rel->rel_flags & REL_system)
+					return FB_NEW(pool) NullNode(pool);
+			}
+		}
+	}
+
+	return node;
+}
+
+void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "FieldNode";
+	ExprNode::print(text, nodes);
+}
+
+//// TODO: Implement FieldNode DSQL support.
+
+ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	fb_assert(false);
+}
+
+void FieldNode::setParameterName(dsql_par* parameter) const
+{
+	fb_assert(false);
+}
+
+void FieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	fb_assert(false);
+}
+
+void FieldNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
+{
+	fb_assert(false);
+}
+
+bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	fb_assert(false);
+}
+
+bool FieldNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream) /*const*/
+{
+	const FieldNode* o = other->as<FieldNode>();
+	// ASF: Why not test fieldStream == o->fieldStream?
+	return o && fieldId == o->fieldId && o->fieldStream == stream;
+}
+
+bool FieldNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	bool allowOnlyCurrentStream)
+{
+	if (allowOnlyCurrentStream)
+	{
+		if (fieldStream != stream && !(csb->csb_rpt[fieldStream].csb_flags & csb_sub_stream))
+			return false;
+	}
+	else
+	{
+		if (fieldStream == stream)
+			return false;
+	}
+
+	return csb->csb_rpt[fieldStream].csb_flags & csb_active;
+}
+
+void FieldNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
+{
+	// dimitr: OLD/NEW contexts shouldn't create any stream dependencies.
+
+	if (fieldStream != optRet->stream &&
+		(optRet->csb->csb_rpt[fieldStream].csb_flags & csb_active) &&
+		!(optRet->csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
+	{
+		if (!streamList->exist(fieldStream))
+			streamList->add(fieldStream);
+	}
+}
+
+void FieldNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	const Format* format = CMP_format(tdbb, csb, fieldStream);
+
+	if (fieldId >= format->fmt_count)
+	{
+		desc->dsc_dtype = dtype_unknown;
+		desc->dsc_length = 0;
+		desc->dsc_scale = 0;
+		desc->dsc_sub_type = 0;
+		desc->dsc_flags = 0;
+	}
+	else
+	{
+		*desc = format->fmt_desc[fieldId];
+
+		// Fix UNICODE_FSS wrong length used in system tables.
+		jrd_rel* relation = csb->csb_rpt[fieldStream].csb_relation;
+
+		if (relation && (relation->rel_flags & REL_system) &&
+			desc->isText() && desc->getCharSet() == CS_UNICODE_FSS)
+		{
+			USHORT adjust = 0;
+
+			if (desc->dsc_dtype == dtype_varying)
+				adjust = sizeof(USHORT);
+			else if (desc->dsc_dtype == dtype_cstring)
+				adjust = 1;
+
+			desc->dsc_length -= adjust;
+			desc->dsc_length *= 3;
+			desc->dsc_length += adjust;
+		}
+	}
+}
+
+ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	USHORT fldId = copier.getFieldId(this);
+	USHORT stream = fieldStream;
+
+	fldId = copier.remapField(stream, fldId);
+
+	if (copier.remap)
+	{
+#ifdef CMP_DEBUG
+		csb->dump("remap nod_field: %d -> %d\n", stream, copier.remap[stream]);
+#endif
+		stream = copier.remap[stream];
+	}
+
+	FieldNode* node = ExprNode::as<FieldNode>(PAR_gen_field(tdbb, stream, fldId));
+	fb_assert(node);
+
+	node->byId = byId;
+
+	if (defaultValue)
+		node->defaultValue = defaultValue;
+
+	return node;
+}
+
+ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	USHORT stream = fieldStream;
+
+	CMP_mark_variant(csb, stream);
+
+	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+	jrd_rel* relation = tail->csb_relation;
+	jrd_fld* field;
+
+	if (!relation || !(field = MET_get_field(relation, fieldId)))
+		return ExprNode::pass1(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+
+	const USHORT ttype = INTL_TEXT_TYPE(desc);
+
+	// Are we using a collation?
+	if (TTYPE_TO_COLLATION(ttype) != 0)
+	{
+		Collation* collation = NULL;
+
+		try
+		{
+			ThreadStatusGuard local_status(tdbb);
+			collation = INTL_texttype_lookup(tdbb, ttype);
+		}
+		catch (Exception&)
+		{
+			// ASF: Swallow the exception if we fail to load the collation here.
+			// This allows us to backup databases when the collation isn't available.
+			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
+				throw;
+		}
+
+		if (collation)
+			CMP_post_resource(&csb->csb_resources, collation, Resource::rsc_collation, ttype);
+	}
+
+	// if this is a modify or store, check REFERENCES access to any foreign keys
+
+	/* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
+		time the FK is defined in DDL, not when a DML is going to be executed.
+	if (((tail->csb_flags & csb_modify) || (tail->csb_flags & csb_store)) &&
+		!(relation->rel_view_rse || relation->rel_file))
+	{
+		IDX_check_access(tdbb, csb, tail->csb_view, relation);
+	}
+	*/
+
+	// posting the required privilege access to the current relation and field
+
+	// If this is in a "validate_subtree" then we must not
+	// post access checks to the table and the fields in the table.
+	// If any node of the parse tree is a nod_validate type node,
+	// the nodes in the subtree are involved in a validation
+	// clause only, the subtree is a validate_subtree in our notation.
+
+	const SLONG viewId = tail->csb_view ?
+		tail->csb_view->rel_id : (csb->csb_view ? csb->csb_view->rel_id : 0);
+
+	if (tail->csb_flags & csb_modify)
+	{
+		if (!csb->csb_validate_expr)
+		{
+			CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+				SCL_sql_update, SCL_object_table, relation->rel_name);
+			CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+				SCL_sql_update, SCL_object_column, field->fld_name, relation->rel_name);
+		}
+	}
+	else if (tail->csb_flags & csb_erase)
+	{
+		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+			SCL_sql_delete, SCL_object_table, relation->rel_name);
+	}
+	else if (tail->csb_flags & csb_store)
+	{
+		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+			SCL_sql_insert, SCL_object_table, relation->rel_name);
+		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+			SCL_sql_insert, SCL_object_column, field->fld_name, relation->rel_name);
+	}
+	else
+	{
+		CMP_post_access(tdbb, csb, relation->rel_security_name, viewId,
+			SCL_read, SCL_object_table, relation->rel_name);
+		CMP_post_access(tdbb, csb, field->fld_security_name, viewId,
+			SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
+	}
+
+	jrd_nod* sub;
+
+	if (!(sub = field->fld_computation) && !(sub = field->fld_source))
+	{
+
+		if (!relation->rel_view_rse)
+			return ExprNode::pass1(tdbb, csb);
+
+		// Msg 364 "cannot access column %s in view %s"
+		ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) <<
+												  Arg::Str(relation->rel_name));
+	}
+
+	// The previous test below is an apparent temporary fix
+	// put in by Root & Harrison in Summer/Fall 1991.
+	// Old Code:
+	// if (tail->csb_flags & (csb_view_update | csb_trigger))
+	//   return ExprNode::pass1(tdbb, csb);
+	// If the field is a computed field - we'll go on and make
+	// the substitution.
+	// Comment 1994-August-08 David Schnepper
+
+	if (tail->csb_flags & (csb_view_update | csb_trigger))
+	{
+		// dimitr:	added an extra check for views, because we don't
+		//			want their old/new contexts to be substituted
+		if (relation->rel_view_rse || !field->fld_computation)
+			return ExprNode::pass1(tdbb, csb);
+	}
+
+	UCHAR local_map[JrdStatement::MAP_LENGTH];
+	UCHAR* map = tail->csb_map;
+
+	if (!map)
+	{
+		map = local_map;
+		fb_assert(stream + 2 <= MAX_STREAMS);
+		local_map[0] = (UCHAR) stream;
+		map[1] = stream + 1;
+		map[2] = stream + 2;
+	}
+
+	AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+		(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
+	sub = NodeCopier::copy(tdbb, csb, sub, map);
+
+	if (relation->rel_view_rse)
+	{
+		// dimitr:	if we reference view columns, we need to pass them
+		//			as belonging to a view (in order to compute the access
+		//			permissions properly).
+		AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
+		AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
+
+		// ASF: If the view field doesn't reference an item of a stream, evaluate it
+		// based on the view dbkey - CORE-1245.
+		RecordKeyNode* recNode;
+
+		if (!ExprNode::is<FieldNode>(sub) &&
+			(!(recNode = ExprNode::as<RecordKeyNode>(sub)) || recNode->blrOp != blr_dbkey))
+		{
+			NodeStack stack;
+			CMP_expand_view_nodes(tdbb, csb, stream, stack, blr_dbkey, true);
+			const UCHAR streamCount = (UCHAR) stack.getCount();
+
+			if (streamCount)
+			{
+				DerivedExprNode* derivedNode =
+					FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
+				derivedNode->arg = sub;
+
+				for (NodeStack::iterator i(stack); i.hasData(); ++i)
+					derivedNode->streamList.add(ExprNode::as<RecordKeyNode>(i.object())->recStream);
+
+				sub = PAR_make_node(tdbb, 1);
+				sub->nod_type = nod_class_exprnode_jrd;
+				sub->nod_count = 0;
+				sub->nod_arg[0] = reinterpret_cast<jrd_nod*>(derivedNode);
+			}
+		}
+
+		return reinterpret_cast<ValueExprNode*>(CMP_pass1(tdbb, csb, sub)->nod_arg[0]);	// note: scope of AutoSetRestore
+	}
+
+	return reinterpret_cast<ValueExprNode*>(CMP_pass1(tdbb, csb, sub)->nod_arg[0]);
+}
+
+ExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	// SMB_SET uses ULONG, not USHORT
+	SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[fieldStream].csb_fields, fieldId);
+
+	if (csb->csb_rpt[fieldStream].csb_relation || csb->csb_rpt[fieldStream].csb_procedure)
+		format = CMP_format(tdbb, csb, fieldStream);
+
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value_ex));
+
+	return this;
+}
+
+dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+
+	record_param& rpb = request->req_rpb[fieldStream];
+	Record* record = rpb.rpb_record;
+	jrd_rel* relation = rpb.rpb_relation;
+
+	// In order to "map a null to a default" value (in EVL_field()), the relation block is referenced.
+	// Reference: Bug 10116, 10424
+
+	if (!EVL_field(relation, record, fieldId, &impure->vlu_desc))
+		return NULL;
+
+	// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
+	// AP: for fields that are missing in original format use record's one.
+	if (format &&
+		record->rec_format->fmt_version != format->fmt_version &&
+		fieldId < format->fmt_desc.getCount() &&
+		!DSC_EQUIV(&impure->vlu_desc, &format->fmt_desc[fieldId], true))
+	{
+		dsc desc = impure->vlu_desc;
+		impure->vlu_desc = format->fmt_desc[fieldId];
+
+		if (impure->vlu_desc.isText())
+		{
+			// Allocate a string block of sufficient size.
+			VaryingString* string = impure->vlu_string;
+
+			if (string && string->str_length < impure->vlu_desc.dsc_length)
+			{
+				delete string;
+				string = NULL;
+			}
+
+			if (!string)
+			{
+				string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
+					impure->vlu_desc.dsc_length) VaryingString();
+				string->str_length = impure->vlu_desc.dsc_length;
+			}
+
+			impure->vlu_desc.dsc_address = string->str_data;
+		}
+		else
+			impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
+
+		MOV_move(tdbb, &desc, &impure->vlu_desc);
+	}
+
+	if (!relation || !(relation->rel_flags & REL_system))
+	{
+		if (impure->vlu_desc.dsc_dtype == dtype_text)
+			INTL_adjust_text_descriptor(tdbb, &impure->vlu_desc);
+	}
 
 	return &impure->vlu_desc;
 }
@@ -4800,6 +5373,388 @@ ExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* LiteralNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	return const_cast<dsc*>(&litDesc);
+}
+
+
+//--------------------
+
+
+DsqlMapNode::DsqlMapNode(MemoryPool& pool, dsql_ctx* aContext, dsql_map* aMap)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_MAP>(pool),
+	  context(aContext),
+	  map(aMap)
+{
+}
+
+void DsqlMapNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("DsqlMapNode");
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return FB_NEW(getPool()) DsqlMapNode(getPool(), context, map);
+}
+
+bool DsqlMapNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	if (visitor.window)
+		return false;
+
+	if (context->ctx_scope_level == visitor.dsqlScratch->scopeLevel)
+		return true;
+
+	return visitor.visit(&map->map_node);
+}
+
+bool DsqlMapNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return visitor.visit(&map->map_node);
+}
+
+bool DsqlMapNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	// If that map is of the current scopeLevel, we prevent the visiting of the aggregate
+	// expression. This is because a field embedded in an aggregate function is valid even
+	// not being in the group by list. Examples:
+	//   select count(n) from table group by m
+	//   select count(n) from table
+
+	AutoSetRestore<bool> autoInsideOwnMap(&visitor.insideOwnMap,
+		context->ctx_scope_level == visitor.context->ctx_scope_level);
+
+	// If the context scope is greater than our own, someone should have already inspected
+	// nested aggregates, so set insideHigherMap to true.
+
+	AutoSetRestore<bool> autoInsideHigherMap(&visitor.insideHigherMap,
+		context->ctx_scope_level > visitor.context->ctx_scope_level);
+
+	return visitor.visit(&map->map_node);
+}
+
+bool DsqlMapNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool DsqlMapNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	return visitor.visit(&map->map_node);
+}
+
+bool DsqlMapNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	if (context->ctx_scope_level != visitor.context->ctx_scope_level)
+	{
+		AutoSetRestore<USHORT> autoCurrentLevel(&visitor.currentLevel, context->ctx_scope_level);
+		visitor.visit(&map->map_node);
+	}
+
+	if (visitor.window && context->ctx_scope_level == visitor.context->ctx_scope_level)
+	{
+		visitor.replaceNode(PASS1_post_map(visitor.dsqlScratch, this,
+			visitor.context, visitor.partitionNode, visitor.orderNode));
+	}
+
+	return false;
+}
+
+void DsqlMapNode::setParameterName(dsql_par* parameter) const
+{
+	const dsql_nod* nestNode = map->map_node;
+	const DsqlMapNode* mapNode;
+
+	while ((mapNode = ExprNode::as<DsqlMapNode>(nestNode)))
+	{
+		// Skip all the DsqlMapNodes.
+		nestNode = mapNode->map->map_node;
+	}
+
+	const char* nameAlias = NULL;
+	const dsql_ctx* context = NULL;
+	const dsql_fld* field;
+	const dsql_nod* alias;
+	const dsql_str* str;
+
+	switch (nestNode->nod_type)
+	{
+		case Dsql::nod_field:
+			field = (dsql_fld*) nestNode->nod_arg[Dsql::e_fld_field];
+			nameAlias = field->fld_name.c_str();
+			context = (dsql_ctx*) nestNode->nod_arg[Dsql::e_fld_context];
+			break;
+
+		case Dsql::nod_alias:
+			str = (dsql_str*) nestNode->nod_arg[Dsql::e_alias_alias];
+			parameter->par_alias = str->str_data;
+			alias = nestNode->nod_arg[Dsql::e_alias_value];
+
+			if (alias->nod_type == Dsql::nod_field)
+			{
+				field = (dsql_fld*) alias->nod_arg[Dsql::e_fld_field];
+				parameter->par_name = field->fld_name.c_str();
+				context = (dsql_ctx*) alias->nod_arg[Dsql::e_fld_context];
+			}
+			break;
+
+		case Dsql::nod_class_exprnode:
+		{
+			const AggNode* aggNode;
+			const LiteralNode* literalNode;
+			const DerivedFieldNode* derivedField;
+
+			if ((aggNode = ExprNode::as<AggNode>(nestNode)))
+				aggNode->setParameterName(parameter);
+			else if ((literalNode = ExprNode::as<LiteralNode>(nestNode)))
+				literalNode->setParameterName(parameter);
+			else if (ExprNode::is<RecordKeyNode>(nestNode))
+				nameAlias = DB_KEY_NAME;
+			else if ((derivedField = ExprNode::as<DerivedFieldNode>(nestNode)))
+			{
+				parameter->par_alias = derivedField->name;
+				alias = derivedField->dsqlValue;
+
+				if (alias->nod_type == Dsql::nod_field)
+				{
+					field = (dsql_fld*) alias->nod_arg[Dsql::e_fld_field];
+					parameter->par_name = field->fld_name.c_str();
+					context = (dsql_ctx*) alias->nod_arg[Dsql::e_fld_context];
+				}
+			}
+
+			break;
+		}
+	} // switch(nestNode->nod_type)
+
+	if (nameAlias)
+		parameter->par_name = parameter->par_alias = nameAlias;
+
+	if (context)
+	{
+		if (context->ctx_relation)
+		{
+			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
+			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
+		}
+		else if (context->ctx_procedure)
+		{
+			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
+			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
+		}
+
+		parameter->par_rel_alias = context->ctx_alias;
+	}
+}
+
+void DsqlMapNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_fid);
+
+	if (map->map_partition)
+		dsqlScratch->appendUChar(map->map_partition->context);
+	else
+		GEN_stuff_context(dsqlScratch, context);
+
+	dsqlScratch->appendUShort(map->map_position);
+}
+
+void DsqlMapNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc(dsqlScratch, desc, map->map_node);
+
+	// ASF: We should mark nod_agg_count as nullable when it's in an outer join - CORE-2660.
+	if (context->ctx_flags & CTX_outer_join)
+		desc->setNullable(true);
+}
+
+bool DsqlMapNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const DsqlMapNode* o = other->as<DsqlMapNode>();
+	return o && PASS1_node_match(map->map_node, o->map->map_node, ignoreMapCast);
+}
+
+
+//--------------------
+
+
+DerivedFieldNode::DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHORT aScope,
+			dsql_nod* aDsqlValue)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_FIELD>(pool),
+	  name(aName),
+	  scope(aScope),
+	  dsqlValue(aDsqlValue),
+	  context(NULL)
+{
+	addChildNode(dsqlValue);
+}
+
+void DerivedFieldNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("DerivedFieldNode");
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* DerivedFieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+bool DerivedFieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	// This is a derived table, so don't look further, but don't forget to check for the
+	// deepest scope_level.
+
+	const USHORT localScopeLevel = scope;
+
+	if (visitor.deepestLevel < localScopeLevel)
+		visitor.deepestLevel = localScopeLevel;
+
+	return false;
+}
+
+bool DerivedFieldNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return false;
+}
+
+bool DerivedFieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	const USHORT localScopeLevel = scope;
+
+	if (localScopeLevel == visitor.context->ctx_scope_level)
+		return true;
+	else if (visitor.context->ctx_scope_level < localScopeLevel)
+		return visitor.visit(&dsqlValue);
+
+	return false;
+}
+
+bool DerivedFieldNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool DerivedFieldNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	// This is a "virtual" field
+	visitor.field = true;
+
+	const USHORT dfScopeLevel = scope;
+
+	switch (visitor.matchType)
+	{
+		case FIELD_MATCH_TYPE_EQUAL:
+			return dfScopeLevel == visitor.checkScopeLevel;
+
+		case FIELD_MATCH_TYPE_LOWER:
+			return dfScopeLevel < visitor.checkScopeLevel;
+
+		case FIELD_MATCH_TYPE_LOWER_EQUAL:
+			return dfScopeLevel <= visitor.checkScopeLevel;
+
+		///case FIELD_MATCH_TYPE_HIGHER:
+		///	return dfScopeLevel > visitor.checkScopeLevel;
+
+		///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+		///	return dfScopeLevel >= visitor.checkScopeLevel;
+
+		default:
+			fb_assert(false);
+	}
+
+	return false;
+}
+
+bool DerivedFieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	// If we got a field from a derived table we should not remap anything
+	// deeper in the alias, but this "virtual" field should be mapped to
+	// the given context (of course only if we're in the same scope-level).
+	const USHORT localScopeLevel = scope;
+
+	if (localScopeLevel == visitor.context->ctx_scope_level)
+	{
+		visitor.replaceNode(PASS1_post_map(visitor.dsqlScratch, this,
+			visitor.context, visitor.partitionNode, visitor.orderNode));
+	}
+	else if (visitor.context->ctx_scope_level < localScopeLevel)
+		visitor.visit(&dsqlValue);
+
+	return false;
+}
+
+void DerivedFieldNode::setParameterName(dsql_par* parameter) const
+{
+	const dsql_ctx* context = NULL;
+	const RecordKeyNode* dbKeyNode;
+
+	if (dsqlValue->nod_type == Dsql::nod_field)
+	{
+		dsql_fld* field = (dsql_fld*) dsqlValue->nod_arg[Dsql::e_fld_field];
+		parameter->par_name = field->fld_name.c_str();
+		context = (dsql_ctx*) dsqlValue->nod_arg[Dsql::e_fld_context];
+	}
+	else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(dsqlValue)))
+		dbKeyNode->setParameterName(parameter);
+
+	parameter->par_alias = name;
+
+	if (context)
+	{
+		if (context->ctx_relation)
+		{
+			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
+			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
+		}
+		else if (context->ctx_procedure)
+		{
+			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
+			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
+		}
+
+		parameter->par_rel_alias = context->ctx_alias;
+	}
+}
+
+void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	// ASF: If we are not referencing a field, we should evaluate the expression based on
+	// a set (ORed) of contexts. If any of them are in a valid position the expression is
+	// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
+
+	if (dsqlValue->nod_type != Dsql::nod_field &&
+		!ExprNode::is<DerivedFieldNode>(dsqlValue) &&
+		!ExprNode::is<RecordKeyNode>(dsqlValue) &&
+		!ExprNode::is<DsqlMapNode>(dsqlValue))
+	{
+		if (context->ctx_main_derived_contexts.hasData())
+		{
+			if (context->ctx_main_derived_contexts.getCount() > MAX_UCHAR)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_imp_exc) <<
+						  Arg::Gds(isc_ctx_too_big));
+			}
+
+			dsqlScratch->appendUChar(blr_derived_expr);
+			dsqlScratch->appendUChar(context->ctx_main_derived_contexts.getCount());
+
+			for (DsqlContextStack::const_iterator stack(context->ctx_main_derived_contexts);
+				 stack.hasData(); ++stack)
+			{
+				fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
+				dsqlScratch->appendUChar(stack.object()->ctx_context);
+			}
+		}
+	}
+
+	GEN_expr(dsqlScratch, dsqlValue);
+}
+
+void DerivedFieldNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc(dsqlScratch, desc, dsqlValue);
 }
 
 
@@ -5657,6 +6612,578 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<RecordKeyNode> regRecordKeyNodeDbKey(blr_dbkey);
+static RegisterNode<RecordKeyNode> regRecordKeyNodeRecordVersion(blr_record_version);
+
+RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDsqlQualifier)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_RECORD_KEY>(pool),
+	  blrOp(aBlrOp),
+	  dsqlQualifier(pool, aDsqlQualifier),
+	  dsqlRelation(NULL),
+	  recStream(0),
+	  aggregate(false)
+{
+	addChildNode(dsqlRelation);
+}
+
+DmlNode* RecordKeyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	RecordKeyNode* node = FB_NEW(pool) RecordKeyNode(pool, blrOp);
+
+	node->recStream = csb->csb_blr_reader.getByte();
+
+	if (node->recStream >= csb->csb_rpt.getCount() || !(csb->csb_rpt[node->recStream].csb_flags & csb_used))
+		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
+
+	node->recStream = csb->csb_rpt[node->recStream].csb_stream;
+
+	return node;
+}
+
+void RecordKeyNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("RecordKeyNode (%s)", (blrOp == blr_lowcase ? "lower" : "upper"));
+	ExprNode::print(text, nodes);
+}
+
+// Resolve a dbkey to an available context.
+ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	if (dsqlQualifier.isEmpty())
+	{
+		DsqlContextStack contexts;
+
+		for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
+		{
+			dsql_ctx* context = stack.object();
+			if (context->ctx_scope_level != dsqlScratch->scopeLevel)
+				continue;
+
+			if (context->ctx_relation)
+				contexts.push(context);
+		}
+
+		if (contexts.hasData())
+		{
+			dsql_ctx* context = contexts.object();
+
+			if (!context->ctx_relation)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_dbkey_from_non_table));
+			}
+
+			if (context->ctx_flags & CTX_null)
+				return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+
+			PASS1_ambiguity_check(dsqlScratch, MAKE_cstring("RDB$DB_KEY"), contexts);
+
+			RecordKeyNode* node = FB_NEW(getPool()) RecordKeyNode(getPool(), blrOp);
+			node->dsqlRelation = MAKE_node(Dsql::nod_relation, Dsql::e_rel_count);
+			node->dsqlRelation->nod_arg[0] = (dsql_nod*) context;
+
+			return node;
+		}
+	}
+	else
+	{
+		const bool cfgRlxAlias = Config::getRelaxedAliasChecking();
+		bool rlxAlias = false;
+
+		for (;;)
+		{
+			for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
+			{
+				dsql_ctx* context = stack.object();
+
+				if ((!context->ctx_relation ||
+						context->ctx_relation->rel_name != dsqlQualifier ||
+						!rlxAlias && context->ctx_internal_alias) &&
+					(!context->ctx_internal_alias ||
+						strcmp(dsqlQualifier.c_str(), context->ctx_internal_alias) != 0))
+				{
+					continue;
+				}
+
+				if (!context->ctx_relation)
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+							  Arg::Gds(isc_dsql_dbkey_from_non_table));
+				}
+
+				if (context->ctx_flags & CTX_null)
+					return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+
+				RecordKeyNode* node = FB_NEW(getPool()) RecordKeyNode(getPool(), blrOp);
+				node->dsqlRelation = MAKE_node(Dsql::nod_relation, Dsql::e_rel_count);
+				node->dsqlRelation->nod_arg[0] = (dsql_nod*) context;
+
+				return node;
+			}
+
+			if (rlxAlias == cfgRlxAlias)
+				break;
+
+			rlxAlias = cfgRlxAlias;
+		}
+	}
+
+	//// FIXME: pass the node to report line/column of the error.
+	// Field unresolved.
+	PASS1_field_unknown((dsqlQualifier.hasData() ? dsqlQualifier.c_str() : NULL), DB_KEY_NAME, NULL);
+
+	return NULL;
+}
+
+bool RecordKeyNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return false;
+}
+
+bool RecordKeyNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	if (dsqlRelation && dsqlRelation->nod_type == Dsql::nod_relation)
+	{
+		const dsql_ctx* localContext =
+			reinterpret_cast<dsql_ctx*>(dsqlRelation->nod_arg[Dsql::e_rel_context]);
+
+		if (localContext && localContext->ctx_scope_level == visitor.context->ctx_scope_level)
+			return true;
+	}
+
+	return false;
+}
+
+bool RecordKeyNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool RecordKeyNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	return false;
+}
+
+bool RecordKeyNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	visitor.replaceNode(PASS1_post_map(visitor.dsqlScratch, this,
+		visitor.context, visitor.partitionNode, visitor.orderNode));
+	return false;
+}
+
+void RecordKeyNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = DB_KEY_NAME;
+
+	dsql_ctx* context = (dsql_ctx*) dsqlRelation->nod_arg[0];
+
+	if (context)
+	{
+		if (context->ctx_relation)
+		{
+			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
+			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
+		}
+		else if (context->ctx_procedure)
+		{
+			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
+			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
+		}
+
+		parameter->par_rel_alias = context->ctx_alias;
+	}
+}
+
+void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsql_ctx* context = (dsql_ctx*) dsqlRelation->nod_arg[Dsql::e_rel_context];
+	dsqlScratch->appendUChar(blrOp);
+	GEN_stuff_context(dsqlScratch, context);
+}
+
+void RecordKeyNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	fb_assert(blrOp == blr_dbkey);
+
+	// Fix for bug 10072 check that the target is a relation
+	dsql_ctx* context = (dsql_ctx*) dsqlRelation->nod_arg[0];
+	dsql_rel* relation = context->ctx_relation;
+
+	if (relation)
+	{
+		desc->dsc_dtype = dtype_text;
+
+		if (relation->rel_flags & REL_creating)
+			desc->dsc_length = 8;
+		else
+			desc->dsc_length = relation->rel_dbkey_length;
+
+		desc->dsc_flags = DSC_nullable;
+		desc->dsc_ttype() = ttype_binary;
+	}
+	else
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_dsql_dbkey_from_non_table));
+	}
+}
+
+bool RecordKeyNode::jrdStreamFinder(StreamFinder& visitor)
+{
+	return recStream == visitor.stream;
+}
+
+bool RecordKeyNode::jrdStreamsCollector(StreamsCollector& visitor)
+{
+	if (!visitor.streams.exist(recStream))
+		visitor.streams.add(recStream);
+
+	return false;
+}
+
+bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse, bool allowOnlyCurrentStream)
+{
+	if (allowOnlyCurrentStream)
+	{
+		if (recStream != stream && !(csb->csb_rpt[recStream].csb_flags & csb_sub_stream))
+			return false;
+	}
+	else
+	{
+		if (recStream == stream)
+			return false;
+	}
+
+	return csb->csb_rpt[recStream].csb_flags & csb_active;
+}
+
+void RecordKeyNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
+{
+	if (recStream != optRet->stream && (optRet->csb->csb_rpt[recStream].csb_flags & csb_active))
+	{
+		if (!streamList->exist(recStream))
+			streamList->add(recStream);
+	}
+}
+
+void RecordKeyNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	if (blrOp == blr_dbkey)
+	{
+		desc->dsc_dtype = dtype_dbkey;
+		desc->dsc_length = type_lengths[dtype_dbkey];
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+	}
+	else if (blrOp == blr_record_version)
+	{
+		desc->dsc_dtype = dtype_text;
+		desc->dsc_ttype() = ttype_binary;
+		desc->dsc_length = sizeof(SLONG);
+		desc->dsc_scale = 0;
+		desc->dsc_flags = 0;
+	}
+}
+
+ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	RecordKeyNode* node = FB_NEW(*tdbb->getDefaultPool()) RecordKeyNode(*tdbb->getDefaultPool(), blrOp);
+	node->recStream = recStream;
+	node->aggregate = aggregate;
+
+	if (copier.remap)
+	{
+#ifdef CMP_DEBUG
+		csb->dump("remap RecordKeyNode: %d -> %d\n", node->recStream, copier.remap[node->recStream]);
+#endif
+		node->recStream = copier.remap[node->recStream];
+	}
+
+	return node;
+}
+
+bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const RecordKeyNode* o = other->as<RecordKeyNode>();
+	fb_assert(o)
+
+	return blrOp == o->blrOp;
+}
+
+bool RecordKeyNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
+	USHORT stream)
+{
+	if (!ExprNode::expressionEqual(tdbb, csb, other, stream))
+		return false;
+
+	RecordKeyNode* o = other->as<RecordKeyNode>();
+	fb_assert(o);
+
+	return blrOp == o->blrOp && recStream == o->recStream;
+}
+
+ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass1(tdbb, csb);
+
+	CMP_mark_variant(csb, recStream);
+
+	if (!csb->csb_rpt[recStream].csb_map)
+		return this;
+
+	NodeStack stack;
+	CMP_expand_view_nodes(tdbb, csb, recStream, stack, blrOp, false);
+
+#ifdef CMP_DEBUG
+	csb->dump("expand RecordKeyNode: %d\n", recStream);
+#endif
+
+	if (stack.hasData())
+	{
+		const size_t stackCount = stack.getCount();
+
+		// If that is a DB_KEY of a view, it's possible (in case of
+		// outer joins) that some sub-stream have a NULL DB_KEY.
+		// In this case, we build a COALESCE(DB_KEY, _OCTETS x"0000000000000000"),
+		// for the concatenation of sub DB_KEYs not result in NULL.
+		if (blrOp == blr_dbkey && stackCount > 1)
+		{
+			NodeStack stack2;
+
+			for (NodeStack::iterator i(stack); i.hasData(); ++i)
+			{
+#ifdef CMP_DEBUG
+				csb->dump(" %d", ExprNode::as<RecordKeyNode>(i.object())->recStream);
+#endif
+
+				ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(csb->csb_pool);
+
+				jrd_nod* new_node = PAR_make_node(tdbb, 1);
+				new_node->nod_type = nod_class_exprnode_jrd;
+				new_node->nod_count = 0;
+				new_node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
+
+				MissingBoolNode* missingNode = FB_NEW(csb->csb_pool) MissingBoolNode(csb->csb_pool);
+				missingNode->arg = i.object();
+
+				NotBoolNode* notNode = FB_NEW(csb->csb_pool) NotBoolNode(csb->csb_pool);
+				notNode->arg = missingNode;
+
+				// build an IF (RDB$DB_KEY IS NOT NULL)
+				valueIfNode->condition = notNode;
+
+				valueIfNode->trueValue = i.object();	// THEN
+
+				LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+				literal->litDesc.dsc_dtype = dtype_text;
+				literal->litDesc.dsc_ttype() = CS_BINARY;
+				literal->litDesc.dsc_scale = 0;
+				literal->litDesc.dsc_length = 8;
+				literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
+					const_cast<char*>("\0\0\0\0\0\0\0\0"));	// safe const_cast
+
+				valueIfNode->falseValue = PAR_make_node(tdbb, 1);	// ELSE
+				valueIfNode->falseValue->nod_type = nod_class_exprnode_jrd;
+				valueIfNode->falseValue->nod_count = 0;
+				valueIfNode->falseValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+
+				stack2.push(new_node);
+			}
+
+			stack.clear();
+
+			// stack2 is in reverse order, pushing everything in stack
+			// will correct the order.
+			for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
+				stack.push(i2.object());
+		}
+
+		jrd_nod* node = catenateNodes(tdbb, stack);
+
+		if (blrOp == blr_dbkey && stackCount > 1)
+		{
+			// ASF: If the view is in null state (with outer joins) we need to transform
+			// the view RDB$KEY to NULL. (CORE-1245)
+
+			ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(csb->csb_pool);
+
+			ComparativeBoolNode* eqlNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+				csb->csb_pool, blr_eql);
+
+			// build an IF (RDB$DB_KEY = '')
+			valueIfNode->condition = eqlNode;
+
+			eqlNode->arg1 = NodeCopier::copy(tdbb, csb, node, NULL);
+
+			LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+			literal->litDesc.dsc_dtype = dtype_text;
+			literal->litDesc.dsc_ttype() = CS_BINARY;
+			literal->litDesc.dsc_scale = 0;
+			literal->litDesc.dsc_length = 0;
+			literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
+				const_cast<char*>(""));	// safe const_cast
+
+			eqlNode->arg2 = PAR_make_node(tdbb, 1);
+			eqlNode->arg2->nod_type = nod_class_exprnode_jrd;
+			eqlNode->arg2->nod_count = 0;
+			eqlNode->arg2->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+
+			// THEN: NULL
+			valueIfNode->trueValue = PAR_make_node(tdbb, 1);
+			valueIfNode->trueValue->nod_type = nod_class_exprnode_jrd;
+			valueIfNode->trueValue->nod_count = 0;
+			valueIfNode->trueValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+				FB_NEW(csb->csb_pool) NullNode(csb->csb_pool));
+
+			// ELSE: RDB$DB_KEY
+			valueIfNode->falseValue = node;
+
+			node = PAR_make_node(tdbb, 1);
+			node->nod_type = nod_class_exprnode_jrd;
+			node->nod_count = 0;
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
+		}
+
+#ifdef CMP_DEBUG
+		csb->dump("\n");
+#endif
+
+		return reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
+	}
+
+#ifdef CMP_DEBUG
+	csb->dump("\n");
+#endif
+
+	// The user is asking for the dbkey/record version of an aggregate.
+	// Humor him with a key filled with zeros.
+
+	RecordKeyNode* node = FB_NEW(*tdbb->getDefaultPool()) RecordKeyNode(*tdbb->getDefaultPool(), blrOp);
+	node->recStream = recStream;
+	node->aggregate = true;
+
+	return node;
+}
+
+ExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* RecordKeyNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value* const impure = request->getImpure<impure_value>(node->nod_impure);
+	const record_param* rpb = &request->req_rpb[recStream];
+
+	if (blrOp == blr_dbkey)
+	{
+		// Make up a dbkey for a record stream. A dbkey is expressed as an 8 byte character string.
+
+		const jrd_rel* relation = rpb->rpb_relation;
+
+		// If it doesn't point to a valid record, return NULL
+		if (!rpb->rpb_number.isValid() || !relation)
+		{
+			request->req_flags |= req_null;
+			return NULL;
+		}
+
+		// Format dbkey as vector of relation id, record number
+
+		// Initialize first 32 bits of DB_KEY
+		impure->vlu_misc.vlu_dbkey[0] = 0;
+
+		// Now, put relation ID into first 16 bits of DB_KEY
+		// We do not assign it as SLONG because of big-endian machines.
+		*(USHORT*) impure->vlu_misc.vlu_dbkey = relation->rel_id;
+
+		// Encode 40-bit record number. Before that, increment the value
+		// because users expect the numbering to start with one.
+		RecordNumber temp(rpb->rpb_number.getValue() + 1);
+		temp.bid_encode(reinterpret_cast<RecordNumber::Packed*>(impure->vlu_misc.vlu_dbkey));
+
+		// Initialize descriptor
+
+		impure->vlu_desc.dsc_address = (UCHAR*) impure->vlu_misc.vlu_dbkey;
+		impure->vlu_desc.dsc_dtype = dtype_dbkey;
+		impure->vlu_desc.dsc_length = type_lengths[dtype_dbkey];
+		impure->vlu_desc.dsc_ttype() = ttype_binary;
+	}
+	else if (blrOp == blr_record_version)
+	{
+		// Make up a record version for a record stream. The tid of the record will be used.
+		// This will be returned as a 4 byte character string.
+
+		// If the current transaction has updated the record, the record version
+		// coming in from DSQL will have the original transaction # (or current
+		// transaction if the current transaction updated the record in a different
+		// request.).  In these cases, mark the request so that the boolean
+		// to check equality of record version will be forced to evaluate to true.
+
+		if (request->req_transaction->tra_number == rpb->rpb_transaction_nr)
+			request->req_flags |= req_same_tx_upd;
+		else
+		{
+			// If the transaction is a commit retain, check if the record was
+			// last updated in one of its own prior transactions
+
+			if (request->req_transaction->tra_commit_sub_trans)
+			{
+				if (request->req_transaction->tra_commit_sub_trans->test(rpb->rpb_transaction_nr))
+					 request->req_flags |= req_same_tx_upd;
+			}
+		}
+
+		// Initialize descriptor
+
+		impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
+		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
+		impure->vlu_desc.dsc_dtype = dtype_text;
+		impure->vlu_desc.dsc_length = 4;
+		impure->vlu_desc.dsc_ttype() = ttype_binary;
+	}
+
+	return &impure->vlu_desc;
+}
+
+// Take a stack of nodes and turn them into a tree of concatenations.
+jrd_nod* RecordKeyNode::catenateNodes(thread_db* tdbb, NodeStack& stack)
+{
+	SET_TDBB(tdbb);
+
+	jrd_nod* node1 = stack.pop();
+
+	if (stack.isEmpty())
+		return node1;
+
+	ConcatenateNode* concatNode = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(
+		*tdbb->getDefaultPool());
+	concatNode->arg1 = node1;
+	concatNode->arg2 = catenateNodes(tdbb, stack);
+
+	jrd_nod* node = PAR_make_node(tdbb, 1);
+	node->nod_type = nod_class_exprnode_jrd;
+	node->nod_count = 0;
+	node->nod_arg[0] = (jrd_nod*) concatNode;
+
+	return node;
+}
+
+
+//--------------------
+
+
 static RegisterNode<ScalarNode> regScalarNode1(blr_index);
 
 DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
@@ -5669,9 +7196,11 @@ DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 
 void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
 {
-	jrd_rel* relation = csb->csb_rpt[(USHORT)(IPTR) field->nod_arg[e_fld_stream]].csb_relation;
-	const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-	const jrd_fld* field = MET_get_field(relation, id);
+	FieldNode* fieldNode = ExprNode::as<FieldNode>(field.getObject());
+	fb_assert(fieldNode);
+
+	jrd_rel* relation = csb->csb_rpt[fieldNode->fieldStream].csb_relation;
+	const jrd_fld* field = MET_get_field(relation, fieldNode->fieldId);
 	const ArrayField* array;
 
 	if (!field || !(array = field->fld_array))
@@ -5735,6 +7264,63 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 		subscripts->nod_count, numSubscripts, impure);
 
 	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
+static RegisterNode<StmtExprNode> regStmtExprNode(blr_stmt_expr);
+
+DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	StmtExprNode* node = FB_NEW(pool) StmtExprNode(pool);
+
+	node->stmt = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->expr = PAR_parse_node(tdbb, csb, VALUE);
+
+	return node;
+}
+
+void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	CMP_get_desc(tdbb, csb, expr, desc);
+}
+
+ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	StmtExprNode* node = FB_NEW(*tdbb->getDefaultPool()) StmtExprNode(*tdbb->getDefaultPool());
+	node->stmt = copier.copy(tdbb, stmt);
+	node->expr = copier.copy(tdbb, expr);
+	return node;
+}
+
+ExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	stmt = CMP_pass1(tdbb, csb, stmt);
+	return ExprNode::pass1(tdbb, csb);
+}
+
+ExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	stmt = CMP_pass2(tdbb, csb, stmt, node);
+
+	ExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	node->nod_impure = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	EXE_looper(tdbb, request, stmt, true);
+
+	dsc* desc = EVL_expr(tdbb, expr);
+
+	return (request->req_flags & req_null) ? NULL : desc;
 }
 
 

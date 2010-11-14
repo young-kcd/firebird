@@ -87,11 +87,9 @@ static NodeParseFunc blr_parsers[256] = {NULL};	// TODO: separate statements and
 static BoolExprNodeParseFunc boolParsers[256] = {NULL};
 
 
-static SSHORT find_proc_field(const jrd_prc*, const Firebird::MetaName&);
 static PsqlException* par_conditions(thread_db*, CompilerScratch*);
 static jrd_nod* par_exec_proc(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* par_field(thread_db*, CompilerScratch*, SSHORT);
 static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static jrd_nod* par_modify(thread_db*, CompilerScratch*, SSHORT);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
@@ -581,12 +579,16 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
  **************************************/
 	SET_TDBB(tdbb);
 
-	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_fld_length) jrd_nod();
-	node->nod_type = nod_field;
-	node->nod_arg[e_fld_id] = (jrd_nod*) (IPTR) id;
-	node->nod_arg[e_fld_stream] = (jrd_nod*) (IPTR) stream;
+	FieldNode* fieldNode = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
+	fieldNode->fieldId = id;
+	fieldNode->fieldStream = stream;
 
-	return node;
+	jrd_nod* nod = PAR_make_node(tdbb, 1);
+	nod->nod_type = nod_class_exprnode_jrd;
+	nod->nod_count = 0;
+	nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(fieldNode);
+
+	return nod;
 }
 
 
@@ -621,7 +623,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
 
-	const SSHORT id = procedure ? find_proc_field(procedure, base_field) :
+	const SSHORT id = procedure ? PAR_find_proc_field(procedure, base_field) :
 		MET_lookup_field(tdbb, csb->csb_rpt[stream].csb_relation, base_field);
 
 	if (id < 0)
@@ -670,19 +672,11 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	}
 
 	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
-	/*
-	if (param)
-	{
-		if (param->prm_default_value) //&& param->prm_not_null)
-			temp_node->nod_arg[e_fld_default_value] =
-				param->prm_default_value;
-	}
-	else
-	*/
+
 	if (field)
 	{
 		if (field->fld_default_value && field->fld_not_null)
-			temp_node->nod_arg[e_fld_default_value] = field->fld_default_value;
+			ExprNode::as<FieldNode>(temp_node)->defaultValue = field->fld_default_value;
 	}
 
 	return temp_node;
@@ -869,18 +863,9 @@ void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxEr
 }
 
 
-static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName& name)
+// Look for named field in procedure output fields.
+SSHORT PAR_find_proc_field(const jrd_prc* procedure, const Firebird::MetaName& name)
 {
-/**************************************
- *
- *	f i n d _ p r o c _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Look for named field in procedure output fields.
- *
- **************************************/
 	const Array<NestConst<Parameter> >& list = procedure->prc_output_fields;
 
 	Array<NestConst<Parameter> >::const_iterator ptr = list.begin();
@@ -1186,208 +1171,17 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	booleanNode->arg2 = PAR_parse_node(tdbb, csb, VALUE);
 
-	jrd_nod* dbKeyNode = booleanNode->arg1 = PAR_make_node(tdbb, 1);
-	dbKeyNode->nod_type = nod_dbkey;
-	dbKeyNode->nod_count = 0;
-	dbKeyNode->nod_arg[0] = (jrd_nod*)(IPTR) relationSource->getStream();
+	RecordKeyNode* dbKeyNode = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
+	dbKeyNode->recStream = relationSource->getStream();
+
+	jrd_nod* dbKeyNod = booleanNode->arg1 = PAR_make_node(tdbb, 1);
+	dbKeyNod->nod_type = nod_class_exprnode_jrd;
+	dbKeyNod->nod_count = 0;
+	dbKeyNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(dbKeyNode);
 
 	// Pick up statement
 
 	forNode->statement = PAR_parse_node(tdbb, csb, STATEMENT);
-
-	return node;
-}
-
-
-static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_operator)
-{
-/**************************************
- *
- *	p a r _ f i e l d
- *
- **************************************
- *
- * Functional description
- *	Parse a field.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	const USHORT context = (unsigned int) csb->csb_blr_reader.getByte();
-
-	// check if this is a VALUE of domain's check constraint
-	if (!csb->csb_domain_validation.isEmpty() &&
-		(blr_operator == blr_fid || blr_operator == blr_field) && context == 0)
-	{
-		if (blr_operator == blr_fid)
-		{
-#ifdef DEV_BUILD
-			SSHORT id =
-#endif
-				csb->csb_blr_reader.getWord();
-			fb_assert(id == 0);
-		}
-		else
-		{
-			Firebird::MetaName name;
-			PAR_name(csb, name);
-		}
-
-		DomainValidationNode* node =
-			FB_NEW(*tdbb->getDefaultPool()) DomainValidationNode(*tdbb->getDefaultPool());
-
-		MET_get_domain(tdbb, csb->csb_domain_validation, &node->domDesc, NULL);
-
-		jrd_nod* nod = PAR_make_node(tdbb, 1);
-		nod->nod_type = nod_class_exprnode_jrd;
-		nod->nod_count = 0;
-		nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(node);
-
-		return nod;
-	}
-
-	if (context >= csb->csb_rpt.getCount())/* ||
-		!(csb->csb_rpt[context].csb_flags & csb_used) )
-
-		dimitr:	commented out to support system triggers implementing
-				WITH CHECK OPTION. They reference the relation stream (#2)
-				directly, without a DSQL context. It breaks the layering,
-				but we must support legacy BLR.
-		*/
-	{
-		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-	}
-
-	Firebird::MetaName name;
-	SSHORT id;
-	const SSHORT stream = csb->csb_rpt[context].csb_stream;
-	SSHORT flags = 0;
-	bool is_column = false;
-
-	if (blr_operator == blr_fid)
-	{
-		id = csb->csb_blr_reader.getWord();
-		flags = nod_id;
-		is_column = true;
-	}
-	else if (blr_operator == blr_field)
-	{
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
-		const jrd_prc* procedure = tail->csb_procedure;
-
-		// make sure procedure has been scanned before using it
-
-		if (procedure && (!(procedure->prc_flags & PRC_scanned) ||
-				(procedure->prc_flags & PRC_being_scanned) ||
-				(procedure->prc_flags & PRC_being_altered)))
-		{
-			const jrd_prc* scan_proc = MET_procedure(tdbb, procedure->getId(), false, 0);
-			if (scan_proc != procedure)
-				procedure = NULL;
-		}
-
-		if (procedure)
-		{
-			PAR_name(csb, name);
-			if ((id = find_proc_field(procedure, name)) == -1)
-			{
-				PAR_error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
-													   Arg::Str(procedure->getName().toString()));
-			}
-		}
-		else
-		{
-			jrd_rel* relation = tail->csb_relation;
-			if (!relation)
-				PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-
-			// make sure relation has been scanned before using it
-
-			if (!(relation->rel_flags & REL_scanned) || (relation->rel_flags & REL_being_scanned))
-			{
-				MET_scan_relation(tdbb, relation);
-			}
-
-			PAR_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name)) < 0)
-			{
-				if (csb->csb_g_flags & csb_validation)
-				{
-					id = 0;
-					flags |= nod_id;
-					is_column = true;
-				}
-				else
-				{
-					if (relation->rel_flags & REL_system)
-					{
-						jrd_nod* node = PAR_make_node(tdbb, 1);
-						node->nod_type = nod_class_exprnode_jrd;
-						node->nod_count = 0;
-						node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-							FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-						return node;
- 					}
-
- 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
-					{
-						PAR_warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
-																   Arg::Str(relation->rel_name));
-					}
-					else if (!(relation->rel_flags & REL_deleted))
-					{
-						PAR_error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) <<
-															  Arg::Str(relation->rel_name));
-					}
-					else
-						PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-				}
-			}
-		}
-	}
-
-	// check for dependencies -- if a field name was given,
-	// use it because when restoring the database the field
-	// id's may not be valid yet
-
-	if (csb->csb_g_flags & csb_get_dependencies)
-	{
-		if (blr_operator == blr_fid)
-			PAR_dependency(tdbb, csb, stream, id, "");
-		else
-			PAR_dependency(tdbb, csb, stream, id, name);
-	}
-
-	jrd_nod* node = PAR_gen_field(tdbb, stream, id);
-	node->nod_flags |= flags;
-
-	if (is_column)
-	{
-		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
-
-		if (temp_rel)
-		{
-			jrd_fld* field;
-
-			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
-			{
-				if (field->fld_default_value && field->fld_not_null)
-					node->nod_arg[e_fld_default_value] = field->fld_default_value;
-			}
-			else
-			{
-				if (temp_rel->rel_flags & REL_system)
-				{
-					node = PAR_make_node(tdbb, 1);
-					node->nod_type = nod_class_exprnode_jrd;
-					node->nod_count = 0;
-					node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-						FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-					return node;
-				}
-			}
-		}
-	}
 
 	return node;
 }
@@ -2445,13 +2239,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 		node->nod_arg[0] = (jrd_nod*) AggregateSourceNode::parse(tdbb, csb);
 		break;
 
-	case blr_field:
-	case blr_fid:
-		node = par_field(tdbb, csb, blr_operator);
-		if (ExprNode::is<DomainValidationNode>(node) || ExprNode::is<NullNode>(node))
-			set_type = false;	// to not change nod->nod_type to nod_field
-		break;
-
 	case blr_set_generator:
 		{
 			Firebird::MetaName name;
@@ -2464,14 +2251,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			node->nod_arg[e_gen_id] = (jrd_nod*)(IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
 		}
-		break;
-
-	case blr_record_version:
-	case blr_dbkey:
-		n = csb->csb_blr_reader.getByte();
-		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
-			PAR_error(csb, Arg::Gds(isc_ctxnotdef));
-		node->nod_arg[0] = (jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_fetch:
@@ -2571,11 +2350,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			if (!vector || n >= vector->count())
 				PAR_syntax_error(csb, "variable identifier");
 		}
-		break;
-
-	case blr_stmt_expr:
-		node->nod_arg[e_stmt_expr_stmt] = PAR_parse_node(tdbb, csb, STATEMENT);
-		node->nod_arg[e_stmt_expr_expr] = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 
 	default:

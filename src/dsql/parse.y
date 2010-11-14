@@ -5182,9 +5182,9 @@ value	: column_name
 		| internal_info
 			{ $$ = makeClassNode($1); }
 		| DB_KEY
-			{ $$ = make_node (nod_dbkey, 1, NULL); }
+			{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey)); }
 		| symbol_table_alias_name '.' DB_KEY
-			{ $$ = make_node (nod_dbkey, 1, $1); }
+			{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey, toName($1))); }
 		| KW_VALUE
 			{ $$ = make_node (nod_dom_value, 0, NULL); }
 		| datetime_value_expression
@@ -5754,7 +5754,7 @@ udf
 
 cast_specification
 	: CAST '(' value AS data_type_descriptor ')'
-		{ $$ = makeClassNode(FB_NEW(getPool()) CastNode(getPool(), $3, $5)); }
+		{ $$ = makeClassNode(newNode<CastNode>($3, $5)); }
 	;
 
 // case expressions

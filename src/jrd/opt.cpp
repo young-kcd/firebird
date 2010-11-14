@@ -142,16 +142,7 @@ bool PossibleUnknownFinder::visit(const JrdNode& node)
 
 	jrd_nod* jrdNode = (*node.jrdNode);
 
-	switch (jrdNode->nod_type)
-	{
-		case nod_field:
-		case nod_rec_version:
-		case nod_dbkey:
-			return false;
-
-		default:
-			return visitChildren(node);
-	}
+	return visitChildren(node);
 }
 
 
@@ -176,13 +167,6 @@ bool StreamFinder::visit(const JrdNode& node)
 
 	switch (jrdNode->nod_type)
 	{
-		case nod_field:
-			return (USHORT)(IPTR) jrdNode->nod_arg[e_fld_stream] == stream;
-
-		case nod_rec_version:
-		case nod_dbkey:
-			return (USHORT)(IPTR) jrdNode->nod_arg[0] == stream;
-
 		case nod_class_recsrcnode_jrd:
 		{
 			RecordSourceNode* recSource = reinterpret_cast<RecordSourceNode*>(jrdNode->nod_arg[0]);
@@ -249,23 +233,6 @@ bool StreamsCollector::visit(const JrdNode& node)
 
 	switch (jrdNode->nod_type)
 	{
-		case nod_field:
-		{
-			int n = (int)(IPTR) jrdNode->nod_arg[e_fld_stream];
-			if (!streams.exist(n))
-				streams.add(n);
-			break;
-		}
-
-		case nod_rec_version:
-		case nod_dbkey:
-		{
-			int n = (int)(IPTR) jrdNode->nod_arg[0];
-			if (!streams.exist(n))
-				streams.add(n);
-			break;
-		}
-
 		case nod_class_recsrcnode_jrd:
 		{
 			RecordSourceNode* recSource = reinterpret_cast<RecordSourceNode*>(jrdNode->nod_arg[0]);
@@ -304,58 +271,20 @@ UnmappedNodeGetter::UnmappedNodeGetter(/*const*/ MapNode* aMap, UCHAR aShellStre
 	: JrdNodeVisitor(false, &ExprNode::jrdUnmappedNodeGetter),
 	  map(aMap),
 	  shellStream(aShellStream),
-	  rootNode(true),
-	  invalid(false),
-	  nodeFound()
+	  invalid(false)
 {
 	DEV_BLKCHK(map, type_nod);
 }
 
 bool UnmappedNodeGetter::visit(const JrdNode& node)
 {
-	const bool wasRootNode = rootNode;
-	rootNode = false;
-
 	if (node.boolExprNode)
 	{
 		invalid |= !visitChildren(node);
-		nodeFound = node;
 		return !invalid;
 	}
 
-	jrd_nod* jrdNode = (*node.jrdNode);
-
-	// Check if node is a mapping and if so unmap it, but only for root nodes (not contained in
-	// another node). This can be expanded by checking complete expression (Then don't forget to
-	// leave aggregate-functions alone in case of aggregate rse).
-	// Because this is only to help using an index we keep it simple.
-	if (jrdNode->nod_type == nod_field && (USHORT)(IPTR) jrdNode->nod_arg[e_fld_stream] == shellStream)
-	{
-		const USHORT fieldId = (USHORT)(IPTR) jrdNode->nod_arg[e_fld_id];
-		if (!wasRootNode || fieldId >= map->items.getCount())
-		{
-			invalid = true;
-			return false;
-		}
-
-		// Check also the expression inside the map, because aggregate
-		// functions aren't allowed to be delivered to the WHERE clause.
-		if (!visit(map->items[fieldId]->nod_arg[e_asgn_from]))
-			invalid = true;
-		return !invalid;
-	}
-
-	switch (jrdNode->nod_type)
-	{
-		case nod_field:
-			break;
-
-		default:
-			invalid |= !visitChildren(node);
-			break;
-	}
-
-	nodeFound = node;
+	invalid |= !visitChildren(node);
 
 	return !invalid;
 }
@@ -436,11 +365,13 @@ namespace Jrd
 	protected:
 		bool isReferenced(const jrd_nod* node, bool& field_found) const
 		{
-			if (node->nod_type == nod_field)
+			const FieldNode* fieldNode;
+
+			if ((fieldNode = ExprNode::as<FieldNode>(node)))
 			{
-				for (const UCHAR* iter = m_streams.begin(); iter < m_streams.end(); iter++)
+				for (const UCHAR* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
 				{
-					if ((USHORT)(IPTR) node->nod_arg[e_fld_stream] == *iter)
+					if (fieldNode->fieldStream == *iter)
 					{
 						field_found = true;
 						return true;
@@ -451,12 +382,11 @@ namespace Jrd
 			}
 
 			const jrd_nod* const* ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+
+			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr != end; ++ptr)
 			{
 				if (!isReferenced(*ptr, field_found))
-				{
 					return false;
-				}
 			}
 
 			return true;
@@ -1303,10 +1233,12 @@ static void check_sorts(RseNode* rse)
 
 			for (; project_ptr != project_end; ++project_ptr)
 			{
-				if ((*sort_ptr)->nod_type == nod_field &&
-					(*project_ptr)->nod_type == nod_field &&
-					(*sort_ptr)->nod_arg[e_fld_stream] == (*project_ptr)->nod_arg[e_fld_stream] &&
-					(*sort_ptr)->nod_arg[e_fld_id] == (*project_ptr)->nod_arg[e_fld_id])
+				const FieldNode* sortField = ExprNode::as<FieldNode>(sort_ptr->getObject());
+				const FieldNode* projectField = ExprNode::as<FieldNode>(project_ptr->getObject());
+
+				if (sortField && projectField &&
+					sortField->fieldStream == projectField->fieldStream &&
+					sortField->fieldId == projectField->fieldId)
 				{
 					break;
 				}
@@ -1339,10 +1271,12 @@ static void check_sorts(RseNode* rse)
 
 		for (; sort_ptr != sort_end; ++sort_ptr)
 		{
-			if ((*sort_ptr)->nod_type == nod_field)
+			const FieldNode* sortField;
+
+			if ((sortField = ExprNode::as<FieldNode>(sort_ptr->getObject())))
 			{
 				// Get stream for this field at this position.
-				const int current_stream = (int)(IPTR)(*sort_ptr)->nod_arg[e_fld_stream];
+				const int current_stream = sortField->fieldStream;
 
 				// If this is the first position node, save this stream.
 				if (sort_ptr == sort->expressions.begin())
@@ -1712,11 +1646,11 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 			continue;
 
 		jrd_nod* node1 = cmpNode->arg1;
-		if (node1->nod_type != nod_field)
+		if (!ExprNode::is<FieldNode>(node1))
 			continue;
 
 		jrd_nod* node2 = cmpNode->arg2;
-		if (node2->nod_type != nod_field)
+		if (!ExprNode::is<FieldNode>(node2))
 			continue;
 
 		for (eq_class = classes.begin(); eq_class != classes.end(); ++eq_class)
@@ -1813,7 +1747,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 
 		bool reverse = false;
 
-		if (node1->nod_type != nod_field)
+		if (!ExprNode::is<FieldNode>(node1))
 		{
 			jrd_nod* swap_node = node1;
 			node1 = node2;
@@ -1821,7 +1755,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 			reverse = true;
 		}
 
-		if (node1->nod_type != nod_field)
+		if (!ExprNode::is<FieldNode>(node1))
 			continue;
 
 		if (!ExprNode::is<LiteralNode>(node2) &&
@@ -2644,14 +2578,12 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 					 node_ptr != end_node;
 					 ++node_ptr)
 				{
-					NestConst<jrd_nod> node = *node_ptr;
+					FieldNode* fieldNode = ExprNode::as<FieldNode>(node_ptr->getObject());
 
-					if (node->nod_type == nod_field &&
-						(USHORT)(IPTR) node->nod_arg[e_fld_stream] == *ptr &&
-						(USHORT)(IPTR) node->nod_arg[e_fld_id] == id)
+					if (fieldNode && fieldNode->fieldStream == *ptr && fieldNode->fieldId == id)
 					{
 						dsc* desc = &descriptor;
-						CMP_get_desc(tdbb, csb, node, desc);
+						fieldNode->getDesc(tdbb, csb, desc);
 
 						// International type text has a computed key
 						if (IS_INTL_DATA(desc))
@@ -2772,10 +2704,12 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 		map_item->desc.dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 
-		if (node->nod_type == nod_field)
+		FieldNode* fieldNode;
+
+		if ((fieldNode = ExprNode::as<FieldNode>(node.getObject())))
 		{
-			map_item->stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			map_item->fieldId = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+			map_item->stream = fieldNode->fieldStream;
+			map_item->fieldId = fieldNode->fieldId;
 		}
 	}
 
@@ -3322,10 +3256,10 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const MapNod
 	DEV_BLKCHK(field1, type_nod);
 	DEV_BLKCHK(field2, type_nod);
 
-	if (field1->nod_type != nod_field)
-		return false;
+	const FieldNode* fieldNode1 = ExprNode::as<FieldNode>(field1);
+	const FieldNode* fieldNode2 = ExprNode::as<FieldNode>(field2);
 
-	if (field2->nod_type != nod_field)
+	if (!fieldNode1 || !fieldNode2)
 		return false;
 
 	// look through the mapping and see if we can find an equivalence.
@@ -3333,23 +3267,17 @@ static bool map_equal(const jrd_nod* field1, const jrd_nod* field2, const MapNod
 
 	for (const NestConst<jrd_nod>* const map_end = map->items.end(); map_ptr != map_end; ++map_ptr)
 	{
-		const jrd_nod* map_from = (*map_ptr)->nod_arg[e_asgn_from];
-		const jrd_nod* map_to = (*map_ptr)->nod_arg[e_asgn_to];
+		const FieldNode* mapFrom = ExprNode::as<FieldNode>((*map_ptr)->nod_arg[e_asgn_from]);
+		const FieldNode* mapTo = ExprNode::as<FieldNode>((*map_ptr)->nod_arg[e_asgn_to]);
 
-		if (map_from->nod_type != nod_field || map_to->nod_type != nod_field)
+		if (!mapFrom || !mapTo)
 			continue;
 
-		if (field1->nod_arg[e_fld_stream] != map_from->nod_arg[e_fld_stream] ||
-			field1->nod_arg[e_fld_id] != map_from->nod_arg[e_fld_id])
-		{
+		if (fieldNode1->fieldStream != mapFrom->fieldStream || fieldNode1->fieldId != mapFrom->fieldId)
 			continue;
-		}
 
-		if (field2->nod_arg[e_fld_stream] != map_to->nod_arg[e_fld_stream] ||
-			field2->nod_arg[e_fld_id] != map_to->nod_arg[e_fld_id])
-		{
+		if (fieldNode2->fieldStream != mapTo->fieldStream || fieldNode2->fieldId != mapTo->fieldId)
 			continue;
-		}
 
 		return true;
 	}
@@ -3374,14 +3302,13 @@ static bool node_equality(const jrd_nod* node1, const jrd_nod* node2)
 	if (node1 == node2)
 		return true;
 
-	switch (node1->nod_type)
-	{
-		case nod_field:
-			return (node1->nod_arg[e_fld_stream] == node2->nod_arg[e_fld_stream] &&
-					node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]);
+	const FieldNode* fieldNode1 = ExprNode::as<FieldNode>(node1);
+	const FieldNode* fieldNode2 = ExprNode::as<FieldNode>(node2);
 
-		default:
-			break;
+	if (fieldNode1 && fieldNode2)
+	{
+		return fieldNode1->fieldStream == fieldNode2->fieldStream &&
+			fieldNode1->fieldId == fieldNode2->fieldId;
 	}
 
 	return false;
@@ -3687,10 +3614,13 @@ static void set_position(const SortNode* from_clause, SortNode* to_clause, const
 		for (const NestConst<jrd_nod>* const to_end = to_clause->expressions.end();
 			 to_ptr != to_end; ++to_ptr)
 		{
+			const FieldNode* fromField = ExprNode::as<FieldNode>(from_ptr->getObject());
+			const FieldNode* toField = ExprNode::as<FieldNode>(to_ptr->getObject());
+
 			if ((map && map_equal(*to_ptr, *from_ptr, map)) ||
 				(!map &&
-					(*from_ptr)->nod_arg[e_fld_stream] == (*to_ptr)->nod_arg[e_fld_stream] &&
-					(*from_ptr)->nod_arg[e_fld_id] == (*to_ptr)->nod_arg[e_fld_id]))
+					fromField->fieldStream == toField->fieldStream &&
+					fromField->fieldId == toField->fieldId))
 			{
 				jrd_nod* swap = *to_swap;
 				*to_swap = *to_ptr;

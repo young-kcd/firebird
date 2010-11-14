@@ -34,5 +34,6 @@ void	GEN_rse(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
 void	GEN_return(Jrd::DsqlCompilerScratch*, const Firebird::Array<Jrd::dsql_nod*>& variables, bool, bool);
 void	GEN_start_transaction(Jrd::DsqlCompilerScratch*, const Jrd::dsql_nod*);
 void	GEN_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
+void	GEN_stuff_context(Jrd::DsqlCompilerScratch*, const Jrd::dsql_ctx*);
 
 #endif //  DSQL_GEN_PROTO_H

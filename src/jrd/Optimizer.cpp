@@ -117,40 +117,6 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		}
 	}
 
-	USHORT n;
-
-	switch (node->nod_type)
-	{
-	case nod_field:
-		n = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-		if (allowOnlyCurrentStream)
-		{
-			if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
-				return false;
-		}
-		else
-		{
-			if (n == stream)
-				return false;
-		}
-		return csb->csb_rpt[n].csb_flags & csb_active;
-
-	case nod_rec_version:
-	case nod_dbkey:
-		n = (USHORT)(IPTR) node->nod_arg[0];
-		if (allowOnlyCurrentStream)
-		{
-			if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
-				return false;
-		}
-		else
-		{
-			if (n == stream)
-				return false;
-		}
-		return csb->csb_rpt[n].csb_flags & csb_active;
-	}
-
 	return true;
 }
 
@@ -214,7 +180,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		dsc desc1, desc2;
 		CastNode* castNode;
 
-		if ((castNode = ExprNode::as<CastNode>(node1)) && node2->nod_type == nod_field)
+		if ((castNode = ExprNode::as<CastNode>(node1)) && ExprNode::is<FieldNode>(node2))
 		{
 			CMP_get_desc(tdbb, csb, node1, &desc1);
 			CMP_get_desc(tdbb, csb, node2, &desc2);
@@ -226,7 +192,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			}
 		}
 
-		if (node1->nod_type == nod_field && (castNode = ExprNode::as<CastNode>(node2)))
+		if (ExprNode::is<FieldNode>(node1) && (castNode = ExprNode::as<CastNode>(node2)))
 		{
 			CMP_get_desc(tdbb, csb, node1, &desc1);
 			CMP_get_desc(tdbb, csb, node2, &desc2);
@@ -249,20 +215,6 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
 
 			return exprNode1->expressionEqual(tdbb, csb, exprNode2, stream);
-		}
-
-		case nod_rec_version:
-		case nod_dbkey:
-			if (node1->nod_arg[0] == node2->nod_arg[0])
-			{
-				return true;
-			}
-			break;
-
-		case nod_field:
-		{
-			const USHORT fld_stream = (USHORT)(IPTR) node2->nod_arg[e_fld_stream];
-			return (node1->nod_arg[e_fld_id] == node2->nod_arg[e_fld_id]) && fld_stream == stream;
 		}
 
 	    case nod_list:
@@ -692,35 +644,6 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamLis
 		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 			findDependentFromStreams(*ptr, streamList);
 	}
-
-	switch (node->nod_type)
-	{
-		case nod_field:
-		{
-			int fieldStream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-			// dimitr: OLD/NEW contexts shouldn't create any stream dependencies
-			if (fieldStream != stream &&
-				(csb->csb_rpt[fieldStream].csb_flags & csb_active) &&
-				!(csb->csb_rpt[fieldStream].csb_flags & csb_trigger))
-			{
-				if (!streamList->exist(fieldStream))
-					streamList->add(fieldStream);
-			}
-			return;
-		}
-
-		case nod_rec_version:
-		case nod_dbkey:
-		{
-			const int keyStream = (USHORT)(IPTR) node->nod_arg[0];
-			if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
-			{
-				if (!streamList->exist(keyStream))
-					streamList->add(keyStream);
-			}
-			return;
-		}
-	}
 }
 
 const string& OptimizerRetrieval::getAlias()
@@ -974,6 +897,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 		{
 
 			jrd_nod* node = *ptr;
+			FieldNode* fieldNode;
 
 			if (idx->idx_flags & idx_expressn)
 			{
@@ -983,9 +907,8 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 					break;
 				}
 			}
-			else if (node->nod_type != nod_field ||
-				(USHORT)(IPTR) node->nod_arg[e_fld_stream] != stream ||
-				(USHORT)(IPTR) node->nod_arg[e_fld_id] != idx_tail->idx_field)
+			else if (!(fieldNode = ExprNode::as<FieldNode>(node)) ||
+				fieldNode->fieldStream != stream || fieldNode->fieldId != idx_tail->idx_field)
 			{
 				usableIndex = false;
 				break;
@@ -1289,18 +1212,20 @@ jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* pos
  *
  **************************************/
 
-	if (dbkey->nod_type == nod_dbkey)
+	RecordKeyNode* keyNode;
+
+	if ((keyNode = ExprNode::as<RecordKeyNode>(dbkey)) && keyNode->blrOp == blr_dbkey)
 	{
-		if ((USHORT)(IPTR) dbkey->nod_arg[0] == stream)
+		if (keyNode->recStream == stream)
 			return dbkey;
 
 		*position = *position + 1;
 		return NULL;
 	}
 
-	ConcatenateNode* concatNode = ExprNode::as<ConcatenateNode>(dbkey);
+	ConcatenateNode* concatNode;
 
-	if (concatNode)
+	if ((concatNode = ExprNode::as<ConcatenateNode>(dbkey)))
 	{
 		jrd_nod* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
 
@@ -1955,16 +1880,18 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 		// If left side is not a field, swap sides.
 		// If left side is still not a field, give up
 
-		if (match->nod_type != nod_field ||
-			(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
+		FieldNode* fieldNode;
+
+		if (!(fieldNode = ExprNode::as<FieldNode>(match)) ||
+			fieldNode->fieldStream != stream ||
 			(value && !OPT_computable(csb, value, stream, true, false)))
 		{
 			jrd_nod* temp = match;
 			match = value;
 			value = temp;
 
-			if (!match || match->nod_type != nod_field ||
-				(USHORT)(IPTR) match->nod_arg[e_fld_stream] != stream ||
+			if (!(fieldNode = ExprNode::as<FieldNode>(match)) ||
+				fieldNode->fieldStream != stream ||
 				!OPT_computable(csb, value, stream, true, false))
 			{
 				return false;
@@ -2029,8 +1956,15 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
+		FieldNode* fieldNode = ExprNode::as<FieldNode>(match);
+
+		if (!(indexScratch->idx->idx_flags & idx_expressn))
+		{
+			fb_assert(fieldNode);
+		}
+
 		if ((indexScratch->idx->idx_flags & idx_expressn) ||
-			(USHORT)(IPTR) match->nod_arg[e_fld_id] == indexScratch->idx->idx_rpt[i].idx_field)
+			fieldNode->fieldId == indexScratch->idx->idx_rpt[i].idx_field)
 		{
 			if (cmpNode)
 			{
@@ -2212,11 +2146,16 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	jrd_nod* dbkey = cmpNode->arg1;
 	jrd_nod* value = cmpNode->arg2;
+	RecordKeyNode* keyNode;
 
-	if (dbkey->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(dbkey))
+	if (!((keyNode = ExprNode::as<RecordKeyNode>(dbkey)) && keyNode->blrOp == blr_dbkey) &&
+		!ExprNode::is<ConcatenateNode>(dbkey))
 	{
-		if (value->nod_type != nod_dbkey && !ExprNode::is<ConcatenateNode>(value))
+		if (!((keyNode = ExprNode::as<RecordKeyNode>(value)) && keyNode->blrOp == blr_dbkey) &&
+			!ExprNode::is<ConcatenateNode>(value))
+		{
 			return NULL;
+		}
 
 		dbkey = value;
 		value = cmpNode->arg1;
@@ -2238,8 +2177,10 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	}
 
 	// Make sure we have the correct stream
+	keyNode = ExprNode::as<RecordKeyNode>(dbkey);
+	fb_assert(keyNode);
 
-	if ((USHORT)(IPTR) dbkey->nod_arg[0] != stream)
+	if (keyNode->recStream != stream)
 		return NULL;
 
 	// If this is a dbkey for the appropriate stream, it's invertable
@@ -2551,7 +2492,9 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	}
 	else
 	{
-		if (field->nod_type != nod_field)
+		FieldNode* fieldNode = ExprNode::as<FieldNode>(field);
+
+		if (!fieldNode)
 		{
 			// dimitr:	any idea how we can use an index in this case?
 			//			The code below produced wrong results.
@@ -2559,7 +2502,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 			// this must include many matches (think about empty string)
 			return false;
 			/*
-			if (value->nod_type != nod_field)
+			if (!ExprNode::is<FieldNode>(value))
 				return NULL;
 			field = value;
 			value = cmpNode->arg1;
@@ -2581,8 +2524,8 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 
 		// AB: Check if the index-segment is usable for using starts.
 		// Thus it should be of type string, etc...
-		if ((USHORT)(IPTR) field->nod_arg[e_fld_stream] != stream ||
-			(USHORT)(IPTR) field->nod_arg[e_fld_id] != indexScratch->idx->idx_rpt[segment].idx_field ||
+		if (fieldNode->fieldStream != stream ||
+			fieldNode->fieldId != indexScratch->idx->idx_rpt[segment].idx_field ||
 			!(indexScratch->idx->idx_rpt[segment].idx_itype == idx_string ||
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||

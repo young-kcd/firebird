@@ -57,12 +57,6 @@ NODE(nod_init_variable, init_variable, "")
 NODE(nod_set_generator, set_generator, "")
 NODE(nod_set_generator2, set_generator, "")
 
-NODE(nod_dbkey, dbkey, "ROWID")
-NODE(nod_field, field, "")
-NODE(nod_rec_version, record_version, "RECORD VERSION")
-
-NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
-
 NODE(nod_class_exprnode_jrd, class_exprnode_jrd, "class_exprnode_jrd")
 NODE(nod_class_stmtnode_jrd, class_stmtnode_jrd, "class_stmtnode_jrd")
 NODE(nod_class_recsrcnode_jrd, class_recsrcnode_jrd, "class_recsrcnode_jrd")

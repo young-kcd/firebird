@@ -309,6 +309,7 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 	USHORT* impure_flags = NULL;
 	const ParameterNode* toParam;
 	const VariableNode* toVar;
+	const FieldNode* toField;
 
 	if ((toParam = ExprNode::as<ParameterNode>(to)))
 	{
@@ -459,16 +460,14 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 
 	// Handle the null flag as appropriate for fields and message arguments.
 
-	if (to->nod_type == nod_field)
+	if ((toField = ExprNode::as<FieldNode>(to)))
 	{
-		const SSHORT id = (USHORT)(IPTR) to->nod_arg[e_fld_id];
-		Record* record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
-		if (null) {
-			SET_NULL(record, id);
-		}
-		else {
-			CLEAR_NULL(record, id);
-		}
+		Record* record = request->req_rpb[toField->fieldStream].rpb_record;
+
+		if (null)
+			SET_NULL(record, toField->fieldId);
+		else
+			CLEAR_NULL(record, toField->fieldId);
 	}
 	else if (toParam && toParam->argFlag)
 	{
@@ -1831,7 +1830,7 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_node)
+const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_node, bool stmtExpr)
 {
 /**************************************
  *
@@ -1870,7 +1869,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 	jrd_tra* old_transaction = tdbb->getTransaction();
 	tdbb->setTransaction(transaction);
 
-	if (in_node->nod_type != nod_stmt_expr)
+	if (!stmtExpr)
 	{
 	    fb_assert(request->req_caller == NULL);
 		request->req_caller = old_request;
@@ -1895,7 +1894,9 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 
 	bool runExternal = statement->procedure && statement->procedure->getExternal();
 
-	while (runExternal || (node && !(request->req_flags & req_stall)))
+	while (runExternal ||
+		(node && !(request->req_flags & req_stall) &&
+		 (!stmtExpr || request->req_operation == jrd_req::req_evaluate)))
 	{
 	try {
 		if (statement->procedure && statement->procedure->getExternal())
@@ -2744,13 +2745,6 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 			node = reinterpret_cast<const StmtNode*>(node->nod_arg[0])->execute(tdbb, request);
 			break;
 
-		case nod_stmt_expr:
-			if (request->req_operation == jrd_req::req_evaluate)
-				node = node->nod_arg[e_stmt_expr_stmt];
-			else
-				node = NULL;
-			break;
-
 		default:
 			BUGCHECK(168);		// msg 168 looper: action not yet implemented
 		}
@@ -2814,16 +2808,14 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 	// request unless we are in the middle of processing an
 	// asynchronous message
 
-	if (in_node->nod_type != nod_stmt_expr && !node)
+	if (!stmtExpr && !node)
 	{
 		// Close active cursors
 		for (const Cursor* const* ptr = request->req_cursors.begin();
 			 ptr < request->req_cursors.end(); ++ptr)
 		{
 			if (*ptr)
-			{
 				(*ptr)->close(tdbb);
-			}
 		}
 
 		request->req_flags &= ~(req_active | req_reserved);
@@ -2836,7 +2828,7 @@ end:
 	tdbb->setTransaction(old_transaction);
 	tdbb->setRequest(old_request);
 
-	if (in_node->nod_type != nod_stmt_expr)
+	if (!stmtExpr)
 	{
 		fb_assert(request->req_caller == old_request);
 		request->req_caller = NULL;
@@ -3660,7 +3652,13 @@ static void validate(thread_db* tdbb, const jrd_nod* list)
 	{
 		jrd_req* request = tdbb->getRequest();
 
-		if (!EVL_boolean(tdbb, (*ptr1)->nod_arg[e_val_boolean]) && !(request->req_flags & req_null))
+		if ((*ptr1)->nod_arg[e_val_stmt])
+			EXE_looper(tdbb, request, (*ptr1)->nod_arg[e_val_stmt], true);
+
+		BoolExprNode* boolExpr = reinterpret_cast<BoolExprNode*>(
+			(*ptr1)->nod_arg[e_val_boolean]->nod_arg[0]);
+
+		if (!boolExpr->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
 			// Validation error -- report result
 			const char* value;
@@ -3685,25 +3683,24 @@ static void validate(thread_db* tdbb, const jrd_nod* list)
 				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
 			}
 
-			const TEXT*	name = 0;
-			if (node->nod_type == nod_field)
-			{
-				const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
-				const USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
-				const jrd_rel* relation = request->req_rpb[stream].rpb_relation;
+			const TEXT*	name = NULL;
+			const FieldNode* fieldNode = ExprNode::as<FieldNode>(node);
 
-				const jrd_fld* field;
+			if (fieldNode)
+			{
+				const jrd_rel* relation = request->req_rpb[fieldNode->fieldStream].rpb_relation;
 				const vec<jrd_fld*>* vector = relation->rel_fields;
-				if (vector && id < vector->count() && (field = (*vector)[id]))
+				const jrd_fld* field;
+
+				if (vector && fieldNode->fieldId < vector->count() &&
+					(field = (*vector)[fieldNode->fieldId]))
 				{
 					name = field->fld_name.c_str();
 				}
 			}
 
 			if (!name)
-			{
 				name = UNKNOWN_STRING_MARK;
-			}
 
 			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) << Arg::Str(value));
 		}

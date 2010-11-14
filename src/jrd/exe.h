@@ -116,13 +116,11 @@ public:
 	***/
 };
 
-const int nod_id			= 1;		// marks a field node as a blr_fid guy
-const int nod_quad			= 2;		// compute in quad (default is long)
-const int nod_double		= 4;
-const int nod_date			= 8;
-const int nod_value			= 16;		// full value area required in impure space
-const int nod_agg_dbkey		= 32;		// dbkey of an aggregate
-const int nod_invariant		= 64;		// node is recognized as being invariant
+const int nod_quad			= 1;		// compute in quad (default is long)
+const int nod_double		= 2;
+const int nod_date			= 4;
+const int nod_value			= 8;		// full value area required in impure space
+const int nod_invariant		= 16;		// node is recognized as being invariant
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;
@@ -175,12 +173,6 @@ const int e_msg_format			= 1;
 const int e_msg_impure_flags	= 2;
 const int e_msg_length			= 3;
 
-const int e_fld_stream		= 0;
-const int e_fld_id			= 1;
-const int e_fld_format		= 2;		// relation or procedure latest format when compiling
-const int e_fld_default_value	= 3;	// hold column default value info if any
-const int e_fld_length		= 4;
-
 const int e_sto_statement	= 0;
 const int e_sto_statement2	= 1;
 const int e_sto_sub_store	= 2;
@@ -218,9 +210,10 @@ const int e_lbl_statement	= 0;
 const int e_lbl_label		= 1;
 const int e_lbl_length		= 2;
 
-const int e_val_boolean		= 0;
-const int e_val_value		= 1;
-const int e_val_length		= 2;
+const int e_val_stmt		= 0;
+const int e_val_boolean		= 1;
+const int e_val_value		= 2;
+const int e_val_length		= 3;
 
 // Execute stored procedure
 
@@ -297,11 +290,6 @@ const int e_exec_stmt_extra_outputs		= 2;
 const int e_exec_stmt_extra_tran		= 3;
 const int e_exec_stmt_extra_privs		= 4;
 const int e_exec_stmt_extra_count		= 5;
-
-// nod_stmt_expr
-const int e_stmt_expr_stmt		= 0;
-const int e_stmt_expr_expr		= 1;
-const int e_stmt_expr_length	= 2;
 
 // index (in nod_list) for external procedure blr
 const int e_extproc_input_message	= 0;

@@ -266,19 +266,24 @@ public:
 		TYPE_CURRENT_ROLE,
 		TYPE_CURRENT_USER,
 		TYPE_DERIVED_EXPR,
+		TYPE_DERIVED_FIELD,
 		TYPE_DOMAIN_VALIDATION,
 		TYPE_EXTRACT,
+		TYPE_FIELD,
 		TYPE_GEN_ID,
 		TYPE_INTERNAL_INFO,
 		TYPE_LITERAL,
+		TYPE_MAP,
 		TYPE_MISSING_BOOL,
 		TYPE_NEGATE,
 		TYPE_NOT_BOOL,
 		TYPE_NULL,
 		TYPE_OVER,
 		TYPE_PARAMETER,
+		TYPE_RECORD_KEY,
 		TYPE_RSE_BOOL,
 		TYPE_SCALAR,
+		TYPE_STMT_EXPR,
 		TYPE_STR_CASE,
 		TYPE_STR_LEN,
 		TYPE_SUBQUERY,
@@ -384,8 +389,6 @@ public:
 
 	virtual bool jrdUnmappedNodeGetter(UnmappedNodeGetter& visitor)
 	{
-		visitor.nodeFound = node;
-
 		for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 		{
 			if (!visitor.visit(*i))

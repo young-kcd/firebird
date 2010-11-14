@@ -61,6 +61,7 @@ void			PAR_dependency(Jrd::thread_db*, Jrd::CompilerScratch*, SSHORT, SSHORT,
 	const Firebird::MetaName&);
 USHORT			PAR_desc(Jrd::thread_db*, Jrd::CompilerScratch*, dsc*, Jrd::ItemInfo* = NULL);
 void			PAR_error(Jrd::CompilerScratch*, const Firebird::Arg::StatusVector&, bool isSyntaxError = true);
+SSHORT			PAR_find_proc_field(const Jrd::jrd_prc*, const Firebird::MetaName&);
 Jrd::jrd_nod*	PAR_gen_field(Jrd::thread_db*, USHORT, USHORT);
 Jrd::jrd_nod*	PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
 Jrd::jrd_nod*	PAR_make_list(Jrd::thread_db*, Jrd::NodeStack&);

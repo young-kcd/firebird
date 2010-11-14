@@ -278,7 +278,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		EngineCallbackGuard guard(tdbb, *this);
 		IntStatus s(status);
 		m_transaction = reinterpret_cast<jrd_tra*>
-				(att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer(), NULL));
+				(att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer(), 0));
 																	//// FIXME: public_handle
 	}
 }

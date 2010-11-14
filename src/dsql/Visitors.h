@@ -35,6 +35,7 @@ class dsql_nod;
 class ExprNode;
 class jrd_nod;
 class JrdNodeVisitor;
+class FieldNode;
 class MapNode;
 
 
@@ -378,7 +379,6 @@ class StreamFinder : public JrdNodeVisitor
 public:
 	StreamFinder(CompilerScratch* aCsb, UCHAR aStream);
 
-public:
 	static bool find(CompilerScratch* csb, UCHAR stream, const JrdNode& node)
 	{
 		return StreamFinder(csb, stream).visit(node);
@@ -386,7 +386,7 @@ public:
 
 	virtual bool visit(const JrdNode& node);
 
-private:
+public:
 	CompilerScratch* const csb;
 	const UCHAR stream;
 };
@@ -397,7 +397,6 @@ class StreamsCollector : public JrdNodeVisitor
 public:
 	StreamsCollector(Firebird::SortedArray<int>& aStreams);
 
-public:
 	static bool collect(const JrdNode& node, Firebird::SortedArray<int>& streams)
 	{
 		return StreamsCollector(streams).visit(node);
@@ -405,7 +404,7 @@ public:
 
 	virtual bool visit(const JrdNode& node);
 
-private:
+public:
 	Firebird::SortedArray<int>& streams;
 };
 
@@ -415,10 +414,10 @@ class UnmappedNodeGetter : public JrdNodeVisitor
 public:
 	UnmappedNodeGetter(/*const*/ MapNode* aMap, UCHAR aShellStream);
 
-	static JrdNode get(/*const*/ MapNode* map, UCHAR shellStream, const JrdNode& node)
+	static bool check(/*const*/ MapNode* map, UCHAR shellStream, const JrdNode& node)
 	{
 		UnmappedNodeGetter obj(map, shellStream);
-		return obj.visit(node) && !obj.invalid ? obj.nodeFound : JrdNode();
+		return obj.visit(node) && !obj.invalid;
 	}
 
 	virtual bool visit(const JrdNode& node);
@@ -426,9 +425,7 @@ public:
 public:
 	/*const*/ MapNode* map;
 	const UCHAR shellStream;
-	bool rootNode;
 	bool invalid;
-	JrdNode nodeFound;
 };
 
 
@@ -465,7 +462,7 @@ public:
 		return fldId;
 	}
 
-	virtual USHORT getFieldId(jrd_nod* input);
+	virtual USHORT getFieldId(FieldNode* input);
 
 public:
 	CompilerScratch* csb;

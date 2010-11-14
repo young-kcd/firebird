@@ -23,6 +23,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/req.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
@@ -273,7 +274,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 		const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
 		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
-			if (item->node && item->node->nod_type != nod_field)
+			if (item->node.getObject() && !ExprNode::is<FieldNode>(item->node.getObject()))
 				continue;
 
 			if (item->stream == stream)
@@ -283,9 +284,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 			record_param* const rpb = &request->req_rpb[stream];
 
 			if (rpb->rpb_relation)
-			{
 				VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
-			}
 		}
 	}
 
@@ -314,9 +313,8 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		const UCHAR flag = *(data + item->flagOffset);
 		from = item->desc;
 		from.dsc_address = data + (IPTR) from.dsc_address;
-		const jrd_nod* const node = item->node;
 
-		if (node && node->nod_type != nod_field)
+		if (item->node.getObject() && !ExprNode::is<FieldNode>(item->node.getObject()))
 			continue;
 
 		// if moving a TEXT item into the key portion of the sort record,
