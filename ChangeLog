@@ -1,3 +1,11 @@
+ 2010-11-13 06:40  dimitr 
+   M src/jrd/isc_file.cpp
+This is a poor man's extension to the solution for CORE-1038 (Remote shadows on NT-based systems) that's expected to fix CORE-3059 (RemoteFileOpenAbility fails on Windows).
+
+ 2010-11-13 06:34  dimitr 
+   M src/dsql/pass1.cpp
+Backport CORE-2812: Prohibit any improper mixture of explicit and implicit joins.
+
  2010-11-12 12:20  alexpeshkoff 
    M src/jrd/os/posix/os_utils.cpp
 Backported fix for CORE-3229: Records: "operating system directive open failed, Too many links" in firebird.log
