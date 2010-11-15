@@ -1,3 +1,59 @@
+ 2010-11-14 22:31  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/WinNodes.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/trace/TraceObjects.cpp
+Remove dependency of jrd_nod in ExprNode
+
+ 2010-11-14 17:25  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/constants.h
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/exe_proto.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/lls.h
+   M src/jrd/nod.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/misc/blrtable.cpp
+Refactored DSQL nodes: nod_derived_field, nod_map, nod_dbkey and nod_rec_version.
+Refactored JRD nodes: blr_field (JRD side only), blr_dbkey, blr_record_version and blr_stmt_expr.
+
  2010-11-13 15:04  dimitr 
    M src/dsql/parse.y
 Let's clearly distinguish between deterministic and invariant functions, they're not the same thing actually. Runtime optimization usage is to be re-considered, if necessary.
