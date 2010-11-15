@@ -1313,8 +1313,11 @@ void BURP_abort()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print(true, 83);
-	// msg 83 Exiting before completion due to errors
+	if (!tdgbl->uSvc->isService())
+	{
+		BURP_print(true, 83);
+		// msg 83 Exiting before completion due to errors
+	}
 
 	tdgbl->uSvc->started();
 
