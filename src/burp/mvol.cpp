@@ -516,7 +516,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			// Write to the current file till fil_lingth > 0, otherwise
+			// Write to the current file till fil_length > 0, otherwise
 			// switch to the next one
 			if (tdgbl->action->act_file->fil_length == 0)
 			{
