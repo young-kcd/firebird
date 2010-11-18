@@ -3359,10 +3359,9 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 		if (charSet->isMultiByte())
 		{
 			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
-
-			start = charSet->length(
-				BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false),
-				buffer.begin(), true);
+			SLONG length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
+				blob->blb_length, false);
+			start = charSet->length(length, buffer.begin(), true);
 		}
 		else
 			start = blob->blb_length / charSet->maxBytesPerChar();
