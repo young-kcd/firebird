@@ -1223,9 +1223,11 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 	UCHAR* p;
 	MoveBuffer temp;
-	const int length = MOV_make_string2(tdbb, value,
-		(cs->isMultiByte() || cs->minBytesPerChar() > 1 ? ttype_ascii : value->getCharSet()),
-		&p, temp);
+	int length = MOV_make_string2(tdbb, value, value->getCharSet(), &p, temp);
+	UCHAR dummy[4];
+
+	if (cs->substring(length, p, sizeof(dummy), dummy, 0, 1) != 1)
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_transliteration_failed));
 
 	impure->vlu_misc.vlu_short = (length > 0 ? p[0] : 0);
 	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
