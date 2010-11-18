@@ -2966,7 +2966,7 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 	// if the first string is empty, we should return 1 accordingly to SQL2003 standard
 	if (value1CanonicalLen == 0)
 	{
-		impure->vlu_misc.vlu_long = 1;
+		impure->vlu_misc.vlu_long = start;
 		return &impure->vlu_desc;
 	}
 
