@@ -356,6 +356,12 @@ bool ISC_analyze_pclan(tstring& expanded_name, tstring& node_name)
 	if (p == npos)
 		return false;
 
+	if (Config::getRemoteFileOpenAbility())
+	{
+		if (expanded_name.find(':', p + 1) == npos)
+			return false;
+	}
+
 	node_name = "\\\\";
 	node_name += expanded_name.substr(2, p - 2);
 
