@@ -3021,7 +3021,7 @@ void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type
 
 		try
 		{
-			JRD_receive(tdbb, request, msg_type, msg_length, reinterpret_cast<UCHAR*>(msg));
+			JRD_receive(tdbb, request, msg_type, msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
