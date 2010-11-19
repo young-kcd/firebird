@@ -2860,6 +2860,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		TraceSQLStatementImpl stmt(request, NULL);
 		TraceManager::event_dsql_free(att, &stmt, DSQL_drop);
 	}
+	request->req_traced = false;
 
 	// If request is named, clear it from the hash table
 
