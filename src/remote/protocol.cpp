@@ -1024,6 +1024,10 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 			{
 				return FALSE;
 			}
+			if (xdrs->x_op == XDR_DECODE && desc->dsc_length - 2 > v->vary_length)
+			{
+				memset(v->vary_string + v->vary_length, 0, desc->dsc_length - 2 - v->vary_length);
+			}
 		}
 		break;
 
