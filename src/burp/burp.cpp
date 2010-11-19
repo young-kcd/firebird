@@ -2134,3 +2134,33 @@ static ULONG get_size(const SCHAR* string, burp_fil* file)
 	file->fil_length = size;
 	return size;
 }
+
+
+#ifndef WIN_NT
+void close_platf(DESC file)
+{
+/**********************************************
+ *
+ *      c l o s e _ p l a t f
+ *
+ **********************************************
+ *
+ * Functional description
+ *	Truncate and close file - posix version
+ *
+ **********************************************/
+	if (sizeof(off_t) > 4)		// 64 bit or b4-bit IO in 32 bit OS
+	{
+#ifndef	O_ACCMODE
+// Suppose compatibility with KR where 0, 1, 2 were documented for RO, WO and RW in open() still exists
+#define O_ACCMODE 3
+#endif
+		off_t fileSize = lseek(file, 0, SEEK_CUR);
+		if (fileSize != (off_t)(-1))
+		{
+			ftruncate(file, fileSize);
+		}
+	}
+	close(file);
+}
+#endif // WIN_NT
