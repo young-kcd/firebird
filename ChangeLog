@@ -1,3 +1,19 @@
+ 2010-11-18 15:06  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3227	- ASCII_VAL() fails if argument	contains multi-byte character anywhere
+
+ 2010-11-18 14:53  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3228	- RIGHT() fails with multibyte text blobs > 1024 chars
+
+ 2010-11-18 14:26  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3244	- POSITION: Wrong result with '' if third argument present
+
+ 2010-11-18 11:40  dimitr 
+   M src/common/isc_file.cpp
+Front ported CORE-3059: RemoteFileOpenAbility fails on Windows.
+
  2010-11-15 17:03  alexpeshkoff 
    M src/burp/burp.cpp
 Fixed assertion
