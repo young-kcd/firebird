@@ -336,7 +336,8 @@ bool ConfigFile::translate(const String& from, String& to)
 		PathUtils::splitLastComponent(path, file, configFile.ToPathName());
 		to = path.ToString();
 	}
-/*	else if (!substituteOneOfStandardFirebirdDirs(from, to))
+/*	ToDo - implement this feature
+	else if (!substituteOneOfStandardFirebirdDirs(from, to))
 	{
 		return false;
 	}	*/
