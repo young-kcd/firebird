@@ -1393,9 +1393,11 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		}
 		break;
 
+	case dtype_varying:
+		MOVE_CLEAR(to->dsc_address, to->dsc_length);
+		// fall through ...
 	case dtype_text:
 	case dtype_cstring:
-	case dtype_varying:
 		switch (from->dsc_dtype)
 		{
 		case dtype_dbkey:
