@@ -4242,6 +4242,7 @@ void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
 ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	fb_assert(false);
+	return NULL;
 }
 
 void FieldNode::setParameterName(dsql_par* parameter) const
@@ -4262,6 +4263,7 @@ void FieldNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
 	fb_assert(false);
+	return false;
 }
 
 bool FieldNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
