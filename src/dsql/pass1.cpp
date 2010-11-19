@@ -456,6 +456,10 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 		{
 			const dsql_ctx* conflict = stack.object();
 
+			// dimitr:	we don't check for ctx_hidden here because the newly created context
+			//			should be validated against all the known ones of the same level,
+			//			so that a context duplication error would be thrown properly
+
 			if (conflict->ctx_scope_level != context->ctx_scope_level) {
 				continue;
 			}
@@ -4190,8 +4194,11 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 		for (DsqlContextStack::iterator stack(*statement->req_context); stack.hasData(); ++stack)
 		{
 			dsql_ctx* context = stack.object();
-			if (context->ctx_scope_level != statement->req_scope_level)
+			if (context->ctx_hidden ||
+				(context->ctx_scope_level != statement->req_scope_level))
+			{
 				continue;
+			}
 
 			if (context->ctx_relation)
 				contexts.push(context);
@@ -4228,11 +4235,12 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 			{
 				dsql_ctx* context = stack.object();
 
-				if ((!context->ctx_relation ||
+				if (context->ctx_hidden ||
+					((!context->ctx_relation ||
 						context->ctx_relation->rel_name != qualifier->str_data ||
 						!rlxAlias && context->ctx_internal_alias) &&
 					(!context->ctx_internal_alias ||
-						strcmp(qualifier->str_data, context->ctx_internal_alias) != 0))
+						strcmp(qualifier->str_data, context->ctx_internal_alias) != 0)))
 				{
 					continue;
 				}
@@ -5412,7 +5420,9 @@ static dsql_nod* pass1_field(CompiledStatement* statement, dsql_nod* input,
 
 				dsql_ctx* context = stack.object();
 
-				if (context->ctx_scope_level != (current_scope_level - 1)) {
+				if (context->ctx_hidden ||
+					(context->ctx_scope_level != (current_scope_level - 1)))
+				{
 					continue;
 				}
 
@@ -6512,11 +6522,24 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 	DEV_BLKCHK(statement, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	// Set up an empty context to process the joins
+	// Temporarily hide contexts of the same level
 
-	DsqlContextStack* const base_context = statement->req_context;
-	DsqlContextStack temp;
-	statement->req_context = &temp;
+	HalfStaticArray<dsql_ctx*, 16> hidden_contexts;
+	for (DsqlContextStack::iterator itr(*statement->req_context); itr.hasData(); ++itr)
+	{
+		dsql_ctx* const context = itr.object();
+		if (context->ctx_scope_level == statement->req_scope_level)
+		{
+			hidden_contexts.add(context);
+		}
+	}
+
+	for (size_t i = 0; i < hidden_contexts.getCount(); i++)
+	{
+		hidden_contexts[i]->ctx_hidden++;
+	}
+
+	// Recreate the node
 
 	dsql_nod* const node = MAKE_node(input->nod_type, input->nod_count);
 
@@ -6752,14 +6775,12 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 
 	node->nod_arg[e_join_boolean] = PASS1_node(statement, boolean);
 
-	// Merge the newly created contexts with the original ones
+	// Restore visibility of the hidden contexts
 
-	while (temp.hasData())
+	for (size_t i = 0; i < hidden_contexts.getCount(); i++)
 	{
-		base_context->push(temp.pop());
+		hidden_contexts[i]->ctx_hidden--;
 	}
-
-	statement->req_context = base_context;
 
 	return node;
 }
@@ -7667,7 +7688,9 @@ static dsql_ctx* pass1_alias(CompiledStatement* statement, DsqlContextStack& sta
 	for (DsqlContextStack::iterator itr(stack); itr.hasData(); ++itr)
 	{
 		dsql_ctx* context = itr.object();
-		if (context->ctx_scope_level != statement->req_scope_level) {
+		if (context->ctx_hidden ||
+			(context->ctx_scope_level != statement->req_scope_level))
+		{
 			continue;
 		}
 
