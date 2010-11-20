@@ -1,3 +1,25 @@
+ 2010-11-19 17:36  alexpeshkoff 
+   M src/common/cvt.cpp
+Backported improvement CORE-3248: Set unused bytes of varchar values in message buffer to 0
+
+ 2010-11-19 15:13  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+Backported fix for CORE-3249: gbak file is not truncated during backup operation
+
+ 2010-11-19 15:11  alexpeshkoff 
+   M src/remote/protocol.cpp
+Backported improvement CORE-3248: Set unused bytes of varchar values in message buffer to 0
+
+ 2010-11-19 14:33  hvlad 
+   M src/dsql/dsql.cpp
+Fixed bug CORE-3219 : trace manager crash server with DSQL_unprepare
+
+ 2010-11-19 12:14  dimitr 
+   M src/dsql/dsql.h
+   M src/dsql/pass1.cpp
+Second attempt to fix CORE-2812. The prior one introduced regressions.
+
  2010-11-18 16:19  alexpeshkoff 
    M src/burp/mvol.cpp
 Misc
