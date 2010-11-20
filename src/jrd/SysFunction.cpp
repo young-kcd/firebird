@@ -2965,8 +2965,10 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 	const SLONG value1CanonicalLen = tt->canonical(value1Length, value1Address,
 		value1Canonical.getCount(), value1Canonical.begin()) * canonicalWidth;
 
-	// if the first string is empty, we should return 1 accordingly to SQL2003 standard
-	if (value1CanonicalLen == 0)
+	// If the first string is empty, we should return the start position accordingly to the SQL2003
+	// standard. Using the same logic with our "start" parameter (an extension to the standard),
+	// we should return it if it's >= 1 and <= (the other string length + 1). Otherwise, return 0.
+	if (value1CanonicalLen == 0 && start == 1)
 	{
 		impure->vlu_misc.vlu_long = start;
 		return &impure->vlu_desc;
@@ -2992,6 +2994,12 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 	value2Canonical.getBuffer(value2Length / cs->minBytesPerChar() * canonicalWidth);
 	const SLONG value2CanonicalLen = tt->canonical(value2Length, value2Address,
 		value2Canonical.getCount(), value2Canonical.begin()) * canonicalWidth;
+
+	if (value1CanonicalLen == 0)
+	{
+		impure->vlu_misc.vlu_long = (start <= value2CanonicalLen / canonicalWidth + 1) ? start : 0;
+		return &impure->vlu_desc;
+	}
 
 	// if the second string is empty, first one is not inside it
 	if (value2CanonicalLen == 0)
