@@ -1,3 +1,8 @@
+ 2010-11-21 02:36  asfernandes 
+   M src/burp/burp.cpp
+   M src/common/config/config_file.cpp
+Misc
+
  2010-11-20 00:43  asfernandes 
    M src/jrd/SysFunction.cpp
 Correction for CORE-3244
