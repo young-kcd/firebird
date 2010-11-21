@@ -105,8 +105,8 @@ cat >$TestCpp <<eof
 #include <stdlib.h>
 typedef unsigned short USHORT;
 #include "$Mini"
-main()
-{ exit(ODS_VERSION); }
+int main()
+{ return ODS_VERSION; }
 eof
 
 [ -z "$CXX" ] && CXX=g++
