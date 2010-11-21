@@ -37,7 +37,7 @@ using namespace Jrd;
 // Data access: skip N rows filter
 // -------------------------------
 
-SkipRowsStream::SkipRowsStream(CompilerScratch* csb, RecordSource* next, jrd_nod* value)
+SkipRowsStream::SkipRowsStream(CompilerScratch* csb, RecordSource* next, ValueExprNode* value)
 	: m_next(next), m_value(value)
 {
 	fb_assert(m_next && m_value);
@@ -52,7 +52,7 @@ void SkipRowsStream::open(thread_db* tdbb) const
 
 	impure->irsb_flags = irsb_open;
 
-	const dsc* desc = EVL_expr(tdbb, m_value);
+	const dsc* desc = EVL_expr(tdbb, request, m_value);
 	const SINT64 value = (desc && !(request->req_flags & req_null)) ? MOV_get_int64(desc, 0) : 0;
 
     if (value < 0)

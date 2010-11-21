@@ -388,7 +388,8 @@ ExtEngineManager::Function::~Function()
 }
 
 
-void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure) const
+void ExtEngineManager::Function::execute(thread_db* tdbb, const NestValueArray& args,
+	impure_value* impure) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
@@ -402,12 +403,14 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, i
 
 	HalfStaticArray<impure_value, 32> impureArgs;
 
-	impure_value* impureArgsPtr = impureArgs.getBuffer(args->nod_count);
+	jrd_req* request = tdbb->getRequest();
+	impure_value* impureArgsPtr = impureArgs.getBuffer(args.getCount());
+
 	try
 	{
-		ValuesImpl params(pool, args->nod_count);
+		ValuesImpl params(pool, args.getCount());
 
-		for (int i = 0; i < args->nod_count; ++i)
+		for (size_t i = 0; i < args.getCount(); ++i)
 		{
 			impureArgsPtr->vlu_desc = udf->fun_args[i + 1].fun_parameter->prm_desc;
 
@@ -423,9 +426,9 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, i
 				impureArgsPtr->vlu_desc.dsc_address = (UCHAR*) &impureArgsPtr->vlu_misc;
 			}
 
-			dsc* arg = EVL_expr(tdbb, args->nod_arg[i]);
+			dsc* arg = EVL_expr(tdbb, request, args[i]);
 
-			if (tdbb->getRequest()->req_flags & req_null)
+			if (request->req_flags & req_null)
 				impureArgsPtr->vlu_desc.dsc_flags = DSC_null;
 			else
 			{
@@ -445,19 +448,19 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const jrd_nod* args, i
 	}
 	catch (...)
 	{
-		for (int i = 0; i < args->nod_count; ++i)
+		for (size_t i = 0; i < args.getCount(); ++i)
 			delete impureArgs[i].vlu_string;
 
 		throw;
 	}
 
-	for (int i = 0; i < args->nod_count; ++i)
+	for (size_t i = 0; i < args.getCount(); ++i)
 		delete impureArgs[i].vlu_string;
 
 	if (result.isNull())
-		tdbb->getRequest()->req_flags |= req_null;
+		request->req_flags |= req_null;
 	else
-		tdbb->getRequest()->req_flags &= ~req_null;
+		request->req_flags &= ~req_null;
 }
 
 

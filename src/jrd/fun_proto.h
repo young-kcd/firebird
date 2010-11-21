@@ -24,6 +24,9 @@
 #ifndef JRD_FUN_PROTO_H
 #define JRD_FUN_PROTO_H
 
+#include "../dsql/Nodes.h"
+
+
 class IbUtil
 {
 public:
@@ -33,7 +36,8 @@ public:
 	static bool free(void* ptr);
 };
 
+void FUN_evaluate(Jrd::thread_db*, const Jrd::Function*, const Jrd::NestValueArray&,
+	Jrd::impure_value*);
 
-void FUN_evaluate(Jrd::thread_db*, const Jrd::Function*, const Jrd::jrd_nod*, Jrd::impure_value*);
 
 #endif // JRD_FUN_PROTO_H

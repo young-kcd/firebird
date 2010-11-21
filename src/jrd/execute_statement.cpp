@@ -130,8 +130,10 @@ void ExecuteStatement::open(thread_db* tdbb, const jrd_nod* sql, SSHORT nVars, b
 	varCount = nVars;
 	singleMode = singleton;
 
+	jrd_req* request = tdbb->getRequest();
 	Firebird::string sqlText;
-	getString(tdbb, sqlText, EVL_expr(tdbb, sql), tdbb->getRequest());
+
+	getString(tdbb, sqlText, EVL_expr(tdbb, request, sql->asValue()), request);
 	memcpy(startOfSqlOperator, sqlText.c_str(), sizeof(startOfSqlOperator) - 1);
 	startOfSqlOperator[sizeof(startOfSqlOperator) - 1] = 0;
 
@@ -199,7 +201,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, const jrd_nod* const* jrdVar)
 	{
 		dsc& desc = resultSet->getDesc(i + 1);
 		bool nullFlag = resultSet->isNull(i + 1);
-		EXE_assignment(tdbb, jrdVar[i], &desc, nullFlag, NULL, NULL);
+		EXE_assignment(tdbb, jrdVar[i]->asValue(), &desc, nullFlag, NULL, NULL);
 	}
 
 	if (singleMode)

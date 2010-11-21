@@ -119,7 +119,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
+dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 {
 /**************************************
  *
@@ -137,10 +137,8 @@ dsc* EVL_assign_to(thread_db* tdbb, const jrd_nod* node)
 
 	DEV_BLKCHK(node, type_nod);
 
-	const ExprNode* exprNode = node->asExpr();
-
 	jrd_req* request = tdbb->getRequest();
-	impure_value* impure = request->getImpure<impure_value>(exprNode->impureOffset);
+	impure_value* impure = request->getImpure<impure_value>(node->impureOffset);
 
 	// The only nodes that can be assigned to are: argument, field and variable.
 
@@ -258,9 +256,10 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 
 	case InversionNode::TYPE_DBKEY:
 		{
-			impure_inversion* impure = tdbb->getRequest()->getImpure<impure_inversion>(node->impure);
+			jrd_req* request = tdbb->getRequest();
+			impure_inversion* impure = request->getImpure<impure_inversion>(node->impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			const dsc* desc = EVL_expr(tdbb, node->value);
+			const dsc* desc = EVL_expr(tdbb, request, node->value);
 
 			if (!(tdbb->getRequest()->req_flags & req_null) &&
 				desc->dsc_length == sizeof(RecordNumber::Packed))
@@ -296,35 +295,20 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 }
 
 
-dsc* EVL_expr(thread_db* tdbb, const jrd_nod* node)
+// Evaluate a value expression.
+dsc* EVL_expr(thread_db* tdbb, jrd_req* request, const ValueExprNode* node)
 {
-/**************************************
- *
- *      E V L _ e x p r
- *
- **************************************
- *
- * Functional description
- *      Evaluate a value expression.
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
 	if (!node)
-		BUGCHECK(303);			// msg 303 Invalid expression for evaluation
+		BUGCHECK(303);	// msg 303 Invalid expression for evaluation
 
 	SET_TDBB(tdbb);
 
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-	const ValueExprNode* exprNode = static_cast<const ValueExprNode*>(node->asExpr());
-
-	jrd_req* const request = tdbb->getRequest();
-	impure_value* const impure = request->getImpure<impure_value>(exprNode->impureOffset);
 	request->req_flags &= ~req_null;
 
-	dsc* desc = exprNode->execute(tdbb, request);
+	dsc* desc = node->execute(tdbb, request);
 
 	if (desc)
 		request->req_flags &= ~req_null;

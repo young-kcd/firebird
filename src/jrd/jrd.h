@@ -305,7 +305,7 @@ class Parameter : public pool_alloc<type_prm>
 public:
 	USHORT		prm_number;
 	dsc			prm_desc;
-	NestConst<jrd_nod>	prm_default_value;
+	NestConst<ValueExprNode>	prm_default_value;
 	bool		prm_nullable;
 	prm_mech_t	prm_mechanism;
 	Firebird::MetaName prm_name;			// asciiz name
@@ -325,7 +325,7 @@ class IndexBlock : public pool_alloc<type_idb>
 {
 public:
 	IndexBlock*	idb_next;
-	jrd_nod*	idb_expression;				// node tree for index expression
+	ValueExprNode* idb_expression;			// node tree for index expression
 	JrdStatement* idb_expression_statement;	// statement for index expression evaluation
 	dsc			idb_expression_desc;		// descriptor for expression result
 	Lock*		idb_lock;					// lock to synchronize changes to index

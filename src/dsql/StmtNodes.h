@@ -155,8 +155,8 @@ public:
 	Firebird::MetaName name;
 	dsql_nod* dsqlMessageExpr;
 	dsql_nod* dsqlParameters;
-	NestConst<jrd_nod> messageExpr;
-	NestConst<jrd_nod> parameters;
+	NestConst<ValueExprNode> messageExpr;
+	NestConst<ValueListNode> parameters;
 	NestConst<PsqlException> exception;
 };
 
@@ -249,8 +249,8 @@ public:
 public:
 	dsql_nod* dsqlEvent;
 	dsql_nod* dsqlArgument;
-	NestConst<jrd_nod> event;
-	NestConst<jrd_nod> argument;
+	NestConst<ValueExprNode> event;
+	NestConst<ValueExprNode> argument;
 };
 
 

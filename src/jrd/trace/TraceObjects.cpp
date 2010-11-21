@@ -370,47 +370,47 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const jrd_nod* const* ptr = m_params->nod_arg;
-	const jrd_nod* const* end = ptr + m_params->nod_count;
-	for (; ptr < end; ptr++)
+	const NestConst<ValueExprNode>* ptr = m_params->args.begin();
+	const NestConst<ValueExprNode>* const end = m_params->args.end();
+
+	for (; ptr != end; ++ptr)
 	{
 		const dsc* from_desc = NULL;
 		dsc desc;
 
-		const jrd_nod* const prm = (*ptr)->nod_arg[e_asgn_to];
+		const NestConst<ValueExprNode> prm = *ptr;
 		const ParameterNode* param;
 		const VariableNode* var;
 		const LiteralNode* literal;
 
-		if ((param = ExprNode::as<ParameterNode>(prm)))
+		if ((param = prm->as<ParameterNode>()))
 		{
-			//const impure_value* impure = request->getImpure<impure_value>(param->impureOffset)
+			//const impure_value* impure = m_request->getImpure<impure_value>(param->impureOffset)
 			const jrd_nod* message = param->message;
 			const Format* format = (Format*) message->nod_arg[e_msg_format];
 			const int arg_number = param->argNumber;
 
 			desc = format->fmt_desc[arg_number];
 			from_desc = &desc;
-			desc.dsc_address = const_cast<jrd_req*>(m_request)->getImpure<UCHAR>(
+			desc.dsc_address = m_request->getImpure<UCHAR>(
 				message->nod_impure + (IPTR) desc.dsc_address);
 
 			// handle null flag if present
 			if (param->argFlag)
 			{
-				const dsc* flag = EVL_expr(tdbb, param->argFlag);
+				const dsc* flag = EVL_expr(tdbb, m_request, param->argFlag);
 				if (MOV_get_long(flag, 0))
 					desc.dsc_flags |= DSC_null;
 			}
 		}
-		else if ((var = ExprNode::as<VariableNode>(prm)))
+		else if ((var = prm->as<VariableNode>()))
 		{
-			impure_value* impure = const_cast<jrd_req*>(m_request)->getImpure<impure_value>(
-				var->impureOffset);
+			impure_value* impure = m_request->getImpure<impure_value>(var->impureOffset);
 			from_desc = &impure->vlu_desc;
 		}
-		else if ((literal = ExprNode::as<LiteralNode>(prm)))
+		else if ((literal = prm->as<LiteralNode>()))
 			from_desc = &literal->litDesc;
-		else if (ExprNode::is<NullNode>(prm))
+		else if (prm->is<NullNode>())
 		{
 			desc.clear();
 			desc.setNull();

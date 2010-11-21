@@ -35,6 +35,8 @@ namespace Jrd {
 	class BoolExprNode;
 	class DmlNode;
 	class SortNode;
+	class ValueExprNode;
+	class ValueListNode;
 }
 
 // blr type classes
@@ -49,8 +51,8 @@ const int ACCESS_TYPE	= 6;
 
 struct dsc;
 
-Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, UCHAR, USHORT);
-Jrd::jrd_nod*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
+Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, USHORT);
+Jrd::ValueListNode*	PAR_args(Jrd::thread_db*, Jrd::CompilerScratch*);
 Jrd::jrd_nod*	PAR_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*, ULONG blr_length,
 	Jrd::CompilerScratch*, Jrd::CompilerScratch**, Jrd::JrdStatement**, const bool, USHORT);
 void PAR_validation_blr(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR* blr,
@@ -70,12 +72,12 @@ USHORT			PAR_name(Jrd::CompilerScratch*, Firebird::MetaName&);
 size_t			PAR_name(Jrd::CompilerScratch* csb, Firebird::string& name);
 Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length,
 	bool internal_flag, USHORT = 0, const UCHAR* = NULL);
-
 void			PAR_procedure_parms(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*,
-	Jrd::jrd_nod**, Jrd::jrd_nod**, bool);
-Jrd::jrd_nod*	PAR_rse(Jrd::thread_db*, Jrd::CompilerScratch*, SSHORT);
-Jrd::SortNode* PAR_sort(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, bool);
-Jrd::SortNode* PAR_sort_internal(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR blrOp,
+	Jrd::jrd_nod**, Jrd::ValueListNode**, Jrd::ValueListNode**, bool input_flag);
+Jrd::RseNode*	PAR_rse(Jrd::thread_db*, Jrd::CompilerScratch*, SSHORT);
+Jrd::RseNode*	PAR_rse(Jrd::thread_db*, Jrd::CompilerScratch*);
+Jrd::SortNode*	PAR_sort(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR, bool);
+Jrd::SortNode*	PAR_sort_internal(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR blrOp,
 	USHORT);
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
@@ -86,6 +88,7 @@ typedef Jrd::BoolExprNode* (*BoolExprNodeParseFunc)(Jrd::thread_db* tdbb, Memory
 	Jrd::CompilerScratch* csb, UCHAR blrOp);
 
 Jrd::BoolExprNode* PAR_parse_boolean(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb);
+Jrd::ValueExprNode* PAR_parse_value(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb);
 Jrd::jrd_nod* PAR_parse_node(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, USHORT expected);
 void PAR_register(UCHAR blr, NodeParseFunc parseFunc);
 void PAR_register(UCHAR blr, BoolExprNodeParseFunc parseFunc);

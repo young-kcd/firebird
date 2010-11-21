@@ -34,7 +34,6 @@ class CompilerScratch;
 class dsql_nod;
 class ExprNode;
 class jrd_nod;
-class JrdNodeVisitor;
 class FieldNode;
 class MapNode;
 
@@ -285,150 +284,6 @@ public:
 };
 
 
-// Stores a reference to jrd_nod or BoolExprNode.
-class JrdNode
-{
-public:
-	JrdNode(jrd_nod*& aJrdNode)
-		: jrdNode(&aJrdNode),
-		  boolExprNode(NULL)
-	{
-	}
-
-	JrdNode(NestConst<jrd_nod>& aJrdNode)
-		: jrdNode(aJrdNode.getAddress()),
-		  boolExprNode(NULL)
-	{
-	}
-
-	JrdNode(NestConst<BoolExprNode>& aBoolExprNode)
-		: jrdNode(NULL),
-		  boolExprNode(aBoolExprNode.getAddress())
-	{
-	}
-
-	JrdNode()
-		: jrdNode(NULL),
-		  boolExprNode(NULL)
-	{
-	}
-
-	bool operator !() const
-	{
-		return !((jrdNode && *jrdNode) || (boolExprNode && *boolExprNode));
-	}
-
-	operator bool() const
-	{
-		return (jrdNode && *jrdNode) || (boolExprNode && *boolExprNode);
-	}
-
-	jrd_nod** jrdNode;
-	BoolExprNode** boolExprNode;
-};
-
-
-class JrdNodeVisitor
-{
-public:
-	template <typename Self>
-	JrdNodeVisitor(bool aReturnOnOthers, bool (ExprNode::*aVisitFunction)(Self&))
-		: returnOnOthers(aReturnOnOthers)
-	{
-		caller = FB_NEW(*getDefaultMemoryPool()) VisitorCallerImpl<Self>(
-			static_cast<Self&>(*this), aVisitFunction);
-	}
-
-public:
-	bool visitChildren(const JrdNode& node);
-
-	virtual bool visit(const JrdNode& node) = 0;
-
-private:
-	bool call(ExprNode* exprNode)
-	{
-		return caller->call(exprNode);
-	}
-
-private:
-	const bool returnOnOthers;
-	Firebird::AutoPtr<VisitorCaller> caller;
-};
-
-
-// Check if expression could return NULL or expression can turn NULL into a true/false.
-class PossibleUnknownFinder : public JrdNodeVisitor
-{
-public:
-	PossibleUnknownFinder();
-
-public:
-	static bool find(const JrdNode& node)
-	{
-		return PossibleUnknownFinder().visit(node);
-	}
-
-protected:
-	virtual bool visit(const JrdNode& node);
-};
-
-// Search if somewhere in the expression the given stream is used.
-// If a unknown node is found it will return true.
-class StreamFinder : public JrdNodeVisitor
-{
-public:
-	StreamFinder(CompilerScratch* aCsb, UCHAR aStream);
-
-	static bool find(CompilerScratch* csb, UCHAR stream, const JrdNode& node)
-	{
-		return StreamFinder(csb, stream).visit(node);
-	}
-
-	virtual bool visit(const JrdNode& node);
-
-public:
-	CompilerScratch* const csb;
-	const UCHAR stream;
-};
-
-// Return all streams referenced by the expression.
-class StreamsCollector : public JrdNodeVisitor
-{
-public:
-	StreamsCollector(Firebird::SortedArray<int>& aStreams);
-
-	static bool collect(const JrdNode& node, Firebird::SortedArray<int>& streams)
-	{
-		return StreamsCollector(streams).visit(node);
-	}
-
-	virtual bool visit(const JrdNode& node);
-
-public:
-	Firebird::SortedArray<int>& streams;
-};
-
-// Verify if this node is allowed in an unmapped boolean.
-class UnmappedNodeGetter : public JrdNodeVisitor
-{
-public:
-	UnmappedNodeGetter(/*const*/ MapNode* aMap, UCHAR aShellStream);
-
-	static bool check(/*const*/ MapNode* map, UCHAR shellStream, const JrdNode& node)
-	{
-		UnmappedNodeGetter obj(map, shellStream);
-		return obj.visit(node) && !obj.invalid;
-	}
-
-	virtual bool visit(const JrdNode& node);
-
-public:
-	/*const*/ MapNode* map;
-	const UCHAR shellStream;
-	bool invalid;
-};
-
-
 // Generic node copier.
 class NodeCopier
 {
@@ -447,9 +302,40 @@ public:
 public:
 	jrd_nod* copy(thread_db* tdbb, jrd_nod* input);
 
+	// Copy an expression tree remapping field streams. If the map isn't present, don't remap.
+	template <typename T>
+	T* copy(thread_db* tdbb, T* input)
+	{
+		if (!input)
+			return NULL;
+
+		T* copy = input->copy(tdbb, *this);
+		copy->nodFlags = input->nodFlags;
+
+		return copy;
+	}
+
+	template <typename T>
+	T* copy(thread_db* tdbb, NestConst<T>& input)
+	{
+		return copy(tdbb, input.getObject());
+	}
+
 	static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input, UCHAR* remap)
 	{
 		return NodeCopier(csb, remap).copy(tdbb, input);
+	}
+
+	template <typename T>
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, T* input, UCHAR* remap)
+	{
+		return NodeCopier(csb, remap).copy(tdbb, input);
+	}
+
+	template <typename T>
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, NestConst<T>& input, UCHAR* remap)
+	{
+		return NodeCopier(csb, remap).copy(tdbb, input.getObject());
 	}
 
 	virtual bool remapArgument()

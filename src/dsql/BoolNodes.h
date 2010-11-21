@@ -81,9 +81,9 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& visitor)
+	virtual bool jrdPossibleUnknownFinder()
 	{
-		return blrOp == blr_equiv ? true : BoolExprNode::jrdPossibleUnknownFinder(visitor);
+		return blrOp == blr_equiv ? true : BoolExprNode::jrdPossibleUnknownFinder();
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
@@ -110,9 +110,9 @@ public:
 	dsql_nod* dsqlArg2;
 	dsql_nod* dsqlArg3;
 	DsqlFlag dsqlFlag;
-	NestConst<jrd_nod> arg1;
-	NestConst<jrd_nod> arg2;
-	NestConst<jrd_nod> arg3;
+	NestConst<ValueExprNode> arg1;
+	NestConst<ValueExprNode> arg2;
+	NestConst<ValueExprNode> arg3;
 
 };
 
@@ -128,7 +128,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
+	virtual bool jrdPossibleUnknownFinder()
 	{
 		return true;
 	}
@@ -140,7 +140,7 @@ public:
 
 public:
 	dsql_nod* dsqlArg;
-	NestConst<jrd_nod> arg;
+	NestConst<ValueExprNode> arg;
 };
 
 
@@ -155,7 +155,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
+	virtual bool jrdPossibleUnknownFinder()
 	{
 		return true;
 	}
@@ -190,7 +190,7 @@ public:
 		return visitor.ignoreSubSelects ? false : BoolExprNode::dsqlVisit(visitor);
 	}
 
-	virtual bool jrdPossibleUnknownFinder(PossibleUnknownFinder& /*visitor*/)
+	virtual bool jrdPossibleUnknownFinder()
 	{
 		return true;
 	}
@@ -210,7 +210,7 @@ private:
 public:
 	UCHAR blrOp;
 	dsql_nod* dsqlRse;
-	NestConst<jrd_nod> rse;
+	NestConst<RseNode> rse;
 	NestConst<RecordSource> rsb;
 };
 

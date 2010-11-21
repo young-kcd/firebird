@@ -38,7 +38,7 @@ static const char* const SCRATCH = "fb_merge_";
 // -----------------------
 
 MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
-					 SortedStream* const* args, const LegacyNodeArray* const* keys)
+					 SortedStream* const* args, const NestValueArray* const* keys)
 	: m_args(csb->csb_pool), m_keys(csb->csb_pool)
 {
 	size_t size = sizeof(struct Impure) + count * sizeof(Impure::irsb_mrg_repeat);
@@ -153,7 +153,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 	{
 		const NestConst<SortedStream>* const ptr = &m_args[i];
 		const SortedStream* const sort_rsb = *ptr;
-		const LegacyNodeArray* const sort_key = m_keys[i];
+		const NestValueArray* const sort_key = m_keys[i];
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 		MergeFile* const mfb = &tail->irsb_mrg_file;
@@ -211,7 +211,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 		{
 			const NestConst<SortedStream>* const ptr = &m_args[i];
 			const SortedStream* const sort_rsb = *ptr;
-			const LegacyNodeArray* const sort_key = m_keys[i];
+			const NestValueArray* const sort_key = m_keys[i];
 			Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
 			if (highest_ptr != ptr)
@@ -430,20 +430,20 @@ void MergeJoin::restoreRecords(thread_db* tdbb) const
 	}
 }
 
-int MergeJoin::compare(thread_db* tdbb, const LegacyNodeArray* node1,
-	const LegacyNodeArray* node2) const
+int MergeJoin::compare(thread_db* tdbb, const NestValueArray* node1,
+	const NestValueArray* node2) const
 {
 	jrd_req* const request = tdbb->getRequest();
 
-	const NestConst<jrd_nod>* ptr1 = node1->begin();
-	const NestConst<jrd_nod>* ptr2 = node2->begin();
+	const NestConst<ValueExprNode>* ptr1 = node1->begin();
+	const NestConst<ValueExprNode>* ptr2 = node2->begin();
 
-	for (const NestConst<jrd_nod>* const end = node1->end(); ptr1 != end; ++ptr1, ++ptr2)
+	for (const NestConst<ValueExprNode>* const end = node1->end(); ptr1 != end; ++ptr1, ++ptr2)
 	{
-		const dsc* const desc1 = EVL_expr(tdbb, *ptr1);
+		const dsc* const desc1 = EVL_expr(tdbb, request, *ptr1);
 		const bool null1 = (request->req_flags & req_null);
 
-		const dsc* const desc2 = EVL_expr(tdbb, *ptr2);
+		const dsc* const desc2 = EVL_expr(tdbb, request, *ptr2);
 		const bool null2 = (request->req_flags & req_null);
 
 		if (null1 && !null2)

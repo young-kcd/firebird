@@ -5256,7 +5256,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 							defaultRequest->req_timestamp.validate();
 
 							TRA_attach_request(transaction, defaultRequest);
-							dsc* result = EVL_expr(tdbb, defaultNode);
+							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode->asValue());
 							TRA_detach_request(defaultRequest);
 
 							if (result)

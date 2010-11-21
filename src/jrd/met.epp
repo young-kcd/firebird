@@ -2999,7 +2999,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					try
 					{
 						parameter->prm_default_value = MET_parse_blob(tdbb, NULL,
-							&pa_default_value, NULL, NULL, false, false);
+							&pa_default_value, NULL, NULL, false, false)->asValue();
 					}
 					catch (const Exception&)
 					{
@@ -3676,30 +3676,33 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				if (dependencies)
 				{
 					csb->csb_g_flags |= csb_get_dependencies;
-					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
+					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p)->asValue();
 					const MetaName depName(REL.RDB$RELATION_NAME);
 					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans);
 				}
-				else {
-					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
-				}
+				else
+					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p)->asValue();
 				break;
 
 			case RSR_computed_blr:
-				field->fld_computation = dependencies ?
-					MET_get_dependencies(tdbb, relation, p, length, csb, NULL, NULL, NULL,
-										 field->fld_name, obj_computed, 0, depTrans) :
-					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0);
+				{
+					jrd_nod* nod = dependencies ?
+						MET_get_dependencies(tdbb, relation, p, length, csb, NULL, NULL, NULL,
+							field->fld_name, obj_computed, 0, depTrans) :
+						PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0);
+
+					field->fld_computation = nod ? nod->asValue() : NULL;
+				}
 				break;
 
 			case RSR_missing_value:
-				field->fld_missing_value = PAR_blr(tdbb, relation, p, length, csb,
-					NULL, NULL, false, 0);
+				field->fld_missing_value =
+					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0)->asValue();
 				break;
 
 			case RSR_default_value:
-				field->fld_default_value = PAR_blr(tdbb, relation, p, length, csb,
-					NULL, NULL, false, 0);
+				field->fld_default_value =
+					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0)->asValue();
 				break;
 
 			case RSR_validation_blr:

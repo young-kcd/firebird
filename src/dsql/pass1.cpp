@@ -4937,9 +4937,9 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 
 					default:
 						if ((derivedField = ExprNode::as<DerivedFieldNode>(matchingNode)))
-							strcat(buffer1, "a derived field");
+							strcat(buffer2, "a derived field");
 						else
-							strcat(buffer1, "an item");
+							strcat(buffer2, "an item");
 						break;
 				}
 

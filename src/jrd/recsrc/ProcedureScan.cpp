@@ -21,7 +21,9 @@
 #include "../common/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/intl.h"
+#include "../dsql/ExprNodes.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
@@ -38,11 +40,19 @@ using namespace Jrd;
 // ---------------------------
 
 ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
-							 const jrd_prc* procedure, jrd_nod* inputs, jrd_nod* message)
+							 const jrd_prc* procedure, const ValueListNode* sourceList,
+							 const ValueListNode* targetList, jrd_nod* message)
 	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),
-	  m_procedure(procedure), m_inputs(inputs), m_message(message)
+	  m_procedure(procedure), m_sourceList(sourceList), m_targetList(targetList), m_message(message)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
+
+	fb_assert(!sourceList == !targetList);
+
+	if (sourceList && targetList)
+	{
+		fb_assert(sourceList->args.getCount() == targetList->args.getCount());
+	}
 }
 
 void ProcedureScan::open(thread_db* tdbb) const
@@ -66,15 +76,16 @@ void ProcedureScan::open(thread_db* tdbb) const
 	jrd_req* const proc_request = m_procedure->getStatement()->findRequest(tdbb);
 	impure->irsb_req_handle = proc_request;
 
-	if (m_inputs)
+	if (m_sourceList)
 	{
 		enum jrd_req::req_s saved_state = request->req_operation;
 
-		const jrd_nod* const* ptr = m_inputs->nod_arg;
-		for (const jrd_nod* const* const end = ptr + m_inputs->nod_count; ptr < end; ptr++)
-		{
-			EXE_assignment(tdbb, *ptr);
-		}
+		const NestConst<ValueExprNode>* const sourceEnd = m_sourceList->args.end();
+		const NestConst<ValueExprNode>* sourcePtr = m_sourceList->args.begin();
+		const NestConst<ValueExprNode>* targetPtr = m_targetList->args.begin();
+
+		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
+			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 
 		request->req_operation = saved_state;
 		const Format* const format = (Format*) m_message->nod_arg[e_msg_format];
@@ -96,7 +107,7 @@ void ProcedureScan::open(thread_db* tdbb) const
 	{
 		proc_request->req_timestamp = request->req_timestamp;
 
-		TraceProcExecute trace(tdbb, proc_request, request, m_inputs);
+		TraceProcExecute trace(tdbb, proc_request, request, m_targetList);
 
 		EXE_start(tdbb, proc_request, request->req_transaction);
 

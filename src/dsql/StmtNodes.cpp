@@ -139,7 +139,7 @@ void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = condition->pass1(tdbb, csb);
+	condition = CMP_pass1(tdbb, csb, condition);
 	trueAction = CMP_pass1(tdbb, csb, trueAction);
 	falseAction = CMP_pass1(tdbb, csb, falseAction);
 	return this;
@@ -148,7 +148,7 @@ IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = condition->pass2(tdbb, csb);
+	condition = CMP_pass2(tdbb, csb, condition);
 	trueAction = CMP_pass2(tdbb, csb, trueAction, node);
 	falseAction = CMP_pass2(tdbb, csb, falseAction, node);
 	return this;
@@ -712,16 +712,10 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	if (type == blr_exception_params)
 	{
 		const USHORT count = csb->csb_blr_reader.getWord();
-
-		node->parameters = PAR_make_node(tdbb, count);
-		node->parameters->nod_type = nod_list;
-		node->parameters->nod_count = count;
-
-		for (unsigned i = 0; i < count; ++i)
-			node->parameters->nod_arg[i] = PAR_parse_node(tdbb, csb, VALUE);
+		node->parameters = PAR_args(tdbb, csb, count, count);
 	}
 	else if (type == blr_exception_msg)
-		node->messageExpr = PAR_parse_node(tdbb, csb, VALUE);
+		node->messageExpr = PAR_parse_node(tdbb, csb, VALUE)->asValue();
 
 	return node;
 }
@@ -786,16 +780,24 @@ void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	messageExpr = CMP_pass1(tdbb, csb, messageExpr);
-	parameters = CMP_pass1(tdbb, csb, parameters);
+	if (messageExpr)
+		messageExpr = messageExpr->pass1(tdbb, csb);
+
+	if (parameters)
+		parameters = parameters->pass1(tdbb, csb);
+
 	return this;
 }
 
 
 ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	messageExpr = CMP_pass2(tdbb, csb, messageExpr, node);
-	parameters = CMP_pass2(tdbb, csb, parameters, node);
+	if (messageExpr)
+		messageExpr = messageExpr->pass2(tdbb, csb);
+
+	if (parameters)
+		parameters = parameters->pass2(tdbb, csb);
+
 	return this;
 }
 
@@ -853,7 +855,8 @@ void ExceptionNode::setError(thread_db* tdbb) const
 		UCHAR* string = NULL;
 
 		// Evaluate exception message and convert it to string.
-		dsc* desc = EVL_expr(tdbb, messageExpr);
+		dsc* desc = EVL_expr(tdbb, request, messageExpr);
+
 		if (desc && !(request->req_flags & req_null))
 		{
 			length = MOV_make_string2(tdbb, desc, CS_METADATA, &string, temp);
@@ -933,9 +936,10 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 			if (parameters)
 			{
-				for (unsigned i = 0; i < parameters->nod_count; ++i)
+				for (const NestConst<ValueExprNode>* parameter = parameters->args.begin();
+					 parameter != parameters->args.end(); ++parameter)
 				{
-					const dsc* value = EVL_expr(tdbb, parameters->nod_arg[i]);
+					const dsc* value = EVL_expr(tdbb, request, *parameter);
 
 					if (!value || (request->req_flags & req_null))
 						paramsStr.push(NULL_STRING_MARK);
@@ -947,7 +951,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 				// and will not move in paramsStr.
 
 				MsgFormat::SafeArg arg;
-				for (unsigned i = 0; i < parameters->nod_count; ++i)
+				for (size_t i = 0; i < parameters->args.getCount(); ++i)
 					arg << paramsStr[i].c_str();
 
 				MsgFormat::StringRefStream stream(formattedMsg);
@@ -955,7 +959,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 				status << formattedMsg;
 
-				for (unsigned i = 0; i < parameters->nod_count; ++i)
+				for (size_t i = 0; i < parameters->args.getCount(); ++i)
 					status << paramsStr[i];
 			}
 			else
@@ -1002,10 +1006,10 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_scrollable)
 	{
-		node->rse = RseNode::getFrom(PAR_parse_node(tdbb, csb, TYPE_RSE));
+		node->rse = PAR_rse(tdbb, csb);
 	}
 	else
-		node->rse = RseNode::getFrom(PAR_rse(tdbb, csb, blrOp));
+		node->rse = PAR_rse(tdbb, csb, blrOp);
 
 	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
 
@@ -1124,7 +1128,7 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	stall = CMP_pass1(tdbb, csb, stall);
-	rse->pass1(tdbb, csb, csb->csb_view);
+	rse->pass1(tdbb, csb);
 	statement = CMP_pass1(tdbb, csb, statement);
 	return this;
 }
@@ -1197,9 +1201,9 @@ DmlNode* PostEventNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 {
 	PostEventNode* node = FB_NEW(pool) PostEventNode(pool);
 
-	node->event = PAR_parse_node(tdbb, csb, VALUE);
+	node->event = PAR_parse_node(tdbb, csb, VALUE)->asValue();
 	if (blrOp == blr_post_arg)
-		node->argument = PAR_parse_node(tdbb, csb, VALUE);
+		node->argument = PAR_parse_node(tdbb, csb, VALUE)->asValue();
 
 	return node;
 }
@@ -1244,15 +1248,16 @@ void PostEventNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 PostEventNode* PostEventNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	event = CMP_pass1(tdbb, csb, event);
-	argument = CMP_pass1(tdbb, csb, argument);
+	if (argument)
+		argument = CMP_pass1(tdbb, csb, argument);
 	return this;
 }
 
 
 PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	event = CMP_pass2(tdbb, csb, event, node);
-	argument = CMP_pass2(tdbb, csb, argument, node);
+	event = CMP_pass2(tdbb, csb, event);
+	argument = CMP_pass2(tdbb, csb, argument);
 	return this;
 }
 
@@ -1261,9 +1266,11 @@ const jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
-	DeferredWork* work = DFW_post_work(transaction, dfw_post_event, EVL_expr(tdbb, event), 0);
+	DeferredWork* work = DFW_post_work(transaction, dfw_post_event,
+		EVL_expr(tdbb, request, event), 0);
+
 	if (argument)
-		DFW_post_work_arg(transaction, work, EVL_expr(tdbb, argument), 0);
+		DFW_post_work_arg(transaction, work, EVL_expr(tdbb, request, argument), 0);
 
 	// For an autocommit transaction, events can be posted without any updates.
 

@@ -25,9 +25,12 @@
 #include "../common/dsc.h"
 #include "../common/classes/NestConst.h"
 #include "../jrd/val.h"
+#include "../dsql/Nodes.h"
 
 namespace Jrd
 {
+	class ValueListNode;
+
 	class Function : public Routine
 	{
 		static const USHORT MAX_ALTER_COUNT = 64;	// Number of times an in-cache function can be altered
@@ -53,12 +56,14 @@ namespace Jrd
 
 		USHORT incrementAlterCount();
 
-		dsc* execute(thread_db* tdbb, const jrd_nod* args, impure_value* value, bool invariant) const;
+		dsc* execute(thread_db* tdbb, const NestValueArray& args,
+			impure_value* value, bool invariant) const;
+
 		void releaseLocks(thread_db* tdbb);
 		void remove(thread_db* tdbb);
 		ULONG allocateImpure(CompilerScratch* csb) const;
 		void parseBlr(thread_db* tdbb, bid* blob_id, CompilerScratch* csb);
-		jrd_nod* parseArgs(thread_db* tdbb, CompilerScratch* csb);
+		ValueListNode* parseArgs(thread_db* tdbb, CompilerScratch* csb);
 
 	private:
 		explicit Function(MemoryPool& p)

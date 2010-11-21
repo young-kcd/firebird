@@ -72,15 +72,7 @@ DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (count != node->jrdChildNodes.getCount())
 		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
 
-	if (count != 0)
-	{
-		JrdNode* arg = node->jrdChildNodes.begin();
-		do
-		{
-			*arg->jrdNode = PAR_parse_node(tdbb, csb, VALUE);
-			++arg;
-		} while (--count);
-	}
+	node->parseArgs(tdbb, csb, count);
 
 	return node;
 }
@@ -168,7 +160,7 @@ ValueExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) RankWinNode(*tdbb->getDefaultPool());
 }
 
-ExprNode* RankWinNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* RankWinNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
 	return AggNode::pass2(tdbb, csb);
@@ -289,6 +281,13 @@ LagLeadWinNode::LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aD
 	addChildNode(dsqlOutExpr, outExpr);
 }
 
+void LagLeadWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count)
+{
+	arg = PAR_parse_value(tdbb, csb);
+	rows = PAR_parse_value(tdbb, csb);
+	outExpr = PAR_parse_value(tdbb, csb);
+}
+
 void LagLeadWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
@@ -297,7 +296,7 @@ void LagLeadWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void LagLeadWinNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 }
 
 void LagLeadWinNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -319,7 +318,7 @@ dsc* LagLeadWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 
 dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	dsc* desc = EVL_expr(tdbb, rows);
+	dsc* desc = EVL_expr(tdbb, request, rows);
 	SINT64 records;
 
 	if (!desc || (request->req_flags & req_null) || (records = MOV_get_int64(desc, 0)) < 0)
@@ -332,14 +331,14 @@ dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* w
 	{
 		window->move(0);	// Come back to our row because outExpr may reference columns.
 
-		desc = EVL_expr(tdbb, outExpr);
+		desc = EVL_expr(tdbb, request, outExpr);
 		if (!desc || (request->req_flags & req_null))
 			return NULL;
 
 		return desc;
 	}
 
-	desc = EVL_expr(tdbb, arg);
+	desc = EVL_expr(tdbb, request, arg);
 	if (!desc || (request->req_flags & req_null))
 		return NULL;
 

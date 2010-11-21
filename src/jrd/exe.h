@@ -115,14 +115,26 @@ public:
 
 	const ExprNode* asExpr() const
 	{
-		fb_assert(nod_type == nod_class_exprnode_jrd);
+		fb_assert(nod_type == nod_class_exprnode_jrd || nod_type == nod_class_recsrcnode_jrd);
 		return reinterpret_cast<const ExprNode*>(nod_arg[0]);
 	}
 
 	ExprNode* asExpr()
 	{
-		fb_assert(nod_type == nod_class_exprnode_jrd);
+		fb_assert(nod_type == nod_class_exprnode_jrd || nod_type == nod_class_recsrcnode_jrd);
 		return reinterpret_cast<ExprNode*>(nod_arg[0]);
+	}
+
+	const ValueExprNode* asValue() const
+	{
+		fb_assert(nod_type == nod_class_exprnode_jrd);
+		return reinterpret_cast<const ValueExprNode*>(nod_arg[0]);
+	}
+
+	ValueExprNode* asValue()
+	{
+		fb_assert(nod_type == nod_class_exprnode_jrd);
+		return reinterpret_cast<ValueExprNode*>(nod_arg[0]);
 	}
 };
 
@@ -221,12 +233,14 @@ const int e_val_length		= 3;
 
 // Execute stored procedure
 
-const int e_esp_inputs		= 0;
-const int e_esp_in_msg		= 1;
-const int e_esp_outputs		= 2;
-const int e_esp_out_msg		= 3;
-const int e_esp_procedure	= 4;
-const int e_esp_length		= 5;
+const int e_esp_input_sources	= 0;
+const int e_esp_input_targets	= 1;
+const int e_esp_in_msg			= 2;
+const int e_esp_output_sources	= 3;
+const int e_esp_output_targets	= 4;
+const int e_esp_out_msg			= 5;
+const int e_esp_procedure		= 6;
+const int e_esp_length			= 7;
 
 // Generate id
 

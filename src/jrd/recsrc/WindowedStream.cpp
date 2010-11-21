@@ -442,12 +442,13 @@ WindowedStream::WindowedStream(CompilerScratch* csb,
 	{
 		// While here, verify not supported functions/clauses.
 
-		const NestConst<jrd_nod>* ptr = partition->map->items.begin();
+		const NestConst<ValueExprNode>* source = partition->map->sourceList.begin();
 
-		for (const NestConst<jrd_nod>* const end = partition->map->items.end(); ptr != end; ++ptr)
+		for (const NestConst<ValueExprNode>* const end = partition->map->sourceList.end();
+			 source != end;
+			 ++source)
 		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+			const AggNode* aggNode = (*source)->as<AggNode>();
 
 			if (partition->order && aggNode)
 				aggNode->checkOrderedWindowCapable();

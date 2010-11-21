@@ -232,7 +232,7 @@ private:
 class TraceProcedureImpl : public TraceProcedure
 {
 public:
-	TraceProcedureImpl(const jrd_req* request, PerformanceInfo* perf) :
+	TraceProcedureImpl(jrd_req* request, PerformanceInfo* perf) :
 		m_request(request),
 		m_perf(perf),
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
@@ -250,7 +250,7 @@ private:
 	class JrdParamsImpl : public TraceParams
 	{
 	public:
-		JrdParamsImpl(Firebird::MemoryPool& pool, const jrd_req* request, const jrd_nod* params) :
+		JrdParamsImpl(Firebird::MemoryPool& pool, jrd_req* request, const ValueListNode* params) :
 			m_request(request),
 			m_params(params),
 			m_descs(pool)
@@ -262,12 +262,12 @@ private:
 	private:
 		void fillParams();
 
-		const jrd_req* m_request;
-		const jrd_nod* m_params;
+		jrd_req* m_request;
+		const ValueListNode* m_params;
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 
-	const jrd_req* const m_request;
+	jrd_req* const m_request;
 	PerformanceInfo* const m_perf;
 	JrdParamsImpl m_inputs;
 };

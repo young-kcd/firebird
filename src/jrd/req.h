@@ -51,6 +51,7 @@ class jrd_rel;
 class jrd_prc;
 class Record;
 class jrd_nod;
+class ValueListNode;
 class SaveRecordParam;
 template <typename T> class vec;
 class jrd_tra;
@@ -278,7 +279,7 @@ public:
 	SINT64 req_fetch_elapsed;	// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;	// Total number of rows returned by this request
 	jrd_req* req_proc_caller;	// Procedure's caller request
-	const jrd_nod* req_proc_inputs;	// and its node with input parameters
+	const ValueListNode* req_proc_inputs;	// and its node with input parameters
 
 	USHORT	req_src_line;
 	USHORT	req_src_column;

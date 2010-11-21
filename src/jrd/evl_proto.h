@@ -33,9 +33,9 @@ namespace Jrd
 	struct ItemInfo;
 }
 
-dsc*		EVL_assign_to(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
+dsc*		EVL_assign_to(Jrd::thread_db* tdbb, const Jrd::ValueExprNode*);
 Jrd::RecordBitmap**	EVL_bitmap(Jrd::thread_db* tdbb, const Jrd::InversionNode*, Jrd::RecordBitmap*);
-dsc*		EVL_expr(Jrd::thread_db* tdbb, const Jrd::jrd_nod*);
+dsc*		EVL_expr(Jrd::thread_db* tdbb, Jrd::jrd_req* request, const Jrd::ValueExprNode* node);
 bool		EVL_field(Jrd::jrd_rel*, Jrd::Record*, USHORT, dsc*);
 void		EVL_make_value(Jrd::thread_db* tdbb, const dsc*, Jrd::impure_value*);
 void		EVL_validate(Jrd::thread_db*, const Jrd::Item&, const Jrd::ItemInfo*, dsc*, bool);

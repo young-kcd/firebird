@@ -174,7 +174,7 @@ static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
 static contents delete_node(thread_db*, WIN*, UCHAR*);
 static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
-static DSC* eval(thread_db*, const jrd_nod*, DSC*, bool*);
+static DSC* eval(thread_db*, const ValueExprNode*, DSC*, bool*);
 static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, AutoPtr<Sort>&, SelectivityList&);
 
 static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
@@ -493,10 +493,8 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		expr_request->req_timestamp = org_request ?
 			org_request->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
 
-		if (!(result = EVL_expr(tdbb, idx->idx_expression)))
-		{
+		if (!(result = EVL_expr(tdbb, expr_request, idx->idx_expression)))
 			result = &idx->idx_expression_desc;
-		}
 
 		notNull = !(expr_request->req_flags & req_null);
 	}
@@ -1396,7 +1394,7 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 
 idx_e BTR_make_key(thread_db* tdbb,
 				   USHORT count,
-				   const jrd_nod* const* exprs,
+				   const ValueExprNode* const* exprs,
 				   const index_desc* idx,
 				   temporary_key* key,
 				   bool fuzzy)
@@ -2988,7 +2986,7 @@ static void delete_tree(thread_db* tdbb,
 }
 
 
-static DSC* eval(thread_db* tdbb, const jrd_nod* node, DSC* temp, bool* isNull)
+static DSC* eval(thread_db* tdbb, const ValueExprNode* node, DSC* temp, bool* isNull)
 {
 /**************************************
  *
@@ -3003,12 +3001,13 @@ static DSC* eval(thread_db* tdbb, const jrd_nod* node, DSC* temp, bool* isNull)
  **************************************/
 	SET_TDBB(tdbb);
 
-	dsc* desc = EVL_expr(tdbb, node);
+	jrd_req* request = tdbb->getRequest();
+
+	dsc* desc = EVL_expr(tdbb, request, node);
 	*isNull = false;
 
-	if (desc && !(tdbb->getRequest()->req_flags & req_null)) {
+	if (desc && !(request->req_flags & req_null))
 		return desc;
-	}
 
 	*isNull = true;
 

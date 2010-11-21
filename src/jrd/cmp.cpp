@@ -124,7 +124,7 @@ namespace
 			jrd_fld* field = MET_get_field(relation, fldId);
 
 			if (field->fld_source)
-				fldId = ExprNode::as<FieldNode>(field->fld_source)->fieldId;
+				fldId = field->fld_source->as<FieldNode>()->fieldId;
 
 			return fldId;
 		}
@@ -170,23 +170,9 @@ IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
 
 
-jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+// Clone a node.
+ValueExprNode* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, ValueExprNode* node)
 {
-/**************************************
- *
- *	C M P _ c l o n e _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Clone a node.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
 	return NodeCopier::copy(tdbb, csb, node, NULL);
 }
 
@@ -194,18 +180,17 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 // Clone a value node for the optimizer.
 // Make a copy of the node (if necessary) and assign impure space.
 
-jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+ValueExprNode* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, ValueExprNode* node)
 {
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
 
-	if (ExprNode::is<ParameterNode>(node))
+	if (node->is<ParameterNode>())
 		return node;
 
-	jrd_nod* clone = NodeCopier::copy(tdbb, csb, node, NULL);
-	CMP_pass2(tdbb, csb, clone, 0);
+	ValueExprNode* clone = NodeCopier::copy(tdbb, csb, node, NULL);
+	CMP_pass2(tdbb, csb, clone);
 
 	return clone;
 }
@@ -217,9 +202,9 @@ BoolExprNode* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, BoolExpr
 	DEV_BLKCHK(csb, type_csb);
 
 	NodeCopier copier(csb, NULL);
-	BoolExprNode* clone = node->copy(tdbb, copier);
+	BoolExprNode* clone = copier.copy(tdbb, node);
 
-	clone->pass2(tdbb, csb);
+	CMP_pass2(tdbb, csb, clone);
 
 	return clone;
 }
@@ -931,8 +916,8 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 
 
 // Expand dbkey for view.
-void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream, NodeStack& stack,
-	UCHAR blrOp, bool allStreams)
+void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+	ValueExprNodeStack& stack, UCHAR blrOp, bool allStreams)
 {
 	SET_TDBB(tdbb);
 
@@ -959,12 +944,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 	{
 		RecordKeyNode* node = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blrOp);
 		node->recStream = stream;
-
-		jrd_nod* nod = PAR_make_node(tdbb, 1);
-		nod->nod_count = 0;
-		nod->nod_type = nod_class_exprnode_jrd;
-		nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(node);
-		stack.push(nod);
+		stack.push(node);
 	}
 }
 
@@ -1009,7 +989,7 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
 	{
-		jrd_nod* value;
+		ValueExprNode* value;
 
 		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
 			continue;
@@ -1051,18 +1031,14 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			{
 				// Make a gen_id(<generator name>, 1) expression.
 
-				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
-					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
-				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
-
 				LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
 				SLONG* increment = FB_NEW(csb->csb_pool) SLONG(1);
 				literal->litDesc.makeLong(0, increment);
 
-				genNode->arg = PAR_make_node(tdbb, 1);
-				genNode->arg->nod_type = nod_class_exprnode_jrd;
-				genNode->arg->nod_count = 0;
-				genNode->arg->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
+					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
+				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
+				genNode->arg = literal;
 
 				jrd_nod* genNod = PAR_make_node(tdbb, 1);
 				genNod->nod_type = nod_class_exprnode_jrd;
@@ -1073,8 +1049,14 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 			else //if (value)
 			{
 				// Clone the field default value.
-				node->nod_arg[e_asgn_from] =
-					RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, value);
+
+				jrd_nod* nod = PAR_make_node(tdbb, 1);
+				nod->nod_type = nod_class_exprnode_jrd;
+				nod->nod_count = 0;
+				nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+					RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, value));
+
+				node->nod_arg[e_asgn_from] = nod;
 			}
 		}
 	}
@@ -1140,7 +1122,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			if ((validationStmt = (*ptr1)->fld_validation_stmt))
 				validationStmt = copier.copy(tdbb, validationStmt);
 
-			validation = validation->copy(tdbb, copier);
+			validation = copier.copy(tdbb, validation);
 
 			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
 			boolNod->nod_type = nod_class_exprnode_jrd;
@@ -1165,7 +1147,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			if ((validationStmt = (*ptr1)->fld_not_null_stmt))
 				validationStmt = copier.copy(tdbb, validationStmt);
 
-			validation = validation->copy(tdbb, copier);
+			validation = copier.copy(tdbb, validation);
 
 			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
 			boolNod->nod_type = nod_class_exprnode_jrd;
@@ -1212,6 +1194,22 @@ void CMP_mark_variant(CompilerScratch* csb, USHORT stream)
 }
 
 
+ValueExprNode* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, ValueExprNode* node)
+{
+	if (!node)
+		return NULL;
+
+	return node->pass1(tdbb, csb);
+}
+
+BoolExprNode* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, BoolExprNode* node)
+{
+	if (!node)
+		return NULL;
+
+	return node->pass1(tdbb, csb);
+}
+
 jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
@@ -1234,7 +1232,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
  * function.)
  *
  **************************************/
-	jrd_nod* sub;
+	ValueExprNode* sub;
 	jrd_nod** ptr;
 	USHORT stream;
 	CompilerScratch::csb_repeat* tail;
@@ -1244,15 +1242,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	DEV_BLKCHK(csb, type_csb);
 	DEV_BLKCHK(node, type_nod);
-	DEV_BLKCHK(view, type_rel);
 
 	if (!node)
 		return node;
 
 	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr,
 		csb->csb_validate_expr || node->nod_type == nod_validate);
-
-	jrd_rel* const view = csb->csb_view;
 
 	// if there is processing to be done before sub expressions, do it here
 
@@ -1271,19 +1266,31 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_assignment:
 		{
-			sub = node->nod_arg[e_asgn_from];
+			sub = node->nod_arg[e_asgn_from]->asValue();
 			FieldNode* fieldNode;
 
-			if ((fieldNode = ExprNode::as<FieldNode>(sub)))
+			if ((fieldNode = sub->as<FieldNode>()))
 			{
 				stream = fieldNode->fieldStream;
 				jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation, fieldNode->fieldId);
+
 				if (field)
-					node->nod_arg[e_asgn_missing2] = field->fld_missing_value;
+				{
+					jrd_nod* nod = field->fld_missing_value ? PAR_make_node(tdbb, 1) : NULL;
+
+					if (nod)
+					{
+						nod->nod_count = 0;
+						nod->nod_type = nod_class_exprnode_jrd;
+						nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(field->fld_missing_value);
+					}
+
+					node->nod_arg[e_asgn_missing2] = nod;
+				}
 			}
 
-			sub = node->nod_arg[e_asgn_to];
-			if (!(fieldNode = ExprNode::as<FieldNode>(sub)))
+			sub = node->nod_arg[e_asgn_to]->asValue();
+			if (!(fieldNode = sub->as<FieldNode>()))
 				break;
 
 			stream = fieldNode->fieldStream;
@@ -1295,7 +1302,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 			if (field->fld_missing_value)
 			{
-				node->nod_arg[e_asgn_missing] = field->fld_missing_value;
+				jrd_nod* nod = PAR_make_node(tdbb, 1);
+				nod->nod_count = 0;
+				nod->nod_type = nod_class_exprnode_jrd;
+				nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(field->fld_missing_value);
+
+				node->nod_arg[e_asgn_missing] = nod;
 				node->nod_count = 3;
 			}
 		}
@@ -1337,7 +1349,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		break;
 
 	case nod_class_recsrcnode_jrd:
-		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb, view);
+		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb);
 		break;
 
 	case nod_src_info:
@@ -1385,10 +1397,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	if (node->nod_type == nod_assignment)
 	{
-		sub = node->nod_arg[e_asgn_to];
+		sub = node->nod_arg[e_asgn_to]->asValue();
 		FieldNode* fieldNode;
 
-		if ((fieldNode = ExprNode::as<FieldNode>(sub)))
+		if ((fieldNode = sub->as<FieldNode>()))
 		{
 			stream = fieldNode->fieldStream;
 			tail = &csb->csb_rpt[stream];
@@ -1404,11 +1416,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				ERR_post(Arg::Gds(isc_read_only_field));
 			}
 		}
-		else if (!(ExprNode::is<ParameterNode>(sub) || ExprNode::is<VariableNode>(sub) ||
-					ExprNode::is<NullNode>(sub)))
-		{
+		else if (!(sub->is<ParameterNode>() || sub->is<VariableNode>() || sub->is<NullNode>()))
 			ERR_post(Arg::Gds(isc_read_only_field));
-		}
 	}
 
 	return node;
@@ -1565,7 +1574,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 				const jrd_fld* field = MET_get_field(relation, id);
 
 				if (field->fld_source)
-					new_id = ExprNode::as<FieldNode>(field->fld_source)->fieldId;
+					new_id = field->fld_source->as<FieldNode>()->fieldId;
 				else
 					new_id = id;
 			}
@@ -1961,18 +1970,29 @@ ItemInfo* CMP_pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item
 }
 
 
+// Allocate and assign impure space for various nodes.
+ExprNode* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node)
+{
+	NodeRefImpl<ExprNode> temp(&node);
+	temp.pass2(tdbb, csb);
+	return node;
+}
+
+// Allocate and assign impure space for various nodes.
+ValueExprNode* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, ValueExprNode* node)
+{
+	return static_cast<ValueExprNode*>(CMP_pass2(tdbb, csb, static_cast<ExprNode*>(node)));
+}
+
+// Allocate and assign impure space for various nodes.
+BoolExprNode* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, BoolExprNode* node)
+{
+	return static_cast<BoolExprNode*>(CMP_pass2(tdbb, csb, static_cast<ExprNode*>(node)));
+}
+
+// Allocate and assign impure space for various nodes.
 jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, jrd_nod* parent)
 {
-/**************************************
- *
- *	C M P _ p a s s 2
- *
- **************************************
- *
- * Functional description
- *	Allocate and assign impure space for various nodes.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
@@ -2162,27 +2182,8 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_class_exprnode_jrd:
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0])->pass2(tdbb, csb);
+			ExprNode* exprNode = CMP_pass2(tdbb, csb, reinterpret_cast<ExprNode*>(node->nod_arg[0]));
 			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(exprNode);
-
-			// Bind values of invariant nodes to top-level RSE (if present)
-			if (exprNode->nodFlags & ExprNode::FLAG_INVARIANT)
-			{
-				if (csb->csb_current_nodes.hasData())
-				{
-					RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
-					fb_assert(topRseNode.rseNode);
-
-					if (!topRseNode.rseNode->rse_invariants)
-					{
-						topRseNode.rseNode->rse_invariants =
-							FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
-					}
-
-					topRseNode.rseNode->rse_invariants->add(exprNode->impureOffset);
-				}
-			}
-
 			break;
 		}
 

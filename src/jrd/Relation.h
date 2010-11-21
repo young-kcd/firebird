@@ -335,10 +335,10 @@ public:
 	jrd_nod*	fld_validation_stmt;	// validation clause, if any - nod_stmt_expr fragment
 	BoolExprNode*	fld_not_null;		// if field cannot be NULL
 	jrd_nod*	fld_not_null_stmt;		// if field cannot be NULL - nod_stmt_expr fragment
-	jrd_nod*	fld_missing_value;	// missing value, if any
-	jrd_nod*	fld_computation;	// computation for virtual field
-	jrd_nod*	fld_source;			// source for view fields
-	jrd_nod*	fld_default_value;	// default value, if any
+	ValueExprNode*	fld_missing_value;	// missing value, if any
+	ValueExprNode*	fld_computation;	// computation for virtual field
+	ValueExprNode*	fld_source;			// source for view fields
+	ValueExprNode*	fld_default_value;	// default value, if any
 	ArrayField*	fld_array;			// array description, if array
 	Firebird::MetaName	fld_name;	// Field name
 	Firebird::MetaName	fld_security_name;	// security class name for field

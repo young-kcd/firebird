@@ -40,7 +40,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
-	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -84,7 +84,7 @@ protected:
 
 private:
 	dsql_nod* dsqlDelimiter;
-	NestConst<jrd_nod> delimiter;
+	NestConst<ValueExprNode> delimiter;
 };
 
 class CountAggNode : public AggNode

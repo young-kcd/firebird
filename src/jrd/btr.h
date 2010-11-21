@@ -74,7 +74,7 @@ struct index_desc
 	vec<int>*	idx_foreign_primaries;		// ids for primary/unique indexes with partners
 	vec<int>*	idx_foreign_relations;		// ids for foreign key partner relations
 	vec<int>*	idx_foreign_indexes;		// ids for foreign key partner indexes
-	jrd_nod* idx_expression;				// node tree for indexed expresssion
+	ValueExprNode* idx_expression;			// node tree for indexed expresssion
 	dsc		idx_expression_desc;			// descriptor for expression result
 	JrdStatement* idx_expression_statement;	// stored statement for expression evaluation
 	// This structure should exactly match IRTD structure for current ODS
@@ -204,7 +204,7 @@ public:
 	USHORT irb_lower_count;		// Number of segments for retrieval
 	USHORT irb_upper_count;		// Number of segments for retrieval
 	temporary_key*	irb_key;	// key for equality retrieval
-	jrd_nod* irb_value[1];
+	ValueExprNode* irb_value[1];
 };
 
 // Flag values for irb_generic

@@ -57,86 +57,13 @@ using namespace Firebird;
 
 namespace Jrd {
 
-bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
-				const bool idx_use, const bool allowOnlyCurrentStream)
-{
-/**************************************
- *
- *	c o m p u t a b l e
- *
- **************************************
- *
- * Functional description
- *	See if node is presently computable.
- *	Note that a field is not computable
- *	with respect to its own stream.
- *
- * There are two different uses of OPT_computable().
- * (a) idx_use == false: when an unused conjunct is to be picked for making
- *     into a boolean and in making a db_key.
- *     In this case, a node is said to be computable, if all the streams
- *     involved in that node are csb_active. The csb_active flag
- *     defines all the streams available in the current scope of the
- *     query.
- * (b) idx_use == true: to determine if we can use an
- *     index on the conjunct we have already chosen.
- *     In order to use an index on a conjunct, it is required that the
- *     all the streams involved in the conjunct are currently active
- *     or have been already processed before and made into rivers.
- *     Because, here we want to differentiate between streams we have
- *     not yet worked on and those that we have worked on or are currently
- *     working on.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	// Recurse thru interesting sub-nodes
-
-	switch (node->nod_type)
-	{
-		case nod_class_recsrcnode_jrd:
-			return reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->computable(
-				csb, stream, idx_use, allowOnlyCurrentStream, NULL);
-
-		case nod_class_exprnode_jrd:
-		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-			return exprNode->computable(csb, stream, idx_use, allowOnlyCurrentStream);
-		}
-
-		default:
-		{
-			jrd_nod* const* ptr = node->nod_arg;
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream))
-					return false;
-			}
-			break;
-		}
-	}
-
-	return true;
-}
-
 
 // Try to merge this function with node_equality() into 1 function.
 
-bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
-							 const index_desc* idx, jrd_nod* node,
-							 USHORT stream)
+// Wrapper for OPT_expression_equal2().
+bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, const index_desc* idx,
+	ValueExprNode* node, USHORT stream)
 {
-/**************************************
- *
- *      e x p r e s s i o n _ e q u a l
- *
- **************************************
- *
- * Functional description
- *  Wrapper for OPT_expression_equal2().
- *
- **************************************/
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
@@ -150,40 +77,20 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
 	return false;
 }
 
-
-bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
-						   jrd_nod* node1, jrd_nod* node2,
-						   USHORT stream)
+// Determine if two expression trees are the same for the purposes of matching one half of a boolean
+// expression to an index.
+bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2,
+	USHORT stream)
 {
-/**************************************
- *
- *      e x p r e s s i o n _ e q u a l 2
- *
- **************************************
- *
- * Functional description
- *      Determine if two expression trees are the same for
- *	the purposes of matching one half of a boolean expression
- *	to an index.
- *
- **************************************/
-	DEV_BLKCHK(node1, type_nod);
-	DEV_BLKCHK(node2, type_nod);
-
-	SET_TDBB(tdbb);
-
-	if (!node1 || !node2)
-		BUGCHECK(303);	// msg 303 Invalid expression for evaluation.
-
-	if (node1->nod_type != node2->nod_type)
+	if (node1->type != node2->type)
 	{
 		dsc desc1, desc2;
 		CastNode* castNode;
 
-		if ((castNode = ExprNode::as<CastNode>(node1)) && ExprNode::is<FieldNode>(node2))
+		if ((castNode = node1->as<CastNode>()) && node2->is<FieldNode>())
 		{
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
+			castNode->getDesc(tdbb, csb, &desc1);
+			static_cast<ValueExprNode*>(node2)->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
 				OPT_expression_equal2(tdbb, csb, castNode->source, node2, stream))
@@ -192,10 +99,10 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 			}
 		}
 
-		if (ExprNode::is<FieldNode>(node1) && (castNode = ExprNode::as<CastNode>(node2)))
+		if (node1->is<FieldNode>() && (castNode = node2->as<CastNode>()))
 		{
-			CMP_get_desc(tdbb, csb, node1, &desc1);
-			CMP_get_desc(tdbb, csb, node2, &desc2);
+			static_cast<ValueExprNode*>(node1)->getDesc(tdbb, csb, &desc1);
+			castNode->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
 				OPT_expression_equal2(tdbb, csb, node1, castNode->source, stream))
@@ -207,42 +114,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb,
 		return false;
 	}
 
-	switch (node1->nod_type)
-	{
-		case nod_class_exprnode_jrd:
-		{
-			ExprNode* exprNode1 = reinterpret_cast<ExprNode*>(node1->nod_arg[0]);
-			ExprNode* exprNode2 = reinterpret_cast<ExprNode*>(node2->nod_arg[0]);
-
-			return exprNode1->expressionEqual(tdbb, csb, exprNode2, stream);
-		}
-
-	    case nod_list:
-		{
-			jrd_nod* const* ptr1 = node1->nod_arg;
-			jrd_nod* const* ptr2 = node2->nod_arg;
-
-			if (node1->nod_count != node2->nod_count)
-				return false;
-
-			ULONG count = node1->nod_count;
-
-			while (count--)
-			{
-				if (!OPT_expression_equal2(tdbb, csb, *ptr1++, *ptr2++, stream))
-					return false;
-			}
-
-			return true;
-	    }
-
-		// AB: New nodes has to be added
-
-		default:
-			break;
-	}
-
-	return false;
+	return node1->expressionEqual(tdbb, csb, node2, stream);
 }
 
 
@@ -612,40 +484,6 @@ InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, Invers
 	return FB_NEW(pool) InversionNode(node_type, node1, node2);
 }
 
-
-void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const
-{
-/**************************************
- *
- *	f i n d D e p e n d e n t F r o m S t r e a m s
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-
-	// Recurse thru interesting sub-nodes
-
-	if (node->nod_type == nod_class_exprnode_jrd)
-	{
-		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-		exprNode->findDependentFromStreams(this, streamList);
-	}
-	else if (node->nod_type == nod_class_recsrcnode_jrd)
-	{
-		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->findDependentFromStreams(
-			this, streamList);
-	}
-	else
-	{
-		jrd_nod* const* ptr = node->nod_arg;
-
-		for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			findDependentFromStreams(*ptr, streamList);
-	}
-}
-
 const string& OptimizerRetrieval::getAlias()
 {
 /**************************************
@@ -887,16 +725,15 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 		bool usableIndex = true;
 		index_desc::idx_repeat* idx_tail = idx->idx_rpt;
-		NestConst<jrd_nod>* ptr = sortPtr->expressions.begin();
+		NestConst<ValueExprNode>* ptr = sortPtr->expressions.begin();
 		const bool* descending = sortPtr->descending.begin();
 		const int* nullOrder = sortPtr->nullOrder.begin();
 
-		for (const NestConst<jrd_nod>* const end = sortPtr->expressions.end();
+		for (const NestConst<ValueExprNode>* const end = sortPtr->expressions.end();
 			 ptr != end;
 			 ++ptr, ++descending, ++nullOrder, ++idx_tail)
 		{
-
-			jrd_nod* node = *ptr;
+			ValueExprNode* node = *ptr;
 			FieldNode* fieldNode;
 
 			if (idx->idx_flags & idx_expressn)
@@ -907,7 +744,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 					break;
 				}
 			}
-			else if (!(fieldNode = ExprNode::as<FieldNode>(node)) ||
+			else if (!(fieldNode = node->as<FieldNode>()) ||
 				fieldNode->fieldStream != stream || fieldNode->fieldId != idx_tail->idx_field)
 			{
 				usableIndex = false;
@@ -924,7 +761,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 			}
 
 			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
+			node->getDesc(tdbb, csb, &desc);
 
 			// ASF: "desc.dsc_ttype() > ttype_last_internal" is to avoid recursion
 			// when looking for charsets/collations
@@ -1198,7 +1035,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 	}
 }
 
-jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* position) const
+ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, USHORT stream, SLONG* position) const
 {
 /**************************************
  *
@@ -1214,7 +1051,7 @@ jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* pos
 
 	RecordKeyNode* keyNode;
 
-	if ((keyNode = ExprNode::as<RecordKeyNode>(dbkey)) && keyNode->blrOp == blr_dbkey)
+	if ((keyNode = dbkey->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey)
 	{
 		if (keyNode->recStream == stream)
 			return dbkey;
@@ -1225,9 +1062,9 @@ jrd_nod* OptimizerRetrieval::findDbKey(jrd_nod* dbkey, USHORT stream, SLONG* pos
 
 	ConcatenateNode* concatNode;
 
-	if ((concatNode = ExprNode::as<ConcatenateNode>(dbkey)))
+	if ((concatNode = dbkey->as<ConcatenateNode>()))
 	{
-		jrd_nod* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
+		ValueExprNode* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
 
 		if (dbkey_temp)
 			return dbkey_temp;
@@ -1300,8 +1137,8 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	retrieval->irb_relation = relation;
 
 	// Pick up lower bound segment values
-	jrd_nod** lower = retrieval->irb_value;
-	jrd_nod** upper = retrieval->irb_value + idx->idx_count;
+	ValueExprNode** lower = retrieval->irb_value;
+	ValueExprNode** upper = retrieval->irb_value + idx->idx_count;
 	retrieval->irb_lower_count = indexScratch->lowerCount;
 	retrieval->irb_upper_count = indexScratch->upperCount;
 
@@ -1323,13 +1160,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	{
 		if (segment[i]->scanType == segmentScanMissing)
 		{
-			jrd_nod* value = PAR_make_node(tdbb, 1);
-			value->nod_type = nod_class_exprnode_jrd;
-			value->nod_count = 0;
-			value->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-				FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool()));
-
-			*lower++ = *upper++ = value;
+			*lower++ = *upper++ = FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 			ignoreNullsOnScan = false;
 		}
 		else
@@ -1366,7 +1197,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 		fb_assert(cmpNode);
 
 		dsc dsc0;
-		CMP_get_desc(tdbb, csb, cmpNode->arg1.getObject(), &dsc0);
+		cmpNode->arg1->getDesc(tdbb, csb, &dsc0);
 
 		// ASF: "dsc0.dsc_ttype() > ttype_last_internal" is to avoid recursion
 		// when looking for charsets/collations
@@ -1832,8 +1663,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	NotBoolNode* notNode = boolean->as<NotBoolNode>();
 	RseBoolNode* rseNode = boolean->as<RseBoolNode>();
 	bool forward = true;
-	jrd_nod* value = NULL;
-	jrd_nod* match = NULL;
+	ValueExprNode* value = NULL;
+	ValueExprNode* match = NULL;
 
 	if (cmpNode)
 	{
@@ -1842,16 +1673,16 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	}
 	else if (missingNode)
 		match = missingNode->arg;
-	else if (notNode)
+	else if (notNode || rseNode)
 		return false;
-	else if (rseNode)
-		match = rseNode->rse;
 	else
 	{
 		fb_assert(false);
+		return false;
 	}
 
-	jrd_nod* value2 = (cmpNode && cmpNode->blrOp == blr_between) ? cmpNode->arg3 : NULL;
+	ValueExprNode* value2 = (cmpNode && cmpNode->blrOp == blr_between) ?
+		cmpNode->arg3 : NULL;
 
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
@@ -1860,13 +1691,13 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
 		if (!OPT_expression_equal(tdbb, csb, indexScratch->idx, match, stream) ||
-			(value && !OPT_computable(csb, value, stream, true, false)))
+			(value && !value->computable(csb, stream, true, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
 				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
-				OPT_computable(csb, match, stream, true, false))
+				match->computable(csb, stream, true, false))
 			{
-				jrd_nod* temp = match;
+				ValueExprNode* temp = match;
 				match = value;
 				value = temp;
 				forward = false;
@@ -1882,17 +1713,17 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 		FieldNode* fieldNode;
 
-		if (!(fieldNode = ExprNode::as<FieldNode>(match)) ||
+		if (!(fieldNode = match->as<FieldNode>()) ||
 			fieldNode->fieldStream != stream ||
-			(value && !OPT_computable(csb, value, stream, true, false)))
+			(value && !value->computable(csb, stream, true, false)))
 		{
-			jrd_nod* temp = match;
+			ValueExprNode* temp = match;
 			match = value;
 			value = temp;
 
-			if (!(fieldNode = ExprNode::as<FieldNode>(match)) ||
+			if ((!match || !(fieldNode = match->as<FieldNode>())) ||
 				fieldNode->fieldStream != stream ||
-				!OPT_computable(csb, value, stream, true, false))
+				!value->computable(csb, stream, true, false))
 			{
 				return false;
 			}
@@ -1907,10 +1738,10 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	if (value)
 	{
 		dsc desc1, desc2;
-		CMP_get_desc(tdbb, csb, match, &desc1);
-		CMP_get_desc(tdbb, csb, value, &desc2);
+		match->getDesc(tdbb, csb, &desc1);
+		value->getDesc(tdbb, csb, &desc2);
 
-		if (!BTR_types_comparable(desc1, desc2, value->asExpr()->nodFlags))
+		if (!BTR_types_comparable(desc1, desc2, value->nodFlags))
 			return false;
 
 		// if the indexed column is of type int64, we need to inject an
@@ -1927,10 +1758,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 			cast->format = format;
 			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-			value = PAR_make_node(tdbb, 1);
-			value->nod_type = nod_class_exprnode_jrd;
-			value->nod_count = 0;
-			value->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
+			value = cast;
 
 			if (value2)
 			{
@@ -1939,10 +1767,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 				cast->format = format;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-				value2 = PAR_make_node(tdbb, 1);
-				value2->nod_type = nod_class_exprnode_jrd;
-				value2->nod_count = 0;
-				value2->nod_arg[0] = reinterpret_cast<jrd_nod*>(cast);
+				value2 = cast;
 			}
 		}
 	}
@@ -1956,7 +1781,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
-		FieldNode* fieldNode = ExprNode::as<FieldNode>(match);
+		FieldNode* fieldNode = match->as<FieldNode>();
 
 		if (!(indexScratch->idx->idx_flags & idx_expressn))
 		{
@@ -1971,7 +1796,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 				switch (cmpNode->blrOp)
 				{
 					case blr_between:
-						if (!forward || !OPT_computable(csb, value2, stream, true, false))
+						if (!forward || !value2->computable(csb, stream, true, false))
 							return false;
 						segment[i]->matches.add(boolean);
 						// AB: If we have already an exact match don't
@@ -2144,15 +1969,15 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	// Find the side of the equality that is potentially a dbkey.  If
 	// neither, make the obvious deduction
 
-	jrd_nod* dbkey = cmpNode->arg1;
-	jrd_nod* value = cmpNode->arg2;
+	ValueExprNode* dbkey = cmpNode->arg1;
+	ValueExprNode* value = cmpNode->arg2;
 	RecordKeyNode* keyNode;
 
-	if (!((keyNode = ExprNode::as<RecordKeyNode>(dbkey)) && keyNode->blrOp == blr_dbkey) &&
-		!ExprNode::is<ConcatenateNode>(dbkey))
+	if (!((keyNode = dbkey->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey) &&
+		!dbkey->is<ConcatenateNode>())
 	{
-		if (!((keyNode = ExprNode::as<RecordKeyNode>(value)) && keyNode->blrOp == blr_dbkey) &&
-			!ExprNode::is<ConcatenateNode>(value))
+		if (!((keyNode = value->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey) &&
+			!value->is<ConcatenateNode>())
 		{
 			return NULL;
 		}
@@ -2163,13 +1988,13 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	// If the value isn't computable, this has been a waste of time
 
-	if (!OPT_computable(csb, value, stream, false, false))
+	if (!value->computable(csb, stream, false, false))
 		return NULL;
 
 	// If this is a concatenation, find an appropriate dbkey
 
 	SLONG n = 0;
-	if (ExprNode::is<ConcatenateNode>(dbkey))
+	if (dbkey->is<ConcatenateNode>())
 	{
 		dbkey = findDbKey(dbkey, stream, &n);
 		if (!dbkey)
@@ -2177,7 +2002,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	}
 
 	// Make sure we have the correct stream
-	keyNode = ExprNode::as<RecordKeyNode>(dbkey);
+	keyNode = dbkey->as<RecordKeyNode>();
 	fb_assert(keyNode);
 
 	if (keyNode->recStream != stream)
@@ -2465,8 +2290,8 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	if (!cmpNode || cmpNode->blrOp != blr_starting)
 		return false;
 
-	jrd_nod* field = cmpNode->arg1;
-	jrd_nod* value = cmpNode->arg2;
+	ValueExprNode* field = cmpNode->arg1;
+	ValueExprNode* value = cmpNode->arg2;
 
 	if (indexScratch->idx->idx_flags & idx_expressn)
 	{
@@ -2475,13 +2300,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		fb_assert(indexScratch->idx->idx_expression != NULL);
 
 		if (!(OPT_expression_equal(tdbb, csb, indexScratch->idx, field, stream) ||
-			(value && !OPT_computable(csb, value, stream, true, false))))
+			(value && !value->computable(csb, stream, true, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
 				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
-				OPT_computable(csb, field, stream, true, false))
+				field->computable(csb, stream, true, false))
 			{
 				field = value;
 				value = cmpNode->arg1;
@@ -2492,7 +2317,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 	}
 	else
 	{
-		FieldNode* fieldNode = ExprNode::as<FieldNode>(field);
+		FieldNode* fieldNode = field->as<FieldNode>();
 
 		if (!fieldNode)
 		{
@@ -2502,7 +2327,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 			// this must include many matches (think about empty string)
 			return false;
 			/*
-			if (!ExprNode::is<FieldNode>(value))
+			if (!value->is<FieldNode>())
 				return NULL;
 			field = value;
 			value = cmpNode->arg1;
@@ -2512,7 +2337,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		// Every string starts with an empty string so don't bother using an index in that case.
 		LiteralNode* literal;
 
-		if ((literal = ExprNode::as<LiteralNode>(value)))
+		if ((literal = value->as<LiteralNode>()))
 		{
 			if ((literal->litDesc.dsc_dtype == dtype_text && literal->litDesc.dsc_length == 0) ||
 				(literal->litDesc.dsc_dtype == dtype_varying &&
@@ -2530,7 +2355,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||
 				indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
-			!OPT_computable(csb, value, stream, false, false))
+			!value->computable(csb, stream, false, false))
 		{
 			return false;
 		}

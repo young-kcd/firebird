@@ -65,7 +65,6 @@ const double THRESHOLD_CARDINALITY = 5.0;
 const int DEFAULT_INDEX_COST = 1;
 
 
-class jrd_nod;
 struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
@@ -76,9 +75,9 @@ class PlanNode;
 class River;
 class SortNode;
 
-bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, const bool, const bool);
-bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, jrd_nod*, USHORT);
-bool OPT_expression_equal2(thread_db*, CompilerScratch*, jrd_nod*, jrd_nod*, USHORT);
+bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, ValueExprNode*, USHORT);
+bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2,
+	USHORT stream);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 
@@ -100,8 +99,8 @@ public:
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
 
-	jrd_nod* lowerValue;		// lower bound on index value
-	jrd_nod* upperValue;		// upper bound on index value
+	ValueExprNode* lowerValue;	// lower bound on index value
+	ValueExprNode* upperValue;	// upper bound on index value
 	bool excludeLower;			// exclude lower bound value from scan
 	bool excludeUpper;			// exclude upper bound value from scan
 	int scope;					// highest scope level
@@ -164,8 +163,6 @@ public:
 	InversionCandidate* getCost();
 	InversionCandidate* getInversion(IndexTableScan** rsb);
 
-	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
-
 protected:
 	InversionNode* composeInversion(InversionNode* node1, InversionNode* node2,
 		InversionNode::Type node_type) const;
@@ -181,7 +178,7 @@ protected:
 	InversionCandidate* matchDbKey(BoolExprNode* boolean) const;
 	InversionCandidate* matchOnIndexes(IndexScratchList* indexScratches,
 		BoolExprNode* boolean, USHORT scope) const;
-	jrd_nod* findDbKey(jrd_nod*, USHORT, SLONG*) const;
+	ValueExprNode* findDbKey(ValueExprNode*, USHORT, SLONG*) const;
 
 #ifdef OPT_DEBUG_RETRIEVAL
 	void printCandidate(const InversionCandidate* candidate) const;

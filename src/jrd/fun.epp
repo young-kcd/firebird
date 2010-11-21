@@ -303,7 +303,8 @@ static void invoke(thread_db* tdbb,
 static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
-void FUN_evaluate(thread_db* tdbb, const Function* function, const jrd_nod* node, impure_value* value)
+void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArray& node,
+	impure_value* value)
 {
 /**************************************
  *
@@ -358,7 +359,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const jrd_nod* node
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
 
-	const jrd_nod* const* ptr = node->nod_arg;
+	const NestConst<ValueExprNode>* ptr = node.begin();
 
 	// We'll use to this trick to give the UDF a way to signal
 	// "I sent a null blob" when not using descriptors.
@@ -380,9 +381,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const jrd_nod* node
 			request->req_flags &= ~req_null;
 		}
 		else
-		{
-			input = EVL_expr(tdbb, *ptr++);
-		}
+			input = EVL_expr(tdbb, request, *ptr++);
 
 		// If we're passing data type ISC descriptor, there's
 		// nothing left to be done

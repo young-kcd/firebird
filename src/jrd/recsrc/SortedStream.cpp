@@ -205,7 +205,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 
 			if (item->node)
 			{
-				from = EVL_expr(tdbb, item->node);
+				from = EVL_expr(tdbb, request, item->node);
 				if (request->req_flags & req_null)
 					flag = true;
 			}
@@ -274,7 +274,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 		const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
 		for (const SortMap::Item* item = m_map->items.begin(); item < end_item; item++)
 		{
-			if (item->node.getObject() && !ExprNode::is<FieldNode>(item->node.getObject()))
+			if (item->node && !item->node->is<FieldNode>())
 				continue;
 
 			if (item->stream == stream)
@@ -314,7 +314,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		from = item->desc;
 		from.dsc_address = data + (IPTR) from.dsc_address;
 
-		if (item->node.getObject() && !ExprNode::is<FieldNode>(item->node.getObject()))
+		if (item->node && !item->node->is<FieldNode>())
 			continue;
 
 		// if moving a TEXT item into the key portion of the sort record,

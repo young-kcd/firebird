@@ -296,9 +296,9 @@ void AggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	}
 }
 
-ExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* AggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -336,7 +336,7 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 
 	if (arg)
 	{
-		desc = EVL_expr(tdbb, arg);
+		desc = EVL_expr(tdbb, request, arg);
 		if (request->req_flags & req_null)
 			return;
 
@@ -448,7 +448,7 @@ DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	AvgAggNode* node = FB_NEW(pool) AvgAggNode(pool,
 		(blrOp == blr_agg_average_distinct),
 		(csb->csb_g_flags & csb_blr_version4));
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -492,7 +492,7 @@ void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 
 	if (dialect1)
 	{
@@ -560,7 +560,7 @@ ValueExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* AvgAggNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	if (dialect1)
 		nodFlags |= FLAG_DOUBLE;
@@ -653,8 +653,8 @@ DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 {
 	ListAggNode* node = FB_NEW(pool) ListAggNode(pool,
 		(blrOp == blr_agg_list_distinct));
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
-	node->delimiter = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
+	node->delimiter = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -674,7 +674,7 @@ bool ListAggNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void ListAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 	desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 }
 
@@ -717,7 +717,8 @@ void ListAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 
 	if (impure->vlux_count)
 	{
-		const dsc* const delimiterDesc = EVL_expr(tdbb, delimiter);
+		const dsc* const delimiterDesc = EVL_expr(tdbb, request, delimiter);
+
 		if (request->req_flags & req_null)
 		{
 			// Mark the result as NULL.
@@ -778,8 +779,10 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 {
 	CountAggNode* node = FB_NEW(pool) CountAggNode(pool,
 		(blrOp == blr_agg_count_distinct));
+
 	if (blrOp != blr_agg_count)
-		node->arg = PAR_parse_node(tdbb, csb, VALUE);
+		node->arg = PAR_parse_value(tdbb, csb);
+
 	return node;
 }
 
@@ -858,10 +861,11 @@ SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_no
 
 DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
-	SumAggNode* node = FB_NEW(pool) SumAggNode(pool,
-		(blrOp == blr_agg_total_distinct),
+	SumAggNode* node = FB_NEW(pool) SumAggNode(pool, (blrOp == blr_agg_total_distinct),
 		(csb->csb_g_flags & csb_blr_version4));
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+
+	node->arg = PAR_parse_value(tdbb, csb);
+
 	return node;
 }
 
@@ -915,7 +919,7 @@ void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 
 	if (dialect1)
 	{
@@ -1110,7 +1114,7 @@ DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 {
 	MaxMinAggNode* node = FB_NEW(pool) MaxMinAggNode(pool,
 		(blrOp == blr_agg_max ? TYPE_MAX : TYPE_MIN));
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -1122,7 +1126,7 @@ void MaxMinAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void MaxMinAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier)

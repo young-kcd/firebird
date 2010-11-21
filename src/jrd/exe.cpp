@@ -236,18 +236,9 @@ const int POST_TRIG	= 2;
 const size_t MAX_STACK_TRACE = 2048;
 
 
+// Perform an assignment.
 void EXE_assignment(thread_db* tdbb, const jrd_nod* node)
 {
-/**************************************
- *
- *	E X E _ a s s i g n m e n t
- *
- **************************************
- *
- * Functional description
- *	Perform an assignment
- *
- **************************************/
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
@@ -256,39 +247,42 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* node)
 
 	// Get descriptors of src field/parameter/variable, etc.
 	request->req_flags &= ~req_null;
-	dsc* from_desc = EVL_expr(tdbb, node->nod_arg[e_asgn_from]);
+	dsc* from_desc = EVL_expr(tdbb, request, node->nod_arg[e_asgn_from]->asValue());
 
-	EXE_assignment(tdbb, node->nod_arg[e_asgn_to], from_desc, (request->req_flags & req_null),
+	EXE_assignment(tdbb, node->nod_arg[e_asgn_to]->asValue(), from_desc,
+		(request->req_flags & req_null),
 		node->nod_arg[e_asgn_missing], node->nod_arg[e_asgn_missing2]);
 
 	request->req_operation = jrd_req::req_return;
 }
 
+// Perform an assignment.
+void EXE_assignment(thread_db* tdbb, const ValueExprNode* source, const ValueExprNode* target)
+{
+	SET_TDBB(tdbb);
+	jrd_req* request = tdbb->getRequest();
 
-void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool from_null,
+	// Get descriptors of src field/parameter/variable, etc.
+	request->req_flags &= ~req_null;
+	dsc* from_desc = EVL_expr(tdbb, request, source);
+
+	EXE_assignment(tdbb, target, from_desc, (request->req_flags & req_null), NULL, NULL);
+
+	request->req_operation = jrd_req::req_return;
+}
+
+// Perform an assignment.
+void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bool from_null,
 	const jrd_nod* missing_node, const jrd_nod* missing2_node)
 {
-/**************************************
- *
- *	E X E _ a s s i g n m e n t
- *
- **************************************
- *
- * Functional description
- *	Perform an assignment
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
 
 	// Get descriptors of receiving and sending fields/parameters, variables, etc.
 
 	dsc* missing = NULL;
-	if (missing_node) {
-		missing = EVL_expr(tdbb, missing_node);
-	}
+	if (missing_node)
+		missing = EVL_expr(tdbb, request, missing_node->asValue());
 
 	// Get descriptor of target field/parameter/variable, etc.
 	DSC* to_desc = EVL_assign_to(tdbb, to);
@@ -446,14 +440,10 @@ void EXE_assignment(thread_db* tdbb, const jrd_nod* to, dsc* from_desc, bool fro
 	}
 	else
 	{
-		if (missing2_node && (missing = EVL_expr(tdbb, missing2_node)))
-		{
+		if (missing2_node && (missing = EVL_expr(tdbb, request, missing2_node->asValue())))
 			MOV_move(tdbb, missing, to_desc);
-		}
 		else
-		{
 			memset(to_desc->dsc_address, 0, to_desc->dsc_length);
-		}
 
 		to_desc->dsc_flags |= DSC_null;
 	}
@@ -1407,15 +1397,21 @@ static void execute_procedure(thread_db* tdbb, const jrd_nod* node)
 	BLKCHK(node, type_nod);
 
 	jrd_req* request = tdbb->getRequest();
+	const jrd_nod* temp;
 
-	const jrd_nod* temp = node->nod_arg[e_esp_inputs];
-	if (temp)
+	const ValueListNode* targetList = NULL;
+
+	if ((temp = node->nod_arg[e_esp_input_sources]))
 	{
-		const jrd_nod* const* ptr;
-		const jrd_nod* const* end;
+		const ValueListNode* sourceList = temp->asValue()->as<ValueListNode>();
+		targetList = node->nod_arg[e_esp_input_targets]->asValue()->as<ValueListNode>();
 
-		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-			EXE_assignment(tdbb, *ptr);
+		const NestConst<ValueExprNode>* const sourceEnd = sourceList->args.end();
+		const NestConst<ValueExprNode>* sourcePtr = sourceList->args.begin();
+		const NestConst<ValueExprNode>* targetPtr = targetList->args.begin();
+
+		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
+			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 	}
 
 	const jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
@@ -1444,7 +1440,7 @@ static void execute_procedure(thread_db* tdbb, const jrd_nod* node)
 	jrd_req* proc_request = procedure->getStatement()->findRequest(tdbb);
 
 	// trace procedure execution start
-	TraceProcExecute trace(tdbb, proc_request, request, node->nod_arg[e_esp_inputs]);
+	TraceProcExecute trace(tdbb, proc_request, request, targetList);
 
 	Firebird::Array<UCHAR> temp_buffer;
 
@@ -1507,15 +1503,17 @@ static void execute_procedure(thread_db* tdbb, const jrd_nod* node)
 	EXE_unwind(tdbb, proc_request);
 	tdbb->setRequest(request);
 
-	temp = node->nod_arg[e_esp_outputs];
-	if (temp)
+	if ((temp = node->nod_arg[e_esp_output_sources]))
 	{
-		const jrd_nod* const* ptr;
-		const jrd_nod* const* end;
-		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-		{
-			EXE_assignment(tdbb, *ptr);
-		}
+		const ValueListNode* sourceList = temp->asValue()->as<ValueListNode>();
+		targetList = node->nod_arg[e_esp_output_targets]->asValue()->as<ValueListNode>();
+
+		const NestConst<ValueExprNode>* const sourceEnd = sourceList->args.end();
+		const NestConst<ValueExprNode>* sourcePtr = sourceList->args.begin();
+		const NestConst<ValueExprNode>* targetPtr = targetList->args.begin();
+
+		for (; sourcePtr != sourceEnd; ++sourcePtr, ++targetPtr)
+			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 	}
 
 	proc_request->req_attachment = NULL;
@@ -1761,10 +1759,11 @@ static void get_string(thread_db* tdbb, jrd_req* request, const jrd_nod* node, F
 	MoveBuffer buffer;
 	UCHAR* p = NULL;
 	SSHORT len = 0;
-	const dsc* dsc = node ? EVL_expr(tdbb, node) : NULL;
-	if (dsc && !(request->req_flags & req_null)) {
+	const dsc* dsc = node ? EVL_expr(tdbb, request, node->asValue()) : NULL;
+
+	if (dsc && !(request->req_flags & req_null))
 		len = MOV_make_string2(tdbb, dsc, dsc->getTextType(), &p, buffer);
-	}
+
 	str = Firebird::string((char*) p, len);
 	str.trim();
 }
@@ -2159,7 +2158,8 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 
 							const SLONG fetch_op = (IPTR) node->nod_arg[e_cursor_stmt_scroll_op];
 
-							const dsc* desc = EVL_expr(tdbb, node->nod_arg[e_cursor_stmt_scroll_val]);
+							const dsc* desc = EVL_expr(tdbb, request,
+								node->nod_arg[e_cursor_stmt_scroll_val]->asValue());
 							const bool unknown = !desc || (request->req_flags & req_null);
 							const SINT64 offset = unknown ? 0 : MOV_get_int64(desc, 0);
 
@@ -2581,7 +2581,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 				node = node->nod_parent;
 				break;
 			}
-			exec_sql(tdbb, request, EVL_expr(tdbb, node->nod_arg[0]));
+			exec_sql(tdbb, request, EVL_expr(tdbb, request, node->nod_arg[0]->asValue()));
 			if (request->req_operation == jrd_req::req_evaluate)
 				request->req_operation = jrd_req::req_return;
 			node = node->nod_parent;
@@ -2686,7 +2686,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 				DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_BEFORE,
 					DDL_TRIGGER_ALTER_SEQUENCE, genName, *request->getStatement()->sqlText);
 
-				dsc* desc = EVL_expr(tdbb, node->nod_arg[e_gen_value]);
+				dsc* desc = EVL_expr(tdbb, request, node->nod_arg[e_gen_value]->asValue());
 				DPM_gen_id(tdbb, genId, true, MOV_get_int64(desc, 0));
 
 				DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
@@ -2726,7 +2726,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 						request->getStatement()->mapFieldInfo.get(itemInfo->field, fieldInfo) &&
 						fieldInfo.defaultValue)
 					{
-						dsc* value = EVL_expr(tdbb, fieldInfo.defaultValue);
+						dsc* value = EVL_expr(tdbb, request, fieldInfo.defaultValue->asValue());
 
 						if (value && !(request->req_flags & req_null))
 						{
@@ -3665,7 +3665,7 @@ static void validate(thread_db* tdbb, const jrd_nod* list)
 			VaryStr<128> temp;
 
 			const jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
-			const dsc* desc = EVL_expr(tdbb, node);
+			const dsc* desc = EVL_expr(tdbb, request, node->asValue());
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value,
 								&temp, sizeof(temp) - 1) : 0;

@@ -159,7 +159,7 @@ private:
 
 
 HashJoin::HashJoin(CompilerScratch* csb, size_t count,
-				   RecordSource* const* args, const LegacyNodeArray* const* keys)
+				   RecordSource* const* args, const NestValueArray* const* keys)
 	: m_leader(args[0]), m_leaderKeys(keys[0]), m_args(csb->csb_pool, count - 1),
 	  m_keys(csb->csb_pool, count - 1), m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
 {
@@ -388,14 +388,14 @@ void HashJoin::restoreRecords(thread_db* tdbb) const
 }
 
 size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-	const LegacyNodeArray* keys) const
+	const NestValueArray* keys) const
 {
 	ULONG hash_value = 0;
 	size_t hash_slot = 0;
 
 	for (size_t i = 0; i < keys->getCount(); i++)
 	{
-		const dsc* const desc = EVL_expr(tdbb, (*keys)[i]);
+		const dsc* const desc = EVL_expr(tdbb, request, (*keys)[i]);
 
 		if (desc && !(request->req_flags & req_null))
 		{
@@ -461,12 +461,12 @@ bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request) const
 {
 	for (size_t i = 0; i < m_leaderKeys->getCount(); ++i)
 	{
-		const dsc* const desc1 = EVL_expr(tdbb, (*m_leaderKeys)[i]);
+		const dsc* const desc1 = EVL_expr(tdbb, request, (*m_leaderKeys)[i]);
 		const bool null1 = (request->req_flags & req_null);
 
 		for (size_t j = 0; j < m_keys.getCount(); j++)
 		{
-			const dsc* const desc2 = EVL_expr(tdbb, (*m_keys[j])[i]);
+			const dsc* const desc2 = EVL_expr(tdbb, request, (*m_keys[j])[i]);
 			const bool null2 = (request->req_flags & req_null);
 
 			if (null1 != null2)

@@ -205,14 +205,14 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			if (fieldInfo.validationExpr)
 			{
 				NodeCopier copier(csb, local_map);
-				fieldInfo.validationExpr = fieldInfo.validationExpr->copy(tdbb, copier);
+				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 
 			fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
 			fieldInfo.validationStmt = CMP_pass1(tdbb, csb, fieldInfo.validationStmt);
 
 			if (fieldInfo.validationExpr)
-				fieldInfo.validationExpr = fieldInfo.validationExpr->pass1(tdbb, csb);
+				fieldInfo.validationExpr = CMP_pass1(tdbb, csb, fieldInfo.validationExpr);
 		}
 
 		csb->csb_exec_sta.clear();
@@ -227,7 +227,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			fieldInfo.validationStmt = CMP_pass2(tdbb, csb, fieldInfo.validationStmt, 0);
 
 			if (fieldInfo.validationExpr)
-				fieldInfo.validationExpr = fieldInfo.validationExpr->pass2(tdbb, csb);
+				fieldInfo.validationExpr = CMP_pass2(tdbb, csb, fieldInfo.validationExpr);
 		}
 
 		if (csb->csb_impure > MAX_REQUEST_SIZE)

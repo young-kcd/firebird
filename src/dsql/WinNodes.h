@@ -57,7 +57,7 @@ public:
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
-	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
@@ -117,11 +117,14 @@ public:
 	virtual dsc* winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const;
 
 protected:
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+
+protected:
 	const int direction;
 	dsql_nod* dsqlRows;
 	dsql_nod* dsqlOutExpr;
-	NestConst<jrd_nod> rows;
-	NestConst<jrd_nod> outExpr;
+	NestConst<ValueExprNode> rows;
+	NestConst<ValueExprNode> outExpr;
 };
 
 // LAG function.

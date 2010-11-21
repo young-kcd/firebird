@@ -30,8 +30,10 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/NestConst.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/rwlock.h"
+///#include "../dsql/Nodes.h"
 
 struct dsc;
 
@@ -45,6 +47,7 @@ class Database;
 class Format;
 class Trigger;
 class Function;
+class ValueExprNode;
 class ValueImpl;
 class ValuesImpl;
 struct impure_value;
@@ -130,7 +133,8 @@ public:
 			const Jrd::Function* aUdf);
 		~Function();
 
-		void execute(thread_db* tdbb, const jrd_nod* args, impure_value* impure) const;
+		void execute(thread_db* tdbb, const Firebird::Array<NestConst<ValueExprNode> >& args,
+			impure_value* impure) const;
 
 	private:
 		ExtEngineManager* extManager;

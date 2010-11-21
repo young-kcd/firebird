@@ -1283,7 +1283,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 	const jrd_nod* const* jrdVar = params;
 	GenericMap<Pair<NonPooled<const jrd_nod*, dsc*> > > paramDescs(getPool());
 
-	const jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->getRequest();
 
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
@@ -1293,7 +1293,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 
 		if (!paramDescs.get(*jrdVar, src))
 		{
-			src = EVL_expr(tdbb, *jrdVar);
+			src = EVL_expr(tdbb, request, (*jrdVar)->asValue());
 			paramDescs.put(*jrdVar, src);
 
 			if (src)
@@ -1356,7 +1356,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
 		/*
-		dsc* d = EVL_assign_to(tdbb, *jrdVar);
+		dsc* d = EVL_assign_to(tdbb, (*jrdVar)->asValue());
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
 			m_error = true;
@@ -1382,7 +1382,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 		}
 
 		// and assign to the target
-		EXE_assignment(tdbb, *jrdVar, local, srcNull, NULL, NULL);
+		EXE_assignment(tdbb, (*jrdVar)->asValue(), local, srcNull, NULL, NULL);
 	}
 }
 

@@ -132,10 +132,15 @@ bool Union::getRecord(thread_db* tdbb) const
 	// We've got a record, map it into the target record
 
 	const MapNode* const map = m_maps[impure->irsb_count];
-	const NestConst<jrd_nod>* ptr = map->items.begin();
+	const NestConst<ValueExprNode>* const sourceEnd = map->sourceList.end();
 
-	for (const NestConst<jrd_nod>* const end = map->items.end(); ptr != end; ++ptr)
-		EXE_assignment(tdbb, *ptr);
+	for (const NestConst<ValueExprNode>* source = map->sourceList.begin(),
+			*target = map->targetList.begin();
+		 source != sourceEnd;
+		 ++source, ++target)
+	{
+		EXE_assignment(tdbb, *source, *target);
+	}
 
 	return true;
 }

@@ -148,44 +148,44 @@ void makeUuid(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* 
 void makeUuidToChar(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* result, int argsCount, const dsc** args);
 
 // generic stdmath function
-dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
+dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 // specific evl functions
-dsc* evlAbs(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAsciiChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAsciiVal(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlExp(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlFloor(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlGenUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlGetContext(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSetContext(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlHash(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLeft(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlMod(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPi(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRand(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlReplace(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlReverse(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRight(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSign(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
-dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args, impure_value* impure);
+dsc* evlAbs(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlAsciiChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlAsciiVal(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlCeil(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlExp(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlFloor(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlGenUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlGetContext(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlSetContext(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlHash(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlLeft(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlMod(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlPi(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlRand(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlReplace(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlReverse(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlRight(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlSign(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
+dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args, impure_value* impure);
 
 
 const char
@@ -1039,15 +1039,15 @@ void makeUuidToChar(DataTypeUtilBase*, const SysFunction* function, dsc* result,
 }
 
 
-dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1140,14 +1140,13 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlAbs(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
-	impure_value* impure)
+dsc* evlAbs(thread_db* tdbb, const SysFunction*, const NestValueArray& args, impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1186,14 +1185,14 @@ dsc* evlAbs(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1208,14 +1207,14 @@ dsc* evlAsciiChar(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1236,18 +1235,18 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
@@ -1258,17 +1257,17 @@ dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 1);
+	fb_assert(args.getCount() >= 1);
 	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
-	for (int i = 0; i < args->nod_count; ++i)
+	for (size_t i = 0; i < args.getCount(); ++i)
 	{
-		const dsc* value = EVL_expr(tdbb, args->nod_arg[i]);
+		const dsc* value = EVL_expr(tdbb, request, args[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL
 			return NULL;
 
@@ -1307,19 +1306,19 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
@@ -1365,14 +1364,14 @@ dsc* evlBinShift(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlCeil(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlCeil(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1428,14 +1427,14 @@ string showInvalidChar(const UCHAR c)
 }
 
 
-dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlCharToUuid(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1533,22 +1532,22 @@ const char* getPartName(int n)
 }
 
 
-dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 3);
+	fb_assert(args.getCount() == 3);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* quantityDsc = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* quantityDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if quantityDsc is NULL
 		return NULL;
 
-	const dsc* partDsc = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* partDsc = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
 		return NULL;
 
-	const dsc* valueDsc = EVL_expr(tdbb, args->nod_arg[2]);
+	const dsc* valueDsc = EVL_expr(tdbb, request, args[2]);
 	if (request->req_flags & req_null)	// return NULL if valueDsc is NULL
 		return NULL;
 
@@ -1730,22 +1729,22 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 3);
+	fb_assert(args.getCount() == 3);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* partDsc = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* partDsc = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if partDsc is NULL
 		return NULL;
 
-	const dsc* value1Dsc = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value1Dsc = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value1Dsc is NULL
 		return NULL;
 
-	const dsc* value2Dsc = EVL_expr(tdbb, args->nod_arg[2]);
+	const dsc* value2Dsc = EVL_expr(tdbb, request, args[2]);
 	if (request->req_flags & req_null)	// return NULL if value2Dsc is NULL
 		return NULL;
 
@@ -1943,14 +1942,14 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlExp(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlExp(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -1967,14 +1966,14 @@ dsc* evlExp(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlFloor(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlFloor(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -2022,10 +2021,10 @@ dsc* evlFloor(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 0);
+	fb_assert(args.getCount() == 0);
 
 	FB_GUID guid;
 	fb_assert(sizeof(guid.data) == 16);
@@ -2040,10 +2039,10 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
@@ -2051,11 +2050,11 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
-	const dsc* nameSpace = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// Complain if namespace is null
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 
-	const dsc* name = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* name = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// Complain if variable name is null
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 
@@ -2186,25 +2185,25 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 3);
+	fb_assert(args.getCount() == 3);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = tdbb->getTransaction();
 	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
-	const dsc* nameSpace = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* nameSpace = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// Complain if namespace is null
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 
-	const dsc* name = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* name = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// Complain if variable name is null
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[2]);
+	const dsc* value = EVL_expr(tdbb, request, args[2]);
 
 	const string nameSpaceStr(MOV_make_string2(tdbb, nameSpace, ttype_none));
 	const string nameStr(MOV_make_string2(tdbb, name, ttype_none));
@@ -2287,14 +2286,14 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlHash(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlHash(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -2349,18 +2348,18 @@ dsc* evlHash(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlLeft(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* str = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* str = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if str is NULL
 		return NULL;
 
-	const dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* len = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if len is NULL
 		return NULL;
 
@@ -2372,15 +2371,15 @@ dsc* evlLeft(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -2414,18 +2413,18 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlLog(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
@@ -2453,18 +2452,18 @@ dsc* evlLog(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value*)
 {
-	fb_assert(args->nod_count >= 1);
+	fb_assert(args.getCount() >= 1);
 	fb_assert(function->misc != NULL);
 
 	jrd_req* request = tdbb->getRequest();
 	dsc* result = NULL;
 
-	for (int i = 0; i < args->nod_count; ++i)
+	for (size_t i = 0; i < args.getCount(); ++i)
 	{
-		dsc* value = EVL_expr(tdbb, args->nod_arg[i]);
+		dsc* value = EVL_expr(tdbb, request, args[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL
 			return NULL;
 
@@ -2494,18 +2493,18 @@ dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const jrd_nod*
 }
 
 
-dsc* evlMod(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlMod(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
@@ -2543,31 +2542,31 @@ dsc* evlMod(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 3);
+	fb_assert(args.getCount() >= 3);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	const dsc* placing = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* placing = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if placing is NULL
 		return NULL;
 
-	const dsc* fromDsc = EVL_expr(tdbb, args->nod_arg[2]);
+	const dsc* fromDsc = EVL_expr(tdbb, request, args[2]);
 	if (request->req_flags & req_null)	// return NULL if fromDsc is NULL
 		return NULL;
 
 	const dsc* lengthDsc = NULL;
 	ULONG length = 0;
 
-	if (args->nod_count >= 4)
+	if (args.getCount() >= 4)
 	{
-		lengthDsc = EVL_expr(tdbb, args->nod_arg[3]);
+		lengthDsc = EVL_expr(tdbb, request, args[3]);
 		if (request->req_flags & req_null)	// return NULL if lengthDsc is NULL
 			return NULL;
 
@@ -2727,18 +2726,18 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const jrd_nod* arg
 }
 
 
-dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 2);
+	fb_assert(args.getCount() >= 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* padLenDsc = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* padLenDsc = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if padLenDsc is NULL
 		return NULL;
 
@@ -2754,9 +2753,9 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 	ULONG padLen = static_cast<ULONG>(padLenArg);
 
 	const dsc* value2 = NULL;
-	if (args->nod_count >= 3)
+	if (args.getCount() >= 3)
 	{
-		value2 = EVL_expr(tdbb, args->nod_arg[2]);
+		value2 = EVL_expr(tdbb, request, args[2]);
 		if (request->req_flags & req_null)	// return NULL if value2 is NULL
 			return NULL;
 	}
@@ -2890,10 +2889,10 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const jrd_nod* args,
+dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 0);
+	fb_assert(args.getCount() == 0);
 
 	impure->vlu_misc.vlu_double = 3.14159265358979323846;
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -2902,26 +2901,26 @@ dsc* evlPi(thread_db* /*tdbb*/, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 2);
+	fb_assert(args.getCount() >= 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
 	SLONG start = 1;
 
-	if (args->nod_count >= 3)
+	if (args.getCount() >= 3)
 	{
-		const dsc* value3 = EVL_expr(tdbb, args->nod_arg[2]);
+		const dsc* value3 = EVL_expr(tdbb, request, args[2]);
 		if (request->req_flags & req_null)	// return NULL if value3 is NULL
 			return NULL;
 
@@ -3028,18 +3027,18 @@ dsc* evlPosition(thread_db* tdbb, const SysFunction* function, const jrd_nod* ar
 }
 
 
-dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlPower(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
@@ -3075,10 +3074,10 @@ dsc* evlPower(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlRand(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlRand(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 0);
+	fb_assert(args.getCount() == 0);
 
 	SINT64 n;
 	tdbb->getAttachment()->att_random_generator.getBytes(&n, sizeof(n));
@@ -3091,10 +3090,10 @@ dsc* evlRand(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 3);
+	fb_assert(args.getCount() == 3);
 
 	jrd_req* request = tdbb->getRequest();
 	dsc* values[3];	// 0 = searched, 1 = find, 2 = replacement
@@ -3102,7 +3101,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 
 	for (int i = 0; i < 3; ++i)
 	{
-		values[i] = EVL_expr(tdbb, args->nod_arg[i]);
+		values[i] = EVL_expr(tdbb, request, args[i]);
 		if (request->req_flags & req_null)	// return NULL if values[i] is NULL
 			return NULL;
 
@@ -3240,14 +3239,14 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlReverse(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -3343,18 +3342,18 @@ dsc* evlReverse(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 2);
+	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	const dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* len = EVL_expr(tdbb, request, args[1]);
 	if (request->req_flags & req_null)	// return NULL if len is NULL
 		return NULL;
 
@@ -3395,22 +3394,22 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlRound(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 1);
+	fb_assert(args.getCount() >= 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
 	SLONG scale = 0;
 
-	if (args->nod_count > 1)
+	if (args.getCount() > 1)
 	{
-		const dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		const dsc* scaleDsc = EVL_expr(tdbb, request, args[1]);
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
@@ -3430,14 +3429,14 @@ dsc* evlRound(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlSign(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
+dsc* evlSign(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -3456,14 +3455,14 @@ dsc* evlSign(thread_db* tdbb, const SysFunction*, const jrd_nod* args,
 }
 
 
-dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -3482,21 +3481,21 @@ dsc* evlSqrt(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count >= 1);
+	fb_assert(args.getCount() >= 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
 	SLONG resultScale = 0;
-	if (args->nod_count > 1)
+	if (args.getCount() > 1)
 	{
-		const dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		const dsc* scaleDsc = EVL_expr(tdbb, request, args[1]);
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
@@ -3569,14 +3568,14 @@ dsc* evlTrunc(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
 }
 
 
-dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const jrd_nod* args,
+dsc* evlUuidToChar(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
-	fb_assert(args->nod_count == 1);
+	fb_assert(args.getCount() == 1);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, request, args[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 

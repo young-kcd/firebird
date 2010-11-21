@@ -80,6 +80,35 @@ static bool isDateAndTime(const dsc& d1, const dsc& d2);
 //--------------------
 
 
+void NodeRef::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	internalPass2(tdbb, csb);
+
+	ExprNode* node = getExpr();
+
+	// Bind values of invariant nodes to top-level RSE (if present)
+	if (node && (node->nodFlags & ExprNode::FLAG_INVARIANT))
+	{
+		if (csb->csb_current_nodes.hasData())
+		{
+			RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
+			fb_assert(topRseNode.rseNode);
+
+			if (!topRseNode.rseNode->rse_invariants)
+			{
+				topRseNode.rseNode->rse_invariants =
+					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
+			}
+
+			topRseNode.rseNode->rse_invariants->add(node->impureOffset);
+		}
+	}
+}
+
+
+//--------------------
+
+
 ExprNode* ExprNode::fromLegacy(const dsql_nod* node)
 {
 	return node && node->nod_type == Dsql::nod_class_exprnode ?
@@ -155,48 +184,27 @@ bool ExprNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ 
 	if (other->jrdChildNodes.getCount() != count)
 		return false;
 
-	JrdNode* j = other->jrdChildNodes.begin();
+	NodeRef** j = other->jrdChildNodes.begin();
 
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i, ++j)
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i, ++j)
 	{
-		if (*i && *j)
-		{
-			if (i->jrdNode && j->jrdNode)
-			{
-				if (!OPT_expression_equal2(tdbb, csb, *i->jrdNode, *j->jrdNode, stream))
-					return false;
-			}
-			else if (i->boolExprNode && j->boolExprNode)
-			{
-				if (!(*i->boolExprNode)->expressionEqual(tdbb, csb, *j->boolExprNode, stream))
-					return false;
-			}
-			else
-				return false;
-		}
+		if (!**i && !**j)
+			continue;
+
+		if (!**i || !**j || !(*i)->getExpr()->expressionEqual(tdbb, csb, (*j)->getExpr(), stream))
+			return false;
 	}
 
 	return true;
 }
 
 bool ExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
-	bool allowOnlyCurrentStream)
+	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (*i)
-		{
-			if (i->jrdNode)
-			{
-				if (!OPT_computable(csb, *i->jrdNode, stream, idxUse, allowOnlyCurrentStream))
-					return false;
-			}
-			else if (i->boolExprNode)
-			{
-				if (!(*i->boolExprNode)->computable(csb, stream, idxUse, allowOnlyCurrentStream))
-					return false;
-			}
-		}
+		if (**i && !(*i)->getExpr()->computable(csb, stream, idxUse, allowOnlyCurrentStream))
+			return false;
 	}
 
 	return true;
@@ -204,29 +212,19 @@ bool ExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
 
 void ExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
 {
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (*i)
-		{
-			if (i->jrdNode)
-				optRet->findDependentFromStreams(*i->jrdNode, streamList);
-			else if (i->boolExprNode)
-				(*i->boolExprNode)->findDependentFromStreams(optRet, streamList);
-		}
+		if (**i)
+			(*i)->getExpr()->findDependentFromStreams(optRet, streamList);
 	}
 }
 
 ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (*i)
-		{
-			if (i->jrdNode)
-				*i->jrdNode = CMP_pass1(tdbb, csb, *i->jrdNode);
-			else if (i->boolExprNode)
-				*i->boolExprNode = (*i->boolExprNode)->pass1(tdbb, csb);
-		}
+		if (**i)
+			(*i)->pass1(tdbb, csb);
 	}
 
 	return this;
@@ -234,28 +232,59 @@ ExprNode* ExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (*i)
-		{
-			if (i->jrdNode)
-				*i->jrdNode = CMP_pass2(tdbb, csb, *i->jrdNode, NULL);
-			else if (i->boolExprNode)
-				*i->boolExprNode = (*i->boolExprNode)->pass2(tdbb, csb);
-		}
+		if (**i)
+			(*i)->pass2(tdbb, csb);
 	}
 
 	return this;
 }
 
-bool ExprNode::jrdVisit(JrdNodeVisitor& visitor)
+// Check if expression could return NULL or expression can turn NULL into a true/false.
+bool ExprNode::jrdPossibleUnknownFinder()
 {
-	bool ret = false;
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (**i && (*i)->getExpr()->jrdPossibleUnknownFinder())
+			return true;
+	}
 
-	for (JrdNode* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-		ret |= visitor.visit(*i);
+	return false;
+}
 
-	return ret;
+// Search if somewhere in the expression the given stream is used.
+bool ExprNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
+{
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (**i && (*i)->getExpr()->jrdStreamFinder(csb, findStream))
+			return true;
+	}
+
+	return false;
+}
+
+// Return all streams referenced by the expression.
+void ExprNode::jrdStreamsCollector(SortedArray<int>& streamList)
+{
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (**i)
+			(*i)->getExpr()->jrdStreamsCollector(streamList);
+	}
+}
+
+// Verify if this node is allowed in an unmapped boolean.
+bool ExprNode::jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream)
+{
+	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	{
+		if (**i && !(*i)->getExpr()->jrdUnmappableNode(mapNode, shellStream))
+			return false;
+	}
+
+	return true;
 }
 
 
@@ -311,8 +340,8 @@ DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 {
 	ArithmeticNode* node = FB_NEW(pool) ArithmeticNode(
 		pool, blrOp, (csb->csb_g_flags & csb_blr_version4));
-	node->arg1 = PAR_parse_node(tdbb, csb, VALUE);
-	node->arg2 = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg1 = PAR_parse_value(tdbb, csb);
+	node->arg2 = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -861,8 +890,8 @@ void ArithmeticNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	CMP_get_desc(tdbb, csb, arg1, &desc1);
-	CMP_get_desc(tdbb, csb, arg2, &desc2);
+	arg1->getDesc(tdbb, csb, &desc1);
+	arg2->getDesc(tdbb, csb, &desc2);
 
 	if (desc1.isNull())
 	{
@@ -1448,9 +1477,9 @@ bool ArithmeticNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*co
 	return false;
 }
 
-ExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ArithmeticNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -1469,11 +1498,11 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 	// any case, evaluate both, since some expressions may later depend
 	// on mappings which are developed here
 
-	const dsc* desc1 = EVL_expr(tdbb, arg1);
+	const dsc* desc1 = EVL_expr(tdbb, request, arg1);
 	const ULONG flags = request->req_flags;
 	request->req_flags &= ~req_null;
 
-	const dsc* desc2 = EVL_expr(tdbb, arg2);
+	const dsc* desc2 = EVL_expr(tdbb, request, arg2);
 
 	// restore saved NULL state
 
@@ -2502,7 +2531,7 @@ DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	PAR_desc(tdbb, csb, desc, &itemInfo);
 	format->fmt_length = desc->dsc_length;
 
-	node->source = PAR_parse_node(tdbb, csb, VALUE);
+	node->source = PAR_parse_value(tdbb, csb);
 
 	if (itemInfo.isSpecial())
 		node->itemInfo = FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo);
@@ -2596,7 +2625,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		(desc->dsc_dtype == dtype_varying && desc->dsc_length <= sizeof(USHORT)))
 	{
 		// Remove this call if enable the one above.
-		CMP_get_desc(tdbb, csb, source, &desc1);
+		source->getDesc(tdbb, csb, &desc1);
 
 		desc->dsc_length = DSC_string_length(&desc1);
 
@@ -2650,7 +2679,7 @@ bool CastNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ 
 		OPT_expression_equal2(tdbb, csb, source, o->source, stream);
 }
 
-ExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -2664,12 +2693,12 @@ ExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			Resource::rsc_collation, ttype);
 	}
 
-	return ExprNode::pass1(tdbb, csb);
+	return ValueExprNode::pass1(tdbb, csb);
 }
 
-ExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -2681,7 +2710,7 @@ ExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Cast from one datatype to another.
 dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	dsc* value = EVL_expr(tdbb, source);
+	dsc* value = EVL_expr(tdbb, request, source);
 	value = request->req_flags & req_null ? NULL : value;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
@@ -2765,8 +2794,8 @@ ConcatenateNode::ConcatenateNode(MemoryPool& pool, dsql_nod* aArg1, dsql_nod* aA
 DmlNode* ConcatenateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	ConcatenateNode* node = FB_NEW(pool) ConcatenateNode(pool);
-	node->arg1 = PAR_parse_node(tdbb, csb, VALUE);
-	node->arg2 = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg1 = PAR_parse_value(tdbb, csb);
+	node->arg2 = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -2821,8 +2850,8 @@ void ConcatenateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	dsc desc1, desc2;
 
-	CMP_get_desc(tdbb, csb, arg1, &desc1);
-	CMP_get_desc(tdbb, csb, arg2, &desc2);
+	arg1->getDesc(tdbb, csb, &desc1);
+	arg2->getDesc(tdbb, csb, &desc2);
 
 	DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
 }
@@ -2835,9 +2864,9 @@ ValueExprNode* ConcatenateNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -2848,9 +2877,9 @@ ExprNode* ConcatenateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	const dsc* value1 = EVL_expr(tdbb, arg1);
+	const dsc* value1 = EVL_expr(tdbb, request, arg1);
 	const ULONG flags = request->req_flags;
-	const dsc* value2 = EVL_expr(tdbb, arg2);
+	const dsc* value2 = EVL_expr(tdbb, request, arg2);
 
 	// restore saved NULL state
 
@@ -3067,9 +3096,9 @@ ValueExprNode* CurrentDateNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentDateNode(*tdbb->getDefaultPool());
 }
 
-ExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CurrentDateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3166,9 +3195,9 @@ ValueExprNode* CurrentTimeNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeNode(*tdbb->getDefaultPool(), precision);
 }
 
-ExprNode* CurrentTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CurrentTimeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3276,9 +3305,9 @@ ValueExprNode* CurrentTimeStampNode::copy(thread_db* tdbb, NodeCopier& /*copier*
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeStampNode(*tdbb->getDefaultPool(), precision);
 }
 
-ExprNode* CurrentTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CurrentTimeStampNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3369,9 +3398,9 @@ ValueExprNode* CurrentRoleNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentRoleNode(*tdbb->getDefaultPool());
 }
 
-ExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CurrentRoleNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3464,9 +3493,9 @@ ValueExprNode* CurrentUserNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentUserNode(*tdbb->getDefaultPool());
 }
 
-ExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* CurrentUserNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3523,13 +3552,13 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 		node->streamList.add(csb->csb_rpt[n].csb_stream);
 	}
 
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
 
 bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
-	bool allowOnlyCurrentStream)
+	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
 	{
@@ -3571,7 +3600,7 @@ void DerivedExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 
 void DerivedExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -3595,9 +3624,9 @@ ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	NodeStack stack;
+	ValueExprNodeStack stack;
 
 #ifdef CMP_DEBUG
 	csb->dump("expand nod_derived_expr:");
@@ -3615,20 +3644,20 @@ ExprNode* DerivedExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	streamList.clear();
 
 #ifdef CMP_DEBUG
-	for (NodeStack::iterator i(stack); i.hasData(); ++i)
-		csb->dump(" %d", ExprNode::as<RecordKeyNode>(i.object())->recStream);
+	for (ExprValueNodeStack::iterator i(stack); i.hasData(); ++i)
+		csb->dump(" %d", i.object()->as<RecordKeyNode>()->recStream);
 	csb->dump("\n");
 #endif
 
-	for (NodeStack::iterator i(stack); i.hasData(); ++i)
-		streamList.add(ExprNode::as<RecordKeyNode>(i.object())->recStream);
+	for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
+		streamList.add(i.object()->as<RecordKeyNode>()->recStream);
 
-	return ExprNode::pass1(tdbb, csb);
+	return ValueExprNode::pass1(tdbb, csb);
 }
 
-ExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3645,7 +3674,7 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		if (request->req_rpb[*i].rpb_number.isValid())
 		{
-			value = EVL_expr(tdbb, arg);
+			value = EVL_expr(tdbb, request, arg);
 
 			if (request->req_flags & req_null)
 				value = NULL;
@@ -3674,9 +3703,9 @@ ValueExprNode* DomainValidationNode::copy(thread_db* tdbb, NodeCopier& /*copier*
 	return node;
 }
 
-ExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* DomainValidationNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3716,7 +3745,7 @@ DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
 	ExtractNode* node = FB_NEW(pool) ExtractNode(pool, blrSubOp);
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -3863,9 +3892,9 @@ bool ExtractNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const
 	return blrSubOp == o->blrSubOp;
 }
 
-ExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ExtractNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -3880,7 +3909,7 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
-	const dsc* value = EVL_expr(tdbb, arg);
+	const dsc* value = EVL_expr(tdbb, request, arg);
 
 	if (!value || (request->req_flags & req_null))
 		return NULL;
@@ -4275,7 +4304,7 @@ bool FieldNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/
 }
 
 bool FieldNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
-	bool allowOnlyCurrentStream)
+	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
 	{
@@ -4366,7 +4395,7 @@ ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	USHORT stream = fieldStream;
 
@@ -4377,7 +4406,7 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	jrd_fld* field;
 
 	if (!relation || !(field = MET_get_field(relation, fieldId)))
-		return ExprNode::pass1(tdbb, csb);
+		return ValueExprNode::pass1(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -4458,13 +4487,13 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			SCL_read, SCL_object_column, field->fld_name, relation->rel_name);
 	}
 
-	jrd_nod* sub;
+	ValueExprNode* sub;
 
 	if (!(sub = field->fld_computation) && !(sub = field->fld_source))
 	{
 
 		if (!relation->rel_view_rse)
-			return ExprNode::pass1(tdbb, csb);
+			return ValueExprNode::pass1(tdbb, csb);
 
 		// Msg 364 "cannot access column %s in view %s"
 		ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) <<
@@ -4475,7 +4504,7 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// put in by Root & Harrison in Summer/Fall 1991.
 	// Old Code:
 	// if (tail->csb_flags & (csb_view_update | csb_trigger))
-	//   return ExprNode::pass1(tdbb, csb);
+	//   return ValueExprNode::pass1(tdbb, csb);
 	// If the field is a computed field - we'll go on and make
 	// the substitution.
 	// Comment 1994-August-08 David Schnepper
@@ -4485,7 +4514,7 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// dimitr:	added an extra check for views, because we don't
 		//			want their old/new contexts to be substituted
 		if (relation->rel_view_rse || !field->fld_computation)
-			return ExprNode::pass1(tdbb, csb);
+			return ValueExprNode::pass1(tdbb, csb);
 	}
 
 	UCHAR local_map[JrdStatement::MAP_LENGTH];
@@ -4517,10 +4546,10 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// based on the view dbkey - CORE-1245.
 		RecordKeyNode* recNode;
 
-		if (!ExprNode::is<FieldNode>(sub) &&
-			(!(recNode = ExprNode::as<RecordKeyNode>(sub)) || recNode->blrOp != blr_dbkey))
+		if (!sub->is<FieldNode>() &&
+			(!(recNode = sub->as<RecordKeyNode>()) || recNode->blrOp != blr_dbkey))
 		{
-			NodeStack stack;
+			ValueExprNodeStack stack;
 			CMP_expand_view_nodes(tdbb, csb, stream, stack, blr_dbkey, true);
 			const UCHAR streamCount = (UCHAR) stack.getCount();
 
@@ -4530,25 +4559,22 @@ ExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 					FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
 				derivedNode->arg = sub;
 
-				for (NodeStack::iterator i(stack); i.hasData(); ++i)
-					derivedNode->streamList.add(ExprNode::as<RecordKeyNode>(i.object())->recStream);
+				for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
+					derivedNode->streamList.add(i.object()->as<RecordKeyNode>()->recStream);
 
-				sub = PAR_make_node(tdbb, 1);
-				sub->nod_type = nod_class_exprnode_jrd;
-				sub->nod_count = 0;
-				sub->nod_arg[0] = reinterpret_cast<jrd_nod*>(derivedNode);
+				sub = derivedNode;
 			}
 		}
 
-		return reinterpret_cast<ValueExprNode*>(CMP_pass1(tdbb, csb, sub)->nod_arg[0]);	// note: scope of AutoSetRestore
+		return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
 	}
 
-	return reinterpret_cast<ValueExprNode*>(CMP_pass1(tdbb, csb, sub)->nod_arg[0]);
+	return CMP_pass1(tdbb, csb, sub);
 }
 
-ExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	// SMB_SET uses ULONG, not USHORT
 	SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[fieldStream].csb_fields, fieldId);
@@ -4655,7 +4681,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 	GenIdNode* node = FB_NEW(pool) GenIdNode(pool, (csb->csb_g_flags & csb_blr_version4), name);
 	node->id = id;
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
@@ -4738,9 +4764,9 @@ bool GenIdNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/
 	return otherNode && dialect1 == otherNode->dialect1 && id == otherNode->id;
 }
 
-ExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* GenIdNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -4754,7 +4780,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	const dsc* value = EVL_expr(tdbb, arg);
+	const dsc* value = EVL_expr(tdbb, request, arg);
 
 	if (request->req_flags & req_null)
 		return NULL;
@@ -4805,9 +4831,9 @@ DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 	const UCHAR* blrOffset = csb->csb_blr_reader.getPos();
 
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 
-	LiteralNode* literal = ExprNode::as<LiteralNode>(node->arg.getObject());
+	LiteralNode* literal = node->arg->as<LiteralNode>();
 
 	if (!literal || literal->litDesc.dsc_dtype != dtype_long)
 	{
@@ -4848,10 +4874,10 @@ void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 
 void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	fb_assert(ExprNode::is<LiteralNode>(arg.getObject()));
+	fb_assert(arg->is<LiteralNode>());
 
 	dsc argDesc;
-	CMP_get_desc(tdbb, csb, arg, &argDesc);
+	arg->getDesc(tdbb, csb, &argDesc);
 	fb_assert(argDesc.dsc_dtype == dtype_long);
 
 	InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(argDesc.dsc_address));
@@ -4869,9 +4895,9 @@ ValueExprNode* InternalInfoNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* InternalInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -4886,7 +4912,7 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
-	const dsc* value = EVL_expr(tdbb, arg);
+	const dsc* value = EVL_expr(tdbb, request, arg);
 	if (request->req_flags & req_null)
 		return NULL;
 
@@ -5358,9 +5384,9 @@ bool LiteralNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const
 		memcmp(desc1.dsc_address, desc2.dsc_address, desc1.dsc_length) == 0;
 }
 
-ExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* LiteralNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -5773,7 +5799,7 @@ NegateNode::NegateNode(MemoryPool& pool, dsql_nod* aArg)
 DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	NegateNode* node = FB_NEW(pool) NegateNode(pool);
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -5885,8 +5911,8 @@ void NegateNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void NegateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
-	nodFlags = arg->asExpr()->nodFlags & (FLAG_DOUBLE | FLAG_QUAD);
+	arg->getDesc(tdbb, csb, desc);
+	nodFlags = arg->nodFlags & (FLAG_DOUBLE | FLAG_QUAD);
 }
 
 ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -5896,9 +5922,9 @@ ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* NegateNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -5911,7 +5937,7 @@ dsc* NegateNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	request->req_flags &= ~req_null;
 
-	const dsc* desc = EVL_expr(tdbb, arg);
+	const dsc* desc = EVL_expr(tdbb, request, arg);
 	if (request->req_flags & req_null)
 		return NULL;
 
@@ -6025,9 +6051,9 @@ ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
 	return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 }
 
-ExprNode* NullNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* NullNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -6306,10 +6332,7 @@ DmlNode* ParameterNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 		if (flagNode->argNumber >= format->fmt_count)
 			PAR_error(csb, Arg::Gds(isc_badparnum));
 
-		node->argFlag = PAR_make_node(tdbb, 1);
-		node->argFlag->nod_type = nod_class_exprnode_jrd;
-		node->argFlag->nod_count = 0;
-		node->argFlag->nod_arg[0] = reinterpret_cast<jrd_nod*>(flagNode);
+		node->argFlag = flagNode;
 	}
 
 	if (blrOp == blr_parameter3)
@@ -6321,10 +6344,7 @@ DmlNode* ParameterNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 		if (indicatorNode->argNumber >= format->fmt_count)
 			PAR_error(csb, Arg::Gds(isc_badparnum));
 
-		node->argIndicator = PAR_make_node(tdbb, 1);
-		node->argIndicator->nod_type = nod_class_exprnode_jrd;
-		node->argIndicator->nod_count = 0;
-		node->argIndicator->nod_arg[0] = reinterpret_cast<jrd_nod*>(indicatorNode);
+		node->argIndicator = indicatorNode;
 	}
 
 	return node;
@@ -6546,12 +6566,12 @@ ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ParameterNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	argInfo = CMP_pass2_validation(tdbb, csb,
 		Item(Item::TYPE_PARAMETER, (IPTR) message->nod_arg[e_msg_number], argNumber));
 
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -6569,7 +6589,7 @@ dsc* ParameterNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (argFlag)
 	{
-		desc = EVL_expr(tdbb, argFlag);
+		desc = EVL_expr(tdbb, request, argFlag);
 		if (MOV_get_long(desc, 0))
 			request->req_flags |= req_null;
 	}
@@ -6621,6 +6641,7 @@ RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDs
 	  recStream(0),
 	  aggregate(false)
 {
+	fb_assert(blrOp == blr_dbkey || blrOp == blr_record_version);
 	addChildNode(dsqlRelation);
 }
 
@@ -6640,7 +6661,7 @@ DmlNode* RecordKeyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 void RecordKeyNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	text.printf("RecordKeyNode (%s)", (blrOp == blr_lowcase ? "lower" : "upper"));
+	text.printf("RecordKeyNode (%s)", (blrOp == blr_dbkey ? "dbkey" : "record_version"));
 	ExprNode::print(text, nodes);
 }
 
@@ -6828,20 +6849,19 @@ void RecordKeyNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	}
 }
 
-bool RecordKeyNode::jrdStreamFinder(StreamFinder& visitor)
+bool RecordKeyNode::jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR findStream)
 {
-	return recStream == visitor.stream;
+	return recStream == findStream;
 }
 
-bool RecordKeyNode::jrdStreamsCollector(StreamsCollector& visitor)
+void RecordKeyNode::jrdStreamsCollector(SortedArray<int>& streamList)
 {
-	if (!visitor.streams.exist(recStream))
-		visitor.streams.add(recStream);
-
-	return false;
+	if (!streamList.exist(recStream))
+		streamList.add(recStream);
 }
 
-bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse, bool allowOnlyCurrentStream)
+bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
 	{
@@ -6925,16 +6945,16 @@ bool RecordKeyNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*con
 	return blrOp == o->blrOp && recStream == o->recStream;
 }
 
-ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass1(tdbb, csb);
+	ValueExprNode::pass1(tdbb, csb);
 
 	CMP_mark_variant(csb, recStream);
 
 	if (!csb->csb_rpt[recStream].csb_map)
 		return this;
 
-	NodeStack stack;
+	ValueExprNodeStack stack;
 	CMP_expand_view_nodes(tdbb, csb, recStream, stack, blrOp, false);
 
 #ifdef CMP_DEBUG
@@ -6951,20 +6971,15 @@ ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// for the concatenation of sub DB_KEYs not result in NULL.
 		if (blrOp == blr_dbkey && stackCount > 1)
 		{
-			NodeStack stack2;
+			ValueExprNodeStack stack2;
 
-			for (NodeStack::iterator i(stack); i.hasData(); ++i)
+			for (ValueExprNodeStack::iterator i(stack); i.hasData(); ++i)
 			{
 #ifdef CMP_DEBUG
 				csb->dump(" %d", ExprNode::as<RecordKeyNode>(i.object())->recStream);
 #endif
 
 				ValueIfNode* valueIfNode = FB_NEW(csb->csb_pool) ValueIfNode(csb->csb_pool);
-
-				jrd_nod* new_node = PAR_make_node(tdbb, 1);
-				new_node->nod_type = nod_class_exprnode_jrd;
-				new_node->nod_count = 0;
-				new_node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
 
 				MissingBoolNode* missingNode = FB_NEW(csb->csb_pool) MissingBoolNode(csb->csb_pool);
 				missingNode->arg = i.object();
@@ -6985,23 +7000,20 @@ ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 				literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
 					const_cast<char*>("\0\0\0\0\0\0\0\0"));	// safe const_cast
 
-				valueIfNode->falseValue = PAR_make_node(tdbb, 1);	// ELSE
-				valueIfNode->falseValue->nod_type = nod_class_exprnode_jrd;
-				valueIfNode->falseValue->nod_count = 0;
-				valueIfNode->falseValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+				valueIfNode->falseValue = literal;
 
-				stack2.push(new_node);
+				stack2.push(valueIfNode);
 			}
 
 			stack.clear();
 
 			// stack2 is in reverse order, pushing everything in stack
 			// will correct the order.
-			for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
+			for (ValueExprNodeStack::iterator i2(stack2); i2.hasData(); ++i2)
 				stack.push(i2.object());
 		}
 
-		jrd_nod* node = catenateNodes(tdbb, stack);
+		ValueExprNode* node = catenateNodes(tdbb, stack);
 
 		if (blrOp == blr_dbkey && stackCount > 1)
 		{
@@ -7026,32 +7038,22 @@ ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			literal->litDesc.dsc_address = reinterpret_cast<UCHAR*>(
 				const_cast<char*>(""));	// safe const_cast
 
-			eqlNode->arg2 = PAR_make_node(tdbb, 1);
-			eqlNode->arg2->nod_type = nod_class_exprnode_jrd;
-			eqlNode->arg2->nod_count = 0;
-			eqlNode->arg2->nod_arg[0] = reinterpret_cast<jrd_nod*>(literal);
+			eqlNode->arg2 = literal;
 
 			// THEN: NULL
-			valueIfNode->trueValue = PAR_make_node(tdbb, 1);
-			valueIfNode->trueValue->nod_type = nod_class_exprnode_jrd;
-			valueIfNode->trueValue->nod_count = 0;
-			valueIfNode->trueValue->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-				FB_NEW(csb->csb_pool) NullNode(csb->csb_pool));
+			valueIfNode->trueValue = FB_NEW(csb->csb_pool) NullNode(csb->csb_pool);
 
 			// ELSE: RDB$DB_KEY
 			valueIfNode->falseValue = node;
 
-			node = PAR_make_node(tdbb, 1);
-			node->nod_type = nod_class_exprnode_jrd;
-			node->nod_count = 0;
-			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(valueIfNode);
+			node = valueIfNode;
 		}
 
 #ifdef CMP_DEBUG
 		csb->dump("\n");
 #endif
 
-		return reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
+		return node;
 	}
 
 #ifdef CMP_DEBUG
@@ -7068,9 +7070,9 @@ ExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return node;
 }
 
-ExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* RecordKeyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -7156,11 +7158,11 @@ dsc* RecordKeyNode::execute(thread_db* tdbb, jrd_req* request) const
 }
 
 // Take a stack of nodes and turn them into a tree of concatenations.
-jrd_nod* RecordKeyNode::catenateNodes(thread_db* tdbb, NodeStack& stack)
+ValueExprNode* RecordKeyNode::catenateNodes(thread_db* tdbb, ValueExprNodeStack& stack)
 {
 	SET_TDBB(tdbb);
 
-	jrd_nod* node1 = stack.pop();
+	ValueExprNode* node1 = stack.pop();
 
 	if (stack.isEmpty())
 		return node1;
@@ -7170,12 +7172,7 @@ jrd_nod* RecordKeyNode::catenateNodes(thread_db* tdbb, NodeStack& stack)
 	concatNode->arg1 = node1;
 	concatNode->arg2 = catenateNodes(tdbb, stack);
 
-	jrd_nod* node = PAR_make_node(tdbb, 1);
-	node->nod_type = nod_class_exprnode_jrd;
-	node->nod_count = 0;
-	node->nod_arg[0] = (jrd_nod*) concatNode;
-
-	return node;
+	return concatNode;
 }
 
 
@@ -7187,14 +7184,14 @@ static RegisterNode<ScalarNode> regScalarNode1(blr_index);
 DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	ScalarNode* node = FB_NEW(pool) ScalarNode(pool);
-	node->field = PAR_parse_node(tdbb, csb, VALUE);
-	node->subscripts = PAR_args(tdbb, csb, VALUE);
+	node->field = PAR_parse_value(tdbb, csb);
+	node->subscripts = PAR_args(tdbb, csb);
 	return node;
 }
 
 void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
 {
-	FieldNode* fieldNode = ExprNode::as<FieldNode>(field.getObject());
+	FieldNode* fieldNode = field->as<FieldNode>();
 	fb_assert(fieldNode);
 
 	jrd_rel* relation = csb->csb_rpt[fieldNode->fieldStream].csb_relation;
@@ -7218,9 +7215,9 @@ ValueExprNode* ScalarNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -7233,7 +7230,7 @@ ExprNode* ScalarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	const dsc* desc = EVL_expr(tdbb, field);
+	const dsc* desc = EVL_expr(tdbb, request, field);
 
 	if (request->req_flags & req_null)
 		return NULL;
@@ -7241,16 +7238,16 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (desc->dsc_dtype != dtype_array)
 		IBERROR(261);	// msg 261 scalar operator used on field which is not an array
 
-	if (subscripts->nod_count > MAX_ARRAY_DIMENSIONS)
+	if (subscripts->args.getCount() > MAX_ARRAY_DIMENSIONS)
 		ERR_post(Arg::Gds(isc_array_max_dimensions) << Arg::Num(MAX_ARRAY_DIMENSIONS));
 
 	SLONG numSubscripts[MAX_ARRAY_DIMENSIONS];
 	int iter = 0;
-	const jrd_nod* const* ptr = subscripts->nod_arg;
+	const NestConst<ValueExprNode>* ptr = subscripts->args.begin();
 
-	for (const jrd_nod* const* const end = ptr + subscripts->nod_count; ptr < end;)
+	for (const NestConst<ValueExprNode>* const end = subscripts->args.end(); ptr != end;)
 	{
-		const dsc* temp = EVL_expr(tdbb, *ptr++);
+		const dsc* temp = EVL_expr(tdbb, request, *ptr++);
 
 		if (temp && !(request->req_flags & req_null))
 			numSubscripts[iter++] = MOV_get_long(temp, 0);
@@ -7259,7 +7256,7 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	BLB_scalar(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc->dsc_address),
-		subscripts->nod_count, numSubscripts, impure);
+		subscripts->args.getCount(), numSubscripts, impure);
 
 	return &impure->vlu_desc;
 }
@@ -7275,14 +7272,14 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	StmtExprNode* node = FB_NEW(pool) StmtExprNode(pool);
 
 	node->stmt = PAR_parse_node(tdbb, csb, STATEMENT);
-	node->expr = PAR_parse_node(tdbb, csb, VALUE);
+	node->expr = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
 
 void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, expr, desc);
+	expr->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -7293,17 +7290,17 @@ ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	stmt = CMP_pass1(tdbb, csb, stmt);
-	return ExprNode::pass1(tdbb, csb);
+	return ValueExprNode::pass1(tdbb, csb);
 }
 
-ExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	stmt = CMP_pass2(tdbb, csb, stmt, NULL);
 
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -7316,7 +7313,7 @@ dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	EXE_looper(tdbb, request, stmt, true);
 
-	dsc* desc = EVL_expr(tdbb, expr);
+	dsc* desc = EVL_expr(tdbb, request, expr);
 
 	return (request->req_flags & req_null) ? NULL : desc;
 }
@@ -7340,7 +7337,7 @@ StrCaseNode::StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg)
 DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	StrCaseNode* node = FB_NEW(pool) StrCaseNode(pool, blrOp);
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -7392,7 +7389,7 @@ void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void StrCaseNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, arg, desc);
+	arg->getDesc(tdbb, csb, desc);
 
 	if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob)
 	{
@@ -7434,9 +7431,9 @@ bool StrCaseNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const
 	return blrOp == otherNode->blrOp;
 }
 
-ExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* StrCaseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -7451,7 +7448,7 @@ dsc* StrCaseNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
-	const dsc* value = EVL_expr(tdbb, arg);
+	const dsc* value = EVL_expr(tdbb, request, arg);
 
 	if (request->req_flags & req_null)
 		return NULL;
@@ -7539,7 +7536,7 @@ DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
 	StrLenNode* node = FB_NEW(pool) StrLenNode(pool, blrSubOp);
-	node->arg = PAR_parse_node(tdbb, csb, VALUE);
+	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -7638,9 +7635,9 @@ bool StrLenNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*
 	return blrSubOp == o->blrSubOp;
 }
 
-ExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* StrLenNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -7655,7 +7652,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
-	const dsc* value = EVL_expr(tdbb, arg);
+	const dsc* value = EVL_expr(tdbb, request, arg);
 
 	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
 
@@ -7793,13 +7790,13 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	// We treat blr_from as blr_via after parse.
 	SubQueryNode* node = FB_NEW(pool) SubQueryNode(pool, (blrOp == blr_from ? blr_via : blrOp));
 
-	node->rse = PAR_parse_node(tdbb, csb, TYPE_RSE);
+	node->rse = PAR_rse(tdbb, csb);
 
 	if (blrOp != blr_count)
-		node->value1 = PAR_parse_node(tdbb, csb, VALUE);
+		node->value1 = PAR_parse_value(tdbb, csb);
 
 	if (blrOp == blr_via)
-		node->value2 = PAR_parse_node(tdbb, csb, VALUE);
+		node->value2 = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
@@ -7867,56 +7864,53 @@ bool SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return false;
 }
 
-bool SubQueryNode::jrdStreamFinder(StreamFinder& visitor)
+bool SubQueryNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
 {
-	if (rse && visitor.visit(rse))
+	if (rse && rse->jrdStreamFinder(csb, findStream))
 		return true;
 
-	if (value1 && visitor.visit(value1))
+	if (value1 && value1->jrdStreamFinder(csb, findStream))
 		return true;
 
 	return false;
 }
 
-bool SubQueryNode::jrdStreamsCollector(StreamsCollector& visitor)
+void SubQueryNode::jrdStreamsCollector(SortedArray<int>& streamList)
 {
-	visitor.visit(rse);
-	visitor.visit(value1);
-	return false;
+	if (rse)
+		rse->jrdStreamsCollector(streamList);
+
+	if (value1)
+		value1->jrdStreamsCollector(streamList);
 }
 
-bool SubQueryNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse, bool allowOnlyCurrentStream)
+bool SubQueryNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	if (value2 && !OPT_computable(csb, value2, stream, idxUse, allowOnlyCurrentStream))
+	if (value2 && !value2->computable(csb, stream, idxUse, allowOnlyCurrentStream))
 		return false;
 
-	fb_assert(rse->nod_type == nod_class_recsrcnode_jrd);
-	RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
-
-	return rseNode->computable(csb, stream, idxUse, allowOnlyCurrentStream, value1);
+	return rse->computable(csb, stream, idxUse, allowOnlyCurrentStream, value1);
 }
 
 void SubQueryNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)
 {
 	if (value2)
-		optRet->findDependentFromStreams(value2, streamList);
+		value2->findDependentFromStreams(optRet, streamList);
 
-	fb_assert(rse->nod_type == nod_class_recsrcnode_jrd);
-	RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
-
-	rseNode->findDependentFromStreams(optRet, streamList);
+	rse->findDependentFromStreams(optRet, streamList);
 
 	// Check value expression, if any.
 	if (value1)
-		optRet->findDependentFromStreams(value1, streamList);
+		value1->findDependentFromStreams(optRet, streamList);
 }
 
 void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	if (blrOp == blr_count)
 		desc->makeLong(0);
-	else
-		CMP_get_desc(tdbb, csb, value1, desc);
+	else if (value1)
+		value1->getDesc(tdbb, csb, desc);
 
 	if (blrOp == blr_average)
 	{
@@ -8017,44 +8011,38 @@ bool SubQueryNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*cons
 	return false;
 }
 
-ExprNode* SubQueryNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SubQueryNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	fb_assert(rse->nod_type == nod_class_recsrcnode_jrd);
-	RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
-	fb_assert(rseNode->type == RseNode::TYPE);
+	rse->ignoreDbKey(tdbb, csb);
+	rse->pass1(tdbb, csb);
 
-	rseNode->ignoreDbKey(tdbb, csb, csb->csb_view);
-	rseNode->pass1(tdbb, csb, csb->csb_view);
+	csb->csb_current_nodes.push(rse.getObject());
 
-	csb->csb_current_nodes.push(rseNode);
+	if (value1)
+		value1 = CMP_pass1(tdbb, csb, value1);
 
-	value1 = CMP_pass1(tdbb, csb, value1);
-	value2 = CMP_pass1(tdbb, csb, value2);
+	if (value2)
+		value2 = CMP_pass1(tdbb, csb, value2);
 
 	csb->csb_current_nodes.pop();
 
 	return this;
 }
 
-ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	fb_assert(rse->nod_type == nod_class_recsrcnode_jrd);
-	RseNode* rseNode = reinterpret_cast<RseNode*>(rse->nod_arg[0]);
-
-	if (!rseNode)
+	if (!rse)
 		ERR_post(Arg::Gds(isc_wish_list));
 
-	fb_assert(rseNode->type == RseNode::TYPE);
-
-	if (!(rseNode->flags & RseNode::FLAG_VARIANT))
+	if (!(rse->flags & RseNode::FLAG_VARIANT))
 	{
 		nodFlags |= FLAG_INVARIANT;
 		csb->csb_invariants.push(&impureOffset);
 	}
 
-	rseNode->pass2Rse(tdbb, csb);
+	rse->pass2Rse(tdbb, csb);
 
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
 
@@ -8083,7 +8071,7 @@ ExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	// Finish up processing of record selection expressions.
 
-	rsb = CMP_post_rse(tdbb, csb, rseNode);
+	rsb = CMP_post_rse(tdbb, csb, rse);
 	csb->csb_fors.add(rsb);
 
 	return this;
@@ -8142,7 +8130,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			case blr_maximum:
 				while (rsb->getRecord(tdbb))
 				{
-					dsc* value = EVL_expr(tdbb, value1);
+					dsc* value = EVL_expr(tdbb, request, value1);
 					if (request->req_flags & req_null)
 						continue;
 
@@ -8161,7 +8149,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			case blr_total:
 				while (rsb->getRecord(tdbb))
 				{
-					desc = EVL_expr(tdbb, value1);
+					desc = EVL_expr(tdbb, request, value1);
 					if (request->req_flags & req_null)
 						continue;
 
@@ -8195,11 +8183,11 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			case blr_via:
 				if (rsb->getRecord(tdbb))
-					desc = EVL_expr(tdbb, value1);
+					desc = EVL_expr(tdbb, request, value1);
 				else
 				{
 					if (value2)
-						desc = EVL_expr(tdbb, value2);
+						desc = EVL_expr(tdbb, request, value2);
 					else
 						ERR_post(Arg::Gds(isc_from_no_match));
 				}
@@ -8274,9 +8262,9 @@ DmlNode* SubstringNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	UCHAR /*blrOp*/)
 {
 	SubstringNode* node = FB_NEW(pool) SubstringNode(pool);
-	node->expr = PAR_parse_node(tdbb, csb, VALUE);
-	node->start = PAR_parse_node(tdbb, csb, VALUE);
-	node->length = PAR_parse_node(tdbb, csb, VALUE);
+	node->expr = PAR_parse_value(tdbb, csb);
+	node->start = PAR_parse_value(tdbb, csb);
+	node->length = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -8332,28 +8320,27 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
 	DSC desc0, desc1, desc2, desc3;
 
-	CMP_get_desc(tdbb, csb, expr, &desc0);
+	expr->getDesc(tdbb, csb, &desc0);
 
-	jrd_nod* offsetNode = start;
-	jrd_nod* decrementNode = NULL;
-	ArithmeticNode* arithmeticNode = ExprNode::as<ArithmeticNode>(offsetNode);
+	ValueExprNode* offsetNode = start;
+	ValueExprNode* decrementNode = NULL;
+	ArithmeticNode* arithmeticNode = offsetNode->as<ArithmeticNode>();
 
 	// ASF: This code is very strange. The DSQL node is created as dialect 1, but only the dialect
 	// 3 is verified here. Also, this task seems unnecessary here, as it must be done during
 	// execution anyway.
 
-	if (arithmeticNode && arithmeticNode->blrOp == blr_subtract &&
-		!arithmeticNode->dialect1)
+	if (arithmeticNode && arithmeticNode->blrOp == blr_subtract && !arithmeticNode->dialect1)
 	{
 		// This node is created by the DSQL layer, but the system BLR code bypasses it and uses
 		// zero-based string offsets instead.
 		decrementNode = arithmeticNode->arg2;
-		CMP_get_desc(tdbb, csb, decrementNode, &desc3);
+		decrementNode->getDesc(tdbb, csb, &desc3);
 		offsetNode = arithmeticNode->arg1;
 	}
 
-	CMP_get_desc(tdbb, csb, offsetNode, &desc1);
-	CMP_get_desc(tdbb, csb, length, &desc2);
+	offsetNode->getDesc(tdbb, csb, &desc1);
+	length->getDesc(tdbb, csb, &desc2);
 
 	DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
 
@@ -8361,26 +8348,23 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->dsc_flags |= DSC_null;
 	else
 	{
-		if (ExprNode::is<LiteralNode>(offsetNode) && desc1.dsc_dtype == dtype_long)
+		if (offsetNode->is<LiteralNode>() && desc1.dsc_dtype == dtype_long)
 		{
 			SLONG offset = MOV_get_long(&desc1, 0);
 
-			if (decrementNode && ExprNode::is<LiteralNode>(decrementNode) &&
-				desc3.dsc_dtype == dtype_long)
-			{
+			if (decrementNode && decrementNode->is<LiteralNode>() && desc3.dsc_dtype == dtype_long)
 				offset -= MOV_get_long(&desc3, 0);
-			}
 
 			if (offset < 0)
 				ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
 		}
 
-		if (ExprNode::is<LiteralNode>(length.getObject()) && desc2.dsc_dtype == dtype_long)
+		if (length->is<LiteralNode>() && desc2.dsc_dtype == dtype_long)
 		{
-			const SLONG length = MOV_get_long(&desc2, 0);
+			const SLONG len = MOV_get_long(&desc2, 0);
 
-			if (length < 0)
-				ERR_post(Arg::Gds(isc_bad_substring_length) << Arg::Num(length));
+			if (len < 0)
+				ERR_post(Arg::Gds(isc_bad_substring_length) << Arg::Num(len));
 		}
 	}
 }
@@ -8395,9 +8379,9 @@ ValueExprNode* SubstringNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SubstringNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -8412,13 +8396,13 @@ dsc* SubstringNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	// Run all expression arguments.
 
-	const dsc* exprDesc = EVL_expr(tdbb, expr);
+	const dsc* exprDesc = EVL_expr(tdbb, request, expr);
 	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
 
-	const dsc* startDesc = EVL_expr(tdbb, start);
+	const dsc* startDesc = EVL_expr(tdbb, request, start);
 	startDesc = (request->req_flags & req_null) ? NULL : startDesc;
 
-	const dsc* lengthDesc = EVL_expr(tdbb, length);
+	const dsc* lengthDesc = EVL_expr(tdbb, request, length);
 	lengthDesc = (request->req_flags & req_null) ? NULL : lengthDesc;
 
 	if (exprDesc && startDesc && lengthDesc)
@@ -8600,9 +8584,9 @@ DmlNode* SubstringSimilarNode::parse(thread_db* tdbb, MemoryPool& pool, Compiler
 	UCHAR /*blrOp*/)
 {
 	SubstringSimilarNode* node = FB_NEW(pool) SubstringSimilarNode(pool);
-	node->expr = PAR_parse_node(tdbb, csb, VALUE);
-	node->pattern = PAR_parse_node(tdbb, csb, VALUE);
-	node->escape = PAR_parse_node(tdbb, csb, VALUE);
+	node->expr = PAR_parse_value(tdbb, csb);
+	node->pattern = PAR_parse_value(tdbb, csb);
+	node->escape = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -8641,11 +8625,11 @@ void SubstringSimilarNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, expr, desc);
+	expr->getDesc(tdbb, csb, desc);
 
 	dsc tempDesc;
-	CMP_get_desc(tdbb, csb, pattern, &tempDesc);
-	CMP_get_desc(tdbb, csb, escape, &tempDesc);
+	pattern->getDesc(tdbb, csb, &tempDesc);
+	escape->getDesc(tdbb, csb, &tempDesc);
 }
 
 ValueExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -8658,7 +8642,7 @@ ValueExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return node;
 }
 
-ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	expr = CMP_pass1(tdbb, csb, expr);
 
@@ -8673,8 +8657,7 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	// If there is no top-level RSE present and patterns are not constant, unmark node as invariant
 	// because it may be dependent on data or variables.
-	if ((nodFlags & FLAG_INVARIANT) &&
-		(!ExprNode::is<LiteralNode>(pattern.getObject()) || !ExprNode::is<LiteralNode>(escape.getObject())))
+	if ((nodFlags & FLAG_INVARIANT) && (!pattern->is<LiteralNode>() || !escape->is<LiteralNode>()))
 	{
 		const RseOrExprNode* ctx_node, *end;
 
@@ -8692,12 +8675,12 @@ ExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-ExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SubstringSimilarNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	if (nodFlags & FLAG_INVARIANT)
 		csb->csb_invariants.push(&impureOffset);
 
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -8710,13 +8693,13 @@ dsc* SubstringSimilarNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	// Run all expression arguments.
 
-	const dsc* exprDesc = EVL_expr(tdbb, expr);
+	const dsc* exprDesc = EVL_expr(tdbb, request, expr);
 	exprDesc = (request->req_flags & req_null) ? NULL : exprDesc;
 
-	const dsc* patternDesc = EVL_expr(tdbb, pattern);
+	const dsc* patternDesc = EVL_expr(tdbb, request, pattern);
 	patternDesc = (request->req_flags & req_null) ? NULL : patternDesc;
 
-	const dsc* escapeDesc = EVL_expr(tdbb, escape);
+	const dsc* escapeDesc = EVL_expr(tdbb, request, escape);
 	escapeDesc = (request->req_flags & req_null) ? NULL : escapeDesc;
 
 	// If any of them is NULL, return NULL.
@@ -8845,7 +8828,7 @@ DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 		PAR_error(csb, Arg::Gds(isc_funnotdef) << Arg::Str(name));
 	}
 
-	node->args = PAR_args(tdbb, csb, VALUE);
+	node->args = PAR_args(tdbb, csb);
 
 	return node;
 }
@@ -8888,20 +8871,18 @@ void SysFuncCallNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	fb_assert(args->nod_type == nod_list);
-
 	Array<const dsc*> argsArray;
 
-	for (jrd_nod** p = args->nod_arg; p < args->nod_arg + args->nod_count; ++p)
+	for (NestConst<ValueExprNode>* p = args->args.begin(); p != args->args.end(); ++p)
 	{
 		dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
 		argsArray.push(targetDesc);
-		CMP_get_desc(tdbb, csb, *p, targetDesc);
+		(*p)->getDesc(tdbb, csb, targetDesc);
 
 		// dsc_address is verified in makeFunc to get literals. If the node is not a
 		// literal, set it to NULL, to prevent wrong interpretation of offsets as
 		// pointers - CORE-2612.
-		if (!ExprNode::is<LiteralNode>(*p))
+		if (!(*p)->is<LiteralNode>())
 			targetDesc->dsc_address = NULL;
 	}
 
@@ -8943,15 +8924,15 @@ bool SysFuncCallNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*c
 	return function && function == otherNode->function;
 }
 
-ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-	function->checkArgsMismatch(args->nod_count);
+	function->checkArgsMismatch(args->args.getCount());
 
 	return this;
 }
@@ -8959,7 +8940,7 @@ ExprNode* SysFuncCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* SysFuncCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
-	return function->evlFunc(tdbb, function, args, impure);
+	return function->evlFunc(tdbb, function, args->args, impure);
 }
 
 ValueExprNode* SysFuncCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -9030,9 +9011,9 @@ DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	TrimNode* node = FB_NEW(pool) TrimNode(pool, where);
 
 	if (what == blr_trim_characters)
-		node->trimChars = PAR_parse_node(tdbb, csb, VALUE);
+		node->trimChars = PAR_parse_value(tdbb, csb);
 
-	node->value = PAR_parse_node(tdbb, csb, VALUE);
+	node->value = PAR_parse_value(tdbb, csb);
 
 	return node;
 }
@@ -9117,12 +9098,12 @@ void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void TrimNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb, value, desc);
+	value->getDesc(tdbb, csb, desc);
 
 	if (trimChars)
 	{
 		dsc desc1;
-		CMP_get_desc(tdbb, csb, trimChars, &desc1);
+		trimChars->getDesc(tdbb, csb, &desc1);
 		desc->dsc_flags |= desc1.dsc_flags & DSC_null;
 	}
 
@@ -9145,7 +9126,8 @@ ValueExprNode* TrimNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	TrimNode* node = FB_NEW(*tdbb->getDefaultPool()) TrimNode(*tdbb->getDefaultPool(), where);
 	node->value = copier.copy(tdbb, value);
-	node->trimChars = copier.copy(tdbb, trimChars);
+	if (trimChars)
+		node->trimChars = copier.copy(tdbb, trimChars);
 	return node;
 }
 
@@ -9172,9 +9154,9 @@ bool TrimNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ 
 	return where == o->where;
 }
 
-ExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* TrimNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -9189,11 +9171,11 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	request->req_flags &= ~req_null;
 
-	dsc* trimCharsDesc = (trimChars ? EVL_expr(tdbb, trimChars) : NULL);
+	dsc* trimCharsDesc = (trimChars ? EVL_expr(tdbb, request, trimChars) : NULL);
 	if (request->req_flags & req_null)
 		return NULL;
 
-	dsc* valueDesc = EVL_expr(tdbb, value);
+	dsc* valueDesc = EVL_expr(tdbb, request, value);
 	if (request->req_flags & req_null)
 		return NULL;
 
@@ -9480,9 +9462,9 @@ bool UdfCallNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const
 	return function && function == otherNode->function;
 }
 
-ExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass1(tdbb, csb);
+	ValueExprNode::pass1(tdbb, csb);
 
 	if (!(csb->csb_g_flags & (csb_internal | csb_ignore_perm)))
 	{
@@ -9510,9 +9492,9 @@ ExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-ExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -9525,7 +9507,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 	const bool invariant = (nodFlags & FLAG_INVARIANT);
-	return function->execute(tdbb, args, impure, invariant);
+	return function->execute(tdbb, args->args, impure, invariant);
 }
 
 ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -9587,8 +9569,8 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 {
 	ValueIfNode* node = FB_NEW(pool) ValueIfNode(pool);
 	node->condition = PAR_parse_boolean(tdbb, csb);
-	node->trueValue = PAR_parse_node(tdbb, csb, VALUE);
-	node->falseValue = PAR_parse_node(tdbb, csb, VALUE);
+	node->trueValue = PAR_parse_value(tdbb, csb);
+	node->falseValue = PAR_parse_value(tdbb, csb);
 	return node;
 }
 
@@ -9646,22 +9628,22 @@ void ValueIfNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 void ValueIfNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	CMP_get_desc(tdbb, csb,
-		(ExprNode::is<NullNode>(trueValue.getObject()) ? falseValue : trueValue), desc);
+	ValueExprNode* val = trueValue->is<NullNode>() ? falseValue : trueValue;
+	val->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	ValueIfNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueIfNode(*tdbb->getDefaultPool());
-	node->condition = condition->copy(tdbb, copier);
+	node->condition = copier.copy(tdbb, condition);
 	node->trueValue = copier.copy(tdbb, trueValue);
 	node->falseValue = copier.copy(tdbb, falseValue);
 	return node;
 }
 
-ExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
@@ -9672,7 +9654,34 @@ ExprNode* ValueIfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* ValueIfNode::execute(thread_db* tdbb, jrd_req* request) const
 {
-	return EVL_expr(tdbb, (condition->execute(tdbb, request) ? trueValue : falseValue));
+	return EVL_expr(tdbb, request, (condition->execute(tdbb, request) ? trueValue : falseValue));
+}
+
+
+//--------------------
+
+
+ValueListNode::ValueListNode(MemoryPool& pool, unsigned count)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_VALUE_LIST>(pool),
+	  args(pool)
+{
+	args.resize(count);
+
+	for (unsigned i = 0; i < count; ++i)
+		addChildNode((args[i] = NULL));
+}
+
+ValueListNode* ValueListNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	ValueListNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
+		args.getCount());
+
+	NestConst<ValueExprNode>* j = node->args.begin();
+
+	for (NestConst<ValueExprNode>* i = args.begin(); i != args.end(); ++i, ++j)
+		*j = copier.copy(tdbb, *i);
+
+	return node;
 }
 
 
@@ -9784,9 +9793,9 @@ ValueExprNode* VariableNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return this;
 }
 
-ExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	ExprNode::pass1(tdbb, csb);
+	ValueExprNode::pass1(tdbb, csb);
 
 	vec<jrd_nod*>* vector = csb->csb_variables;
 
@@ -9796,11 +9805,11 @@ ExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-ExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+ValueExprNode* VariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	varInfo = CMP_pass2_validation(tdbb, csb, Item(Item::TYPE_VARIABLE, varId));
 
-	ExprNode::pass2(tdbb, csb);
+	ValueExprNode::pass2(tdbb, csb);
 
 	impureOffset = CMP_impure(csb, (nodFlags & FLAG_VALUE) ? sizeof(impure_value_ex) : sizeof(dsc));
 

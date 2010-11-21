@@ -33,7 +33,8 @@ namespace Jrd {
 }
 
 void EXE_assignment(Jrd::thread_db*, const Jrd::jrd_nod*);
-void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::jrd_nod* to, dsc* from_desc, bool from_null,
+void EXE_assignment(Jrd::thread_db*, const Jrd::ValueExprNode*, const Jrd::ValueExprNode*);
+void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::ValueExprNode* to, dsc* from_desc, bool from_null,
 	const Jrd::jrd_nod* missing_node, const Jrd::jrd_nod* missing2_node);
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,

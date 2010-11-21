@@ -40,20 +40,21 @@ using namespace Jrd;
 
 // Note that we can have NULL order here, in case of window function with shouldCallWinPass
 // returning true, with partition, and without order. Example: ROW_NUMBER() OVER (PARTITION BY N).
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
-			const MapNode* map, BaseBufferedStream* next, const LegacyNodeArray* order)
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
+			const MapNode* map, BaseBufferedStream* next, const NestValueArray* order)
 	: RecordStream(csb, stream),
 	  m_bufferedStream(next),
 	  m_next(m_bufferedStream),
 	  m_group(group),
 	  m_map(map),
 	  m_order(order),
-	  m_winPassMap(csb->csb_pool)
+	  m_winPassSources(csb->csb_pool),
+	  m_winPassTargets(csb->csb_pool)
 {
 	init(csb);
 }
 
-AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const LegacyNodeArray* group,
+AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const NestValueArray* group,
 			const MapNode* map, RecordSource* next)
 	: RecordStream(csb, stream),
 	  m_bufferedStream(NULL),
@@ -61,7 +62,8 @@ AggregatedStream::AggregatedStream(CompilerScratch* csb, UCHAR stream, const Leg
 	  m_group(group),
 	  m_map(map),
 	  m_order(NULL),
-	  m_winPassMap(csb->csb_pool)
+	  m_winPassSources(csb->csb_pool),
+	  m_winPassTargets(csb->csb_pool)
 {
 	init(csb);
 }
@@ -130,18 +132,21 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 			m_bufferedStream->locate(tdbb, position);
 		}
 
-		if (m_winPassMap.hasData())
+		if (m_winPassSources.hasData())
 		{
 			SlidingWindow window(tdbb, m_bufferedStream, m_group, request);
 			dsc* desc;
 
-			for (const jrd_nod* const* ptr = m_winPassMap.begin(); ptr != m_winPassMap.end(); ++ptr)
-			{
-				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-				fb_assert(from->nod_type == nod_class_exprnode_jrd);
-				const AggNode* aggNode = reinterpret_cast<const AggNode*>(from->nod_arg[0]);
+			const NestConst<ValueExprNode>* const sourceEnd = m_winPassSources.end();
 
-				const FieldNode* field = ExprNode::as<FieldNode>((*ptr)->nod_arg[e_asgn_to]);
+			for (const NestConst<ValueExprNode>* source = m_winPassSources.begin(),
+					*target = m_winPassTargets.begin();
+				 source != sourceEnd;
+				 ++source, ++target)
+			{
+				const AggNode* aggNode = (*source)->as<AggNode>();
+
+				const FieldNode* field = (*target)->as<FieldNode>();
 				const USHORT id = field->fieldId;
 				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
@@ -151,7 +156,7 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 					SET_NULL(record, id);
 				else
 				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, (*ptr)->nod_arg[e_asgn_to]));
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, *target));
 					CLEAR_NULL(record, id);
 				}
 			}
@@ -165,15 +170,17 @@ bool AggregatedStream::getRecord(thread_db* tdbb) const
 		// If there is no group, we should reassign the map items.
 		if (!m_group)
 		{
-			const NestConst<jrd_nod>* const end = m_map->items.end();
+			const NestConst<ValueExprNode>* const sourceEnd = m_map->sourceList.end();
 
-			for (const NestConst<jrd_nod>* ptr = m_map->items.begin(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
+					*target = m_map->targetList.begin();
+				 source != sourceEnd;
+				 ++source, ++target)
 			{
-				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-				const AggNode* aggNode = ExprNode::as<AggNode>(from);
+				const AggNode* aggNode = (*source)->as<AggNode>();
 
 				if (!aggNode)
-					EXE_assignment(tdbb, *ptr);
+					EXE_assignment(tdbb, *source, *target);
 			}
 		}
 	}
@@ -239,15 +246,20 @@ void AggregatedStream::init(CompilerScratch* csb)
 
 	// Separate nodes that requires the winPass call.
 
-	const NestConst<jrd_nod>* const end = m_map->items.end();
+	const NestConst<ValueExprNode>* const sourceEnd = m_map->sourceList.end();
 
-	for (const NestConst<jrd_nod>* ptr = m_map->items.begin(); ptr != end; ++ptr)
+	for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
+			*target = m_map->targetList.begin();
+		 source != sourceEnd;
+		 ++source, ++target)
 	{
-		const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-		const AggNode* aggNode = ExprNode::as<AggNode>(from);
+		const AggNode* aggNode = (*source)->as<AggNode>();
 
 		if (aggNode && aggNode->shouldCallWinPass())
-			m_winPassMap.add(*ptr);
+		{
+			m_winPassSources.add(*source);
+			m_winPassTargets.add(*target);
+		}
 	}
 }
 
@@ -270,7 +282,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 	try
 	{
-		const NestConst<jrd_nod>* ptr, *end;
+		const NestConst<ValueExprNode>* const sourceEnd = m_map->sourceList.end();
 
 		// If there isn't a record pending, open the stream and get one
 
@@ -278,25 +290,17 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		{
 			// Initialize the aggregate record
 
-			for (ptr = m_map->items.begin(), end = m_map->items.end(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
+					*target = m_map->targetList.begin();
+				 source != sourceEnd;
+				 ++source, ++target)
 			{
-				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
+				const AggNode* aggNode = (*source)->as<AggNode>();
 
-				switch (from->nod_type)
-				{
-					case nod_class_exprnode_jrd:
-					{
-						const AggNode* aggNode = ExprNode::as<AggNode>(from);
-						if (aggNode)
-							aggNode->aggInit(tdbb, request);
-						else if (ExprNode::is<LiteralNode>(from))
-							EXE_assignment(tdbb, *ptr);
-						break;
-					}
-
-					default:    // Shut up some compiler warnings
-						break;
-				}
+				if (aggNode)
+					aggNode->aggInit(tdbb, request);
+				else if ((*source)->is<LiteralNode>())
+					EXE_assignment(tdbb, *source, *target);
 			}
 		}
 
@@ -314,17 +318,17 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			}
 		}
 
+		const NestConst<ValueExprNode>* ptrValue, *endValue;
 		dsc* desc;
 
 		if (m_group)
 		{
-			for (ptr = m_group->begin(), end = m_group->end(); ptr != end; ++ptr)
+			for (ptrValue = m_group->begin(), endValue = m_group->end(); ptrValue != endValue; ++ptrValue)
 			{
-				const jrd_nod* from = *ptr;
-				const ExprNode* fromExpr = from->asExpr();
-				impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
+				const ValueExprNode* from = *ptrValue;
+				impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
 
-				desc = EVL_expr(tdbb, from);
+				desc = EVL_expr(tdbb, request, from);
 
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -335,13 +339,12 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		if (m_order)
 		{
-			for (ptr = m_order->begin(), end = m_order->end(); ptr != end; ++ptr)
+			for (ptrValue = m_order->begin(), endValue = m_order->end(); ptrValue != endValue; ++ptrValue)
 			{
-				const jrd_nod* from = *ptr;
-				const ExprNode* fromExpr = from->asExpr();
-				impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
+				const ValueExprNode* from = *ptrValue;
+				impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
 
-				desc = EVL_expr(tdbb, from);
+				desc = EVL_expr(tdbb, request, from);
 
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -367,18 +370,19 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 				if (m_group)
 				{
-					for (ptr = m_group->begin(), end = m_group->end(); ptr != end; ++ptr)
+					for (ptrValue = m_group->begin(), endValue = m_group->end();
+						 ptrValue != endValue;
+						 ++ptrValue)
 					{
-						const jrd_nod* from = *ptr;
-						const ExprNode* fromExpr = from->asExpr();
-						impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
+						const ValueExprNode* from = *ptrValue;
+						impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 						else
 							vtemp.vlu_desc.dsc_address = NULL;
 
-						desc = EVL_expr(tdbb, from);
+						desc = EVL_expr(tdbb, request, from);
 
 						if (request->req_flags & req_null)
 						{
@@ -405,18 +409,19 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 				if (m_order)
 				{
-					for (ptr = m_order->begin(), end = m_order->end(); ptr != end; ++ptr)
+					for (ptrValue = m_order->begin(), endValue = m_order->end();
+						 ptrValue != endValue;
+						 ++ptrValue)
 					{
-						const jrd_nod* from = *ptr;
-						const ExprNode* fromExpr = from->asExpr();
-						impure_value* impure = request->getImpure<impure_value>(fromExpr->impureOffset);
+						const ValueExprNode* from = *ptrValue;
+						impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
 
 						if (impure->vlu_desc.dsc_address)
 							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 						else
 							vtemp.vlu_desc.dsc_address = NULL;
 
-						desc = EVL_expr(tdbb, from);
+						desc = EVL_expr(tdbb, request, from);
 
 						if (request->req_flags & req_null)
 						{
@@ -436,10 +441,12 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 			// go through and compute all the aggregates on this record
 
-			for (ptr = m_map->items.begin(), end = m_map->items.end(); ptr != end; ++ptr)
+			for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
+					*target = m_map->targetList.begin();
+				 source != sourceEnd;
+				 ++source, ++target)
 			{
-				const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-				const AggNode* aggNode = ExprNode::as<AggNode>(from);
+				const AggNode* aggNode = (*source)->as<AggNode>();
 
 				if (aggNode)
 				{
@@ -450,7 +457,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 						state = STATE_EOF_FOUND;
 				}
 				else
-					EXE_assignment(tdbb, *ptr);
+					EXE_assignment(tdbb, *source, *target);
 			}
 
 			if (state == STATE_EOF_FOUND)
@@ -466,14 +473,16 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		delete vtemp.vlu_string;
 
-		for (ptr = m_map->items.begin(), end = m_map->items.end(); ptr != end; ++ptr)
+		for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
+				*target = m_map->targetList.begin();
+			 source != sourceEnd;
+			 ++source, ++target)
 		{
-			const jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
-			const AggNode* aggNode = ExprNode::as<AggNode>(from);
+			const AggNode* aggNode = (*source)->as<AggNode>();
 
 			if (aggNode)
 			{
-				const FieldNode* field = ExprNode::as<FieldNode>((*ptr)->nod_arg[e_asgn_to]);
+				const FieldNode* field = (*target)->as<FieldNode>();
 				const USHORT id = field->fieldId;
 				Record* record = request->req_rpb[field->fieldStream].rpb_record;
 
@@ -482,7 +491,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 					SET_NULL(record, id);
 				else
 				{
-					MOV_move(tdbb, desc, EVL_assign_to(tdbb, (*ptr)->nod_arg[e_asgn_to]));
+					MOV_move(tdbb, desc, EVL_assign_to(tdbb, *target));
 					CLEAR_NULL(record, id);
 				}
 			}
@@ -500,13 +509,14 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 // Finalize a sort for distinct aggregate
 void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 {
-	const NestConst<jrd_nod>* ptr, *end;
+	const NestConst<ValueExprNode>* const sourceEnd = m_map->sourceList.end();
 
-	for (ptr = m_map->items.begin(), end = m_map->items.end(); ptr != end; ++ptr)
+	for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin();
+		 source != sourceEnd;
+		 ++source)
 	{
-		const jrd_nod* const from = (*ptr)->nod_arg[e_asgn_from];
+		const AggNode* aggNode = (*source)->as<AggNode>();
 
-		const AggNode* aggNode = ExprNode::as<AggNode>(from);
 		if (aggNode)
 			aggNode->aggFinish(tdbb, request);
 	}
@@ -514,7 +524,7 @@ void AggregatedStream::finiDistinct(thread_db* tdbb, jrd_req* request) const
 
 
 SlidingWindow::SlidingWindow(thread_db* aTdbb, const BaseBufferedStream* aStream,
-			const LegacyNodeArray* aGroup, jrd_req* aRequest)
+			const NestValueArray* aGroup, jrd_req* aRequest)
 	: tdbb(aTdbb),	// Note: instanciate the class only as local variable
 	  stream(aStream),
 	  group(aGroup),
@@ -577,13 +587,13 @@ bool SlidingWindow::move(SINT64 delta)
 			impure_value* impure = partitionKeys.getBuffer(group->getCount());
 			memset(impure, 0, sizeof(impure_value) * group->getCount());
 
-			const NestConst<jrd_nod>* const end = group->end();
+			const NestConst<ValueExprNode>* const end = group->end();
 			dsc* desc;
 
-			for (const NestConst<jrd_nod>* ptr = group->begin(); ptr < end; ++ptr, ++impure)
+			for (const NestConst<ValueExprNode>* ptr = group->begin(); ptr < end; ++ptr, ++impure)
 			{
-				const jrd_nod* from = *ptr;
-				desc = EVL_expr(tdbb, from);
+				const ValueExprNode* from = *ptr;
+				desc = EVL_expr(tdbb, request, from);
 
 				if (request->req_flags & req_null)
 					impure->vlu_desc.dsc_address = NULL;
@@ -612,12 +622,12 @@ bool SlidingWindow::move(SINT64 delta)
 
 	impure_value* impure = partitionKeys.begin();
 	dsc* desc;
-	const NestConst<jrd_nod>* const end = group->end();
+	const NestConst<ValueExprNode>* const end = group->end();
 
-	for (const NestConst<jrd_nod>* ptr = group->begin(); ptr != end; ++ptr, ++impure)
+	for (const NestConst<ValueExprNode>* ptr = group->begin(); ptr != end; ++ptr, ++impure)
 	{
-		const jrd_nod* from = *ptr;
-		desc = EVL_expr(tdbb, from);
+		const ValueExprNode* from = *ptr;
+		desc = EVL_expr(tdbb, request, from);
 
 		if (request->req_flags & req_null)
 		{
