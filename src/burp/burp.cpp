@@ -2320,12 +2320,14 @@ void close_platf(DESC file)
 // Suppose compatibility with KR where 0, 1, 2 were documented for RO, WO and RW in open() still exists
 #define O_ACCMODE 3
 #endif
+
 		off_t fileSize = lseek(file, 0, SEEK_CUR);
 		if (fileSize != (off_t)(-1))
 		{
 			ftruncate(file, fileSize);
 		}
 	}
+
 	close(file);
 }
 #endif // WIN_NT
