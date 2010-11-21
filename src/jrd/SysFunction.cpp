@@ -973,9 +973,11 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 	UCHAR* p;
 	MoveBuffer temp;
-	const int length = MOV_make_string2(tdbb, value,
-		(cs->isMultiByte() || cs->minBytesPerChar() > 1 ? ttype_ascii : value->getCharSet()),
-		&p, temp);
+	int length = MOV_make_string2(tdbb, value, value->getCharSet(), &p, temp);
+	UCHAR dummy[4];
+
+	if (cs->substring(length, p, sizeof(dummy), dummy, 0, 1) != 1)
+		status_exception::raise(isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 
 	impure->vlu_misc.vlu_short = (length > 0 ? p[0] : 0);
 	impure->vlu_desc.makeShort(0, &impure->vlu_misc.vlu_short);
@@ -2181,8 +2183,10 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	const SLONG value1CanonicalLen = tt->canonical(value1Length, value1Address,
 		value1Canonical.getCount(), value1Canonical.begin()) * canonicalWidth;
 
-	// if the first string is empty, we should return 1 accordingly to SQL2003 standard
-	if (value1CanonicalLen == 0)
+	// If the first string is empty, we should return the start position accordingly to the SQL2003
+	// standard. Using the same logic with our "start" parameter (an extension to the standard),
+	// we should return it if it's >= 1 and <= (the other string length + 1). Otherwise, return 0.
+	if (value1CanonicalLen == 0 && start == 1)
 	{
 		impure->vlu_misc.vlu_long = 1;
 		return &impure->vlu_desc;
@@ -2208,6 +2212,12 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	value2Canonical.getBuffer(value2Length / cs->minBytesPerChar() * canonicalWidth);
 	const SLONG value2CanonicalLen = tt->canonical(value2Length, value2Address,
 		value2Canonical.getCount(), value2Canonical.begin()) * canonicalWidth;
+
+	if (value1CanonicalLen == 0)
+	{
+		impure->vlu_misc.vlu_long = (start <= value2CanonicalLen / canonicalWidth + 1) ? start : 0;
+		return &impure->vlu_desc;
+	}
 
 	// if the second string is empty, first one is not inside it
 	if (value2CanonicalLen == 0)
@@ -2557,11 +2567,11 @@ static dsc* evlRight(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 		if (charSet->isMultiByte())
 		{
-			Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 
-			start = charSet->length(
-				BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length), blob->blb_length, false),
-				buffer.begin(), true);
+			SLONG length = BLB_get_data(tdbb, blob, buffer.getBuffer(blob->blb_length),
+				blob->blb_length, false);
+			start = charSet->length(length, buffer.begin(), true);
 		}
 		else
 			start = blob->blb_length / charSet->maxBytesPerChar();
