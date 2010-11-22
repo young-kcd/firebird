@@ -1,3 +1,10 @@
+ 2010-11-21 18:14  asfernandes 
+   M src/jrd/SysFunction.cpp
+Backport fixes for:
+CORE-3227 - ASCII_VAL() fails if argument contains multi-byte character anywhere
+CORE-3228 - RIGHT() fails with multibyte text blobs > 1024 chars
+CORE-3244 - POSITION: Wrong result with '' if third argument present
+
  2010-11-19 17:36  alexpeshkoff 
    M src/common/cvt.cpp
 Backported improvement CORE-3248: Set unused bytes of varchar values in message buffer to 0
