@@ -149,7 +149,7 @@
 #define FB_CPU CpuMipsel
 #endif /* mipsel */
 
-#ifdef MIPS
+#ifdef MIPSEB
 #define FB_CPU CpuMips
 #endif /* mips */
 
