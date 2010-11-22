@@ -5628,12 +5628,10 @@ ValueExprNode* DerivedFieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool DerivedFieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
 	// This is a derived table, so don't look further, but don't forget to check for the
-	// deepest scope_level.
+	// deepest scope level.
 
-	const USHORT localScopeLevel = scope;
-
-	if (visitor.deepestLevel < localScopeLevel)
-		visitor.deepestLevel = localScopeLevel;
+	if (visitor.deepestLevel < scope)
+		visitor.deepestLevel = scope;
 
 	return false;
 }
@@ -5645,11 +5643,9 @@ bool DerivedFieldNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 
 bool DerivedFieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 {
-	const USHORT localScopeLevel = scope;
-
-	if (localScopeLevel == visitor.context->ctx_scope_level)
+	if (scope == visitor.context->ctx_scope_level)
 		return true;
-	else if (visitor.context->ctx_scope_level < localScopeLevel)
+	else if (visitor.context->ctx_scope_level < scope)
 		return visitor.visit(&dsqlValue);
 
 	return false;
@@ -5696,14 +5692,13 @@ bool DerivedFieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	// If we got a field from a derived table we should not remap anything
 	// deeper in the alias, but this "virtual" field should be mapped to
 	// the given context (of course only if we're in the same scope-level).
-	const USHORT localScopeLevel = scope;
 
-	if (localScopeLevel == visitor.context->ctx_scope_level)
+	if (scope == visitor.context->ctx_scope_level)
 	{
 		visitor.replaceNode(PASS1_post_map(visitor.dsqlScratch, this,
 			visitor.context, visitor.partitionNode, visitor.orderNode));
 	}
-	else if (visitor.context->ctx_scope_level < localScopeLevel)
+	else if (visitor.context->ctx_scope_level < scope)
 		visitor.visit(&dsqlValue);
 
 	return false;
