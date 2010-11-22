@@ -1,3 +1,10 @@
+ 2010-11-21 19:44  asfernandes 
+   M src/jrd/SysFunction.cpp
+Backport fixes for:
+CORE-3227 - ASCII_VAL() fails if argument contains multi-byte character anywhere
+CORE-3228 - RIGHT() fails with multibyte text blobs > 1024 chars
+CORE-3244 - POSITION: Wrong result with '' if third argument present
+
  2010-11-11 07:50  alexpeshkoff 
    M builds/install/arch-specific/linux/misc/firebird.init.d.debian.in
 Added LSB header
