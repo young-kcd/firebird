@@ -1,3 +1,82 @@
+ 2010-11-21 21:22  asfernandes 
+   M src/common/os/guid.h
+Fixed a source of many warnings when using clang
+
+ 2010-11-21 21:21  asfernandes 
+   M src/misc/writeBuildNum.sh
+Make clang build work
+
+ 2010-11-21 03:47  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/pass1.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/Relation.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/SysFunction.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb_proto.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/btr_proto.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/exe_proto.h
+   M src/jrd/execute_statement.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/fun_proto.h
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/misc/blrtable.cpp
+Make ExprNodes and RecordSourceNodes reference others directly instead of via jrd_nod.
+Store ValueExprNodes instead of jrd_nod in the metadata cache.
+Make RecordSourceNode child of ExprNode as they share most operations.
+Get rid of the JRD visitors in favor of direct calls.
+Convert assignments statement lists created inside expressions to separate source and targets ValuesExprNodes.
+
  2010-11-21 02:36  asfernandes 
    M src/burp/burp.cpp
    M src/common/config/config_file.cpp
