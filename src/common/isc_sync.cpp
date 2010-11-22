@@ -95,6 +95,8 @@ static int process_id;
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
+
+#include "../common/classes/semaphore.h"
 #endif
 
 #ifdef HAVE_FCNTL_H
