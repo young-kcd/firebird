@@ -320,26 +320,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 #endif // FB_RAISE_LIMITS
 
-	// Remove restriction on username, for DEV builds
-	// restrict only for production builds.  MOD 21-July-2002
-#ifndef DEV_BUILD
-	Firebird::string user_name;	// holds the user name
-	// check user id
-	ISC_get_user(&user_name, NULL, NULL);
-
-	if (user_name != "root" &&
-		user_name != FIREBIRD_USER_NAME &&
-		user_name != INTERBASE_USER_NAME &&
-		user_name != INTERBASE_USER_SHORT)
-	{
-		// invalid user -- bail out
-		fprintf(stderr, "%s: Invalid user (must be %s, %s, %s or root).\n",
-				   "fbserver", FIREBIRD_USER_NAME,
-				   INTERBASE_USER_NAME, INTERBASE_USER_SHORT);
-		exit(STARTUP_ERROR);
-	}
-#endif
-
 	if (!(debug || classic))
 	{
 		int mask = 0; // FD_ZERO(&mask);
