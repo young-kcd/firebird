@@ -1311,6 +1311,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
 	{
 		fb_assert(false);	// Invalid operation.
+		return NULL;
 	}
 
 public:
