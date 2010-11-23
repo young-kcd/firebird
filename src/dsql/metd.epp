@@ -1859,11 +1859,13 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
 			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
+			EXE_unwind(tdbb, handle);
 			return relation;
 		}
 
 		relation = METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
 		if (relation) {
+			EXE_unwind(tdbb, handle);
 			return relation;
 		}
 
