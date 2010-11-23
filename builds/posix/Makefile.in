@@ -33,7 +33,7 @@
 #		Alex Peshkoff - created single makefile based on Mark's files
 # 
 
-ROOT=..
+ROOT=$(shell cd ..; pwd)
 
 include     make.defaults
 include     make.platform
@@ -74,7 +74,7 @@ Debug:
 updateBuildNum : $(SRC_ROOT)/jrd/build_no.h $(GEN_ROOT)/Make.Version
 
 $(SRC_ROOT)/jrd/build_no.h : $(SRC_ROOT)/misc/writeBuildNum.sh
-	(cd ..; ./src/misc/writeBuildNum.sh rebuildHeader)
+	(cd $(ROOT); ./src/misc/writeBuildNum.sh rebuildHeader)
 
 $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 	$(SRC_ROOT)/misc/writeBuildNum.sh createMakeVersion $@
@@ -92,7 +92,7 @@ extern:
 # create platform-specific export lists (version scripts) in gen
 #
 
-%.vers: ../builds/posix/%.vers
+%.vers: $(ROOT)/builds/posix/%.vers
 	sh vers.sh $(firstword $@)
 
 export_lists: $(ALLVERS)
