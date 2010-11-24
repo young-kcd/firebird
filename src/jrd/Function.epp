@@ -657,6 +657,11 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 			Arg::Gds(isc_func_pack_not_implemented) <<
 				Arg::Str(getName().identifier) << Arg::Str(getName().package));
 	}
+	else if (!isImplemented())
+	{
+		status_exception::raise(
+			Arg::Gds(isc_funnotdef) << Arg::Str(getName().toString()) << Arg::Gds(isc_modnotfound));
+	}
 
 	jrd_req* const request = tdbb->getRequest();
 
