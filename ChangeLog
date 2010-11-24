@@ -1,3 +1,7 @@
+ 2010-11-23 12:05  dimitr 
+   M src/dsql/metd.epp
+Fixed CORE-3256: Error "request depth exceeded" may appear while preparing a select query against a view with explicit plan.
+
  2010-11-21 18:14  asfernandes 
    M src/jrd/SysFunction.cpp
 Backport fixes for:
