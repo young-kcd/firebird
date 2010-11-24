@@ -173,7 +173,7 @@ int openCreateSharedFile(const char* pathname, int flags)
 		int rc;
 		do {
 			rc = fstat(fd, &st);
-		} while (fd != 0 && SYSCALL_INTERRUPTED(errno));
+		} while (rc != 0 && SYSCALL_INTERRUPTED(errno));
 		if (rc != 0)
 		{
 			close(fd);
