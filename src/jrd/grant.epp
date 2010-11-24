@@ -394,10 +394,6 @@ static void get_object_info(thread_db* tdbb,
 		}
 		END_FOR
 	}
-	else
-	{
-		fb_assert(false);
-	}
 }
 
 
