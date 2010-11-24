@@ -1914,15 +1914,6 @@ void DYN_define_index(Global*		gbl,
 		request = old_request;
 		id = old_id;
 
-		/* The previous 2 lines and the next two lines can be
-		 * deleted as long as no code is added in the middle.
-		 */
-
-		old_request = request;
-		old_id = id;
-		request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
-		id = drq_l_lfield;
-		
 		ULONG referred_cols = 0;
 
 		while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1959,6 +1950,11 @@ void DYN_define_index(Global*		gbl,
 					}
 						
 					seg_count++;
+
+					old_request = request;
+					old_id = id;
+					request = CMP_find_request(tdbb, drq_l_lfield, DYN_REQUESTS);
+					id = drq_l_lfield;
 
 					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 						F IN RDB$RELATION_FIELDS CROSS GF IN RDB$FIELDS
@@ -2035,6 +2031,8 @@ void DYN_define_index(Global*		gbl,
 					END_FOR;
 					if (!DYN_REQUEST(drq_l_lfield))
 						DYN_REQUEST(drq_l_lfield) = request;
+					request = old_request;
+					id = old_id;
 					break;
 				}
 
@@ -2179,8 +2177,6 @@ void DYN_define_index(Global*		gbl,
 			default:
 				DYN_unsupported_verb();
 			}
-		request = old_request;
-		id = old_id;
 
 		key_length = ROUNDUP(key_length, sizeof(SLONG));
 		if (key_length >= MAX_KEY)
