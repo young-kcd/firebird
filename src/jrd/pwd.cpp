@@ -284,15 +284,33 @@ void SecurityDatabase::closeDatabase()
 void SecurityDatabase::onShutdown()
 {
 #ifndef EMBEDDED
-	MutexLockGuard guard(mutex);
+	isc_db_handle tmp = 0;
+	try {
+		MutexLockGuard guard(mutex);
 
-	if (server_shutdown)
+		if (server_shutdown)
+		{
+			return;
+		}
+
+		server_shutdown = true;
+		tmp = lookup_db;
+		lookup_db = 0;
+		closeDatabase();
+	}
+	catch (const Firebird::Exception&)
 	{
-		return;
+		if (tmp)
+		{
+			isc_detach_database(status, &tmp);
+		}
 	}
 
-	server_shutdown = true;
-	closeDatabase();
+	if (tmp)
+	{
+		isc_detach_database(status, &tmp);
+		checkStatus("isc_detach_database");
+	}
 #endif //EMBEDDED
 }
 

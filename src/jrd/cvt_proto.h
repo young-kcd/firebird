@@ -24,6 +24,7 @@
 #ifndef JRD_CVT_PROTO_H
 #define JRD_CVT_PROTO_H
 
+#include "../common/classes/init.h"
 #include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 
@@ -44,7 +45,7 @@ namespace Jrd
 		{
 		}
 
-		EngineCallbacks()
+		EngineCallbacks(Firebird::MemoryPool&)
 			: Callbacks(ERR_post)
 		{
 		}
@@ -60,7 +61,7 @@ namespace Jrd
 		virtual void isVersion4(bool& v4);
 
 	public:
-		static EngineCallbacks instance;
+		static Firebird::GlobalPtr<EngineCallbacks> instance;
 	};
 }
 
