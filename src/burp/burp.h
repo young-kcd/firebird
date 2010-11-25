@@ -782,7 +782,11 @@ inline static void unlink_platf(const TEXT* file_name)
 
 inline static void flush_platf(DESC file)
 {
+#if defined(HAVE_FDATASYNC)
 	fdatasync(file);
+#elif defined(HAVE_FSYNC)
+	fsync(file);
+#endif
 }
 
 #endif // WIN_NT
