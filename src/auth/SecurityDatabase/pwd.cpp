@@ -213,17 +213,30 @@ SecurityDatabase SecurityDatabase::instance;
 
 void SecurityDatabase::fini()
 {
-	MutexLockGuard guard(mutex);
+	isc_db_handle tmp = 0;
+	try {
+		MutexLockGuard guard(mutex);
 
-	if (lookup_req)
+		if (lookup_req)
+		{
+			isc_release_request(status, &lookup_req);
+			checkStatus("isc_release_request");
+		}
+
+		tmp = lookup_db;
+		lookup_db = 0;
+	}
+	catch (const Firebird::Exception&)
 	{
-		isc_release_request(status, &lookup_req);
-		checkStatus("isc_release_request");
+		if (tmp)
+		{
+			isc_detach_database(status, &tmp);
+		}
 	}
 
-	if (lookup_db)
+	if (tmp)
 	{
-		isc_detach_database(status, &lookup_db);
+		isc_detach_database(status, &tmp);
 		checkStatus("isc_detach_database");
 	}
 }

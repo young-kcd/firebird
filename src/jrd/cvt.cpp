@@ -369,7 +369,7 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc* desc)
 }
 
 
-EngineCallbacks EngineCallbacks::instance;
+Firebird::GlobalPtr<EngineCallbacks> EngineCallbacks::instance;
 
 
 bool EngineCallbacks::transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2)
