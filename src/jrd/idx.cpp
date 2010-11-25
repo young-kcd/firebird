@@ -596,8 +596,7 @@ void IDX_delete_index(thread_db* tdbb, jrd_rel* relation, USHORT id)
 
 	signal_index_deletion(tdbb, relation, id);
 
-	RelationPages* relPages = relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
+	WIN window(get_root_page(tdbb, relation));
 	CCH_FETCH(tdbb, &window, LCK_write, pag_root);
 
 	const bool tree_exists = BTR_delete_index(tdbb, &window, id);
@@ -633,6 +632,8 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 	SSHORT i;
 
 	SET_TDBB(tdbb);
+
+	fb_assert(relPages->rel_index_root);
 
 	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
@@ -729,8 +730,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 	insertion.iib_relation = rpb->rpb_relation;
 	insertion.iib_key = &key1;
 
-	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, relPages->rel_index_root);
+	WIN window(get_root_page(tdbb, rpb->rpb_relation));
 
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
