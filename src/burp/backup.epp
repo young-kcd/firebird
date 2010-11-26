@@ -644,7 +644,7 @@ void general_on_error()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print_status(isc_status, true);
+	BURP_print_status(true, isc_status);
 	BURP_abort();
 }
 
@@ -1241,9 +1241,9 @@ void put_array( burp_fld* field, burp_rel* relation, ISC_QUAD* blob_id)
 					  NULL,	// param for subset of an array handling
 					  slice_length, slice, (SLONG*) &return_length))
 	{
-		BURP_print(true, 81, field->fld_name);
+		BURP_print(false, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
-		BURP_print_status(status_vector);
+		BURP_print_status(false, status_vector);
 #ifdef DEBUG
 		PRETTY_print_sdl(blr_buffer, NULL, NULL, 0);
 #endif
@@ -1386,9 +1386,9 @@ void put_blob( burp_fld* field, ISC_QUAD& blob_id)
 
 	if (!blob.open(DB, gds_trans, blob_id))
 	{
-		BURP_print(true, 81, field->fld_name);
+		BURP_print(false, 81, field->fld_name);
 		// msg 81 error accessing blob field %s -- continuing
-		BURP_print_status(status_vector);
+		BURP_print_status(false, status_vector);
 		return;
 	}
 

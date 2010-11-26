@@ -291,7 +291,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 		if (isc_service_attach(status, 0, service.c_str(), &svc_handle,
 							   spb.getBufferLength(), reinterpret_cast<const char*>(spb.getBuffer())))
 		{
-			BURP_print_status(status);
+			BURP_print_status(true, status);
 			BURP_print(true, 83);
 			// msg 83 Exiting before completion due to errors
 			return FINI_ERROR;
@@ -314,7 +314,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 
 		if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
 		{
-			BURP_print_status(status);
+			BURP_print_status(true, status);
 			isc_service_detach(status, &svc_handle);
 			BURP_print(true, 83);	// msg 83 Exiting before completion due to errors
 			return FINI_ERROR;
@@ -328,7 +328,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 								  sizeof(sendbuf), sendbuf,
 								  sizeof(respbuf), respbuf))
 			{
-				BURP_print_status(status);
+				BURP_print_status(true, status);
 				isc_service_detach(status, &svc_handle);
 				BURP_print(true, 83);	// msg 83 Exiting before completion due to errors
 				return FINI_ERROR;
@@ -362,7 +362,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
-		BURP_print_status(status);
+		BURP_print_status(true, status);
 		if (svc_handle)
 		{
 			isc_service_detach(status, &svc_handle);
@@ -1115,7 +1115,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		// Non-burp exception was caught
 		tdgbl->burp_throw = false;
 		e.stuff_exception(tdgbl->status_vector);
-		BURP_print_status(tdgbl->status_vector, true);
+		BURP_print_status(true, tdgbl->status_vector);
 		BURP_print(true, 83);	// msg 83 Exiting before completion due to errors
 		exit_code = FINI_ERROR;
 	}
@@ -1138,7 +1138,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		close_out_transaction(action, &tdgbl->global_trans);
 		if (isc_detach_database(tdgbl->status_vector, &tdgbl->db_handle))
 		{
-			BURP_print_status(tdgbl->status_vector, true);
+			BURP_print_status(true, tdgbl->status_vector);
 		}
 	}
 
@@ -1250,7 +1250,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector, USHORT errcode, const 
  *
  **************************************/
 
-	BURP_print_status(status_vector, true);
+	BURP_print_status(true, status_vector);
 	BURP_error(errcode, true, arg);
 }
 
@@ -1382,7 +1382,7 @@ void BURP_print(bool err, USHORT number, const char* str)
 }
 
 
-void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
+void BURP_print_status(bool err, const ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -1398,7 +1398,7 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 
-		if (flagStuff) {
+		if (err) {
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 			tdgbl->uSvc->setServiceStatus(vector);
 			tdgbl->uSvc->started();
@@ -1410,11 +1410,11 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
 
         SCHAR s[1024];
 		if (fb_interpret(s, sizeof(s), &vector)) {
-			BURP_msg_partial(true, 256); // msg 256: gbak: ERROR:
-			burp_output(true, "%s\n", s);
+			BURP_msg_partial(err, 256); // msg 256: gbak: ERROR:
+			burp_output(err, "%s\n", s);
 			while (fb_interpret(s, sizeof(s), &vector)) {
-				BURP_msg_partial(true, 256); // msg 256: gbak: ERROR:
-				burp_output(true, "    %s\n", s);
+				BURP_msg_partial(err, 256); // msg 256: gbak: ERROR:
+				burp_output(err, "    %s\n", s);
 			}
 		}
 	}
@@ -1529,7 +1529,7 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 				// we can detach from the database.
 				isc_rollback_transaction(status_vector, handle);
 				if (status_vector[1])
-					BURP_print_status(status_vector);
+					BURP_print_status(false, status_vector);
 			}
 		}
 		else
@@ -1538,7 +1538,7 @@ static void close_out_transaction(gbak_action action, isc_tr_handle* handle)
 			// by never writing data during a backup, but let's double
 			// ensure it by doing a rollback
 			if (isc_rollback_transaction(status_vector, handle))
-				BURP_print_status(status_vector);
+				BURP_print_status(false, status_vector);
 		}
 	}
 }
@@ -1610,7 +1610,7 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 13 REPLACE specified, but the first file %s is a database
 				BURP_error(13, true, file1);
 				if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
-					BURP_print_status(status_vector, true);
+					BURP_print_status(true, status_vector);
 				}
 				return QUIT;
 			}
@@ -1626,7 +1626,7 @@ static gbak_action open_files(const TEXT* file1,
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
 		{
-			BURP_print_status(status_vector, true);
+			BURP_print_status(true, status_vector);
 			return QUIT;
 		}
 	}
@@ -1746,7 +1746,7 @@ static gbak_action open_files(const TEXT* file1,
 		{
 			if (isc_detach_database(status_vector, &tdgbl->db_handle))
 			{
-				BURP_print_status(status_vector);
+				BURP_print_status(false, status_vector);
 			}
 		}
 
@@ -1926,7 +1926,7 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		if (sw_replace == IN_SW_BURP_C) {
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
-				BURP_print_status(status_vector, true);
+				BURP_print_status(true, status_vector);
 			}
 			BURP_error(14, true, *file2);
 			// msg 14 database %s already exists.  To replace it, use the -R switch
@@ -1937,7 +1937,7 @@ static gbak_action open_files(const TEXT* file1,
 				Firebird::makePermanentVector(status_vector);
 				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
-					BURP_print_status(status_vector2);
+					BURP_print_status(false, status_vector2);
 				}
 
 				// Complain only if the drop database entrypoint is available.

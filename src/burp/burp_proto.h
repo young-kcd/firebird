@@ -42,7 +42,7 @@ void	BURP_msg_get(USHORT, TEXT*, const MsgFormat::SafeArg& arg = MsgFormat::Safe
 void	BURP_output_version(void*, const TEXT*);
 void	BURP_print(bool err, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_print(bool err, USHORT, const char* str);
-void	BURP_print_status(const ISC_STATUS* status, bool stuffFlag = false);
+void	BURP_print_status(bool err, const ISC_STATUS* status);
 void	BURP_print_warning(const ISC_STATUS*);
 void	BURP_verbose(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_verbose(USHORT, const char* str);
