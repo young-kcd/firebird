@@ -1,3 +1,26 @@
+ 2010-11-25 15:50  alexpeshkoff 
+   M configure.in
+   M src/burp/burp.h
+Check for presence of sync functions
+
+ 2010-11-25 12:23  alexpeshkoff 
+   M src/jrd/cvt.cpp
+   M src/jrd/cvt_proto.h
+   M src/jrd/pwd.cpp
+Backported fix for CORE-3259: Deadlock and sefgault when processing ctrl-C in user code
+
+ 2010-11-24 15:20  dimitr 
+   M src/jrd/dyn_def.epp
+Fixed another incarnation of the "request depth exceeded" error, this time it prevents more than 128 expression indices from being created. Reported privately by Timo Partanen.
+
+ 2010-11-24 13:19  alexpeshkoff 
+   M builds/posix/make.defaults
+Fixed CORE-3257: 'make install' fails on linux
+
+ 2010-11-24 10:12  alexpeshkoff 
+   M src/jrd/os/posix/os_utils.cpp
+Fixed awful mistype in my previous commit
+
  2010-11-23 12:05  dimitr 
    M src/dsql/metd.epp
 Fixed CORE-3256: Error "request depth exceeded" may appear while preparing a select query against a view with explicit plan.
