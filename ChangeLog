@@ -1,3 +1,26 @@
+ 2010-11-25 15:48  alexpeshkoff 
+   M configure.in
+   M src/burp/burp.h
+Check for presence of sync functions
+
+ 2010-11-25 12:22  alexpeshkoff 
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/jrd/cvt.cpp
+   M src/jrd/cvt_proto.h
+Fixed CORE-3259: Deadlock and sefgault when processing ctrl-C in user code
+
+ 2010-11-25 10:53  hvlad 
+   M src/jrd/idx.cpp
+Frontport fix for bug CORE-3188 : page 0 is of wrong type (expected 6, found 1)
+
+ 2010-11-24 16:00  dimitr 
+   M src/jrd/Function.epp
+Fixed assertion when restoring a database having expression insides referencing non-existent UDFs.
+
+ 2010-11-24 15:55  dimitr 
+   M src/jrd/grant.epp
+Fixed inability to restore privileges granted to roles.
+
  2010-11-23 14:30  asfernandes 
    M src/dsql/ExprNodes.h
 Correction
