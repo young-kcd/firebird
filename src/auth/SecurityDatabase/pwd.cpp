@@ -214,7 +214,9 @@ SecurityDatabase SecurityDatabase::instance;
 void SecurityDatabase::fini()
 {
 	isc_db_handle tmp = 0;
-	try {
+
+	try
+	{
 		MutexLockGuard guard(mutex);
 
 		if (lookup_req)
