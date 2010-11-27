@@ -1,3 +1,11 @@
+ 2010-11-26 16:54  alexpeshkoff 
+   M src/burp/OdsDetection.epp
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp_proto.h
+   M src/burp/restore.epp
+Fixed CORE-3261: Assertion when running restore service
+
  2010-11-25 15:48  alexpeshkoff 
    M configure.in
    M src/burp/burp.h
