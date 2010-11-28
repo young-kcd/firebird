@@ -69,6 +69,7 @@
 #endif
 
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 #include "../jrd/fil.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
@@ -2489,6 +2490,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 			lock->lck_key.lck_long = static_cast<SLONG>(tmp) + TEMP_PAGE_SPACE + 1;
 			if (LCK_lock(tdbb, lock, LCK_write, LCK_NO_WAIT))
 				break;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
 
 		att->att_temp_pg_lock = lock;
