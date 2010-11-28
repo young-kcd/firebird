@@ -370,7 +370,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		fb_assert(!m_allocated);
 		EngineCallbackGuard guard(tdbb, *this);
 		m_request = reinterpret_cast<Jrd::dsql_req*>(att->allocateStatement(&status));
-		m_allocated = (m_request != 0);
+		m_allocated = (m_request != NULL);
 	}
 
 	if (!status.isSuccess())
@@ -547,17 +547,21 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 	LocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		m_request->free(&status, drop ? DSQL_drop : DSQL_close);
+
+		if (m_request)
+			m_request->free(&status, drop ? DSQL_drop : DSQL_close);
+
 		if (drop)
 		{
-			m_allocated = 0;
+			m_allocated = false;
 			m_request = NULL;
 		}
 	}
 
 	if (!status.isSuccess())
 	{
-		m_allocated = m_request = 0;
+		m_allocated = false;
+		m_request = NULL;
 		raise(status, tdbb, "jrd8_free_statement");
 	}
 }
