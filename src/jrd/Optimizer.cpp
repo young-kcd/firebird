@@ -1312,22 +1312,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 			invCandidate->cost += csb->csb_rpt[stream].csb_cardinality * invCandidate->selectivity;
 		}
 
-		// Adjust the effective selectivity by treating computable conjunctions as filters
-		for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-			tail < optimizer->opt_conjuncts.end(); tail++)
-		{
-			jrd_nod* const node = tail->opt_conjunct_node;
-			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
-				!invCandidate->matches.exist(node))
-			{
-				const double factor = (node->nod_type == nod_eql) ?
-					REDUCE_SELECTIVITY_FACTOR_EQUALITY :
-					REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
-				invCandidate->selectivity *= factor;
-			}
-		}
-
 		// Add the streams where this stream is depending on
 		for (size_t i = 0; i < invCandidate->matches.getCount(); i++) {
 			findDependentFromStreams(invCandidate->matches[i], 
@@ -1504,40 +1488,6 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 	return NULL;
 }
 
-InversionCandidate* OptimizerRetrieval::getCost()
-{
-/**************************************
- *
- *	g e t C o s t
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	createIndexScanNodes = false;
-	setConjunctionsMatched = false;
-	InversionCandidate* inversion = generateInversion(NULL);
-	if (inversion) {
-		return inversion;
-	}
-	else {
-		// No index will be used, thus
-		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-		invCandidate->indexes = 0;
-		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
-		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
-/*
-		OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		for (; tail < optimizer->opt_conjuncts.end(); tail++) {
-			findDependentFromStreams(tail->opt_conjunct_node,
-									 &invCandidate->dependentFromStreams);
-		}
-*/
-		return invCandidate;
-	}
-}
-
 InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 {
 /**************************************
@@ -1553,20 +1503,37 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
  * an InversionCandidate;
  *
  **************************************/
-	createIndexScanNodes = true;
-	setConjunctionsMatched = true;
-	InversionCandidate* inversion = generateInversion(rsb);
-	if (inversion) {
-		return inversion;
-	}
-	else {
+	createIndexScanNodes = rsb ? true : false;
+	setConjunctionsMatched = rsb ? true : false;
+
+	InversionCandidate* invCandidate = generateInversion(rsb);
+
+	if (!invCandidate)
+	{
 		// No index will be used
-		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+		invCandidate = FB_NEW(pool) InversionCandidate(pool);
 		invCandidate->indexes = 0;
 		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
 		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
-		return invCandidate;
 	}
+
+	// Adjust the effective selectivity by treating computable conjunctions as filters
+	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		tail < optimizer->opt_conjuncts.end(); tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+			!invCandidate->matches.exist(node))
+		{
+			const double factor = (node->nod_type == nod_eql) ?
+				REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+				REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			invCandidate->selectivity *= factor;
+		}
+	}
+
+	return invCandidate;
 }
 
 bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
