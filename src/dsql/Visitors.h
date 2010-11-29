@@ -356,6 +356,23 @@ public:
 	jrd_nod* message;
 };
 
+// Node copier that remaps the field id 0 of stream 0 to a given field id.
+class RemapFieldNodeCopier : public NodeCopier
+{
+public:
+	RemapFieldNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
+		: NodeCopier(aCsb, aRemap),
+		  fldId(aFldId)
+	{
+	}
+
+protected:
+	virtual USHORT getFieldId(FieldNode* field);
+
+private:
+	USHORT fldId;
+};
+
 
 template <typename T, typename T2>
 inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)

@@ -3956,8 +3956,8 @@ savepoint	: set_savepoint
 set_savepoint
 	: SAVEPOINT symbol_savepoint_name
 		{
-			SavepointNode* node = newNode<SavepointNode>();
-			node->command = SavepointNode::CMD_SET;
+			UserSavepointNode* node = newNode<UserSavepointNode>();
+			node->command = UserSavepointNode::CMD_SET;
 			node->name = toName($2);
 			$$ = makeClassNode(node);
 		}
@@ -3966,8 +3966,8 @@ set_savepoint
 release_savepoint
 	: RELEASE SAVEPOINT symbol_savepoint_name release_only_opt
 		{
-			SavepointNode* node = newNode<SavepointNode>();
-			node->command = ($4 ? SavepointNode::CMD_RELEASE_ONLY : SavepointNode::CMD_RELEASE);
+			UserSavepointNode* node = newNode<UserSavepointNode>();
+			node->command = ($4 ? UserSavepointNode::CMD_RELEASE_ONLY : UserSavepointNode::CMD_RELEASE);
 			node->name = toName($3);
 			$$ = makeClassNode(node);
 		}
@@ -3983,8 +3983,8 @@ release_only_opt
 undo_savepoint
 	: ROLLBACK optional_work TO optional_savepoint symbol_savepoint_name
 		{
-			SavepointNode* node = newNode<SavepointNode>();
-			node->command = SavepointNode::CMD_ROLLBACK;
+			UserSavepointNode* node = newNode<UserSavepointNode>();
+			node->command = UserSavepointNode::CMD_ROLLBACK;
 			node->name = toName($5);
 			$$ = makeClassNode(node);
 		}

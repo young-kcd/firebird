@@ -8058,7 +8058,7 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 
 			bool found = false;
 
-			for (; search < end; ++search, replaceFields ? ++replace : NULL)
+			for (; search < end; ++search, replace += (replaceFields ? 1 : 0))
 			{
 				const dsql_str* replaceName = NULL;
 				if (replaceFields)

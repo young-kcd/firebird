@@ -189,64 +189,16 @@ const int e_msg_format			= 1;
 const int e_msg_impure_flags	= 2;
 const int e_msg_length			= 3;
 
-const int e_sto_statement	= 0;
-const int e_sto_statement2	= 1;
-const int e_sto_sub_store	= 2;
-const int e_sto_validate	= 3;
-const int e_sto_relation	= 4;
-const int e_sto_length		= 5;
-
-const int e_erase_statement	= 0;
-const int e_erase_sub_erase	= 1;
-const int e_erase_stream	= 2;
-const int e_erase_rsb		= 3;
-const int e_erase_length	= 4;
-
-const int e_mod_statement	= 0;
-const int e_mod_statement2	= 1;
-const int e_mod_sub_mod		= 2;
-const int e_mod_validate	= 3;
-const int e_mod_map_view	= 4;
-const int e_mod_org_stream	= 5;
-const int e_mod_new_stream	= 6;
-const int e_mod_rsb			= 7;
-const int e_mod_length		= 8;
-
-const int e_send_statement	= 0;
-const int e_send_message	= 1;
-const int e_send_length		= 2;
-
 const int e_asgn_from		= 0;
 const int e_asgn_to			= 1;
 const int e_asgn_missing	= 2;	// Value for comparison for missing
 const int e_asgn_missing2	= 3;	// Value for substitute for missing
 const int e_asgn_length		= 4;
 
-const int e_lbl_statement	= 0;
-const int e_lbl_label		= 1;
-const int e_lbl_length		= 2;
-
 const int e_val_stmt		= 0;
 const int e_val_boolean		= 1;
 const int e_val_value		= 2;
 const int e_val_length		= 3;
-
-// Execute stored procedure
-
-const int e_esp_input_sources	= 0;
-const int e_esp_input_targets	= 1;
-const int e_esp_in_msg			= 2;
-const int e_esp_output_sources	= 3;
-const int e_esp_output_targets	= 4;
-const int e_esp_out_msg			= 5;
-const int e_esp_procedure		= 6;
-const int e_esp_length			= 7;
-
-// Generate id
-
-const int e_gen_value		= 0;
-const int e_gen_id			= 1;	// Generator id (replaces e_gen_relation)
-const int e_gen_length		= 2;
 
 // Protection mask
 
@@ -260,54 +212,11 @@ const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
 const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor
 
-const int e_blk_action		= 0;
-const int e_blk_handlers	= 1;
-const int e_blk_length		= 2;
-
-const int e_err_action		= 0;
-const int e_err_conditions	= 1;
-const int e_err_length		= 2;
-
-const int e_dcl_cur_rse		= 0;
-const int e_dcl_cur_refs	= 1;
-const int e_dcl_cur_number	= 2;
-const int e_dcl_cur_cursor	= 3;
-const int e_dcl_cur_length	= 4;
-
-const int e_cursor_stmt_op			= 0;
-const int e_cursor_stmt_number		= 1;
-const int e_cursor_stmt_scroll_op	= 2;
-const int e_cursor_stmt_scroll_val	= 3;
-const int e_cursor_stmt_into		= 4;
-const int e_cursor_stmt_length		= 5;
-
-// nod_src_info
-const int e_src_info_line		= 0;
-const int e_src_info_col		= 1;
-const int e_src_info_node		= 2;
-const int e_src_info_length		= 3;
-
 // nod_init_variable
 const int e_init_var_id			= 0;
 const int e_init_var_variable	= 1;
 const int e_init_var_info		= 2;
 const int e_init_var_length		= 3;
-
-// nod_exec_stmt
-const int e_exec_stmt_stmt_sql		= 0;
-const int e_exec_stmt_data_src		= 1;
-const int e_exec_stmt_user			= 2;
-const int e_exec_stmt_password		= 3;
-const int e_exec_stmt_role			= 4;
-const int e_exec_stmt_proc_block	= 5;
-const int e_exec_stmt_fixed_count	= 6;
-
-const int e_exec_stmt_extra_inputs		= 0;
-const int e_exec_stmt_extra_input_names	= 1;
-const int e_exec_stmt_extra_outputs		= 2;
-const int e_exec_stmt_extra_tran		= 3;
-const int e_exec_stmt_extra_privs		= 4;
-const int e_exec_stmt_extra_count		= 5;
 
 // index (in nod_list) for external procedure blr
 const int e_extproc_input_message	= 0;
@@ -601,7 +510,6 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_resources(p),
 		csb_dependencies(p),
 		csb_fors(p),
-		csb_exec_sta(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
@@ -676,7 +584,6 @@ public:
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
-	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
 	Firebird::Array<RseOrExprNode> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are

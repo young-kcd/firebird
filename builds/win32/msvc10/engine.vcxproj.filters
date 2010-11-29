@@ -258,9 +258,6 @@
     <ClCompile Include="..\..\..\src\jrd\exe.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\execute_statement.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\ext.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -738,9 +735,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\exe_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\execute_statement.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\ext.h">

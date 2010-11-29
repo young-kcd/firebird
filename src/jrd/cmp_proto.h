@@ -28,6 +28,11 @@
 // req.h includes exe.h => Jrd::CompilerScratch and Jrd::CompilerScratch::csb_repeat.
 #include "../jrd/scl.h"
 
+namespace Jrd
+{
+	class RelationSourceNode;
+}
+
 UCHAR* CMP_alloc_map(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 Jrd::ValueExprNode* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::ValueExprNode*);
 Jrd::BoolExprNode* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::BoolExprNode*);
@@ -44,11 +49,16 @@ void CMP_get_desc(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*, dsc*);
 Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 ULONG CMP_impure(Jrd::CompilerScratch*, ULONG);
 Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*, bool);
+Jrd::jrd_nod* CMP_make_validation(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT);
 void CMP_mark_variant(Jrd::CompilerScratch*, USHORT stream);
 
 Jrd::ValueExprNode* CMP_pass1(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::ValueExprNode* node);
 Jrd::BoolExprNode* CMP_pass1(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::BoolExprNode* node);
 Jrd::jrd_nod* CMP_pass1(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jrd_nod* node);
+
+Jrd::jrd_nod* CMP_pass1_expand_view(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, USHORT, bool);
+Jrd::RelationSourceNode* CMP_pass1_update(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*,
+	const Jrd::trig_vec*, USHORT, USHORT, Jrd::SecurityClass::flags_t, Jrd::jrd_rel*, USHORT);
 
 Jrd::ExprNode* CMP_pass2(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::ExprNode* node);
 Jrd::ValueExprNode* CMP_pass2(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::ValueExprNode* node);
@@ -65,6 +75,9 @@ void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::Met
 void CMP_post_procedure_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*);
 void CMP_post_resource(Jrd::ResourceList*, void*, Jrd::Resource::rsc_s, USHORT);
 Jrd::RecordSource* CMP_post_rse(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::RseNode*);
+
+void CMP_post_trigger_access(Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::ExternalAccess::exa_act, Jrd::jrd_rel*);
+
 void CMP_release(Jrd::thread_db*, Jrd::jrd_req*);
 void CMP_shutdown_database(Jrd::thread_db*);
 

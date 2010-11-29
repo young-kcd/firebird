@@ -36,16 +36,26 @@ void EXE_assignment(Jrd::thread_db*, const Jrd::jrd_nod*);
 void EXE_assignment(Jrd::thread_db*, const Jrd::ValueExprNode*, const Jrd::ValueExprNode*);
 void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::ValueExprNode* to, dsc* from_desc, bool from_null,
 	const Jrd::jrd_nod* missing_node, const Jrd::jrd_nod* missing2_node);
+
+void EXE_cleanup_rpb(Jrd::thread_db*, Jrd::record_param*);
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 	bool preTriggers, int action);
 const Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
 	const Jrd::jrd_nod* in_node, bool stmtExpr = false);
+
+void EXE_execute_triggers(Jrd::thread_db*, Jrd::trig_vec**, Jrd::record_param*, Jrd::record_param*,
+	Jrd::jrd_req::req_ta, Jrd::StmtNode::WhichTrigger);
+
+void EXE_PreModifyEraseTriggers(Jrd::thread_db*, Jrd::trig_vec**, Jrd::StmtNode::WhichTrigger,
+	Jrd::record_param*, Jrd::record_param*, Jrd::jrd_req::req_ta);
+
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, UCHAR*, bool = false);
 void EXE_release(Jrd::thread_db*, Jrd::jrd_req*);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, const UCHAR*);
 void EXE_start(Jrd::thread_db*, Jrd::jrd_req*, Jrd::jrd_tra*);
 void EXE_unwind(Jrd::thread_db*, Jrd::jrd_req*);
+void EXE_validate(Jrd::thread_db*, const Jrd::jrd_nod*);
 void EXE_verb_cleanup(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 
 namespace Jrd

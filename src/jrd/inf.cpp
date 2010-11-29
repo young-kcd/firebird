@@ -50,6 +50,7 @@
 #include "../jrd/scl.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/license.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/inf_proto.h"
@@ -993,7 +994,8 @@ void INF_request_info(const jrd_req* request,
 				else if (request->req_operation == jrd_req::req_receive)
 				{
 					const jrd_nod* node = request->req_next;
-					if (node->nod_type == nod_select)
+
+					if (StmtNode::is<SelectNode>(node))
 						state = isc_info_req_select;
 					else
 						state = isc_info_req_receive;

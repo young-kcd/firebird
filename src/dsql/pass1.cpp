@@ -5082,11 +5082,11 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	// Puts a blr_send before blr_for in DSQL statements.
-	class MergeSendNode : public DsqlOnlyStmtNode
+	class MergeSendNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
 	{
 	public:
 		explicit MergeSendNode(MemoryPool& pool, dsql_nod* aStmt)
-			: DsqlOnlyStmtNode(pool),
+			: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
 			  stmt(aStmt)
 		{
 		}

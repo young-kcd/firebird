@@ -24,6 +24,7 @@
 #define DSQL_NODES_H
 
 #include "../common/common.h"
+#include "../jrd/jrd.h"
 #include "../dsql/DsqlCompilerScratch.h"
 #include "../dsql/node.h"
 #include "../dsql/Visitors.h"
@@ -799,13 +800,129 @@ private:
 class StmtNode : public DmlNode
 {
 public:
-	explicit StmtNode(MemoryPool& pool)
+	enum Type
+	{
+		TYPE_BLOCK,
+		TYPE_CONTINUE_LEAVE,
+		TYPE_CURSOR_STMT,
+		TYPE_DECLARE_CURSOR,
+		TYPE_ERASE,
+		TYPE_ERROR_HANDLER,
+		TYPE_EXCEPTION,
+		TYPE_EXEC_BLOCK,
+		TYPE_EXEC_PROCEDURE,
+		TYPE_EXEC_STATEMENT,
+		TYPE_EXIT,
+		TYPE_IF,
+		TYPE_IN_AUTO_TRANS,
+		TYPE_FOR,
+		TYPE_HANDLER,
+		TYPE_LABEL,
+		TYPE_LOOP,
+		TYPE_MERGE,
+		TYPE_MODIFY,
+		TYPE_POST_EVENT,
+		TYPE_RECEIVE,
+		TYPE_RETURN,
+		TYPE_SAVEPOINT,
+		TYPE_SAVEPOINT_ENCLOSE,
+		TYPE_SELECT,
+		TYPE_SET_GENERATOR,
+		TYPE_SOURCE_INFO,
+		TYPE_STALL,
+		TYPE_STORE,
+		TYPE_SUSPEND,
+		TYPE_USER_SAVEPOINT
+	};
+
+	enum WhichTrigger
+	{
+		ALL_TRIGS = 0,
+		PRE_TRIG = 1,
+		POST_TRIG = 2
+	};
+
+	struct ExeState
+	{
+		ExeState(thread_db* tdbb)
+			: oldPool(tdbb->getDefaultPool()),
+			  oldRequest(tdbb->getRequest()),
+			  errorPending(false),
+			  catchDisabled(false),
+			  whichEraseTrig(ALL_TRIGS),
+			  whichStoTrig(ALL_TRIGS),
+			  whichModTrig(ALL_TRIGS),
+			  topNode(NULL),
+			  prevNode(NULL)
+		{
+		}
+
+		MemoryPool* oldPool;	// Save the old pool to restore on exit.
+		jrd_req* oldRequest;	// Save the old request to restore on exit.
+		bool errorPending;		// Is there an error pending to be handled?
+		bool catchDisabled;		// Catch errors so we can unwind cleanly.
+		WhichTrigger whichEraseTrig;
+		WhichTrigger whichStoTrig;
+		WhichTrigger whichModTrig;
+		const jrd_nod* topNode;
+		const jrd_nod* prevNode;
+	};
+
+public:
+	explicit StmtNode(Type aType, MemoryPool& pool)
 		: DmlNode(pool),
+		  type(aType),
 		  node(NULL)
 	{
 	}
 
-public:
+	template <typename T> T* as()
+	{
+		return type == T::TYPE ? static_cast<T*>(this) : NULL;
+	}
+
+	template <typename T> const T* as() const
+	{
+		return type == T::TYPE ? static_cast<const T*>(this) : NULL;
+	}
+
+	template <typename T> bool is() const
+	{
+		return type == T::TYPE;
+	}
+
+	template <typename T, typename LegacyType> static T* as(LegacyType* node)
+	{
+		StmtNode* obj = T::fromLegacy(node);
+		return obj ? obj->as<T>() : NULL;
+	}
+
+	template <typename T, typename LegacyType> static const T* as(const LegacyType* node)
+	{
+		const StmtNode* obj = T::fromLegacy(node);
+		return obj ? obj->as<T>() : NULL;
+	}
+
+	template <typename T, typename LegacyType> static bool is(const LegacyType* node)
+	{
+		const StmtNode* obj = T::fromLegacy(node);
+		return obj ? obj->is<T>() : false;
+	}
+
+	static const StmtNode* fromLegacy(const StmtNode* node)
+	{
+		return node;
+	}
+
+	static StmtNode* fromLegacy(StmtNode* node)
+	{
+		return node;
+	}
+
+	static StmtNode* fromLegacy(const dsql_nod* node);
+	static const StmtNode* fromLegacy(const jrd_nod* node);
+	static StmtNode* fromLegacy(jrd_nod* node);
+
 	jrd_nod* getNode()
 	{
 		return node;
@@ -820,7 +937,10 @@ public:
 	{
 	}
 
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request) const = 0;
+	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
+
+public:
+	const Type type;
 
 protected:
 	NestConst<jrd_nod> node;
@@ -832,8 +952,8 @@ protected:
 class DsqlOnlyStmtNode : public StmtNode
 {
 public:
-	explicit DsqlOnlyStmtNode(MemoryPool& pool)
-		: StmtNode(pool)
+	explicit DsqlOnlyStmtNode(Type aType, MemoryPool& pool)
+		: StmtNode(aType, pool)
 	{
 	}
 
@@ -850,7 +970,7 @@ public:
 		return this;
 	}
 
-	const jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
+	const jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const
 	{
 		fb_assert(false);
 		return NULL;
@@ -859,11 +979,11 @@ public:
 
 
 // This class (via the make method) does the job that pass1_savepoint does for the legacy nodes.
-class SavepointEncloseNode : public DsqlOnlyStmtNode
+class SavepointEncloseNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SAVEPOINT_ENCLOSE>
 {
 public:
 	explicit SavepointEncloseNode(MemoryPool& pool, StmtNode* aStmt)
-		: DsqlOnlyStmtNode(pool),
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SAVEPOINT_ENCLOSE>(pool),
 		  stmt(aStmt)
 	{
 	}

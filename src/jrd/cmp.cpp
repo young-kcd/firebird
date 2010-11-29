@@ -76,7 +76,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../common/dsc_proto.h"
-#include "../jrd/execute_statement.h"
 #include "../jrd/Optimizer.h"
 
 #include "../jrd/DataTypeUtil.h"
@@ -129,45 +128,21 @@ namespace
 			return fldId;
 		}
 	};
-
-	// Node copier that remaps the field id 0 of stream 0 to a given field id.
-	class RemapFieldNodeCopier : public NodeCopier
-	{
-	public:
-		RemapFieldNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap, USHORT aFldId)
-			: NodeCopier(aCsb, aRemap),
-			  fldId(aFldId)
-		{
-		}
-
-	protected:
-		virtual USHORT getFieldId(FieldNode* field)
-		{
-			if (field->byId && field->fieldId == 0 && field->fieldStream == 0)
-				return fldId;
-
-			return NodeCopier::getFieldId(field);
-		}
-
-	private:
-		USHORT fldId;
-	};
 }	// namespace
-
-static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
-static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
-static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
-static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
-static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
-static RelationSourceNode* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
-	SecurityClass::flags_t, jrd_rel*, USHORT);
-static void	post_trigger_access(CompilerScratch*, jrd_rel*, ExternalAccess::exa_act, jrd_rel*);
 
 #ifdef CMP_DEBUG
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
+
+
+USHORT RemapFieldNodeCopier::getFieldId(FieldNode* field)
+{
+	if (field->byId && field->fieldId == 0 && field->fieldStream == 0)
+		return fldId;
+
+	return NodeCopier::getFieldId(field);
+}
 
 
 // Clone a node.
@@ -814,14 +789,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 		args = e_asgn_length;
 		break;
 
-	case nod_erase:
-		args = e_erase_length;
-		break;
-
-	case nod_modify:
-		args = e_mod_length;
-		break;
-
 	case nod_init_variable:
 		if (csb->csb_remap_variable != 0)
 		{
@@ -871,26 +838,6 @@ jrd_nod* NodeCopier::copy(thread_db* tdbb, jrd_nod* input)
 			return node;
 		}
 		return input;
-
-	case nod_dcl_cursor:
-		node = PAR_make_node(tdbb, e_dcl_cur_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_dcl_cur_rse] = copy(tdbb, input->nod_arg[e_dcl_cur_rse]);
-		node->nod_arg[e_dcl_cur_refs] = copy(tdbb, input->nod_arg[e_dcl_cur_refs]);
-		node->nod_arg[e_dcl_cur_number] = input->nod_arg[e_dcl_cur_number];
-		break;
-
-	case nod_cursor_stmt:
-		node = PAR_make_node(tdbb, e_cursor_stmt_length);
-		node->nod_count = input->nod_count;
-		node->nod_type = input->nod_type;
-		node->nod_arg[e_cursor_stmt_op] = input->nod_arg[e_cursor_stmt_op];
-		node->nod_arg[e_cursor_stmt_number] = input->nod_arg[e_cursor_stmt_number];
-		node->nod_arg[e_cursor_stmt_scroll_op] = input->nod_arg[e_cursor_stmt_scroll_op];
-		node->nod_arg[e_cursor_stmt_scroll_val] = copy(tdbb, input->nod_arg[e_cursor_stmt_scroll_val]);
-		node->nod_arg[e_cursor_stmt_into] = copy(tdbb, input->nod_arg[e_cursor_stmt_into]);
-		break;
 
 	default:
 		break;
@@ -949,130 +896,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 }
 
 
-static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stream, jrd_nod* statement)
-{
-/**************************************
- *
- *	m a k e _ d e f a u l t s
- *
- **************************************
- *
- * Functional description
- *	Build an default value assignments.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(statement, type_nod);
-
-	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-
-	vec<jrd_fld*>* vector = relation->rel_fields;
-	if (!vector)
-		return statement;
-
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
-	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map)
-	{
-		map = local_map;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR relevant, too?
-		map[0] = (UCHAR) stream;
-		map[1] = 1;
-		map[2] = 2;
-	}
-
-	NodeStack stack;
-
-	USHORT field_id = 0;
-	vec<jrd_fld*>::iterator ptr1 = vector->begin();
-	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
-	{
-		ValueExprNode* value;
-
-		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
-			continue;
-
-		fb_assert(statement->nod_type == nod_list);
-		if (statement->nod_type == nod_list)
-		{
-			bool inList = false;
-
-			for (unsigned i = 0; i < statement->nod_count; ++i)
-			{
-				const jrd_nod* assign = statement->nod_arg[i];
-
-				fb_assert(assign->nod_type == nod_assignment);
-				if (assign->nod_type == nod_assignment)
-				{
-					const jrd_nod* to = assign->nod_arg[e_asgn_to];
-
-					const FieldNode* fieldNode = ExprNode::as<FieldNode>(to);
-					fb_assert(fieldNode);
-
-					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == field_id)
-					{
-						inList = true;
-						break;
-					}
-				}
-			}
-
-			if (inList)
-				continue;
-
-			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
-			node->nod_type = nod_assignment;
-			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, field_id);
-			stack.push(node);
-
-			if ((*ptr1)->fld_generator_name.hasData())
-			{
-				// Make a gen_id(<generator name>, 1) expression.
-
-				LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
-				SLONG* increment = FB_NEW(csb->csb_pool) SLONG(1);
-				literal->litDesc.makeLong(0, increment);
-
-				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
-					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
-				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
-				genNode->arg = literal;
-
-				jrd_nod* genNod = PAR_make_node(tdbb, 1);
-				genNod->nod_type = nod_class_exprnode_jrd;
-				genNod->nod_count = 0;
-				genNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(genNode);
-				node->nod_arg[e_asgn_from] = genNod;
-			}
-			else //if (value)
-			{
-				// Clone the field default value.
-
-				jrd_nod* nod = PAR_make_node(tdbb, 1);
-				nod->nod_type = nod_class_exprnode_jrd;
-				nod->nod_count = 0;
-				nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-					RemapFieldNodeCopier(csb, map, field_id).copy(tdbb, value));
-
-				node->nod_arg[e_asgn_from] = nod;
-			}
-		}
-	}
-
-	if (stack.isEmpty())
-		return statement;
-
-	// We have some default - add the original statement and make a list out of the whole mess.
-
-	stack.push(statement);
-
-	return PAR_make_list(tdbb, stack);
-}
-
-
-static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+jrd_nod* CMP_make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 /**************************************
  *
@@ -1313,48 +1137,9 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		}
 		break;
 
-	case nod_modify:
-		pass1_modify(tdbb, csb, node);
-		break;
-
-	case nod_erase:
-		pass1_erase(tdbb, csb, node);
-		break;
-
-	case nod_exec_proc:
-		procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
-		// Post access to procedure
-		CMP_post_procedure_access(tdbb, csb, procedure);
-		CMP_post_resource(&csb->csb_resources, procedure,
-						  Resource::rsc_procedure, procedure->getId());
-		break;
-
-	case nod_store:
-		if (pass1_store(tdbb, csb, node))
-		{
-			fb_assert(node->nod_arg[e_sto_relation]->nod_type == nod_class_recsrcnode_jrd);
-			RelationSourceNode* recSource = reinterpret_cast<RelationSourceNode*>(
-				node->nod_arg[e_sto_relation]->nod_arg[0]);
-			fb_assert(recSource->type == RelationSourceNode::TYPE);
-
-			stream = recSource->getStream();
-			node->nod_arg[e_sto_statement] =
-				make_defaults(tdbb, csb, stream, node->nod_arg[e_sto_statement]);
-		}
-		break;
-
-	case nod_cursor_stmt:
-		node->nod_arg[e_cursor_stmt_scroll_val] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val]);
-		node->nod_arg[e_cursor_stmt_into] = CMP_pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
-		break;
-
 	case nod_class_recsrcnode_jrd:
 		reinterpret_cast<RecordSourceNode*>(node->nod_arg[0])->pass1(tdbb, csb);
 		break;
-
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
-		return node;
 
 	case nod_class_exprnode_jrd:
 		{
@@ -1424,121 +1209,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 }
 
 
-static void pass1_erase(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
-{
-/**************************************
- *
- *	p a s s 1 _ e r a s e
- *
- **************************************
- *
- * Functional description
- *	Checkout an erase statement.  If it references a view, and
- *	is kosher, fix it up.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	// if updateable views with triggers are involved, there
-	// maybe a recursive call to be ignored
-
-	if (node->nod_arg[e_erase_sub_erase])
-		return;
-
-	// to support nested views, loop until we hit a table or
-	// a view with user-defined triggers (which means no update)
-
-	jrd_rel* parent = NULL;
-	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
-
-	for (;;)
-	{
-		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
-		const USHORT stream = new_stream;
-
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
-		tail->csb_flags |= csb_erase;
-
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-		view = (relation->rel_view_rse) ? relation : view;
-		if (!parent) {
-			parent = tail->csb_view;
-		}
-
-		post_trigger_access(csb, relation, ExternalAccess::exa_delete, view);
-
-		// Check out delete. If this is a delete thru a view, verify the
-		// view by checking for read access on the base table. If field-level select
-		// privileges are implemented, this needs to be enhanced.
-
-		SecurityClass::flags_t priv = SCL_sql_delete;
-		if (parent) {
-			priv |= SCL_read;
-		}
-
-		const trig_vec* trigger = relation->rel_pre_erase ?
-			relation->rel_pre_erase : relation->rel_post_erase;
-
-		// if we have a view with triggers, let's expand it
-
-		if (relation->rel_view_rse && trigger)
-		{
-			new_stream = csb->nextStream();
-			node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) new_stream;
-			CMP_csb_element(csb, new_stream)->csb_relation = relation;
-
-			node->nod_arg[e_erase_statement] = pass1_expand_view(tdbb, csb, stream, new_stream, false);
-			node->nod_count = MAX(node->nod_count, (USHORT) e_erase_statement + 1);
-		}
-
-		// get the source relation, either a table or yet another view
-
-		RelationSourceNode* source = pass1_update(tdbb, csb, relation, trigger, stream,
-			new_stream, priv, parent, parent_stream);
-
-		if (!source)
-			return;	// no source means we're done
-
-		parent = relation;
-		parent_stream = stream;
-
-		// remap the source stream
-
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
-
-		if (trigger)
-		{
-			// set up the new target stream
-
-			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
-			view_node->nod_arg[e_erase_statement] = NULL;
-			view_node->nod_arg[e_erase_sub_erase] = NULL;
-
-			node->nod_arg[e_erase_sub_erase] = view_node;
-			node->nod_count = MAX(node->nod_count, (USHORT) e_erase_sub_erase + 1);
-
-			// substitute the original delete node with the newly created one
-			node = view_node;
-		}
-		else
-		{
-			// this relation is not actually being updated as this operation
-			// goes deeper (we have a naturally updatable view)
-			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
-		}
-
-		// let's reset the target stream
-		new_stream = source->getStream();
-		node->nod_arg[e_erase_stream] = (jrd_nod*)(IPTR) map[new_stream];
-	}
-}
-
-
-static jrd_nod* pass1_expand_view(thread_db* tdbb,
+jrd_nod* CMP_pass1_expand_view(thread_db* tdbb,
 								 CompilerScratch* csb,
 								 USHORT org_stream,
 								 USHORT new_stream,
@@ -1602,286 +1273,7 @@ static jrd_nod* pass1_expand_view(thread_db* tdbb,
 }
 
 
-static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
-{
-/**************************************
- *
- *	p a s s 1 _ m o d i f y
- *
- **************************************
- *
- * Functional description
- *	Process a source for a modify statement.  This can
- *	get a little tricky if the relation is a view.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	// if updateable views with triggers are involved, there
-	// maybe a recursive call to be ignored
-
-	if (node->nod_arg[e_mod_sub_mod])
-		return;
-
-	jrd_rel* parent = NULL;
-	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
-
-	// to support nested views, loop until we hit a table or
-	// a view with user-defined triggers (which means no update)
-
-	for (;;)
-	{
-		USHORT stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
-		USHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[new_stream];
-		tail->csb_flags |= csb_modify;
-
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-		view = (relation->rel_view_rse) ? relation : view;
-		if (!parent) {
-			parent = tail->csb_view;
-		}
-
-		post_trigger_access(csb, relation, ExternalAccess::exa_update, view);
-
-		// Check out update. If this is an update thru a view, verify the
-		// view by checking for read access on the base table. If field-level select
-		// privileges are implemented, this needs to be enhanced.
-
-		SecurityClass::flags_t priv = SCL_sql_update;
-		if (parent) {
-			priv |= SCL_read;
-		}
-
-		const trig_vec* trigger = (relation->rel_pre_modify) ?
-			relation->rel_pre_modify : relation->rel_post_modify;
-
-		// if we have a view with triggers, let's expand it
-
-		if (relation->rel_view_rse && trigger)
-		{
-			node->nod_arg[e_mod_map_view] = pass1_expand_view(tdbb, csb, stream, new_stream, false);
-			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_map_view + 1);
-		}
-
-		// get the source relation, either a table or yet another view
-
-		RelationSourceNode* source = pass1_update(tdbb, csb, relation, trigger, stream,
-			new_stream, priv, parent, parent_stream);
-
-		if (!source)
-		{
-			// no source means we're done
-
-			if (!relation->rel_view_rse)
-			{
-				// apply validation constraints
-
-				if ( (node->nod_arg[e_mod_validate] = make_validation(tdbb, csb, new_stream)) )
-					node->nod_count = MAX(node->nod_count, (USHORT) e_mod_validate + 1);
-			}
-
-			return;
-		}
-
-		parent = relation;
-		parent_stream = stream;
-
-		// remap the source stream
-
-		UCHAR* map = csb->csb_rpt[stream].csb_map;
-
-		stream = source->getStream();
-		stream = map[stream];
-
-		// copy the view source
-
-		map = CMP_alloc_map(tdbb, csb, (SSHORT)(IPTR) node->nod_arg[e_mod_new_stream]);
-		NodeCopier copier(csb, map);
-		source = source->copy(tdbb, copier);
-
-		if (trigger)
-		{
-			// set up the new target stream
-
-			const USHORT view_stream = new_stream;
-			new_stream = source->getStream();
-			fb_assert(new_stream <= MAX_STREAMS);
-			map[view_stream] = new_stream;
-
-			jrd_nod* view_node = ViewNodeCopier(csb, map).copy(tdbb, node);
-			view_node->nod_arg[e_mod_map_view] = NULL;
-			view_node->nod_arg[e_mod_statement] =
-				pass1_expand_view(tdbb, csb, view_stream, new_stream, true);
-
-			node->nod_arg[e_mod_sub_mod] = view_node;
-			node->nod_count = MAX(node->nod_count, (USHORT) e_mod_sub_mod + 1);
-
-			// substitute the original update node with the newly created one
-			node = view_node;
-		}
-		else
-		{
-			// this relation is not actually being updated as this operation
-			// goes deeper (we have a naturally updatable view)
-
-			csb->csb_rpt[new_stream].csb_flags &= ~csb_view_update;
-		}
-
-		// let's reset streams to represent the mapped source and target
-		node->nod_arg[e_mod_org_stream] = (jrd_nod*)(IPTR) stream;
-		node->nod_arg[e_mod_new_stream] = (jrd_nod*)(IPTR) source->getStream();
-	}
-}
-
-
-static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
-{
-/**************************************
- *
- *	p a s s 1 _ s t o r e
- *
- **************************************
- *
- * Functional description
- *	Process a source for a store statement.  This can get a little tricky if
- *	the relation is a view.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(node, type_nod);
-
-	// if updateable views with triggers are involved, there
-	// may be a recursive call to be ignored
-
-	if (node->nod_arg[e_sto_sub_store])
-		return false;
-
-	jrd_rel* parent = NULL;
-	jrd_rel* view = NULL;
-	USHORT parent_stream = 0;
-
-	// to support nested views, loop until we hit a table or
-	// a view with user-defined triggers (which means no update)
-
-	for (;;)
-	{
-		fb_assert(node->nod_arg[e_sto_relation]->nod_type == nod_class_recsrcnode_jrd);
-		RelationSourceNode* relSource = reinterpret_cast<RelationSourceNode*>(
-			node->nod_arg[e_sto_relation]->nod_arg[0]);
-		fb_assert(relSource->type == RelationSourceNode::TYPE);
-
-		const USHORT stream = relSource->getStream();
-
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
-		tail->csb_flags |= csb_store;
-
-		jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-		view = (relation->rel_view_rse) ? relation : view;
-		if (!parent) {
-			parent = tail->csb_view;
-		}
-
-		post_trigger_access(csb, relation, ExternalAccess::exa_insert, view);
-
-		const trig_vec* trigger = (relation->rel_pre_store) ?
-			relation->rel_pre_store : relation->rel_post_store;
-
-		// Check out insert. If this is an insert thru a view, verify the
-		// view by checking for read access on the base table. If field-level select
-		// privileges are implemented, this needs to be enhanced.
-
-		SecurityClass::flags_t priv = SCL_sql_insert;
-		if (parent) {
-			priv |= SCL_read;
-		}
-
-		// get the source relation, either a table or yet another view
-
-		relSource = pass1_update(tdbb, csb, relation, trigger, stream, stream, priv,
-			parent, parent_stream);
-
-		if (!relSource)
-		{
-			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
-
-			if (!relation->rel_view_rse)
-			{
-				// apply validation constraints
-				if ( (node->nod_arg[e_sto_validate] = make_validation(tdbb, csb, stream)) )
-					node->nod_count = MAX(node->nod_count, (USHORT) e_sto_validate + 1);
-			}
-
-			return true;
-		}
-
-		parent = relation;
-		parent_stream = stream;
-
-		UCHAR* map = CMP_alloc_map(tdbb, csb, stream);
-		NodeCopier copier(csb, map);
-
-		if (trigger)
-		{
-			CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_relation, relation->rel_id);
-
-			// set up the new target stream
-
-			jrd_nod* view_node = NodeCopier::copy(tdbb, csb, node, map);
-			view_node->nod_arg[e_sto_sub_store] = NULL;
-
-			relSource = relSource->copy(tdbb, copier);
-
-			view_node->nod_arg[e_sto_relation] = PAR_make_node(tdbb, 1);
-			view_node->nod_arg[e_sto_relation]->nod_type = nod_class_recsrcnode_jrd;
-			view_node->nod_arg[e_sto_relation]->nod_count = 0;
-			view_node->nod_arg[e_sto_relation]->nod_arg[0] = reinterpret_cast<jrd_nod*>(relSource);
-
-			const USHORT new_stream = relSource->getStream();
-			view_node->nod_arg[e_sto_statement] =
-				pass1_expand_view(tdbb, csb, stream, new_stream, true);
-
-			// dimitr:	I don't think the below code is required, but time will show
-			//	view_node->nod_arg[e_sto_statement] =
-			//		NodeCopier::copy(tdbb, csb, view_node->nod_arg[e_sto_statement], NULL);
-
-			// bug 8150: use of blr_store2 against a view with a trigger was causing
-			// the second statement to be executed, which is not desirable
-
-			view_node->nod_arg[e_sto_statement2] = NULL;
-
-			node->nod_arg[e_sto_sub_store] = view_node;
-			node->nod_count = MAX(node->nod_count, (USHORT) e_sto_sub_store + 1);
-
-			// substitute the original update node with the newly created one
-			node = view_node;
-		}
-		else
-		{
-			// this relation is not actually being updated as this operation
-			// goes deeper (we have a naturally updatable view)
-
-			csb->csb_rpt[stream].csb_flags &= ~csb_view_update;
-
-			relSource = relSource->copy(tdbb, copier);
-
-			node->nod_arg[e_sto_relation] = PAR_make_node(tdbb, 1);
-			node->nod_arg[e_sto_relation]->nod_type = nod_class_recsrcnode_jrd;
-			node->nod_arg[e_sto_relation]->nod_count = 0;
-			node->nod_arg[e_sto_relation]->nod_arg[0] = reinterpret_cast<jrd_nod*>(relSource);
-		}
-	}
-}
-
-
-static RelationSourceNode* pass1_update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
+RelationSourceNode* CMP_pass1_update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
 	const trig_vec* trigger, USHORT stream, USHORT update_stream, SecurityClass::flags_t priv,
 	jrd_rel* view, USHORT view_stream)
 {
@@ -2020,22 +1412,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		reinterpret_cast<StmtNode*>(node->nod_arg[0])->pass2Cursor(rse_node, cursor_ptr);
 		break;
 
-	case nod_dcl_cursor:
-		fb_assert(node->nod_arg[e_dcl_cur_rse]->nod_type == nod_class_recsrcnode_jrd);
-		rse_node = reinterpret_cast<RseNode*>(node->nod_arg[e_dcl_cur_rse]->nod_arg[0]);
-		fb_assert(rse_node->type == RseNode::TYPE);
-		cursor_ptr = (Cursor**) &node->nod_arg[e_dcl_cur_cursor];
-		break;
-
-	case nod_cursor_stmt:
-		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_scroll_val], node);
-		CMP_pass2(tdbb, csb, node->nod_arg[e_cursor_stmt_into], node);
-		break;
-
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = CMP_pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
-		return node;
-
 	case nod_init_variable:
 		node->nod_arg[e_init_var_info] = reinterpret_cast<jrd_nod*>(CMP_pass2_validation(tdbb,
 			csb, Item(Item::TYPE_VARIABLE, (IPTR) node->nod_arg[e_init_var_id])));
@@ -2050,51 +1426,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	// handle sub-expressions here
 
-	// AB: Mark the streams involved with INSERT/UPDATE statements active.
-	// So that the optimizer can use indices for eventually used sub-selects.
-	if (node->nod_type == nod_modify)
-	{
-		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
-		csb->csb_rpt[stream].csb_flags |= csb_active;
-		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-		csb->csb_rpt[stream].csb_flags |= csb_active;
-	}
-	else if (node->nod_type == nod_store)
-	{
-		fb_assert(node->nod_arg[e_sto_relation]->nod_type == nod_class_recsrcnode_jrd);
-		RelationSourceNode* recSource = reinterpret_cast<RelationSourceNode*>(
-			node->nod_arg[e_sto_relation]->nod_arg[0]);
-		fb_assert(recSource->type == RelationSourceNode::TYPE);
-
-		stream = recSource->getStream();
-		csb->csb_rpt[stream].csb_flags |= csb_active;
-	}
-
 	jrd_nod** ptr = node->nod_arg;
 	// This "end" is used later.
 	const jrd_nod* const* const end = ptr + node->nod_count;
 
 	for (; ptr < end; ptr++)
 		CMP_pass2(tdbb, csb, *ptr, node);
-
-	// AB: Remove the previous flags
-	if (node->nod_type == nod_modify)
-	{
-		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
-		csb->csb_rpt[stream].csb_flags &= ~csb_active;
-		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
-		csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	}
-	else if (node->nod_type == nod_store)
-	{
-		fb_assert(node->nod_arg[e_sto_relation]->nod_type == nod_class_recsrcnode_jrd);
-		RelationSourceNode* recSource = reinterpret_cast<RelationSourceNode*>(
-			node->nod_arg[e_sto_relation]->nod_arg[0]);
-		fb_assert(recSource->type == RelationSourceNode::TYPE);
-
-		stream = recSource->getStream();
-		csb->csb_rpt[stream].csb_flags &= ~csb_active;
-	}
 
 	// Handle any residual work
 
@@ -2106,10 +1443,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_assignment:
 		CMP_pass2(tdbb, csb, node->nod_arg[e_asgn_missing2], node);
-		break;
-
-	case nod_block:
-		node->nod_impure = CMP_impure(csb, sizeof(SLONG));
 		break;
 
 	case nod_dcl_variable:
@@ -2129,22 +1462,6 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		}
 		break;
 
-	case nod_modify:
-		{
-			stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
-			csb->csb_rpt[stream].csb_flags |= csb_update;
-			const Format* format = CMP_format(tdbb, csb, stream);
-			Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
-			for (ULONG id = 0; id < format->fmt_count; ++id, ++desc)
-			{
-				if (desc->dsc_dtype) {
-					SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
-				}
-			}
-			node->nod_impure = CMP_impure(csb, sizeof(impure_state));
-		}
-		break;
-
 	case nod_list:
 		// We are using the same "node" always. The "end" was set in the middle
 		// of the two huge switch() statements (this is the second).
@@ -2160,24 +1477,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 				}
 			}
 		}
-		// FALL INTO
-
-	case nod_store:
 		node->nod_impure = CMP_impure(csb, sizeof(impure_state));
-		break;
-
-	case nod_erase:
-		stream = (USHORT)(IPTR) node->nod_arg[e_erase_stream];
-		csb->csb_rpt[stream].csb_flags |= csb_update;
-		break;
-
-	case nod_exec_into:
-		node->nod_impure = CMP_impure(csb, sizeof(ExecuteStatement));
-		csb->csb_exec_sta.push(node);
-		break;
-
-	case nod_exec_stmt:
-		node->nod_impure = CMP_impure(csb, sizeof(void**));
 		break;
 
 	case nod_class_exprnode_jrd:
@@ -2316,7 +1616,7 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 }
 
 
-static void post_trigger_access(CompilerScratch* csb,
+void CMP_post_trigger_access(CompilerScratch* csb,
 								jrd_rel* owner_relation,
 								ExternalAccess::exa_act operation, jrd_rel* view)
 {

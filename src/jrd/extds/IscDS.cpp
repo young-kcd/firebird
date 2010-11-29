@@ -515,7 +515,8 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	}
 }
 
-void IscStatement::doSetInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
+void IscStatement::doSetInParams(thread_db* tdbb, int count, const string* const* names,
+	const NestConst<Jrd::ValueExprNode>* params)
 {
 	Statement::doSetInParams(tdbb, count, names, params);
 

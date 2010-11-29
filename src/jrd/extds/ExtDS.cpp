@@ -29,6 +29,7 @@
 #include "iberror.h"
 
 #include "../../dsql/chars.h"
+#include "../../dsql/ExprNodes.h"
 #include "../common/dsc.h"
 #include "../exe.h"
 #include "ExtDS.h"
@@ -838,22 +839,22 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 	m_preparedByReq = m_callerPrivileges ? tdbb->getRequest() : NULL;
 }
 
-void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, const jrd_nod* const* in_params, int out_count,
-	const jrd_nod* const* out_params)
+void Statement::execute(thread_db* tdbb, Transaction* tran,
+	const string* const* in_names, const ValueListNode* in_params,
+	const ValueListNode* out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
 	fb_assert(!m_active);
 
 	m_transaction = tran;
-	setInParams(tdbb, in_count, in_names, in_params);
+	setInParams(tdbb, in_names, in_params);
 	doExecute(tdbb);
-	getOutParams(tdbb, out_count, out_params);
+	getOutParams(tdbb, out_params);
 }
 
-void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
-	const string* const* in_names, const jrd_nod* const* in_params, bool singleton)
+void Statement::open(thread_db* tdbb, Transaction* tran,
+	const string* const* in_names, const ValueListNode* in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -862,12 +863,12 @@ void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
 	m_singleton = singleton;
 	m_transaction = tran;
 
-	setInParams(tdbb, in_count, in_names, in_params);
+	setInParams(tdbb, in_names, in_params);
 	doOpen(tdbb);
 	m_active = true;
 }
 
-bool Statement::fetch(thread_db* tdbb, int out_count, const jrd_nod* const* out_params)
+bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -876,7 +877,7 @@ bool Statement::fetch(thread_db* tdbb, int out_count, const jrd_nod* const* out_
 	if (!doFetch(tdbb))
 		return false;
 
-	getOutParams(tdbb, out_count, out_params);
+	getOutParams(tdbb, out_params);
 
 	if (m_singleton)
 	{
@@ -1221,10 +1222,12 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db* tdbb, int count, const string* const* names,
-	const jrd_nod* const* params)
+void Statement::setInParams(thread_db* tdbb, const string* const* names,
+	const ValueListNode* params)
 {
-	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
+	size_t count = params ? params->args.getCount() : 0;
+
+	m_error = (names && ((int) m_sqlParamNames.getCount() != count || count == 0)) ||
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error)
@@ -1236,8 +1239,9 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 	if (m_sqlParamNames.getCount())
 	{
 		const int sqlCount = m_sqlParamsMap.getCount();
-		Array<const jrd_nod*> sqlParamsArray(getPool(), 16);
-		const jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
+		// Here NestConst plays against its objective. It temporary unconstifies the values.
+		Array<NestConst<ValueExprNode> > sqlParamsArray(getPool(), 16);
+		NestConst<ValueExprNode>* sqlParams = sqlParamsArray.getBuffer(sqlCount);
 
 		for (int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
@@ -1256,19 +1260,17 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
 			}
 
-			sqlParams[sqlNum] = params[num];
+			sqlParams[sqlNum] = params->args[num];
 		}
 
 		doSetInParams(tdbb, sqlCount, m_sqlParamsMap.begin(), sqlParams);
 	}
 	else
-	{
-		doSetInParams(tdbb, count, names, params);
-	}
+		doSetInParams(tdbb, count, names, (params ? params->args.begin() : NULL));
 }
 
 void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/,
-	const jrd_nod* const* params)
+	const NestConst<ValueExprNode>* params)
 {
 	if (count != getInputs())
 	{
@@ -1280,12 +1282,12 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 	if (!count)
 		return;
 
-	const jrd_nod* const* jrdVar = params;
-	GenericMap<Pair<NonPooled<const jrd_nod*, dsc*> > > paramDescs(getPool());
+	const NestConst<ValueExprNode>* jrdVar = params;
+	GenericMap<Pair<NonPooled<const ValueExprNode*, dsc*> > > paramDescs(getPool());
 
 	jrd_req* request = tdbb->getRequest();
 
-	for (int i = 0; i < count; i++, jrdVar++)
+	for (size_t i = 0; i < count; ++i, ++jrdVar)
 	{
 		dsc* src = NULL;
 		dsc& dst = m_inDescs[i * 2];
@@ -1293,7 +1295,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 
 		if (!paramDescs.get(*jrdVar, src))
 		{
-			src = EVL_expr(tdbb, request, (*jrdVar)->asValue());
+			src = EVL_expr(tdbb, request, *jrdVar);
 			paramDescs.put(*jrdVar, src);
 
 			if (src)
@@ -1340,8 +1342,10 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 
 
 // m_outDescs -> jrd_nod
-void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* params)
+void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 {
+	size_t count = params ? params->args.getCount() : 0;
+
 	if (count != getOutputs())
 	{
 		m_error = true;
@@ -1352,11 +1356,12 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 	if (!count)
 		return;
 
-	const jrd_nod* const* jrdVar = params;
-	for (int i = 0; i < count; i++, jrdVar++)
+	const NestConst<ValueExprNode>* jrdVar = params->args.begin();
+
+	for (size_t i = 0; i < count; ++i, ++jrdVar)
 	{
 		/*
-		dsc* d = EVL_assign_to(tdbb, (*jrdVar)->asValue());
+		dsc* d = EVL_assign_to(tdbb, *jrdVar);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
 			m_error = true;
@@ -1382,7 +1387,7 @@ void Statement::getOutParams(thread_db* tdbb, int count, const jrd_nod* const* p
 		}
 
 		// and assign to the target
-		EXE_assignment(tdbb, (*jrdVar)->asValue(), local, srcNull, NULL, NULL);
+		EXE_assignment(tdbb, *jrdVar, local, srcNull, NULL, NULL);
 	}
 }
 

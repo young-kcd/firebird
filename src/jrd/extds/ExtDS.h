@@ -35,6 +35,7 @@ namespace Jrd
 	class jrd_nod;
 	class jrd_tra;
 	class thread_db;
+	class ValueListNode;
 }
 
 namespace EDS {
@@ -315,12 +316,12 @@ public:
 	Transaction* getTransaction() { return m_transaction; }
 
 	void prepare(Jrd::thread_db* tdbb, Transaction* tran, const Firebird::string& sql, bool named);
-	void execute(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
-		const Firebird::string* const* in_names, const Jrd::jrd_nod* const* in_params,
-		int out_count, const Jrd::jrd_nod* const* out_params);
-	void open(Jrd::thread_db* tdbb, Transaction* tran, int in_count,
-		const Firebird::string* const* in_names, const Jrd::jrd_nod* const* in_params, bool singleton);
-	bool fetch(Jrd::thread_db* tdbb, int out_count, const Jrd::jrd_nod* const* out_params);
+	void execute(Jrd::thread_db* tdbb, Transaction* tran,
+		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params,
+		const Jrd::ValueListNode* out_params);
+	void open(Jrd::thread_db* tdbb, Transaction* tran,
+		const Firebird::string* const* in_names, const Jrd::ValueListNode* in_params, bool singleton);
+	bool fetch(Jrd::thread_db* tdbb, const Jrd::ValueListNode* out_params);
 	void close(Jrd::thread_db* tdbb);
 	void deallocate(Jrd::thread_db* tdbb);
 
@@ -356,12 +357,12 @@ protected:
 	virtual bool doFetch(Jrd::thread_db* tdbb) = 0;
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop) = 0;
 
-	void setInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
-		const Jrd::jrd_nod* const* params);
-	virtual void getOutParams(Jrd::thread_db* tdbb, int count, const Jrd::jrd_nod* const* params);
+	void setInParams(Jrd::thread_db* tdbb, const Firebird::string* const* names,
+		const Jrd::ValueListNode* params);
+	virtual void getOutParams(Jrd::thread_db* tdbb, const Jrd::ValueListNode* params);
 
 	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
-		const Jrd::jrd_nod* const* params);
+		const NestConst<Jrd::ValueExprNode>* params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
 	virtual void getExtBlob(Jrd::thread_db* tdbb, const dsc& src, dsc& dst);

@@ -50,7 +50,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  resources(*p),
 	  triggerName(*p),
 	  fors(*p),
-	  execStmts(*p),
 	  invariants(*p),
 	  blr(*p),
 	  mapFieldInfo(*p),
@@ -132,10 +131,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	// make a vector of all used RSEs
 	fors = csb->csb_fors;
 
-	// make a vector of all used ExecuteStatements into
-	for (Array<jrd_nod*>::iterator i = csb->csb_exec_sta.begin(); i != csb->csb_exec_sta.end(); ++i)
-		execStmts.add(*i);
-
 	// make a vector of all invariant-type nodes, so that we will
 	// be able to easily reinitialize them when we restart the request
 	invariants.join(csb->csb_invariants);
@@ -214,8 +209,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			if (fieldInfo.validationExpr)
 				fieldInfo.validationExpr = CMP_pass1(tdbb, csb, fieldInfo.validationExpr);
 		}
-
-		csb->csb_exec_sta.clear();
 
 		csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
 

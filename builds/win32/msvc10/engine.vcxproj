@@ -76,7 +76,6 @@
     <ClCompile Include="..\..\..\src\jrd\event.cpp" />
     <ClCompile Include="..\..\..\src\jrd\evl.cpp" />
     <ClCompile Include="..\..\..\src\jrd\exe.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\execute_statement.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ext.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\ExtDS.cpp" />
     <ClCompile Include="..\..\..\src\jrd\extds\InternalDS.cpp" />
@@ -237,7 +236,6 @@
     <ClInclude Include="..\..\..\src\jrd\evl_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\evl_string.h" />
     <ClInclude Include="..\..\..\src\jrd\exe.h" />
-    <ClInclude Include="..\..\..\src\jrd\execute_statement.h" />
     <ClInclude Include="..\..\..\src\jrd\exe_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\ext.h" />
     <ClInclude Include="..\..\..\src\jrd\extds\ExtDS.h" />
