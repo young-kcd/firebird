@@ -1,3 +1,7 @@
+ 2010-11-28 19:51  dimitr 
+   M src/jrd/pag.cpp
+Backport.
+
  2010-11-25 10:44  hvlad 
    M src/jrd/idx.cpp
 Backport fix for bug CORE-3188 : page 0 is of wrong type (expected 6, found 1)
