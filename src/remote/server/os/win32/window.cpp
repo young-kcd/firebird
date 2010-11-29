@@ -65,6 +65,7 @@ static HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
 static HWND hMainWnd = NULL;
+const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
 
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[BUFFER_MEDIUM]);
@@ -227,7 +228,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-				fb_shutdown(0, fb_shutrsn_app_stopped);
+				fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_app_stopped);
 				//DestroyWindow(hWnd);
 			}
 		}
@@ -434,7 +435,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 						return FALSE;
 					}
 
-					fb_shutdown(0, fb_shutrsn_device_removed);
+					fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_device_removed);
 					//DestroyWindow(hWnd);
 					return TRUE;
 				}
@@ -458,7 +459,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
-				fb_shutdown(0, fb_shutrsn_device_removed);
+				fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_device_removed);
 			}
 			return TRUE;
 
