@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  *
  * 2001.6.21 Claudio Valderrama: Allow inserting strings into blob fields.
- * 2001.6.28 Claudio Valderrama: Move code to EXE_cleanup_rpb() as directed
+ * 2001.6.28 Claudio Valderrama: Move code to cleanup_rpb() as directed
  * by Ann Harrison and cleanup of new record in store() routine.
  * 2001.10.11 Claudio Valderrama: Fix SF Bug #436462: From now, we only
  * count real store, modify and delete operations either in an external
@@ -1059,84 +1059,6 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 }
 
 
-// Perform cleaning of rpb, zeroing unassigned fields and the impure tail of varying fields that
-// we don't want to carry when the RLE algorithm is applied.
-void EXE_cleanup_rpb(thread_db* tdbb, record_param* rpb)
-{
-	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
-
-	SET_TDBB(tdbb); // Is it necessary?
-
-	/*
-    Starting from the format, walk through its
-    array of descriptors.  If the descriptor has
-    no address, its a computed field and we shouldn't
-    try to fix it.  Get a pointer to the actual data
-    and see if that field is null by indexing into
-    the null flags between the record header and the
-    record data.
-	*/
-
-	for (USHORT n = 0; n < format->fmt_count; n++)
-	{
-		const dsc* desc = &format->fmt_desc[n];
-		if (!desc->dsc_address)
-			continue;
-		UCHAR* const p = record->rec_data + (IPTR) desc->dsc_address;
-		if (TEST_NULL(record, n))
-		{
-			USHORT length = desc->dsc_length;
-			if (length) {
-				memset(p, 0, length);
-			}
-		}
-		else if (desc->dsc_dtype == dtype_varying)
-		{
-			vary* varying = reinterpret_cast<vary*>(p);
-			USHORT length = desc->dsc_length - sizeof(USHORT);
-			if (length > varying->vary_length)
-			{
-				char* trail = varying->vary_string + varying->vary_length;
-				length -= varying->vary_length;
-				memset(trail, 0, length);
-			}
-		}
-	}
-}
-
-// Perform operation's pre-triggers, storing active rpb in chain.
-void EXE_PreModifyEraseTriggers(thread_db* tdbb,
-								   trig_vec** trigs,
-								   StmtNode::WhichTrigger which_trig,
-								   record_param* rpb,
-								   record_param* rec,
-								   jrd_req::req_ta op)
-{
-	if (!tdbb->getTransaction()->tra_rpblist)
-	{
-		tdbb->getTransaction()->tra_rpblist =
-			FB_NEW(*tdbb->getTransaction()->tra_pool) traRpbList(*tdbb->getTransaction()->tra_pool);
-	}
-
-	const int rpblevel = tdbb->getTransaction()->tra_rpblist->PushRpb(rpb);
-
-	if (*trigs && which_trig != StmtNode::POST_TRIG)
-	{
-		try
-		{
-			EXE_execute_triggers(tdbb, trigs, rpb, rec, op, StmtNode::PRE_TRIG);
-		}
-		catch (const Exception&)
-		{
-			tdbb->getTransaction()->tra_rpblist->PopRpb(rpb, rpblevel);
-			throw;
-		}
-	}
-
-	tdbb->getTransaction()->tra_rpblist->PopRpb(rpb, rpblevel);
-}
-
 
 static void execute_looper(thread_db* tdbb,
 						   jrd_req* request,
@@ -1952,73 +1874,6 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	else
 	{
 		ERR_punt();
-	}
-}
-
-
-// Execute a list of validation expressions.
-void EXE_validate(thread_db* tdbb, const jrd_nod* list)
-{
-	SET_TDBB(tdbb);
-	BLKCHK(list, type_nod);
-
-	const jrd_nod* const* ptr1 = list->nod_arg;
-	for (const jrd_nod* const* const end = ptr1 + list->nod_count; ptr1 < end; ptr1++)
-	{
-		jrd_req* request = tdbb->getRequest();
-
-		if ((*ptr1)->nod_arg[e_val_stmt])
-			EXE_looper(tdbb, request, (*ptr1)->nod_arg[e_val_stmt], true);
-
-		BoolExprNode* boolExpr = reinterpret_cast<BoolExprNode*>(
-			(*ptr1)->nod_arg[e_val_boolean]->nod_arg[0]);
-
-		if (!boolExpr->execute(tdbb, request) && !(request->req_flags & req_null))
-		{
-			// Validation error -- report result
-			const char* value;
-			VaryStr<128> temp;
-
-			const jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
-			const dsc* desc = EVL_expr(tdbb, request, node->asValue());
-			const USHORT length = (desc && !(request->req_flags & req_null)) ?
-				MOV_make_string(desc, ttype_dynamic, &value,
-								&temp, sizeof(temp) - 1) : 0;
-
-			if (!desc || (request->req_flags & req_null))
-			{
-				value = NULL_STRING_MARK;
-			}
-			else if (!length)
-			{
-				value = "";
-			}
-			else
-			{
-				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
-			}
-
-			const TEXT*	name = NULL;
-			const FieldNode* fieldNode = ExprNode::as<FieldNode>(node);
-
-			if (fieldNode)
-			{
-				const jrd_rel* relation = request->req_rpb[fieldNode->fieldStream].rpb_relation;
-				const vec<jrd_fld*>* vector = relation->rel_fields;
-				const jrd_fld* field;
-
-				if (vector && fieldNode->fieldId < vector->count() &&
-					(field = (*vector)[fieldNode->fieldId]))
-				{
-					name = field->fld_name.c_str();
-				}
-			}
-
-			if (!name)
-				name = UNKNOWN_STRING_MARK;
-
-			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) << Arg::Str(value));
-		}
 	}
 }
 

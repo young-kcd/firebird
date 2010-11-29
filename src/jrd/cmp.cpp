@@ -100,6 +100,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+#ifdef NOT_USED_OR_REPLACED
 namespace
 {
 	// Node copier for views.
@@ -129,20 +130,12 @@ namespace
 		}
 	};
 }	// namespace
+#endif	// NOT_USED_OR_REPLACED
 
 #ifdef CMP_DEBUG
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
-
-
-USHORT RemapFieldNodeCopier::getFieldId(FieldNode* field)
-{
-	if (field->byId && field->fieldId == 0 && field->fieldStream == 0)
-		return fldId;
-
-	return NodeCopier::getFieldId(field);
-}
 
 
 // Clone a node.
@@ -896,104 +889,6 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
 }
 
 
-jrd_nod* CMP_make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
-{
-/**************************************
- *
- *	m a k e _ v a l i d a t i o n
- *
- **************************************
- *
- * Functional description
- *	Build a validation list for a relation, if appropriate.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-
-	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-
-	vec<jrd_fld*>* vector = relation->rel_fields;
-	if (!vector)
-		return NULL;
-
-	UCHAR local_map[JrdStatement::MAP_LENGTH];
-	UCHAR* map = csb->csb_rpt[stream].csb_map;
-	if (!map)
-	{
-		map = local_map;
-		fb_assert(stream <= MAX_STREAMS); // CVC: MAX_UCHAR still relevant for the bitmap?
-		map[0] = (UCHAR) stream;
-	}
-
-	NodeStack stack;
-
-	USHORT field_id = 0;
-	vec<jrd_fld*>::iterator ptr1 = vector->begin();
-	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++field_id)
-	{
-		BoolExprNode* validation;
-		jrd_nod* validationStmt;
-
-		if (*ptr1 && (validation = (*ptr1)->fld_validation))
-		{
-			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
-
-			RemapFieldNodeCopier copier(csb, map, field_id);
-
-			if ((validationStmt = (*ptr1)->fld_validation_stmt))
-				validationStmt = copier.copy(tdbb, validationStmt);
-
-			validation = copier.copy(tdbb, validation);
-
-			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
-			boolNod->nod_type = nod_class_exprnode_jrd;
-			boolNod->nod_count = 0;
-			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
-
-			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
-			node->nod_type = nod_validate;
-			node->nod_arg[e_val_stmt] = validationStmt;
-			node->nod_arg[e_val_boolean] = boolNod;
-			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
-			stack.push(node);
-		}
-
-		if (*ptr1 && (validation = (*ptr1)->fld_not_null))
-		{
-			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
-				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
-
-			RemapFieldNodeCopier copier(csb, map, field_id);
-
-			if ((validationStmt = (*ptr1)->fld_not_null_stmt))
-				validationStmt = copier.copy(tdbb, validationStmt);
-
-			validation = copier.copy(tdbb, validation);
-
-			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
-			boolNod->nod_type = nod_class_exprnode_jrd;
-			boolNod->nod_count = 0;
-			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
-
-			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
-			node->nod_type = nod_validate;
-			node->nod_arg[e_val_stmt] = validationStmt;
-			node->nod_arg[e_val_boolean] = boolNod;
-			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, field_id);
-			stack.push(node);
-		}
-	}
-
-	if (stack.isEmpty())
-		return NULL;
-
-	return PAR_make_list(tdbb, stack);
-}
-
-
 // Look at all RseNode's which are lower in scope than the RseNode which this field is
 // referencing, and mark them as variant - the rule is that if a field from one RseNode is
 // referenced within the scope of another RseNode, the inner RseNode can't be invariant.
@@ -1206,150 +1101,6 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	}
 
 	return node;
-}
-
-
-jrd_nod* CMP_pass1_expand_view(thread_db* tdbb,
-								 CompilerScratch* csb,
-								 USHORT org_stream,
-								 USHORT new_stream,
-								 bool remap)
-{
-/**************************************
- *
- *	p a s s 1 _ e x p a n d _ v i e w
- *
- **************************************
- *
- * Functional description
- *	Process a view update performed by a trigger.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-
-	NodeStack stack;
-	jrd_rel* relation = csb->csb_rpt[org_stream].csb_relation;
-	vec<jrd_fld*>* fields = relation->rel_fields;
-
-	dsc desc;
-	USHORT id = 0, new_id = 0;
-	vec<jrd_fld*>::iterator ptr = fields->begin();
-	for (const vec<jrd_fld*>::const_iterator end = fields->end(); ptr < end; ++ptr, ++id)
-	{
-		if (*ptr)
-		{
-			if (remap)
-			{
-				const jrd_fld* field = MET_get_field(relation, id);
-
-				if (field->fld_source)
-					new_id = field->fld_source->as<FieldNode>()->fieldId;
-				else
-					new_id = id;
-			}
-			else
-				new_id = id;
-
-			jrd_nod* node = PAR_gen_field(tdbb, new_stream, new_id);
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			if (!desc.dsc_address)
-			{
-				delete node;
-				continue;
-			}
-
-			jrd_nod* assign = PAR_make_node(tdbb, e_asgn_length);
-			assign->nod_type = nod_assignment;
-			assign->nod_arg[e_asgn_to] = node;
-			assign->nod_arg[e_asgn_from] = PAR_gen_field(tdbb, org_stream, id);
-			stack.push(assign);
-		}
-	}
-
-	return PAR_make_list(tdbb, stack);
-}
-
-
-RelationSourceNode* CMP_pass1_update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
-	const trig_vec* trigger, USHORT stream, USHORT update_stream, SecurityClass::flags_t priv,
-	jrd_rel* view, USHORT view_stream)
-{
-/**************************************
- *
- *	p a s s 1 _ u p d a t e
- *
- **************************************
- *
- * Functional description
- *	Check out a prospective update to a relation.  If it fails
- *	security check, bounce it.  If it's a view update, make sure
- *	the view is updatable,  and return the view source for redirection.
- *	If it's a simple relation, return NULL.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(relation, type_rel);
-	DEV_BLKCHK(view, type_rel);
-
-	// unless this is an internal request, check access permission
-
-	CMP_post_access(tdbb, csb, relation->rel_security_name, (view ? view->rel_id : 0),
-					priv, SCL_object_table, relation->rel_name);
-
-	// ensure that the view is set for the input streams,
-	// so that access to views can be checked at the field level
-
-	fb_assert(view_stream <= MAX_STREAMS);
-	CMP_csb_element(csb, stream)->csb_view = view;
-	CMP_csb_element(csb, stream)->csb_view_stream = (UCHAR) view_stream;
-	CMP_csb_element(csb, update_stream)->csb_view = view;
-	CMP_csb_element(csb, update_stream)->csb_view_stream = (UCHAR) view_stream;
-
-	// if we're not a view, everything's cool
-
-	RseNode* rse = relation->rel_view_rse;
-	if (!rse)
-		return NULL;
-
-	// a view with triggers is always updatable
-
-	if (trigger)
-	{
-		bool user_triggers = false;
-		for (size_t i = 0; i < trigger->getCount(); i++)
-		{
-			if (!(*trigger)[i].sys_trigger)
-			{
-				user_triggers = true;
-				break;
-			}
-		}
-
-		if (user_triggers)
-		{
-			csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
-			return NULL;
-		}
-	}
-
-	// we've got a view without triggers, let's check whether it's updateable
-
-	if (rse->rse_relations.getCount() != 1 || rse->rse_projection || rse->rse_sorted ||
-		rse->rse_relations[0]->type != RelationSourceNode::TYPE)
-	{
-		ERR_post(Arg::Gds(isc_read_only_view) << Arg::Str(relation->rel_name));
-	}
-
-	// for an updateable view, return the view source
-
-	csb->csb_rpt[update_stream].csb_flags |= csb_view_update;
-
-	return static_cast<RelationSourceNode*>(rse->rse_relations[0].getObject());
 }
 
 
@@ -1613,51 +1364,4 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 	}
 
 	return rsb;
-}
-
-
-void CMP_post_trigger_access(CompilerScratch* csb,
-								jrd_rel* owner_relation,
-								ExternalAccess::exa_act operation, jrd_rel* view)
-{
-/**************************************
- *
- *	p o s t _ t r i g g e r _ a c c e s s
- *
- **************************************
- *
- * Functional description
- *	Inherit access to triggers to be fired.
- *
- *	When we detect that a trigger could be fired by a request,
- *	then we add the access list for that trigger to the access
- *	list for this request.  That way, when we check access for
- *	the request we also check access for any other objects that
- *	could be fired off by the request.
- *
- *	Note that when we add the access item, we specify that
- *	   Trigger X needs access to resource Y.
- *	In the access list we parse here, if there is no "accessor"
- *	name then the trigger must access it directly.  If there is
- *	an "accessor" name, then something accessed by this trigger
- *	must require the access.
- *
- *  CVC: The third parameter is the owner of the triggers vector
- *   and was added to avoid triggers posting access checks to
- *   their base tables, since it's nonsense and causes weird
- *   messages about false REFERENCES right failures.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(view, type_rel);
-
-	// allow all access to internal requests
-	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
-		return;
-
-	// Post trigger access
-	ExternalAccess temp(operation, owner_relation->rel_id, view ? view->rel_id : 0);
-	size_t i;
-	if (!csb->csb_external.find(temp, i))
-		csb->csb_external.insert(i, temp);
 }
