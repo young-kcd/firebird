@@ -1,3 +1,50 @@
+ 2010-11-29 02:17  asfernandes 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc7/engine.vcproj
+   M builds/win32/msvc7/engine_classic.vcproj
+   M builds/win32/msvc7/engine_embed.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M src/dsql/DdlNodes.epp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/exe_proto.h
+   D src/jrd/execute_statement.cpp
+   D src/jrd/execute_statement.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/inf.cpp
+   M src/jrd/nod.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/misc/blrtable.cpp
+Refactored the support for blr_handler, blr_loop, blr_exec_sql, blr_exec_into, blr_exec_stmt,
+blr_start_savepoint, blr_end_savepoint, blr_store, blr_store2, blr_erase, blr_modify,
+blr_modify2, blr_exec_proc, blr_exec_proc2, blr_exec_pid, blr_dcl_cursor, blr_cursor_stmt,
+blr_set_generator, blr_receive, blr_stall, blr_select, blr_block, blr_error_handler,
+blr_label, blr_leave, blr_continue and the source info node.
+
+ 2010-11-28 18:53  skidder 
+   M src/jrd/pag.cpp
+Port fix for frequent random lock conflict errors from RDB 2.1
+
+ 2010-11-28 14:56  asfernandes 
+   M src/jrd/extds/InternalDS.cpp
+Fixed segfault after EXECUTE STATEMENT with invalid SQL
+
  2010-11-27 13:54  asfernandes 
    M src/auth/SecurityDatabase/pwd.cpp
 Misc
