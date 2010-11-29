@@ -179,8 +179,12 @@ public:
 		bool outer, bool inner, jrd_nod** sortNode);
 	~OptimizerRetrieval();
 
-	InversionCandidate* getCost();
 	InversionCandidate* getInversion(RecordSource** rsb);
+
+	InversionCandidate* getCost()
+	{
+		return getInversion(NULL);
+	}
 
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, nod_t node_type) const;
