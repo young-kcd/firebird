@@ -1,3 +1,8 @@
+ 2010-11-29 16:02  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Correction for one of my past commits. Also, unified the code a bit.
+
  2010-11-28 19:51  dimitr 
    M src/jrd/pag.cpp
 Backport.
