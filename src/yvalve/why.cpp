@@ -5595,8 +5595,11 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 	int rc = FB_SUCCESS;
 
 #ifdef DEV_BUILD
-	// ignore timeout in debug build: hard to debug something during 5-10 sec
-	timeout = 0;
+	// make timeout huge in debug build: hard to debug something during 5-10 sec
+	if (timeout)
+	{
+		timeout = 10 * 3600 * 1000;		// 10 hours
+	}
 #endif
 
 	try
