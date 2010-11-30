@@ -9184,8 +9184,38 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (trimCharsDesc)
 	{
-		UCHAR* tempAddress = 0;
-		charactersLength = MOV_make_string2(tdbb, trimCharsDesc, ttype, &tempAddress, charactersBuffer);
+		UCHAR* tempAddress = NULL;
+
+		if (trimCharsDesc->isBlob())
+		{
+			UCharBuffer bpb;
+			CharSet* charsCharSet;
+
+			if (trimCharsDesc->getBlobSubType() == isc_blob_text)
+			{
+				BLB_gen_bpb_from_descs(trimCharsDesc, valueDesc, bpb);
+				charsCharSet = INTL_charset_lookup(tdbb, trimCharsDesc->getCharSet());
+			}
+			else
+				charsCharSet = cs;
+
+			blb* blob = BLB_open2(tdbb, request->req_transaction,
+				reinterpret_cast<bid*>(trimCharsDesc->dsc_address), bpb.getCount(), bpb.begin());
+
+			// Go simple way and always read entire blob in memory.
+
+			unsigned maxLen = blob->blb_length / charsCharSet->minBytesPerChar() *
+				cs->maxBytesPerChar();
+
+			tempAddress = charactersBuffer.getBuffer(maxLen);
+			charactersLength = BLB_get_data(tdbb, blob, tempAddress, maxLen, true);
+		}
+		else
+		{
+			charactersLength = MOV_make_string2(tdbb, trimCharsDesc, ttype,
+				&tempAddress, charactersBuffer);
+		}
+
 		charactersAddress = tempAddress;
 	}
 	else
@@ -9200,7 +9230,6 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 	const SLONG charactersCanonicalLen = tt->canonical(charactersLength, charactersAddress,
 		charactersCanonical.getCount(), charactersCanonical.begin()) * tt->getCanonicalWidth();
 
-	HalfStaticArray<UCHAR, BUFFER_SMALL> blobBuffer;
 	MoveBuffer valueBuffer;
 	UCHAR* valueAddress;
 	ULONG valueLength;
@@ -9208,12 +9237,12 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (valueDesc->isBlob())
 	{
 		// Source string is a blob, things get interesting.
-		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
+		blb* blob = BLB_open(tdbb, request->req_transaction,
 			reinterpret_cast<bid*>(valueDesc->dsc_address));
 
 		// It's very difficult (and probably not very efficient) to trim a blob in chunks.
 		// So go simple way and always read entire blob in memory.
-		valueAddress = blobBuffer.getBuffer(blob->blb_length);
+		valueAddress = valueBuffer.getBuffer(blob->blb_length);
 		valueLength = BLB_get_data(tdbb, blob, valueAddress, blob->blb_length, true);
 	}
 	else
