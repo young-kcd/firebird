@@ -1,3 +1,13 @@
+ 2010-11-29 15:50  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Correction for one of my past commits. Also, unified the code a bit.
+
+ 2010-11-29 15:05  hvlad 
+   M src/remote/os/win32/srvr_w32.cpp
+   M src/remote/os/win32/window.cpp
+Fixed bug CORE-3266 : Race condition between async service detach request and running user trace service
+
  2010-11-28 19:51  dimitr 
    M src/jrd/pag.cpp
 Backport.
