@@ -1,3 +1,17 @@
+ 2010-11-29 15:06  hvlad 
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/os/win32/window.cpp
+Fixed bug CORE-3266 : Race condition between async service detach request and running user trace service
+
+ 2010-11-29 14:54  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/Visitors.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe_proto.h
+Move some previously static functions to StmtNodes.cpp
+
  2010-11-29 02:17  asfernandes 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc10/engine.vcxproj.filters
