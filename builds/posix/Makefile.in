@@ -86,6 +86,11 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 extern:
 	$(MAKE) -C $(ROOT)/extern/btyacc
+ifeq ($(STD_EDITLINE),false)
+ifeq ($(EDITLINE_FLG),Y)
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
+endif
+endif
 
 
 #___________________________________________________________________________
