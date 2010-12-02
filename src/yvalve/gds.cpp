@@ -3749,10 +3749,14 @@ public:
 			FreeLibrary(hShFolder);
 #else
 			char cmnData[MAXPATHLEN];
-			if (!SHGetSpecialFolderPath(NULL, cmnData, CSIDL_COMMON_APPDATA, TRUE)) {
-				Firebird::system_call_failed::raise("SHGetSpecialFolderPath");
+			if (SHGetSpecialFolderPath(NULL, cmnData, CSIDL_COMMON_APPDATA, TRUE))
+			{
+				PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
 			}
-			PathUtils::concatPath(lockPrefix, cmnData, LOCKDIR);
+			else
+			{
+				lockPrefix = prefix;	// emergency default
+			}
 #endif  // WIN9X_SUPPORT
 #endif  // WIN_NT
 		}
