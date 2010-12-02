@@ -2,6 +2,146 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-3244
+        Function POSITION: wrong result with '' if third argument present
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3228
+        Function RIGHT() fails with multibyte text blobs > 1024 chars
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3227
+        Function ASCII_VAL() fails if argument contains multi-byte character anywhere
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3220
+        isc_info_svc_get_users returns error message in the result cluster
+      Contributor(s):
+       Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3218
+        Statement cancellation request might be silently ignored by the currently running SQL code
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3208
+        Significant memory leaks with recursive queries
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3205
+        isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3202
+        execute_immediate API call family may crash the remote server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3188
+        Page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3148
+        Dangerous code in SQZ_apply_differences
+      Contributor(s):
+       Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+       Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3137
+        Partial rollback is possible for a selectable procedure modifying data
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3133
+        WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3115
+        Bugs in the internal record compression routines
+      Contributor(s):
+       Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+       Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3091
+        Built-in function POWER(X, Y) does not work when the X argument is negative
+        and the Y value is scaled numeric but integral
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3079
+        Strong slowing down inserts with EVENT-s in a single transaction.
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3067
+        Objects are not unmapped when shared memory is closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3064
+        Using both the procedure name and alias inside an explicit plan crashes the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3050
+        Race condition in LocksCache::get() could lead to AV in the engine
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3041
+        Engine could hang when working with read-only database
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3034
+        Bugcheñk 300 (can't find shared latch)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3022
+        gpre C++ compiler warnings with GCC 4.4.1
+      Contributor(s):
+        Daniel Dodson <zabbit at yahoo.com> 
+
+    * Bugfix CORE-3019
+        Startup failure of SS and SC on linux gentoo
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3016
+        On disconnect it is possible to see "Fatal lock manager error:
+        invalid lock id (0), errno: 0" in firebird.log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3015
+        Various "Cannot initialize the shared memory region" errors
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3011
+        Server hangs or crashes while monitoring connections repeatedly attaching and detaching
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3003
+        Procedure suspend check may cause restore to fail
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3001
+        Install fails to create user & group "firebird"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2999
         Message "SCH_validate -- not entered" is logged in firebird.log
         when the Classic Server connection where events were used is finished
@@ -70,6 +210,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2900
+        Server crashes evaluating aggregate distinct
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-2888
         A memory corruption cause incorrect query evaluation and may crash the server
       Contributor(s):
@@ -79,6 +224,11 @@
         Sweep could raise error: page 0 is of wrong type (expected 6, found 1)
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2871
+        Outer ORDER BY clause has no effect
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2865
         Segmentation fault when SuperServer binary is restarted
@@ -90,11 +240,21 @@
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
 
+    * Bugfix CORE-2856
+        Non-NULL key in unique index could be not found when key is removed
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2846
         Cannot connect to the database if GFIX -shut <mode> -attach <timeout>
         fails after the specified timeout (because of connections being still active)
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2845
+        Solaris 10 no longer requires SFIO
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
 
     * Bugfix CORE-2833
         Changing data that affects an expression index that contains references to null date fields fails
@@ -105,6 +265,12 @@
         ISQL shouldn't display database and user names when extracting a script
       Contributor(s):
         Claudio Valderrama <cvalde at usa.net>
+
+    * Bugfix CORE-2827
+        Very slow prepare for complex interrelated metadata with many triggers indirectly involved
+        in the operation being prepared
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-2826
         Join condition fails for UTF-8 databases
@@ -213,11 +379,6 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Bugfix CORE-2586
-        Non-NULL key in unique index could be not found when key is removed
-      Contributor(s):
-        Vlad Khorsun <hvlad at users.sourceforge.net>
-
     * Bugfix CORE-2578
         select rdb$db_key from a view with more than one table joined results in a conversion error
       Contributor(s):
@@ -248,6 +409,12 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-2356
+        On Windows listener process of Classic Server can't create necessary resources after restart
+        if any worker process was present
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2301
         select list(xxx, ';') from table into :xxx cause a memory leak
       Contributor(s):
@@ -262,6 +429,16 @@
         GROUP BY concatenation with empty string
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2122
+        Translation of large text BLOB between UNICODE_FSS (UTF8) and other charsets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2107
+        Failed to establish TCP\IP connection with Windows Classic Server under high load
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-2084
         Services API security problem
@@ -292,6 +469,11 @@
         Avoid memory consumption of <page size> bytes per every temporary blob
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Improvement CORE-1234
+        More information about table that belongs to column when checking privileges
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * New feature CORE-2655
         Add support for Linux/sh4 (Renesas SH) platform
