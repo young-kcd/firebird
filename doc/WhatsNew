@@ -20,7 +20,7 @@
     * Bugfix CORE-3220
         isc_info_svc_get_users returns error message in the result cluster
       Contributor(s):
-       Alex Peshkov <peshkoff at mail.ru>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3218
         Statement cancellation request might be silently ignored by the currently running SQL code
@@ -51,15 +51,15 @@
     * Bugfix CORE-3148
         Dangerous code in SQZ_apply_differences
       Contributor(s):
-       Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
-       Alex Peshkov <peshkoff at mail.ru>
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3137
         Partial rollback is possible for a selectable procedure modifying data
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
-    * Bugfix CORE-3133
+    * Bugfix CORE-3131
         WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
