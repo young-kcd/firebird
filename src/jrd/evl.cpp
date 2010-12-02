@@ -5389,34 +5389,51 @@ static dsc* internal_info(thread_db* tdbb, const dsc* value, impure_value* impur
  *      of the internal engine data.
  *
  **************************************/
-	EVL_make_value(tdbb, value, impure);
+	const jrd_req* const request = tdbb->getRequest();
 
-	const internal_info_id id = *reinterpret_cast<internal_info_id*>(impure->vlu_desc.dsc_address);
+	fb_assert(value->dsc_dtype == dtype_long);
+	const internal_info_id id = *reinterpret_cast<internal_info_id*>(value->dsc_address);
 
+	if (id == internal_sqlstate)
+	{
+		char sqlstate[FB_SQLSTATE_SIZE];
+		request->req_last_xcp.as_sqlstate(sqlstate);
+
+		dsc desc;
+		desc.makeText(FB_SQLSTATE_LENGTH, ttype_ascii, (UCHAR*) sqlstate);
+		EVL_make_value(tdbb, &desc, impure);
+
+		return &impure->vlu_desc;
+	}
+
+	SLONG result = 0;
 	switch (id)
 	{
 	case internal_connection_id:
-		impure->vlu_misc.vlu_long = PAG_attachment_id(tdbb);
+		result = PAG_attachment_id(tdbb);
 		break;
 	case internal_transaction_id:
-		impure->vlu_misc.vlu_long = tdbb->getTransaction()->tra_number;
+		result = tdbb->getTransaction()->tra_number;
 		break;
 	case internal_gdscode:
-		impure->vlu_misc.vlu_long = tdbb->getRequest()->req_last_xcp.as_gdscode();
+		result = tdbb->getRequest()->req_last_xcp.as_gdscode();
 		break;
 	case internal_sqlcode:
-		impure->vlu_misc.vlu_long = tdbb->getRequest()->req_last_xcp.as_sqlcode();
+		result = tdbb->getRequest()->req_last_xcp.as_sqlcode();
 		break;
 	case internal_rows_affected:
-		impure->vlu_misc.vlu_long = tdbb->getRequest()->req_records_affected.getCount();
+		result = tdbb->getRequest()->req_records_affected.getCount();
 		break;
 	case internal_trigger_action:
-		impure->vlu_misc.vlu_long = tdbb->getRequest()->req_trigger_action;
+		result = tdbb->getRequest()->req_trigger_action;
 		break;
 	default:
 		BUGCHECK(232);	/* msg 232 EVL_expr: invalid operation */
 	}
-	impure->vlu_desc.dsc_address = (UCHAR *) &impure->vlu_misc.vlu_long;
+
+	dsc desc;
+	desc.makeLong(0, &result);
+	EVL_make_value(tdbb, &desc, impure);
 
 	return &impure->vlu_desc;
 }

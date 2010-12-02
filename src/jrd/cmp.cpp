@@ -84,6 +84,7 @@
 
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
+#include "../jrd/misc_func_ids.h"
 
 /* Pick up relation ids */
 #include "../jrd/ini.h"
@@ -1692,10 +1693,25 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 		return;
 
 	case nod_internal_info:
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
+		{
+			jrd_nod* const arg_node = node->nod_arg[0];
+			fb_assert(arg_node->nod_type == nod_literal);
+
+			dsc arg_desc;
+			CMP_get_desc(tdbb, csb, arg_node, &arg_desc);
+			fb_assert(arg_desc.dsc_dtype == dtype_long);
+
+			const internal_info_id id = *reinterpret_cast<internal_info_id*>(arg_desc.dsc_address);
+
+			if (id == internal_sqlstate)
+			{
+				desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
+			}
+			else
+			{
+				desc->makeLong(0);
+			}
+		}
 		return;
 
 	case nod_extract:
@@ -1714,7 +1730,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC* des
 				desc->makeShort(0);
 				break;
 		}
-
 		return;
 
 	case nod_strlen:

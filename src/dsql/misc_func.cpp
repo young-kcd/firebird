@@ -34,7 +34,8 @@ const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] =
 	{"GDSCODE", REQ_block},
 	{"SQLCODE", REQ_block},
 	{"ROW_COUNT", REQ_block},
-	{"INSERTING/UPDATING/DELETING", REQ_trigger}
+	{"INSERTING/UPDATING/DELETING", REQ_trigger},
+	{"SQLSTATE", REQ_block}
 };
 
 const char* InternalInfo::getAlias(internal_info_id info_id)

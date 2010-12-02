@@ -989,6 +989,7 @@ public:
 	bool success() const;
 	SLONG as_gdscode() const;
 	SLONG as_sqlcode() const;
+	void as_sqlstate(char*) const;
 };
 
 // must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE

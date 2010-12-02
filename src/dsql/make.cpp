@@ -1298,10 +1298,19 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_internal_info:
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0;
-		desc->dsc_length = sizeof(SLONG);
+		{
+			const internal_info_id id =
+				*reinterpret_cast<internal_info_id*>(node->nod_arg[0]->nod_desc.dsc_address);
+
+			if (id == internal_sqlstate)
+			{
+				desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
+			}
+			else
+			{
+				desc->makeLong(0);
+			}
+		}
 		return;
 
 	case nod_current_time:
@@ -2042,7 +2051,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 	case nod_internal_info:
 		{
-			internal_info_id id =
+			const internal_info_id id =
 				*reinterpret_cast<internal_info_id*>(item->nod_arg[0]->nod_desc.dsc_address);
 			name_alias = InternalInfo::getAlias(id);
 		}

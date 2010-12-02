@@ -32,6 +32,7 @@ enum internal_info_id
 	internal_sqlcode = 4,
 	internal_rows_affected = 5,
 	internal_trigger_action = 6,
+	internal_sqlstate = 7,
 	max_internal_id
 };
 

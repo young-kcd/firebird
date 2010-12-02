@@ -342,6 +342,7 @@ static const TOK tokens[] =
 	{SOURCE, "SOURCE", 2, true},
 	{SPACE, "SPACE", 2, true},
 	{SQLCODE, "SQLCODE", 1, false},
+	{SQLSTATE, "SQLSTATE", 2, false},
 	{SQRT, "SQRT", 2, false},
 	{STABILITY, "STABILITY", 1, false},
 	{START, "START", 2, false},

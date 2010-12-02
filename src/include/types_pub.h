@@ -65,7 +65,8 @@ typedef intptr_t ISC_STATUS;
 typedef ISC_STATUS ISC_STATUS_ARRAY[ISC_STATUS_LENGTH];
 
 /* SQL State as defined in the SQL Standard. */
-#define FB_SQLSTATE_SIZE   6
+#define FB_SQLSTATE_LENGTH	5
+#define FB_SQLSTATE_SIZE	(FB_SQLSTATE_LENGTH + 1)
 typedef char FB_SQLSTATE_STRING[FB_SQLSTATE_SIZE];
 
 /******************************************************************/

@@ -193,6 +193,11 @@ SLONG StatusXcp::as_sqlcode() const
 	return gds__sqlcode(status);
 }
 
+void StatusXcp::as_sqlstate(char* sqlstate) const
+{
+	fb_sqlstate(sqlstate, status);
+}
+
 static void cleanup_rpb(thread_db*, record_param*);
 static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_req::req_s);

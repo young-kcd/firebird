@@ -559,6 +559,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token TWO_PHASE
 %token BIND_PARAM
 %token BIN_NOT
+%token SQLSTATE
 
 /* precedence declarations for expression evaluation */
 
@@ -2478,6 +2479,7 @@ keyword_or_column	: valid_symbol_name
 		| SENSITIVE
 		| START
 		| SIMILAR				/* added in FB 2.5 */
+		| SQLSTATE
 		;
 
 col_opt	: ALTER
@@ -4427,7 +4429,10 @@ internal_info	: CURRENT_CONNECTION
 		| SQLCODE
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
 						MAKE_const_slong (internal_sqlcode)); }
-		| ROW_COUNT
+		| SQLSTATE
+			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
+						MAKE_const_slong (internal_sqlstate)); }
+ 		| ROW_COUNT
 			{ $$ = make_node (nod_internal_info, (int) e_internal_info_count,
 						MAKE_const_slong (internal_rows_affected)); }
 		;
