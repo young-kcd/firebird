@@ -1,4 +1,248 @@
   **************************
+  * v2.5.1
+  **************************
+
+    * Bugfix CORE-3266
+        Race condition between async service detach request and running user trace service
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3261
+        Assertion when running restore service
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3259
+        Deadlock and SEGV when processing ctrl-C in user code
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3257
+        'make install' fails on linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3256
+        Error "request depth exceeded" may appear while preparing a select query
+        against a view with explicit plan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3249
+        Backup file is not truncated during the backup operation via GBAK
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3244
+        Function POSITION: wrong result with '' if third argument present
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3229
+        Records: "operating system directive open failed, Too many links" in firebird.log
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3228
+        Function RIGHT() fails with multibyte text blobs > 1024 chars
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3227
+        Function ASCII_VAL() fails if argument contains multi-byte character anywhere
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3222
+        View with "WITH CHECK OPTION" doesn't like TRIM function in WHERE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3220
+        isc_info_svc_get_users returns error message in the result cluster
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3219
+        Trace manager crashes server with DSQL_unprepare
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3218
+        Statement cancellation request might be silently ignored by the currently running SQL code
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3217
+        Server crashes inside the lock manager when multiple connections are
+        attaching/detaching simultaneously
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3212
+        Error compile 2.5 for FreeBSD
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3211
+        String truncation occurs when selecting from a view containing NOT IN inside
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3210
+        Error "no current record for fetch operation" in SELECT query
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3208
+        Significant memory leaks with recursive queries
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3207
+        AccessViolationException inside FB_965910463_Class.isc_start_multiple on begin transaction
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3205
+        isc_dsql_exec_immed2() doesn't return error codes isc_stream_eof and isc_sing_select_err
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3203
+        UPDATE OR INSERT with RETURNING causes "Invalid Cursor" error
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3202
+        execute_immediate API call family may crash the remote server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3188
+        Page 0 is of wrong type (expected 6, found 1)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3185
+        Firebird compilation on a box, already running firebird server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3180
+        ALTER VIEW with not matched columns in declaration and selection crashs the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3170
+        Engine could enter infinite loop if EVENT's are posted but no subscribers exists
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3168
+        exclude_filter doesn't work for <services></section> section of the trace facility
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3166
+        Script changeMultiConnectMode.sh should not be present in the SS install
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3164
+        Parameterized requests involving blob fields fails when connected using charset UTF8
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3157
+        COMMENT ON PARAMETER - statement leads to a consumption of 1.7 GB RAM
+        in a runtime of more than 1 minute
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3148
+        Dangerous code in SQZ_apply_differences
+      Contributor(s):
+        Dmitry Kovalenko <dmitry.lipetsk at gmail.com>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3143
+        Segmentation fault may occur when user interrupts GSTAT
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3141
+        The last column in a view is returning as a null value even when it's not
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3137
+        Partial rollback is possible for a selectable procedure modifying data
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3131
+        WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3091
+        Built-in function POWER(X, Y) does not work when the X argument is negative
+        and the Y value is scaled numeric but integral
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3064
+        Using both the procedure name and alias inside an explicit plan crashes the server
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3059
+        RemoteFileOpenAbility fails on windows
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3029
+        Bugcheck "Too many savepoints (287)" at rollback after exception of EXECUTE BLOCK
+        containing an exception handler
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3024
+        Error "no current record for fetch operation" after ALTER VIEW
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3022
+        gpre C++ compiler warnings with GCC 4.4.1
+      Contributor(s):
+        Daniel Dodson <zabbit at yahoo.com> 
+
+    * Bugfix CORE-2827
+        Very slow prepare for complex interrelated metadata with many triggers indirectly involved
+        in the operation being prepared
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3248
+        Set unused bytes of varchar values in the message buffer to zero
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3184
+        Port for linux/hppa and linux/alpha platforms
+      Contributor(s):
+        Damyan Ivanov <dmn at debian.org>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2812
+        Prohibit any improper mixture of explicit and implicit joins
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  **************************
   * v2.5.0 Final Release
   **************************
 
