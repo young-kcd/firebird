@@ -1,3 +1,28 @@
+ 2010-12-02 19:52  dimitr 
+   M src/jrd/gds.cpp
+InitPrefix::init() should never throw, it leads to the infinite recursion with a stack overflow.
+
+ 2010-12-02 11:15  dimitr 
+   M src/dsql/keywords.cpp
+   M src/dsql/make.cpp
+   M src/dsql/misc_func.cpp
+   M src/dsql/parse.y
+   M src/include/types_pub.h
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/misc_func_ids.h
+Backported CORE-2890: SQLSTATE should also be available as a PSQL context variable like GDSCODE/SQLCODE.
+
+ 2010-12-02 10:41  dimitr 
+   M src/misc/writeBuildNum.sh
+Updated version info.
+
+ 2010-12-02 10:38  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
  2010-11-29 15:50  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
