@@ -275,7 +275,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 			iscLogException("Server error", ex);
 		}
 
-		fb_shutdown(5*1000 /*5 seconds*/, fb_shutrsn_no_connection);
+		fb_shutdown(5 * 1000 /*5 seconds*/, fb_shutrsn_no_connection);
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{
