@@ -215,8 +215,7 @@ void SecurityDatabase::fini()
 {
 	isc_db_handle tmp = 0;
 
-	try
-	{
+	{ // scope
 		MutexLockGuard guard(mutex);
 
 		if (lookup_req)
@@ -227,13 +226,6 @@ void SecurityDatabase::fini()
 
 		tmp = lookup_db;
 		lookup_db = 0;
-	}
-	catch (const Firebird::Exception&)
-	{
-		if (tmp)
-		{
-			isc_detach_database(status, &tmp);
-		}
 	}
 
 	if (tmp)
