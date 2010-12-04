@@ -45,8 +45,6 @@
 using namespace Firebird;
 using namespace Jrd;
 
-#include "gen/blrtable.h"
-
 namespace Jrd {
 
 
@@ -140,7 +138,7 @@ BinaryBoolNode::BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aArg1, 
 	addChildNode(dsqlArg2, arg2);
 }
 
-BoolExprNode* BinaryBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* BinaryBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	BinaryBoolNode* node = FB_NEW(pool) BinaryBoolNode(pool, blrOp);
 	node->arg1 = PAR_parse_boolean(tdbb, csb);
@@ -351,7 +349,7 @@ ComparativeBoolNode::ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp,
 	addChildNode(dsqlArg3, arg3);
 }
 
-BoolExprNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	ComparativeBoolNode* node = FB_NEW(pool) ComparativeBoolNode(pool, blrOp);
 
@@ -586,7 +584,7 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			break;
 	}
 
-	arg1 = CMP_pass1(tdbb, csb, arg1);
+	doPass1(tdbb, csb, arg1.getAddress());
 
 	if (invariantCheck)
 	{
@@ -595,10 +593,8 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		csb->csb_current_nodes.push(this);
 	}
 
-	arg2 = CMP_pass1(tdbb, csb, arg2);
-
-	if (arg3)
-		arg3 = CMP_pass1(tdbb, csb, arg3);
+	doPass1(tdbb, csb, arg2.getAddress());
+	doPass1(tdbb, csb, arg3.getAddress());
 
 	if (invariantCheck)
 	{
@@ -1347,7 +1343,7 @@ MissingBoolNode::MissingBoolNode(MemoryPool& pool, dsql_nod* aArg)
 	addChildNode(dsqlArg, arg);
 }
 
-BoolExprNode* MissingBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* MissingBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	MissingBoolNode* node = FB_NEW(pool) MissingBoolNode(pool);
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -1429,7 +1425,7 @@ NotBoolNode::NotBoolNode(MemoryPool& pool, dsql_nod* aArg)
 	addChildNode(dsqlArg, arg);
 }
 
-BoolExprNode* NotBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* NotBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	NotBoolNode* node = FB_NEW(pool) NotBoolNode(pool);
 	node->arg = PAR_parse_boolean(tdbb, csb);
@@ -1625,7 +1621,7 @@ RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, dsql_nod* aDsqlRse)
 	addChildNode(dsqlRse, rse);
 }
 
-BoolExprNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	RseBoolNode* node = FB_NEW(pool) RseBoolNode(pool, blrOp);
 	node->rse = PAR_rse(tdbb, csb);
@@ -1698,7 +1694,10 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			BoolExprNode* newNode = convertNeqAllToNotAny(tdbb, csb);
 			if (newNode)
-				return CMP_pass1(tdbb, csb, newNode);
+			{
+				doPass1(tdbb, csb, &newNode);
+				return newNode;
+			}
 
 			nodFlags |= FLAG_DEOPTIMIZE;
 		}

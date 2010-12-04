@@ -809,6 +809,7 @@ Data source : @4', NULL, NULL)
 ('private_procedure', 'METD_get_procedure', 'metd.epp', NULL, 0, 699, NULL, 'Procedure @1 is private to package @2', NULL, NULL)
 ('request_outdated', 'EVL_expr', 'evl.cpp', NULL, 0, 700, NULL, 'Request can''t access new records in relation @1 and should be recompiled', NULL, NULL)
 ('bad_events_handle', NULL, NULL, NULL, 0, 701, NULL, 'invalid events id (handle)', NULL, NULL);
+('cannot_copy_stmt', NULL, NULL, NULL, 0, 702, NULL, 'Cannot copy statement @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

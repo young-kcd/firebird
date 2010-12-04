@@ -178,7 +178,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		// into the impure area and throw away any unnecessary crude. Execution
 		// optimizations can be performed here.
 
-		csb->csb_node = CMP_pass1(tdbb, csb, csb->csb_node);
+		DmlNode::doPass1(tdbb, csb, &csb->csb_node);
 
 		// Copy and compile (pass1) domains DEFAULT and constraints.
 		MapFieldInfo::Accessor accessor(&csb->csb_map_field_info);
@@ -203,24 +203,23 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 				fieldInfo.validationExpr = copier.copy(tdbb, fieldInfo.validationExpr);
 			}
 
-			fieldInfo.defaultValue = CMP_pass1(tdbb, csb, fieldInfo.defaultValue);
-			fieldInfo.validationStmt = CMP_pass1(tdbb, csb, fieldInfo.validationStmt);
-
-			if (fieldInfo.validationExpr)
-				fieldInfo.validationExpr = CMP_pass1(tdbb, csb, fieldInfo.validationExpr);
+			DmlNode::doPass1(tdbb, csb, fieldInfo.defaultValue.getAddress());
+			DmlNode::doPass1(tdbb, csb, fieldInfo.validationStmt.getAddress());
+			DmlNode::doPass1(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 
-		csb->csb_node = CMP_pass2(tdbb, csb, csb->csb_node, 0);
+		if (csb->csb_node->kind == DmlNode::KIND_STATEMENT)
+			StmtNode::doPass2(tdbb, csb, reinterpret_cast<StmtNode**>(&csb->csb_node), NULL);
+		else
+			ExprNode::doPass2(tdbb, csb, &csb->csb_node);
 
 		// Compile (pass2) domains DEFAULT and constraints
 		for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 		{
 			FieldInfo& fieldInfo = accessor.current()->second;
-			fieldInfo.defaultValue = CMP_pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-			fieldInfo.validationStmt = CMP_pass2(tdbb, csb, fieldInfo.validationStmt, 0);
-
-			if (fieldInfo.validationExpr)
-				fieldInfo.validationExpr = CMP_pass2(tdbb, csb, fieldInfo.validationExpr);
+			ExprNode::doPass2(tdbb, csb, fieldInfo.defaultValue.getAddress());
+			StmtNode::doPass2(tdbb, csb, fieldInfo.validationStmt.getAddress(), NULL);
+			ExprNode::doPass2(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 
 		if (csb->csb_impure > MAX_REQUEST_SIZE)

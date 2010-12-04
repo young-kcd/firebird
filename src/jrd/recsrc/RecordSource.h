@@ -35,7 +35,6 @@ namespace Jrd
 {
 	class thread_db;
 	class jrd_req;
-	class jrd_nod;
 	class jrd_prc;
 	class AggNode;
 	class BoolExprNode;
@@ -281,7 +280,7 @@ namespace Jrd
 	public:
 		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
 					  const jrd_prc* procedure, const ValueListNode* sourceList,
-					  const ValueListNode* targetList, jrd_nod* message);
+					  const ValueListNode* targetList, MessageNode* message);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -300,7 +299,7 @@ namespace Jrd
 		const jrd_prc* const m_procedure;
 		const ValueListNode* m_sourceList;
 		const ValueListNode* m_targetList;
-		NestConst<jrd_nod> const m_message;
+		NestConst<MessageNode> const m_message;
 	};
 
 

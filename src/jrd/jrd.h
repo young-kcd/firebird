@@ -123,7 +123,6 @@ class JrdStatement;
 class Lock;
 class jrd_file;
 class Format;
-class jrd_nod;
 class BufferControl;
 class SparseBitmap;
 class jrd_rel;
@@ -140,6 +139,7 @@ class jrd_fld;
 class dsql_dbb;
 class PreparedStatement;
 class TraceManager;
+class MessageNode;
 
 // The database block, the topmost block in the metadata
 // cache for a database
@@ -229,7 +229,7 @@ class jrd_prc : public Routine
 public:
 	USHORT prc_flags;
 	USHORT prc_defaults;
-	const jrd_nod*	prc_output_msg;
+	const MessageNode* prc_output_msg;
 	const Format*	prc_input_fmt;
 	const Format*	prc_output_fmt;
 	const Format*	prc_format;
@@ -716,7 +716,7 @@ private:
 };
 
 
-// duplicate context of firebird string to store in jrd_nod::nod_arg
+// duplicate context of firebird string
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
 	char* rc = (char*) p.allocate(s.length() + 1

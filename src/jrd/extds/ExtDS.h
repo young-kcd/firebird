@@ -32,7 +32,6 @@
 
 namespace Jrd
 {
-	class jrd_nod;
 	class jrd_tra;
 	class thread_db;
 	class ValueListNode;

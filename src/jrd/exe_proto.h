@@ -28,20 +28,20 @@
 
 namespace Jrd {
 	class jrd_req;
-	class jrd_nod;
 	class jrd_tra;
+	class AssignmentNode;
 }
 
-void EXE_assignment(Jrd::thread_db*, const Jrd::jrd_nod*);
+void EXE_assignment(Jrd::thread_db*, const Jrd::AssignmentNode*);
 void EXE_assignment(Jrd::thread_db*, const Jrd::ValueExprNode*, const Jrd::ValueExprNode*);
 void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::ValueExprNode* to, dsc* from_desc, bool from_null,
-	const Jrd::jrd_nod* missing_node, const Jrd::jrd_nod* missing2_node);
+	const Jrd::ValueExprNode* missing_node, const Jrd::ValueExprNode* missing2_node);
 
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 	bool preTriggers, int action);
-const Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
-	const Jrd::jrd_nod* in_node, bool stmtExpr = false);
+const Jrd::StmtNode* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
+	const Jrd::StmtNode* in_node, bool stmtExpr = false);
 
 void EXE_execute_triggers(Jrd::thread_db*, Jrd::trig_vec**, Jrd::record_param*, Jrd::record_param*,
 	Jrd::jrd_req::req_ta, Jrd::StmtNode::WhichTrigger);

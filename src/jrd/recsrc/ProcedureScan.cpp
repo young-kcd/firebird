@@ -22,6 +22,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/intl.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
@@ -41,7 +42,7 @@ using namespace Jrd;
 
 ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, UCHAR stream,
 							 const jrd_prc* procedure, const ValueListNode* sourceList,
-							 const ValueListNode* targetList, jrd_nod* message)
+							 const ValueListNode* targetList, MessageNode* message)
 	: RecordStream(csb, stream, procedure->prc_format), m_name(csb->csb_pool, name),
 	  m_procedure(procedure), m_sourceList(sourceList), m_targetList(targetList), m_message(message)
 {
@@ -88,9 +89,8 @@ void ProcedureScan::open(thread_db* tdbb) const
 			EXE_assignment(tdbb, *sourcePtr, *targetPtr);
 
 		request->req_operation = saved_state;
-		const Format* const format = (Format*) m_message->nod_arg[e_msg_format];
-		iml = format->fmt_length;
-		im = request->getImpure<UCHAR>(m_message->nod_impure);
+		iml = m_message->format->fmt_length;
+		im = request->getImpure<UCHAR>(m_message->impureOffset);
 	}
 	else
 	{
@@ -168,18 +168,20 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 
 	jrd_req* const proc_request = impure->irsb_req_handle;
 	const Format* const rec_format = m_format;
+	const Format* const msg_format = m_procedure->prc_output_msg->format;
 
-	const Format* const msg_format = (Format*) m_procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
 		const SLONG size = msg_format->fmt_length + FB_ALIGNMENT;
 		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
 		impure->irsb_message->str_length = size;
 	}
+
 	UCHAR* om = (UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data, FB_ALIGNMENT);
 	ULONG oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	Record* record;
+
 	if (!rpb->rpb_record)
 	{
 		record = rpb->rpb_record =
@@ -188,9 +190,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 		record->rec_length = rec_format->fmt_length;
 	}
 	else
-	{
 		record = rpb->rpb_record;
-	}
 
 	TraceProcFetch trace(tdbb, proc_request);
 

@@ -38,6 +38,7 @@
 #include "../../jrd/tra.h"
 #include "../../jrd/DataTypeUtil.h"
 #include "../../dsql/ExprNodes.h"
+#include "../../dsql/StmtNodes.h"
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
@@ -386,14 +387,14 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 		if ((param = prm->as<ParameterNode>()))
 		{
 			//const impure_value* impure = m_request->getImpure<impure_value>(param->impureOffset)
-			const jrd_nod* message = param->message;
-			const Format* format = (Format*) message->nod_arg[e_msg_format];
+			const MessageNode* message = param->message;
+			const Format* format = message->format;
 			const int arg_number = param->argNumber;
 
 			desc = format->fmt_desc[arg_number];
 			from_desc = &desc;
 			desc.dsc_address = m_request->getImpure<UCHAR>(
-				message->nod_impure + (IPTR) desc.dsc_address);
+				message->impureOffset + (IPTR) desc.dsc_address);
 
 			// handle null flag if present
 			if (param->argFlag)

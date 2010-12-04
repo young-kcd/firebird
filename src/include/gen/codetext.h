@@ -723,6 +723,7 @@ static const struct {
 	{"private_procedure", 335545019},
 	{"request_outdated", 335545020},
 	{"bad_events_handle", 335545021},
+	{"cannot_copy_stmt", 335545022},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

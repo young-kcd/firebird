@@ -1341,7 +1341,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /
 }
 
 
-// m_outDescs -> jrd_nod
+// m_outDescs -> ValueExprNode
 void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 {
 	size_t count = params ? params->args.getCount() : 0;

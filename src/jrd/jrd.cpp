@@ -76,6 +76,7 @@
 #include "../intl/charsets.h"
 #include "../jrd/sort.h"
 #include "../jrd/PreparedStatement.h"
+#include "../dsql/StmtNodes.h"
 #include "../auth/SecurityDatabase/jrd_pwd.h"
 
 #include "../jrd/blb_proto.h"
@@ -3858,8 +3859,8 @@ void jrd_tra::transactRequest(Status* user_status,
 
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-			jrd_nod* in_message = NULL;
-			jrd_nod* out_message = NULL;
+			const MessageNode* inMessage = NULL;
+			const MessageNode* outMessage = NULL;
 
 			jrd_req* request = NULL;
 			MemoryPool* new_pool = dbb->createPool();
@@ -3874,19 +3875,16 @@ void jrd_tra::transactRequest(Status* user_status,
 				request = JrdStatement::makeRequest(tdbb, csb, false);
 				request->getStatement()->verifyAccess(tdbb);
 
-				jrd_nod* node;
+				const MessageNode* node;
+
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					if ( (node = csb->csb_rpt[i].csb_message) )
+					if ((node = csb->csb_rpt[i].csb_message))
 					{
-						if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
-						{
-							in_message = node;
-						}
-						else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
-						{
-							out_message = node;
-						}
+						if (node->messageNumber == 0)
+							inMessage = node;
+						else if (node->messageNumber == 1)
+							outMessage = node;
 					}
 				}
 			}
@@ -3903,16 +3901,13 @@ void jrd_tra::transactRequest(Status* user_status,
 			request->req_attachment = tdbb->getAttachment();
 
 			USHORT len;
+
 			if (in_msg_length)
 			{
-				if (in_message)
-				{
-					const Format* format = (Format*) in_message->nod_arg[e_msg_format];
-					len = format->fmt_length;
-				}
-				else {
+				if (inMessage)
+					len = inMessage->format->fmt_length;
+				else
 					len = 0;
-				}
 
 				if (in_msg_length != len)
 				{
@@ -3920,19 +3915,15 @@ void jrd_tra::transactRequest(Status* user_status,
 													   Arg::Num(len));
 				}
 
-				memcpy(request->getImpure<UCHAR>(in_message->nod_impure), in_msg, in_msg_length);
+				memcpy(request->getImpure<UCHAR>(inMessage->impureOffset), in_msg, in_msg_length);
 			}
 
 			EXE_start(tdbb, request, transaction);
 
-			if (out_message)
-			{
-				const Format* format = (Format*) out_message->nod_arg[e_msg_format];
-				len = format->fmt_length;
-			}
-			else {
+			if (outMessage)
+				len = outMessage->format->fmt_length;
+			else
 				len = 0;
-			}
 
 			if (out_msg_length != len)
 			{
@@ -3940,8 +3931,10 @@ void jrd_tra::transactRequest(Status* user_status,
 												   Arg::Num(len));
 			}
 
-			if (out_msg_length) {
-				memcpy(out_msg, request->getImpure<UCHAR>(out_message->nod_impure), out_msg_length);
+			if (out_msg_length)
+			{
+				memcpy(out_msg, request->getImpure<UCHAR>(outMessage->impureOffset),
+					out_msg_length);
 			}
 
 			check_autocommit(request, tdbb);

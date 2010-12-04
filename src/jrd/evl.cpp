@@ -67,6 +67,7 @@
 #include "../jrd/ibase.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/req.h"
@@ -145,7 +146,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 	int arg_number;
 	const dsc* desc;
 	const Format* format;
-	const jrd_nod* message;
+	const MessageNode* message;
 	Record* record;
 	const ParameterNode* paramNode;
 	const VariableNode* varNode;
@@ -154,12 +155,11 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 	if ((paramNode = ExprNode::as<ParameterNode>(node)))
 	{
 		message = paramNode->message;
-		format = (Format*) message->nod_arg[e_msg_format];
 		arg_number = paramNode->argNumber;
-		desc = &format->fmt_desc[arg_number];
+		desc = &message->format->fmt_desc[arg_number];
 
 		impure->vlu_desc.dsc_address = request->getImpure<UCHAR>(
-			message->nod_impure + (IPTR) desc->dsc_address);
+			message->impureOffset + (IPTR) desc->dsc_address);
 		impure->vlu_desc.dsc_dtype = desc->dsc_dtype;
 		impure->vlu_desc.dsc_length = desc->dsc_length;
 		impure->vlu_desc.dsc_scale = desc->dsc_scale;
@@ -184,7 +184,7 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 	else if ((varNode = ExprNode::as<VariableNode>(node)))
 	{
 		// Calculate descriptor
-		impure = request->getImpure<impure_value>(varNode->varDecl->nod_impure);
+		impure = request->getImpure<impure_value>(varNode->varDecl->impureOffset);
 		return &impure->vlu_desc;
 	}
 	else if ((fieldNode = ExprNode::as<FieldNode>(node)))
@@ -561,7 +561,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		const USHORT flags = request->req_flags;
 
 		if (fieldInfo.validationStmt)
-			EXE_looper(tdbb, request, fieldInfo.validationStmt, true);
+			EXE_looper(tdbb, request, fieldInfo.validationStmt.getObject(), true);
 
 		if (!fieldInfo.validationExpr->execute(tdbb, request) && !(request->req_flags & req_null))
 		{

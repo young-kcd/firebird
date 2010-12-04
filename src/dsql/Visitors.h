@@ -33,9 +33,9 @@ namespace Jrd {
 class CompilerScratch;
 class dsql_nod;
 class ExprNode;
-class jrd_nod;
 class FieldNode;
 class MapNode;
+class MessageNode;
 
 
 enum FieldMatchType
@@ -300,8 +300,6 @@ public:
 	}
 
 public:
-	jrd_nod* copy(thread_db* tdbb, jrd_nod* input);
-
 	// Copy an expression tree remapping field streams. If the map isn't present, don't remap.
 	template <typename T>
 	T* copy(thread_db* tdbb, T* input)
@@ -310,7 +308,7 @@ public:
 			return NULL;
 
 		T* copy = input->copy(tdbb, *this);
-		copy->nodFlags = input->nodFlags;
+		postCopy(input, copy, copy);
 
 		return copy;
 	}
@@ -319,11 +317,6 @@ public:
 	T* copy(thread_db* tdbb, NestConst<T>& input)
 	{
 		return copy(tdbb, input.getObject());
-	}
-
-	static jrd_nod* copy(thread_db* tdbb, CompilerScratch* csb, jrd_nod* input, UCHAR* remap)
-	{
-		return NodeCopier(csb, remap).copy(tdbb, input);
 	}
 
 	template <typename T>
@@ -350,10 +343,20 @@ public:
 
 	virtual USHORT getFieldId(FieldNode* input);
 
+private:
+	template <typename T1, typename T2> void postCopy(T1* source, T2* target, ExprNode* /*dummy*/)
+	{
+		target->nodFlags = source->nodFlags;
+	}
+
+	void postCopy(StmtNode* /*source*/, StmtNode* /*target*/, StmtNode* /*dummy*/)
+	{
+	}
+
 public:
 	CompilerScratch* csb;
 	UCHAR* remap;
-	jrd_nod* message;
+	MessageNode* message;
 };
 
 

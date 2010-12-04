@@ -279,8 +279,6 @@
       </File>
       <File RelativePath="..\..\..\src\jrd\BlrReader.h">
       </File>
-      <File RelativePath="..\..\..\src\include\gen\blrtable.h">
-      </File>
       <File RelativePath="..\..\..\src\jrd\btn.h">
       </File>
       <File RelativePath="..\..\..\src\jrd\btr.h">

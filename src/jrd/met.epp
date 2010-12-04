@@ -64,6 +64,7 @@
 #include "../jrd/align.h"
 #include "../jrd/flu.h"
 #include "../jrd/blob_filter.h"
+#include "../dsql/StmtNodes.h"
 #include "../intl/charsets.h"
 #include "../common/gdsassert.h"
 #include "../jrd/blb_proto.h"
@@ -119,9 +120,9 @@ static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, trig_vec**, const TEXT
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
 static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
-static jrd_nod* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
+static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
-	BoolExprNode** expr, jrd_nod** stmt);
+	BoolExprNode** expr, StmtNode** stmt);
 static void parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*, bool);
 static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
@@ -1417,7 +1418,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 }
 
 
-jrd_nod* MET_get_dependencies(thread_db* tdbb,
+DmlNode* MET_get_dependencies(thread_db* tdbb,
 							  jrd_rel* relation,
 							  const UCHAR* blob,
 							  const ULONG blob_length,
@@ -1450,7 +1451,8 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, domain_validation);
 	csb->csb_g_flags |= (csb_get_dependencies | flags);
 
-	jrd_nod* node;
+	DmlNode* node;
+
 	if (blob)
 	{
 		node = PAR_blr(tdbb, relation, blob, blob_length, view_csb, &csb, statementPtr,
@@ -1489,13 +1491,9 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 	}
 
 	if (csb_ptr)
-	{
 		*csb_ptr = csb;
-	}
 	else
-	{
 		delete csb;
-	}
 
 	return node;
 }
@@ -2605,7 +2603,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 }
 
 
-jrd_nod* MET_parse_blob(thread_db*	tdbb,
+DmlNode* MET_parse_blob(thread_db*	tdbb,
 				   jrd_rel*		relation,
 				   bid*			blob_id,
 				   CompilerScratch**		csb_ptr,
@@ -2637,7 +2635,7 @@ jrd_nod* MET_parse_blob(thread_db*	tdbb,
 	UCHAR* temp = tmp.getBuffer(length);
 	length = BLB_get_data(tdbb, blob, temp, length);
 
-	jrd_nod* node = NULL;
+	DmlNode* node = NULL;
 
 	if (validationExpr)
 	{
@@ -2998,8 +2996,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 					try
 					{
-						parameter->prm_default_value = MET_parse_blob(tdbb, NULL,
-							&pa_default_value, NULL, NULL, false, false)->asValue();
+						parameter->prm_default_value = static_cast<ValueExprNode*>(
+							MET_parse_blob(tdbb, NULL, &pa_default_value, NULL, NULL, false, false));
 					}
 					catch (const Exception&)
 					{
@@ -3081,13 +3079,12 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				procedure->getStatement()->procedure = procedure;
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					jrd_nod* node = csb->csb_rpt[i].csb_message;
+					MessageNode* node = csb->csb_rpt[i].csb_message;
+
 					if (node)
 					{
-						if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
-						{
+						if (node->messageNumber == 1)
 							procedure->prc_output_msg = node;
-						}
 					}
 				}
 				delete csb;
@@ -3534,7 +3531,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		{
 			// parse the view blr, getting dependencies on relations, etc. at the same time
 
-			jrd_nod* rseNode;
+			DmlNode* rseNode;
 
 			if (dependencies)
 			{
@@ -3547,8 +3544,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 			if (rseNode)
 			{
-				fb_assert(rseNode->nod_type == nod_class_recsrcnode_jrd);
-				relation->rel_view_rse = reinterpret_cast<RseNode*>(rseNode->nod_arg[0]);
+				fb_assert(rseNode->kind == DmlNode::KIND_REC_SOURCE);
+				relation->rel_view_rse = static_cast<RseNode*>(rseNode);
 				fb_assert(relation->rel_view_rse->type == RseNode::TYPE);
 			}
 			else
@@ -3676,33 +3673,33 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				if (dependencies)
 				{
 					csb->csb_g_flags |= csb_get_dependencies;
-					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p)->asValue();
+					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
 					const MetaName depName(REL.RDB$RELATION_NAME);
 					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans);
 				}
 				else
-					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p)->asValue();
+					field->fld_source = PAR_make_field(tdbb, csb, view_context, (TEXT*) p);
 				break;
 
 			case RSR_computed_blr:
 				{
-					jrd_nod* nod = dependencies ?
+					DmlNode* nod = dependencies ?
 						MET_get_dependencies(tdbb, relation, p, length, csb, NULL, NULL, NULL,
 							field->fld_name, obj_computed, 0, depTrans) :
 						PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0);
 
-					field->fld_computation = nod ? nod->asValue() : NULL;
+					field->fld_computation = static_cast<ValueExprNode*>(nod);
 				}
 				break;
 
 			case RSR_missing_value:
-				field->fld_missing_value =
-					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0)->asValue();
+				field->fld_missing_value = static_cast<ValueExprNode*>(
+					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0));
 				break;
 
 			case RSR_default_value:
-				field->fld_default_value =
-					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0)->asValue();
+				field->fld_default_value = static_cast<ValueExprNode*>(
+					PAR_blr(tdbb, relation, p, length, csb, NULL, NULL, false, 0));
 				break;
 
 			case RSR_validation_blr:
@@ -4291,7 +4288,7 @@ static void make_relation_scope_name(const TEXT* rel_name, const USHORT rel_flag
 
 
 // Parses default BLR for a field.
-static jrd_nod* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
+static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -4304,18 +4301,18 @@ static jrd_nod* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 
 	length = BLB_get_data(tdbb, blob, temp.getBuffer(length), length);
 
-	jrd_nod* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
+	DmlNode* node = PAR_blr(tdbb, NULL, temp.begin(), length, NULL, &csb, NULL, false, 0);
 
 	csb->csb_blr_reader = BlrReader();
 	delete csb;
 
-	return node;
+	return static_cast<ValueExprNode*>(node);
 }
 
 
 // Parses validation BLR for a field.
 static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
-	BoolExprNode** expr, jrd_nod** stmt)
+	BoolExprNode** expr, StmtNode** stmt)
 {
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();

@@ -75,26 +75,68 @@
 using namespace Jrd;
 using namespace Firebird;
 
-#include "gen/blrtable.h"
-
-static const TEXT elements[][14] =
-	{ "", "statement", "boolean", "value", "RecordSelExpr", "TABLE" };
-
 #include "gen/codetext.h"
 
 
-static NodeParseFunc blr_parsers[256] = {NULL};	// TODO: separate statements and value expressions
-static BoolExprNodeParseFunc boolParsers[256] = {NULL};
+static NodeParseFunc blr_parsers[256] = {NULL};
 
 
-static jrd_nod* par_fetch(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* par_message(thread_db*, CompilerScratch*);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
+
+
+namespace
+{
+	class FetchNode
+	{
+	public:
+		// Parse a FETCH statement, and map it into FOR x IN relation WITH x.DBKEY EQ value ...
+		static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+		{
+			ForNode* forNode = FB_NEW(pool) ForNode(pool);
+
+			// Fake RseNode.
+
+			RseNode* rse = forNode->rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(
+				*tdbb->getDefaultPool());
+
+			DmlNode* relationNode = PAR_parse_node(tdbb, csb);
+			if (relationNode->kind != DmlNode::KIND_REC_SOURCE)
+				PAR_syntax_error(csb, "TABLE");
+
+			RelationSourceNode* relationSource = static_cast<RelationSourceNode*>(relationNode);
+			if (relationSource->type != RelationSourceNode::TYPE)
+				PAR_syntax_error(csb, "TABLE");
+
+			rse->rse_relations.add(relationSource);
+
+			// Fake boolean.
+
+			ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+				csb->csb_pool, blr_eql);
+
+			rse->rse_boolean = booleanNode;
+
+			booleanNode->arg2 = PAR_parse_value(tdbb, csb);
+
+			RecordKeyNode* dbKeyNode = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
+			dbKeyNode->recStream = relationSource->getStream();
+
+			booleanNode->arg1 = dbKeyNode;
+
+			// Pick up statement.
+			forNode->statement = PAR_parse_stmt(tdbb, csb);
+
+			return forNode;
+		}
+	};
+
+	static RegisterNode<FetchNode> regFetch(blr_fetch);
+}	// namespace
 
 
 // Parse blr, returning a compiler scratch block with the results.
 // Caller must do pool handling.
-jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
+DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
 	const bool trigger, USHORT flags)
 {
@@ -174,7 +216,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
-	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
+	DmlNode* node = PAR_parse_node(tdbb, csb);
 	csb->csb_node = node;
 
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
@@ -196,7 +238,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 // Validation expressions are boolean expressions, but may be prefixed with a blr_stmt_expr.
 void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, USHORT flags,
-	BoolExprNode** resultExpr, jrd_nod** resultStmt)
+	BoolExprNode** resultExpr, StmtNode** resultStmt)
 {
 	SET_TDBB(tdbb);
 
@@ -260,12 +302,12 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
-	jrd_nod* stmt = NULL;
+	StmtNode* stmt = NULL;
 
 	if (csb->csb_blr_reader.peekByte() == blr_stmt_expr)
 	{
 		csb->csb_blr_reader.getByte();
-		stmt = PAR_parse_node(tdbb, csb, STATEMENT);
+		stmt = PAR_parse_stmt(tdbb, csb);
 	}
 
 	BoolExprNode* expr = PAR_parse_boolean(tdbb, csb);
@@ -562,7 +604,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 }
 
 
-jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
+ValueExprNode* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 {
 /**************************************
  *
@@ -580,18 +622,12 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 	fieldNode->fieldId = id;
 	fieldNode->fieldStream = stream;
 
-	jrd_nod* nod = PAR_make_node(tdbb, 1);
-	nod->nod_type = nod_class_exprnode_jrd;
-	nod->nod_count = 0;
-	nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(fieldNode);
-
-	return nod;
+	return fieldNode;
 }
 
 
-jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
-						USHORT context,
-						const Firebird::MetaName& base_field)
+ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT context,
+	const MetaName& base_field)
 {
 /**************************************
  *
@@ -668,64 +704,32 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 		PAR_dependency(tdbb, csb, stream, id, base_field);
 	}
 
-	jrd_nod* temp_node = PAR_gen_field(tdbb, stream, id);
+	ValueExprNode* temp_node = PAR_gen_field(tdbb, stream, id);
 
 	if (field)
 	{
 		if (field->fld_default_value && field->fld_not_null)
-			ExprNode::as<FieldNode>(temp_node)->defaultValue = field->fld_default_value;
+			temp_node->as<FieldNode>()->defaultValue = field->fld_default_value;
 	}
 
 	return temp_node;
 }
 
 
-jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
+// Make a list node out of a stack.
+CompoundStmtNode* PAR_make_list(thread_db* tdbb, StmtNodeStack& stack)
 {
-/**************************************
- *
- *	P A R _ m a k e _ l i s t
- *
- **************************************
- *
- * Functional description
- *	Make a list node out of a stack.
- *
- **************************************/
 	SET_TDBB(tdbb);
 
-	// Count the number of nodes
+	// Count the number of nodes.
 	USHORT count = stack.getCount();
 
-	jrd_nod* node = PAR_make_node(tdbb, count);
-	node->nod_type = nod_list;
-	jrd_nod** ptr = node->nod_arg + count;
+	CompoundStmtNode* node = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
+
+	NestConst<StmtNode>* ptr = node->statements.getBuffer(count) + count;
 
 	while (stack.hasData())
-	{
 		*--ptr = stack.pop();
-	}
-
-	return node;
-}
-
-
-jrd_nod* PAR_make_node(thread_db* tdbb, int size)
-{
-/**************************************
- *
- *	P A R _ m a k e _ n o d e
- *
- **************************************
- *
- * Functional description
- *	Make a node element and pass it back.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	jrd_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), size) jrd_nod();
-	node->nod_count = size;
 
 	return node;
 }
@@ -767,13 +771,11 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
 	if (dbginfo_length > 0)
 		DBG_parse_debug_info(dbginfo_length, dbginfo, csb->csb_dbg_info);
 
-	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
+	DmlNode* node = PAR_parse_node(tdbb, csb);
 	csb->csb_node = node;
 
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
-	{
 		PAR_syntax_error(csb, "end_of_command");
-	}
 
 	return csb;
 }
@@ -815,13 +817,6 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 {
 	fb_assert(!blr_parsers[blr] || blr_parsers[blr] == parseFunc);
 	blr_parsers[blr] = parseFunc;
-}
-
-// Registers a parse function for a boolean BLR code.
-void PAR_register(UCHAR blr, BoolExprNodeParseFunc parseFunc)
-{
-	fb_assert(!boolParsers[blr] || boolParsers[blr] == parseFunc);
-	boolParsers[blr] = parseFunc;
 }
 
 
@@ -999,126 +994,6 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, SSHORT stream, SSHORT
 }
 
 
-static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
-{
-/**************************************
- *
- *	p a r _ f e t c h
- *
- **************************************
- *
- * Functional description
- *	Parse a FETCH statement, and map it into
- *
- *	    FOR x IN relation WITH x.DBKEY EQ value ...
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	ForNode* forNode = reinterpret_cast<ForNode*>(node->nod_arg[0]);
-
-	// Fake RseNode
-
-	RseNode* rse = forNode->rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(
-		*tdbb->getDefaultPool());
-
-	jrd_nod* relationNode = PAR_parse_node(tdbb, csb, RELATION);
-	fb_assert(relationNode->nod_type == nod_class_recsrcnode_jrd);
-
-	RelationSourceNode* relationSource = reinterpret_cast<RelationSourceNode*>(
-		relationNode->nod_arg[0]);
-	fb_assert(relationSource->type == RelationSourceNode::TYPE);
-
-	rse->rse_relations.add(relationSource);
-
-	// Fake boolean
-
-	ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
-		csb->csb_pool, blr_eql);
-
-	rse->rse_boolean = booleanNode;
-
-	booleanNode->arg2 = PAR_parse_value(tdbb, csb);
-
-	RecordKeyNode* dbKeyNode = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
-	dbKeyNode->recStream = relationSource->getStream();
-
-	booleanNode->arg1 = dbKeyNode;
-
-	// Pick up statement
-
-	forNode->statement = PAR_parse_node(tdbb, csb, STATEMENT);
-
-	return node;
-}
-
-
-static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
-{
-/**************************************
- *
- *	p a r _ m e s s a g e
- *
- **************************************
- *
- * Functional description
- *	Parse a message declaration, including operator byte.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	// Get message number, register it in the compiler scratch block, and
-	// allocate a node to represent the message
-
-	USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
-	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
-	jrd_nod* node = PAR_make_node(tdbb, e_msg_length);
-	tail->csb_message = node;
-	node->nod_count = 0;
-	node->nod_arg[e_msg_number] = (jrd_nod*) (IPTR) n;
-	if (n > csb->csb_msg_number)
-		csb->csb_msg_number = n;
-
-	// Get the number of parameters in the message and prepare to fill out the format block
-
-	n = csb->csb_blr_reader.getWord();
-	Format* format = Format::newFormat(*tdbb->getDefaultPool(), n);
-	node->nod_arg[e_msg_format] = (jrd_nod*) format;
-	ULONG offset = 0;
-
-	Format::fmt_desc_iterator desc, end;
-	USHORT index = 0;
-
-	for (desc = format->fmt_desc.begin(), end = desc + n; desc < end; ++desc, ++index)
-	{
-		ItemInfo itemInfo;
-		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
-		if (alignment)
-			offset = FB_ALIGN(offset, alignment);
-		desc->dsc_address = (UCHAR *) (IPTR) offset;
-		offset += desc->dsc_length;
-
-		// ASF: Odd indexes are the nullable flag.
-		// So we only check even indexes, which is the actual parameter.
-		if (itemInfo.isSpecial() && index % 2 == 0)
-		{
-			csb->csb_dbg_info.argInfoToName.get(
-				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
-
-			csb->csb_map_item_info.put(Item(Item::TYPE_PARAMETER, csb->csb_msg_number, index),
-				itemInfo);
-		}
-	}
-
-	if (offset > MAX_FORMAT_SIZE)
-		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
-
-	format->fmt_length = (USHORT) offset;
-
-	return node;
-}
-
-
 USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
 {
 /**************************************
@@ -1222,7 +1097,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 		USHORT n = (unsigned int) csb->csb_blr_reader.getByte();
 		if (n != blr_relation && n != blr_relation2 && n != blr_rid && n != blr_rid2)
-			PAR_syntax_error(csb, elements[RELATION]);
+			PAR_syntax_error(csb, "TABLE");
 
 		// don't make RelationSourceNode::parse() parse the context, because
 		// this would add a new context; while this is a reference to
@@ -1371,7 +1246,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 // Parse some procedure parameters.
 void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedure,
-	jrd_nod** message_ptr, ValueListNode** sourceList, ValueListNode** targetList, bool input_flag)
+	MessageNode** message_ptr, ValueListNode** sourceList, ValueListNode** targetList, bool input_flag)
 {
 	SET_TDBB(tdbb);
 	SLONG count = csb->csb_blr_reader.getWord();
@@ -1395,13 +1270,10 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 		if (n < 2)
 			csb->csb_msg_number = n = 2;
 		CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
-		jrd_nod* message = PAR_make_node(tdbb, e_msg_length);
-		tail->csb_message = message;
-		message->nod_type = nod_message;
-		message->nod_count = count_table[blr_message];
-		*message_ptr = message;
-		message->nod_count = 0;
-		message->nod_arg[e_msg_number] = (jrd_nod*)(IPTR) n;
+
+		MessageNode* message = tail->csb_message = *message_ptr = FB_NEW(pool) MessageNode(pool);
+		message->messageNumber = n;
+
 		const Format* format = input_flag ? procedure->prc_input_fmt : procedure->prc_output_fmt;
 		/* dimitr: procedure (with its parameter formats) is allocated out of
 				   its own pool (prc_request->req_pool) and can be freed during
@@ -1418,12 +1290,13 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 				   to avoid unexpected cache cleanups, but that area is out of my
 				   knowledge. So this fix should be considered a temporary solution.
 
-		message->nod_arg[e_msg_format] = (jrd_nod*) format;
+		message->format = format;
 		*/
 		Format* fmt_copy = Format::newFormat(pool, format->fmt_count);
 		*fmt_copy = *format;
-		message->nod_arg[e_msg_format] = (jrd_nod*) fmt_copy;
+		message->format = fmt_copy;
 		// --- end of fix ---
+
 		n = format->fmt_count / 2;
 
 		ValueListNode* sourceValues = *sourceList = FB_NEW(pool) ValueListNode(pool, n);
@@ -1730,198 +1603,88 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
 // Parse a boolean node.
 BoolExprNode* PAR_parse_boolean(thread_db* tdbb, CompilerScratch* csb)
 {
-	SET_TDBB(tdbb);
+	DmlNode* node = PAR_parse_node(tdbb, csb);
 
-	const SSHORT blrOp = csb->csb_blr_reader.getByte();
+	if (node->kind != DmlNode::KIND_BOOLEAN)
+		PAR_syntax_error(csb, "boolean");
 
-	if (blrOp < 0 || blrOp >= FB_NELEM(type_table) || !boolParsers[blrOp])
-	{
-        // NS: This error string is correct, please do not mangle it again and again.
-		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
-        PAR_syntax_error(csb, "valid boolean BLR code");
-    }
-
-	return boolParsers[blrOp](tdbb, *tdbb->getDefaultPool(), csb, blrOp);
+	return static_cast<BoolExprNode*>(node);
 }
 
 // Parse a value node.
 ValueExprNode* PAR_parse_value(thread_db* tdbb, CompilerScratch* csb)
 {
-	jrd_nod* node = PAR_parse_node(tdbb, csb, VALUE);
-	return node->asValue();
+	DmlNode* node = PAR_parse_node(tdbb, csb);
+
+	if (node->kind != DmlNode::KIND_VALUE)
+		PAR_syntax_error(csb, "value");
+
+	return static_cast<ValueExprNode*>(node);
 }
 
-// Parse a BLR expression.
-jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
+// Parse a statement node.
+StmtNode* PAR_parse_stmt(thread_db* tdbb, CompilerScratch* csb)
+{
+	DmlNode* node = PAR_parse_node(tdbb, csb);
+
+	if (node->kind != DmlNode::KIND_STATEMENT)
+		PAR_syntax_error(csb, "statement");
+
+	return static_cast<StmtNode*>(node);
+}
+
+// Parse a BLR node.
+DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 
 	const USHORT blr_offset = csb->csb_blr_reader.getOffset();
 	const SSHORT blr_operator = csb->csb_blr_reader.getByte();
 
-	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table))
+	if (blr_operator < 0 || blr_operator >= FB_NELEM(blr_parsers))
 	{
         // NS: This error string is correct, please do not mangle it again and again.
 		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
         PAR_syntax_error(csb, "valid BLR code");
     }
 
-	const SSHORT sub_type = sub_type_table[blr_operator];
-
-	// If there is a length given in the length table, pre-allocate
-	// the node and set its count.  This saves an enormous amount of repetitive code.
-
-	jrd_nod* node;
-	jrd_nod** arg;
-	USHORT n = length_table[blr_operator];
-	if (n)
-	{
-		node = PAR_make_node(tdbb, n);
-		node->nod_count = count_table[blr_operator];
-		arg = node->nod_arg;
-	}
-	else
-	{
-		node = NULL;
-		arg = NULL;
-	}
-
-	bool set_type = true;
-	bool notHandled = false;
-
 	// Dispatch on operator type.
 
 	switch (blr_operator)
 	{
-	case blr_assignment:
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
-		break;
+		case blr_rse:
+		case blr_rs_stream:
+		case blr_singular:
+		case blr_scrollable:
+			csb->csb_blr_reader.seekBackward(1);
+			return PAR_rse(tdbb, csb);
 
-	case blr_fetch:
-		par_fetch(tdbb, csb, node);
-		break;
-
-	case blr_message:
-		node = par_message(tdbb, csb);
-		break;
-
-	case blr_dcl_variable:
-		{
-			dsc* desc = (dsc*) (node->nod_arg + e_dcl_desc);
-
-			ItemInfo itemInfo;
-
-			n = csb->csb_blr_reader.getWord();
-			node->nod_arg[e_dcl_id] = (jrd_nod*) (IPTR) n;
-			PAR_desc(tdbb, csb, desc, &itemInfo);
-			csb->csb_variables =
-				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-
-			if (itemInfo.isSpecial())
-			{
-				csb->csb_dbg_info.varIndexToName.get(n, itemInfo.name);
-				csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, n), itemInfo);
-			}
-
-			if (itemInfo.explicitCollation)
-			{
-				CompilerScratch::Dependency dependency(obj_collation);
-				dependency.number = INTL_TEXT_TYPE(*desc);
-				csb->csb_dependencies.push(dependency);
-			}
-		}
-		break;
-
-	case blr_begin:
-		{
-			NodeStack stack;
-
-			while (csb->csb_blr_reader.peekByte() != (UCHAR) blr_end)
-			{
-				if (blr_operator == blr_select && csb->csb_blr_reader.peekByte() != blr_receive)
-					PAR_syntax_error(csb, "blr_receive");
-				stack.push(PAR_parse_node(tdbb, csb, sub_type));
-			}
-			csb->csb_blr_reader.getByte(); // skip blr_end
-			node = PAR_make_list(tdbb, stack);
-		}
-		break;
-
-	case blr_init_variable:
-		{
-			n = csb->csb_blr_reader.getWord();
-			node->nod_arg[e_init_var_id] = (jrd_nod*)(U_IPTR) n;
-			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count())
-				PAR_syntax_error(csb, "variable identifier");
-		}
-		break;
-
-	case blr_rse:
-	case blr_rs_stream:
-	case blr_singular:
-	case blr_scrollable:
-		csb->csb_blr_reader.seekBackward(1);
-		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(PAR_rse(tdbb, csb));
-		break;
-
-	case blr_pid:
-	case blr_pid2:
-	case blr_procedure:
-	case blr_procedure2:
-	case blr_procedure3:
-	case blr_procedure4:
-	case blr_relation:
-	case blr_rid:
-	case blr_relation2:
-	case blr_rid2:
-	case blr_union:
-	case blr_recurse:
-	case blr_window:
-	case blr_aggregate:
-		csb->csb_blr_reader.seekBackward(1);
-		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(PAR_parseRecordSource(tdbb, csb));
-		break;
-
-	default:
-		notHandled = true;
+		case blr_pid:
+		case blr_pid2:
+		case blr_procedure:
+		case blr_procedure2:
+		case blr_procedure3:
+		case blr_procedure4:
+		case blr_relation:
+		case blr_rid:
+		case blr_relation2:
+		case blr_rid2:
+		case blr_union:
+		case blr_recurse:
+		case blr_window:
+		case blr_aggregate:
+			csb->csb_blr_reader.seekBackward(1);
+			return PAR_parseRecordSource(tdbb, csb);
 	}
 
-	if (notHandled)
-	{
-		const nod_t temp = (nod_t)(USHORT) blr_table[(int) blr_operator];
-		if (temp == nod_class_exprnode_jrd || temp == nod_class_stmtnode_jrd)
-		{
-			fb_assert(blr_parsers[blr_operator]);
-
-			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-				blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator));
-		}
-		else
-			PAR_syntax_error(csb, elements[expected]);
-	}
-
-	if (set_type)
-	{
-		if (csb->csb_g_flags & csb_blr_version4)
-			node->nod_type = (nod_t)(USHORT) blr_table4[(int) blr_operator];
-		else
-			node->nod_type = (nod_t)(USHORT) blr_table[(int) blr_operator];
-	}
-
+	DmlNode* node = blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator);
 	size_t pos = 0;
-	if (csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
+
+	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
 	{
-		Firebird::MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
-
-		jrd_nod* node_src = PAR_make_node(tdbb, 1);
-		node_src->nod_type = nod_class_stmtnode_jrd;
-		node_src->nod_count = 0;
-		node_src->nod_arg[0] = reinterpret_cast<jrd_nod*>(FB_NEW(*tdbb->getDefaultPool())
-			SourceInfoNode(*tdbb->getDefaultPool(), node, i.mbs_src_line, i.mbs_src_col));
-
-		return node_src;
+		MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
+		node = FB_NEW(*tdbb->getDefaultPool()) SourceInfoNode(
+			*tdbb->getDefaultPool(), static_cast<StmtNode*>(node), i.mbs_src_line, i.mbs_src_col);
 	}
 
 	return node;

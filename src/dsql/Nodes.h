@@ -38,7 +38,6 @@ class CompilerScratch;
 class Cursor;
 class dsql_nod;
 class ExprNode;
-class jrd_nod;
 class OptimizerRetrieval;
 class RseNode;
 class SlidingWindow;
@@ -72,72 +71,6 @@ typedef Firebird::SortedArray<int> SortedStreamList;
 typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
-
-
-// Stores a reference to a specialized ExprNode.
-// This class and NodeRefImpl exists to nodes replace themselfs (eg. pass1) in a type-safe way.
-class NodeRef
-{
-public:
-	virtual ~NodeRef()
-	{
-	}
-
-	bool operator !() const
-	{
-		return !getExpr();
-	}
-
-	operator bool() const
-	{
-		return getExpr() != NULL;
-	}
-
-	virtual ExprNode* getExpr() = 0;
-	virtual const ExprNode* getExpr() const = 0;
-
-	virtual void pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
-	void pass2(thread_db* tdbb, CompilerScratch* csb);
-
-protected:
-	virtual void internalPass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-};
-
-template <typename T> class NodeRefImpl : public NodeRef
-{
-public:
-	NodeRefImpl(T** aPtr)
-		: ptr(aPtr)
-	{
-		fb_assert(aPtr);
-	}
-
-	virtual ExprNode* getExpr()
-	{
-		return *ptr;
-	}
-
-	virtual const ExprNode* getExpr() const
-	{
-		return *ptr;
-	}
-
-	virtual void pass1(thread_db* tdbb, CompilerScratch* csb)
-	{
-		if (*ptr)
-			*ptr = (*ptr)->pass1(tdbb, csb);
-	}
-
-protected:
-	virtual void internalPass2(thread_db* tdbb, CompilerScratch* csb)
-	{
-		if (*ptr)
-			*ptr = (*ptr)->pass2(tdbb, csb);
-	}
-
-private:
-	T** ptr;
-};
 
 
 template <typename T>
@@ -275,15 +208,38 @@ public:
 class DmlNode : public Node
 {
 public:
-	explicit DmlNode(MemoryPool& pool)
-		: Node(pool)
+	// DML node kinds
+	enum Kind
 	{
+		KIND_STATEMENT,
+		KIND_VALUE,
+		KIND_BOOLEAN,
+		KIND_REC_SOURCE
+	};
+
+	explicit DmlNode(MemoryPool& pool, Kind aKind)
+		: Node(pool),
+		kind(aKind)
+	{
+	}
+
+	// Merge missing values, computed values, validation expressions, and views into a parsed request.
+	template <typename T> static void doPass1(thread_db* tdbb, CompilerScratch* csb, T** node)
+	{
+		if (!*node)
+			return;
+
+		*node = (*node)->pass1(tdbb, csb);
 	}
 
 public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch) = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
+	virtual DmlNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+
+public:
+	const Kind kind;
 };
 
 
@@ -298,6 +254,67 @@ public:
 
 public:
 	const static typename T::Type TYPE = typeConst;
+};
+
+
+// Stores a reference to a specialized ExprNode.
+// This class and NodeRefImpl exists to nodes replace themselfs (eg. pass1) in a type-safe way.
+class NodeRef
+{
+public:
+	virtual ~NodeRef()
+	{
+	}
+
+	bool operator !() const
+	{
+		return !getExpr();
+	}
+
+	operator bool() const
+	{
+		return getExpr() != NULL;
+	}
+
+	virtual ExprNode* getExpr() = 0;
+	virtual const ExprNode* getExpr() const = 0;
+
+	virtual void pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
+	void pass2(thread_db* tdbb, CompilerScratch* csb);
+
+protected:
+	virtual void internalPass2(thread_db* tdbb, CompilerScratch* csb) = 0;
+};
+
+template <typename T> class NodeRefImpl : public NodeRef
+{
+public:
+	NodeRefImpl(T** aPtr)
+		: ptr(aPtr)
+	{
+		fb_assert(aPtr);
+	}
+
+	virtual ExprNode* getExpr()
+	{
+		return *ptr;
+	}
+
+	virtual const ExprNode* getExpr() const
+	{
+		return *ptr;
+	}
+
+	virtual void pass1(thread_db* tdbb, CompilerScratch* csb)
+	{
+		DmlNode::doPass1(tdbb, csb, ptr);
+	}
+
+protected:
+	virtual inline void internalPass2(thread_db* tdbb, CompilerScratch* csb);
+
+private:
+	T** ptr;
 };
 
 
@@ -373,8 +390,8 @@ public:
 	static const unsigned FLAG_DATE			= 0x20;
 	static const unsigned FLAG_VALUE		= 0x40;	// Full value area required in impure space.
 
-	explicit ExprNode(Type aType, MemoryPool& pool)
-		: DmlNode(pool),
+	explicit ExprNode(Type aType, MemoryPool& pool, Kind aKind)
+		: DmlNode(pool, aKind),
 		  type(aType),
 		  nodFlags(0),
 		  impureOffset(0),
@@ -428,8 +445,15 @@ public:
 	}
 
 	static ExprNode* fromLegacy(const dsql_nod* node);
-	static const ExprNode* fromLegacy(const jrd_nod* node);
-	static ExprNode* fromLegacy(jrd_nod* node);
+
+	// Allocate and assign impure space for various nodes.
+	template <typename T> static void doPass2(thread_db* tdbb, CompilerScratch* csb, T** node)
+	{
+		if (!*node)
+			return;
+
+		*node = (*node)->pass2(tdbb, csb);
+	}
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
@@ -537,11 +561,19 @@ public:
 	Firebird::Array<NodeRef*> jrdChildNodes;
 };
 
+
+template <typename T>
+inline void NodeRefImpl<T>::internalPass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::doPass2(tdbb, csb, ptr);
+}
+
+
 class BoolExprNode : public ExprNode
 {
 public:
 	BoolExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool)
+		: ExprNode(aType, pool, KIND_BOOLEAN)
 	{
 	}
 
@@ -578,7 +610,7 @@ class ValueExprNode : public ExprNode
 {
 public:
 	ValueExprNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool),
+		: ExprNode(aType, pool, KIND_VALUE),
 		  nodScale(0)
 	{
 	}
@@ -610,7 +642,9 @@ public:
 		return this;
 	}
 
+	// Compute descriptor for value expression.
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
+
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
 
@@ -802,10 +836,13 @@ class StmtNode : public DmlNode
 public:
 	enum Type
 	{
+		TYPE_ASSIGNMENT,
 		TYPE_BLOCK,
+		TYPE_COMPOUND_STMT,
 		TYPE_CONTINUE_LEAVE,
 		TYPE_CURSOR_STMT,
 		TYPE_DECLARE_CURSOR,
+		TYPE_DECLARE_VARIABLE,
 		TYPE_ERASE,
 		TYPE_ERROR_HANDLER,
 		TYPE_EXCEPTION,
@@ -815,11 +852,13 @@ public:
 		TYPE_EXIT,
 		TYPE_IF,
 		TYPE_IN_AUTO_TRANS,
+		TYPE_INIT_VARIABLE,
 		TYPE_FOR,
 		TYPE_HANDLER,
 		TYPE_LABEL,
 		TYPE_LOOP,
 		TYPE_MERGE,
+		TYPE_MESSAGE,
 		TYPE_MODIFY,
 		TYPE_POST_EVENT,
 		TYPE_RECEIVE,
@@ -864,15 +903,16 @@ public:
 		WhichTrigger whichEraseTrig;
 		WhichTrigger whichStoTrig;
 		WhichTrigger whichModTrig;
-		const jrd_nod* topNode;
-		const jrd_nod* prevNode;
+		const StmtNode* topNode;
+		const StmtNode* prevNode;
 	};
 
 public:
 	explicit StmtNode(Type aType, MemoryPool& pool)
-		: DmlNode(pool),
+		: DmlNode(pool, KIND_STATEMENT),
 		  type(aType),
-		  node(NULL)
+		  parentStmt(NULL),
+		  impureOffset(0)
 	{
 	}
 
@@ -920,30 +960,39 @@ public:
 	}
 
 	static StmtNode* fromLegacy(const dsql_nod* node);
-	static const StmtNode* fromLegacy(const jrd_nod* node);
-	static StmtNode* fromLegacy(jrd_nod* node);
 
-	jrd_nod* getNode()
+	// Allocate and assign impure space for various nodes.
+	template <typename T> static void doPass2(thread_db* tdbb, CompilerScratch* csb, T** node,
+		StmtNode* parentStmt)
 	{
-		return node;
+		if (!*node)
+			return;
+
+		if (parentStmt)
+			(*node)->parentStmt = parentStmt;
+
+		*node = (*node)->pass2(tdbb, csb);
 	}
 
-	void setNode(jrd_nod* value)
+	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
+	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
+
+	virtual StmtNode* copy(thread_db* tdbb, NodeCopier& copier)
 	{
-		node = value;
+		fb_assert(false);
+		Firebird::status_exception::raise(
+			Firebird::Arg::Gds(isc_cannot_copy_stmt) <<
+			Firebird::Arg::Num(int(type)));
+
+		return NULL;
 	}
 
-	virtual void pass2Cursor(RseNode*& /*rsePtr*/, Cursor**& /*cursorPtr*/)
-	{
-	}
-
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const = 0;
 
 public:
 	const Type type;
-
-protected:
-	NestConst<jrd_nod> node;
+	NestConst<StmtNode> parentStmt;
+	ULONG impureOffset;	// Inpure offset from request block.
 };
 
 
@@ -958,19 +1007,25 @@ public:
 	}
 
 public:
-	DsqlOnlyStmtNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual DsqlOnlyStmtNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return this;
 	}
 
-	DsqlOnlyStmtNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
+	virtual DsqlOnlyStmtNode* pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 	{
 		fb_assert(false);
 		return this;
 	}
 
-	const jrd_nod* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const
+	virtual DsqlOnlyStmtNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/)
+	{
+		fb_assert(false);
+		return this;
+	}
+
+	const StmtNode* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const
 	{
 		fb_assert(false);
 		return NULL;

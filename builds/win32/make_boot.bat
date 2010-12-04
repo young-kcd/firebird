@@ -44,11 +44,6 @@ if "%ERRLEV%"=="1" goto :END
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
-@echo.
-@echo Building BLR Table
-@call blrtable.bat
-
-::=======
 call :gpre_boot
 if "%ERRLEV%"=="1" goto :END
 

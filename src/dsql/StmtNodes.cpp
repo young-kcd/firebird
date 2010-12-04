@@ -57,8 +57,6 @@
 using namespace Firebird;
 using namespace Jrd;
 
-#include "gen/blrtable.h"
-
 
 namespace
 {
@@ -91,17 +89,19 @@ namespace Jrd {
 
 
 static void cleanupRpb(thread_db* tdbb, record_param* rpb);
-static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
-static jrd_nod* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
+static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+	Array<ValidateInfo>& validations);
+static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
 	USHORT newStream, bool remap);
 static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jrd_rel* relation,
 	const trig_vec* trigger, USHORT stream, USHORT updateStream, SecurityClass::flags_t priv,
 	jrd_rel* view, USHORT viewStream);
+static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations);
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
 static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
 	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, jrd_req::req_ta op);
-static void validateExpressions(thread_db* tdbb, const jrd_nod* list);
+static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 
 //--------------------
@@ -110,18 +110,6 @@ static void validateExpressions(thread_db* tdbb, const jrd_nod* list);
 StmtNode* StmtNode::fromLegacy(const dsql_nod* node)
 {
 	return node && node->nod_type == Dsql::nod_class_stmtnode ?
-		reinterpret_cast<StmtNode*>(node->nod_arg[0]) : NULL;
-}
-
-const StmtNode* StmtNode::fromLegacy(const jrd_nod* node)
-{
-	return node && node->nod_type == nod_class_stmtnode_jrd ?
-		reinterpret_cast<const StmtNode*>(node->nod_arg[0]) : NULL;
-}
-
-StmtNode* StmtNode::fromLegacy(jrd_nod* node)
-{
-	return node && node->nod_type == nod_class_stmtnode_jrd ?
 		reinterpret_cast<StmtNode*>(node->nod_arg[0]) : NULL;
 }
 
@@ -140,7 +128,6 @@ StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsql
 	return node;
 }
 
-
 void SavepointEncloseNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "SavepointEncloseNode\n";
@@ -148,7 +135,6 @@ void SavepointEncloseNode::print(string& text, Array<dsql_nod*>& nodes) const
 	stmt->print(s, nodes);
 	text += s;
 }
-
 
 void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -163,17 +149,131 @@ void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
+static RegisterNode<AssignmentNode> regAssignmentNode(blr_assignment);
+
+DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+{
+	AssignmentNode* node = FB_NEW(pool) AssignmentNode(pool);
+	node->asgnFrom = PAR_parse_value(tdbb, csb);
+	node->asgnTo = PAR_parse_value(tdbb, csb);
+	return node;
+}
+
+AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+void AssignmentNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "AssignmentNode";
+}
+
+void AssignmentNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+}
+
+AssignmentNode* AssignmentNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	AssignmentNode* node = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(*tdbb->getDefaultPool());
+	node->asgnFrom = copier.copy(tdbb, asgnFrom);
+	node->asgnTo = copier.copy(tdbb, asgnTo);
+	node->missing = copier.copy(tdbb, missing);
+	node->missing2 = copier.copy(tdbb, missing2);
+	return node;
+}
+
+AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode* sub = asgnFrom;
+	FieldNode* fieldNode;
+	USHORT stream;
+	CompilerScratch::csb_repeat* tail;
+
+	if ((fieldNode = sub->as<FieldNode>()))
+	{
+		stream = fieldNode->fieldStream;
+		jrd_fld* field = MET_get_field(csb->csb_rpt[stream].csb_relation, fieldNode->fieldId);
+
+		if (field)
+			missing2 = field->fld_missing_value;
+	}
+
+	sub = asgnTo;
+
+	if ((fieldNode = sub->as<FieldNode>()))
+	{
+		stream = fieldNode->fieldStream;
+		tail = &csb->csb_rpt[stream];
+		jrd_fld* field = MET_get_field(tail->csb_relation, fieldNode->fieldId);
+
+		if (field && field->fld_missing_value)
+			missing = field->fld_missing_value;
+	}
+
+	doPass1(tdbb, csb, asgnFrom.getAddress());
+	doPass1(tdbb, csb, asgnTo.getAddress());
+	doPass1(tdbb, csb, missing.getAddress());
+	// ASF: No idea why we do not call pass1 for missing2.
+
+	// Perform any post-processing here.
+
+	sub = asgnTo;
+
+	if ((fieldNode = sub->as<FieldNode>()))
+	{
+		stream = fieldNode->fieldStream;
+		tail = &csb->csb_rpt[stream];
+
+		// Assignments to the OLD context are prohibited for all trigger types.
+		if ((tail->csb_flags & csb_trigger) && stream == 0)
+			ERR_post(Arg::Gds(isc_read_only_field));
+
+		// Assignments to the NEW context are prohibited for post-action triggers.
+		if ((tail->csb_flags & csb_trigger) && stream == 1 &&
+			(csb->csb_g_flags & csb_post_trigger))
+		{
+			ERR_post(Arg::Gds(isc_read_only_field));
+		}
+	}
+	else if (!(sub->is<ParameterNode>() || sub->is<VariableNode>() || sub->is<NullNode>()))
+		ERR_post(Arg::Gds(isc_read_only_field));
+
+	return this;
+}
+
+AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ExprNode::doPass2(tdbb, csb, asgnFrom.getAddress());
+	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
+	ExprNode::doPass2(tdbb, csb, missing.getAddress());
+	ExprNode::doPass2(tdbb, csb, missing2.getAddress());
+	return this;
+}
+
+const StmtNode* AssignmentNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+		EXE_assignment(tdbb, this);
+
+	return parentStmt;
+}
+
+
+//--------------------
+
+
 static RegisterNode<BlockNode> regBlockNode(blr_block);
 
 DmlNode* BlockNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	BlockNode* node = FB_NEW(pool) BlockNode(pool);
-	node->action = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->action = PAR_parse_stmt(tdbb, csb);
 
-	NodeStack stack;
+	StmtNodeStack stack;
 
 	while (csb->csb_blr_reader.peekByte() != blr_end)
-		stack.push(PAR_parse_node(tdbb, csb, STATEMENT));
+		stack.push(PAR_parse_stmt(tdbb, csb));
 
 	csb->csb_blr_reader.getByte();	// skip blr_end
 
@@ -198,22 +298,22 @@ void BlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 BlockNode* BlockNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	action = CMP_pass1(tdbb, csb, action);
-	handlers = CMP_pass1(tdbb, csb, handlers);
+	doPass1(tdbb, csb, action.getAddress());
+	doPass1(tdbb, csb, handlers.getAddress());
 	return this;
 }
 
 BlockNode* BlockNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	action = CMP_pass2(tdbb, csb, action, node);
-	handlers = CMP_pass2(tdbb, csb, handlers, node);
+	doPass2(tdbb, csb, action.getAddress(), this);
+	doPass2(tdbb, csb, handlers.getAddress(), this);
 
-	node->nod_impure = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SLONG));
 
 	return this;
 }
 
-const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
@@ -227,7 +327,7 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 				VIO_start_save_point(tdbb, transaction);
 				const Savepoint* save_point = transaction->tra_save_point;
 				count = save_point->sav_number;
-				*request->getImpure<SLONG>(node->nod_impure) = count;
+				*request->getImpure<SLONG>(impureOffset) = count;
 			}
 			return action;
 
@@ -243,7 +343,7 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 
 				if (transaction != sysTransaction)
 				{
-					count = *request->getImpure<SLONG>(node->nod_impure);
+					count = *request->getImpure<SLONG>(impureOffset);
 
 					for (const Savepoint* save_point = transaction->tra_save_point;
 						 save_point && count <= save_point->sav_number;
@@ -253,12 +353,12 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 					}
 				}
 
-				return node->nod_parent;
+				return parentStmt;
 			}
 
 			if (transaction != sysTransaction)
 			{
-				count = *request->getImpure<SLONG>(node->nod_impure);
+				count = *request->getImpure<SLONG>(impureOffset);
 
 				// Since there occurred an error (req_unwind), undo all savepoints
 				// up to, but not including, the savepoint of this block.  The
@@ -273,16 +373,18 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 				}
 			}
 
-			const jrd_nod* temp;
+			const StmtNode* temp;
 
 			if (handlers)
 			{
-				temp = node->nod_parent;
-				const jrd_nod* const* ptr = handlers->nod_arg;
+				temp = parentStmt;
+				const NestConst<StmtNode>* ptr = handlers->statements.begin();
 
-				for (const jrd_nod* const* const end = ptr + handlers->nod_count; ptr < end; ++ptr)
+				for (const NestConst<StmtNode>* const end = handlers->statements.end();
+					 ptr != end;
+					 ++ptr)
 				{
-					const ErrorHandlerNode* handlerNode = StmtNode::as<ErrorHandlerNode>(*ptr);
+					const ErrorHandlerNode* handlerNode = (*ptr)->as<ErrorHandlerNode>();
 					const PsqlException* xcpNode = handlerNode->conditions;
 
 					if (testAndFixupError(tdbb, request, xcpNode))
@@ -342,7 +444,7 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 				}
 			}
 			else
-				temp = node->nod_parent;
+				temp = parentStmt;
 
 			// If the application didn't have an error handler, then
 			// the error will still be pending.  Undo the block by
@@ -365,7 +467,7 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 		case jrd_req::req_return:
 			if (transaction != sysTransaction)
 			{
-				count = *request->getImpure<SLONG>(node->nod_impure);
+				count = *request->getImpure<SLONG>(impureOffset);
 
 				for (const Savepoint* save_point = transaction->tra_save_point;
 					 save_point && count <= save_point->sav_number;
@@ -376,7 +478,7 @@ const jrd_nod* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 			}
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 
 	fb_assert(false);
@@ -442,6 +544,116 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const PsqlE
 //--------------------
 
 
+static RegisterNode<CompoundStmtNode> regCompoundStmtNode(blr_begin);
+
+DmlNode* CompoundStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	CompoundStmtNode* node = FB_NEW(pool) CompoundStmtNode(pool);
+
+	while (csb->csb_blr_reader.peekByte() != blr_end)
+		node->statements.add(PAR_parse_stmt(tdbb, csb));
+
+	csb->csb_blr_reader.getByte();	// skip blr_end
+
+	return node;
+}
+
+CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+void CompoundStmtNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text = "CompoundStmtNode";
+}
+
+void CompoundStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+}
+
+CompoundStmtNode* CompoundStmtNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	CompoundStmtNode* node = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
+	node->onlyAssignments = onlyAssignments;
+
+	NestConst<StmtNode>* j = node->statements.getBuffer(statements.getCount());
+
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i, ++j)
+		*j = copier.copy(tdbb, *i);
+
+	return node;
+}
+
+CompoundStmtNode* CompoundStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+		doPass1(tdbb, csb, i->getAddress());
+	return this;
+}
+
+CompoundStmtNode* CompoundStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+		doPass2(tdbb, csb, i->getAddress(), this);
+
+	impureOffset = CMP_impure(csb, sizeof(impure_state));
+
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+	{
+		if (!StmtNode::is<AssignmentNode>(i->getObject()))
+			return this;
+	}
+
+	onlyAssignments = true;
+
+	return this;
+}
+
+const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+{
+	const NestConst<StmtNode>* end = statements.end();
+
+	if (onlyAssignments)
+	{
+		if (request->req_operation == jrd_req::req_evaluate)
+		{
+			for (const NestConst<StmtNode>* i = statements.begin(); i != end; ++i)
+				EXE_assignment(tdbb, static_cast<const AssignmentNode*>(i->getObject()));
+
+			request->req_operation = jrd_req::req_return;
+		}
+
+		return parentStmt;
+	}
+
+	impure_state* impure = request->getImpure<impure_state>(impureOffset);
+
+	switch (request->req_operation)
+	{
+		case jrd_req::req_evaluate:
+			impure->sta_state = 0;
+			// fall into
+
+		case jrd_req::req_return:
+		case jrd_req::req_sync:
+			if (impure->sta_state < int(statements.getCount()))
+			{
+				request->req_operation = jrd_req::req_evaluate;
+				return statements[impure->sta_state++];
+			}
+			request->req_operation = jrd_req::req_return;
+			// fall into
+
+		default:
+			return parentStmt;
+	}
+}
+
+
+//--------------------
+
+
 static RegisterNode<ContinueLeaveNode> regContinueLeaveNodeContinue(blr_continue_loop);
 static RegisterNode<ContinueLeaveNode> regContinueLeaveNodeLeave(blr_leave);
 
@@ -466,12 +678,12 @@ void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-const jrd_nod* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	request->req_operation = jrd_req::req_unwind;
 	request->req_label = labelNumber;
 	request->req_flags |= (blrOp == blr_continue_loop ? req_continue_loop : req_leave);
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -500,7 +712,7 @@ DmlNode* CursorStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 
 		case blr_cursor_fetch:
 			csb->csb_g_flags |= csb_reuse_context;
-			node->intoStmt = PAR_parse_node(tdbb, csb, STATEMENT);
+			node->intoStmt = PAR_parse_stmt(tdbb, csb);
 			csb->csb_g_flags &= ~csb_reuse_context;
 			break;
 
@@ -527,19 +739,19 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	scrollExpr = CMP_pass1(tdbb, csb, scrollExpr);
-	intoStmt = CMP_pass1(tdbb, csb, intoStmt);
+	doPass1(tdbb, csb, scrollExpr.getAddress());
+	doPass1(tdbb, csb, intoStmt.getAddress());
 	return this;
 }
 
 CursorStmtNode* CursorStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	scrollExpr = CMP_pass2(tdbb, csb, scrollExpr);
-	intoStmt = CMP_pass2(tdbb, csb, intoStmt, node);
+	ExprNode::doPass2(tdbb, csb, scrollExpr.getAddress());
+	doPass2(tdbb, csb, intoStmt.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	fb_assert(cursorNumber < request->req_cursors.getCount());
 	const Cursor* const cursor = request->req_cursors[cursorNumber];
@@ -553,7 +765,7 @@ const jrd_nod* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 				cursor->open(tdbb);
 				request->req_operation = jrd_req::req_return;
 			}
-			return node->nod_parent;
+			return parentStmt;
 
 		case blr_cursor_close:
 			if (request->req_operation == jrd_req::req_evaluate)
@@ -561,7 +773,7 @@ const jrd_nod* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 				cursor->close(tdbb);
 				request->req_operation = jrd_req::req_return;
 			}
-			return node->nod_parent;
+			return parentStmt;
 
 		case blr_cursor_fetch:
 		case blr_cursor_fetch_scroll:
@@ -615,7 +827,7 @@ const jrd_nod* CursorStmtNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 					request->req_operation = jrd_req::req_return;
 
 				default:
-					return node->nod_parent;
+					return parentStmt;
 			}
 			break;
 	}
@@ -659,19 +871,30 @@ void DeclareCursorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 DeclareCursorNode* DeclareCursorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	rse = rse->pass1(tdbb, csb);
-	refs = refs->pass1(tdbb, csb);
+	doPass1(tdbb, csb, rse.getAddress());
+	doPass1(tdbb, csb, refs.getAddress());
 	return this;
 }
 
 DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	rse = rse->pass2(tdbb, csb);
-	refs = refs->pass2(tdbb, csb);
+	rse->pass2Rse(tdbb, csb);
+
+	ExprNode::doPass2(tdbb, csb, rse.getAddress());
+	ExprNode::doPass2(tdbb, csb, refs.getAddress());
+
+	// Finish up processing of record selection expressions.
+
+	RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse.getObject());
+	csb->csb_fors.add(rsb);
+
+	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
+		(rse->flags & RseNode::FLAG_SCROLLABLE));
+
 	return this;
 }
 
-const jrd_nod* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -684,7 +907,106 @@ const jrd_nod* DeclareCursorNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 		request->req_operation = jrd_req::req_return;
 	}
 
-	return node->nod_parent;
+	return parentStmt;
+}
+
+
+//--------------------
+
+
+static RegisterNode<DeclareVariableNode> regDeclareVariableNode(blr_dcl_variable);
+
+DmlNode* DeclareVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	DeclareVariableNode* node = FB_NEW(pool) DeclareVariableNode(pool);
+
+	node->varId = csb->csb_blr_reader.getWord();
+
+	ItemInfo itemInfo;
+	PAR_desc(tdbb, csb, &node->varDesc, &itemInfo);
+
+	csb->csb_variables = vec<DeclareVariableNode*>::newVector(
+		*tdbb->getDefaultPool(), csb->csb_variables, node->varId + 1);
+
+	if (itemInfo.isSpecial())
+	{
+		csb->csb_dbg_info.varIndexToName.get(node->varId, itemInfo.name);
+		csb->csb_map_item_info.put(Item(Item::TYPE_VARIABLE, node->varId), itemInfo);
+	}
+
+	if (itemInfo.explicitCollation)
+	{
+		CompilerScratch::Dependency dependency(obj_collation);
+		dependency.number = INTL_TEXT_TYPE(node->varDesc);
+		csb->csb_dependencies.push(dependency);
+	}
+
+	return node;
+}
+
+DeclareVariableNode* DeclareVariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+void DeclareVariableNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text = "DeclareVariableNode";
+}
+
+void DeclareVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+}
+
+DeclareVariableNode* DeclareVariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	if (copier.csb->csb_remap_variable == 0)
+		return this;
+
+	DeclareVariableNode* node = FB_NEW(*tdbb->getDefaultPool()) DeclareVariableNode(*tdbb->getDefaultPool());
+	node->varId = varId + copier.csb->csb_remap_variable;
+	node->varDesc = varDesc;
+
+	copier.csb->csb_variables = vec<DeclareVariableNode*>::newVector(*tdbb->getDefaultPool(),
+		copier.csb->csb_variables, node->varId + 1);
+
+	return node;
+}
+
+DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	vec<DeclareVariableNode*>* vector = csb->csb_variables = vec<DeclareVariableNode*>::newVector(
+		*tdbb->getDefaultPool(), csb->csb_variables, varId + 1);
+	fb_assert(!(*vector)[varId]);
+	(*vector)[varId] = this;
+
+	return this;
+}
+
+DeclareVariableNode* DeclareVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	impureOffset = CMP_impure(csb, sizeof(impure_value) + varDesc.dsc_length);
+	return this;
+}
+
+const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+{
+	impure_value* variable = request->getImpure<impure_value>(impureOffset);
+	variable->vlu_desc = varDesc;
+	variable->vlu_desc.dsc_flags = 0;
+	variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
+
+	if (variable->vlu_desc.dsc_dtype <= dtype_varying && !variable->vlu_string)
+	{
+		const USHORT len = variable->vlu_desc.dsc_length;
+		variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
+		variable->vlu_string->str_length = len;
+		variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
+	}
+
+	request->req_operation = jrd_req::req_return;
+
+	return parentStmt;
 }
 
 
@@ -724,8 +1046,8 @@ EraseNode* EraseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	pass1Erase(tdbb, csb, this);
 
-	statement = CMP_pass1(tdbb, csb, statement);
-	subStatement = CMP_pass1(tdbb, csb, subStatement);
+	doPass1(tdbb, csb, statement.getAddress());
+	doPass1(tdbb, csb, subStatement.getAddress());
 
 	return this;
 }
@@ -809,10 +1131,7 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 			EraseNode* viewNode = FB_NEW(*tdbb->getDefaultPool()) EraseNode(*tdbb->getDefaultPool());
 			viewNode->stream = node->stream;
 
-			node->subStatement = PAR_make_node(tdbb, 1);
-			node->subStatement->nod_type = nod_class_stmtnode_jrd;
-			node->subStatement->nod_count = 0;
-			node->subStatement->nod_arg[0] = reinterpret_cast<jrd_nod*>(viewNode);
+			node->subStatement = viewNode;
 
 			// Substitute the original delete node with the newly created one.
 			node = viewNode;
@@ -832,40 +1151,40 @@ void EraseNode::pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* nod
 
 EraseNode* EraseNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
-	subStatement = CMP_pass2(tdbb, csb, subStatement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
+	doPass2(tdbb, csb, subStatement.getAddress(), this);
 
-	node->nod_impure = CMP_impure(csb, sizeof(SLONG));
+	impureOffset = CMP_impure(csb, sizeof(SLONG));
 	csb->csb_rpt[stream].csb_flags |= csb_update;
 
 	return this;
 }
 
-const jrd_nod* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
-	const jrd_nod* retNode;
+	const StmtNode* retNode;
 
 	if (request->req_operation == jrd_req::req_unwind)
-		retNode = node->nod_parent;
+		retNode = parentStmt;
 	else if (request->req_operation == jrd_req::req_return && subStatement)
 	{
 		if (!exeState->topNode)
 		{
-			exeState->topNode = node;
+			exeState->topNode = this;
 			exeState->whichEraseTrig = PRE_TRIG;
 		}
 
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = erase(tdbb, request, exeState->whichEraseTrig);
 
 		if (exeState->whichEraseTrig == PRE_TRIG)
 		{
 			retNode = subStatement;
-			fb_assert(retNode->nod_parent == node);
-			///retNode->nod_parent = exeState->prevNode;
+			fb_assert(retNode->parentStmt == this);
+			///retNode->parentStmt = exeState->prevNode;
 		}
 
-		if (exeState->topNode == node && exeState->whichEraseTrig == POST_TRIG)
+		if (exeState->topNode == this && exeState->whichEraseTrig == POST_TRIG)
 		{
 			exeState->topNode = NULL;
 			exeState->whichEraseTrig = ALL_TRIGS;
@@ -875,7 +1194,7 @@ const jrd_nod* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 	}
 	else
 	{
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = erase(tdbb, request, ALL_TRIGS);
 
 		if (!subStatement && exeState->whichEraseTrig == PRE_TRIG)
@@ -886,7 +1205,7 @@ const jrd_nod* EraseNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 }
 
 // Perform erase operation.
-const jrd_nod* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
@@ -919,7 +1238,7 @@ const jrd_nod* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger 
 			break;
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 
 	request->req_operation = jrd_req::req_return;
@@ -997,7 +1316,7 @@ const jrd_nod* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger 
 
 	rpb->rpb_number.setValid(false);
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -1065,7 +1384,7 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 		}
 	}
 
-	node->action = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->action = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -1086,30 +1405,30 @@ void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ErrorHandlerNode* ErrorHandlerNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	action = CMP_pass1(tdbb, csb, action);
+	doPass1(tdbb, csb, action.getAddress());
 	return this;
 }
 
 ErrorHandlerNode* ErrorHandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	action = CMP_pass2(tdbb, csb, action, node);
+	doPass2(tdbb, csb, action.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
+const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
 {
 	if ((request->req_flags & req_error_handler) && !exeState->errorPending)
 	{
 		fb_assert(request->req_caller == exeState->oldRequest);
 		request->req_caller = NULL;
-		return node;
+		return this;
 	}
 
-	const jrd_nod* retNode = node->nod_parent;
-	retNode = retNode->nod_parent;
+	const StmtNode* retNode = parentStmt;
+	retNode = retNode->parentStmt;
 
 	if (request->req_operation == jrd_req::req_unwind)
-		retNode = retNode->nod_parent;
+		retNode = retNode->parentStmt;
 
 	request->req_last_xcp.clear();
 
@@ -1184,55 +1503,36 @@ ExecProcedureNode* ExecProcedureNode::pass1(thread_db* tdbb, CompilerScratch* cs
 	CMP_post_procedure_access(tdbb, csb, procedure);
 	CMP_post_resource(&csb->csb_resources, procedure, Resource::rsc_procedure, procedure->getId());
 
-	if (inputSources)
-		inputSources = inputSources->pass1(tdbb, csb);
-
-	if (inputTargets)
-		inputTargets = inputTargets->pass1(tdbb, csb);
-
-	inputMessage = CMP_pass1(tdbb, csb, inputMessage);
-
-	if (outputSources)
-		outputSources = outputSources->pass1(tdbb, csb);
-
-	if (outputTargets)
-		outputTargets = outputTargets->pass1(tdbb, csb);
-
-	outputMessage = CMP_pass1(tdbb, csb, outputMessage);
+	doPass1(tdbb, csb, inputSources.getAddress());
+	doPass1(tdbb, csb, inputTargets.getAddress());
+	doPass1(tdbb, csb, inputMessage.getAddress());
+	doPass1(tdbb, csb, outputSources.getAddress());
+	doPass1(tdbb, csb, outputTargets.getAddress());
+	doPass1(tdbb, csb, outputMessage.getAddress());
 
 	return this;
 }
 
 ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (inputSources)
-		inputSources = inputSources->pass2(tdbb, csb);
-
-	if (inputTargets)
-		inputTargets = inputTargets->pass2(tdbb, csb);
-
-	inputMessage = CMP_pass2(tdbb, csb, inputMessage, node);
-
-	if (outputSources)
-		outputSources = outputSources->pass2(tdbb, csb);
-
-	if (outputTargets)
-		outputTargets = outputTargets->pass2(tdbb, csb);
-
-	outputMessage = CMP_pass2(tdbb, csb, outputMessage, node);
-
+	ExprNode::doPass2(tdbb, csb, inputSources.getAddress());
+	ExprNode::doPass2(tdbb, csb, inputTargets.getAddress());
+	doPass2(tdbb, csb, inputMessage.getAddress(), this);
+	ExprNode::doPass2(tdbb, csb, outputSources.getAddress());
+	ExprNode::doPass2(tdbb, csb, outputTargets.getAddress());
+	doPass2(tdbb, csb, outputMessage.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecProcedureNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_unwind)
-		return node->nod_parent;
+		return parentStmt;
 
 	executeProcedure(tdbb, request);
 
 	request->req_operation = jrd_req::req_return;
-	return node->nod_parent;
+	return parentStmt;
 }
 
 // Execute a stored procedure. Begin by assigning the input parameters.
@@ -1256,9 +1556,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	if (inputMessage)
 	{
-		const Format* format = (Format*) inputMessage->nod_arg[e_msg_format];
-		inMsgLength = format->fmt_length;
-		inMsg = request->getImpure<UCHAR>(inputMessage->nod_impure);
+		inMsgLength = inputMessage->format->fmt_length;
+		inMsg = request->getImpure<UCHAR>(inputMessage->impureOffset);
 	}
 
 	const Format* format = NULL;
@@ -1267,9 +1566,9 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	if (outputMessage)
 	{
-		format = (Format*) outputMessage->nod_arg[e_msg_format];
+		format = outputMessage->format;
 		outMsgLength = format->fmt_length;
-		outMsg = request->getImpure<UCHAR>(outputMessage->nod_impure);
+		outMsg = request->getImpure<UCHAR>(outputMessage->impureOffset);
 	}
 
 	jrd_req* procRequest = procedure->getStatement()->findRequest(tdbb);
@@ -1281,7 +1580,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 	if (!outputMessage)
 	{
-		format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
+		format = procedure->prc_output_msg->format;
 		outMsgLength = format->fmt_length;
 		outMsg = temp_buffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
 		outMsg = (UCHAR*) FB_ALIGN((U_IPTR) outMsg, FB_DOUBLE_ALIGN);
@@ -1377,7 +1676,7 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 			node->sql = PAR_parse_value(tdbb, csb);
 
 			if (csb->csb_blr_reader.getByte() == 0)	// not singleton flag
-				node->innerStmt = PAR_parse_node(tdbb, csb, STATEMENT);
+				node->innerStmt = PAR_parse_stmt(tdbb, csb);
 
 			node->outputs = PAR_args(tdbb, csb, outputs, outputs);
 			break;
@@ -1407,7 +1706,7 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 						break;
 
 					case blr_exec_stmt_proc_block:
-						node->innerStmt = PAR_parse_node(tdbb, csb, STATEMENT);
+						node->innerStmt = PAR_parse_stmt(tdbb, csb);
 						break;
 
 					case blr_exec_stmt_data_src:
@@ -1511,47 +1810,36 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ExecStatementNode* ExecStatementNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	sql = CMP_pass1(tdbb, csb, sql);
-	dataSource = CMP_pass1(tdbb, csb, dataSource);
-	userName = CMP_pass1(tdbb, csb, userName);
-	password = CMP_pass1(tdbb, csb, password);
-	role = CMP_pass1(tdbb, csb, role);
-
-	innerStmt = CMP_pass1(tdbb, csb, innerStmt);
-
-	if (inputs)
-		inputs = inputs->pass1(tdbb, csb);
-
-	if (outputs)
-		outputs = outputs->pass1(tdbb, csb);
-
+	doPass1(tdbb, csb, sql.getAddress());
+	doPass1(tdbb, csb, dataSource.getAddress());
+	doPass1(tdbb, csb, userName.getAddress());
+	doPass1(tdbb, csb, password.getAddress());
+	doPass1(tdbb, csb, role.getAddress());
+	doPass1(tdbb, csb, innerStmt.getAddress());
+	doPass1(tdbb, csb, inputs.getAddress());
+	doPass1(tdbb, csb, outputs.getAddress());
 	return this;
 }
 
 ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	sql = CMP_pass2(tdbb, csb, sql);
-	dataSource = CMP_pass2(tdbb, csb, dataSource);
-	userName = CMP_pass2(tdbb, csb, userName);
-	password = CMP_pass2(tdbb, csb, password);
-	role = CMP_pass2(tdbb, csb, role);
+	ExprNode::doPass2(tdbb, csb, sql.getAddress());
+	ExprNode::doPass2(tdbb, csb, dataSource.getAddress());
+	ExprNode::doPass2(tdbb, csb, userName.getAddress());
+	ExprNode::doPass2(tdbb, csb, password.getAddress());
+	ExprNode::doPass2(tdbb, csb, role.getAddress());
+	doPass2(tdbb, csb, innerStmt.getAddress(), this);
+	ExprNode::doPass2(tdbb, csb, inputs.getAddress());
+	ExprNode::doPass2(tdbb, csb, outputs.getAddress());
 
-	innerStmt = CMP_pass2(tdbb, csb, innerStmt, node);
-
-	if (inputs)
-		inputs = inputs->pass2(tdbb, csb);
-
-	if (outputs)
-		outputs = outputs->pass2(tdbb, csb);
-
-	node->nod_impure = CMP_impure(csb, sizeof(void**));
+	impureOffset = CMP_impure(csb, sizeof(void**));
 
 	return this;
 }
 
-const jrd_nod* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
-	EDS::Statement** stmtPtr = request->getImpure<EDS::Statement*>(node->nod_impure);
+	EDS::Statement** stmtPtr = request->getImpure<EDS::Statement*>(impureOffset);
 	EDS::Statement* stmt = *stmtPtr;
 
 	if (request->req_operation == jrd_req::req_evaluate)
@@ -1611,21 +1899,21 @@ const jrd_nod* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 	if (request->req_operation == jrd_req::req_unwind)
 	{
-		const LabelNode* label = StmtNode::as<LabelNode>(node->nod_parent.getObject());
+		const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
 
 		if (label && request->req_label == label->labelNumber &&
 			(request->req_flags & req_continue_loop))
 		{
 			request->req_flags &= ~req_continue_loop;
 			request->req_operation = jrd_req::req_sync;
-			return node;
+			return this;
 		}
 	}
 
 	if (stmt)
 		stmt->close(tdbb);
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
@@ -1649,21 +1937,20 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 
 static RegisterNode<IfNode> regIfNode(blr_if);
 
-
 DmlNode* IfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	IfNode* node = FB_NEW(pool) IfNode(pool);
 
 	node->condition = PAR_parse_boolean(tdbb, csb);
-	node->trueAction = PAR_parse_node(tdbb, csb, STATEMENT);
-	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_end)
+	node->trueAction = PAR_parse_stmt(tdbb, csb);
+
+	if (csb->csb_blr_reader.peekByte() == blr_end)
 		csb->csb_blr_reader.getByte(); // skip blr_end
 	else
-		node->falseAction = PAR_parse_node(tdbb, csb, STATEMENT);
+		node->falseAction = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
-
 
 IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
@@ -1674,7 +1961,6 @@ IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-
 void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "IfNode";
@@ -1683,7 +1969,6 @@ void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
 	if (dsqlFalseAction)
 		nodes.add(dsqlFalseAction);
 }
-
 
 void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -1696,26 +1981,23 @@ void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_end);
 }
 
-
 IfNode* IfNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = CMP_pass1(tdbb, csb, condition);
-	trueAction = CMP_pass1(tdbb, csb, trueAction);
-	falseAction = CMP_pass1(tdbb, csb, falseAction);
+	doPass1(tdbb, csb, condition.getAddress());
+	doPass1(tdbb, csb, trueAction.getAddress());
+	doPass1(tdbb, csb, falseAction.getAddress());
 	return this;
 }
-
 
 IfNode* IfNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	condition = CMP_pass2(tdbb, csb, condition);
-	trueAction = CMP_pass2(tdbb, csb, trueAction, node);
-	falseAction = CMP_pass2(tdbb, csb, falseAction, node);
+	ExprNode::doPass2(tdbb, csb, condition.getAddress());
+	doPass2(tdbb, csb, trueAction.getAddress(), this);
+	doPass2(tdbb, csb, falseAction.getAddress(), this);
 	return this;
 }
 
-
-const jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -1734,7 +2016,7 @@ const jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*ex
 		request->req_operation = jrd_req::req_return;
 	}
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -1742,7 +2024,6 @@ const jrd_nod* IfNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*ex
 
 
 static RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
-
 
 DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	UCHAR /*blrOp*/)
@@ -1752,11 +2033,10 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, C
 	if (csb->csb_blr_reader.getByte() != 0)	// Reserved for future improvements. Should be 0 for now.
 		PAR_syntax_error(csb, "0");
 
-	node->action = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->action = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
-
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
@@ -1772,13 +2052,11 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 	return node;
 }
 
-
 void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "InAutonomousTransactionNode";
 	nodes.add(dsqlAction);
 }
-
 
 void InAutonomousTransactionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -1787,23 +2065,20 @@ void InAutonomousTransactionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_statement(dsqlScratch, dsqlAction);
 }
 
-
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	action = CMP_pass1(tdbb, csb, action);
+	doPass1(tdbb, csb, action.getAddress());
 	return this;
 }
-
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	savNumberOffset = CMP_impure(csb, sizeof(SLONG));
-	action = CMP_pass2(tdbb, csb, action, node);
+	doPass2(tdbb, csb, action.getAddress(), this);
 	return this;
 }
 
-
-const jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	Jrd::Attachment* attachment = request->req_attachment;
 	SLONG* savNumber = request->getImpure<SLONG>(savNumberOffset);
@@ -1939,7 +2214,99 @@ const jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* re
 	request->req_transaction = request->req_auto_trans.pop();
 	tdbb->setTransaction(request->req_transaction);
 
-	return node->nod_parent;
+	return parentStmt;
+}
+
+
+//--------------------
+
+
+static RegisterNode<InitVariableNode> regInitVariableNode(blr_init_variable);
+
+DmlNode* InitVariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	InitVariableNode* node = FB_NEW(pool) InitVariableNode(pool);
+	node->varId = csb->csb_blr_reader.getWord();
+
+	vec<DeclareVariableNode*>* vector = csb->csb_variables;
+
+	if (!vector || node->varId >= vector->count())
+		PAR_syntax_error(csb, "variable identifier");
+
+	return node;
+}
+
+InitVariableNode* InitVariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+void InitVariableNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text = "InitVariableNode";
+}
+
+void InitVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+}
+
+InitVariableNode* InitVariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	if (copier.csb->csb_remap_variable == 0)
+		return this;
+
+	InitVariableNode* node = FB_NEW(*tdbb->getDefaultPool()) InitVariableNode(*tdbb->getDefaultPool());
+	node->varId = varId + copier.csb->csb_remap_variable;
+	node->varDecl = varDecl;
+	node->varInfo = varInfo;
+	return node;
+}
+
+InitVariableNode* InitVariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	vec<DeclareVariableNode*>* vector = csb->csb_variables;
+
+	if (!vector || varId >= vector->count() || !(varDecl = (*vector)[varId]))
+		PAR_syntax_error(csb, "variable identifier");
+
+	return this;
+}
+
+InitVariableNode* InitVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	varInfo = CMP_pass2_validation(tdbb, csb, Item(Item::TYPE_VARIABLE, varId));
+	return this;
+}
+
+const StmtNode* InitVariableNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+	{
+		if (varInfo)
+		{
+			dsc* toDesc = &request->getImpure<impure_value>(varDecl->impureOffset)->vlu_desc;
+			toDesc->dsc_flags |= DSC_null;
+
+			MapFieldInfo::ValueType fieldInfo;
+
+			if (varInfo->fullDomain &&
+				request->getStatement()->mapFieldInfo.get(varInfo->field, fieldInfo) &&
+				fieldInfo.defaultValue)
+			{
+				dsc* value = EVL_expr(tdbb, request, fieldInfo.defaultValue);
+
+				if (value && !(request->req_flags & req_null))
+				{
+					toDesc->dsc_flags &= ~DSC_null;
+					MOV_move(tdbb, value, toDesc);
+				}
+			}
+		}
+
+		request->req_operation = jrd_req::req_return;
+	}
+
+	return parentStmt;
 }
 
 
@@ -2039,7 +2406,6 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-
 void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ExecBlockNode\n";
@@ -2058,7 +2424,6 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 	nodes.add(localDeclList);
 	nodes.add(body);
 }
-
 
 void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -2189,7 +2554,6 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->endDebug();
 }
 
-
 // Revert parameters order for EXECUTE BLOCK statement
 void ExecBlockNode::revertParametersOrder(Array<dsql_par*>& parameters)
 {
@@ -2211,7 +2575,6 @@ void ExecBlockNode::revertParametersOrder(Array<dsql_par*>& parameters)
 
 
 static RegisterNode<ExceptionNode> regExceptionNode(blr_abort);
-
 
 DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	UCHAR /*blrOp*/)
@@ -2280,7 +2643,6 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-
 StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
@@ -2291,14 +2653,12 @@ StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
 
-
 void ExceptionNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text.printf("ExceptionNode: Name: %s", name.c_str());
 	if (dsqlMessageExpr)
 		nodes.add(dsqlMessageExpr);
 }
-
 
 void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -2337,32 +2697,21 @@ void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, dsqlMessageExpr);
 }
 
-
 ExceptionNode* ExceptionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (messageExpr)
-		messageExpr = messageExpr->pass1(tdbb, csb);
-
-	if (parameters)
-		parameters = parameters->pass1(tdbb, csb);
-
+	doPass1(tdbb, csb, messageExpr.getAddress());
+	doPass1(tdbb, csb, parameters.getAddress());
 	return this;
 }
-
 
 ExceptionNode* ExceptionNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (messageExpr)
-		messageExpr = messageExpr->pass2(tdbb, csb);
-
-	if (parameters)
-		parameters = parameters->pass2(tdbb, csb);
-
+	ExprNode::doPass2(tdbb, csb, messageExpr.getAddress());
+	ExprNode::doPass2(tdbb, csb, parameters.getAddress());
 	return this;
 }
 
-
-const jrd_nod* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -2385,9 +2734,8 @@ const jrd_nod* ExceptionNode::execute(thread_db* tdbb, jrd_req* request, ExeStat
 		}
 	}
 
-	return node->nod_parent;
+	return parentStmt;
 }
-
 
 // Set status vector according to specified error condition and jump to handle error accordingly.
 void ExceptionNode::setError(thread_db* tdbb) const
@@ -2542,7 +2890,6 @@ void ExitNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 	text = "ExitNode";
 }
 
-
 void ExitNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_leave);
@@ -2560,7 +2907,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	ForNode* node = FB_NEW(pool) ForNode(pool);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
-		node->stall = PAR_parse_node(tdbb, csb, STATEMENT);
+		node->stall = PAR_parse_stmt(tdbb, csb);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_rse ||
 		csb->csb_blr_reader.peekByte() == (UCHAR) blr_singular ||
@@ -2571,7 +2918,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	else
 		node->rse = PAR_rse(tdbb, csb, blrOp);
 
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -2687,21 +3034,32 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 StmtNode* ForNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	stall = CMP_pass1(tdbb, csb, stall);
-	rse->pass1(tdbb, csb);
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, stall.getAddress());
+	doPass1(tdbb, csb, rse.getAddress());
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
 
 StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	stall = CMP_pass2(tdbb, csb, stall, node);
-	rse->pass2(tdbb, csb);
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	rse->pass2Rse(tdbb, csb);
+
+	doPass2(tdbb, csb, stall.getAddress(), this);
+	ExprNode::doPass2(tdbb, csb, rse.getAddress());
+	doPass2(tdbb, csb, statement.getAddress(), this);
+
+	// Finish up processing of record selection expressions.
+
+	RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse.getObject());
+	csb->csb_fors.add(rsb);
+
+	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
+		(rse->flags & RseNode::FLAG_SCROLLABLE));
+
 	return this;
 }
 
-const jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
@@ -2726,14 +3084,14 @@ const jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*e
 
 		case jrd_req::req_unwind:
 		{
-			const LabelNode* label = StmtNode::as<LabelNode>(node->nod_parent.getObject());
+			const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
 
 			if (label && request->req_label == label->labelNumber &&
 				(request->req_flags & req_continue_loop))
 			{
 				request->req_flags &= ~req_continue_loop;
 				request->req_operation = jrd_req::req_sync;
-				return node;
+				return this;
 			}
 
 			// fall into
@@ -2741,7 +3099,7 @@ const jrd_nod* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*e
 
 		default:
 			cursor->close(tdbb);
-			return node->nod_parent;
+			return parentStmt;
 	}
 
 	fb_assert(false); // unreachable code
@@ -2757,7 +3115,7 @@ static RegisterNode<HandlerNode> regHandlerNode(blr_handler);
 DmlNode* HandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	HandlerNode* node = FB_NEW(pool) HandlerNode(pool);
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 	return node;
 }
 
@@ -2777,17 +3135,17 @@ void HandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 HandlerNode* HandlerNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
 
 HandlerNode* HandlerNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
@@ -2799,7 +3157,7 @@ const jrd_nod* HandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 				request->req_operation = jrd_req::req_return;
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 }
 
@@ -2814,7 +3172,7 @@ DmlNode* LabelNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	LabelNode* node = FB_NEW(pool) LabelNode(pool);
 
 	node->labelNumber = csb->csb_blr_reader.getByte();
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -2835,17 +3193,17 @@ void LabelNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 LabelNode* LabelNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
 
 LabelNode* LabelNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
+const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
 {
 	switch (request->req_operation)
 	{
@@ -2864,7 +3222,7 @@ const jrd_nod* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeStat
 			// fall into
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 }
 
@@ -2877,7 +3235,7 @@ static RegisterNode<LoopNode> regLoopNode(blr_loop);
 DmlNode* LoopNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	LoopNode* node = FB_NEW(pool) LoopNode(pool);
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 	return node;
 }
 
@@ -2897,17 +3255,17 @@ void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 LoopNode* LoopNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
 
 LoopNode* LoopNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
@@ -2918,7 +3276,7 @@ const jrd_nod* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState
 
 		case jrd_req::req_unwind:
 		{
-			const LabelNode* label = StmtNode::as<LabelNode>(node->nod_parent.getObject());
+			const LabelNode* label = StmtNode::as<LabelNode>(parentStmt.getObject());
 
 			if (label && request->req_label == label->labelNumber &&
 				(request->req_flags & req_continue_loop))
@@ -2931,8 +3289,119 @@ const jrd_nod* LoopNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState
 		}
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
+}
+
+
+//--------------------
+
+
+static RegisterNode<MessageNode> regMessageNode(blr_message);
+
+// Parse a message declaration, including operator byte.
+DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	MessageNode* node = FB_NEW(pool) MessageNode(pool);
+
+	// Get message number, register it in the compiler scratch block, and
+	// allocate a node to represent the message.
+
+	USHORT n = csb->csb_blr_reader.getByte();
+	CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
+
+	tail->csb_message = node;
+	node->messageNumber = n;
+
+	if (n > csb->csb_msg_number)
+		csb->csb_msg_number = n;
+
+	// Get the number of parameters in the message and prepare to fill out the format block.
+
+	n = csb->csb_blr_reader.getWord();
+	node->format = Format::newFormat(*tdbb->getDefaultPool(), n);
+	ULONG offset = 0;
+
+	Format::fmt_desc_iterator desc, end;
+	USHORT index = 0;
+
+	for (desc = node->format->fmt_desc.begin(), end = desc + n; desc < end; ++desc, ++index)
+	{
+		ItemInfo itemInfo;
+		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
+		if (alignment)
+			offset = FB_ALIGN(offset, alignment);
+		desc->dsc_address = (UCHAR *) (IPTR) offset;
+		offset += desc->dsc_length;
+
+		// ASF: Odd indexes are the nullable flag.
+		// So we only check even indexes, which is the actual parameter.
+		if (itemInfo.isSpecial() && index % 2 == 0)
+		{
+			csb->csb_dbg_info.argInfoToName.get(
+				Firebird::ArgumentInfo(csb->csb_msg_number, index / 2), itemInfo.name);
+
+			csb->csb_map_item_info.put(Item(Item::TYPE_PARAMETER, csb->csb_msg_number, index),
+				itemInfo);
+		}
+	}
+
+	if (offset > MAX_FORMAT_SIZE)
+		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+
+	node->format->fmt_length = (USHORT) offset;
+
+	return node;
+}
+
+MessageNode* MessageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	return this;
+}
+
+void MessageNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
+{
+	text = "MessageNode";
+}
+
+void MessageNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+}
+
+MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	MessageNode* node = FB_NEW(*tdbb->getDefaultPool()) MessageNode(*tdbb->getDefaultPool());
+	node->messageNumber = messageNumber;
+	node->format = format;
+	node->impureFlags = impureFlags;
+	return node;
+}
+
+MessageNode* MessageNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+{
+	return this;
+}
+
+MessageNode* MessageNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	fb_assert(format);
+
+	impureOffset = CMP_impure(csb, FB_ALIGN(format->fmt_length, 2));
+	impureFlags = CMP_impure(csb, sizeof(USHORT) * format->fmt_count);
+
+	return this;
+}
+
+const StmtNode* MessageNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+{
+	if (request->req_operation == jrd_req::req_evaluate)
+	{
+		USHORT* flags = request->getImpure<USHORT>(impureFlags);
+		memset(flags, 0, sizeof(USHORT) * format->fmt_count);
+		request->req_operation = jrd_req::req_return;
+	}
+
+	return parentStmt;
 }
 
 
@@ -2974,10 +3443,10 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	ModifyNode* node = FB_NEW(pool) ModifyNode(pool);
 	node->orgStream = orgStream;
 	node->newStream = newStream;
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	if (blrOp == blr_modify2)
-		node->statement2 = PAR_parse_node(tdbb, csb, STATEMENT);
+		node->statement2 = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -3000,11 +3469,11 @@ ModifyNode* ModifyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	pass1Modify(tdbb, csb, this);
 
-	statement = CMP_pass1(tdbb, csb, statement);
-	statement2 = CMP_pass1(tdbb, csb, statement2);
-	subMod = CMP_pass1(tdbb, csb, subMod);
-	validate = CMP_pass1(tdbb, csb, validate);
-	mapView = CMP_pass1(tdbb, csb, mapView);
+	doPass1(tdbb, csb, statement.getAddress());
+	doPass1(tdbb, csb, statement2.getAddress());
+	doPass1(tdbb, csb, subMod.getAddress());
+	pass1Validations(tdbb, csb, validations);
+	doPass1(tdbb, csb, mapView.getAddress());
 
 	return this;
 }
@@ -3068,7 +3537,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 			if (!relation->rel_view_rse)
 			{
 				// Apply validation constraints.
-				node->validate = makeValidation(tdbb, csb, newStream);
+				makeValidation(tdbb, csb, newStream, node->validations);
 			}
 
 			return;
@@ -3104,10 +3573,7 @@ void ModifyNode::pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* 
 			ModifyNode* viewNode = FB_NEW(*tdbb->getDefaultPool()) ModifyNode(*tdbb->getDefaultPool());
 			viewNode->statement = pass1ExpandView(tdbb, csb, viewStream, newStream, true);
 
-			node->subMod = PAR_make_node(tdbb, 1);
-			node->subMod->nod_type = nod_class_stmtnode_jrd;
-			node->subMod->nod_count = 0;
-			node->subMod->nod_arg[0] = reinterpret_cast<jrd_nod*>(viewNode);
+			node->subMod = viewNode;
 
 			node = viewNode;
 		}
@@ -3131,11 +3597,18 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	csb->csb_rpt[orgStream].csb_flags |= csb_active;
 	csb->csb_rpt[newStream].csb_flags |= csb_active;
 
-	statement = CMP_pass2(tdbb, csb, statement, node);
-	statement2 = CMP_pass2(tdbb, csb, statement2, node);
-	subMod = CMP_pass2(tdbb, csb, subMod, node);
-	validate = CMP_pass2(tdbb, csb, validate, node);
-	mapView = CMP_pass2(tdbb, csb, mapView, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
+	doPass2(tdbb, csb, statement2.getAddress(), this);
+	doPass2(tdbb, csb, subMod.getAddress(), this);
+
+	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
+	{
+		doPass2(tdbb, csb, i->stmt.getAddress(), this);
+		ExprNode::doPass2(tdbb, csb, i->boolean.getAddress());
+		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
+	}
+
+	doPass2(tdbb, csb, mapView.getAddress(), this);
 
 	// AB: Remove the previous flags
 	csb->csb_rpt[orgStream].csb_flags &= ~csb_active;
@@ -3152,33 +3625,33 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[orgStream].csb_fields, id);
 	}
 
-	node->nod_impure = CMP_impure(csb, sizeof(impure_state));
+	impureOffset = CMP_impure(csb, sizeof(impure_state));
 
 	return this;
 }
 
-const jrd_nod* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
-	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
-	const jrd_nod* retNode;
+	impure_state* impure = request->getImpure<impure_state>(impureOffset);
+	const StmtNode* retNode;
 
 	if (request->req_operation == jrd_req::req_unwind)
-		return node->nod_parent;
+		return parentStmt;
 	else if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
 	{
 		if (!exeState->topNode)
 		{
-			exeState->topNode = node;
+			exeState->topNode = this;
 			exeState->whichModTrig = PRE_TRIG;
 		}
 
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = modify(tdbb, request, exeState->whichModTrig);
 
 		if (exeState->whichModTrig == PRE_TRIG)
 		{
 			retNode = subMod;
-			fb_assert(retNode->nod_parent == exeState->prevNode);
+			fb_assert(retNode->parentStmt == exeState->prevNode);
 			///retNode->nod_parent = exeState->prevNode;
 		}
 
@@ -3192,7 +3665,7 @@ const jrd_nod* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 	}
 	else
 	{
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = modify(tdbb, request, ALL_TRIGS);
 
 		if (!subMod && exeState->whichModTrig == PRE_TRIG)
@@ -3203,11 +3676,11 @@ const jrd_nod* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Execute a MODIFY statement.
-const jrd_nod* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
-	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
+	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 
 	record_param* orgRpb = &request->req_rpb[orgStream];
 	jrd_rel* relation = orgRpb->rpb_relation;
@@ -3256,8 +3729,8 @@ const jrd_nod* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigge
 				preModifyEraseTriggers(tdbb, &relation->rel_pre_modify, whichTrig, orgRpb, newRpb,
 					jrd_req::req_trigger_update);
 
-				if (validate)
-					validateExpressions(tdbb, validate);
+				if (validations.hasData())
+					validateExpressions(tdbb, validations);
 
 				if (relation->rel_file)
 					EXT_modify(orgRpb, newRpb, transaction);
@@ -3344,7 +3817,7 @@ const jrd_nod* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigge
 			}
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 
 	impure->sta_state = 0;
@@ -3476,20 +3949,19 @@ void PostEventNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 PostEventNode* PostEventNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	event = CMP_pass1(tdbb, csb, event);
-	if (argument)
-		argument = CMP_pass1(tdbb, csb, argument);
+	doPass1(tdbb, csb, event.getAddress());
+	doPass1(tdbb, csb, argument.getAddress());
 	return this;
 }
 
 PostEventNode* PostEventNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	event = CMP_pass2(tdbb, csb, event);
-	argument = CMP_pass2(tdbb, csb, argument);
+	ExprNode::doPass2(tdbb, csb, event.getAddress());
+	ExprNode::doPass2(tdbb, csb, argument.getAddress());
 	return this;
 }
 
-const jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
@@ -3507,7 +3979,7 @@ const jrd_nod* PostEventNode::execute(thread_db* tdbb, jrd_req* request, ExeStat
 	if (request->req_operation == jrd_req::req_evaluate)
 		request->req_operation = jrd_req::req_return;
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -3522,7 +3994,7 @@ DmlNode* ReceiveNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 	USHORT n = csb->csb_blr_reader.getByte();
 	node->message = csb->csb_rpt[n].csb_message;
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -3543,14 +4015,14 @@ void ReceiveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 ReceiveNode* ReceiveNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	// Do not call message pass1.
 	return this;
 }
 
 ReceiveNode* ReceiveNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	// Do not call message pass2.
 	return this;
 }
@@ -3558,7 +4030,7 @@ ReceiveNode* ReceiveNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Execute a RECEIVE statement. This can be entered either with "req_evaluate" (ordinary receive
 // statement) or "req_proceed" (select statement).
 // In the latter case, the statement isn't every formalled evaluated.
-const jrd_nod* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
@@ -3566,14 +4038,14 @@ const jrd_nod* ReceiveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 			request->req_operation = jrd_req::req_receive;
 			request->req_message = message;
 			request->req_flags |= req_stall;
-			return node;
+			return this;
 
 		case jrd_req::req_proceed:
 			request->req_operation = jrd_req::req_evaluate;
 			return statement;
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 }
 
@@ -3599,10 +4071,10 @@ DmlNode* StoreNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		PAR_syntax_error(csb, "relation source");
 	}
 
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	if (blrOp == blr_store2)
-		node->statement2 = PAR_parse_node(tdbb, csb, STATEMENT);
+		node->statement2 = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
@@ -3626,10 +4098,10 @@ StoreNode* StoreNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (pass1Store(tdbb, csb, this))
 		makeDefaults(tdbb, csb);
 
-	statement = CMP_pass1(tdbb, csb, statement);
-	statement2 = CMP_pass1(tdbb, csb, statement2);
-	subStore = CMP_pass1(tdbb, csb, subStore);
-	validate = CMP_pass1(tdbb, csb, validate);
+	doPass1(tdbb, csb, statement.getAddress());
+	doPass1(tdbb, csb, statement2.getAddress());
+	doPass1(tdbb, csb, subStore.getAddress());
+	pass1Validations(tdbb, csb, validations);
 
 	return this;
 }
@@ -3689,7 +4161,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 			if (!relation->rel_view_rse)
 			{
 				// Apply validation constraints.
-				node->validate = makeValidation(tdbb, csb, stream);
+				makeValidation(tdbb, csb, stream, node->validations);
 			}
 
 			return true;
@@ -3717,10 +4189,7 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 			viewNode->relationSource = relSource;
 			viewNode->statement = pass1ExpandView(tdbb, csb, stream, newStream, true);
 
-			node->subStore = PAR_make_node(tdbb, 1);
-			node->subStore->nod_type = nod_class_stmtnode_jrd;
-			node->subStore->nod_count = 0;
-			node->subStore->nod_arg[0] = reinterpret_cast<jrd_nod*>(viewNode);
+			node->subStore = viewNode;
 
 			// Substitute the original update node with the newly created one.
 			node = viewNode;
@@ -3757,7 +4226,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 		map[2] = 2;
 	}
 
-	NodeStack stack;
+	StmtNodeStack stack;
 
 	USHORT fieldId = 0;
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
@@ -3769,21 +4238,22 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 		if (!*ptr1 || !((*ptr1)->fld_generator_name.hasData() || (value = (*ptr1)->fld_default_value)))
 			continue;
 
-		fb_assert(statement->nod_type == nod_list);
-		if (statement->nod_type == nod_list)
+		CompoundStmtNode* compoundNode = StmtNode::as<CompoundStmtNode>(statement.getObject());
+		fb_assert(compoundNode);
+
+		if (compoundNode)
 		{
 			bool inList = false;
 
-			for (unsigned i = 0; i < statement->nod_count; ++i)
+			for (size_t i = 0; i < compoundNode->statements.getCount(); ++i)
 			{
-				const jrd_nod* assign = statement->nod_arg[i];
+				const AssignmentNode* assign = StmtNode::as<AssignmentNode>(
+					compoundNode->statements[i].getObject());
+				fb_assert(assign);
 
-				fb_assert(assign->nod_type == nod_assignment);
-				if (assign->nod_type == nod_assignment)
+				if (assign)
 				{
-					const jrd_nod* to = assign->nod_arg[e_asgn_to];
-
-					const FieldNode* fieldNode = ExprNode::as<FieldNode>(to);
+					const FieldNode* fieldNode = assign->asgnTo->as<FieldNode>();
 					fb_assert(fieldNode);
 
 					if (fieldNode && fieldNode->fieldStream == stream && fieldNode->fieldId == fieldId)
@@ -3797,10 +4267,11 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 			if (inList)
 				continue;
 
-			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
-			node->nod_type = nod_assignment;
-			node->nod_arg[e_asgn_to] = PAR_gen_field(tdbb, stream, fieldId);
-			stack.push(node);
+			AssignmentNode* assign = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(
+				*tdbb->getDefaultPool());
+			assign->asgnTo = PAR_gen_field(tdbb, stream, fieldId);
+
+			stack.push(assign);
 
 			if ((*ptr1)->fld_generator_name.hasData())
 			{
@@ -3815,23 +4286,12 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
 				genNode->arg = literal;
 
-				jrd_nod* genNod = PAR_make_node(tdbb, 1);
-				genNod->nod_type = nod_class_exprnode_jrd;
-				genNod->nod_count = 0;
-				genNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(genNode);
-				node->nod_arg[e_asgn_from] = genNod;
+				assign->asgnFrom = genNode;
 			}
 			else //if (value)
 			{
 				// Clone the field default value.
-
-				jrd_nod* nod = PAR_make_node(tdbb, 1);
-				nod->nod_type = nod_class_exprnode_jrd;
-				nod->nod_count = 0;
-				nod->nod_arg[0] = reinterpret_cast<jrd_nod*>(
-					RemapFieldNodeCopier(csb, map, fieldId).copy(tdbb, value));
-
-				node->nod_arg[e_asgn_from] = nod;
+				assign->asgnFrom = RemapFieldNodeCopier(csb, map, fieldId).copy(tdbb, value);
 			}
 		}
 	}
@@ -3852,39 +4312,45 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	USHORT stream = relationSource->getStream();
 	csb->csb_rpt[stream].csb_flags |= csb_active;
 
-	statement = CMP_pass2(tdbb, csb, statement, node);
-	statement2 = CMP_pass2(tdbb, csb, statement2, node);
-	subStore = CMP_pass2(tdbb, csb, subStore, node);
-	validate = CMP_pass2(tdbb, csb, validate, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
+	doPass2(tdbb, csb, statement2.getAddress(), this);
+	doPass2(tdbb, csb, subStore.getAddress(), this);
+
+	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
+	{
+		doPass2(tdbb, csb, i->stmt.getAddress(), this);
+		ExprNode::doPass2(tdbb, csb, i->boolean.getAddress());
+		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
+	}
 
 	// AB: Remove the previous flags
 	csb->csb_rpt[stream].csb_flags &= ~csb_active;
 
-	node->nod_impure = CMP_impure(csb, sizeof(impure_state));
+	impureOffset = CMP_impure(csb, sizeof(impure_state));
 
 	return this;
 }
 
-const jrd_nod* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
-	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
-	const jrd_nod* retNode;
+	impure_state* impure = request->getImpure<impure_state>(impureOffset);
+	const StmtNode* retNode;
 
 	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subStore)
 	{
 		if (!exeState->topNode)
 		{
-			exeState->topNode = node;
+			exeState->topNode = this;
 			exeState->whichStoTrig = PRE_TRIG;
 		}
 
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = store(tdbb, request, exeState->whichStoTrig);
 
 		if (exeState->whichStoTrig == PRE_TRIG)
 		{
 			retNode = subStore;
-			fb_assert(retNode->nod_parent == exeState->prevNode);
+			fb_assert(retNode->parentStmt == exeState->prevNode);
 			///retNode->nod_parent = exeState->prevNode;
 		}
 
@@ -3898,7 +4364,7 @@ const jrd_nod* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 	}
 	else
 	{
-		exeState->prevNode = node;
+		exeState->prevNode = this;
 		retNode = store(tdbb, request, ALL_TRIGS);
 
 		if (!subStore && exeState->whichStoTrig == PRE_TRIG)
@@ -3909,11 +4375,11 @@ const jrd_nod* StoreNode::execute(thread_db* tdbb, jrd_req* request, ExeState* e
 }
 
 // Execute a STORE statement.
-const jrd_nod* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
+const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* transaction = request->req_transaction;
-	impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
+	impure_state* impure = request->getImpure<impure_state>(impureOffset);
 
 	const USHORT stream = relationSource->getStream();
 	record_param* rpb = &request->req_rpb[stream];
@@ -3932,7 +4398,7 @@ const jrd_nod* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger 
 
 		case jrd_req::req_return:
 			if (impure->sta_state)
-				return node->nod_parent;
+				return parentStmt;
 
 			if (transaction != attachment->getSysTransaction())
 				++transaction->tra_save_point->sav_verb_count;
@@ -3943,8 +4409,8 @@ const jrd_nod* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger 
 					jrd_req::req_trigger_insert, PRE_TRIG);
 			}
 
-			if (validate)
-				validateExpressions(tdbb, validate);
+			if (validations.hasData())
+				validateExpressions(tdbb, validations);
 
 			// For optimum on-disk record compression, zero all unassigned
 			// fields. In addition, zero the tail of assigned varying fields
@@ -4012,7 +4478,7 @@ const jrd_nod* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger 
 			}
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 
 	// Fall thru on evaluate to set up for store before executing sub-statement.
@@ -4050,7 +4516,6 @@ const jrd_nod* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger 
 
 static RegisterNode<UserSavepointNode> regUserSavepointNode(blr_user_savepoint);
 
-
 DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	UserSavepointNode* node = FB_NEW(pool) UserSavepointNode(pool);
@@ -4060,7 +4525,6 @@ DmlNode* UserSavepointNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, Compile
 
 	return node;
 }
-
 
 UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
@@ -4103,12 +4567,10 @@ UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-
 void UserSavepointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "UserSavepointNode";
 }
-
 
 void UserSavepointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -4117,20 +4579,17 @@ void UserSavepointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendNullString(name.c_str());
 }
 
-
 UserSavepointNode* UserSavepointNode::pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
-
 
 UserSavepointNode* UserSavepointNode::pass2(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
 {
 	return this;
 }
 
-
-const jrd_nod* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	jrd_tra* transaction = request->req_transaction;
 
@@ -4233,7 +4692,7 @@ const jrd_nod* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 	request->req_operation = jrd_req::req_return;
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -4250,7 +4709,7 @@ DmlNode* SelectNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	{
 		if (csb->csb_blr_reader.peekByte() != blr_receive)
 			PAR_syntax_error(csb, "blr_receive");
-		node->statements.add(PAR_parse_node(tdbb, csb, STATEMENT));
+		node->statements.add(PAR_parse_stmt(tdbb, csb));
 	}
 
 	csb->csb_blr_reader.getByte();	// skip blr_end
@@ -4274,15 +4733,15 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 SelectNode* SelectNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<jrd_nod>* i = statements.begin(); i != statements.end(); ++i)
-		*i = CMP_pass1(tdbb, csb, *i);
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+		doPass1(tdbb, csb, i->getAddress());
 	return this;
 }
 
 SelectNode* SelectNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	for (NestConst<jrd_nod>* i = statements.begin(); i != statements.end(); ++i)
-		*i = CMP_pass2(tdbb, csb, *i, node);
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+		doPass2(tdbb, csb, i->getAddress(), this);
 	return this;
 }
 
@@ -4291,18 +4750,18 @@ SelectNode* SelectNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // EXE_send will then loop thru the sub-statements of select looking for the appropriate RECEIVE
 // statement. When (or if) it finds it, it will set it up the next statement to be executed.
 // The RECEIVE, then, will be entered with the operation "req_proceed".
-const jrd_nod* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			request->req_message = node;
+			request->req_message = this;
 			request->req_operation = jrd_req::req_receive;
 			request->req_flags |= req_stall;
-			return node;
+			return this;
 
 		default:
-			return node->nod_parent;
+			return parentStmt;
 	}
 }
 
@@ -4310,7 +4769,7 @@ const jrd_nod* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 //--------------------
 
 
-static RegisterNode<SetGeneratorNode> regSetGenerator(blr_set_generator);
+static RegisterNode<SetGeneratorNode> regSetGeneratorNode(blr_set_generator);
 
 DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
@@ -4344,17 +4803,17 @@ void SetGeneratorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	value = CMP_pass1(tdbb, csb, value);
+	doPass1(tdbb, csb, value.getAddress());
 	return this;
 }
 
 SetGeneratorNode* SetGeneratorNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	value = CMP_pass2(tdbb, csb, value);
+	ExprNode::doPass2(tdbb, csb, value.getAddress());
 	return this;
 }
 
-const jrd_nod* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -4375,7 +4834,7 @@ const jrd_nod* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, ExeS
 		request->req_operation = jrd_req::req_return;
 	}
 
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -4396,19 +4855,25 @@ void SourceInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
+SourceInfoNode* SourceInfoNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	return FB_NEW(*tdbb->getDefaultPool()) SourceInfoNode(*tdbb->getDefaultPool(),
+		copier.copy(tdbb, statement), line, column);
+}
+
 SourceInfoNode* SourceInfoNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
 
 SourceInfoNode* SourceInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	return this;
 }
 
-const jrd_nod* SourceInfoNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SourceInfoNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
@@ -4418,7 +4883,7 @@ const jrd_nod* SourceInfoNode::execute(thread_db* /*tdbb*/, jrd_req* request, Ex
 		return statement;
 	}
 	else
-		return node->nod_parent;
+		return parentStmt;
 }
 
 
@@ -4460,22 +4925,22 @@ StallNode* StallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 // Execute a stall statement. This is like a blr_receive, except that there is no need for a
 // gds__send () from the user (i.e. EXE_send () in the engine).
 // A gds__receive () will unblock the user.
-const jrd_nod* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
 		case jrd_req::req_sync:
-			return node->nod_parent;
+			return parentStmt;
 
 		case jrd_req::req_proceed:
 			request->req_operation = jrd_req::req_return;
-			return node->nod_parent;
+			return parentStmt;
 
 		default:
-			request->req_message = node;
+			request->req_message = this;
 			request->req_operation = jrd_req::req_return;
 			request->req_flags |= req_stall;
-			return node;
+			return this;
 	}
 }
 
@@ -4485,18 +4950,16 @@ const jrd_nod* StallNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeStat
 
 static RegisterNode<SuspendNode> regSuspendNode(blr_send);
 
-
 DmlNode* SuspendNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	SuspendNode* node = FB_NEW(pool) SuspendNode(pool);
 
 	USHORT n = csb->csb_blr_reader.getByte();
 	node->message = csb->csb_rpt[n].csb_message;
-	node->statement = PAR_parse_node(tdbb, csb, STATEMENT);
+	node->statement = PAR_parse_stmt(tdbb, csb);
 
 	return node;
 }
-
 
 SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
@@ -4521,35 +4984,30 @@ SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-
 void SuspendNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "SuspendNode";
 }
-
 
 void SuspendNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->genReturn();
 }
 
-
 SuspendNode* SuspendNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass1(tdbb, csb, statement);
+	doPass1(tdbb, csb, statement.getAddress());
 	return this;
 }
-
 
 SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	statement = CMP_pass2(tdbb, csb, statement, node);
+	doPass2(tdbb, csb, statement.getAddress(), this);
 	return this;
 }
 
-
 // Execute a SEND statement.
-const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
@@ -4560,14 +5018,14 @@ const jrd_nod* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 		request->req_operation = jrd_req::req_send;
 		request->req_message = message;
 		request->req_flags |= req_stall;
-		return node;
+		return this;
 
 	case jrd_req::req_proceed:
 		request->req_operation = jrd_req::req_return;
-		return node->nod_parent;
+		return parentStmt;
 
 	default:
-		return node->nod_parent;
+		return parentStmt;
 	}
 }
 
@@ -4597,13 +5055,11 @@ ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-
 void ReturnNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "ReturnNode";
 	nodes.add(value);
 }
-
 
 void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
@@ -4645,7 +5101,7 @@ void SavePointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-const jrd_nod* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
+const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const
 {
 	jrd_tra* transaction = request->req_transaction;
 	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
@@ -4679,7 +5135,7 @@ const jrd_nod* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeStat
 	}
 
 	request->req_operation = jrd_req::req_return;
-	return node->nod_parent;
+	return parentStmt;
 }
 
 
@@ -4737,7 +5193,8 @@ static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 }
 
 // Build a validation list for a relation, if appropriate.
-static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+static void makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT stream,
+	Array<ValidateInfo>& validations)
 {
 	SET_TDBB(tdbb);
 
@@ -4747,7 +5204,7 @@ static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT str
 
 	vec<jrd_fld*>* vector = relation->rel_fields;
 	if (!vector)
-		return NULL;
+		return;
 
 	UCHAR local_map[JrdStatement::MAP_LENGTH];
 	UCHAR* map = csb->csb_rpt[stream].csb_map;
@@ -4758,15 +5215,13 @@ static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT str
 		map[0] = (UCHAR) stream;
 	}
 
-	NodeStack stack;
-
 	USHORT fieldId = 0;
 	vec<jrd_fld*>::iterator ptr1 = vector->begin();
 
 	for (const vec<jrd_fld*>::const_iterator end = vector->end(); ptr1 < end; ++ptr1, ++fieldId)
 	{
 		BoolExprNode* validation;
-		jrd_nod* validationStmt;
+		StmtNode* validationStmt;
 
 		if (*ptr1 && (validation = (*ptr1)->fld_validation))
 		{
@@ -4780,17 +5235,11 @@ static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT str
 
 			validation = copier.copy(tdbb, validation);
 
-			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
-			boolNod->nod_type = nod_class_exprnode_jrd;
-			boolNod->nod_count = 0;
-			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
-
-			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
-			node->nod_type = nod_validate;
-			node->nod_arg[e_val_stmt] = validationStmt;
-			node->nod_arg[e_val_boolean] = boolNod;
-			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, fieldId);
-			stack.push(node);
+			ValidateInfo validate;
+			validate.stmt = validationStmt;
+			validate.boolean = validation;
+			validate.value = PAR_gen_field(tdbb, stream, fieldId);
+			validations.add(validate);
 		}
 
 		if (*ptr1 && (validation = (*ptr1)->fld_not_null))
@@ -4805,35 +5254,24 @@ static jrd_nod* makeValidation(thread_db* tdbb, CompilerScratch* csb, USHORT str
 
 			validation = copier.copy(tdbb, validation);
 
-			jrd_nod* boolNod = PAR_make_node(tdbb, 1);
-			boolNod->nod_type = nod_class_exprnode_jrd;
-			boolNod->nod_count = 0;
-			boolNod->nod_arg[0] = reinterpret_cast<jrd_nod*>(validation);
-
-			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
-			node->nod_type = nod_validate;
-			node->nod_arg[e_val_stmt] = validationStmt;
-			node->nod_arg[e_val_boolean] = boolNod;
-			node->nod_arg[e_val_value] = PAR_gen_field(tdbb, stream, fieldId);
-			stack.push(node);
+			ValidateInfo validate;
+			validate.stmt = validationStmt;
+			validate.boolean = validation;
+			validate.value = PAR_gen_field(tdbb, stream, fieldId);
+			validations.add(validate);
 		}
 	}
-
-	if (stack.isEmpty())
-		return NULL;
-
-	return PAR_make_list(tdbb, stack);
 }
 
 // Process a view update performed by a trigger.
-static jrd_nod* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
+static StmtNode* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT orgStream,
 	USHORT newStream, bool remap)
 {
 	SET_TDBB(tdbb);
 
 	DEV_BLKCHK(csb, type_csb);
 
-	NodeStack stack;
+	StmtNodeStack stack;
 	jrd_rel* relation = csb->csb_rpt[orgStream].csb_relation;
 	vec<jrd_fld*>* fields = relation->rel_fields;
 
@@ -4857,8 +5295,8 @@ static jrd_nod* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT or
 			else
 				newId = id;
 
-			jrd_nod* node = PAR_gen_field(tdbb, newStream, newId);
-			CMP_get_desc(tdbb, csb, node, &desc);
+			ValueExprNode* node = PAR_gen_field(tdbb, newStream, newId);
+			node->getDesc(tdbb, csb, &desc);
 
 			if (!desc.dsc_address)
 			{
@@ -4866,10 +5304,11 @@ static jrd_nod* pass1ExpandView(thread_db* tdbb, CompilerScratch* csb, USHORT or
 				continue;
 			}
 
-			jrd_nod* assign = PAR_make_node(tdbb, e_asgn_length);
-			assign->nod_type = nod_assignment;
-			assign->nod_arg[e_asgn_to] = node;
-			assign->nod_arg[e_asgn_from] = PAR_gen_field(tdbb, orgStream, id);
+			AssignmentNode* assign = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(
+				*tdbb->getDefaultPool());
+			assign->asgnTo = node;
+			assign->asgnFrom = PAR_gen_field(tdbb, orgStream, id);
+
 			stack.push(assign);
 		}
 	}
@@ -4947,6 +5386,24 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	return static_cast<RelationSourceNode*>(rse->rse_relations[0].getObject());
 }
 
+// The csb->csb_validate_expr becomes true if an ancestor of the current node (the one being
+// passed in) in the parse tree is a validation. "Ancestor" does not include the current node
+// being passed in as an argument.
+// If we are in a "validate subtree" (as determined by the csb->csb_validate_expr), we must not
+// post update access to the fields involved in the validation clause.
+// (See the call for CMP_post_access in this function.)
+static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<ValidateInfo>& validations)
+{
+	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr, true);
+
+	for (Array<ValidateInfo>::iterator i = validations.begin(); i != validations.end(); ++i)
+	{
+		DmlNode::doPass1(tdbb, csb, i->stmt.getAddress());
+		DmlNode::doPass1(tdbb, csb, i->boolean.getAddress());
+		DmlNode::doPass1(tdbb, csb, i->value.getAddress());
+	}
+}
+
 // Inherit access to triggers to be fired.
 //
 // When we detect that a trigger could be fired by a request,
@@ -5013,31 +5470,26 @@ static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
 }
 
 // Execute a list of validation expressions.
-static void validateExpressions(thread_db* tdbb, const jrd_nod* list)
+static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations)
 {
 	SET_TDBB(tdbb);
-	BLKCHK(list, type_nod);
 
-	const jrd_nod* const* ptr1 = list->nod_arg;
+	Array<ValidateInfo>::const_iterator end = validations.end();
 
-	for (const jrd_nod* const* const end = ptr1 + list->nod_count; ptr1 < end; ptr1++)
+	for (Array<ValidateInfo>::const_iterator i = validations.begin(); i != end; ++i)
 	{
 		jrd_req* request = tdbb->getRequest();
 
-		if ((*ptr1)->nod_arg[e_val_stmt])
-			EXE_looper(tdbb, request, (*ptr1)->nod_arg[e_val_stmt], true);
+		if (i->stmt)
+			EXE_looper(tdbb, request, i->stmt.getObject(), true);
 
-		BoolExprNode* boolExpr = reinterpret_cast<BoolExprNode*>(
-			(*ptr1)->nod_arg[e_val_boolean]->nod_arg[0]);
-
-		if (!boolExpr->execute(tdbb, request) && !(request->req_flags & req_null))
+		if (!i->boolean->execute(tdbb, request) && !(request->req_flags & req_null))
 		{
 			// Validation error -- report result
 			const char* value;
 			VaryStr<128> temp;
 
-			const jrd_nod* node = (*ptr1)->nod_arg[e_val_value];
-			const dsc* desc = EVL_expr(tdbb, request, node->asValue());
+			const dsc* desc = EVL_expr(tdbb, request, i->value);
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value, &temp, sizeof(temp) - 1) : 0;
 
@@ -5049,7 +5501,7 @@ static void validateExpressions(thread_db* tdbb, const jrd_nod* list)
 				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
 
 			const TEXT*	name = NULL;
-			const FieldNode* fieldNode = ExprNode::as<FieldNode>(node);
+			const FieldNode* fieldNode = i->value->as<FieldNode>();
 
 			if (fieldNode)
 			{

@@ -31,6 +31,7 @@ namespace Jrd
 
 class BoolExprNode;
 class RseNode;
+class StmtNode;
 
 // view context block to cache view aliases
 
@@ -332,9 +333,9 @@ class jrd_fld : public pool_alloc<type_fld>
 {
 public:
 	BoolExprNode*	fld_validation;		// validation clause, if any
-	jrd_nod*	fld_validation_stmt;	// validation clause, if any - nod_stmt_expr fragment
+	StmtNode*		fld_validation_stmt;	// validation clause, if any - StmtExprNode fragment
 	BoolExprNode*	fld_not_null;		// if field cannot be NULL
-	jrd_nod*	fld_not_null_stmt;		// if field cannot be NULL - nod_stmt_expr fragment
+	StmtNode*		fld_not_null_stmt;	// if field cannot be NULL - StmtExprNode fragment
 	ValueExprNode*	fld_missing_value;	// missing value, if any
 	ValueExprNode*	fld_computation;	// computation for virtual field
 	ValueExprNode*	fld_source;			// source for view fields

@@ -722,6 +722,7 @@ static const struct {
 	{335545019, "42000"}, // 699 private_procedure
 	{335545020, "24000"}, // 700 request_outdated
 	{335545021, "08003"}, // 701 bad_events_handle
+	{335545022, "XX000"}, // 702 cannot_copy_stmt
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

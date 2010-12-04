@@ -194,7 +194,7 @@ const int ISR_null		= 2;	// Record consists of NULL values only
 
 // Index retrieval block -- hold stuff for index retrieval
 
-class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
+class IndexRetrieval : public pool_alloc_rpt<ValueExprNode*, type_irb>
 {
 public:
 	index_desc irb_desc;		// Index descriptor

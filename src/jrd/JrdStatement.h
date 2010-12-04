@@ -74,7 +74,7 @@ public:
 	const jrd_prc* procedure;			// procedure, if any
 	const Function* function;			// function, if any
 	Firebird::MetaName triggerName;		// name of request (trigger), if any
-	const jrd_nod* topNode;				// top of execution tree
+	const DmlNode* topNode;				// top of execution tree
 	Firebird::Array<const RecordSource*> fors;	// record sources
 	Firebird::Array<ULONG*> invariants;	// pointer to nodes invariant offsets
 	Firebird::RefStrPtr sqlText;		// SQL text (encoded in the metadata charset)

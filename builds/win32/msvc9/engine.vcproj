@@ -912,10 +912,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\include\gen\blrtable.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\BlrWriter.h"
 				>
 			</File>

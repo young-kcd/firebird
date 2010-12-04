@@ -50,7 +50,6 @@ class Format;
 class jrd_rel;
 class jrd_prc;
 class Record;
-class jrd_nod;
 class ValueListNode;
 class SaveRecordParam;
 template <typename T> class vec;
@@ -252,7 +251,7 @@ public:
 	jrd_req*	req_caller;				// Caller of this request
 										// This field may be used to reconstruct the whole call stack
 	TempBlobIdTree req_blobs;			// Temporary BLOBs owned by this request
-	const jrd_nod*	req_message;		// Current message for send/receive
+	const StmtNode*	req_message;		// Current message for send/receive
 
 	ULONG		req_records_selected;	// count of records selected by request (meeting selection criteria)
 	ULONG		req_records_inserted;	// count of records inserted by request
@@ -267,7 +266,7 @@ public:
 	jrd_rel*	req_top_view_modify;	// the top view in modify(), if any
 	jrd_rel*	req_top_view_erase;		// the top view in erase(), if any
 
-	const jrd_nod*	req_next;			// next node for execution
+	const StmtNode*	req_next;			// next node for execution
 	EDS::Statement*	req_ext_stmt;		// head of list of active dynamic statements
 	Firebird::Array<const Cursor*>	req_cursors;	// named cursors
 	USHORT		req_label;				// label for leave

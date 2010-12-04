@@ -993,9 +993,9 @@ void INF_request_info(const jrd_req* request,
 					state = isc_info_req_send;
 				else if (request->req_operation == jrd_req::req_receive)
 				{
-					const jrd_nod* node = request->req_next;
+					const StmtNode* node = request->req_next;
 
-					if (StmtNode::is<SelectNode>(node))
+					if (node->is<SelectNode>())
 						state = isc_info_req_select;
 					else
 						state = isc_info_req_receive;
@@ -1021,14 +1021,17 @@ void INF_request_info(const jrd_req* request,
 			}
 			else
 			{
-				const jrd_nod* node = request->req_message;
-				if (item == isc_info_message_number)
-					length = INF_convert((IPTR) node->nod_arg[e_msg_number], buffer_ptr);
-				else
+				const MessageNode* node = StmtNode::as<MessageNode>(request->req_message);
+
+				if (node)
 				{
-					const Format* format = (Format*) node->nod_arg[e_msg_format];
-					length = INF_convert(format->fmt_length, buffer_ptr);
+					if (item == isc_info_message_number)
+						length = INF_convert(node->messageNumber, buffer_ptr);
+					else
+						length = INF_convert(node->format->fmt_length, buffer_ptr);
 				}
+				else
+					length = 0;
 			}
 			break;
 

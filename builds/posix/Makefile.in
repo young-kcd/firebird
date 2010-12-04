@@ -145,7 +145,7 @@ $(COMMON_LIB):	$(Common_Objects)
 # gpre_boot
 #
 
-boot: $(GPRE_BOOT) $(SRC_ROOT)/include/gen/blrtable.h
+boot: $(GPRE_BOOT)
 
 $(GPRE_BOOT):	$(GPRE_Boot_Objects) $(COMMON_LIB)
 	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
@@ -554,7 +554,6 @@ clean_makefiles:
 	-$(RM) $(GEN_ROOT)/examples/Make*
 	$(RM) $(ROOT)/Makefile
 	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
-	$(RM) $(SRC_ROOT)/include/gen/blrtable.h
 
 clean_gpre_gen:
 	-$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.cpp' -print`

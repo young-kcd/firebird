@@ -40,7 +40,6 @@ struct dsc;
 namespace Jrd {
 
 class thread_db;
-class jrd_nod;
 class jrd_prc;
 class Attachment;
 class Database;

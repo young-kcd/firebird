@@ -33,7 +33,47 @@
 namespace Jrd {
 
 class PsqlException;
+class CompoundStmtNode;
 class RelationSourceNode;
+
+
+struct ValidateInfo
+{
+	NestConst<StmtNode> stmt;
+	NestConst<BoolExprNode> boolean;
+	NestConst<ValueExprNode> value;
+};
+
+
+class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
+{
+public:
+	explicit AssignmentNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>(pool),
+		  asgnFrom(NULL),
+		  asgnTo(NULL),
+		  missing(NULL),
+		  missing2(NULL)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual AssignmentNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual AssignmentNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual AssignmentNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual AssignmentNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+public:
+	NestConst<ValueExprNode> asgnFrom;
+	NestConst<ValueExprNode> asgnTo;
+	NestConst<ValueExprNode> missing;
+	NestConst<ValueExprNode> missing2;
+};
 
 
 class BlockNode : public TypedNode<StmtNode, StmtNode::TYPE_BLOCK>
@@ -54,14 +94,41 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual BlockNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual BlockNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	static bool testAndFixupError(thread_db* tdbb, jrd_req* request, const PsqlException* conditions);
 
 public:
-	NestConst<jrd_nod> action;
-	NestConst<jrd_nod> handlers;
+	NestConst<StmtNode> action;
+	NestConst<CompoundStmtNode> handlers;
+};
+
+
+class CompoundStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>	// blr_begin
+{
+public:
+	explicit CompoundStmtNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>(pool),
+		  statements(pool),
+		  onlyAssignments(false)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual CompoundStmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual CompoundStmtNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual CompoundStmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual CompoundStmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+public:
+	Firebird::Array<NestConst<StmtNode> > statements;
+	bool onlyAssignments;
 };
 
 
@@ -93,7 +160,7 @@ public:
 		return this;
 	}
 
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	UCHAR blrOp;
@@ -122,14 +189,14 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual CursorStmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual CursorStmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	UCHAR cursorOp;
 	USHORT cursorNumber;
 	UCHAR scrollOp;
 	NestConst<ValueExprNode> scrollExpr;
-	NestConst<jrd_nod> intoStmt;
+	NestConst<StmtNode> intoStmt;
 };
 
 
@@ -153,20 +220,40 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual DeclareCursorNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual DeclareCursorNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-
-	virtual void pass2Cursor(RseNode*& rsePtr, Cursor**& cursorPtr)
-	{
-		rsePtr = rse;
-		cursorPtr = cursor.getAddress();
-	}
-
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	NestConst<RseNode> rse;
 	NestConst<ValueListNode> refs;
 	USHORT cursorNumber;
 	NestConst<Cursor> cursor;
+};
+
+
+class DeclareVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>
+{
+public:
+	explicit DeclareVariableNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>(pool),
+		  varId(0)
+	{
+		varDesc.clear();
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual DeclareVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual DeclareVariableNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual DeclareVariableNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual DeclareVariableNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+public:
+	USHORT varId;
+	dsc varDesc;
 };
 
 
@@ -189,15 +276,15 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual EraseNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual EraseNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	static void pass1Erase(thread_db* tdbb, CompilerScratch* csb, EraseNode* node);
-	const jrd_nod* erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
+	const StmtNode* erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	NestConst<jrd_nod> statement;
-	NestConst<jrd_nod> subStatement;
+	NestConst<StmtNode> statement;
+	NestConst<StmtNode> subStatement;
 	USHORT stream;
 };
 
@@ -220,10 +307,10 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ErrorHandlerNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ErrorHandlerNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> action;
+	NestConst<StmtNode> action;
 	NestConst<PsqlException> conditions;
 };
 
@@ -251,7 +338,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExecProcedureNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExecProcedureNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	void executeProcedure(thread_db* tdbb, jrd_req* request) const;
@@ -259,10 +346,10 @@ private:
 public:
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
-	NestConst<jrd_nod> inputMessage;
+	NestConst<MessageNode> inputMessage;
 	NestConst<ValueListNode> outputSources;
 	NestConst<ValueListNode> outputTargets;
-	NestConst<jrd_nod> outputMessage;
+	NestConst<MessageNode> outputMessage;
 	NestConst<jrd_prc> procedure;
 };
 
@@ -294,7 +381,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExecStatementNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExecStatementNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	void getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
@@ -306,7 +393,7 @@ public:
 	NestConst<ValueExprNode> userName;
 	NestConst<ValueExprNode> password;
 	NestConst<ValueExprNode> role;
-	NestConst<jrd_nod> innerStmt;
+	NestConst<StmtNode> innerStmt;
 	NestConst<ValueListNode> inputs;
 	NestConst<ValueListNode> outputs;
 	bool useCallerPrivs;
@@ -337,15 +424,15 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual IfNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual IfNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	dsql_nod* dsqlCondition;
 	dsql_nod* dsqlTrueAction;
 	dsql_nod* dsqlFalseAction;
 	NestConst<BoolExprNode> condition;
-	NestConst<jrd_nod> trueAction;
-	NestConst<jrd_nod> falseAction;
+	NestConst<StmtNode> trueAction;
+	NestConst<StmtNode> falseAction;
 };
 
 
@@ -368,12 +455,41 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual InAutonomousTransactionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual InAutonomousTransactionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	dsql_nod* dsqlAction;
-	NestConst<jrd_nod> action;
+	NestConst<StmtNode> action;
 	SLONG savNumberOffset;
+};
+
+
+class InitVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_INIT_VARIABLE>
+{
+public:
+	explicit InitVariableNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_INIT_VARIABLE>(pool),
+		  varId(0),
+		  varDecl(NULL),
+		  varInfo(NULL)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual InitVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual InitVariableNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual InitVariableNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual InitVariableNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+public:
+	USHORT varId;
+	NestConst<DeclareVariableNode> varDecl;
+	NestConst<ItemInfo> varInfo;
 };
 
 
@@ -427,7 +543,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExceptionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExceptionNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	void setError(thread_db* tdbb) const;
@@ -482,14 +598,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-
-	virtual void pass2Cursor(RseNode*& rsePtr, Cursor**& cursorPtr)
-	{
-		rsePtr = rse;
-		cursorPtr = cursor.getAddress();
-	}
-
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	dsql_nod* dsqlSelect;
@@ -498,9 +607,9 @@ public:
 	dsql_nod* dsqlAction;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
-	NestConst<jrd_nod> stall;
+	NestConst<StmtNode> stall;
 	NestConst<RseNode> rse;
-	NestConst<jrd_nod> statement;
+	NestConst<StmtNode> statement;
 	NestConst<Cursor> cursor;
 };
 
@@ -522,10 +631,10 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual HandlerNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual HandlerNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> statement;
+	NestConst<StmtNode> statement;
 };
 
 
@@ -547,10 +656,10 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual LabelNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual LabelNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> statement;
+	NestConst<StmtNode> statement;
 	USHORT labelNumber;
 };
 
@@ -572,10 +681,39 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual LoopNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual LoopNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> statement;
+	NestConst<StmtNode> statement;
+};
+
+
+class MessageNode : public TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>
+{
+public:
+	explicit MessageNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>(pool),
+		  messageNumber(0),
+		  format(NULL),
+		  impureFlags(0)
+	{
+	}
+
+public:
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual MessageNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual MessageNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual MessageNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	virtual MessageNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+
+public:
+	USHORT messageNumber;
+	NestConst<Format> format;
+	ULONG impureFlags;
 };
 
 
@@ -587,7 +725,7 @@ public:
 		  statement(NULL),
 		  statement2(NULL),
 		  subMod(NULL),
-		  validate(NULL),
+		  validations(pool),
 		  mapView(NULL),
 		  orgStream(0),
 		  newStream(0)
@@ -602,18 +740,18 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ModifyNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ModifyNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	static void pass1Modify(thread_db* tdbb, CompilerScratch* csb, ModifyNode* node);
-	const jrd_nod* modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
+	const StmtNode* modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	NestConst<jrd_nod> statement;
-	NestConst<jrd_nod> statement2;
-	NestConst<jrd_nod> subMod;
-	NestConst<jrd_nod> validate;
-	NestConst<jrd_nod> mapView;
+	NestConst<StmtNode> statement;
+	NestConst<StmtNode> statement2;
+	NestConst<StmtNode> subMod;
+	Firebird::Array<ValidateInfo> validations;
+	NestConst<StmtNode> mapView;
 	USHORT orgStream;
 	USHORT newStream;
 };
@@ -639,7 +777,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual PostEventNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual PostEventNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	dsql_nod* dsqlEvent;
@@ -667,11 +805,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ReceiveNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ReceiveNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> statement;
-	NestConst<jrd_nod> message;
+	NestConst<StmtNode> statement;
+	NestConst<MessageNode> message;
 };
 
 
@@ -683,7 +821,7 @@ public:
 		  statement(NULL),
 		  statement2(NULL),
 		  subStore(NULL),
-		  validate(NULL),
+		  validations(pool),
 		  relationSource(NULL)
 	{
 	}
@@ -696,18 +834,18 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StoreNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StoreNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
 	static bool pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* node);
 	void makeDefaults(thread_db* tdbb, CompilerScratch* csb);
-	const jrd_nod* store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
+	const StmtNode* store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
-	NestConst<jrd_nod> statement;
-	NestConst<jrd_nod> statement2;
-	NestConst<jrd_nod> subStore;
-	NestConst<jrd_nod> validate;
+	NestConst<StmtNode> statement;
+	NestConst<StmtNode> statement2;
+	NestConst<StmtNode> subStore;
+	Firebird::Array<ValidateInfo> validations;
 	NestConst<RelationSourceNode> relationSource;
 };
 
@@ -740,7 +878,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual UserSavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual UserSavepointNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	Command command;
@@ -765,10 +903,10 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual SelectNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SelectNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	Firebird::Array<NestConst<jrd_nod> > statements;
+	Firebird::Array<NestConst<StmtNode> > statements;
 };
 
 
@@ -790,7 +928,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual SetGeneratorNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SetGeneratorNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	NestConst<ValueExprNode> value;
@@ -801,7 +939,7 @@ public:
 class SourceInfoNode : public TypedNode<StmtNode, StmtNode::TYPE_SOURCE_INFO>
 {
 public:
-	explicit SourceInfoNode(MemoryPool& pool, jrd_nod* aStatement, USHORT aLine, USHORT aColumn)
+	explicit SourceInfoNode(MemoryPool& pool, StmtNode* aStatement, USHORT aLine, USHORT aColumn)
 		: TypedNode<StmtNode, StmtNode::TYPE_SOURCE_INFO>(pool),
 		  statement(aStatement),
 		  line(aLine),
@@ -813,12 +951,13 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual SourceInfoNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual SourceInfoNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual SourceInfoNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SourceInfoNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> statement;
+	NestConst<StmtNode> statement;
 	USHORT line;
 	USHORT column;
 };
@@ -840,7 +979,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StallNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StallNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 };
 
 
@@ -862,11 +1001,11 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual SuspendNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual SuspendNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	NestConst<jrd_nod> message;
-	NestConst<jrd_nod> statement;
+	NestConst<MessageNode> message;
+	NestConst<StmtNode> statement;
 };
 
 
@@ -915,7 +1054,7 @@ public:
 		return this;
 	}
 
-	virtual const jrd_nod* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
+	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
 	UCHAR blrOp;

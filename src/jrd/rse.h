@@ -40,7 +40,6 @@ struct dsc;
 
 namespace Jrd {
 
-class jrd_nod;
 struct sort_key_def;
 class CompilerScratch;
 class BoolExprNode;

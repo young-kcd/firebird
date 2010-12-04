@@ -27,6 +27,7 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../common/dsc_proto.h"
@@ -66,19 +67,23 @@ SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return newSort;
 }
 
-void SortNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+SortNode* SortNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
-		*i = CMP_pass1(tdbb, csb, *i);
+		DmlNode::doPass1(tdbb, csb, i->getAddress());
+
+	return this;
 }
 
-void SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+SortNode* SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 		(*i)->nodFlags |= ExprNode::FLAG_VALUE;
 
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
-		CMP_pass2(tdbb, csb, *i);
+		ExprNode::doPass2(tdbb, csb, i->getAddress());
+
+	return this;
 }
 
 bool SortNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
@@ -121,7 +126,7 @@ MapNode* MapNode::copy(thread_db* tdbb, NodeCopier& copier)
 	return newMap;
 }
 
-void MapNode::pass1(thread_db* tdbb, CompilerScratch* csb)
+MapNode* MapNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	NestConst<ValueExprNode>* target = targetList.begin();
 
@@ -129,12 +134,14 @@ void MapNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		 source != sourceList.end();
 		 ++source, ++target)
 	{
-		*source = CMP_pass1(tdbb, csb, *source);
-		*target = CMP_pass1(tdbb, csb, *target);
+		DmlNode::doPass1(tdbb, csb, source->getAddress());
+		DmlNode::doPass1(tdbb, csb, target->getAddress());
 	}
+
+	return this;
 }
 
-void MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+MapNode* MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	NestConst<ValueExprNode>* target = targetList.begin();
 
@@ -142,9 +149,11 @@ void MapNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		 source != sourceList.end();
 		 ++source, ++target)
 	{
-		CMP_pass2(tdbb, csb, *source);
-		CMP_pass2(tdbb, csb, *target);
+		ExprNode::doPass2(tdbb, csb, source->getAddress());
+		ExprNode::doPass2(tdbb, csb, target->getAddress());
 	}
+
+	return this;
 }
 
 
@@ -386,7 +395,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 		NodeCopier copier(csb, map);
 		RseNode* copy = viewRse->copy(tdbb, copier);
 		DEBUG;
-		copy->pass1(tdbb, csb);
+		doPass1(tdbb, csb, &copy);
 		stack.push(copy);
 		DEBUG;
 		return;
@@ -424,13 +433,13 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	// contains the stream numbers of the referenced relations, since it was added during the call
 	// to copy() above. After the copy() below, the fields in the projection will reference the
 	// base table(s) instead of the view's context (see bug #8822), so we are ready to context-
-	// recognize them in CMP_pass1() - that is, replace the field nodes with actual field blocks.
+	// recognize them in doPass1() - that is, replace the field nodes with actual field blocks.
 
 	if (viewRse->rse_projection)
 	{
 		NodeCopier copier(csb, map);
 		rse->rse_projection = viewRse->rse_projection->copy(tdbb, copier);
-		rse->rse_projection->pass1(tdbb, csb);
+		doPass1(tdbb, csb, rse->rse_projection.getAddress());
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the
@@ -441,7 +450,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 		NodeCopier copier(csb, map);
 		BoolExprNode* node = copier.copy(tdbb, viewRse->rse_boolean);
 
-		node = CMP_pass1(tdbb, csb, node);
+		doPass1(tdbb, csb, &node);
 
 		if (*boolean)
 		{
@@ -621,7 +630,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	newSource->in_msg = copier.copy(tdbb, in_msg);
 
 	{	// scope
-		AutoSetRestore<jrd_nod*> autoMessage(&copier.message, newSource->in_msg);
+		AutoSetRestore<MessageNode*> autoMessage(&copier.message, newSource->in_msg);
 		newSource->sourceList = copier.copy(tdbb, sourceList);
 		newSource->targetList = copier.copy(tdbb, targetList);
 	}
@@ -644,12 +653,8 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 
 RecordSourceNode* ProcedureSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
-	if (sourceList)
-		sourceList = sourceList->pass1(tdbb, csb);
-
-	if (targetList)
-		targetList = targetList->pass1(tdbb, csb);
-
+	doPass1(tdbb, csb, sourceList.getAddress());
+	doPass1(tdbb, csb, targetList.getAddress());
 	return this;
 }
 
@@ -691,9 +696,9 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 
 RecordSourceNode* ProcedureSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	CMP_pass2(tdbb, csb, sourceList);
-	CMP_pass2(tdbb, csb, targetList);
-	CMP_pass2(tdbb, csb, in_msg, NULL);
+	ExprNode::doPass2(tdbb, csb, sourceList.getAddress());
+	ExprNode::doPass2(tdbb, csb, targetList.getAddress());
+	ExprNode::doPass2(tdbb, csb, in_msg.getAddress());
 	return this;
 }
 
@@ -830,11 +835,10 @@ RecordSourceNode* AggregateSourceNode::pass1(thread_db* tdbb, CompilerScratch* c
 	fb_assert(stream <= MAX_STREAMS);
 	csb->csb_rpt[stream].csb_flags |= csb_no_dbkey;
 	rse->ignoreDbKey(tdbb, csb);
-	rse->pass1(tdbb, csb);
-	map->pass1(tdbb, csb);
 
-	if (group)
-		group->pass1(tdbb, csb);
+	doPass1(tdbb, csb, rse.getAddress());
+	doPass1(tdbb, csb, map.getAddress());
+	doPass1(tdbb, csb, group.getAddress());
 
 	return this;
 }
@@ -851,10 +855,8 @@ void AggregateSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 RecordSourceNode* AggregateSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	rse->pass2Rse(tdbb, csb);
-	map->pass2(tdbb, csb);
-
-	if (group)
-		group->pass2(tdbb, csb);
+	ExprNode::doPass2(tdbb, csb, map.getAddress());
+	ExprNode::doPass2(tdbb, csb, group.getAddress());
 
 	fb_assert(stream <= MAX_STREAMS);
 
@@ -1088,8 +1090,8 @@ void UnionSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode
 
 	for (NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr, ++ptr2)
 	{
-		(*ptr)->pass1(tdbb, csb);
-		(*ptr2)->pass1(tdbb, csb);
+		doPass1(tdbb, csb, ptr->getAddress());
+		doPass1(tdbb, csb, ptr2->getAddress());
 	}
 }
 
@@ -1111,7 +1113,7 @@ RecordSourceNode* UnionSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	for (NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr, ++ptr2)
 	{
 		(*ptr)->pass2Rse(tdbb, csb);
-		(*ptr2)->pass2(tdbb, csb);
+		ExprNode::doPass2(tdbb, csb, ptr2->getAddress());
 		processMap(tdbb, csb, *ptr2, format);
 		csb->csb_rpt[id].csb_format = *format;
 	}
@@ -1347,19 +1349,16 @@ RecordSourceNode* WindowSourceNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	rse->ignoreDbKey(tdbb, csb);
-	rse->pass1(tdbb, csb);
+	doPass1(tdbb, csb, rse.getAddress());
 
 	for (ObjectsArray<Partition>::iterator partition = partitions.begin();
 		 partition != partitions.end();
 		 ++partition)
 	{
-		if (partition->group)
-			partition->group->pass1(tdbb, csb);
-		if (partition->regroup)
-			partition->regroup->pass1(tdbb, csb);
-		if (partition->order)
-			partition->order->pass1(tdbb, csb);
-		partition->map->pass1(tdbb, csb);
+		doPass1(tdbb, csb, partition->group.getAddress());
+		doPass1(tdbb, csb, partition->regroup.getAddress());
+		doPass1(tdbb, csb, partition->order.getAddress());
+		doPass1(tdbb, csb, partition->map.getAddress());
 	}
 
 	return this;
@@ -1381,11 +1380,9 @@ RecordSourceNode* WindowSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		 partition != partitions.end();
 		 ++partition)
 	{
-		partition->map->pass2(tdbb, csb);
-		if (partition->group)
-			partition->group->pass2(tdbb, csb);
-		if (partition->order)
-			partition->order->pass2(tdbb, csb);
+		ExprNode::doPass2(tdbb, csb, partition->map.getAddress());
+		ExprNode::doPass2(tdbb, csb, partition->group.getAddress());
+		ExprNode::doPass2(tdbb, csb, partition->order.getAddress());
 
 		fb_assert(partition->stream <= MAX_STREAMS);
 
@@ -1398,8 +1395,7 @@ RecordSourceNode* WindowSourceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		 partition != partitions.end();
 		 ++partition)
 	{
-		if (partition->regroup)
-			partition->regroup->pass2(tdbb, csb);
+		ExprNode::doPass2(tdbb, csb, partition->regroup.getAddress());
 	}
 
 	return this;
@@ -1579,10 +1575,16 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	// finish of by processing other clauses
 
 	if (first)
-		rse_first = CMP_pass1(tdbb, csb, first);
+	{
+		doPass1(tdbb, csb, &first);
+		rse_first = first;
+	}
 
 	if (skip)
-		rse_skip = CMP_pass1(tdbb, csb, skip);
+	{
+		doPass1(tdbb, csb, &skip);
+		rse_skip = skip;
+	}
 
 	if (boolean)
 	{
@@ -1590,7 +1592,9 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 			andNode->arg1 = boolean;
-			andNode->arg2 = CMP_pass1(tdbb, csb, rse_boolean);
+			andNode->arg2 = rse_boolean;
+
+			doPass1(tdbb, csb, andNode->arg2.getAddress());
 
 			rse_boolean = andNode;
 		}
@@ -1598,17 +1602,17 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			rse_boolean = boolean;
 	}
 	else if (rse_boolean)
-		rse_boolean = CMP_pass1(tdbb, csb, rse_boolean);
+		doPass1(tdbb, csb, rse_boolean.getAddress());
 
 	if (sort)
 	{
-		sort->pass1(tdbb, csb);
+		doPass1(tdbb, csb, &sort);
 		rse_sorted = sort;
 	}
 
 	if (project)
 	{
-		project->pass1(tdbb, csb);
+		doPass1(tdbb, csb, &project);
 		rse_projection = project;
 	}
 
@@ -1643,12 +1647,12 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 		if (rse_boolean)
 		{
-			BoolExprNode* node = CMP_pass1(tdbb, csb, rse_boolean);
+			BoolExprNode* node = rse_boolean;
+			doPass1(tdbb, csb, &node);
 
 			if (*boolean)
 			{
-				BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
-					csb->csb_pool, blr_and);
+				BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 				andNode->arg1 = node;
 				andNode->arg2 = *boolean;
 
@@ -1675,24 +1679,19 @@ void RseNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 	csb->csb_current_nodes.push(this);
 
 	if (rse_first)
-		CMP_pass2(tdbb, csb, rse_first);
+		ExprNode::doPass2(tdbb, csb, rse_first.getAddress());
 
 	if (rse_skip)
-	    CMP_pass2(tdbb, csb, rse_skip);
+	    ExprNode::doPass2(tdbb, csb, rse_skip.getAddress());
 
 	NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
 	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
 		(*ptr)->pass2Rse(tdbb, csb);
 
-	if (rse_boolean)
-		rse_boolean->pass2(tdbb, csb);
-
-	if (rse_sorted)
-		rse_sorted->pass2(tdbb, csb);
-
-	if (rse_projection)
-		rse_projection->pass2(tdbb, csb);
+	ExprNode::doPass2(tdbb, csb, rse_boolean.getAddress());
+	ExprNode::doPass2(tdbb, csb, rse_sorted.getAddress());
+	ExprNode::doPass2(tdbb, csb, rse_projection.getAddress());
 
 	// If the user has submitted a plan for this RseNode, check it for correctness.
 
@@ -2202,7 +2201,7 @@ static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	while (count-- > 0)
 	{
-		node->targetList.add(PAR_gen_field(tdbb, stream, csb->csb_blr_reader.getWord())->asValue());
+		node->targetList.add(PAR_gen_field(tdbb, stream, csb->csb_blr_reader.getWord()));
 		node->sourceList.add(PAR_parse_value(tdbb, csb));
 	}
 

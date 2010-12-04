@@ -726,6 +726,7 @@ Data source : @4"},		/* eds_statement */
 	{335545019, "Procedure @1 is private to package @2"},		/* private_procedure */
 	{335545020, "Request can't access new records in relation @1 and should be recompiled"},		/* request_outdated */
 	{335545021, "invalid events id (handle)"},		/* bad_events_handle */
+	{335545022, "Cannot copy statement @1"},		/* cannot_copy_stmt */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

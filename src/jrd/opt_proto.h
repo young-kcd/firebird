@@ -32,7 +32,6 @@
 namespace Jrd {
 	class jrd_req;
 	class jrd_rel;
-	class jrd_nod;
 	class RecordSource;
 	struct index_desc;
 	class CompilerScratch;

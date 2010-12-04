@@ -32,6 +32,7 @@ class SysFunction;
 namespace Jrd {
 
 struct ItemInfo;
+class DeclareVariableNode;
 class RecordSource;
 class ValueListNode;
 
@@ -783,7 +784,7 @@ public:
 public:
 	USHORT dsqlParameterIndex;
 	dsql_par* dsqlParameter;
-	NestConst<jrd_nod> message;
+	NestConst<MessageNode> message;
 	USHORT argNumber;
 	NestConst<ValueExprNode> argFlag;
 	NestConst<ValueExprNode> argIndicator;
@@ -936,7 +937,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	NestConst<jrd_nod> stmt;
+	NestConst<StmtNode> stmt;
 	NestConst<ValueExprNode> expr;
 };
 
@@ -1348,7 +1349,7 @@ public:
 	dsql_var* dsqlVar;
 	dsc varDesc;
 	USHORT varId;
-	NestConst<jrd_nod> varDecl;
+	NestConst<DeclareVariableNode> varDecl;
 	NestConst<ItemInfo> varInfo;
 };
 

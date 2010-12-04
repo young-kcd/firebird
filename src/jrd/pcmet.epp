@@ -133,13 +133,10 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 				if (!IDX.RDB$EXPRESSION_BLR.NULL)
 				{
-					idx.idx_expression = MET_get_dependencies(tdbb, relation,
-													  NULL, 0, NULL,
-													  &IDX.RDB$EXPRESSION_BLR,
-													  &idx.idx_expression_statement,
-													  &csb, name,
-													  obj_expression_index, 0,
-													  transaction)->asValue();
+					idx.idx_expression = static_cast<ValueExprNode*>(MET_get_dependencies(
+						tdbb, relation, NULL, 0, NULL, &IDX.RDB$EXPRESSION_BLR,
+						&idx.idx_expression_statement, &csb, name, obj_expression_index, 0,
+						transaction));
 				}
 			} // end scope
 
@@ -247,8 +244,9 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 		{ // scope
 			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
-			idx->idx_expression = MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
-				&idx->idx_expression_statement, false, false)->asValue();
+			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
+				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
+				&idx->idx_expression_statement, false, false));
 		} // end scope
 	}
 	END_FOR

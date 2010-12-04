@@ -200,8 +200,6 @@ vpath %.dll $(LIB)
 
 # From jrd
 
-BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
-
 
 # The firebird shared library name 
 # SD: This name is also hard-coded in builds/install/.../linux/classic scripts.

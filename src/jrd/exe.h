@@ -68,16 +68,7 @@ struct dsc;
 
 namespace Jrd {
 
-#define NODE(type, name, keyword) type,
-
-enum nod_t {
-#include "../jrd/nod.h"
-	nod_MAX
-#undef NODE
-};
-
 class jrd_rel;
-class jrd_nod;
 class Sort;
 struct sort_key_def;
 template <typename T> class vec;
@@ -87,56 +78,10 @@ struct index_desc;
 struct IndexDescAlloc;
 class Format;
 class Cursor;
+class DeclareVariableNode;
+class MessageNode;
 class PlanNode;
 class RecordSource;
-
-class jrd_nod : public pool_alloc_rpt<jrd_nod*, type_nod>
-{
-public:
-	NestConst<jrd_nod>	nod_parent;
-	ULONG		nod_impure;			// Inpure offset from request block
-	nod_t		nod_type;			// Type of node
-	USHORT		nod_count;			// Number of arguments
-	jrd_nod*	nod_arg[1];
-
-	// Replace the line above by this block to check deep const-correctness.
-	/***
-	struct
-	{
-		NestConst<jrd_nod> arg[1];
-
-		jrd_nod*& operator [](size_t index) { return *arg[index].getAddress(); }
-		const jrd_nod* const& operator [](size_t index) const { return *arg[index].getAddress(); }
-
-		operator jrd_nod** () { return arg[0].getAddress(); }
-		operator const jrd_nod* const* () const { return arg[0].getAddress(); }
-	} nod_arg;
-	***/
-
-	const ExprNode* asExpr() const
-	{
-		fb_assert(nod_type == nod_class_exprnode_jrd || nod_type == nod_class_recsrcnode_jrd);
-		return reinterpret_cast<const ExprNode*>(nod_arg[0]);
-	}
-
-	ExprNode* asExpr()
-	{
-		fb_assert(nod_type == nod_class_exprnode_jrd || nod_type == nod_class_recsrcnode_jrd);
-		return reinterpret_cast<ExprNode*>(nod_arg[0]);
-	}
-
-	const ValueExprNode* asValue() const
-	{
-		fb_assert(nod_type == nod_class_exprnode_jrd);
-		return reinterpret_cast<const ValueExprNode*>(nod_arg[0]);
-	}
-
-	ValueExprNode* asValue()
-	{
-		fb_assert(nod_type == nod_class_exprnode_jrd);
-		return reinterpret_cast<ValueExprNode*>(nod_arg[0]);
-	}
-};
 
 // Types of nulls placement for each column in sort order
 const int rse_nulls_default	= 0;
@@ -182,43 +127,7 @@ struct impure_agg_sort
 };
 
 
-// Various field positions
-
-const int e_msg_number			= 0;
-const int e_msg_format			= 1;
-const int e_msg_impure_flags	= 2;
-const int e_msg_length			= 3;
-
-const int e_asgn_from		= 0;
-const int e_asgn_to			= 1;
-const int e_asgn_missing	= 2;	// Value for comparison for missing
-const int e_asgn_missing2	= 3;	// Value for substitute for missing
-const int e_asgn_length		= 4;
-
-const int e_val_stmt		= 0;
-const int e_val_boolean		= 1;
-const int e_val_value		= 2;
-const int e_val_length		= 3;
-
-// Protection mask
-
-const int e_pro_class		= 0;
-const int e_pro_relation	= 1;
-const int e_pro_length		= 2;
-
-// Variable declaration
-
-const int e_dcl_id			= 0;
-const int e_dcl_desc		= 1;
-const int e_dcl_length		= (1 + sizeof (DSC) / sizeof(::Jrd::jrd_nod*));	// Room for descriptor
-
-// nod_init_variable
-const int e_init_var_id			= 0;
-const int e_init_var_variable	= 1;
-const int e_init_var_info		= 2;
-const int e_init_var_length		= 3;
-
-// index (in nod_list) for external procedure blr
+// index (in CompoundStmtNode) for external procedure blr
 const int e_extproc_input_message	= 0;
 const int e_extproc_output_message	= 1;
 const int e_extproc_input_assign	= 2;
@@ -421,9 +330,9 @@ struct FieldInfo
 	{}
 
 	bool nullable;
-	NestConst<jrd_nod> defaultValue;
+	NestConst<ValueExprNode> defaultValue;
 	NestConst<BoolExprNode> validationExpr;
-	NestConst<jrd_nod> validationStmt;
+	NestConst<StmtNode> validationStmt;
 };
 
 struct ItemInfo
@@ -577,10 +486,10 @@ public:
 #endif
 
 	BlrReader		csb_blr_reader;
-	jrd_nod*		csb_node;
+	DmlNode*		csb_node;
 	ExternalAccessList csb_external;			// Access to outside procedures/triggers to be checked
 	AccessItemList	csb_access;					// Access items to be checked
-	vec<jrd_nod*>*	csb_variables;				// Vector of variables, if any
+	vec<DeclareVariableNode*>*	csb_variables;	// Vector of variables, if any
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
@@ -637,7 +546,7 @@ public:
 		jrd_rel* csb_view;				// parent view
 
 		IndexDescAlloc* csb_idx;		// Packed description of indices
-		jrd_nod* csb_message;			// Msg for send/receive
+		MessageNode* csb_message;		// Msg for send/receive
 		const Format* csb_format;		// Default Format for stream
 		Format* csb_internal_format;	// Statement internal format
 		UInt32Bitmap* csb_fields;		// Fields referenced

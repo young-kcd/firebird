@@ -5244,8 +5244,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						JrdStatement* defaultStatement = NULL;
 						try
 						{
-							jrd_nod* defaultNode = MET_parse_blob(tdbb, relation, defaultValue,
-								NULL, &defaultStatement, false, false);
+							ValueExprNode* defaultNode = static_cast<ValueExprNode*>(MET_parse_blob(
+								tdbb, relation, defaultValue, NULL, &defaultStatement, false, false));
 
 							jrd_req* const defaultRequest = defaultStatement->findRequest(tdbb);
 
@@ -5256,7 +5256,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 							defaultRequest->req_timestamp.validate();
 
 							TRA_attach_request(transaction, defaultRequest);
-							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode->asValue());
+							dsc* result = EVL_expr(tdbb, defaultRequest, defaultNode);
 							TRA_detach_request(defaultRequest);
 
 							if (result)

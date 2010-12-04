@@ -333,8 +333,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 					try
 					{
-						parameter->prm_default_value = MET_parse_blob(tdbb, NULL, &default_value,
-							NULL, NULL, false, false)->asValue();
+						parameter->prm_default_value = static_cast<ValueExprNode*>(MET_parse_blob(
+							tdbb, NULL, &default_value, NULL, NULL, false, false));
 					}
 					catch (const Exception&)
 					{

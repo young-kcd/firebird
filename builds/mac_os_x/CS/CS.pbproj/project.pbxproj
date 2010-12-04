@@ -1951,11 +1951,6 @@
 			path = autoconfig_msvc.h;
 			refType = 4;
 		};
-		F616C4560200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = blrtable.h;
-			refType = 4;
-		};
 		F616C4580200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = codetext.h;
@@ -3799,16 +3794,6 @@
 		F616C5810200B0CF01EF0ADE = {
 			isa = PBXFileReference;
 			path = blr.h;
-			refType = 4;
-		};
-		F616C5820200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = blrtable.cpp;
-			refType = 4;
-		};
-		F616C5830200B0CF01EF0ADE = {
-			isa = PBXFileReference;
-			path = blrtable.h;
 			refType = 4;
 		};
 		F616C5860200B0CF01EF0ADE = {

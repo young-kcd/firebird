@@ -36,6 +36,7 @@ class IndexRetrieval;
 class OptimizerRetrieval;
 class ProcedureScan;
 class BoolExprNode;
+class MessageNode;
 class RelationSourceNode;
 class RseNode;
 class ValueListNode;
@@ -54,8 +55,8 @@ public:
 	}
 
 	SortNode* copy(thread_db* tdbb, NodeCopier& copier);
-	void pass1(thread_db* tdbb, CompilerScratch* csb);
-	void pass2(thread_db* tdbb, CompilerScratch* csb);
+	SortNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	SortNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use, bool allowOnlyCurrentStream);
 	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
 
@@ -76,8 +77,8 @@ public:
 	}
 
 	MapNode* copy(thread_db* tdbb, NodeCopier& copier);
-	void pass1(thread_db* tdbb, CompilerScratch* csb);
-	void pass2(thread_db* tdbb, CompilerScratch* csb);
+	MapNode* pass1(thread_db* tdbb, CompilerScratch* csb);
+	MapNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
 	NestValueArray sourceList;
 	NestValueArray targetList;
@@ -199,7 +200,7 @@ class RecordSourceNode : public ExprNode
 {
 public:
 	RecordSourceNode(Type aType, MemoryPool& pool)
-		: ExprNode(aType, pool),
+		: ExprNode(aType, pool, KIND_REC_SOURCE),
 		  stream(MAX_USHORT)
 	{
 	}
@@ -384,7 +385,7 @@ public:
 	NestConst<ValueListNode> targetList;
 
 private:
-	NestConst<jrd_nod> in_msg;
+	NestConst<MessageNode> in_msg;
 	USHORT procedure;
 	jrd_rel* view;
 	SSHORT context;
@@ -555,12 +556,6 @@ public:
 		  rse_relations(pool),
 		  flags(0)
 	{
-	}
-
-	static RseNode* getFrom(jrd_nod* node)
-	{
-		fb_assert(node->nod_type == nod_class_recsrcnode_jrd);
-		return reinterpret_cast<RseNode*>(node->nod_arg[0]);
 	}
 
 	RseNode* clone()

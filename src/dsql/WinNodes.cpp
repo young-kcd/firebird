@@ -34,8 +34,6 @@
 using namespace Firebird;
 using namespace Jrd;
 
-#include "gen/blrtable.h"
-
 namespace Jrd {
 
 

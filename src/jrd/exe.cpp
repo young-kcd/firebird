@@ -214,21 +214,19 @@ const size_t MAX_STACK_TRACE = 2048;
 
 
 // Perform an assignment.
-void EXE_assignment(thread_db* tdbb, const jrd_nod* node)
+void EXE_assignment(thread_db* tdbb, const AssignmentNode* node)
 {
 	DEV_BLKCHK(node, type_nod);
 
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
-	BLKCHK(node, type_nod);
 
 	// Get descriptors of src field/parameter/variable, etc.
 	request->req_flags &= ~req_null;
-	dsc* from_desc = EVL_expr(tdbb, request, node->nod_arg[e_asgn_from]->asValue());
+	dsc* from_desc = EVL_expr(tdbb, request, node->asgnFrom);
 
-	EXE_assignment(tdbb, node->nod_arg[e_asgn_to]->asValue(), from_desc,
-		(request->req_flags & req_null),
-		node->nod_arg[e_asgn_missing], node->nod_arg[e_asgn_missing2]);
+	EXE_assignment(tdbb, node->asgnTo, from_desc, (request->req_flags & req_null),
+		node->missing, node->missing2);
 
 	request->req_operation = jrd_req::req_return;
 }
@@ -250,7 +248,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* source, const ValueExp
 
 // Perform an assignment.
 void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bool from_null,
-	const jrd_nod* missing_node, const jrd_nod* missing2_node)
+	const ValueExprNode* missing_node, const ValueExprNode* missing2_node)
 {
 	SET_TDBB(tdbb);
 	jrd_req* request = tdbb->getRequest();
@@ -259,7 +257,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	dsc* missing = NULL;
 	if (missing_node)
-		missing = EVL_expr(tdbb, request, missing_node->asValue());
+		missing = EVL_expr(tdbb, request, missing_node);
 
 	// Get descriptor of target field/parameter/variable, etc.
 	DSC* to_desc = EVL_assign_to(tdbb, to);
@@ -284,17 +282,16 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	if ((toParam = ExprNode::as<ParameterNode>(to)))
 	{
+		const MessageNode* message = toParam->message;
+
 		if (toParam->argInfo)
 		{
-			EVL_validate(tdbb,
-				Item(Item::TYPE_PARAMETER, (IPTR) toParam->message->nod_arg[e_msg_number],
-					toParam->argNumber),
+			EVL_validate(tdbb, Item(Item::TYPE_PARAMETER, message->messageNumber, toParam->argNumber),
 				toParam->argInfo, from_desc, null == -1);
 		}
 
 		impure_flags = request->getImpure<USHORT>(
-			(IPTR) toParam->message->nod_arg[e_msg_impure_flags] +
-			(sizeof(USHORT) * toParam->argNumber));
+			message->impureFlags + (sizeof(USHORT) * toParam->argNumber));
 	}
 	else if ((toVar = ExprNode::as<VariableNode>(to)))
 	{
@@ -305,7 +302,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 		}
 
 		impure_flags = &request->getImpure<impure_value>(
-			toVar->varDecl->nod_impure)->vlu_flags;
+			toVar->varDecl->impureOffset)->vlu_flags;
 	}
 
 	if (impure_flags != NULL)
@@ -417,7 +414,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 	}
 	else
 	{
-		if (missing2_node && (missing = EVL_expr(tdbb, request, missing2_node->asValue())))
+		if (missing2_node && (missing = EVL_expr(tdbb, request, missing2_node)))
 			MOV_move(tdbb, missing, to_desc);
 		else
 			memset(to_desc->dsc_address, 0, to_desc->dsc_length);
@@ -600,7 +597,7 @@ void EXE_receive(thread_db* tdbb,
  *
  * Functional description
  *	Move a message from JRD to the host program.  This corresponds to
- *	a JRD BLR/jrd_nod* send.
+ *	a JRD BLR/Stmtode* send.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -654,16 +651,16 @@ void EXE_receive(thread_db* tdbb,
 			ERR_post(Arg::Gds(isc_req_sync));
 	}
 
-	const jrd_nod* message = request->req_message;
-	const Format* format = (Format*) message->nod_arg[e_msg_format];
+	const MessageNode* message = StmtNode::as<MessageNode>(request->req_message);
+	const Format* format = message->format;
 
-	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
+	if (msg != message->messageNumber)
 		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length)
 		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << Arg::Num(format->fmt_length));
 
-	memcpy(buffer, request->getImpure<UCHAR>(message->nod_impure), length);
+	memcpy(buffer, request->getImpure<UCHAR>(message->impureOffset), length);
 
 	// ASF: temporary blobs returned to the client should not be released
 	// with the request, but in the transaction end.
@@ -766,8 +763,8 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	if (!(request->req_flags & req_active))
 		ERR_post(Arg::Gds(isc_req_sync));
 
-	const jrd_nod* message;
-	const jrd_nod* node;
+	const StmtNode* message;
+	const StmtNode* node;
 
 	if (request->req_operation != jrd_req::req_receive)
 		ERR_post(Arg::Gds(isc_req_sync));
@@ -780,60 +777,49 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 
 	if (external)
 	{
-		fb_assert(statement->topNode->nod_type == nod_list);
-		message = statement->topNode->nod_arg[e_extproc_input_message];	// input message
-		fb_assert(message->nod_type == nod_message);
+		fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
+		const CompoundStmtNode* list = StmtNode::as<CompoundStmtNode>(
+			static_cast<const StmtNode*>(statement->topNode));
+		fb_assert(list);
+
+		message = list->statements[e_extproc_input_message]->as<MessageNode>();
+		fb_assert(message);
 	}
 	else
 	{
-		switch (node->nod_type)
+		const SelectNode* selectNode;
+
+		if (StmtNode::is<MessageNode>(node))
+			message = node;
+		else if ((selectNode = StmtNode::as<SelectNode>(node)))
 		{
-			case nod_message:
-				message = node;
-				break;
+			const NestConst<StmtNode>* ptr = selectNode->statements.begin();
 
-			case nod_class_stmtnode_jrd:
+			for (const NestConst<StmtNode>* end = selectNode->statements.end(); ptr != end; ++ptr)
 			{
-				const SelectNode* selectNode = StmtNode::as<SelectNode>(node);
+				const ReceiveNode* receiveNode = (*ptr)->as<ReceiveNode>();
+				message = receiveNode->message;
 
-				if (selectNode)
+				if (message->as<MessageNode>()->messageNumber == msg)
 				{
-					const NestConst<jrd_nod>* ptr = selectNode->statements.begin();
-
-					for (const NestConst<jrd_nod>* end = selectNode->statements.end();
-						 ptr != end;
-						 ++ptr)
-					{
-						const ReceiveNode* receiveNode = StmtNode::as<ReceiveNode>(ptr->getObject());
-						message = receiveNode->message;
-
-						if ((USHORT)(IPTR) message->nod_arg[e_msg_number] == msg)
-						{
-							request->req_next = *ptr;
-							break;
-						}
-					}
-
+					request->req_next = *ptr;
 					break;
 				}
-
-				// fall into
 			}
-
-			default:
-				BUGCHECK(167);	// msg 167 invalid SEND request
 		}
+		else
+			BUGCHECK(167);	// msg 167 invalid SEND request
 	}
 
-	const Format* format = (Format*) message->nod_arg[e_msg_format];
+	const Format* format = StmtNode::as<MessageNode>(message)->format;
 
-	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
+	if (msg != StmtNode::as<MessageNode>(message)->messageNumber)
 		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length)
 		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << Arg::Num(format->fmt_length));
 
-	memcpy(request->getImpure<UCHAR>(message->nod_impure), buffer, length);
+	memcpy(request->getImpure<UCHAR>(message->impureOffset), buffer, length);
 
 	for (USHORT i = 0; i < format->fmt_count; ++i)
 	{
@@ -842,7 +828,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 		// ASF: I'll not test for dtype_cstring because usage is only internal
 		if (desc->dsc_dtype == dtype_text || desc->dsc_dtype == dtype_varying)
 		{
-			const UCHAR* p = request->getImpure<UCHAR>(message->nod_impure +
+			const UCHAR* p = request->getImpure<UCHAR>(message->impureOffset +
 				(ULONG)(IPTR) desc->dsc_address);
 			USHORT len;
 
@@ -868,7 +854,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 			if (desc->getCharSet() != CS_NONE && desc->getCharSet() != CS_BINARY)
 			{
 				const Jrd::bid* bid = request->getImpure<Jrd::bid>(
-					message->nod_impure + (ULONG)(IPTR) desc->dsc_address);
+					message->impureOffset + (ULONG)(IPTR) desc->dsc_address);
 
 				if (!bid->isEmpty())
 				{
@@ -1304,7 +1290,7 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_node, bool stmtExpr)
+const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* node, bool stmtExpr)
 {
 /**************************************
  *
@@ -1318,15 +1304,16 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
  *
  **************************************/
 	jrd_tra* transaction = request->req_transaction;
-	if (!transaction) {
+	if (!transaction)
 		ERR_post(Arg::Gds(isc_req_no_trans));
-	}
 
 	SET_TDBB(tdbb);
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* dbb = tdbb->getDatabase();
-	BLKCHK(in_node, type_nod);
+
+	if (!node || node->kind != DmlNode::KIND_STATEMENT)
+		BUGCHECK(147);
 
 	// Save the old pool and request to restore on exit
 	StmtNode::ExeState exeState(tdbb);
@@ -1346,8 +1333,6 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
-
-	const jrd_nod* node = in_node;
 
 	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
 
@@ -1369,54 +1354,60 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 			else
 				break;
 
+			fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
+			const CompoundStmtNode* extStmts = StmtNode::as<CompoundStmtNode>(
+				static_cast<const StmtNode*>(statement->topNode));
+			fb_assert(extStmts);
+
 			switch (request->req_operation)
 			{
 				case jrd_req::req_evaluate:
-					request->req_message = statement->topNode->nod_arg[0];	// input message
+					request->req_message = extStmts->statements[e_extproc_input_message]->as<MessageNode>();
 					request->req_flags |= req_stall;
 					request->req_operation = jrd_req::req_receive;
 					break;
 
 				case jrd_req::req_sync:
 				{
-					fb_assert(statement->topNode->nod_type == nod_list);
+					const MessageNode* outMsgNode =
+						extStmts->statements[e_extproc_output_message]->as<MessageNode>();
+					fb_assert(outMsgNode);
 
-					const jrd_nod* outMsgNode = statement->topNode->nod_arg[e_extproc_output_message];
-					fb_assert(outMsgNode->nod_type == nod_message);
-
-					const Format* outFormat = (Format*) outMsgNode->nod_arg[e_msg_format];
-					UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->nod_impure);
+					const Format* outFormat = outMsgNode->format;
+					UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->impureOffset);
 
 					if (!request->resultSet)
 					{
 						// input message
-						const jrd_nod* inMsgNode = statement->topNode->nod_arg[e_extproc_input_message];
-						fb_assert(inMsgNode->nod_type == nod_message);
+						const MessageNode* inMsgNode =
+							extStmts->statements[e_extproc_input_message]->as<MessageNode>();
+						fb_assert(inMsgNode);
 						fb_assert(request->req_message == inMsgNode);
 
-						const jrd_nod* list = statement->topNode->nod_arg[e_extproc_input_assign];
-						fb_assert(list->nod_type == nod_asn_list ||
-							(list->nod_type == nod_list && list->nod_count == 0));
+						const CompoundStmtNode* list =
+							extStmts->statements[e_extproc_input_assign]->as<CompoundStmtNode>();
+						fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
 
-						const Format* format = (Format*) inMsgNode->nod_arg[e_msg_format];
+						const Format* format = inMsgNode->format;
 
 						// clear the flags from the input message
-						USHORT* impure_flags = request->getImpure<USHORT>(
-							(IPTR) request->req_message->nod_arg[e_msg_impure_flags]);
+						USHORT* impure_flags = request->getImpure<USHORT>(inMsgNode->impureFlags);
 						memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
 
 						// clear the flags from the output message
-						impure_flags = request->getImpure<USHORT>(
-							(IPTR) outMsgNode->nod_arg[e_msg_impure_flags]);
+						impure_flags = request->getImpure<USHORT>(outMsgNode->impureFlags);
 						memset(impure_flags, 0, sizeof(USHORT) * outFormat->fmt_count);
 
 						// validate input parameters
-						for (unsigned i = 0; i < list->nod_count; ++i)
-							EXE_assignment(tdbb, list->nod_arg[i]);
+						for (size_t i = 0; i < list->statements.getCount(); ++i)
+						{
+							EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
+								list->statements[i].getObject()));
+						}
 
 						if (!request->inputParams)
 						{
-							UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->nod_impure);
+							UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->impureOffset);
 
 							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
 								*request->req_pool, format, inMsg,
@@ -1443,15 +1434,18 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 					fb_assert(eofDesc.dsc_dtype == dtype_short);
 					*((SSHORT*) (UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
 
-					const jrd_nod* list = statement->topNode->nod_arg[e_extproc_output_assign];
-					fb_assert(list->nod_type == nod_asn_list ||
-						(list->nod_type == nod_list && list->nod_count == 0));
+					const CompoundStmtNode* list =
+						extStmts->statements[e_extproc_output_assign]->as<CompoundStmtNode>();
+					fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
 
 					if (result)
 					{
 						// validate output parameters
-						for (unsigned i = 0; i < list->nod_count; ++i)
-							EXE_assignment(tdbb, list->nod_arg[i]);
+						for (size_t i = 0; i < list->statements.getCount(); ++i)
+						{
+							EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
+								list->statements[i].getObject()));
+						}
 					}
 
 					break;
@@ -1470,121 +1464,7 @@ const jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, const jrd_nod* in_n
 			JRD_reschedule(tdbb, 0, true);
 		}
 
-		switch (node->nod_type)
-		{
-		case nod_asn_list:
-			if (request->req_operation == jrd_req::req_evaluate)
-			{
-				const jrd_nod* const* ptr = node->nod_arg;
-				for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				{
-					EXE_assignment(tdbb, *ptr);
-				}
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_assignment:
-			if (request->req_operation == jrd_req::req_evaluate)
-				EXE_assignment(tdbb, node);
-			node = node->nod_parent;
-			break;
-
-		case nod_dcl_variable:
-			{
-				impure_value* variable = request->getImpure<impure_value>(node->nod_impure);
-				variable->vlu_desc = *(DSC*) (node->nod_arg + e_dcl_desc);
-				variable->vlu_desc.dsc_flags = 0;
-				variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
-
-				if (variable->vlu_desc.dsc_dtype <= dtype_varying && !variable->vlu_string)
-				{
-					const USHORT len = variable->vlu_desc.dsc_length;
-					variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
-					variable->vlu_string->str_length = len;
-					variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
-				}
-
-				request->req_operation = jrd_req::req_return;
-				node = node->nod_parent;
-			}
-			break;
-
-		case nod_list:
-			{
-				impure_state* impure = request->getImpure<impure_state>(node->nod_impure);
-				switch (request->req_operation)
-				{
-				case jrd_req::req_evaluate:
-					impure->sta_state = 0;
-				case jrd_req::req_return:
-				case jrd_req::req_sync:
-					if (impure->sta_state < node->nod_count)
-					{
-						request->req_operation = jrd_req::req_evaluate;
-						node = node->nod_arg[impure->sta_state++];
-						break;
-					}
-					request->req_operation = jrd_req::req_return;
-				default:
-					node = node->nod_parent;
-				}
-			}
-			break;
-
-		case nod_message:
-			if (request->req_operation == jrd_req::req_evaluate)
-			{
-				const Format* format = (Format*) node->nod_arg[e_msg_format];
-				USHORT* impure_flags = request->getImpure<USHORT>(
-					(IPTR) node->nod_arg[e_msg_impure_flags]);
-				memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_init_variable:
-			if (request->req_operation == jrd_req::req_evaluate)
-			{
-				const ItemInfo* itemInfo =
-					reinterpret_cast<const ItemInfo*>(node->nod_arg[e_init_var_info]);
-				if (itemInfo)
-				{
-					const jrd_nod* var_node = node->nod_arg[e_init_var_variable];
-					DSC* to_desc = &request->getImpure<impure_value>(var_node->nod_impure)->vlu_desc;
-
-					to_desc->dsc_flags |= DSC_null;
-
-					MapFieldInfo::ValueType fieldInfo;
-					if (itemInfo->fullDomain &&
-						request->getStatement()->mapFieldInfo.get(itemInfo->field, fieldInfo) &&
-						fieldInfo.defaultValue)
-					{
-						dsc* value = EVL_expr(tdbb, request, fieldInfo.defaultValue->asValue());
-
-						if (value && !(request->req_flags & req_null))
-						{
-							to_desc->dsc_flags &= ~DSC_null;
-							MOV_move(tdbb, value, to_desc);
-						}
-					}
-				}
-
-				request->req_operation = jrd_req::req_return;
-			}
-			node = node->nod_parent;
-			break;
-
-		case nod_class_stmtnode_jrd:
-			node = reinterpret_cast<const StmtNode*>(node->nod_arg[0])->execute(
-				tdbb, request, &exeState);
-			break;
-
-		default:
-			BUGCHECK(168);		// msg 168 looper: action not yet implemented
-		}
+		node = node->execute(tdbb, request, &exeState);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -1718,7 +1598,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request)
 	// of handling signals use this stuff?
 	// (see jrd/ibsetjmp.h for implementation of these macros)
 
-	EXE_looper(tdbb, request, request->getStatement()->topNode);
+	EXE_looper(tdbb, request, static_cast<const StmtNode*>(request->getStatement()->topNode));
 
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);

@@ -192,9 +192,3 @@ AllObjects += $(CODES_Objects)
 BUILD_Objects:= $(call makeObjects,msgs,build_file.epp)
 
 AllObjects += $(BUILD_Objects)
-
-
-# BLR
-BLRTABLE_Objects = $(call makeObjects,misc,blrtable.cpp)
-
-AllObjects += $(BLRTABLE_Objects)

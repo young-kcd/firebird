@@ -60,7 +60,6 @@ namespace Jrd
 	class Lock;
 	class jrd_file;
 	class Format;
-	class jrd_nod;
 	class BufferControl;
 	class SparseBitmap;
 	class jrd_rel;

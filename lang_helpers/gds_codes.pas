@@ -734,6 +734,7 @@ const
 	gds_private_procedure                = 335545019;
 	gds_request_outdated                 = 335545020;
 	gds_bad_events_handle                = 335545021;
+	gds_cannot_copy_stmt                 = 335545022;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
