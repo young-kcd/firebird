@@ -4973,25 +4973,54 @@ SuspendNode* SuspendNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 }
 
 // Execute a SEND statement.
-const StmtNode* SuspendNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
+const StmtNode* SuspendNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
-	case jrd_req::req_evaluate:
-		return statement;
+		case jrd_req::req_evaluate:
+		{
+			// ASF: If this is the send in the tail of a procedure and the procedure was called
+			// with a SELECT, don't run all the send statements. It may make validations fail when
+			// the procedure didn't return any rows. See CORE-2204.
+			// But we should run the last assignment, as it's the one who make the procedure stop.
 
-	case jrd_req::req_return:
-		request->req_operation = jrd_req::req_send;
-		request->req_message = message;
-		request->req_flags |= req_stall;
-		return this;
+			if (!request->getStatement()->procedure || !(request->req_flags & req_proc_fetch))
+				return statement;
 
-	case jrd_req::req_proceed:
-		request->req_operation = jrd_req::req_return;
-		return parentStmt;
+			const CompoundStmtNode* list = parentStmt->as<CompoundStmtNode>();
 
-	default:
-		return parentStmt;
+			if (list && !list->parentStmt && list->statements[list->statements.getCount() - 1] == this)
+			{
+				list = statement->as<CompoundStmtNode>();
+
+				if (list && list->onlyAssignments && list->statements.hasData())
+				{
+					// This is the assignment that sets the EOS parameter.
+					const AssignmentNode* assign = static_cast<const AssignmentNode*>(
+						list->statements[list->statements.getCount() - 1].getObject());
+					EXE_assignment(tdbb, assign);
+				}
+				else
+					return statement;
+			}
+			else
+				return statement;
+
+			// fall into
+		}
+
+		case jrd_req::req_return:
+			request->req_operation = jrd_req::req_send;
+			request->req_message = message;
+			request->req_flags |= req_stall;
+			return this;
+
+		case jrd_req::req_proceed:
+			request->req_operation = jrd_req::req_return;
+			return parentStmt;
+
+		default:
+			return parentStmt;
 	}
 }
 
