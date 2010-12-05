@@ -1,3 +1,96 @@
+ 2010-12-05 00:55  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/exe.cpp
+   M src/jrd/par.cpp
+Rework on line/column info support to make it faster
+
+ 2010-12-05 00:54  asfernandes 
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+Make expression evaluation faster
+
+ 2010-12-04 22:15  asfernandes 
+   M builds/mac_os_x/CS/CS.pbproj/project.pbxproj
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+   M builds/posix/make.shared.targets
+   M builds/posix/make.shared.variables
+   D builds/win32/blrtable.bat
+   M builds/win32/clean_all.bat
+   M builds/win32/make_boot.bat
+   M builds/win32/msvc7/engine.vcproj
+   M builds/win32/msvc7/engine_classic.vcproj
+   M builds/win32/msvc7/engine_embed.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/WinNodes.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/Attachment.h
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/Relation.h
+   M src/jrd/btr.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/exe_proto.h
+   M src/jrd/ext_proto.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lls.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   D src/jrd/nod.h
+   M src/jrd/opt_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/pcmet.epp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/req.h
+   M src/jrd/rse.h
+   M src/jrd/trace/TraceObjects.cpp
+   D src/misc/blrtable.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Finish the statements refactor in the engine. Get rid of jrd_nod.
+
+ 2010-12-04 17:19  asfernandes 
+   M src/remote/server/os/win32/srvr_w32.cpp
+Misc
+
+ 2010-12-04 11:16  alexpeshkoff 
+   M src/auth/SecurityDatabase/pwd.cpp
+Simplified code - thanks to Claudio
+
  2010-12-02 19:54  dimitr 
    M src/yvalve/gds.cpp
 InitPrefix::init() should never throw, it leads to the infinite recursion with a stack overflow.
