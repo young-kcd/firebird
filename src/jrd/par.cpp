@@ -1683,8 +1683,11 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info.blrToSrc.find(blr_offset, pos))
 	{
 		MapBlrToSrcItem& i = csb->csb_dbg_info.blrToSrc[pos];
-		node = FB_NEW(*tdbb->getDefaultPool()) SourceInfoNode(
-			*tdbb->getDefaultPool(), static_cast<StmtNode*>(node), i.mbs_src_line, i.mbs_src_col);
+		StmtNode* stmt = static_cast<StmtNode*>(node);
+
+		stmt->hasLineColumn = true;
+		stmt->line = i.mbs_src_line;
+		stmt->column = i.mbs_src_col;
 	}
 
 	return node;

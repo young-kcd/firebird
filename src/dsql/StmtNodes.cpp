@@ -619,7 +619,17 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 		if (request->req_operation == jrd_req::req_evaluate)
 		{
 			for (const NestConst<StmtNode>* i = statements.begin(); i != end; ++i)
-				EXE_assignment(tdbb, static_cast<const AssignmentNode*>(i->getObject()));
+			{
+				const StmtNode* stmt = i->getObject();
+
+				if (stmt->hasLineColumn)
+				{
+					request->req_src_line = stmt->line;
+					request->req_src_column = stmt->column;
+				}
+
+				EXE_assignment(tdbb, static_cast<const AssignmentNode*>(stmt));
+			}
 
 			request->req_operation = jrd_req::req_return;
 		}
@@ -4835,55 +4845,6 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 	}
 
 	return parentStmt;
-}
-
-
-//--------------------
-
-
-SourceInfoNode* SourceInfoNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
-{
-	return this;
-}
-
-void SourceInfoNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
-{
-	text = "SourceInfoNode";
-}
-
-void SourceInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
-{
-}
-
-SourceInfoNode* SourceInfoNode::copy(thread_db* tdbb, NodeCopier& copier)
-{
-	return FB_NEW(*tdbb->getDefaultPool()) SourceInfoNode(*tdbb->getDefaultPool(),
-		copier.copy(tdbb, statement), line, column);
-}
-
-SourceInfoNode* SourceInfoNode::pass1(thread_db* tdbb, CompilerScratch* csb)
-{
-	doPass1(tdbb, csb, statement.getAddress());
-	return this;
-}
-
-SourceInfoNode* SourceInfoNode::pass2(thread_db* tdbb, CompilerScratch* csb)
-{
-	doPass2(tdbb, csb, statement.getAddress(), this);
-	return this;
-}
-
-const StmtNode* SourceInfoNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
-{
-	if (request->req_operation == jrd_req::req_evaluate)
-	{
-		request->req_src_line = line;
-		request->req_src_column = column;
-		//request->req_operation = jrd_req::req_return;
-		return statement;
-	}
-	else
-		return parentStmt;
 }
 
 

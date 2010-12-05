@@ -936,33 +936,6 @@ public:
 };
 
 
-class SourceInfoNode : public TypedNode<StmtNode, StmtNode::TYPE_SOURCE_INFO>
-{
-public:
-	explicit SourceInfoNode(MemoryPool& pool, StmtNode* aStatement, USHORT aLine, USHORT aColumn)
-		: TypedNode<StmtNode, StmtNode::TYPE_SOURCE_INFO>(pool),
-		  statement(aStatement),
-		  line(aLine),
-		  column(aColumn)
-	{
-	}
-
-public:
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual SourceInfoNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual SourceInfoNode* copy(thread_db* tdbb, NodeCopier& copier);
-	virtual SourceInfoNode* pass1(thread_db* tdbb, CompilerScratch* csb);
-	virtual SourceInfoNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
-
-public:
-	NestConst<StmtNode> statement;
-	USHORT line;
-	USHORT column;
-};
-
-
 class StallNode : public TypedNode<StmtNode, StmtNode::TYPE_STALL>
 {
 public:

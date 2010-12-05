@@ -1464,6 +1464,12 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			JRD_reschedule(tdbb, 0, true);
 		}
 
+		if (request->req_operation == jrd_req::req_evaluate && node->hasLineColumn)
+		{
+			request->req_src_line = node->line;
+			request->req_src_column = node->column;
+		}
+
 		node = node->execute(tdbb, request, &exeState);
 	}	// try
 	catch (const Firebird::Exception& ex)

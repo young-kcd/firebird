@@ -912,7 +912,10 @@ public:
 		: DmlNode(pool, KIND_STATEMENT),
 		  type(aType),
 		  parentStmt(NULL),
-		  impureOffset(0)
+		  impureOffset(0),
+		  hasLineColumn(false),
+		  line(0),
+		  column(0)
 	{
 	}
 
@@ -993,6 +996,9 @@ public:
 	const Type type;
 	NestConst<StmtNode> parentStmt;
 	ULONG impureOffset;	// Inpure offset from request block.
+	bool hasLineColumn;
+	USHORT line;
+	USHORT column;
 };
 
 
