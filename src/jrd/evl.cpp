@@ -295,30 +295,6 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 }
 
 
-// Evaluate a value expression.
-dsc* EVL_expr(thread_db* tdbb, jrd_req* request, const ValueExprNode* node)
-{
-	if (!node)
-		BUGCHECK(303);	// msg 303 Invalid expression for evaluation
-
-	SET_TDBB(tdbb);
-
-	if (--tdbb->tdbb_quantum < 0)
-		JRD_reschedule(tdbb, 0, true);
-
-	request->req_flags &= ~req_null;
-
-	dsc* desc = node->execute(tdbb, request);
-
-	if (desc)
-		request->req_flags &= ~req_null;
-	else
-		request->req_flags |= req_null;
-
-	return desc;
-}
-
-
 bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 {
 /**************************************
