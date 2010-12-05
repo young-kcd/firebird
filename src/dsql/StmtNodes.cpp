@@ -995,7 +995,7 @@ DeclareVariableNode* DeclareVariableNode::pass1(thread_db* tdbb, CompilerScratch
 
 DeclareVariableNode* DeclareVariableNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
-	impureOffset = CMP_impure(csb, sizeof(impure_value) + varDesc.dsc_length);
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
 	return this;
 }
 
@@ -1004,15 +1004,20 @@ const StmtNode* DeclareVariableNode::execute(thread_db* tdbb, jrd_req* request, 
 	impure_value* variable = request->getImpure<impure_value>(impureOffset);
 	variable->vlu_desc = varDesc;
 	variable->vlu_desc.dsc_flags = 0;
-	variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
 
-	if (variable->vlu_desc.dsc_dtype <= dtype_varying && !variable->vlu_string)
+	if (variable->vlu_desc.dsc_dtype <= dtype_varying)
 	{
-		const USHORT len = variable->vlu_desc.dsc_length;
-		variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
-		variable->vlu_string->str_length = len;
+		if (!variable->vlu_string)
+		{
+			const USHORT len = variable->vlu_desc.dsc_length;
+			variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), len) VaryingString();
+			variable->vlu_string->str_length = len;
+		}
+
 		variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
 	}
+	else
+		variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
 
 	request->req_operation = jrd_req::req_return;
 
@@ -1842,7 +1847,7 @@ ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	ExprNode::doPass2(tdbb, csb, inputs.getAddress());
 	ExprNode::doPass2(tdbb, csb, outputs.getAddress());
 
-	impureOffset = CMP_impure(csb, sizeof(void**));
+	impureOffset = CMP_impure(csb, sizeof(EDS::Statement*));
 
 	return this;
 }
