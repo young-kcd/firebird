@@ -5580,6 +5580,16 @@ static bool gen_sort_merge(thread_db* tdbb, OptimizerBlk* opt, RiverStack& org_r
 		}
 		jrd_nod* node1 = node->nod_arg[0];
 		jrd_nod* node2 = node->nod_arg[1];
+
+		dsc desc1, desc2;
+		CMP_get_desc(tdbb, opt->opt_csb, node1, &desc1);
+		CMP_get_desc(tdbb, opt->opt_csb, node2, &desc2);
+
+		if (!DSC_EQUIV(&desc1, &desc2, true) || desc1.isBlob() || desc2.isBlob())
+		{
+			continue;
+		}
+
 		for (RiverStack::iterator stack0(org_rivers); stack0.hasData(); ++stack0) {
 			River* river1 = stack0.object();
 			if (!river_reference(river1, node1)) {
