@@ -1,3 +1,7 @@
+ 2010-12-08 10:57  dimitr 
+   M src/jrd/opt.cpp
+Backported CORE-1274 and CORE-1752.
+
  2010-12-02 19:52  dimitr 
    M src/jrd/gds.cpp
 InitPrefix::init() should never throw, it leads to the infinite recursion with a stack overflow.
