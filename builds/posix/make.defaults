@@ -70,7 +70,7 @@ OBJ=$(TMP_ROOT)
 GEN_SRC=$(OBJ)
 
 # avoid generated cpp files deletion
-.SECONDARY:	$(OBJ)/%.cpp
+.SECONDARY:
 
   # This one is not so widely used at the momement.
   # but I would like it to become so.
