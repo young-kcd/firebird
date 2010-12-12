@@ -1155,9 +1155,23 @@ static void aux_request( rem_port* port, P_REQ * request, PACKET* send)
 		return;
 	}
 
-	if (aux_port) {
-		aux_port->connect(send, 0);
-		aux_port->port_context = rdb;
+	if (aux_port) 
+	{
+		ISC_STATUS* const save_status = aux_port->port_status_vector;
+		aux_port->port_status_vector = status_vector;
+
+		if (aux_port->connect(send, 0))
+		{
+			aux_port->port_context = rdb;
+			aux_port->port_status_vector = save_status;
+		}
+		else
+		{
+			gds__log_status(NULL, aux_port->port_status_vector);
+			fb_assert(port->port_async == aux_port);
+			port->port_async = NULL;
+			aux_port->disconnect();
+		}
 	}
 
 /* restore the port status vector */
