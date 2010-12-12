@@ -655,6 +655,7 @@ RecordSourceNode* ProcedureSourceNode::pass1(thread_db* tdbb, CompilerScratch* c
 {
 	doPass1(tdbb, csb, sourceList.getAddress());
 	doPass1(tdbb, csb, targetList.getAddress());
+	doPass1(tdbb, csb, in_msg.getAddress());
 	return this;
 }
 
