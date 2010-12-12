@@ -1541,15 +1541,23 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 	}
 
 	if (aux_port)
-	{
-		aux_port->connect(send);
-		aux_port->port_context = rdb;
+		try
+		{
+			if (aux_port->connect(send))
+				aux_port->port_context = rdb;
+		}
+		catch (const Exception& ex)
+		{
+			iscLogException("", ex);
+			fb_assert(port->port_async == aux_port);
+			port->port_async = NULL;
+			aux_port->disconnect();
+		}
 	}
-  }
-  catch (const Exception& ex)
-  {
-  	iscLogException("Unhandled exception in server's aux_request():", ex);
-  }
+	catch (const Exception& ex)
+	{
+		iscLogException("Unhandled exception in server's aux_request():", ex);
+	}
 }
 
 
@@ -3744,7 +3752,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 		{
 			if (!port->port_parent)
 			{
-				if (!Worker::isShuttingDown())
+				if (!Worker::isShuttingDown() && !(port->port_flags & PORT_rdb_shutdown))
 					gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
 				return false;
@@ -4569,6 +4577,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	if (exit_code == isc_shutdown || exit_code == isc_att_shutdown)
 	{
 		this->port_state = rem_port::BROKEN;
+		this->port_flags |= PORT_rdb_shutdown;
 	}
 
 	return exit_code;
