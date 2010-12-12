@@ -125,7 +125,7 @@ const USHORT MAX_PTYPE	= ptype_lazy_send;
 #include <process.h>
 #include <signal.h>
 #include "../utilities/install/install_nt.h"
-#define SOCLOSE		closesocket
+
 #define INET_RETRY_ERRNO	WSAEINPROGRESS
 #define INET_ADDR_IN_USE	WSAEADDRINUSE
 #define sleep(seconds)  Sleep ((seconds) * 1000)
@@ -133,9 +133,6 @@ const int NOTASOCKET = WSAENOTSOCK;
 
 #else // WIN_NT
 
-#ifndef SOCLOSE
-#define SOCLOSE	close
-#endif
 #ifndef INET_ADDR_IN_USE
 #define INET_ADDR_IN_USE EADDRINUSE
 #endif
@@ -146,9 +143,19 @@ const int NOTASOCKET = EBADF;
 
 #endif // WIN_NT
 
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET  -1
+
+static void SOCLOSE(SOCKET& socket)
+{
+	if (socket != INVALID_SOCKET)
+	{
+#ifdef WIN_NT
+		closesocket(socket);
+#else
+		close(socket);
 #endif
+		socket = INVALID_SOCKET;
+	}
+};
 
 // Can't find were it's used.
 //#ifndef SIGURG
@@ -235,7 +242,7 @@ static bool		accept_connection(rem_port*, const P_CNCT*);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
 #endif
-static rem_port*		alloc_port(rem_port*);
+static rem_port*		alloc_port(rem_port*, const USHORT = 0);
 static rem_port*		aux_connect(rem_port*, PACKET*);
 static rem_port*		aux_request(rem_port*, PACKET*);
 
@@ -1142,7 +1149,7 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 }
 
 
-static rem_port* alloc_port(rem_port* const parent)
+static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 {
 /**************************************
  *
@@ -1217,6 +1224,7 @@ static rem_port* alloc_port(rem_port* const parent)
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 	port->port_async_receive = inet_async_receive;
+	port->port_flags = flags;
 
 	xdrinet_create(	&port->port_send, port,
 					&port->port_buffer[INET_remote_buffer],
@@ -1254,15 +1262,15 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	if (port->port_server_flags)
 	{
-		struct timeval timeout;
-		timeout.tv_sec = port->port_connect_timeout;
-		timeout.tv_usec = 0;
+			struct timeval timeout;
+			timeout.tv_sec = port->port_connect_timeout;
+			timeout.tv_usec = 0;
 
-		fd_set slct_fdset;
-		FD_ZERO(&slct_fdset);
-		FD_SET(port->port_channel, &slct_fdset);
+			fd_set slct_fdset;
+			FD_ZERO(&slct_fdset);
+			FD_SET(port->port_channel, &slct_fdset);
 
-		int inetErrNo = 0;
+			int inetErrNo = 0;
 
 		while (true)
 		{
@@ -1425,14 +1433,14 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-    rem_port* const new_port = alloc_port(port->port_parent);
+    rem_port* const new_port = alloc_port(port->port_parent, PORT_async);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 
 	new_port->port_server_flags = port->port_server_flags;
 	new_port->port_channel = (int) n;
-	new_port->port_flags = port->port_flags & PORT_no_oob;
+	new_port->port_flags |= port->port_flags & PORT_no_oob;
 
 	P_RESP* response = &packet->p_resp;
 
@@ -1530,11 +1538,7 @@ static void disconnect(rem_port* const port)
 				   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
 
-#if defined WIN_NT
-	if (port->port_handle && port->port_handle != INVALID_SOCKET)
-#else
-	if (port->port_handle)
-#endif
+	if (port->port_handle != INVALID_SOCKET)
 	{
 		shutdown(port->port_handle, 2);
 	}
@@ -1553,9 +1557,8 @@ static void disconnect(rem_port* const port)
 
 	inet_ports->unRegisterPort(port);
 
-	if (port->port_handle) {
-		SOCLOSE(port->port_handle);
-	}
+	SOCLOSE(port->port_handle);
+	SOCLOSE(port->port_channel);
 
 	port->release();
 
@@ -1592,17 +1595,10 @@ static void force_close(rem_port* port)
 
 	port->port_state = rem_port::BROKEN;
 
-	const SOCKET handle = port->port_handle;
-	port->port_handle = 0;
-
-#ifdef WIN_NT
-	if (handle && handle != INVALID_SOCKET)
-#else
-	if (handle)
-#endif
+	if (port->port_handle != INVALID_SOCKET)
 	{
-		shutdown(handle, 2);
-		SOCLOSE(handle);
+		shutdown(port->port_handle, 2);
+		SOCLOSE(port->port_handle);
 	}
 }
 
@@ -1970,9 +1966,9 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				if (main_port->port_state != rem_port::BROKEN)
 				{
 					main_port->port_state = rem_port::BROKEN;
-					const SOCKET s = main_port->port_handle;
-					shutdown(s, 2);
-					SOCLOSE(s);
+
+					shutdown(main_port->port_handle, 2);
+					SOCLOSE(main_port->port_handle);
 				}
 			}
 			else if (port = select_accept(main_port))
@@ -2082,8 +2078,12 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 #ifdef WIN_NT
 		const int ok = FD_ISSET(n, &selct->slct_fdset);
 #else
-		if (n < 0 || n >= FD_SETSIZE) {
-			return;
+		if (n < 0 || n >= FD_SETSIZE)
+		{
+			if (port->port_flags & PORT_disconnect)
+				continue;
+			else
+				return;
 		}
 		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
@@ -2142,7 +2142,9 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 			Firebird::MutexLockGuard guard(port_mutex);
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
-				if (port->port_state == rem_port::PENDING)
+				if (port->port_state == rem_port::PENDING && 
+					// don't wait on still listening (not connected) async port
+					!(port->port_handle == INVALID_SOCKET && port->port_flags & PORT_async))
 				{
 					// Adjust down the port's keepalive timer.
 

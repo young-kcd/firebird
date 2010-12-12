@@ -53,6 +53,10 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET  -1
+#endif
 #endif // !WIN_NT
 
 
@@ -78,7 +82,6 @@ const int BLOB_LENGTH		= 16384;
 
 #include "../remote/protocol.h"
 #include "fb_blk.h"
-
 
 // fwd. decl.
 struct rem_port;
@@ -585,6 +588,7 @@ const USHORT PORT_partial_data	= 0x0080;	// Physical packet doesn't contain all 
 const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed
 const USHORT PORT_server		= 0x0200;	// Server (not client) port
 const USHORT PORT_detached		= 0x0400;	// op_detach, op_drop_database or op_service_detach was processed
+const USHORT PORT_rdb_shutdown	= 0x0800;	// Database is shutted down
 
 // Port itself
 
@@ -643,7 +647,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	SLONG			port_dummy_timeout;	// time remaining until keepalive packet
 	ISC_STATUS*		port_status_vector;
 	SOCKET			port_handle;		// handle for INET socket
-	int				port_channel;		// handle for connection (from by OS)
+	SOCKET			port_channel;		// handle for connection (from by OS)
 	struct linger	port_linger;		// linger value as defined by SO_LINGER
 	Rdb*			port_context;
 	ThreadHandle	port_events_thread;	// handle of thread, handling incoming events
@@ -694,7 +698,7 @@ public:
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
-		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
+		port_dummy_timeout(0), port_status_vector(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET),
 		port_context(0), port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
 		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),

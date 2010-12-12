@@ -591,7 +591,6 @@ void rem_port::linkParent(rem_port* const parent)
 
 	this->port_parent = parent;
 	this->port_next = parent->port_clients;
-	this->port_handle = parent->port_handle;
 	this->port_server = parent->port_server;
 	this->port_server_flags = parent->port_server_flags;
 
