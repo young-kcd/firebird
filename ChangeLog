@@ -1,3 +1,10 @@
+ 2010-12-12 19:17  hvlad 
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server.cpp
+Fixed bug CORE-3119 : 100% CPU USAGE with Unilimited Loop & Index corrupted
+
  2010-12-08 10:57  dimitr 
    M src/jrd/opt.cpp
 Backported CORE-1274 and CORE-1752.
