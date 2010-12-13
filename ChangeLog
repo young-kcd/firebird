@@ -1,3 +1,22 @@
+ 2010-12-12 20:45  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Missing pass1 on procedure message, seen by Claudio - not relevant currently, but do it as before.
+
+ 2010-12-12 20:19  hvlad 
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Port forward fix for bug CORE-3119 : 100% CPU USAGE with Unilimited Loop & Index corrupted
+
+ 2010-12-12 19:53  asfernandes 
+   M builds/posix/make.defaults
+An attempt which seems to work to not lose cpp files generated from epp ones.
+
+ 2010-12-12 14:22  alexpeshkoff 
+   M src/gpre/c_cxx.cpp
+Fixed gcc warnings
+
  2010-12-05 16:49  asfernandes 
    M src/dsql/StmtNodes.cpp
 Fixed CORE-2204 - Constraints on SP output parameters are checked even when the SP returns zero rows
