@@ -1,3 +1,11 @@
+ 2010-12-12 19:22  hvlad 
+   M src/remote/inet.cpp
+   M src/remote/server.cpp
+Backport fix for bug CORE-3119 : 100% CPU USAGE with Unilimited Loop & Index corrupted
+Backport related fixes from v2.5 :
+Added timeouts to the network event listener code.
+Fixed wrong usage of SO_REUSEADDR on Windows.
+
  2010-12-08 10:57  dimitr 
    M src/jrd/opt.cpp
 Backported CORE-1274 and CORE-1752.
