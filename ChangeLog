@@ -1,3 +1,7 @@
+ 2010-12-16 00:06  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3277 - Wrong result for RIGHT(UTF8 varchar)
+
  2010-12-12 20:45  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Missing pass1 on procedure message, seen by Claudio - not relevant currently, but do it as before.
