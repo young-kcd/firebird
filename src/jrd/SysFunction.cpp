@@ -3357,11 +3357,11 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 	if (request->req_flags & req_null)	// return NULL if len is NULL
 		return NULL;
 
+	CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
 	SLONG start;
 
 	if (value->isBlob())
 	{
-		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
 		blb* blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction,
 			reinterpret_cast<bid*>(value->dsc_address));
 
@@ -3382,6 +3382,7 @@ dsc* evlRight(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		MoveBuffer temp;
 		UCHAR* p;
 		start = MOV_make_string2(tdbb, value, value->getTextType(), &p, temp);
+		start = charSet->length(start, p, true);
 	}
 
 	start -= MOV_get_long(len, 0);
