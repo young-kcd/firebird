@@ -5841,7 +5841,10 @@ decode_pairs
 
 next_value_expression
 	: NEXT KW_VALUE FOR symbol_generator_name
-		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), toName($4)); }
+		{
+			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
+				toName($4), MAKE_const_slong(1));
+		}
 	| GEN_ID '(' symbol_generator_name ',' value ')'
 		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), toName($3), $5); }
 	;
