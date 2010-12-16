@@ -1,3 +1,7 @@
+ 2010-12-16 00:14  asfernandes 
+   M src/jrd/SysFunction.cpp
+Backported fix for CORE-3277 - Wrong result for RIGHT(UTF8 varchar)
+
  2010-12-12 19:17  hvlad 
    M src/remote/inet.cpp
    M src/remote/remote.cpp
