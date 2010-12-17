@@ -436,7 +436,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-2107
-        Failed to establish TCP\IP connection with Windows Classic Server under high load
+        Failed to establish TCP/IP connection with Windows Classic Server under high load
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
