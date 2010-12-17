@@ -290,6 +290,8 @@ public:
 		Firebird::Mutex mtx;
 	};
 
+	Firebird::Semaphore	svc_detach_sem;
+
 private:
 	StatusStringsHelper	svc_thread_strings;
 

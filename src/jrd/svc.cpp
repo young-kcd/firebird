@@ -936,7 +936,15 @@ bool Service::locateInAllServices(size_t* posPtr)
 ULONG Service::totalCount()
 {
 	MutexLockGuard guard(globalServicesMutex);
-	return allServices->getCount();
+	AllServices& all(allServices);
+	ULONG cnt = 0;
+	
+	// don't count already detached services
+	for (size_t i = 0; i < all.getCount(); i++)
+		if (!(all[i]->svc_flags & SVC_detached))
+			cnt++;
+
+	return cnt;
 }
 
 
@@ -967,7 +975,14 @@ void Service::shutdownServices()
 	MutexLockGuard guard(globalServicesMutex);
 	AllServices& all(allServices);
 
-	for (unsigned int pos = 0; pos < all.getCount(); )
+	unsigned int pos;
+
+	// signal once for every still running service
+	for (pos = 0; pos < all.getCount(); pos++)
+		if (all[pos]->svc_flags & SVC_thd_running)
+			all[pos]->svc_detach_sem.release();
+
+	for (pos = 0; pos < all.getCount(); )
 	{
 		if (all[pos]->svc_flags & SVC_thd_running)
 		{
@@ -2280,6 +2295,10 @@ void Service::finish(USHORT flag)
 		if (svc_flags & SVC_finished)
 		{
 			svc_flags &= ~SVC_thd_running;
+		}
+		else
+		{
+			svc_detach_sem.release();
 		}
 	}
 }

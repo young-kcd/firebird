@@ -284,7 +284,8 @@ void TraceSvcJrd::readSession(TraceSession& session)
 			if (!checkAliveAndFlags(session.ses_id, flags))
 				break;
 
-			THD_sleep(250);
+			if (m_svc.svc_detach_sem.tryEnter(0, 250))
+				break;
 		}
 		else
 		{
