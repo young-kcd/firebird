@@ -151,7 +151,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3164
-        Parameterized requests involving blob fields fails when connected using charset UTF8
+        Parameterized requests involving blob fields fail when connected using charset UTF8
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
