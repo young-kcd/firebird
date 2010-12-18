@@ -1,3 +1,65 @@
+ 2010-12-18 02:17  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/cvt.cpp
+   M src/common/cvt.h
+   M src/common/dsc.cpp
+   M src/common/dsc.h
+   M src/common/dsc_pub.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/ddl_proto.h
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/sqlda_pub.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/isql/isql.epp
+   M src/isql/isql.h
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/align.h
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/cvt2.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/mov.cpp
+   M src/jrd/mov_proto.h
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/array.epp
+   M src/yvalve/gds.cpp
+   M src/yvalve/keywords.cpp
+   M src/yvalve/utly.cpp
+Feature CORE-726 - Boolean data type
+
+ 2010-12-17 22:32  hvlad 
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/trace/TraceService.cpp
+Frontport better fix for bug CORE-3266 : Race condition between async service detach request and running user trace service
+
  2010-12-16 21:11  asfernandes 
    M src/dsql/parse.y
 Fixed the crash about NEXT VALUE FOR reported in fb-devel
