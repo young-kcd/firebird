@@ -1,3 +1,13 @@
+ 2010-12-17 09:54  hvlad 
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/trace/TraceService.cpp
+Better fix for bug CORE-3266 : Race condition between async service detach request and running user trace service
+
+ 2010-12-17 05:40  robocop 
+   M doc/WhatsNew
+Misc.
+
  2010-12-16 00:14  asfernandes 
    M src/jrd/SysFunction.cpp
 Backported fix for CORE-3277 - Wrong result for RIGHT(UTF8 varchar)
