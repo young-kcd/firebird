@@ -133,6 +133,13 @@ void MOV_double_to_date(double real, SLONG fixed[2])
 }
 
 
+// Get the value of a boolean descriptor.
+bool MOV_get_boolean(const dsc* desc)
+{
+	return CVT_get_boolean(desc, ERR_post);
+}
+
+
 double MOV_get_double(const dsc* desc)
 {
 /**************************************

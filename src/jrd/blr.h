@@ -66,6 +66,7 @@
 #define blr_not_nullable	(unsigned char)20
 #define blr_column_name		(unsigned char)21
 #define blr_column_name2	(unsigned char)22
+#define blr_bool			(unsigned char)23
 
 // first sub parameter for blr_domain_name[2]
 #define blr_domain_type_of	(unsigned char)0
@@ -393,5 +394,6 @@
 #define blr_procedure4				(unsigned char) 198
 #define blr_agg_function			(unsigned char) 199
 #define blr_substring_similar		(unsigned char) 200
+#define blr_bool_as_value			(unsigned char) 201
 
 #endif // JRD_BLR_H

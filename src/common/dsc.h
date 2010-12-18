@@ -251,6 +251,14 @@ typedef struct dsc
 		dsc_address = (UCHAR*) address;
 	}
 
+	void makeBoolean(UCHAR* address = NULL)
+	{
+		clear();
+		dsc_dtype = dtype_boolean;
+		dsc_length = sizeof(UCHAR);
+		dsc_address = address;
+	}
+
 	void makeNullString()
 	{
 		clear();

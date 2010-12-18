@@ -1295,6 +1295,10 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			length = INT64_KEY_LENGTH;
 			break;
 
+		case idx_boolean:
+			length = sizeof(UCHAR);
+			break;
+
 		default:
 			if (idx->idx_flags & idx_expressn)
 			{
@@ -1343,6 +1347,9 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 			break;
 		case idx_numeric2:
 			length = INT64_KEY_LENGTH;
+			break;
+		case idx_boolean:
+			length = sizeof(UCHAR);
 			break;
 		default:
 			length = format->fmt_desc[tail->idx_field].dsc_length;
@@ -2137,6 +2144,9 @@ bool BTR_types_comparable(const dsc& target, const dsc& source, const int flags)
 			(flags & ExprNode::FLAG_DATE));
 	}
 
+	if (target.dsc_dtype == dtype_boolean)
+		return source.dsc_dtype == dtype_boolean;
+
 	fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
 	return false;
 }
@@ -2486,6 +2496,16 @@ static void compress(thread_db* tdbb,
 
 #ifdef DEBUG_INDEXKEY
 		fprintf(stderr, "TIMESTAMP1 special %lg ", temp.temp_double);
+#endif
+
+	}
+	else if (itype == idx_boolean)
+	{
+		temp.temp_char[0] = UCHAR(MOV_get_boolean(desc) ? 1 : 0);
+		temp_copy_length = sizeof(UCHAR);
+
+#ifdef DEBUG_INDEXKEY
+		fprintf(stderr, "BOOLEAN %d ", temp.temp_char[0]);
 #endif
 
 	}

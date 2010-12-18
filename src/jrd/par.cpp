@@ -459,6 +459,10 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 			break;
 		}
 
+	case blr_bool:
+		desc->makeBoolean();
+		break;
+
 	case blr_domain_name:
 	case blr_domain_name2:
 		{

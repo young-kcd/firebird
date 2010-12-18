@@ -525,6 +525,10 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 				ch_stuff(p, xvar->sqlscale, same_flag);
 				dtype = dtype_quad;
 				break;
+			case SQL_BOOLEAN:
+				ch_stuff(p, blr_bool, same_flag);
+				dtype = dtype_boolean;
+				break;
 			case SQL_NULL:
 				ch_stuff(p, blr_text, same_flag);
 				ch_stuff_word(p, len, same_flag);
@@ -639,6 +643,9 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 			break;
 		case SQL_QUAD:
 			dtype = dtype_quad;
+			break;
+		case SQL_BOOLEAN:
+			dtype = dtype_boolean;
 			break;
 		case SQL_NULL:
 			dtype = dtype_text;

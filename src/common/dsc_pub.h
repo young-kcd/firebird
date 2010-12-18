@@ -60,7 +60,8 @@
 #define dtype_array		18
 #define dtype_int64		19
 #define dtype_dbkey		20
-#define DTYPE_TYPE_MAX	21
+#define dtype_boolean	21
+#define DTYPE_TYPE_MAX	22
 
 #define ISC_TIME_SECONDS_PRECISION		10000
 #define ISC_TIME_SECONDS_PRECISION_SCALE	(-4)

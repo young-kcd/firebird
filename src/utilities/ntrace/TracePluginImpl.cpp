@@ -628,6 +628,9 @@ void TracePluginImpl::appendParams(TraceParams* params)
 			case dtype_dbkey:
 				paramtype = "db_key";
 				break;
+			case dtype_boolean:
+				paramtype = "boolean";
+				break;
 
 			default:
 				paramtype.printf("<type%d>", parameters->dsc_dtype);
@@ -731,6 +734,11 @@ void TracePluginImpl::appendParams(TraceParams* params)
 						ts.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
 					break;
 				}
+
+				case dtype_boolean:
+					paramvalue = *parameters->dsc_address ? "<true>" : "<false>";
+					break;
+
 				default:
 					paramvalue = "<unknown>";
 			}

@@ -58,7 +58,9 @@ const USHORT blr_dtypes[] = {
 	blr_timestamp,				// dtype_timestamp
 	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob doesn't fit in UCHAR
 	blr_short,					// dtype_array
-	blr_int64					// dtype_int64
+	blr_int64,					// dtype_int64
+	0,							// DB_KEY
+	blr_bool					// dtype_boolean
 };
 
 void DDL_execute(Jrd::dsql_req*);

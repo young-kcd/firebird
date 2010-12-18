@@ -340,6 +340,7 @@ ComparativeBoolNode::ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp,
 	  dsqlArg2(aArg2),
 	  dsqlArg3(aArg3),
 	  dsqlFlag(DFLAG_NONE),
+	  dsqlWasValue(false),
 	  arg1(NULL),
 	  arg2(NULL),
 	  arg3(NULL)
@@ -380,6 +381,40 @@ void ComparativeBoolNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	dsql_nod* procArg1 = dsqlArg1;
+	dsql_nod* procArg2 = dsqlArg2;
+	dsql_nod* procArg3 = dsqlArg3;
+
+	// Make INSERTING/UPDATING/DELETING in booleans to read the trigger action.
+
+	if (dsqlWasValue && procArg1->nod_type == Dsql::nod_field_name)
+	{
+		const char* fieldName = ((dsql_str*) procArg1->nod_arg[Dsql::e_fln_name])->str_data;
+
+		static const char* const NAMES[] = {
+			"INSERTING",
+			"UPDATING",
+			"DELETING"
+		};
+
+		for (size_t i = 0; i < FB_NELEM(NAMES); ++i)
+		{
+			if (strcmp(fieldName, NAMES[i]) == 0)
+			{
+				thread_db* tdbb = JRD_get_thread_data();
+
+				InternalInfoNode* infoNode = FB_NEW(*tdbb->getDefaultPool()) InternalInfoNode(
+					*tdbb->getDefaultPool(),
+					MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
+
+				procArg1 = MAKE_node(Dsql::nod_class_exprnode, 1);
+				procArg1->nod_arg[0] = reinterpret_cast<dsql_nod*>(infoNode);
+
+				procArg2 = MAKE_const_slong(i + 1);
+			}
+		}
+	}
+
 	switch (blrOp)
 	{
 		case blr_eql:
@@ -388,13 +423,13 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_geq:
 		case blr_lss:
 		case blr_leq:
-			if (dsqlArg2->nod_type == Dsql::nod_list)
+			if (procArg2->nod_type == Dsql::nod_list)
 			{
 				int listItemCount = 0;
 				BoolExprNode* resultNode = NULL;
-				dsql_nod** ptr = dsqlArg2->nod_arg;
+				dsql_nod** ptr = procArg2->nod_arg;
 
-				for (const dsql_nod* const* const end = ptr + dsqlArg2->nod_count;
+				for (const dsql_nod* const* const end = ptr + procArg2->nod_count;
 					 ptr != end; ++listItemCount, ++ptr)
 				{
 					if (listItemCount >= MAX_MEMBER_LIST)
@@ -407,7 +442,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 
 					ComparativeBoolNode* temp = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
-						blrOp, dsqlArg1, *ptr);
+						blrOp, procArg1, *ptr);
 
 					if (resultNode)
 					{
@@ -429,8 +464,8 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				return resultNode->dsqlPass(dsqlScratch);
 			}
 
-			if (dsqlArg2->nod_type == Dsql::nod_select_expr &&
-				!(dsqlArg2->nod_flags & NOD_SELECT_EXPR_SINGLETON))
+			if (procArg2->nod_type == Dsql::nod_select_expr &&
+				!(procArg2->nod_flags & NOD_SELECT_EXPR_SINGLETON))
 			{
 				UCHAR newBlrOp = blr_any;
 
@@ -446,8 +481,8 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blrOp,
-		PASS1_node(dsqlScratch, dsqlArg1), PASS1_node(dsqlScratch, dsqlArg2),
-		PASS1_node(dsqlScratch, dsqlArg3));
+		PASS1_node(dsqlScratch, procArg1), PASS1_node(dsqlScratch, procArg2),
+		PASS1_node(dsqlScratch, procArg3));
 
 	switch (blrOp)
 	{
@@ -459,6 +494,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		case blr_leq:
 		case blr_equiv:
 		case blr_between:
+		{
 			// Try to force arg1 to be same type as arg2 eg: ? = FIELD case
 			PASS1_set_parameter_type(dsqlScratch, node->dsqlArg1, node->dsqlArg2, false);
 
@@ -473,7 +509,21 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				// ? BETWEEN Y AND ? case
 				PASS1_set_parameter_type(dsqlScratch, node->dsqlArg3, node->dsqlArg2, false);
 			}
+
+			dsc desc1, desc2;
+
+			MAKE_desc(dsqlScratch, &desc1, node->dsqlArg1);
+			MAKE_desc(dsqlScratch, &desc2, node->dsqlArg2);
+
+			if ((desc1.dsc_dtype == dtype_boolean || desc2.dsc_dtype == dtype_boolean) &&
+				desc1.dsc_dtype != desc2.dsc_dtype)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_invalid_boolean_usage));
+			}
+
 			break;
+		}
 
 		case blr_containing:
 		case blr_like:
@@ -1546,6 +1596,7 @@ BoolExprNode* NotBoolNode::process(DsqlCompilerScratch* dsqlScratch, bool invert
 
 				ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
 					getPool(), newBlrOp, cmpArg->dsqlArg1, cmpArg->dsqlArg2);
+				node->dsqlWasValue = cmpArg->dsqlWasValue;
 
 				if (cmpArg->dsqlFlag == ComparativeBoolNode::DFLAG_ANSI_ANY)
 					node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ALL;

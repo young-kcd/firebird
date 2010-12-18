@@ -1001,6 +1001,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
+	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -1040,6 +1041,17 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	}
 
 	return value;
+}
+
+
+// Get the value of a boolean descriptor.
+bool CVT_get_boolean(const dsc* desc, ErrorFunction err)
+{
+	if (desc->dsc_dtype == dtype_boolean)
+		return *desc->dsc_address != '\0';
+
+	CVT_conversion_error(desc, err);
+	return false;	// silence warning
 }
 
 
@@ -1241,6 +1253,7 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 	case dtype_blob:
 	case dtype_array:
 	case dtype_dbkey:
+	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -1340,6 +1353,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1372,6 +1386,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1404,6 +1419,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1608,6 +1624,8 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 		default:
 			fb_assert(false);		// Fall into ...
+
+		case dtype_boolean:
 		case dtype_blob:
 			CVT_conversion_error(from, cb->err);
 			return;
@@ -1695,6 +1713,10 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		*(double*) p = CVT_get_double(from, cb->err);
 #endif
 		return;
+
+	case dtype_boolean:
+		CVT_conversion_error(from, cb->err);
+		break;
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
@@ -1726,6 +1748,8 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		p = "BLOB";
 	else if (desc->dsc_dtype == dtype_array)
 		p = "ARRAY";
+	else if (desc->dsc_dtype == dtype_boolean)
+		p = "BOOLEAN";
 	else
 	{
 		// CVC: I don't have access here to JRD_get_thread_data())->tdbb_status_vector
@@ -2401,6 +2425,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
+	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -2547,6 +2572,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
+	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 

@@ -1833,6 +1833,44 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 						segment[i]->excludeUpper = false;
 						break;
 
+					// ASF: Make "NOT boolean" work with indices.
+					case blr_neq:
+					{
+						dsc desc;
+						value->getDesc(tdbb, csb, &desc);
+
+						if (desc.dsc_dtype != dtype_boolean)
+							return false;
+
+						// Let's make a compare with FALSE so we invert the value.
+
+						static const UCHAR falseValue = '\0';
+						LiteralNode* falseLiteral = FB_NEW(*tdbb->getDefaultPool())
+							LiteralNode(*tdbb->getDefaultPool());
+						falseLiteral->litDesc.makeBoolean(const_cast<UCHAR*>(&falseValue));
+
+						ComparativeBoolNode* newCmp = FB_NEW(*tdbb->getDefaultPool())
+							ComparativeBoolNode(*tdbb->getDefaultPool(), blr_eql);
+						newCmp->arg1 = value;
+						newCmp->arg2 = falseLiteral;
+
+						// Recreate the boolean expression as a value.
+						BoolAsValueNode* newValue = FB_NEW(*tdbb->getDefaultPool())
+							BoolAsValueNode(*tdbb->getDefaultPool());
+						newValue->boolean = newCmp;
+
+						newValue->impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+						// We have the value inverted. Then use it with a segmentScanEqual for the
+						// index lookup.
+						segment[i]->matches.add(boolean);
+						segment[i]->lowerValue = segment[i]->upperValue = newValue;
+						segment[i]->scanType = segmentScanEqual;
+						segment[i]->excludeLower = false;
+						segment[i]->excludeUpper = false;
+						break;
+					}
+
 					case blr_gtr:
 					case blr_geq:
 						segment[i]->matches.add(boolean);

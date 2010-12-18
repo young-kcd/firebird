@@ -4164,7 +4164,8 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		return node;
 	}
 
-	PASS1_field_unknown((qualifier ? qualifier->str_data : NULL), (name ? name->str_data : NULL), input);
+	PASS1_field_unknown((qualifier ? qualifier->str_data : NULL),
+		(name ? name->str_data : NULL), input);
 
 	// CVC: PASS1_field_unknown() calls ERRD_post() that never returns, so the next line
 	// is only to make the compiler happy.
@@ -8017,7 +8018,10 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 		case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
-			return exprNode->setParameterType(dsqlScratch, node, force_varchar);
+			if (exprNode->kind == DmlNode::KIND_VALUE)
+				return exprNode->setParameterType(dsqlScratch, node, force_varchar);
+			else
+				return false;
 		}
 
 		case nod_limit:

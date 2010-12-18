@@ -92,6 +92,34 @@ public:
 };
 
 
+class BoolAsValueNode : public TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>
+{
+public:
+	explicit BoolAsValueNode(MemoryPool& pool, dsql_nod* aBoolean = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual void setParameterName(dsql_par* parameter) const
+	{
+	}
+
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlBoolean;
+	NestConst<BoolExprNode> boolean;
+};
+
+
 class CastNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
 {
 public:

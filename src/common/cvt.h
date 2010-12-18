@@ -69,6 +69,7 @@ public:
 void CVT_conversion_error(const dsc*, ErrorFunction);
 double CVT_power_of_ten(const int);
 SLONG CVT_get_long(const dsc*, SSHORT, ErrorFunction);
+bool CVT_get_boolean(const dsc*, ErrorFunction);
 double CVT_get_double(const dsc*, ErrorFunction);
 USHORT CVT_make_string(const dsc*, USHORT, const char**, vary*, USHORT, ErrorFunction);
 void CVT_move_common(const dsc*, dsc*, Firebird::Callbacks*);

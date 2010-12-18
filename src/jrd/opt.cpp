@@ -347,7 +347,8 @@ static const UCHAR sort_dtypes[] =
 	SKD_quad,					// dtype_blob
 	0,							// dtype_array
 	SKD_int64,					// dtype_int64
-	SKD_text					// dtype_dbkey - use text sort for backward compatibility
+	SKD_text,					// dtype_dbkey - use text sort for backward compatibility
+	SKD_bytes					// dtype_boolean
 };
 
 

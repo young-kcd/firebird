@@ -451,6 +451,10 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		value->vlu_misc.vlu_bid = *(bid*)from.dsc_address;
 		return;
 
+	case dtype_boolean:
+		value->vlu_misc.vlu_uchar = *from.dsc_address;
+		return;
+
 	default:
 		fb_assert(false);
 		break;

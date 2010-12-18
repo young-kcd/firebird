@@ -20,6 +20,7 @@
 
 #include "firebird.h"
 #include <math.h>
+#include <ctype.h>
 #include "../common/common.h"
 #include "../common/classes/FpeControl.h"
 #include "../common/classes/VaryStr.h"
@@ -2490,6 +2491,93 @@ ValueExprNode* ArithmeticNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //--------------------
 
 
+static RegisterNode<BoolAsValueNode> regBoolAsValueNode(blr_bool_as_value);
+
+BoolAsValueNode::BoolAsValueNode(MemoryPool& pool, dsql_nod* aBoolean)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_BOOL_AS_VALUE>(pool),
+	  dsqlBoolean(aBoolean),
+	  boolean(NULL)
+{
+	addChildNode(dsqlBoolean, boolean);
+}
+
+DmlNode* BoolAsValueNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	BoolAsValueNode* node = FB_NEW(pool) BoolAsValueNode(pool);
+	node->boolean = PAR_parse_boolean(tdbb, csb);
+	return node;
+}
+
+void BoolAsValueNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "BoolAsValueNode";
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* BoolAsValueNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	BoolAsValueNode* node = FB_NEW(getPool()) BoolAsValueNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlBoolean));
+
+	return node;
+}
+
+void BoolAsValueNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_bool_as_value);
+	GEN_expr(dsqlScratch, dsqlBoolean);
+}
+
+void BoolAsValueNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	desc->makeBoolean();
+	desc->setNullable(true);
+}
+
+void BoolAsValueNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeBoolean();
+	desc->setNullable(true);
+}
+
+ValueExprNode* BoolAsValueNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	BoolAsValueNode* node = FB_NEW(*tdbb->getDefaultPool()) BoolAsValueNode(*tdbb->getDefaultPool());
+	node->boolean = copier.copy(tdbb, boolean);
+	return node;
+}
+
+ValueExprNode* BoolAsValueNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* BoolAsValueNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	UCHAR booleanVal = (UCHAR) boolean->execute(tdbb, request);
+
+	if (request->req_flags & req_null)
+		return NULL;
+
+	impure_value* impure = request->getImpure<impure_value>(impureOffset);
+
+	dsc desc;
+	desc.makeBoolean(&booleanVal);
+	EVL_make_value(tdbb, &desc, impure);
+
+	return &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
 static RegisterNode<CastNode> regCastNode(blr_cast);
 
 CastNode::CastNode(MemoryPool& pool, dsql_nod* aDsqlSource, dsql_fld* aDsqlField)
@@ -2748,6 +2836,49 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (!value)
 		return NULL;
+
+	dsc desc;
+	char* text;
+	UCHAR tempByte;
+
+	if (value->dsc_dtype == dtype_boolean &&
+		(DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype)))
+	{
+		text = const_cast<char*>(MOV_get_boolean(value) ? "TRUE" : "FALSE");
+		desc.makeText(strlen(text), CS_ASCII, reinterpret_cast<UCHAR*>(text));
+		value = &desc;
+	}
+	else if (impure->vlu_desc.dsc_dtype == dtype_boolean &&
+		(DTYPE_IS_TEXT(value->dsc_dtype) || DTYPE_IS_BLOB(value->dsc_dtype)))
+	{
+		desc.makeBoolean(&tempByte);
+
+		MoveBuffer buffer;
+		UCHAR* address;
+		int len = MOV_make_string2(tdbb, value, CS_ASCII, &address, buffer);
+
+		// Remove heading and trailing spaces.
+
+		while (len > 0 && isspace(*address))
+		{
+			++address;
+			--len;
+		}
+
+		while (len > 0 && isspace(address[len - 1]))
+			--len;
+
+		if (len == 4 && fb_utils::strnicmp(reinterpret_cast<char*>(address), "TRUE", len) == 0)
+		{
+			tempByte = '\1';
+			value = &desc;
+		}
+		else if (len == 5 && fb_utils::strnicmp(reinterpret_cast<char*>(address), "FALSE", len) == 0)
+		{
+			tempByte = '\0';
+			value = &desc;
+		}
+	}
 
 	if (DTYPE_IS_BLOB(value->dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype))
 		BLB_move(tdbb, value, &impure->vlu_desc, NULL);
@@ -5055,6 +5186,11 @@ DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 			memcpy(p, q, l);
 			break;
 
+		case dtype_boolean:
+			l = 1;
+			*p = *q;
+			break;
+
 		default:
 			fb_assert(FALSE);
 	}
@@ -5190,6 +5326,11 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 
 			break;
 		}
+
+		case dtype_boolean:
+			GEN_descriptor(dsqlScratch, desc, false);
+			dsqlScratch->appendUChar(*p != 0);
+			break;
 
 		default:
 			// gen_constant: datatype not understood

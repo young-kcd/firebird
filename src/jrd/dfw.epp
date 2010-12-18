@@ -550,6 +550,8 @@ USHORT DFW_assign_index_type(thread_db* tdbb, const Firebird::MetaName& name, SS
 	// idx_numeric2 used for 64-bit Integer support
 	case dtype_int64:
 		return idx_numeric2;
+	case dtype_boolean:
+		return idx_boolean;
 	default:
 		return idx_numeric;
 	}

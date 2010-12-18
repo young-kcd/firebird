@@ -581,12 +581,17 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token <legacyNode> ROW_NUMBER
 %token <legacyNode> SQLSTATE
 
+%token <legacyNode> KW_BOOLEAN
+%token <legacyNode> KW_FALSE
+%token <legacyNode> KW_TRUE
+%token <legacyNode> UNKNOWN
+
 // precedence declarations for expression evaluation
 
 %left	OR
 %left	AND
 %left	NOT
-%left	'=' '<' '>' LIKE EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS
+%left	'=' '<' '>' LIKE CONTAINING STARTING SIMILAR KW_IN EQL NEQ GTR LSS GEQ LEQ NOT_GTR NOT_LSS
 %left	'+' '-'
 %left	'*' '/'
 %left	UMINUS UPLUS
@@ -805,7 +810,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> update_searched user_grantee user_grantee_list
 %type <int32Val>   unsigned_short_integer
 
-%type <legacyNode> valid_symbol_name value value_list value_list_opt var_decl_opt var_declaration_item
+%type <legacyNode> valid_symbol_name value common_value common_value_list common_value_list_opt value_list value_list_opt var_decl_opt var_declaration_item
 %type <legacyNode> variable variable_list varying_keyword version_mode
 %type <createAlterViewNode> view_clause
 
@@ -815,6 +820,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr> external_body_clause_opt
 
 %type <legacyField> alter_col_name column_def_name data_type_descriptor init_data_type simple_column_def_name
+
+%type <legacyNode>	boolean_literal
 
 // New nodes
 
@@ -877,13 +884,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 // Predicates
 %type <boolExprNode> between_predicate comparison_predicate distinct_predicate
 %type <boolExprNode> exists_predicate in_predicate binary_pattern_predicate
-%type <boolExprNode> null_predicate predicate quantified_predicate search_condition_impl
-%type <boolExprNode> singular_predicate ternary_pattern_predicate trigger_action_predicate
+%type <boolExprNode> null_predicate predicate quantified_predicate boolean_value_expression
+%type <boolExprNode> singular_predicate ternary_pattern_predicate
 
 %type <blrOp> binary_pattern_operator ternary_pattern_operator comparison_operator
 %type <cmpBoolFlag> quantified_flag
 %type <legacyNode> escape_opt
-%type <intVal> trigger_action_code
 
 %%
 
@@ -3625,6 +3631,11 @@ non_charset_simple_type	: national_character_type
 				lex.g_field->fld_dtype = dtype_timestamp;
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
+		| KW_BOOLEAN
+			{
+				lex.g_field->fld_dtype = dtype_boolean;
+				lex.g_field->fld_length = sizeof(UCHAR);
+			}
 		;
 
 integer_keyword	: INTEGER
@@ -4876,11 +4887,22 @@ update_column_name : simple_column_name
 // boolean expressions
 
 search_condition
-	: search_condition_impl
-		{ $$ = makeClassNode($1); }
+	: value
+		{
+			BoolAsValueNode* node = ExprNode::as<BoolAsValueNode>($1);
+			if (node)
+				$$ = node->dsqlBoolean;
+			else
+			{
+				ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
+					blr_eql, $1, MAKE_constant(MAKE_string("1", 1), CONSTANT_BOOLEAN));
+				cmpNode->dsqlWasValue = true;
+				$$ = makeClassNode(cmpNode);
+			}
+		}
 	;
 
-search_condition_impl
+boolean_value_expression
 	: predicate
 	| search_condition OR search_condition
 		{ $$ = newNode<BinaryBoolNode>(blr_or, $1, $3); }
@@ -4888,6 +4910,8 @@ search_condition_impl
 		{ $$ = newNode<BinaryBoolNode>(blr_and, $1, $3); }
 	| NOT search_condition
 		{ $$ = newNode<NotBoolNode>($2); }
+	| '(' boolean_value_expression ')'
+		{ $$ = $2; }
 	;
 
 predicate
@@ -4901,16 +4925,20 @@ predicate
 	| quantified_predicate
 	| exists_predicate
 	| singular_predicate
-	| trigger_action_predicate
-	| '(' search_condition_impl ')'
-		{ $$ = $2; }
+	| common_value IS boolean_literal
+		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $3); }
+	| common_value IS NOT boolean_literal
+		{
+			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $4);
+			$$ = newNode<NotBoolNode>(makeClassNode(node));
+		}
 	;
 
 
 // comparisons
 
 comparison_predicate
-	: value comparison_operator value
+	: common_value comparison_operator common_value
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
 	;
 
@@ -4927,7 +4955,7 @@ comparison_operator
 // quantified comparisons
 
 quantified_predicate
-	: value comparison_operator quantified_flag '(' column_select ')'
+	: common_value comparison_operator quantified_flag '(' column_select ')'
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>($2, $1, $5);
 			node->dsqlFlag = $3;
@@ -4945,19 +4973,19 @@ quantified_flag
 // other predicates
 
 distinct_predicate
-	: value IS DISTINCT FROM value
+	: common_value IS DISTINCT FROM common_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv, $1, $5);
 			$$ = newNode<NotBoolNode>(makeClassNode(node));
 		}
-	| value IS NOT DISTINCT FROM value
+	| common_value IS NOT DISTINCT FROM common_value
 		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, $1, $6); }
 	;
 
 between_predicate
-	: value BETWEEN value AND value
+	: common_value BETWEEN common_value AND common_value
 		{ $$ = newNode<ComparativeBoolNode>(blr_between, $1, $3, $5); }
-	| value NOT BETWEEN value AND value
+	| common_value NOT BETWEEN common_value AND common_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_between, $1, $4, $6);
 			$$ = newNode<NotBoolNode>(makeClassNode(node));
@@ -4965,12 +4993,12 @@ between_predicate
 	;
 
 binary_pattern_predicate
-	: value binary_pattern_operator value
+	: common_value binary_pattern_operator common_value
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3); }
-	| value NOT binary_pattern_operator value
+	| common_value NOT binary_pattern_operator common_value
 		{
-			ComparativeBoolNode* containingNode = newNode<ComparativeBoolNode>($3, $1, $4);
-			$$ = newNode<NotBoolNode>(makeClassNode(containingNode));
+			ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>($3, $1, $4);
+			$$ = newNode<NotBoolNode>(makeClassNode(cmpNode));
 		}
 	;
 
@@ -4981,9 +5009,9 @@ binary_pattern_operator
 	;
 
 ternary_pattern_predicate
-	: value ternary_pattern_operator value escape_opt
+	: common_value ternary_pattern_operator common_value escape_opt
 		{ $$ = newNode<ComparativeBoolNode>($2, $1, $3, $4); }
-	| value NOT ternary_pattern_operator value escape_opt
+	| common_value NOT ternary_pattern_operator common_value escape_opt
 		{
 			ComparativeBoolNode* likeNode = newNode<ComparativeBoolNode>($3, $1, $4, $5);
 			$$ = newNode<NotBoolNode>(makeClassNode(likeNode));
@@ -4997,17 +5025,17 @@ ternary_pattern_operator
 
 escape_opt
 	:				{ $$ = NULL; }
-	| ESCAPE value	{ $$ = $2; }
+	| ESCAPE common_value	{ $$ = $2; }
 	;
 
 in_predicate
-	: value KW_IN in_predicate_value
+	: common_value KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $3);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
 			$$ = node;
 		}
-	| value NOT KW_IN in_predicate_value
+	| common_value NOT KW_IN in_predicate_value
 		{
 			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_eql, $1, $4);
 			node->dsqlFlag = ComparativeBoolNode::DFLAG_ANSI_ANY;
@@ -5026,27 +5054,12 @@ singular_predicate
 	;
 
 null_predicate
-	: value IS KW_NULL
+	: common_value IS KW_NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
-	| value IS NOT KW_NULL
+	| common_value IS NOT KW_NULL
 		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
 	;
 
-trigger_action_predicate
-	: trigger_action_code
-		{
-			InternalInfoNode* infoNode = newNode<InternalInfoNode>(
-				MAKE_const_slong(SLONG(InternalInfoNode::INFO_TYPE_TRIGGER_ACTION)));
-			$$ = newNode<ComparativeBoolNode>(blr_eql,
-				makeClassNode(infoNode), MAKE_const_slong($1));
-		}
-	;
-
-trigger_action_code
-	: INSERTING	{ $$ = 1; }
-	| UPDATING	{ $$ = 2; }
-	| DELETING	{ $$ = 3; }
-	;
 
 // set values
 
@@ -5130,11 +5143,19 @@ grant_admin
 
 // value types
 
-value	: column_name
+value
+	: common_value
+	| boolean_value_expression
+		{ $$ = makeClassNode(newNode<BoolAsValueNode>(makeClassNode($1))); }
+	;
+
+common_value
+		: column_name
 		| array_element
 		| function
 			{ $$ = makeClassNode($1); }
 		| u_constant
+		| boolean_literal
 		| parameter
 		| variable
 		| cast_specification
@@ -5143,35 +5164,35 @@ value	: column_name
 			{ $$ = makeClassNode($1); }
 		| udf
 			{ $$ = makeClassNode($1); }
-		| '-' value %prec UMINUS
+		| '-' common_value %prec UMINUS
 			{ $$ = makeClassNode(newNode<NegateNode>($2)); }
-		| '+' value %prec UPLUS
+		| '+' common_value %prec UPLUS
 			{ $$ = $2; }
-		| value '+' value
+		| common_value '+' common_value
 			{
 				$$ = makeClassNode(newNode<ArithmeticNode>(blr_add,
 					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
-		| value CONCATENATE value
+		| common_value CONCATENATE common_value
 			{ $$ = makeClassNode(newNode<ConcatenateNode>($1, $3)); }
-		| value COLLATE symbol_collation_name
+		| common_value COLLATE symbol_collation_name
 			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
-		| value '-' value
+		| common_value '-' common_value
 			{
 				$$ = makeClassNode(newNode<ArithmeticNode>(blr_subtract,
 					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
-		| value '*' value
+		| common_value '*' common_value
 			{
 				$$ = makeClassNode(newNode<ArithmeticNode>(blr_multiply,
 					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
-		| value '/' value
+		| common_value '/' common_value
 			{
 				$$ = makeClassNode(newNode<ArithmeticNode>(blr_divide,
 					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
 			}
-		| '(' value ')'
+		| '(' common_value ')'
 			{ $$ = $2; }
 		| '(' column_singleton ')'
 			{ $$ = $2; }
@@ -5251,6 +5272,19 @@ array_element   : column_name '[' value_list ']'
 			{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
 		;
 
+common_value_list_opt
+	:
+		{ $$ = make_node(nod_list, 0, NULL); }
+	| common_value_list
+		{ $$ = make_list($1); }
+	;
+
+common_value_list
+	: common_value
+	| common_value_list ',' common_value
+		{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
+
 value_list_opt
 	:
 		{ $$ = make_node(nod_list, 0, NULL); }
@@ -5258,15 +5292,17 @@ value_list_opt
 		{ $$ = make_list($1); }
 	;
 
-value_list	: value
-		| value_list ',' value
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+value_list
+	: value
+	| value_list ',' value
+		{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
 constant
 	: u_constant
 	| '-' u_numeric_constant
 		{ $$ = makeClassNode(newNode<NegateNode>($2)); }
+	| boolean_literal
 	;
 
 u_numeric_constant : NUMERIC
@@ -5319,6 +5355,12 @@ u_constant	: u_numeric_constant
 	| TIMESTAMP STRING
 		{ $$ = MAKE_constant ($2, CONSTANT_TIMESTAMP); }
 		;
+
+boolean_literal
+	: KW_FALSE	{ $$ = MAKE_constant(MAKE_string("", 0), CONSTANT_BOOLEAN); }
+	| KW_TRUE	{ $$ = MAKE_constant(MAKE_string("1", 1), CONSTANT_BOOLEAN); }
+	| UNKNOWN	{ $$ = makeClassNode(newNode<NullNode>()); }
+	;
 
 parameter
 	: '?'	{ $$ = makeClassNode(make_parameter()); }
@@ -5685,13 +5727,13 @@ system_function_special_syntax
 				make_node(nod_list, 3, $3, $5, $7));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' value KW_IN value ')'
+	| POSITION '(' common_value KW_IN common_value ')'
 		{
 			$$ = newNode<SysFuncCallNode>(toName($1),
 				make_node(nod_list, 2, $3, $5));
 			$$->dsqlSpecialSyntax = true;
 		}
-	| POSITION '(' value_list_opt ')'
+	| POSITION '(' common_value_list_opt  ')'
 		{ $$ = newNode<SysFuncCallNode>(toName($1), $3); }
 	;
 
@@ -5715,7 +5757,7 @@ substring_function
 
 			$$ = newNode<SubstringNode>($3, subtractNode, $6);
 		}
-	| SUBSTRING '(' value SIMILAR value ESCAPE value ')'
+	| SUBSTRING '(' common_value SIMILAR common_value ESCAPE common_value ')'
 		{ $$ = newNode<SubstringSimilarNode>($3, $5, $7); }
 	;
 

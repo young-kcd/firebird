@@ -723,6 +723,7 @@ static const struct {
 	{335545020, -904}, /* 700 request_outdated */
 	{335545021, -901}, /* 701 bad_events_handle */
 	{335545022, -104}, /* 702 cannot_copy_stmt */
+	{335545023, -104}, /* 703 invalid_boolean_usage */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

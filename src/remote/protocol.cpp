@@ -1005,10 +1005,9 @@ static bool_t xdr_datum( XDR* xdrs, const DSC* desc, BLOB_PTR* buffer)
 		// Fall through ...
 
 	case dtype_text:
+	case dtype_boolean:
 		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), desc->dsc_length))
-		{
 			return FALSE;
-		}
 		break;
 
 	case dtype_varying:

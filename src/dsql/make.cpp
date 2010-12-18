@@ -266,6 +266,13 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			break;
 		}
 
+	case CONSTANT_BOOLEAN:
+		DEV_BLKCHK(constant, dsql_type_str);
+
+		literal->litDesc.makeBoolean((UCHAR*) constant->str_data);
+		literal->dsqlStr = constant;
+		break;
+
 	default:
 		fb_assert(numeric_flag == CONSTANT_STRING);
 		DEV_BLKCHK(constant, dsql_type_str);
@@ -368,7 +375,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 	case nod_class_exprnode:
 		{
 			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(node->nod_arg[0]);
-			exprNode->make(dsqlScratch, desc);
+			if (exprNode->kind == DmlNode::KIND_VALUE)
+				exprNode->make(dsqlScratch, desc);
 		}
 		return;
 
@@ -873,7 +881,11 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	switch (item->nod_type)
 	{
 	case nod_class_exprnode:
-		reinterpret_cast<ValueExprNode*>(item->nod_arg[0])->setParameterName(parameter);
+		{
+			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(item->nod_arg[0]);
+			if (exprNode->kind == DmlNode::KIND_VALUE)
+				exprNode->setParameterName(parameter);
+		}
 		break;
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];

@@ -810,6 +810,7 @@ Data source : @4', NULL, NULL)
 ('request_outdated', 'EVL_expr', 'evl.cpp', NULL, 0, 700, NULL, 'Request can''t access new records in relation @1 and should be recompiled', NULL, NULL)
 ('bad_events_handle', NULL, NULL, NULL, 0, 701, NULL, 'invalid events id (handle)', NULL, NULL);
 ('cannot_copy_stmt', NULL, NULL, NULL, 0, 702, NULL, 'Cannot copy statement @1', NULL, NULL);
+('invalid_boolean_usage', NULL, NULL, NULL, 0, 703, NULL, 'Invalid usage of boolean expression', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -1082,6 +1082,10 @@ void GEN_descriptor( DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool tex
 		dsqlScratch->appendUShort(desc->getTextType());
 		break;
 
+	case dtype_boolean:
+		dsqlScratch->appendUChar(blr_bool);
+		break;
+
 	default:
 		// don't understand dtype
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<

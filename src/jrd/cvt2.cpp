@@ -92,7 +92,8 @@ static const BYTE compare_priority[] =
 	dtype_blob + 1,
 	dtype_array + 1,
 	dtype_long + 1,				// int64 goes right after long
-	dtype_dbkey					// compares with nothing except itself
+	dtype_dbkey,				// compares with nothing except itself
+	dtype_boolean				// compares with nothing except itself
 };
 
 
@@ -193,6 +194,9 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			if (*(double *) p1 > *(double *) p2)
 				return 1;
 			return -1;
+
+		case dtype_boolean:
+			return *p1 == *p2 ? 0 : *p1 < *p2 ? -1 : 1;
 
 		case dtype_text:
 		case dtype_varying:
@@ -432,6 +436,10 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			return (arg1->dsc_length > l) ? 1 : (length > l) ? -1 : 0;
 		}
 		ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << "DB_KEY compare");
+		break;
+
+	case dtype_boolean:
+		ERR_post(Arg::Gds(isc_invalid_boolean_usage));
 		break;
 
 	default:

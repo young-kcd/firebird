@@ -151,6 +151,7 @@ const int DATE_LEN		= 11;	// 11 for date only
 const int DATETIME_LEN		= 25;	// 25 for date-time
 const int TIME_ONLY_LEN		= 13;	// 13 for time only
 const int DATE_ONLY_LEN		= 11;
+const int BOOLEAN_LEN		= 7;	// <false>
 const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
@@ -1795,7 +1796,6 @@ static processing_state add_row(TEXT* tabname)
 	if (Input_file)
 		return ps_ERR;
 
-
 	// There may have been a commit transaction before we got here
 
 	if (!M__trans)
@@ -2042,6 +2042,7 @@ static processing_state add_row(TEXT* tabname)
 				SINT64 n;
 				float* fvalue;
 				double* dvalue;
+				UCHAR* boolean;
 				tm times;
 				// Initialize the time structure
 				memset(&times, 0, sizeof(times));
@@ -2273,6 +2274,21 @@ static processing_state add_row(TEXT* tabname)
 							STDERROUT("Value too big");
 							done = true;
 						}
+					}
+					break;
+
+				case SQL_BOOLEAN:
+					boolean = (UCHAR*) ISQL_ALLOC(sizeof(UCHAR));
+					ivar->sqldata = (SCHAR*) boolean;
+
+					if (fb_utils::stricmp(lastInputLine, "TRUE") == 0)
+						*boolean = 1;
+					else if (fb_utils::stricmp(lastInputLine, "FALSE") == 0)
+						*boolean = 0;
+					else
+					{
+						STDERROUT("Invalid boolean value");
+						done = true;
 					}
 					break;
 
@@ -2826,6 +2842,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 				SINT64 n;
 				float* fvalue;
 				double* dvalue;
+				UCHAR* boolean;
 				tm times;
 				// Initialize the time structure.
 				memset(&times, 0, sizeof(times));
@@ -3092,6 +3109,25 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 							STDERROUT("Integer value too big");
 							done = true;
 						}
+					}
+					break;
+
+				case SQL_BOOLEAN:
+					if (ivar->sqldata)
+						boolean = (UCHAR*) ivar->sqldata;
+					else
+						boolean = (UCHAR*) ISQL_ALLOC(sizeof(UCHAR));
+
+					ivar->sqldata = (SCHAR*) boolean;
+
+					if (fb_utils::stricmp(lastInputLine, "TRUE") == 0)
+						*boolean = 1;
+					else if (fb_utils::stricmp(lastInputLine, "FALSE") == 0)
+						*boolean = 0;
+					else
+					{
+						STDERROUT("Invalid boolean value");
+						done = true;
 					}
 					break;
 
@@ -7155,7 +7191,7 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 			isqlGlob.printf("<null>%s", NEWLINE);
 		}
 
-		if ((dtype == SQL_TEXT) || (dtype == SQL_VARYING))
+		if (dtype == SQL_TEXT || dtype == SQL_VARYING || dtype == SQL_BOOLEAN)
 			sprintf(p, "%-*s ", length, "<null>");
 		else
 			sprintf(p, "%*s ", length, "<null>");
@@ -7515,6 +7551,13 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 				}
 				break;
 			}
+
+		case SQL_BOOLEAN:
+			strcpy(d, (var->sqldata[0] ? "<true>" : "<false>"));
+			sprintf(p, "%-*s ", length, d);
+			if (List)
+				isqlGlob.printf("%s%s", d, NEWLINE);
+			break;
 
 		default:
 			sprintf(d, "Unknown type: %d", dtype);
@@ -8255,6 +8298,9 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 			disp_length = QUAD_LEN;
 			break;
 #endif
+		case SQL_BOOLEAN:
+			disp_length = BOOLEAN_LEN;
+			break;
 		default:
 			disp_length = UNKNOWN_LEN;
 			break;
@@ -8908,6 +8954,8 @@ static const char* sqltype_to_string(USHORT sqltype)
 		return "ARRAY	";
 	case SQL_QUAD:
 		return "QUAD	 ";
+	case SQL_BOOLEAN:
+		return "BOOLEAN  ";
 	case SQL_NULL:
 		return "NULL	 ";
 	default:

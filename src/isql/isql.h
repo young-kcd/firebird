@@ -284,6 +284,7 @@ const int BLOB			= 261;
 //const int SQL_DATE	= 12;
 //const int SQL_TIME	= 13;
 const int BIGINT		= 16;
+const int BOOLEAN_TYPE	= 23;
 
 static const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		// NTX: keyword
@@ -299,7 +300,8 @@ static const sqltypes Column_types[] = {
 	{blr_sql_time, "TIME"},		// NTX: keyword
 	{blr_sql_date, "DATE"},		// NTX: keyword
 	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword
-	{BIGINT, "BIGINT"},		// keyword
+	{BIGINT, "BIGINT"},			// keyword
+	{BOOLEAN_TYPE, "BOOLEAN"},	// keyword
 	{0, ""}
 };
 

@@ -236,5 +236,6 @@ static const struct
 	{"procedure4", procedure4},
 	{"agg_function", function},
 	{"substring_similar", three},
+	{"bool_as_value", one},
 	{0, 0}
 };

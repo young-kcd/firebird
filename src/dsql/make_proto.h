@@ -43,7 +43,8 @@ namespace Jrd {
 		CONSTANT_DATE		= 2, // stored as a SLONG
 		CONSTANT_TIME		= 3, // stored as a ULONG
 		CONSTANT_TIMESTAMP	= 4, // stored as a QUAD
-		CONSTANT_SINT64		= 5  // stored as a SINT64
+		CONSTANT_SINT64		= 5, // stored as a SINT64
+		CONSTANT_BOOLEAN	= 6, // stored as a UCHAR
 	};
 
 	// Parameters to MAKE_variable

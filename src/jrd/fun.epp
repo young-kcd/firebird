@@ -639,6 +639,17 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				}
 				break;
 
+			case dtype_boolean:
+				l = (SLONG) MOV_get_boolean(input);
+				if (tail->fun_mechanism == FUN_value)
+				{
+					*arg_ptr++ = (UDF_ARG)(IPTR) l;
+					continue;
+				}
+				lp = (SLONG*) temp_ptr;
+				*lp = l;
+				break;
+
 			default:
 				fb_assert(FALSE);
 				MOV_move(tdbb, input, &temp_desc);

@@ -2999,6 +2999,11 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 8;
 		break;
 
+	case blr_bool:
+		string = "bool";
+		length = 1;
+		break;
+
 	case blr_domain_name:
 		string = "domain_name";
 		// Don't bother with this length.

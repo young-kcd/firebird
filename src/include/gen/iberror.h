@@ -758,6 +758,7 @@ const ISC_STATUS isc_private_procedure                = 335545019L;
 const ISC_STATUS isc_request_outdated                 = 335545020L;
 const ISC_STATUS isc_bad_events_handle                = 335545021L;
 const ISC_STATUS isc_cannot_copy_stmt                 = 335545022L;
+const ISC_STATUS isc_invalid_boolean_usage            = 335545023L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1176,7 +1177,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1120;
+const ISC_STATUS isc_err_max                          = 1121;
 
 #else /* c definitions */
 
@@ -1904,6 +1905,7 @@ const ISC_STATUS isc_err_max                          = 1120;
 #define isc_request_outdated                 335545020L
 #define isc_bad_events_handle                335545021L
 #define isc_cannot_copy_stmt                 335545022L
+#define isc_invalid_boolean_usage            335545023L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2322,7 +2324,7 @@ const ISC_STATUS isc_err_max                          = 1120;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1120
+#define isc_err_max                          1121
 
 #endif
 

@@ -724,6 +724,7 @@ static const struct {
 	{"request_outdated", 335545020},
 	{"bad_events_handle", 335545021},
 	{"cannot_copy_stmt", 335545022},
+	{"invalid_boolean_usage", 335545023},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

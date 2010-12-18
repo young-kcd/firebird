@@ -2405,6 +2405,11 @@ static USHORT parse_blr(dsql_req* request, USHORT blr_length, const UCHAR* blr,
 			}
 			break;
 
+		case blr_bool:
+			desc.dsc_dtype = dtype_boolean;
+			desc.dsc_length = sizeof(UCHAR);
+			break;
+
 		default:
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_sqlda_err));
@@ -3318,6 +3323,10 @@ static UCHAR* var_info(const dsql_msg* message,
 			case dtype_quad:
 				sql_type = SQL_QUAD;
 				sql_scale = param->par_desc.dsc_scale;
+				break;
+
+			case dtype_boolean:
+				sql_type = SQL_BOOLEAN;
 				break;
 
 			default:
