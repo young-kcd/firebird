@@ -437,6 +437,14 @@ public:
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
 	virtual void setParameterName(dsql_par* parameter) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
@@ -478,6 +486,10 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
+	dsql_ctx* dsqlContext;
+	dsql_fld* dsqlField;
+	dsql_nod* dsqlIndices;
+	dsc dsqlDesc;
 	bool byId;
 	USHORT fieldStream;
 	USHORT fieldId;

@@ -122,7 +122,6 @@ enum nod_t
 	nod_flag,
 	nod_join,
 	nod_unique,
-	nod_field,
 	nod_dom_value,
 	nod_field_name,
 	nod_alias,
@@ -254,11 +253,6 @@ enum node_args {
 
 	e_fpd_list = 0,			// nod_for_update
 	e_fpd_count,
-
-	e_fld_context = 0,		// nod_field
-	e_fld_field,
-	e_fld_indices,
-	e_fld_count,
 
 	e_ary_array = 0,		// nod_array
 	e_ary_indices,

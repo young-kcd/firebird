@@ -422,18 +422,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		desc->dsc_flags = 0; // Can first/skip accept NULL in the future?
 		return;
 
-	case nod_field:
-		if (node->nod_desc.dsc_dtype)
-		{
-			*desc = node->nod_desc;
-		}
-		else
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-203) <<
-					  Arg::Gds(isc_dsql_field_ref));
-		}
-		return;
-
 	case nod_hidden_var:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr]);
 		return;
@@ -541,28 +529,29 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	DEV_BLKCHK(field, dsql_type_fld);
 	DEV_BLKCHK(indices, dsql_type_nod);
 
-	dsql_nod* node = MAKE_node(nod_field, e_fld_count);
-	node->nod_arg[e_fld_context] = (dsql_nod*) context;
-	node->nod_arg[e_fld_field] = (dsql_nod*) field;
+	thread_db* tdbb = JRD_get_thread_data();
+	FieldNode* node = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
+	node->dsqlContext = context;
+	node->dsqlField = field;
+
 	if (field->fld_dimensions)
 	{
 		if (indices)
 		{
-			node->nod_arg[e_fld_indices] = indices;
-			MAKE_desc_from_field(&node->nod_desc, field);
-			node->nod_desc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
-			node->nod_desc.dsc_length = field->fld_element_length;
+			node->dsqlIndices = indices;
+			MAKE_desc_from_field(&node->dsqlDesc, field);
+			node->dsqlDesc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
+			node->dsqlDesc.dsc_length = field->fld_element_length;
 
-			// node->nod_desc.dsc_scale = field->fld_scale;
-			// node->nod_desc.dsc_sub_type = field->fld_sub_type;
-
+			// node->dsqlDesc.dsc_scale = field->fld_scale;
+			// node->dsqlDesc.dsc_sub_type = field->fld_sub_type;
 		}
 		else
 		{
-			node->nod_desc.dsc_dtype = dtype_array;
-			node->nod_desc.dsc_length = sizeof(ISC_QUAD);
-			node->nod_desc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
-			node->nod_desc.dsc_sub_type = field->fld_sub_type;
+			node->dsqlDesc.dsc_dtype = dtype_array;
+			node->dsqlDesc.dsc_length = sizeof(ISC_QUAD);
+			node->dsqlDesc.dsc_scale = static_cast<SCHAR>(field->fld_scale);
+			node->dsqlDesc.dsc_sub_type = field->fld_sub_type;
 		}
 	}
 	else
@@ -573,32 +562,33 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 					  Arg::Gds(isc_dsql_only_can_subscript_array) << Arg::Str(field->fld_name));
 		}
 
-		MAKE_desc_from_field(&node->nod_desc, field);
+		MAKE_desc_from_field(&node->dsqlDesc, field);
 	}
 
 	if ((field->fld_flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
-	{
-		node->nod_desc.dsc_flags |= DSC_nullable;
-	}
+		node->dsqlDesc.dsc_flags |= DSC_nullable;
 
 	// UNICODE_FSS_HACK
 	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
-		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
+	if ((field->fld_flags & FLD_system) && node->dsqlDesc.dsc_dtype <= dtype_varying &&
+		INTL_GET_CHARSET(&node->dsqlDesc) == CS_METADATA)
 	{
 		USHORT adjust = 0;
 
-		if (node->nod_desc.dsc_dtype == dtype_varying)
+		if (node->dsqlDesc.dsc_dtype == dtype_varying)
 			adjust = sizeof(USHORT);
-		else if (node->nod_desc.dsc_dtype == dtype_cstring)
+		else if (node->dsqlDesc.dsc_dtype == dtype_cstring)
 			adjust = 1;
 
-		node->nod_desc.dsc_length -= adjust;
-		node->nod_desc.dsc_length *= 3;
-		node->nod_desc.dsc_length += adjust;
+		node->dsqlDesc.dsc_length -= adjust;
+		node->dsqlDesc.dsc_length *= 3;
+		node->dsqlDesc.dsc_length += adjust;
 	}
 
-	return node;
+	dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
+
+	return nod;
 }
 
 
@@ -876,7 +866,7 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	fb_assert(parameter && item);
 
 	const char* name_alias = NULL;
-	const RecordKeyNode* dbKeyNode;
+	const ValueExprNode* exprNode;
 
 	switch (item->nod_type)
 	{
@@ -887,23 +877,15 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				exprNode->setParameterName(parameter);
 		}
 		break;
-	case nod_field:
-		field = (dsql_fld*) item->nod_arg[e_fld_field];
-		name_alias = field->fld_name.c_str();
-		context = (dsql_ctx*) item->nod_arg[e_fld_context];
-		break;
 	case nod_alias:
 		string = (dsql_str*) item->nod_arg[e_alias_alias];
 		alias = item->nod_arg[e_alias_value];
 
-		if (alias->nod_type == nod_field)
+		if ((exprNode = ExprNode::as<RecordKeyNode>(alias)) ||
+			(exprNode = ExprNode::as<FieldNode>(alias)))
 		{
-			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
-			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
+			exprNode->setParameterName(parameter);
 		}
-		else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(alias)))
-			dbKeyNode->setParameterName(parameter);
 
 		parameter->par_alias = string->str_data;
 		break;
@@ -912,6 +894,7 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_simple_case:
 		name_alias = "CASE";
 		break;
+
 	case nod_coalesce:
 		name_alias = "COALESCE";
 		break;
@@ -919,20 +902,4 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	if (name_alias)
 		parameter->par_name = parameter->par_alias = name_alias;
-
-	if (context)
-	{
-		if (context->ctx_relation)
-		{
-			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
-			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
-		}
-		else if (context->ctx_procedure)
-		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.identifier.c_str();
-			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
-		}
-
-		parameter->par_rel_alias = context->ctx_alias;
-	}
 }

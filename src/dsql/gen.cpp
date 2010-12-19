@@ -67,7 +67,6 @@ static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
-static void gen_field(DsqlCompilerScratch*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
 static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_map(DsqlCompilerScratch*, dsql_map*);
 static inline void gen_optional_expr(DsqlCompilerScratch*, const UCHAR code, dsql_nod*);
@@ -180,13 +179,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_fid);
 		dsqlScratch->appendUChar(0);		// Context
 		dsqlScratch->appendUShort(0);		// Field id
-		return;
-
-	case nod_field:
-		gen_field(dsqlScratch,
-				  (dsql_ctx*) node->nod_arg[e_fld_context],
-				  (dsql_fld*) node->nod_arg[e_fld_field],
-				  node->nod_arg[e_fld_indices]);
 		return;
 
 	case nod_join:
@@ -1239,72 +1231,6 @@ static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 	}
 
 	dsqlScratch->appendUChar(blr_end);
-}
-
-
-/**
-
- 	gen_field
-
-    @brief	Generate blr for a field - field id's
- 	are preferred but not for trigger or view blr.
-
-
-    @param dsqlScratch
-    @param context
-    @param field
-    @param indices
-
- **/
-static void gen_field( DsqlCompilerScratch* dsqlScratch, const dsql_ctx* context,
-	const dsql_fld* field, dsql_nod* indices)
-{
-	// For older clients - generate an error should they try and
-	// access data types which did not exist in the older dialect
-	if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-	{
-		switch (field->fld_dtype)
-		{
-		case dtype_sql_date:
-		case dtype_sql_time:
-		case dtype_int64:
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_datatype_err) <<
-					  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
-					  			Arg::Num(dsqlScratch->clientDialect) <<
-					  			Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype))));
-			break;
-		default:
-			// No special action for other data types
-			break;
-		}
-	}
-
-	if (indices)
-		dsqlScratch->appendUChar(blr_index);
-
-	if (DDL_ids(dsqlScratch))
-	{
-		dsqlScratch->appendUChar(blr_fid);
-		GEN_stuff_context(dsqlScratch, context);
-		dsqlScratch->appendUShort(field->fld_id);
-	}
-	else
-	{
-		dsqlScratch->appendUChar(blr_field);
-		GEN_stuff_context(dsqlScratch, context);
-		dsqlScratch->appendMetaString(field->fld_name.c_str());
-	}
-
-	if (indices)
-	{
-		dsqlScratch->appendUChar(indices->nod_count);
-		dsql_nod** ptr = indices->nod_arg;
-		for (const dsql_nod* const* end = ptr + indices->nod_count; ptr < end; ptr++)
-		{
-			GEN_expr(dsqlScratch, *ptr);
-		}
-	}
 }
 
 

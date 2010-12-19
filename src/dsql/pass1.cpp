@@ -391,14 +391,6 @@ bool AggregateFinder::internalVisit(const dsql_nod* node)
 			return aggregate;
 		}
 
-		case nod_field:
-		{
-			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-			if (deepestLevel < localContext->ctx_scope_level)
-				deepestLevel = localContext->ctx_scope_level;
-			return false;
-		}
-
 		default:
 			return visitChildren(node);
 	}
@@ -452,7 +444,6 @@ bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 		}
 
 		case nod_relation:
-		case nod_field:
 			return false;
 
 		default:
@@ -513,36 +504,6 @@ bool FieldFinder::internalVisit(const dsql_nod* node)
 		case nod_relation:
 			return false;
 
-		case nod_field:
-		{
-			const dsql_ctx* field_context = (dsql_ctx*) node->nod_arg[e_fld_context];
-			DEV_BLKCHK(field_context, dsql_type_ctx);
-
-			field = true;
-
-			switch (matchType)
-			{
-				case FIELD_MATCH_TYPE_EQUAL:
-					return field_context->ctx_scope_level == checkScopeLevel;
-
-				case FIELD_MATCH_TYPE_LOWER:
-					return field_context->ctx_scope_level < checkScopeLevel;
-
-				case FIELD_MATCH_TYPE_LOWER_EQUAL:
-					return field_context->ctx_scope_level <= checkScopeLevel;
-
-				///case FIELD_MATCH_TYPE_HIGHER:
-				///	return field_context->ctx_scope_level > checkScopeLevel;
-
-				///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
-				///	return field_context->ctx_scope_level >= checkScopeLevel;
-
-				default:
-					fb_assert(false);
-			}
-			break;
-		}
-
 		default:
 			return visitChildren(node);
 	}
@@ -595,28 +556,6 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 		case nod_aggregate:
 			invalid |= visit(&node->nod_arg[e_agg_rse]);
 			break;
-
-		case nod_field:
-		{
-			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-
-			// Wouldn't it be better to call an error from this point where return is true?
-			// Then we could give the fieldname that's making the trouble.
-
-			// If we come here then this field is used inside a aggregate-function. The
-			// ctx_scope_level gives the info how deep the context is inside the statement.
-
-			// If the context-scope-level from this field is lower or the same as the scope-level
-			// from the given context then it is an invalid field.
-			if (localContext->ctx_scope_level == context->ctx_scope_level)
-			{
-				// Return true (invalid) if this field isn't inside the GROUP BY clause, that
-				// should already been seen in the match_node test in that routine start.
-				invalid = true;
-			}
-
-			break;
-		}
 
 		case nod_coalesce:
 		///case nod_unique:
@@ -674,15 +613,6 @@ bool FieldRemapper::internalVisit(dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_field:
-		{
-			const dsql_ctx* localContext = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fld_context]);
-			if (localContext->ctx_scope_level == context->ctx_scope_level)
-				replaceNode(PASS1_post_map(dsqlScratch, node, context, partitionNode, orderNode));
-
-			break;
-		}
-
 		case nod_rse:
 		{
 			AutoSetRestore<USHORT> autoCurrentLevel(&currentLevel, currentLevel + 1);
@@ -756,7 +686,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 
 		case nod_aggregate:
 
-		case nod_field:
 		case nod_relation:
 		case nod_field_name:
 			return false;
@@ -1115,11 +1044,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if (dsqlScratch->isPsql())
 			return pass1_variable(dsqlScratch, input);
 		return pass1_field(dsqlScratch, input, false, NULL);
-
-	case nod_field:
-		// AB: nod_field is an already passed node.
-		// This could be done in expand_select_list.
-		return input;
 
 	case nod_array:
 		if (dsqlScratch->isPsql())
@@ -2212,10 +2136,11 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 		if (elem1->nod_type == nod_assign && !is_insert)
 			elem1 = elem1->nod_arg[e_asgn_field];
 
-		if (elem1->nod_type == nod_field)
+		const FieldNode* fieldNode1 = ExprNode::as<FieldNode>(elem1);
+
+		if (fieldNode1)
 		{
-			const Firebird::MetaName& n1 =
-				reinterpret_cast<dsql_fld*>(elem1->nod_arg[e_fld_field])->fld_name;
+			const Firebird::MetaName& n1 = fieldNode1->dsqlField->fld_name;
 
 			for (int j = i + 1; j < fields->nod_count; ++j)
 			{
@@ -2223,19 +2148,20 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 				if (elem2->nod_type == nod_assign && !is_insert)
 					elem2 = elem2->nod_arg[e_asgn_field];
 
-				if (elem2->nod_type == nod_field)
+				const FieldNode* fieldNode2 = ExprNode::as<FieldNode>(elem2);
+
+				if (fieldNode2)
 				{
-					const Firebird::MetaName& n2 =
-						reinterpret_cast<dsql_fld*>(elem2->nod_arg[e_fld_field])->fld_name;
+					const Firebird::MetaName& n2 = fieldNode2->dsqlField->fld_name;
 
 					if (n1 == n2)
 					{
-						const dsql_ctx* tmp_ctx = (dsql_ctx*) elem2->nod_arg[e_fld_context];
+						const dsql_ctx* tmp_ctx = fieldNode2->dsqlContext;
 						const dsql_rel* bad_rel = tmp_ctx ? tmp_ctx->ctx_relation : 0;
-						field_duplication(bad_rel ? bad_rel->rel_name.c_str() : 0,
-										n2.c_str(),
-										is_insert ? old_fields->nod_arg[j]: old_fields->nod_arg[j]->nod_arg[1],
-										dsqlScratch);
+						field_duplication((bad_rel ? bad_rel->rel_name.c_str() : 0),
+							n2.c_str(),
+							(is_insert ? old_fields->nod_arg[j] : old_fields->nod_arg[j]->nod_arg[1]),
+							dsqlScratch);
 					}
 				}
 			}
@@ -2585,19 +2511,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 		}
 		return true;
 
-	case nod_field:
-		if (node1->nod_arg[e_fld_field] != node2->nod_arg[e_fld_field] ||
-			node1->nod_arg[e_fld_context] != node2->nod_arg[e_fld_context])
-		{
-			return false;
-		}
-		if (node1->nod_arg[e_fld_indices] || node2->nod_arg[e_fld_indices])
-		{
-			return PASS1_node_match(node1->nod_arg[e_fld_indices],
-				node2->nod_arg[e_fld_indices], ignore_map_cast);
-		}
-		return true;
-
 	case nod_derived_table:
 		{
 			const dsql_ctx* ctx1 = (dsql_ctx*) node1->nod_arg[e_derived_table_context];
@@ -2735,8 +2648,10 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	PASS1_make_context(dsqlScratch, input->nod_arg[e_blb_relation]);
-	dsql_nod* field = pass1_field(dsqlScratch, input->nod_arg[e_blb_field], false, NULL);
-	if (field->nod_desc.dsc_dtype != dtype_blob)
+	FieldNode* field = ExprNode::as<FieldNode>(
+		pass1_field(dsqlScratch, input->nod_arg[e_blb_field], false, NULL));
+
+	if (field->dsqlDesc.dsc_dtype != dtype_blob)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
 				  Arg::Gds(isc_dsql_blob_err));
@@ -2758,8 +2673,8 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	blob->blb_segment = parameter;
 	parameter->par_desc.dsc_dtype = dtype_text;
 	parameter->par_desc.dsc_ttype() = ttype_binary;
-	parameter->par_desc.dsc_length = ((dsql_fld*) field->nod_arg[e_fld_field])->fld_seg_length;
-	DEV_BLKCHK(field->nod_arg[e_fld_field], dsql_type_fld);
+	parameter->par_desc.dsc_length = field->dsqlField->fld_seg_length;
+	DEV_BLKCHK(field->dsqlField, dsql_type_fld);
 
 	// The Null indicator is used to pass back the segment length,
 	// set DSC_nullable so that the SQL_type is set to SQL_TEXT+1 instead
@@ -2773,7 +2688,7 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	dsql_msg* temp_msg = (input->nod_type == nod_get_segment) ?
 		blob->blb_open_in_msg : blob->blb_open_out_msg;
 	blob->blb_blob_id = parameter = MAKE_parameter(temp_msg, true, true, 0, NULL);
-	MAKE_desc(dsqlScratch, &parameter->par_desc, field);
+	field->make(dsqlScratch, &parameter->par_desc);
 	parameter->par_desc.dsc_dtype = dtype_quad;
 	parameter->par_desc.dsc_scale = 0;
 
@@ -4243,28 +4158,24 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr)
 {
 	// For some node types, it's better to not create temporary value.
-	switch (expr->nod_type)
+	if (expr->nod_type == nod_class_exprnode)
 	{
-		case nod_field:
-			return NULL;
-
-		case nod_class_exprnode:
-			switch (ExprNode::fromLegacy(expr)->type)
-			{
-				case ExprNode::TYPE_CURRENT_DATE:
-				case ExprNode::TYPE_CURRENT_TIME:
-				case ExprNode::TYPE_CURRENT_TIMESTAMP:
-				case ExprNode::TYPE_CURRENT_ROLE:
-				case ExprNode::TYPE_CURRENT_USER:
-				case ExprNode::TYPE_INTERNAL_INFO:
-				case ExprNode::TYPE_LITERAL:
-				case ExprNode::TYPE_NULL:
-				case ExprNode::TYPE_PARAMETER:
-				case ExprNode::TYPE_RECORD_KEY:
-				case ExprNode::TYPE_VARIABLE:
-					return NULL;
-			}
-			break;
+		switch (ExprNode::fromLegacy(expr)->type)
+		{
+			case ExprNode::TYPE_CURRENT_DATE:
+			case ExprNode::TYPE_CURRENT_TIME:
+			case ExprNode::TYPE_CURRENT_TIMESTAMP:
+			case ExprNode::TYPE_CURRENT_ROLE:
+			case ExprNode::TYPE_CURRENT_USER:
+			case ExprNode::TYPE_FIELD:
+			case ExprNode::TYPE_INTERNAL_INFO:
+			case ExprNode::TYPE_LITERAL:
+			case ExprNode::TYPE_NULL:
+			case ExprNode::TYPE_PARAMETER:
+			case ExprNode::TYPE_RECORD_KEY:
+			case ExprNode::TYPE_VARIABLE:
+				return NULL;
+		}
 	}
 
 	VariableNode* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
@@ -4349,13 +4260,14 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 
 			const dsql_ctx* tmp_ctx = NULL;
 			const TEXT* tmp_name = NULL;
+			const FieldNode* fieldNode;
 			const DerivedFieldNode* derivedField;
 
-			if (temp2->nod_type == nod_field)
+			if ((fieldNode = ExprNode::as<FieldNode>(temp2)))
 			{
-				tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_fld_context];
-				tmp_name = (temp2->nod_arg[e_fld_field] ?
-					((dsql_fld*) temp2->nod_arg[e_fld_field])->fld_name.c_str() : NULL);
+				tmp_ctx = fieldNode->dsqlContext;
+				if (fieldNode->dsqlField)
+					tmp_name = fieldNode->dsqlField->fld_name.c_str();
 			}
 			else if ((derivedField = ExprNode::as<DerivedFieldNode>(temp2)))
 			{
@@ -4543,6 +4455,7 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				{
 					const TEXT* name = NULL;
 					dsql_nod* item = j.object();
+					FieldNode* fieldNode;
 					DerivedFieldNode* derivedField;
 
 					switch (item->nod_type)
@@ -4551,12 +4464,10 @@ static dsql_nod* pass1_join(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 							name = reinterpret_cast<dsql_str*>(item->nod_arg[e_alias_alias])->str_data;
 							break;
 
-						case nod_field:
-							name = reinterpret_cast<dsql_fld*>(item->nod_arg[e_fld_field])->fld_name.c_str();
-							break;
-
 						default:
-							if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
+							if ((fieldNode = ExprNode::as<FieldNode>(item)))
+								name = fieldNode->dsqlField->fld_name.c_str();
+							else if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
 								name = derivedField->name.c_str();
 							break;
 					}
@@ -4865,6 +4776,7 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 	{
 		dsql_nod* matchingNode = NULL;
 		dsql_nod* node = *ptr;
+		FieldNode* fieldNode;
 		DerivedFieldNode* derivedField;
 
 		switch (node->nod_type)
@@ -4878,16 +4790,13 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 				}
 				break;
 
-			case nod_field:
+			default:
+				if ((fieldNode = ExprNode::as<FieldNode>(node)))
 				{
-					const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
-					if (field->fld_name == name->str_data)
+					if (fieldNode->dsqlField->fld_name == name->str_data)
 						matchingNode = node;
 				}
-				break;
-
-			default:
-				if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
+				else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
 				{
 					if (strcmp(derivedField->name.c_str(), name->str_data) == 0)
 						matchingNode = node;
@@ -4907,16 +4816,14 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 				buffer1[0] = 0;
 				switch (returnNode->nod_type)
 				{
-					case nod_field:
-						strcat(buffer1, "a field");
-						break;
-
 					case nod_alias:
 						strcat(buffer1, "an alias");
 						break;
 
 					default:
-						if ((derivedField = ExprNode::as<DerivedFieldNode>(returnNode)))
+						if (ExprNode::is<FieldNode>(returnNode))
+							strcat(buffer1, "a field");
+						else if (ExprNode::is<DerivedFieldNode>(returnNode))
 							strcat(buffer1, "a derived field");
 						else
 							strcat(buffer1, "an item");
@@ -4928,16 +4835,14 @@ static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql
 
 				switch (matchingNode->nod_type)
 				{
-					case nod_field:
-						strcat(buffer2, "a field");
-						break;
-
 					case nod_alias:
 						strcat(buffer2, "an alias");
 						break;
 
 					default:
-						if ((derivedField = ExprNode::as<DerivedFieldNode>(matchingNode)))
+						if (ExprNode::is<FieldNode>(matchingNode))
+							strcat(buffer2, "a field");
+						else if (ExprNode::is<DerivedFieldNode>(matchingNode))
 							strcat(buffer2, "a derived field");
 						else
 							strcat(buffer2, "an item");
@@ -4980,23 +4885,6 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 
 	switch (select_item->nod_type)
 	{
-		case nod_field:
-			{
-				const dsql_fld* field = (dsql_fld*) select_item->nod_arg[e_fld_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-
-				// Create a derived field and hook in.
-
-				DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool, field->fld_name,
-					dsqlScratch->scopeLevel, select_item);
-
-				dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-				nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
-				nod->nod_desc = select_item->nod_desc;
-
-				return nod;
-			}
-
 		case nod_alias:
 			{
 				const dsql_str* alias_alias = (dsql_str*) select_item->nod_arg[e_alias_alias];
@@ -5017,6 +4905,7 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 			{
 				SubQueryNode* subQueryNode;
 				DsqlMapNode* mapNode;
+				FieldNode* fieldNode;
 				DerivedFieldNode* derivedField;
 
 				if ((subQueryNode = ExprNode::as<SubQueryNode>(select_item)))
@@ -5044,6 +4933,19 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 						derived_field->nod_desc = select_item->nod_desc;
 						return derived_field;
 					}
+				}
+				else if ((fieldNode = ExprNode::as<FieldNode>(select_item)))
+				{
+					// Create a derived field and hook in.
+
+					DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+						fieldNode->dsqlField->fld_name, dsqlScratch->scopeLevel, select_item);
+
+					dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+					nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+					nod->nod_desc = fieldNode->dsqlDesc;
+
+					return nod;
 				}
 				else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 				{
@@ -7086,16 +6988,17 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 								name_node = mapNode->map->map_node;
 							}
 
-							if (name_node->nod_type == nod_field)
+							const FieldNode* fieldNode;
+
+							if ((fieldNode = ExprNode::as<FieldNode>(name_node)))
 							{
-								dsql_fld* sub_field = (dsql_fld*) name_node->nod_arg[e_fld_field];
 								// Create new node for alias and copy fieldname
 								alias_node = MAKE_node(nod_alias, e_alias_count);
 								// Copy fieldname to a new string.
 								dsql_str* str_alias = FB_NEW_RPT(*tdbb->getDefaultPool(),
-									sub_field->fld_name.length()) dsql_str;
-								strcpy(str_alias->str_data, sub_field->fld_name.c_str());
-								str_alias->str_length = sub_field->fld_name.length();
+									fieldNode->dsqlField->fld_name.length()) dsql_str;
+								strcpy(str_alias->str_data, fieldNode->dsqlField->fld_name.c_str());
+								str_alias->str_length = fieldNode->dsqlField->fld_name.length();
 								alias_node->nod_arg[e_alias_alias] = (dsql_nod*) str_alias;
 							}
 						}
@@ -7965,24 +7868,27 @@ static dsql_nod* resolve_using_field(DsqlCompilerScratch* dsqlScratch, dsql_str*
 		PASS1_field_unknown(qualifier.c_str(), name->str_data, flawedNode);
 	}
 
+	FieldNode* fieldNode;
 	DerivedFieldNode* derivedField;
 
-	if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
+	if ((fieldNode = ExprNode::as<FieldNode>(node)))
+	{
+		ctx = fieldNode->dsqlContext;
+		return node;
+	}
+	else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
 	{
 		ctx = derivedField->context;
 		return node;
 	}
 
-	switch (node->nod_type)
+	if (node->nod_type == nod_alias)
 	{
-	case nod_field:
-		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fln_context]);
-		break;
-	case nod_alias:
 		fb_assert(node->nod_count >= (int) e_alias_imp_join - 1);
 		ctx = reinterpret_cast<ImplicitJoin*>(node->nod_arg[e_alias_imp_join])->visibleInContext;
-		break;
-	default:
+	}
+	else
+	{
 		fb_assert(false);
 	}
 
@@ -8107,10 +8013,10 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 	if (!par_node)
 		return;
 
-	// Could it be something else ???
-	fb_assert(fld_node->nod_type == nod_field);
+	const FieldNode* fieldNode = ExprNode::as<FieldNode>(fld_node);
+	fb_assert(fieldNode);	// Could it be something else ???
 
-	if (fld_node->nod_desc.dsc_dtype != dtype_array)
+	if (fieldNode->dsqlDesc.dsc_dtype != dtype_array)
 		return;
 
 	switch (par_node->nod_type)
@@ -8141,9 +8047,7 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 				{
 					ParameterNode* paramNode = exprNode->as<ParameterNode>();
 					dsql_par* parameter = paramNode->dsqlParameter;
-					const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
-					DEV_BLKCHK(field, dsql_type_fld);
-					parameter->par_name = field->fld_name.c_str();
+					parameter->par_name = fieldNode->dsqlField->fld_name.c_str();
 					parameter->par_rel_name = relation->rel_name.c_str();
 					break;
 				}
@@ -8787,20 +8691,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 			DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
 			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
-			return;
-		}
-
-	case nod_field:
-		{
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_fld_context];
-			const dsql_rel* relation = context->ctx_relation;
-			const dsql_prc* procedure = context->ctx_procedure;
-			const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
-			trace_line("%sfield %s.%s, context %d\n", buffer,
-				(relation != NULL ?
-					relation->rel_name.c_str() :
-					(procedure != NULL ? procedure->prc_name.toString().c_str() : "unknown_db_object")),
-				field->fld_name.c_str(), context->ctx_context);
 			return;
 		}
 

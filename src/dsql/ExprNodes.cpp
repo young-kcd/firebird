@@ -4202,12 +4202,16 @@ static RegisterNode<FieldNode> regFieldNodeField(blr_field);
 
 FieldNode::FieldNode(MemoryPool& pool)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
+	  dsqlContext(NULL),
+	  dsqlField(NULL),
+	  dsqlIndices(NULL),
 	  byId(false),
 	  fieldStream(0),
 	  fieldId(0),
 	  format(NULL),
 	  defaultValue(NULL)
 {
+	dsqlDesc.clear();
 }
 
 // Parse a field.
@@ -4383,40 +4387,191 @@ void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
 	ExprNode::print(text, nodes);
 }
 
-//// TODO: Implement FieldNode DSQL support.
-
 ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	fb_assert(false);
-	return NULL;
+	// AB: nod_field is an already passed node.
+	// This could be done in expand_select_list.
+	return this;
+}
+
+bool FieldNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	if (visitor.deepestLevel < dsqlContext->ctx_scope_level)
+		visitor.deepestLevel = dsqlContext->ctx_scope_level;
+
+	return false;
+}
+
+bool FieldNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return false;
+}
+
+bool FieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	// Wouldn't it be better to call an error from this point where return is true?
+	// Then we could give the fieldname that's making the trouble.
+
+	// If we come here then this field is used inside a aggregate-function. The
+	// ctx_scope_level gives the info how deep the context is inside the statement.
+
+	// If the context-scope-level from this field is lower or the same as the scope-level
+	// from the given context then it is an invalid field.
+	if (dsqlContext->ctx_scope_level == visitor.context->ctx_scope_level)
+	{
+		// Return true (invalid) if this field isn't inside the GROUP BY clause, that
+		// should already been seen in the match_node test in that routine start.
+		return true;
+	}
+
+	return false;
+}
+
+bool FieldNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool FieldNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	visitor.field = true;
+
+	switch (visitor.matchType)
+	{
+		case FIELD_MATCH_TYPE_EQUAL:
+			return dsqlContext->ctx_scope_level == visitor.checkScopeLevel;
+
+		case FIELD_MATCH_TYPE_LOWER:
+			return dsqlContext->ctx_scope_level < visitor.checkScopeLevel;
+
+		case FIELD_MATCH_TYPE_LOWER_EQUAL:
+			return dsqlContext->ctx_scope_level <= visitor.checkScopeLevel;
+
+		///case FIELD_MATCH_TYPE_HIGHER:
+		///	return dsqlContext->ctx_scope_level > visitor.checkScopeLevel;
+
+		///case FIELD_MATCH_TYPE_HIGHER_EQUAL:
+		///	return dsqlContext->ctx_scope_level >= visitor.checkScopeLevel;
+
+		default:
+			fb_assert(false);
+	}
+
+	return false;
+}
+
+bool FieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	if (dsqlContext->ctx_scope_level == visitor.context->ctx_scope_level)
+	{
+		visitor.replaceNode(PASS1_post_map(visitor.dsqlScratch, this, visitor.context,
+			visitor.partitionNode, visitor.orderNode));
+	}
+
+	return false;
 }
 
 void FieldNode::setParameterName(dsql_par* parameter) const
 {
-	fb_assert(false);
+	parameter->par_name = parameter->par_alias = dsqlField->fld_name.c_str();
+
+	if (dsqlContext->ctx_relation)
+	{
+		parameter->par_rel_name = dsqlContext->ctx_relation->rel_name.c_str();
+		parameter->par_owner_name = dsqlContext->ctx_relation->rel_owner.c_str();
+	}
+	else if (dsqlContext->ctx_procedure)
+	{
+		parameter->par_rel_name = dsqlContext->ctx_procedure->prc_name.identifier.c_str();
+		parameter->par_owner_name = dsqlContext->ctx_procedure->prc_owner.c_str();
+	}
+
+	parameter->par_rel_alias = dsqlContext->ctx_alias;
 }
 
+// Generate blr for a field - field id's are preferred but not for trigger or view blr.
 void FieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	fb_assert(false);
+	// For older clients - generate an error should they try and
+	// access data types which did not exist in the older dialect.
+	if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
+	{
+		switch (dsqlField->fld_dtype)
+		{
+			case dtype_sql_date:
+			case dtype_sql_time:
+			case dtype_int64:
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+						  Arg::Gds(isc_dsql_datatype_err) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) <<
+								Arg::Num(dsqlScratch->clientDialect) <<
+								Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(dsqlField->fld_dtype))));
+				break;
+
+			default:
+				// No special action for other data types
+				break;
+		}
+	}
+
+	if (dsqlIndices)
+		dsqlScratch->appendUChar(blr_index);
+
+	if (DDL_ids(dsqlScratch))
+	{
+		dsqlScratch->appendUChar(blr_fid);
+		GEN_stuff_context(dsqlScratch, dsqlContext);
+		dsqlScratch->appendUShort(dsqlField->fld_id);
+	}
+	else
+	{
+		dsqlScratch->appendUChar(blr_field);
+		GEN_stuff_context(dsqlScratch, dsqlContext);
+		dsqlScratch->appendMetaString(dsqlField->fld_name.c_str());
+	}
+
+	if (dsqlIndices)
+	{
+		dsqlScratch->appendUChar(dsqlIndices->nod_count);
+		dsql_nod** ptr = dsqlIndices->nod_arg;
+
+		for (const dsql_nod* const* end = ptr + dsqlIndices->nod_count; ptr != end; ++ptr)
+			GEN_expr(dsqlScratch, *ptr);
+	}
 }
 
 void FieldNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	fb_assert(false);
+	if (dsqlDesc.dsc_dtype)
+		*desc = dsqlDesc;
+	else
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-203) <<
+				  Arg::Gds(isc_dsql_field_ref));
+	}
 }
 
 bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
-	fb_assert(false);
-	return false;
+	if (!ExprNode::dsqlMatch(other, ignoreMapCast))
+		return false;
+
+	const FieldNode* o = other->as<FieldNode>();
+	fb_assert(o)
+
+	if (dsqlField != o->dsqlField || dsqlContext != o->dsqlContext)
+		return false;
+
+	if (dsqlIndices || o->dsqlIndices)
+		return PASS1_node_match(dsqlIndices, o->dsqlIndices, ignoreMapCast);
+
+	return true;
 }
 
 bool FieldNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
 	USHORT stream) /*const*/
 {
 	const FieldNode* o = other->as<FieldNode>();
-	// ASF: Why not test fieldStream == o->fieldStream?
 	return o && fieldId == o->fieldId && o->fieldStream == stream;
 }
 
@@ -5626,30 +5781,17 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	}
 
 	const char* nameAlias = NULL;
-	const dsql_ctx* context = NULL;
-	const dsql_fld* field;
+	const FieldNode* fieldNode = NULL;
 	const dsql_nod* alias;
 	const dsql_str* str;
 
 	switch (nestNode->nod_type)
 	{
-		case Dsql::nod_field:
-			field = (dsql_fld*) nestNode->nod_arg[Dsql::e_fld_field];
-			nameAlias = field->fld_name.c_str();
-			context = (dsql_ctx*) nestNode->nod_arg[Dsql::e_fld_context];
-			break;
-
 		case Dsql::nod_alias:
 			str = (dsql_str*) nestNode->nod_arg[Dsql::e_alias_alias];
 			parameter->par_alias = str->str_data;
 			alias = nestNode->nod_arg[Dsql::e_alias_value];
-
-			if (alias->nod_type == Dsql::nod_field)
-			{
-				field = (dsql_fld*) alias->nod_arg[Dsql::e_fld_field];
-				parameter->par_name = field->fld_name.c_str();
-				context = (dsql_ctx*) alias->nod_arg[Dsql::e_fld_context];
-			}
+			fieldNode = ExprNode::as<FieldNode>(alias);
 			break;
 
 		case Dsql::nod_class_exprnode:
@@ -5668,18 +5810,24 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 			{
 				parameter->par_alias = derivedField->name;
 				alias = derivedField->dsqlValue;
-
-				if (alias->nod_type == Dsql::nod_field)
-				{
-					field = (dsql_fld*) alias->nod_arg[Dsql::e_fld_field];
-					parameter->par_name = field->fld_name.c_str();
-					context = (dsql_ctx*) alias->nod_arg[Dsql::e_fld_context];
-				}
+				fieldNode = ExprNode::as<FieldNode>(alias);
 			}
+			else if ((fieldNode = ExprNode::as<FieldNode>(nestNode)))
+				nameAlias = fieldNode->dsqlField->fld_name.c_str();
 
 			break;
 		}
 	} // switch(nestNode->nod_type)
+
+	const dsql_ctx* context = NULL;
+	const dsql_fld* field;
+
+	if (fieldNode)
+	{
+		context = fieldNode->dsqlContext;
+		field = fieldNode->dsqlField;
+		parameter->par_name = field->fld_name.c_str();
+	}
 
 	if (nameAlias)
 		parameter->par_name = parameter->par_alias = nameAlias;
@@ -5836,13 +5984,13 @@ bool DerivedFieldNode::dsqlFieldRemapper(FieldRemapper& visitor)
 void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 {
 	const dsql_ctx* context = NULL;
+	const FieldNode* fieldNode;
 	const RecordKeyNode* dbKeyNode;
 
-	if (dsqlValue->nod_type == Dsql::nod_field)
+	if ((fieldNode = ExprNode::as<FieldNode>(dsqlValue)))
 	{
-		dsql_fld* field = (dsql_fld*) dsqlValue->nod_arg[Dsql::e_fld_field];
-		parameter->par_name = field->fld_name.c_str();
-		context = (dsql_ctx*) dsqlValue->nod_arg[Dsql::e_fld_context];
+		parameter->par_name = fieldNode->dsqlField->fld_name.c_str();
+		context = fieldNode->dsqlContext;
 	}
 	else if ((dbKeyNode = ExprNode::as<RecordKeyNode>(dsqlValue)))
 		dbKeyNode->setParameterName(parameter);
@@ -5872,7 +6020,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	// a set (ORed) of contexts. If any of them are in a valid position the expression is
 	// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
 
-	if (dsqlValue->nod_type != Dsql::nod_field &&
+	if (!ExprNode::is<FieldNode>(dsqlValue) &&
 		!ExprNode::is<DerivedFieldNode>(dsqlValue) &&
 		!ExprNode::is<RecordKeyNode>(dsqlValue) &&
 		!ExprNode::is<DsqlMapNode>(dsqlValue))

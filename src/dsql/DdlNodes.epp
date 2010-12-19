@@ -7392,9 +7392,10 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		}
 
 		const dsql_fld* nameField = NULL;
+		const FieldNode* fieldNameNode = ExprNode::as<FieldNode>(nameNode);
 
-		if (nameNode->nod_type == Dsql::nod_field)
-			nameField = (dsql_fld*) nameNode->nod_arg[Dsql::e_fld_field];
+		if (fieldNameNode)
+			nameField = fieldNameNode->dsqlField;
 
 		const TEXT* fieldStr = NULL;
 
@@ -7411,10 +7412,12 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		dsql_fld* field = NULL;
 		const dsql_ctx* context = NULL;
 
-		if (fieldNode->nod_type == Dsql::nod_field)
+		fieldNameNode = ExprNode::as<FieldNode>(fieldNode);
+
+		if (fieldNameNode)
 		{
-			field = (dsql_fld*) fieldNode->nod_arg[Dsql::e_fld_field];
-			context = (dsql_ctx*) fieldNode->nod_arg[Dsql::e_fld_context];
+			field = fieldNameNode->dsqlField;
+			context = fieldNameNode->dsqlContext;
 		}
 		else
 			updatable = false;
@@ -8064,8 +8067,8 @@ dsql_nod* CreateAlterViewNode::replaceFieldNames(dsql_nod* input, dsql_nod* sear
 				if (replaceFields)
 					replaceName = (dsql_str*) (*replace)->nod_arg[Dsql::e_fln_name];
 
-				const dsql_nod* fieldNode = *search;
-				const dsql_fld* field = (dsql_fld*) fieldNode->nod_arg[Dsql::e_fld_field];
+				const FieldNode* fieldNode = ExprNode::as<FieldNode>(*search);
+				const dsql_fld* field = fieldNode->dsqlField;
 
 				if (field->fld_name == fieldName->str_data)
 				{
