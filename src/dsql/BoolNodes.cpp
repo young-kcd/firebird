@@ -516,7 +516,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			MAKE_desc(dsqlScratch, &desc2, node->dsqlArg2);
 
 			if ((desc1.dsc_dtype == dtype_boolean || desc2.dsc_dtype == dtype_boolean) &&
-				desc1.dsc_dtype != desc2.dsc_dtype)
+				!(desc1.isNull() || desc2.isNull()) && desc1.dsc_dtype != desc2.dsc_dtype)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					Arg::Gds(isc_invalid_boolean_usage));

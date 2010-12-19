@@ -5056,7 +5056,11 @@ singular_predicate
 null_predicate
 	: common_value IS KW_NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
+	| common_value IS UNKNOWN
+		{ $$ = newNode<MissingBoolNode>($1); }
 	| common_value IS NOT KW_NULL
+		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
+	| common_value IS NOT UNKNOWN
 		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
 	;
 
@@ -5359,7 +5363,6 @@ u_constant	: u_numeric_constant
 boolean_literal
 	: KW_FALSE	{ $$ = MAKE_constant(MAKE_string("", 0), CONSTANT_BOOLEAN); }
 	| KW_TRUE	{ $$ = MAKE_constant(MAKE_string("1", 1), CONSTANT_BOOLEAN); }
-	| UNKNOWN	{ $$ = makeClassNode(newNode<NullNode>()); }
 	;
 
 parameter
@@ -5917,6 +5920,7 @@ distinct_noise
 
 null_value
 	: KW_NULL	{ $$ = newNode<NullNode>(); }
+	| UNKNOWN	{ $$ = newNode<NullNode>(); }
 	;
 
 
