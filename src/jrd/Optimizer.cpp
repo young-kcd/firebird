@@ -49,6 +49,59 @@
 
 namespace Jrd {
 
+class AutoActivateResetStreams : public Firebird::AutoStorage
+{
+public:
+	AutoActivateResetStreams(CompilerScratch* csb, const RecordSelExpr* rse)
+		: m_csb(csb), m_streams(getPool()), m_flags(getPool())
+	{
+		collect(rse);
+
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const UCHAR stream = m_streams[i];
+			m_csb->csb_rpt[stream].csb_flags |= (csb_active | csb_sub_stream);
+		}
+	}
+
+	~AutoActivateResetStreams()
+	{
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const UCHAR stream = m_streams[i];
+			m_csb->csb_rpt[stream].csb_flags = m_flags[i];
+		}
+	}
+
+private:
+	CompilerScratch* m_csb;
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+	Firebird::HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
+
+	void collect(const RecordSelExpr* rse)
+	{
+		const jrd_nod* const* ptr = rse->rse_relation;
+		for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
+		{
+			const jrd_nod* const node = *ptr;
+			if (node->nod_type != nod_rse)
+			{
+				const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+				if (!m_streams.exist(stream))
+				{
+					m_streams.add(stream);
+					m_flags.add(m_csb->csb_rpt[stream].csb_flags);
+				}
+			}
+			else
+			{
+				collect((const RecordSelExpr*) node);
+			}
+		}
+	}
+};
+
+
 bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 				bool idx_use, bool allowOnlyCurrentStream)
 {
@@ -186,49 +239,46 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		return true;
 	}
 
-	// Node is a record selection expression.
-	bool result = true;
+	// Node is a record selection expression
 
-	if ((sub = rse->rse_first) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
+	if ((sub = rse->rse_first) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
+	{
 		return false;
 	}
 
-    if ((sub = rse->rse_skip) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
+    if ((sub = rse->rse_skip) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
+	{
         return false;
 	}
     
 	// Set sub-streams of rse active
-	OPT_set_rse_active(csb, rse, csb_sub_stream);
+	AutoActivateResetStreams activator(csb, rse);
 
 	// Check sub-stream
-	if (((sub = rse->rse_boolean)    && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted)     && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	if (((sub = rse->rse_boolean) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
 	    ((sub = rse->rse_projection) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
-		result = false;
+		return false;
 	}
 
 	const jrd_nod* const* end;
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-		((ptr < end) && (result)); ptr++)
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
 		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
 		{
-			result = false;
+			return false;
 		}
 	}
 
 	// Check value expression, if any
-	if (result && value && !OPT_computable(csb, value, stream, idx_use, allowOnlyCurrentStream))
+	if (value && !OPT_computable(csb, value, stream, idx_use, allowOnlyCurrentStream))
 	{
-		result = false;
+		return false;
 	}
 
-	// Reset streams inactive
-	OPT_set_rse_inactive(csb, rse, csb_sub_stream);
-
-	return result;
+	return true;
 }
 
 
@@ -739,68 +789,6 @@ USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
 		rsb->rsb_arg[RSB_NAV_idx_offset] = (RecordSource*) (IPTR) size;
 	size += sizeof(index_desc);
 	return size;
-}
-
-
-void OPT_set_rse_active(CompilerScratch* csb, const RecordSelExpr* rse, int extra_flags)
-{
-/***************************************************
- *
- *  s e t _ r s e _ a c t i v e
- *
- ***************************************************
- *
- * Functional Description:
- *    Set all the streams involved in an RSE as active.
- *    Do it recursively.
- *
- ***************************************************/
-	const jrd_nod* const* ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count;
-		 ptr < end; ptr++)
-	{
-		const jrd_nod* const node = *ptr;
-		if (node->nod_type != nod_rse)
-		{
-			const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			csb->csb_rpt[stream].csb_flags |= (csb_active | extra_flags);
-		}
-		else
-		{
-			OPT_set_rse_active(csb, (const RecordSelExpr*) node, extra_flags);
-		}
-	}
-}
-
-
-void OPT_set_rse_inactive(CompilerScratch* csb, const RecordSelExpr* rse, int extra_flags)
-{
-/***************************************************
- *
- *  s e t _ r s e _ i n a c t i v e
- *
- ***************************************************
- *
- * Functional Description:
- *    Set all the streams involved in an RSE as inactive.
- *    Do it recursively.
- *
- ***************************************************/
-	const jrd_nod* const* ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count;
-		 ptr < end; ptr++)
-	{
-		const jrd_nod* const node = *ptr;
-		if (node->nod_type != nod_rse)
-		{
-			const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-			csb->csb_rpt[stream].csb_flags &= ~(csb_active | extra_flags);
-		}
-		else
-		{
-			OPT_set_rse_inactive(csb, (const RecordSelExpr*) node, extra_flags);
-		}
-	}
 }
 
 

@@ -173,6 +173,7 @@ static void set_direction(const jrd_nod*, jrd_nod*);
 static void set_inactive(OptimizerBlk*, const River*);
 static void set_made_river(OptimizerBlk*, const River*);
 static void set_position(const jrd_nod*, jrd_nod*, const jrd_nod*);
+static void set_rse_inactive(CompilerScratch*, const RecordSelExpr*);
 static void sort_indices_by_selectivity(CompilerScratch::csb_repeat*);
 static SSHORT sort_indices_by_priority(CompilerScratch::csb_repeat*, index_desc**, FB_UINT64*);
 
@@ -366,7 +367,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	}
 
 	// clear the csb_active flag of all streams in the RecordSelExpr
-	OPT_set_rse_inactive(csb, rse);
+	set_rse_inactive(csb, rse);
 
 	UCHAR* p = streams + 1;
 
@@ -7714,6 +7715,37 @@ static void set_position(const jrd_nod* from_clause, jrd_nod* to_clause,
 		}
 
 		to_swap++;
+	}
+}
+
+
+static void set_rse_inactive(CompilerScratch* csb, const RecordSelExpr* rse)
+{
+/***************************************************
+ *
+ *  s e t _ r s e _ i n a c t i v e
+ *
+ ***************************************************
+ *
+ * Functional Description:
+ *    Set all the streams involved in an RSE as inactive.
+ *    Do it recursively.
+ *
+ ***************************************************/
+	const jrd_nod* const* ptr = rse->rse_relation;
+	for (const jrd_nod* const* const end = ptr + rse->rse_count;
+		 ptr < end; ptr++)
+	{
+		const jrd_nod* const node = *ptr;
+		if (node->nod_type != nod_rse)
+		{
+			const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+			csb->csb_rpt[stream].csb_flags &= ~csb_active;
+		}
+		else
+		{
+			set_rse_inactive(csb, (const RecordSelExpr*) node);
+		}
 	}
 }
 

@@ -76,8 +76,6 @@ double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(NOD_T, jrd_nod*, jrd_nod*, bool);
 USHORT OPT_nav_rsb_size(RecordSource*, USHORT, USHORT);
-void OPT_set_rse_active(CompilerScratch*, const RecordSelExpr*, int = 0);
-void OPT_set_rse_inactive(CompilerScratch*, const RecordSelExpr*, int = 0);
 
 inline int STREAM_INDEX(const jrd_nod* node)
 {
