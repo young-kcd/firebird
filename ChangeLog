@@ -1,3 +1,18 @@
+ 2010-12-19 21:42  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/pass1.cpp
+Refactor DSQL's nod_field
+
+ 2010-12-19 18:57  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/parse.y
+Fix comparation problem with boolean and NULL
+
  2010-12-18 19:13  dimitr 
    D src/lock/driver.cpp
    D src/lock/reset.cpp
