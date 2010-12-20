@@ -57,6 +57,59 @@
 
 namespace Jrd {
 
+class AutoActivateResetStreams : public Firebird::AutoStorage
+{
+public:
+	AutoActivateResetStreams(CompilerScratch* csb, const RecordSelExpr* rse)
+		: m_csb(csb), m_streams(getPool()), m_flags(getPool())
+	{
+		collect(rse);
+
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const UCHAR stream = m_streams[i];
+			m_csb->csb_rpt[stream].csb_flags |= (csb_active | csb_sub_stream);
+		}
+	}
+
+	~AutoActivateResetStreams()
+	{
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const UCHAR stream = m_streams[i];
+			m_csb->csb_rpt[stream].csb_flags = m_flags[i];
+		}
+	}
+
+private:
+	CompilerScratch* m_csb;
+	Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+	Firebird::HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
+
+	void collect(const RecordSelExpr* rse)
+	{
+		const jrd_nod* const* ptr = rse->rse_relation;
+		for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
+		{
+			const jrd_nod* const node = *ptr;
+			if (node->nod_type != nod_rse)
+			{
+				const SSHORT stream = (USHORT)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+				if (!m_streams.exist(stream))
+				{
+					m_streams.add(stream);
+					m_flags.add(m_csb->csb_rpt[stream].csb_flags);
+				}
+			}
+			else
+			{
+				collect((const RecordSelExpr*) node);
+			}
+		}
+	}
+};
+
+
 bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 				bool idx_use, bool allowOnlyCurrentStream)
 {
@@ -194,60 +247,44 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		return true;
 	}
 
-	// Node is a record selection expression.
-	bool result = true;
+	// Node is a record selection expression
 
-	if ((sub = rse->rse_first) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
+	if ((sub = rse->rse_first) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
+	{
 		return false;
 	}
 
-    if ((sub = rse->rse_skip) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) {
+    if ((sub = rse->rse_skip) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream))
+	{
         return false;
 	}
     
 	// Set sub-streams of rse active
-	const jrd_nod* const* end;
-
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++) {
-		if ((*ptr)->nod_type != nod_rse) {
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags |= (csb_active | csb_sub_stream);
-		}
-	}
+	AutoActivateResetStreams activator(csb, rse);
 
 	// Check sub-stream
-	if (((sub = rse->rse_boolean)    && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
-	    ((sub = rse->rse_sorted)     && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	if (((sub = rse->rse_boolean) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
+	    ((sub = rse->rse_sorted) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)) ||
 	    ((sub = rse->rse_projection) && !OPT_computable(csb, sub, stream, idx_use, allowOnlyCurrentStream)))
 	{
-		result = false;
+		return false;
 	}
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count;
-		((ptr < end) && (result)); ptr++)
+	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
-		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream)) {
-			result = false;
+		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
+		{
+			return false;
 		}
 	}
 
 	// Check value expression, if any
-	if (result && value && !OPT_computable(csb, value, stream, idx_use, allowOnlyCurrentStream)) {
-		result = false;
-	}
-
-	// Reset streams inactive
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end;
-		 ptr++)
+	if (value && !OPT_computable(csb, value, stream, idx_use, allowOnlyCurrentStream))
 	{
-		if ((*ptr)->nod_type != nod_rse)
-		{
-			n = (USHORT)(IPTR) (*ptr)->nod_arg[STREAM_INDEX((*ptr))];
-			csb->csb_rpt[n].csb_flags &= ~(csb_active | csb_sub_stream);
-		}
+		return false;
 	}
 
-	return result;
+	return true;
 }
 
 
