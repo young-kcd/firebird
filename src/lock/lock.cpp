@@ -41,6 +41,7 @@
 
 #include "firebird.h"
 #include "../common/classes/timestamp.h"
+#include "../common/classes/array.h"
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/thd.h"
@@ -3509,12 +3510,11 @@ static void post_blockage(LRQ request,
 	CHECK(owner->own_pending_request == SRQ_REL_PTR(request));
 	CHECK(request->lrq_flags & LRQ_pending);
 
-	SRQ_PTR next_que_offset;
-	for (SRQ lock_srq = SRQ_NEXT(lock->lbl_requests); lock_srq != &lock->lbl_requests;
-		 lock_srq = (SRQ) SRQ_ABS_PTR(next_que_offset)) 
+	Firebird::HalfStaticArray<SRQ_PTR, 16> blocking_owners;
+
+	SRQ lock_srq;
+	SRQ_LOOP(lock->lbl_requests, lock_srq) 
 	{
-		SRQ next_que = SRQ_NEXT((*lock_srq));
-		next_que_offset = SRQ_REL_PTR(next_que);
 		LRQ block = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_lbl_requests));
 
 		/* Figure out if this lock request is blocking our own lock request.
@@ -3546,17 +3546,24 @@ static void post_blockage(LRQ request,
 		if (force) {
 			blocking_owner->own_ast_flags &= ~OWN_signaled;
 		}
-		if (blocking_owner != owner &&
-			signal_owner(blocking_owner, SRQ_REL_PTR(owner)))
-		{
-			/* We can't signal the blocking_owner, assume he has died
-			   and purge him out */
-
-			lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward);
-			purge_owner(SRQ_REL_PTR(owner), blocking_owner);
+		if (blocking_owner != owner) {
+			blocking_owners.add(block->lrq_owner);
 		}
 		if (block->lrq_state == LCK_EX)
 			break;
+	}
+
+	SRQ_PTR owner_offset = SRQ_REL_PTR(owner);
+	while (blocking_owners.getCount())
+	{
+		own* const blocking_owner = (own*) SRQ_ABS_PTR(blocking_owners.pop());
+		if (blocking_owner->own_count && 
+			signal_owner(blocking_owner, owner_offset) != FB_SUCCESS)
+		{
+			/* We can't signal the blocking_owner, assume he has died
+			   and purge him out */
+			purge_owner(owner_offset, blocking_owner);
+		}
 	}
 }
 
