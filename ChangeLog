@@ -1,3 +1,7 @@
+ 2010-12-20 07:27  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-3283: Bad plan with using LEFT OUTER JOIN in sub-select. Compilation is not tested.
+
  2010-11-24 15:20  dimitr 
    M src/jrd/dyn_def.epp
 Fixed another incarnation of the "request depth exceeded" error, this time it prevents more than 128 expression indices from being created. Reported privately by Timo Partanen.
