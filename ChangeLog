@@ -1,3 +1,9 @@
+ 2010-12-20 07:05  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Fixed CORE-3283: Bad plan with using LEFT OUTER JOIN in sub-select.
+
  2010-12-17 09:54  hvlad 
    M src/jrd/svc.cpp
    M src/jrd/svc.h
