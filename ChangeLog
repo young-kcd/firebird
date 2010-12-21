@@ -1,3 +1,13 @@
+ 2010-12-20 23:23  hvlad 
+   M src/lock/lock.cpp
+Fixed bug CORE-3285 : 100% CPU load 
+
+ 2010-12-20 07:13  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Fixed CORE-3283: Bad plan with using LEFT OUTER JOIN in sub-select.
+
  2010-12-17 05:37  robocop 
    M doc/WhatsNew
 Misc.
