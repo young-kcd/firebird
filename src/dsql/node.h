@@ -97,7 +97,6 @@ enum nod_t
 	nod_modify,
 	nod_erase,
 	nod_assign,
-	nod_exec_procedure,
 	nod_while,
 	nod_erase_current,
 	nod_modify_current,
@@ -179,22 +178,16 @@ enum nod_t
 	nod_breakleave,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_limit, // limit support
-	nod_exec_sql, // EXECUTE STATEMENT
 	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
-	nod_exec_into, // EXECUTE STATEMENT INTO
 	nod_difference_file,
 	nod_drop_difference,
 	nod_begin_backup,
 	nod_end_backup,
 	nod_derived_table, // Derived table support
-	nod_cursor_open,
-	nod_cursor_fetch,
-	nod_cursor_close,
-	nod_fetch_scroll,
 	nod_rows,	// ROWS support
 	nod_query_spec,
 	nod_mod_udf,
@@ -213,15 +206,6 @@ enum nod_t
 	nod_add_user,
 	nod_mod_user,
 	nod_del_user,
-	nod_exec_stmt,
-	nod_exec_stmt_inputs,
-	nod_exec_stmt_datasrc,
-	nod_exec_stmt_user,
-	nod_exec_stmt_pwd,
-	nod_exec_stmt_role,
-	nod_exec_stmt_privs,
-	nod_tran_params,
-	nod_named_param,
 	nod_dfl_collate,
 	nod_trg_act,
 	nod_trg_ext,
@@ -266,37 +250,6 @@ enum node_args {
 	e_err_action,
 	e_err_count,
 
-	e_exec_sql_stmnt = 0,	// nod_exec_sql
-	e_exec_sql_count,
-
-	e_exec_into_stmnt = 0,	// nod_exec_into
-	e_exec_into_block,
-	e_exec_into_list,
-	e_exec_into_label,
-	e_exec_into_count,
-
-	e_exec_stmt_sql = 0,	// nod_exec_stmt
-	e_exec_stmt_inputs,
-	e_exec_stmt_outputs,
-	e_exec_stmt_proc_block,
-	e_exec_stmt_label,
-	e_exec_stmt_options,
-	e_exec_stmt_data_src,
-	e_exec_stmt_user,
-	e_exec_stmt_pwd,
-	e_exec_stmt_role,
-	e_exec_stmt_tran,
-	e_exec_stmt_privs,
-	e_exec_stmt_count,
-
-	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
-	e_exec_stmt_inputs_params,
-	e_exec_stmt_inputs_count,
-
-	e_named_param_name = 0,	// nod_named_param
-	e_named_param_expr,
-	e_named_param_count,
-
 	e_vrn_name = 0,			// nod_variable_name
 	e_vrn_count,
 
@@ -336,12 +289,6 @@ enum node_args {
 	e_cur_rse,
 	e_cur_number,
 	e_cur_count,
-
-	e_exe_procedure = 0,	// nod_exec_procedure
-	e_exe_inputs,
-	e_exe_outputs,
-	e_exe_package,
-	e_exe_count,
 
 	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
@@ -664,11 +611,6 @@ enum node_args {
 	e_derived_table_context,		// Context for derived table
 	e_derived_table_count,
 
-	e_cur_stmt_id = 0,
-	e_cur_stmt_scroll,
-	e_cur_stmt_into,
-	e_cur_stmt_count,
-
 	e_mod_udf_name = 0,				// nod_mod_udf
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
@@ -784,11 +726,6 @@ enum nod_flags_vals {
 
 	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
 	NOD_DT_CTE_USED			= 2,		// nod_derived_table
-
-	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
-	NOD_TRAN_COMMON = 2,
-	NOD_TRAN_2PC = 3,
-	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON,
 
 	NOD_AGG_WINDOW = 1				// nod_aggregate
 };

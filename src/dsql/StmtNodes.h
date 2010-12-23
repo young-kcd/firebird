@@ -171,9 +171,13 @@ public:
 class CursorStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
 {
 public:
-	explicit CursorStmtNode(MemoryPool& pool)
+	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const Firebird::MetaName& aDsqlName = "",
+				dsql_nod* aDsqlIntoStmt = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>(pool),
-		  cursorOp(0),
+		  dsqlName(pool, aDsqlName),
+		  dsqlIntoStmt(aDsqlIntoStmt),
+		  dsqlScrollExpr(NULL),
+		  cursorOp(aCursorOp),
 		  cursorNumber(0),
 		  scrollOp(0),
 		  scrollExpr(NULL),
@@ -192,6 +196,9 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	Firebird::MetaName dsqlName;
+	dsql_nod* dsqlIntoStmt;
+	dsql_nod* dsqlScrollExpr;
 	UCHAR cursorOp;
 	USHORT cursorNumber;
 	UCHAR scrollOp;
@@ -318,8 +325,13 @@ public:
 class ExecProcedureNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>
 {
 public:
-	explicit ExecProcedureNode(MemoryPool& pool)
+	explicit ExecProcedureNode(MemoryPool& pool,
+				const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName(),
+				dsql_nod* aDsqlInputs = NULL, dsql_nod* aDsqlOutputs = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>(pool),
+		  dsqlName(pool, aDsqlName),
+		  dsqlInputs(aDsqlInputs),
+		  dsqlOutputs(aDsqlOutputs),
 		  inputSources(NULL),
 		  inputTargets(NULL),
 		  inputMessage(NULL),
@@ -341,9 +353,13 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
+	dsql_nod* explodeOutputs(DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure);
 	void executeProcedure(thread_db* tdbb, jrd_req* request) const;
 
 public:
+	Firebird::QualifiedName dsqlName;
+	dsql_nod* dsqlInputs;
+	dsql_nod* dsqlOutputs;
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
 	NestConst<MessageNode> inputMessage;
@@ -359,6 +375,15 @@ class ExecStatementNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEME
 public:
 	explicit ExecStatementNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_STATEMENT>(pool),
+		  dsqlSql(NULL),
+		  dsqlDataSource(NULL),
+		  dsqlUserName(NULL),
+		  dsqlPassword(NULL),
+		  dsqlRole(NULL),
+		  dsqlInnerStmt(NULL),
+		  dsqlInputs(NULL),
+		  dsqlOutputs(NULL),
+		  dsqlLabel(NULL),
 		  sql(NULL),
 		  dataSource(NULL),
 		  userName(NULL),
@@ -368,7 +393,7 @@ public:
 		  inputs(NULL),
 		  outputs(NULL),
 		  useCallerPrivs(false),
-		  traScope(EDS::traCommon),
+		  traScope(EDS::TraScope(0)),	// not defined
 		  inputNames(NULL)
 	{
 	}
@@ -377,17 +402,28 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual ExecStatementNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExecStatementNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExecStatementNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
+	static void genOptionalExpr(DsqlCompilerScratch* dsqlScratch, const UCHAR code, dsql_nod* node);
+
 	void getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
 		Firebird::string& str) const;
 
 public:
+	dsql_nod* dsqlSql;
+	dsql_nod* dsqlDataSource;
+	dsql_nod* dsqlUserName;
+	dsql_nod* dsqlPassword;
+	dsql_nod* dsqlRole;
+	dsql_nod* dsqlInnerStmt;
+	dsql_nod* dsqlInputs;
+	dsql_nod* dsqlOutputs;
+	dsql_nod* dsqlLabel;
 	NestConst<ValueExprNode> sql;
 	NestConst<ValueExprNode> dataSource;
 	NestConst<ValueExprNode> userName;

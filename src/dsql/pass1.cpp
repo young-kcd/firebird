@@ -186,7 +186,6 @@ static void DSQL_pretty(const dsql_nod*, int);
 
 static void assign_fld_dtype_from_dsc(dsql_fld*, const dsc*);
 static dsql_nod* explode_fields(dsql_rel*);
-static dsql_nod* explode_outputs(DsqlCompilerScratch*, const dsql_prc*);
 static void field_appears_once(const dsql_nod*, const dsql_nod*, const bool, const char*);
 static void field_duplication(const TEXT*, const TEXT*, const dsql_nod*, const char*);
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
@@ -758,7 +757,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			relation_node->nod_arg[e_rpn_inputs]))
 	{
 		procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-			relation_name, package);
+			QualifiedName(relation_name->str_data, (package ? package->str_data : NULL)));
 
 		if (!procedure)
 		{
@@ -783,7 +782,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 		if (!relation && (relation_node->nod_type == nod_rel_proc_name))
 		{
 			procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-				relation_name, NULL);
+				QualifiedName(relation_name->str_data));
 		}
 
 		if (!relation && !procedure)
@@ -1171,18 +1170,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_returning:
 		return pass1_returning(dsqlScratch, input);
 
-	case nod_tran_params:
-		return input;
-
-	case nod_exec_stmt_privs:
-		return input;
-
-	case nod_named_param:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
-		node->nod_arg[e_named_param_expr] = PASS1_node(dsqlScratch, input->nod_arg[e_named_param_expr]);
-		return node;
-
 	default:
 		break;
 	}
@@ -1362,95 +1349,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = pass1_savepoint(dsqlScratch, pass1_delete(dsqlScratch, input));
 		break;
 
-	case nod_exec_procedure:
-		{
-			const dsql_str* name = (dsql_str*) input->nod_arg[e_exe_procedure];
-			const dsql_str* package = (dsql_str*) input->nod_arg[e_exe_package];
-			DEV_BLKCHK(name, dsql_type_str);
-			dsql_prc* procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-				name, package);
-
-			if (!procedure)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_dsql_procedure_err) <<
-						  Arg::Gds(isc_random) <<
-						  Arg::Str(QualifiedName(name->str_data,
-									package ? package->str_data : NULL).toString()));
-			}
-
-			if (!dsqlScratch->isPsql())
-			{
-				dsqlScratch->procedure = procedure;
-				dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
-			}
-
-			node = MAKE_node(input->nod_type, input->nod_count);
-			node->nod_arg[e_exe_procedure] = input->nod_arg[e_exe_procedure];
-			node->nod_arg[e_exe_package] = input->nod_arg[e_exe_package];
-
-			if (!node->nod_arg[e_exe_package] && procedure->prc_name.package.hasData())
-			{
-				node->nod_arg[e_exe_package] = (dsql_nod*) MAKE_string(
-					procedure->prc_name.package.c_str(), procedure->prc_name.package.length());
-			}
-
-			// handle input parameters
-
-			const USHORT count = input->nod_arg[e_exe_inputs] ?
-				input->nod_arg[e_exe_inputs]->nod_count : 0;
-			if (count > procedure->prc_in_count ||
-				count < procedure->prc_in_count - procedure->prc_def_count)
-			{
-				ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(name->str_data));
-			}
-
-			node->nod_arg[e_exe_inputs] = PASS1_node(dsqlScratch, input->nod_arg[e_exe_inputs]);
-
-			if (count)
-			{
-				// Initialize this stack variable, and make it look like a node
-				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
-
-				dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
-				for (const dsql_fld* field = procedure->prc_inputs; *ptr;
-					ptr++, field = field->fld_next)
-				{
-					DEV_BLKCHK(field, dsql_type_fld);
-					DEV_BLKCHK(*ptr, dsql_type_nod);
-					MAKE_desc_from_field(&desc_node->nod_desc, field);
-					// PASS1_set_parameter_type(*ptr, &desc_node, false);
-					PASS1_set_parameter_type(dsqlScratch, *ptr, desc_node, false);
-				}
-			}
-
-			// handle output parameters
-
-			dsql_nod* temp = input->nod_arg[e_exe_outputs];
-			if (dsqlScratch->isPsql())
-			{
-				const USHORT ocount = temp ? temp->nod_count : 0;
-				if (ocount != procedure->prc_out_count)
-				{
-					ERRD_post(Arg::Gds(isc_prc_out_param_mismatch) << Arg::Str(name->str_data));
-				}
-
-				node->nod_arg[e_exe_outputs] = PASS1_node(dsqlScratch, temp);
-			}
-			else
-			{
-				if (temp)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  // Token unknown
-							  Arg::Gds(isc_token_err) <<
-							  Arg::Gds(isc_random) << Arg::Str("RETURNING_VALUES"));
-				}
-				node->nod_arg[e_exe_outputs] = explode_outputs(dsqlScratch, dsqlScratch->procedure);
-			}
-		}
-		break;
-
 	case nod_get_segment:
 	case nod_put_segment:
 		pass1_blob(dsqlScratch, input);
@@ -1503,158 +1401,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node->nod_arg[e_err_errs] = input->nod_arg[e_err_errs];
 		node->nod_arg[e_err_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_err_action]);
 		return node;
-
-	case nod_exec_sql:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_sql_stmnt] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_sql_stmnt]);
-		return pass1_savepoint(dsqlScratch, node);
-
-	case nod_exec_into:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_into_stmnt] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_into_stmnt]);
-		if (input->nod_arg[e_exec_into_block])
-		{
-			dsqlScratch->loopLevel++;
-			node->nod_arg[e_exec_into_label] = PASS1_label(dsqlScratch, input);
-			node->nod_arg[e_exec_into_block] =
-				PASS1_statement(dsqlScratch, input->nod_arg[e_exec_into_block]);
-			dsqlScratch->loopLevel--;
-			dsqlScratch->labels.pop();
-		}
-
-		node->nod_arg[e_exec_into_list] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_into_list]);
-		return pass1_savepoint(dsqlScratch, node);
-
-	case nod_exec_stmt:
-		// if no new features of EXECUTE STATEMENT is used, lets generate old BLR
-		if (!input->nod_arg[e_exec_stmt_inputs] && !input->nod_arg[e_exec_stmt_options])
-		{
-			if (!input->nod_arg[e_exec_stmt_outputs])
-			{
-				node = MAKE_node(nod_exec_sql, e_exec_sql_count);
-				node->nod_arg[e_exec_sql_stmnt] = input->nod_arg[e_exec_stmt_sql];
-			}
-			else
-			{
-				node = MAKE_node(nod_exec_into, e_exec_into_count);
-				node->nod_arg[e_exec_into_stmnt] = input->nod_arg[e_exec_stmt_sql];
-				node->nod_arg[e_exec_into_block] = input->nod_arg[e_exec_stmt_proc_block];
-				node->nod_arg[e_exec_into_list] = input->nod_arg[e_exec_stmt_outputs];
-				node->nod_arg[e_exec_into_label] = input->nod_arg[e_exec_stmt_label];
-			}
-			return PASS1_statement(dsqlScratch, node);
-		}
-
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_stmt_sql] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_stmt_sql]);
-		node->nod_arg[e_exec_stmt_inputs] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_stmt_inputs]);
-
-		// check params names uniqueness, if present
-		if (node->nod_arg[e_exec_stmt_inputs])
-		{
-			const int cnt = node->nod_arg[e_exec_stmt_inputs]->nod_count;
-			StrArray names(*getDefaultMemoryPool(), cnt);
-
-			const dsql_nod* const* prm = node->nod_arg[e_exec_stmt_inputs]->nod_arg;
-			if (prm[0]->nod_arg[e_named_param_name])
-			{
-				for (int i = 0; i < cnt; i++)
-				{
-					const dsql_str* name = (dsql_str*) prm[i]->nod_arg[e_named_param_name];
-
-					size_t pos;
-					if (names.find(name->str_data, pos))
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(name->str_data));
-					}
-					names.insert(pos, name->str_data);
-				}
-			}
-		}
-
-		node->nod_arg[e_exec_stmt_outputs] = PASS1_node(dsqlScratch, input->nod_arg[e_exec_stmt_outputs]);
-
-		if (input->nod_arg[e_exec_stmt_proc_block])
-		{
-			dsqlScratch->loopLevel++;
-			node->nod_arg[e_exec_stmt_label] = PASS1_label(dsqlScratch, input);
-			node->nod_arg[e_exec_stmt_proc_block] =
-				PASS1_statement(dsqlScratch, input->nod_arg[e_exec_stmt_proc_block]);
-			dsqlScratch->loopLevel--;
-			dsqlScratch->labels.pop();
-		}
-
-		// process various optional arguments
-		if (input->nod_arg[e_exec_stmt_options])
-		{
-			dsql_nod* list = input->nod_arg[e_exec_stmt_options];
-			fb_assert(list->nod_type == nod_list);
-
-			const dsql_nod* const* end = list->nod_arg + list->nod_count;
-
-			for (dsql_nod** ptr = list->nod_arg; ptr < end; ptr++)
-			{
-				const char* dupClause = NULL;
-				dsql_nod* opt = *ptr;
-
-				switch (opt->nod_type)
-				{
-				case nod_exec_stmt_datasrc:
-					if (node->nod_arg[e_exec_stmt_data_src])
-						dupClause = "EXTERNAL DATA SOURCE";
-					else
-						node->nod_arg[e_exec_stmt_data_src] = PASS1_node(dsqlScratch, opt->nod_arg[0]);
-					break;
-
-				case nod_exec_stmt_user:
-					if (node->nod_arg[e_exec_stmt_user])
-						dupClause = "USER";
-					else
-						node->nod_arg[e_exec_stmt_user] = PASS1_node(dsqlScratch, opt->nod_arg[0]);
-					break;
-
-				case nod_exec_stmt_pwd:
-					if (node->nod_arg[e_exec_stmt_pwd])
-						dupClause = "PASSWORD";
-					else
-						node->nod_arg[e_exec_stmt_pwd] = PASS1_node(dsqlScratch, opt->nod_arg[0]);
-					break;
-
-				case nod_exec_stmt_role:
-					if (node->nod_arg[e_exec_stmt_role])
-						dupClause = "ROLE";
-					else
-						node->nod_arg[e_exec_stmt_role] = PASS1_node(dsqlScratch, opt->nod_arg[0]);
-					break;
-
-				case nod_tran_params:
-					if (node->nod_arg[e_exec_stmt_tran])
-						dupClause = "TRANSACTION";
-					else
-						node->nod_arg[e_exec_stmt_tran] = PASS1_node(dsqlScratch, opt);
-					break;
-
-				case nod_exec_stmt_privs:
-					if (node->nod_arg[e_exec_stmt_privs])
-						dupClause = "CALLER PRIVILEGES";
-					else
-						node->nod_arg[e_exec_stmt_privs] = PASS1_node(dsqlScratch, opt);
-					break;
-
-				default:
-					fb_assert(false);
-				}
-
-				if (dupClause)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
-							  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(dupClause));
-				}
-			}
-		}
-
-		return pass1_savepoint(dsqlScratch, node);
 
 	case nod_breakleave:
 		if (!dsqlScratch->loopLevel)
@@ -1755,7 +1501,8 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		{
 			fb_assert(input->nod_flags > 0);
 			// make sure the cursor doesn't exist
-			PASS1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_name], NOD_CURSOR_ALL, false);
+			PASS1_cursor_name(dsqlScratch, ((dsql_str*) input->nod_arg[e_cur_name])->str_data,
+				NOD_CURSOR_ALL, false);
 			// temporarily hide unnecessary contexts and process our RSE
 			DsqlContextStack* const base_context = dsqlScratch->context;
 			DsqlContextStack temp;
@@ -1768,45 +1515,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			// assign number and store in the dsqlScratch stack
 			input->nod_arg[e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
 			dsqlScratch->cursors.push(input);
-		}
-		return input;
-
-	case nod_cursor_open:
-	case nod_cursor_close:
-	case nod_cursor_fetch:
-		// Verify if we're in an autonomous transaction.
-		if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)
-		{
-			const char* stmt = NULL;
-
-			switch (input->nod_type)
-			{
-				case nod_cursor_open:
-					stmt = "OPEN CURSOR";
-					break;
-				case nod_cursor_close:
-					stmt = "CLOSE CURSOR";
-					break;
-				case nod_cursor_fetch:
-					stmt = "FETCH CURSOR";
-					break;
-			}
-
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-					  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str(stmt));
-		}
-
-		// resolve the cursor
-		input->nod_arg[e_cur_stmt_id] =
-			PASS1_cursor_name(dsqlScratch, (dsql_str*) input->nod_arg[e_cur_stmt_id],
-							  NOD_CURSOR_EXPLICIT, true);
-		// process a scroll node, if exists
-		if (input->nod_arg[e_cur_stmt_scroll]) {
-			input->nod_arg[e_cur_stmt_scroll] = PASS1_node(dsqlScratch, input->nod_arg[e_cur_stmt_scroll]);
-		}
-		// process an assignment node, if exists
-		if (input->nod_arg[e_cur_stmt_into]) {
-			input->nod_arg[e_cur_stmt_into] = PASS1_node(dsqlScratch, input->nod_arg[e_cur_stmt_into]);
 		}
 		return input;
 
@@ -2063,55 +1771,6 @@ static dsql_nod* explode_fields(dsql_rel* relation)
 	}
 
 	return MAKE_list(stack);
-}
-
-
-/**
-
- 	explode_outputs
-
-    @brief	Generate a parameter list to correspond to procedure outputs.
-
-
-    @param dsqlScratch
-    @param procedure
-
- **/
-static dsql_nod* explode_outputs( DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(procedure, dsql_type_prc);
-
-	const SSHORT count = procedure->prc_out_count;
-	dsql_nod* node = MAKE_node(nod_list, count);
-	dsql_nod** ptr = node->nod_arg;
-	for (const dsql_fld* field = procedure->prc_outputs; field; field = field->fld_next, ptr++)
-	{
-		DEV_BLKCHK(field, dsql_type_fld);
-		DEV_BLKCHK(*ptr, dsql_type_nod);
-
-		ParameterNode* paramNode = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(
-			*tdbb->getDefaultPool());
-
-		dsql_nod* p_node = MAKE_node(nod_class_exprnode, 1);
-		p_node->nod_count = 0;
-		p_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
-
-		*ptr = p_node;
-		dsql_par* parameter = paramNode->dsqlParameter = MAKE_parameter(
-			dsqlScratch->getStatement()->getReceiveMsg(),
-			true, true, 0, NULL);
-		paramNode->dsqlParameterIndex = parameter->par_index;
-
-		MAKE_desc_from_field(&parameter->par_desc, field);
-		parameter->par_name = parameter->par_alias = field->fld_name.c_str();
-		parameter->par_rel_name = procedure->prc_name.identifier.c_str();
-		parameter->par_owner_name = procedure->prc_owner.c_str();
-	}
-
-	return node;
 }
 
 
@@ -2864,7 +2523,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	DEV_BLKCHK(string, dsql_type_str);
 
 	// this function must throw an error if no cursor was found
-	const dsql_nod* node = PASS1_cursor_name(dsqlScratch, string, NOD_CURSOR_ALL, true);
+	const dsql_nod* node = PASS1_cursor_name(dsqlScratch, string->str_data, NOD_CURSOR_ALL, true);
 	fb_assert(node);
 
 	const dsql_nod* rse = node->nod_arg[e_cur_rse];
@@ -2939,13 +2598,13 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	@param existence_flag
 
  **/
-dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const dsql_str* string,
+dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const MetaName& string,
 	USHORT mask, bool existence_flag)
 {
 	DEV_BLKCHK(string, dsql_type_str);
 	dsql_nod* cursor = NULL;
 
-	if (!strlen(string->str_data))
+	if (string.isEmpty())
 	{
 		if (existence_flag)
 		{
@@ -2965,7 +2624,7 @@ dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const dsql_str* st
 	{
 		cursor = itr.object();
 		const dsql_str* cname = (dsql_str*) cursor->nod_arg[e_cur_name];
-		if (!strcmp(string->str_data, cname->str_data) && (cursor->nod_flags & mask))
+		if (strcmp(string.c_str(), cname->str_data) == 0 && (cursor->nod_flags & mask))
 			break;
 		cursor = NULL;
 	}
@@ -2974,13 +2633,13 @@ dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const dsql_str* st
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_found) << Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_not_found) << Arg::Str(string.c_str()));
 	}
 	else if (cursor && !existence_flag)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_exists) << Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_exists) << Arg::Str(string.c_str()));
 	}
 
 	return cursor;
@@ -4647,12 +4306,6 @@ dsql_nod* PASS1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		break;
 	case nod_continue:
 		label = input->nod_arg[e_continue_label];
-		break;
-	case nod_exec_into:
-		label = input->nod_arg[e_exec_into_label];
-		break;
-	case nod_exec_stmt:
-		label = input->nod_arg[e_exec_stmt_label];
 		break;
 	case nod_while:
 		label = input->nod_arg[e_while_label];
@@ -8282,9 +7935,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_execute:
 		verb = "execute";
 		break;
-	case nod_exec_procedure:
-		verb = "execute procedure";
-		break;
 	case nod_flag:
 		verb = "flag";
 		break;
@@ -8614,9 +8264,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_udf_param:
 		verb = "udf_param";
 		break;
-	case nod_exec_sql:
-		verb = "exec_sql";
-		break;
 	case nod_for_update:
 		verb = "for_update";
 		break;
@@ -8634,11 +8281,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_derived_table:
 		verb = "derived_table";
-		break;
-
-	// CVC: This node seems obsolete.
-	case nod_exec_into:
-		verb = "exec_into";
 		break;
 
 	case nod_breakleave:
@@ -8737,19 +8379,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		trace_line("%s\"\n", string->str_data);
 		return;
 
-	case nod_cursor_open:
-		verb = "cursor_open";
-		break;
-	case nod_cursor_fetch:
-		verb = "cursor_fetch";
-		break;
-	case nod_cursor_close:
-		verb = "cursor_close";
-		break;
-	case nod_fetch_scroll:
-		verb = "fetch_scroll";
-		break;
-
 	case nod_query_spec:
 		verb = "query_spec";
 		break;
@@ -8821,10 +8450,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_del_user:
 		verb = "del_user";
-		break;
-
-	case nod_exec_stmt:
-		verb = "exec_stmt";
 		break;
 
 	case nod_class_exprnode:

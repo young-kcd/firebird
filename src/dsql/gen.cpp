@@ -66,10 +66,8 @@ using namespace Firebird;
 static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node);
 static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_map(DsqlCompilerScratch*, dsql_map*);
-static inline void gen_optional_expr(DsqlCompilerScratch*, const UCHAR code, dsql_nod*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_relation(DsqlCompilerScratch*, dsql_ctx*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
@@ -675,7 +673,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_modify:
 	case nod_modify_current:
 	case nod_store:
-	case nod_exec_procedure:
 		gen_statement(dsqlScratch, node);
 		return;
 
@@ -688,39 +685,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 			gen_error_condition(dsqlScratch, *ptr);
 		}
 		GEN_statement(dsqlScratch, node->nod_arg[e_err_action]);
-		return;
-
-	case nod_exec_sql:
-		dsqlScratch->appendUChar(blr_exec_sql);
-		GEN_expr(dsqlScratch, node->nod_arg[e_exec_sql_stmnt]);
-		return;
-
-	case nod_exec_into:
-		if (node->nod_arg[e_exec_into_block])
-		{
-			dsqlScratch->appendUChar(blr_label);
-			dsqlScratch->appendUChar((int) (IPTR) node->nod_arg[e_exec_into_label]->nod_arg[e_label_number]);
-		}
-		dsqlScratch->appendUChar(blr_exec_into);
-		temp = node->nod_arg[e_exec_into_list];
-		dsqlScratch->appendUShort(temp->nod_count);
-		GEN_expr(dsqlScratch, node->nod_arg[e_exec_into_stmnt]);
-		if (node->nod_arg[e_exec_into_block])
-		{
-			dsqlScratch->appendUChar(0); // Non-singleton
-			GEN_statement(dsqlScratch, node->nod_arg[e_exec_into_block]);
-		}
-		else
-			dsqlScratch->appendUChar(1); // Singleton
-
-		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-		{
-			GEN_expr(dsqlScratch, *ptr);
-		}
-		return;
-
-	case nod_exec_stmt:
-		gen_exec_stmt(dsqlScratch, node);
 		return;
 
 	case nod_breakleave:
@@ -774,59 +738,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		end = ptr + temp->nod_count;
 		while (ptr < end) {
 			GEN_expr(dsqlScratch, *ptr++);
-		}
-		return;
-
-	case nod_cursor_open:
-	case nod_cursor_close:
-	case nod_cursor_fetch:
-		{
-			const dsql_nod* scroll = node->nod_arg[e_cur_stmt_scroll];
-			// op-code
-			dsqlScratch->appendUChar(blr_cursor_stmt);
-			if (node->nod_type == nod_cursor_open)
-				dsqlScratch->appendUChar(blr_cursor_open);
-			else if (node->nod_type == nod_cursor_close)
-				dsqlScratch->appendUChar(blr_cursor_close);
-			else if (scroll)
-				dsqlScratch->appendUChar(blr_cursor_fetch_scroll);
-			else
-				dsqlScratch->appendUChar(blr_cursor_fetch);
-			// cursor reference
-			dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
-			dsqlScratch->appendUShort((int) (IPTR) cursor->nod_arg[e_cur_number]);
-			// scrolling
-			if (scroll)
-			{
-				dsqlScratch->appendUChar(ExprNode::as<LiteralNode>(scroll->nod_arg[0])->getSlong());
-
-				if (scroll->nod_arg[1])
-					GEN_expr(dsqlScratch, scroll->nod_arg[1]);
-				else
-					dsqlScratch->appendUChar(blr_null);
-			}
-			// assignment
-			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
-			if (list_into)
-			{
-				dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
-				if (list->nod_count != list_into->nod_count)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
-							  Arg::Gds(isc_dsql_count_mismatch));
-				}
-				dsqlScratch->appendUChar(blr_begin);
-				ptr = list->nod_arg;
-				end = ptr + list->nod_count;
-				dsql_nod** ptr_to = list_into->nod_arg;
-				while (ptr < end)
-				{
-					dsqlScratch->appendUChar(blr_assignment);
-					GEN_expr(dsqlScratch, *ptr++);
-					GEN_expr(dsqlScratch, *ptr_to++);
-				}
-				dsqlScratch->appendUChar(blr_end);
-			}
 		}
 		return;
 
@@ -1133,109 +1044,6 @@ static void gen_error_condition( DsqlCompilerScratch* dsqlScratch, const dsql_no
 
 /**
 
- 	gen_exec_stmt
-
-    @brief	Generate blr for the EXECUTE STATEMENT clause
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_exec_stmt(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	if (node->nod_arg[e_exec_stmt_proc_block])
-	{
-		dsqlScratch->appendUChar(blr_label);
-		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_exec_stmt_label]->nod_arg[e_label_number]);
-	}
-
-	dsqlScratch->appendUChar(blr_exec_stmt);
-
-	// counts of input and output parameters
-	const dsql_nod* temp = node->nod_arg[e_exec_stmt_inputs];
-	if (temp)
-	{
-		dsqlScratch->appendUChar(blr_exec_stmt_inputs);
-		dsqlScratch->appendUShort(temp->nod_count);
-	}
-
-	temp = node->nod_arg[e_exec_stmt_outputs];
-	if (temp)
-	{
-		dsqlScratch->appendUChar(blr_exec_stmt_outputs);
-		dsqlScratch->appendUShort(temp->nod_count);
-	}
-
-	// query expression
-	dsqlScratch->appendUChar(blr_exec_stmt_sql);
-	GEN_expr(dsqlScratch, node->nod_arg[e_exec_stmt_sql]);
-
-	// proc block body
-	dsql_nod* temp2 = node->nod_arg[e_exec_stmt_proc_block];
-	if (temp2)
-	{
-		dsqlScratch->appendUChar(blr_exec_stmt_proc_block);
-		GEN_statement(dsqlScratch, temp2);
-	}
-
-	// external data source, user, password and role
-	gen_optional_expr(dsqlScratch, blr_exec_stmt_data_src, node->nod_arg[e_exec_stmt_data_src]);
-	gen_optional_expr(dsqlScratch, blr_exec_stmt_user, node->nod_arg[e_exec_stmt_user]);
-	gen_optional_expr(dsqlScratch, blr_exec_stmt_pwd, node->nod_arg[e_exec_stmt_pwd]);
-	gen_optional_expr(dsqlScratch, blr_exec_stmt_role, node->nod_arg[e_exec_stmt_role]);
-
-	// dsqlScratch's transaction behavior
-	temp = node->nod_arg[e_exec_stmt_tran];
-	if (temp)
-	{
-		dsqlScratch->appendUChar(blr_exec_stmt_tran_clone); // transaction parameters equal to current transaction
-		dsqlScratch->appendUChar((UCHAR)(IPTR) temp->nod_flags);
-	}
-
-	// inherit caller's privileges ?
-	if (node->nod_arg[e_exec_stmt_privs]) {
-		dsqlScratch->appendUChar(blr_exec_stmt_privs);
-	}
-
-	// inputs
-	temp = node->nod_arg[e_exec_stmt_inputs];
-	if (temp)
-	{
-		const dsql_nod* const* ptr = temp->nod_arg;
-		const bool haveNames = ((*ptr)->nod_arg[e_named_param_name] != 0);
-		if (haveNames)
-			dsqlScratch->appendUChar(blr_exec_stmt_in_params2);
-		else
-			dsqlScratch->appendUChar(blr_exec_stmt_in_params);
-
-		for (const dsql_nod* const* end = ptr + temp->nod_count; ptr < end; ptr++)
-		{
-			if (haveNames)
-			{
-				const dsql_str* name = (dsql_str*) (*ptr)->nod_arg[e_named_param_name];
-				dsqlScratch->appendNullString(name->str_data);
-			}
-			GEN_expr(dsqlScratch, (*ptr)->nod_arg[e_named_param_expr]);
-		}
-	}
-
-	// outputs
-	temp = node->nod_arg[e_exec_stmt_outputs];
-	if (temp)
-	{
-		dsqlScratch->appendUChar(blr_exec_stmt_out_params);
-		for (size_t i = 0; i < temp->nod_count; ++i) {
-			GEN_expr(dsqlScratch, temp->nod_arg[i]);
-		}
-	}
-
-	dsqlScratch->appendUChar(blr_end);
-}
-
-
-/**
-
  	gen_join_rse
 
     @brief	Generate a record selection expression
@@ -1301,15 +1109,6 @@ static void gen_map( DsqlCompilerScratch* dsqlScratch, dsql_map* map)
 	{
 		dsqlScratch->appendUShort(temp->map_position);
 		GEN_expr(dsqlScratch, temp->map_node);
-	}
-}
-
-static void gen_optional_expr(DsqlCompilerScratch* dsqlScratch, const UCHAR code, dsql_nod* node)
-{
-	if (node)
-	{
-		dsqlScratch->appendUChar(code);
-		GEN_expr(dsqlScratch, node);
 	}
 }
 
@@ -2025,48 +1824,6 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		{
 			dsqlScratch->appendUChar(blr_erase);
 			GEN_stuff_context(dsqlScratch, context);
-		}
-		break;
-
-	case nod_exec_procedure:
-		if (node->nod_arg[e_exe_package])
-		{
-			dsqlScratch->appendUChar(blr_exec_proc2);
-			dsqlScratch->appendMetaString(((dsql_str*) node->nod_arg[e_exe_package])->str_data);
-		}
-		else
-			dsqlScratch->appendUChar(blr_exec_proc);
-
-		name = (dsql_str*) node->nod_arg[e_exe_procedure];
-		dsqlScratch->appendMetaString(name->str_data);
-
-		// Input parameters
-		if ( (temp = node->nod_arg[e_exe_inputs]) )
-		{
-			dsqlScratch->appendUShort(temp->nod_count);
-			dsql_nod** ptr = temp->nod_arg;
-			const dsql_nod* const* end = ptr + temp->nod_count;
-			while (ptr < end)
-			{
-				GEN_expr(dsqlScratch, *ptr++);
-			}
-		}
-		else {
-			dsqlScratch->appendUShort(0);
-		}
-		// Output parameters
-		if ( ( temp = node->nod_arg[e_exe_outputs]) )
-		{
-			dsqlScratch->appendUShort(temp->nod_count);
-			dsql_nod** ptr = temp->nod_arg;
-			const dsql_nod* const* end = ptr + temp->nod_count;
-			while (ptr < end)
-			{
-				GEN_expr(dsqlScratch, *ptr++);
-			}
-		}
-		else {
-			dsqlScratch->appendUShort(0);
 		}
 		break;
 

@@ -32,7 +32,7 @@ namespace Jrd
 void PASS1_ambiguity_check(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, const Jrd::DsqlContextStack&);
 void PASS1_check_unique_fields_names(Jrd::StrArray& names, const Jrd::dsql_nod* fields);
 Jrd::dsql_nod* PASS1_compose(Jrd::dsql_nod*, Jrd::dsql_nod*, UCHAR);
-Jrd::dsql_nod* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, USHORT, bool);
+Jrd::dsql_nod* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, USHORT, bool);
 void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label2(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);

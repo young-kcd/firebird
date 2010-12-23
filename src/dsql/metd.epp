@@ -1097,7 +1097,7 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 
 
 dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScratch,
-	const dsql_str* name, const dsql_str* package)
+	const QualifiedName& name)
 {
 /**************************************
  *
@@ -1116,8 +1116,6 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	validateTransaction(transaction);
 
 	dsql_dbb* dbb = transaction->getDsqlAttachment();
-	QualifiedName metaName(MetaName(name->str_data, name->str_length),
-		(package ? MetaName(package->str_data, package->str_length) : ""));
 
 	// ASF: I've removed the code where we verify if the procedure being looked up is the one being
 	// defined (dsqlScratch->procedure). This code is totally incorrect, not considering
@@ -1153,6 +1151,8 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 	//
 	// I hope for a solution, involving savepoint logic.
 
+	QualifiedName metaName(name);
+
 	bool maybeUnqualified = dsqlScratch->package.hasData() && metaName.package.isEmpty();
 	if (maybeUnqualified)
 		metaName.package = dsqlScratch->package;
@@ -1182,7 +1182,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 
 		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE transaction)
 			X IN RDB$PROCEDURES
-			WITH X.RDB$PROCEDURE_NAME EQ name->str_data AND
+			WITH X.RDB$PROCEDURE_NAME EQ metaName.identifier.c_str() AND
 				 X.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 		{
 			fb_utils::exact_name(X.RDB$OWNER_NAME);
@@ -1221,7 +1221,7 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			PR IN RDB$PROCEDURE_PARAMETERS
 			CROSS FLD IN RDB$FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE AND
-				 PR.RDB$PROCEDURE_NAME EQ name->str_data AND
+				 PR.RDB$PROCEDURE_NAME EQ metaName.identifier.c_str() AND
 				 PR.RDB$PARAMETER_TYPE = type AND
 				 PR.RDB$PACKAGE_NAME EQUIV NULLIF(metaName.package.c_str(), '')
 			SORTED BY DESCENDING PR.RDB$PARAMETER_NUMBER

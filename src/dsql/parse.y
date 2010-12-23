@@ -649,6 +649,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ExecBlockNode* execBlockNode;
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
+	Jrd::CursorStmtNode* cursorStmtNode;
+	Jrd::ExecStatementNode* execStatementNode;
 }
 
 %type <legacyNode> access_mode access_type alias_list
@@ -697,19 +699,23 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> end_default err errors event_argument_opt exception_clause
 %type <legacyNode> excp_hndl_statement excp_hndl_statements
-%type <legacyNode> exec_function exec_into exec_procedure exec_sql exec_stmt_inputs
-%type <legacyNode> exec_stmt_option exec_stmt_options exec_stmt_options_list
-%type <legacyNode> ext_datasrc ext_privs ext_pwd ext_role ext_tran ext_user extra_indices_opt
+%type <legacyNode> exec_function exec_procedure
+%type <legacyNode> extra_indices_opt
 %type <legacyNode> execute_privilege
 %type <legacyStr>  end_trigger entry_op
 %type <pathNamePtr> external_file
+%type <execStatementNode> exec_into exec_sql
+%type exec_stmt_option(<execStatementNode>) exec_stmt_options(<execStatementNode>)
+%type exec_stmt_options_list(<execStatementNode>) exec_stmt_inputs(<execStatementNode>)
 
-%type <legacyNode> fetch_cursor fetch_opt fetch_scroll_opt file1 file_clause file_desc file_desc1
+%type <legacyNode> fetch_cursor file1 file_clause file_desc file_desc1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause
-%type <legacyNode> float_type for_exec_into for_select for_update_clause for_update_list from_clause
+%type <legacyNode> float_type for_select for_update_clause for_update_list from_clause
 %type <legacyNode> from_list full_proc_block full_proc_block_body
 %type <legacyStr>  firstname_opt
+%type fetch_scroll(<cursorStmtNode>)
 %type <int32Val>   first_file_length
+%type <execStatementNode> for_exec_into
 
 %type <legacyNode> generated_always_clause grant grant_option granted_by granted_by_text grantee grantee_list
 %type <legacyNode> grantor group_by_item group_by_list group_clause gtt_recreate_clause
@@ -739,13 +745,15 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> merge_when_clause merge_when_matched_clause merge_when_not_matched_clause
 %type <legacyStr>  middlename_opt module_op
 
-%type <legacyNode> named_columns_join named_param named_params_list national_character_keyword
+%type <legacyNode> named_columns_join national_character_keyword
 %type <legacyNode> national_character_type natural_join
 %type <legacyNode> non_array_type
 %type <legacyNode> non_charset_simple_type non_reserved_word non_role_grantee_list
-%type <legacyNode> not_named_param not_named_params_list null_constraint
+%type <legacyNode> null_constraint
 %type <legacyNode> nulls_clause nulls_placement numeric_type
 %type <int32Val>   neg_short_integer nonneg_short_integer
+%type named_param(<execStatementNode>) named_params_list(<execStatementNode>)
+%type not_named_param(<execStatementNode>) not_named_params_list(<execStatementNode>)
 
 %type <legacyNode> open_cursor opt_snapshot optional_retain
 %type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
@@ -2337,7 +2345,9 @@ simple_proc_statement	: assignment
 		| singleton_select
 		| exec_procedure
 		| exec_sql
+			{ $$ = makeClassNode($1); }
 		| exec_into
+			{ $$ = makeClassNode($1); }
 		| exec_function
 		| excp_statement
 			{ $$ = makeClassNode($1); }
@@ -2363,6 +2373,7 @@ complex_proc_statement
 	| while
 	| for_select
 	| for_exec_into
+		{ $$ = makeClassNode($1); }
 	;
 
 in_autonomous_transaction
@@ -2402,121 +2413,119 @@ for_select
 	;
 
 exec_sql
-	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
+	: EXECUTE STATEMENT
+			{ $<execStatementNode>$ = newNode<ExecStatementNode>(); }
+			exec_stmt_inputs($<execStatementNode>3) exec_stmt_options($<execStatementNode>3)
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, NULL, make_list($4),
-					NULL, NULL, NULL, NULL, NULL, NULL);
+			$$ = $<execStatementNode>3;
 		}
 	;
 
 exec_into
-	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
-			INTO variable_list
+	: exec_sql INTO variable_list
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list($6), NULL, NULL, make_list($4),
-					NULL, NULL, NULL, NULL, NULL, NULL);
+			$$ = $<execStatementNode>1;
+			$$->dsqlOutputs = make_list($3);
 		}
 	;
 
 for_exec_into
-	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
-			INTO variable_list
-			DO proc_block
+	: label_opt FOR exec_into DO proc_block
 		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count),
-					($5)->nod_arg[0], ($5)->nod_arg[1], make_list($8), $10, $1, make_list($6),
-					NULL, NULL, NULL, NULL, NULL, NULL);
+			$$ = $<execStatementNode>3;
+			$$->dsqlLabel = $1;
+			$$->dsqlInnerStmt = $5;
 		}
 	;
 
-exec_stmt_inputs
+exec_stmt_inputs($execStatementNode)
 	: value
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $1, NULL); }
-	| '(' value ')' '(' named_params_list ')'
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
-	| '(' value ')' '(' not_named_params_list ')'
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
+		{ $execStatementNode->dsqlSql = $1; }
+	| '(' value ')' '(' named_params_list($execStatementNode) ')'
+		{
+			$execStatementNode->dsqlSql = $2;
+			$execStatementNode->dsqlInputs = make_list($execStatementNode->dsqlInputs);
+		}
+	| '(' value ')' '(' not_named_params_list($execStatementNode) ')'
+		{
+			$execStatementNode->dsqlSql = $2;
+			$execStatementNode->dsqlInputs = make_list($execStatementNode->dsqlInputs);
+		}
 	;
 
-named_params_list
-	: named_param
-	| named_params_list ',' named_param
-		{ $$ = make_node (nod_list, 2, $1, $3); }
+named_params_list($execStatementNode)
+	: named_param($execStatementNode)
+	| named_params_list ',' named_param($execStatementNode)
 	;
 
-named_param
+named_param($execStatementNode)
 	: symbol_variable_name BIND_PARAM value
-		  { $$ = make_node (nod_named_param, e_named_param_count, $1, $3); }
+		{
+			if (!$execStatementNode->inputNames)
+				$execStatementNode->inputNames = FB_NEW(getPool()) EDS::ParamNames(getPool());
+
+			$execStatementNode->inputNames->add(
+				FB_NEW(getPool()) string(getPool(), toString((dsql_str*) $1)));
+
+			if ($execStatementNode->dsqlInputs)
+			{
+				$execStatementNode->dsqlInputs = make_node(nod_list, 2,
+					$execStatementNode->dsqlInputs, $3);
+			}
+			else
+				$execStatementNode->dsqlInputs = $3;
+		}
 	;
 
-not_named_params_list
-	: not_named_param
-	| not_named_params_list ',' not_named_param
-		{ $$ = make_node (nod_list, 2, $1, $3); }
+not_named_params_list($execStatementNode)
+	: not_named_param($execStatementNode)
+	| not_named_params_list ',' not_named_param($execStatementNode)
 	;
 
-not_named_param
+not_named_param($execStatementNode)
 	: value
-		{ $$ = make_node (nod_named_param, e_named_param_count, NULL, $1); }
+		{
+			if ($execStatementNode->dsqlInputs)
+			{
+				$execStatementNode->dsqlInputs = make_node(nod_list, 2,
+					$execStatementNode->dsqlInputs, $1);
+			}
+			else
+				$execStatementNode->dsqlInputs = $1;
+		}
 	;
 
-exec_stmt_options
-	: exec_stmt_options_list
-	|
-		{ $$ = NULL; }
+exec_stmt_options($execStatementNode)
+	:
+	| exec_stmt_options_list($execStatementNode)
 	;
 
-exec_stmt_options_list
-	: exec_stmt_options_list exec_stmt_option
-		{ $$ = make_node (nod_list, 2, $1, $2); }
-	| exec_stmt_option
+exec_stmt_options_list($execStatementNode)
+	: exec_stmt_options_list exec_stmt_option($execStatementNode)
+	| exec_stmt_option($execStatementNode)
 	;
 
-exec_stmt_option
-	: ext_datasrc
-	| ext_user
-	| ext_pwd
-	| ext_role
-	| ext_tran
-	| ext_privs
-	;
-
-ext_datasrc
+exec_stmt_option($execStatementNode)
 	: ON EXTERNAL DATA SOURCE value
-		{ $$ = make_node (nod_exec_stmt_datasrc, 1, $5); }
+		{ setClause($execStatementNode->dsqlDataSource, "EXTERNAL DATA SOURCE", $5); }
 	| ON EXTERNAL value
-		{ $$ = make_node (nod_exec_stmt_datasrc, 1, $3); }
-	;
-
-ext_user
-	: AS USER value
-		{ $$ = make_node (nod_exec_stmt_user, 1, $3); }
-	;
-
-ext_pwd
-	: PASSWORD value
-		{ $$ = make_node (nod_exec_stmt_pwd, 1, $2); }
-	;
-
-ext_role
-	: ROLE value
-		{ $$ = make_node (nod_exec_stmt_role, 1, $2); }
-	;
-
-ext_tran
-	: WITH AUTONOMOUS TRANSACTION
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_AUTONOMOUS, 1, NULL); }
+		{ setClause($execStatementNode->dsqlDataSource, "EXTERNAL DATA SOURCE", $3); }
+	| AS USER value
+		{ setClause($execStatementNode->dsqlUserName, "USER", $3); }
+	| PASSWORD value
+		{ setClause($execStatementNode->dsqlPassword, "PASSWORD", $2); }
+	| ROLE value
+		{ setClause($execStatementNode->dsqlRole, "ROLE", $2); }
+	| WITH AUTONOMOUS TRANSACTION
+		{ setClause($execStatementNode->traScope, "TRANSACTION", EDS::traAutonomous); }
 	| WITH COMMON TRANSACTION
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
-	// | WITH TWO_PHASE TRANSACTION
-	//		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_2PC, 1, NULL); }
-	;
-
-ext_privs
-	: WITH CALLER PRIVILEGES
-		{ $$ = make_node (nod_exec_stmt_privs, 1, NULL); }
+		{ setClause($execStatementNode->traScope, "TRANSACTION", EDS::traCommon); }
+	| WITH CALLER PRIVILEGES
+		{ setClause($execStatementNode->useCallerPrivs, "CALLER PRIVILEGES"); }
+	/*
+	| WITH TWO_PHASE TRANSACTION
+		{ setClause($execStatementNode->traScope, "TRANSACTION", EDS::traTwoPhase); }
+	*/
 	;
 
 if_then_else
@@ -2641,44 +2650,49 @@ cursor_statement	: open_cursor
 	| close_cursor
 	;
 
-open_cursor	: OPEN symbol_cursor_name
-		{ $$ = make_node (nod_cursor_open, (int) e_cur_stmt_count, $2, NULL, NULL); }
+open_cursor
+	: OPEN symbol_cursor_name
+		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_open, toName($2))); }
 	;
 
-close_cursor	: CLOSE symbol_cursor_name
-		{ $$ = make_node (nod_cursor_close, (int) e_cur_stmt_count, $2, NULL, NULL); }
+close_cursor
+	: CLOSE symbol_cursor_name
+		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_close, toName($2))); }
 	;
 
-fetch_cursor	: FETCH fetch_opt symbol_cursor_name INTO variable_list
-		{ $$ = make_node (nod_cursor_fetch, (int) e_cur_stmt_count, $3, $2, make_list ($5)); }
+fetch_cursor
+	: FETCH
+			{ $<cursorStmtNode>$ = newNode<CursorStmtNode>(blr_cursor_fetch_scroll); }
+			fetch_scroll($<cursorStmtNode>2) FROM symbol_cursor_name INTO variable_list
+		{
+			CursorStmtNode* cursorStmt = $<cursorStmtNode>2;
+			cursorStmt->dsqlName = toName($5);
+			cursorStmt->dsqlIntoStmt = make_list($7);
+			$$ = makeClassNode(cursorStmt);
+		}
+	| FETCH symbol_cursor_name INTO variable_list
+		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_fetch, toName($2), make_list($4))); }
 	;
 
-fetch_opt
-	: fetch_scroll_opt FROM
-		{ $$ = $1; }
-	|
-		{ $$ = NULL; }
-	;
-
-fetch_scroll_opt
+fetch_scroll($cursorStmtNode)
 	: FIRST
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_bof), NULL); }
+		{ $cursorStmtNode->scrollOp = blr_scroll_bof; }
 	| LAST
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_eof), NULL); }
+		{ $cursorStmtNode->scrollOp = blr_scroll_eof; }
 	| PRIOR
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_backward), NULL); }
+		{ $cursorStmtNode->scrollOp = blr_scroll_backward; }
 	| NEXT
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_forward), NULL); }
+		{ $cursorStmtNode->scrollOp = blr_scroll_forward; }
 	| KW_ABSOLUTE value
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_absolute), $2); }
+		{
+			$cursorStmtNode->scrollOp = blr_scroll_absolute;
+			$cursorStmtNode->dsqlScrollExpr = $2;
+		}
 	| KW_RELATIVE value
-		{ $$ = make_node (nod_fetch_scroll, 2,
-				MAKE_const_slong (blr_scroll_relative), $2); }
+		{
+			$cursorStmtNode->scrollOp = blr_scroll_relative;
+			$cursorStmtNode->dsqlScrollExpr = $2;
+		}
 	;
 
 
@@ -2686,9 +2700,9 @@ fetch_scroll_opt
 
 exec_procedure
 	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs_opt
-		{ $$ = make_node (nod_exec_procedure, (int) e_exe_count, $3, $4, $5, NULL); }
+		{ $$ = makeClassNode(newNode<ExecProcedureNode>(QualifiedName(toName($3)), $4, $5)); }
 	| EXECUTE PROCEDURE symbol_package_name '.' symbol_procedure_name proc_inputs proc_outputs_opt
-		{ $$ = make_node (nod_exec_procedure, (int) e_exe_count, $5, $6, $7, $3); }
+		{ $$ = makeClassNode(newNode<ExecProcedureNode>(QualifiedName(toName($5), toName($3)), $6, $7)); }
 	;
 
 proc_inputs	: value_list

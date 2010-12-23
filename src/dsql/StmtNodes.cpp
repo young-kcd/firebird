@@ -48,6 +48,7 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../dsql/ddl_proto.h"
+#include "../dsql/metd_proto.h"
 #include "../jrd/vio_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
@@ -704,9 +705,7 @@ static RegisterNode<CursorStmtNode> regCursorStmtNode(blr_cursor_stmt);
 
 DmlNode* CursorStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
-	CursorStmtNode* node = FB_NEW(pool) CursorStmtNode(pool);
-
-	node->cursorOp = csb->csb_blr_reader.getByte();
+	CursorStmtNode* node = FB_NEW(pool) CursorStmtNode(pool, csb->csb_blr_reader.getByte());
 	node->cursorNumber = csb->csb_blr_reader.getWord();
 
 	switch (node->cursorOp)
@@ -735,6 +734,43 @@ DmlNode* CursorStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 
 CursorStmtNode* CursorStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	// Verify if we're in an autonomous transaction.
+	if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK)
+	{
+		const char* stmt = NULL;
+
+		switch (cursorOp)
+		{
+			case blr_cursor_open:
+				stmt = "OPEN CURSOR";
+				break;
+
+			case blr_cursor_close:
+				stmt = "CLOSE CURSOR";
+				break;
+
+			case blr_cursor_fetch:
+			case blr_cursor_fetch_scroll:
+				stmt = "FETCH CURSOR";
+				break;
+		}
+
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_unsupported_in_auto_trans) << Arg::Str(stmt));
+	}
+
+	// Resolve the cursor.
+	cursorNumber = (USHORT)(IPTR) PASS1_cursor_name(dsqlScratch, dsqlName, NOD_CURSOR_EXPLICIT,
+		true)->nod_arg[Dsql::e_cur_number];
+
+	// Process a scroll node, if exists.
+	if (dsqlScrollExpr)
+		dsqlScrollExpr = PASS1_node(dsqlScratch, dsqlScrollExpr);
+
+	// Process an assignment node, if exists.
+	if (dsqlIntoStmt)
+		dsqlIntoStmt = PASS1_node(dsqlScratch, dsqlIntoStmt);
+
 	return this;
 }
 
@@ -745,6 +781,57 @@ void CursorStmtNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_cursor_stmt);
+	dsqlScratch->appendUChar(cursorOp);	// open, close, fetch [scroll]
+	dsqlScratch->appendUShort(cursorNumber);
+
+	if (cursorOp == blr_cursor_fetch_scroll)
+	{
+		dsqlScratch->appendUChar(scrollOp);
+
+		if (dsqlScrollExpr)
+			GEN_expr(dsqlScratch, dsqlScrollExpr);
+		else
+			dsqlScratch->appendUChar(blr_null);
+	}
+
+	dsql_nod* cursor = NULL;
+
+	for (DsqlNodStack::iterator itr(dsqlScratch->cursors); !cursor && itr.hasData(); ++itr)
+	{
+		if ((USHORT)(IPTR) itr.object()->nod_arg[Dsql::e_cur_number] == cursorNumber)
+			cursor = itr.object();
+	}
+
+	fb_assert(cursor);
+
+	// Assignment.
+	dsql_nod* listInto = dsqlIntoStmt;
+
+	if (listInto)
+	{
+		dsql_nod* list = cursor->nod_arg[Dsql::e_cur_rse]->nod_arg[Dsql::e_rse_items];
+		if (list->nod_count != listInto->nod_count)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
+					  Arg::Gds(isc_dsql_count_mismatch));
+		}
+
+		dsqlScratch->appendUChar(blr_begin);
+
+		dsql_nod** ptr = list->nod_arg;
+		dsql_nod** end = ptr + list->nod_count;
+		dsql_nod** ptr_to = listInto->nod_arg;
+
+		while (ptr < end)
+		{
+			dsqlScratch->appendUChar(blr_assignment);
+			GEN_expr(dsqlScratch, *ptr++);
+			GEN_expr(dsqlScratch, *ptr_to++);
+		}
+
+		dsqlScratch->appendUChar(blr_end);
+	}
 }
 
 CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -1500,7 +1587,112 @@ DmlNode* ExecProcedureNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	dsql_prc* procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch, dsqlName);
+
+	if (!procedure)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_dsql_procedure_err) <<
+				  Arg::Gds(isc_random) <<
+				  Arg::Str(dsqlName.toString()));
+	}
+
+	if (!dsqlScratch->isPsql())
+	{
+		dsqlScratch->procedure = procedure;
+		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
+	}
+
+	ExecProcedureNode* node = FB_NEW(getPool()) ExecProcedureNode(getPool(), dsqlName);
+
+	if (node->dsqlName.package.isEmpty() && procedure->prc_name.package.hasData())
+		node->dsqlName.package = procedure->prc_name.package;
+
+	// Handle input parameters.
+
+	const USHORT count = dsqlInputs ? dsqlInputs->nod_count : 0;
+	if (count > procedure->prc_in_count || count < procedure->prc_in_count - procedure->prc_def_count)
+		ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(dsqlName.toString()));
+
+	node->dsqlInputs = PASS1_node(dsqlScratch, dsqlInputs);
+
+	if (count)
+	{
+		// Initialize this stack variable, and make it look like a node.
+		AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+
+		dsql_nod* const* ptr = node->dsqlInputs->nod_arg;
+
+		for (const dsql_fld* field = procedure->prc_inputs; *ptr; ++ptr, field = field->fld_next)
+		{
+			DEV_BLKCHK(field, dsql_type_fld);
+			DEV_BLKCHK(*ptr, dsql_type_nod);
+			MAKE_desc_from_field(&desc_node->nod_desc, field);
+			// PASS1_set_parameter_type(*ptr, &desc_node, false);
+			PASS1_set_parameter_type(dsqlScratch, *ptr, desc_node, false);
+		}
+	}
+
+	// Handle output parameters.
+
+	if (dsqlScratch->isPsql())
+	{
+		const USHORT outCount = dsqlOutputs ? dsqlOutputs->nod_count : 0;
+
+		if (outCount != procedure->prc_out_count)
+			ERRD_post(Arg::Gds(isc_prc_out_param_mismatch) << Arg::Str(dsqlName.toString()));
+
+		node->dsqlOutputs = PASS1_node(dsqlScratch, dsqlOutputs);
+	}
+	else
+	{
+		if (dsqlOutputs)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Token unknown
+					  Arg::Gds(isc_token_err) <<
+					  Arg::Gds(isc_random) << Arg::Str("RETURNING_VALUES"));
+		}
+
+		node->dsqlOutputs = explodeOutputs(dsqlScratch, dsqlScratch->procedure);
+	}
+
+	return node;
+}
+
+// Generate a parameter list to correspond to procedure outputs.
+dsql_nod* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure)
+{
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+	DEV_BLKCHK(procedure, dsql_type_prc);
+
+	const SSHORT count = procedure->prc_out_count;
+	dsql_nod* node = MAKE_node(Dsql::nod_list, count);
+	dsql_nod** ptr = node->nod_arg;
+
+	for (const dsql_fld* field = procedure->prc_outputs; field; field = field->fld_next, ++ptr)
+	{
+		DEV_BLKCHK(field, dsql_type_fld);
+		DEV_BLKCHK(*ptr, dsql_type_nod);
+
+		ParameterNode* paramNode = FB_NEW(getPool()) ParameterNode(getPool());
+
+		dsql_nod* p_node = MAKE_node(Dsql::nod_class_exprnode, 1);
+		p_node->nod_count = 0;
+		p_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
+
+		*ptr = p_node;
+		dsql_par* parameter = paramNode->dsqlParameter = MAKE_parameter(
+			dsqlScratch->getStatement()->getReceiveMsg(), true, true, 0, NULL);
+		paramNode->dsqlParameterIndex = parameter->par_index;
+
+		MAKE_desc_from_field(&parameter->par_desc, field);
+		parameter->par_name = parameter->par_alias = field->fld_name.c_str();
+		parameter->par_rel_name = procedure->prc_name.identifier.c_str();
+		parameter->par_owner_name = procedure->prc_owner.c_str();
+	}
+
+	return node;
 }
 
 void ExecProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
@@ -1510,6 +1702,56 @@ void ExecProcedureNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ExecProcedureNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	const dsql_msg* message = NULL;
+
+	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
+	{
+		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
+		{
+			dsqlScratch->appendUChar(blr_begin);
+			dsqlScratch->appendUChar(blr_send);
+			dsqlScratch->appendUChar(message->msg_number);
+		}
+	}
+
+	if (dsqlName.package.hasData())
+	{
+		dsqlScratch->appendUChar(blr_exec_proc2);
+		dsqlScratch->appendMetaString(dsqlName.package.c_str());
+	}
+	else
+		dsqlScratch->appendUChar(blr_exec_proc);
+
+	dsqlScratch->appendMetaString(dsqlName.identifier.c_str());
+
+	// Input parameters.
+	if (dsqlInputs)
+	{
+		dsqlScratch->appendUShort(dsqlInputs->nod_count);
+		dsql_nod** ptr = dsqlInputs->nod_arg;
+		const dsql_nod* const* end = ptr + dsqlInputs->nod_count;
+
+		while (ptr < end)
+			GEN_expr(dsqlScratch, *ptr++);
+	}
+	else
+		dsqlScratch->appendUShort(0);
+
+	// Output parameters.
+	if (dsqlOutputs)
+	{
+		dsqlScratch->appendUShort(dsqlOutputs->nod_count);
+		dsql_nod** ptr = dsqlOutputs->nod_arg;
+		const dsql_nod* const* end = ptr + dsqlOutputs->nod_count;
+
+		while (ptr < end)
+			GEN_expr(dsqlScratch, *ptr++);
+	}
+	else
+		dsqlScratch->appendUShort(0);
+
+	if (message)
+		dsqlScratch->appendUChar(blr_end);
 }
 
 ExecProcedureNode* ExecProcedureNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -1677,6 +1919,7 @@ static RegisterNode<ExecStatementNode> regExecStatementStmt(blr_exec_stmt);
 DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	ExecStatementNode* node = FB_NEW(pool) ExecStatementNode(pool);
+	node->traScope = EDS::traCommon;
 
 	switch (blrOp)
 	{
@@ -1809,9 +2052,57 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 	return node;
 }
 
-ExecStatementNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	ExecStatementNode* node = FB_NEW(getPool()) ExecStatementNode(getPool());
+
+	node->dsqlSql = PASS1_node(dsqlScratch, dsqlSql);
+	node->dsqlInputs = PASS1_node(dsqlScratch, dsqlInputs);
+	node->inputNames = inputNames;
+
+	// Check params names uniqueness, if present.
+
+	if (node->inputNames)
+	{
+		const size_t count = node->inputNames->getCount();
+		StrArray names(*getDefaultMemoryPool(), count);
+
+		for (size_t i = 0; i != count; ++i)
+		{
+			const string* name = (*node->inputNames)[i];
+
+			size_t pos;
+			if (names.find(name->c_str(), pos))
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+						  Arg::Gds(isc_dsql_duplicate_spec) << *name);
+			}
+
+			names.insert(pos, name->c_str());
+		}
+	}
+
+	node->dsqlOutputs = PASS1_node(dsqlScratch, dsqlOutputs);
+
+	if (dsqlInnerStmt)
+	{
+		++dsqlScratch->loopLevel;
+		node->dsqlLabel = PASS1_label2(dsqlScratch, NULL, dsqlLabel);
+		node->dsqlInnerStmt = PASS1_statement(dsqlScratch, dsqlInnerStmt);
+		--dsqlScratch->loopLevel;
+		dsqlScratch->labels.pop();
+	}
+
+	// Process various optional arguments.
+
+	node->dsqlDataSource = PASS1_node(dsqlScratch, dsqlDataSource);
+	node->dsqlUserName = PASS1_node(dsqlScratch, dsqlUserName);
+	node->dsqlPassword = PASS1_node(dsqlScratch, dsqlPassword);
+	node->dsqlRole = PASS1_node(dsqlScratch, dsqlRole);
+	node->traScope = traScope;
+	node->useCallerPrivs = useCallerPrivs;
+
+	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
 
 void ExecStatementNode::print(string& text, Array<dsql_nod*>& nodes) const
@@ -1821,6 +2112,127 @@ void ExecStatementNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	if (dsqlInnerStmt)
+	{
+		dsqlScratch->appendUChar(blr_label);
+		dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	}
+
+	// If no new features of EXECUTE STATEMENT is used, lets generate old BLR.
+	if (!dsqlDataSource && !dsqlUserName && !dsqlPassword && !dsqlRole && !useCallerPrivs &&
+		!dsqlInputs && !traScope)
+	{
+		if (dsqlOutputs)
+		{
+			dsqlScratch->appendUChar(blr_exec_into);
+			dsqlScratch->appendUShort(dsqlOutputs->nod_count);
+
+			GEN_expr(dsqlScratch, dsqlSql);
+
+			if (dsqlInnerStmt)
+			{
+				dsqlScratch->appendUChar(0); // Non-singleton.
+				GEN_statement(dsqlScratch, dsqlInnerStmt);
+			}
+			else
+				dsqlScratch->appendUChar(1); // Singleton.
+
+			for (size_t i = 0; i < dsqlOutputs->nod_count; ++i)
+				GEN_expr(dsqlScratch, dsqlOutputs->nod_arg[i]);
+		}
+		else
+		{
+			dsqlScratch->appendUChar(blr_exec_sql);
+			GEN_expr(dsqlScratch, dsqlSql);
+		}
+	}
+	else
+	{
+		dsqlScratch->appendUChar(blr_exec_stmt);
+
+		// Counts of input and output parameters.
+		if (dsqlInputs)
+		{
+			dsqlScratch->appendUChar(blr_exec_stmt_inputs);
+			dsqlScratch->appendUShort(dsqlInputs->nod_count);
+		}
+
+		if (dsqlOutputs)
+		{
+			dsqlScratch->appendUChar(blr_exec_stmt_outputs);
+			dsqlScratch->appendUShort(dsqlOutputs->nod_count);
+		}
+
+		// Query expression.
+		dsqlScratch->appendUChar(blr_exec_stmt_sql);
+		GEN_expr(dsqlScratch, dsqlSql);
+
+		// Proc block body.
+		if (dsqlInnerStmt)
+		{
+			dsqlScratch->appendUChar(blr_exec_stmt_proc_block);
+			GEN_statement(dsqlScratch, dsqlInnerStmt);
+		}
+
+		// External data source, user, password and role.
+		genOptionalExpr(dsqlScratch, blr_exec_stmt_data_src, dsqlDataSource);
+		genOptionalExpr(dsqlScratch, blr_exec_stmt_user, dsqlUserName);
+		genOptionalExpr(dsqlScratch, blr_exec_stmt_pwd, dsqlPassword);
+		genOptionalExpr(dsqlScratch, blr_exec_stmt_role, dsqlRole);
+
+		// dsqlScratch's transaction behavior.
+		if (traScope)
+		{
+			// Transaction parameters equal to current transaction.
+			dsqlScratch->appendUChar(blr_exec_stmt_tran_clone);
+			dsqlScratch->appendUChar(UCHAR(traScope));
+		}
+
+		// Inherit caller's privileges?
+		if (useCallerPrivs)
+			dsqlScratch->appendUChar(blr_exec_stmt_privs);
+
+		// Inputs.
+		if (dsqlInputs)
+		{
+			if (inputNames)
+				dsqlScratch->appendUChar(blr_exec_stmt_in_params2);
+			else
+				dsqlScratch->appendUChar(blr_exec_stmt_in_params);
+
+			dsql_nod* const* ptr = dsqlInputs->nod_arg;
+			string* const* name = inputNames ? inputNames->begin() : NULL;
+
+			for (const dsql_nod* const* end = ptr + dsqlInputs->nod_count; ptr != end; ++ptr, ++name)
+			{
+				if (inputNames)
+					dsqlScratch->appendNullString((*name)->c_str());
+
+				GEN_expr(dsqlScratch, *ptr);
+			}
+		}
+
+		// Outputs.
+		if (dsqlOutputs)
+		{
+			dsqlScratch->appendUChar(blr_exec_stmt_out_params);
+
+			for (size_t i = 0; i < dsqlOutputs->nod_count; ++i)
+				GEN_expr(dsqlScratch, dsqlOutputs->nod_arg[i]);
+		}
+
+		dsqlScratch->appendUChar(blr_end);
+	}
+}
+
+void ExecStatementNode::genOptionalExpr(DsqlCompilerScratch* dsqlScratch, const UCHAR code,
+	dsql_nod* node)
+{
+	if (node)
+	{
+		dsqlScratch->appendUChar(code);
+		GEN_expr(dsqlScratch, node);
+	}
 }
 
 ExecStatementNode* ExecStatementNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -2948,7 +3360,7 @@ StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (dsqlCursor)
 	{
 		fb_assert(dsqlCursor->nod_flags > 0);
-		PASS1_cursor_name(dsqlScratch, (dsql_str*) dsqlCursor->nod_arg[Dsql::e_cur_name],
+		PASS1_cursor_name(dsqlScratch, ((dsql_str*) dsqlCursor->nod_arg[Dsql::e_cur_name])->str_data,
 			NOD_CURSOR_ALL, false);
 		dsqlCursor->nod_arg[Dsql::e_cur_rse] = node->dsqlSelect;
 		dsqlCursor->nod_arg[Dsql::e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
