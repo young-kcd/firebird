@@ -1804,8 +1804,10 @@ static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebir
 	UCHAR* p = NULL;
 	SSHORT len = 0;
 	const dsc* dsc = node ? EVL_expr(tdbb, node) : NULL;
-	if (dsc && !(request->req_flags & req_null)) {
-		len = MOV_make_string2(tdbb, dsc, dsc->getTextType(), &p, buffer);
+	if (dsc && !(request->req_flags & req_null)) 
+	{
+		const Attachment* att = tdbb->getAttachment();
+		len = MOV_make_string2(tdbb, dsc, att->att_charset, &p, buffer);
 	}
 	str = Firebird::string((char*) p, len);
 	str.trim();
