@@ -1,3 +1,15 @@
+ 2010-12-23 18:42  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactored the DSQL support of cursor statements, execute procedure and execute statement
+
  2010-12-19 21:42  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/ExprNodes.cpp
