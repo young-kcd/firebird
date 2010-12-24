@@ -1,3 +1,7 @@
+ 2010-12-23 11:10  hvlad 
+   M src/jrd/exe.cpp
+Fixed bug CORE-3282 : EXECUTE STATEMENT parses the SQL text using wrong charset
+
  2010-12-20 07:05  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
