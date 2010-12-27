@@ -145,6 +145,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
+	Firebird::MetaName dsqlAlias;
 	dsql_nod* dsqlSource;
 	dsql_fld* dsqlField;
 	dsc castDesc;

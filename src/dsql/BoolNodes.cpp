@@ -1385,9 +1385,10 @@ BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratc
 
 static RegisterBoolNode<MissingBoolNode> regMissingBoolNode(blr_missing);
 
-MissingBoolNode::MissingBoolNode(MemoryPool& pool, dsql_nod* aArg)
+MissingBoolNode::MissingBoolNode(MemoryPool& pool, dsql_nod* aArg, bool aDsqlUnknown)
 	: TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>(pool),
 	  dsqlArg(aArg),
+	  dsqlUnknown(aDsqlUnknown),
 	  arg(NULL)
 {
 	addChildNode(dsqlArg, arg);
@@ -1412,6 +1413,15 @@ BoolExprNode* MissingBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		PASS1_node(dsqlScratch, dsqlArg));
 
 	PASS1_set_parameter_type(dsqlScratch, node->dsqlArg, NULL, false);
+
+	dsc desc;
+	MAKE_desc(dsqlScratch, &desc, node->dsqlArg);
+
+	if (dsqlUnknown && desc.dsc_dtype != dtype_boolean && !desc.isNull())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			Arg::Gds(isc_invalid_boolean_usage));
+	}
 
 	return node;
 }

@@ -2582,6 +2582,7 @@ static RegisterNode<CastNode> regCastNode(blr_cast);
 
 CastNode::CastNode(MemoryPool& pool, dsql_nod* aDsqlSource, dsql_fld* aDsqlField)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_CAST>(pool),
+	  dsqlAlias("CAST"),
 	  dsqlSource(aDsqlSource),
 	  dsqlField(aDsqlField),
 	  source(NULL),
@@ -2629,6 +2630,7 @@ void CastNode::print(string& text, Array<dsql_nod*>& nodes) const
 ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	CastNode* node = FB_NEW(getPool()) CastNode(getPool());
+	node->dsqlAlias = dsqlAlias;
 	node->dsqlSource = PASS1_node(dsqlScratch, dsqlSource);
 	node->dsqlField = dsqlField;
 
@@ -2645,7 +2647,7 @@ ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 void CastNode::setParameterName(dsql_par* parameter) const
 {
-	parameter->par_name = parameter->par_alias = "CAST";
+	parameter->par_name = parameter->par_alias = dsqlAlias;
 }
 
 bool CastNode::setParameterType(DsqlCompilerScratch* dsqlScratch,

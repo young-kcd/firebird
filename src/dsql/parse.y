@@ -5071,11 +5071,11 @@ null_predicate
 	: common_value IS KW_NULL
 		{ $$ = newNode<MissingBoolNode>($1); }
 	| common_value IS UNKNOWN
-		{ $$ = newNode<MissingBoolNode>($1); }
+		{ $$ = newNode<MissingBoolNode>($1, true); }
 	| common_value IS NOT KW_NULL
 		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
 	| common_value IS NOT UNKNOWN
-		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1))); }
+		{ $$ = newNode<NotBoolNode>(makeClassNode(newNode<MissingBoolNode>($1, true))); }
 	;
 
 
@@ -5933,8 +5933,18 @@ distinct_noise
 	;
 
 null_value
-	: KW_NULL	{ $$ = newNode<NullNode>(); }
-	| UNKNOWN	{ $$ = newNode<NullNode>(); }
+	: KW_NULL
+		{ $$ = newNode<NullNode>(); }
+	| UNKNOWN
+		{
+			dsql_fld* field = make_field(NULL);
+			field->fld_dtype = dtype_boolean;
+			field->fld_length = sizeof(UCHAR);
+
+			CastNode* castNode = newNode<CastNode>(makeClassNode(newNode<NullNode>()), field);
+			castNode->dsqlAlias = "CONSTANT";
+			$$ = castNode;
+		}
 	;
 
 

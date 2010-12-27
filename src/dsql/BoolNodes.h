@@ -121,7 +121,7 @@ public:
 class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
 {
 public:
-	MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL, bool aDsqlUnknown = false);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -141,6 +141,7 @@ public:
 
 public:
 	dsql_nod* dsqlArg;
+	bool dsqlUnknown;
 	NestConst<ValueExprNode> arg;
 };
 
