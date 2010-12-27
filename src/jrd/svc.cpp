@@ -1121,7 +1121,7 @@ void Service::shutdownServices()
 	unsigned int pos;
 	
 	// signal once for every still running service
-	for (pos = 0; pos < all.getCount(); )
+	for (pos = 0; pos < all.getCount(); pos++)
 		if (all[pos]->svc_flags & SVC_thd_running)
 			all[pos]->svc_detach_sem.release();
 	
