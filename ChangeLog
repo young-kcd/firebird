@@ -1,3 +1,11 @@
+ 2010-12-27 00:34  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/parse.y
+Make UNKNOWN a boolean value/test, and not something exactly like NULL
+
  2010-12-23 18:42  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
