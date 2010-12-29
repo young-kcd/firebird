@@ -1975,7 +1975,7 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 #ifdef WIN_NT
 		const int ok = FD_ISSET(n, &selct->slct_fdset);
 #else
-		if (n < 0 || n >= FD_SETSIZE) 
+		if (n < 0 || n >= FD_SETSIZE)
 		{
 			if (port->port_flags & PORT_disconnect)
 				continue;
@@ -2041,7 +2041,7 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 			{
 				if (port->port_state == rem_port::PENDING &&
 					// don't wait on still listening (not connected) async port
-					!(port->port_handle == INVALID_SOCKET && port->port_flags & PORT_async) )
+					!(port->port_handle == INVALID_SOCKET && (port->port_flags & PORT_async)))
  				{
 					// Adjust down the port's keepalive timer.
 

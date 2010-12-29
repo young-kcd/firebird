@@ -938,11 +938,13 @@ ULONG Service::totalCount()
 	MutexLockGuard guard(globalServicesMutex);
 	AllServices& all(allServices);
 	ULONG cnt = 0;
-	
+
 	// don't count already detached services
 	for (size_t i = 0; i < all.getCount(); i++)
+	{
 		if (!(all[i]->svc_flags & SVC_detached))
 			cnt++;
+	}
 
 	return cnt;
 }
@@ -979,8 +981,10 @@ void Service::shutdownServices()
 
 	// signal once for every still running service
 	for (pos = 0; pos < all.getCount(); pos++)
+	{
 		if (all[pos]->svc_flags & SVC_thd_running)
 			all[pos]->svc_detach_sem.release();
+	}
 
 	for (pos = 0; pos < all.getCount(); )
 	{

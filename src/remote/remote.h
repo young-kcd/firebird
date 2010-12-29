@@ -672,8 +672,8 @@ public:
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
-		port_dummy_timeout(0), /*port_status_vector(0),*/ port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET),
-		port_context(0), port_events_thread(0), port_events_shutdown(0),
+		port_dummy_timeout(0), /*port_status_vector(0),*/ port_handle(INVALID_SOCKET),
+		port_channel(INVALID_SOCKET), port_context(0), port_events_thread(0), port_events_shutdown(0),
 #ifdef WIN_NT
 		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
 #endif

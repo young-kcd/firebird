@@ -1510,48 +1510,50 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
  *
  **************************************/
 
-  try
-  {
-	ISC_STATUS_ARRAY status_vector;
-	success(status_vector);
-
-	Rdb* const rdb = port->port_context;
-	if (bad_db(status_vector, rdb))
+	try
 	{
-		port->send_response(send, 0, 0, status_vector, false);
-		return;
-	}
+		ISC_STATUS_ARRAY status_vector;
+		success(status_vector);
 
-	// This buffer is used by INET and WNET transports
-	// to return the server identification string
-	UCHAR buffer[BUFFER_TINY];
-	send->p_resp.p_resp_data.cstr_address = buffer;
-
-	// To be retrieved via an overloaded class member once our ports become real classes
-	const int aux_port_id = (port->port_type == rem_port::INET) ? Config::getRemoteAuxPort() : 0;
-	GlobalPortLock auxPortLock(aux_port_id);
-
-	rem_port* const aux_port = port->request(send);
-
-	port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length, status_vector, false);
-
-	if (status_vector[1])
-	{
-		return;
-	}
-
-	if (aux_port)
-		try
+		Rdb* const rdb = port->port_context;
+		if (bad_db(status_vector, rdb))
 		{
-			if (aux_port->connect(send))
-				aux_port->port_context = rdb;
+			port->send_response(send, 0, 0, status_vector, false);
+			return;
 		}
-		catch (const Exception& ex)
+
+		// This buffer is used by INET and WNET transports
+		// to return the server identification string
+		UCHAR buffer[BUFFER_TINY];
+		send->p_resp.p_resp_data.cstr_address = buffer;
+
+		// To be retrieved via an overloaded class member once our ports become real classes
+		const int aux_port_id = (port->port_type == rem_port::INET) ? Config::getRemoteAuxPort() : 0;
+		GlobalPortLock auxPortLock(aux_port_id);
+
+		rem_port* const aux_port = port->request(send);
+
+		port->send_response(send, rdb->rdb_id, send->p_resp.p_resp_data.cstr_length, status_vector, false);
+
+		if (status_vector[1])
 		{
-			iscLogException("", ex);
-			fb_assert(port->port_async == aux_port);
-			port->port_async = NULL;
-			aux_port->disconnect();
+			return;
+		}
+
+		if (aux_port)
+		{
+			try
+			{
+				if (aux_port->connect(send))
+					aux_port->port_context = rdb;
+			}
+			catch (const Exception& ex)
+			{
+				iscLogException("", ex);
+				fb_assert(port->port_async == aux_port);
+				port->port_async = NULL;
+				aux_port->disconnect();
+			}
 		}
 	}
 	catch (const Exception& ex)
