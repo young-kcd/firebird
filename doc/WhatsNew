@@ -2,6 +2,11 @@
   * v2.1.4
   ***************************
 
+    * Bugfix CORE-3285
+        100% CPU usage (endless loop) inside the lock manager
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3244
         Function POSITION: wrong result with '' if third argument present
       Contributor(s):
@@ -63,6 +68,11 @@
         WIN1257_LV (Latvian) collation is wrong for 4 letters: A E I U. 
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3119
+        100% CPU USAGE (endless loop) in the remote protocol code related to events processing
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3115
         Bugs in the internal record compression routines
@@ -445,10 +455,21 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-1752
+        Results of a join with different collations depend on the execution plan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-1346
         LPAD and RPAD with two columns not working
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1274
+        Wrong results when PLAN MERGE is chosen and datatypes
+        of the equality predicate arguments are different
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1089
         Wrong ordering with views, distinct, left join and order by
@@ -459,6 +480,11 @@
         Bugcheck 291 (cannot find record back version)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3295
+        Estimate the actual record compression ratio in the optimizer
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-2769
         Make XNET_CONNECT_TIMEOUT in xnet.h user configurable
