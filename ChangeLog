@@ -1,3 +1,10 @@
+ 2010-12-29 00:49  asfernandes 
+   M src/jrd/svc.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Misc
+
  2010-12-27 00:34  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/BoolNodes.h
