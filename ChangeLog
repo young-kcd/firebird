@@ -1,3 +1,18 @@
+ 2010-12-29 08:35  dimitr 
+   M builds/win32/msvc7/Firebird2.sln
+   D builds/win32/msvc7/gds32.vcproj
+   M builds/win32/msvc8/Firebird2.sln
+   D builds/win32/msvc8/gds32.vcproj
+   M builds/win32/msvc9/Firebird2.sln
+   D builds/win32/msvc9/gds32.vcproj
+   M src/jrd/isc_version.h
+   D src/jrd/isc_version.rc
+Cleanup. For a long time already, the only proper way to generate gds32.dll is to use instclient.exe.
+
+ 2010-12-29 08:12  dimitr 
+   M doc/WhatsNew
+Update.
+
  2010-12-28 12:01  dimitr 
    M src/jrd/dpm.epp
 CORE-3295: Estimate the actual record compression ratio in the optimizer.
