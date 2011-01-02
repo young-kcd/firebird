@@ -206,7 +206,7 @@ static void execute_procedure(thread_db*, jrd_nod*);
 static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	jrd_req::req_ta, SSHORT);
-static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
+static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&, bool = false);
 static void looper_seh(thread_db*, jrd_req*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
@@ -1613,7 +1613,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		const bool caller_privs = (privs_node != NULL);
 
 		Firebird::string sSql;
-		get_string(tdbb, request, node->nod_arg[e_exec_stmt_stmt_sql], sSql);
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_stmt_sql], sSql, true);
 
 		Firebird::string sDataSrc;
 		get_string(tdbb, request, node->nod_arg[e_exec_stmt_data_src], sDataSrc);
@@ -1798,7 +1798,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 }
 
 
-static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebird::string& str)
+static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebird::string& str, bool useAttCS)
 {
 	MoveBuffer buffer;
 	UCHAR* p = NULL;
@@ -1807,7 +1807,7 @@ static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebir
 	if (dsc && !(request->req_flags & req_null)) 
 	{
 		const Attachment* att = tdbb->getAttachment();
-		len = MOV_make_string2(tdbb, dsc, att->att_charset, &p, buffer);
+		len = MOV_make_string2(tdbb, dsc, useAttCS ? att->att_charset : dsc->getTextType(), &p, buffer);
 	}
 	str = Firebird::string((char*) p, len);
 	str.trim();
