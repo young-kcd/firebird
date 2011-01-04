@@ -273,7 +273,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 
 	const USHORT recordSize = sizeof(Ods::data_page::dpg_repeat) +
 		ROUNDUP(compressedSize + RHD_SIZE, ODS_ALIGNMENT) +
-		(dbb->dbb_flags & DBB_no_reserve) ? 0 : SPACE_FUDGE;
+		((dbb->dbb_flags & DBB_no_reserve) ? 0 : SPACE_FUDGE);
 
 	return (double) dataPages * (dbb->dbb_page_size - DPG_SIZE) / recordSize;
 }
