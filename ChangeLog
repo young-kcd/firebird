@@ -1,3 +1,7 @@
+ 2011-01-04 12:49  dimitr 
+   M src/jrd/dpm.epp
+Fixed my stupid mistake.
+
  2010-12-29 08:35  dimitr 
    M builds/win32/msvc7/Firebird2.sln
    D builds/win32/msvc7/gds32.vcproj
