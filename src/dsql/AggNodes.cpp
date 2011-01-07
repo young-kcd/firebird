@@ -322,7 +322,7 @@ void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 		asbImpure->iasb_sort = NULL;
 
 		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool()) Sort(
-			database, &request->req_sorts, ROUNDUP_LONG(asb->length),
+			database, &request->req_sorts, asb->length,
 			asb->keyItems.getCount(), 1, asb->keyItems.begin(),
 			RecordSource::rejectDuplicate, 0);
 	}

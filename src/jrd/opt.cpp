@@ -1911,6 +1911,8 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode*
 			else
 				asb->length += sort_key->skd_length;
 
+			asb->length = ROUNDUP(asb->length, sizeof(SLONG));
+
 			sort_key->skd_flags = SKD_ascending;
 			asb->impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->desc = *desc;
