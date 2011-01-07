@@ -4151,6 +4151,8 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 			else
 				asb->asb_length += sort_key->skd_length;
 
+			asb->asb_length = ROUNDUP(asb->asb_length, sizeof(SLONG));
+
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));
 			asb->asb_desc = *desc;

@@ -3933,7 +3933,7 @@ static void init_agg_distinct(thread_db* tdbb, const jrd_nod* node)
 	SORT_fini(asb_impure->iasb_sort_handle);
 
 	asb_impure->iasb_sort_handle =
-		SORT_init(tdbb->getDatabase(), &request->req_sorts, ROUNDUP_LONG(asb->asb_length),
+		SORT_init(tdbb->getDatabase(), &request->req_sorts, asb->asb_length,
 		(asb->asb_intl ? 2 : 1), 1, sort_key, reject_duplicate, 0);
 }
 
