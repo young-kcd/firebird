@@ -1,3 +1,8 @@
+ 2011-01-07 11:32  dimitr 
+   M src/dsql/AggNodes.cpp
+   M src/jrd/opt.cpp
+Fixed CORE-3302: Distinct aggregates return wrong (duplicated) data.
+
  2010-12-29 00:49  asfernandes 
    M src/jrd/svc.cpp
    M src/remote/inet.cpp
