@@ -1,3 +1,8 @@
+ 2011-01-07 11:24  dimitr 
+   M src/jrd/evl.cpp
+   M src/jrd/opt.cpp
+Fixed CORE-3302: Distinct aggregates return wrong (duplicated) data.
+
  2011-01-04 12:49  dimitr 
    M src/jrd/dpm.epp
 Fixed my stupid mistake.
