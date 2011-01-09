@@ -41,6 +41,7 @@
 #include "../dsql/DdlNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/constants.h"
@@ -63,17 +64,13 @@ using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
 
-static void gen_aggregate(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_map(DsqlCompilerScratch*, dsql_map*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_relation(DsqlCompilerScratch*, dsql_ctx*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_simple_case(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_sort(DsqlCompilerScratch*, dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
@@ -139,6 +136,13 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_class_exprnode:
 		{
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+
+			if (exprNode->is<RseNode>())
+			{
+				GEN_rse(dsqlScratch, node);
+				return;
+			}
+
 			exprNode->genBlr(dsqlScratch);
 
 			// Check whether the node we just processed is for a dialect 3
@@ -169,10 +173,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_expr(dsqlScratch, node->nod_arg[e_alias_value]);
 		return;
 
-	case nod_aggregate:
-		gen_aggregate(dsqlScratch, node);
-		return;
-
 	case nod_dom_value:
 		dsqlScratch->appendUChar(blr_fid);
 		dsqlScratch->appendUChar(0);		// Context
@@ -181,18 +181,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	case nod_join:
 		gen_join_rse(dsqlScratch, node);
-		return;
-
-	case nod_relation:
-		gen_relation(dsqlScratch, (dsql_ctx*) node->nod_arg[e_rel_context]);
-		return;
-
-	case nod_rse:
-		GEN_rse(dsqlScratch, node);
-		return;
-
-	case nod_derived_table:
-		GEN_rse(dsqlScratch, node->nod_arg[e_derived_table_rse]);
 		return;
 
     case nod_coalesce:
@@ -727,18 +715,19 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 	case nod_cursor:
 		dsqlScratch->appendUChar(blr_dcl_cursor);
 		dsqlScratch->appendUShort((int)(IPTR) node->nod_arg[e_cur_number]);
+
 		if (node->nod_arg[e_cur_scroll])
-		{
 			dsqlScratch->appendUChar(blr_scrollable);
-		}
+
 		GEN_rse(dsqlScratch, node->nod_arg[e_cur_rse]);
-		temp = node->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
+		temp = ExprNode::as<RseNode>(node->nod_arg[e_cur_rse])->dsqlSelectList;
 		dsqlScratch->appendUShort(temp->nod_count);
 		ptr = temp->nod_arg;
 		end = ptr + temp->nod_count;
-		while (ptr < end) {
+
+		while (ptr < end)
 			GEN_expr(dsqlScratch, *ptr++);
-		}
+
 		return;
 
 	case nod_src_info:
@@ -751,92 +740,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				  Arg::Gds(isc_dsql_internal_err) <<
 				  // gen.c: node not supported
 				  Arg::Gds(isc_node_err));
-	}
-}
-
-
-/**
-
- 	gen_aggregate
-
-    @brief	Generate blr for a relation reference.
-
-
-    @param
-    @param
-
- **/
-static void gen_aggregate( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
-	const bool window = (node->nod_flags & NOD_AGG_WINDOW);
-	dsqlScratch->appendUChar((window ? blr_window : blr_aggregate));
-
-	if (!window)
-		GEN_stuff_context(dsqlScratch, context);
-
-	GEN_rse(dsqlScratch, node->nod_arg[e_agg_rse]);
-
-	// Handle PARTITION BY and GROUP BY clause
-
-	if (window)
-	{
-		fb_assert(context->ctx_win_maps.hasData());
-		dsqlScratch->appendUChar(context->ctx_win_maps.getCount());	// number of windows
-
-		for (Array<PartitionMap*>::iterator i = context->ctx_win_maps.begin();
-			 i != context->ctx_win_maps.end();
-			 ++i)
-		{
-			dsqlScratch->appendUChar(blr_partition_by);
-			dsql_nod* partition = (*i)->partition;
-			dsql_nod* partitionRemapped = (*i)->partitionRemapped;
-			dsql_nod* order = (*i)->order;
-
-			dsqlScratch->appendUChar((*i)->context);
-
-			if (partition)
-			{
-				dsqlScratch->appendUChar(partition->nod_count);	// partition by expression count
-
-				dsql_nod** ptr = partition->nod_arg;
-				for (const dsql_nod* const* end = ptr + partition->nod_count; ptr < end; ++ptr)
-					GEN_expr(dsqlScratch, *ptr);
-
-				ptr = partitionRemapped->nod_arg;
-				for (const dsql_nod* const* end = ptr + partitionRemapped->nod_count; ptr < end; ++ptr)
-					GEN_expr(dsqlScratch, *ptr);
-			}
-			else
-				dsqlScratch->appendUChar(0);	// partition by expression count
-
-			if (order)
-				gen_sort(dsqlScratch, order);
-			else
-			{
-				dsqlScratch->appendUChar(blr_sort);
-				dsqlScratch->appendUChar(0);
-			}
-
-			gen_map(dsqlScratch, (*i)->map);
-		}
-	}
-	else
-	{
-		dsqlScratch->appendUChar(blr_group_by);
-
-		dsql_nod* list = node->nod_arg[e_agg_group];
-		if (list != NULL)
-		{
-			dsqlScratch->appendUChar(list->nod_count);
-			dsql_nod** ptr = list->nod_arg;
-			for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
-				GEN_expr(dsqlScratch, *ptr);
-		}
-		else
-			dsqlScratch->appendUChar(0);
-
-		gen_map(dsqlScratch, context->ctx_map);
 	}
 }
 
@@ -1084,34 +987,6 @@ static void gen_join_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
 }
 
 
-/**
-
- 	gen_map
-
-    @brief	Generate a value map for a record selection expression.
-
-
-    @param dsqlScratch
-    @param map
-
- **/
-static void gen_map( DsqlCompilerScratch* dsqlScratch, dsql_map* map)
-{
-	USHORT count = 0;
-	dsql_map* temp;
-	for (temp = map; temp; temp = temp->map_next)
-		++count;
-
-	dsqlScratch->appendUChar(blr_map);
-	dsqlScratch->appendUShort(count);
-
-	for (temp = map; temp; temp = temp->map_next)
-	{
-		dsqlScratch->appendUShort(temp->map_position);
-		GEN_expr(dsqlScratch, temp->map_node);
-	}
-}
-
 // Generate a parameter reference.
 void GEN_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
 {
@@ -1175,8 +1050,8 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
 		// stuff the relation--the relation id itself is redundant except
 		// when there is a need to differentiate the base tables of views
 
-		const dsql_nod* arg = node->nod_arg[0];
-		gen_relation(dsqlScratch, (dsql_ctx*) arg->nod_arg[e_rel_context]);
+		/*const*/ dsql_nod* arg = node->nod_arg[0];
+		ExprNode::as<RelationSourceNode>(arg)->genBlr(dsqlScratch);
 
 		// now stuff the access method for this stream
 		const dsql_str* index_string;
@@ -1219,86 +1094,6 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
 }
 
 
-
-/**
-
- 	gen_relation
-
-    @brief	Generate blr for a relation reference.
-
-
-    @param dsqlScratch
-    @param context
-
- **/
-static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
-{
-	const dsql_rel* relation = context->ctx_relation;
-	const dsql_prc* procedure = context->ctx_procedure;
-
-	// if this is a trigger or procedure, don't want relation id used
-	if (relation)
-	{
-		if (DDL_ids(dsqlScratch))
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_rid2 : blr_rid);
-			dsqlScratch->appendUShort(relation->rel_id);
-		}
-		else
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_relation2 : blr_relation);
-			dsqlScratch->appendMetaString(relation->rel_name.c_str());
-		}
-
-		if (context->ctx_alias)
-			dsqlScratch->appendMetaString(context->ctx_alias);
-
-		GEN_stuff_context(dsqlScratch, context);
-	}
-	else if (procedure)
-	{
-		if (DDL_ids(dsqlScratch))
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_pid2 : blr_pid);
-			dsqlScratch->appendUShort(procedure->prc_id);
-		}
-		else
-		{
-			if (procedure->prc_name.package.hasData())
-			{
-				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure4 : blr_procedure3);
-				dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
-				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
-			}
-			else
-			{
-				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure2 : blr_procedure);
-				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
-			}
-		}
-
-		if (context->ctx_alias)
-			dsqlScratch->appendMetaString(context->ctx_alias);
-
-		GEN_stuff_context(dsqlScratch, context);
-
-		dsql_nod* inputs = context->ctx_proc_inputs;
-		if (inputs)
-		{
-			dsqlScratch->appendUShort(inputs->nod_count);
-
-			dsql_nod* const* ptr = inputs->nod_arg;
-			for (const dsql_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
-			{
- 				GEN_expr(dsqlScratch, *ptr);
-			}
- 		}
-		else
-			dsqlScratch->appendUShort(0);
-	}
-}
-
-
 /**
 
  	GEN_rse
@@ -1310,23 +1105,23 @@ static void gen_relation( DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
     @param rse
 
  **/
-void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
+void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 {
-	if (rse->nod_flags & NOD_SELECT_EXPR_SINGLETON)
-	{
+	const RseNode* rse = ExprNode::as<RseNode>(rseNod);
+
+	if (rseNod->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 		dsqlScratch->appendUChar(blr_singular);
-	}
 
 	dsqlScratch->appendUChar(blr_rse);
 
-	dsql_nod* list = rse->nod_arg[e_rse_streams];
+	dsql_nod* list = rse->dsqlStreams;
 
 	// Handle source streams
 
 	if (list->nod_type == nod_union)
 	{
 		dsqlScratch->appendUChar(1);
-		gen_union(dsqlScratch, rse);
+		gen_union(dsqlScratch, rseNod);
 	}
 	else if (list->nod_type == nod_list)
 	{
@@ -1337,13 +1132,9 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
 			dsql_nod* node = *ptr;
 			switch (node->nod_type)
 			{
-			case nod_relation:
-			case nod_aggregate:
+			case nod_class_exprnode:
 			case nod_join:
 				GEN_expr(dsqlScratch, node);
-				break;
-			case nod_derived_table:
-				GEN_expr(dsqlScratch, node->nod_arg[e_derived_table_rse]);
 				break;
 			}
 		}
@@ -1354,48 +1145,46 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
 		GEN_expr(dsqlScratch, list);
 	}
 
-	if (rse->nod_arg[e_rse_lock])
+	if (rse->flags & RseNode::FLAG_WRITELOCK)
 		dsqlScratch->appendUChar(blr_writelock);
 
 	dsql_nod* node;
 
-	if ((node = rse->nod_arg[e_rse_first]) != NULL)
+	if ((node = rse->dsqlFirst))
 	{
 		dsqlScratch->appendUChar(blr_first);
 		GEN_expr(dsqlScratch, node);
 	}
 
-	if ((node = rse->nod_arg[e_rse_skip]) != NULL)
+	if ((node = rse->dsqlSkip))
 	{
 		dsqlScratch->appendUChar(blr_skip);
 		GEN_expr(dsqlScratch, node);
 	}
 
-	if ((node = rse->nod_arg[e_rse_boolean]) != NULL)
+	if ((node = rse->dsqlWhere))
 	{
 		dsqlScratch->appendUChar(blr_boolean);
 		GEN_expr(dsqlScratch, node);
 	}
 
-	if ((list = rse->nod_arg[e_rse_sort]) != NULL)
-	{
-		gen_sort(dsqlScratch, list);
-	}
+	if ((list = rse->dsqlOrder))
+		GEN_sort(dsqlScratch, list);
 
-	if ((list = rse->nod_arg[e_rse_reduced]) != NULL)
+	if ((list = rse->dsqlDistinct))
 	{
 		dsqlScratch->appendUChar(blr_project);
 		dsqlScratch->appendUChar(list->nod_count);
+
 		dsql_nod** ptr = list->nod_arg;
+
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-		{
 			GEN_expr(dsqlScratch, *ptr);
-		}
 	}
 
 	// if the user specified an access plan to use, add it here
 
-	if ((node = rse->nod_arg[e_rse_plan]) != NULL)
+	if ((node = rse->dsqlPlan) != NULL)
 	{
 		dsqlScratch->appendUChar(blr_plan);
 		gen_plan(dsqlScratch, node);
@@ -1449,16 +1238,17 @@ static void gen_searched_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod*
     @param rse
 
  **/
-static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
+static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 {
 	dsql_ctx* context;
 
-	fb_assert(rse->nod_type == nod_rse);
+	RseNode* rse = ExprNode::as<RseNode>(rseNod);
+	fb_assert(rse);
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
 
 	// Set up parameter for things in the select list
-	const dsql_nod* list = rse->nod_arg[e_rse_items];
+	const dsql_nod* list = rse->dsqlSelectList;
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 	{
@@ -1477,20 +1267,23 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	// Save DBKEYs for possible update later
 
-	list = rse->nod_arg[e_rse_streams];
+	list = rse->dsqlStreams;
 
 	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
 
-	if (!rse->nod_arg[e_rse_reduced])
+	if (!rse->dsqlDistinct)
 	{
 		dsql_nod* const* ptr2 = list->nod_arg;
 		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; ptr2 < end2; ptr2++)
 		{
 			dsql_nod* item = *ptr2;
-			if (item && item->nod_type == nod_relation)
+			RelationSourceNode* relNode;
+
+			if (item && (relNode = ExprNode::as<RelationSourceNode>(item)))
 			{
-				context = (dsql_ctx*) item->nod_arg[e_rel_context];
+				context = relNode->dsqlContext;
 				const dsql_rel* relation = context->ctx_relation;
+
 				if (relation)
 				{
 					// Set up dbkey
@@ -1541,7 +1334,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rse)
 
 	dsqlScratch->appendUChar(blr_for);
 	dsqlScratch->appendUChar(blr_stall);
-	GEN_rse(dsqlScratch, rse);
+	GEN_rse(dsqlScratch, rseNod);
 
 	dsqlScratch->appendUChar(blr_send);
 	dsqlScratch->appendUChar(message->msg_number);
@@ -1644,18 +1437,8 @@ static void gen_simple_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod* n
 }
 
 
-/**
-
- 	gen_sort
-
-    @brief	Generate a sort clause.
-
-
-    @param dsqlScratch
-    @param list
-
- **/
-static void gen_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
+// Generate a sort clause.
+void GEN_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 {
 	dsqlScratch->appendUChar(blr_sort);
 	dsqlScratch->appendUChar(list->nod_count);
@@ -1677,10 +1460,12 @@ static void gen_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 					break;
 			}
 		}
+
 		if ((*ptr)->nod_arg[e_order_flag])
 			dsqlScratch->appendUChar(blr_descending);
 		else
 			dsqlScratch->appendUChar(blr_ascending);
+
 		GEN_expr(dsqlScratch, (*ptr)->nod_arg[e_order_field]);
 	}
 }
@@ -1760,23 +1545,21 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		dsqlScratch->appendUChar(node->nod_arg[e_sto_return] ? blr_store2 : blr_store);
 		GEN_expr(dsqlScratch, node->nod_arg[e_sto_relation]);
 		GEN_statement(dsqlScratch, node->nod_arg[e_sto_statement]);
-		if (node->nod_arg[e_sto_return]) {
+		if (node->nod_arg[e_sto_return])
 			GEN_statement(dsqlScratch, node->nod_arg[e_sto_return]);
-		}
 		break;
 
 	case nod_modify:
 		dsqlScratch->appendUChar(node->nod_arg[e_mod_return] ? blr_modify2 : blr_modify);
 		temp = node->nod_arg[e_mod_source];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 		GEN_stuff_context(dsqlScratch, context);
 		temp = node->nod_arg[e_mod_update];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 		GEN_stuff_context(dsqlScratch, context);
 		GEN_statement(dsqlScratch, node->nod_arg[e_mod_statement]);
-		if (node->nod_arg[e_mod_return]) {
+		if (node->nod_arg[e_mod_return])
 			GEN_statement(dsqlScratch, node->nod_arg[e_mod_return]);
-		}
 		break;
 
 	case nod_modify_current:
@@ -1784,17 +1567,16 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
 		GEN_stuff_context(dsqlScratch, context);
 		temp = node->nod_arg[e_mdc_update];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 		GEN_stuff_context(dsqlScratch, context);
 		GEN_statement(dsqlScratch, node->nod_arg[e_mdc_statement]);
-		if (node->nod_arg[e_mdc_return]) {
+		if (node->nod_arg[e_mdc_return])
 			GEN_statement(dsqlScratch, node->nod_arg[e_mdc_return]);
-		}
 		break;
 
 	case nod_erase:
 		temp = node->nod_arg[e_era_relation];
-		context = (dsql_ctx*) temp->nod_arg[e_rel_context];
+		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 		if (node->nod_arg[e_era_return])
 		{
 			dsqlScratch->appendUChar(blr_begin);
@@ -1831,9 +1613,8 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 		fb_assert(false);
 	}
 
-	if (message) {
+	if (message)
 		dsqlScratch->appendUChar(blr_end);
-	}
 }
 
 
@@ -1898,13 +1679,15 @@ static void gen_table_lock( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tb
  **/
 static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_node)
 {
-	if (union_node->nod_arg[0]->nod_flags & NOD_UNION_RECURSIVE)
+	const RseNode* unionRse = ExprNode::as<RseNode>(union_node);
+
+	if (unionRse->dsqlStreams->nod_flags & NOD_UNION_RECURSIVE)
 		dsqlScratch->appendUChar(blr_recurse);
 	else
 		dsqlScratch->appendUChar(blr_union);
 
 	// Obtain the context for UNION from the first dsql_map* node
-	dsql_nod* items = union_node->nod_arg[e_rse_items];
+	dsql_nod* items = unionRse->dsqlSelectList;
 	dsql_nod* map_item = items->nod_arg[0];
 
 	// AB: First item could be a virtual field generated by derived table.
@@ -1918,7 +1701,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 	// secondary context number must be present once in generated blr
 	union_context->ctx_flags &= ~CTX_recursive;
 
-	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
+	dsql_nod* streams = unionRse->dsqlStreams;
 	dsqlScratch->appendUChar(streams->nod_count);	// number of substreams
 
 	dsql_nod** ptr = streams->nod_arg;
@@ -1926,7 +1709,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 	{
 		dsql_nod* sub_rse = *ptr;
 		GEN_rse(dsqlScratch, sub_rse);
-		items = sub_rse->nod_arg[e_rse_items];
+		items = ExprNode::as<RseNode>(sub_rse)->dsqlSelectList;
 		dsqlScratch->appendUChar(blr_map);
 		dsqlScratch->appendUShort(items->nod_count);
 		USHORT count = 0;

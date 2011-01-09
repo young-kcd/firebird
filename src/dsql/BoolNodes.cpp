@@ -1340,43 +1340,47 @@ BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratc
 {
 	PASS1_set_parameter_type(dsqlScratch, dsqlArg1, dsqlArg2, false);
 
-	// create a derived table representing our subquery
-	dsql_nod* dt = MAKE_node(Dsql::nod_derived_table, Dsql::e_derived_table_count);
-	// Ignore validation for columnames that must exist for "user" derived tables.
-	dt->nod_flags |= NOD_DT_IGNORE_COLUMN_CHECK;
-	dt->nod_arg[Dsql::e_derived_table_rse] = dsqlArg2;
+	// Create a derived table representing our subquery.
+	dsql_nod* dt = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
+	// Ignore validation for colum names that must exist for "user" derived tables.
+	dt->nod_flags |= NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK | NOD_SELECT_EXPR_DERIVED;
+	dt->nod_arg[Dsql::e_sel_query_spec] = dsqlArg2;
 	dsql_nod* from = MAKE_node(Dsql::nod_list, 1);
 	from->nod_arg[0] = dt;
-	dsql_nod* query_spec = MAKE_node(Dsql::nod_query_spec, Dsql::e_qry_count);
-	query_spec->nod_arg[Dsql::e_qry_from] = from;
+
+	RseNode* querySpec = FB_NEW(getPool()) RseNode(getPool());
+	querySpec->dsqlFrom = from;
+
 	dsql_nod* select_expr = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
-	select_expr->nod_arg[Dsql::e_sel_query_spec] = query_spec;
+	select_expr->nod_arg[Dsql::e_sel_query_spec] = MAKE_node(Dsql::nod_class_exprnode, 1);
+	select_expr->nod_arg[Dsql::e_sel_query_spec]->nod_arg[0] = reinterpret_cast<dsql_nod*>(querySpec);
 
 	const DsqlContextStack::iterator base(*dsqlScratch->context);
 	const DsqlContextStack::iterator baseDT(dsqlScratch->derivedContext);
 	const DsqlContextStack::iterator baseUnion(dsqlScratch->unionContext);
 
-	dsql_nod* rse = PASS1_rse(dsqlScratch, select_expr, NULL);
+	dsql_nod* rseNod = PASS1_rse(dsqlScratch, select_expr, NULL);
+	RseNode* rse = ExprNode::as<RseNode>(rseNod);
+	fb_assert(rse);
 
-	// create a conjunct to be injected
+	// Create a conjunct to be injected.
 
 	ComparativeBoolNode* cmpNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blrOp,
-		PASS1_node_psql(dsqlScratch, dsqlArg1, false), rse->nod_arg[Dsql::e_rse_items]->nod_arg[0]);
+		PASS1_node_psql(dsqlScratch, dsqlArg1, false), rse->dsqlSelectList->nod_arg[0]);
 
 	dsql_nod* temp = MAKE_node(Dsql::nod_class_exprnode, 1);
 	temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(cmpNode);
-	rse->nod_arg[Dsql::e_rse_boolean] = temp;
+	rse->dsqlWhere = temp;
 
-	// create output node
-
-	RseBoolNode* rseNode = FB_NEW(getPool()) RseBoolNode(getPool(), rseBlrOp, rse);
+	// Create output node.
+	RseBoolNode* rseBoolNode = FB_NEW(getPool()) RseBoolNode(getPool(), rseBlrOp, rseNod);
 
 	// Finish off by cleaning up contexts
 	dsqlScratch->unionContext.clear(baseUnion);
 	dsqlScratch->derivedContext.clear(baseDT);
 	dsqlScratch->context->clear(base);
 
-	return rseNode;
+	return rseBoolNode;
 }
 
 

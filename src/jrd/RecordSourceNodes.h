@@ -269,6 +269,7 @@ class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::
 public:
 	explicit RelationSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>(pool),
+		  dsqlContext(NULL),
 		  relation(NULL),
 		  context(0),
 		  alias(NULL),
@@ -278,6 +279,18 @@ public:
 
 	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp,
 		bool parseContext);
+
+	static void genRelation(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
@@ -322,6 +335,7 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 public:
+	dsql_ctx* dsqlContext;
 	jrd_rel* relation;
 	SSHORT context;		// user-specified context number for the relation reference
 	const char* alias;	// SQL alias for the relation
@@ -396,6 +410,10 @@ class AggregateSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode:
 public:
 	explicit AggregateSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_AGGREGATE_SOURCE>(pool),
+		  dsqlContext(NULL),
+		  dsqlGroup(NULL),
+		  dsqlRse(NULL),
+		  dsqlWindow(false),
 		  group(NULL),
 		  map(NULL),
 		  rse(NULL)
@@ -403,6 +421,16 @@ public:
 	}
 
 	static AggregateSourceNode* parse(thread_db* tdbb, CompilerScratch* csb);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual AggregateSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
@@ -424,10 +452,16 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
+	void genMap(DsqlCompilerScratch* dsqlScratch, dsql_map* map);
+
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, BoolExprNodeStack* parentStack,
 		UCHAR shellStream);
 
 public:
+	dsql_ctx* dsqlContext;
+	dsql_nod* dsqlGroup;
+	dsql_nod* dsqlRse;
+	bool dsqlWindow;
 	NestConst<SortNode> group;
 	NestConst<MapNode> map;
 
@@ -551,11 +585,31 @@ public:
 
 	explicit RseNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RSE>(pool),
+		  dsqlFirst(NULL),
+		  dsqlSkip(NULL),
+		  dsqlDistinct(NULL),
+		  dsqlSelectList(NULL),
+		  dsqlFrom(NULL),
+		  dsqlWhere(NULL),
+		  dsqlGroup(NULL),
+		  dsqlHaving(NULL),
+		  dsqlOrder(NULL),
+		  dsqlPlan(NULL),
+		  dsqlStreams(NULL),
+		  dsqlContext(NULL),
 		  rse_jointype(0),
 		  rse_invariants(NULL),
 		  rse_relations(pool),
 		  flags(0)
 	{
+		addChildNode(dsqlStreams);
+		addChildNode(dsqlWhere);
+		addChildNode(dsqlOrder);
+		addChildNode(dsqlDistinct);
+		addChildNode(dsqlSelectList);
+		addChildNode(dsqlFirst);
+		addChildNode(dsqlSkip);
+		addChildNode(dsqlPlan);
 	}
 
 	RseNode* clone()
@@ -580,6 +634,15 @@ public:
 	virtual void getStreams(StreamsArray& /*list*/) const
 	{
 	}
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
@@ -611,6 +674,18 @@ private:
 	static void planSet(CompilerScratch* csb, PlanNode* plan);
 
 public:
+	dsql_nod* dsqlFirst;
+	dsql_nod* dsqlSkip;
+	dsql_nod* dsqlDistinct;
+	dsql_nod* dsqlSelectList;
+	dsql_nod* dsqlFrom;
+	dsql_nod* dsqlWhere;
+	dsql_nod* dsqlGroup;
+	dsql_nod* dsqlHaving;
+	dsql_nod* dsqlOrder;
+	dsql_nod* dsqlPlan;
+	dsql_nod* dsqlStreams;
+	dsql_ctx* dsqlContext;		// derived table support
 	USHORT rse_jointype;		// inner, left, full
 	NestConst<ValueExprNode> rse_first;
 	NestConst<ValueExprNode> rse_skip;

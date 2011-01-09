@@ -6966,9 +6966,12 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			PASS1_ambiguity_check(dsqlScratch, MAKE_cstring("RDB$DB_KEY"), contexts);
 
+			RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
+			relNode->dsqlContext = context;
+
 			RecordKeyNode* node = FB_NEW(getPool()) RecordKeyNode(getPool(), blrOp);
-			node->dsqlRelation = MAKE_node(Dsql::nod_relation, Dsql::e_rel_count);
-			node->dsqlRelation->nod_arg[0] = (dsql_nod*) context;
+			node->dsqlRelation = MAKE_node(Dsql::nod_class_exprnode, 1);
+			node->dsqlRelation->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
 
 			return node;
 		}
@@ -7002,9 +7005,12 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				if (context->ctx_flags & CTX_null)
 					return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 
+				RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
+				relNode->dsqlContext = context;
+
 				RecordKeyNode* node = FB_NEW(getPool()) RecordKeyNode(getPool(), blrOp);
-				node->dsqlRelation = MAKE_node(Dsql::nod_relation, Dsql::e_rel_count);
-				node->dsqlRelation->nod_arg[0] = (dsql_nod*) context;
+				node->dsqlRelation = MAKE_node(Dsql::nod_class_exprnode, 1);
+				node->dsqlRelation->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
 
 				return node;
 			}
@@ -7030,13 +7036,15 @@ bool RecordKeyNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 
 bool RecordKeyNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 {
-	if (dsqlRelation && dsqlRelation->nod_type == Dsql::nod_relation)
-	{
-		const dsql_ctx* localContext =
-			reinterpret_cast<dsql_ctx*>(dsqlRelation->nod_arg[Dsql::e_rel_context]);
+	RelationSourceNode* relNode;
 
-		if (localContext && localContext->ctx_scope_level == visitor.context->ctx_scope_level)
+	if (dsqlRelation && (relNode = ExprNode::as<RelationSourceNode>(dsqlRelation)))
+	{
+		if (relNode->dsqlContext &&
+			relNode->dsqlContext->ctx_scope_level == visitor.context->ctx_scope_level)
+		{
 			return true;
+		}
 	}
 
 	return false;
@@ -7084,7 +7092,7 @@ void RecordKeyNode::setParameterName(dsql_par* parameter) const
 
 void RecordKeyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	dsql_ctx* context = (dsql_ctx*) dsqlRelation->nod_arg[Dsql::e_rel_context];
+	dsql_ctx* context = ExprNode::as<RelationSourceNode>(dsqlRelation)->dsqlContext;
 	dsqlScratch->appendUChar(blrOp);
 	GEN_stuff_context(dsqlScratch, context);
 }
@@ -8127,7 +8135,7 @@ bool SubQueryNode::dsqlFieldFinder(FieldFinder& visitor)
 bool SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 {
 	visitor.visit(&dsqlRse);
-	dsqlValue1 = dsqlRse->nod_arg[Dsql::e_rse_items]->nod_arg[0];
+	dsqlValue1 = ExprNode::as<RseNode>(dsqlRse)->dsqlSelectList->nod_arg[0];
 	return false;
 }
 

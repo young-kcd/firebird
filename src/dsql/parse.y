@@ -4273,7 +4273,7 @@ lock_clause : WITH LOCK
 
 select_expr
 	: with_clause select_expr_body order_clause rows_clause
-		{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
+		{ $$ = make_node(nod_select_expr, (int) e_sel_count, $2, $3, $4, $1, NULL); }
 	;
 
 with_clause
@@ -4293,7 +4293,12 @@ with_list
 
 with_item
 	: symbol_table_alias_name derived_column_list AS '(' select_expr ')'
-		{ $$ = make_node (nod_derived_table, (int) e_derived_table_count, $5, $1, $2, NULL); }
+		{
+			$$ = $5;
+			$$->nod_flags |= NOD_SELECT_EXPR_DERIVED;
+			$$->nod_arg[e_sel_alias] = $1;
+			$$->nod_arg[e_sel_columns] = $2;
+		}
 	;
 
 column_select
@@ -4333,18 +4338,30 @@ query_spec
 			 group_clause
 			 having_clause
 			 plan_clause
-		{ $$ = make_node (nod_query_spec, (int) e_qry_count, $2, $3, $4, $5, $6, $7, $8, $9); }
+		{
+			RseNode* rse = newNode<RseNode>();
+			rse->dsqlFirst = $2 ? $2->nod_arg[1] : NULL;
+			rse->dsqlSkip = $2 ? $2->nod_arg[0] : NULL;
+			rse->dsqlDistinct = $3;
+			rse->dsqlSelectList = $4;
+			rse->dsqlFrom = $5;
+			rse->dsqlWhere = $6;
+			rse->dsqlGroup = $7;
+			rse->dsqlHaving = $8;
+			rse->dsqlPlan = $9;
+			$$ = makeClassNode(rse);
+		}
 	;
 
 limit_clause
 	:
 		{ $$ = NULL; }
 	| first_clause skip_clause
-		{ $$ = make_node (nod_limit, (int) e_limit_count, $2, $1); }
+		{ $$ = make_node(nod_list, 2, $2, $1); }
 	| first_clause
-		{ $$ = make_node (nod_limit, (int) e_limit_count, NULL, $1); }
+		{ $$ = make_node(nod_list, 2, NULL, $1); }
 	| skip_clause
-		{ $$ = make_node (nod_limit, (int) e_limit_count, $1, NULL); }
+		{ $$ = make_node(nod_list, 2, $1, NULL); }
 	;
 
 first_clause
@@ -4365,27 +4382,25 @@ skip_clause
 		{ $$ = $2; }
 	;
 
-distinct_clause	: DISTINCT
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		| all_noise
-			{ $$ = 0; }
-		;
+distinct_clause
+	: DISTINCT		{ $$ = make_node(nod_flag, 0, NULL); }
+	| all_noise		{ $$ = NULL; }
+	;
 
-select_list	: select_items
-			{ $$ = make_list ($1); }
-		| '*'
-			{ $$ = 0; }
-		;
+select_list
+	: select_items	{ $$ = make_list($1); }
+	| '*'			{ $$ = NULL; }
+	;
 
-select_items	: select_item
-		| select_items ',' select_item
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+select_items
+	: select_item
+	| select_items ',' select_item	{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
-select_item	: value
-		| value as_noise symbol_item_alias_name
-			{ $$ = make_node (nod_alias, 2, $1, $3); }
-		;
+select_item
+	: value
+	| value as_noise symbol_item_alias_name		{ $$ = make_node(nod_alias, 2, $1, $3); }
+	;
 
 as_noise
 	:
@@ -4395,78 +4410,85 @@ as_noise
 // FROM clause
 
 from_clause
-	: FROM from_list
-		{ $$ = make_list ($2); }
+	: FROM from_list	{ $$ = make_list($2); }
 	;
 
 from_list
 	: table_reference
-	| from_list ',' table_reference
-		{ $$ = make_node (nod_list, 2, $1, $3); }
+	| from_list ',' table_reference		{ $$ = make_node(nod_list, 2, $1, $3); }
 	;
 
-table_reference	: joined_table
-		| table_primary
-		;
+table_reference
+	: joined_table
+	| table_primary
+	;
 
-table_primary	: table_proc
-		| derived_table
-		| '(' joined_table ')'
-			{ $$ = $2; }
-		;
+table_primary
+	: table_proc
+	| derived_table
+	| '(' joined_table ')'	{ $$ = $2; }
+	;
 
 // AB: derived table support
-derived_table :
-		'(' select_expr ')' as_noise correlation_name derived_column_list
-			{ $$ = make_node(nod_derived_table, (int) e_derived_table_count, $2, $5, $6, NULL); }
-		;
+derived_table
+	: '(' select_expr ')' as_noise correlation_name derived_column_list
+		{
+			$$ = $2;
+			$$->nod_flags |= NOD_SELECT_EXPR_DERIVED;
+			$$->nod_arg[e_sel_alias] = $5;
+			$$->nod_arg[e_sel_columns] = $6;
+		}
+	;
 
-correlation_name : symbol_table_alias_name
-		|
-			{ $$ = NULL; }
-		;
+correlation_name
+	: /* nothing */				{ $$ = NULL; }
+	| symbol_table_alias_name
+	;
 
-derived_column_list : '(' alias_list ')'
-			{ $$ = make_list ($2); }
-		|
-			{ $$ = NULL; }
-		;
+derived_column_list
+	: /* nothing */			{ $$ = NULL; }
+	| '(' alias_list ')'	{ $$ = make_list($2); }
+	;
 
-alias_list : symbol_item_alias_name
-		| alias_list ',' symbol_item_alias_name
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+alias_list
+	: symbol_item_alias_name
+	| alias_list ',' symbol_item_alias_name		{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
-joined_table	: cross_join
-		| natural_join
-		| qualified_join
-		;
+joined_table
+	: cross_join
+	| natural_join
+	| qualified_join
+	;
 
-cross_join	: table_reference CROSS JOIN table_primary
-			{ $$ = make_node (nod_join, (int) e_join_count, $1,
-				make_node (nod_join_inner, (int) 0, NULL), $4, NULL); }
-		;
+cross_join
+	: table_reference CROSS JOIN table_primary
+		{ $$ = make_node(nod_join, (int) e_join_count, $1,
+				make_node(nod_join_inner, (int) 0, NULL), $4, NULL); }
+	;
 
-natural_join	: table_reference NATURAL join_type JOIN table_primary
-			{ $$ = make_node (nod_join, (int) e_join_count, $1, $3, $5,
-					make_node (nod_flag, 0, NULL)); }
-		;
+natural_join
+	: table_reference NATURAL join_type JOIN table_primary
+		{ $$ = make_node(nod_join, (int) e_join_count, $1, $3, $5, make_node(nod_flag, 0, NULL)); }
+	;
 
-qualified_join	: table_reference join_type JOIN table_reference join_specification
-			{ $$ = make_node (nod_join, (int) e_join_count, $1, $2, $4, $5); }
-		;
+qualified_join
+	: table_reference join_type JOIN table_reference join_specification
+		{ $$ = make_node(nod_join, (int) e_join_count, $1, $2, $4, $5); }
+	;
 
-join_specification	: join_condition
-		| named_columns_join
-		;
+join_specification
+	: join_condition
+	| named_columns_join
+	;
 
-join_condition	: ON search_condition
-			{ $$ = $2; }
-		;
+join_condition
+	: ON search_condition	{ $$ = $2; }
+	;
 
-named_columns_join	: USING '(' column_list ')'
-			{ $$ = make_list ($3); }
-		;
+named_columns_join
+	: USING '(' column_list ')'		{ $$ = make_list($3); }
+	;
 
 table_proc
 	: symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name

@@ -51,6 +51,7 @@
 #include "../dsql/utld_proto.h"
 #include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
@@ -405,7 +406,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
 		return;
 
-	case nod_limit:
 	case nod_rows:
 		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
 		{
@@ -427,11 +427,14 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		return;
 
 	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
-		node = node->nod_arg[e_sel_query_spec];
-		fb_assert(node->nod_type == nod_query_spec);
-		node = node->nod_arg[e_qry_list];
-		fb_assert(node->nod_type == nod_list && node->nod_count > 0);
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[0]);
+		{
+			node = node->nod_arg[e_sel_query_spec];
+			RseNode* rseNode = ExprNode::as<RseNode>(node);
+			fb_assert(rseNode);
+			node = rseNode->dsqlSelectList;
+			fb_assert(node->nod_type == nod_list && node->nod_count > 0);
+			MAKE_desc(dsqlScratch, desc, node->nod_arg[0]);
+		}
 		return;
 
 	default:

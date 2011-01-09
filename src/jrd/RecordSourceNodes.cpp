@@ -28,12 +28,16 @@
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../dsql/dsql.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
+#include "../dsql/ddl_proto.h"
+#include "../dsql/gen_proto.h"
+#include "../dsql/pass1_proto.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -249,6 +253,130 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 		delete aliasString;
 
 	return node;
+}
+
+bool RelationSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	// Check if relation is a procedure.
+	if (dsqlContext->ctx_procedure)
+	{
+		// Check if a aggregate is buried inside the input parameters.
+		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+	}
+
+	return false;
+}
+
+bool RelationSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return false;
+}
+
+bool RelationSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	// If relation is a procedure, check if the parameters are valid.
+	if (dsqlContext->ctx_procedure)
+		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+
+	return false;
+}
+
+bool RelationSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool RelationSourceNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	return false;
+}
+
+bool RelationSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	// Check if relation is a procedure.
+	if (dsqlContext->ctx_procedure)
+		visitor.visit(&dsqlContext->ctx_proc_inputs);	// Remap the input parameters.
+
+	return false;
+}
+
+bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const RelationSourceNode* o = other->as<RelationSourceNode>();
+	return o && dsqlContext == o->dsqlContext;
+}
+
+void RelationSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	genRelation(dsqlScratch, dsqlContext);
+}
+
+// Generate blr for a relation reference.
+void RelationSourceNode::genRelation(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
+{
+	const dsql_rel* relation = context->ctx_relation;
+	const dsql_prc* procedure = context->ctx_procedure;
+
+	// if this is a trigger or procedure, don't want relation id used
+	if (relation)
+	{
+		if (DDL_ids(dsqlScratch))
+		{
+			dsqlScratch->appendUChar(context->ctx_alias ? blr_rid2 : blr_rid);
+			dsqlScratch->appendUShort(relation->rel_id);
+		}
+		else
+		{
+			dsqlScratch->appendUChar(context->ctx_alias ? blr_relation2 : blr_relation);
+			dsqlScratch->appendMetaString(relation->rel_name.c_str());
+		}
+
+		if (context->ctx_alias)
+			dsqlScratch->appendMetaString(context->ctx_alias);
+
+		GEN_stuff_context(dsqlScratch, context);
+	}
+	else if (procedure)
+	{
+		if (DDL_ids(dsqlScratch))
+		{
+			dsqlScratch->appendUChar(context->ctx_alias ? blr_pid2 : blr_pid);
+			dsqlScratch->appendUShort(procedure->prc_id);
+		}
+		else
+		{
+			if (procedure->prc_name.package.hasData())
+			{
+				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure4 : blr_procedure3);
+				dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
+				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			}
+			else
+			{
+				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure2 : blr_procedure);
+				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+			}
+		}
+
+		if (context->ctx_alias)
+			dsqlScratch->appendMetaString(context->ctx_alias);
+
+		GEN_stuff_context(dsqlScratch, context);
+
+		dsql_nod* inputs = context->ctx_proc_inputs;
+
+		if (inputs)
+		{
+			dsqlScratch->appendUShort(inputs->nod_count);
+
+			dsql_nod* const* ptr = inputs->nod_arg;
+
+			for (const dsql_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
+				GEN_expr(dsqlScratch, *ptr);
+		}
+		else
+			dsqlScratch->appendUShort(0);
+	}
 }
 
 RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -799,6 +927,140 @@ AggregateSourceNode* AggregateSourceNode::parse(thread_db* tdbb, CompilerScratch
 	node->map = parseMap(tdbb, csb, node->stream);
 
 	return node;
+}
+
+bool AggregateSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	return !visitor.ignoreSubSelects && visitor.visit(&dsqlRse);
+}
+
+bool AggregateSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	// Pass only dsqlGroup.
+	return visitor.visit(&dsqlGroup);
+}
+
+bool AggregateSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	return visitor.visit(&dsqlRse);
+}
+
+bool AggregateSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool AggregateSourceNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	// Pass only dsqlGroup.
+	return visitor.visit(&dsqlGroup);
+}
+
+bool AggregateSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	visitor.visit(&dsqlRse);
+	return false;
+}
+
+bool AggregateSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const AggregateSourceNode* o = other->as<AggregateSourceNode>();
+
+	return o && dsqlContext == o->dsqlContext &&
+		PASS1_node_match(dsqlGroup, o->dsqlGroup, ignoreMapCast) &&
+		PASS1_node_match(dsqlRse, o->dsqlRse, ignoreMapCast);
+}
+
+void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar((dsqlWindow ? blr_window : blr_aggregate));
+
+	if (!dsqlWindow)
+		GEN_stuff_context(dsqlScratch, dsqlContext);
+
+	GEN_rse(dsqlScratch, dsqlRse);
+
+	// Handle PARTITION BY and GROUP BY clause
+
+	if (dsqlWindow)
+	{
+		fb_assert(dsqlContext->ctx_win_maps.hasData());
+		dsqlScratch->appendUChar(dsqlContext->ctx_win_maps.getCount());	// number of windows
+
+		for (Array<PartitionMap*>::iterator i = dsqlContext->ctx_win_maps.begin();
+			 i != dsqlContext->ctx_win_maps.end();
+			 ++i)
+		{
+			dsqlScratch->appendUChar(blr_partition_by);
+			dsql_nod* partition = (*i)->partition;
+			dsql_nod* partitionRemapped = (*i)->partitionRemapped;
+			dsql_nod* order = (*i)->order;
+
+			dsqlScratch->appendUChar((*i)->context);
+
+			if (partition)
+			{
+				dsqlScratch->appendUChar(partition->nod_count);	// partition by expression count
+
+				dsql_nod** ptr = partition->nod_arg;
+				for (const dsql_nod* const* end = ptr + partition->nod_count; ptr < end; ++ptr)
+					GEN_expr(dsqlScratch, *ptr);
+
+				ptr = partitionRemapped->nod_arg;
+				for (const dsql_nod* const* end = ptr + partitionRemapped->nod_count; ptr < end; ++ptr)
+					GEN_expr(dsqlScratch, *ptr);
+			}
+			else
+				dsqlScratch->appendUChar(0);	// partition by expression count
+
+			if (order)
+				GEN_sort(dsqlScratch, order);
+			else
+			{
+				dsqlScratch->appendUChar(blr_sort);
+				dsqlScratch->appendUChar(0);
+			}
+
+			genMap(dsqlScratch, (*i)->map);
+		}
+	}
+	else
+	{
+		dsqlScratch->appendUChar(blr_group_by);
+
+		dsql_nod* list = dsqlGroup;
+
+		if (list != NULL)
+		{
+			dsqlScratch->appendUChar(list->nod_count);
+			dsql_nod** ptr = list->nod_arg;
+
+			for (const dsql_nod* const* end = ptr + list->nod_count; ptr < end; ptr++)
+				GEN_expr(dsqlScratch, *ptr);
+		}
+		else
+			dsqlScratch->appendUChar(0);
+
+		genMap(dsqlScratch, dsqlContext->ctx_map);
+	}
+}
+
+// Generate a value map for a record selection expression.
+void AggregateSourceNode::genMap(DsqlCompilerScratch* dsqlScratch, dsql_map* map)
+{
+	USHORT count = 0;
+
+	for (dsql_map* temp = map; temp; temp = temp->map_next)
+		++count;
+
+	dsqlScratch->appendUChar(blr_map);
+	dsqlScratch->appendUShort(count);
+
+	for (dsql_map* temp = map; temp; temp = temp->map_next)
+	{
+		dsqlScratch->appendUShort(temp->map_position);
+		GEN_expr(dsqlScratch, temp->map_node);
+	}
 }
 
 AggregateSourceNode* AggregateSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -1486,6 +1748,59 @@ void WindowSourceNode::findDependentFromStreams(const OptimizerRetrieval* optRet
 
 //--------------------
 
+
+bool RseNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	AutoSetRestore<USHORT> autoValidateExpr(&visitor.currentLevel, visitor.currentLevel + 1);
+	return visitor.visit(&dsqlStreams) | visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+}
+
+bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	AutoSetRestore<bool> autoCurrentScopeLevelEqual(&visitor.currentScopeLevelEqual, false);
+	// Pass dsqlWhere and dsqlSelectList
+	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+}
+
+bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	return false;
+}
+
+bool RseNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return true;
+}
+
+bool RseNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	// Pass dsqlWhere and dsqlSelectList
+	return visitor.visit(&dsqlWhere) | visitor.visit(&dsqlSelectList);
+}
+
+bool RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	AutoSetRestore<USHORT> autoCurrentLevel(&visitor.currentLevel, visitor.currentLevel + 1);
+
+	visitor.visit(&dsqlStreams);
+	visitor.visit(&dsqlWhere);
+	visitor.visit(&dsqlSelectList);
+	visitor.visit(&dsqlOrder);
+
+	return false;
+}
+
+bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const RseNode* o = other->as<RseNode>();
+
+	if (!o)
+		return false;
+
+	fb_assert(dsqlContext && o->dsqlContext);
+
+	return dsqlContext == o->dsqlContext;
+}
 
 RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier)
 {

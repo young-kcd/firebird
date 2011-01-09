@@ -25,6 +25,7 @@
 #include "../dsql/ExprNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../dsql/node.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
@@ -421,7 +422,7 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 
 	for (dsql_nod* const* cte = list->nod_arg; cte < end; cte++)
 	{
-		fb_assert((*cte)->nod_type == Dsql::nod_derived_table);
+		fb_assert((*cte)->nod_type == Dsql::nod_select_expr);
 
 		if (with->nod_flags & NOD_UNION_RECURSIVE)
 		{
@@ -432,7 +433,7 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 
 			// Add CTE name into CTE aliases stack. It allows later to search for
 			// aliases of given CTE.
-			const dsql_str* cteName = (dsql_str*) (*cte)->nod_arg[Dsql::e_derived_table_alias];
+			const dsql_str* cteName = (dsql_str*) (*cte)->nod_arg[Dsql::e_sel_alias];
 			addCTEAlias(cteName);
 		}
 		else
@@ -445,7 +446,9 @@ dsql_nod* DsqlCompilerScratch::findCTE(const dsql_str* name)
 	for (size_t i = 0; i < ctes.getCount(); ++i)
 	{
 		dsql_nod* cte = ctes[i];
-		const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_derived_table_alias];
+		fb_assert(cte->nod_type == Dsql::nod_select_expr);
+
+		const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_sel_alias];
 
 		if (name->str_length == cteName->str_length &&
 			strncmp(name->str_data, cteName->str_data, cteName->str_length) == 0)
@@ -469,10 +472,11 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 	for (size_t i = 0; i < ctes.getCount(); ++i)
 	{
 		const dsql_nod* cte = ctes[i];
+		fb_assert(cte->nod_type == Dsql::nod_select_expr);
 
-		if (!(cte->nod_flags & NOD_DT_CTE_USED))
+		if (!(cte->nod_flags & NOD_SELECT_EXPR_DT_CTE_USED))
 		{
-			const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_derived_table_alias];
+			const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_sel_alias];
 
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_cte_not_used) << Arg::Str(cteName->str_data));
@@ -500,9 +504,8 @@ void DsqlCompilerScratch::checkUnusedCTEs() const
 // needed. Therefore recursive part is built using newly allocated list nodes.
 dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 {
-	dsql_str* const cte_alias = (dsql_str*) input->nod_arg[Dsql::e_derived_table_alias];
-	dsql_nod* const select_expr = input->nod_arg[Dsql::e_derived_table_rse];
-	dsql_nod* query = select_expr->nod_arg[Dsql::e_sel_query_spec];
+	dsql_str* const cte_alias = (dsql_str*) input->nod_arg[Dsql::e_sel_alias];
+	dsql_nod* query = input->nod_arg[Dsql::e_sel_query_spec];
 
 	if (query->nod_type != Dsql::nod_list && pass1RseIsRecursive(query))
 	{
@@ -512,7 +515,8 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 	}
 
 	// split queries list on two parts: anchor and recursive
-	dsql_nod* anchorRse = NULL, *recursiveRse = NULL;
+	dsql_nod* anchorRse = NULL;
+	dsql_nod* recursiveRse = NULL;
 	dsql_nod* qry = query;
 
 	dsql_nod* newQry = MAKE_node(Dsql::nod_list, 2);
@@ -527,10 +531,12 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 		else
 			rse = qry;
 
-		dsql_nod* newRse = pass1RseIsRecursive(rse);
+		dsql_nod* newRseNod = pass1RseIsRecursive(rse);
 
-		if (newRse) // rse is recursive
+		if (newRseNod) // rse is recursive
 		{
+			RseNode* newRse = ExprNode::as<RseNode>(newRseNod);
+
 			if (anchorRse)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -538,7 +544,7 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 					Arg::Gds(isc_dsql_cte_nonrecurs_after_recurs) << Arg::Str(cte_alias->str_data));
 			}
 
-			if (newRse->nod_arg[Dsql::e_qry_distinct])
+			if (newRse->dsqlDistinct)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
@@ -546,7 +552,7 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 														   Arg::Str("DISTINCT"));
 			}
 
-			if (newRse->nod_arg[Dsql::e_qry_group])
+			if (newRse->dsqlGroup)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
@@ -554,7 +560,7 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 														   Arg::Str("GROUP BY"));
 			}
 
-			if (newRse->nod_arg[Dsql::e_qry_having])
+			if (newRse->dsqlHaving)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					// Recursive member of CTE '%s' has %s clause
@@ -574,12 +580,12 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 			if (!recursiveRse)
 				recursiveRse = newQry;
 
-			newRse->nod_flags |= NOD_SELECT_EXPR_RECURSIVE;
+			newRseNod->nod_flags |= NOD_SELECT_EXPR_RECURSIVE;
 
 			if (qry->nod_type == Dsql::nod_list)
-				newQry->nod_arg[1] = newRse;
+				newQry->nod_arg[1] = newRseNod;
 			else
-				newQry->nod_arg[0] = newRse;
+				newQry->nod_arg[0] = newRseNod;
 		}
 		else
 		{
@@ -646,30 +652,33 @@ dsql_nod* DsqlCompilerScratch::pass1RecursiveCte(dsql_nod* input)
 	select->nod_arg[Dsql::e_sel_order] = select->nod_arg[Dsql::e_sel_rows] =
 		select->nod_arg[Dsql::e_sel_with_list] = NULL;
 
-	dsql_nod* node = MAKE_node(Dsql::nod_derived_table, Dsql::e_derived_table_count);
-	dsql_str* alias = (dsql_str*) input->nod_arg[Dsql::e_derived_table_alias];
-	node->nod_arg[Dsql::e_derived_table_alias] = (dsql_nod*) alias;
-	node->nod_arg[Dsql::e_derived_table_column_alias] =
-		input->nod_arg[Dsql::e_derived_table_column_alias];
-	node->nod_arg[Dsql::e_derived_table_rse] = select;
-	node->nod_arg[Dsql::e_derived_table_context] = input->nod_arg[Dsql::e_derived_table_context];
+	select->nod_arg[Dsql::e_sel_alias] = input->nod_arg[Dsql::e_sel_alias];
+	select->nod_arg[Dsql::e_sel_columns] = input->nod_arg[Dsql::e_sel_columns];
 
-	return node;
+	return select;
 }
 
 // Check if rse is recursive. If recursive reference is a table in the FROM list remove it.
 // If recursive reference is a part of join add join boolean (returned by pass1JoinIsRecursive)
 // to the WHERE clause. Punt if more than one recursive reference is found.
-dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* input)
+dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 {
-	fb_assert(input->nod_type == Dsql::nod_query_spec);
+	RseNode* input = ExprNode::as<RseNode>(inputNod);
+	fb_assert(input);
 
-	dsql_nod* result = MAKE_node(Dsql::nod_query_spec, Dsql::e_qry_count);
-	memcpy(result->nod_arg, input->nod_arg, Dsql::e_qry_count * sizeof(dsql_nod*));
+	RseNode* result = FB_NEW(getPool()) RseNode(getPool());
+	result->dsqlFirst = input->dsqlFirst;
+	result->dsqlSkip = input->dsqlSkip;
+	result->dsqlDistinct = input->dsqlDistinct;
+	result->dsqlSelectList = input->dsqlSelectList;
+	result->dsqlWhere = input->dsqlWhere;
+	result->dsqlGroup = input->dsqlGroup;
+	result->dsqlHaving = input->dsqlHaving;
+	result->dsqlPlan = input->dsqlPlan;
 
-	dsql_nod* srcTables = input->nod_arg[Dsql::e_qry_from];
+	dsql_nod* srcTables = input->dsqlFrom;
 	dsql_nod* dstTables = MAKE_node(Dsql::nod_list, srcTables->nod_count);
-	result->nod_arg[Dsql::e_qry_from] = dstTables;
+	result->dsqlFrom = dstTables;
 
 	dsql_nod** pDstTable = dstTables->nod_arg;
 	dsql_nod** pSrcTable = srcTables->nod_arg;
@@ -718,14 +727,13 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* input)
 
 					found = true;
 
-					result->nod_arg[Dsql::e_qry_where] = PASS1_compose(
-						result->nod_arg[Dsql::e_qry_where], joinBool, blr_and);
+					result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
 				}
 
 				break;
 			}
 
-			case Dsql::nod_derived_table:
+			case Dsql::nod_select_expr:
 				break;
 
 			default:
@@ -733,7 +741,14 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* input)
 		}
 	}
 
-	return found ? result : NULL;
+	if (found)
+	{
+		dsql_nod* resultNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+		resultNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(result);
+		return resultNod;
+	}
+	else
+		return NULL;
 }
 
 // Check if table reference is recursive i.e. its name is equal to the name of current processing CTE.
@@ -760,7 +775,7 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
 
 	fb_assert(currCtes.hasData());
 	const dsql_nod* curr_cte = currCtes.object();
-	const dsql_str* cte_name = (dsql_str*) curr_cte->nod_arg[Dsql::e_derived_table_alias];
+	const dsql_str* cte_name = (dsql_str*) curr_cte->nod_arg[Dsql::e_sel_alias];
 
 	const bool recursive = (cte_name->str_length == relName->str_length) &&
 		(strncmp(relName->str_data, cte_name->str_data, cte_name->str_length) == 0);

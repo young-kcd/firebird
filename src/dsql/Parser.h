@@ -33,6 +33,7 @@
 #include "../dsql/WinNodes.h"
 #include "../dsql/PackageNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../common/classes/Nullable.h"
 #include "../common/classes/stack.h"
 

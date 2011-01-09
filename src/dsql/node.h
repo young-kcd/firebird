@@ -109,14 +109,11 @@ enum nod_t
 	nod_start_savepoint,
 	nod_end_savepoint,
 	nod_cursor,
-	nod_relation,
 	nod_relation_name,
 	nod_procedure_name,
 	nod_rel_proc_name,
-	nod_rse,
 	nod_select_expr,
 	nod_union,
-	nod_aggregate,
 	nod_order,
 	nod_flag,
 	nod_join,
@@ -177,7 +174,6 @@ enum nod_t
 	nod_mod_field_pos,
 	nod_breakleave,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
-	nod_limit, // limit support
 	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
 	nod_coalesce, // COALESCE function
@@ -187,9 +183,7 @@ enum nod_t
 	nod_drop_difference,
 	nod_begin_backup,
 	nod_end_backup,
-	nod_derived_table, // Derived table support
 	nod_rows,	// ROWS support
-	nod_query_spec,
 	nod_mod_udf,
 	nod_returning,
 	nod_tra_misc,
@@ -257,29 +251,6 @@ enum node_args {
 	e_fln_name,
 	e_fln_count,
 
-	e_rel_context = 0,		// nod_relation
-	e_rel_count,
-
-	e_agg_context = 0,		// nod_aggregate
-	e_agg_group,
-	e_agg_rse,
-	e_agg_count,
-
-	e_rse_streams = 0,		// nod_rse
-	e_rse_boolean,
-	e_rse_sort,
-	e_rse_reduced,
-	e_rse_items,
-	e_rse_first,
-	e_rse_plan,
-	e_rse_skip,
-	e_rse_lock,
-	e_rse_count,
-
-	e_limit_skip = 0,		// nod_limit
-	e_limit_length,
-	e_limit_count,
-
 	e_rows_skip = 0,		// nod_rows
 	e_rows_length,
 	e_rows_count,
@@ -294,17 +265,9 @@ enum node_args {
 	e_sel_order,
 	e_sel_rows,
 	e_sel_with_list,
+	e_sel_alias,			// Alias name for derived table
+	e_sel_columns,			// List with alias names from derived table columns
 	e_sel_count,
-
-	e_qry_limit = 0,		// nod_query_spec
-	e_qry_distinct,
-	e_qry_list,
-	e_qry_from,
-	e_qry_where,
-	e_qry_group,
-	e_qry_having,
-	e_qry_plan,
-	e_qry_count,
 
 	e_ins_relation = 0,		// nod_insert
 	e_ins_fields,
@@ -605,12 +568,6 @@ enum node_args {
 	e_label_number,
 	e_label_count,
 
-	e_derived_table_rse = 0,		// Contains select_expr
-	e_derived_table_alias,			// Alias name for derived table
-	e_derived_table_column_alias,	// List with alias names from derived table columns
-	e_derived_table_context,		// Context for derived table
-	e_derived_table_count,
-
 	e_mod_udf_name = 0,				// nod_mod_udf
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
@@ -715,19 +672,17 @@ enum nod_flags_vals {
 	// depending on the SQL dialect.
 	NOD_COMP_DIALECT		= 16, // nod_...2, see MAKE_desc
 
-	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
-	NOD_SELECT_EXPR_VALUE		= 2,
-	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
-	NOD_SELECT_VIEW_FIELDS		= 8, // view's field list
+	NOD_SELECT_EXPR_SINGLETON				= 1,	// nod_select_expr
+	NOD_SELECT_EXPR_VALUE					= 2,
+	NOD_SELECT_EXPR_RECURSIVE				= 4,	// recursive member of recursive CTE
+	NOD_SELECT_EXPR_VIEW_FIELDS				= 8,	// view's field list
+	NOD_SELECT_EXPR_DERIVED					= 16,
+	NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK	= 32,
+	NOD_SELECT_EXPR_DT_CTE_USED				= 64,
 
 	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
 	NOD_CURSOR_FOR			= 2,
-	NOD_CURSOR_ALL			= USHORT(~0),
-
-	NOD_DT_IGNORE_COLUMN_CHECK	= 1, // nod_cursor, see pass1_cursor_name
-	NOD_DT_CTE_USED			= 2,		// nod_derived_table
-
-	NOD_AGG_WINDOW = 1				// nod_aggregate
+	NOD_CURSOR_ALL			= USHORT(~0)
 };
 
 } // namespace

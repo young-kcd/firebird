@@ -810,7 +810,7 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	if (listInto)
 	{
-		dsql_nod* list = cursor->nod_arg[Dsql::e_cur_rse]->nod_arg[Dsql::e_rse_items];
+		dsql_nod* list = ExprNode::as<RseNode>(cursor->nod_arg[Dsql::e_cur_rse])->dsqlSelectList;
 		if (list->nod_count != listInto->nod_count)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
@@ -3432,7 +3432,7 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	// Build body of FOR loop
 
-	dsql_nod* list = dsqlSelect->nod_arg[Dsql::e_rse_items];
+	dsql_nod* list = ExprNode::as<RseNode>(dsqlSelect)->dsqlSelectList;
 
 	if (dsqlInto)
 	{

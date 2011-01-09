@@ -7156,7 +7156,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	DDL_reset_context_stack(dsqlScratch);
 	++dsqlScratch->contextNumber;
-	selectExpr->nod_flags |= NOD_SELECT_VIEW_FIELDS;
+	selectExpr->nod_flags |= NOD_SELECT_EXPR_VIEW_FIELDS;
 	dsql_nod* rse = PASS1_rse(dsqlScratch, selectExpr, NULL);
 
 	dsqlScratch->getBlrData().clear();
@@ -7341,7 +7341,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// If an expression is specified rather than a field, define a global
 	// field for the computed value as well.
 
-	dsql_nod* items = rse->nod_arg[Dsql::e_rse_items];
+	dsql_nod* items = ExprNode::as<RseNode>(rse)->dsqlSelectList;
 	dsql_nod** itemsPtr = items->nod_arg;
 	SortedArray<dsql_fld*> modifiedFields;
 	bool updatable = true;
@@ -7654,9 +7654,9 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_col_name_err));
 		}
 
-		dsql_nod* querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+		dsql_nod* querySpecNod = selectExpr->nod_arg[Dsql::e_sel_query_spec];
 
-		if (querySpec->nod_type == Dsql::nod_list)
+		if (querySpecNod->nod_type == Dsql::nod_list)
 		{
 			// Only one table allowed for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -7665,7 +7665,10 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_table_view_err));
 		}
 
-		if (querySpec->nod_arg[Dsql::e_qry_from]->nod_count != 1)
+		RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
+		fb_assert(querySpec);
+
+		if (querySpec->dsqlFrom->nod_count != 1)
 		{
 			// Only one table allowed for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -7674,7 +7677,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_table_view_err));
 		}
 
-		if (!querySpec->nod_arg[Dsql::e_qry_where])
+		if (!querySpec->dsqlWhere)
 		{
 			// No where clause for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -7683,8 +7686,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				Arg::Gds(isc_where_err));
 		}
 
-		if (querySpec->nod_arg[Dsql::e_qry_distinct] || querySpec->nod_arg[Dsql::e_qry_group] ||
-			querySpec->nod_arg[Dsql::e_qry_having])
+		if (querySpec->dsqlDistinct || querySpec->dsqlGroup || querySpec->dsqlHaving)
 		{
 			// DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
 			status_exception::raise(
@@ -7711,6 +7713,8 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	dsql_nod* items)
 {
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
 	// Specify that the trigger should abort if the condition is not met.
 	dsql_nod* actionNode = MAKE_node(Dsql::nod_list, 1);
 	actionNode->nod_arg[0] = MAKE_node(Dsql::nod_gdscode, 1);
@@ -7724,13 +7728,15 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 	fb_assert(baseAndNode);
 	fb_assert(baseRelation);
 
-	dsql_nod* rse = MAKE_node(Dsql::nod_rse, e_rse_count);
-	rse->nod_arg[e_rse_boolean] = baseAndNode;
-	dsql_nod* temp = MAKE_node(Dsql::nod_list, 1);
-	rse->nod_arg[e_rse_streams] = temp;
-	temp->nod_arg[0] = baseRelation;
+	RseNode* rse = FB_NEW(pool) RseNode(pool);
+	rse->dsqlWhere = baseAndNode;
+	rse->dsqlStreams = MAKE_node(Dsql::nod_list, 1);
+	rse->dsqlStreams->nod_arg[0] = baseRelation;
 
-	createCheckTrigger(tdbb, dsqlScratch, rse, items, actionNode, PRE_MODIFY_TRIGGER);
+	dsql_nod* rseNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+	rseNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(rse);
+
+	createCheckTrigger(tdbb, dsqlScratch, rseNod, items, actionNode, PRE_MODIFY_TRIGGER);
 	createCheckTrigger(tdbb, dsqlScratch, NULL, items, actionNode, PRE_STORE_TRIGGER);
 }
 
@@ -7742,7 +7748,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
 
-	const dsql_nod* querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec];
+	const dsql_nod* querySpecNod = selectExpr->nod_arg[Dsql::e_sel_query_spec];
 	dsql_nod* relationNode = dsqlNode;
 
 	// Generate the trigger blr.
@@ -7797,27 +7803,26 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	// Generate the condition for firing the trigger.
 
+	const RseNode* querySpec = ExprNode::as<RseNode>(querySpecNod);
+	fb_assert(querySpec);
+
 	dsql_nod* condition;
 
 	if (triggerType == PRE_MODIFY_TRIGGER)
 	{
 		dsqlScratch->appendUChar(blr_for);
 
-		dsql_nod* temp = rse->nod_arg[Dsql::e_rse_streams];
-		temp->nod_arg[0] = PASS1_node(dsqlScratch, temp->nod_arg[0]);
-		temp = rse->nod_arg[Dsql::e_rse_boolean];
+		RseNode* rseNode = ExprNode::as<RseNode>(rse);
 
-		rse->nod_arg[Dsql::e_rse_boolean] = PASS1_node(dsqlScratch, temp);
+		rseNode->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, rseNode->dsqlStreams->nod_arg[0]);
+		rseNode->dsqlWhere = PASS1_node(dsqlScratch, rseNode->dsqlWhere);
+
 		GEN_expr(dsqlScratch, rse);
 
-		condition = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where], items,
-			viewFields, false, NEW_CONTEXT);
+		condition = replaceFieldNames(querySpec->dsqlWhere, items, viewFields, false, NEW_CONTEXT);
 	}
 	else if (triggerType == PRE_STORE_TRIGGER)
-	{
-		condition = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where], items,
-			viewFields, true, NEW_CONTEXT);
-	}
+		condition = replaceFieldNames(querySpec->dsqlWhere, items, viewFields, true, NEW_CONTEXT);
 	else
 	{
 		fb_assert(false);
@@ -7858,12 +7863,10 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Check whether this is an updatable view definition.
 
-	dsql_nod* querySpec = NULL;
+	RseNode* querySpec = ExprNode::as<RseNode>(selectExpr->nod_arg[Dsql::e_sel_query_spec]);
 	dsql_nod* fromList = NULL;
 
-	if (!(querySpec = selectExpr->nod_arg[Dsql::e_sel_query_spec]) ||
-		!(fromList = querySpec->nod_arg[Dsql::e_qry_from]) ||
-		fromList->nod_count != 1)
+	if (!querySpec || !(fromList = querySpec->dsqlFrom) || fromList->nod_count != 1)
 	{
 		// The caller seems throwing proper errors for all the above conditions.
 		// But just in case it doesn't, here we have the final attempt to prevent the bad things.
@@ -7881,7 +7884,7 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	// fields in the base relation that are not computed.
 
 	dsql_nod* valuesNode = viewFields;
-	dsql_nod* fieldsNode = querySpec->nod_arg[Dsql::e_qry_list];
+	dsql_nod* fieldsNode = querySpec->dsqlSelectList;
 
 	if (!fieldsNode)
 	{
@@ -7977,21 +7980,15 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	}
 
 	if (andArg == 0)
-	{
-		andNode->dsqlArg1 = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where],
-			items, NULL, false, TEMP_CONTEXT);
-	}
+		andNode->dsqlArg1 = replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
 	else if (andArg == 1)
-	{
-		andNode->dsqlArg2 = replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where],
-			items, NULL, false, TEMP_CONTEXT);
-	}
+		andNode->dsqlArg2 = replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT);
 	else
 	{
 		dsql_nod* oldAnd = andNod;
 
 		andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and, oldAnd,
-			replaceFieldNames(querySpec->nod_arg[Dsql::e_qry_where], items, NULL, false, TEMP_CONTEXT));
+			replaceFieldNames(querySpec->dsqlWhere, items, NULL, false, TEMP_CONTEXT));
 
 		andNod = MAKE_node(Dsql::nod_class_exprnode, 1);
 		andNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(andNode);
