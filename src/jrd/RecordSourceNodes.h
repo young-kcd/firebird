@@ -372,9 +372,9 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool containsStream(USHORT /*checkStream*/) const
+	virtual bool containsStream(USHORT checkStream) const
 	{
-		return false;
+		return checkStream == stream;
 	}
 
 	virtual void computeDbKeyStreams(UCHAR* /*streams*/) const
