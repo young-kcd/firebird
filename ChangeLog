@@ -1,3 +1,20 @@
+ 2011-01-09 21:58  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Parser.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/gen_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+Refactor nod_aggregate, nod_relation, nod_rse, nod_derived_table, nod_query_spec and nod_limit
+
  2011-01-07 11:32  dimitr 
    M src/dsql/AggNodes.cpp
    M src/jrd/opt.cpp
