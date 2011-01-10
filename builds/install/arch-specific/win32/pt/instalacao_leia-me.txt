@@ -1,16 +1,16 @@
-Servidor SQL Firebird 2.1
+Servidor SQL Firebird $MAJOR.$MINOR
 ==================================================
 
 
 Este documento constitui um guia para instalar o kit do
-Firebird 2.1 na plataforma Windows. Estas notas
+Firebird $MAJOR.$MINOR na plataforma Windows. Estas notas
 referem-se ao próprio kit de instalação, em vez do
-Firebird 2.1 em geral. Adicionalmente, estas notas
+Firebird $MAJOR.$MINOR em geral. Adicionalmente, estas notas
 são dirigidas principalmente aos utilizadores do
 instalador dos binários.
 
 Presume-se que os leitores destas notas estão familiarizados
-com o Firebird 2.0. Se está a avaliar o Firebird 2.1 como
+com o Firebird 2.0. Se está a avaliar o Firebird $MAJOR.$MINOR como
 parte de uma migração do Fb 1.5 é aconselhável que consulte
 a documentação do Firebird 2.0 para entender todas as
 mudanças elaboradas entre as versões 1.5 e 2.0.
@@ -56,7 +56,7 @@ Outros problemas de instalação conhecidos
 ---------------------------------
 
 o Apenas é possível instalar a instância padrão do
-  Firebird 2.1 usando este instalador de binários.
+  Firebird $MAJOR.$MINOR usando este instalador de binários.
   Se pretender instalar instâncias adicionais deve
   fazê-lo manualmente usando as imagens de instalação
   comprimidas (zipped).

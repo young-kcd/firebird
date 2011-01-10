@@ -1,4 +1,4 @@
-Firebird Serveur Bases de données 2.1
+Firebird Serveur Bases de données $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 ** NOTE IMPORTANTE **
@@ -11,8 +11,8 @@ version, seul le texte original en anglais
 **       FIN      **
 
 Ce document est un guide pour l'installation de
-Firebird 2.1 sur une plateforme Windows. Ces notes
-concernent l'utilitaire d'installation, pas Firebird 2.1
+Firebird $MAJOR.$MINOR sur une plateforme Windows. Ces notes
+concernent l'utilitaire d'installation, pas Firebird $MAJOR.$MINOR
 en général.
 
 Ce document s'adresse à des personnes connaissant déjà
@@ -62,7 +62,7 @@ Problèmes connus d'installation
 -------------------------------
 
 o Vous ne pouvez utiliser l'utilitaire d'installation
-  que pour installer l'instance par défaut de Firebird 2.1.
+  que pour installer l'instance par défaut de Firebird $MAJOR.$MINOR.
   Si vous voulez en installer une deuxième en plus, ou une
   instance nomée, vous devez le faire à partir de l'image
   zip.

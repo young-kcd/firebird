@@ -1,6 +1,6 @@
 
 ====================================
-Firebird 2.1.3    (Windows Build)
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
 ====================================
 
 
@@ -15,13 +15,13 @@ o Reporting Bugs
 Introduction
 ============
 
-Welcome to Firebird 2.1.
+Welcome to Firebird $MAJOR.$MINOR.
 
 
 Intended Users
 ==============
 
-Firebird 2.1 has undergone extensive testing and is
+Firebird $MAJOR.$MINOR has undergone extensive testing and is
 intended for widespread production use. However, users
 are recommended to follow standard practices before
 deploying this release on a production server. ie:

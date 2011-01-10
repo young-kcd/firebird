@@ -1,17 +1,17 @@
-Firebird Database Server 2.1
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 
 Este documento es una guía para instalar este paquete
-de Firebird 2.1 en la plataforma Windows. Estas notas
+de Firebird $MAJOR.$MINOR en la plataforma Windows. Estas notas
 hacen referencia al paquete de instalación en sí, más
-que a Firebird 2.1 en general. Además, estas notas
+que a Firebird $MAJOR.$MINOR en general. Además, estas notas
 están destinadas principalmente a usuarios del
 programa de instalación.
 
 Se supone que los lectores de este documento se
 encuentran familiarizados con Firebird 2.0. Si Ud. se
-encuentra evaluando Firebird 2.1 como parte de la
+encuentra evaluando Firebird $MAJOR.$MINOR como parte de la
 migración desde Fb 1.5, le recomendamos revisar la
 documentación de Fb 2.0 para tener una idea de los
 cambios realizados entre 1.5 y 2.0.
@@ -60,7 +60,7 @@ Otros problemas conocidos relacionados con la instalación
 ---------------------------------------------------------
 
 o Sólo es posible utilizar el programa de instalación
-  para instalar la instancia por defecto de Firebird 2.1.
+  para instalar la instancia por defecto de Firebird $MAJOR.$MINOR.
   Si desea instalar instancias adicionales, con nombre,
   debería realizar la instalación manualmente desde el
   paquete ZIP de instalación.

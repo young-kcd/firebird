@@ -1,17 +1,17 @@
-Firebird Datenbank Server 2.1
+Firebird Datenbank Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 
 Dieses Dokument ist eine Anleitung um dieses Paket
-von Firebird 2.1 auf einer Windows Plattform zu installieren.
+von Firebird $MAJOR.$MINOR auf einer Windows Plattform zu installieren.
 Diese Hinweise beziehen sich ausschließlich auf das
-Installationspaket und nicht auf Firebird 2.1 im
+Installationspaket und nicht auf Firebird $MAJOR.$MINOR im
 Allgemeinen. Des Weiteren ist diese Anleitung für
 die Benutzer der Setuproutine gedacht.
 
 Es wird vorausgesetzt, dass der/die Leser(in) dieses
 Dokuments bereits mit Firebird 2.0 vertraut ist. Falls
-Sie Firebird 2.1 im Zuge einer Migration von Fb 1.5
+Sie Firebird $MAJOR.$MINOR im Zuge einer Migration von Fb 1.5
 evaluieren, dann sollten Sie zuvor die Fb 2.0 Dokumentation
 lesen, um die durchgeführten Änderungen zwischen 1.5 und
 2.0 zu verstehen.
@@ -58,7 +58,7 @@ Weitere bekannte Installationsprobleme
 --------------------------------------
 
 o Sie können die Setuproutine nur für die Installation
-  der Default-Instanz von Firebird 2.1 verwenden. Falls
+  der Default-Instanz von Firebird $MAJOR.$MINOR verwenden. Falls
   Sie die Installation von weiteren, benannten Instanzen
   durchführen möchten, dann müssen Sie dazu die gezippte
   Distribution verwenden.

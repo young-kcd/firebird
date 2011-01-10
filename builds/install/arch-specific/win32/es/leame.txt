@@ -1,6 +1,6 @@
 
 ===================================
-Firebird 2.1.3   (Windows Build)
+Firebird $MAJOR.$MINOR.$RELEASE   (Windows Build)
 ===================================
 
 
@@ -16,13 +16,13 @@ o Informe de Errores
 Introducción
 ============
 
-Bienvenido a Firebird 2.1.
+Bienvenido a Firebird $MAJOR.$MINOR.
 
 
 A quién está destinada esta versión
 ===================================
 
-Firebird 2.1.3 ha sido intensivamente probado y está
+Firebird $MAJOR.$MINOR.$RELEASE ha sido intensivamente probado y está
 listo para usarse en ambientes de producción.
 De todas maneras, se recomienda a los usuarios
 que sigan los procedimientos habituales antes

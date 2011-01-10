@@ -1,15 +1,15 @@
-Firebird Database Server 2.1
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
 ==================================================
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.1 za Windows platformu. Ovaj tekst
-se odnosi na instalacioni paket, a ne na Firebird 2.1
+Firebird-a $MAJOR.$MINOR za Windows platformu. Ovaj tekst
+se odnosi na instalacioni paket, a ne na Firebird $MAJOR.$MINOR
 u generalnom smislu. Kao dodatak, ovaj tekst je
 primarno namijenjen korisnicima binarne instalacije.
 
 Pretpostavljamo da citaoci ovog dokumenta su vec
 upoznati sa Firebird-om 2.0. Ako evaluirate
-Firebird 2.1 kao dio migracione strategije sa Fb 1.5
+Firebird $MAJOR.$MINOR kao dio migracione strategije sa Fb 1.5
 preporucujemo vam da pogledate Fb 2.0 dokumentaciju kako
 bi razumjeli promjene napravljene uzmedju 1.5 i 2.0.
 
@@ -55,7 +55,7 @@ Drugi poznati problemi vezani za instalaciju
 ---------------------------------
 
 o Moguce je jedino koristiti instalacioni program
-  za instalaciju default-ne instance Firebird-a 2.1.
+  za instalaciju default-ne instance Firebird-a $MAJOR.$MINOR.
   Ako zelite da instalirate dodatne, named instance,
   trebate ih rucno instalirati iz zip datoteke.
 

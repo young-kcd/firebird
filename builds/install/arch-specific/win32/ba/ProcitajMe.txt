@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.1.3    (Windows Build)
+Firebird $MAJOR.$MINOR.$RELEASE    (Windows Build)
 ==================================
 
 o Uvod
@@ -14,13 +14,13 @@ o Prijavljivanje Bug-ova
 Uvod
 ============
 
-Dobrodosli u Firebird 2.1.
+Dobrodosli u Firebird $MAJOR.$MINOR.
 
 
 Kome je namjenjen?
 ============================
 
-Firebird 2.1 je prosao kroz opsezan proces testiranja
+Firebird $MAJOR.$MINOR je prosao kroz opsezan proces testiranja
 i namjenjen je za siroku upotrebu u produkciji. Svakako,
 korisnicima je preporuceno da prate standardne procedure
 prije deploy-a ovog release-a na produkcioni server. tj:

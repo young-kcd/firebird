@@ -1,5 +1,5 @@
 =================================================
-Firebird 2.1       (Wersja Windows)
+Firebird $MAJOR.$MINOR.$RELEASE       (Wersja Windows)
 =================================================
 
 o Wprowadzenie
@@ -15,13 +15,13 @@ o Propozycje nowych funkcjonalnoœci
 Wprowadzenie
 ============
 
-Witamy w Firebird 2.1.3
+Witamy w Firebird $MAJOR.$MINOR.$RELEASE
 
 
 Docelowi u¿ytkownicy
 ====================
 
-Firebird 2.1.3 przeszed³ intensywne testy i jest przeznaczony
+Firebird $MAJOR.$MINOR.$RELEASE przeszed³ intensywne testy i jest przeznaczony
 do szerokich zastosowañ produkcyjnych. Aczkolwiek zaleca siê,
 aby u¿ytkownicy zachowali nastêpuj¹ce standardowe praktyki
 przed uruchomieniem tego wydania na serwerze produkcyjnym:
@@ -44,13 +44,13 @@ przed uruchomieniem tego wydania na serwerze produkcyjnym:
 Cechy tego wydania (wszystkie platformy)
 ========================================
 
-Zobacz doc/Firebird_v2.1.3.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
+Zobacz doc/Firebird_v$MAJOR.$MINOR.$RELEASE.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
 
 
 B³êdy poprawione w tym wydaniu (wszystkie platformy)
 ===================================================
 
-Zobacz doc/Firebird_v2.1.3.BugFixes.pdf w celu uzyskania dodatkowych informacji.
+Zobacz doc/Firebird_v$MAJOR.$MINOR.$RELEASE.BugFixes.pdf w celu uzyskania dodatkowych informacji.
 
 
 Instalowanie samouruchamiaj¹cego siê programu

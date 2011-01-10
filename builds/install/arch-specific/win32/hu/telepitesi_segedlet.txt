@@ -1,9 +1,9 @@
-Firebird Adatbázis Szerver 2.1
+Firebird Adatbázis Szerver $MAJOR.$MINOR
 ===================================================
 
 
 -----------------
-Az alábbi információk a Firebird 2.1 verziójára
+Az alábbi információk a Firebird $MAJOR.$MINOR verziójára
 vontakozik. A Firebird 2.5 verzióával kaqpcsolatos
 telepítési segédlet még nem készült el.
 
@@ -17,9 +17,9 @@ telepítési segédlet még nem készült el.
   ** ****** **
 
 Ez a dokumentum egy telepítési segédlet a Windows
-platformon mûködõ Firebird 2.1 telepítéséhez.
+platformon mûködõ Firebird $MAJOR.$MINOR telepítéséhez.
 A telepítési segédlet elsõsorban a telepítés menetét
-írja le, s nem a Firebird 2.1-ról szól
+írja le, s nem a Firebird $MAJOR.$MINOR-ról szól
 általánosságban.
 
 A dokumentáció azoknak a felhasználóknak szól, akik
@@ -179,7 +179,7 @@ Ismert telepítési problémák
 ---------------------------
 
 o A telepítõ segítségével csak az alapértelmezett példányt
-  telepítheti a Firebird 2.1 adatbáziskezelõbõl. Amennyiben
+  telepítheti a Firebird $MAJOR.$MINOR adatbáziskezelõbõl. Amennyiben
   további példányokat szeretne telepíteni, eltérõ néven, az
   a zip-tömörített állományból teheti meg kézileg telepítve.
 

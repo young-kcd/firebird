@@ -161,6 +161,10 @@ if not DEFINED FB_EXTERNAL_DOCS (
 :: the path this will fail! Use of the cygwin tools has not
 :: been tested and may produce unexpected results.
 ::========================================================
+
+:: Here we are extracting individual values from build_no.h with sed and
+:: then writing them to file. We then parse that file with 'for' to assign
+:: the value to an envvar. There must be an easier way.
 find "#define PRODUCT_VER_STRING" %FB_ROOT_PATH%\src\jrd\build_no.h > %temp%.\b$1.txt
 sed -n -e s/\"//g -e s/"#define PRODUCT_VER_STRING "//w%temp%.\b$2.txt %temp%.\b$1.txt
 for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set FBBUILD_PRODUCT_VER_STRING=%%a
@@ -183,18 +187,18 @@ for /f "tokens=*" %%a in ('type %temp%.\b$2.txt') do set FB_BUILD_NO=%%a
 
 set FBBUILD_FILE_ID=%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%_%FB_TARGET_PLATFORM%
 
-::@echo s/-2.0.0-/-%FBBUILD_PRODUCT_VER_STRING%-/ > %temp%.\b$3.txt
+:: We now generate a sed script that swaps our compile time values
+:: for the fixed values in the innosetup script.
+
 @echo s/define release/define %FBBUILD_BUILDTYPE%/ > %temp%.\b$3.txt
 @echo s/define msvc_version 8/define msvc_version %MSVC_VERSION%/ >> %temp%.\b$3.txt
 @echo s/define no_pdb/define %FBBUILD_SHIP_PDB%/ >> %temp%.\b$3.txt
-::@echo s/define package_number=\"0\"/define package_number=\"%FBBUILD_PACKAGE_NUMBER%\"/ >> %temp%.\b$3.txt
 @echo s/define iss_release/define %ISS_BUILD_TYPE%/ >> %temp%.\b$3.txt
 @echo s/define examples/define %ISS_EXAMPLES%/ >> %temp%.\b$3.txt
 @echo s/define compression/define %ISS_COMPRESS%/ >> %temp%.\b$3.txt
 @echo s/FBBUILD_PRODUCT_VER_STRING/%FBBUILD_PRODUCT_VER_STRING%/ >> %temp%.\b$3.txt
 
 sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_ID%.iss
-del %temp%.\b$?.txt
 
 set FBBUILD_FB21_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 
@@ -202,7 +206,34 @@ set FBBUILD_FB21_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.5
-set FBBUILD_FB20_CUR_VER=2.0.3
+set FBBUILD_FB20_CUR_VER=2.0.6
+
+:: Now fix up the major.minor version strings in the readme files.
+:: We place output in %FB_GEN_DIR%\readmes
+@if not exist %FB_GEN_DIR%\readmes (@mkdir %FB_GEN_DIR%\readmes)
+@for %%d in (ba de es fr hu it pl pt ru si ) do (
+  @if not exist %FB_GEN_DIR%\readmes\%%d (@mkdir %FB_GEN_DIR%\readmes\%%d)
+)
+
+@echo s/\$MAJOR/%FB_MAJOR_VER%/g >  %temp%.\b$4.txt
+@echo s/\$MINOR/%FB_MINOR_VER%/g >> %temp%.\b$4.txt
+@echo s/\$RELEASE/%FB_REV_NO%/g  >> %temp%.\b$4.txt
+@for %%f in (Readme.txt installation_readme.txt) do (
+	@echo   Processing version strings in %%f
+	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%f
+)
+
+@for %%d in (ba de es fr hu it pl pt ru si ) do (
+  @pushd %%d
+  @for /F %%f in ( '@dir /B /A-D *.txt'  ) do (
+	@echo   Processing version strings in %%d\%%f
+	@sed -f  %temp%.\b$4.txt %%f > %FB_GEN_DIR%\readmes\%%d\%%f
+  )
+  @popd
+
+)
+
+del %temp%.\b$?.txt
 
 
 ::End of SED_MAGIC
@@ -312,7 +343,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 
 
 @echo   Copying other documentation...
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
+@copy  %FB_GEN_DIR%\readmes\installation_readme.txt %FB_OUTPUT_DIR%\doc\installation_readme.txt > nul
 @copy %FB_OUTPUT_DIR%\doc\WhatsNew %FB_OUTPUT_DIR%\doc\WhatsNew.txt > nul
 @del %FB_OUTPUT_DIR%\doc\WhatsNew
 
@@ -353,7 +384,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 )
 
 :: And readme
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FB_OUTPUT_DIR%\ > nul
+@copy  %FB_GEN_DIR%\readmes\readme.txt %FB_OUTPUT_DIR%\ > nul
 
 ::  Walk through all docs and transform any that are not .txt, .pdf or .html to .txt
 echo   Setting .txt filetype to ascii docs.
@@ -612,7 +643,7 @@ for %%v in (IPLicense.txt IDPLicense.txt ) do (
 )
 
 :: And readme
-@copy %FB_ROOT_PATH%\builds\install\arch-specific\win32\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
+@copy  %FB_GEN_DIR%\readmes\readme.txt %FBBUILD_EMB_PACK_ROOT%\ > nul
 
 
 ::End of GEN_EMBEDDED
