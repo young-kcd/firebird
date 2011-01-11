@@ -1,3 +1,27 @@
+ 2011-01-10 16:28  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+   M builds/install/arch-specific/win32/FirebirdInstall_20.iss
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/ba/Instalacija_ProcitajMe.txt
+   M builds/install/arch-specific/win32/ba/ProcitajMe.txt
+   M builds/install/arch-specific/win32/de/installation_liesmich.txt
+   M builds/install/arch-specific/win32/de/liesmich.txt
+   M builds/install/arch-specific/win32/es/leame.txt
+   M builds/install/arch-specific/win32/es/leame_instalacion.txt
+   M builds/install/arch-specific/win32/fr/installation_lisezmoi.txt
+   M builds/install/arch-specific/win32/fr/lisezmoi.txt
+   M builds/install/arch-specific/win32/hu/olvass_el.txt
+   M builds/install/arch-specific/win32/hu/telepitesi_segedlet.txt
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/it/leggimi.txt
+   M builds/install/arch-specific/win32/pl/czytajto.txt
+   M builds/install/arch-specific/win32/pl/instalacja_czytajto.txt
+   M builds/install/arch-specific/win32/pt/instalacao_leia-me.txt
+   M builds/install/arch-specific/win32/pt/leia-me.txt
+   M builds/install/arch-specific/win32/ru/Readme.txt
+   M builds/install/arch-specific/win32/ru/installation_readme.txt
+Generate version strings dynamically in windows readme files.
+
  2011-01-04 12:49  dimitr 
    M src/jrd/dpm.epp
 Fixed my stupid mistake.
