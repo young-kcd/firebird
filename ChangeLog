@@ -1,3 +1,7 @@
+ 2011-01-10 15:41  asfernandes 
+   M src/jrd/RecordSourceNodes.h
+Fixed CORE-3306 - Invariant sub-query is treated as variant thus causing multiple invokations of a nested stored procedure
+
  2011-01-09 21:58  asfernandes 
    M src/dsql/BoolNodes.cpp
    M src/dsql/DdlNodes.epp
