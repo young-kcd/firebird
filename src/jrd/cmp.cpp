@@ -2699,10 +2699,11 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 		(RecordSelExpr*) PAR_make_node(tdbb, innerRse->rse_count + rse_delta + 2);
 
 	*newInnerRse = *innerRse;
-	ignore_dbkey(tdbb, csb, newInnerRse, csb->csb_view);
 
 	for (USHORT i = 0; i < innerRse->rse_count; ++i)
 		newInnerRse->rse_relation[i] = innerRse->rse_relation[i];
+
+	ignore_dbkey(tdbb, csb, newInnerRse, csb->csb_view);
 
 	newNode->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
 	newNode->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
