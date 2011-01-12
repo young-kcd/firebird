@@ -6446,6 +6446,11 @@ static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
 				return true;		// do not mark as variant
 			}
 			break;
+		// procedures
+		case nod_procedure:
+			if (stream == (USHORT)(IPTR) sub->nod_arg[e_prc_stream])
+				return true;		// do not mark as variant
+			break;
 		}
 	}
 
