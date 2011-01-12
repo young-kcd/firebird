@@ -1,3 +1,15 @@
+ 2011-01-12 00:15  asfernandes 
+   M src/jrd/cmp.cpp
+Backported fix for CORE-3306 - Invariant sub-query is treated as variant thus causing multiple invokations of a nested stored procedure
+
+ 2011-01-11 15:55  dimitr 
+   M src/jrd/cmp.cpp
+Better fix for CORE-3211. It avoids a crash due to a not initialized rse_relation[] array which is used inside ignore_dbkey().
+
+ 2011-01-11 07:48  alexpeshkoff 
+   M doc/README.fb_shutdown
+fixed to make it match actual code
+
  2011-01-07 11:24  dimitr 
    M src/jrd/evl.cpp
    M src/jrd/opt.cpp
