@@ -40,7 +40,7 @@ call :btyacc
 if "%ERRLEV%"=="1" goto :END
 
 @echo Generating DSQL parser...
-@call parse.bat
+@call parse.bat %*
 if "%ERRLEV%"=="1" goto :END
 
 ::=======
