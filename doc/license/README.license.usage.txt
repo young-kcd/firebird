@@ -6,10 +6,10 @@ The applicable and approved licenses for the source files
 of the Firebird RDBMS project are:
 
   1) InterBase Public License (IPL), version 1.0
-     http://bdn.borland.com/article/0,1410,30198,00.html
+     http://www.firebirdsql.org/index.php?op=doc&id=ipl
 
   2) Initial Developer's Public License (IDPL), version 1.0
-     http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl
+     http://www.firebirdsql.org/index.php?op=doc&id=idpl
 
 The IPL is copyright of Borland Corp., the other licenses are copyright
 by the source code authors and contributors.
