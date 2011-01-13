@@ -1,3 +1,11 @@
+ 2011-01-12 10:56  dimitr 
+   M doc/license/README.license.usage.txt
+Corrected the license URLs.
+
+ 2011-01-12 10:46  dimitr 
+   M builds/win32/make_boot.bat
+Fixed the debug boot build.
+
  2011-01-11 07:49  alexpeshkoff 
    M doc/README.fb_shutdown
 front-ported doc changes
