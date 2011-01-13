@@ -1,3 +1,7 @@
+ 2011-01-12 10:56  dimitr 
+   M doc/license/README.license.usage.txt
+Corrected the license URLs.
+
  2011-01-12 00:15  asfernandes 
    M src/jrd/cmp.cpp
 Backported fix for CORE-3306 - Invariant sub-query is treated as variant thus causing multiple invokations of a nested stored procedure
