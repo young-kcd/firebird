@@ -1,3 +1,7 @@
+ 2011-01-12 10:56  dimitr 
+   M doc/license/README.license.usage.txt
+Corrected the license URLs.
+
  2011-01-10 16:28  paul_reeves 
    M builds/install/arch-specific/win32/BuildExecutableInstall.bat
    M builds/install/arch-specific/win32/FirebirdInstall_20.iss
