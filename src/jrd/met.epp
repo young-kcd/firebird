@@ -818,9 +818,9 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
-			request = CMP_find_request(tdbb, irq_m_fields4, IRQ_REQUESTS);
+			jrd_req* request2 = CMP_find_request(tdbb, irq_m_fields4, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE request)
+			FOR(REQUEST_HANDLE request2)
 				DEP IN RDB$DEPENDENCIES CROSS
 				PRC IN RDB$PROCEDURES
 					WITH DEP.RDB$DEPENDED_ON_NAME EQ X.RDB$RELATION_NAME AND
@@ -830,7 +830,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 						 DEP.RDB$DEPENDENT_NAME EQ PRC.RDB$PROCEDURE_NAME
 
 				if (!REQUEST(irq_m_fields4))
-					REQUEST(irq_m_fields4) = request;
+					REQUEST(irq_m_fields4) = request2;
 
 				Firebird::MetaName proc_name(PRC.RDB$PROCEDURE_NAME);
 
@@ -846,11 +846,11 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 			END_FOR;
 
 			if (!REQUEST(irq_m_fields4))
-				REQUEST(irq_m_fields4) = request;
+				REQUEST(irq_m_fields4) = request2;
 
-			request = CMP_find_request(tdbb, irq_m_fields5, IRQ_REQUESTS);
+			request2 = CMP_find_request(tdbb, irq_m_fields5, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE request)
+			FOR(REQUEST_HANDLE request2)
 				DEP IN RDB$DEPENDENCIES CROSS
 				TRG IN RDB$TRIGGERS
 					WITH DEP.RDB$DEPENDED_ON_NAME EQ X.RDB$RELATION_NAME AND
@@ -860,7 +860,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 						 DEP.RDB$DEPENDENT_NAME EQ TRG.RDB$TRIGGER_NAME
 
 				if (!REQUEST(irq_m_fields5))
-					REQUEST(irq_m_fields5) = request;
+					REQUEST(irq_m_fields5) = request2;
 
 				Firebird::MetaName trigger_name(TRG.RDB$TRIGGER_NAME);
 				Firebird::MetaName trigger_relation_name(TRG.RDB$RELATION_NAME);
@@ -880,7 +880,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 			END_FOR;
 
 			if (!REQUEST(irq_m_fields5))
-				REQUEST(irq_m_fields5) = request;
+				REQUEST(irq_m_fields5) = request2;
 		}
 	END_FOR;
 
