@@ -815,6 +815,73 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 		relation_name.dsc_address = (UCHAR *) X.RDB$RELATION_NAME;
 		SCL_check_relation(tdbb, &relation_name, SCL_control);
 		dw = DFW_post_work(transaction, dfw_update_format, &relation_name, 0);
+
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+		{
+			request = CMP_find_request(tdbb, irq_m_fields4, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request)
+				DEP IN RDB$DEPENDENCIES CROSS
+				PRC IN RDB$PROCEDURES
+					WITH DEP.RDB$DEPENDED_ON_NAME EQ X.RDB$RELATION_NAME AND
+						 DEP.RDB$FIELD_NAME EQ X.RDB$FIELD_NAME AND
+						 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
+						 DEP.RDB$DEPENDENT_TYPE EQ obj_procedure AND
+						 DEP.RDB$DEPENDENT_NAME EQ PRC.RDB$PROCEDURE_NAME
+
+				if (!REQUEST(irq_m_fields4))
+					REQUEST(irq_m_fields4) = request;
+
+				Firebird::MetaName proc_name(PRC.RDB$PROCEDURE_NAME);
+
+				dsc desc;
+				desc.dsc_dtype = dtype_text;
+				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
+				desc.dsc_length = proc_name.length();
+				desc.dsc_address = (UCHAR*) proc_name.c_str();
+
+				DeferredWork* dw2 =
+					DFW_post_work(transaction, dfw_modify_procedure, &desc, PRC.RDB$PROCEDURE_ID);
+				DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
+			END_FOR;
+
+			if (!REQUEST(irq_m_fields4))
+				REQUEST(irq_m_fields4) = request;
+
+			request = CMP_find_request(tdbb, irq_m_fields5, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request)
+				DEP IN RDB$DEPENDENCIES CROSS
+				TRG IN RDB$TRIGGERS
+					WITH DEP.RDB$DEPENDED_ON_NAME EQ X.RDB$RELATION_NAME AND
+						 DEP.RDB$FIELD_NAME EQ X.RDB$FIELD_NAME AND
+						 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
+						 DEP.RDB$DEPENDENT_TYPE EQ obj_trigger AND
+						 DEP.RDB$DEPENDENT_NAME EQ TRG.RDB$TRIGGER_NAME
+
+				if (!REQUEST(irq_m_fields5))
+					REQUEST(irq_m_fields5) = request;
+
+				Firebird::MetaName trigger_name(TRG.RDB$TRIGGER_NAME);
+				Firebird::MetaName trigger_relation_name(TRG.RDB$RELATION_NAME);
+
+				dsc desc;
+				desc.dsc_dtype = dtype_text;
+				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
+				desc.dsc_length = trigger_name.length();
+				desc.dsc_address = (UCHAR*) trigger_name.c_str();
+
+				DeferredWork* dw2 = DFW_post_work(transaction, dfw_modify_trigger, &desc, 0);
+				DFW_post_work_arg(transaction, dw2, NULL, TRG.RDB$TRIGGER_TYPE, dfw_arg_trg_type);
+
+				desc.dsc_length = trigger_relation_name.length();
+				desc.dsc_address = (UCHAR*) trigger_relation_name.c_str();
+				DFW_post_work_arg(transaction, dw2, &desc, 0, dfw_arg_check_blr);
+			END_FOR;
+
+			if (!REQUEST(irq_m_fields5))
+				REQUEST(irq_m_fields5) = request;
+		}
 	END_FOR;
 
 	if (!REQUEST(irq_m_fields))
@@ -883,74 +950,6 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
 
 		if (!REQUEST(irq_m_fields3))
 			REQUEST(irq_m_fields3) = request;
-
-		request = CMP_find_request(tdbb, irq_m_fields4, IRQ_REQUESTS);
-
-		FOR(REQUEST_HANDLE request)
-			RFL IN RDB$RELATION_FIELDS CROSS
-			DEP IN RDB$DEPENDENCIES CROSS
-			PRC IN RDB$PROCEDURES
-				WITH RFL.RDB$FIELD_SOURCE EQ field_source->dsc_address AND
-					 DEP.RDB$DEPENDED_ON_NAME EQ RFL.RDB$RELATION_NAME AND
-					 DEP.RDB$FIELD_NAME EQ RFL.RDB$FIELD_NAME AND
-					 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
-					 DEP.RDB$DEPENDENT_TYPE EQ obj_procedure AND
-					 DEP.RDB$DEPENDENT_NAME EQ PRC.RDB$PROCEDURE_NAME
-
-			if (!REQUEST(irq_m_fields4))
-				REQUEST(irq_m_fields4) = request;
-
-			Firebird::MetaName proc_name(PRC.RDB$PROCEDURE_NAME);
-
-			dsc desc;
-			desc.dsc_dtype = dtype_text;
-			INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-			desc.dsc_length = proc_name.length();
-			desc.dsc_address = (UCHAR*) proc_name.c_str();
-
-			DeferredWork* dw2 =
-				DFW_post_work(transaction, dfw_modify_procedure, &desc, PRC.RDB$PROCEDURE_ID);
-			DFW_post_work_arg(transaction, dw2, NULL, 0, dfw_arg_check_blr);
-		END_FOR;
-
-		if (!REQUEST(irq_m_fields4))
-			REQUEST(irq_m_fields4) = request;
-
-		request = CMP_find_request(tdbb, irq_m_fields5, IRQ_REQUESTS);
-
-		FOR(REQUEST_HANDLE request)
-			RFL IN RDB$RELATION_FIELDS CROSS
-			DEP IN RDB$DEPENDENCIES CROSS
-			TRG IN RDB$TRIGGERS
-				WITH RFL.RDB$FIELD_SOURCE EQ field_source->dsc_address AND
-					 DEP.RDB$DEPENDED_ON_NAME EQ RFL.RDB$RELATION_NAME AND
-					 DEP.RDB$FIELD_NAME EQ RFL.RDB$FIELD_NAME AND
-					 DEP.RDB$DEPENDED_ON_TYPE EQ obj_relation AND
-					 DEP.RDB$DEPENDENT_TYPE EQ obj_trigger AND
-					 DEP.RDB$DEPENDENT_NAME EQ TRG.RDB$TRIGGER_NAME
-
-			if (!REQUEST(irq_m_fields5))
-				REQUEST(irq_m_fields5) = request;
-
-			Firebird::MetaName trigger_name(TRG.RDB$TRIGGER_NAME);
-			Firebird::MetaName trigger_relation_name(TRG.RDB$RELATION_NAME);
-
-			dsc desc;
-			desc.dsc_dtype = dtype_text;
-			INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
-			desc.dsc_length = trigger_name.length();
-			desc.dsc_address = (UCHAR*) trigger_name.c_str();
-
-			DeferredWork* dw2 = DFW_post_work(transaction, dfw_modify_trigger, &desc, 0);
-			DFW_post_work_arg(transaction, dw2, NULL, TRG.RDB$TRIGGER_TYPE, dfw_arg_trg_type);
-
-			desc.dsc_length = trigger_relation_name.length();
-			desc.dsc_address = (UCHAR*) trigger_relation_name.c_str();
-			DFW_post_work_arg(transaction, dw2, &desc, 0, dfw_arg_check_blr);
-		END_FOR;
-
-		if (!REQUEST(irq_m_fields5))
-			REQUEST(irq_m_fields5) = request;
 	}
 
 	return dw;
