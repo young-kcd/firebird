@@ -166,7 +166,7 @@ static const TEXT history_names[][10] =
 };
 
 static const TEXT valid_switches[] =
-	"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>, -m \n";
+	"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>, -m";
 
 // The same table is in lock.cpp, maybe worth moving to a common file?
 static const UCHAR compatibility[LCK_max][LCK_max] =
@@ -265,7 +265,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		SCHAR* p = *argv++;
 		if (*p++ != '-')
 		{
-			FPRINTF(outfile, valid_switches);
+			FPRINTF(outfile, "%s\n", valid_switches);
 			exit(FINI_OK);
 		}
 		SCHAR c;
@@ -392,7 +392,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			default:
-				FPRINTF(outfile, valid_switches);
+				FPRINTF(outfile, "%s\n", valid_switches);
 				exit(FINI_OK);
 				break;
 			}
