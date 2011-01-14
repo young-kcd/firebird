@@ -32,6 +32,7 @@
 #include "../common/classes/File.h"
 
 #include "ProviderInterface.h"
+#include "../common/classes/ImplementHelper.h"
 namespace Jrd
 {
 	typedef Firebird::Status Status;
@@ -145,7 +146,7 @@ struct bid
 
 // Your basic blob block.
 
-class blb : public pool_alloc<type_blb>, public FbApi::Blob
+class blb : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION, pool_alloc<type_blb> >
 {
 public:
 	blb(MemoryPool& pool, USHORT page_size)
@@ -205,8 +206,10 @@ public:
 		blb_has_buffer = false;
 	}
 
+	static void destroy(blb* blob, const bool purge_flag);
+
 public:
-	virtual void release();
+	virtual int release();
 	virtual void getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);

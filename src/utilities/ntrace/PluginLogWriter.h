@@ -29,10 +29,12 @@
 #define PLUGINLOGWRITER_H
 
 
+#include "firebird.h"
 #include "../../jrd/ntrace.h"
 #include "../../common/classes/timestamp.h"
 #include "../../common/isc_s_proto.h"
 #include "../../common/os/path_utils.h"
+#include "../../common/classes/ImplementHelper.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -45,15 +47,22 @@
 #include <sys/stat.h>
 
 
-class PluginLogWriter : public TraceLogWriter
+class PluginLogWriter : public Firebird::StdIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
 {
 public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
 	~PluginLogWriter();
 
 	virtual size_t write(const void* buf, size_t size);
-	virtual void release()
-	{ delete this; }
+	virtual int release()
+	{
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+		return 1;
+	}
 
 private:
 	SINT64 seekToEnd();

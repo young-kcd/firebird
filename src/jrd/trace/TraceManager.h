@@ -35,6 +35,7 @@
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/init.h"
 #include "../../common/classes/locks.h"
+#include "../../common/classes/ImplementHelper.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 #include "../../jrd/trace/TraceSession.h"
 
@@ -60,7 +61,7 @@ public:
 	{ return storageInstance.getStorage(); }
 
 	static size_t pluginsCount()
-	{ return modules->getCount(); }
+	{ return factories->getCount(); }
 
 	void event_attach(TraceConnection* connection, bool create_db,
 		ntrace_result_t att_result);
@@ -108,33 +109,13 @@ public:
 
 	void event_service_detach(TraceService* service, ntrace_result_t detach_result);
 
-	struct NotificationNeeds
-	{
-		// Set if event is tracked
-		bool event_attach;
-		bool event_detach;
-		bool event_transaction_start;
-		bool event_transaction_end;
-		bool event_set_context;
-		bool event_proc_execute;
-		bool event_trigger_execute;
-		bool event_dsql_prepare;
-		bool event_dsql_free;
-		bool event_dsql_execute;
-		bool event_blr_compile;
-		bool event_blr_execute;
-		bool event_dyn_execute;
-		bool event_service_attach;
-		bool event_service_start;
-		bool event_service_query;
-		bool event_service_detach;
-	};
+	typedef ntrace_mask_t NotificationNeeds;
 
-	inline const NotificationNeeds& needs()
+	inline bool needs(TraceEvent e)
 	{
 		if (changeNumber != getStorage()->getChangeNumber())
 			update_sessions();
-		return trace_needs;
+		return trace_needs & (1 << e);
 	}
 
 	/* DSQL-friendly routines to call Trace API hooks.
@@ -159,39 +140,67 @@ private:
 	NotificationNeeds trace_needs;
 
 	// This structure should be POD-like to be stored in Array
-	struct ModuleInfo
+	struct FactoryInfo
 	{
-		ModuleInfo()
+		FactoryInfo() : factory(NULL)
 		{
-			ntrace_attach = NULL;
-			memset(module, 0, sizeof(module));
+			memset(name, 0, sizeof(name));
 		}
 
-		ntrace_attach_t ntrace_attach;
-		char module[MAXPATHLEN];
+		TraceFactory* factory;
+		char name[MAXPATHLEN];
 	};
-	static Firebird::GlobalPtr<Firebird::Array<ModuleInfo> > modules;
-	static Firebird::GlobalPtr<Firebird::Mutex> init_modules_mtx;
-	static volatile bool init_modules;
+	class Factories : public Firebird::Array<FactoryInfo>
+	{
+	public:
+		Factories(Firebird::MemoryPool& p)
+			: Firebird::Array<FactoryInfo>(p)
+		{ }
+		~Factories()
+		{
+			Firebird::PluginInterface pi;
+			for (unsigned int i = 0; i < getCount(); ++i)
+			{
+				pi->releasePlugin(getElement(i).factory);
+			}
+		}
+	};
+	static Firebird::GlobalPtr<Factories> factories;
+	static Firebird::GlobalPtr<Firebird::Mutex> init_factories_mtx;
+	static volatile bool init_factories;
 
 	struct SessionInfo
 	{
-		const TracePlugin* plugin;
-		ModuleInfo* module_info;
+		FactoryInfo* factory_info;
+		TracePlugin* plugin;
 		ULONG ses_id;
 
 		static ULONG generate(const void*, const SessionInfo& item)
 		{ return item.ses_id; }
 	};
-	Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>,
-		ULONG, SessionInfo> trace_sessions;
+	class Sessions : public Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, ULONG, SessionInfo>
+	{
+	public:
+		Sessions(MemoryPool& p)
+			: Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, ULONG, SessionInfo>(p)
+		{ }
+
+		~Sessions()
+		{
+			for (unsigned int i = 0; i < getCount(); ++i)
+			{
+				getElement(i).plugin->release();
+			}
+		}
+	};
+	Sessions trace_sessions;
 
 	void init();
-	void load_modules();
+	void load_plugins();
 	void update_sessions();
 	void update_session(const Firebird::TraceSession& session);
 
-	bool check_result(const TracePlugin* plugin, const char* module, const char* function, bool result);
+	bool check_result(TracePlugin* plugin, const char* module, const char* function, bool result);
 
 	/* DSQL statement lifecycle. To be moved to public and used directly when DSQL becomes a part of JRD */
 	void event_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,

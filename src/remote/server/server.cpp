@@ -69,8 +69,6 @@
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
-//#include "../auth/SecurityDatabase/jrd_pwd.h"
-//#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/ImplementHelper.h"
 
 using namespace Firebird;
@@ -217,25 +215,6 @@ public:
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
 
-class InitList : public HalfStaticArray<Auth::ServerPlugin*, 8>
-{
-public:
-	explicit InitList(MemoryPool& p)
-		: HalfStaticArray<Auth::ServerPlugin*, 8>(p)
-	{
-		Plugin* plugin;
-		while ( (plugin = fb_query_plugin(Plugin::AuthServer, NULL)) )
-		{
-			push(reinterpret_cast<Auth::ServerPlugin*>(plugin));
-		}
-
-		// must be last
-		push(NULL);
-	}
-};
-
-Firebird::InitInstance<InitList> pluginList;
-
 // delayed authentication block for auth callback
 class ServerAuth : public GlobalStorage, public ServerAuthBase
 {
@@ -248,9 +227,10 @@ public:
 		: fileName(getPool()),
 		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
 		  	  MAX_DPB_SIZE, pb, pbLen),
-		  authBlockInterface(getPool(), op == op_service_attach),
-		  remoteId(getPool()), userName(getPool()), authInstance(0),
-		  part2(p2), sequence(0), operation(op)
+		  authBlockInterface(op == op_service_attach),
+		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION),
+		  remoteId(getPool()), userName(getPool()), authServer(NULL),
+		  part2(p2), operation(op)
 	{
 		// Do not store port here - it will be passed to authenticate() explicitly
 		fileName.assign(fName, fLen);
@@ -275,34 +255,28 @@ public:
 	}
 
 	~ServerAuth()
-	{
-		if (authInstance)
-		{
-			authInstance->release();
-		}
-	}
+	{ }
 
 	bool authenticate(rem_port* port, PACKET* send, const cstring* data)
 	{
 		bool working = true;
-		Auth::ServerPlugin** list = pluginList().begin();
 		Firebird::LocalStatus st;
 
-		while (working && list[sequence])
+		while (working && authItr.hasData())
 		{
 			bool first = false;
-			if (! authInstance)
+			if (! authServer)
 			{
-				authInstance = list[sequence]->instance();
+				authServer = authItr.plugin();
 				first = true;
 			}
 
 			fb_assert(first || data);
 			Auth::Result ar = first ?
-				authInstance->startAuthentication(&st, operation == op_service_attach, fileName.c_str(),
+				authServer->startAuthentication(&st, operation == op_service_attach, fileName.c_str(),
 												  wrt.getBuffer(), wrt.getBufferLength(),
 												  &authBlockInterface) :
-				authInstance->contAuthentication(&st, &authBlockInterface,
+				authServer->contAuthentication(&st, &authBlockInterface,
 												 data->cstr_address, data->cstr_length);
 
 			cstring* s;
@@ -312,8 +286,8 @@ public:
 			case Auth::AUTH_MORE_DATA:
 				if (port->port_protocol < PROTOCOL_VERSION11)
 				{
-					authInstance->release();
-					authInstance = NULL;
+					authServer->release();
+					authServer = NULL;
 					working = false;
 					break;
 				}
@@ -325,7 +299,7 @@ public:
 					s = &send->p_auth_cont.p_data;
 					s->cstr_allocated = 0;
 					// violate constness here safely - send operation does not modify data
-					authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
+					authServer->getData(const_cast<const unsigned char**>(&s->cstr_address),
 										  &s->cstr_length);
 
 					s = &send->p_auth_cont.p_name;
@@ -333,8 +307,8 @@ public:
 					if (first)
 					{
 						// violate constness here safely - send operation does not modify data
-						s->cstr_address = (UCHAR*) list[sequence]->name();
-						s->cstr_length = strlen(list[sequence]->name());
+						s->cstr_address = (UCHAR*) authItr.name();
+						s->cstr_length = strlen(authItr.name());
 					}
 					else
 					{
@@ -343,7 +317,7 @@ public:
 				}
 				else
 				{
-					if (Auth::legacy(list[sequence]))
+					if (Auth::legacy(authItr.name()))
 					{
 						// compatibility with FB 2.1 trusted
 						send->p_operation = op_trusted_auth;
@@ -351,13 +325,13 @@ public:
 						s = &send->p_trau.p_trau_data;
 						s->cstr_allocated = 0;
 						// violate constness here safely - send operation does not modify data
-						authInstance->getData(const_cast<const unsigned char**>(&s->cstr_address),
+						authServer->getData(const_cast<const unsigned char**>(&s->cstr_address),
 											  &s->cstr_length);
 					}
 					else
 					{
-						authInstance->release();
-						authInstance = NULL;
+						authServer->release();
+						authServer = NULL;
 						working = false;
 						break;
 					}
@@ -367,23 +341,20 @@ public:
 				return false;
 
 			case Auth::AUTH_CONTINUE:
-				++sequence;
-				authInstance->release();
-				authInstance = NULL;
+				authItr.next();
+				authServer = NULL;
 				continue;
 
 			case Auth::AUTH_SUCCESS:
 				usernameFailedLogins->loginSuccess(userName);
 				remoteFailedLogins->loginSuccess(remoteId);
-				authInstance->release();
-				authInstance = NULL;
+				authServer = NULL;
 				authBlockInterface.store(wrt);
 				part2(port, operation, fileName.c_str(), fileName.length(), wrt, send);
 				return true;
 
 			case Auth::AUTH_FAILED:
-				authInstance->release();
-				authInstance = NULL;
+				authServer = NULL;
 				working = false;
 				break;
 			}
@@ -407,10 +378,10 @@ private:
 	PathName fileName;
 	ClumpletWriter wrt;
 	Auth::WriterImplementation authBlockInterface;
+	PluginsSet<Auth::Server> authItr;
 	string remoteId, userName;
-	Auth::ServerInstance* authInstance;
+	Auth::Server* authServer;
 	Part2* part2;
-	unsigned int sequence;
 	P_OP operation;
 };
 

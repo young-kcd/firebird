@@ -32,9 +32,8 @@
 
 namespace Auth {
 
-WriterImplementation::WriterImplementation(Firebird::MemoryPool& pool, bool svcFlag)
-	: Firebird::PermanentStorage(pool), body(getPool()),
-	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
+WriterImplementation::WriterImplementation(bool svcFlag)
+	: body(getPool()), sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
 { }
 
 void WriterImplementation::store(Firebird::ClumpletWriter& to)
@@ -75,11 +74,10 @@ void DpbImplementation::drop()
 }
 
 
-bool legacy(Firebird::Plugin* plugin)
+bool legacy(const char* nm)
 {
 	const char* legacyTrusted = "WIN_SSPI";
 	const unsigned short legLength = strlen(legacyTrusted);
-	const char* nm = plugin->name();
 
 	return strlen(nm) == legLength && memcmp(legacyTrusted, nm, legLength) == 0;
 }

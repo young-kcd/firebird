@@ -165,6 +165,12 @@ LEGACY_USERS_MANAGE_Objects:= $(call makeObjects,auth/SecurityDatabase,LegacyMan
 AllObjects += $(LEGACY_USERS_MANAGE_Objects)
 
 
+# Multihop authentication debugger
+AUTH_DEBUGGER_Objects:= $(call makeObjects,auth,AuthDbg.cpp)
+
+AllObjects += $(AUTH_DEBUGGER_Objects)
+
+
 # UDR engine
 UDRENG_Objects:= $(call dirObjects,plugins/udr_engine)
 

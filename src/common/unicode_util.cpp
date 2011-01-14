@@ -28,6 +28,7 @@
 #include "../common/classes/alloc.h"
 #include "../jrd/constants.h"
 #include "../common/unicode_util.h"
+#include "../common/isc_proto.h"
 #include "../common/CharSet.h"
 #include "../common/IntlUtil.h"
 #include "../common/gdsassert.h"
@@ -737,6 +738,26 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 	return true;	// well-formed
 }
 
+namespace {
+template <typename T> void getEntryPoint(const char* name, const string& major, const string& minor,
+										 ModuleLoader::Module* module, T& ptr)
+{
+	string symbol;
+
+	symbol.printf("%s_%s_%s", name, major.c_str(), minor.c_str());
+	module->findSymbol(symbol, ptr);
+	if (ptr)
+		return;
+
+	symbol.printf("%s_%s%s", name, major.c_str(), minor.c_str());
+	module->findSymbol(symbol, ptr);
+	if (ptr)
+		return;
+
+	(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
+	 Arg::Gds(isc_random) << name).raise();
+}
+}
 
 UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
@@ -757,6 +778,11 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
+
+	if (!versions.getCount())
+	{
+		gds__log("No versions");
+	}
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
@@ -806,6 +832,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		if (!icu->ucModule)
 		{
+			gds__log("failed to load module %s", filename.c_str());
 			delete icu;
 			continue;
 		}
@@ -816,73 +843,42 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		if (!icu->inModule)
 		{
+			gds__log("failed to load module %s", filename.c_str());
 			delete icu;
 			continue;
 		}
 
-		string symbol;
-
-		symbol.printf("u_init_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->uInit);
-
-		symbol.printf("u_versionToString_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->uVersionToString);
-
-		symbol.printf("uloc_countAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->ulocCountAvailable);
-
-		symbol.printf("uloc_getAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->ulocGetAvailable);
-
-		symbol.printf("uset_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetClose);
-
-		symbol.printf("uset_getItem_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetGetItem);
-
-		symbol.printf("uset_getItemCount_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetGetItemCount);
-
-		symbol.printf("uset_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetOpen);
-
-		symbol.printf("ucol_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolClose);
-
-		symbol.printf("ucol_getContractions_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetContractions);
-
-		symbol.printf("ucol_getSortKey_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetSortKey);
-
-		symbol.printf("ucol_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolOpen);
-
-		symbol.printf("ucol_setAttribute_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolSetAttribute);
-
-		symbol.printf("ucol_strcoll_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolStrColl);
-
-		symbol.printf("ucol_getVersion_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetVersion);
-
-		symbol.printf("utrans_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransOpen);
-
-		symbol.printf("utrans_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransClose);
-
-		symbol.printf("utrans_transUChars_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->utransTransUChars);
-
-		if (/*!icu->uInit ||*/ !icu->uVersionToString || !icu->ulocCountAvailable ||
-			!icu->ulocGetAvailable || !icu->usetClose || !icu->usetGetItem ||
-			!icu->usetGetItemCount || !icu->usetOpen || !icu->ucolClose ||
-			!icu->ucolGetContractions || !icu->ucolGetSortKey || !icu->ucolOpen ||
-			!icu->ucolSetAttribute || !icu->ucolStrColl || !icu->ucolGetVersion ||
-			!icu->utransOpen || !icu->utransClose || !icu->utransTransUChars)
+		try
 		{
+			getEntryPoint("u_init", majorVersion, minorVersion,	icu->ucModule, icu->uInit);
+		}
+		catch (const status_exception&)
+		{ }
+
+		try
+		{
+			getEntryPoint("u_versionToString", majorVersion, minorVersion, icu->ucModule, icu->uVersionToString);
+			getEntryPoint("uloc_countAvailable", majorVersion, minorVersion, icu->ucModule, icu->ulocCountAvailable);
+			getEntryPoint("uloc_getAvailable", majorVersion, minorVersion, icu->ucModule, icu->ulocGetAvailable);
+			getEntryPoint("uset_close", majorVersion, minorVersion, icu->ucModule, icu->usetClose);
+			getEntryPoint("uset_getItem", majorVersion, minorVersion, icu->ucModule, icu->usetGetItem);
+			getEntryPoint("uset_getItemCount", majorVersion, minorVersion, icu->ucModule, icu->usetGetItemCount);
+			getEntryPoint("uset_open", majorVersion, minorVersion, icu->ucModule, icu->usetOpen);
+
+			getEntryPoint("ucol_close", majorVersion, minorVersion, icu->inModule, icu->ucolClose);
+			getEntryPoint("ucol_getContractions", majorVersion, minorVersion, icu->inModule, icu->ucolGetContractions);
+			getEntryPoint("ucol_getSortKey", majorVersion, minorVersion, icu->inModule, icu->ucolGetSortKey);
+			getEntryPoint("ucol_open", majorVersion, minorVersion, icu->inModule, icu->ucolOpen);
+			getEntryPoint("ucol_setAttribute", majorVersion, minorVersion, icu->inModule, icu->ucolSetAttribute);
+			getEntryPoint("ucol_strcoll", majorVersion, minorVersion, icu->inModule, icu->ucolStrColl);
+			getEntryPoint("ucol_getVersion", majorVersion, minorVersion, icu->inModule, icu->ucolGetVersion);
+			getEntryPoint("utrans_open", majorVersion, minorVersion, icu->inModule, icu->utransOpen);
+			getEntryPoint("utrans_close", majorVersion, minorVersion, icu->inModule, icu->utransClose);
+			getEntryPoint("utrans_transUChars", majorVersion, minorVersion, icu->inModule, icu->utransTransUChars);
+		}
+		catch (const status_exception& s)
+		{
+			iscLogStatus("ICU load error", s.value());
 			delete icu;
 			continue;
 		}
@@ -894,6 +890,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			icu->uInit(&status);
 			if (status != U_ZERO_ERROR)
 			{
+				gds__log("u_init() error %d", status);
 				delete icu;
 				continue;
 			}
@@ -902,6 +899,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		UCollator* collator = icu->ucolOpen("", &status);
 		if (!collator)
 		{
+			gds__log("ucolOpen failed");
 			delete icu;
 			continue;
 		}
@@ -968,7 +966,10 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 		collVersion = IntlUtil::convertUtf16ToAscii(collVersion, &error);
 		if (error)
+		{
+			gds__log("IntlUtil::convertUtf16ToAscii failed");
 			return NULL;
+		}
 	}
 
 	string numericSort;
@@ -978,19 +979,26 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 		numericSort = IntlUtil::convertUtf16ToAscii(numericSort, &error);
 		if (error || !(numericSort == "0" || numericSort == "1"))
+		{
+			gds__log("IntlUtil::convertUtf16ToAscii failed");
 			return NULL;
+		}
 	}
 
 	locale = IntlUtil::convertUtf16ToAscii(locale, &error);
 	if (error)
+	{
+		gds__log("IntlUtil::convertUtf16ToAscii failed");
 		return NULL;
+	}
 
 	if ((attributes & ~(TEXTTYPE_ATTR_PAD_SPACE | TEXTTYPE_ATTR_CASE_INSENSITIVE |
 			TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ||
 		((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
-			TEXTTYPE_ATTR_ACCENT_INSENSITIVE) ||
-		(specificAttributes.count() - attributeCount) != 0)
+			TEXTTYPE_ATTR_ACCENT_INSENSITIVE)/* ||
+		(specificAttributes.count() - attributeCount) != 0*/)
 	{
+		gds__log("attributes (%x) failed or %d != %d ?", attributes, specificAttributes.count(), attributeCount);
 		return NULL;
 	}
 
@@ -1001,17 +1009,24 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 	ICU* icu = loadICU(collVersion, locale, configInfo);
 	if (!icu)
+	{
+		gds__log("loadICU failed");
 		return NULL;
+	}
 
 	UErrorCode status = U_ZERO_ERROR;
 
 	UCollator* compareCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!compareCollator)
+	{
+		gds__log("ucolOpen failed");
 		return NULL;
+	}
 
 	UCollator* partialCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!partialCollator)
 	{
+		gds__log("ucolOpen failed");
 		icu->ucolClose(compareCollator);
 		return NULL;
 	}
@@ -1019,6 +1034,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	UCollator* sortCollator = icu->ucolOpen(locale.c_str(), &status);
 	if (!sortCollator)
 	{
+		gds__log("ucolOpen failed");
 		icu->ucolClose(compareCollator);
 		icu->ucolClose(partialCollator);
 		return NULL;

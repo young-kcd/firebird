@@ -43,11 +43,11 @@ namespace Jrd {
 
 void jrd_vtof(const char*, char*, SSHORT);
 
-namespace FbApi
+namespace Firebird
 {
-	class Provider;
+	class PProvider;
 }
-FbApi::Provider* currentProvider();
+Firebird::PProvider* currentProvider();
 
 // Defines for parameter 3 of JRD_num_attachments
 enum JRD_info_tag

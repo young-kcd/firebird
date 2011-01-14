@@ -25,7 +25,7 @@
 # 
 #
 
-firebirdPlugin
+firebird_plugin
 fbUdrRegFunction
 fbUdrRegProcedure
 fbUdrRegTrigger

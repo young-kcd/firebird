@@ -40,6 +40,7 @@
 #include "../../jrd/tra.h"
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
+#include "../../common/classes/ImplementHelper.h"
 
 //// TODO: DDL triggers, packages and external procedures and functions support
 namespace Jrd {
@@ -48,7 +49,7 @@ class Database;
 class Attachment;
 class jrd_tra;
 
-class TraceConnectionImpl : public TraceConnection
+class TraceConnectionImpl : public Firebird::StackIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceConnectionImpl(const Attachment* att) :
@@ -71,7 +72,7 @@ private:
 };
 
 
-class TraceTransactionImpl : public TraceTransaction
+class TraceTransactionImpl : public Firebird::StackIface<TraceTransaction, FB_TRACE_TRANSACTION_VERSION>
 {
 public:
 	TraceTransactionImpl(const jrd_tra* tran, PerformanceInfo* perf = NULL) :
@@ -91,7 +92,7 @@ private:
 };
 
 
-class BLRPrinter : public TraceBLRStatement
+class BLRPrinter : public Firebird::StackIface<TraceBLRStatement, FB_TRACE_BLR_VERSION>
 {
 public:
 	BLRPrinter(const unsigned char* blr, size_t length) :
@@ -143,7 +144,7 @@ public:
 };
 
 
-class TraceSQLStatementImpl : public TraceSQLStatement
+class TraceSQLStatementImpl : public Firebird::StackIface<TraceSQLStatement, FB_TRACE_SQL_VERSION>
 {
 public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
@@ -164,7 +165,7 @@ public:
 	virtual const char* getTextUTF8();
 
 private:
-	class DSQLParamsImpl : public TraceParams
+	class DSQLParamsImpl : public Firebird::StackIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 	{
 	public:
 		DSQLParamsImpl(Firebird::MemoryPool &pool, const Firebird::Array<dsql_par*>* params) :
@@ -190,7 +191,7 @@ private:
 };
 
 
-class TraceFailedSQLStatement : public TraceSQLStatement
+class TraceFailedSQLStatement : public Firebird::StackIface<TraceSQLStatement, FB_TRACE_SQL_VERSION>
 {
 public:
 	TraceFailedSQLStatement(Firebird::string &text) :
@@ -210,7 +211,7 @@ private:
 };
 
 
-class TraceContextVarImpl : public TraceContextVariable
+class TraceContextVarImpl : public Firebird::StackIface<TraceContextVariable, FB_TRACE_CONTEXT_VARIABLE_VERSION>
 {
 public:
 	TraceContextVarImpl(const char* ns, const char* name, const char* value) :
@@ -229,7 +230,7 @@ private:
 	const char* const m_value;
 };
 
-class TraceProcedureImpl : public TraceProcedure
+class TraceProcedureImpl : public Firebird::StackIface<TraceProcedure, FB_TRACE_PROCEDURE_VERSION>
 {
 public:
 	TraceProcedureImpl(jrd_req* request, PerformanceInfo* perf) :
@@ -247,7 +248,7 @@ public:
 	virtual PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
-	class JrdParamsImpl : public TraceParams
+	class JrdParamsImpl : public Firebird::StackIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 	{
 	public:
 		JrdParamsImpl(Firebird::MemoryPool& pool, jrd_req* request, const ValueListNode* params) :
@@ -273,7 +274,7 @@ private:
 };
 
 
-class TraceTriggerImpl : public TraceTrigger
+class TraceTriggerImpl : public Firebird::StackIface<TraceTrigger, FB_TRACE_TRIGGER_VERSION>
 {
 public:
 	TraceTriggerImpl(const jrd_req* trig, SSHORT which, PerformanceInfo* perf) :
@@ -295,7 +296,7 @@ private:
 };
 
 
-class TraceServiceImpl : public TraceService
+class TraceServiceImpl : public Firebird::StackIface<TraceService, FB_TRACE_SERVICE_VERSION>
 {
 public:
 	TraceServiceImpl(const Service* svc) :
@@ -333,7 +334,7 @@ private:
 };
 
 
-class TraceInitInfoImpl : public TraceInitInfo
+class TraceInitInfoImpl : public Firebird::StackIface<TraceInitInfo, FB_TRACE_INIT_INFO_VERSION>
 {
 public:
 	TraceInitInfoImpl(const Firebird::TraceSession &session, const Attachment* att,

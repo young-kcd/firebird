@@ -30,36 +30,29 @@
 #ifndef FIREBIRD_NTRACE_H
 #define FIREBIRD_NTRACE_H
 
-// to define SINT64
-#include "../common/common.h"
-
-// Version of API, used for version fields in TracePlugin structure
-#define NTRACE_VERSION 2
-
-// plugin entry point
-static const char* const NTRACE_ATTACH = "trace_create";
+#include "FirebirdPluginApi.h"
+#include "../common/common.h"		// to define SINT64
 
 // Database objects
 
 struct PerformanceInfo;
 
-class TraceConnection
+class TraceConnection : public Firebird::Interface
 {
 public:
-	virtual int getConnectionID() = 0;
-	virtual const char* getDatabaseName() = 0;
+	virtual int FB_CARG getConnectionID() = 0;
+	virtual const char* FB_CARG getDatabaseName() = 0;
 
-	virtual int getProcessID() = 0;
-	virtual const char* getUserName() = 0;
-	virtual const char* getRoleName() = 0;
-	virtual const char* getCharSet() = 0;
-	virtual const char* getRemoteProtocol() = 0;
-	virtual const char* getRemoteAddress() = 0;
-	virtual int getRemoteProcessID() = 0;
-	virtual const char* getRemoteProcessName() = 0;
-
-	virtual ~TraceConnection() { }
+	virtual int FB_CARG getProcessID() = 0;
+	virtual const char* FB_CARG getUserName() = 0;
+	virtual const char* FB_CARG getRoleName() = 0;
+	virtual const char* FB_CARG getCharSet() = 0;
+	virtual const char* FB_CARG getRemoteProtocol() = 0;
+	virtual const char* FB_CARG getRemoteAddress() = 0;
+	virtual int FB_CARG getRemoteProcessID() = 0;
+	virtual const char* FB_CARG getRemoteProcessName() = 0;
 };
+#define FB_TRACE_CONNECTION_VERSION (FB_INTERFACE_VERSION + 10)
 
 enum ntrace_tra_isolation_t
 {
@@ -69,116 +62,110 @@ enum ntrace_tra_isolation_t
 	tra_iso_read_committed_norecver
 };
 
-class TraceTransaction
+class TraceTransaction : public Firebird::Interface
 {
 public:
-	virtual int getTransactionID() = 0;
-	virtual bool getReadOnly() = 0;
-	virtual int getWait() = 0;
-	virtual ntrace_tra_isolation_t getIsolation() = 0;
-	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceTransaction() { }
+	virtual int FB_CARG getTransactionID() = 0;
+	virtual bool FB_CARG getReadOnly() = 0;
+	virtual int FB_CARG getWait() = 0;
+	virtual ntrace_tra_isolation_t FB_CARG getIsolation() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 5)
 
 typedef int ntrace_relation_t;
 
-class TraceParams
+class TraceParams : public Firebird::Interface
 {
 public:
-	virtual size_t getCount() = 0;
-	virtual const struct dsc* getParam(size_t idx) = 0;
-
-	virtual ~TraceParams() { }
+	virtual size_t FB_CARG getCount() = 0;
+	virtual const struct dsc* FB_CARG getParam(size_t idx) = 0;
 };
+#define FB_TRACE_PARAMS_VERSION (FB_INTERFACE_VERSION + 2)
 
-class TraceStatement
+class TraceStatement : public Firebird::Interface
 {
 public:
-	virtual int getStmtID() = 0;
-	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceStatement() { }
+	virtual int FB_CARG getStmtID() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_STATEMENT_VERSION (FB_INTERFACE_VERSION + 2)
 
 class TraceSQLStatement : public TraceStatement
 {
 public:
-	virtual const char* getText() = 0;
-	virtual const char* getPlan() = 0;
-	virtual TraceParams* getInputs() = 0;
-	virtual const char* getTextUTF8() = 0;
+	virtual const char* FB_CARG getText() = 0;
+	virtual const char* FB_CARG getPlan() = 0;
+	virtual TraceParams* FB_CARG getInputs() = 0;
+	virtual const char* FB_CARG getTextUTF8() = 0;
 };
+#define FB_TRACE_SQL_VERSION (FB_TRACE_STATEMENT_VERSION + 4)
 
 class TraceBLRStatement : public TraceStatement
 {
 public:
-	virtual const unsigned char* getData() = 0;
-	virtual size_t getDataLength() = 0;
-	virtual const char* getText() = 0;
+	virtual const unsigned char* FB_CARG getData() = 0;
+	virtual size_t FB_CARG getDataLength() = 0;
+	virtual const char* FB_CARG getText() = 0;
 };
+#define FB_TRACE_BLR_VERSION (FB_TRACE_STATEMENT_VERSION + 3)
 
-class TraceDYNRequest
+class TraceDYNRequest : public Firebird::Interface
 {
 public:
-	virtual const unsigned char* getData() = 0;
-	virtual size_t getDataLength() = 0;
-	virtual const char* getText() = 0;
-
-	virtual ~TraceDYNRequest() { }
+	virtual const unsigned char* FB_CARG getData() = 0;
+	virtual size_t FB_CARG getDataLength() = 0;
+	virtual const char* FB_CARG getText() = 0;
 };
+#define FB_TRACE_DYN_VERSION (FB_INTERFACE_VERSION + 3)
 
-class TraceContextVariable
+class TraceContextVariable : public Firebird::Interface
 {
 public:
-	virtual const char* getNameSpace() = 0;
-	virtual const char* getVarName() = 0;
-	virtual const char* getVarValue() = 0;
-
-	virtual ~TraceContextVariable() { }
+	virtual const char* FB_CARG getNameSpace() = 0;
+	virtual const char* FB_CARG getVarName() = 0;
+	virtual const char* FB_CARG getVarValue() = 0;
 };
+#define FB_TRACE_CONTEXT_VARIABLE_VERSION (FB_INTERFACE_VERSION + 3)
 
-class TraceProcedure
+class TraceProcedure : public Firebird::Interface
 {
 public:
-	virtual const char* getProcName() = 0;
-	virtual TraceParams* getInputs() = 0;
-	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceProcedure() { }
+	virtual const char* FB_CARG getProcName() = 0;
+	virtual TraceParams* FB_CARG getInputs() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_PROCEDURE_VERSION (FB_INTERFACE_VERSION + 3)
 
-class TraceTrigger
+class TraceTrigger : public Firebird::Interface
 {
 public:
-	virtual const char* getTriggerName() = 0;
-	virtual const char* getRelationName() = 0;
-	virtual int getAction() = 0;
-	virtual int getWhich() = 0;
-	virtual PerformanceInfo* getPerf() = 0;
-
-	virtual ~TraceTrigger() { }
+	virtual const char* FB_CARG getTriggerName() = 0;
+	virtual const char* FB_CARG getRelationName() = 0;
+	virtual int FB_CARG getAction() = 0;
+	virtual int FB_CARG getWhich() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_TRIGGER_VERSION (FB_INTERFACE_VERSION + 5)
 
 typedef void* ntrace_service_t;
 
-class TraceService
+class TraceService : public Firebird::Interface
 {
 public:
-	virtual ntrace_service_t getServiceID() = 0;
-	virtual const char* getServiceMgr() = 0;
-	virtual const char* getServiceName() = 0;
+	virtual ntrace_service_t FB_CARG getServiceID() = 0;
+	virtual const char* FB_CARG getServiceMgr() = 0;
+	virtual const char* FB_CARG getServiceName() = 0;
 
-	virtual int getProcessID() = 0;
-	virtual const char* getUserName() = 0;
-	virtual const char* getRoleName() = 0;
-	virtual const char* getRemoteProtocol() = 0;
-	virtual const char* getRemoteAddress() = 0;
-	virtual int getRemoteProcessID() = 0;
-	virtual const char* getRemoteProcessName() = 0;
-
-	virtual ~TraceService() { }
+	virtual int FB_CARG getProcessID() = 0;
+	virtual const char* FB_CARG getUserName() = 0;
+	virtual const char* FB_CARG getRoleName() = 0;
+	virtual const char* FB_CARG getRemoteProtocol() = 0;
+	virtual const char* FB_CARG getRemoteAddress() = 0;
+	virtual int FB_CARG getRemoteProcessID() = 0;
+	virtual const char* FB_CARG getRemoteProcessName() = 0;
 };
+#define FB_TRACE_SERVICE_VERSION (FB_INTERFACE_VERSION + 10)
 
 
 // Plugin-specific argument. Passed by the engine to each hook
@@ -192,6 +179,7 @@ typedef int ntrace_boolean_t;
 
 // Performance counter
 typedef SINT64 ntrace_counter_t;
+typedef FB_UINT64 ntrace_mask_t;
 
 // Used for arrays with binary data
 typedef unsigned char ntrace_byte_t;
@@ -244,148 +232,116 @@ struct PerformanceInfo
 	ntrace_counter_t pin_records_fetched;	// records fetched from statement/procedure
 };
 
-// Get error string for hook failure that happened
-typedef const char* (*ntrace_get_error_t)(const struct TracePlugin* tpl_plugin);
-
-// Finalize plugin interface for this particular database
-typedef ntrace_boolean_t (*ntrace_shutdown_t)(const struct TracePlugin* tpl_plugin);
-
-// Create/close attachment
-typedef ntrace_boolean_t (*ntrace_event_attach_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
-typedef ntrace_boolean_t (*ntrace_event_detach_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, ntrace_boolean_t drop_db);
-
-// Start/end transaction
-typedef ntrace_boolean_t (*ntrace_event_transaction_start_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
-typedef ntrace_boolean_t (*ntrace_event_transaction_end_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
-
-// Assignment to context variables
-typedef ntrace_boolean_t (*ntrace_event_set_context_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
-
-// Stored procedure and triggers executing
-typedef	ntrace_boolean_t (*ntrace_event_proc_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
-	bool started, ntrace_result_t proc_result);
-
-typedef ntrace_boolean_t (*ntrace_event_trigger_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
-	bool started, ntrace_result_t trig_result);
-
-// DSQL statement lifecycle
-typedef ntrace_boolean_t (*ntrace_event_dsql_prepare_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-typedef ntrace_boolean_t (*ntrace_event_dsql_free_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
-typedef ntrace_boolean_t (*ntrace_event_dsql_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
-	bool started, ntrace_result_t req_result);
-
-// BLR requests
-typedef ntrace_boolean_t (*ntrace_event_blr_compile_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-typedef ntrace_boolean_t (*ntrace_event_blr_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	TraceBLRStatement* statement, ntrace_result_t req_result);
-
-// DYN requests
-typedef ntrace_boolean_t (*ntrace_event_dyn_execute_t)(const struct TracePlugin* tpl_plugin,
-	TraceConnection* connection, TraceTransaction* transaction,
-	TraceDYNRequest* request, ntrace_counter_t time_millis,
-	ntrace_result_t req_result);
-
-// Using the services
-typedef ntrace_boolean_t (*ntrace_event_service_attach_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t att_result);
-typedef ntrace_boolean_t (*ntrace_event_service_start_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, size_t switches_length, const char* switches,
-	ntrace_result_t start_result);
-typedef ntrace_boolean_t (*ntrace_event_service_query_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, size_t send_item_length,
-	const ntrace_byte_t* send_items, size_t recv_item_length,
-	const ntrace_byte_t* recv_items, ntrace_result_t query_result);
-typedef ntrace_boolean_t (*ntrace_event_service_detach_t)(const struct TracePlugin* tpl_plugin,
-	TraceService* service, ntrace_result_t detach_result);
-
-
-// API of trace plugin. Used to deliver notifications for each database
-struct TracePlugin
-{
-	// API version
-	ntrace_version_t tpl_version;
-	// Driver-specific object pointer
-	ntrace_object_t tpl_object;
-
-	// Destroy plugin. Called when database is closed by the engine
-	ntrace_shutdown_t tpl_shutdown;
-
-	// Function to return error string for hook failure
-	ntrace_get_error_t tpl_get_error;
-
-
-	// Events supported
-	ntrace_event_attach_t tpl_event_attach;
-	ntrace_event_detach_t tpl_event_detach;
-	ntrace_event_transaction_start_t tpl_event_transaction_start;
-	ntrace_event_transaction_end_t tpl_event_transaction_end;
-
-	ntrace_event_proc_execute_t tpl_event_proc_execute;
-	ntrace_event_trigger_execute_t tpl_event_trigger_execute;
-	ntrace_event_set_context_t tpl_event_set_context;
-
-	ntrace_event_dsql_prepare_t tpl_event_dsql_prepare;
-	ntrace_event_dsql_free_t tpl_event_dsql_free;
-	ntrace_event_dsql_execute_t tpl_event_dsql_execute;
-
-	ntrace_event_blr_compile_t tpl_event_blr_compile;
-	ntrace_event_blr_execute_t tpl_event_blr_execute;
-	ntrace_event_dyn_execute_t tpl_event_dyn_execute;
-
-	ntrace_event_service_attach_t tpl_event_service_attach;
-	ntrace_event_service_start_t tpl_event_service_start;
-	ntrace_event_service_query_t tpl_event_service_query;
-	ntrace_event_service_detach_t tpl_event_service_detach;
-
-	// Some space for future extension of Trace API interface,
-    // must be zero-initialized by the plugin
-	void* reserved_for_interface[24];
-
-	// Some space which may be freely used by Trace API driver.
-	// If driver needs more space it may allocate and return larger TracePlugin structure.
-	void* reserved_for_driver[1];
-};
-
-class TraceLogWriter
+class TraceLogWriter : public Firebird::Interface
 {
 public:
 	virtual size_t write(const void* buf, size_t size) = 0;
-	virtual void release() = 0;
-
-	virtual ~TraceLogWriter() { }
 };
+#define FB_TRACE_LOG_WRITER_VERSION (FB_INTERFACE_VERSION + 1)
 
-class TraceInitInfo
+class TraceInitInfo : public Firebird::Interface
 {
 public:
-	virtual const char* getConfigText() = 0;
-	virtual int getTraceSessionID() = 0;
-	virtual const char* getTraceSessionName() = 0;
-	virtual const char* getFirebirdRootDirectory() = 0;
-	virtual const char* getDatabaseName() = 0;
-	virtual TraceConnection* getConnection() = 0;
-	virtual TraceLogWriter* getLogWriter() = 0;
-
-	virtual ~TraceInitInfo() { }
+	virtual const char* FB_CARG getConfigText() = 0;
+	virtual int FB_CARG getTraceSessionID() = 0;
+	virtual const char* FB_CARG getTraceSessionName() = 0;
+	virtual const char* FB_CARG getFirebirdRootDirectory() = 0;
+	virtual const char* FB_CARG getDatabaseName() = 0;
+	virtual TraceConnection* FB_CARG getConnection() = 0;
+	virtual TraceLogWriter* FB_CARG getLogWriter() = 0;
 };
+#define FB_TRACE_INIT_INFO_VERSION (FB_INTERFACE_VERSION + 7)
 
-// Trace API plugin entrypoint type
-typedef ntrace_boolean_t (*ntrace_attach_t)(const TraceInitInfo* initInfo, const TracePlugin** plugin);
+
+// API of trace plugin. Used to deliver notifications for each database
+class TracePlugin : public Firebird::Interface
+{
+public:
+	// Function to return error string for hook failure
+	virtual const char* FB_CARG trace_get_error() = 0;
+
+	// Events supported:
+
+	// Create/close attachment
+	virtual int FB_CARG trace_attach(TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result) = 0;
+	virtual int FB_CARG trace_detach(TraceConnection* connection, ntrace_boolean_t drop_db) = 0;
+
+	// Start/end transaction
+	virtual int FB_CARG trace_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
+			size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result) = 0;
+	virtual int FB_CARG trace_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
+			ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result) = 0;
+
+	// Stored procedure and triggers executing
+	virtual int FB_CARG trace_proc_execute (TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+			bool started, ntrace_result_t proc_result) = 0;
+	virtual int FB_CARG trace_trigger_execute(TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+			bool started, ntrace_result_t trig_result) = 0;
+
+	// Assignment to context variables
+	virtual int FB_CARG trace_set_context(TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable) = 0;
+
+	// DSQL statement lifecycle
+	virtual int FB_CARG trace_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+			TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result) = 0;
+	virtual int FB_CARG trace_dsql_free(TraceConnection* connection, TraceSQLStatement* statement, unsigned short option) = 0;
+	virtual int FB_CARG trace_dsql_execute(TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+			bool started, ntrace_result_t req_result) = 0;
+
+	// BLR requests
+	virtual int FB_CARG trace_blr_compile(TraceConnection* connection, TraceTransaction* transaction,
+			TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result) = 0;
+	virtual int FB_CARG trace_blr_execute(TraceConnection* connection, TraceTransaction* transaction,
+			TraceBLRStatement* statement, ntrace_result_t req_result) = 0;
+
+	// DYN requests
+	virtual int FB_CARG trace_dyn_execute(TraceConnection* connection, TraceTransaction* transaction,
+			TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result) = 0;
+
+	// Using the services
+	virtual int FB_CARG trace_service_attach(TraceService* service, ntrace_result_t att_result) = 0;
+	virtual int FB_CARG trace_service_start(TraceService* service, size_t switches_length, const char* switches,
+			ntrace_result_t start_result) = 0;
+	virtual int FB_CARG trace_service_query(TraceService* service, size_t send_item_length,
+			const ntrace_byte_t* send_items, size_t recv_item_length,
+			const ntrace_byte_t* recv_items, ntrace_result_t query_result) = 0;
+	virtual int FB_CARG trace_service_detach(TraceService* service, ntrace_result_t detach_result) = 0;
+};
+#define FB_TRACE_PLUGIN_VERSION (FB_INTERFACE_VERSION + 18)
+
+// Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
+class TraceFactory : public Firebird::Plugin
+{
+public:
+	// What notifications does plugin need
+	virtual ntrace_mask_t FB_CARG trace_needs() = 0;
+
+	// Create plugin
+	virtual TracePlugin* FB_CARG trace_create(Firebird::Status* status, TraceInitInfo* init_info) = 0;
+};
+#define FB_TRACE_FACTORY_VERSION (FB_PLUGIN_VERSION + 2)
+
+enum TraceEvent
+{
+	// Bit is set if event is tracked
+	TRACE_EVENT_ATTACH,
+	TRACE_EVENT_DETACH,
+	TRACE_EVENT_TRANSACTION_START,
+	TRACE_EVENT_TRANSACTION_END,
+	TRACE_EVENT_SET_CONTEXT,
+	TRACE_EVENT_PROC_EXECUTE,
+	TRACE_EVENT_TRIGGER_EXECUTE,
+	TRACE_EVENT_DSQL_PREPARE,
+	TRACE_EVENT_DSQL_FREE,
+	TRACE_EVENT_DSQL_EXECUTE,
+	TRACE_EVENT_BLR_COMPILE,
+	TRACE_EVENT_BLR_EXECUTE,
+	TRACE_EVENT_DYN_EXECUTE,
+	TRACE_EVENT_SERVICE_ATTACH,
+	TRACE_EVENT_SERVICE_START,
+	TRACE_EVENT_SERVICE_QUERY,
+	TRACE_EVENT_SERVICE_DETACH,
+	TRACE_EVENT_MAX					// keep it last
+};
 
 #endif	// FIREBIRD_NTRACE_H

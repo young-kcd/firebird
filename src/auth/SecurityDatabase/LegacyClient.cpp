@@ -29,41 +29,45 @@
 #include "../jrd/ibase.h"
 #include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../common/classes/ImplementHelper.h"
-
-namespace {
-#ifndef WIN_NT
-	char name[] = "LEGACY_AUTH";
-	Firebird::PluginHelper<Auth::SecurityDatabaseClient, Firebird::Plugin::AuthClient, 200, name> client;
-#endif
-}
+#include "../common/classes/init.h"
 
 namespace Auth {
 
-ClientInstance* SecurityDatabaseClient::instance()
-{
-	return Firebird::interfaceAlloc<SecurityDatabaseClientInstance>();
-}
-
-Result SecurityDatabaseClientInstance::startAuthentication(Firebird::Status*, bool, const char*, DpbInterface* dpb)
+Result SecurityDatabaseClient::startAuthentication(Firebird::Status*, bool, const char*, DpbInterface* dpb)
 {
 	return dpb->find(isc_dpb_user_name) &&
 		(dpb->find(isc_dpb_password) || dpb->find(isc_dpb_password_enc)) ?
 			AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
-Result SecurityDatabaseClientInstance::contAuthentication(Firebird::Status*, const unsigned char*, unsigned int)
+Result SecurityDatabaseClient::contAuthentication(Firebird::Status*, const unsigned char*, unsigned int)
 {
 	return AUTH_FAILED;
 }
 
-void SecurityDatabaseClientInstance::getData(const unsigned char**, unsigned short* dataSize)
+void SecurityDatabaseClient::getData(const unsigned char**, unsigned short* dataSize)
 {
 	*dataSize = 0;
 }
 
-void SecurityDatabaseClientInstance::release()
+int SecurityDatabaseClient::release()
 {
-	interfaceFree(this);
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+	return 1;
+}
+
+namespace {
+	Firebird::Static<Firebird::SimpleFactory<SecurityDatabaseClient> > factory;
+}
+
+void registerLegacyClient(Firebird::IPlugin* iPlugin)
+{
+	factory->addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

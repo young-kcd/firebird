@@ -96,6 +96,8 @@ public:
 	ConfigFile(const char* file, USHORT fl);
 	ConfigFile(UseText, const char* configText, USHORT fl);
 
+	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl);
+
 private:
 	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file);
 

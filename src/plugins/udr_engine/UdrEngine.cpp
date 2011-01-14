@@ -35,6 +35,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/os/mod_loader.h"
 #include "../common/os/path_utils.h"
+#include "../common/classes/ImplementHelper.h"
 
 
 namespace Firebird
@@ -73,18 +74,57 @@ struct TriggerNode : public Node
 };
 
 
-class Engine : public ExternalEngine, public PermanentStorage
+static GlobalPtr<ObjectsArray<PathName> > paths;
+
+class Engine : public StdPlugin<ExternalEngine, FB_EXTERNAL_ENGINE_VERSION>
 {
 public:
-	Engine()
-		: PermanentStorage(*getDefaultMemoryPool()),
-		  functions(getPool()),
+	explicit Engine(IFactoryParameter* par)
+		: functions(getPool()),
 		  procedures(getPool()),
 		  triggers(getPool())
 	{
+		IConfig* defaultConfig = par->getDefaultConfig();
+
+		if (defaultConfig)
+		{
+			// this plugin is not ready to support different configurations
+			// therefore keep legacy approach
+			IConfigParameter* icp = NULL;
+			for (int n = 0; (icp = defaultConfig->findPos("path", n)); ++n)
+			{
+				PathName newPath(icp->value());
+				icp->release();
+
+				bool found = false;
+				for (ObjectsArray<PathName>::iterator i = paths->begin(); i != paths->end(); ++i)
+				{
+					if (*i == newPath)
+					{
+						found = true;
+						break;
+					}
+				}
+
+				if (!found)
+				{
+					paths->add(newPath);
+				}
+			}
+
+			defaultConfig->release();
+		}
 	}
 
-	virtual ~Engine();
+	int release()
+	{
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+		return 1;
+	}
 
 public:
 	void loadModule(const string& str, PathName* moduleName, string* entryPoint, string* info);
@@ -146,7 +186,6 @@ public:
 static ModuleLoader::Module* libraryModule = NULL;
 
 static GlobalPtr<PathName> libraryName;
-static GlobalPtr<ObjectsArray<PathName> > paths;
 
 static GlobalPtr<Mutex> modulesMutex;
 static GlobalPtr<ModulesMap> modules;
@@ -488,11 +527,6 @@ ModulesMap::~ModulesMap()
 //--------------------------------------
 
 
-Engine::~Engine()
-{
-}
-
-
 void Engine::loadModule(const string& str, PathName* moduleName, string* entryPoint, string* info)
 {
 	const size_t pos = str.find('!');
@@ -745,10 +779,11 @@ void FB_CALL Engine::dispose(Error* /*error*/)
 //--------------------------------------
 
 
+/*
 class ExternalEngineFactoryImpl : public ExternalEngineFactory
 {
 public:
-	virtual ExternalEngine* FB_CALL createEngine(Error* error, int /*version*/,
+	virtual ExternalEngine* FB_CALL createEngine(Error* error, int *version*,
 		const char* name)
 	{
 		if (strcmp(name, "UDR") == 0)
@@ -761,11 +796,18 @@ public:
 		error->addString(msg, strlen(msg));
 		return NULL;
 	}
+ */
+class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
+{
 } factory;
 
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Error* error, ExtEngPlugin* plugin)
+extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
+	Firebird::IPlugin* plugin = master->getPluginInterface();
+	plugin->registerPlugin(Firebird::PluginType::ExternalEngine, "UDR", &factory);
+	plugin->release();
+/*
 	if (plugin->getLibraryName())
 		libraryName->assign(plugin->getLibraryName());
 	libraryModule = ModuleLoader::loadModule(libraryName);
@@ -781,6 +823,7 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Error* error, ExtEngPlugin* plugin)
 	}
 
 	plugin->setExternalEngineFactory(&factory);
+ */
 }
 
 

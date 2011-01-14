@@ -39,20 +39,15 @@
 #include "../common/classes/UserBlob.h"
 #include "../auth/SecurityDatabase/LegacyManagement.h"
 #include "../common/classes/ImplementHelper.h"
+#include "FirebirdPluginApi.h"
 
 // Here we use version-independent symbolic link (or copy) of actual database
 DATABASE DB = STATIC FILENAME "security.fdb";
 
-namespace {
+static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
-Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
-
-// register plugin
-char name[] = "LEGACY_AUTH";
-Firebird::PluginHelper<Auth::SecurityDatabaseManagement, Firebird::Plugin::UserManagement, 0, name> manage;
-
-bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
-	const internal_user_data* io_user_data)
+static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
+							 const internal_user_data* io_user_data)
 {
 	if (!io_user_data->admin_entered)
 	{
@@ -93,7 +88,7 @@ bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE tr
 }
 
 /*
-bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
+static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
 						ISC_QUAD& blobId, const Firebird::string& passwd)
 {
 	UserBlob blob(isc_status);
@@ -113,13 +108,8 @@ bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE DB, FB_API_HANDLE trans,
 }
  */
 
-} // anonymous namespace
-
-namespace Auth {
-
 // work in progress - we must avoid both internal_user_data and callback function
-
-int SecurityDatabaseManagement::execLine(ISC_STATUS* isc_status,
+int Auth::SecurityDatabaseManagement::execLine(ISC_STATUS* isc_status,
 						  const char* realUser,
 						  FB_API_HANDLE DB,
 						  FB_API_HANDLE trans,
@@ -550,4 +540,26 @@ int SecurityDatabaseManagement::execLine(ISC_STATUS* isc_status,
 	return ret;
 }
 
-} // namespace Auth
+int Auth::SecurityDatabaseManagement::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+// register plugin
+static Firebird::Static<Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> > factory;
+
+extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+{
+	Firebird::IPlugin* iPlugin = master->getPluginInterface();
+
+	factory->addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
+
+	iPlugin->release();
+}

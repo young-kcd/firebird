@@ -97,7 +97,9 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/constants.h"
 #include "../common/ThreadStart.h"
-#include "../common/os/mod_loader.h"
+#include "../common/classes/ImplementHelper.h"
+#include "../remote/client/interface.h"
+#include "../yvalve/PluginManager.h"
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -253,13 +255,13 @@ namespace Why
 	public:
 		UCHAR			type;
 		UCHAR			flags;
-		USHORT			implementation;
 		FB_API_HANDLE	public_handle;
 		Attachment		parent;
     	FB_API_HANDLE*	user_handle;
+    	Plugin*			provider;
 
 	protected:
-		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, USHORT imp = ~0);
+		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, Plugin* prov = NULL);
 
 	public:
 		static BaseHandle* translate(FB_API_HANDLE);
@@ -345,7 +347,7 @@ namespace Why
 		Mutex enterMutex;
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		FbApi::Attachment* handle;
+		IAttachment* handle;
 		StatusHolder status;		// Do not use raise() method of this class in yValve
 		PathName db_path;
 
@@ -360,7 +362,7 @@ namespace Why
 		}
 
 	public:
-		CAttachment(FbApi::Attachment*, FB_API_HANDLE*, USHORT);
+		CAttachment(IAttachment*, FB_API_HANDLE*, Plugin*);
 
 		static void destroy(CAttachment*);
 
@@ -380,7 +382,7 @@ namespace Why
 	public:
 		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
 		Transaction next;
-		FbApi::Transaction* handle;
+		ITransaction* handle;
 		HandleArray<CBlob> blobs;
 
 		static ISC_STATUS hError()
@@ -394,15 +396,15 @@ namespace Why
 		}
 
 	public:
-		CTransaction(FbApi::Transaction* h, FB_API_HANDLE* pub, Attachment par)
+		CTransaction(ITransaction* h, FB_API_HANDLE* pub, Attachment par)
 			: BaseHandle(hType(), pub, par), next(0), handle(h),
 			blobs(getPool())
 		{
 			parent->transactions.toParent(this);
 		}
 
-		CTransaction(FB_API_HANDLE* pub, USHORT a_implementation)
-			: BaseHandle(hType(), pub, Attachment(0), a_implementation), next(0), handle(0),
+		CTransaction(FB_API_HANDLE* pub)
+			: BaseHandle(hType(), pub, Attachment(0)), next(0), handle(0),
 			blobs(getPool())
 		{
 		}
@@ -416,7 +418,7 @@ namespace Why
 	class CRequest : public BaseHandle
 	{
 	public:
-		FbApi::Request* handle;
+		IRequest* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -429,7 +431,7 @@ namespace Why
 		}
 
 	public:
-		CRequest(FbApi::Request* h, FB_API_HANDLE* pub, Attachment par)
+		CRequest(IRequest* h, FB_API_HANDLE* pub, Attachment par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			parent->requests.toParent(this);
@@ -449,7 +451,7 @@ namespace Why
 	class CBlob : public BaseHandle
 	{
 	public:
-		FbApi::Blob* handle;
+		IBlob* handle;
 		Transaction tra;
 
 		static ISC_STATUS hError()
@@ -463,7 +465,7 @@ namespace Why
 		}
 
 	public:
-		CBlob(FbApi::Blob* h, FB_API_HANDLE* pub, Attachment par, Transaction t)
+		CBlob(IBlob* h, FB_API_HANDLE* pub, Attachment par, Transaction t)
 			: BaseHandle(hType(), pub, par), handle(h), tra(t)
 		{
 			parent->blobs.toParent(this);
@@ -484,7 +486,7 @@ namespace Why
 	class CStatement : public BaseHandle
 	{
 	public:
-		FbApi::Statement* handle;
+		IStatement* handle;
 		struct sqlda_sup das;
 
 		static ISC_STATUS hError()
@@ -498,7 +500,7 @@ namespace Why
 		}
 
 	public:
-		CStatement(FbApi::Statement* h, FB_API_HANDLE* pub, Attachment par)
+		CStatement(IStatement* h, FB_API_HANDLE* pub, Attachment par)
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			parent->statements.toParent(this);
@@ -534,7 +536,7 @@ namespace Why
 	{
 	public:
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		FbApi::Service* handle;
+		IService* handle;
 
 		static ISC_STATUS hError()
 		{
@@ -547,8 +549,8 @@ namespace Why
 		}
 
 	public:
-		CService(FbApi::Service* h, FB_API_HANDLE* pub, USHORT impl)
-			: BaseHandle(hType(), pub, Attachment(0), impl), handle(h)
+		CService(IService* h, FB_API_HANDLE* pub, Plugin* prov)
+			: BaseHandle(hType(), pub, Attachment(0), prov), handle(h)
 		{
 		}
 
@@ -562,10 +564,10 @@ namespace Why
 		~CService() { }
 	};
 
-	class CEvents : public BaseHandle, public FbApi::EventCallback
+	class CEvents : public BaseHandle, public EventCallback
 	{
 	public:
-		FbApi::Events* handle;
+		IEvents* handle;
 		EventCallback* callBack;
 
 		static ISC_STATUS hError()
@@ -688,12 +690,9 @@ namespace Why
 	ShutChain* ShutChain::list = 0;
 
 
-	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, USHORT imp)
-		: type(t), flags(0), implementation(par ? par->implementation : imp),
-		  parent(par), user_handle(0)
+	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment par, Plugin* prov)
+		: type(t), flags(0), parent(par), user_handle(0), provider(prov)
 	{
-		fb_assert(par || (imp != USHORT(~0)));
-
 		addRef();
 
 		{ // scope for write lock on handleMappingLock
@@ -716,6 +715,10 @@ namespace Why
 		if (pub)
 		{
 			*pub = public_handle;
+		}
+		if (provider)
+		{
+			provider->addRef();
 		}
 	}
 
@@ -762,7 +765,14 @@ namespace Why
 		return RefPtr<ToHandle>(0);
 	}
 
-	BaseHandle::~BaseHandle() { }
+	BaseHandle::~BaseHandle()
+	{
+		if (provider)
+		{
+			PluginInterface pi;
+			pi->releasePlugin(provider);
+		}
+	}
 
 	void BaseHandle::drop(BaseHandle* h)
 	{
@@ -783,8 +793,8 @@ namespace Why
 		h->release();
 	}
 
-	CAttachment::CAttachment(FbApi::Attachment* h, FB_API_HANDLE* pub, USHORT impl)
-		: BaseHandle(hType(), pub, Attachment(0), impl),
+	CAttachment::CAttachment(IAttachment* h, FB_API_HANDLE* pub, Plugin* prov)
+		: BaseHandle(hType(), pub, Attachment(0), prov),
 		  transactions(getPool()),
 		  requests(getPool()),
 		  blobs(getPool()),
@@ -928,7 +938,7 @@ const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_de
 namespace
 {
 	// Status:	Provides correct status vector for operation and init() it.
-	class StatusVector : public Firebird::Status
+	class StatusVector : public StackIface<Status, FB_STATUS_VERSION>
 	{
 	public:
 		explicit StatusVector(ISC_STATUS* v) throw()
@@ -949,7 +959,7 @@ namespace
 #endif
 		}
 
-		void set(size_t length, const ISC_STATUS* value)
+		void set(unsigned int length, const ISC_STATUS* value)
 		{
 			fb_utils::copyStatus(local_vector, FB_NELEM(local_status), value, length);
 		}
@@ -986,11 +996,6 @@ namespace
 	private:
 		ISC_STATUS_ARRAY local_status;
 		ISC_STATUS* local_vector;
-
-		void release()
-		{
-			// this implementation is for on-stack use only. therefore empty private release
-		}
 	};
 
 #ifdef UNIX
@@ -1038,7 +1043,7 @@ namespace
 			if (fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_signal) == FB_SUCCESS)
 			{
 				InstanceControl::registerShutdown(0);
-				exit(0);
+				break;//exit(0);
 			}
 		}
 
@@ -1102,80 +1107,18 @@ namespace
 	};
 #endif //UNIX
 
-	class ProviderPtr		// this class may be treated as plain data
+	class BuiltinRegister
 	{
 	public:
-		ProviderPtr(FbApi::Provider* v, ModuleLoader::Module* m)
-			: p(v), mod(m) { }
-
-		FbApi::Provider* get() const
+		static void init()
 		{
-			return p;
+			PluginInterface pi;
+			Remote::registerRedirector(pi);
 		}
 
-		bool operator>(const ProviderPtr& cmp) const
-		{
-			return p->priority() < cmp.p->priority();
-		}
-
-	private:
-		FbApi::Provider* p;
-
-	public:
-		ModuleLoader::Module* mod;
+		static void cleanup()
+		{ }
 	};
-
-	//	Initializes providers list.
-	class ProvidersArray : public PermanentStorage
-	{
-	public:
-		ProvidersArray(MemoryPool& p) : PermanentStorage(p), providers(p)
-		{
-			Firebird::Plugin* plug = 0;
-			while ( (plug = fb_query_plugin(Plugin::Provider, NULL)) )
-			{
-				providers.add(ProviderPtr(reinterpret_cast<FbApi::Provider*>(plug), NULL));
-			}
-
-			// load engines
-			// temp solution
-			ModuleLoader::Module* engine = ModuleLoader::fixAndLoadModule(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, "engine12"));
-			if (engine)
-			{
-				if ( (plug = fb_query_plugin(Plugin::Provider, NULL)) )
-				{
-					providers.add(ProviderPtr(reinterpret_cast<FbApi::Provider*>(plug), engine));
-				}
-				else
-				{
-					delete engine;
-				}
-			}
-		}
-
-		FbApi::Provider* get(unsigned int i) const
-		{
-			return providers[i].get();
-		}
-
-		size_t count() const
-		{
-			return providers.getCount();
-		}
-
-		~ProvidersArray()
-		{
-			/*for (unsigned int i = 0; i < count(); ++i)
-			{
-				delete providers[i].mod;
-			} */
-		}
-
-	private:
-		Firebird::SortedArray<ProviderPtr> providers;
-	};
-
-	InitInstance<const ProvidersArray> providers;
 
 	// YEntry:	Tracks FP exceptions state (via FpeControl).
 	//			Accounts activity per different attachments.
@@ -1188,6 +1131,10 @@ namespace
 #ifdef UNIX
 			static GlobalPtr<CtrlCHandler> ctrlCHandler;
 #endif //UNIX
+
+			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
+			registerBuiltinPlugins.init();
+
 			if (primary && primary->parent)
 			{
 				att = primary->parent;
@@ -1306,6 +1253,17 @@ static const SCHAR sql_prepare_info2[] =
 	isc_info_sql_describe_end
 };
 
+namespace
+{
+	class NoEntrypoint
+	{
+	public:
+		virtual void FB_CARG noEntrypoint(Status* s)
+		{
+			s->set(Arg::Gds(isc_unavailable).value());
+		}
+	};
+}
 
 ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
 										   SSHORT file_length,
@@ -1327,7 +1285,6 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
  **************************************/
 	StatusVector temp(NULL);
 	Attachment attachment(0);
-	FbApi::Provider* provider = 0;
 
 	StatusVector status(user_status);
 	StatusVector* ptr = &status;
@@ -1419,14 +1376,15 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
 			newDpb.insertPath(isc_dpb_org_filename, org_filename);
 		}
 
-		for (USHORT n = 0; n < providers().count(); ++n)
+		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+			 providerIterator.hasData(); providerIterator.next())
 		{
-			FbApi::Provider* p = providers().get(n);
+			PProvider* p = providerIterator.plugin();
 
-			attachment = new CAttachment(NULL, public_handle, n);
+			attachment = new CAttachment(NULL, public_handle, p);
 			attachment->db_path = expanded_filename;
 
-			p->attachDatabase(&attachment->handle, ptr, *public_handle, expanded_filename.c_str(),
+			p->attachDatabase(ptr, &attachment->handle, *public_handle, expanded_filename.c_str(),
 							  newDpb.getBufferLength(), newDpb.getBuffer());
 			if (ptr->isSuccess())
 			{
@@ -1810,7 +1768,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
  **************************************/
 	StatusVector status(user_status);
 	Attachment attachment(NULL);
-	FbApi::Request* rq = NULL;
+	IRequest* rq = NULL;
 
 	try
 	{
@@ -1831,7 +1789,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
 	{
 		if (rq)
 		{
-			rq->detach(&status);
+			rq->free(&status);
 			*req_handle = 0;
 		}
 		e.stuffException(&status);
@@ -2007,17 +1965,18 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 			newDpb.insertPath(isc_dpb_org_filename, org_filename);
 		}
 
-		for (unsigned int n = 0; n < providers().count(); ++n)
+		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+			 providerIterator.hasData(); providerIterator.next())
 		{
-			FbApi::Provider* p = providers().get(n);
-			attachment = new CAttachment(NULL, public_handle, n);
+			PProvider* p = providerIterator.plugin();
+			attachment = new CAttachment(NULL, public_handle, p);
 #ifdef WIN_NT
 			attachment->db_path = expanded_filename;
 #else
 			attachment->db_path = org_filename;
 #endif
 
-			p->createDatabase(&attachment->handle, ptr, *public_handle, expanded_filename.c_str(),
+			p->createDatabase(ptr, &attachment->handle, *public_handle, expanded_filename.c_str(),
 							  newDpb.getBufferLength(), newDpb.getBuffer());
 			if (ptr->isSuccess())
 			{
@@ -2337,7 +2296,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
  **************************************/
 	StatusVector status(user_status);
 	Attachment attachment(NULL);
-	FbApi::Statement* stmt_handle = NULL;
+	IStatement* stmt_handle = NULL;
 
 	try
 	{
@@ -2652,7 +2611,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 		YEntry entryGuard(statement);
 
 		Transaction transaction(NULL);
-		FbApi::Transaction* tra = NULL;
+		ITransaction* tra = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
@@ -2957,7 +2916,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* user_status,
 		}
 
 		if (ret_v3_error) {
-			Firebird::Arg::Gds(isc_srvr_version_too_old).copyTo(status);
+			Arg::Gds(isc_srvr_version_too_old).copyTo(status);
 			return status[1];
 		}
 
@@ -3010,7 +2969,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 		YEntry entryGuard(attachment);
 
 		Transaction transaction(NULL);
-		FbApi::Transaction* tra = NULL;
+		ITransaction* tra = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
@@ -3448,7 +3407,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(statement);
 
-		FbApi::Transaction* tra = NULL;
+		ITransaction* tra = NULL;
 
 		if (tra_handle && *tra_handle)
 		{
@@ -3461,7 +3420,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
 			tra = transaction->handle;
 		}
 
-		FbApi::Statement* newStatement = statement->handle->
+		IStatement* newStatement = statement->handle->
 						prepare(&status, tra, length, string, dialect,
 								item_length, reinterpret_cast<const unsigned char*>(items),
 								buffer_length, reinterpret_cast<unsigned char*>(buffer));
@@ -4004,7 +3963,7 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Get a record from the host program.
+ *	Send a record to the host program.
  *
  **************************************/
 	StatusVector status(user_status);
@@ -4043,7 +4002,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
  *
  **************************************/
 	StatusVector status(user_status);
-	FbApi::Transaction* handle = 0;
+	ITransaction* handle = 0;
 
 	try
 	{
@@ -4093,7 +4052,7 @@ ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(request);
 
-		request->handle->detach(&status);
+		request->handle->free(&status);
 		if (status.isSuccess())
 		{
 			destroy(request);
@@ -4361,7 +4320,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 	Service service(0);
 	StatusVector temp(NULL);
 	StatusVector status(user_status);
-	FbApi::Service* handle = 0;
+	IService* handle = 0;
 
 	try
 	{
@@ -4388,14 +4347,15 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 		svcname.rtrim();
 
 		StatusVector* ptr = &status;
-		for (USHORT n = 0; n < providers().count(); ++n)
+		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+			 providerIterator.hasData(); providerIterator.next())
 		{
-			FbApi::Provider* p = providers().get(n);
+			PProvider* p = providerIterator.plugin();
 			handle = p->attachServiceManager(ptr, svcname.c_str(),
 											 spb_length, reinterpret_cast<const unsigned char*>(spb));
 			if (ptr->isSuccess())
 			{
-				service = new CService(handle, public_handle, n);
+				service = new CService(handle, public_handle, p);
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 				if (status[2] != isc_arg_warning)
@@ -4680,7 +4640,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 
 		if (transaction->next)
 		{
-			Transaction sub(new CTransaction(tra_handle, ~0));
+			Transaction sub(new CTransaction(tra_handle));
 			sub->next = transaction;
 		}
 		else
@@ -5322,7 +5282,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		YEntry entryGuard(attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		FbApi::Blob* blob_handle = createFlag ?
+		IBlob* blob_handle = createFlag ?
 			transaction->handle->createBlob(&status, blob_id, bpb_length, bpb, attachment->handle) :
 			transaction->handle->openBlob(&status, blob_id, bpb_length, bpb, attachment->handle);
 
@@ -5383,7 +5343,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 	unsigned char* p = description;
 	if (!p)
 	{
-		Firebird::Arg::Gds(isc_virmemexh).copyTo(status);
+		Arg::Gds(isc_virmemexh).copyTo(status);
 		return status[1];
 	}
 
@@ -5604,11 +5564,18 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 
 	try
 	{
+		// In some cases it's OK to stop plugin manager even now
+		if (reason == fb_shutrsn_exit_called)
+		{
+			PluginManager::shutdown();
+		}
+
 		// Ask clients about shutdown confirmation
 		if (ShutChain::run(fb_shut_confirmation, reason) != FB_SUCCESS)
 		{
 			return FB_FAILURE;	// Do not perform former shutdown
 		}
+		PluginManager::shutdown();
 
 		// Shutdown clients before providers
 		if (ShutChain::run(fb_shut_preproviders, reason) != FB_SUCCESS)
@@ -5620,10 +5587,13 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
 
 		// Shutdown providers
-		for (unsigned int n = 0; n < providers().count(); ++n)
+		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+			 providerIterator.hasData(); providerIterator.next())
 		{
-			FbApi::Provider* p = providers().get(n);
-			if (p->shutdown(timeout, reason) != FB_SUCCESS)
+			PProvider* p = providerIterator.plugin();
+			StatusVector status(NULL);
+			p->shutdown(&status, timeout, reason);
+			if (status[1])
 			{
 				rc = FB_FAILURE;
 			}
@@ -5640,13 +5610,18 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		{
 			rc = FB_FAILURE;
 		}
+
+		// At this step callbacks are welcome to exit (or take actions to make main thread do it)
+		if (ShutChain::run(fb_shut_exit, reason) != FB_SUCCESS)
+		{
+			rc = FB_FAILURE;
+		}
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(&status);
 		gds__log_status(0, status);
-		return FB_SUCCESS;	// This seems to be a strange logic, but we should better
-							// let it exit() when unexpected errors happen
+		return FB_FAILURE;
 	}
 
 	return rc;

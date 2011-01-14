@@ -107,7 +107,7 @@ export_lists: $(ALLVERS)
 # main build target for both debug abd release builds
 #
 
-.PHONY:	boot yvalve engine fbintl gpre utilities plugins rest codes
+.PHONY:	boot yvalve engine fbintl gpre utilities plugins rest codes examples
 
 master_process:
 	$(MAKE) updateBuildNum
@@ -130,6 +130,7 @@ ifeq ($(IsDeveloper), Y)
 	$(MAKE) codes
 endif
 	$(MAKE) plugins
+	$(MAKE) examples
 	$(MAKE) rest
 
 #___________________________________________________________________________
@@ -197,12 +198,11 @@ $(LIBFBINTL_SO):	$(INTL_Objects) $(COMMON_LIB)
 #___________________________________________________________________________
 # full gpre
 # when switching to it we also build databases needed later
-# and libib_util needed to start engine smart
 #
 
-.PHONY:	databases udfsupport
+.PHONY:	databases
 
-gpre: $(GPRE) databases udfsupport
+gpre: $(GPRE) databases
 
 $(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
@@ -250,7 +250,7 @@ msg.timestamp:	$(MSG_FILES)
 	$(TOUCH) $@
 
 
-.PHONY:	udfs ibutil ibudf fbudf
+.PHONY:	udfs ibutil ibudf fbudf udfsupport
 
 udfsupport:
 	$(MAKE) ibutil
@@ -279,13 +279,13 @@ $(LIBIBUTIL_SO): $(UTIL_Objects)
 
 
 #___________________________________________________________________________
-# most of utilities, including network server
+# most of utilities, including network server and UDFs
 # qli is not here cause it needs special database (help.fdb), therefore needs gbak
 #
 
 .PHONY:	firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix gsec gsplit gstat isql nbackup
 
-utilities: firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix gsec gsplit gstat isql nbackup
+utilities: firebird_server fb_lock_print fbguard fbsvcmgr fbtracemgr gbak gfix gsec gsplit gstat isql nbackup udfsupport
 
 firebird_server:	$(FB_DAEMON)
 
@@ -306,6 +306,8 @@ fbsvcmgr:		$(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
+#$(FBSVCMGR):	$(FBSVCMGR_Objects) $(YValve_Objects) $(Remote_Client_Objects) $(COMMON_LIB)
+#	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS)
 
 fbtracemgr:		$(FBTRACEMGR)
 
@@ -352,11 +354,18 @@ $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
 # plugins - some of them are required to build examples, use separate entry for them
 #
 
-.PHONY:	udr legacy_user_management trace
-UDR_PLUGIN = $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT)
-LEGACY_USER_MANAGER = $(PLUGINS)/$(LIB_PREFIX)user_management.$(SHRLIB_EXT)
+.PHONY:	udr legacy_user_management trace auth_debug
+makePluginName= $(PLUGINS)/$(LIB_PREFIX)$(1).$(SHRLIB_EXT)
+UDR_PLUGIN = $(call makePluginName,udr_engine)
+LEGACY_USER_MANAGER = $(call makePluginName,Legacy_Auth)
+AUTH_DEBUGGER = $(call makePluginName,Auth_Debug)
 
-plugins: udr legacy_user_management trace
+BUILD_DEBUG:=
+ifeq ($(TARGET),Debug)
+	BUILD_DEBUG:=auth_debug
+endif
+
+plugins: udr legacy_user_management trace $(BUILD_DEBUG)
 
 udr:	$(UDR_PLUGIN) $(PLUGINS)/udr_engine.conf
 
@@ -375,6 +384,11 @@ trace:	$(FBTRACE)
 
 $(FBTRACE):	$(FBTRACE_UTIL_Objects) $(COMMON_LIB)
 	$(LINK_TRACE) -o $@ $^ $(FIREBIRD_LIBRARY_LINK) $(LINK_TRACE_LIBS)
+
+auth_debug:	$(AUTH_DEBUGGER)
+
+$(AUTH_DEBUGGER):	$(AUTH_DEBUGGER_Objects) $(COMMON_LIB)
+	$(LINK_PLUGIN) $(call LIB_LINK_SONAME,$(notdir $@).0) -o $@ $^ $(LINK_PLUG_LIBS) $(FIREBIRD_LIBRARY_LINK)
 
 
 #___________________________________________________________________________
@@ -401,9 +415,9 @@ $(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
 # all the rest we need to build
 #
 
-.PHONY:	qli examples message_file
+.PHONY:	qli message_file
 
-rest:	qli examples message_file include_generic
+rest:	qli message_file
 
 qli:		$(QLI)
 
@@ -524,10 +538,11 @@ clean_editline:
 #	-$(MAKE) -C $(ROOT)/extern/icu/source clean
 
 clean_objects:
-	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
 	$(RM) `find $(TMP_ROOT)/ -type f -name '*.o' -print`
+	$(RM) `find $(TMP_ROOT)/ -type f -name '*.a' -print`
 
 clean_extern_objects:
+	$(RM) `find $(ROOT)/extern/ -type f -name '*.lo' -print`
 	$(RM) `find $(ROOT)/extern/ -type f -name '*.o' -print`
 
 # Clear out dependancies files created by the gcc compiler

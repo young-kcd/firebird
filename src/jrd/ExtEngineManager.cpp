@@ -35,7 +35,6 @@
 #include "../jrd/req.h"
 #include "../jrd/status.h"
 #include "../jrd/tra.h"
-#include "../jrd/PluginManager.h"
 #include "../jrd/ibase.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/cvt_proto.h"
@@ -52,6 +51,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/config/config.h"
 #include "../common/ScanDir.h"
+#include "../common/utils_proto.h"
 
 using namespace Firebird;
 
@@ -363,12 +363,6 @@ void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* val
 //---------------------
 
 
-static InitInstance<GenericMap<Pair<Full<MetaName, ConfigFile::String> > > > enginesModules;
-
-
-//---------------------
-
-
 ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtManager,
 		ExternalEngine* aEngine, ExternalFunction* aFunction,
 		const Jrd::Function* aUdf)
@@ -658,13 +652,26 @@ int ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, MemoryPool& pool,
 ExtEngineManager::~ExtEngineManager()
 {
 	fb_assert(enginesAttachments.count() == 0);
+/*
+AP: Commented out this code due to later AV.
+
+When engine is released, it does dlclose() plugin module (libudr_engine.so),
+but that module is not actually unloaded - because UDR module (libudrcpp_example.so) is using
+symbols from plugin module, therefore raising plugin module's reference count.
+UDR module can be unloaded only from plugin module's global variable (ModuleMap modules) dtor,
+which is not called as long as plugin module is not inloaded. As the result all this will be
+unloaded only on program exit, causing at that moment AV if this code is active: it happens that
+~ModuleMap dlcloses itself.
+
+	PluginInterface pi;
 
 	EnginesMap::Accessor accessor(&engines);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
 		ExternalEngine* engine = accessor.current()->second;
-		engine->dispose(LogError());
+		pi->releasePlugin(engine);
 	}
+ */
 }
 
 
@@ -673,53 +680,6 @@ ExtEngineManager::~ExtEngineManager()
 
 void ExtEngineManager::initialize()
 {
-	PathName pluginsPath = PluginManager::getPluginsDirectory();
-	ScanDir dir(pluginsPath.c_str(), "*.conf");
-
-	try
-	{
-		SortedArray<MetaName> conflicts;
-
-		while (dir.next())
-		{
-			ConfigFile configFile(dir.getFilePath(),
-				ConfigFile::EXCEPTION_ON_ERROR | ConfigFile::HAS_SUB_CONF);
-
-			const ConfigFile::Parameters& params = configFile.getParameters();
-			for (size_t n = 0; n < params.getCount(); ++n)
-			{
-				const ConfigFile::Parameter* el = &params[n];
-				if (el->name == "external_engine")
-				{
-					MetaName name(el->value);
-
-					if (enginesModules().exist(name) || conflicts.exist(name))
-					{
-						string s;
-						s.printf("External engine %s defined more than once.", name.c_str());
-						gds__log(s.c_str());
-
-						conflicts.add(name);
-						continue;
-					}
-
-					const ConfigFile::Parameter* plugin = el->sub->findParameter("plugin_module");
-
-					if (plugin)
-						enginesModules().put(name, plugin->value);
-					else
-						conflicts.add(name);
-				}
-			}
-		}
-	}
-	catch (const Exception& ex)
-	{
-		string s;
-		s.printf("Error in plugin config file '%s':", dir.getFilePath());
-		iscLogException(s.c_str(), ex);
-	}
-
 }
 
 
@@ -891,11 +851,10 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 		if (!engines.get(name, engine))
 		{
-			ConfigFile::String pluginName;
-			if (enginesModules().get(name, pluginName))
-			{
-				PluginImpl* plugin = PluginManager::getPlugin(pluginName);
+			PluginsSet<ExternalEngine> engineControl(PluginType::ExternalEngine, FB_EXTERNAL_ENGINE_VERSION, name.c_str());
 
+			if (engineControl.hasData())
+			{
 				EngineAttachment key(NULL, NULL);
 				AutoPtr<EngineAttachmentInfo> attInfo;
 
@@ -903,9 +862,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 				{
 					Database::Checkout dcoHolder(tdbb->getDatabase());
 
-					engine = plugin->getExternalEngineFactory()->createEngine(RaiseError(),
-						EXTERNAL_VERSION_1, name.c_str());
-
+					engine = engineControl.plugin();
 					if (engine)
 					{
 						int version = engine->getVersion(RaiseError());
@@ -932,13 +889,17 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 				catch (...)
 				{
 					if (engine)
-						engine->dispose(LogError());
+					{
+						PluginInterface pi;
+						pi->releasePlugin(engine);
+					}
 
 					throw;
 				}
 
 				if (engine)
 				{
+					engine->addRef();
 					engines.put(name, engine);
 					enginesAttachments.put(key, attInfo);
 					attInfo.release();

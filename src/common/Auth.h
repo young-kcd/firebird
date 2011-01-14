@@ -35,20 +35,21 @@
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
 
-bool legacy(Firebird::Plugin* plugin);
+bool legacy(const char* nm);
 
-class WriterImplementation : public WriterInterface, public Firebird::PermanentStorage
+class WriterImplementation : public Firebird::StackIface<WriterInterface, FB_AUTH_WRITER_VERSION>
 {
 public:
-	WriterImplementation(Firebird::MemoryPool&, bool svcFlag);
+	WriterImplementation(bool svcFlag);
 
-	void store(Firebird::ClumpletWriter& to);
+	void FB_CARG store(Firebird::ClumpletWriter& to);
 
-	void reset();
-	void add(const char* name, const char* method, const char* details);
+	void FB_CARG reset();
+	void FB_CARG add(const char* name, const char* method, const char* details);
 
 private:
 	Firebird::AuthWriter body;
@@ -56,41 +57,41 @@ private:
 	unsigned char tag;
 };
 
-class DpbImplementation : public DpbInterface
+class DpbImplementation : public Firebird::StackIface<DpbInterface, FB_AUTH_DBP_VERSION>
 {
 public:
 	DpbImplementation(Firebird::ClumpletWriter& base);
 
-	int find(UCHAR tag);
-	void add(UCHAR tag, const void* bytes, unsigned int count);
-	void drop();
+	int FB_CARG find(UCHAR tag);
+	void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count);
+	void FB_CARG drop();
 
 private:
 	Firebird::ClumpletWriter* body;
 };
 
-#define AUTH_DEBUG
+//#define AUTH_DEBUG
 
 #ifdef AUTH_DEBUG
 
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer : public ServerPlugin
+class DebugServer : Firebird::StdIface<public Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	ServerInstance* instance();
-    void release();
+	Firebird::Interface* FB_CARG createPlugin(const char* name, const char* configFile);
+    int FB_CARG release();
 };
 
-class DebugClient : public ClientPlugin
+class DebugClient : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	ClientInstance* instance();
-    void release();
+	Firebird::Interface* FB_CARG createPlugin(const char* name, const char* configFile);
+    int FB_CARG release();
 };
 
-class DebugServerInstance : public ServerInstance
+class DebugServerInstance : public Firebird::StdPlugin<ServerInstance, FB_AUTH_SERVER_VERSION>
 {
 public:
 	DebugServerInstance();
@@ -101,13 +102,13 @@ public:
     Result contAuthentication(WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int FB_CARG release();
 
 private:
 	Firebird::string str;
 };
 
-class DebugClientInstance : public ClientInstance
+class DebugClientInstance : public Firebird::StdPlugin<ClientInstance, FB_AUTH_CLIENT_VERSION>
 {
 public:
 	DebugClientInstance();
@@ -115,7 +116,7 @@ public:
 	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
 	Result contAuthentication(const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int FB_CARG release();
 
 private:
 	Firebird::string str;

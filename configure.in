@@ -1055,6 +1055,11 @@ dnl # by module name
 	done
 
 	src/misc/writeBuildNum.sh createMakeVersion gen/Make.Version
+
+dnl # sql files for UDF declarations
+	for sql_file in src/extlib/ib_udf.sql src/extlib/fbudf/fbudf.sql src/extlib/ib_udf2.sql; do
+		cp \$sql_file gen/\$fb_tgt/firebird/UDF
+	done
 done
 
 for src_dir in `ls -R -1 examples | grep : | tr -d : | tr "\n" " "`; do
@@ -1080,6 +1085,8 @@ gen/Debug/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
 gen/Release/firebird/fbtrace.conf:src/utilities/ntrace/fbtrace.conf
 gen/Debug/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
 gen/Release/firebird/intl/fbintl.conf:builds/install/misc/fbintl.conf
+gen/Debug/firebird/plugins.conf:builds/install/misc/plugins.conf
+gen/Release/firebird/plugins.conf:builds/install/misc/plugins.conf
 gen/Release/firebird/bin/fb_config:builds/install/misc/fb_config.in
 gen/Release/firebird/bin/posixLibrary.sh:builds/install/misc/posixLibrary.sh.in
 gen/Release/firebird/bin/classicLibrary.sh:builds/install/misc/classicLibrary.sh.in

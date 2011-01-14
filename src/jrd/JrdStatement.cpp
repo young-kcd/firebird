@@ -538,6 +538,8 @@ void JrdStatement::release(thread_db* tdbb)
 
 	sqlText = NULL;
 
+	--refCounter;
+
 	dbb->deletePool(pool);
 }
 

@@ -507,7 +507,7 @@ private:
 };
 
 
-class dsql_req : public pool_alloc<dsql_type_req>, public FbApi::Statement
+class dsql_req : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION, pool_alloc<dsql_type_req> >
 {
 public:
 	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
@@ -538,6 +538,8 @@ public:
 	{
 		return statement;
 	}
+
+	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
 private:
 	MemoryPool&	req_pool;
@@ -577,10 +579,10 @@ protected:
 	friend class Firebird::MemoryPool;
 
 public:
-	virtual void release();
+	virtual int release();
 	//virtual Sqlda* describeInput(Status* status);
 	//virtual Sqlda* describeOutput(Status* status);
-	virtual FbApi::Statement* prepare(Status* status, FbApi::Transaction* tra,
+	virtual Firebird::IStatement* prepare(Status* status, Firebird::ITransaction* tra,
 									  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 									  unsigned int item_length, const unsigned char* items,
 	    		                      unsigned int buffer_length, unsigned char* buffer);
@@ -588,8 +590,8 @@ public:
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 	virtual void setCursor(Status* status, const char* name, unsigned int type);
-//	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* tra, Sqlda* in, Sqlda* out);
-	virtual FbApi::Transaction* executeMessage(Status* status, FbApi::Transaction* tra,
+//	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* tra, Sqlda* in, Sqlda* out);
+	virtual Firebird::ITransaction* executeMessage(Status* status, Firebird::ITransaction* tra,
 										unsigned int in_blr_length, const unsigned char* in_blr,
 										unsigned int in_msg_type,
 										unsigned int in_msg_length, const unsigned char* in_message,

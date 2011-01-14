@@ -43,7 +43,7 @@ public:
 		m_baseline(NULL)
 	{
 		Attachment* attachment = m_transaction->tra_attachment;
-		m_need_trace = attachment->att_trace_manager->needs().event_transaction_end;
+		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_TRANSACTION_END);
 		if (!m_need_trace)
 			return;
 
@@ -94,7 +94,7 @@ public:
 		m_request(request)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = trace_mgr->needs().event_proc_execute;
+		m_need_trace = trace_mgr->needs(TRACE_EVENT_PROC_EXECUTE);
 		if (!m_need_trace)
 			return;
 
@@ -169,7 +169,7 @@ public:
 		m_request(request)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs().event_proc_execute;
+		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs(TRACE_EVENT_PROC_EXECUTE);
 		if (!m_need_trace)
 			return;
 
@@ -232,7 +232,7 @@ public:
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		m_need_trace = !(m_request->getStatement()->flags & JrdStatement::FLAG_SYS_TRIGGER) &&
-			trace_mgr->needs().event_trigger_execute;
+			trace_mgr->needs(TRACE_EVENT_TRIGGER_EXECUTE);
 
 		if (!m_need_trace)
 			return;
@@ -298,7 +298,7 @@ public:
 	{
 		Attachment* attachment = m_tdbb->getAttachment();
 
-		m_need_trace = attachment->att_trace_manager->needs().event_blr_compile &&
+		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_COMPILE) &&
 			m_blr_length && m_blr &&
 			!(attachment->att_flags & ATT_gstat_attachment) &&
 			!(attachment->att_flags & ATT_gbak_attachment) &&
@@ -362,7 +362,7 @@ public:
 		Attachment* attachment = m_tdbb->getAttachment();
 		JrdStatement* statement = m_request->getStatement();
 
-		m_need_trace = attachment->att_trace_manager->needs().event_blr_execute &&
+		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_EXECUTE) &&
 			!statement->sqlText &&
 			!(statement->flags & JrdStatement::FLAG_INTERNAL) &&
 			!(attachment->att_flags & ATT_gstat_attachment) &&

@@ -27,19 +27,26 @@
 #ifndef AUTH_LEGACY_MANAGEMENT_H
 #define AUTH_LEGACY_MANAGEMENT_H
 
+#include "../common/classes/ImplementHelper.h"
 #include "../auth/AuthInterface.h"
 
 
 namespace Auth {
 
-class SecurityDatabaseManagement : public ManagementPlugin
+class SecurityDatabaseManagement : public Firebird::StdPlugin<Management, FB_AUTH_MANAGE_VERSION>
 {
 public:
+	explicit SecurityDatabaseManagement(Firebird::IFactoryParameter*)
+	{
+	}
+
 	// work in progress - we must avoid both internal_user_data and callback function
 	int execLine(ISC_STATUS* isc_status, const char* realUser,
 				 FB_API_HANDLE db, FB_API_HANDLE trans,
 				 internal_user_data* io_user_data,
 				 FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
+
+	int release();
 };
 
 } // namespace Auth

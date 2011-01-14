@@ -220,6 +220,37 @@ public:
 	}
 };
 
+// Static - create instance of some class in static char[] buffer. Never destroy it.
+
+template <typename T>
+class Static
+{
+private:
+	char buf[sizeof(T) + FB_ALIGNMENT];
+	T* t;
+
+public:
+	Static()
+	{
+		t = new((void*) FB_ALIGN(U_IPTR(buf), FB_ALIGNMENT)) T();
+	}
+
+	T* operator->()
+	{
+		return t;
+	}
+
+	T* operator&()
+	{
+		return t;
+	}
+
+	operator T()
+	{
+		return *t;
+	}
+};
+
 } //namespace Firebird
 
 #endif // CLASSES_INIT_INSTANCE_H

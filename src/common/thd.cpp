@@ -157,7 +157,7 @@ void THD_yield()
 
 // Cleanup on thread completion
 
-#ifdef USE_POSIX_THREADS
+#ifdef USE_THREAD_DESTRUCTOR
 namespace {
 
 pthread_key_t key;
@@ -189,6 +189,18 @@ void initThreadCleanup()
 
 ThreadCleanup* chain = NULL;
 Firebird::GlobalPtr<Firebird::Mutex> cleanupMutex;
+
+class RemoveUnneededKey
+{
+public:
+	~RemoveUnneededKey()
+	{
+		pthread_key_delete(key);
+	}
+	RemoveUnneededKey(Firebird::MemoryPool&)
+	{ }
+};
+Firebird::GlobalPtr<RemoveUnneededKey> removeUnneededKey;
 
 } // anonymous namespace
 

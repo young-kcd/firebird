@@ -159,11 +159,11 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		generateDPB(tdbb, m_dpb, user, pwd, role);
 
 		LocalStatus status;
-		FbApi::Attachment* a;
+		Firebird::IAttachment* a;
 
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			currentProvider()->attachDatabase(&a, &status, 0, m_dbName.c_str(),
+			currentProvider()->attachDatabase(&status, &a, 0, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 

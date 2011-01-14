@@ -32,6 +32,7 @@
 #include "../common/sha.h"
 #include "gen/iberror.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/ImplementHelper.h"
 
 #include "../auth/AuthInterface.h"
 
@@ -108,23 +109,29 @@ private:
 	}
 };
 
-class SecurityDatabaseServer : public ServerPlugin
+class SecurityDatabaseServerFactory : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	ServerInstance* instance();
+	Firebird::Plugin* FB_CARG createPlugin(const char* name, const char* configFile);
 };
 
-class SecurityDatabaseServerInstance : public ServerInstance
+class SecurityDatabaseServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
+	explicit SecurityDatabaseServer(Firebird::IFactoryParameter*)
+	{
+	}
+
 	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
 							   const unsigned char* dpb, unsigned int dpbSize,
 							   WriterInterface* writerInterface);
 	Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
 							  const unsigned char* data, unsigned int size);
 	void getData(const unsigned char** data, unsigned short* dataSize);
-	void release();
+	int release();
 };
+
+void registerLegacyServer(Firebird::IPlugin* iPlugin);
 
 } // namespace Auth
 

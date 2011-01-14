@@ -28,7 +28,7 @@ namespace Jrd {
 
 
 // Compiled statement.
-class JrdStatement : public pool_alloc<type_req>, public FbApi::Request
+class JrdStatement : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSION, pool_alloc<type_req> >
 {
 public:
 	static const unsigned FLAG_SYS_TRIGGER	= 0x01;
@@ -83,7 +83,7 @@ public:
 	MapItemInfo mapItemInfo;			// Map item to item info
 
 public:
-	virtual void release();
+	virtual int release();
 	virtual void receive(Status* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
 	virtual void send(Status* status, int level, unsigned int msg_type,
@@ -91,11 +91,11 @@ public:
 	virtual void getInfo(Status* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void start(Status* status, FbApi::Transaction* tra, int level);
-	virtual void startAndSend(Status* status, FbApi::Transaction* tra, int level, unsigned int msg_type,
+	virtual void start(Status* status, Firebird::ITransaction* tra, int level);
+	virtual void startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
 							  unsigned int length, const unsigned char* message);
 	virtual void unwind(Status* status, int level);
-	virtual void detach(Status* status);
+	virtual void free(Status* status);
 };
 
 

@@ -116,7 +116,6 @@
 
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
-#include "../jrd/PluginManager.h"
 #include "../common/db_alias.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
@@ -148,34 +147,10 @@ int debug;
 namespace Jrd
 {
 
-void blb::release()
-{
-	LocalStatus status;
-	cancel(&status);
-}
-
-void jrd_tra::release()
-{
-	LocalStatus status;
-	rollback(&status);
-}
-
-void dsql_req::release()
-{
-	LocalStatus status;
-	free(&status, DSQL_drop);
-}
-
-void JrdStatement::release()
-{
-	LocalStatus status;
-	detach(&status);
-}
-
-class Events : public pool_alloc<type_att>, public FbApi::Events
+class Events : public StdIface<IEvents, FB_I_EVENTS_VERSION, pool_alloc<type_Events> >
 {
 public:
-	virtual void release();
+	virtual int release();
 	virtual void cancel(Status* status);
 
 public:
@@ -190,22 +165,61 @@ private:
 	Attachment* attachment;
 };
 
-void Events::release()
-{
-	LocalStatus status;
-	cancel(&status);
-}
+// work in progress - reference counts are ignored now
+// to be fixed together with handle validation after getting appropriate locks
 
-void Attachment::release()
+int Jrd::Attachment::release()
 {
 	LocalStatus status;
 	detach(&status);
+
+	return 0;
 }
 
-class Svc : public FbApi::Service
+int blb::release()
+{
+	LocalStatus status;
+	cancel(&status);
+
+	return 0;
+}
+
+int jrd_tra::release()
+{
+	LocalStatus status;
+	rollback(&status);
+
+	return 0;
+}
+
+int dsql_req::release()
+{
+	LocalStatus status;
+	free(&status, DSQL_drop);
+
+	return 0;
+}
+
+int JrdStatement::release()
+{
+	LocalStatus status;
+	free(&status);
+
+	return 0;
+}
+
+int Events::release()
+{
+	LocalStatus status;
+	cancel(&status);
+
+	return 0;
+}
+
+class Svc : public StdIface<IService, FB_I_SERVICE_VERSION>
 {
 public:
-	virtual void release();
+	virtual int release();
 	virtual void detach(Status* status);
 	virtual void query(Status* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
@@ -221,31 +235,59 @@ private:
 	Jrd::Service* svc;
 };
 
-void Svc::release()
+int Svc::release()
 {
 	LocalStatus status;
 	detach(&status);
+
+	return 0;
 }
 
-class Provider : public FbApi::Provider
+class Provider : public StdPlugin<Firebird::PProvider, FB_P_PROVIDER_VERSION>
 {
 public:
-	virtual void attachDatabase(FbApi::Attachment** ptr, Status* status, FB_API_HANDLE api, const char* fileName,
+	explicit Provider(IFactoryParameter*)
+	{ }
+
+	virtual void attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void createDatabase(FbApi::Attachment** ptr, Status* status, FB_API_HANDLE api, const char* fileName,
+	virtual void createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual FbApi::Service* attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* attachServiceManager(Status* status, const char* service,
 												 unsigned int spbLength, const unsigned char* spb);
-	//virtual FbApi::Transaction* startTransaction(Status* status, unsigned int count, ...);
-	//virtual FbApi::Transaction* startMultiple(Status* status, MultipleTransaction* multi);
-	virtual int shutdown(unsigned int timeout, const int reason);
+	//virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int count, ...);
+	//virtual Firebird::ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
+	virtual void shutdown(Status* status, unsigned int timeout, const int reason);
+	virtual int release();
 };
 
-// register as plugin
-char providerName[] = "ENGINE12";
-Firebird::PluginHelper<Provider, Firebird::Plugin::Provider, 12, providerName> engine12;
+int Provider::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+static Firebird::Static<Firebird::SimpleFactory<Provider> > engineFactory;
+
+void registerEngine(Firebird::IPlugin* iPlugin)
+{
+	engineFactory->addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Engine12", &engineFactory);
+}
 
 } // namespace Jrd
+
+extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+{
+	IPlugin* pi = master->getPluginInterface();
+	registerEngine(pi);
+	pi->release();
+}
 
 namespace
 {
@@ -260,7 +302,6 @@ namespace
 	public:
 		static void init()
 		{
-			PluginManager::initialize();
 			IbUtil::initialize();
 			IntlManager::initialize();
 			ExtEngineManager::initialize();
@@ -418,7 +459,8 @@ namespace
 	public:
 		static void atExitShutdown()
 		{
-			currentProvider()->shutdown(5000, fb_shutrsn_exit_called);
+			LocalStatus status;
+			currentProvider()->shutdown(&status, 5000, fb_shutrsn_exit_called);
 		}
 
 		UnloadHandler()
@@ -640,7 +682,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public TraceConnection
+class TraceFailedConnection : public Firebird::StackIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
@@ -923,9 +965,9 @@ const int SWEEP_INTERVAL		= 20000;
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
-FbApi::Provider* currentProvider()
+PProvider* currentProvider()
 {
-	return &engine12;
+	return new Provider(NULL);
 }
 
 // External hook definitions
@@ -955,7 +997,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 	{
 		TraceManager tempMgr(origFilename);
 
-		if (tempMgr.needs().event_attach)
+		if (tempMgr.needs(TRACE_EVENT_ATTACH))
 		{
 			TraceFailedConnection conn(origFilename, &options);
 			tempMgr.event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
@@ -963,7 +1005,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 	}
 	else
 	{
-		if (traceManager->needs().event_attach)
+		if (traceManager->needs(TRACE_EVENT_ATTACH))
 		{
 			TraceFailedConnection conn(origFilename, &options);
 			traceManager->event_attach(&conn, create, no_priv ? res_unauthorized : res_failed);
@@ -973,8 +1015,8 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
-void Provider::attachDatabase(FbApi::Attachment** handle,
-							  Status* user_status,
+void Provider::attachDatabase(Status* user_status,
+							  Firebird::IAttachment** handle,
 							  FB_API_HANDLE public_handle,
 							  const char* filename,
 							  unsigned int dpb_length,
@@ -1557,7 +1599,7 @@ void Provider::attachDatabase(FbApi::Attachment** handle,
 
 			*handle = attachment;
 
-			if (attachment->att_trace_manager->needs().event_attach)
+			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
 				attachment->att_trace_manager->event_attach(&conn, false, res_successful);
@@ -1741,6 +1783,7 @@ void Events::cancel(Status* user_status)
 				dbb->dbb_event_mgr->cancelEvents(id);
 			}
 
+			--refCounter;
 			delete this;
 		}
 		catch (const Exception& ex)
@@ -1918,7 +1961,7 @@ void jrd_tra::commitRetaining(Status* user_status)
 }
 
 
-FbApi::Request* Attachment::compileRequest(Status* user_status,
+Firebird::IRequest* Attachment::compileRequest(Status* user_status,
 	unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
@@ -1978,8 +2021,8 @@ FbApi::Request* Attachment::compileRequest(Status* user_status,
 }
 
 
-FbApi::Blob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
-	unsigned int bpb_length, const unsigned char* bpb, FbApi::Attachment* apiAtt)
+Firebird::IBlob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
+	unsigned int bpb_length, const unsigned char* bpb, Firebird::IAttachment* apiAtt)
 {
 /**************************************
  *
@@ -2029,7 +2072,7 @@ FbApi::Blob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
 }
 
 
-void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status,
+void Provider::createDatabase(Status* user_status, Firebird::IAttachment** handle,
 	FB_API_HANDLE public_handle, const char* filename, unsigned int dpb_length,
 	const unsigned char* dpb)
 {
@@ -2216,7 +2259,7 @@ void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status,
 			{
 				if (options.dpb_overwrite)
 				{
-					attachDatabase(handle, user_status, public_handle, filename, dpb_length, dpb);
+					attachDatabase(user_status, handle, public_handle, filename, dpb_length, dpb);
 					if (user_status->get()[1] == isc_adm_task_denied)
 					{
 						throw;
@@ -2363,7 +2406,7 @@ void Provider::createDatabase(FbApi::Attachment** handle, Status* user_status,
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			// Report that we created attachment to Trace API
-			if (attachment->att_trace_manager->needs().event_attach)
+			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
 				attachment->att_trace_manager->event_attach(&conn, true, res_successful);
@@ -2610,7 +2653,7 @@ void Attachment::drop(Status* user_status)
 			const Shadow* shadow = dbb->dbb_shadow;
 
 			// Notify Trace API manager about successful drop of database
-			if (att_trace_manager->needs().event_detach)
+			if (att_trace_manager->needs(TRACE_EVENT_DETACH))
 			{
 				TraceConnectionImpl conn(this);
 				att_trace_manager->event_detach(&conn, true);
@@ -2703,7 +2746,7 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
 
 int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdl_length*/,
 	const unsigned char* sdl, unsigned int param_length, const unsigned char* param,
-	int slice_length, unsigned char* slice, FbApi::Attachment* apiAtt)
+	int slice_length, unsigned char* slice, Firebird::IAttachment* apiAtt)
 {
 /**************************************
  *
@@ -2760,8 +2803,8 @@ int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sd
 }
 
 
-FbApi::Blob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsigned int bpb_length,
-	const unsigned char* bpb, FbApi::Attachment* apiAtt)
+Firebird::IBlob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsigned int bpb_length,
+	const unsigned char* bpb, Firebird::IAttachment* apiAtt)
 {
 /**************************************
  *
@@ -2895,7 +2938,7 @@ void blb::putSegment(Status* user_status, unsigned int buffer_length, const unsi
 
 void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdlLength*/,
 	const unsigned char* sdl, unsigned int paramLength, const unsigned char* param,
-	int sliceLength, unsigned char* slice, FbApi::Attachment* apiAtt)
+	int sliceLength, unsigned char* slice, Firebird::IAttachment* apiAtt)
 {
 /**************************************
  *
@@ -2943,7 +2986,7 @@ void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*s
 }
 
 
-FbApi::Events* Attachment::queEvents(Status* user_status, FbApi::EventCallback* callback,
+Firebird::IEvents* Attachment::queEvents(Status* user_status, Firebird::EventCallback* callback,
 	unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3006,8 +3049,7 @@ void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type
  **************************************
  *
  * Functional description
- *	Get a record from the host program.
- *
+ *	Send a record to the host program.
  **************************************/
 	try
 	{
@@ -3040,7 +3082,7 @@ void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type
 }
 
 
-FbApi::Transaction* Attachment::reconnectTransaction(Status* user_status, unsigned int length,
+Firebird::ITransaction* Attachment::reconnectTransaction(Status* user_status, unsigned int length,
 	const unsigned char* id)
 {
 /**************************************
@@ -3085,7 +3127,7 @@ FbApi::Transaction* Attachment::reconnectTransaction(Status* user_status, unsign
 }
 
 
-void JrdStatement::detach(Status* user_status)
+void JrdStatement::free(Status* user_status)
 {
 /**************************************
  *
@@ -3336,7 +3378,7 @@ void JrdStatement::send(Status* user_status, int level, unsigned int msg_type,
 }
 
 
-FbApi::Service* Provider::attachServiceManager(Status* user_status, const char* service_name,
+Firebird::IService* Provider::attachServiceManager(Status* user_status, const char* service_name,
 											   unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -3388,7 +3430,7 @@ void Svc::detach(Status* user_status)
 		validateHandle(svc);
 
 		svc->detach();
-		delete this;
+		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -3505,7 +3547,7 @@ void Svc::start(Status* user_status, unsigned int spbLength, const unsigned char
 }
 
 
-void JrdStatement::startAndSend(Status* user_status, FbApi::Transaction* tra, int level,
+void JrdStatement::startAndSend(Status* user_status, Firebird::ITransaction* tra, int level,
 	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3572,7 +3614,7 @@ void JrdStatement::startAndSend(Status* user_status, FbApi::Transaction* tra, in
 }
 
 
-void JrdStatement::start(Status* user_status, FbApi::Transaction* tra, int level)
+void JrdStatement::start(Status* user_status, Firebird::ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -3636,7 +3678,34 @@ void JrdStatement::start(Status* user_status, FbApi::Transaction* tra, int level
 }
 
 
-int Provider::shutdown(unsigned int timeout, const int /*reason*/)
+class CounterGuard
+{
+public:
+	explicit CounterGuard(AtomicCounter& pc)
+		: counter(&pc)
+	{
+		for(;;)
+		{
+			if (counter->exchangeAdd(1) == 0)
+			{
+				break;
+			}
+			counter->exchangeAdd(-1);
+			THD_sleep(1);
+		}
+	}
+
+	~CounterGuard()
+	{
+		counter->exchangeAdd(-1);
+	}
+
+private:
+	AtomicCounter* counter;
+};
+
+
+void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason*/)
 {
 /**************************************
  *
@@ -3651,12 +3720,15 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
  *
  **************************************/
 	static volatile bool unloading = false;
+	static AtomicCounter shutCounter;
 
 	try
 	{
+		CounterGuard guard(shutCounter);
+/*
 		if (unloading)
 		{
-			return FB_SUCCESS;
+			return;
 		}
 
 		static GlobalPtr<Mutex> jrdShutdownMutex;
@@ -3664,9 +3736,9 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
 
 		if (unloading)
 		{
-			return FB_SUCCESS;
+			return;
 		}
-
+*/
 		ThreadContextHolder tdbb;
 
 		ULONG attach_count, database_count, svc_count;
@@ -3700,12 +3772,9 @@ int Provider::shutdown(unsigned int timeout, const int /*reason*/)
 	{
 		// repeat it here too - FixMe to special class setting flag in dtor
 		unloading = true;
-	 	ISC_STATUS_ARRAY status;
-		ex.stuff_exception(status);
-		gds__log_status(NULL, status);
+		ex.stuffException(status);
+		gds__log_status(NULL, status->get());
 	}
-
-	return FB_SUCCESS;
 }
 
 /*
@@ -3786,7 +3855,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
 }
 */
 
-FbApi::Transaction* Attachment::startTransaction(Status* user_status,
+Firebird::ITransaction* Attachment::startTransaction(Status* user_status,
 	unsigned int tpbLength, const unsigned char* tpb, FB_API_HANDLE public_handle)
 {
 /**************************************
@@ -3828,7 +3897,7 @@ void jrd_tra::transactRequest(Status* user_status,
 	unsigned int blr_length, const unsigned char* blr,
 	unsigned int in_msg_length, const unsigned char* in_msg,
 	unsigned int out_msg_length, unsigned char* out_msg,
-	FbApi::Attachment* apiAtt)
+	Firebird::IAttachment* apiAtt)
 {
 /**************************************
  *
@@ -4042,7 +4111,7 @@ void JrdStatement::unwind(Status* user_status, int level)
 }
 
 
-FbApi::Statement* Attachment::allocateStatement(Status* user_status)
+Firebird::IStatement* Attachment::allocateStatement(Status* user_status)
 {
 	dsql_req* stmt = NULL;
 
@@ -4076,7 +4145,7 @@ FbApi::Statement* Attachment::allocateStatement(Status* user_status)
 }
 
 
-FbApi::Transaction* dsql_req::executeMessage(Status* user_status, FbApi::Transaction* apiTra,
+Firebird::ITransaction* dsql_req::executeMessage(Status* user_status, Firebird::ITransaction* apiTra,
 	unsigned int in_blr_length, const unsigned char* in_blr,
 	unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
 	unsigned int out_blr_length, const unsigned char* out_blr,
@@ -4123,7 +4192,7 @@ FbApi::Transaction* dsql_req::executeMessage(Status* user_status, FbApi::Transac
 }
 
 
-FbApi::Transaction* Attachment::execute(Status* user_status, FbApi::Transaction* apiTra,
+Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	unsigned int in_blr_length, const unsigned char* in_blr,
 	unsigned int /*in_msg_type*/, unsigned int in_msg_length, const unsigned char* in_msg,
@@ -4269,7 +4338,7 @@ void dsql_req::insertMessage(Status* user_status, unsigned int blr_length, const
 }
 
 
-FbApi::Statement* dsql_req::prepare(Status* user_status, FbApi::Transaction* apiTra,
+Firebird::IStatement* dsql_req::prepare(Status* user_status, Firebird::ITransaction* apiTra,
 									unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 									unsigned int item_length, const unsigned char* items,
 									unsigned int buffer_length, unsigned char* buffer)
@@ -6221,7 +6290,7 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 	}
 
 	// Notify Trace API manager about disconnect
-	if (attachment->att_trace_manager->needs().event_detach)
+	if (attachment->att_trace_manager->needs(TRACE_EVENT_DETACH))
 	{
 		TraceConnectionImpl conn(attachment);
 		attachment->att_trace_manager->event_detach(&conn, false);

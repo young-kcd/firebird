@@ -29,7 +29,7 @@ namespace Firebird
 	class ClumpletReader;
 }
 
-namespace FbApi
+namespace Firebird
 {
 	class Status;
 }

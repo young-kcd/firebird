@@ -440,11 +440,11 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl : public TraceLogWriter
+class TraceLogWriterImpl : public StdIface<TraceLogWriter, FB_TRACE_INIT_INFO_VERSION>
 {
 public:
-	TraceLogWriterImpl(MemoryPool& pool, const TraceSession& session) :
-		m_log(pool, session.ses_logfile, false),
+	TraceLogWriterImpl(const TraceSession& session) :
+		m_log(getPool(), session.ses_logfile, false),
 		m_sesId(session.ses_id)
 	{
 		m_maxSize = Config::getMaxUserTraceLogSize();
@@ -452,9 +452,14 @@ public:
 
 	virtual size_t write(const void* buf, size_t size);
 
-	virtual void release()
+	virtual int release()
 	{
-		delete this;
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+		return 1;
 	}
 
 private:
@@ -508,8 +513,7 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
 	if (!m_logWriter && !m_session.ses_logfile.empty())
 	{
-		MemoryPool &pool = *getDefaultMemoryPool();
-		m_logWriter = FB_NEW(pool) TraceLogWriterImpl(pool, m_session);
+		m_logWriter = new TraceLogWriterImpl(m_session);
 	}
 	return m_logWriter;
 }

@@ -338,14 +338,9 @@ fb_shutdown
 fb_shutdown_callback
 fb_ping
 
-# Plugins support
+# Master firebird object access
 
-fb_register_plugin
-fb_query_plugin
-
-# COM emulation
-
-fb_get_status_instance
+fb_get_master_interface
 
 # Other misc functions
 

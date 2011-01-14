@@ -47,10 +47,6 @@ using namespace Firebird;
 
 namespace {
 
-// register plugin
-char name[] = "LEGACY_AUTH";
-PluginHelper<Auth::SecurityDatabaseServer, Firebird::Plugin::AuthServer, 200, name> server;
-
 // temporal implementation of timer
 
 GlobalPtr<Mutex> timerMutex;
@@ -454,12 +450,7 @@ void SecurityDatabase::shutdown(void*)
 	instance.fini();
 }
 
-ServerInstance* SecurityDatabaseServer::instance()
-{
-	return Firebird::interfaceAlloc<SecurityDatabaseServerInstance>();
-}
-
-Result SecurityDatabaseServerInstance::startAuthentication(Firebird::Status* status,
+Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 											  bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
 											  WriterInterface* writerInterface)
@@ -476,22 +467,38 @@ Result SecurityDatabaseServerInstance::startAuthentication(Firebird::Status* sta
 	}
 }
 
-Result SecurityDatabaseServerInstance::contAuthentication(Firebird::Status*,
+Result SecurityDatabaseServer::contAuthentication(Firebird::Status*,
 											  WriterInterface* /*writerInterface*/,
 											  const unsigned char* /*data*/, unsigned int /*size*/)
 {
 	return AUTH_FAILED;
 }
 
-void SecurityDatabaseServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
+void SecurityDatabaseServer::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = NULL;
 	*dataSize = 0;
 }
 
-void SecurityDatabaseServerInstance::release()
+int SecurityDatabaseServer::release()
 {
-	interfaceFree(this);
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+namespace {
+	Firebird::Static<Firebird::SimpleFactory<SecurityDatabaseServer> > factory;
+}
+
+void registerLegacyServer(Firebird::IPlugin* iPlugin)
+{
+	factory->addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

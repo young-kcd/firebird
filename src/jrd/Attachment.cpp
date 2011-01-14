@@ -81,14 +81,17 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 		while (sysTransaction->tra_requests)
 			EXE_unwind(tdbb, sysTransaction->tra_requests);
 
-		delete sysTransaction;
+		jrd_tra::destroy(NULL, sysTransaction);
 	}
 
 	Database* const dbb = attachment->att_database;
 	MemoryPool* const pool = attachment->att_pool;
 	Firebird::MemoryStats temp_stats;
 	pool->setStatsGroup(temp_stats);
+
+	--(attachment->refCounter);
 	delete attachment;
+
 	dbb->deletePool(pool);
 }
 

@@ -30,11 +30,12 @@
 #ifndef FB_AUTHDBG_H
 #define FB_AUTHDBG_H
 
-//#define AUTH_DEBUG
+#define AUTH_DEBUG
 
 #ifdef AUTH_DEBUG
 
 #include "../auth/AuthInterface.h"
+#include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
@@ -45,44 +46,32 @@ namespace Auth {
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer : public ServerPlugin
+class DebugServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
-	ServerInstance* instance();
-};
+	DebugServer(Firebird::IFactoryParameter*);
 
-class DebugClient : public ClientPlugin
-{
-public:
-	ClientInstance* instance();
-};
-
-class DebugServerInstance : public ServerInstance
-{
-public:
-	DebugServerInstance();
-
-    Result startAuthentication(bool isService, const char* dbName,
+    Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
                                WriterInterface* writerInterface);
-    Result contAuthentication(WriterInterface* writerInterface,
+    Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int release();
 
 private:
 	Firebird::string str;
 };
 
-class DebugClientInstance : public ClientInstance
+class DebugClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	DebugClientInstance();
+	DebugClient(Firebird::IFactoryParameter*);
 
-	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(const unsigned char* data, unsigned int size);
+	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int release();
 
 private:
 	Firebird::string str;

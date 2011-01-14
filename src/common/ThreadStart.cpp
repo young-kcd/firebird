@@ -38,6 +38,7 @@
 #include "../common/gdsassert.h"
 
 
+
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
@@ -119,7 +120,6 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 } // anonymous namespace
 
-
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
 void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id)
@@ -139,15 +139,16 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	pthread_attr_t pattr;
 	int state;
 
+
 #if defined (LINUX) || defined (FREEBSD)
 	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
 		Firebird::system_call_failed::raise("pthread_create", state);
+
 	if (!thd_id)
 	{
 		if (state = pthread_detach(thread))
 			Firebird::system_call_failed::raise("pthread_detach", state);
 	}
-
 #else
 	state = pthread_attr_init(&pattr);
 	if (state)

@@ -34,6 +34,7 @@
 
 #include <../common/classes/fb_string.h>
 #include <../common/classes/array.h>
+#include "../common/classes/ImplementHelper.h"
 #include <../jrd/ibase.h>
 #include "../auth/AuthInterface.h"
 
@@ -95,19 +96,7 @@ public:
 	bool getLogin(Firebird::string& login, bool& wh);
 };
 
-class WinSspiServer : public ServerPlugin
-{
-public:
-	ServerInstance* instance();
-};
-
-class WinSspiClient : public ClientPlugin
-{
-public:
-	ClientInstance* instance();
-};
-
-class WinSspiServerInstance : public ServerInstance
+class WinSspiServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
     Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
@@ -116,16 +105,16 @@ public:
     Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int release();
 
-	WinSspiServerInstance();
+	WinSspiServer(Firebird::IFactoryParameter*);
 
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
 };
 
-class WinSspiClientInstance : public ClientInstance
+class WinSspiClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
 	Result startAuthentication(Firebird::Status* status, bool isService,
@@ -133,14 +122,17 @@ public:
 	Result contAuthentication(Firebird::Status* status,
 							  const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int release();
 
-	WinSspiClientInstance();
+	WinSspiClient(Firebird::IFactoryParameter*);
 
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
 };
+
+void registerTrustedClient(Firebird::IPlugin* iPlugin);
+void registerTrustedServer(Firebird::IPlugin* iPlugin);
 
 } // namespace Auth
 

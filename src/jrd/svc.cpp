@@ -822,7 +822,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			else
 				trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
 
-			if (trace_manager->needs().event_service_attach)
+			if (trace_manager->needs(TRACE_EVENT_SERVICE_ATTACH))
 			{
 				const ISC_LONG exc = ex.stuff_exception(status_vector);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
@@ -842,7 +842,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		throw;
 	}
 
-	if (svc_trace_manager->needs().event_service_attach)
+	if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_ATTACH))
 	{
 		TraceServiceImpl service(this);
 		svc_trace_manager->event_service_attach(&service, res_successful);
@@ -1454,7 +1454,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		INF_put_item(isc_info_length, length2, buffer, start_info, end, true);
 	}
 
-	if (svc_trace_manager->needs().event_service_query)
+	if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 	{
 		TraceServiceImpl service(this);
 		svc_trace_manager->event_service_query(&service, send_item_length, send_items,
@@ -1471,7 +1471,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs().event_service_query)
+		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 		{
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
@@ -1850,7 +1850,7 @@ void Service::query(USHORT			send_item_length,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs().event_service_query)
+		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 		{
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
@@ -1866,7 +1866,7 @@ void Service::query(USHORT			send_item_length,
 	if (!(svc_flags & SVC_thd_running))
 	{
 		if ((svc_flags & SVC_detached) &&
-			svc_trace_manager->needs().event_service_query)
+			svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
 		{
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
@@ -2049,7 +2049,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		if (svc_trace_manager->needs().event_service_start)
+		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_START))
 		{
 			ISC_STATUS_ARRAY status_vector;
 			const ISC_LONG exc = ex.stuff_exception(status_vector);
@@ -2063,7 +2063,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		throw;
 	}
 
-	if (this->svc_trace_manager->needs().event_service_start)
+	if (this->svc_trace_manager->needs(TRACE_EVENT_SERVICE_START))
 	{
 		TraceServiceImpl service(this);
 		this->svc_trace_manager->event_service_start(&service,
@@ -2166,6 +2166,7 @@ bool Service::full() const
 	return add_one(svc_stdout_tail) == svc_stdout_head;
 }
 
+#define ENQUEUE_DEQUEUE_DELAY 100
 
 void Service::enqueue(const UCHAR* s, ULONG len)
 {
@@ -2179,7 +2180,7 @@ void Service::enqueue(const UCHAR* s, ULONG len)
 		// Wait for space in buffer
 		while (full())
 		{
-			THREAD_SLEEP(1);
+			THREAD_SLEEP(ENQUEUE_DEQUEUE_DELAY);
 			if (checkForShutdown() || (svc_flags & SVC_detached))
 			{
 				return;
@@ -2232,7 +2233,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 		if (empty())
 		{
-			THREAD_SLEEP(1);
+			THREAD_SLEEP(ENQUEUE_DEQUEUE_DELAY);
 		}
 #ifdef HAVE_GETTIMEOFDAY
 		GETTIMEOFDAY(&end_time);

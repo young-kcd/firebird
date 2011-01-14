@@ -28,26 +28,27 @@
 #define AUTH_LEGACY_CLIENT_H
 
 #include "../auth/AuthInterface.h"
+#include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
 
 // Required to stop analyzing rest of plugins before first roundtrip to server
 // if legacy login is present in DPB
 
-class SecurityDatabaseClient : public ClientPlugin
+class SecurityDatabaseClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	ClientInstance* instance();
-};
+	explicit SecurityDatabaseClient(Firebird::IFactoryParameter*)
+	{
+	}
 
-class SecurityDatabaseClientInstance : public ClientInstance
-{
-public:
 	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
 	Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
-    void release();
+    int release();
 };
+
+void registerLegacyClient(Firebird::IPlugin* iPlugin);
 
 } // namespace Auth
 

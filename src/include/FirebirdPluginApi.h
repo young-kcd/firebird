@@ -21,13 +21,13 @@
  */
 
 /*
- * When Firebird is initializing, it opens all *.conf files from <fbroot>/plugins.
+ * Firebird plugins are accessed using methods of PluginLoader interface.
  * For each plugin_module tag found, it constructs a Plugin object, reads the corresponding
  * plugin_config tag and inserts all config information in the object.
  *
  * When requested, the engine gets the attribute value of plugin_module/filename, load it as a
  * dynamic (shared) library and calls the exported function firebirdPlugin (FB_PLUGIN_ENTRY_POINT
- * definition, InitPluginEntryPoint prototype) passing the Plugin object as parameter.
+ * definition, StartLoadedModule prototype) passing the Plugin object as parameter.
  *
  * The plugin library may save the plugin object and call they methods later. The object and all
  * pointers returned by it are valid until the plugin is unloaded (done through OS unload of the
@@ -56,18 +56,7 @@
  * are read. The dynamic library extension may be ommitted, and $(this) expands to the directory of
  * the .conf file.
  *
- * Plugins may access Firebird API through the client library read from Plugin::getLibraryName
- * method. This method may return different filenames depending on the server architecture, and may
- * even return NULL. Currently it returns values as the table below, but this is implementation
- * detail and portable plugins should just expect a filename or NULL.
- *
- * Architecture    File
- * --------------- ------------------------------------------------------
- * Embedded        The embedded library
- * Windows SS      fbserver executable
- * Windows CS/SC   fb_inet_server executable
- * POSIX CS/SC     The embedded library
- * POSIX SS        NULL [application should open it through dlopen(NULL)]
+ * Plugins may access Firebird API through the fbclient library.
  */
 
 #ifndef FIREBIRD_PLUGIN_API_H
@@ -77,45 +66,97 @@
 #	pragma GCC system_header	// disable warning about non-existent virtual destructor
 #endif
 
-#include "FirebirdApi.h"
+#include "Interface.h"
 
-#define FB_PLUGIN_ENTRY_POINT		firebirdPlugin
+#define FB_PLUGIN_ENTRY_POINT		firebird_plugin
 
 
 namespace Firebird {
 
-class ExternalEngine;
-
-
-const int PLUGIN_VERSION_1 = 1;
-
-
-class ExternalEngineFactory
+// Plugin interface - base for master plugin interfaces (factories are registered for them)
+class Plugin : public Interface
 {
 public:
-	// Strings passed to error->addString during this call are assumed to be UTF-8.
-	virtual ExternalEngine* FB_CALL createEngine(Error* error, int version,
-		const char* name) = 0;
+	virtual Interface* FB_CARG owner(Interface*) = 0;
 };
+#define FB_PLUGIN_VERSION (FB_INTERFACE_VERSION + 1)
 
-
-// Passed to plugin library through entry point FB_PLUGIN_ENTRY_POINT in Firebird initialization.
-class ExtEngPlugin
+// IPluginSet - low level tool to access plugins according to parameter from firebird.conf
+class IPluginSet : public Interface
 {
 public:
-	virtual int FB_CALL getVersion() = 0;
-	virtual const char* FB_CALL getName() = 0;
-	virtual const char* FB_CALL getLibraryName() = 0;
-	virtual uint FB_CALL getConfigInfoCount() = 0;
-	virtual void FB_CALL getConfigInfo(Error* error, uint index,	// first index is 0
-		const char** key, const char** value) = 0;
-
-	virtual void FB_CALL setExternalEngineFactory(ExternalEngineFactory* factory) = 0;
+	virtual const char* FB_CARG name() const = 0;
+	virtual const char* FB_CARG module() const = 0;
+	virtual Plugin* FB_CARG plugin() = 0;
+	virtual void FB_CARG next() = 0;
+	virtual void FB_CARG set(const char*) = 0;
 };
+#define FB_PLUGIN_SET_VERSION (FB_INTERFACE_VERSION + 5)
 
+// Interfaces to work with configuration data
+class IConfig;
 
-typedef void (*PluginEntryPoint)(Error* error, ExtEngPlugin* plugin);
+class IConfigParameter : public Interface
+{
+public:
+	virtual const char* FB_CARG name() = 0;
+	virtual const char* FB_CARG value() = 0;
+	virtual IConfig* sub() = 0;
+};
+#define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 
+class IConfig : public Interface
+{
+public:
+	virtual IConfigParameter* FB_CARG find(const char* name) = 0;
+	virtual IConfigParameter* FB_CARG findValue(const char* name, const char* value) = 0;
+	virtual IConfigParameter* FB_CARG findPos(const char* name, unsigned int pos) = 0;
+};
+#define FB_I_CONFIG_VERSION (FB_INTERFACE_VERSION + 3)
+
+// This interface is passed to plugin's factory as it's single parameter
+class IFactoryParameter : public Interface
+{
+public:
+	virtual const char* FB_CARG getConfigFileName() = 0;
+	virtual IConfig* FB_CARG getDefaultConfig() = 0;
+};
+#define FB_FACTORY_PARAMETER_VERSION (FB_INTERFACE_VERSION + 2)
+
+// Required to creat instances of given plugin
+class PluginsFactory : public Interface
+{
+public:
+	virtual Plugin* FB_CARG createPlugin(IFactoryParameter* fp) = 0;
+};
+#define FB_PLUGINS_FACTORY_VERSION (FB_INTERFACE_VERSION + 1)
+
+// Interface to deal with plugins here and there, returned by master interface
+class IPlugin : public Interface
+{
+public:
+	virtual void FB_CARG registerPlugin(unsigned int interfaceType, const char* defaultName,
+										PluginsFactory* factory) = 0;
+	virtual IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
+										   int desiredVersion, void* missingFunctionClass) = 0;
+	virtual IConfig* FB_CARG getConfig(const char* filename) = 0;
+	virtual void FB_CARG releasePlugin(Plugin* plugin) = 0;
+};
+#define FB_I_PLUGIN_VERSION (FB_INTERFACE_VERSION + 4)
+
+typedef void StartLoadedModule(IMaster* masterInterface);
+
+namespace PluginType {
+	static const unsigned int YValve = 1;
+	static const unsigned int Provider = 2;
+	// leave space for may be some more super-std plugins
+	static const unsigned int FirstNonLibPlugin = 11;
+	static const unsigned int AuthServer = 11;
+	static const unsigned int AuthClient = 12;
+	static const unsigned int AuthUserManagement = 13;
+	static const unsigned int ExternalEngine = 14;
+	static const unsigned int Trace = 15;
+};
 
 }	// namespace Firebird
 

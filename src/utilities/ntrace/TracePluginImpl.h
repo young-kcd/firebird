@@ -29,6 +29,7 @@
 #ifndef TRACEPLUGINIMPL_H
 #define TRACEPLUGINIMPL_H
 
+#include "firebird.h"
 #include "../../jrd/ntrace.h"
 #include "TracePluginConfig.h"
 #include "TraceUnicodeUtils.h"
@@ -43,16 +44,9 @@
 // Bring in off_t
 #include <sys/types.h>
 
-
-class TracePluginImpl
+class TracePluginImpl : public Firebird::StdIface<TracePlugin, FB_TRACE_PLUGIN_VERSION>
 {
 public:
-	// Create skeletal plugin (to report initialization error)
-	static TracePlugin* createSkeletalPlugin();
-
-	// Create trace plugin for particular database
-	static TracePlugin* createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo);
-
 	// Serialize exception to TLS buffer to return it to user
 	static void marshal_exception(const Firebird::Exception& ex);
 
@@ -137,8 +131,9 @@ public:
 	typedef Firebird::BePlusTree<ServiceData, ntrace_service_t, Firebird::MemoryPool, ServiceData>
 		ServicesTree;
 
-private:
 	TracePluginImpl(const TracePluginConfig& configuration, TraceInitInfo* initInfo);
+
+private:
 	~TracePluginImpl();
 
 	bool operational; // Set if plugin is fully initialized and is ready for logging
@@ -256,77 +251,53 @@ private:
 								 const ntrace_byte_t* recv_items, ntrace_result_t query_result);
 	void log_event_service_detach(TraceService* service, ntrace_result_t detach_result);
 
-	/* Finalize plugin. Called when database is closed by the engine */
-	static ntrace_boolean_t ntrace_shutdown(const TracePlugin* tpl_plugin);
+	int FB_CARG release();
+	const char* FB_CARG trace_get_error();
 
-	/* Function to return error string for hook failure */
-	static const char* ntrace_get_error(const TracePlugin* tpl_plugin);
+	// Create/close attachment
+	int FB_CARG trace_attach(TraceConnection* connection, ntrace_boolean_t create_db, ntrace_result_t att_result);
+	int FB_CARG trace_detach(TraceConnection* connection, ntrace_boolean_t drop_db);
 
-	/* Create/close attachment */
-	static ntrace_boolean_t ntrace_event_attach(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, ntrace_boolean_t create_db,
-		ntrace_result_t att_result);
-	static ntrace_boolean_t ntrace_event_detach(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, ntrace_boolean_t drop_db);
+	// Start/end transaction
+	int FB_CARG trace_transaction_start(TraceConnection* connection, TraceTransaction* transaction,
+			size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
+	int FB_CARG trace_transaction_end(TraceConnection* connection, TraceTransaction* transaction,
+			ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
-	/* Start/end transaction */
-	static ntrace_boolean_t ntrace_event_transaction_start(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
-	static ntrace_boolean_t ntrace_event_transaction_end(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
+	// Stored procedure and triggers executing
+	int FB_CARG trace_proc_execute (TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
+			bool started, ntrace_result_t proc_result);
+	int FB_CARG trace_trigger_execute(TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
+			bool started, ntrace_result_t trig_result);
 
-	/* Assignment to context variables */
-	static ntrace_boolean_t ntrace_event_set_context(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceContextVariable* variable);
+	// Assignment to context variables
+	int FB_CARG trace_set_context(TraceConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable);
 
-	/* Stored procedure executing */
-	static ntrace_boolean_t ntrace_event_proc_execute(const struct TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
-		bool started, ntrace_result_t proc_result);
+	// DSQL statement lifecycle
+	int FB_CARG trace_dsql_prepare(TraceConnection* connection, TraceTransaction* transaction,
+			TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
+	int FB_CARG trace_dsql_free(TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
+	int FB_CARG trace_dsql_execute(TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
+			bool started, ntrace_result_t req_result);
 
-	static ntrace_boolean_t ntrace_event_trigger_execute(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
-		bool started, ntrace_result_t trig_result);
+	// BLR requests
+	int FB_CARG trace_blr_compile(TraceConnection* connection, TraceTransaction* transaction,
+			TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
+	int FB_CARG trace_blr_execute(TraceConnection* connection, TraceTransaction* transaction,
+			TraceBLRStatement* statement, ntrace_result_t req_result);
 
-	/* DSQL statement lifecycle */
-	static ntrace_boolean_t ntrace_event_dsql_prepare(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceSQLStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-	static ntrace_boolean_t ntrace_event_dsql_free(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceSQLStatement* statement, unsigned short option);
-	static ntrace_boolean_t ntrace_event_dsql_execute(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement,
-		bool started, ntrace_result_t req_result);
+	// DYN requests
+	int FB_CARG trace_dyn_execute(TraceConnection* connection, TraceTransaction* transaction,
+			TraceDYNRequest* request, ntrace_counter_t time_millis, ntrace_result_t req_result);
 
-	/* BLR requests */
-	static ntrace_boolean_t ntrace_event_blr_compile(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceBLRStatement* statement, ntrace_counter_t time_millis, ntrace_result_t req_result);
-	static ntrace_boolean_t ntrace_event_blr_execute(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceBLRStatement* statement, ntrace_result_t req_result);
-
-	/* DYN requests */
-	static ntrace_boolean_t ntrace_event_dyn_execute(const TracePlugin* tpl_plugin,
-		TraceConnection* connection, TraceTransaction* transaction,
-		TraceDYNRequest* request, ntrace_counter_t time_millis,
-		ntrace_result_t req_result);
-
-	/* Using the services */
-	static ntrace_boolean_t ntrace_event_service_attach(const TracePlugin* tpl_plugin,
-		TraceService* service, ntrace_result_t att_result);
-	static ntrace_boolean_t ntrace_event_service_start(const TracePlugin* tpl_plugin,
-		TraceService* service, size_t switches_length, const char* switches,
-		ntrace_result_t start_result);
-	static ntrace_boolean_t ntrace_event_service_query(const TracePlugin* tpl_plugin,
-		TraceService* service, size_t send_item_length,
-		const ntrace_byte_t* send_items, size_t recv_item_length,
-		const ntrace_byte_t* recv_items, ntrace_result_t query_result);
-	static ntrace_boolean_t ntrace_event_service_detach(const TracePlugin* tpl_plugin,
-		TraceService* service, ntrace_result_t detach_result);
+	// Using the services
+	int FB_CARG trace_service_attach(TraceService* service, ntrace_result_t att_result);
+	int FB_CARG trace_service_start(TraceService* service, size_t switches_length, const char* switches,
+			ntrace_result_t start_result);
+	int FB_CARG trace_service_query(TraceService* service, size_t send_item_length,
+			const ntrace_byte_t* send_items, size_t recv_item_length,
+			const ntrace_byte_t* recv_items, ntrace_result_t query_result);
+	int FB_CARG trace_service_detach(TraceService* service, ntrace_result_t detach_result);
 };
 
 

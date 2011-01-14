@@ -128,6 +128,11 @@ public:
 		KEY_TRACE_CONFIG,
 		KEY_MAX_TRACELOG_SIZE,
 		KEY_FILESYSTEM_CACHE_SIZE,
+		KEY_PLUG_PROVIDERS,
+		KEY_PLUG_AUTH_SERVER,
+		KEY_PLUG_AUTH_CLIENT,
+		KEY_PLUG_AUTH_MANAGE,
+		KEY_PLUG_TRACE,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -325,6 +330,8 @@ public:
 	static bool getSharedDatabase();
 
 	static bool getMultiClientServer();
+
+	static const char* getPlugins(unsigned int type);
 };
 
 #endif // COMMON_CONFIG_H

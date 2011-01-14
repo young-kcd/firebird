@@ -29,10 +29,33 @@
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
+class TraceFactoryImpl : public Firebird::StdPlugin<TraceFactory, FB_TRACE_FACTORY_VERSION>
+{
+public:
+	explicit TraceFactoryImpl(Firebird::IFactoryParameter*)
+	{ }
 
-extern "C" {
+	ntrace_mask_t FB_CARG trace_needs();
+	TracePlugin* FB_CARG trace_create(Firebird::Status* status, TraceInitInfo* init_info);
+	int FB_CARG release();
+};
 
-FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const TracePlugin** plugin)
+int FB_CARG TraceFactoryImpl::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+	return 1;
+}
+
+ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
+{
+	return (1 << TRACE_EVENT_MAX) - 1;
+}
+
+TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, TraceInitInfo* initInfo)
 {
 	try
 	{
@@ -48,8 +71,7 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 			(config.connection_id && connection &&
 				(connection->getConnectionID() != SLONG(config.connection_id))))
 		{
-			*plugin = NULL;
-			return true; // Plugin is not needed, no error happened.
+			return NULL; // Plugin is not needed, no error happened.
 		}
 
 		TraceLogWriter* logWriter = initInfo->getLogWriter();
@@ -57,32 +79,30 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 			config.log_filename = "";
 		}
 
-		*plugin = TracePluginImpl::createFullPlugin(config, initInfo);
-
-		return true; // Everything is ok, we created a plugin
+		return new TracePluginImpl(config, initInfo);	// Everything is ok, we created a plugin
 
 	}
 	catch(Firebird::Exception& ex)
 	{
-		try
-		{
-			// Create skeletal plugin object in order to return error to caller
-			*plugin = TracePluginImpl::createSkeletalPlugin();
-
-			// Stuff exception to error buffer now
-			TracePluginImpl::marshal_exception(ex);
-
-		}
-		catch (Firebird::Exception&)
-		{
-			// We faced total lack of luck here. Most probably this is
-			// out-of-memory error, but nothing we can tell to our caller
-			// about it.
-			*plugin = NULL;
-		}
-
-		return false;
+		ex.stuffException(status);
 	}
+
+	return NULL;
 }
 
-} // extern "C"
+
+static Firebird::Static<Firebird::SimpleFactory<TraceFactoryImpl> > traceFactory;
+
+void registerTrace(Firebird::IPlugin* iPlugin)
+{
+	traceFactory->addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
+}
+
+
+extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+{
+	Firebird::IPlugin* pi = master->getPluginInterface();
+	registerTrace(pi);
+	pi->release();
+}

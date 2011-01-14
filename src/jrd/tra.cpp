@@ -1616,7 +1616,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs().event_transaction_start)
+	if (attachment->att_trace_manager->needs(TRACE_EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);
@@ -1661,7 +1661,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	{
 		transaction_options(tdbb, temp, tpb, tpb_length);
 		transaction = transaction_start(tdbb, temp);
-		delete temp;
+		jrd_tra::destroy(NULL, temp);
 	}
 	catch (const Exception&)
 	{
@@ -1669,7 +1669,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs().event_transaction_start)
+	if (attachment->att_trace_manager->needs(TRACE_EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);

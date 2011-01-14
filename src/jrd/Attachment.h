@@ -121,7 +121,8 @@ const int DBB_max_count				= 8;
 //
 // the attachment block; one is created for each attachment to a database
 //
-class Attachment : public pool_alloc<type_att>, public Firebird::PublicHandle, public FbApi::Attachment
+class Attachment : public Firebird::PublicHandle,
+				   public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION, pool_alloc<type_att> >
 {
 public:
 	static Attachment* create(Database* dbb, FB_API_HANDLE publicHandle);
@@ -219,25 +220,25 @@ public:
 	bool checkHandle() const;
 
 public:
-	virtual void release();
+	virtual int release();
 	virtual void getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-//	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
+//	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual FbApi::Transaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
-										  FB_API_HANDLE api);
-	virtual FbApi::Transaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
-	virtual FbApi::Statement* allocateStatement(Status* status);
-	virtual FbApi::Request* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual FbApi::Transaction* execute(Status* status, FbApi::Transaction* transaction,
+	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
+													 FB_API_HANDLE api);
+	virtual Firebird::ITransaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
+	virtual Firebird::IStatement* allocateStatement(Status* status);
+	virtual Firebird::IRequest* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
+	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_blr_length, const unsigned char* in_blr,
 								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_blr_length, unsigned char* out_blr,
 								 unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg);
-	virtual FbApi::Events* queEvents(Status* status, FbApi::EventCallback* callback,
-									 unsigned int length, const unsigned char* events);
+	virtual Firebird::IEvents* queEvents(Status* status, Firebird::EventCallback* callback,
+										 unsigned int length, const unsigned char* events);
 	virtual void cancelOperation(Status* status, int option);
 	virtual void ping(Status* status);
 	virtual void detach(Status* status);

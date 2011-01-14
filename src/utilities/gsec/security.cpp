@@ -30,7 +30,7 @@
 #include <ctype.h>
 #include "../common/common.h"
 #include "../jrd/ibase.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../auth/AuthInterface.h"
 #include "../common/enc_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
@@ -40,7 +40,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/UserBlob.h"
-#include "../common/classes/Interface.h"
+#include "../common/classes/ImplementHelper.h"
 #include "../common/utils_proto.h"
 
 using namespace Firebird;
@@ -53,33 +53,22 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 						  FPTR_SECURITY_CALLBACK display_func,
 						  void* callback_arg)
 {
-	static Auth::ManagementPlugin* volatile plugin = NULL;
-
-	if (!plugin)
+	try
 	{
-		static GlobalPtr<Mutex> mutex;
-		MutexLockGuard g(mutex);
+		PluginsSet<Auth::Management> authItr(PluginType::AuthUserManagement, FB_AUTH_MANAGE_VERSION);
 
-		if (!plugin)
+		if (!authItr.hasData())
 		{
-			// temporary measure before PluginManager integration
-			PathName plugFile(fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, "user_management"));
-			ModuleLoader::doctorModuleExtension(plugFile);
-			if (ModuleLoader::loadModule(plugFile))
-			{
-				plugin = reinterpret_cast<Auth::ManagementPlugin*>(
-					fb_query_plugin(Plugin::UserManagement, NULL));
-			}
+			(Arg::Gds(isc_random) << "Missing user management plugin").raise();
 		}
 
-		if (!plugin)
-		{
-			(Arg::Gds(isc_random) << "Missing user management plugin").copyTo(isc_status);
-			return GsecMsg75;
-		}
+		return authItr.plugin()->execLine(isc_status, realUser, db, trans, io_user_data, display_func, callback_arg);
 	}
-
-	return plugin->execLine(isc_status, realUser, db, trans, io_user_data, display_func, callback_arg);
+	catch(const Exception& ex)
+	{
+		ex.stuff_exception(isc_status);
+		return GsecMsg75;
+	}
 }
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,

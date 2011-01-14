@@ -28,6 +28,7 @@
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
 #include "../common/os/fbsyslog.h"
+#include "FirebirdPluginApi.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -173,7 +174,18 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_BOOLEAN,		"OldSetClauseSemantics",	(ConfigValue) false},	// if true disallow SET A = B, B = A to exchange column values
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
-	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 30}		// percent
+	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 30},		// percent
+	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote,Engine12,Loopback"},
+#ifdef WIN_NT
+#define FB_AUTHS "Legacy_Auth, Win_Sspi"
+#else
+#define FB_AUTHS "Legacy_Auth"
+#endif
+	{TYPE_STRING,		"AuthServer",				(ConfigValue) FB_AUTHS},
+	{TYPE_STRING,		"AuthClient",				(ConfigValue) FB_AUTHS},
+#undef FB_AUTHS
+	{TYPE_STRING,		"UserManager",				(ConfigValue) "Legacy_Auth"},
+	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"}
 };
 
 /******************************************************************************
@@ -646,4 +658,24 @@ bool Config::getMultiClientServer()
 #else
 	return false;
 #endif
+}
+
+const char* Config::getPlugins(unsigned int type)
+{
+	switch(type)
+	{
+		case Firebird::PluginType::Provider:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_PROVIDERS];
+		case Firebird::PluginType::AuthServer:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_SERVER];
+		case Firebird::PluginType::AuthClient:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_CLIENT];
+		case Firebird::PluginType::AuthUserManagement:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_AUTH_MANAGE];
+		case Firebird::PluginType::Trace:
+			return (const char*) getDefaultConfig()->values[KEY_PLUG_TRACE];
+	}
+
+	(Firebird::Arg::Gds(isc_random) << "Internal error in getPlugins()").raise();
+	return NULL;		// compiler warning silencer
 }

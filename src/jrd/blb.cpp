@@ -96,7 +96,6 @@ static blob_page* get_next_page(thread_db*, blb*, WIN *);
 static void insert_page(thread_db*, blb*);
 static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, const ValueExprNode*);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
-static void release_blob(blb*, const bool);
 static void slice_callback(array_slice*, ULONG, dsc*);
 static blb* store_array(thread_db*, jrd_tra*, bid*);
 
@@ -123,7 +122,7 @@ void BLB_cancel(thread_db* tdbb, blb* blob)
 	if (blob->blb_flags & BLB_temporary)
 		delete_blob(tdbb, blob, 0);
 
-	release_blob(blob, true);
+	blb::destroy(blob, true);
 }
 
 
@@ -205,7 +204,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 
 	if (!(blob->blb_flags & BLB_temporary))
 	{
-		release_blob(blob, true);
+		blb::destroy(blob, true);
 		return;
 	}
 
@@ -1210,7 +1209,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNode
 			array->arr_request = own_request;
 	}
 
-	release_blob(blob, !materialized_blob);
+	blb::destroy(blob, !materialized_blob);
 }
 
 
@@ -2174,7 +2173,7 @@ static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page
 	if (!(blob->blb_flags & BLB_damaged))
 		delete_blob(tdbb, blob, prior_page);
 
-	release_blob(blob, true);
+	blb::destroy(blob, true);
 }
 
 
@@ -2593,7 +2592,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 }
 
 
-static void release_blob(blb* blob, const bool purge_flag)
+void blb::destroy(blb* blob, const bool purge_flag)
 {
 /**************************************
  *
@@ -2647,6 +2646,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 		blob->blb_transaction->getBlobSpace()->releaseSpace(blob->blb_temp_offset, blob->blb_temp_size);
 	}
 
+	--(blob->refCounter);
 	delete blob;
 }
 

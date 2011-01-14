@@ -124,6 +124,7 @@ void TraceCfgReader::readConfig()
 				}
 
 				match = !m_databaseName.empty();
+				//match = m_databaseName.empty();
 				defDB = true;
 			}
 			else

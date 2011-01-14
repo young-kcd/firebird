@@ -610,6 +610,7 @@
 #define fb_shut_preproviders			  2
 #define fb_shut_postproviders			  4
 #define fb_shut_finish					  8
+#define fb_shut_exit					 16
 
 /****************************************/
 /* Shutdown reasons, used by engine     */

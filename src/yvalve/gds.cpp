@@ -56,11 +56,8 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
-#include "../common/classes/Interface.h"
 #include "../common/classes/TempFile.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/ImplementHelper.h"
-#include "../common/StatusHolder.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -3655,20 +3652,6 @@ VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 	}
 }
 
-class UserStatus : public Firebird::BaseStatus
-{
-public:
-	virtual void release()
-	{
-		 Firebird::interfaceFree(this);
-	}
-};
-
-Firebird::Status* API_ROUTINE FbApi::fb_get_status_instance()
-{
-	return Firebird::interfaceAlloc<UserStatus>();
-}
-
 class InitPrefix
 {
 public:
@@ -3839,55 +3822,6 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 #else
 	return false;
 #endif
-}
-
-
-// Plugin operations
-
-namespace {
-	Firebird::GlobalPtr<Firebird::Mutex> pluginMutex;
-	Firebird::Plugin* pluginChain;
-} // anonymous napespace
-
-void API_ROUTINE fb_register_plugin(Firebird::Plugin* plugin)
-{
-	// If initialization is complete, use mutex to protect pluginChain.
-	// Otherwise we are single-threaded, and have no need in such protection.
-	Firebird::Mutex* mutex(&pluginMutex);
-	if (mutex)
-	{
-		mutex->enter();
-	}
-
-	plugin->link(pluginChain);
-	pluginChain = plugin;
-
-	if (mutex)
-	{
-		mutex->leave();
-	}
-}
-
-Firebird::Plugin* API_ROUTINE fb_query_plugin(unsigned int type, const char* name)
-{
-	Firebird::MutexLockGuard g(pluginMutex);
-
-	Firebird::Plugin* prev = NULL;
-	for (Firebird::Plugin* p = pluginChain; p; prev = p, p = p->next())
-	{
-		if (p->type() == type && (!name || !strcmp(name, p->name())))
-		{
-			if (prev)
-				prev->link(p->next());
-			else
-				pluginChain = p->next();
-
-			p->link(NULL);
-			return p;
-		}
-	}
-
-	return NULL;
 }
 
 

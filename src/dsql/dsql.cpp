@@ -98,7 +98,6 @@ static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const T
 static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_statement(DsqlCompiledStatement* statement);
-static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
@@ -452,12 +451,12 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 	if (option & DSQL_drop)
 	{
 		// Release everything associated with the request
-		release_request(tdbb, request, true);
+		dsql_req::destroy(tdbb, request, true);
 	}
 	else if (option & DSQL_unprepare)
 	{
 		// Release everything but the request itself
-		release_request(tdbb, request, false);
+		dsql_req::destroy(tdbb, request, false);
 	}
 	else if (option & DSQL_close)
 	{
@@ -669,7 +668,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 		{
 			Jrd::ContextPoolHolder context(tdbb, &old_request->getPool());
-			release_request(tdbb, old_request, true);
+			dsql_req::destroy(tdbb, old_request, true);
 		}
 
 		*req_handle = request;
@@ -682,7 +681,7 @@ void DSQL_prepare(thread_db* tdbb,
 		if (request)
 		{
 			Jrd::ContextPoolHolder context(tdbb, &request->getPool());
-			release_request(tdbb, request, true);
+			dsql_req::destroy(tdbb, request, true);
 		}
 		throw;
 	}
@@ -1057,14 +1056,14 @@ static void execute_immediate(thread_db* tdbb,
 						out_blr_length, out_blr, out_msg_length, out_msg,
 						singleton);
 
-		release_request(tdbb, request, true);
+		dsql_req::destroy(tdbb, request, true);
 	}
 	catch (const Firebird::Exception&)
 	{
 		if (request)
 		{
 			Jrd::ContextPoolHolder context(tdbb, &request->getPool());
-			release_request(tdbb, request, true);
+			dsql_req::destroy(tdbb, request, true);
 		}
 		throw;
 	}
@@ -2790,7 +2789,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	{
 		trace.prepare(res_failed);
 		request->req_traced = false;
-		release_request(tdbb, request, true);
+		dsql_req::destroy(tdbb, request, true);
 		throw;
 	}
 }
@@ -2859,7 +2858,7 @@ static void release_statement(DsqlCompiledStatement* statement)
 
 /**
 
- 	release_request
+ 	dsql_req::destroy
 
     @brief	Release a dynamic request.
 
@@ -2868,7 +2867,7 @@ static void release_statement(DsqlCompiledStatement* statement)
     @param top_level
 
  **/
-static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
+void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 {
 	SET_TDBB(tdbb);
 
@@ -2930,7 +2929,10 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	// Release the entire request if explicitly asked for
 
 	if (drop)
+	{
+		--(request->refCounter);
 		request->req_dbb->deletePool(&request->getPool());
+	}
 }
 
 

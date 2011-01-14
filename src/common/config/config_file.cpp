@@ -189,6 +189,13 @@ ConfigFile::ConfigFile(UseText, const char* configText, USHORT fl)
 	parse(&s);
 }
 
+ConfigFile::ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl)
+	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
+{
+	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
+	parse(&s);
+}
+
 ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file)
 	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
 {

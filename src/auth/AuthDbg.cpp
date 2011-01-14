@@ -28,104 +28,160 @@
 #include "firebird.h"
 #include "../auth/AuthDbg.h"
 #include "../jrd/ibase.h"
-#include "../common/classes/ImplementHelper.h"
 
 #ifdef AUTH_DEBUG
 
-namespace {
-	char name[] = "DEBUG_AUTH";
-	Firebird::PluginHelper<Auth::DebugServer, Firebird::Plugin::AuthServer, name> debugServer;
-	Firebird::PluginHelper<Auth::DebugClient, Firebird::Plugin::AuthClient, name> debugClient;
+//#define AUTH_VERBOSE
+
+// register plugin
+static Firebird::SimpleFactory<Auth::DebugClient> clientFactory;
+static Firebird::SimpleFactory<Auth::DebugServer> serverFactory;
+
+extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+{
+	const char* name = "Auth_Debug";
+
+	Firebird::IPlugin* iPlugin = master->getPluginInterface();
+
+	clientFactory.addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, name, &clientFactory);
+	serverFactory.addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, name, &serverFactory);
+
+	iPlugin->release();
 }
+
 
 namespace Auth {
 
-ServerInstance* DebugServer::instance()
-{
-	return Firebird::interfaceAlloc<DebugServerInstance>();
-}
-
-ClientInstance* DebugClient::instance()
-{
-	return Firebird::interfaceAlloc<DebugClientInstance>();
-}
-
-DebugServerInstance::DebugServerInstance()
-	: str(*getDefaultMemoryPool())
+DebugServer::DebugServer(Firebird::IFactoryParameter*)
+	: str(getPool())
 { }
 
-Result DebugServerInstance::startAuthentication(bool isService, const char* dbName,
-												const unsigned char* dpb, unsigned int dpbSize,
-												WriterInterface* writerInterface)
+Result FB_CARG DebugServer::startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+										const unsigned char* dpb, unsigned int dpbSize,
+										WriterInterface* writerInterface)
 {
-	str.erase();
-	Firebird::ClumpletReader rdr(isService ?
-		Firebird::ClumpletReader::spbList :
-		Firebird::ClumpletReader::dpbList, dpb, dpbSize);
-
-	if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
+	try
 	{
-		str.assign(rdr.getBytes(), rdr.getClumpLength());
+		str.erase();
+		Firebird::ClumpletReader rdr(isService ?
+			Firebird::ClumpletReader::spbList :
+			Firebird::ClumpletReader::dpbList, dpb, dpbSize);
+
+		if (rdr.find(isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth))
+		{
+			str.assign(rdr.getBytes(), rdr.getClumpLength());
+		}
+
+		str += '_';
+		return AUTH_MORE_DATA;
 	}
-
-	str += '_';
-	return AUTH_MORE_DATA;
-}
-
-Result DebugServerInstance::contAuthentication(WriterInterface* writerInterface,
-											   const unsigned char* data, unsigned int size)
-{
-	//fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
-	writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
-	return AUTH_SUCCESS;
-}
-
-void DebugServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
-{
-	*data = reinterpret_cast<const unsigned char*>(str.c_str());
-	*dataSize = str.length();
-	//fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
-}
-
-void DebugServerInstance::release()
-{
-	Firebird::interfaceFree(this);
-}
-
-DebugClientInstance::DebugClientInstance()
-	: str(*getDefaultMemoryPool())
-{ }
-
-Result DebugClientInstance::startAuthentication(bool isService, const char*, DpbInterface* dpb)
-{
-	str = "HAND";
-	if (dpb)
+	catch (const Firebird::Exception& ex)
 	{
-		dpb->add((isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth),
-				 str.c_str(), str.length());
+		ex.stuffException(status);
+		return AUTH_FAILED;
+	}
+}
+
+Result FB_CARG DebugServer::contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+									   const unsigned char* data, unsigned int size)
+{
+	try
+	{
+#ifdef AUTH_VERBOSE
+		fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
+#endif
+		writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
 		return AUTH_SUCCESS;
 	}
-	return AUTH_MORE_DATA;
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+		return AUTH_FAILED;
+	}
 }
 
-Result DebugClientInstance::contAuthentication(const unsigned char* data, unsigned int size)
-{
-	//fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
-	str.assign(data, size);
-	str += "SHAKE";
-	return AUTH_CONTINUE;
-}
-
-void DebugClientInstance::getData(const unsigned char** data, unsigned short* dataSize)
+void FB_CARG DebugServer::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = reinterpret_cast<const unsigned char*>(str.c_str());
 	*dataSize = str.length();
-	//fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
+#ifdef AUTH_VERBOSE
+	fprintf(stderr, "DebugServerInstance::getData: %.*s\n", *dataSize, *data);
+#endif
 }
 
-void DebugClientInstance::release()
+int FB_CARG DebugServer::release()
 {
-	Firebird::interfaceFree(this);
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+DebugClient::DebugClient(Firebird::IFactoryParameter*)
+	: str(getPool())
+{ }
+
+Result FB_CARG DebugClient::startAuthentication(Firebird::Status* status, bool isService, const char*, DpbInterface* dpb)
+{
+	try
+	{
+		str = "HAND";
+		if (dpb)
+		{
+			dpb->add((isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth),
+					 str.c_str(), str.length());
+			return AUTH_SUCCESS;
+		}
+		return AUTH_MORE_DATA;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+		return AUTH_FAILED;
+	}
+}
+
+Result FB_CARG DebugClient::contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size)
+{
+	try
+	{
+#ifdef AUTH_VERBOSE
+		fprintf(stderr, "DebugClientInstance::contAuthentication: %.*s\n", size, data);
+#endif
+		str.assign(data, size);
+		str += "SHAKE";
+		return AUTH_CONTINUE;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+		return AUTH_FAILED;
+	}
+}
+
+void FB_CARG DebugClient::getData(const unsigned char** data, unsigned short* dataSize)
+{
+	*data = reinterpret_cast<const unsigned char*>(str.c_str());
+	*dataSize = str.length();
+#ifdef AUTH_VERBOSE
+	fprintf(stderr, "DebugClientInstance::getData: %.*s\n", *dataSize, *data);
+#endif
+}
+
+int FB_CARG DebugClient::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
 }
 
 } // namespace Auth

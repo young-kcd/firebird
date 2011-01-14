@@ -34,6 +34,7 @@
 #endif
 
 #include "FirebirdApi.h"
+#include "FirebirdPluginApi.h"
 
 
 namespace Firebird {
@@ -153,7 +154,7 @@ public:
 
 // In SuperServer, shared by all attachments to one database and disposed when last (non-external)
 // user attachment to the database is closed.
-class ExternalEngine : public Disposable
+class ExternalEngine : public Plugin
 {
 public:
 	virtual int FB_CALL getVersion(Error* error) = 0;
@@ -181,7 +182,7 @@ public:
 		const char* name, const char* entryPoint, const char* body,
 		const char* table, ExternalTrigger::Type type) = 0;
 };
-
+#define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 7)
 
 }	// namespace Firebird
 

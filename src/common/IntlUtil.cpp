@@ -461,6 +461,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 	catch (...)
 	{
 		delete charSet;
+		gds__log("initUnicodeCollation failed - unexpected exception caught");
 		return false;
 	}
 
@@ -497,7 +498,10 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		UnicodeUtil::Utf16Collation::create(tt, attributes, map16, configInfo);
 
 	if (!collation)
+	{
+		gds__log("initUnicodeCollation failed - UnicodeUtil::Utf16Collation::create failed");
 		return false;
+	}
 
 	tt->texttype_impl = new TextTypeImpl(cs, collation);
 

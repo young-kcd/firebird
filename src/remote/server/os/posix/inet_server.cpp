@@ -75,7 +75,6 @@
 
 #include <errno.h>
 #include "../jrd/ibase.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 
 #include "../remote/remote.h"
 #include "../jrd/license.h"
@@ -87,6 +86,11 @@
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/fb_string.h"
+
+#include "FirebirdPluginApi.h"
+#include "../common/classes/ImplementHelper.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../auth/trusted/AuthSspi.h"
 
 #ifdef UNIX
 #ifdef NETBSD
@@ -132,6 +136,15 @@ static void logSecurityDatabaseError(const char* path, ISC_STATUS* status)
 	exit(STARTUP_ERROR);
 }
 
+static int closePort(const int reason, const int, void* arg)
+{
+	if (reason == fb_shutrsn_signal)
+	{
+		kill(getpid(), 15);		// make select() die in select_wait()
+	}
+
+	return 0;
+}
 
 extern "C" {
 
@@ -353,6 +366,14 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		}
 	}
 
+	{ // scope for interface ptr
+		Firebird::PluginInterface pi;
+		Auth::registerLegacyServer(pi);
+#ifdef TRUSTED_AUTH
+		Auth::registerTrustedServer(pi);
+#endif
+	}
+
 	if (super)
 	{
 		// Server tries to attach to security2.fdb to make sure everything is OK
@@ -377,6 +398,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			logSecurityDatabaseError(path, status);
 		}
 	} // end scope
+
+	fb_shutdown_callback(NULL, closePort, fb_shut_exit, port);
 
 	SRVR_multi_thread(port, INET_SERVER_flag);
 

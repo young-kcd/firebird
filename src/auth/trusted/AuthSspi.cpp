@@ -35,14 +35,13 @@
 
 using namespace Firebird;
 
-namespace {
-	char name[] = "WIN_SSPI";
-	PluginHelper<Auth::WinSspiServer, Plugin::AuthServer, 100, name> server;
-	PluginHelper<Auth::WinSspiClient, Plugin::AuthClient, 100, name> client;
-}
-
 namespace
 {
+	Firebird::SimpleFactory<Auth::WinSspiClient> clientFactory;
+	Firebird::SimpleFactory<Auth::WinSspiServer> serverFactory;
+
+	const char* plugName = "Win_Sspi";
+
 	void makeDesc(SecBufferDesc& d, SecBuffer& b, size_t len, void* p)
 	{
 		b.BufferType = SECBUFFER_TOKEN;
@@ -333,30 +332,19 @@ bool AuthSspi::getLogin(string& login, bool& wh)
 }
 
 
-ServerInstance* WinSspiServer::instance()
-{
-	return interfaceAlloc<WinSspiServerInstance>();
-}
-
-ClientInstance* WinSspiClient::instance()
-{
-	return interfaceAlloc<WinSspiClientInstance>();
-}
-
-
-WinSspiServerInstance::WinSspiServerInstance()
-	: sspiData(*getDefaultMemoryPool())
+WinSspiServer::WinSspiServer(Firebird::IFactoryParameter*)
+	: sspiData(getPool())
 { }
 
-WinSspiClientInstance::WinSspiClientInstance()
-	: sspiData(*getDefaultMemoryPool())
+WinSspiClient::WinSspiClient(Firebird::IFactoryParameter*)
+	: sspiData(getPool())
 { }
 
-Result WinSspiServerInstance::startAuthentication(Firebird::Status* status,
-												  bool isService,
-												  const char* /*dbName*/,
-												  const unsigned char* dpb, unsigned int dpbSize,
-												  WriterInterface* /*writerInterface*/)
+Result WinSspiServer::startAuthentication(Firebird::Status* status,
+										  bool isService,
+										  const char* /*dbName*/,
+										  const unsigned char* dpb, unsigned int dpbSize,
+										  WriterInterface* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
 	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
@@ -375,9 +363,9 @@ Result WinSspiServerInstance::startAuthentication(Firebird::Status* status,
 	return AUTH_MORE_DATA;
 }
 
-Result WinSspiServerInstance::contAuthentication(Firebird::Status* status,
-												 WriterInterface* writerInterface,
-											     const unsigned char* data, unsigned int size)
+Result WinSspiServer::contAuthentication(Firebird::Status* status,
+										 WriterInterface* writerInterface,
+									     const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
 	sspiData.add(data, size);
@@ -403,21 +391,27 @@ Result WinSspiServerInstance::contAuthentication(Firebird::Status* status,
 	return AUTH_MORE_DATA;
 }
 
-void WinSspiServerInstance::getData(const unsigned char** data, unsigned short* dataSize)
+void WinSspiServer::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = sspiData.begin();
 	*dataSize = sspiData.getCount();
 }
 
-void WinSspiServerInstance::release()
+void WinSspiServer::release()
 {
-	interfaceFree(this);
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
 }
 
-Result WinSspiClientInstance::startAuthentication(Firebird::Status* status,
-												  bool isService,
-												  const char* /*dbName*/,
-												  DpbInterface* dpb)
+Result WinSspiClient::startAuthentication(Firebird::Status* status,
+										  bool isService,
+										  const char* /*dbName*/,
+										  DpbInterface* dpb)
 {
 	sspi.request(sspiData);
 
@@ -443,8 +437,8 @@ Result WinSspiClientInstance::startAuthentication(Firebird::Status* status,
 	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
-Result WinSspiClientInstance::contAuthentication(Firebird::Status* status,
-												 const unsigned char* data, unsigned int size)
+Result WinSspiClient::contAuthentication(Firebird::Status* status,
+										 const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
 	sspiData.add(data, size);
@@ -456,15 +450,33 @@ Result WinSspiClientInstance::contAuthentication(Firebird::Status* status,
 	return sspi.isActive() ? AUTH_MORE_DATA : AUTH_CONTINUE;
 }
 
-void WinSspiClientInstance::getData(const unsigned char** data, unsigned short* dataSize)
+void WinSspiClient::getData(const unsigned char** data, unsigned short* dataSize)
 {
 	*data = sspiData.begin();
 	*dataSize = sspiData.getCount();
 }
 
-void WinSspiClientInstance::release()
+int WinSspiClient::release()
 {
-	interfaceFree(this);
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+void registerTrustedClient(Firebird::IPlugin* iPlugin)
+{
+	clientFactory.addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, plugName, &clientFactory);
+}
+
+void registerTrustedServer(Firebird::IPlugin* iPlugin)
+{
+	serverFactory.addRef();
+	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, plugName, &serverFactory);
 }
 
 } // namespace Auth

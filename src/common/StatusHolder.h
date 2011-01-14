@@ -31,6 +31,7 @@
 
 #include "ProviderInterface.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/ImplementHelper.h"
 
 namespace Firebird {
 
@@ -42,7 +43,7 @@ public:
 		set(fb_utils::statusLength(value), value);
 	}
 
-	virtual void set(size_t length, const ISC_STATUS* value)
+	virtual void set(unsigned int length, const ISC_STATUS* value)
 	{
 		fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
 	}
@@ -72,14 +73,8 @@ private:
 	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
 };
 
-class LocalStatus : public BaseStatus
+class LocalStatus : public StackIface<BaseStatus, FB_STATUS_VERSION>
 {
-public:
-	virtual void release()
-	{
-		// do nothing - we are supposed to be on stack or a part of other object
-		fb_assert(false);
-	}
 };
 
 class StatusHolder

@@ -349,6 +349,44 @@
 
 # ----------------------------
 #
+# This group of parameters determines what plugins will be used by firebird.
+# Format of string is the list of plugins, separated by space, ',' or ';'.
+# Plugins will be tried in an order, specified here.
+# In many cases correct order is important!
+#
+# Type: string
+
+# AuthServer and AuthClient determine what uthentication methods will be used
+# by network server and client redirector. For non-windows systems default
+# for both is Legacy_Auth.
+#
+#AuthServer = Legacy_Auth, Win_Sspi
+#AuthClient = Legacy_Auth, Win_Sspi
+
+# UserManager sets plugin used to work with security database. If more than
+# one plugin is given, first plugin from the list is used.
+#
+#UserManager = Legacy_Auth
+
+# TracePlugin is used by firebird trace facility to send trace data to the user
+# or log file in audit case.
+#
+#TracePlugin = fbtrace
+
+
+# ----------------------------
+#
+# This parameter determines what providers will be used by firebird.
+# Format is the same as for the list of plugins (see a few lines before).
+# This is not strange because internally provider is just a kind of plugin.
+#
+# Type: string
+#
+#Providers = Remote,Engine12,Loopback
+
+
+# ----------------------------
+#
 # Determines the number of seconds that the lock manager will wait after a
 # conflict has been encountered before purging locks from dead processes
 # and doing extra deadlock scan cycle. Engine detects deadlocks instantly

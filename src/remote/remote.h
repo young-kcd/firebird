@@ -81,7 +81,7 @@ const int BLOB_LENGTH		= 16384;
 namespace Firebird {
 	class Exception;
 }
-namespace FbApi {
+namespace Firebird {
 	class EventCallback;
 }
 struct rem_port;
@@ -214,7 +214,7 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
 // if client
-	FbApi::EventCallback* rvnt_callback;
+	Firebird::EventCallback* rvnt_callback;
 // else if server
 	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;

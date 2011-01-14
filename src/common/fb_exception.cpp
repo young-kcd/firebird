@@ -11,9 +11,15 @@
 #include "../common/classes/array.h"
 #include "../common/thd.h"
 #include "../common/utils_proto.h"
+#include "../common/StatusHolder.h"
 
 #ifdef WIN_NT
 #include <windows.h>
+#else
+#ifndef USE_THREAD_DESTRUCTOR
+#include <pthread.h>
+#include <signal.h>
+#endif
 #endif
 
 namespace {
@@ -77,7 +83,18 @@ private:
 					thread = currTID;
 				}
 			}
-#endif
+#else
+#ifndef USE_THREAD_DESTRUCTOR
+			if (thread != currTID)
+			{
+				if (pthread_kill(thread, 0) == ESRCH)
+				{
+					// Thread does not exist any more
+					thread = currTID;
+				}
+			}
+#endif // USE_THREAD_DESTRUCTOR
+#endif // WIN_NT
 
 			return thread == currTID;
 		}
@@ -230,11 +247,10 @@ Exception::~Exception() throw() { }
 
 ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
 {
-	Status* status = FbApi::fb_get_status_instance();
-	stuffException(status);
-	const ISC_STATUS* s = status->get();
+	LocalStatus status;
+	stuffException(&status);
+	const ISC_STATUS* s = status.get();
 	fb_utils::copyStatus(status_vector, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
-	status->release();
 
 	return status_vector[1];
 }
