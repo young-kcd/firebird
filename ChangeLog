@@ -1,3 +1,11 @@
+ 2011-01-14 06:47  dimitr 
+   M src/jrd/met.epp
+Correction.
+
+ 2011-01-14 06:19  dimitr 
+   M src/jrd/met.epp
+Tuned the code a little in order to avoid redundant retrievals. As a side effect, it downgrades three-way joins to two-way ones, thus helping the optimizer to choose a good plan in the worst (zero selectivity) cases. This should resolve CORE-2933 (Very slow execution of a script that creates a lot of metadata) and CORE-3237 (Slow compilation of stored procedures) without tweaking the optimizer constants.
+
  2011-01-12 10:56  dimitr 
    M doc/license/README.license.usage.txt
 Corrected the license URLs.
