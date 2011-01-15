@@ -845,7 +845,9 @@ void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 	if (!rsr_status) {
 		rsr_status = new Firebird::StatusHolder();
 	}
-	if (overwrite || !rsr_status->getError()) {
+	
+	if (overwrite || !rsr_status->getError())
+	{
 		ISC_STATUS_ARRAY temp;
 		ex.stuff_exception(temp);
 		rsr_status->save(temp);
