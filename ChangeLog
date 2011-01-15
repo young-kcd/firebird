@@ -1,3 +1,104 @@
+ 2011-01-14 17:31  alexpeshkoff 
+   M builds/install/misc/aliases.conf.in
+   M builds/install/misc/firebird.conf.in
+   A builds/install/misc/plugins.conf
+   M builds/posix/Makefile.in
+   A builds/posix/fbplugin.vers (from /firebird/trunk/builds/posix/fbtrace.vers:52016)
+   D builds/posix/fbtrace.vers
+   M builds/posix/firebird.vers
+   M builds/posix/make.defaults
+   M builds/posix/make.shared.variables
+   M builds/posix/prefix.linux
+   M builds/posix/prefix.linux_amd64
+   D builds/posix/udr_engine.hpux.vers
+   M builds/posix/udr_engine.vers
+   M configure.in
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/jrd_pwd.h
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/IntlUtil.cpp
+   M src/common/StatusHolder.h
+   M src/common/ThreadStart.cpp
+   M src/common/classes/ImplementHelper.h
+   D src/common/classes/Interface.h
+   M src/common/classes/init.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/fb_exception.cpp
+   M src/common/thd.cpp
+   M src/common/unicode_util.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdPluginApi.h
+   A src/include/Interface.h (from /firebird/trunk/src/common/classes/Interface.h:52016)
+   M src/include/ProviderInterface.h
+   M src/include/consts_pub.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   D src/jrd/PluginManager.cpp
+   D src/jrd/PluginManager.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/ntrace.h
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   A src/remote/client/interface.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/security.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TraceConfiguration.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+   A src/yvalve/MasterImplementation.cpp
+   A src/yvalve/PluginManager.cpp (from /firebird/trunk/src/jrd/PluginManager.cpp:52016)
+   A src/yvalve/PluginManager.h (from /firebird/trunk/src/jrd/PluginManager.h:52016)
+   M src/yvalve/gds.cpp
+   M src/yvalve/why.cpp
+New plugin manager. Use it for all types of plugins.
+
+ 2011-01-14 17:01  alexpeshkoff 
+   M src/lock/print.cpp
+misc
+
+ 2011-01-14 06:51  dimitr 
+   M src/jrd/met.epp
+Tuned the code a little in order to avoid redundant retrievals. As a side effect, it downgrades three-way joins to two-way ones, thus helping the optimizer to choose a good plan in the worst (zero selectivity) cases. This should resolve CORE-2933 (Very slow execution of a script that creates a lot of metadata) and CORE-3237 (Slow compilation of stored procedures) without tweaking the optimizer constants.
+
  2011-01-12 10:56  dimitr 
    M doc/license/README.license.usage.txt
 Corrected the license URLs.
