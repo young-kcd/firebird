@@ -1308,13 +1308,13 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 	if (aux_port)
 	{
-		ISC_STATUS* const save_status = aux_port->port_status_vector;
+		ISC_STATUS* const save_status2 = aux_port->port_status_vector;
 		aux_port->port_status_vector = status_vector;
 
 		if (aux_port->connect(send))
 		{
 			aux_port->port_context = rdb;
-			aux_port->port_status_vector = save_status;
+			aux_port->port_status_vector = save_status2;
 		}
 		else
 		{
