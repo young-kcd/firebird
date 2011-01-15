@@ -1262,15 +1262,15 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	if (port->port_server_flags)
 	{
-			struct timeval timeout;
-			timeout.tv_sec = port->port_connect_timeout;
-			timeout.tv_usec = 0;
+		struct timeval timeout;
+		timeout.tv_sec = port->port_connect_timeout;
+		timeout.tv_usec = 0;
 
-			fd_set slct_fdset;
-			FD_ZERO(&slct_fdset);
-			FD_SET(port->port_channel, &slct_fdset);
+		fd_set slct_fdset;
+		FD_ZERO(&slct_fdset);
+		FD_SET(port->port_channel, &slct_fdset);
 
-			int inetErrNo = 0;
+		int inetErrNo = 0;
 
 		while (true)
 		{
@@ -2082,8 +2082,8 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 		{
 			if (port->port_flags & PORT_disconnect)
 				continue;
-			else
-				return;
+
+			return;
 		}
 		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
