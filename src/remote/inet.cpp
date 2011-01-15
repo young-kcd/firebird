@@ -154,7 +154,7 @@ static void SOCLOSE(SOCKET& socket)
 #endif
 		socket = INVALID_SOCKET;
 	}
-};
+}
 
 // Can't find were it's used.
 //#ifndef SIGURG
@@ -1208,7 +1208,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		{
 			int savedError = inetErrNo;
 			SOCLOSE(port->port_channel);
-			inet_error(false, port, "accept", isc_net_event_connect_err, inetErrNo);
+			inet_error(false, port, "accept", isc_net_event_connect_err, savedError);
 		}
 
 		SOCLOSE(port->port_channel);
@@ -1979,8 +1979,8 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 		{
 			if (port->port_flags & PORT_disconnect)
 				continue;
-			else
-				return;
+
+			return;
 		}
 		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
@@ -2900,7 +2900,8 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 			if (slct_count == -1)
 			{
-				if (!(port->port_flags & PORT_disconnect)) {
+				if (!(port->port_flags & PORT_disconnect))
+				{
 					try
 					{
 						inet_error(false, port, "select in packet_receive", isc_net_read_err, inetErrNo);
