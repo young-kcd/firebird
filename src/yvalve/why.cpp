@@ -1043,7 +1043,7 @@ namespace
 			if (fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_signal) == FB_SUCCESS)
 			{
 				InstanceControl::registerShutdown(0);
-				break;//exit(0);
+				break;	//exit(0);
 			}
 		}
 
@@ -3420,10 +3420,10 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
 			tra = transaction->handle;
 		}
 
-		IStatement* newStatement = statement->handle->
-						prepare(&status, tra, length, string, dialect,
-								item_length, reinterpret_cast<const unsigned char*>(items),
-								buffer_length, reinterpret_cast<unsigned char*>(buffer));
+		IStatement* newStatement = statement->handle->prepare(&status, tra, length, string,
+			dialect, item_length, reinterpret_cast<const unsigned char*>(items),
+			buffer_length, reinterpret_cast<unsigned char*>(buffer));
+
 		if (status.isSuccess())
 		{
 			statement->handle = newStatement;
@@ -4320,7 +4320,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 	Service service(0);
 	StatusVector temp(NULL);
 	StatusVector status(user_status);
-	IService* handle = 0;
+	IService* handle = NULL;
 
 	try
 	{
