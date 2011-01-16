@@ -1,3 +1,27 @@
+ 2011-01-15 09:22  robocop 
+   M src/jrd/cvt_proto.h
+Misc.
+
+ 2011-01-15 09:18  robocop 
+   M src/remote/inet.cpp
+Misc.
+
+ 2011-01-15 09:09  robocop 
+   M src/remote/remote.h
+Misc.
+
+ 2011-01-15 09:07  robocop 
+   M src/remote/os/win32/srvr_w32.cpp
+Misc.
+
+ 2011-01-15 09:07  robocop 
+   M src/remote/server.cpp
+Avoid variable shadowing.
+
+ 2011-01-15 09:04  robocop 
+   M doc/README.fb_shutdown
+Misc.
+
  2011-01-14 06:47  dimitr 
    M src/jrd/met.epp
 Correction.
