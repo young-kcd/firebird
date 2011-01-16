@@ -1,3 +1,39 @@
+ 2011-01-16 02:16  asfernandes 
+   M builds/install/misc/firebird.conf.in
+   M doc/README.fb_shutdown
+   M src/common/ThreadStart.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/config/config.cpp
+   M src/common/unicode_util.cpp
+   M src/include/ProviderInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/client/interface.h
+   M src/remote/remote.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Misc
+
+ 2011-01-15 09:30  robocop 
+   M src/remote/remote.h
+Misc.
+
+ 2011-01-15 09:29  robocop 
+   M src/remote/remote.cpp
+Misc.
+
+ 2011-01-15 09:27  robocop 
+   M src/remote/inet.cpp
+Misc and small fix.
+
  2011-01-14 17:31  alexpeshkoff 
    M builds/install/misc/aliases.conf.in
    M builds/install/misc/firebird.conf.in
