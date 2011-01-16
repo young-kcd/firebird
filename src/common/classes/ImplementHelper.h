@@ -51,23 +51,6 @@ public:
 	}
 };
 
-/*
-template <typename T>
-T* interfaceAlloc()
-{
-	void* ptr = gds__alloc(sizeof(T));
-	return new(ptr) T;
-	// return FB_NEW(*getDefaultMemoryPool()) T;
-}
-
-template <typename T>
-void interfaceFree(T* ptr)
-{
-	delete((void*) 0) ptr;
-	gds__free(ptr);
-	// delete ptr;
-}
-*/
 
 // Implement standard interface and plugin functions
 template <class C, int V, typename S>
