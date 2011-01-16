@@ -18,13 +18,7 @@
 #
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
-OS_ServerFiles=inet_server.cpp
-
 LINK_OPTS+=-Wl,-rpath,../gen/firebird/lib
 
 PROD_FLAGS=-O -fno-builtin -DFREEBSD -pipe -MMD -fPIC
 DEV_FLAGS=-ggdb -DFREEBSD -pipe -MMD -p -fPIC -Wall -Wno-non-virtual-dtor
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
-CLIENT_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
-
-Physical_IO_Module=os/posix/unix.cpp

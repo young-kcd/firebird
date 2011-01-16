@@ -9,10 +9,3 @@ endif
 
 # Firebird needs no RTTI
 CXXFLAGS:= $(CXXFLAGS) -fno-rtti
-
-OS_ServerFiles=inet_server.cpp
-
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gstat gsec fbguard nbackup fbmgr_bin fb_lock_print
-
-Physical_IO_Module=os/posix/unix.cpp

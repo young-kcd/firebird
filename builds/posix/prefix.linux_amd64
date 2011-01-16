@@ -26,10 +26,3 @@ CXXFLAGS:= $(CXXFLAGS) -fno-rtti
 PROD_FLAGS=$(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
 #DEV_FLAGS=-DUSE_VALGRIND $(COMMON_FLAGS) $(WARN_FLAGS)
 DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
-
-OS_ServerFiles=inet_server.cpp
-
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
-CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
-
-Physical_IO_Module=os/posix/unix.cpp

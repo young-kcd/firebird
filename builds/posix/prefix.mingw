@@ -25,10 +25,6 @@ DEV_FLAGS=-ggdb -march=i586 -DMINGW -mno-cygwin -Wall -Wshadow -Wundef -Wno-long
 
 PLATFORM_PATH=os/win32
 
-OS_SPECIFIC_Files=thd_priority.cpp
-
-OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/cntl.cpp 
-
 # Override link command for implicit stdc++ linking
 LIB_LINK=$(LD)
 
@@ -43,12 +39,6 @@ endif
 # Generation of fbclient_ms.lib
 LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
-
-
-EMBED_UTIL_TARGETS:=gstat gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS:=gstat gsec instsvc instreg nbackup fb_lock_print
-
-Physical_IO_Module=os/win32/winnt.cpp
 
 # Add resources to some files
 FilesToAddVersionInfo=$(LIBFBEMBED_SO) $(LIBFBCLIENT_SO) $(LIBFBINTL_SO) \
@@ -77,7 +67,3 @@ LINK_UDF_LIBS =
 
 # Special options for trace plugin link
 LINK_TRACE_LIBS = -L$(LIB) $(SO_LINK_LIBS) $(ICU_LIBS)
-
-# This is ugly HACK!!! Must be removed as soon as somebody find
-# a way to use routines from server
-TRACE_OS_Sources = jrd/gds.cpp jrd/isc_ipc.cpp

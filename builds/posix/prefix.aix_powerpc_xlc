@@ -106,19 +106,4 @@ LIB_LINK_MAPFILE=-bE:
 LIB_LINK_RPATH=
 LIB_LINK_SONAME=
 
-OS_ServerFiles=inet_server.cpp
-INTL_Files2=common/utils.cpp \
-	common/config/config.cpp common/config/config_file.cpp common/config/ConfigCache.cpp \
-	common/classes/MsgPrint.cpp common/classes/SafeArg.cpp \
-	common/classes/BaseStream.cpp common/classes/fb_string.cpp \
-	common/classes/TempFile.cpp \
-	jrd/gds.cpp jrd/isc.cpp \
-	jrd/os/posix/path_utils.cpp jrd/os/posix/os_utils.cpp \
-	jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp
-
-EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
-CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
-
-Physical_IO_Module=os/posix/unix.cpp
-
 UNDEF_PLATFORM=
