@@ -75,6 +75,7 @@ void CVT_move_common(const dsc*, dsc*, Firebird::Callbacks*);
 void CVT_move(const dsc*, dsc*, ErrorFunction);
 SSHORT CVT_decompose(const char*, USHORT, SSHORT, SLONG*, ErrorFunction);
 USHORT CVT_get_string_ptr(const dsc*, USHORT*, UCHAR**, vary*, USHORT, ErrorFunction);
+USHORT CVT_get_string_ptr_common(const dsc*, USHORT*, UCHAR**, vary*, USHORT, Firebird::Callbacks*);
 SINT64 CVT_get_int64(const dsc*, SSHORT, ErrorFunction);
 SQUAD CVT_get_quad(const dsc*, SSHORT, ErrorFunction);
 

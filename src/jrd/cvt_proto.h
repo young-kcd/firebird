@@ -70,4 +70,11 @@ inline void CVT_move(const dsc* from, dsc* to)
 	CVT_move_common(from, to, &Jrd::EngineCallbacks::instance);
 }
 
+inline USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
+                                 vary* temp, USHORT length)
+{
+	return CVT_get_string_ptr_common(desc, ttype, address, temp, length, 
+									 &Jrd::EngineCallbacks::instance);
+}
+
 #endif // JRD_CVT_PROTO_H

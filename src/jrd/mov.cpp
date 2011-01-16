@@ -203,8 +203,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 	USHORT dummy_type;
 	UCHAR *ptr;
 
-	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
-									   NULL, 0, ERR_post);
+	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr, NULL, 0);
 
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
@@ -276,7 +275,7 @@ int MOV_get_string_ptr(const dsc* desc,
  *
  **************************************/
 
-	return CVT_get_string_ptr(desc, ttype, address, temp, length, ERR_post);
+	return CVT_get_string_ptr(desc, ttype, address, temp, length);
 }
 
 

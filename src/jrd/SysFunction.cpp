@@ -1376,7 +1376,7 @@ dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	USHORT ttype;
 	UCHAR* data_temp;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0, ERR_post);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data_temp, NULL, 0);
 	const UCHAR* data = data_temp;
 
 	// validate the UUID
@@ -3271,7 +3271,7 @@ dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	USHORT ttype;
 	UCHAR* data;
-	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0);
 
 	if (len != sizeof(FB_GUID))
 	{

@@ -248,8 +248,8 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		UCHAR* p1 = NULL;
 		UCHAR* p2 = NULL;
 		USHORT t1, t2; // unused later
-		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0, ERR_post);
-		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0, ERR_post);
+		USHORT length = CVT_get_string_ptr(arg1, &t1, &p1, NULL, 0);
+		USHORT length2 = CVT_get_string_ptr(arg2, &t2, &p2, NULL, 0);
 
 		int fill = length - length2;
 		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
@@ -420,7 +420,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 		{
 			UCHAR* p = NULL;
 			USHORT t; // unused later
-			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0, ERR_post);
+			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0);
 
 			USHORT l = MIN(arg1->dsc_length, length);
 			SSHORT rc = memcmp(arg1->dsc_address, p, l);
