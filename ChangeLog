@@ -1,3 +1,7 @@
+ 2011-01-15 09:03  robocop 
+   M src/remote/server.cpp
+Avoid variable shadowing.
+
  2011-01-12 10:56  dimitr 
    M doc/license/README.license.usage.txt
 Corrected the license URLs.
