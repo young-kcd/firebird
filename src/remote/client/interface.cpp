@@ -165,9 +165,8 @@ int Blob::release()
 		cancel(&status);
 	}
 	else
-	{
 		delete this;
-	}
+
 	return 0;
 }
 
@@ -209,10 +208,12 @@ public:
 
 public:
 	Transaction(Rtr* handle) : transaction(handle) { }
+
 	Rtr* getTransaction()
 	{
 		return transaction;
 	}
+
 	void clear()
 	{
 		transaction = NULL;
@@ -226,9 +227,7 @@ private:
 int Transaction::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (transaction)
 	{
@@ -236,9 +235,7 @@ int Transaction::release()
 		rollback(&status);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -287,9 +284,7 @@ private:
 int Statement::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (statement)
 	{
@@ -297,9 +292,7 @@ int Statement::release()
 		free(&status, DSQL_drop);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -331,9 +324,7 @@ private:
 int Request::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (rq)
 	{
@@ -341,9 +332,7 @@ int Request::release()
 		free(&status);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -364,9 +353,7 @@ private:
 int Events::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (rvnt)
 	{
@@ -374,9 +361,7 @@ int Events::release()
 		cancel(&status);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -410,6 +395,7 @@ public:
 
 public:
 	Attachment(Rdb* handle) : rdb(handle) { }
+
 	Rdb* getRdb()
 	{
 		return rdb;
@@ -422,9 +408,7 @@ private:
 int Attachment::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (rdb)
 	{
@@ -432,9 +416,7 @@ int Attachment::release()
 		detach(&status);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -461,9 +443,7 @@ private:
 int Service::release()
 {
 	if (--refCounter != 0)
-	{
 		return 1;
-	}
 
 	if (rdb)
 	{
@@ -471,9 +451,7 @@ int Service::release()
 		detach(&status);
 	}
 	else
-	{
 		delete this;
-	}
 
 	return 0;
 }
@@ -502,6 +480,7 @@ public:
 			delete this;
 			return 0;
 		}
+
 		return 1;
 	}
 
@@ -5667,7 +5646,7 @@ static void init(Status* status,
 		if (n && n->cstr_length && authItr.hasData())
 		{
 			// if names match, do not change instance
-			if (strlen(authItr.name()) == n->cstr_length && 
+			if (strlen(authItr.name()) == n->cstr_length &&
 				memcmp(authItr.name(), n->cstr_address, n->cstr_length) == 0)
 			{
 				n = NULL;

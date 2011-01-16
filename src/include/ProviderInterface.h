@@ -67,9 +67,9 @@ public:
 	virtual void FB_CARG getInfo(Firebird::Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual unsigned int FB_CARG getSegment(Firebird::Status* status, unsigned int length, 
+	virtual unsigned int FB_CARG getSegment(Firebird::Status* status, unsigned int length,
 											unsigned char* buffer) = 0;	// returns real length
-	virtual void FB_CARG putSegment(Firebird::Status* status, unsigned int length, 
+	virtual void FB_CARG putSegment(Firebird::Status* status, unsigned int length,
 									const unsigned char* buffer) = 0;
 	virtual void FB_CARG cancel(Firebird::Status* status) = 0;
 	virtual void FB_CARG close(Firebird::Status* status) = 0;

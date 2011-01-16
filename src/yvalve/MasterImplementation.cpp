@@ -93,12 +93,12 @@ void FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
 	if (toUpgrade->version() >= desiredVersion)
 		return;
 
-	CVirtualClass* target = (CVirtualClass*)toUpgrade;
+	CVirtualClass* target = (CVirtualClass*) toUpgrade;
 	FunctionPtr* newTab = NULL;
 
-	if (!functionMap->get((U_IPTR)(target->vTab), newTab))
+	if (!functionMap->get((U_IPTR) target->vTab, newTab))
 	{
-		CVirtualClass* miss = (CVirtualClass*)missingFunctionClass;
+		CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
 		newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
 
 		for (int i = 0; i < toUpgrade->version(); ++i)
@@ -106,7 +106,7 @@ void FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
 		for (int j = toUpgrade->version(); j < desiredVersion; ++j)
 			newTab[j] = miss->vTab[0];
 
-		functionMap->put((U_IPTR)(target->vTab), newTab);
+		functionMap->put((U_IPTR) target->vTab, newTab);
 	}
 
 	target->vTab = newTab;

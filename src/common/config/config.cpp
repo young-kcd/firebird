@@ -662,7 +662,7 @@ bool Config::getMultiClientServer()
 
 const char* Config::getPlugins(unsigned int type)
 {
-	switch(type)
+	switch (type)
 	{
 		case Firebird::PluginType::Provider:
 			return (const char*) getDefaultConfig()->values[KEY_PLUG_PROVIDERS];

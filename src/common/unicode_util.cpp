@@ -779,10 +779,8 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	ObjectsArray<string> versions;
 	getVersions(configInfo, versions);
 
-	if (!versions.getCount())
-	{
+	if (versions.isEmpty())
 		gds__log("No versions");
-	}
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")

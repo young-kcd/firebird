@@ -54,6 +54,7 @@ public:
 	~PluginLogWriter();
 
 	virtual size_t write(const void* buf, size_t size);
+
 	virtual int release()
 	{
 		if (--refCounter == 0)

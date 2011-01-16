@@ -2592,20 +2592,10 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 }
 
 
+// Release a blob and associated blocks. Among other things, disconnect it from the transaction.
+// However, if purge_flag is false, then only release the associated blocks.
 void blb::destroy(blb* blob, const bool purge_flag)
 {
-/**************************************
- *
- *      r e l e a s e _ b l o b
- *
- **************************************
- *
- * Functional description
- *      Release a blob and associated blocks.  Among other things,
- *      disconnect it from the transaction.  However, if purge_flag
- *      is false, then only release the associated blocks.
- *
- **************************************/
 	jrd_tra* const transaction = blob->blb_transaction;
 
 	// Disconnect blob from transaction block.
@@ -2646,7 +2636,7 @@ void blb::destroy(blb* blob, const bool purge_flag)
 		blob->blb_transaction->getBlobSpace()->releaseSpace(blob->blb_temp_offset, blob->blb_temp_size);
 	}
 
-	--(blob->refCounter);
+	--blob->refCounter;
 	delete blob;
 }
 

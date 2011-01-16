@@ -37,8 +37,6 @@
 #include "../common/isc_s_proto.h"
 #include "../common/gdsassert.h"
 
-
-
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
@@ -138,7 +136,6 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	pthread_t thread;
 	pthread_attr_t pattr;
 	int state;
-
 
 #if defined (LINUX) || defined (FREEBSD)
 	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))

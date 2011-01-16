@@ -356,7 +356,7 @@
 #
 # Type: string
 
-# AuthServer and AuthClient determine what uthentication methods will be used
+# AuthServer and AuthClient determine what authentication methods will be used
 # by network server and client redirector. For non-windows systems default
 # for both is Legacy_Auth.
 #

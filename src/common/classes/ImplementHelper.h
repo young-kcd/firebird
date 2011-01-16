@@ -261,7 +261,7 @@ private:
 
 	void getPlugin()
 	{
-		currentPlugin = (P*)(pluginSet->plugin());
+		currentPlugin = (P*) pluginSet->plugin();
 	}
 };
 

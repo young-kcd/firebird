@@ -142,12 +142,12 @@ namespace
 			if (--refCounter == 0)
 			{
 				if (cf)
-				{
 					cf->release();
-				}
+
 				delete this;
 				return 0;
 			}
+
 			return 1;
 		}
 
@@ -200,6 +200,7 @@ namespace
 				delete this;
 				return 0;
 			}
+
 			return 1;
 		}
 
@@ -213,6 +214,7 @@ namespace
 				addRef();
 				return new ConfigParameterAccess(this, p);
 			}
+
 			return NULL;
 		}
 	};
@@ -220,9 +222,8 @@ namespace
 	IConfig* ConfigParameterAccess::sub()
 	{
 		if (par && par->sub.hasData())
-		{
 			return new ConfigAccess(par->sub);
-		}
+
 		return NULL;
 	}
 
@@ -231,6 +232,7 @@ namespace
 		RegisteredPlugin(PluginsFactory* f, const char* nm, unsigned int t)
 			: factory(f), name(nm), type(t)
 		{ }
+
 		RegisteredPlugin()
 			: factory(NULL), name(NULL), type(0)
 		{ }
@@ -364,6 +366,7 @@ namespace
 				delete this;
 				return 0;
 			}
+
 			return 1;
 		}
 
@@ -495,6 +498,7 @@ namespace
 				delete this;
 				return 0;
 			}
+
 			return 1;
 		}
 
@@ -509,6 +513,7 @@ namespace
 		AutoPtr<IMaster, AutoInterface> masterInterface;
 
 		RefPtr<PluginModule> loadModule(const PathName& modName);
+
 		void loadError(const Arg::StatusVector& error)
 		{
 			iscLogStatus("PluginSet", error.value());
@@ -576,7 +581,7 @@ namespace
 			RegisteredPlugin* r = m->findPlugin(interfaceType, regName);
 			if (! r)
 			{
-				gds__log("Misconfigured: module %s does not contain plugin %s type %d", 
+				gds__log("Misconfigured: module %s does not contain plugin %s type %d",
 						 curModule.c_str(), regName.c_str(), interfaceType);
 				continue;
 			}
@@ -586,7 +591,7 @@ namespace
 
 			currentPlugin = new ConfiguredPlugin(m, r, conf, plugConfigFile, currentName);
 			currentPlugin->release();	// std interface is created with refCounter == 1
-										// cause currentPlugin holds refernce itself, that 1 should be released() here
+										// cause currentPlugin holds reference itself, that 1 should be released() here
 
 			plugins->put(MapKey(interfaceType, currentName), currentPlugin);
 			return;
@@ -698,6 +703,7 @@ void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 	MutexLockGuard g(plugins->mutex);
 
 	Interface* parent = plugin->owner(NULL);
+
 	if (plugin->release() == 0)
 	{
 		fb_assert(parent);

@@ -150,21 +150,23 @@ private:
 		TraceFactory* factory;
 		char name[MAXPATHLEN];
 	};
+
 	class Factories : public Firebird::Array<FactoryInfo>
 	{
 	public:
 		Factories(Firebird::MemoryPool& p)
 			: Firebird::Array<FactoryInfo>(p)
 		{ }
+
 		~Factories()
 		{
 			Firebird::PluginInterface pi;
+
 			for (unsigned int i = 0; i < getCount(); ++i)
-			{
 				pi->releasePlugin(getElement(i).factory);
-			}
 		}
 	};
+
 	static Firebird::GlobalPtr<Factories> factories;
 	static Firebird::GlobalPtr<Firebird::Mutex> init_factories_mtx;
 	static volatile bool init_factories;

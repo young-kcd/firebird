@@ -2154,7 +2154,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceService* service, siz
 {
 	try
 	{
-		log_event_service_query(service, send_item_length, send_items, 
+		log_event_service_query(service, send_item_length, send_items,
 								recv_item_length, recv_items, query_result);
 		return true;
 	}

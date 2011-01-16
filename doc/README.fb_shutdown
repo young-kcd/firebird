@@ -43,7 +43,7 @@ to callback function. Call mask can have the following values:
 fb_shut_confirmation - callback function may return non-zero value to abort shutdown
 fb_shut_preproviders - callback function will be called before shutting down engine
 fb_shut_postproviders - callback function will be called after shutting down engine
-fb_shut_finish - final step, callback function may wait for some activity to be treminated
+fb_shut_finish - final step, callback function may wait for some activity to be terminated
 or ORed combination of them (to make same function be called in required cases).
 
 Callback function has 3 parameters - reason of shutdown, actual value of mask with which it was 

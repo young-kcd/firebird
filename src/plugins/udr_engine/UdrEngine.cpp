@@ -90,13 +90,16 @@ public:
 		{
 			// this plugin is not ready to support different configurations
 			// therefore keep legacy approach
+
 			IConfigParameter* icp = NULL;
+
 			for (int n = 0; (icp = defaultConfig->findPos("path", n)); ++n)
 			{
 				PathName newPath(icp->value());
 				icp->release();
 
 				bool found = false;
+
 				for (ObjectsArray<PathName>::iterator i = paths->begin(); i != paths->end(); ++i)
 				{
 					if (*i == newPath)
@@ -779,7 +782,7 @@ void FB_CALL Engine::dispose(Error* /*error*/)
 //--------------------------------------
 
 
-/*
+/***
 class ExternalEngineFactoryImpl : public ExternalEngineFactory
 {
 public:
@@ -796,7 +799,8 @@ public:
 		error->addString(msg, strlen(msg));
 		return NULL;
 	}
- */
+***/
+
 class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
@@ -807,7 +811,8 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 	Firebird::IPlugin* plugin = master->getPluginInterface();
 	plugin->registerPlugin(Firebird::PluginType::ExternalEngine, "UDR", &factory);
 	plugin->release();
-/*
+
+	/***
 	if (plugin->getLibraryName())
 		libraryName->assign(plugin->getLibraryName());
 	libraryModule = ModuleLoader::loadModule(libraryName);
@@ -823,7 +828,7 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 	}
 
 	plugin->setExternalEngineFactory(&factory);
- */
+	***/
 }
 
 

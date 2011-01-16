@@ -53,6 +53,7 @@ namespace
 		virtual int FB_CARG noEvent()
 		{
 			static bool flagFirst = true;
+
 			if (flagFirst)
 			{
 				flagFirst = false;
@@ -154,7 +155,7 @@ void TraceManager::load_plugins()
 	init_factories = true;
 
 	for (PluginsSet<TraceFactory, IgnoreMissing> traceItr(PluginType::Trace, FB_TRACE_PLUGIN_VERSION);
-             traceItr.hasData(); traceItr.next())
+		 traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;
 		info.factory = traceItr.plugin();
@@ -241,7 +242,7 @@ void TraceManager::update_session(const TraceSession& session)
 		}
 	}
 
-	for (FactoryInfo* info = factories->begin(); info < factories->end(); ++info)
+	for (FactoryInfo* info = factories->begin(); info != factories->end(); ++info)
 	{
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
 		LocalStatus status;

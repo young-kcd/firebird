@@ -659,7 +659,7 @@ When engine is released, it does dlclose() plugin module (libudr_engine.so),
 but that module is not actually unloaded - because UDR module (libudrcpp_example.so) is using
 symbols from plugin module, therefore raising plugin module's reference count.
 UDR module can be unloaded only from plugin module's global variable (ModuleMap modules) dtor,
-which is not called as long as plugin module is not inloaded. As the result all this will be
+which is not called as long as plugin module is not unloaded. As the result all this will be
 unloaded only on program exit, causing at that moment AV if this code is active: it happens that
 ~ModuleMap dlcloses itself.
 

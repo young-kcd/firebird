@@ -3725,7 +3725,8 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 	try
 	{
 		CounterGuard guard(shutCounter);
-/*
+
+		/***
 		if (unloading)
 		{
 			return;
@@ -3738,7 +3739,8 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 		{
 			return;
 		}
-*/
+		***/
+
 		ThreadContextHolder tdbb;
 
 		ULONG attach_count, database_count, svc_count;

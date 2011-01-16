@@ -194,11 +194,10 @@ public:
 	{
 		if (transaction)
 		{
-			--(transaction->refCounter);
+			--transaction->refCounter;
+
 			if (!dbb || transaction->tra_outer)
-			{
 				delete transaction;
-			}
 			else
 			{
 				MemoryPool* const pool = transaction->tra_pool;
