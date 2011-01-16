@@ -1642,8 +1642,8 @@ static void find_index_relationship_streams(thread_db* tdbb,
 			// depends on already active streams and can not be used in a separate
 			// SORT/MERGE.
 
-			OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream, false, false, NULL);
-
+			OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, *stream,
+												  false, false, NULL);
 			AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
 
 			if (candidate->dependentFromStreams.hasData())
@@ -1744,15 +1744,12 @@ static void form_rivers(thread_db*		tdbb,
 
 	if (temp[0] != 0)
 	{
-		OptimizerInnerJoin* const innerJoin = FB_NEW(*tdbb->getDefaultPool())
-			OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, temp, sort_clause, plan_clause);
+		OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, temp, sort_clause, plan_clause);
+
 		USHORT count;
-
 		do {
-			count = innerJoin->findJoinOrder();
+			count = innerJoin.findJoinOrder();
 		} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
-
-		delete innerJoin;
 	}
 }
 
@@ -1955,18 +1952,15 @@ static void gen_join(thread_db*		tdbb,
 		return;
 	}
 
-	OptimizerInnerJoin* const innerJoin = FB_NEW(*tdbb->getDefaultPool())
-		OptimizerInnerJoin(*tdbb->getDefaultPool(), opt, streams, sort_clause, plan_clause);
+	OptimizerInnerJoin innerJoin(*tdbb->getDefaultPool(), opt, streams, sort_clause, plan_clause);
 
 	stream_array_t temp;
 	memcpy(temp, streams, streams[0] + 1);
 
 	USHORT count;
 	do {
-		count = innerJoin->findJoinOrder();
+		count = innerJoin.findJoinOrder();
 	} while (form_river(tdbb, opt, count, streams[0], temp, river_list, sort_clause));
-
-	delete innerJoin;
 }
 
 
@@ -2233,8 +2227,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else
 	{
 		// Persistent table
-		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(),
-												opt, stream, outer_flag, inner_flag, sort_ptr);
+		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
+											  outer_flag, inner_flag, sort_ptr);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
 
 		if (candidate && candidate->inversion)

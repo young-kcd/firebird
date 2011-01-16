@@ -214,10 +214,10 @@ class IndexRelationship
 public:
 	IndexRelationship();
 
-	int		stream;
-	bool	unique;
-	double	cost;
-	double	cardinality;
+	int stream;
+	bool unique;
+	double cost;
+	double cardinality;
 };
 
 typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
@@ -228,12 +228,12 @@ public:
 	explicit InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
-	int		stream;
-	bool	baseUnique;
-	double	baseCost;
-	int		baseIndexes;
-	int		baseConjunctionMatches;
-	bool	used;
+	int stream;
+	bool baseUnique;
+	double baseCost;
+	int baseIndexes;
+	int baseConjunctionMatches;
+	bool used;
 
 	IndexedRelationships indexedRelationships;
 	int previousExpectedStreams;

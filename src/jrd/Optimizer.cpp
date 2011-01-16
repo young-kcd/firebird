@@ -633,7 +633,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 			node->computable(csb, stream, false, true) &&
 			!invCandidate->matches.exist(node))
 		{
-			const ComparativeBoolNode* cmpNode = node->as<ComparativeBoolNode>();
+			const ComparativeBoolNode* const cmpNode = node->as<ComparativeBoolNode>();
 
 			const double factor = (cmpNode && cmpNode->blrOp == blr_eql) ?
 				REDUCE_SELECTIVITY_FACTOR_EQUALITY : REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
@@ -2416,6 +2416,7 @@ IndexRelationship::IndexRelationship()
 	stream = 0;
 	unique = false;
 	cost = 0;
+	cardinality = 0;
 }
 
 
@@ -2562,8 +2563,10 @@ void OptimizerInnerJoin::calculateStreamInfo()
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
 		csb_tail->csb_flags |= csb_active;
 
-		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream, false, false, NULL);
+		OptimizerRetrieval optimizerRetrieval(pool, optimizer, innerStreams[i]->stream,
+											  false, false, NULL);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getCost());
+
 		innerStreams[i]->baseCost = candidate->cost;
 		innerStreams[i]->baseIndexes = candidate->indexes;
 		innerStreams[i]->baseUnique = candidate->unique;
@@ -2678,8 +2681,8 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	// Create the optimizer retrieval generation class and calculate
 	// which indexes will be used and the total estimated selectivity will be returned
 	OptimizerRetrieval optimizerRetrieval(pool, optimizer, stream, false, false, NULL);
-
 	AutoPtr<const InversionCandidate> candidate(optimizerRetrieval.getCost());
+
 	*cost = candidate->cost;
 
 	// Calculate cardinality
@@ -2699,7 +2702,7 @@ int OptimizerInnerJoin::findJoinOrder()
  *
  *  Find the best order out of the streams.
  *  First return a stream if it can't use
- *  a index based on a previous stream and
+ *  an index based on a previous stream and
  *  it can't be used by another stream.
  *  Next loop through the remaining streams
  *  and find the best order.
