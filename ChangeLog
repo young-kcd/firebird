@@ -1,3 +1,24 @@
+ 2011-01-16 14:05  alexpeshkoff 
+   M builds/posix/prefix.linux_s390x
+Damyan's patch fixing list of targets for linux/s390
+
+ 2011-01-16 13:19  alexpeshkoff 
+   M src/common/cvt.cpp
+   M src/common/cvt.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt_proto.h
+   M src/jrd/mov.cpp
+Fixed CORE-2756: substring from timestamp - unexpected result
+
+ 2011-01-16 09:59  robocop 
+   M doc/README.fb_shutdown
+Misc.
+
+ 2011-01-16 09:58  robocop 
+   M src/jrd/svc.cpp
+Style.
+
  2011-01-15 09:22  robocop 
    M src/jrd/cvt_proto.h
 Misc.
