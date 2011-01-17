@@ -42,7 +42,8 @@ Add2Path() {
 Answer=""
 OrigPasswd=""
 TmpFile=""
-SecurityDatabase=security2.fdb
+SecurityDatabase=security3.fdb
+DefaultLibrary=libfbclient
 UninstallScript=FirebirdUninstall.sh
 ArchiveDateTag=`date +"%Y%m%d_%H%M"`
 export ArchiveDateTag
@@ -202,7 +203,7 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
+	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
 	then
 		serverMode=super
@@ -216,6 +217,14 @@ checkIfServerRunning() {
 
 
 # Check is server is being actively used.
+
+    checkString=`ps -ef$psOptions | egrep "\b(firebird)\b" |grep -v grep`
+    if [ ! -z "$checkString" ]
+    then
+        echo "An instance of the Firebird server seems to be running."
+        echo "Please quit all Firebird applications and then proceed."
+        exit 1
+    fi
 
     checkString=`ps -ef$psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
@@ -233,7 +242,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|fb_smp_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -487,20 +496,11 @@ createLinksForBackCompatibility() {
 
     # These two links are required for compatibility with existing ib programs
     # If the program had been linked with libgds.so then this link is required
-    # to ensure it loads the fb equivalent.  Eventually these should be 
-    # optional and in a seperate rpm install.  MOD 7-Nov-2002.
+    # to ensure it loads the fb equivalent.  MOD 7-Nov-2002.
 
-	if [ "$1" ]
-	then
-		# Use library name from parameter
-		newLibrary=@FB_LIBDIR@/$1
-	else
-	    # Use DefaultLibrary, set by appropriate install library
-    	newLibrary=@FB_LIBDIR@/$DefaultLibrary.so
-	fi
-
-	safeLink $newLibrary @libdir@/libgds.so
-	safeLink $newLibrary @libdir@/libgds.so.0
+   	newLibrary=@FB_LIBDIR@/$DefaultLibrary.@SHRLIB_EXT@
+	safeLink $newLibrary @libdir@/libgds.@SHRLIB_EXT@
+	safeLink $newLibrary @libdir@/libgds.@SHRLIB_EXT@.0
 }
 
 
@@ -510,8 +510,8 @@ createLinksForBackCompatibility() {
 #  linked systems.
 
 removeLinksForBackCompatibility() {
-    removeIfOnlyAlink @libdir@/libgds.so
-    removeIfOnlyAlink @libdir@/libgds.so.0
+    removeIfOnlyAlink @libdir@/libgds.@SHRLIB_EXT@
+    removeIfOnlyAlink @libdir@/libgds.@SHRLIB_EXT@.0
 }
 
 
@@ -609,7 +609,7 @@ archivePriorInstallSystemFiles() {
         fi
     done
 
-    for i in libib_util.so libfbclient.so*
+    for i in libib_util.@SHRLIB_EXT@ libfbclient.@SHRLIB_EXT@*
 	do
 		for DestFile in usr/lib/$i
 	    do
@@ -630,7 +630,7 @@ archivePriorInstallSystemFiles() {
 			fi
         fi
     done
-	
+
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
@@ -723,6 +723,29 @@ removeEmptyDirs() {
 
 
 #------------------------------------------------------------------------
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
+
+#  For some files RunUser and RunGroup (firebird)
+#  must have write access - lock and log for example.
+
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser:$RunGroup $FileName
+
+	if [ "$RunUser" = "root" ]
+	# In that case we must open databases, locks, etc. to the world...
+	# That's a pity, but required if root RunUser choosen.
+	then
+    	chmod a=rw $FileName
+	else
+		# This is good secure setting
+	    chmod ug=rw,o= $FileName
+	fi
+}
+
+
+#------------------------------------------------------------------------
 #  fixFilePermissions
 #  Change the permissions to restrict access to server programs to 
 #  firebird group only.  This is MUCH better from a safety point of 
@@ -742,7 +765,7 @@ fixFilePermissions() {
 	cd @FB_LOGDIR@
     touch firebird.log
     MakeFileFirebirdWritable firebird.log
-    
+
     # Security database
 	cd @FB_SECDBDIR@
     MakeFileFirebirdWritable $SecurityDatabase
@@ -753,7 +776,57 @@ fixFilePermissions() {
 		MakeFileFirebirdWritable $i
     done
 
-	# Architecture (CS/SS) specific permissions
-	fixArcSpecificPermissions
+    # Fix QLI help
+	cd @FB_HELPDIR@
+    chmod a=r help.fdb
 }
 
+
+#------------------------------------------------------------------------
+#  changeXinetdServiceUser
+#  Change the run user of the xinetd service
+
+changeXinetdServiceUser() {
+    InitFile=/etc/xinetd.d/firebird
+    if [ -f $InitFile ]
+    then
+        editFile $InitFile user "\tuser\t\t\t= $RunUser"
+    fi
+}
+
+
+#------------------------------------------------------------------------
+#  Update inetd service entry
+#  This just adds/replaces the service entry line
+
+updateInetdEntry() {
+    newLine="@FB_SERVICE_NAME@  stream  tcp     nowait.30000      $RunUser @FB_SBINDIR@/firebird firebird # Firebird Database Remote Server"
+    replaceLineInFile /etc/inetd.conf "$newLine" "^@FB_SERVICE_NAME@"
+}
+
+
+#------------------------------------------------------------------------
+#  Update xinetd service entry
+
+updateXinetdEntry() {
+    cp @FB_MISCDIR@/firebird.xinetd /etc/xinetd.d/firebird
+    changeXinetdServiceUser
+}
+
+
+#------------------------------------------------------------------------
+#  Update inetd service entry
+#  Check to see if we have xinetd installed or plain inetd.
+#  Install differs for each of them.
+
+updateInetdServiceEntry() {
+	if ! isStandaloneServerInstalled
+	then
+	    if [ -d /etc/xinetd.d ]
+    	then
+        	updateXinetdEntry
+    	else
+        	updateInetdEntry
+		fi
+    fi
+}

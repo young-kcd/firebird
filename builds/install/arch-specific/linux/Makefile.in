@@ -33,7 +33,7 @@ include     $(ROOT)/gen/make.shared.variables
 
  @SET_MAKE@
 
-.PHONY: install dist packages tarfile rpmfile 
+.PHONY: install dist packages tarfile
 .PHONY: buildTarDir buildImageDir buildRoot buildDebugInfo
 
 # Some of these targets are run from the root tree of the build.
@@ -55,41 +55,23 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 TarDir= Firebird$(ArchPrefix)-$(Version).$(CpuType)
 TarFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).tar.gz
-RPMFile=Firebird$(ArchPrefix)-$(Version).$(CpuType).rpm
 DebugDir=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType)
 DebugFile=Firebird$(ArchPrefix)-debuginfo-$(Version).$(CpuType).tar.gz
 
 
-# Determine where the packages are built.  Each distribution builds them in
-# their own spot.
-# This should be moved to configure.in file
-RedhatPackageDir=/usr/src/redhat/RPMS/$(CpuType)
-MandrakePackageDir=/usr/src/RPM/RPMS/$(CpuType)
-SuSEPackageDir=/usr/src/packages/RPMS/$(CpuType)
-
-PackageDir:=$(shell if [ -d $(RedhatPackageDir) ]; then echo $(RedhatPackageDir); \
-		           elif [ -d $(MandrakePackageDir) ]; then echo $(MandrakePackageDir); \
-		           elif [ -d $(SuSEPackageDir) ]; then echo $(SuSEPackageDir); \
-				   fi)
-
-
-
 PkgSrcDir=$(InstallRoot)/$(ArchType)
 ScriptDir=$(GEN_ROOT)/install/scripts/
-RPMSrcDir=$(GEN_ROOT)/install/scripts
 
 
 TarInstallDir=$(GEN_ROOT)/install
 
-#Target for required libraries detection
-RpmRequiredVersionTarget=$(GEN_ROOT)/firebird/bin/isql
 #Curses library
 TermLib=@TERMLIB@.so
 
 
 dist : packages
 
-packages: tarfile rpmfile debugfile
+packages: tarfile debugfile
 
 tarfile:  $(TarFile)
 
@@ -159,45 +141,3 @@ buildTarDir: buildImageDir
 install: buildTarDir
 	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= ./install.sh)
 	cp -r $(GEN_ROOT)/$(DebugDir)/* /
-
-
-rpmfile: $(RPMFile)
-
-$(RPMFile) : $(GEN_ROOT)/install/rpmscript buildImageDir
-	rpmbuild --define='_topdir @BUILD_ROOT_DIR@/gen/RPM' -bb --target @CPU_TYPE@ $(GEN_ROOT)/install/rpmscript
-#	rpmbuild -bb --buildroot `pwd`/buildroot $(GEN_ROOT)/rpmscript
-	cp @BUILD_ROOT_DIR@/gen/RPM/RPMS/@CPU_TYPE@/$(RPMFile) $(GEN_ROOT)
-
-
-.PHONY: $(GEN_ROOT)/install/rpmscript
-
-$(GEN_ROOT)/install/rpmscript :
-	echo $@
-	awk < $(RPMSrcDir)/rpmheader.txt 'BEGIN {fl=1;} ($$1 == "Requires:") {fl=0;} (fl) {print $$0;}' > $@
-	echo -n "Requires: `ldd $(RpmRequiredVersionTarget) | grep $(TermLib) | awk '{print $$1;}'`" >> $@
-	echo ", `ldd $(RpmRequiredVersionTarget) | grep libstdc++ | awk '{print $$1;}'`" >> $@
-	awk < $(RPMSrcDir)/rpmheader.txt 'BEGIN {fl=0;} (fl) {print $$0;} ($$1 == "Requires:") {fl=1;}' >> $@
-	echo "" >> $@
-	echo "%prep" >> $@
-#	cat $(ClassicSrcDir)/prepinstall.sh >> $@
-	echo "" >> $@
-	echo "%build" >> $@
-#	cat $(ScriptDir)/buildinstall.sh >> $@
-	echo "" >> $@
-	echo "%install" >> $@
-#	cat $(ScriptDir)/install.sh >> $@
-	echo "" >> $@
-	echo "%files" >> $@
-	cat $(RPMSrcDir)/rpmfiles.txt >> $@
-	echo "" >> $@
-	echo "%pre" >> $@
-	cat $(ScriptDir)/preinstall.sh >> $@
-	echo "" >> $@
-	echo "%post" >> $@
-	cat $(ScriptDir)/postinstall.sh >> $@
-	echo "" >> $@
-	echo "%preun" >> $@
-	cat $(ScriptDir)/preuninstall.sh >> $@
-	echo "" >> $@
-	echo "%postun" >> $@
-	cat $(ScriptDir)/postuninstall.sh >> $@

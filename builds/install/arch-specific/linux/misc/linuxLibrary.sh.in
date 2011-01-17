@@ -48,12 +48,12 @@ TryAddGroup() {
 
 	AdditionalParameter=$1
 	testStr=`grep firebird /etc/group`
-	
+
     if [ -z "$testStr" ]
       then
         groupadd $AdditionalParameter firebird
     fi
-	
+
 }
 
 
@@ -61,11 +61,11 @@ TryAddUser() {
 
 	AdditionalParameter=$1
 	testStr=`grep firebird /etc/passwd`
-	
+
     if [ -z "$testStr" ]
       then
-        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /bin/false \
-            -c "Firebird Database Owner" -g firebird firebird 
+        useradd $AdditionalParameter -d @FB_CONFDIR@ -s /sbin/nologin \
+            -c "Firebird Database Owner" -g firebird firebird
     fi
 
 }
@@ -153,7 +153,7 @@ getInitScriptLocation() {
 #  stop super server if it is running
 
 stopSuperServerIfRunning() {
-	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
+	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -166,7 +166,7 @@ stopSuperServerIfRunning() {
 			do
        	    	$init_d stop
 				sleep 1
-				checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
+				checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server|firebird)\b" |grep -v grep`
 				if [ -z "$checkString" ]
 				then
 					return
@@ -297,7 +297,7 @@ EOF
         initScript=/etc/rc.d/init.d/firebird
     fi
 
-	
+
 	if [ "$initScript" ]
 	then
 	    # Install the firebird init.d script
@@ -320,13 +320,13 @@ EOF
     	elif [ -x /sbin/insserv ]
 	    then
     	    /sbin/insserv /etc/init.d/firebird
-	
+
 		# One more way to register service - used in Knoppix (& Debian ?)
     	elif [ -x /usr/sbin/update-rc.d ]
 	    then
 			/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
 	    fi
-	
+
     	# More SuSE - rc.config fillup
 	    if [ -f /etc/rc.config ]
     	then
@@ -338,7 +338,7 @@ EOF
     	then
         	cp @FB_MISCDIR@/rc.config.firebird /etc/sysconfig/firebird
 	    fi
-	
+
 	else
 		echo "Couldn't autodetect linux type. You must select"
 		echo "the most appropriate startup script in @FB_MISCDIR@"
@@ -369,15 +369,19 @@ startService() {
     then
 		"$InitFile" start
 
-		checkString=`ps -eaf | egrep "\b(fbserver|fb_smp_server)\b" |grep -v grep`
+		checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
 		if [ -z "$checkString" ]
 		then
-			# server didn't start - possible reason bad shell /bin/false for user "firebird"
-			echo
-			echo Fixing firebird\'s shell to /bin/sh
-			echo
-			usermod -s /bin/sh firebird
+			# server didn't start - wait a bit and recheck
+			sleep 2
 			"$InitFile" start
+
+			checkString=`ps -eaf | egrep "\b(firebird)\b" |grep -v grep`
+			if [ -z "$checkString" ]
+			then
+				echo "Looks like standalone server failed to start"
+				echo "Trying to continue anyway..."
+			fi
 		fi
 	fi
 }
@@ -393,7 +397,7 @@ removeServiceAutostart() {
 		if [ -x /sbin/insserv ]; then
 			/sbin/insserv /etc/init.d/
 		fi
-     
+
 		if [ -x /sbin/chkconfig ]; then
 			/sbin/chkconfig --del firebird
 		fi
@@ -407,15 +411,19 @@ removeServiceAutostart() {
 		then
 			rm -f /usr/sbin/rcfirebird
 		fi
-        
-		# Remove initd script
-		if [ -e /etc/init.d/firebird ]; then
-			rm -f /etc/init.d/firebird
-		fi
 
-		if [ -e /etc/rc.d/init.d/firebird ]; then
-			rm -f /etc/rc.d/init.d/firebird
-		fi
+		# Remove initd script
+		rm -f $InitFile
 	fi
 }
 
+#------------------------------------------------------------------------
+# Returns TRUE if SA server is installed
+
+isStandaloneServerInstalled() {
+	InitFile=`getInitScriptLocation`
+	if [ -f "$InitFile" ]; then
+		return 0
+	fi
+	return 1
+}

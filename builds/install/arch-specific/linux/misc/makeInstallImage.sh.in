@@ -35,9 +35,9 @@ fi
 
 # Making an assumption that this program is being run in the gen directory
 BuildRootDir=..
-BuiltFBDir=./firebird  # Where the just build fb exists.
+BuiltFBDir=Release/firebird  # Where the just build fb exists.
 TargetDir=buildroot    # Where we want to build the install image
-SecurityDatabase=security2.fdb
+SecurityDatabase=security3.fdb
 
 
 #------------------------------------------------------------------------
@@ -53,7 +53,7 @@ addLibs() {
 
 	rm -f $libTarget
 	touch $libTarget
-	for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh linuxLibrary.sh
+	for i in posixLibrary.sh linuxLibrary.sh
 	do
 		echo "# $i" >>$libTarget
 		cat $libSdir/$i >>$libTarget
@@ -161,17 +161,14 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_BINDIR@/*
 
 	#sbin
-    copyIfExists $BuiltFBDir/bin/fb_smp_server ${TargetDir}@FB_SBINDIR@
-    copyIfExists $BuiltFBDir/bin/fbserver ${TargetDir}@FB_SBINDIR@
+    cp -f $BuiltFBDir/bin/firebird ${TargetDir}@FB_SBINDIR@/firebird
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_lock_print ${TargetDir}@FB_SBINDIR@
-	copyIfExists $BuiltFBDir/bin/fbmgr.bin ${TargetDir}@FB_SBINDIR@
 
-    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuiltFBDir/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuiltFBDir/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuiltFBDir/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
+    addLibs $BuiltFBDir/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
     cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
 
@@ -180,14 +177,14 @@ copyFiles() {
 	chmod 0700 ${TargetDir}@FB_SBINDIR@/*.sh
 
 	#install scripts
-    addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin tarinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin preinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin postinstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin preuninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin postuninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin taruninstall.sh $BuildRootDir/gen/install/scripts
-    addLibs $BuildRootDir/gen/firebird/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin tarinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin preinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin postinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin preuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin postuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin taruninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuiltFBDir/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
 
     #examples - copy only if we have them
     exampleFiles=`find $BuiltFBDir/examples/README -type f -print`
@@ -247,10 +244,12 @@ copyFiles() {
 	chmod 0755 ${TargetDir}@FB_LIBDIR@/*.so*
 
 	#plugins
-	cp -df $BuiltFBDir/plugins/* ${TargetDir}@FB_PLUGDIR@
+	(cd $BuiltFBDir/plugins;tar cf - .) | (cd ${TargetDir}@FB_PLUGDIR@; tar xvf -)
 
-	chown root:root ${TargetDir}@FB_PLUGDIR@/*.so*
-	chmod 0755 ${TargetDir}@FB_PLUGDIR@/*.so*
+	for file in `find ${TargetDir}@FB_PLUGDIR@ -name '*.so*' -print`; do
+		chown root:root ${file}
+		chmod 0755 ${file}
+	done
 
 	#intl
     cp $BuiltFBDir/intl/libfbintl.so ${TargetDir}@FB_INTLDIR@/fbintl
@@ -306,6 +305,7 @@ copyFiles() {
     cp $BuiltFBDir/firebird.conf ${TargetDir}@FB_CONFDIR@
     cp $BuiltFBDir/aliases.conf ${TargetDir}@FB_CONFDIR@
     cp $BuiltFBDir/fbtrace.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuiltFBDir/plugins.conf ${TargetDir}@FB_CONFDIR@
 
 	chown root:root ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf

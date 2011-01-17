@@ -207,41 +207,41 @@ gpre: $(GPRE) databases
 $(GPRE):	$(GPRE_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
+HELP_FDB = $(FIREBIRD)/help/help.fdb
+SECURITY_FDB = $(FIREBIRD)/security3.fdb
+SECURITY_TMP = security.tmp
 
-databases:		yachts.lnk help.fdb security.fdb msg.timestamp
+databases:		yachts.lnk msg.timestamp $(HELP_FDB) $(SECURITY_FDB)
+
+export LD_LIBRARY_PATH += $(FIREBIRD)/lib
 
 yachts.lnk:		metadata.fdb
 	-$(RM) $@
 	$(LN) $^ $@
 
-export LD_LIBRARY_PATH += :$(FIREBIRD)/lib
-
 metadata.fdb:	$(BLD_ROOT)/misc/metadata.gbak
 	$(GBAK) -MODE read_only -R $< $@
-	$(TOUCH) $@
 	$(CHMOD) 0444 $@
 
-help.fdb:		$(FIREBIRD)/help/help.fdb
+$(HELP_FDB):	help.fdb
 	-$(RM) $@
-	$(LN) $^ $@
+	$(CP) $^ $@
+	$(CHMOD) 0444 $@
 
-$(FIREBIRD)/help/help.fdb:	$(BLD_ROOT)/misc/help.gbak
+help.fdb:	$(BLD_ROOT)/misc/help.gbak
 	$(GBAK) -MODE read_only -R $< $@
-	$(TOUCH) $@
-	$(CHMOD) 0444 $@
 
-security.fdb:	$(SECURITY_FDB)
+$(SECURITY_FDB):	security.fdb
 	-$(RM) $@
-	$(LN)  $(SECDB) $@
+	$(CP) $^ $@
 
-SECDB = security.tmp
-$(SECURITY_FDB):	$(SRC_ROOT)/dbs/security.sql
+security.fdb:	$(SRC_ROOT)/dbs/security.sql
 	-$(RM) $@
-	-$(RM) $(SECDB)
-	echo create database \'$(SECDB)\'\; | $(ISQL)
-	$(ISQL) -i $^ $(SECDB)
-	$(CHMOD) a=rw $(SECDB)
-	$(CP) $(SECDB) $@
+	-$(RM) $(SECURITY_TMP)
+	echo create database \'$(SECURITY_TMP)\'\; | $(ISQL)
+	$(ISQL) -i $^ $(SECURITY_TMP)
+	$(CHMOD) a=rw $(SECURITY_TMP)
+	$(CP) $(SECURITY_TMP) $@
 
 msg.timestamp:	$(MSG_FILES)
 	-$(RM) msg.fdb
@@ -490,6 +490,15 @@ include $(ROOT)/gen/make.shared.targets
 
 Dependencies = $(AllObjects:.o=.d) 
 -include $(Dependencies)
+
+
+#___________________________________________________________________________
+# create binary packages
+#
+
+install install-embedded package packages dist:
+	$(MAKE) -f Makefile.install $@
+
 
 #___________________________________________________________________________
 # various cleaning
