@@ -91,7 +91,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, Tr
 }
 
 
-static Firebird::Static<Firebird::SimpleFactory<TraceFactoryImpl> > traceFactory;
+static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
 
 void registerTrace(Firebird::IPlugin* iPlugin)
 {

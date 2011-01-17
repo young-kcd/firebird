@@ -43,9 +43,9 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 
 	Firebird::IPlugin* iPlugin = master->getPluginInterface();
 
-	clientFactory.addRef();
+	clientFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, name, &clientFactory);
-	serverFactory.addRef();
+	serverFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, name, &serverFactory);
 
 	iPlugin->release();

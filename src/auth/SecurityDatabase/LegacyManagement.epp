@@ -552,7 +552,7 @@ int Auth::SecurityDatabaseManagement::release()
 }
 
 // register plugin
-static Firebird::Static<Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> > factory;
+static Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> factory;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {

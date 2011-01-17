@@ -513,8 +513,8 @@ public:
 };
 
 namespace {
-	Firebird::Static<Firebird::SimpleFactory<Provider> > remoteFactory;
-	Firebird::Static<Firebird::SimpleFactory<Loopback> > loopbackFactory;
+	Firebird::SimpleFactory<Provider> remoteFactory;
+	Firebird::SimpleFactory<Loopback> loopbackFactory;
 }
 
 void registerRedirector(Firebird::IPlugin* iPlugin)

@@ -272,7 +272,7 @@ int Provider::release()
 	return 1;
 }
 
-static Firebird::Static<Firebird::SimpleFactory<Provider> > engineFactory;
+static Firebird::SimpleFactory<Provider> engineFactory;
 
 void registerEngine(Firebird::IPlugin* iPlugin)
 {

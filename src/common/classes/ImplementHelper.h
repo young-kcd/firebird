@@ -34,6 +34,7 @@
 #include "gen/iberror.h"
 #include "../common/config/config.h"
 #include "../yvalve/gds_proto.h"
+#include "../common/classes/init.h"
 
 namespace Firebird {
 
@@ -148,13 +149,18 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactory : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class SimpleFactoryBase : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
 	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
 	{
 		return new P(factoryParameter);
 	}
+};
+
+template <class P>
+class SimpleFactory : public Static<SimpleFactoryBase<P> >
+{
 };
 
 

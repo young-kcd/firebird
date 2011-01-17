@@ -492,7 +492,7 @@ int SecurityDatabaseServer::release()
 }
 
 namespace {
-	Firebird::Static<Firebird::SimpleFactory<SecurityDatabaseServer> > factory;
+	Firebird::SimpleFactory<SecurityDatabaseServer> factory;
 }
 
 void registerLegacyServer(Firebird::IPlugin* iPlugin)

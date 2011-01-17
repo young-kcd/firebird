@@ -61,7 +61,7 @@ int SecurityDatabaseClient::release()
 }
 
 namespace {
-	Firebird::Static<Firebird::SimpleFactory<SecurityDatabaseClient> > factory;
+	Firebird::SimpleFactory<SecurityDatabaseClient> factory;
 }
 
 void registerLegacyClient(Firebird::IPlugin* iPlugin)
