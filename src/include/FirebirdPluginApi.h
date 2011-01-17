@@ -101,7 +101,7 @@ class IConfigParameter : public Interface
 public:
 	virtual const char* FB_CARG name() = 0;
 	virtual const char* FB_CARG value() = 0;
-	virtual IConfig* sub() = 0;
+	virtual IConfig* FB_CARG sub() = 0;
 };
 #define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 

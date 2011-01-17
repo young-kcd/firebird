@@ -235,7 +235,7 @@ struct PerformanceInfo
 class TraceLogWriter : public Firebird::Interface
 {
 public:
-	virtual size_t write(const void* buf, size_t size) = 0;
+	virtual size_t FB_CARG write(const void* buf, size_t size) = 0;
 };
 #define FB_TRACE_LOG_WRITER_VERSION (FB_INTERFACE_VERSION + 1)
 

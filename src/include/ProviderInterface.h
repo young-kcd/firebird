@@ -46,16 +46,16 @@ public:
 class ShutdownCallback
 {
 public:
-	virtual void shutdownCallbackFunction(int reason, int mask) = 0;
+	virtual void FB_CARG shutdownCallbackFunction(int reason, int mask) = 0;
 };
 
 class MultipleTransaction
 {
 public:
-	virtual unsigned int count() = 0;
-	virtual Attachment* attachment(unsigned int n) = 0;
-	virtual unsigned char* tpb(unsigned int n) = 0;
-	virtual unsigned int tpbLength(unsigned int n) = 0;
+	virtual unsigned int FB_CARG count() = 0;
+	virtual Attachment* FB_CARG attachment(unsigned int n) = 0;
+	virtual unsigned char* FB_CARG tpb(unsigned int n) = 0;
+	virtual unsigned int FB_CARG tpbLength(unsigned int n) = 0;
 };
 */
 
@@ -131,7 +131,7 @@ public:
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual void FB_CARG setCursor(Firebird::Status* status, const char* name, unsigned int type) = 0;
-//	virtual ITransaction* execute(Firebird::Status* status, ITransaction* tra, Sqlda* in, Sqlda* out) = 0;
+//	virtual ITransaction* FB_CARG execute(Firebird::Status* status, ITransaction* tra, Sqlda* in, Sqlda* out) = 0;
 	virtual ITransaction* FB_CARG executeMessage(Firebird::Status* status, ITransaction* tra,
 										unsigned int in_blr_length, const unsigned char* in_blr,
 										unsigned int in_msg_type,
@@ -139,12 +139,12 @@ public:
 										unsigned int out_blr_length, const unsigned char* out_blr,
 										unsigned int out_msg_type,
 										unsigned int out_msg_length, unsigned char* out_message) = 0;
-//	virtual int fetch(Firebird::Status* status, Sqlda* out) = 0;								// returns 100 if EOF, 101 if fragmented
+//	virtual int FB_CARG fetch(Firebird::Status* status, Sqlda* out) = 0;								// returns 100 if EOF, 101 if fragmented
 	virtual int FB_CARG fetchMessage(Firebird::Status* status,
 							 unsigned int blr_length, const unsigned char* blr,
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message) = 0;	// returns 100 if EOF, 101 if fragmented
-//	virtual void insert(Firebird::Status* status, Sqlda* in) = 0;
+//	virtual void FB_CARG insert(Firebird::Status* status, Sqlda* in) = 0;
 	virtual void FB_CARG insertMessage(Firebird::Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
@@ -174,7 +174,7 @@ public:
 class IEvents : public Firebird::Interface
 {
 public:
-	virtual void cancel(Firebird::Status* status) = 0;
+	virtual void FB_CARG cancel(Firebird::Status* status) = 0;
 };
 #define FB_I_EVENTS_VERSION (FB_INTERFACE_VERSION + 1)
 
@@ -228,10 +228,10 @@ public:
 								unsigned int dpbLength, const unsigned char* dpb) = 0;
 	virtual IService* FB_CARG attachServiceManager(Firebird::Status* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb) = 0;
-	//virtual ITransaction* startTransaction(Firebird::Status* status, unsigned int count, ...) = 0;
-	//virtual ITransaction* startMultiple(Firebird::Status* status, MultipleTransaction* multi) = 0;
+	//virtual ITransaction* FB_CARG startTransaction(Firebird::Status* status, unsigned int count, ...) = 0;
+	//virtual ITransaction* FB_CARG startMultiple(Firebird::Status* status, MultipleTransaction* multi) = 0;
 	virtual void FB_CARG shutdown(Firebird::Status* status, unsigned int timeout, const int reason) = 0;
-	//virtual void fb_shutdown_callback(Firebird::Status* status, const int mask, ShutdownCallback* callback) = 0;
+	//virtual void FB_CARG fb_shutdown_callback(Firebird::Status* status, const int mask, ShutdownCallback* callback) = 0;
 };
 #define FB_P_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
 
