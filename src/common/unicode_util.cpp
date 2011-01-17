@@ -63,8 +63,11 @@ private:
 	ICU& operator =(const ICU&);	// not implemented
 
 public:
-	ICU()
-		: inModule(NULL), ucModule(NULL)
+	ICU(int aMajorVersion, int aMinorVersion)
+		: majorVersion(aMajorVersion),
+		  minorVersion(aMinorVersion),
+		  inModule(NULL),
+		  ucModule(NULL)
 	{
 	}
 
@@ -74,6 +77,26 @@ public:
 		delete inModule;
 	}
 
+	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr)
+	{
+		string symbol;
+
+		symbol.printf("%s_%d_%d", name, majorVersion, minorVersion);
+		module->findSymbol(symbol, ptr);
+		if (ptr)
+			return;
+
+		symbol.printf("%s_%d%d", name, majorVersion, minorVersion);
+		module->findSymbol(symbol, ptr);
+		if (ptr)
+			return;
+
+		(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
+		 Arg::Gds(isc_random) << name).raise();
+	}
+
+	int majorVersion;
+	int minorVersion;
 	ModuleLoader::Module* inModule;
 	ModuleLoader::Module* ucModule;
 	UVersionInfo collVersion;
@@ -142,12 +165,10 @@ public:
 	RWLock lock;
 };
 
-namespace {
-	GlobalPtr<UnicodeUtil::ICUModules> icuModules;
-}
-
 
 static const char* const COLL_30_VERSION = "41.128.4.4";	// ICU 3.0 collator version
+
+static GlobalPtr<UnicodeUtil::ICUModules> icuModules;
 
 
 static void getVersions(const string& configInfo, ObjectsArray<string>& versions)
@@ -738,42 +759,21 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 	return true;	// well-formed
 }
 
-namespace {
-template <typename T> void getEntryPoint(const char* name, const string& major, const string& minor,
-										 ModuleLoader::Module* module, T& ptr)
-{
-	string symbol;
-
-	symbol.printf("%s_%s_%s", name, major.c_str(), minor.c_str());
-	module->findSymbol(symbol, ptr);
-	if (ptr)
-		return;
-
-	symbol.printf("%s_%s%s", name, major.c_str(), minor.c_str());
-	module->findSymbol(symbol, ptr);
-	if (ptr)
-		return;
-
-	(Arg::Gds(isc_random) << "Missing entrypoint in ICU library" <<
-	 Arg::Gds(isc_random) << name).raise();
-}
-}
-
 UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
 {
 #if defined(WIN_NT)
-	const char* const inTemplate = "icuin%s%s.dll";
-	const char* const ucTemplate = "icuuc%s%s.dll";
+	const char* const inTemplate = "icuin%d%d.dll";
+	const char* const ucTemplate = "icuuc%d%d.dll";
 #elif defined(DARWIN)
 	const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
 	const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
 #elif defined(HPUX)
-	const char* const inTemplate = "libicui18n.sl.%s%s";
-	const char* const ucTemplate = "libicuuc.sl.%s%s";
+	const char* const inTemplate = "libicui18n.sl.%d%d";
+	const char* const ucTemplate = "libicuuc.sl.%d%d";
 #else
-	const char* const inTemplate = "libicui18n.so.%s%s";
-	const char* const ucTemplate = "libicuuc.so.%s%s";
+	const char* const inTemplate = "libicui18n.so.%d%d";
+	const char* const ucTemplate = "libicuuc.so.%d%d";
 #endif
 
 	ObjectsArray<string> versions;
@@ -784,47 +784,36 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	string version = icuVersion.isEmpty() ? versions[0] : icuVersion;
 	if (version == "default")
-	{
 		version.printf("%d.%d", U_ICU_VERSION_MAJOR_NUM, U_ICU_VERSION_MINOR_NUM);
-	}
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
-		string majorVersion;
-		string minorVersion;
+		int majorVersion, minorVersion;
 
 		if (*i == "default")
 		{
-			majorVersion = STRINGIZE(U_ICU_VERSION_MAJOR_NUM);
-			minorVersion = STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+			majorVersion = U_ICU_VERSION_MAJOR_NUM;
+			minorVersion = U_ICU_VERSION_MINOR_NUM;
 		}
-		else
-		{
-			const size_t pos = i->find('.');
-			if (pos == i->npos)
-				continue;
-
-			majorVersion = i->substr(0, pos);
-			minorVersion = i->substr(pos + 1);
-		}
-
-		if (version != majorVersion + "." + minorVersion)
-		{
+		else if (sscanf(i->c_str(), "%d.%d", &majorVersion, &minorVersion) != 2)
 			continue;
-		}
+
+		string configVersion;
+		configVersion.printf("%d.%d", majorVersion, minorVersion);
+
+		if (version != configVersion)
+			continue;
 
 		ReadLockGuard readGuard(icuModules->lock);
 
 		ICU* icu;
 		if (icuModules->modules.get(version, icu))
-		{
 			return icu;
-		}
 
 		PathName filename;
-		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
+		filename.printf(ucTemplate, majorVersion, minorVersion);
 
-		icu = FB_NEW(*getDefaultMemoryPool()) ICU();
+		icu = FB_NEW(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
 		icu->ucModule = ModuleLoader::fixAndLoadModule(filename);
 
@@ -835,7 +824,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			continue;
 		}
 
-		filename.printf(inTemplate, majorVersion.c_str(), minorVersion.c_str());
+		filename.printf(inTemplate, majorVersion, minorVersion);
 
 		icu->inModule = ModuleLoader::fixAndLoadModule(filename);
 
@@ -848,31 +837,31 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		try
 		{
-			getEntryPoint("u_init", majorVersion, minorVersion,	icu->ucModule, icu->uInit);
+			icu->getEntryPoint("u_init", icu->ucModule, icu->uInit);
 		}
 		catch (const status_exception&)
 		{ }
 
 		try
 		{
-			getEntryPoint("u_versionToString", majorVersion, minorVersion, icu->ucModule, icu->uVersionToString);
-			getEntryPoint("uloc_countAvailable", majorVersion, minorVersion, icu->ucModule, icu->ulocCountAvailable);
-			getEntryPoint("uloc_getAvailable", majorVersion, minorVersion, icu->ucModule, icu->ulocGetAvailable);
-			getEntryPoint("uset_close", majorVersion, minorVersion, icu->ucModule, icu->usetClose);
-			getEntryPoint("uset_getItem", majorVersion, minorVersion, icu->ucModule, icu->usetGetItem);
-			getEntryPoint("uset_getItemCount", majorVersion, minorVersion, icu->ucModule, icu->usetGetItemCount);
-			getEntryPoint("uset_open", majorVersion, minorVersion, icu->ucModule, icu->usetOpen);
+			icu->getEntryPoint("u_versionToString", icu->ucModule, icu->uVersionToString);
+			icu->getEntryPoint("uloc_countAvailable", icu->ucModule, icu->ulocCountAvailable);
+			icu->getEntryPoint("uloc_getAvailable", icu->ucModule, icu->ulocGetAvailable);
+			icu->getEntryPoint("uset_close", icu->ucModule, icu->usetClose);
+			icu->getEntryPoint("uset_getItem", icu->ucModule, icu->usetGetItem);
+			icu->getEntryPoint("uset_getItemCount", icu->ucModule, icu->usetGetItemCount);
+			icu->getEntryPoint("uset_open", icu->ucModule, icu->usetOpen);
 
-			getEntryPoint("ucol_close", majorVersion, minorVersion, icu->inModule, icu->ucolClose);
-			getEntryPoint("ucol_getContractions", majorVersion, minorVersion, icu->inModule, icu->ucolGetContractions);
-			getEntryPoint("ucol_getSortKey", majorVersion, minorVersion, icu->inModule, icu->ucolGetSortKey);
-			getEntryPoint("ucol_open", majorVersion, minorVersion, icu->inModule, icu->ucolOpen);
-			getEntryPoint("ucol_setAttribute", majorVersion, minorVersion, icu->inModule, icu->ucolSetAttribute);
-			getEntryPoint("ucol_strcoll", majorVersion, minorVersion, icu->inModule, icu->ucolStrColl);
-			getEntryPoint("ucol_getVersion", majorVersion, minorVersion, icu->inModule, icu->ucolGetVersion);
-			getEntryPoint("utrans_open", majorVersion, minorVersion, icu->inModule, icu->utransOpen);
-			getEntryPoint("utrans_close", majorVersion, minorVersion, icu->inModule, icu->utransClose);
-			getEntryPoint("utrans_transUChars", majorVersion, minorVersion, icu->inModule, icu->utransTransUChars);
+			icu->getEntryPoint("ucol_close", icu->inModule, icu->ucolClose);
+			icu->getEntryPoint("ucol_getContractions", icu->inModule, icu->ucolGetContractions);
+			icu->getEntryPoint("ucol_getSortKey", icu->inModule, icu->ucolGetSortKey);
+			icu->getEntryPoint("ucol_open", icu->inModule, icu->ucolOpen);
+			icu->getEntryPoint("ucol_setAttribute", icu->inModule, icu->ucolSetAttribute);
+			icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
+			icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
+			icu->getEntryPoint("utrans_open", icu->inModule, icu->utransOpen);
+			icu->getEntryPoint("utrans_close", icu->inModule, icu->utransClose);
+			icu->getEntryPoint("utrans_transUChars", icu->inModule, icu->utransTransUChars);
 		}
 		catch (const status_exception& s)
 		{
