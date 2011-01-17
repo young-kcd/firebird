@@ -808,27 +808,14 @@ class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::IPlugin* plugin = master->getPluginInterface();
-	plugin->registerPlugin(Firebird::PluginType::ExternalEngine, "UDR", &factory);
+	IPlugin* plugin = master->getPluginInterface();
+	plugin->registerPlugin(PluginType::ExternalEngine, "UDR", &factory);
 	plugin->release();
 
-	/***
-	if (plugin->getLibraryName())
-		libraryName->assign(plugin->getLibraryName());
+	libraryName->assign("fbclient");
+	ModuleLoader::doctorModuleExtension(libraryName);
+
 	libraryModule = ModuleLoader::loadModule(libraryName);
-
-	for (int count = plugin->getConfigInfoCount(), i = 0; i < count; ++i)
-	{
-		const char* key;
-		const char* value;
-
-		plugin->getConfigInfo(error, i, &key, &value);
-		if (strcmp(key, "path") == 0)
-			paths->add(value);
-	}
-
-	plugin->setExternalEngineFactory(&factory);
-	***/
 }
 
 
