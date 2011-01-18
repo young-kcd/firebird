@@ -1,3 +1,44 @@
+ 2011-01-17 19:28  asfernandes 
+   M src/common/unicode_util.cpp
+Misc
+
+ 2011-01-17 19:28  asfernandes 
+   M src/plugins/udr_engine/UdrEngine.cpp
+Correction
+
+ 2011-01-17 17:38  alexpeshkoff 
+   M builds/install/arch-specific/linux/Makefile.in
+   D builds/install/arch-specific/linux/classic
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+   M builds/install/arch-specific/linux/misc/makeInstallImage.sh.in
+   D builds/install/arch-specific/linux/super
+   D builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
+   D builds/install/misc/classicLibrary.sh.in
+   D builds/install/misc/firebird.init.d.generic.in
+   D builds/install/misc/firebird.init.d.mandrake.in
+   M builds/install/misc/posixLibrary.sh.in
+   D builds/install/misc/superLibrary.sh.in
+   M builds/posix/Makefile.in
+   M configure.in
+Fixed binary packages build. No more CS/SS difference. No more linux RPMs on SF.
+
+ 2011-01-17 14:13  alexpeshkoff 
+   M src/include/FirebirdPluginApi.h
+   M src/include/ProviderInterface.h
+   M src/jrd/ntrace.h
+Fixed calling conventions in interfaces - thanks to Dmitry Kovalenko
+
+ 2011-01-17 12:17  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/pwd.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+Fixed bug, found by Adriano - destructor of statically allocated factory should better never be called
+
  2011-01-16 17:45  alexpeshkoff 
    M src/common/classes/ImplementHelper.h
 cleanup
