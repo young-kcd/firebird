@@ -218,7 +218,9 @@ namespace Jrd
 
 			if (count == 1)
 			{
-				m_rsb = rivers.front()->getRecordSource();
+				River* const sub_river = rivers.front();
+				m_rsb = sub_river->getRecordSource();
+				sub_river->activate(csb);
 			}
 			else
 			{
