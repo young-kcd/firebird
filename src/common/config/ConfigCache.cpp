@@ -48,7 +48,7 @@ ConfigCache::~ConfigCache()
 
 void ConfigCache::checkLoadConfig()
 {
-	unsigned long newTime = getTime();
+	time_t newTime = getTime();
 	if (fileTime == newTime)
 	{
 		return;
