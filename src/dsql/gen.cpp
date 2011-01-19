@@ -129,8 +129,6 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
  **/
 void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
-	const dsql_ctx* context;
-
 	switch (node->nod_type)
 	{
 	case nod_class_exprnode:
@@ -1242,10 +1240,10 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 {
 	dsql_ctx* context;
 
-	RseNode* rse = ExprNode::as<RseNode>(rseNod);
+	RseNode* const rse = ExprNode::as<RseNode>(rseNod);
 	fb_assert(rse);
 
-	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
+	DsqlCompiledStatement* const statement = dsqlScratch->getStatement();
 
 	// Set up parameter for things in the select list
 	const dsql_nod* list = rse->dsqlSelectList;
@@ -1259,7 +1257,8 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 
 	// Set up parameter to handle EOF
 
-	dsql_par* parameter_eof = MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
+	dsql_par* const parameter_eof =
+		MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
 	statement->setEof(parameter_eof);
 	parameter_eof->par_desc.dsc_dtype = dtype_short;
 	parameter_eof->par_desc.dsc_scale = 0;
@@ -1267,28 +1266,27 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 
 	// Save DBKEYs for possible update later
 
-	list = rse->dsqlStreams;
-
 	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
 
 	if (!rse->dsqlDistinct)
 	{
+		list = rse->dsqlStreams;
 		dsql_nod* const* ptr2 = list->nod_arg;
 		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; ptr2 < end2; ptr2++)
 		{
-			dsql_nod* item = *ptr2;
+			dsql_nod* const item = *ptr2;
 			RelationSourceNode* relNode;
 
 			if (item && (relNode = ExprNode::as<RelationSourceNode>(item)))
 			{
 				context = relNode->dsqlContext;
-				const dsql_rel* relation = context->ctx_relation;
+				const dsql_rel* const relation = context->ctx_relation;
 
 				if (relation)
 				{
 					// Set up dbkey
-					dsql_par* parameter = MAKE_parameter(statement->getReceiveMsg(), false,
-						false, 0, NULL);
+					dsql_par* parameter =
+						MAKE_parameter(statement->getReceiveMsg(), false, false, 0, NULL);
 
 					parameter->par_dbkey_relname = relation->rel_name;
 					paramContexts.put(parameter, context);
@@ -1344,12 +1342,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 
 	SSHORT constant;
 	dsc constant_desc;
-	constant_desc.dsc_dtype = dtype_short;
-	constant_desc.dsc_scale = 0;
-	constant_desc.dsc_sub_type = 0;
-	constant_desc.dsc_flags = 0;
-	constant_desc.dsc_length = sizeof(SSHORT);
-	constant_desc.dsc_address = (UCHAR*) & constant;
+	constant_desc.makeShort(0, &constant);
 
 	// Add invalid usage here
 
@@ -1360,7 +1353,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
-		dsql_par* parameter = message->msg_parameters[i];
+		dsql_par* const parameter = message->msg_parameters[i];
 
 		if (parameter->par_node)
 		{
@@ -1537,7 +1530,6 @@ static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node
 
 	dsql_nod* temp;
 	const dsql_ctx* context;
-	const dsql_str* name;
 
 	switch (node->nod_type)
 	{
