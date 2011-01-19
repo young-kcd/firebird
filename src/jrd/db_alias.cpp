@@ -68,7 +68,7 @@ namespace
 bool ResolveDatabaseAlias(const PathName& alias, PathName& database)
 {
 	PathName alias_filename = fb_utils::getPrefix(fb_utils::FB_DIR_CONF, ALIAS_FILE);
-	ConfigFile aliasConfig(false, true);
+	ConfigFile aliasConfig(true);
 	aliasConfig.setConfigFilePath(alias_filename);
 
 	PathName corrected_alias = alias;

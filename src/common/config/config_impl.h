@@ -69,6 +69,11 @@ public:
 	static bool asBoolean(const string&);
 	static const char* asString(const string&);
 
+	const char* getMessage()
+	{
+		return confMessage.nullStr();
+	}
+
 private:
 	static const ConfigEntry entries[];
 	const char *root_dir;
@@ -76,6 +81,8 @@ private:
 
     ConfigImpl(const ConfigImpl&);
     void operator=(const ConfigImpl&);
+
+	Firebird::string confMessage;
 };
 
 #endif // CONFIG_IMPL_H

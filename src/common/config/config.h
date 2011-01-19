@@ -123,6 +123,10 @@ class Config
 
 public:
 
+	// Check for errors in .conf file
+
+	static const char* getMessage();
+
 	// Interface to support command line root specification.
 
 	// This ugly solution was required to make it possible to specify root

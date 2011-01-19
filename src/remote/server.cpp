@@ -68,7 +68,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../jrd/scroll_cursors.h"
-
+#include "../jrd/os/fbsyslog.h"
 
 struct server_req_t : public Firebird::GlobalStorage
 {
@@ -568,6 +568,14 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
+	// Check for errors/missing firebird.conf
+	const char* anyError = Config::getMessage();
+	if (anyError)
+	{
+		Firebird::Syslog::Record(Firebird::Syslog::Error, anyError);
+		return;
+	}
+
 	server_req_t* request = NULL;
 	RemPortPtr port;		// Was volatile PORT port = NULL;
 

@@ -1400,8 +1400,14 @@ void nbackup(UtilSvc* uSvc)
 	if (version)
 	{
 		printf("Physical Backup Manager version %s\n", FB_VERSION);
-		if (op == nbNone)
-			exit(FINI_OK);
+	}
+	if (op == nbNone)
+	{
+		if (!version)
+		{
+			usage(uSvc, "None of -L, -N, -F, -B or -R specified");
+		}
+		exit(FINI_OK);
 	}
 
 	if (print_size && (op != nbLock))
@@ -1410,10 +1416,6 @@ void nbackup(UtilSvc* uSvc)
 	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole, direct_io);
 	switch (op)
 	{
-		case nbNone:
-			usage(uSvc, "None of -L, -N, -F, -B or -R specified");
-			break;
-
 		case nbLock:
 			nbk.lock_database(print_size);
 			break;

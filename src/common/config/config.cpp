@@ -139,11 +139,11 @@ static Firebird::InitInstance<ConfigImpl> sysConfig;
  *	Implementation interface
  */
 
-ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
+ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p), confMessage(p)
 {
 	// Prepare some stuff
 
-	ConfigFile file(p, true);
+	ConfigFile file(p);
 	root_dir = getRootDirectory();
 	const int size = FB_NELEM(entries);
 	values = FB_NEW(p) ConfigValue[size];
@@ -187,6 +187,11 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 		//case TYPE_STRING_VECTOR:
 		//	break;
 		}
+	}
+
+	if (file.getMessage())
+	{
+		confMessage = file.getMessage();
 	}
 }
 
@@ -237,6 +242,11 @@ const char* ConfigImpl::asString(const string &value)
  *
  *	Public interface
  */
+
+const char* Config::getMessage()
+{
+	return sysConfig().getMessage();
+}
 
 const char* Config::getInstallDirectory()
 {

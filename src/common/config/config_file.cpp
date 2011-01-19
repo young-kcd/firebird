@@ -36,11 +36,6 @@
 // in applications. That's why for regular SERVER builds
 // it's better to exit with appropriate diags rather continue
 // with missing / wrong configuration.
-#if (! defined(BOOT_BUILD)) && (! defined(EMBEDDED)) && (! defined(SUPERCLIENT))
-#define EXCEPTION_ON_NO_CONF
-#else
-#undef EXCEPTION_ON_NO_CONF
-#endif
 
 // config_file works with OS case-sensitivity
 typedef Firebird::PathName string;
@@ -208,21 +203,12 @@ void ConfigFile::loadConfig()
 
 	Firebird::AutoPtr<FILE, Firebird::FileClose> ifile(fopen(configFile.c_str(), "rt"));
 
-#ifdef EXCEPTION_ON_NO_CONF
 	int BadLinesCount = 0;
-#endif
 	if (!ifile)
 	{
 		// config file does not exist
-#ifdef EXCEPTION_ON_NO_CONF
-		if (fExceptionOnError)
-		{
-			const Firebird::string msg =
-				"Missing configuration file: " + configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(Firebird::Syslog::Error, msg.c_str());
-			Firebird::fatal_exception::raise(msg.c_str());
-		}
-#endif //EXCEPTION_ON_NO_CONF
+		lastMessage = "Missing configuration file: ";
+		lastMessage += configFile;
 		return;
 	}
 	string inputLine;
@@ -243,12 +229,8 @@ void ConfigFile::loadConfig()
 		{
 			const Firebird::string msg =
 				(configFile + ": illegal line \"" + inputLine + "\"").ToString();
-			Firebird::Syslog::Record(fExceptionOnError ?
-										Firebird::Syslog::Error : Firebird::Syslog::Warning,
-									msg.c_str());
-#ifdef EXCEPTION_ON_NO_CONF
+			Firebird::Syslog::Record(Firebird::Syslog::Warning, msg.c_str());
 			BadLinesCount++;
-#endif
 			continue;
 		}
 
@@ -261,12 +243,18 @@ void ConfigFile::loadConfig()
 
 		parameters.add(Parameter(getPool(), key, value));
 	}
-#ifdef EXCEPTION_ON_NO_CONF
-	if (BadLinesCount && fExceptionOnError)
+	if (BadLinesCount)
 	{
-		Firebird::fatal_exception::raise("Bad lines in firebird.conf");
+		lastMessage.printf("%d bad lines in %s", BadLinesCount, configFile.c_str());
 	}
-#endif
 }
 
+/******************************************************************************
+ *
+ *	Check for parse/load error
+ */
 
+const char* ConfigFile::getMessage()
+{
+	return lastMessage.nullStr();
+}

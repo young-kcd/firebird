@@ -57,19 +57,22 @@ class ConfigFile : public Firebird::AutoStorage
 		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
 
 public:
-	ConfigFile(MemoryPool& p, bool ExceptionOnError)
-		: AutoStorage(p), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
-		  parameters(getPool()) {}
-	ConfigFile(bool ExceptionOnError, bool useForAliases)
-		: AutoStorage(), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(useForAliases),
-		  parameters(getPool()) {}
-
-    explicit ConfigFile(bool ExceptionOnError)
-		: AutoStorage(), isLoadedFlg(false),
-		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
-		  parameters(getPool()) {}
+	explicit ConfigFile(MemoryPool& p)
+		: AutoStorage(p),
+		  configFile(getPool()),
+		  lastMessage(getPool()),
+		  isLoadedFlg(false),
+		  parsingAliases(false),
+		  parameters(getPool())
+		{ }
+	explicit ConfigFile(const bool useForAliases)
+		: AutoStorage(),
+		  configFile(getPool()),
+		  lastMessage(getPool()),
+		  isLoadedFlg(false),
+		  parsingAliases(useForAliases),
+		  parameters(getPool())
+		{ }
 
 	// configuration file management
     const string getConfigFilePath() const { return configFile; }
@@ -89,10 +92,13 @@ public:
 	static string parseKeyFrom(const string&, string::size_type&);
 	string parseValueFrom(string, string::size_type);
 
+	// was there some error parsing config file?
+	const char* getMessage();
+
 private:
     string configFile;
+    string lastMessage;
     bool isLoadedFlg;
-	const bool fExceptionOnError;
 	const bool parsingAliases;
     mymap_t parameters;
 };
