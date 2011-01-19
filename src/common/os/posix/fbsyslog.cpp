@@ -40,7 +40,7 @@ void Syslog::Record(Severity level, const char* msg)
 		priority = LOG_ERR;
 		break;
 	}
-	syslog(priority | LOG_LOCAL3, "%s (%m)", msg);
+	syslog(priority | LOG_DAEMON | LOG_PID, "%s", msg);
 
 	// try to put it also on controlling tty
 	int fd = 2;

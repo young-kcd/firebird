@@ -1565,22 +1565,27 @@ void nbackup(UtilSvc* uSvc)
 	if (version)
 	{
 		printMsg(68, SafeArg() << FB_VERSION);
-		if (op == nbNone)
-			exit(FINI_OK);
+	}
+
+	if (op == nbNone)
+	{
+		if (!version)
+		{
+			usage(uSvc, isc_nbackup_no_switch);
+		}
+		exit(FINI_OK);
 	}
 
 	if (print_size && (op != nbLock))
+	{
 		usage(uSvc, isc_nbackup_size_with_lock);
+	}
 
 	NBackup nbk(uSvc, database, username, password, run_db_triggers, trustedUser, trustedRole, direct_io);
 	try
 	{
 		switch (op)
 		{
-			case nbNone:
-				usage(uSvc, isc_nbackup_no_switch);
-				break;
-
 			case nbLock:
 				nbk.lock_database(print_size);
 				break;

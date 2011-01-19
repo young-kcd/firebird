@@ -70,6 +70,7 @@
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/os/fbsyslog.h"
 
 using namespace Firebird;
 
@@ -260,7 +261,7 @@ public:
 	bool authenticate(rem_port* port, PACKET* send, const cstring* data)
 	{
 		bool working = true;
-		Firebird::LocalStatus st;
+		LocalStatus st;
 
 		while (working && authItr.hasData())
 		{
@@ -853,6 +854,14 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
+	// Check for errors/missing firebird.conf
+	const char* anyError = Config::getMessage();
+	if (anyError)
+	{
+		Syslog::Record(Syslog::Error, anyError);
+		return;
+	}
+
 	server_req_t* request = NULL;
 	RemPortPtr port;		// Was volatile PORT port = NULL;
 

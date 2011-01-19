@@ -44,30 +44,15 @@ namespace {
 class ConfigImpl : public Firebird::PermanentStorage
 {
 public:
-	explicit ConfigImpl(Firebird::MemoryPool& p) : Firebird::PermanentStorage(p)
+	explicit ConfigImpl(Firebird::MemoryPool& p)
+		: Firebird::PermanentStorage(p), confMessage(getPool())
 	{
-		try
+		ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE));
+		defaultConfig = new Config(file);
+
+		if (file.getMessage())
 		{
-			// ATTENTION!
-			// This is a brute-force solution to ignore configuration file errors
-			// (existence and syntax) for the shared libraries, which seems being
-			// important at least on Windows. Perhaps the same logic should be
-			// applied to the standalone executables and other platforms as well,
-			// but that's to be decided some other day.
-			const USHORT flag =
-#ifdef FB_DLL_INST
-				Firebird::hDllInst ? 0 : ConfigFile::EXCEPTION_ON_ERROR;
-#else
-				ConfigFile::EXCEPTION_ON_ERROR;
-#endif
-			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE), flag);
-			defaultConfig = new Config(file);
-		}
-		catch (const Firebird::fatal_exception& ex)
-		{
-			Firebird::Syslog::Record(Firebird::Syslog::Error, ex.what());
-			(Firebird::Arg::Gds(isc_random) << "Problems with master configuration file - "
-											   "inform server admin please").raise();
+			confMessage = file.getMessage();
 		}
 	}
 
@@ -81,12 +66,18 @@ public:
 		return defaultConfig;
 	}
 
+	const char* getMessage()
+	{
+		return confMessage.nullStr();
+	}
+
 private:
 	Firebird::RefPtr<Config> defaultConfig;
 
     ConfigImpl(const ConfigImpl&);
     void operator=(const ConfigImpl&);
 
+	Firebird::string confMessage;
 };
 
 /******************************************************************************
@@ -305,6 +296,11 @@ const char* Config::asString(const ConfigFile::String &value)
 const Firebird::RefPtr<Config> Config::getDefaultConfig()
 {
 	return firebirdConf().getDefaultConfig();
+}
+
+const char* Config::getMessage()
+{
+	return getDefaultConfig()->getMessage();
 }
 
 const char* Config::getInstallDirectory()

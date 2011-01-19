@@ -40,16 +40,14 @@ namespace {
 class MainStream : public ConfigFile::Stream
 {
 public:
-	MainStream(const char* fname, bool /*fExceptionOnError*/)
+	MainStream(const char* fname, PathName& errString)
 		: file(fopen(fname, "rt")), l(0)
 	{
-/*
-		if (!file && fExceptionOnError)
+		if (!file)
 		{
 			// config file does not exist
-			fatal_exception::raiseFmt("Missing configuration file: %s", fname);
+			errString.printf("Missing configuration file: %s", fname);
 		}
- */
 	}
 
 	bool getLine(ConfigFile::String& input, unsigned int& line)
@@ -169,35 +167,55 @@ private:
 
 
 ConfigFile::ConfigFile(const Firebird::PathName& file, USHORT fl)
-	: AutoStorage(), configFile(getPool(), file), parameters(getPool()), flags(fl)
+	: AutoStorage(),
+	  configFile(getPool(), file),
+	  parameters(getPool()),
+	  flags(fl),
+	  lastMessage(getPool())
 {
-	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
+	MainStream s(configFile.c_str(), lastMessage);
 	parse(&s);
 }
 
 ConfigFile::ConfigFile(const char* file, USHORT fl)
-	: AutoStorage(), configFile(getPool(), String(file)), parameters(getPool()), flags(fl)
+	: AutoStorage(),
+	  configFile(getPool(), String(file)),
+	  parameters(getPool()),
+	  flags(fl),
+	  lastMessage(getPool())
 {
-	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
+	MainStream s(configFile.c_str(), lastMessage);
 	parse(&s);
 }
 
 ConfigFile::ConfigFile(UseText, const char* configText, USHORT fl)
-	: AutoStorage(), configFile(getPool()), parameters(getPool()), flags(fl)
+	: AutoStorage(),
+	  configFile(getPool()),
+	  parameters(getPool()),
+	  flags(fl),
+	  lastMessage(getPool())
 {
 	TextStream s(configText);
 	parse(&s);
 }
 
 ConfigFile::ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl)
-	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
+	: AutoStorage(p),
+	  configFile(getPool(), file),
+	  parameters(getPool()),
+	  flags(fl),
+	  lastMessage(getPool())
 {
-	MainStream s(configFile.c_str(), flags & EXCEPTION_ON_ERROR);
+	MainStream s(configFile.c_str(), lastMessage);
 	parse(&s);
 }
 
 ConfigFile::ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file)
-	: AutoStorage(p), configFile(getPool(), file), parameters(getPool()), flags(fl)
+	: AutoStorage(p),
+	  configFile(getPool(), file),
+	  parameters(getPool()),
+	  flags(fl),
+	  lastMessage(getPool())
 {
 	parse(s);
 }
@@ -400,12 +418,9 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, cons
 
 void ConfigFile::badLine(const String& line)
 {
-	if (flags & EXCEPTION_ON_ERROR)
-	{
-		fatal_exception::raiseFmt("%s: illegal line <%s>",
-								  (configFile.hasData() ? configFile.c_str() : "Passed text"),
-								  line.c_str());
-	}
+	lastMessage.printf("%s: illegal line <%s>",
+					   (configFile.hasData() ? configFile.c_str() : "Passed text"),
+					   line.c_str());
 }
 
 /******************************************************************************
@@ -428,13 +443,13 @@ void ConfigFile::parse(Stream* stream)
 		{
 		case LINE_BAD:
 			badLine(inputLine);
-			break;
+			return;
 
 		case LINE_REGULAR:
 			if (current.name.isEmpty())
 			{
 				badLine(inputLine);
-				break;
+				return;
 			}
 
 			previous = &parameters[parameters.add(current)];
@@ -458,7 +473,7 @@ void ConfigFile::parse(Stream* stream)
 						if (s.hasData() && s[0] != '#')
 						{
 							badLine(s);
-							continue;
+							return;
 						}
 						break;
 					}
@@ -471,4 +486,14 @@ void ConfigFile::parse(Stream* stream)
 			break;
 		}
 	}
+}
+
+/******************************************************************************
+ *
+ *	Check for parse/load error
+ */
+
+const char* ConfigFile::getMessage() const
+{
+	return lastMessage.nullStr();
 }

@@ -50,8 +50,7 @@ class ConfigFile : public Firebird::AutoStorage, public Firebird::RefCounted
 {
 public:
 	// flags for config file
-	static const USHORT EXCEPTION_ON_ERROR =	0x01;
-	static const USHORT HAS_SUB_CONF =			0x02;
+	static const USHORT HAS_SUB_CONF =	0x01;
 
 	// enum to distinguish ctors
 	enum UseText {USE_TEXT};
@@ -92,11 +91,11 @@ public:
     typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
 										 KeyType, Parameter> Parameters;
 
-	ConfigFile(const Firebird::PathName& file, USHORT fl);
-	ConfigFile(const char* file, USHORT fl);
-	ConfigFile(UseText, const char* configText, USHORT fl);
+	ConfigFile(const Firebird::PathName& file, USHORT fl = 0);
+	ConfigFile(const char* file, USHORT fl = 0);
+	ConfigFile(UseText, const char* configText, USHORT fl = 0);
 
-	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl);
+	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl = 0);
 
 private:
 	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl, const Firebird::PathName& file);
@@ -112,6 +111,9 @@ public:
 		return parameters;
 	}
 
+	// was there some error parsing config file?
+	const char* getMessage() const;
+
 private:
 	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB};
 
@@ -119,6 +121,7 @@ private:
     Parameters parameters;
 	USHORT flags;
 	USHORT badLinesCount;
+	Firebird::PathName lastMessage;
 
 	// utilities
 	void parse(Stream* stream);

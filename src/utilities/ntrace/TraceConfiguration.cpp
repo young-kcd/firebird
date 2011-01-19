@@ -90,8 +90,11 @@ namespace
 
 void TraceCfgReader::readConfig()
 {
-	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text,
-					   ConfigFile::HAS_SUB_CONF | ConfigFile::EXCEPTION_ON_ERROR);
+	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text, ConfigFile::HAS_SUB_CONF);
+	if (cfgFile.getMessage())
+	{
+		fatal_exception::raise(cfgFile.getMessage());
+	}
 
 	m_subpatterns[0].start = 0;
 	m_subpatterns[0].end = m_databaseName.length();
