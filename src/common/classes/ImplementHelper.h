@@ -125,6 +125,10 @@ public:
 
 protected:
 	AtomicCounter refCounter;
+
+private:
+	StdIface(const StdIface&);
+	StdIface& operator=(const StdIface&);
 };
 
 

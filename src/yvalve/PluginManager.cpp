@@ -123,7 +123,7 @@ namespace
 	class ConfigParameterAccess : public StdIface<IConfigParameter, FB_I_CONFIG_PARAMETER_VERSION>
 	{
 	public:
-		ConfigParameterAccess(RefPtr<Interface> c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
+		ConfigParameterAccess(Interface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
 		const char* FB_CARG name()
 		{
@@ -208,7 +208,7 @@ namespace
 		{
 			if (p)
 			{
-				return new ConfigParameterAccess(RefPtr<Interface>(this), p);
+				return new ConfigParameterAccess(this, p);
 			}
 
 			return NULL;
@@ -218,7 +218,9 @@ namespace
 	IConfig* ConfigParameterAccess::sub()
 	{
 		if (par && par->sub.hasData())
+		{
 			return new ConfigAccess(par->sub);
+		}
 
 		return NULL;
 	}
