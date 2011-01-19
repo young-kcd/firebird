@@ -48,9 +48,6 @@ public:
 	virtual void FB_CARG addRef() = 0;
 	virtual int FB_CARG release() = 0;
 	virtual int FB_CARG version() = 0;
-
-protected:
-	~Interface() { }
 };
 #define FB_INTERFACE_VERSION 3		// If this is changed, types of all interfaces must be changed
 
