@@ -1,3 +1,7 @@
+ 2011-01-18 09:57  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+Use smart pointer in ConfigParameterAccess - thanks to Dmitry Kovalenko
+
  2011-01-17 19:28  asfernandes 
    M src/common/unicode_util.cpp
 Misc
