@@ -1,3 +1,35 @@
+ 2011-01-19 17:24  alexpeshkoff 
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/os/posix/fbsyslog.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/ntrace/TraceConfiguration.cpp
+Front-ported fix for CORE-3297: nbackup exits without info when firebird.conf is missing. Make all utilities run without firebird.conf - only server requires it's presence.
+
+ 2011-01-19 17:22  alexpeshkoff 
+   M src/include/Interface.h
+It was useless here
+
+ 2011-01-19 16:58  alexpeshkoff 
+   M src/common/config/ConfigCache.cpp
+misc
+
+ 2011-01-19 07:54  dimitr 
+   M src/dsql/gen.cpp
+Totally misc.
+
+ 2011-01-19 07:15  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+   M src/yvalve/PluginManager.cpp
+Misc
+
+ 2011-01-19 05:47  dimitr 
+   M src/jrd/opt.cpp
+Fixed a small regression caused by myself.
+
  2011-01-18 09:57  alexpeshkoff 
    M src/yvalve/PluginManager.cpp
 Use smart pointer in ConfigParameterAccess - thanks to Dmitry Kovalenko
