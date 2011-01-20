@@ -1,3 +1,15 @@
+ 2011-01-19 12:58  alexpeshkoff 
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/config/config_impl.h
+   M src/jrd/db_alias.cpp
+   M src/jrd/os/posix/fbsyslog.cpp
+   M src/remote/server.cpp
+   M src/utilities/nbackup.cpp
+Fixed CORE-3297: nbackup exits without info when firebird.conf is missing. Make all utilities run without firebird.conf - only server requires it's presence.
+
  2011-01-16 14:05  alexpeshkoff 
    M builds/posix/prefix.linux_s390x
 Damyan's patch fixing list of targets for linux/s390
