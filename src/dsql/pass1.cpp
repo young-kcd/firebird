@@ -212,6 +212,7 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*)
 static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr);
 static dsql_nod* pass1_insert(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_join(DsqlCompilerScratch*, dsql_nod*);
+static void pass1_limit(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, RseNode*);
 static dsql_nod* pass1_lookup_alias(DsqlCompilerScratch*, const dsql_str*, dsql_nod*, bool);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
 static dsql_nod* pass1_merge(DsqlCompilerScratch*, dsql_nod*);
@@ -2687,10 +2688,7 @@ static dsql_nod* pass1_delete( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 			rse->dsqlOrder = pass1_sort(dsqlScratch, temp, NULL);
 
 		if ((temp = input->nod_arg[e_del_rows]))
-		{
-			rse->dsqlFirst = PASS1_node_psql(dsqlScratch, temp->nod_arg[e_rows_length], false);
-			rse->dsqlSkip = PASS1_node_psql(dsqlScratch, temp->nod_arg[e_rows_skip], false);
-		}
+			pass1_limit(dsqlScratch, temp->nod_arg[e_rows_length], temp->nod_arg[e_rows_skip], rse);
 
 		if (input->nod_arg[e_del_return])
 			rseNod->nod_flags |= NOD_SELECT_EXPR_SINGLETON;
@@ -4268,6 +4266,42 @@ dsql_nod* PASS1_label2(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_n
 
 /**
 
+ 	pass1_limit
+
+    @brief	Process the limit clause (FIRST/SKIP/ROWS)
+
+    @param dsqlScratch
+    @param firstNode
+    @param skipNode
+	@param rse
+
+ **/
+static void pass1_limit(DsqlCompilerScratch* dsqlScratch,
+						dsql_nod* firstNode, dsql_nod* skipNode,
+						RseNode* rse)
+{
+	DEV_BLKCHK(dsqlScratch, dsql_type_req);
+	DEV_BLKCHK(firstNode, dsql_type_nod);
+	DEV_BLKCHK(skipNode, dsql_type_nod);
+
+	// Initialize this stack variable, and make it look like a node
+	AutoPtr<dsql_nod> descNode(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+
+	if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
+		descNode->nod_desc.makeLong(0);
+	else
+		descNode->nod_desc.makeInt64(0);
+
+	rse->dsqlFirst = PASS1_node_psql(dsqlScratch, firstNode, false);
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlFirst, descNode, false);
+
+	rse->dsqlSkip = PASS1_node_psql(dsqlScratch, skipNode, false);
+	PASS1_set_parameter_type(dsqlScratch, rse->dsqlSkip, descNode, false);
+}
+
+
+/**
+
  	pass1_lookup_alias
 
     @brief	Lookup a matching item in the select list.
@@ -5465,43 +5499,11 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 	}
 	else if (rows)
 	{
-		if (rows->nod_arg[e_rows_length])
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, rows->nod_arg[e_rows_length], false);
-			rse->dsqlFirst = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, rows, false);
-		}
-
-		if (rows->nod_arg[e_rows_skip])
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, rows->nod_arg[e_rows_skip], false);
-			rse->dsqlSkip = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, rows, false);
-		}
+		pass1_limit(dsqlScratch, rows->nod_arg[e_rows_length], rows->nod_arg[e_rows_skip], rse);
 	}
 	else if (inputRse->dsqlFirst || inputRse->dsqlSkip)
 	{
-		// Initialize this stack variable, and make it look like a node.
-		AutoPtr<dsql_nod> descNode(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
-
-		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-			descNode->nod_desc.makeLong(0);
-		else
-			descNode->nod_desc.makeInt64(0);
-
-		if (inputRse->dsqlFirst)
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, inputRse->dsqlFirst, false);
-			rse->dsqlFirst = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, descNode, false);
-		}
-
-		if (inputRse->dsqlSkip)
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, inputRse->dsqlSkip, false);
-			rse->dsqlSkip = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, descNode, false);
-		}
+		pass1_limit(dsqlScratch, inputRse->dsqlFirst, inputRse->dsqlSkip, rse);
 	}
 
 	// Process boolean, if any
@@ -6411,19 +6413,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 
 	if (rows)
 	{
-		if (rows->nod_arg[e_rows_length])
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, rows->nod_arg[e_rows_length], false);
-			unionRse->dsqlFirst = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, rows, false);
-		}
-
-		if (rows->nod_arg[e_rows_skip])
-		{
-			dsql_nod* sub = PASS1_node_psql(dsqlScratch, rows->nod_arg[e_rows_skip], false);
-			unionRse->dsqlSkip = sub;
-			PASS1_set_parameter_type(dsqlScratch, sub, rows, false);
-		}
+		pass1_limit(dsqlScratch, rows->nod_arg[e_rows_length], rows->nod_arg[e_rows_skip], unionRse);
 	}
 
 	// PROJECT on all the select items unless UNION ALL was specified.
@@ -6806,10 +6796,7 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 			rse->dsqlOrder = pass1_sort(dsqlScratch, temp, NULL);
 
 		if ((temp = input->nod_arg[e_upd_rows]))
-		{
-			rse->dsqlFirst = PASS1_node_psql(dsqlScratch, temp->nod_arg[e_rows_length], false);
-			rse->dsqlSkip = PASS1_node_psql(dsqlScratch, temp->nod_arg[e_rows_skip], false);
-		}
+			pass1_limit(dsqlScratch, temp->nod_arg[e_rows_length], temp->nod_arg[e_rows_skip], rse);
 
 		if (input->nod_arg[e_upd_return])
 		{
@@ -7484,17 +7471,6 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 				return false;
 		}
 
-		case nod_rows:
-			{
-				bool result = false;
-				dsql_nod** ptr = in_node->nod_arg;
-				for (const dsql_nod* const* const end = ptr + in_node->nod_count; ptr < end; ptr++)
-				{
-					result |= PASS1_set_parameter_type(dsqlScratch, *ptr, node, force_varchar);
-				}
-				return result;
-			}
-
 		case nod_hidden_var:
 			return PASS1_set_parameter_type(dsqlScratch, in_node->nod_arg[e_hidden_var_expr],
 				node, force_varchar);
@@ -7607,15 +7583,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 			}
 		}
 		return;
-
-	case nod_rows:
-		{
-			dsql_nod** ptr = par_node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + par_node->nod_count; ptr < end; ptr++)
-				set_parameter_name(*ptr, fld_node, relation);
-
-			return;
-		}
 
 	case nod_hidden_var:
 		set_parameter_name(par_node->nod_arg[e_hidden_var_expr], fld_node, relation);

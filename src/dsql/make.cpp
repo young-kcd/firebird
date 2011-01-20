@@ -406,22 +406,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
 		return;
 
-	case nod_rows:
-		if (dsqlScratch->clientDialect <= SQL_DIALECT_V5)
-		{
-			desc->dsc_dtype = dtype_long;
-			desc->dsc_length = sizeof (SLONG);
-		}
-		else
-		{
-			desc->dsc_dtype = dtype_int64;
-			desc->dsc_length = sizeof (SINT64);
-		}
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_flags = 0; // Can first/skip accept NULL in the future?
-		return;
-
 	case nod_hidden_var:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr]);
 		return;
