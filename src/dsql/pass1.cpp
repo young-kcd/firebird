@@ -244,6 +244,7 @@ static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod*& 
 static dsql_nod* pass1_insert(CompiledStatement*, dsql_nod*, bool);
 static dsql_nod* pass1_join(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_label(CompiledStatement*, dsql_nod*);
+static void pass1_limit(CompiledStatement*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(CompiledStatement*, const dsql_str*, dsql_nod*, bool);
 static dsql_nod* pass1_make_derived_field(CompiledStatement*, thread_db*, dsql_nod*);
 static dsql_nod* pass1_merge(CompiledStatement*, dsql_nod*);
@@ -4329,8 +4330,7 @@ static dsql_nod* pass1_delete( CompiledStatement* statement, dsql_nod* input)
 		}
 
 		if ( (temp = input->nod_arg[e_del_rows]) ) {
-			rse->nod_arg[e_rse_first] = pass1_node_psql(statement, temp->nod_arg[e_rows_length], false);
-			rse->nod_arg[e_rse_skip] = pass1_node_psql(statement, temp->nod_arg[e_rows_skip], false);
+			pass1_limit(statement, temp, rse);
 		}
 
 		if (input->nod_arg[e_del_return])
@@ -6901,6 +6901,57 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 
 /**
 
+ 	pass1_limit
+
+    @brief	Process the limit clause (FIRST/SKIP/ROWS)
+
+
+    @param statement
+    @param input
+	@param output
+
+ **/
+static void pass1_limit(CompiledStatement* statement, dsql_nod* input, dsql_nod* output)
+{
+	DEV_BLKCHK(statement, dsql_type_req);
+	DEV_BLKCHK(input, dsql_type_nod);
+	DEV_BLKCHK(output, dsql_type_nod);
+
+	dsql_nod *first, *skip;
+
+	if (input->nod_type == nod_limit)
+	{
+		first = input->nod_arg[e_limit_length];
+		skip = input->nod_arg[e_limit_skip];
+	}
+	else if (input->nod_type == nod_rows)
+	{
+		first = input->nod_arg[e_rows_length];
+		skip = input->nod_arg[e_rows_skip];
+	}
+	else
+	{
+		fb_assert(false);
+	}
+
+	if (first)
+	{
+		dsql_nod* const sub = pass1_node_psql(statement, first, false);
+		output->nod_arg[e_rse_first] = sub;
+		set_parameter_type(statement, sub, input, false);
+	}
+
+	if (skip)
+	{
+		dsql_nod* const sub = pass1_node_psql(statement, skip, false);
+		output->nod_arg[e_rse_skip] = sub;
+		set_parameter_type(statement, sub, input, false);
+	}
+}
+
+
+/**
+
  	pass1_lookup_alias
 
     @brief	Lookup a matching item in the select list.
@@ -8051,19 +8102,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 	}
 	else if (node || (node = rows) )
 	{
-		const int length_index = rows ? e_rows_length : e_limit_length;
-		const int skip_index = rows ? e_rows_skip : e_limit_skip;
-
-		if (node->nod_arg[length_index]) {
-			dsql_nod* sub = pass1_node_psql(statement, node->nod_arg[length_index], false);
-			rse->nod_arg[e_rse_first] = sub;
-			set_parameter_type(statement, sub, node, false);
-		}
-		if (node->nod_arg[skip_index]) {
-			dsql_nod* sub = pass1_node_psql(statement, node->nod_arg[skip_index], false);
-			rse->nod_arg[e_rse_skip] = sub;
-			set_parameter_type(statement, sub, node, false);
-		}
+		pass1_limit(statement, node, rse);
 	}
 
 	// Process boolean, if any
@@ -8991,16 +9030,7 @@ static dsql_nod* pass1_union( CompiledStatement* statement, dsql_nod* input,
 
 	if (rows)
 	{
-		if (rows->nod_arg[e_rows_length]) {
-			dsql_nod* sub = pass1_node_psql(statement, rows->nod_arg[e_rows_length], false);
-			union_rse->nod_arg[e_rse_first] = sub;
-			set_parameter_type(statement, sub, rows, false);
-		}
-		if (rows->nod_arg[e_rows_skip]) {
-			dsql_nod* sub = pass1_node_psql(statement, rows->nod_arg[e_rows_skip], false);
-			union_rse->nod_arg[e_rse_skip] = sub;
-			set_parameter_type(statement, sub, rows, false);
-		}
+		pass1_limit(statement, rows, union_rse);
 	}
 
 	// PROJECT on all the select items unless UNION ALL was specified.
@@ -9354,8 +9384,7 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 		}
 
 		if ( (temp = input->nod_arg[e_upd_rows]) ) {
-			rse->nod_arg[e_rse_first] = pass1_node_psql(statement, temp->nod_arg[e_rows_length], false);
-			rse->nod_arg[e_rse_skip] = pass1_node_psql(statement, temp->nod_arg[e_rows_skip], false);
+			pass1_limit(statement, temp, rse);
 		}
 
 		if (input->nod_arg[e_upd_return])
