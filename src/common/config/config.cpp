@@ -300,7 +300,7 @@ const Firebird::RefPtr<Config> Config::getDefaultConfig()
 
 const char* Config::getMessage()
 {
-	return getDefaultConfig()->getMessage();
+	return firebirdConf().getMessage();
 }
 
 const char* Config::getInstallDirectory()
