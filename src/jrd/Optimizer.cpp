@@ -2067,6 +2067,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 							matches.add(currentInv->matches[j]);
 						}
 					}
+					if (currentInv->boolean)
+					{
+						if (!matches.exist(currentInv->boolean)) {
+							matches.add(currentInv->boolean);
+						}
+					}
 					invCandidate->matches.join(matches);
 					if (acceptAll) {
 						continue;
