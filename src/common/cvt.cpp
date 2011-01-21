@@ -226,7 +226,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		char temp2[50];
 		const char num_format[] = "%- #*.*g";
 		chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-		if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
+		if (chars_printed <= 0 || static_cast<unsigned int>(chars_printed) >= sizeof(temp2))
 			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 		// If the full-precision result is too wide for the destination,
@@ -242,7 +242,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 			chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-			if (chars_printed <= 0 || chars_printed >= sizeof(temp2))
+			if (chars_printed <= 0 || static_cast<unsigned int>(chars_printed) >= sizeof(temp2))
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
 			// It's possible that reducing the precision caused sprintf to switch
