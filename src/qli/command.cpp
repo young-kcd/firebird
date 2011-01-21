@@ -328,7 +328,7 @@ void CMD_set( qli_syntax* node)
 
 		case set_password:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_password));
+			length = MIN(string->con_desc.dsc_length + 1u, sizeof(QLI_default_password));
 			fb_utils::copy_terminate(QLI_default_password, (char*) string->con_data, length);
 			break;
 
@@ -367,7 +367,7 @@ void CMD_set( qli_syntax* node)
 
 		case set_user:
 			string = (qli_const*) value;
-			length = MIN(string->con_desc.dsc_length + 1, sizeof(QLI_default_user));
+			length = MIN(string->con_desc.dsc_length + 1u, sizeof(QLI_default_user));
 			fb_utils::copy_terminate(QLI_default_user, (char*) string->con_data, length);
 			break;
 

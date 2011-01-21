@@ -448,7 +448,7 @@ static void explain_printf(int level, const TEXT* control, const TEXT* string)
 	if (string)
 		printf(control, string);
 	else
-		printf(control);
+		printf("%s", control);
 }
 #endif
 
