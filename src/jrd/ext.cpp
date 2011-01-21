@@ -328,24 +328,52 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 	UCHAR* p = record->rec_data + offset;
 	const ULONG l = record->rec_length - offset;
 
+	if (file->ext_ifi == NULL)
+	{
+		ERR_post(Arg::Gds(isc_io_error) << "fseek" << Arg::Str(file->ext_filename) <<
+				 Arg::Gds(isc_io_open_err) << Arg::Unix(EBADF) <<
+				 Arg::Gds(isc_random) << "File not opened");
+	}
+
 	// hvlad: fseek will flush file buffer and degrade performance, so don't
 	// call it if it is not necessary. Note that we must flush file buffer if we
 	// do read after write
-	if (file->ext_ifi == NULL ||
-		((FTELL64(file->ext_ifi) != position || !(file->ext_flags & EXT_last_read)) &&
-			(FSEEK64(file->ext_ifi, position, SEEK_SET) != 0)) )
+
+	bool doSeek = false;
+	if (!(file->ext_flags & EXT_last_read))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
-				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		doSeek = true;
+	}
+	else
+	{
+		SINT64 offset = FTELL64(file->ext_ifi);
+		if (offset < 0)
+		{
+			ERR_post(Arg::Gds(isc_io_error) << STRINGIZE(FTELL64) << Arg::Str(file->ext_filename) <<
+					 Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
+		}
+		doSeek = (static_cast<FB_UINT64>(offset) != position);
+	}
+
+	// reset both flags cause we are going to move the file pointer
+	file->ext_flags &= ~(EXT_last_write | EXT_last_read);
+
+	if (doSeek)
+	{
+		if (FSEEK64(file->ext_ifi, position, SEEK_SET) != 0)
+		{
+			ERR_post(Arg::Gds(isc_io_error) << STRINGIZE(FSEEK64) << Arg::Str(file->ext_filename) <<
+					 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
+		}
 	}
 
 	if (!fread(p, l, 1, file->ext_ifi))
+	{
 		return false;
+	}
 
 	position += l;
-
 	file->ext_flags |= EXT_last_read;
-	file->ext_flags &= ~EXT_last_write;
 
 	// Loop thru fields setting missing fields to either blanks/zeros or the missing value
 
@@ -488,22 +516,24 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	// hvlad: fseek will flush file buffer and degrade performance, so don't
 	// call it if it is not necessary.	Note that we must flush file buffer if we
 	// do write after read
+	file->ext_flags &= ~EXT_last_read;
 	if (file->ext_ifi == NULL ||
 		(!(file->ext_flags & EXT_last_write) && FSEEK64(file->ext_ifi, (SINT64) 0, SEEK_END) != 0) )
 	{
+		file->ext_flags &= ~EXT_last_write;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
+		file->ext_flags &= ~EXT_last_write;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fwrite") << Arg::Str(file->ext_filename) <<
 				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	// fflush(file->ext_ifi);
 	file->ext_flags |= EXT_last_write;
-	file->ext_flags &= ~EXT_last_read;
 }
 
 
