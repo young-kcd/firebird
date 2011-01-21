@@ -1127,7 +1127,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, lbl* lock, USHORT 
 	else
 	{
 		UCHAR temp[512];
-		fb_assert(sizeof(temp) >= lock->lbl_length + 1); // Not enough, see <%d> below.
+		fb_assert(sizeof(temp) - 1u >= lock->lbl_length); // Not enough, see <%d> below.
 		UCHAR* p = temp;
 		const UCHAR* end_temp = p + sizeof(temp) - 1;
   		const UCHAR* q = lock->lbl_key;
