@@ -459,7 +459,7 @@ public:
 		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
 	}
 
-	int nextStream(bool check = true)
+	USHORT nextStream(bool check = true)
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
 		{

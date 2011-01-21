@@ -102,9 +102,9 @@ static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
 #endif
 static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
 	const char* option_name, RelationLockTypeMap& lockmap, const int level);
-static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
+static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, ULONG, USHORT);
 static const char* get_lockname_v3(const UCHAR lock);
-static SLONG inventory_page(thread_db*, SLONG);
+static ULONG inventory_page(thread_db*, ULONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
 static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
@@ -912,16 +912,16 @@ bool TRA_precommited(thread_db* tdbb, SLONG old_number, SLONG new_number)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	vcl* vector = dbb->dbb_pc_transactions;
+	TransactionsVector* vector = dbb->dbb_pc_transactions;
 	if (!vector)
 	{
 		if (old_number == new_number)
 			return false;
-		vector = dbb->dbb_pc_transactions = vcl::newVector(*dbb->dbb_permanent, 1);
+		vector = dbb->dbb_pc_transactions = TransactionsVector::newVector(*dbb->dbb_permanent, 1);
 	}
 
 	SLONG* zp = 0;
-	for (vcl::iterator p = vector->begin(), end = vector->end(); p < end; ++p)
+	for (TransactionsVector::iterator p = vector->begin(), end = vector->end(); p < end; ++p)
 	{
 		if (*p == old_number)
 			return (*p = new_number) ? true : false;
@@ -2342,7 +2342,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 static tx_inv_page* fetch_inventory_page(thread_db* tdbb,
 										 WIN* window,
-										 SLONG sequence,
+										 ULONG sequence,
 										 USHORT lock_level)
 {
 /**************************************
@@ -2402,7 +2402,7 @@ static const char* get_lockname_v3(const UCHAR lock)
 }
 
 
-static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
+static ULONG inventory_page(thread_db* tdbb, ULONG sequence)
 {
 /**************************************
  *
@@ -2422,16 +2422,16 @@ static SLONG inventory_page(thread_db* tdbb, SLONG sequence)
 
 	WIN window(DB_PAGE_SPACE, -1);
 	vcl* vector = dbb->dbb_t_pages;
-	while (!vector || sequence >= (SLONG) vector->count())
+	while (!vector || sequence >= vector->count())
 	{
 		DPM_scan_pages(tdbb);
-		if ((vector = dbb->dbb_t_pages) && sequence < (SLONG) vector->count())
+		if ((vector = dbb->dbb_t_pages) && sequence < vector->count())
 			break;
 		if (!vector)
 			BUGCHECK(165);		// msg 165 cannot find tip page
 		window.win_page = (*vector)[vector->count() - 1];
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);
-		const SLONG next = tip->tip_next;
+		const ULONG next = tip->tip_next;
 		CCH_RELEASE(tdbb, &window);
 		if (!(window.win_page = next))
 			BUGCHECK(165);		// msg 165 cannot find tip page

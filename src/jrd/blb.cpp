@@ -89,7 +89,7 @@ static blb* allocate_blob(thread_db*, jrd_tra*);
 static ISC_STATUS blob_filter(USHORT, BlobControl*);
 static blb* copy_blob(thread_db*, const bid*, bid*, USHORT, const UCHAR*, USHORT);
 static void delete_blob(thread_db*, blb*, ULONG);
-static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
+static void delete_blob_id(thread_db*, const bid*, ULONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
@@ -363,7 +363,7 @@ blb* BLB_create2(thread_db* tdbb,
 void BLB_garbage_collect(thread_db* tdbb,
 						 RecordStack& going,
 						 RecordStack& staying,
-						 SLONG prior_page, jrd_rel* relation)
+						 ULONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -1359,7 +1359,7 @@ blb* BLB_open2(thread_db* tdbb,
 		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
-		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, (SLONG) 0);
+		DPM_get_blob(tdbb, blob, blob_id->get_permanent_number(), false, 0);
 
 		// If the blob is known to be damaged, ignore it.
 
@@ -2126,8 +2126,8 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 			const PageNumber page1(pageSpaceID, *ptr);
 			PAG_release_page(tdbb, page1, prior);
 			page = (blob_page*) buffer;
-			const SLONG* ptr2 = page->blp_page;
-			for (const SLONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
+			const ULONG* ptr2 = page->blp_page;
+			for (const ULONG* const end2 = ptr2 + blob->blb_pointers; ptr2 < end2; ptr2++)
 			{
 				if (*ptr2) {
 					PAG_release_page(tdbb, PageNumber(pageSpaceID, *ptr2), page1);
@@ -2138,7 +2138,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 }
 
 
-static void delete_blob_id(thread_db* tdbb, const bid* blob_id, SLONG prior_page, jrd_rel* relation)
+static void delete_blob_id(thread_db* tdbb, const bid* blob_id, ULONG prior_page, jrd_rel* relation)
 {
 /**************************************
  *
@@ -2262,7 +2262,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 	SET_TDBB(tdbb);
 #ifdef SUPERSERVER_V2
 	Database* dbb = tdbb->getDatabase();
-	SLONG pages[PREFETCH_MAX_PAGES];
+	ULONG pages[PREFETCH_MAX_PAGES];
 #endif
 
 	const vcl* vector = blob->blb_pages;
@@ -2316,7 +2316,7 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 										LCK_read, pag_blob);
 	}
 
-	if (page->blp_sequence != (SLONG) blob->blb_sequence)
+	if (page->blp_sequence != blob->blb_sequence)
 		CORRUPT(201);			// msg 201 cannot find blob page
 
 	blob->blb_sequence++;

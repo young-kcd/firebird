@@ -63,7 +63,7 @@ enum idx_null_state {
 
 struct index_desc
 {
-	SLONG	idx_root;						// Index root
+	ULONG	idx_root;						// Index root
 	float	idx_selectivity;				// selectivity of index
 	USHORT	idx_id;
 	UCHAR	idx_flags;
@@ -137,7 +137,7 @@ const int idx_marker		= 16;	// marker used in procedure sort_indices
 struct index_insertion
 {
 	RecordNumber iib_number;		// record number (or lower level page)
-	SLONG iib_sibling;				// right sibling page
+	ULONG iib_sibling;				// right sibling page
 	index_desc*	iib_descriptor;		// index descriptor
 	jrd_rel*	iib_relation;		// relation block
 	temporary_key*	iib_key;		// varying string for insertion
@@ -230,7 +230,7 @@ class BtrPageGCLock : public Lock
 	// as second long needed for 8-byte key already "allocated" by compiler
 	// because of alignment rules. Anyway, to be formally correct, let introduce
 	// 4-byte field for guarantee we have space for lock key.
-	SLONG unused;
+	ULONG unused;
 
 public:
 	explicit BtrPageGCLock(thread_db* tdbb);

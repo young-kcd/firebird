@@ -44,11 +44,12 @@ void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
 void		CCH_get_related(Jrd::thread_db*, Jrd::PageNumber, Jrd::PagesArray&);
-Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, const bool);
+Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, ULONG, SSHORT, SCHAR, SSHORT, const bool);
 void		CCH_init(Jrd::thread_db*, ULONG);
 void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
 void		CCH_must_write(Jrd::win*);
-void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
+void		CCH_precedence(Jrd::thread_db*, Jrd::win*, ULONG);
+void		CCH_tra_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
 #ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
@@ -115,17 +116,17 @@ inline void CCH_MARK_SYSTEM(Jrd::thread_db* tdbb, Jrd::win* window)
 	CCH_mark (tdbb, window, 1, 0);
 }
 
-inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
+inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, ULONG page, SSHORT lock, SCHAR page_type)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, 1, false);
 }
 
-inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type, SSHORT latch_wait)
+inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, ULONG page, SSHORT lock, SCHAR page_type, SSHORT latch_wait)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, latch_wait, false);
 }
 
-inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
+inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db* tdbb, Jrd::win* window, ULONG page, SSHORT lock, SCHAR page_type)
 {
 	return CCH_handoff (tdbb, window, page, lock, page_type, 1, true);
 }

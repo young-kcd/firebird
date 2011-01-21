@@ -619,7 +619,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	// gather continuation files
 
-	SLONG page = HEADER_PAGE;
+	ULONG page = HEADER_PAGE;
 	do {
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
@@ -1170,8 +1170,8 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 	{
 		++relation->rel_pointer_pages;
 		memcpy(ptr_page, (const SCHAR*) db_read(next_pp), tddba->page_size);
-		const SLONG* ptr = ptr_page->ppg_page;
-		for (const SLONG* const end = ptr + ptr_page->ppg_count; ptr < end; ptr++)
+		const ULONG* ptr = ptr_page->ppg_page;
+		for (const ULONG* const end = ptr + ptr_page->ppg_count; ptr < end; ptr++)
 		{
 			++relation->rel_slots;
 			if (*ptr)

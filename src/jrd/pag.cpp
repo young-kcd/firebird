@@ -525,16 +525,16 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 	// Find an allocation page with something on it
 
-	SLONG relative_bit = -1;
-	SLONG sequence;
-	SLONG pipMin;
+	ULONG relative_bit = MAX_ULONG;
+	ULONG sequence;
+	ULONG pipMin;
 	for (sequence = pageSpace->pipHighWater; true; sequence++)
 	{
 		pip_window.win_page = (sequence == 0) ?
 			pageSpace->pipFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
 		page_inv_page* pip_page = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 
-		pipMin = MAX_SLONG;
+		pipMin = MAX_ULONG - 1;
 		const UCHAR* end = (UCHAR*) pip_page + dbb->dbb_page_size;
 		for (bytes = &pip_page->pip_bits[pip_page->pip_min >> 3]; bytes < end; bytes++)
 		{
@@ -549,7 +549,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 						relative_bit = ((bytes - pip_page->pip_bits) << 3) + i;
 						pipMin = MIN(pipMin, relative_bit);
 
-						const SLONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
+						const ULONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
 						window->win_page = pageNum;
 						new_page = CCH_fake(tdbb, window, 0);	// don't wait on latch
 						if (new_page)
@@ -1470,8 +1470,8 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 	PageSpace* pageSpace = pageMgr.findPageSpace(number.getPageSpaceID());
 	fb_assert(pageSpace);
 
-	const SLONG sequence = number.getPageNum() / pageMgr.pagesPerPIP;
-	const SLONG relative_bit = number.getPageNum() % pageMgr.pagesPerPIP;
+	const ULONG sequence = number.getPageNum() / pageMgr.pagesPerPIP;
+	const ULONG relative_bit = number.getPageNum() % pageMgr.pagesPerPIP;
 
 	WIN pip_window(number.getPageSpaceID(), (sequence == 0) ?
 		pageSpace->pipFirst : sequence * pageMgr.pagesPerPIP - 1);

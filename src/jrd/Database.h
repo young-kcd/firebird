@@ -76,11 +76,117 @@ namespace Jrd
 	class BlobFilter;
 	class TxPageCache;
 	class BackupManager;
-	class vcl;
     class ExternalFileDirectoryList;
 	class MonitoringData;
 
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
+
+
+// general purpose vector
+template <class T, BlockType TYPE = type_vec>
+class vec_base : protected pool_alloc<TYPE>
+{
+public:
+	typedef typename Firebird::Array<T>::iterator iterator;
+	typedef typename Firebird::Array<T>::const_iterator const_iterator;
+	/*
+	static vec_base* newVector(MemoryPool& p, int len)
+	{
+		return FB_NEW(p) vec_base<T, TYPE>(p, len);
+	}
+	static vec_base* newVector(MemoryPool& p, const vec_base& base)
+	{
+		return FB_NEW(p) vec_base<T, TYPE>(p, base);
+	}
+	*/
+
+	size_t count() const { return v.getCount(); }
+	T& operator[](size_t index) { return v[index]; }
+	const T& operator[](size_t index) const { return v[index]; }
+
+	iterator begin() { return v.begin(); }
+	iterator end() { return v.end(); }
+
+	const_iterator begin() const { return v.begin(); }
+	const_iterator end() const { return v.end(); }
+
+	void clear() { v.clear(); }
+
+//	T* memPtr() { return &*(v.begin()); }
+	T* memPtr() { return &v[0]; }
+
+	void resize(size_t n, T val = T()) { v.resize(n, val); }
+
+	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
+
+protected:
+	vec_base(MemoryPool& p, int len)
+		: v(p, len)
+	{
+		v.resize(len);
+	}
+	vec_base(MemoryPool& p, const vec_base& base)
+		: v(p)
+	{
+		v = base.v;
+	}
+
+private:
+	Firebird::Array<T> v;
+};
+
+template <typename T>
+class vec : public vec_base<T, type_vec>
+{
+public:
+	static vec* newVector(MemoryPool& p, int len)
+	{
+		return FB_NEW(p) vec<T>(p, len);
+	}
+	static vec* newVector(MemoryPool& p, const vec& base)
+	{
+		return FB_NEW(p) vec<T>(p, base);
+	}
+	static vec* newVector(MemoryPool& p, vec* base, int len)
+	{
+		if (!base)
+			base = FB_NEW(p) vec<T>(p, len);
+		else if (len > (int) base->count())
+			base->resize(len);
+		return base;
+	}
+
+private:
+	vec(MemoryPool& p, int len) : vec_base<T, type_vec>(p, len) {}
+	vec(MemoryPool& p, const vec& base) : vec_base<T, type_vec>(p, base) {}
+};
+
+class vcl : public vec_base<ULONG, type_vcl>
+{
+public:
+	static vcl* newVector(MemoryPool& p, int len)
+	{
+		return FB_NEW(p) vcl(p, len);
+	}
+	static vcl* newVector(MemoryPool& p, const vcl& base)
+	{
+		return FB_NEW(p) vcl(p, base);
+	}
+	static vcl* newVector(MemoryPool& p, vcl* base, int len)
+	{
+		if (!base)
+			base = FB_NEW(p) vcl(p, len);
+		else if (len > (int) base->count())
+			base->resize(len);
+		return base;
+	}
+
+private:
+	vcl(MemoryPool& p, int len) : vec_base<ULONG, type_vcl>(p, len) {}
+	vcl(MemoryPool& p, const vcl& base) : vec_base<ULONG, type_vcl>(p, base) {}
+};
+
+typedef vec<SLONG> TransactionsVector;
 
 
 //
@@ -431,12 +537,12 @@ public:
 	crypt_routine dbb_encrypt;			// External encryption routine
 	crypt_routine dbb_decrypt;			// External decryption routine
 
-	Firebird::Array<CharSetContainer*>		dbb_charsets;	// intl character set descriptions
+	Firebird::Array<CharSetContainer*>	dbb_charsets;		// intl character set descriptions
 	TxPageCache*	dbb_tip_cache;		// cache of latest known state of all transactions in system
-	vcl*		dbb_pc_transactions;	// active precommitted transactions
-	BackupManager*	dbb_backup_manager;	// physical backup manager
-	Firebird::TimeStamp dbb_creation_date; // creation date
-	Firebird::Array<Function*> dbb_functions;	// User defined functions
+	TransactionsVector*	dbb_pc_transactions;				// active precommitted transactions
+	BackupManager*	dbb_backup_manager;						// physical backup manager
+	Firebird::TimeStamp dbb_creation_date; 					// creation date
+	Firebird::Array<Function*> dbb_functions;				// User defined functions
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, USHORT> > > dbb_charset_ids;	// Character set ids
 	ExternalFileDirectoryList* dbb_external_file_directory_list;

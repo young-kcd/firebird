@@ -515,7 +515,7 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	}
 }
 
-void IscStatement::doSetInParams(thread_db* tdbb, int count, const string* const* names,
+void IscStatement::doSetInParams(thread_db* tdbb, unsigned int count, const string* const* names,
 	const NestConst<Jrd::ValueExprNode>* params)
 {
 	Statement::doSetInParams(tdbb, count, names, params);
@@ -523,7 +523,7 @@ void IscStatement::doSetInParams(thread_db* tdbb, int count, const string* const
 	if (names)
 	{
 		XSQLVAR* xVar = m_in_xsqlda->sqlvar;
-		for (int i = 0; i < count; i++, xVar++)
+		for (unsigned int i = 0; i < count; i++, xVar++)
 		{
 			const int max_len = sizeof(xVar->sqlname);
 			const int len = MIN(names[i]->length(), max_len - 1);

@@ -77,17 +77,17 @@ const int MAX_LEVELS	= 16;
 
 #define OVERSIZE	(MAX_PAGE_SIZE + BTN_PAGE_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
 
-// END_LEVEL (-1) is choosen here as a unknown/none value, because it's
+// END_LEVEL (~0) is choosen here as a unknown/none value, because it's
 // already reserved as END_LEVEL marker for page number and record number.
 //
 // NO_VALUE_PAGE and NO_VALUE are the same constant, but with different size
 // Sign-extension mechanizm guaranties that they may be compared to each other safely
-const SLONG NO_VALUE_PAGE = END_LEVEL;
+const ULONG NO_VALUE_PAGE = END_LEVEL;
 const RecordNumber NO_VALUE(END_LEVEL);
 
 // A split page will never have the number 0, because that's the value
 // of the main page.
-const SLONG NO_SPLIT	= 0;
+const ULONG NO_SPLIT	= 0;
 
 // Thresholds for determing of a page should be garbage collected
 // Garbage collect if page size is below GARBAGE_COLLECTION_THRESHOLD
@@ -167,8 +167,8 @@ enum contents {
 	contents_above_threshold
 };
 
-static SLONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*,
-					  SLONG*, SLONG*);
+static ULONG add_node(thread_db*, WIN*, index_insertion*, temporary_key*, RecordNumber*,
+					  ULONG*, ULONG*);
 static void compress(thread_db*, const dsc*, temporary_key*, USHORT, bool, bool, USHORT);
 static USHORT compress_root(thread_db*, index_root_page*);
 static void copy_key(const temporary_key*, temporary_key*);
@@ -184,15 +184,15 @@ static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*
 static UCHAR* find_area_start_point(btree_page*, const temporary_key*, UCHAR*,
 									USHORT*, bool, bool, RecordNumber = NO_VALUE);
 
-static SLONG find_page(btree_page*, const temporary_key*, UCHAR, RecordNumber = NO_VALUE,
+static ULONG find_page(btree_page*, const temporary_key*, UCHAR, RecordNumber = NO_VALUE,
 					   bool = false);
 
-static contents garbage_collect(thread_db*, WIN*, SLONG);
+static contents garbage_collect(thread_db*, WIN*, ULONG);
 static void generate_jump_nodes(thread_db*, btree_page*, jumpNodeList*, USHORT,
 								USHORT*, USHORT*, USHORT*);
 
-static SLONG insert_node(thread_db*, WIN*, index_insertion*, temporary_key*,
-						 RecordNumber*, SLONG*, SLONG*);
+static ULONG insert_node(thread_db*, WIN*, index_insertion*, temporary_key*,
+						 RecordNumber*, ULONG*, ULONG*);
 
 static INT64_KEY make_int64_key(SINT64, SSHORT);
 #ifdef DEBUG_INDEXKEY
@@ -871,7 +871,7 @@ btree_page* BTR_find_page(thread_db* tdbb,
 			while (true)
 			{
 				const temporary_key* tkey = ignoreNulls ? &firstNotNullKey : lower;
-				const SLONG number = find_page(page, tkey, idx->idx_flags,
+				const ULONG number = find_page(page, tkey, idx->idx_flags,
 					NO_VALUE, (retrieval->irb_generic & (irb_starting | irb_partial)));
 				if (number != END_BUCKET)
 				{
@@ -939,7 +939,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	RecordNumber recordNumber(0);
 	BtrPageGCLock lock(tdbb);
 	insertion->iib_dont_gc_lock = &lock;
-	SLONG split_page = add_node(tdbb, &window, insertion, &key, &recordNumber, NULL, NULL);
+	ULONG split_page = add_node(tdbb, &window, insertion, &key, &recordNumber, NULL, NULL);
 	if (split_page == NO_SPLIT) {
 		return;
 	}
@@ -2152,13 +2152,13 @@ bool BTR_types_comparable(const dsc& target, const dsc& source, const int flags)
 }
 
 
-static SLONG add_node(thread_db* tdbb,
+static ULONG add_node(thread_db* tdbb,
 					  WIN* window,
 					  index_insertion* insertion,
 					  temporary_key* new_key,
 					  RecordNumber* new_record_number,
-					  SLONG* original_page,
-					  SLONG* sibling_page)
+					  ULONG* original_page,
+					  ULONG* sibling_page)
 {
 /**************************************
  *
@@ -2182,7 +2182,7 @@ static SLONG add_node(thread_db* tdbb,
 	{
 		while (true)
 		{
-			const SLONG split = insert_node(tdbb, window, insertion, new_key,
+			const ULONG split = insert_node(tdbb, window, insertion, new_key,
 				new_record_number, original_page, sibling_page);
 			if (split != NO_VALUE_PAGE) {
 				return split;
@@ -2195,7 +2195,7 @@ static SLONG add_node(thread_db* tdbb,
 	// If we're above the leaf level, find the appropriate node in the chain of sibling pages.
 	// Hold on to this position while we recurse down to the next level, in case there's a
 	// split at the lower level, in which case we need to insert the new page at this level.
-	SLONG page;
+	ULONG page;
 	while (true)
 	{
 		page = find_page(bucket, insertion->iib_key, insertion->iib_descriptor->idx_flags,
@@ -2220,7 +2220,7 @@ static SLONG add_node(thread_db* tdbb,
 	BtrPageGCLock lockLower(tdbb);
 	propagate.iib_dont_gc_lock = insertion->iib_dont_gc_lock;
 	insertion->iib_dont_gc_lock = &lockLower;
-	SLONG split = add_node(tdbb, window, insertion, new_key, new_record_number, &page,
+	ULONG split = add_node(tdbb, window, insertion, new_key, new_record_number, &page,
 						   &propagate.iib_sibling);
 
 	if (split == NO_SPLIT)
@@ -2251,8 +2251,8 @@ static SLONG add_node(thread_db* tdbb,
 	// now loop through the sibling pages trying to find the appropriate
 	// place to put the pointer to the lower level page--remember that the
 	// page we were on could have split while we weren't looking
-	SLONG original_page2;
-	SLONG sibling_page2;
+	ULONG original_page2;
+	ULONG sibling_page2;
 	while (true)
 	{
 		split = insert_node(tdbb, window, &propagate, new_key, new_record_number, &original_page2,
@@ -2956,7 +2956,7 @@ static void delete_tree(thread_db* tdbb,
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
-	SLONG down = next.getPageNum();
+	ULONG down = next.getPageNum();
 	// Delete the index tree from the top down.
 	while (next.getPageNum())
 	{
@@ -4281,7 +4281,7 @@ static UCHAR* find_area_start_point(btree_page* bucket, const temporary_key* key
 }
 
 
-static SLONG find_page(btree_page* bucket, const temporary_key* key,
+static ULONG find_page(btree_page* bucket, const temporary_key* key,
 					   UCHAR idx_flags, RecordNumber find_record_number,
 					   bool retrieval)
 {
@@ -4339,7 +4339,7 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 		BUGCHECK(206);	// msg 206 exceeded index level
 	}
 
-	SLONG previousNumber = node.pageNumber;
+	ULONG previousNumber = node.pageNumber;
 	if (node.nodePointer == BTreeNode::getPointerFirstNode(bucket))
 	{
 		prefix = 0;
@@ -4447,11 +4447,11 @@ static SLONG find_page(btree_page* bucket, const temporary_key* key,
 	}
 
 	// NOTREACHED
-	return -1;	// superfluous return to shut lint up
+	return ~0;	// superfluous return to shut lint up
 }
 
 
-static contents garbage_collect(thread_db* tdbb, WIN* window, SLONG parent_number)
+static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_number)
 {
 /**************************************
  *
@@ -5184,13 +5184,13 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 }
 
 
-static SLONG insert_node(thread_db* tdbb,
+static ULONG insert_node(thread_db* tdbb,
 						 WIN* window,
 						 index_insertion* insertion,
 						 temporary_key* new_key,
 						 RecordNumber* new_record_number,
-						 SLONG* original_page,
-						 SLONG* sibling_page)
+						 ULONG* original_page,
+						 ULONG* sibling_page)
 {
 /**************************************
  *
@@ -5945,7 +5945,7 @@ static contents remove_node(thread_db* tdbb, index_insertion* insertion, WIN* wi
 
 	while (true)
 	{
-		const SLONG number = find_page(page, insertion->iib_key, idx->idx_flags, insertion->iib_number);
+		const ULONG number = find_page(page, insertion->iib_key, idx->idx_flags, insertion->iib_number);
 
 		// we should always find the node, but let's make sure
 		if (number == END_LEVEL)

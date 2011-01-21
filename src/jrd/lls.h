@@ -37,7 +37,6 @@ namespace Jrd {
 	typedef Firebird::Stack<ValueExprNode*> ValueExprNodeStack;
 	typedef Firebird::Stack<RecordSourceNode*> RecordSourceNodeStack;
 	typedef Firebird::Stack<StmtNode*> StmtNodeStack;
-	typedef Firebird::Stack<SLONG> PageStack;
 	typedef Firebird::Stack<UCHAR*> UCharStack;
 }
 

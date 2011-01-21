@@ -47,18 +47,20 @@ double	DPM_cardinality(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::Format*);
 bool	DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
 int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
 void	DPM_create_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-SLONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
-void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, SLONG);
+ULONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
+void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, ULONG);
 void	DPM_delete_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 bool	DPM_fetch(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SSHORT	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
 void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, bool, SINT64);
 bool	DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
-ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, RecordNumber, bool, SLONG);
+ULONG	DPM_get_blob(Jrd::thread_db*, Jrd::blb*, RecordNumber, bool, ULONG);
 bool	DPM_next(Jrd::thread_db*, Jrd::record_param*, USHORT, bool);
-void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, SLONG);
+void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, ULONG);
+#ifdef SUPERSERVER_V2
 SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::PageBitmap*, SLONG);
+#endif
 void	DPM_scan_pages(Jrd::thread_db*);
 void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, USHORT);
 RecordNumber DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);

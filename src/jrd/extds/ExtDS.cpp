@@ -1227,7 +1227,7 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 {
 	size_t count = params ? params->args.getCount() : 0;
 
-	m_error = (names && ((int) m_sqlParamNames.getCount() != count || count == 0)) ||
+	m_error = (names && (m_sqlParamNames.getCount() != count || count == 0)) ||
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error)
@@ -1238,16 +1238,16 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 
 	if (m_sqlParamNames.getCount())
 	{
-		const int sqlCount = m_sqlParamsMap.getCount();
+		const unsigned int sqlCount = m_sqlParamsMap.getCount();
 		// Here NestConst plays against its objective. It temporary unconstifies the values.
 		Array<NestConst<ValueExprNode> > sqlParamsArray(getPool(), 16);
 		NestConst<ValueExprNode>* sqlParams = sqlParamsArray.getBuffer(sqlCount);
 
-		for (int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
+		for (unsigned int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
 			const string* sqlName = m_sqlParamsMap[sqlNum];
 
-			int num = 0;
+			unsigned int num = 0;
 			for (; num < count; num++)
 			{
 				if (*names[num] == *sqlName)
@@ -1269,7 +1269,7 @@ void Statement::setInParams(thread_db* tdbb, const string* const* names,
 		doSetInParams(tdbb, count, names, (params ? params->args.begin() : NULL));
 }
 
-void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/,
+void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const string* const* /*names*/,
 	const NestConst<ValueExprNode>* params)
 {
 	if (count != getInputs())

@@ -188,9 +188,9 @@ const SCHAR pag_max				= 10;		// Max page type
 
 // Pre-defined page numbers
 
-const SLONG HEADER_PAGE		= 0;
-const SLONG FIRST_PIP_PAGE	= 1;
-const SLONG FIRST_SCN_PAGE	= 2;
+const ULONG HEADER_PAGE		= 0;
+const ULONG FIRST_PIP_PAGE	= 1;
+const ULONG FIRST_SCN_PAGE	= 2;
 
 // Page size limits
 
@@ -221,11 +221,11 @@ typedef pag* PAG;
 struct blob_page
 {
 	pag blp_header;
-	SLONG blp_lead_page;		// First page of blob (for redundancy only)
-	SLONG blp_sequence;			// Sequence within blob
+	ULONG blp_lead_page;		// First page of blob (for redundancy only)
+	ULONG blp_sequence;			// Sequence within blob
 	USHORT blp_length;			// Bytes on page
 	USHORT blp_pad;				// Unused
-	SLONG blp_page[1];			// Page number if level 1
+	ULONG blp_page[1];			// Page number if level 1
 };
 
 #define BLP_SIZE	OFFSETA(Ods::blob_page*, blp_page)
@@ -238,8 +238,8 @@ const UCHAR blp_pointers	= 1;		// Blob pointer page, not data page
 struct btree_page
 {
 	pag btr_header;
-	SLONG btr_sibling;			// right sibling page
-	SLONG btr_left_sibling;		// left sibling page
+	ULONG btr_sibling;			// right sibling page
+	ULONG btr_left_sibling;		// left sibling page
 	SLONG btr_prefix_total;		// sum of all prefixes on page
 	USHORT btr_relation;		// relation id for consistency
 	USHORT btr_length;			// length of data in bucket
@@ -257,7 +257,7 @@ struct IndexNode
 	UCHAR* nodePointer;			// pointer to where this node can be read from the page
 	USHORT prefix;				// size of compressed prefix
 	USHORT length;				// length of data in node
-	SLONG pageNumber;			// page number
+	ULONG pageNumber;			// page number
 	UCHAR* data;				// Data can be read from here
 	RecordNumber recordNumber;	// record number
 	bool isEndBucket;
@@ -293,7 +293,7 @@ const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_jump_info);
 struct data_page
 {
 	pag dpg_header;
-	SLONG dpg_sequence;			// Sequence number in relation
+	ULONG dpg_sequence;			// Sequence number in relation
 	USHORT dpg_relation;		// Relation id
 	USHORT dpg_count;			// Number of record segments on page
 	struct dpg_repeat
@@ -323,7 +323,7 @@ struct index_root_page
 	USHORT irt_count;				// Number of indices
 	struct irt_repeat
 	{
-		SLONG irt_root;				// page number of index root
+		ULONG irt_root;				// page number of index root
 		union {
 			float irt_selectivity;	// selectivity of index - NOT USED since ODS11
 			SLONG irt_transaction;	// transaction in progress
@@ -352,8 +352,9 @@ const USHORT irt_in_progress= 4;
 const USHORT irt_expression	= 32; // Tested, disabled and restored in validation.cpp but never set originally
 
 const int STUFF_COUNT		= 4;
-const SLONG END_LEVEL		= -1;
-const SLONG END_BUCKET		= -2;
+
+const ULONG END_LEVEL		= ~0;
+const ULONG END_BUCKET		= (~0) << 1;
 
 // Header page
 
@@ -362,7 +363,7 @@ struct header_page
 	pag hdr_header;
 	USHORT hdr_page_size;			// Page size of database
 	USHORT hdr_ods_version;			// Version of on-disk structure
-	SLONG hdr_PAGES;				// Page number of PAGES relation
+	ULONG hdr_PAGES;				// Page number of PAGES relation
 	ULONG hdr_next_page;			// Page number of next hdr page
 	SLONG hdr_oldest_transaction;	// Oldest interesting transaction
 	SLONG hdr_oldest_active;		// Oldest transaction thought active
@@ -427,8 +428,8 @@ const USHORT hdr_shutdown_single	= 0x1080;
 struct page_inv_page
 {
 	pag pip_header;
-	SLONG pip_min;				// Lowest (possible) free page
-	SLONG pip_used;				// Number of pages allocated from this PIP page
+	ULONG pip_min;				// Lowest (possible) free page
+	ULONG pip_used;				// Number of pages allocated from this PIP page
 	UCHAR pip_bits[1];
 };
 
@@ -477,12 +478,12 @@ struct scns_page
 struct pointer_page
 {
 	pag ppg_header;
-	SLONG ppg_sequence;			// Sequence number in relation
-	SLONG ppg_next;				// Next pointer page in relation
+	ULONG ppg_sequence;			// Sequence number in relation
+	ULONG ppg_next;				// Next pointer page in relation
 	USHORT ppg_count;			// Number of slots active
 	USHORT ppg_relation;		// Relation id
 	USHORT ppg_min_space;		// Lowest slot with space available
-	SLONG ppg_page[1];			// Data page vector
+	ULONG ppg_page[1];			// Data page vector
 };
 
 // pag_flags
@@ -513,7 +514,7 @@ const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
 struct tx_inv_page
 {
 	pag tip_header;
-	SLONG tip_next;				// Next transaction inventory page
+	ULONG tip_next;				// Next transaction inventory page
 	UCHAR tip_transactions[1];
 };
 
@@ -524,7 +525,7 @@ struct tx_inv_page
 struct generator_page
 {
 	pag gpg_header;
-	SLONG gpg_sequence;			// Sequence number
+	ULONG gpg_sequence;			// Sequence number
 	SINT64 gpg_values[1];		// Generator vector
 };
 
@@ -534,7 +535,7 @@ struct generator_page
 struct rhd
 {
 	SLONG rhd_transaction;		// transaction id
-	SLONG rhd_b_page;			// back pointer
+	ULONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line
 	USHORT rhd_flags;			// flags, etc
 	UCHAR rhd_format;			// format version
@@ -548,11 +549,11 @@ struct rhd
 struct rhdf
 {
 	SLONG rhdf_transaction;		// transaction id
-	SLONG rhdf_b_page;			// back pointer
+	ULONG rhdf_b_page;			// back pointer
 	USHORT rhdf_b_line;			// back line
 	USHORT rhdf_flags;			// flags, etc
 	UCHAR rhdf_format;			// format version    // until here, same than rhd
-	SLONG rhdf_f_page;			// next fragment page
+	ULONG rhdf_f_page;			// next fragment page
 	USHORT rhdf_f_line;			// next fragment line
 	UCHAR rhdf_data[1];			// Blob data
 };
@@ -564,17 +565,17 @@ struct rhdf
 
 struct blh
 {
-	SLONG blh_lead_page;		// First data page number
-	SLONG blh_max_sequence;		// Number of data pages
+	ULONG blh_lead_page;		// First data page number
+	ULONG blh_max_sequence;		// Number of data pages
 	USHORT blh_max_segment;		// Longest segment
 	USHORT blh_flags;			// flags, etc
 	UCHAR blh_level;			// Number of address levels
-	SLONG blh_count;			// Total number of segments
-	SLONG blh_length;			// Total length of data
+	ULONG blh_count;			// Total number of segments
+	ULONG blh_length;			// Total length of data
 	USHORT blh_sub_type;		// Blob sub-type
 	UCHAR blh_charset;			// Blob charset (since ODS 11.1)
 	UCHAR blh_unused;
-	SLONG blh_page[1];			// Page vector for blob pages
+	ULONG blh_page[1];			// Page vector for blob pages
 };
 
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
@@ -619,12 +620,12 @@ struct InternalArrayDesc
 	USHORT iad_struct_count;	// Number of struct elements
 	USHORT iad_element_length;	// Length of array element
 	USHORT iad_length;			// Length of array descriptor
-	SLONG iad_count;			// Total number of elements
-	SLONG iad_total_length;		// Total length of array
+	ULONG iad_count;			// Total number of elements
+	ULONG iad_total_length;		// Total length of array
 	struct iad_repeat
 	{
 		Descriptor iad_desc;	// Element descriptor
-		SLONG iad_length;		// Length of "vector" element
+		ULONG iad_length;		// Length of "vector" element
 		SLONG iad_lower;		// Lower bound
 		SLONG iad_upper;		// Upper bound
 	};

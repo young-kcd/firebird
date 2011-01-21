@@ -37,7 +37,7 @@ void   BLB_check_well_formed(Jrd::thread_db*, const dsc* desc, Jrd::blb*);
 void   BLB_close(Jrd::thread_db*, Jrd::blb*);
 Jrd::blb*   BLB_create(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*);
 Jrd::blb*   BLB_create2(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, USHORT, const UCHAR*);
-void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, SLONG, Jrd::jrd_rel*);
+void   BLB_garbage_collect(Jrd::thread_db*, Jrd::RecordStack&, Jrd::RecordStack&, ULONG, Jrd::jrd_rel*);
 void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb);
 void BLB_gen_bpb_from_descs(const dsc*, const dsc*, Firebird::UCharBuffer&);
 Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);

@@ -578,7 +578,7 @@ protected:
 	virtual bool doFetch(Jrd::thread_db* tdbb);
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop);
 
-	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count, const Firebird::string* const* names,
 		const NestConst<Jrd::ValueExprNode>* params);
 
 	IscTransaction* getIscTransaction() { return (IscTransaction*) m_transaction; }

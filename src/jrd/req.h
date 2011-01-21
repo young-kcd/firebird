@@ -76,13 +76,13 @@ struct record_param
 	Record*		rpb_undo;			// our first version of data if this is a second modification
 	USHORT rpb_format_number;		// format number in relation
 
-	SLONG rpb_page;					// page number
+	ULONG rpb_page;					// page number
 	USHORT rpb_line;				// line number on page
 
-	SLONG rpb_f_page;				// fragment page number
+	ULONG rpb_f_page;				// fragment page number
 	USHORT rpb_f_line;				// fragment line number on page
 
-	SLONG rpb_b_page;				// back page
+	ULONG rpb_b_page;				// back page
 	USHORT rpb_b_line;				// back line
 
 	UCHAR* rpb_address;				// address of record sans header
@@ -145,7 +145,7 @@ public:
 	// ASF: Record is memcopied in realloc_record (vio.cpp), starting at rec_format.
 	// rec_precedence has destructor, so don't move it to after rec_format.
 	MemoryPool& rec_pool;		// pool where record to be expanded
-	PageStack rec_precedence;	// stack of higher precedence pages
+	PageStack rec_precedence;	// stack of higher precedence pages/transactions
 	const Format* rec_format;	// what the data looks like
 	USHORT rec_length;			// how much there is
 	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling

@@ -940,7 +940,7 @@ SSHORT PAR_context(CompilerScratch* csb, SSHORT* context_ptr)
 		PAR_error(csb, Arg::Gds(isc_ctxinuse));
 	}
 
-	const SSHORT stream = csb->nextStream(false);
+	const USHORT stream = csb->nextStream(false);
 	if (stream >= MAX_STREAMS)
 	{
 		PAR_error(csb, Arg::Gds(isc_too_many_contexts));

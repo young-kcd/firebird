@@ -96,12 +96,12 @@ static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHO
 static void check_control(thread_db*);
 static bool check_user(thread_db*, const dsc*);
 static void check_rel_field_class(thread_db*, record_param*, SecurityClass::flags_t, jrd_tra*);
-static void delete_record(thread_db*, record_param*, SLONG, MemoryPool*);
-static UCHAR* delete_tail(thread_db*, record_param*, SLONG, UCHAR*, const UCHAR*);
-static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
+static void delete_record(thread_db*, record_param*, ULONG, MemoryPool*);
+static UCHAR* delete_tail(thread_db*, record_param*, ULONG, UCHAR*, const UCHAR*);
+static void expunge(thread_db*, record_param*, const jrd_tra*, ULONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant = false);
-static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
+static void garbage_collect(thread_db*, record_param*, ULONG, RecordStack&);
 static void garbage_collect_idx(thread_db*, record_param*, Record*, Record*);
 #ifdef GARBAGE_THREAD
 static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
@@ -390,7 +390,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	if (!rpb->rpb_b_page)
 	{
-		delete_record(tdbb, rpb, (SLONG) 0, 0);
+		delete_record(tdbb, rpb, 0, 0);
 		if (!(rpb->rpb_flags & rpb_deleted))
 		{
 			RecordStack empty_staying;
@@ -940,7 +940,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #endif
 					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-						expunge(tdbb, rpb, transaction, (SLONG) 0);
+						expunge(tdbb, rpb, transaction, 0);
 					}
 					return false;
 				}
@@ -1711,7 +1711,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 				}
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				expunge(tdbb, rpb, transaction, (SLONG) 0);
+				expunge(tdbb, rpb, transaction, 0);
 				return false;
 			}
 
@@ -2986,7 +2986,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	rpb->rpb_flags = 0;
 	rpb->rpb_transaction_nr = transaction->tra_number;
 	rpb->getWindow(tdbb).win_flags = 0;
-	rpb->rpb_record->rec_precedence.push(-rpb->rpb_transaction_nr);
+	rpb->rpb_record->rec_precedence.push(PageNumber(TRANS_PAGE_SPACE, rpb->rpb_transaction_nr));
 	DPM_store(tdbb, rpb, rpb->rpb_record->rec_precedence, DPM_primary);
 
 #ifdef VIO_DEBUG
@@ -3614,7 +3614,7 @@ static bool check_user(thread_db* tdbb, const dsc* desc)
 }
 
 
-static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, MemoryPool* pool)
+static void delete_record(thread_db* tdbb, record_param* rpb, ULONG prior_page, MemoryPool* pool)
 {
 /**************************************
  *
@@ -3704,7 +3704,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page, 
 
 static UCHAR* delete_tail(thread_db* tdbb,
 						  record_param* rpb,
-						  SLONG prior_page, UCHAR* tail, const UCHAR* tail_end)
+						  ULONG prior_page, UCHAR* tail, const UCHAR* tail_end)
 {
 /**************************************
  *
@@ -3788,7 +3788,7 @@ static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 }
 
 
-static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction, SLONG prior_page)
+static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction, ULONG prior_page)
 {
 /**************************************
  *
@@ -3875,7 +3875,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 }
 
 
-static void garbage_collect(thread_db* tdbb, record_param* rpb, SLONG prior_page, RecordStack& staying)
+static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page, RecordStack& staying)
 {
 /**************************************
  *
@@ -4375,7 +4375,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 		bool timed_out = false;
 		while (temp.rpb_b_page &&
-			!(temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line))
+			!(temp.rpb_page == next_page && temp.rpb_line == (SSHORT) next_line))
 		{
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
 
@@ -4402,7 +4402,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		// If there is a next older version, then process it: remember that
 		// version's data in 'staying'.
 
-		if (temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line)
+		if (temp.rpb_page == next_page && temp.rpb_line == (SSHORT) next_line)
 		{
 			next_page = temp.rpb_b_page;
 			next_line = temp.rpb_b_line;
@@ -4678,7 +4678,7 @@ static int prepare_update(	thread_db*		tdbb,
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
 					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
-				delete_record(tdbb, temp, (SLONG) 0, 0);
+				delete_record(tdbb, temp, 0, 0);
 				return PREPARE_DELETE;
 			}
 		}
@@ -4730,7 +4730,7 @@ static int prepare_update(	thread_db*		tdbb,
 					if (!DPM_fetch(tdbb, temp, LCK_write)) {
 						BUGCHECK(291);	// msg 291 cannot find record back version
 					}
-					delete_record(tdbb, temp, (SLONG) 0, 0);
+					delete_record(tdbb, temp, 0, 0);
 				}
 				if (writelock) {
 					return PREPARE_DELETE;
@@ -4751,7 +4751,7 @@ static int prepare_update(	thread_db*		tdbb,
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
 					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
-				delete_record(tdbb, temp, (SLONG) 0, 0);
+				delete_record(tdbb, temp, 0, 0);
 				return PREPARE_CONFLICT;
 			}
 
@@ -4796,7 +4796,7 @@ static int prepare_update(	thread_db*		tdbb,
 					if (!DPM_fetch(tdbb, &temp2, LCK_write)) {
 						BUGCHECK(291);	// msg 291 cannot find record back version
 					}
-					delete_record(tdbb, &temp2, (SLONG) 0, 0);
+					delete_record(tdbb, &temp2, 0, 0);
 				}
 				temp->rpb_b_page = rpb->rpb_b_page;
 				temp->rpb_b_line = rpb->rpb_b_line;
@@ -4806,7 +4806,7 @@ static int prepare_update(	thread_db*		tdbb,
 				DPM_store(tdbb, temp, stack, DPM_secondary);
 				continue;
 			}
-			stack.push(temp->rpb_page);
+			stack.push(PageNumber(DB_PAGE_SPACE, temp->rpb_page));
 			return PREPARE_OK;
 
 		case tra_active:
@@ -4857,7 +4857,7 @@ static int prepare_update(	thread_db*		tdbb,
 				if (!DPM_fetch(tdbb, temp, LCK_write)) {
 					BUGCHECK(291);	// msg 291 cannot find record back version
 				}
-				delete_record(tdbb, temp, (SLONG) 0, 0);
+				delete_record(tdbb, temp, 0, 0);
 			}
 			switch (state)
 			{
@@ -5227,7 +5227,7 @@ static void update_in_place(thread_db* tdbb,
 		temp2.rpb_number = org_rpb->rpb_number;
 		DPM_store(tdbb, &temp2, stack, DPM_secondary);
 
-		stack.push(temp2.rpb_page);
+		stack.push(PageNumber(DB_PAGE_SPACE, temp2.rpb_page));
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write)) {
@@ -5236,7 +5236,7 @@ static void update_in_place(thread_db* tdbb,
 
 	if (prior)
 	{
-		const SLONG page = org_rpb->rpb_b_page;
+		const ULONG page = org_rpb->rpb_b_page;
 		const USHORT line = org_rpb->rpb_b_line;
 		org_rpb->rpb_b_page = temp2.rpb_page;
 		org_rpb->rpb_b_line = temp2.rpb_line;

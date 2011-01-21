@@ -169,7 +169,7 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 static void flushAll(thread_db* tdbb, USHORT flush_flag);
 
 
-const SLONG MIN_BUFFER_SEGMENT = 65536;
+const ULONG MIN_BUFFER_SEGMENT = 65536;
 
 // Given pointer a field in the block, find the block
 
@@ -1393,7 +1393,7 @@ void CCH_get_related(thread_db* tdbb, PageNumber page, PagesArray &lowPages)
 }
 
 
-pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR page_type,
+pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, SSHORT lock, SCHAR page_type,
 	SSHORT latch_wait, const bool release_tail)
 {
 /**************************************
@@ -1745,12 +1745,24 @@ void CCH_must_write(WIN* window)
 }
 
 
-void CCH_precedence(thread_db* tdbb, WIN* window, SLONG pageNum)
+void CCH_precedence(thread_db* tdbb, WIN* window, ULONG pageNum)
 {
 	const USHORT pageSpaceID = pageNum > FIRST_PIP_PAGE ?
 		window->win_page.getPageSpaceID() : DB_PAGE_SPACE;
 
 	CCH_precedence(tdbb, window, PageNumber(pageSpaceID, pageNum));
+}
+
+
+void CCH_tra_precedence(thread_db* tdbb, WIN* window, SLONG traNum)
+{
+/*
+	if (traNum <= tdbb->getDatabase()->dbb_last_header_write)
+	{
+		return;
+	}
+*/
+	check_precedence(tdbb, window, PageNumber(TRANS_PAGE_SPACE, traNum));
 }
 
 
@@ -3106,16 +3118,29 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// If this is really a transaction id, sort things out
-
-	if ((page.getPageSpaceID() == DB_PAGE_SPACE) && (page.getPageNum() < 0))
+	switch(page.getPageSpaceID())
 	{
-		if (-page.getPageNum() <= dbb->dbb_last_header_write) {
+		case DB_PAGE_SPACE:
+			break;
+		case TRANS_PAGE_SPACE:
+			// cast needed as long as transaction number remains signed
+			if (static_cast<SLONG>(page.getPageNum()) <= tdbb->getDatabase()->dbb_last_header_write)
+			{
+				return;
+			}
+			page = PageNumber(DB_PAGE_SPACE, 0);
+			break;
+		default:
+			fb_assert(false);
 			return;
-		}
-
-		page = PageNumber(DB_PAGE_SPACE, 0);
 	}
+
+	// In the past negative value, passed here, meant not page, but transaction number.
+	// When we finally move to 32 (not 31) bit page numbers, this should be removed,
+	// but currently I add:
+	fb_assert(!(page.getPageNum() & 0x80000000));
+	// to help detect cases, when something possibly negative is passed.
+	// AP - 2011.
 
 	// Start by finding the buffer containing the high priority page
 

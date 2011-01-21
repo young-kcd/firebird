@@ -334,9 +334,9 @@ public:
 
 	bool isSelectable() const { return m_stmt_selectable; }
 
-	int getInputs() const { return m_inputs; }
+	unsigned int getInputs() const { return m_inputs; }
 
-	int getOutputs() const { return m_outputs; }
+	unsigned int getOutputs() const { return m_outputs; }
 
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
@@ -360,7 +360,7 @@ protected:
 		const Jrd::ValueListNode* params);
 	virtual void getOutParams(Jrd::thread_db* tdbb, const Jrd::ValueListNode* params);
 
-	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count, const Firebird::string* const* names,
 		const NestConst<Jrd::ValueExprNode>* params);
 
 	virtual void putExtBlob(Jrd::thread_db* tdbb, dsc& src, dsc& dst);
@@ -400,8 +400,8 @@ protected:
 	// set in prepare()
 	bool	m_allocated;
 	bool	m_stmt_selectable;
-	int		m_inputs;
-	int		m_outputs;
+	unsigned int m_inputs;
+	unsigned int m_outputs;
 
 	bool	m_callerPrivileges;
 	Jrd::jrd_req* m_preparedByReq;
