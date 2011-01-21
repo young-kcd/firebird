@@ -1416,6 +1416,13 @@ bool UnionSourceNode::containsStream(USHORT checkStream) const
 
 RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
+	fb_assert(stream <= MAX_UCHAR);
+	fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
+	//if (opt->beds[0] >= MAX_STREAMS) // all builds check
+	//	ERR_post(Arg::Gds(isc_too_many_contexts));
+
+	opt->beds[++opt->beds[0]] = (UCHAR) stream;
+
 	const SSHORT i = (SSHORT) opt->keyStreams[0];
 	computeDbKeyStreams(opt->keyStreams);
 
