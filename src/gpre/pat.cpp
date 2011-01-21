@@ -462,7 +462,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		break;
 	}
 #else
-	fprintf(gpreGlob.out_file, buffer);
+	fprintf(gpreGlob.out_file, "%s", buffer);
 #endif
 
 }

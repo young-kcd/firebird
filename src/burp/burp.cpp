@@ -169,7 +169,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 	bool flag_trusted = false;
 #endif
 	bool flag_verbint = false;
-	ULONG verbint_val = 0;
+	SLONG verbint_val = 0;
 
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
@@ -804,7 +804,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				if (++itr >= argc)
 					BURP_error(326, true); // verbose interval parameter missing
 
-				ULONG verbint_val = get_number(argv[itr]);
+				SLONG verbint_val = get_number(argv[itr]);
 				if (verbint_val < MIN_VERBOSE_INTERVAL)
 				{
 					// verbose interval value cannot be smaller than @1

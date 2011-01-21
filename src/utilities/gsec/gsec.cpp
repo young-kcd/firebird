@@ -549,7 +549,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 			// this is not a switch, so it must be a parameter for
 			// the previous switch, if any
 			char quote;
-			int l;
+			unsigned int l;
 
 			switch (last_sw)
 			{

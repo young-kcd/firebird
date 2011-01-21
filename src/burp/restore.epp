@@ -3202,14 +3202,14 @@ void fix_exception(BurpGlobals* tdgbl, const char* exc_name, scan_attr_t& scan_n
 
 		// Notice we use 1021 instead of 1023 because this is the maximum length
 		// for this field in v2.0 and v2.1 and they produce the corrupt backups.
-		const int FIELD_LIMIT = 1021;
+		const unsigned int FIELD_LIMIT = 1021;
 
-		const int remaining = FIELD_LIMIT - l2;
-		if (remaining < 1) // not enough space
+		if (FIELD_LIMIT < l2 + 1) // not enough space
 		{
 			bad_attribute(scan_next_attr, failed_attrib, 287);
 			return;
 		}
+		const unsigned int remaining = FIELD_LIMIT - l2;
 
 		*msg_ptr++ = char(attribute); // (1)
 

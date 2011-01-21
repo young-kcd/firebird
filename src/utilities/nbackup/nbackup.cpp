@@ -934,7 +934,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		ULONG lastPage = FIRST_PIP_PAGE;
 		const ULONG pagesPerPIP = Ods::pagesPerPIP(header->hdr_page_size);
 
-		int scnsSlot = 0;
+		ULONG scnsSlot = 0;
 		const ULONG pagesPerSCN = Ods::pagesPerSCN(header->hdr_page_size);
 
 		Array<UCHAR> unaligned_scns_buffer;

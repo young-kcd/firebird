@@ -295,7 +295,7 @@ static int error( ctl* control, SSHORT offset, const TEXT* string, int arg)
 
 	print_line(control, offset);
 	sprintf(control->ctl_ptr, string, arg);
-	fprintf(stderr, control->ctl_ptr);
+	fprintf(stderr, "%s", control->ctl_ptr);
 	ADVANCE_PTR(control->ctl_ptr);
 	print_line(control, offset);
 
