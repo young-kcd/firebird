@@ -219,7 +219,7 @@ MemoryPool::~MemoryPool(void)
 		VALGRIND_DISCARD(
             VALGRIND_MAKE_MEM_DEFINED(block, OFFSET(MemBlock*, body)));
 		VALGRIND_DISCARD(
-            VALGRIND_MAKE_WRITABLE(object, absVal(block->length)));
+            VALGRIND_MAKE_WRITABLE(object, block->length));
 	}
 #endif
 
@@ -289,7 +289,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 				if (COMPARE_EXCHANGE_POINTER(freeObjects + slot, block, (void*) block->pool))
 				{
 #ifdef MEM_DEBUG
-					if (slot != (-block->length) / roundingSize)
+					if (slot != block->length / roundingSize)
 						corrupt("length trashed for block in slot");
 #endif
 					return block;
@@ -305,7 +305,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 				freeObjects[slot] = (MemBlock*) block->pool;
 
 #ifdef MEM_DEBUG
-				if (slot != (-block->length) / roundingSize)
+				if (slot != block->length / roundingSize)
 					corrupt("length trashed for block in slot");
 #endif
 				return block;
@@ -323,7 +323,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 				MemBlock *block = (MemBlock*) hunk->memory;
 				hunk->memory += length;
 				hunk->spaceRemaining -= length;
-				block->length = -(SINT64) length;
+				block->length = length;
 
 				return block;
 			}
@@ -340,7 +340,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 		block = (MemBlock*) ((UCHAR*) hunk + l);
 		hunk->spaceRemaining = minAllocation - length - l;
 		hunk->memory = (UCHAR*) block + length;
-		block->length = -(SINT64) length;
+		block->length = length;
 
 		return block;
 	}
@@ -475,13 +475,13 @@ void* MemoryPool::allocate(size_t size
 	memory->fileName = fileName;
 	memory->lineNumber = line;
 	memset (&memory->body, INIT_BYTE, size);
-	memset (&memory->body + size, GUARD_BYTE, absVal(memory->length) - size - OFFSET(MemBlock*,body));
+	memset (&memory->body + size, GUARD_BYTE, memory->length - size - OFFSET(MemBlock*,body));
 #endif
 
 	++blocksAllocated;
 	++blocksActive;
 
-	increment_usage(absVal(memory->length));
+	increment_usage(memory->length);
 
 	return &memory->body;
 }
@@ -524,10 +524,10 @@ void MemoryPool::release(void* object) throw ()
 		// Remove protection from memory block
 #ifdef VALGRIND_FIX_IT
 		VALGRIND_DISCARD(
-			VALGRIND_MAKE_MEM_DEFINED(object, absVal(block->length) - VALGRIND_REDZONE));
+			VALGRIND_MAKE_MEM_DEFINED(object, block->length - VALGRIND_REDZONE));
 #else
 		VALGRIND_DISCARD(
-			VALGRIND_MAKE_WRITABLE(object, absVal(block->length) - VALGRIND_REDZONE));
+			VALGRIND_MAKE_WRITABLE(object, block->length - VALGRIND_REDZONE));
 #endif
 
 		// Replace element in circular buffer
@@ -538,7 +538,7 @@ void MemoryPool::release(void* object) throw ()
 			pool->delayedFreePos = 0;
 #endif
 
-		size_t size = absVal(block->length);
+		size_t size = block->length;
 #ifdef DEBUG_GDS_ALLOC
 		block->fileName = NULL;
 #endif
@@ -556,7 +556,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 		corrupt("bad block released");
 
 #ifdef MEM_DEBUG
-	for (const UCHAR* end = (UCHAR*) block + absVal(block->length), *p = end - GUARD_BYTES; p < end;)
+	for (const UCHAR* end = (UCHAR*) block + block->length, *p = end - GUARD_BYTES; p < end;)
 	{
 		if (*p++ != GUARD_BYTE)
 			corrupt("guard bytes overwritten");
@@ -564,19 +564,19 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 #endif
 
 	--blocksActive;
-	const SINT64 length = block->length;
+	const size_t length = block->length;
 
-	// If length is negative, this is a small block
+	// If length is less than threshold, this is a small block
 
-	if (length < 0)
+	if (length <= threshold)
 	{
 #ifdef MEM_DEBUG
-		memset (&block->body, DEL_BYTE, -length - OFFSET(MemBlock*, body));
+		memset (&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
 #endif
 
 		if (threadShared)
 		{
-			for (int slot = -length / roundingSize;;)
+			for (int slot = length / roundingSize;;)
 			{
 				void *next = freeObjects [slot];
 				block->pool = (MemoryPool*) next;
@@ -586,7 +586,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 			}
 		}
 
-		int slot = -length / roundingSize;
+		int slot = length / roundingSize;
 		void *next = freeObjects [slot];
 		block->pool = (MemoryPool*) next;
 		freeObjects[slot] = block;
@@ -1023,11 +1023,11 @@ static void print_block(bool used, FILE* file, MemHeader* blk, bool used_only,
 		{
 			if (used)
 			{
-				fprintf(file, "USED %p: size=%d allocated at %s:%d\n",
-					blk, absVal(blk->length), blk->fileName, blk->lineNumber);
+				fprintf(file, "USED %p: size=%" SIZEFORMAT " allocated at %s:%d\n",
+					blk, blk->length, blk->fileName, blk->lineNumber);
 			}
 			else
-				fprintf(file, "FREE %p: size=%d\n", blk, absVal(blk->length));
+				fprintf(file, "FREE %p: size=%" SIZEFORMAT "\n", blk, blk->length);
 		}
 	}
 }
@@ -1060,7 +1060,7 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 		{
 			MemHeader* m = (MemHeader*)ptr;
 			print_block(m->fileName != NULL, file, m, used_only, filter_path, filter_len);
-			ptr += absVal(m->length);
+			ptr += m->length;
 		}
 	}
 

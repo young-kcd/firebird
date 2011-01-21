@@ -86,9 +86,9 @@ static inline size_t MEM_ALIGN(size_t value)
 	return FB_ALIGN(value, ALLOC_ALIGNMENT);
 }
 
-static const int DEFAULT_ROUNDING = 8;
-static const int DEFAULT_CUTOFF = 4096;
-static const int DEFAULT_ALLOCATION = 65536;
+static const unsigned int DEFAULT_ROUNDING = 8;
+static const unsigned int DEFAULT_CUTOFF = 4096;
+static const size_t DEFAULT_ALLOCATION = 65536;
 
 class MemoryPool;
 class MemoryStats
@@ -171,7 +171,7 @@ class MemHeader
 {
 public:
 	MemoryPool	*pool;
-	SINT64		length;
+	size_t		length;
 #ifdef DEBUG_GDS_ALLOC
 	INT32		lineNumber;
 	const char	*fileName;
