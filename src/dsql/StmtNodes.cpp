@@ -3851,8 +3851,8 @@ DmlNode* ModifyNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	if (context >= csb->csb_rpt.getCount() || !(csb->csb_rpt[context].csb_flags & csb_used))
 		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
 
-	const SSHORT orgStream = csb->csb_rpt[context].csb_stream;
-	const SSHORT newStream = csb->nextStream(false);
+	const USHORT orgStream = csb->csb_rpt[context].csb_stream;
+	const USHORT newStream = csb->nextStream(false);
 
 	if (newStream >= MAX_STREAMS)
 		PAR_error(csb, Arg::Gds(isc_too_many_contexts));

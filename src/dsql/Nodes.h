@@ -53,7 +53,7 @@ const int MAX_CONJUNCTS	= 32000;
 // limit is NOT negotiable so long as we use an array of UCHAR, where index 0
 // tells how many streams are in the array (and the streams themselves are
 // identified by a UCHAR).
-const int MAX_STREAMS = 255;
+const unsigned int MAX_STREAMS = 255;
 
 // This is number of ULONG's needed to store bit-mapped flags for all streams
 // OPT_STREAM_BITS = (MAX_STREAMS + 1) / sizeof(ULONG)

@@ -4797,7 +4797,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	if (!map)
 	{
 		map = local_map;
-		fb_assert(stream + 2 <= MAX_STREAMS);
+		fb_assert(stream + 2u <= MAX_STREAMS);
 		local_map[0] = (UCHAR) stream;
 		map[1] = stream + 1;
 		map[2] = stream + 2;

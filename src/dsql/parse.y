@@ -6887,7 +6887,7 @@ int Parser::yylexAux()
 						gds__free (buffer);
 					yyabandon(-104, isc_token_too_long);
 				}
-				else if (p - buffer > MAX_SQL_IDENTIFIER_LEN)
+				else if (p > &buffer[MAX_SQL_IDENTIFIER_LEN])
 				{
 					if (buffer != string)
 						gds__free (buffer);
@@ -7415,7 +7415,7 @@ int Parser::yylexAux()
 			return sym->sym_keyword;
 		}
 
-		if (p - string > MAX_SQL_IDENTIFIER_LEN)
+		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
 			yyabandon(-104, isc_dyn_name_longer);
 
 		yylval.legacyNode = (dsql_nod*) MAKE_string(string, p - string);
