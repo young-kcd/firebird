@@ -2274,7 +2274,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 		fb_assert(!*stmtPtr);
 
 		string sSql;
-		getString(tdbb, request, sql, sSql);
+		getString(tdbb, request, sql, sSql, true);
 
 		string sDataSrc;
 		getString(tdbb, request, dataSource, sDataSrc);
@@ -2344,7 +2344,7 @@ const StmtNode* ExecStatementNode::execute(thread_db* tdbb, jrd_req* request, Ex
 }
 
 void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
-	string& str) const
+	string& str, bool useAttCS) const
 {
 	MoveBuffer buffer;
 	UCHAR* p = NULL;
@@ -2352,7 +2352,10 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 	const dsc* dsc = node ? EVL_expr(tdbb, request, node) : NULL;
 
 	if (dsc && !(request->req_flags & req_null))
-		len = MOV_make_string2(tdbb, dsc, dsc->getTextType(), &p, buffer);
+	{
+		const Jrd::Attachment* att = tdbb->getAttachment();
+		len = MOV_make_string2(tdbb, dsc, useAttCS ? att->att_charset : dsc->getTextType(), &p, buffer);
+	}
 
 	str = string((char*) p, len);
 	str.trim();

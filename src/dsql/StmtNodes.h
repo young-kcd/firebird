@@ -412,7 +412,7 @@ private:
 	static void genOptionalExpr(DsqlCompilerScratch* dsqlScratch, const UCHAR code, dsql_nod* node);
 
 	void getString(thread_db* tdbb, jrd_req* request, const ValueExprNode* node,
-		Firebird::string& str) const;
+		Firebird::string& str, bool useAttCS = false) const;
 
 public:
 	dsql_nod* dsqlSql;
