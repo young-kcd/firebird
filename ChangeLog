@@ -1,3 +1,11 @@
+ 2011-01-20 07:00  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-3312: Sub-optimal join plan when the slave table depends on the master one via the OR predicate.
+
+ 2011-01-20 04:39  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3311: Error "data type unknown" while preparing UPDATE/DELETE statements with the parameterized ROWS clause.
+
  2011-01-19 12:58  alexpeshkoff 
    M src/common/config/config.cpp
    M src/common/config/config.h
