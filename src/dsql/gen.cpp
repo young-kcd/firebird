@@ -668,16 +668,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_statement(dsqlScratch, node->nod_arg[e_err_action]);
 		return;
 
-	case nod_breakleave:
-		dsqlScratch->appendUChar(blr_leave);
-		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_breakleave_label]->nod_arg[e_label_number]);
-		return;
-
-	case nod_continue:
-		dsqlScratch->appendUChar(blr_continue_loop);
-		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_continue_label]->nod_arg[e_label_number]);
-		return;
-
 	case nod_start_savepoint:
 		dsqlScratch->appendUChar(blr_start_savepoint);
 		return;

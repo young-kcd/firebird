@@ -2596,22 +2596,27 @@ label_opt	: symbol_label_name ':'
 			{ $$ = NULL; }
 		;
 
-breakleave	: KW_BREAK
-			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count, NULL); }
-		| LEAVE
-			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count, NULL); }
-		| LEAVE symbol_label_name
-			{ $$ = make_node (nod_breakleave, (int) e_breakleave_count,
-				make_node (nod_label, (int) e_label_count, $2, NULL)); }
-		;
+breakleave
+	: KW_BREAK
+		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_leave)); }
+	| LEAVE
+		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_leave)); }
+	| LEAVE symbol_label_name
+		{
+			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_leave);
+			node->dsqlLabel = make_node(nod_label, (int) e_label_count, $2, NULL);
+			$$ = makeClassNode(node);
+		}
+	;
 
 continue
 	: CONTINUE
-		{ $$ = make_node(nod_continue, (int) e_continue_count, NULL); }
+		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_continue_loop)); }
 	| CONTINUE symbol_label_name
 		{
-			$$ = make_node(nod_continue, (int) e_continue_count,
-					make_node(nod_label, (int) e_label_count, $2, NULL));
+			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_continue_loop);
+			node->dsqlLabel = make_node(nod_label, (int) e_label_count, $2, NULL);
+			$$ = makeClassNode(node);
 		}
 	;
 

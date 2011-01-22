@@ -677,6 +677,18 @@ DmlNode* ContinueLeaveNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, Compile
 
 ContinueLeaveNode* ContinueLeaveNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	const char* cmd = blrOp == blr_continue_loop ? "CONTINUE" : "BREAK/LEAVE";
+
+	if (!dsqlScratch->loopLevel)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			// Token unknown
+			Arg::Gds(isc_token_err) <<
+			Arg::Gds(isc_random) << cmd);
+	}
+
+	dsqlLabel = PASS1_label(dsqlScratch, true, dsqlLabel);
+
 	return this;
 }
 
@@ -687,6 +699,8 @@ void ContinueLeaveNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blrOp);
+	dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
 }
 
 const StmtNode* ContinueLeaveNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
@@ -2087,7 +2101,7 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (dsqlInnerStmt)
 	{
 		++dsqlScratch->loopLevel;
-		node->dsqlLabel = PASS1_label2(dsqlScratch, NULL, dsqlLabel);
+		node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
 		node->dsqlInnerStmt = PASS1_statement(dsqlScratch, dsqlInnerStmt);
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
@@ -3389,7 +3403,7 @@ StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		// CVC: Let's add the ability to BREAK the for_select same as the while,
 		// but only if the command is FOR SELECT, otherwise we have singular SELECT
 		dsqlScratch->loopLevel++;
-		node->dsqlLabel = PASS1_label2(dsqlScratch, NULL, dsqlLabel);
+		node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
 		node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
 		dsqlScratch->loopLevel--;
 		dsqlScratch->labels.pop();

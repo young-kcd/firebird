@@ -165,7 +165,6 @@ enum nod_t
 	nod_mod_field_name,
 	nod_mod_field_type,
 	nod_mod_field_pos,
-	nod_breakleave,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_searched_case, // searched CASE function
 	nod_simple_case, // simple CASE function
@@ -202,7 +201,6 @@ enum nod_t
 	nod_package_name,
 	nod_package_obj,
 	nod_mod_field_null_flag,
-	nod_continue,
 	nod_func_obj,
 	nod_function_name
 };
@@ -529,10 +527,6 @@ enum node_args {
 	e_mod_fld_pos_new_position,
 	e_mod_fld_pos_count,
 
-	// CVC: blr_leave used to emulate break
-	e_breakleave_label = 0,			// nod_breakleave
-	e_breakleave_count,
-
 	e_udf_param_field = 0,
 	e_udf_param_type,		// Basically, by_reference or by_descriptor
 	e_udf_param_count,
@@ -591,10 +585,7 @@ enum node_args {
 
 	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
 	e_mod_fld_null_flag_value,
-	e_mod_fld_null_flag_count,
-
-	e_continue_label = 0,			// nod_continue
-	e_continue_count
+	e_mod_fld_null_flag_count
 };
 
 } // namespace

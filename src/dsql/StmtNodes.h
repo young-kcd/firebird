@@ -138,7 +138,8 @@ public:
 	explicit ContinueLeaveNode(MemoryPool& pool, UCHAR aBlrOp)
 		: TypedNode<StmtNode, StmtNode::TYPE_CONTINUE_LEAVE>(pool),
 		  blrOp(aBlrOp),
-		  labelNumber(0)
+		  labelNumber(0),
+		  dsqlLabel(NULL)
 	{
 		fb_assert(blrOp == blr_continue_loop || blrOp == blr_leave);
 	}
@@ -165,6 +166,7 @@ public:
 public:
 	UCHAR blrOp;
 	USHORT labelNumber;
+	dsql_nod* dsqlLabel;
 };
 
 

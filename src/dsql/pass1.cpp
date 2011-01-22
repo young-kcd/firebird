@@ -1275,28 +1275,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node->nod_arg[e_err_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_err_action]);
 		return node;
 
-	case nod_breakleave:
-		if (!dsqlScratch->loopLevel)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("BREAK/LEAVE"));
-		}
-		input->nod_arg[e_breakleave_label] = PASS1_label(dsqlScratch, input);
-		return input;
-
-	case nod_continue:
-		if (!dsqlScratch->loopLevel)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("CONTINUE"));
-		}
-		input->nod_arg[e_continue_label] = PASS1_label(dsqlScratch, input);
-		return input;
-
 	case nod_select:
 		{
 			node = PASS1_rse(dsqlScratch, input->nod_arg[e_select_expr], input->nod_arg[e_select_lock]);
@@ -1339,7 +1317,7 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			// CVC: loop numbers should be incremented before analyzing the body
 			// to preserve nesting <==> increasing level number
 			dsqlScratch->loopLevel++;
-			node->nod_arg[e_while_label] = PASS1_label(dsqlScratch, input);
+			node->nod_arg[e_while_label] = PASS1_label(dsqlScratch, false, input->nod_arg[e_while_label]);
 			node->nod_arg[e_while_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_while_action]);
 			dsqlScratch->loopLevel--;
 			dsqlScratch->labels.pop();
@@ -3853,39 +3831,9 @@ static dsql_nod* pass1_insert( DsqlCompilerScratch* dsqlScratch, dsql_nod* input
 
 
 // Process loop interruption.
-dsql_nod* PASS1_label(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
+dsql_nod* PASS1_label(DsqlCompilerScratch* dsqlScratch, bool breakContinue, dsql_nod* label)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	dsql_nod* label = NULL;
-
-	// retrieve a label
-
-	switch (input->nod_type)
-	{
-	case nod_breakleave:
-		label = input->nod_arg[e_breakleave_label];
-		break;
-	case nod_continue:
-		label = input->nod_arg[e_continue_label];
-		break;
-	case nod_while:
-		label = input->nod_arg[e_while_label];
-		break;
-	default:
-		fb_assert(false);
-	}
-
-	return PASS1_label2(dsqlScratch, input, label);
-}
-
-
-// Process loop interruption.
-dsql_nod* PASS1_label2(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* label)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(label, dsql_type_nod);
 
 	// look for a label, if specified
@@ -3916,7 +3864,8 @@ dsql_nod* PASS1_label2(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_n
 	}
 
 	USHORT number = 0;
-	if (input && (input->nod_type == nod_breakleave || input->nod_type == nod_continue))
+
+	if (breakContinue)
 	{
 		if (position > 0)
 		{
@@ -7776,14 +7725,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_end_backup:
 		verb = "end_backup";
-		break;
-
-	case nod_breakleave:
-		verb = "breakleave";
-		break;
-
-	case nod_continue:
-		verb = "continue";
 		break;
 
 	case nod_while:
