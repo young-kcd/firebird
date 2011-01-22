@@ -1,3 +1,87 @@
+ 2011-01-21 17:55  alexpeshkoff 
+   M src/jrd/Database.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb_proto.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/jrd/exe.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lls.h
+   M src/jrd/ods.h
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/req.h
+   M src/jrd/tra.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/gstat/ppg_proto.h
+Getting ready to use 32 (not 31) page and transaction numbers
+
+ 2011-01-21 17:18  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+Avoid use of negative block size for small blocks
+
+ 2011-01-21 17:16  alexpeshkoff 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/parse.y
+warnings
+
+ 2011-01-21 16:45  alexpeshkoff 
+   M src/lock/print.cpp
+warnings
+
+ 2011-01-21 16:43  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/burp/restore.epp
+   M src/common/pretty.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/par.cpp
+   M src/gpre/pat.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/nbackup/nbackup.cpp
+warnings
+
+ 2011-01-21 16:38  alexpeshkoff 
+   M src/common/cvt.cpp
+Unavoidable casts when working with printf() return value
+
+ 2011-01-21 16:36  alexpeshkoff 
+   M src/qli/command.cpp
+   M src/qli/gener.cpp
+   M src/qli/lex.cpp
+warnings
+
+ 2011-01-21 16:35  alexpeshkoff 
+   M src/jrd/ext.cpp
+Better logic when working with flags in case of i/o error. Enhanced diagnostics.
+
+ 2011-01-21 15:06  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fix recursive query with ORDER BY.
+It was broken since Aug-2010 with commit "Refactor nod_rse, nod_relation,
+nod_procedure, nod_union, nod_aggregate and nod_window."
+
+ 2011-01-21 10:03  hvlad 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+Front ported fix for bug CORE-3282 : EXECUTE STATEMENT parses the SQL text using wrong charset
+
  2011-01-20 09:18  alexpeshkoff 
    M src/common/config/config.cpp
 fixed bug in my previous commit
