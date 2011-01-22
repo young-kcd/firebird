@@ -474,6 +474,7 @@ class UnionSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYP
 public:
 	explicit UnionSourceNode(MemoryPool& pool)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_UNION>(pool),
+		  dsqlClauses(NULL),
 		  clauses(pool),
 		  maps(pool),
 		  mapStream(0),
@@ -506,6 +507,9 @@ public:
 private:
 	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, UCHAR* streams, USHORT nstreams,
 		BoolExprNodeStack* parentStack, UCHAR shellStream);
+
+public:
+	dsql_nod* dsqlClauses;
 
 private:
 	Firebird::Array<NestConst<RseNode> > clauses;	// RseNode's for union
@@ -597,6 +601,7 @@ public:
 		  dsqlPlan(NULL),
 		  dsqlStreams(NULL),
 		  dsqlContext(NULL),
+		  dsqlExplicitJoin(false),
 		  rse_jointype(0),
 		  rse_invariants(NULL),
 		  rse_relations(pool),
@@ -615,6 +620,20 @@ public:
 	RseNode* clone()
 	{
 		RseNode* obj = FB_NEW(getPool()) RseNode(getPool());
+
+		obj->dsqlFirst = dsqlFirst;
+		obj->dsqlSkip = dsqlSkip;
+		obj->dsqlDistinct = dsqlDistinct;
+		obj->dsqlSelectList = dsqlSelectList;
+		obj->dsqlFrom = dsqlFrom;
+		obj->dsqlWhere = dsqlWhere;
+		obj->dsqlGroup = dsqlGroup;
+		obj->dsqlHaving = dsqlHaving;
+		obj->dsqlOrder = dsqlOrder;
+		obj->dsqlPlan = dsqlPlan;
+		obj->dsqlStreams = dsqlStreams;
+		obj->dsqlContext = dsqlContext;
+		obj->dsqlExplicitJoin = dsqlExplicitJoin;
 
 		obj->rse_jointype = rse_jointype;
 		obj->rse_first = rse_first;
@@ -643,6 +662,7 @@ public:
 	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
 
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
@@ -686,6 +706,7 @@ public:
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlStreams;
 	dsql_ctx* dsqlContext;		// derived table support
+	bool dsqlExplicitJoin;
 	USHORT rse_jointype;		// inner, left, full
 	NestConst<ValueExprNode> rse_first;
 	NestConst<ValueExprNode> rse_skip;

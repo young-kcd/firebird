@@ -211,7 +211,7 @@ private:
 	dsql_nod* pass1RecursiveCte(dsql_nod* input);
 	dsql_nod* pass1RseIsRecursive(dsql_nod* input);
 	bool pass1RelProcIsRecursive(dsql_nod* input);
-	dsql_nod* pass1JoinIsRecursive(dsql_nod*& input);
+	dsql_nod* pass1JoinIsRecursive(dsql_nod*& inputNod);
 
 private:
 	dsql_dbb* dbb;						// DSQL attachment

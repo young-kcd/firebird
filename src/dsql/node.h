@@ -113,10 +113,8 @@ enum nod_t
 	nod_procedure_name,
 	nod_rel_proc_name,
 	nod_select_expr,
-	nod_union,
 	nod_order,
 	nod_flag,
-	nod_join,
 	nod_unique,
 	nod_dom_value,
 	nod_field_name,
@@ -129,11 +127,6 @@ enum nod_t
 	nod_collate,
 	nod_get_segment,	// blobs
 	nod_put_segment,
-	nod_join_inner,	// join types
-	nod_join_left,
-	nod_join_right,
-	nod_join_full,
-	nod_join_cross,
 	nod_access,
 	nod_wait,
 	nod_isolation,
@@ -380,12 +373,6 @@ enum node_args {
 	e_rpn_inputs,
 	e_rpn_package,
 	e_rpn_count,
-
-	e_join_left_rel = 0,	// nod_join
-	e_join_type,
-	e_join_rght_rel,
-	e_join_boolean,
-	e_join_count,
 
 	e_while_cond = 0,		// nod_while
 	e_while_action,

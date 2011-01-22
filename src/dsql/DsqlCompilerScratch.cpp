@@ -708,33 +708,43 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 				}
 				break;
 
-			case Dsql::nod_join:
-			{
-				*pDstTable = MAKE_node(Dsql::nod_join, Dsql::e_join_count);
-				memcpy((*pDstTable)->nod_arg, (*pSrcTable)->nod_arg,
-					Dsql::e_join_count * sizeof(dsql_nod*));
-
-				dsql_nod* joinBool = pass1JoinIsRecursive(*pDstTable);
-
-				if (joinBool)
-				{
-					if (found)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-								  // Recursive member of CTE can't reference itself more than once
-								  Arg::Gds(isc_dsql_cte_mult_references));
-					}
-
-					found = true;
-
-					result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
-				}
-
-				break;
-			}
-
 			case Dsql::nod_select_expr:
 				break;
+
+			case Dsql::nod_class_exprnode:
+			{
+				RseNode* rseNode = ExprNode::as<RseNode>(*pDstTable);
+
+				if (rseNode)
+				{
+					fb_assert(rseNode->dsqlExplicitJoin);
+
+					RseNode* dstRse = rseNode->clone();
+
+					*pDstTable = MAKE_node(Dsql::nod_class_exprnode, 1);
+					(*pDstTable)->nod_arg[0] = reinterpret_cast<dsql_nod*>(dstRse);
+
+					dsql_nod* joinBool = pass1JoinIsRecursive(*pDstTable);
+
+					if (joinBool)
+					{
+						if (found)
+						{
+							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+									  // Recursive member of CTE can't reference itself more than once
+									  Arg::Gds(isc_dsql_cte_mult_references));
+						}
+
+						found = true;
+
+						result->dsqlWhere = PASS1_compose(result->dsqlWhere, joinBool, blr_and);
+					}
+
+					break;
+				}
+
+				// fall into
+			}
 
 			default:
 				fb_assert(false);
@@ -790,30 +800,34 @@ bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
 // boolean (to be added into WHERE clause).
 // We must remove member only if it is a table reference. Punt if recursive reference is found in
 // outer join or more than one recursive reference is found
-dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& input)
+dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& inputNod)
 {
-	const NOD_TYPE join_type = input->nod_arg[Dsql::e_join_type]->nod_type;
+	RseNode* input = ExprNode::as<RseNode>(inputNod);
+	fb_assert(input);
+
+	const UCHAR join_type = input->rse_jointype;
 	bool remove = false;
 
 	bool leftRecursive = false;
 	dsql_nod* leftBool = NULL;
-	dsql_nod** join_table = &input->nod_arg[Dsql::e_join_left_rel];
+	dsql_nod** join_table = &input->dsqlFrom->nod_arg[0];
+	RseNode* joinRse;
 
-	if ((*join_table)->nod_type == Dsql::nod_join)
+	if ((joinRse = ExprNode::as<RseNode>(*join_table)) && joinRse->dsqlExplicitJoin)
 	{
 		leftBool = pass1JoinIsRecursive(*join_table);
 		leftRecursive = (leftBool != NULL);
 	}
 	else
 	{
-		leftBool = input->nod_arg[Dsql::e_join_boolean];
+		leftBool = input->dsqlWhere;
 		leftRecursive = pass1RelProcIsRecursive(*join_table);
 
 		if (leftRecursive)
 			remove = true;
 	}
 
-	if (leftRecursive && join_type != Dsql::nod_join_inner)
+	if (leftRecursive && join_type != blr_inner)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive member of CTE can't be member of an outer join
@@ -823,23 +837,23 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& input)
 	bool rightRecursive = false;
 	dsql_nod* rightBool = NULL;
 
-	join_table = &input->nod_arg[Dsql::e_join_rght_rel];
+	join_table = &input->dsqlFrom->nod_arg[1];
 
-	if ((*join_table)->nod_type == Dsql::nod_join)
+	if ((joinRse = ExprNode::as<RseNode>(*join_table)) && joinRse->dsqlExplicitJoin)
 	{
 		rightBool = pass1JoinIsRecursive(*join_table);
 		rightRecursive = (rightBool != NULL);
 	}
 	else
 	{
-		rightBool = input->nod_arg[Dsql::e_join_boolean];
+		rightBool = input->dsqlWhere;
 		rightRecursive = pass1RelProcIsRecursive(*join_table);
 
 		if (rightRecursive)
 			remove = true;
 	}
 
-	if (rightRecursive && join_type != Dsql::nod_join_inner)
+	if (rightRecursive && join_type != blr_inner)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Recursive member of CTE can't be member of an outer join
@@ -856,7 +870,7 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& input)
 	if (leftRecursive)
 	{
 		if (remove)
-			input = input->nod_arg[Dsql::e_join_rght_rel];
+			inputNod = input->dsqlFrom->nod_arg[1];
 
 		return leftBool;
 	}
@@ -864,7 +878,7 @@ dsql_nod* DsqlCompilerScratch::pass1JoinIsRecursive(dsql_nod*& input)
 	if (rightRecursive)
 	{
 		if (remove)
-			input = input->nod_arg[Dsql::e_join_left_rel];
+			inputNod = input->dsqlFrom->nod_arg[0];
 
 		return rightBool;
 	}

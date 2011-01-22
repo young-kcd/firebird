@@ -731,7 +731,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type input_parameters(<parametersClause>) input_proc_parameter(<parametersClause>)
 %type input_proc_parameters(<parametersClause>)
 
-%type <legacyNode> join_condition join_specification join_type joined_table
+%type <legacyNode> join_condition join_specification joined_table
+%type <blrOp> join_type
 
 %type <legacyNode> keyword_or_column
 
@@ -4463,18 +4464,43 @@ joined_table
 
 cross_join
 	: table_reference CROSS JOIN table_primary
-		{ $$ = make_node(nod_join, (int) e_join_count, $1,
-				make_node(nod_join_inner, (int) 0, NULL), $4, NULL); }
+		{
+			RseNode* rse = newNode<RseNode>();
+			rse->dsqlExplicitJoin = true;
+			rse->rse_jointype = blr_inner;
+			rse->dsqlFrom = make_node(nod_list, 2);
+			rse->dsqlFrom->nod_arg[0] = $1;
+			rse->dsqlFrom->nod_arg[1] = $4;
+			$$ = makeClassNode(rse);
+		}
 	;
 
 natural_join
 	: table_reference NATURAL join_type JOIN table_primary
-		{ $$ = make_node(nod_join, (int) e_join_count, $1, $3, $5, make_node(nod_flag, 0, NULL)); }
+		{
+			RseNode* rse = newNode<RseNode>();
+			rse->dsqlExplicitJoin = true;
+			rse->rse_jointype = $3;
+			rse->dsqlFrom = make_node(nod_list, 2);
+			rse->dsqlFrom->nod_arg[0] = $1;
+			rse->dsqlFrom->nod_arg[1] = $5;
+			rse->dsqlWhere = make_node(nod_flag, 0, NULL);
+			$$ = makeClassNode(rse);
+		}
 	;
 
 qualified_join
 	: table_reference join_type JOIN table_reference join_specification
-		{ $$ = make_node(nod_join, (int) e_join_count, $1, $2, $4, $5); }
+		{
+			RseNode* rse = newNode<RseNode>();
+			rse->dsqlExplicitJoin = true;
+			rse->rse_jointype = $2;
+			rse->dsqlFrom = make_node(nod_list, 2);
+			rse->dsqlFrom->nod_arg[0] = $1;
+			rse->dsqlFrom->nod_arg[1] = $4;
+			rse->dsqlWhere = $5;
+			$$ = makeClassNode(rse);
+		}
 	;
 
 join_specification
@@ -4516,17 +4542,14 @@ simple_table_name: symbol_table_name
 			{ $$ = make_node (nod_relation_name, (int) e_rln_count, $1, NULL); }
 		;
 
-join_type	: INNER
-			{ $$ = make_node (nod_join_inner, (int) 0, NULL); }
-		| LEFT outer_noise
-			{ $$ = make_node (nod_join_left, (int) 0, NULL); }
-		| RIGHT outer_noise
-			{ $$ = make_node (nod_join_right, (int) 0, NULL); }
-		| FULL outer_noise
-			{ $$ = make_node (nod_join_full, (int) 0, NULL); }
-		|
-			{ $$ = make_node (nod_join_inner, (int) 0, NULL); }
-		;
+join_type
+	: /* nothing */		{ $$ = blr_inner; }
+	| INNER				{ $$ = blr_inner; }
+	| LEFT outer_noise	{ $$ = blr_left; }
+	| RIGHT outer_noise	{ $$ = blr_right; }
+	| FULL outer_noise	{ $$ = blr_full; }
+
+	;
 
 outer_noise
 	:

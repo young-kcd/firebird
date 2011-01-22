@@ -398,11 +398,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 		case nod_simple_case:
 		case nod_searched_case:
 		case nod_list:
-		case nod_join:
-		case nod_join_inner:
-		case nod_join_left:
-		case nod_join_right:
-		case nod_join_full:
 		{
 			T2 ptr = node->nod_arg;
 			for (T2 end = ptr + node->nod_count; ptr < end; ++ptr)

@@ -51,6 +51,8 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, UCHAR shellStream);
 static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
+static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* name,
+	DsqlNodStack& stack, const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 
@@ -1809,6 +1811,251 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return dsqlContext == o->dsqlContext;
 }
 
+// Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
+RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	// Set up an empty context to process the joins
+
+	DsqlContextStack* const base_context = dsqlScratch->context;
+	DsqlContextStack temp;
+	dsqlScratch->context = &temp;
+
+	RseNode* node = FB_NEW(getPool()) RseNode(getPool());
+	node->dsqlExplicitJoin = dsqlExplicitJoin;
+	node->rse_jointype = rse_jointype;
+	node->dsqlStreams = MAKE_node(Dsql::nod_list, dsqlFrom->nod_count);
+
+	switch (rse_jointype)
+	{
+		case blr_inner:
+			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			break;
+
+		case blr_left:
+			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			++dsqlScratch->inOuterJoin;
+			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			--dsqlScratch->inOuterJoin;
+			break;
+
+		case blr_right:
+			++dsqlScratch->inOuterJoin;
+			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			--dsqlScratch->inOuterJoin;
+			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			break;
+
+		case blr_full:
+			++dsqlScratch->inOuterJoin;
+			node->dsqlStreams->nod_arg[0] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[0]);
+			node->dsqlStreams->nod_arg[1] = PASS1_node(dsqlScratch, dsqlFrom->nod_arg[1]);
+			--dsqlScratch->inOuterJoin;
+			break;
+
+		default:
+			fb_assert(false);
+			break;
+	}
+
+	dsql_nod* boolean = dsqlWhere;
+
+	if (boolean && (boolean->nod_type == Dsql::nod_flag || boolean->nod_type == Dsql::nod_list))
+	{
+		if (dsqlScratch->clientDialect < SQL_DIALECT_V6)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+					  Arg::Gds(isc_dsql_unsupp_feature_dialect) << Arg::Num(dsqlScratch->clientDialect));
+		}
+
+		DsqlNodStack leftStack, rightStack;
+
+		if (boolean->nod_type == Dsql::nod_flag)	// NATURAL JOIN
+		{
+			StrArray leftNames(dsqlScratch->getPool());
+			DsqlNodStack matched;
+
+			PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[0], leftStack, true);
+			PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[1], rightStack, true);
+
+			// verify columns that exist in both sides
+			for (int i = 0; i < 2; ++i)
+			{
+				for (DsqlNodStack::const_iterator j(i == 0 ? leftStack : rightStack); j.hasData(); ++j)
+				{
+					const TEXT* name = NULL;
+					dsql_nod* item = j.object();
+					FieldNode* fieldNode;
+					DerivedFieldNode* derivedField;
+
+					switch (item->nod_type)
+					{
+						case Dsql::nod_alias:
+							name = reinterpret_cast<dsql_str*>(item->nod_arg[Dsql::e_alias_alias])->str_data;
+							break;
+
+						default:
+							if ((fieldNode = ExprNode::as<FieldNode>(item)))
+								name = fieldNode->dsqlField->fld_name.c_str();
+							else if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
+								name = derivedField->name.c_str();
+							break;
+					}
+
+					if (name)
+					{
+						if (i == 0)	// left
+							leftNames.add(name);
+						else	// right
+						{
+							if (leftNames.exist(name))
+								matched.push(MAKE_field_name(name));
+						}
+					}
+				}
+			}
+
+			if (matched.isEmpty())
+			{
+				// There is no match. Transform to CROSS JOIN.
+				node->rse_jointype = blr_inner;
+				boolean = NULL;
+			}
+			else
+				boolean = MAKE_list(matched);	// Transform to USING
+		}
+
+		if (boolean)	// JOIN ... USING
+		{
+			fb_assert(boolean->nod_type == Dsql::nod_list);
+
+			dsql_nod* newBoolean = NULL;
+			StrArray usedColumns(dsqlScratch->getPool());
+
+			for (int i = 0; i < boolean->nod_count; ++i)
+			{
+				dsql_nod* field = boolean->nod_arg[i];
+				dsql_str* fldName = reinterpret_cast<dsql_str*>(field->nod_arg[Dsql::e_fln_name]);
+
+				// verify if the column was already used
+				size_t pos;
+				if (usedColumns.find(fldName->str_data, pos))
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  Arg::Gds(isc_dsql_col_more_than_once_using) << Arg::Str(fldName->str_data));
+				}
+				else
+					usedColumns.insert(pos, fldName->str_data);
+
+				dsql_ctx* leftCtx = NULL;
+				dsql_ctx* rightCtx = NULL;
+
+				// clear the stacks for the next pass
+				leftStack.clear();
+				rightStack.clear();
+
+				// get the column names from both sides
+				PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[0], leftStack, true);
+				PASS1_expand_select_node(dsqlScratch, node->dsqlStreams->nod_arg[1], rightStack, true);
+
+				// create the boolean
+
+				ComparativeBoolNode* eqlNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(), blr_eql);
+				eqlNode->dsqlArg1 = resolveUsingField(dsqlScratch, fldName, leftStack, field,
+					"left", leftCtx);
+				eqlNode->dsqlArg2 = resolveUsingField(dsqlScratch, fldName, rightStack, field,
+					"right", rightCtx);
+
+				dsql_nod* eqlNod = MAKE_node(Dsql::nod_class_exprnode, 1);
+				eqlNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(eqlNode);
+
+				fb_assert(leftCtx);
+				fb_assert(rightCtx);
+
+				// We should hide the (unqualified) column in one side
+				ImplicitJoin* impJoinLeft;
+				if (!leftCtx->ctx_imp_join.get(fldName->str_data, impJoinLeft))
+				{
+					impJoinLeft = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinLeft->value = eqlNode->dsqlArg1;
+					impJoinLeft->visibleInContext = leftCtx;
+				}
+				else
+					fb_assert(impJoinLeft->visibleInContext == leftCtx);
+
+				ImplicitJoin* impJoinRight;
+				if (!rightCtx->ctx_imp_join.get(fldName->str_data, impJoinRight))
+				{
+					impJoinRight = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinRight->value = eqlNode->dsqlArg2;
+				}
+				else
+					fb_assert(impJoinRight->visibleInContext == rightCtx);
+
+				// create the COALESCE
+				DsqlNodStack stack;
+
+				dsql_nod* temp = impJoinLeft->value;
+				if (temp->nod_type == Dsql::nod_alias)
+					temp = temp->nod_arg[Dsql::e_alias_value];
+
+				{	// scope
+					PsqlChanger changer(dsqlScratch, false);
+
+					if (temp->nod_type == Dsql::nod_coalesce)
+					{
+						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[0], stack);
+						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[1], stack);
+					}
+					else
+						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
+
+					if ((temp = impJoinRight->value)->nod_type == Dsql::nod_alias)
+						temp = temp->nod_arg[Dsql::e_alias_value];
+
+					if (temp->nod_type == Dsql::nod_coalesce)
+					{
+						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[0], stack);
+						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[1], stack);
+					}
+					else
+						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
+				}
+
+				dsql_nod* coalesce = MAKE_node(Dsql::nod_coalesce, 2);
+				coalesce->nod_arg[0] = stack.pop();
+				coalesce->nod_arg[1] = MAKE_list(stack);
+
+				impJoinLeft->value = MAKE_node(Dsql::nod_alias, Dsql::e_alias_count);
+				impJoinLeft->value->nod_arg[Dsql::e_alias_value] = coalesce;
+				impJoinLeft->value->nod_arg[Dsql::e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
+				impJoinLeft->value->nod_arg[Dsql::e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
+
+				impJoinRight->visibleInContext = NULL;
+
+				// both sides should refer to the same ImplicitJoin
+				leftCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
+				rightCtx->ctx_imp_join.put(fldName->str_data, impJoinLeft);
+
+				newBoolean = PASS1_compose(newBoolean, eqlNod, blr_and);
+			}
+
+			boolean = newBoolean;
+		}
+	}
+
+	node->dsqlWhere = PASS1_node(dsqlScratch, boolean);
+
+	// Merge the newly created contexts with the original ones
+
+	while (temp.hasData())
+		base_context->push(temp.pop());
+
+	dsqlScratch->context = base_context;
+
+	return node;
+}
+
 RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	RseNode* newSource = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
@@ -2843,6 +3090,47 @@ static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
 
 		++idx;
 	}
+}
+
+// Resolve a field for JOIN USING purposes.
+static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* name,
+	DsqlNodStack& stack, const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx)
+{
+	dsql_nod* list = MAKE_list(stack);
+	dsql_nod* node = PASS1_lookup_alias(dsqlScratch, name, list, false);
+
+	if (!node)
+	{
+		string qualifier;
+		qualifier.printf("<%s side of USING>", side);
+		PASS1_field_unknown(qualifier.c_str(), name->str_data, flawedNode);
+	}
+
+	FieldNode* fieldNode;
+	DerivedFieldNode* derivedField;
+
+	if ((fieldNode = ExprNode::as<FieldNode>(node)))
+	{
+		ctx = fieldNode->dsqlContext;
+		return node;
+	}
+	else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
+	{
+		ctx = derivedField->context;
+		return node;
+	}
+
+	if (node->nod_type == Dsql::nod_alias)
+	{
+		fb_assert(node->nod_count >= (int) Dsql::e_alias_imp_join - 1);
+		ctx = reinterpret_cast<ImplicitJoin*>(node->nod_arg[Dsql::e_alias_imp_join])->visibleInContext;
+	}
+	else
+	{
+		fb_assert(false);
+	}
+
+	return node;
 }
 
 // Sort SortedStream indices based on there selectivity. Lowest selectivy as first, highest as last.

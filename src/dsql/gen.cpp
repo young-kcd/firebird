@@ -66,7 +66,6 @@ using namespace Firebird;
 
 static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_join_rse(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
@@ -175,10 +174,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_fid);
 		dsqlScratch->appendUChar(0);		// Context
 		dsqlScratch->appendUShort(0);		// Field id
-		return;
-
-	case nod_join:
-		gen_join_rse(dsqlScratch, node);
 		return;
 
     case nod_coalesce:
@@ -943,48 +938,6 @@ static void gen_error_condition( DsqlCompilerScratch* dsqlScratch, const dsql_no
 }
 
 
-/**
-
- 	gen_join_rse
-
-    @brief	Generate a record selection expression
- 	with an explicit join type.
-
-
-    @param dsqlScratch
-    @param rse
-
- **/
-static void gen_join_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rse)
-{
-	dsqlScratch->appendUChar(blr_rs_stream);
-	dsqlScratch->appendUChar(2);
-
-	GEN_expr(dsqlScratch, rse->nod_arg[e_join_left_rel]);
-	GEN_expr(dsqlScratch, rse->nod_arg[e_join_rght_rel]);
-
-	const dsql_nod* node = rse->nod_arg[e_join_type];
-	if (node->nod_type != nod_join_inner)
-	{
-		dsqlScratch->appendUChar(blr_join_type);
-		if (node->nod_type == nod_join_left)
-			dsqlScratch->appendUChar(blr_left);
-		else if (node->nod_type == nod_join_right)
-			dsqlScratch->appendUChar(blr_right);
-		else
-			dsqlScratch->appendUChar(blr_full);
-	}
-
-	if (rse->nod_arg[e_join_boolean])
-	{
-		dsqlScratch->appendUChar(blr_boolean);
-		GEN_expr(dsqlScratch, rse->nod_arg[e_join_boolean]);
-	}
-
-	dsqlScratch->appendUChar(blr_end);
-}
-
-
 // Generate a parameter reference.
 void GEN_parameter( DsqlCompilerScratch* dsqlScratch, const dsql_par* parameter)
 {
@@ -1110,13 +1063,19 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 	if (rseNod->nod_flags & NOD_SELECT_EXPR_SINGLETON)
 		dsqlScratch->appendUChar(blr_singular);
 
-	dsqlScratch->appendUChar(blr_rse);
+	if (rse->dsqlExplicitJoin)
+	{
+		dsqlScratch->appendUChar(blr_rs_stream);
+		fb_assert(rse->dsqlStreams->nod_count == 2);
+	}
+	else
+		dsqlScratch->appendUChar(blr_rse);
 
 	dsql_nod* list = rse->dsqlStreams;
 
 	// Handle source streams
 
-	if (list->nod_type == nod_union)
+	if (ExprNode::is<UnionSourceNode>(list))
 	{
 		dsqlScratch->appendUChar(1);
 		gen_union(dsqlScratch, rseNod);
@@ -1131,7 +1090,6 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 			switch (node->nod_type)
 			{
 			case nod_class_exprnode:
-			case nod_join:
 				GEN_expr(dsqlScratch, node);
 				break;
 			}
@@ -1158,6 +1116,12 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 	{
 		dsqlScratch->appendUChar(blr_skip);
 		GEN_expr(dsqlScratch, node);
+	}
+
+	if (rse->rse_jointype != blr_inner)
+	{
+		dsqlScratch->appendUChar(blr_join_type);
+		dsqlScratch->appendUChar(rse->rse_jointype);
 	}
 
 	if ((node = rse->dsqlWhere))
@@ -1693,7 +1657,7 @@ static void gen_union( DsqlCompilerScratch* dsqlScratch, const dsql_nod* union_n
 	// secondary context number must be present once in generated blr
 	union_context->ctx_flags &= ~CTX_recursive;
 
-	dsql_nod* streams = unionRse->dsqlStreams;
+	dsql_nod* streams = ExprNode::as<UnionSourceNode>(unionRse->dsqlStreams)->dsqlClauses;
 	dsqlScratch->appendUChar(streams->nod_count);	// number of substreams
 
 	dsql_nod** ptr = streams->nod_arg;
