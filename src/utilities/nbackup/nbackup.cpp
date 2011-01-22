@@ -1576,7 +1576,7 @@ void nbackup(UtilSvc* uSvc)
 		exit(FINI_OK);
 	}
 
-	if (print_size && (op != nbLock))
+	if (print_size && op != nbLock)
 	{
 		usage(uSvc, isc_nbackup_size_with_lock);
 	}

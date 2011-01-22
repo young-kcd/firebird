@@ -419,8 +419,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, cons
 void ConfigFile::badLine(const String& line)
 {
 	lastMessage.printf("%s: illegal line <%s>",
-					   (configFile.hasData() ? configFile.c_str() : "Passed text"),
-					   line.c_str());
+		(configFile.hasData() ? configFile.c_str() : "Passed text"), line.c_str());
 }
 
 /******************************************************************************

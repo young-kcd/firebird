@@ -1756,12 +1756,12 @@ void CCH_precedence(thread_db* tdbb, WIN* window, ULONG pageNum)
 
 void CCH_tra_precedence(thread_db* tdbb, WIN* window, SLONG traNum)
 {
-/*
+	/*
 	if (traNum <= tdbb->getDatabase()->dbb_last_header_write)
 	{
 		return;
 	}
-*/
+	*/
 	check_precedence(tdbb, window, PageNumber(TRANS_PAGE_SPACE, traNum));
 }
 

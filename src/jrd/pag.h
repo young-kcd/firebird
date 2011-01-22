@@ -58,7 +58,7 @@ class PageControl : public pool_alloc<type_pgc>
 // page spaces below TRANS_PAGE_SPACE is regular database pages
 // TEMP_PAGE_SPACE and page spaces above TEMP_PAGE_SPACE is temporary pages
 // TRANS_PAGE_SPACE is pseudo space to store transaction numbers in precedence stack
-// INVALID_PAGE_SPACE is to 
+// INVALID_PAGE_SPACE is to
 const USHORT INVALID_PAGE_SPACE	= 0;
 const USHORT DB_PAGE_SPACE		= 1;
 const USHORT TRANS_PAGE_SPACE	= 255;
@@ -296,6 +296,7 @@ public:
 		return pageNum;
 	}
 	*/
+
 private:
 	ULONG	pageNum;
 	USHORT	pageSpaceID;

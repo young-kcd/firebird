@@ -89,11 +89,13 @@ class vec_base : protected pool_alloc<TYPE>
 public:
 	typedef typename Firebird::Array<T>::iterator iterator;
 	typedef typename Firebird::Array<T>::const_iterator const_iterator;
+
 	/*
 	static vec_base* newVector(MemoryPool& p, int len)
 	{
 		return FB_NEW(p) vec_base<T, TYPE>(p, len);
 	}
+
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
 	{
 		return FB_NEW(p) vec_base<T, TYPE>(p, base);
@@ -112,7 +114,6 @@ public:
 
 	void clear() { v.clear(); }
 
-//	T* memPtr() { return &*(v.begin()); }
 	T* memPtr() { return &v[0]; }
 
 	void resize(size_t n, T val = T()) { v.resize(n, val); }
@@ -125,6 +126,7 @@ protected:
 	{
 		v.resize(len);
 	}
+
 	vec_base(MemoryPool& p, const vec_base& base)
 		: v(p)
 	{
@@ -143,10 +145,12 @@ public:
 	{
 		return FB_NEW(p) vec<T>(p, len);
 	}
+
 	static vec* newVector(MemoryPool& p, const vec& base)
 	{
 		return FB_NEW(p) vec<T>(p, base);
 	}
+
 	static vec* newVector(MemoryPool& p, vec* base, int len)
 	{
 		if (!base)
@@ -168,10 +172,12 @@ public:
 	{
 		return FB_NEW(p) vcl(p, len);
 	}
+
 	static vcl* newVector(MemoryPool& p, const vcl& base)
 	{
 		return FB_NEW(p) vcl(p, base);
 	}
+
 	static vcl* newVector(MemoryPool& p, vcl* base, int len)
 	{
 		if (!base)

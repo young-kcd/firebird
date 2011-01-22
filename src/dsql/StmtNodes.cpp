@@ -2354,7 +2354,8 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 	if (dsc && !(request->req_flags & req_null))
 	{
 		const Jrd::Attachment* att = tdbb->getAttachment();
-		len = MOV_make_string2(tdbb, dsc, useAttCS ? att->att_charset : dsc->getTextType(), &p, buffer);
+		len = MOV_make_string2(tdbb, dsc, (useAttCS ? att->att_charset : dsc->getTextType()),
+			&p, buffer);
 	}
 
 	str = string((char*) p, len);
