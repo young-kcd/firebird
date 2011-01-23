@@ -4232,47 +4232,41 @@ ddl_type1
 	;
 
 ddl_type2
-	: COLUMN
-		{ $$ = ddl_relation; }
-	| PARAMETER
-		{ $$ = ddl_procedure; }
+	: COLUMN		{ $$ = ddl_relation; }
+	| PARAMETER		{ $$ = ddl_procedure; }
 	;
 
 ddl_subname
-	: '.' symbol_ddl_name
-		{ $$ = $2; }
+	: '.' symbol_ddl_name	{ $$ = $2; }
 	;
 
 ddl_desc
     : sql_string
-	| KW_NULL
-	    { $$ = NULL; }
+	| KW_NULL		{ $$ = NULL; }
 	;
 
 
 // SELECT statement
 
-select		: select_expr for_update_clause lock_clause
-			{ $$ = make_node (nod_select, (int) e_select_count, $1, $2, $3); }
-		;
+select
+	: select_expr for_update_clause lock_clause
+		{ $$ = make_node(nod_select, (int) e_select_count, $1, $2, $3); }
+	;
 
-for_update_clause : FOR UPDATE for_update_list
-			{ $$ = make_node (nod_for_update, (int) e_fpd_count, $3); }
-		|
-			{ $$ = NULL; }
-		;
+for_update_clause
+	: /* nothing */					{ $$ = NULL; }
+	| FOR UPDATE for_update_list	{ $$ = make_node(nod_for_update, (int) e_fpd_count, $3); }
+	;
 
-for_update_list	: OF column_list
-			{ $$ = $2; }
-		|
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		;
+for_update_list
+	: /* nothing */		{ $$ = make_node(nod_flag, 0, NULL); }
+	| OF column_list	{ $$ = $2; }
+	;
 
-lock_clause : WITH LOCK
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+lock_clause
+	: /* nothing */	{ $$ = NULL; }
+	| WITH LOCK		{ $$ = make_node(nod_flag, 0, NULL); }
+	;
 
 
 // SELECT expression
@@ -4283,18 +4277,17 @@ select_expr
 	;
 
 with_clause
-    :
+	: /* nothing */
 		{ $$ = NULL; }
 	| WITH RECURSIVE with_list
-		{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
+		{ $$ = make_flag_node(nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
 	| WITH with_list
-		{ $$ = make_node (nod_with, 1, make_list($2)); }
+		{ $$ = make_node(nod_with, 1, make_list($2)); }
 	;
 
 with_list
 	: with_item
-	| with_item ',' with_list
-		{ $$ = make_node (nod_list, 2, $1, $3); }
+	| with_item ',' with_list	{ $$ = make_node (nod_list, 2, $1, $3); }
 	;
 
 with_item
@@ -4360,32 +4353,22 @@ query_spec
 	;
 
 limit_clause
-	:
-		{ $$ = NULL; }
-	| first_clause skip_clause
-		{ $$ = make_node(nod_list, 2, $2, $1); }
-	| first_clause
-		{ $$ = make_node(nod_list, 2, NULL, $1); }
-	| skip_clause
-		{ $$ = make_node(nod_list, 2, $1, NULL); }
+	: /* nothing */				{ $$ = NULL; }
+	| first_clause skip_clause	{ $$ = make_node(nod_list, 2, $2, $1); }
+	| first_clause				{ $$ = make_node(nod_list, 2, NULL, $1); }
+	| skip_clause				{ $$ = make_node(nod_list, 2, $1, NULL); }
 	;
 
 first_clause
-	: FIRST long_integer
-		{ $$ = MAKE_const_slong($2); }
-	| FIRST '(' value ')'
-		{ $$ = $3; }
-	| FIRST parameter
-		{ $$ = $2; }
+	: FIRST long_integer	{ $$ = MAKE_const_slong($2); }
+	| FIRST '(' value ')'	{ $$ = $3; }
+	| FIRST parameter		{ $$ = $2; }
 	;
 
 skip_clause
-	: SKIP long_integer
-		{ $$ = MAKE_const_slong($2); }
-	| SKIP '(' value ')'
-		{ $$ = $3; }
-	| SKIP parameter
-		{ $$ = $2; }
+	: SKIP long_integer		{ $$ = MAKE_const_slong($2); }
+	| SKIP '(' value ')'	{ $$ = $3; }
+	| SKIP parameter		{ $$ = $2; }
 	;
 
 distinct_clause
@@ -4532,20 +4515,21 @@ table_proc
 		{ $$ = make_node (nod_rel_proc_name, (int) e_rpn_count, $3, NULL, $4, $1); }
 	;
 
-table_proc_inputs	: '(' value_list ')'
-				{ $$ = make_list ($2); }
-			|
-				{ $$ = NULL; }
-			;
+table_proc_inputs
+	: /* nothing */			{ $$ = NULL; }
+	| '(' value_list ')'	{ $$ = make_list ($2); }
+	;
 
-table_name	: simple_table_name
-		| symbol_table_name as_noise symbol_table_alias_name
-			{ $$ = make_node (nod_relation_name, (int) e_rln_count, $1, $3); }
-		;
+table_name
+	: simple_table_name
+	| symbol_table_name as_noise symbol_table_alias_name
+		{ $$ = make_node(nod_relation_name, (int) e_rln_count, $1, $3); }
+	;
 
-simple_table_name: symbol_table_name
-			{ $$ = make_node (nod_relation_name, (int) e_rln_count, $1, NULL); }
-		;
+simple_table_name
+	: symbol_table_name
+		{ $$ = make_node(nod_relation_name, (int) e_rln_count, $1, NULL); }
+	;
 
 join_type
 	: /* nothing */		{ $$ = blr_inner; }
@@ -4595,19 +4579,17 @@ where_clause	: WHERE search_condition
 
 // PLAN clause to specify an access plan for a query
 
-plan_clause	: PLAN plan_expression
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+plan_clause
+	: /* nothing */			{ $$ = NULL; }
+	| PLAN plan_expression	{ $$ = $2; }
+	;
 
-plan_expression	: plan_type '(' plan_item_list ')'
-			{ $$ = make_node (nod_plan_expr, 1, make_list ($3)); }
-		;
+plan_expression
+	: plan_type '(' plan_item_list ')'	{ $$ = make_node(nod_plan_expr, 1, make_list($3)); }
+	;
 
 plan_type
-	:
-		{ $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
 	| JOIN
 	| SORT MERGE
 	| MERGE
@@ -4615,70 +4597,64 @@ plan_type
 	| SORT
 	;
 
-plan_item_list	: plan_item
-		| plan_item ',' plan_item_list
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+plan_item_list
+	: plan_item
+	| plan_item ',' plan_item_list	{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
-plan_item	: table_or_alias_list access_type
-			{ $$ = make_node (nod_plan_item, 2, make_list ($1), $2); }
-		| plan_expression
-		;
+plan_item
+	: table_or_alias_list access_type	{ $$ = make_node(nod_plan_item, 2, make_list($1), $2); }
+	| plan_expression
+	;
 
-table_or_alias_list : symbol_table_name
-		| symbol_table_name table_or_alias_list
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+table_or_alias_list
+	: symbol_table_name
+	| symbol_table_name table_or_alias_list		{ $$ = make_node(nod_list, 2, $1, $2); }
+	;
 
-access_type	: NATURAL
-			{ $$ = make_node (nod_natural, (int) 0, NULL); }
-		| INDEX '(' index_list ')'
-			{ $$ = make_node (nod_index, 1, make_list ($3)); }
-		| ORDER symbol_index_name extra_indices_opt
-			{ $$ = make_node (nod_index_order, 2, $2, $3); }
-		;
+access_type
+	: NATURAL									{ $$ = make_node(nod_natural, (int) 0, NULL); }
+	| INDEX '(' index_list ')'					{ $$ = make_node(nod_index, 1, make_list($3)); }
+	| ORDER symbol_index_name extra_indices_opt	{ $$ = make_node(nod_index_order, 2, $2, $3); }
+	;
 
-index_list	: symbol_index_name
-		| symbol_index_name ',' index_list
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+index_list
+	: symbol_index_name
+	| symbol_index_name ',' index_list	{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-extra_indices_opt	: INDEX '(' index_list ')'
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = 0; }
-		;
+extra_indices_opt
+	: /* nothing */				{ $$ = NULL; }
+	| INDEX '(' index_list ')'	{ $$ = make_list ($3); }
+	;
 
 // ORDER BY clause
 
-order_clause	: ORDER BY order_list
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = 0; }
-		;
+order_clause
+	: /* nothing */			{ $$ = NULL; }
+	| ORDER BY order_list	{ $$ = make_list ($3); }
+	;
 
-order_list	: order_item
-		| order_list ',' order_item
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+order_list
+	: order_item
+	| order_list ',' order_item		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-order_item	: value order_direction nulls_clause
-			{ $$ = make_node (nod_order, (int) e_order_count, $1, $2, $3); }
-		;
+order_item
+	: value order_direction nulls_clause
+		{ $$ = make_node (nod_order, (int) e_order_count, $1, $2, $3); }
+	;
 
-order_direction	: ASC
-			{ $$ = 0; }
-		| DESC
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		|
-			{ $$ = 0; }
-		;
+order_direction
+	: /* nothing */		{ $$ = NULL; }
+	| ASC				{ $$ = NULL; }
+	| DESC				{ $$ = make_node(nod_flag, 0, NULL); }
+	;
 
-nulls_clause : NULLS nulls_placement
-			{ $$ = $2; }
-		|
-			{ $$ = 0; }
-		;
+nulls_clause
+	: /* nothing */		{ $$ = NULL; }
+	| NULLS nulls_placement		{ $$ = $2; }
+	;
 
 nulls_placement
 	: FIRST	{ $$ = MAKE_const_slong(NOD_NULLS_FIRST); }
@@ -4687,35 +4663,36 @@ nulls_placement
 
 // ROWS clause
 
-rows_clause	: ROWS value
-			// equivalent to FIRST value
-			{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
-		| ROWS value TO value
-			// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
-			{
-				$$ = make_node (nod_rows, (int) e_rows_count,
+rows_clause
+	: /* nothing */
+		{ $$ = NULL; }
+	// equivalent to FIRST value
+	| ROWS value
+		{ $$ = make_node (nod_rows, (int) e_rows_count, NULL, $2); }
+	// equivalent to FIRST (upper_value - lower_value + 1) SKIP (lower_value - 1)
+	| ROWS value TO value
+		{
+			$$ = make_node (nod_rows, (int) e_rows_count,
+				makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
+					$2, MAKE_const_slong(1))),
+				makeClassNode(newNode<ArithmeticNode>(blr_add, true,
 					makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
-						$2, MAKE_const_slong(1))),
-					makeClassNode(newNode<ArithmeticNode>(blr_add, true,
-						makeClassNode(newNode<ArithmeticNode>(blr_subtract, true,
-							$4, $2)),
-						MAKE_const_slong(1))));
-			}
-		|
-			{ $$ = NULL; }
-		;
+						$4, $2)),
+					MAKE_const_slong(1))));
+		}
+	;
 
 
 // INSERT statement
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
-insert		: INSERT INTO simple_table_name ins_column_parens_opt
-				VALUES '(' value_list ')' returning_clause
-			{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, make_list ($7), NULL, $9); }
-		| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
-			{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, NULL, $5, $6); }
-		| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
-			{ $$ = make_node (nod_insert, (int) e_ins_count, $3, NULL, NULL, NULL, $6); }
-		;
+insert
+	: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' value_list ')' returning_clause
+		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, make_list ($7), NULL, $9); }
+	| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
+		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, NULL, $5, $6); }
+	| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
+		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, NULL, NULL, NULL, $6); }
+	;
 
 
 // MERGE statement
@@ -4769,82 +4746,89 @@ merge_insert_specification
 
 // DELETE statement
 
-delete		: delete_searched
-		| delete_positioned
-		;
+delete
+	: delete_searched
+	| delete_positioned
+	;
 
-delete_searched	: KW_DELETE FROM table_name where_clause
-		plan_clause order_clause rows_clause returning_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, $4, $5, $6, $7, NULL, $8); }
-		;
+delete_searched
+	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause returning_clause
+		{ $$ = make_node(nod_delete, (int) e_del_count, $3, $4, $5, $6, $7, NULL, $8); }
+	;
 
-delete_positioned : KW_DELETE FROM table_name cursor_clause
-			{ $$ = make_node (nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4, NULL); }
-		;
+delete_positioned
+	: KW_DELETE FROM table_name cursor_clause
+		{ $$ = make_node(nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4, NULL); }
+	;
 
 
 // UPDATE statement
 
-update		: update_searched
-		| update_positioned
-		;
+update
+	: update_searched
+	| update_positioned
+	;
 
-update_searched	: UPDATE table_name SET assignments where_clause
-		plan_clause order_clause rows_clause returning_clause
-			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), $5, $6, $7, $8, NULL, $9, NULL); }
-		  	;
+update_searched
+	: UPDATE table_name SET assignments where_clause plan_clause
+			order_clause rows_clause returning_clause
+		{
+			$$ = make_node(nod_update, (int) e_upd_count, $2, make_list($4),
+				$5, $6, $7, $8, NULL, $9, NULL);
+		}
+	;
 
-update_positioned : UPDATE table_name SET assignments cursor_clause
-			{ $$ = make_node (nod_update, (int) e_upd_count,
-				$2, make_list ($4), NULL, NULL, NULL, NULL, $5, NULL, NULL); }
-		;
+update_positioned
+	: UPDATE table_name SET assignments cursor_clause
+		{
+			$$ = make_node(nod_update, (int) e_upd_count,
+				$2, make_list($4), NULL, NULL, NULL, NULL, $5, NULL, NULL);
+		}
+	;
 
 
 // UPDATE OR INSERT statement
 
 update_or_insert
-	:	UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
-			VALUES '(' value_list ')'
-			update_or_insert_matching_opt
-			returning_clause
+	: UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
+			VALUES '(' value_list ')' update_or_insert_matching_opt returning_clause
 		{
-			$$ = make_node (nod_update_or_insert, (int) e_upi_count,
-				$5, make_list ($6), make_list ($9), $11, $12);
+			$$ = make_node(nod_update_or_insert, (int) e_upi_count,
+				$5, make_list($6), make_list($9), $11, $12);
 		}
 	;
 
 update_or_insert_matching_opt
-	:	MATCHING ins_column_parens
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
+	: /* nothing */					{ $$ = NULL; }
+	| MATCHING ins_column_parens	{ $$ = $2; }
 	;
 
 
-returning_clause	: RETURNING value_list
-			{ $$ = make_node (nod_returning, (int) e_ret_count, make_list ($2), NULL); }
-		| RETURNING value_list INTO variable_list
-			{ $$ = make_node (nod_returning, (int) e_ret_count, make_list ($2), make_list ($4)); }
-		|
-			{ $$ = NULL; }
-		;
+returning_clause
+	: /* nothing */
+		{ $$ = NULL; }
+	| RETURNING value_list
+		{ $$ = make_node(nod_returning, (int) e_ret_count, make_list($2), NULL); }
+	| RETURNING value_list INTO variable_list
+		{ $$ = make_node(nod_returning, (int) e_ret_count, make_list($2), make_list($4)); }
+	;
 
-cursor_clause	: WHERE CURRENT OF symbol_cursor_name
-			{ $$ = make_node (nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL, NULL); }
-		;
+cursor_clause
+	: WHERE CURRENT OF symbol_cursor_name
+		{ $$ = make_node(nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL, NULL); }
+	;
 
 
 // Assignments
 
-assignments	: assignment
-		| assignments ',' assignment
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+assignments
+	: assignment
+	| assignments ',' assignment	{ $$ = make_node(nod_list, 2, $1, $3); }
+	;
 
-assignment	: update_column_name '=' value
-			{ $$ = make_node (nod_assign, e_asgn_count, $3, $1); }
-		;
+assignment
+	: update_column_name '=' value	{ $$ = make_node(nod_assign, e_asgn_count, $3, $1); }
+	;
 
 exec_function
 	: udf
