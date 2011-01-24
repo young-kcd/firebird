@@ -284,6 +284,18 @@ void Thread::waitForCompletion(Handle& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
 }
+
+void Thread::kill(Handle& handle)
+{
+	TerminateThread(handle, -1);
+}
+
+void Thread::closeHandle(Handle& handle)
+{
+	CloseHandle(handle);
+	handle = 0;
+}
+
 #endif  // WIN_NT
 
 

@@ -265,6 +265,8 @@ int Provider::release()
 {
 	if (--refCounter == 0)
 	{
+		LocalStatus status;
+		shutdown(&status, 5000, fb_shutrsn_no_connection);
 		delete this;
 		return 0;
 	}
@@ -453,24 +455,8 @@ namespace
 			ERR_post(Arg::Gds(isc_adm_task_denied));
 		}
 	}
-
-	class UnloadHandler
-	{
-	public:
-		static void atExitShutdown()
-		{
-			LocalStatus status;
-			currentProvider()->shutdown(&status, 5000, fb_shutrsn_exit_called);
-		}
-
-		UnloadHandler()
-		{
-			InstanceControl::registerShutdown(atExitShutdown);
-		}
-	};
 } // anonymous
 
-UnloadHandler engine12IsLoaded;
 
 #ifdef  WIN_NT
 #include <windows.h>
@@ -3757,12 +3743,19 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 		{
 			Semaphore shutdown_semaphore;
 
-			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, 0);
+			Thread::Handle h;
+			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
 			{
+				// sad, but we MUST kill shutdown_thread because engine DLL\SO is unloaded
+				// else whole process will be crashed
+				Thread::kill(h);
+				Thread::closeHandle(h);
+
 				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
 			}
+			Thread::closeHandle(h);
 		}
 		else
 		{

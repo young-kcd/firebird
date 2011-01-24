@@ -3192,7 +3192,7 @@ namespace {
 		if (port->port_events_thread)
 		{
 			Thread::waitForCompletion(port->port_events_thread);
-			port->port_events_thread = 0;
+			Thread::closeHandle(port->port_events_thread);
 		}
 	}
 }
