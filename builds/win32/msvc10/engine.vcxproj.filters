@@ -321,9 +321,6 @@
     <ClCompile Include="..\..\..\src\jrd\par.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\PluginManager.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\PreparedStatement.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -890,9 +887,6 @@
     <ClInclude Include="..\..\..\src\jrd\pcmet_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\PluginManager.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\PreparedStatement.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -1084,6 +1078,7 @@
     <None Include="..\..\..\src\dsql\parse.y">
       <Filter>DSQL</Filter>
     </None>
+    <None Include="..\defs\plugin.def" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

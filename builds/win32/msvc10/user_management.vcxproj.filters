@@ -23,6 +23,7 @@
     <None Include="..\..\..\src\auth\SecurityDatabase\LegacyManagement.epp">
       <Filter>GPRE epp</Filter>
     </None>
+    <None Include="..\defs\plugin.def" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\auth\SecurityDatabase\LegacyManagement.h">

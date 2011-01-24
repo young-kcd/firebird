@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -27,7 +27,9 @@
     <ClCompile Include="..\..\..\src\yvalve\alt.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\gds.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\keywords.cpp" />
+    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\perf.cpp" />
+    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\preparse.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\user_dsql.cpp" />
     <ClCompile Include="..\..\..\src\yvalve\utl.cpp" />
@@ -44,6 +46,7 @@
     <ClInclude Include="..\..\..\src\yvalve\keywords.h" />
     <ClInclude Include="..\..\..\src\yvalve\perf.h" />
     <ClInclude Include="..\..\..\src\yvalve\perf_proto.h" />
+    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h" />
     <ClInclude Include="..\..\..\src\yvalve\prepa_proto.h" />
     <ClInclude Include="..\..\..\src\yvalve\user__proto.h" />
     <ClInclude Include="..\..\..\src\yvalve\utly_proto.h" />

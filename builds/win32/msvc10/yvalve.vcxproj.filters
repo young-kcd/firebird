@@ -66,6 +66,12 @@
     <ClCompile Include="..\..\..\src\remote\client\interface.cpp">
       <Filter>Remote client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\yvalve\PluginManager.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\yvalve\MasterImplementation.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\yvalve\why_proto.h">
@@ -108,6 +114,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\auth\trusted\AuthSspi.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\yvalve\PluginManager.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
