@@ -30,7 +30,7 @@
 #ifdef TRUSTED_AUTH
 
 #include "../common/classes/ClumpletReader.h"
-#include "../common/classes/Interface.h"
+#include "Interface.h"
 #include "../common/classes/ImplementHelper.h"
 
 using namespace Firebird;
@@ -397,7 +397,7 @@ void WinSspiServer::getData(const unsigned char** data, unsigned short* dataSize
 	*dataSize = sspiData.getCount();
 }
 
-void WinSspiServer::release()
+int WinSspiServer::release()
 {
 	if (--refCounter == 0)
 	{
@@ -469,13 +469,13 @@ int WinSspiClient::release()
 
 void registerTrustedClient(Firebird::IPlugin* iPlugin)
 {
-	clientFactory.addRef();
+	clientFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, plugName, &clientFactory);
 }
 
 void registerTrustedServer(Firebird::IPlugin* iPlugin)
 {
-	serverFactory.addRef();
+	serverFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, plugName, &serverFactory);
 }
 

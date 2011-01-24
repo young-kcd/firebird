@@ -19,7 +19,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -62,6 +62,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib icuuc.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -90,7 +91,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -135,6 +136,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib icuuc.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -163,7 +165,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
@@ -210,6 +212,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib icuuc.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -238,7 +241,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
+			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
@@ -286,6 +289,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="mpr.lib icuuc.lib"
 				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
+				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -485,10 +489,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\par.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\PluginManager.cpp"
 				>
 			</File>
 			<File
@@ -1424,10 +1424,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PluginManager.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg_proto.h"
 				>
 			</File>
@@ -1852,6 +1848,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\defs\plugin.def"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

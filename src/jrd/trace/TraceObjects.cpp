@@ -293,7 +293,8 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
-			if (parameter->par_null &&
+			if (parameter->par_null && 
+				parameter->par_null->par_desc.dsc_address &&
 				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
 				null_flag = DSC_null;
@@ -450,9 +451,9 @@ public:
 		m_maxSize = Config::getMaxUserTraceLogSize();
 	}
 
-	virtual size_t write(const void* buf, size_t size);
+	virtual size_t FB_CARG write(const void* buf, size_t size);
 
-	virtual int release()
+	virtual int FB_CARG release()
 	{
 		if (--refCounter == 0)
 		{

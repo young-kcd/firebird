@@ -38,27 +38,27 @@ namespace Firebird {
 class BaseStatus : public Status
 {
 public:
-	virtual void set(const ISC_STATUS* value)
+	virtual void FB_CARG set(const ISC_STATUS* value)
 	{
 		set(fb_utils::statusLength(value), value);
 	}
 
-	virtual void set(unsigned int length, const ISC_STATUS* value)
+	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value)
 	{
 		fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
 	}
 
-	virtual void init()
+	virtual void FB_CARG init()
 	{
 		fb_utils::init_status(vector);
 	}
 
-	virtual const ISC_STATUS* get() const
+	virtual const ISC_STATUS* FB_CARG get() const
 	{
 		return vector;
 	}
 
-	virtual int isSuccess() const
+	virtual int FB_CARG isSuccess() const
 	{
 		return vector[1] == 0;
 	}

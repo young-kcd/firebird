@@ -579,19 +579,19 @@ protected:
 	friend class Firebird::MemoryPool;
 
 public:
-	virtual int release();
+	virtual int FB_CARG release();
 	//virtual Sqlda* describeInput(Status* status);
 	//virtual Sqlda* describeOutput(Status* status);
-	virtual Firebird::IStatement* prepare(Status* status, Firebird::ITransaction* tra,
+	virtual Firebird::IStatement* FB_CARG prepare(Status* status, Firebird::ITransaction* tra,
 									  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 									  unsigned int item_length, const unsigned char* items,
 	    		                      unsigned int buffer_length, unsigned char* buffer);
-	virtual void getInfo(Status* status,
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void setCursor(Status* status, const char* name, unsigned int type);
+	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
 //	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* tra, Sqlda* in, Sqlda* out);
-	virtual Firebird::ITransaction* executeMessage(Status* status, Firebird::ITransaction* tra,
+	virtual Firebird::ITransaction* FB_CARG executeMessage(Status* status, Firebird::ITransaction* tra,
 										unsigned int in_blr_length, const unsigned char* in_blr,
 										unsigned int in_msg_type,
 										unsigned int in_msg_length, const unsigned char* in_message,
@@ -599,16 +599,16 @@ public:
 										unsigned int out_msg_type,
 										unsigned int out_msg_length, unsigned char* out_message);
 //	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
-	virtual int fetchMessage(Status* status,
+	virtual int FB_CARG fetchMessage(Status* status,
 							 unsigned int blr_length, const unsigned char* blr,
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void insertMessage(Status* status,
+	virtual void FB_CARG insertMessage(Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
 							   unsigned int msg_length, const unsigned char* message);
-	virtual void free(Status* status, unsigned int option);
+	virtual void FB_CARG free(Status* status, unsigned int option);
 };
 
 // Blob

@@ -9,10 +9,10 @@
 ;  See the License for the specific language governing rights
 ;  and limitations under the License.
 ;
-;  The Original Code was created by Adriano dos Santos Fernandes
+;  The Original Code was created by Khorsun Vladyslav
 ;  for the Firebird Open Source RDBMS project.
 ;
-;  Copyright (c) 2008 Adriano dos Santos Fernandes <adrianosf@uol.com.br>
+;  Copyright (c) 2011 Khorsun Vladyslav <hvlad@users.sf.net>
 ;  and all contributors signed below.
 ;
 ;  All Rights Reserved.
@@ -20,7 +20,4 @@
 
 EXPORTS
 	firebird_plugin
-	fbUdrRegFunction
-	fbUdrRegProcedure
-	fbUdrRegTrigger
-	fbUdrGetFunction
+

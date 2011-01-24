@@ -53,9 +53,9 @@ public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
 	~PluginLogWriter();
 
-	virtual size_t write(const void* buf, size_t size);
+	virtual size_t FB_CARG write(const void* buf, size_t size);
 
-	virtual int release()
+	virtual int FB_CARG release()
 	{
 		if (--refCounter == 0)
 		{

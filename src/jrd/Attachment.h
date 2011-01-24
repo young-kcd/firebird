@@ -220,29 +220,29 @@ public:
 	bool checkHandle() const;
 
 public:
-	virtual int release();
-	virtual void getInfo(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 //	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
+	virtual Firebird::ITransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
 													 FB_API_HANDLE api);
-	virtual Firebird::ITransaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
-	virtual Firebird::IStatement* allocateStatement(Status* status);
-	virtual Firebird::IRequest* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
+	virtual Firebird::IStatement* FB_CARG allocateStatement(Status* status);
+	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
+	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_blr_length, const unsigned char* in_blr,
 								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_blr_length, unsigned char* out_blr,
 								 unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg);
-	virtual Firebird::IEvents* queEvents(Status* status, Firebird::EventCallback* callback,
+	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
 										 unsigned int length, const unsigned char* events);
-	virtual void cancelOperation(Status* status, int option);
-	virtual void ping(Status* status);
-	virtual void detach(Status* status);
-	virtual void drop(Status* status);
+	virtual void FB_CARG cancelOperation(Status* status, int option);
+	virtual void FB_CARG ping(Status* status);
+	virtual void FB_CARG detach(Status* status);
+	virtual void FB_CARG drop(Status* status);
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);

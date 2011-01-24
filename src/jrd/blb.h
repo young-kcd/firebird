@@ -209,15 +209,15 @@ public:
 	static void destroy(blb* blob, const bool purge_flag);
 
 public:
-	virtual int release();
-	virtual void getInfo(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void putSegment(Status* status, unsigned int length, const unsigned char* buffer);
-	virtual void cancel(Status* status);
-	virtual void close(Status* status);
-	virtual int seek(Status* status, int mode, int offset);			// returns position
+	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
+	virtual void FB_CARG putSegment(Status* status, unsigned int length, const unsigned char* buffer);
+	virtual void FB_CARG cancel(Status* status);
+	virtual void FB_CARG close(Status* status);
+	virtual int FB_CARG seek(Status* status, int mode, int offset);			// returns position
 };
 
 const int BLB_temporary		= 1;		// Newly created blob

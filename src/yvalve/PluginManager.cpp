@@ -135,7 +135,7 @@ namespace
 			return par ? par->value.nullStr() : NULL;
 		}
 
-		IConfig* sub();
+		IConfig* FB_CARG sub();
 
 		int FB_CARG release()
 		{

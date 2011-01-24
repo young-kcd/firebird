@@ -83,19 +83,19 @@ public:
 	MapItemInfo mapItemInfo;			// Map item to item info
 
 public:
-	virtual int release();
-	virtual void receive(Status* status, int level, unsigned int msg_type,
+	virtual int FB_CARG release();
+	virtual void FB_CARG receive(Status* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
-	virtual void send(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG send(Status* status, int level, unsigned int msg_type,
 					  unsigned int length, const unsigned char* message);
-	virtual void getInfo(Status* status, int level,
+	virtual void FB_CARG getInfo(Status* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void start(Status* status, Firebird::ITransaction* tra, int level);
-	virtual void startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
+	virtual void FB_CARG start(Status* status, Firebird::ITransaction* tra, int level);
+	virtual void FB_CARG startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
 							  unsigned int length, const unsigned char* message);
-	virtual void unwind(Status* status, int level);
-	virtual void free(Status* status);
+	virtual void FB_CARG unwind(Status* status, int level);
+	virtual void FB_CARG free(Status* status);
 };
 
 

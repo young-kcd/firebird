@@ -119,7 +119,7 @@ public:
 		}
 	}
 
-	int release()
+	int FB_CARG release()
 	{
 		if (--refCounter == 0)
 		{

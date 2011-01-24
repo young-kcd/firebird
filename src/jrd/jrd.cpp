@@ -150,8 +150,8 @@ namespace Jrd
 class Events : public StdIface<IEvents, FB_I_EVENTS_VERSION, pool_alloc<type_Events> >
 {
 public:
-	virtual int release();
-	virtual void cancel(Status* status);
+	virtual int FB_CARG release();
+	virtual void FB_CARG cancel(Status* status);
 
 public:
 	Events(int h, Attachment* att) : id(h), attachment(att) { }
@@ -219,13 +219,13 @@ int Events::release()
 class Svc : public StdIface<IService, FB_I_SERVICE_VERSION>
 {
 public:
-	virtual int release();
-	virtual void detach(Status* status);
-	virtual void query(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG detach(Status* status);
+	virtual void FB_CARG query(Status* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer);
-	virtual void start(Status* status,
+	virtual void FB_CARG start(Status* status,
 					   unsigned int spbLength, const unsigned char* spb);
 
 public:
@@ -249,16 +249,16 @@ public:
 	explicit Provider(IFactoryParameter*)
 	{ }
 
-	virtual void attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
 												 unsigned int spbLength, const unsigned char* spb);
 	//virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int count, ...);
 	//virtual Firebird::ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
-	virtual void shutdown(Status* status, unsigned int timeout, const int reason);
-	virtual int release();
+	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
+	virtual int FB_CARG release();
 };
 
 int Provider::release()
@@ -687,16 +687,16 @@ class TraceFailedConnection : public Firebird::StackIface<TraceConnection, FB_TR
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
-	virtual int getConnectionID()				{ return 0; }
-	virtual int getProcessID()					{ return m_options->dpb_remote_pid; }
-	virtual const char* getDatabaseName()		{ return m_filename; }
-	virtual const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
-	virtual const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
-	virtual const char* getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
-	virtual const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
-	virtual const char* getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
-	virtual int getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
-	virtual const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
+	virtual int FB_CARG getConnectionID()				{ return 0; }
+	virtual int FB_CARG getProcessID()					{ return m_options->dpb_remote_pid; }
+	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
+	virtual const char* FB_CARG getUserName()			{ return m_id.usr_user_name.c_str(); }
+	virtual const char* FB_CARG getRoleName()			{ return m_options->dpb_role_name.c_str(); }
+	virtual const char* FB_CARG getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
+	virtual const char* FB_CARG getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
+	virtual const char* FB_CARG getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
+	virtual int FB_CARG getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
+	virtual const char* FB_CARG getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
 
 private:
 	const char* m_filename;

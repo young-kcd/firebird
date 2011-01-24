@@ -135,15 +135,15 @@ typedef Firebird::Status Status;
 class Blob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
 {
 public:
-	virtual int release();
-	virtual void getInfo(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void putSegment(Status* status, unsigned int length, const unsigned char* buffer);
-	virtual void cancel(Status* status);
-	virtual void close(Status* status);
-	virtual int seek(Status* status, int mode, int offset);			// returns position
+	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
+	virtual void FB_CARG putSegment(Status* status, unsigned int length, const unsigned char* buffer);
+	virtual void FB_CARG cancel(Status* status);
+	virtual void FB_CARG close(Status* status);
+	virtual int FB_CARG seek(Status* status, int mode, int offset);			// returns position
 
 public:
 	Blob(Rbl* handle) : blob(handle) { }
@@ -173,38 +173,38 @@ int Blob::release()
 class Transaction : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANSACTION_VERSION>
 {
 public:
-	virtual int release();
-	virtual void getInfo(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual Firebird::IBlob* createBlob(Status* status, ISC_QUAD* id,
+	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, ISC_QUAD* id,
 							 unsigned int bpbLength = 0, const unsigned char* bpb = 0,
 							 Firebird::IAttachment* att = 0);
-	virtual Firebird::IBlob* openBlob(Status* status, ISC_QUAD* id,
+	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, ISC_QUAD* id,
 						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
 						   Firebird::IAttachment* att = 0);
-	virtual int getSlice(Status* status, ISC_QUAD* id,
+	virtual int FB_CARG getSlice(Status* status, ISC_QUAD* id,
 						 unsigned int sdl_length, const unsigned char* sdl,
 						 unsigned int param_length, const unsigned char* param,
 						 int sliceLength, unsigned char* slice,
 						 Firebird::IAttachment* att = 0);
-	virtual void putSlice(Status* status, ISC_QUAD* id,
+	virtual void FB_CARG putSlice(Status* status, ISC_QUAD* id,
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice,
 						  Firebird::IAttachment* att = 0);
-	virtual void transactRequest(Status* status,
+	virtual void FB_CARG transactRequest(Status* status,
 								 unsigned int blr_length, const unsigned char* blr,
 								 unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_msg_length, unsigned char* out_msg,
 								 Firebird::IAttachment* att = 0);
-	virtual void prepare(Status* status,
+	virtual void FB_CARG prepare(Status* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
-	virtual void commit(Status* status);
-	virtual void commitRetaining(Status* status);
-	virtual void rollback(Status* status);
-	virtual void rollbackRetaining(Status* status);
+	virtual void FB_CARG ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
+	virtual void FB_CARG commit(Status* status);
+	virtual void FB_CARG commitRetaining(Status* status);
+	virtual void FB_CARG rollback(Status* status);
+	virtual void FB_CARG rollbackRetaining(Status* status);
 
 public:
 	Transaction(Rtr* handle) : transaction(handle) { }
@@ -243,19 +243,19 @@ int Transaction::release()
 class Statement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION>
 {
 public:
-	virtual int release();
+	virtual int FB_CARG release();
 	//virtual Sqlda* describeInput(Status* status);
 	//virtual Sqlda* describeOutput(Status* status);
-	virtual Statement* prepare(Status* status, Firebird::ITransaction* tra,
+	virtual Statement* FB_CARG prepare(Status* status, Firebird::ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 							   unsigned int item_length, const unsigned char* items,
 							   unsigned int buffer_length, unsigned char* buffer);
-	virtual void getInfo(Status* status,
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void setCursor(Status* status, const char* name, unsigned int type);
+	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
 //	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* tra, Sqlda* in, Sqlda* out);
-	virtual Firebird::ITransaction* executeMessage(Status* status, Firebird::ITransaction* tra,
+	virtual Firebird::ITransaction* FB_CARG executeMessage(Status* status, Firebird::ITransaction* tra,
 										unsigned int in_blr_length, const unsigned char* in_blr,
 										unsigned int in_msg_type,
 										unsigned int in_msg_length, const unsigned char* in_message,
@@ -263,16 +263,16 @@ public:
 										unsigned int out_msg_type,
 										unsigned int out_msg_length, unsigned char* out_message);
 //	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
-	virtual int fetchMessage(Status* status,
+	virtual int FB_CARG fetchMessage(Status* status,
 							 unsigned int blr_length, const unsigned char* blr,
 							 unsigned int msg_type,
 							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void insertMessage(Status* status,
+	virtual void FB_CARG insertMessage(Status* status,
 							   unsigned int blr_length, const unsigned char* blr,
 							   unsigned int msg_type,
 							   unsigned int msg_length, const unsigned char* message);
-	virtual void free(Status* status, unsigned int option);
+	virtual void FB_CARG free(Status* status, unsigned int option);
 
 public:
 	Statement(Rsr* handle) : statement(handle) { }
@@ -300,19 +300,19 @@ int Statement::release()
 class Request : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSION>
 {
 public:
-	virtual int release();
-	virtual void receive(Status* status, int level, unsigned int msg_type,
+	virtual int FB_CARG release();
+	virtual void FB_CARG receive(Status* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
-	virtual void send(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG send(Status* status, int level, unsigned int msg_type,
 					  unsigned int length, const unsigned char* message);
-	virtual void getInfo(Status* status, int level,
+	virtual void FB_CARG getInfo(Status* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void start(Status* status, Firebird::ITransaction* tra, int level);
-	virtual void startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
+	virtual void FB_CARG start(Status* status, Firebird::ITransaction* tra, int level);
+	virtual void FB_CARG startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
 							  unsigned int length, const unsigned char* message);
-	virtual void unwind(Status* status, int level);
-	virtual void free(Status* status);
+	virtual void FB_CARG unwind(Status* status, int level);
+	virtual void FB_CARG free(Status* status);
 
 public:
 	Request(Rrq* handle) : rq(handle) { }
@@ -340,8 +340,8 @@ int Request::release()
 class Events : public Firebird::StdIface<Firebird::IEvents, FB_I_EVENTS_VERSION>
 {
 public:
-	virtual int release();
-	virtual void cancel(Status* status);
+	virtual int FB_CARG release();
+	virtual void FB_CARG cancel(Status* status);
 
 public:
 	Events(Rvnt* handle) : rvnt(handle) { }
@@ -369,29 +369,29 @@ int Events::release()
 class Attachment : public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION>
 {
 public:
-	virtual int release();
-	virtual void getInfo(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
 //	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
+	virtual Firebird::ITransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api);
-	virtual Firebird::ITransaction* reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
-	virtual Firebird::IStatement* allocateStatement(Status* status);
-	virtual Firebird::IRequest* compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
+	virtual Firebird::IStatement* FB_CARG allocateStatement(Status* status);
+	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
+	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_blr_length, const unsigned char* in_blr,
 								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_blr_length, unsigned char* out_blr,
 								 unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg);
-	virtual Firebird::IEvents* queEvents(Status* status, Firebird::EventCallback* callback,
+	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
 									 unsigned int length, const unsigned char* events);
-	virtual void cancelOperation(Status* status, int option);
-	virtual void ping(Status* status);
-	virtual void detach(Status* status);
-	virtual void drop(Status* status);
+	virtual void FB_CARG cancelOperation(Status* status, int option);
+	virtual void FB_CARG ping(Status* status);
+	virtual void FB_CARG detach(Status* status);
+	virtual void FB_CARG drop(Status* status);
 
 public:
 	Attachment(Rdb* handle) : rdb(handle) { }
@@ -424,13 +424,13 @@ int Attachment::release()
 class Service : public Firebird::StdIface<Firebird::IService, FB_I_SERVICE_VERSION>
 {
 public:
-	virtual int release();
-	virtual void detach(Status* status);
-	virtual void query(Status* status,
+	virtual int FB_CARG release();
+	virtual void FB_CARG detach(Status* status);
+	virtual void FB_CARG query(Status* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer);
-	virtual void start(Status* status,
+	virtual void FB_CARG start(Status* status,
 					   unsigned int spbLength, const unsigned char* spb);
 
 public:
@@ -463,17 +463,17 @@ public:
 	{
 	}
 
-	virtual void attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
 	//virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int count, ...);
 	//virtual Firebird::ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
-	virtual void shutdown(Status* status, unsigned int timeout, const int reason);
+	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
 
-	virtual int release()
+	virtual int FB_CARG release()
 	{
 		if (--refCounter == 0)
 		{
@@ -504,11 +504,11 @@ public:
 	{
 	}
 
-	virtual void attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
 };
 
@@ -2628,7 +2628,7 @@ unsigned int Blob::getSegment(Status* status, unsigned int buffer_length, unsign
 			{
 				receive_response(status, rdb, packet);
 			}
-			catch (const Exception& ex)
+			catch (const Exception& /*ex*/)
 			{
 				response->p_resp_data = temp;
 				throw;
@@ -2767,7 +2767,7 @@ unsigned int Blob::getSegment(Status* status, unsigned int buffer_length, unsign
 			{
 				receive_response(status, rdb, packet);
 			}
-			catch (const Exception& ex)
+			catch (const Exception& /*ex*/)
 			{
 				response->p_resp_data = temp;
 				throw;

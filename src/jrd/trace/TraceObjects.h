@@ -56,16 +56,16 @@ public:
 		m_att(att)
 	{}
 
-	virtual int getConnectionID();
-	virtual int getProcessID();
-	virtual const char* getDatabaseName();
-	virtual const char* getUserName();
-	virtual const char* getRoleName();
-	virtual const char* getCharSet();
-	virtual const char* getRemoteProtocol();
-	virtual const char* getRemoteAddress();
-	virtual int getRemoteProcessID();
-	virtual const char* getRemoteProcessName();
+	virtual int FB_CARG getConnectionID();
+	virtual int FB_CARG getProcessID();
+	virtual const char* FB_CARG getDatabaseName();
+	virtual const char* FB_CARG getUserName();
+	virtual const char* FB_CARG getRoleName();
+	virtual const char* FB_CARG getCharSet();
+	virtual const char* FB_CARG getRemoteProtocol();
+	virtual const char* FB_CARG getRemoteAddress();
+	virtual int FB_CARG getRemoteProcessID();
+	virtual const char* FB_CARG getRemoteProcessName();
 
 private:
 	const Attachment* const m_att;
@@ -80,11 +80,11 @@ public:
 		m_perf(perf)
 	{}
 
-	virtual int getTransactionID();
-	virtual bool getReadOnly();
-	virtual int getWait();
-	virtual ntrace_tra_isolation_t getIsolation();
-	virtual PerformanceInfo* getPerf()	{ return m_perf; }
+	virtual int FB_CARG getTransactionID();
+	virtual bool FB_CARG getReadOnly();
+	virtual int FB_CARG getWait();
+	virtual ntrace_tra_isolation_t FB_CARG getIsolation();
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
 
 private:
 	const jrd_tra* const m_tran;
@@ -101,9 +101,9 @@ public:
 		m_text(*getDefaultMemoryPool())
 	{}
 
-	virtual const unsigned char* getData()	{ return m_blr; }
-	virtual size_t getDataLength()	{ return m_length; }
-	virtual const char* getText();
+	virtual const unsigned char* FB_CARG getData()	{ return m_blr; }
+	virtual size_t FB_CARG getDataLength()	{ return m_length; }
+	virtual const char* FB_CARG getText();
 
 private:
 	static void print_blr(void* arg, SSHORT offset, const char* line);
@@ -123,8 +123,8 @@ public:
 		m_perf(perf)
 	{}
 
-	virtual int getStmtID()				{ return m_stmt->req_id; }
-	virtual PerformanceInfo* getPerf()	{ return m_perf; }
+	virtual int FB_CARG getStmtID()				{ return m_stmt->req_id; }
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
 
 private:
 	const jrd_req* const m_stmt;
@@ -139,8 +139,8 @@ public:
 		BLRPrinter(blr, length)
 	{}
 
-	virtual int getStmtID()				{ return 0; }
-	virtual PerformanceInfo* getPerf()	{ return NULL; }
+	virtual int FB_CARG getStmtID()				{ return 0; }
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return NULL; }
 };
 
 
@@ -157,12 +157,12 @@ public:
 
 	~TraceSQLStatementImpl();
 
-	virtual int getStmtID();
-	virtual PerformanceInfo* getPerf();
-	virtual TraceParams* getInputs();
-	virtual const char* getText();
-	virtual const char* getPlan();
-	virtual const char* getTextUTF8();
+	virtual int FB_CARG getStmtID();
+	virtual PerformanceInfo* FB_CARG getPerf();
+	virtual TraceParams* FB_CARG getInputs();
+	virtual const char* FB_CARG getText();
+	virtual const char* FB_CARG getPlan();
+	virtual const char* FB_CARG getTextUTF8();
 
 private:
 	class DSQLParamsImpl : public Firebird::StackIface<TraceParams, FB_TRACE_PARAMS_VERSION>
@@ -173,8 +173,8 @@ private:
 			m_descs(pool)
 		{}
 
-		virtual size_t getCount();
-		virtual const dsc* getParam(size_t idx);
+		virtual size_t FB_CARG getCount();
+		virtual const dsc* FB_CARG getParam(size_t idx);
 
 	private:
 		void fillParams();
@@ -198,12 +198,12 @@ public:
 		m_text(text)
 	{}
 
-	virtual int getStmtID()				{ return 0; }
-	virtual PerformanceInfo* getPerf()	{ return NULL; }
-	virtual TraceParams* getInputs()	{ return NULL; }
-	virtual const char* getText()		{ return m_text.c_str(); }
-	virtual const char* getPlan()		{ return ""; }
-	virtual const char* getTextUTF8();
+	virtual int FB_CARG getStmtID()				{ return 0; }
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return NULL; }
+	virtual TraceParams* FB_CARG getInputs()	{ return NULL; }
+	virtual const char* FB_CARG getText()		{ return m_text.c_str(); }
+	virtual const char* FB_CARG getPlan()		{ return ""; }
+	virtual const char* FB_CARG getTextUTF8();
 
 private:
 	Firebird::string& m_text;
@@ -220,9 +220,9 @@ public:
 		m_value(value)
 	{}
 
-	virtual const char* getNameSpace()	{ return m_namespace; }
-	virtual const char* getVarName()	{ return m_name; }
-	virtual const char* getVarValue()	{ return m_value; }
+	virtual const char* FB_CARG getNameSpace()	{ return m_namespace; }
+	virtual const char* FB_CARG getVarName()	{ return m_name; }
+	virtual const char* FB_CARG getVarValue()	{ return m_value; }
 
 private:
 	const char* const m_namespace;
@@ -239,13 +239,13 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
-	virtual const char* getProcName()
+	virtual const char* FB_CARG getProcName()
 	{
 		return m_request->getStatement()->procedure->getName().identifier.c_str();
 	}
 
-	virtual TraceParams* getInputs()	{ return &m_inputs; }
-	virtual PerformanceInfo* getPerf()	{ return m_perf; };
+	virtual TraceParams* FB_CARG getInputs()	{ return &m_inputs; }
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
 
 private:
 	class JrdParamsImpl : public Firebird::StackIface<TraceParams, FB_TRACE_PARAMS_VERSION>
@@ -257,8 +257,8 @@ private:
 			m_descs(pool)
 		{}
 
-		virtual size_t getCount();
-		virtual const dsc* getParam(size_t idx);
+		virtual size_t FB_CARG getCount();
+		virtual const dsc* FB_CARG getParam(size_t idx);
 
 	private:
 		void fillParams();
@@ -283,11 +283,11 @@ public:
 	  m_perf(perf)
 	{}
 
-	virtual const char* getTriggerName();
-	virtual const char* getRelationName();
-	virtual int getAction()				{ return m_trig->req_trigger_action; }
-	virtual int getWhich()				{ return m_which; }
-	virtual PerformanceInfo* getPerf()	{ return m_perf; }
+	virtual const char* FB_CARG getTriggerName();
+	virtual const char* FB_CARG getRelationName();
+	virtual int FB_CARG getAction()				{ return m_trig->req_trigger_action; }
+	virtual int FB_CARG getWhich()				{ return m_which; }
+	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
 
 private:
 	const jrd_req* const m_trig;
@@ -303,16 +303,16 @@ public:
 		m_svc(svc)
 	{}
 
-	virtual ntrace_service_t getServiceID();
-	virtual const char* getServiceMgr();
-	virtual const char* getServiceName();
-	virtual const char* getUserName();
-	virtual const char* getRoleName();
-	virtual int getProcessID();
-	virtual const char* getRemoteProtocol();
-	virtual const char* getRemoteAddress();
-	virtual int getRemoteProcessID();
-	virtual const char* getRemoteProcessName();
+	virtual ntrace_service_t FB_CARG getServiceID();
+	virtual const char* FB_CARG getServiceMgr();
+	virtual const char* FB_CARG getServiceName();
+	virtual const char* FB_CARG getUserName();
+	virtual const char* FB_CARG getRoleName();
+	virtual int FB_CARG getProcessID();
+	virtual const char* FB_CARG getRemoteProtocol();
+	virtual const char* FB_CARG getRemoteAddress();
+	virtual int FB_CARG getRemoteProcessID();
+	virtual const char* FB_CARG getRemoteProcessName();
 
 private:
 	const Service* const m_svc;
@@ -325,7 +325,7 @@ public:
 	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 		SINT64 clock, SINT64 records_fetched);
 
-	PerformanceInfo* getPerf()	{ return &m_info; }
+	PerformanceInfo* FB_CARG getPerf()	{ return &m_info; }
 
 private:
 	PerformanceInfo m_info;
@@ -350,14 +350,14 @@ public:
 		m_logWriter = NULL;
 	}
 
-	virtual const char* getConfigText()			{ return m_session.ses_config.c_str(); }
-	virtual int getTraceSessionID()				{ return m_session.ses_id; }
-	virtual const char* getTraceSessionName()	{ return m_session.ses_name.c_str(); }
+	virtual const char* FB_CARG getConfigText()			{ return m_session.ses_config.c_str(); }
+	virtual int FB_CARG getTraceSessionID()				{ return m_session.ses_id; }
+	virtual const char* FB_CARG getTraceSessionName()	{ return m_session.ses_name.c_str(); }
 
-	virtual const char* getFirebirdRootDirectory();
-	virtual const char* getDatabaseName()		{ return m_filename; }
+	virtual const char* FB_CARG getFirebirdRootDirectory();
+	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
 
-	virtual TraceConnection* getConnection()
+	virtual TraceConnection* FB_CARG getConnection()
 	{
 		if (m_attachment)
 			return &m_trace_conn;
@@ -365,7 +365,7 @@ public:
 		return NULL;
 	}
 
-	virtual TraceLogWriter* getLogWriter();
+	virtual TraceLogWriter* FB_CARG getLogWriter();
 
 private:
 	const Firebird::TraceSession& m_session;

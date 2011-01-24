@@ -594,7 +594,7 @@ namespace Why
 			drop(h);
 		}
 
-		void eventCallbackFunction(unsigned int length, const UCHAR* events)
+		void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
 			func(arg, length, events);
 		}
@@ -614,7 +614,7 @@ namespace Why
 			: CEvents(NULL, par, f, a)
 		{ }
 
-		void eventCallbackFunction(unsigned int length, const UCHAR* events)
+		void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
 			CEvents::eventCallbackFunction(length, events);
 			sem.release();
@@ -959,27 +959,27 @@ namespace
 #endif
 		}
 
-		void set(unsigned int length, const ISC_STATUS* value)
+		void FB_CARG set(unsigned int length, const ISC_STATUS* value)
 		{
 			fb_utils::copyStatus(local_vector, FB_NELEM(local_status), value, length);
 		}
 
-		void set(const ISC_STATUS* value)
+		void FB_CARG set(const ISC_STATUS* value)
 		{
 			set(fb_utils::statusLength(value), value);
 		}
 
-		void init()
+		void FB_CARG init()
 		{
 			fb_utils::init_status(local_vector);
 		}
 
-		const ISC_STATUS* get() const
+		const ISC_STATUS* FB_CARG get() const
 		{
 			return local_vector;
 		}
 
-		int isSuccess() const
+		int FB_CARG isSuccess() const
 		{
 			switch (local_vector[1])
 			{

@@ -42,10 +42,10 @@ public:
 	{
 	}
 
-	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
-    void getData(const unsigned char** data, unsigned short* dataSize);
-    int release();
+	Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result FB_CARG contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
+    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
+    int FB_CARG release();
 };
 
 void registerLegacyClient(Firebird::IPlugin* iPlugin);

@@ -377,6 +377,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\yvalve\PluginManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\yvalve\prepa_proto.h"
 				>
 			</File>
@@ -437,7 +441,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\yvalve\MasterImplementation.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\yvalve\perf.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\yvalve\PluginManager.cpp"
 				>
 			</File>
 			<File
