@@ -64,24 +64,92 @@
 #define SIG_ACK (void (__cdecl *)(int))4	// acknowledge
 #endif
 
-static int process_id = 0;
 
-const USHORT MAX_OPN_EVENTS	= 40;
+namespace {
 
-struct opn_event_t
+static int process_id		= 0;
+const int MAX_OPN_EVENTS	= 40;
+
+class OpenEvents
 {
-	SLONG opn_event_pid;
-	SLONG opn_event_signal;		// pseudo-signal number
-	HANDLE opn_event_lhandle;	// local handle to foreign event
-	ULONG opn_event_age;
+public:
+	OpenEvents(Firebird::MemoryPool&) 
+	{
+		memset(&m_events, 0, sizeof(m_events));
+		m_count = 0;
+		m_clock = 0;
+	}
+
+	~OpenEvents()
+	{
+		process_id = 0;
+
+		openEvent* evnt = m_events + m_count;
+		m_count = 0;
+		while (evnt-- > m_events)
+			CloseHandle(evnt->handle);
+	}
+
+	HANDLE getEvent(SLONG pid, SLONG signal_number)
+	{
+		openEvent* oldestEvent = NULL;
+		ULONG oldestAge = ~0;
+
+		openEvent* evnt = m_events;
+		const openEvent* const end = evnt + m_count;
+		for (; evnt < end; evnt++)
+		{
+			if (evnt->pid == pid && evnt->signal == signal_number)
+				break;
+
+			if (evnt->age < oldestAge)
+			{
+				oldestEvent = evnt;
+				oldestAge = evnt->age;
+			}
+		}
+
+		if (evnt >= end)
+		{
+			HANDLE handle = ISC_make_signal(false, false, pid, signal_number);
+			if (!handle)
+				return NULL;
+
+			if (m_count < MAX_OPN_EVENTS)
+				m_count++;
+			else
+			{
+				evnt = oldestEvent;
+				CloseHandle(evnt->handle);
+			}
+
+			evnt->pid = pid;
+			evnt->signal = signal_number;
+			evnt->handle = handle;
+		}
+
+		evnt->age = ++m_clock;
+		return evnt->handle;
+	}
+
+private:
+	class openEvent
+	{
+	public:
+		SLONG pid;
+		SLONG signal;	// pseudo-signal number
+		HANDLE handle;	// local handle to foreign event
+		ULONG age;
+	};
+
+	openEvent m_events[MAX_OPN_EVENTS];
+	int m_count;
+	ULONG m_clock;
 };
 
+}; // namespace
 
-static struct opn_event_t opn_events[MAX_OPN_EVENTS];
-static USHORT opn_event_count;
-static ULONG opn_event_clock;
-
-static void signal_cleanup(void*);
+Firebird::GlobalPtr<OpenEvents> openEvents;
 
 int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 {
@@ -100,52 +168,13 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	ISC_signal_init();
 
 	if (pid == process_id)
-	{
-		SetEvent(object_hndl);
-		return 0;
-	}
+		return SetEvent(object_hndl) ? 0 : -1;
 
-	opn_event_t* oldest_opn_event = NULL;
-	ULONG oldest_age = ~0;
-
-	opn_event_t* opn_event = opn_events;
-	const opn_event_t* const end_opn_event = opn_event + opn_event_count;
-	for (; opn_event < end_opn_event; opn_event++)
-	{
-		if (opn_event->opn_event_pid == pid &&
-			opn_event->opn_event_signal == signal_number)
-		{
-			break;
-		}
-		if (opn_event->opn_event_age < oldest_age)
-		{
-			oldest_opn_event = opn_event;
-			oldest_age = opn_event->opn_event_age;
-		}
-	}
-
-	if (opn_event >= end_opn_event)
-	{
-		HANDLE lhandle = ISC_make_signal(false, false, pid, signal_number);
-		if (!lhandle)
-			return -1;
-
-		if (opn_event_count < MAX_OPN_EVENTS)
-			opn_event_count++;
-		else
-		{
-			opn_event = oldest_opn_event;
-			CloseHandle(opn_event->opn_event_lhandle);
-		}
-
-		opn_event->opn_event_pid = pid;
-		opn_event->opn_event_signal = signal_number;
-		opn_event->opn_event_lhandle = lhandle;
-	}
-
-	opn_event->opn_event_age = ++opn_event_clock;
-
-	return SetEvent(opn_event->opn_event_lhandle) ? 0 : -1;
+	HANDLE handle = openEvents->getEvent(pid, signal_number);
+	if (!handle)
+		return -1;
+		
+	return SetEvent(handle) ? 0 : -1;
 }
 
 void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
@@ -196,19 +225,8 @@ namespace
 	public:
 		static void init()
 		{
-			gds__register_cleanup(signal_cleanup, 0);
 			process_id = getpid();
 			ISC_get_security_desc();
-		}
-
-		static void cleanup()
-		{
-			process_id = 0;
-
-			opn_event_t* opn_event = opn_events + opn_event_count;
-			opn_event_count = 0;
-			while (opn_event-- > opn_events)
-				CloseHandle(opn_event->opn_event_lhandle);
 		}
 	};
 
@@ -229,20 +247,4 @@ void ISC_signal_init()
  **************************************/
 
 	signalInit.init();
-}
-
-
-static void signal_cleanup(void*)
-{
-/**************************************
- *
- *	s i g n a l _ c l e a n u p
- *
- **************************************
- *
- * Functional description
- *	Module level cleanup handler.
- *
- **************************************/
-	signalInit.cleanup();
 }
