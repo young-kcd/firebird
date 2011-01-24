@@ -431,14 +431,14 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 		return;
 	}
 
-	string message;
-	message.printf("Error in %s() API call when working with security database", callName);
-	iscLogStatus(message.c_str(), status);
-
 #ifdef DEV_BUILD
 	// throw original status error
 	status_exception::raise(status);
 #else
+	string message;
+	message.printf("Error in %s() API call when working with security database", callName);
+	iscLogStatus(message.c_str(), status);
+
 	// showing real problems with security database to users is not good idea
 	// from security POV - therefore some generic message is used
 	Arg::Gds(userError).raise();
@@ -447,7 +447,19 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 
 void SecurityDatabase::shutdown(void*)
 {
-	instance.fini();
+	try
+	{
+		instance.fini();
+	}
+	catch (Exception &ex)
+	{
+		ISC_STATUS_ARRAY status;
+		ex.stuff_exception(status);
+		if (status[0] == 1 && status[1] != isc_att_shutdown)
+		{
+			iscLogStatus("Legacy security database shutdown", status);
+		}
+	}
 }
 
 Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
