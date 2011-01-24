@@ -3751,11 +3751,9 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 				// sad, but we MUST kill shutdown_thread because engine DLL\SO is unloaded
 				// else whole process will be crashed
 				Thread::kill(h);
-				Thread::closeHandle(h);
-
 				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
 			}
-			Thread::closeHandle(h);
+			Thread::waitForCompletion(h);
 		}
 		else
 		{

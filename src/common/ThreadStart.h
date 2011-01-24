@@ -65,7 +65,6 @@ public:
 	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* thd_id = NULL);
 	static void waitForCompletion(Handle& handle);
 	static void kill(Handle& handle);
-	static void closeHandle(Handle& handle);
 };
 
 #endif // JRD_THREADSTART_H
