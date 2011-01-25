@@ -7,7 +7,7 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
-    * Bugfix CORE-3268
+    * Bugfix CORE-3262
         LIST() function may overwrite last part of output with zero characters
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
