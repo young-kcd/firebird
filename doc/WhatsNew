@@ -7,6 +7,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-3268
+        LIST() function may overwrite last part of output with zero characters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-3244
         Function POSITION: wrong result with '' if third argument present
       Contributor(s):
