@@ -245,13 +245,13 @@ namespace
 	public:
 		PluginModule(ModuleLoader::Module* pmodule, const PathName& pname);
 
-		RegisteredPlugin* addPlugin(const RegisteredPlugin& p)
+		unsigned int addPlugin(const RegisteredPlugin& p)
 		{
 			regPlugins.add(p);
-			return &regPlugins[regPlugins.getCount() - 1];
+			return regPlugins.getCount() - 1;
 		}
 
-		RegisteredPlugin* findPlugin(unsigned int type, const PathName& name)
+		int findPlugin(unsigned int type, const PathName& name)
 		{
 			// typically modules do not contain too many plugins
 			// therefore direct array scan is OK here
@@ -259,11 +259,16 @@ namespace
 			{
 				if (type == regPlugins[i].type && name == regPlugins[i].name)
 				{
-					return &regPlugins[i];
+					return i;
 				}
 			}
 
-			return NULL;
+			return -1;
+		}
+
+		RegisteredPlugin& getPlugin(unsigned int i)
+		{
+			return regPlugins[i];
 		}
 
 		PluginModule* findModule(const PathName& pname)
@@ -309,7 +314,7 @@ namespace
 	class ConfiguredPlugin : public StdIface<IFactoryParameter, FB_FACTORY_PARAMETER_VERSION>
 	{
 	public:
-		ConfiguredPlugin(RefPtr<PluginModule> pmodule, RegisteredPlugin* preg,
+		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
 						 RefPtr<ConfigFile> pconfig, const PathName& pconfName, const PathName& pplugName)
 			: module(pmodule), regPlugin(preg), defaultConfig(pconfig),
 			  confName(getPool(), pconfName), plugName(getPool(), pplugName)
@@ -323,14 +328,15 @@ namespace
 				}
 			}
 #ifdef DEBUG_PLUGINS
-			fprintf(stderr, " ConfiguredPlugin %s module %s registered as %s type %d\n",
-					plugName.c_str(), module->getName(), regPlugin->name, regPlugin->type);
+			RegisteredPlugin& r(module->getPlugin(regPlugin));
+			fprintf(stderr, " ConfiguredPlugin %s module %s registered as %s type %d order %d\n",
+					plugName.c_str(), module->getName(), r.name, r.type, regPlugin);
 #endif
 		}
 
 		Plugin* FB_CARG factory()
 		{
-			return regPlugin->factory->createPlugin(this);
+			return module->getPlugin(regPlugin).factory->createPlugin(this);
 		}
 
 		const char* FB_CARG getConfigFileName()
@@ -372,7 +378,7 @@ namespace
 
 	private:
 		RefPtr<PluginModule> module;
-		RegisteredPlugin* regPlugin;
+		unsigned int regPlugin;
 		RefPtr<ConfigFile> defaultConfig;
 		PathName confName;
 		PathName plugName;
@@ -431,10 +437,10 @@ namespace
 	{
 		if (!destroyingPluginsMap)
 		{
-			plugins->remove(MapKey(regPlugin->type, plugName));
+			plugins->remove(MapKey(module->getPlugin(regPlugin).type, plugName));
 		}
 #ifdef DEBUG_PLUGINS
-		fprintf(stderr, "~ConfiguredPlugin %s type %d\n", plugName.c_str(), regPlugin->type);
+		fprintf(stderr, "~ConfiguredPlugin %s type %d\n", plugName.c_str(), module->getPlugin(regPlugin).type);
 #endif
 	}
 
@@ -576,8 +582,8 @@ namespace
 				continue;
 			}
 
-			RegisteredPlugin* r = m->findPlugin(interfaceType, regName);
-			if (! r)
+			int r = m->findPlugin(interfaceType, regName);
+			if (r < 0)
 			{
 				gds__log("Misconfigured: module %s does not contain plugin %s type %d",
 						 curModule.c_str(), regName.c_str(), interfaceType);
@@ -673,7 +679,7 @@ void FB_CARG PluginManager::registerPlugin(unsigned int interfaceType, const cha
 		return;
 	}
 
-	RegisteredPlugin* r = current->addPlugin(RegisteredPlugin(factory, defaultName, interfaceType));
+	unsigned int r = current->addPlugin(RegisteredPlugin(factory, defaultName, interfaceType));
 
 	if (current == builtin)
 	{
