@@ -23,6 +23,8 @@
 
 :SET_PARAMS
 @echo off
+:: reset ERRLEV to clear error from last run in same cmd shell
+set ERRLEV=0
 :: Assume we are preparing a production build
 set FBBUILD_BUILDTYPE=release
 :: Don't ship pdb files by default
@@ -744,6 +746,24 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @echo.
 @echo     FB2_EXAMPLES=0  - Don't include examples in the install kit.
 @echo.
+@echo.
+@echo   Required Files
+@echo.
+@echo     To successfully package Firebird you will need to make sure several
+@echo     packages are installed and correctly configured on your system.
+@echo.
+@echo     o InnoSetup is needed to create the binary installer. See the header
+@echo       of the .iss file to see which minimum version is required.
+@echo.
+@echo     o 7ZIP is required to create the zip and embedded packages
+@echo.
+@echo     o sed is required to package anything. Use the sed provided by
+@echo       gnuwin32. The cygwin one is not guaranteed to work.
+@echo.
+@echo     o WiX v2.0 is required to build installable msi packages of the
+@echo       MS runtime libraries.
+@echo.
+
 ::End of HELP
 ::-----------
 @goto :EOF
