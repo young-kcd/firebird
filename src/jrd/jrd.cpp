@@ -261,12 +261,18 @@ public:
 	virtual int FB_CARG release();
 };
 
+static Firebird::AtomicCounter shutdownCounter;
+
 int Provider::release()
 {
 	if (--refCounter == 0)
 	{
-		LocalStatus status;
-		shutdown(&status, 5000, fb_shutrsn_no_connection);
+		if (--shutdownCounter == 0)
+		{
+			LocalStatus status;
+			shutdown(&status, 5000, fb_shutrsn_no_connection);
+		}
+
 		delete this;
 		return 0;
 	}
@@ -274,7 +280,17 @@ int Provider::release()
 	return 1;
 }
 
-static Firebird::SimpleFactory<Provider> engineFactory;
+class EngineFactory : public Firebird::StackIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+{
+public:
+	Firebird::Plugin* FB_CARG createPlugin(Firebird::IFactoryParameter* factoryParameter)
+	{
+		++shutdownCounter;
+		return new Provider(factoryParameter);
+	}
+};
+
+static Firebird::Static<EngineFactory> engineFactory;
 
 void registerEngine(Firebird::IPlugin* iPlugin)
 {
