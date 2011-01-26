@@ -825,7 +825,7 @@ begin
   if not CheckWinsock2 then begin
     result := False;
     exit;
-  end
+  end;
 
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.
