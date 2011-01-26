@@ -5136,6 +5136,12 @@ static void check_response(Status* warning, Rdb* rdb, PACKET* packet)
 		return;
 	}
 
+	if (!vector[1])
+	{
+		vector[0] = isc_arg_gds;
+		vector[1] = isc_net_read_err;
+		vector[2] = isc_arg_end;
+	}
 	status_exception::raise(vector);
 }
 
