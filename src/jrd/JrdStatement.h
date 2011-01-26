@@ -37,7 +37,7 @@ public:
 	static const unsigned FLAG_VERSION4		= 0x08;
 
 	static const unsigned MAP_LENGTH = 256;
-	static const int MAX_CLONES = 1000;
+	static const unsigned MAX_CLONES = 1000;
 	static const unsigned MAX_REQUEST_SIZE = 10485760;	// 10 MB - just to be safe
 
 private:
