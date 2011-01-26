@@ -3667,7 +3667,7 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 
 	for (UCHAR i = 0; i < streamCount; ++i)
 	{
-		USHORT n = csb->csb_blr_reader.getByte();
+		const USHORT n = csb->csb_blr_reader.getByte();
 		node->streamList.add(csb->csb_rpt[n].csb_stream);
 	}
 
@@ -4260,7 +4260,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 	MetaName name;
 	SSHORT id;
-	const SSHORT stream = csb->csb_rpt[context].csb_stream;
+	const USHORT stream = csb->csb_rpt[context].csb_stream;
 	SSHORT flags = 0;
 	bool is_column = false;
 	bool byId = false;
