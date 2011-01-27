@@ -110,6 +110,11 @@
 #include "../../../../common/classes/FpeControl.h"
 #include "../jrd/ibase.h"
 
+#include "FirebirdPluginApi.h"
+#include "../common/classes/ImplementHelper.h"
+#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../auth/trusted/AuthSspi.h"
+
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
 static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -243,6 +248,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
 	fb_utils::init_status(status_vector);
+
+	{ // scope for interface ptr
+		Firebird::PluginInterface pi;
+		Auth::registerLegacyServer(pi);
+#ifdef TRUSTED_AUTH
+		Auth::registerTrustedServer(pi);
+#endif
+	}
 
 	fb_shutdown_callback(0, wait_threads, fb_shut_finish, NULL);
 
