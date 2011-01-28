@@ -2380,7 +2380,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		align = type_alignments[dtype_short];
 		if (align)
 			offset = FB_ALIGN(offset, align);
-		USHORT null_offset = offset;
+		const ULONG null_offset = offset;
 		offset += sizeof(SSHORT);
 
 		const dsql_par* const parameter = parameters[index - 1];
