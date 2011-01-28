@@ -1,3 +1,154 @@
+ 2011-01-28 00:58  asfernandes 
+   M src/common/os/win32/isc_ipc.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/remote/client/interface.cpp
+Misc
+
+ 2011-01-27 10:39  dimitr 
+   M builds/win32/msvc9/fbserver.vcproj
+Follow the MSVC10 changes regarding the binary name.
+
+ 2011-01-27 10:37  dimitr 
+   M builds/win32/msvc8/fbserver.vcproj
+Follow the MSVC10 changes regarding the binary name.
+
+ 2011-01-27 05:13  dimitr 
+   M src/remote/server/os/win32/srvr_w32.cpp
+Fixed authentication in Windows builds.
+
+ 2011-01-26 18:06  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Avoid to early shutdown of engine
+
+ 2011-01-26 18:04  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+Do not store pointer to array which may grow - use index instead
+
+ 2011-01-26 16:34  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Do not throw success status vector - if we got no user error, but bad op in packet, this is network error
+
+ 2011-01-26 11:20  dimitr 
+   M src/jrd/JrdStatement.h
+Misc.
+
+ 2011-01-26 10:03  dimitr 
+   M src/dsql/ExprNodes.cpp
+Misc.
+
+ 2011-01-24 22:58  hvlad 
+   M builds/win32/make_all.bat
+   M builds/win32/set_build_target.bat
+Corrections for windows build
+
+ 2011-01-24 20:32  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj.filters
+   M builds/win32/msvc10/user_management.vcxproj
+   M builds/win32/msvc10/user_management.vcxproj.filters
+   M builds/win32/msvc10/yvalve.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+Update MSVC10 build files
+
+ 2011-01-24 16:36  alexpeshkoff 
+   M src/common/ThreadStart.cpp
+   M src/common/ThreadStart.h
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/remote/client/interface.cpp
+Implement Thread::kill for posex threads. Do not support separate Thread::closeHandle - move it inside kill and waitForCompletion
+
+ 2011-01-24 16:34  alexpeshkoff 
+   M src/auth/SecurityDatabase/pwd.cpp
+Letting exceptions get out of shutdown function was wrong idea
+
+ 2011-01-24 14:10  hvlad 
+   M src/common/os/win32/isc_ipc.cpp
+Refactor open events cache to avoid atexit handler which could crash process on DLL unload.
+
+ 2011-01-24 13:20  hvlad 
+   M src/common/ThreadStart.cpp
+   M src/common/ThreadStart.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+Fixed main reason of AV at engine DLL unload time. More fixes will follow soon.
+
+ 2011-01-24 12:51  hvlad 
+   M builds/win32/defs/firebird.def
+   A builds/win32/defs/plugin.def
+   M builds/win32/defs/udr_engine.def
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/fbtrace.vcproj
+   M builds/win32/msvc8/user_management.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/fbtrace.vcproj
+   M builds/win32/msvc9/user_management.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/jrd_pwd.h
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/StatusHolder.h
+   M src/dsql/dsql.h
+   M src/jrd/Attachment.h
+   M src/jrd/JrdStatement.h
+   M src/jrd/blb.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+Make it compiles on Windows after Alex's changes. MSVC10 build will follow later.
+
+ 2011-01-24 12:43  hvlad 
+   M src/jrd/trace/TraceManager.h
+Warning
+
+ 2011-01-23 00:32  asfernandes 
+   M src/dsql/parse.y
+Misc
+
+ 2011-01-22 21:32  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactor DSQL's BREAK, LEAVE and CONTINUE.
+
+ 2011-01-22 20:40  asfernandes 
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+Refactor DSQL's nod_join and nod_union.
+
+ 2011-01-22 17:15  asfernandes 
+   M src/common/config/config_file.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/Database.h
+   M src/jrd/cch.cpp
+   M src/jrd/pag.h
+   M src/utilities/nbackup/nbackup.cpp
+Misc
+
  2011-01-21 17:55  alexpeshkoff 
    M src/jrd/Database.h
    M src/jrd/blb.cpp
