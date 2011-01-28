@@ -740,7 +740,7 @@ CompoundStmtNode* PAR_make_list(thread_db* tdbb, StmtNodeStack& stack)
 
 
 CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, ULONG blr_length,
-	bool internal_flag, USHORT dbginfo_length, const UCHAR* dbginfo)
+	bool internal_flag, ULONG dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *

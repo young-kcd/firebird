@@ -86,7 +86,7 @@ using namespace Jrd;
 
 typedef Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
 
-static USHORT get_counts(USHORT, CountsBuffer&);
+static USHORT get_counts(thread_db*, USHORT, CountsBuffer&);
 
 #define CHECK_INPUT(fcn) \
 	{ \
@@ -97,10 +97,10 @@ static USHORT get_counts(USHORT, CountsBuffer&);
 
 
 void INF_blob_info(const blb* blob,
+				   const ULONG item_length,
 				   const UCHAR* items,
-				   const SSHORT item_length,
-				   UCHAR* info,
-				   const SSHORT output_length)
+				   const ULONG output_length,
+				   UCHAR* info)
 {
 /**************************************
  *
@@ -207,10 +207,11 @@ USHORT INF_convert(SINT64 number, UCHAR* buffer)
 }
 
 
-void INF_database_info(const UCHAR* items,
-					   const SSHORT item_length,
-					   UCHAR* info,
-					   const SSHORT output_length)
+void INF_database_info(thread_db* tdbb,
+					   const ULONG item_length,
+					   const UCHAR* items,
+					   const ULONG output_length,
+					   UCHAR* info)
 {
 /**************************************
  *
@@ -226,19 +227,18 @@ void INF_database_info(const UCHAR* items,
 
 	CountsBuffer counts_buffer;
 	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
-	SSHORT length;
+	USHORT length;
 	SLONG err_val;
 	bool header_refreshed = false;
 
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	jrd_tra* transaction = NULL;
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end = info + output_length;
 
-	const Attachment* err_att = tdbb->getAttachment();
+	const Attachment* const err_att = tdbb->getAttachment();
 
 	while (items < end_items && *items != isc_info_end)
 	{
@@ -345,42 +345,42 @@ void INF_database_info(const UCHAR* items,
 			break;
 
 		case isc_info_read_seq_count:
-			length = get_counts(DBB_read_seq_count, counts_buffer);
+			length = get_counts(tdbb, DBB_read_seq_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_read_idx_count:
-			length = get_counts(DBB_read_idx_count, counts_buffer);
+			length = get_counts(tdbb, DBB_read_idx_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_update_count:
-			length = get_counts(DBB_update_count, counts_buffer);
+			length = get_counts(tdbb, DBB_update_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_insert_count:
-			length = get_counts(DBB_insert_count, counts_buffer);
+			length = get_counts(tdbb, DBB_insert_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_delete_count:
-			length = get_counts(DBB_delete_count, counts_buffer);
+			length = get_counts(tdbb, DBB_delete_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_backout_count:
-			length = get_counts(DBB_backout_count, counts_buffer);
+			length = get_counts(tdbb, DBB_backout_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_purge_count:
-			length = get_counts(DBB_purge_count, counts_buffer);
+			length = get_counts(tdbb, DBB_purge_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_expunge_count:
-			length = get_counts(DBB_expunge_count, counts_buffer);
+			length = get_counts(tdbb, DBB_expunge_count, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
@@ -853,7 +853,8 @@ UCHAR* INF_put_item(UCHAR item,
 					USHORT length,
 					const UCHAR* string,
 					UCHAR* ptr,
-					const UCHAR* end, const bool inserting)
+					const UCHAR* end,
+					const bool inserting)
 {
 /**************************************
  *
@@ -889,10 +890,10 @@ UCHAR* INF_put_item(UCHAR item,
 
 
 void INF_request_info(const jrd_req* request,
+					  const ULONG item_length,
 					  const UCHAR* items,
-					  const SSHORT item_length,
-					  UCHAR* info,
-					  const SLONG output_length)
+					  const ULONG output_length,
+					  UCHAR* info)
 {
 /**************************************
  *
@@ -1064,10 +1065,10 @@ void INF_request_info(const jrd_req* request,
 
 
 void INF_transaction_info(const jrd_tra* transaction,
+						  const ULONG item_length,
 						  const UCHAR* items,
-						  const SSHORT item_length,
-						  UCHAR* info,
-						  const SSHORT output_length)
+						  const ULONG output_length,
+						  UCHAR* info)
 {
 /**************************************
  *
@@ -1185,7 +1186,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 }
 
 
-static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
+static USHORT get_counts(thread_db* tdbb, USHORT count_id, CountsBuffer& buffer)
 {
 /**************************************
  *
@@ -1197,8 +1198,6 @@ static USHORT get_counts(USHORT count_id, CountsBuffer& buffer)
  *	Return operation counts for relation.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
 	const vcl* vector = tdbb->getAttachment()->att_counts[count_id];
 	if (!vector)
 		return 0;

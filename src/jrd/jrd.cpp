@@ -1698,7 +1698,7 @@ void blb::getInfo(Status* user_status,
 
 		try
 		{
-			INF_blob_info(this, items, itemsLength, buffer, bufferLength);
+			INF_blob_info(this, itemsLength, items, bufferLength, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -2463,7 +2463,7 @@ void Attachment::getInfo(Status* user_status, unsigned int item_length, const un
 
 		try
 		{
-			INF_database_info(items, item_length, buffer, buffer_length);
+			INF_database_info(tdbb, item_length, items, buffer_length, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -3194,7 +3194,7 @@ void JrdStatement::getInfo(Status* user_status, int level, unsigned int itemsLen
 
 		try
 		{
-			JRD_request_info(tdbb, request, itemsLength, items, bufferLength, buffer);
+			INF_request_info(request, itemsLength, items, bufferLength, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -3817,7 +3817,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status, FB_API_HANDLE public_hand
 
 
 ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	jrd_tra** tra_handle, SSHORT count, ...)
+	jrd_tra** tra_handle, USHORT count, ...)
 {
  **************************************
  *
@@ -3831,7 +3831,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
  **************************************
 	try
 	{
-		if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
+		if (!count || count > MAX_DB_PER_TRANS)
 		{
 			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) <<
 									Arg::Num(MAX_DB_PER_TRANS));
@@ -4060,7 +4060,7 @@ void jrd_tra::getInfo(Status* user_status,
 
 		try
 		{
-			INF_transaction_info(this, items, itemsLength, buffer, bufferLength);
+			INF_transaction_info(this, itemsLength, items, bufferLength, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -6722,24 +6722,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_l
 }
 
 
-void JRD_request_info(Jrd::thread_db*, jrd_req* request,
-					  SSHORT item_length, const UCHAR* items,
-					  SLONG buffer_length, UCHAR* buffer)
-{
-/**************************************
- *
- *	J R D _ r e q u e s t _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Return information about requests.
- *
- **************************************/
-	INF_request_info(request, items, item_length, buffer, buffer_length);
-}
-
-
 void JRD_send(thread_db* tdbb, jrd_req* request, USHORT msg_type, ULONG msg_length, const UCHAR* msg)
 {
 /**************************************
@@ -6974,7 +6956,7 @@ static void start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_ha
 }
 
 
-void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count, ...)
+void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, USHORT count, ...)
 {
 /**************************************
  *
@@ -6986,7 +6968,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
  *	Start a transaction.
  *
  **************************************/
-	if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
+	if (!count || count > MAX_DB_PER_TRANS)
 	{
 		status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
 	}
@@ -7034,7 +7016,8 @@ void JRD_compile(thread_db* tdbb,
 				 ULONG blr_length,
 				 const UCHAR* blr,
 				 RefStrPtr ref_str,
-				 USHORT dbginfo_length, const UCHAR* dbginfo,
+				 ULONG dbginfo_length,
+				 const UCHAR* dbginfo,
 				 bool isInternalRequest)
 {
 /**************************************

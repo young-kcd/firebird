@@ -69,8 +69,6 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULONG msg_length,
 	UCHAR* msg);
-void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT item_length,
-	const UCHAR* items, SLONG buffer_length, UCHAR* buffer);
 void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction);
 
 void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
@@ -81,11 +79,11 @@ void JRD_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULON
 	const UCHAR* msg);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
 	USHORT msg_type, ULONG msg_length, const UCHAR* msg);
-void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
+void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, USHORT count, ...);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
-	USHORT dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
+	ULONG dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
 bool JRD_verify_database_access(const Firebird::PathName&);
 void JRD_shutdown_attachments(const Jrd::Database* dbb);
 void JRD_cancel_operation(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, int option);

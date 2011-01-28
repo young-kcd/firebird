@@ -62,7 +62,7 @@ Jrd::CompoundStmtNode*	PAR_make_list(Jrd::thread_db*, Jrd::StmtNodeStack&);
 USHORT			PAR_name(Jrd::CompilerScratch*, Firebird::MetaName&);
 size_t			PAR_name(Jrd::CompilerScratch* csb, Firebird::string& name);
 Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length,
-	bool internal_flag, USHORT = 0, const UCHAR* = NULL);
+	bool internal_flag, ULONG = 0, const UCHAR* = NULL);
 
 Jrd::RecordSourceNode* PAR_parseRecordSource(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb);
 void			PAR_procedure_parms(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_prc*,

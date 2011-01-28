@@ -38,7 +38,7 @@ Jrd::ValueExprNode* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, J
 Jrd::BoolExprNode* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::BoolExprNode*);
 Jrd::ValueExprNode* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::ValueExprNode*);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length, bool internal_flag,
-	USHORT = 0, const UCHAR* = NULL);
+	ULONG = 0, const UCHAR* = NULL);
 Jrd::CompilerScratch::csb_repeat* CMP_csb_element(Jrd::CompilerScratch*, USHORT);
 void CMP_decrement_prc_use_count(Jrd::thread_db*, Jrd::jrd_prc*);
 void CMP_expand_view_nodes(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, Jrd::ValueExprNodeStack&,

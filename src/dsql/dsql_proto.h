@@ -35,33 +35,33 @@ namespace Jrd {
 
 Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*, Jrd::Attachment*);
 void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
-				  USHORT, const UCHAR*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, const UCHAR*,
-				  USHORT, UCHAR*);
+				  ULONG, const UCHAR*,
+				  USHORT, ULONG, const UCHAR*,
+				  ULONG, const UCHAR*,
+				  ULONG, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
-							USHORT, const TEXT*, USHORT,
-							USHORT, const UCHAR*,
-							USHORT, const UCHAR*,
-							USHORT, const UCHAR*,
-							USHORT, UCHAR*,
+							ULONG, const TEXT*, USHORT,
+							ULONG, const UCHAR*,
+							ULONG, const UCHAR*,
+							ULONG, const UCHAR*,
+							ULONG, UCHAR*,
 							bool);
-ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
+ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
 void DSQL_insert(Jrd::thread_db*, Jrd::dsql_req*,
-				 USHORT, const UCHAR*,
-				 USHORT, const UCHAR*);
+				 ULONG, const UCHAR*,
+				 ULONG, const UCHAR*);
 void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
-				  USHORT, const TEXT*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*,
+				  ULONG, const TEXT*, USHORT,
+				  ULONG, const UCHAR*,
+				  ULONG, UCHAR*,
 				  bool);
 void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
-				   USHORT, const UCHAR*, ULONG, UCHAR*);
+				   ULONG, const UCHAR*, ULONG, UCHAR*);
 ULONG DSQL_get_plan_info(Jrd::thread_db*,
 						  const Jrd::dsql_req*,
-						  SLONG, SCHAR**,
+						  SLONG, char**,
 						  const bool realloc = true);
 
 #endif //  DSQL_DSQL_PROTO_H

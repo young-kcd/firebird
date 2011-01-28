@@ -78,27 +78,27 @@ using namespace Firebird;
 
 
 static void		close_cursor(thread_db*, dsql_req*);
-static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
-						 USHORT, const UCHAR*, USHORT, UCHAR*);
+static void		execute_blob(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, const UCHAR*,
+						 ULONG, const UCHAR*, ULONG, UCHAR*);
 static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
-							  USHORT, const TEXT*, USHORT,
-							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, const UCHAR*,
-							  USHORT, const UCHAR*, /*USHORT,*/ USHORT, UCHAR*, bool);
-static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
-	USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*, bool);
+							  ULONG, const TEXT*, USHORT,
+							  ULONG, const UCHAR*, ULONG, const UCHAR*,
+							  ULONG, const UCHAR*, ULONG, UCHAR*, bool);
+static void		execute_request(thread_db*, dsql_req*, jrd_tra**, ULONG, const UCHAR*,
+	ULONG, const UCHAR*, ULONG, const UCHAR*, ULONG, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
 static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
-static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
+static USHORT	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
-static dsql_dbb*	init(Jrd::Attachment*);
-static void		map_in_out(dsql_req*, bool, const dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*,
+static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
+static void		map_in_out(dsql_req*, bool, const dsql_msg*, ULONG, const UCHAR*, ULONG, UCHAR*,
 	const UCHAR* = 0);
-static USHORT	parse_blr(dsql_req*, USHORT, const UCHAR*, const USHORT, const Array<dsql_par*>&);
-static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
-static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT, bool);
+static USHORT	parse_blr(dsql_req*, ULONG, const UCHAR*, const ULONG, const Array<dsql_par*>&);
+static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
+static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
 static void		release_statement(DsqlCompiledStatement* statement);
-static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, ULONG, UCHAR*);
+static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
 
@@ -123,15 +123,6 @@ unsigned DSQL_debug = 0;
 
 namespace
 {
-	const UCHAR db_hdr_info_items[] =
-	{
-		isc_info_db_sql_dialect,
-		isc_info_ods_version,
-		isc_info_ods_minor_version,
-		isc_info_db_read_only,
-		isc_info_end
-	};
-
 	const UCHAR explain_info[] =
 	{
 		isc_info_access_path
@@ -176,7 +167,7 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 {
 	SET_TDBB(tdbb);
 
-	dsql_dbb* const database = init(attachment);
+	dsql_dbb* const database = init(tdbb, attachment);
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
 
 	// allocate the request block
@@ -214,10 +205,10 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 void DSQL_execute(thread_db* tdbb,
 				  jrd_tra** tra_handle,
 				  dsql_req* request,
-				  USHORT in_blr_length, const UCHAR* in_blr,
-				  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
-				  USHORT out_blr_length, const UCHAR* const out_blr,
-				  USHORT out_msg_length, UCHAR* out_msg)
+				  ULONG in_blr_length, const UCHAR* in_blr,
+				  USHORT in_msg_type, ULONG in_msg_length, const UCHAR* in_msg,
+				  ULONG out_blr_length, const UCHAR* const out_blr,
+				  ULONG out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -308,11 +299,11 @@ void DSQL_execute(thread_db* tdbb,
 void DSQL_execute_immediate(thread_db* tdbb,
 							Jrd::Attachment* attachment,
 							jrd_tra** tra_handle,
-							USHORT length, const TEXT* string, USHORT dialect,
-							USHORT in_blr_length, const UCHAR* in_blr,
-							USHORT in_msg_length, const UCHAR* in_msg,
-							USHORT out_blr_length, const UCHAR* out_blr,
-							USHORT out_msg_length, UCHAR* out_msg,
+							ULONG length, const TEXT* string, USHORT dialect,
+							ULONG in_blr_length, const UCHAR* in_blr,
+							ULONG in_msg_length, const UCHAR* in_msg,
+							ULONG out_blr_length, const UCHAR* out_blr,
+							ULONG out_msg_length, UCHAR* out_msg,
 							bool isInternalRequest)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
@@ -342,8 +333,8 @@ void DSQL_execute_immediate(thread_db* tdbb,
  **/
 ISC_STATUS DSQL_fetch(thread_db* tdbb,
 					  dsql_req* request,
-					  USHORT blr_length, const UCHAR* blr,
-					  USHORT msg_length, UCHAR* dsql_msg_buf)
+					  ULONG blr_length, const UCHAR* blr,
+					  ULONG msg_length, UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -390,7 +381,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		if (!request->req_user_descs.get(null, userNullDesc))
 			userNullDesc.clear();
 
-		USHORT* ret_length = (USHORT *) (dsql_msg_buf + (IPTR) userNullDesc.dsc_address);
+		USHORT* ret_length = (USHORT*) (dsql_msg_buf + (IPTR) userNullDesc.dsc_address);
 		UCHAR* buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
 
 		*ret_length = BLB_get_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
@@ -492,8 +483,8 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
  **/
 void DSQL_insert(thread_db* tdbb,
 				 dsql_req* request,
-				 USHORT blr_length, const UCHAR* blr,
-				 USHORT msg_length, const UCHAR* dsql_msg_buf)
+				 ULONG blr_length, const UCHAR* blr,
+				 ULONG msg_length, const UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -565,9 +556,9 @@ void DSQL_insert(thread_db* tdbb,
 void DSQL_prepare(thread_db* tdbb,
 				  jrd_tra* transaction,
 				  dsql_req** req_handle,
-				  USHORT length, const TEXT* string, USHORT dialect,
-				  USHORT item_length, const UCHAR* items,
-				  USHORT buffer_length, UCHAR* buffer,
+				  ULONG length, const TEXT* string, USHORT dialect,
+				  ULONG item_length, const UCHAR* items,
+				  ULONG buffer_length, UCHAR* buffer,
 				  bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
@@ -790,7 +781,7 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
  **/
 void DSQL_sql_info(thread_db* tdbb,
 				   dsql_req* request,
-				   USHORT item_length, const UCHAR* items,
+				   ULONG item_length, const UCHAR* items,
 				   ULONG info_length, UCHAR* info)
 {
 	SET_TDBB(tdbb);
@@ -880,13 +871,13 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
  **/
 static void execute_blob(thread_db* tdbb,
 						 dsql_req* request,
-						 USHORT in_blr_length,
+						 ULONG in_blr_length,
 						 const UCHAR* in_blr,
-						 USHORT in_msg_length,
+						 ULONG in_msg_length,
 						 const UCHAR* in_msg,
-						 USHORT out_blr_length,
+						 ULONG out_blr_length,
 						 const UCHAR* out_blr,
-						 USHORT out_msg_length,
+						 ULONG out_msg_length,
 						 UCHAR* out_msg)
 {
 	UCHAR bpb[24];
@@ -982,11 +973,11 @@ static void execute_blob(thread_db* tdbb,
 static void execute_immediate(thread_db* tdbb,
 							  Jrd::Attachment* attachment,
 							  jrd_tra** tra_handle,
-							  USHORT length, const TEXT* string, USHORT dialect,
-							  USHORT in_blr_length, const UCHAR* in_blr,
-							  USHORT in_msg_length, const UCHAR* in_msg,
-							  USHORT out_blr_length, const UCHAR* out_blr,
-							  USHORT out_msg_length, UCHAR* out_msg,
+							  ULONG length, const TEXT* string, USHORT dialect,
+							  ULONG in_blr_length, const UCHAR* in_blr,
+							  ULONG in_msg_length, const UCHAR* in_msg,
+							  ULONG out_blr_length, const UCHAR* out_blr,
+							  ULONG out_msg_length, UCHAR* out_msg,
 							  bool isInternalRequest)
 {
 	SET_TDBB(tdbb);
@@ -1003,7 +994,7 @@ static void execute_immediate(thread_db* tdbb,
 		length = strlen(string);
 	}
 
-	dsql_dbb* const database = init(attachment);
+	dsql_dbb* const database = init(tdbb, attachment);
 	dsql_req* request = NULL;
 
 	try {
@@ -1094,10 +1085,10 @@ static void execute_immediate(thread_db* tdbb,
 static void execute_request(thread_db* tdbb,
 							dsql_req* request,
 							jrd_tra** tra_handle,
-							USHORT in_blr_length, const UCHAR* in_blr,
-							USHORT in_msg_length, const UCHAR* in_msg,
-							USHORT out_blr_length, const UCHAR* out_blr,
-							USHORT out_msg_length, UCHAR* out_msg,
+							ULONG in_blr_length, const UCHAR* in_blr,
+							ULONG in_msg_length, const UCHAR* in_msg,
+							ULONG out_blr_length, const UCHAR* out_blr,
+							ULONG out_msg_length, UCHAR* out_msg,
 							bool singleton)
 {
 	request->req_transaction = *tra_handle;
@@ -1440,10 +1431,10 @@ static bool get_indices(SLONG* explain_length_ptr, const UCHAR** explain_ptr,
 
  **/
 ULONG DSQL_get_plan_info(thread_db* tdbb,
-							const dsql_req* request,
-							SLONG buffer_length,
-							SCHAR** out_buffer,
-							const bool realloc)
+						 const dsql_req* request,
+						 SLONG buffer_length,
+						 char** out_buffer,
+						 const bool realloc)
 {
 	if (!request->req_request)	// DDL
 		return 0;
@@ -1455,7 +1446,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request,
+		INF_request_info(request->req_request,
 						 sizeof(explain_info), explain_info,
 						 explain_buffer.getCount(), explain_buffer.begin());
 
@@ -1463,8 +1454,9 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 		{
 			explain_buffer.resize(MAX_USHORT);
 
-			JRD_request_info(tdbb, request->req_request, sizeof(explain_info), explain_info,
-				explain_buffer.getCount(), explain_buffer.begin());
+			INF_request_info(request->req_request,
+							 sizeof(explain_info), explain_info,
+							 explain_buffer.getCount(), explain_buffer.begin());
 
 			if (explain_buffer[0] == isc_info_truncated)
 			{
@@ -1477,8 +1469,8 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 		return 0;
 	}
 
-	SCHAR* buffer_ptr = *out_buffer;
-	SCHAR* plan;
+	char* buffer_ptr = *out_buffer;
+	char* plan;
 	for (int i = 0; i < 2; i++)
 	{
 		const UCHAR* explain = explain_buffer.begin();
@@ -1577,7 +1569,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
     @param buffer
 
  **/
-static USHORT get_request_info(thread_db* tdbb, dsql_req* request, SLONG buffer_length, UCHAR* buffer)
+static USHORT get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_length, UCHAR* buffer)
 {
 	if (!request->req_request)	// DDL
 		return 0;
@@ -1586,8 +1578,9 @@ static USHORT get_request_info(thread_db* tdbb, dsql_req* request, SLONG buffer_
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request, sizeof(record_info), record_info,
-			buffer_length, buffer);
+		INF_request_info(request->req_request,
+						 sizeof(record_info), record_info,
+						 buffer_length, buffer);
 	}
 	catch (Firebird::Exception&)
 	{
@@ -1986,12 +1979,14 @@ static bool get_rsb_item(SLONG*		explain_length_ptr,
     @param db_handle
 
  **/
-static dsql_dbb* init(Jrd::Attachment* attachment)
+static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 {
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	if (attachment->att_dsql_instance)
 		return attachment->att_dsql_instance;
 
-	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *attachment->att_database->createPool();
 	dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
 	database->dbb_attachment = attachment;
@@ -2000,57 +1995,13 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 
 	INI_init_dsql(tdbb, database);
 
-	UCHAR buffer[BUFFER_TINY];
+	database->dbb_db_SQL_dialect =
+		(dbb->dbb_flags & DBB_DB_SQL_dialect_3) ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-	try
-	{
-		ThreadStatusGuard status_vector(tdbb);
-		INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
-	}
-	catch (Firebird::Exception&)
-	{
-		return database;
-	}
+	database->dbb_ods_version = dbb->dbb_ods_version;
+	database->dbb_minor_version = dbb->dbb_minor_version;
 
-	const UCHAR* data = buffer;
-	UCHAR p;
-
-	while ((p = *data++) != isc_info_end)
-	{
-		const SSHORT l = static_cast<SSHORT>(gds__vax_integer(data, 2));
-		data += 2;
-
-		switch (p)
-		{
-		case isc_info_db_sql_dialect:
-			fb_assert(l == 1);
-			database->dbb_db_SQL_dialect = (USHORT) data[0];
-			break;
-
-		case isc_info_ods_version:
-			database->dbb_ods_version = gds__vax_integer(data, l);
-			if (database->dbb_ods_version < 12)
-			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(12));
-			}
-			break;
-
-		case isc_info_ods_minor_version:
-			database->dbb_minor_version = gds__vax_integer(data, l);
-			break;
-
-		case isc_info_db_read_only:
-			fb_assert(l == 1);
-			database->dbb_read_only = (USHORT) data[0] ? true : false;
-			break;
-
-		default:
-			break;
-		}
-
-		data += l;
-	}
+	database->dbb_read_only = (dbb->dbb_flags & DBB_read_only) ? 1 : 0;
 
 #ifdef DSQL_DEBUG
 	DSQL_debug = Config::getTraceDSQL();
@@ -2078,7 +2029,7 @@ static dsql_dbb* init(Jrd::Attachment* attachment)
 
  **/
 static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* message,
-	USHORT blr_length, const UCHAR* blr, USHORT msg_length, UCHAR* dsql_msg_buf,
+	ULONG blr_length, const UCHAR* blr, ULONG msg_length, UCHAR* dsql_msg_buf,
 	const UCHAR* in_dsql_msg_buf)
 {
 	USHORT count = parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
@@ -2258,8 +2209,8 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
     @param parameters
 
  **/
-static USHORT parse_blr(dsql_req* request, USHORT blr_length, const UCHAR* blr,
-	const USHORT msg_length, const Array<dsql_par*>& parameters_list)
+static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
+	const ULONG msg_length, const Array<dsql_par*>& parameters_list)
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
 
@@ -2472,7 +2423,7 @@ static USHORT parse_blr(dsql_req* request, USHORT blr_length, const UCHAR* blr,
 // Prepare a request for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	USHORT stringLength, const TEXT* string, USHORT clientDialect, USHORT parserVersion,
+	ULONG stringLength, const TEXT* string, USHORT clientDialect, USHORT parserVersion,
 	bool isInternalRequest)
 {
 	return prepareStatement(tdbb, database, transaction, stringLength, string, clientDialect,
@@ -2483,7 +2434,7 @@ static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* tr
 // Prepare a statement for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	USHORT string_length, const TEXT* string, USHORT client_dialect, USHORT parser_version,
+	ULONG string_length, const TEXT* string, USHORT client_dialect, USHORT parser_version,
 	bool isInternalRequest)
 {
 	ISC_STATUS_ARRAY local_status;
@@ -2812,12 +2763,12 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	@param copy
 
  **/
-static UCHAR* put_item(	UCHAR	item,
-						const USHORT	length,
-						const UCHAR* string,
-						UCHAR*	ptr,
-						const UCHAR* const end,
-						const bool copy)
+static UCHAR* put_item(UCHAR item,
+					   const USHORT	length,
+					   const UCHAR* string,
+					   UCHAR* ptr,
+					   const UCHAR* const end,
+					   const bool copy)
 {
 	if (ptr + length + 3 >= end)
 	{
@@ -2952,7 +2903,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 
 static void sql_info(thread_db* tdbb,
 					 dsql_req* request,
-					 USHORT item_length,
+					 ULONG item_length,
 					 const UCHAR* items,
 					 ULONG info_length,
 					 UCHAR* info)
@@ -3115,7 +3066,7 @@ static void sql_info(thread_db* tdbb,
 					//length = DSQL_get_plan_info(tdbb, request, sizeof(buffer),
 					//					reinterpret_cast<SCHAR**>(&buffer_ptr));
 					length = DSQL_get_plan_info(tdbb, request, (end_info - info - 4),
-										reinterpret_cast<SCHAR**>(&buffer_ptr),
+										reinterpret_cast<char**>(&buffer_ptr),
 										false);
 				}
 

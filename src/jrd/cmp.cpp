@@ -179,7 +179,7 @@ BoolExprNode* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, BoolExpr
 
 
 jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool internal_flag,
-					  USHORT dbginfo_length, const UCHAR* dbginfo)
+					  ULONG dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
