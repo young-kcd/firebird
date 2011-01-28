@@ -1,3 +1,25 @@
+ 2011-01-26 10:38  paul_reeves 
+   M builds/win32/msvc8/VCCRT_Shared_Header.wxi
+Add explanatory note.
+
+ 2011-01-26 09:10  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstall_20.iss
+add missing semi-colon
+
+ 2011-01-26 09:08  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+Make sure ERRLEV is set to 0
+Improve the help screen
+(with thanks to Christian Waldmann for some helpful suggestions)
+
+ 2011-01-25 10:19  asfernandes 
+   M doc/WhatsNew
+Typo
+
+ 2011-01-25 09:59  dimitr 
+   M doc/WhatsNew
+Added the missing entry.
+
  2011-01-15 09:03  robocop 
    M src/remote/server.cpp
 Avoid variable shadowing.
