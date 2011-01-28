@@ -105,12 +105,12 @@ enum db_info_types
 	isc_info_tpage_errors = 60,
 
 	isc_info_set_page_buffers = 61,
-	isc_info_db_sql_dialect = 62,
+	isc_info_db_sql_dialect = 62,   
 	isc_info_db_read_only = 63,
 	isc_info_db_size_in_pages = 64,
 
 	/* Values 65 -100 unused to avoid conflict with InterBase */
-
+	
 	frb_info_att_charset = 101,
 	isc_info_db_class = 102,
 	isc_info_firebird_version = 103,
@@ -123,9 +123,6 @@ enum db_info_types
 	isc_info_active_tran_count = 110,
 	isc_info_creation_date = 111,
 	isc_info_db_file_size = 112,
-	fb_info_page_contents = 113,
-
-	fb_info_implementation = 114,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };
@@ -153,7 +150,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
 	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
-
+	
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
 	isc_info_db_impl_isc_vms_orcl = 33,
@@ -179,7 +176,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_epson = 51,
 	isc_info_db_impl_alpha_osf = 52,
 	isc_info_db_impl_alpha_vms = 53,
-	isc_info_db_impl_netware_386 = 54,
+	isc_info_db_impl_netware_386 = 54, 
 	isc_info_db_impl_win_only = 55,
 	isc_info_db_impl_ncr_3000 = 56,
 	isc_info_db_impl_winnt_ppc = 57,
@@ -194,7 +191,7 @@ enum  info_db_implementations
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
-
+	
 	isc_info_db_impl_freebsd_amd64 = 67,
 
 	isc_info_db_impl_winnt_amd64 = 68,
@@ -210,8 +207,8 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_ia64 = 76,
 
 	isc_info_db_impl_darwin_ppc64 = 77,
-	isc_info_db_impl_linux_s390x = 78,
-	isc_info_db_impl_linux_s390 = 79,
+        isc_info_db_impl_linux_s390x = 78,
+        isc_info_db_impl_linux_s390 = 79,
 
 	isc_info_db_impl_linux_sh = 80,
 	isc_info_db_impl_linux_sheb = 81,
@@ -311,11 +308,6 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
-#define isc_info_rsb_window		25
-#define isc_info_rsb_singular	26
-#define isc_info_rsb_writelock	27
-#define isc_info_rsb_buffer		28
-#define isc_info_rsb_hash		29
 
 /**********************/
 /* Bitmap expressions */

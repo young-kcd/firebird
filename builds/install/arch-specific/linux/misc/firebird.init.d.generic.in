@@ -8,44 +8,26 @@
 #   Change INSTANCE and FIREBIRD below (all instance names should be unique)
 #   Edit the copied firebird.conf to change at least RemoteServicePort
 INSTANCE=default
-FIREBIRD=@FB_CONFDIR@
+FIREBIRD=@prefix@
 
 # No changes needed below for multiple instances
 FBRunUser=firebird
-
-makeFbDir() {
-	mDir=${1}
-	mode=${2}
-	if [ ! -d $mDir ]; then
-		rm -rf $mDir
-		mkdir $mDir
-		if [ "$mode" ]; then
-			chmod $mode $mDir
-		fi
-	fi
-	chown $FBRunUser:$FBRunUser $mDir
-}
-runDir=/var/run/firebird
-makeFbDir $runDir
-lockDir=/tmp/firebird
-makeFbDir $lockDir 0770
-
-pidfile="$runDir/$INSTANCE.pid"
+pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
 
 export FIREBIRD LD_LIBRARY_PATH
 
-GUARDIAN=$FIREBIRD/bin/fbguard
-if [ ! -x $GUARDIAN ]; then
-	GUARDIAN=@FB_SBINDIR@/fbguard
-fi
+MANAGER=$FIREBIRD/bin/fbmgr.bin
+
+# Check the file is there and is executable.
+[ -x $MANAGER ] || exit 0
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FULLNAME: "
-	echo "$GUARDIAN -pidfile $pidfile -daemon -forever" | su $FBRunUser
+	echo "$MANAGER -pidfile $pidfile -start -forever" | su $FBRunUser
 	RETVAL=$?
 	;;
   stop)

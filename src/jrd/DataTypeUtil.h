@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:
+ *	PROGRAM:	
  *	MODULE:		DataTypeUtil.h
  *	DESCRIPTION:	Data Type Utility functions
  *
@@ -37,9 +37,9 @@ public:
 public:
 	static SSHORT getResultBlobSubType(const dsc* value1, const dsc* value2);
 	static USHORT getResultTextType(const dsc* value1, const dsc* value2);
+	static void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 
 public:
-	void makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args);
 	ULONG convertLength(ULONG len, USHORT srcCharSet, USHORT dstCharSet);
 	ULONG convertLength(const dsc* src, const dsc* dst);
 	ULONG fixLength(const dsc* desc, ULONG length);
@@ -47,9 +47,6 @@ public:
 	void makeConcatenate(dsc* result, const dsc* value1, const dsc* value2);
 	void makeSubstr(dsc* result, const dsc* value, const dsc* offset, const dsc* length);
 	void makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args);
-
-private:
-	bool makeBlobOrText(dsc* result, const dsc* arg, bool force);
 
 public:
 	virtual UCHAR maxBytesPerChar(UCHAR charSet) = 0;

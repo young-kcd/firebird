@@ -25,7 +25,7 @@
  *
  *
  */
-
+ 
 #ifndef CLASSES_FB_TLS_H
 #define CLASSES_FB_TLS_H
 
@@ -36,9 +36,16 @@
 //
 // TLS variable type should be smaller than size of pointer to stay portable
 
-#include "../common/classes/init.h"
+#ifdef SOLARIS_MT
+#undef HAVE___THREAD
+#endif
 
-#if defined(HAVE___THREAD)
+#if !defined(MULTI_THREAD)
+// Single-threaded case
+# define TLS_DECLARE(TYPE, NAME) TYPE NAME
+# define TLS_GET(NAME) NAME
+# define TLS_SET(NAME, VALUE) NAME = (VALUE)
+#elif defined(HAVE___THREAD)
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
@@ -48,41 +55,29 @@
 namespace Firebird {
 
 template <typename T>
-class Win32Tls : private InstanceControl
-{
+class Win32Tls {
 public:
-	Win32Tls() : InstanceControl()
-	{
-		if ((key = TlsAlloc()) == MAX_ULONG)
+	Win32Tls() {
+		if ((key = TlsAlloc()) == 0xFFFFFFFF)
 			system_call_failed::raise("TlsAlloc");
-		// Allocated pointer is saved by InstanceList::constructor.
-		new InstanceControl::InstanceLink<Win32Tls, PRIORITY_TLS_KEY>(this);
 	}
-	const T get()
-	{
-		fb_assert(key != MAX_ULONG);
-	 	const LPVOID value = TlsGetValue(key);
+	const T get() {
+	 	LPVOID value = TlsGetValue(key);
 		if ((value == NULL) && (GetLastError() != NO_ERROR))
 			system_call_failed::raise("TlsGetValue");
-		return (T) value;
+//		return reinterpret_cast<T>(value);
+		return (T)value;
 	}
-	void set(const T value)
-	{
-		fb_assert(key != MAX_ULONG);
-		if (TlsSetValue(key, (LPVOID) value) == 0)
+	void set(const T value) {
+		if (TlsSetValue(key, (LPVOID)value) == 0)
 			system_call_failed::raise("TlsSetValue");
 	}
-	~Win32Tls()
-	{
-	}
-	void dtor()
-	{
+	~Win32Tls() {
 		if (TlsFree(key) == 0)
 			system_call_failed::raise("TlsFree");
-		key = MAX_ULONG;
 	}
 private:
-	DWORD key;
+	DWORD key;	
 };
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
@@ -92,9 +87,9 @@ private:
 // 14-Jul-2004 Nickolay Samofatov.
 //
 // Unfortunately, compiler-assisted TLS doesn't work with dynamic link libraries
-// loaded via LoadLibrary - it intermittently crashes and these crashes are
+// loaded via LoadLibrary - it intermittently crashes and these crashes are 
 // documented by MS. We may still use it for server binaries, but it requires
-// some changes in build environment. Let's defer this till later point and
+// some changes in build environment. Let's defer this till later point and 
 // think of reliable mean to prevent linking of DLL with code below (if enabled).
 //
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
@@ -102,60 +97,81 @@ private:
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
 #else
 
-#include "../common/classes/init.h"
+#ifndef SOLARIS_MT
 
 #include <pthread.h>
 
 namespace Firebird {
 
-template <typename T>
-class TlsValue : private InstanceControl
-{
-public:
-	TlsValue() : InstanceControl()
-#ifdef DEV_BUILD
-		, keySet(true)
-#endif
-	{
-		int rc = pthread_key_create(&key, NULL);
-		if (rc)
-			system_call_failed::raise("pthread_key_create", rc);
-		// Allocated pointer is saved by InstanceList::constructor.
-		new InstanceControl::InstanceLink<TlsValue, PRIORITY_TLS_KEY>(this);
-	}
 
-	const T get()
-	{
-		fb_assert(keySet);
+template <typename T>
+class TlsValue {
+public:
+	TlsValue() {
+		if (pthread_key_create(&key, NULL))
+			system_call_failed::raise("pthread_key_create");
+	}
+	const T get() {
 		// We use double C-style cast to allow using scalar datatypes
 		// with sizes up to size of pointer without warnings
-		return (T)(IPTR) pthread_getspecific(key);
+		return (T)(IPTR)pthread_getspecific(key);
 	}
-	void set(const T value)
-	{
-		fb_assert(keySet);
-		int rc = pthread_setspecific(key, (void*)(IPTR) value);
-		if (rc)
-			system_call_failed::raise("pthread_setspecific", rc);
+	void set(const T value) {
+		if (pthread_setspecific(key, (void*)(IPTR)value))
+			system_call_failed::raise("pthread_setspecific");
 	}
-	~TlsValue()
-	{
-	}
-	void dtor()
-	{
-		int rc = pthread_key_delete(key);
-		if (rc)
-			system_call_failed::raise("pthread_key_delete", rc);
-#ifdef DEV_BUILD
-		keySet = false;
-#endif
+	~TlsValue() {
+		if (pthread_key_delete(key))
+			system_call_failed::raise("pthread_key_delete");
 	}
 private:
-	pthread_key_t key;
-#ifdef DEV_BUILD
-	bool keySet;	// This is used to avoid conflicts when destroying global variables
-#endif
+	pthread_key_t key;	
 };
+#else //SOLARIS_MT
+#include <thread.h>
+#include <string.h>
+
+namespace Firebird {
+
+
+template <typename T>
+class TlsValue {
+public:
+	static void  TlsV_on_thread_exit (void * pval) {
+	/* Usually should delete pval like this
+		T * ptempT= (T*) pval ;
+		delete ptempT;
+	*/
+
+	}
+
+	TlsValue() {
+		if (thr_keycreate(&key, TlsV_on_thread_exit) )
+			system_call_failed::raise("thr_key_create");
+	}
+	const T get() {
+		// We use double C-style cast to allow using scalar datatypes
+		// with sizes up to size of pointer without warnings
+		T  * valuep;
+		if (thr_getspecific(key, (void **) &valuep) == 0)
+			return (T)(IPTR) (valuep) ;
+		else
+			system_call_failed::raise("thr_getspecific");
+			return (T)NULL;
+	}
+	void set(const T value) {
+		if (thr_setspecific(key, (void*)(IPTR)value))
+			system_call_failed::raise("thr_setspecific");
+	}
+	~TlsValue() {
+		/* Do nothing if no pthread_key_delete */
+	}
+private:
+	thread_key_t key;	
+};
+
+
+#endif //SOLARIS_MT
 
 } // namespace Firebird
 

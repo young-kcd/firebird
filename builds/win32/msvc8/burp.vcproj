@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -45,7 +45,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -60,7 +60,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -108,7 +107,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -123,7 +122,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -167,7 +165,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -182,7 +180,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -227,7 +224,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,WIN32,DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -243,7 +240,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="ws2_32.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -294,10 +290,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\src\burp\OdsDetection.epp"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\src\burp\restore.epp"
 					>
 				</File>
@@ -306,15 +298,11 @@
 				Name="Generated files"
 				>
 				<File
-					RelativePath="..\..\..\gen\burp\backup.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\backup.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\gen\burp\OdsDetection.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\burp\restore.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\burp\restore.cpp"
 					>
 				</File>
 			</Filter>
@@ -352,15 +340,9 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\burp\OdsDetection.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\burp\resto_proto.h"
 				>
 			</File>
 		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

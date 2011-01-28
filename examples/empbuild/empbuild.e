@@ -145,7 +145,7 @@ static int addlang (void)
  *
  **************************************/
 TEXT	job_code[6], job_country[16];
-TEXT	line[100];
+TEXT	line[81];
 TEXT	lang_array[5][16];
 int	i, job_grade, rec_cnt = 0;
 
@@ -211,7 +211,7 @@ static int addjob (void)
  *
  **************************************/
 TEXT		job_code[6];
-TEXT		line[100], job_country[16];
+TEXT		line[82], job_country[16];
 int		len;
 ISC_QUAD	job_blob;
 int		job_grade, rec_cnt = 0;
@@ -288,7 +288,7 @@ static int addproj (void)
  *
  **************************************/
 TEXT		proj_id[6];
-TEXT		line[100];
+TEXT		line[82];
 int		len;
 ISC_QUAD	proj_blob;
 int		rec_cnt = 0;
@@ -363,7 +363,7 @@ static int addqtr (void)
  **************************************/
 TEXT		proj_id[6], dept_no[4];
 int		yr;
-TEXT		line[100];
+TEXT		line[81];
 int		hcnt[4];
 int		rec_cnt = 0;
 

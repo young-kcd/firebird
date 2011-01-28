@@ -15,22 +15,22 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Changes made by Claudio Valderrama for the Firebird project
- *   changes to substr and added substrlen
+ * Changes made by Claudio Valderrama for the Firebird project 
+ *   changes to substr and added substrlen 
  * 2004.9.1 Claudio Valderrama, change some UDF's to be able to detect NULL.
  * 2004.12.5 Slavomir Skopalik contributed IB_UDF_frac.
- *
+ * 
  */
 
 #include "firebird.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef TIME_WITH_SYS_TIME
+#if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
 #else
-# ifdef HAVE_SYS_TIME_H
+# if HAVE_SYS_TIME_H
 #  include <sys/time.h>
 # else
 #  include <time.h>
@@ -43,23 +43,20 @@
 extern "C"
 {
 
-#ifndef __ICC
 #ifndef SOLARIS
 #ifdef WIN_NT
 #define exception_type _exception
 #else
 #define exception_type __exception
 #endif
-int MATHERR(struct exception_type*)
+int MATHERR(struct exception_type *e)
 {
 	return 1;
 }
 #undef exception_type
-#endif // SOLARIS
-#endif //__ICC
+#endif /* SOLARIS */
 
 typedef char* pChar;
-
 double EXPORT IB_UDF_abs( double *a)
 {
 	return (*a < 0.0) ? -*a : *a;
@@ -77,7 +74,7 @@ pChar EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 
 	char* b = (char *) ib_util_malloc(2);
 	*b = (char) (*a);
-	// let us not forget to NULL terminate
+	/* let us not forget to NULL terminate */
 	b[1] = '\0';
 	return (b);
 }
@@ -147,15 +144,17 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.quot);
 	}
-
-	// This is a Kludge!  We need to return INF,
-	// but this seems to be the only way to do
-	// it since there seens to be no constant for it.
+	else
+	{
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
+		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
-	return INFINITY;
+		return INFINITY;
 #else
-	return 1 / tan(0.0);
+		return (1 / tan(0.0));
 #endif
+	}
 }
 
 double EXPORT IB_UDF_floor( double *a)
@@ -191,7 +190,7 @@ pChar EXPORT IB_UDF_lower(const char *s)
 {
 	if (!s)
 		return 0;
-
+		
 	char* buf = (char *) ib_util_malloc(strlen(s) + 1);
 	char* p = buf;
 	while (*s)
@@ -213,9 +212,8 @@ pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 		return 0;
 
 	const long avalue = *a;
-
-	if (avalue >= 0)
-	{
+	
+	if (avalue >= 0) {
 		long current = 0;
 		const long length = strlen(s);
 		const long padlength = strlen(c);
@@ -224,33 +222,31 @@ pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 
 		if (padlength)
 		{
-			while (current + length < avalue)
-			{
+			while (current + length < avalue) {
 				memcpy(&buf[current], c, padlength);
 				current += padlength;
 			}
 			memcpy(&buf[(avalue - length < 0) ? 0 : avalue - length], s, stop);
 			buf[avalue] = '\0';
 		}
-		else
-		{
+		else {
 			memcpy(buf, s, stop);
 			buf[stop] = '\0';
 		}
 		return buf;
 	}
-
-	return NULL;
+	else
+		return NULL;
 }
 
 pChar EXPORT IB_UDF_ltrim( const char *s)
 {
 	if (!s)
 		return 0;
-
-	while (*s == ' ')		// skip leading blanks
+		
+	while (*s == ' ')		/* skip leading blanks */
 		s++;
-
+		
 	const long length = strlen(s);
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
@@ -268,15 +264,17 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 		div_t div_result = div((int) *a, (int) *b);
 		return (div_result.rem);
 	}
-
-	// This is a Kludge!  We need to return INF,
-	// but this seems to be the only way to do
-	// it since there seens to be no constant for it.
+	else
+	{
+		// This is a Kludge!  We need to return INF, 
+		// but this seems to be the only way to do 
+		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
-	return INFINITY;
+		return INFINITY;
 #else
-	return 1 / tan(0.0);
+		return (1 / tan(0.0));
 #endif
+	}
 }
 
 double EXPORT IB_UDF_pi()
@@ -299,11 +297,10 @@ pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
-
+		
 	const long avalue = *a;
 
-	if (avalue >= 0)
-	{
+	if (avalue >= 0) {
 		const long length = strlen(s);
 		long current = (avalue - length) < 0 ? avalue : length;
 		const long padlength = strlen(c);
@@ -312,8 +309,7 @@ pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 		if (padlength)
 		{
-			while (current + padlength < avalue)
-			{
+			while (current + padlength < avalue) {
 				memcpy(&buf[current], c, padlength);
 				current += padlength;
 			}
@@ -325,19 +321,18 @@ pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 		return buf;
 	}
-
-	return NULL;
+	else
+		return NULL;
 }
 
 pChar EXPORT IB_UDF_rtrim( const char *s)
 {
 	if (!s)
 		return 0;
-
+		
 	const char* p = s + strlen(s);
-	while (--p >= s && *p == ' ')
-		; // empty loop body
-
+	while (--p >= s && *p == ' '); // empty loop body
+	
 	const long length = p - s + 1;
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
@@ -352,7 +347,7 @@ ISC_LONG EXPORT IB_UDF_sign( double *a)
 		return 1;
 	if (*a < 0)
 		return -1;
-	// If neither is true then it equals 0
+	/* If neither is true then it equals 0 */
 	return 0;
 }
 
@@ -390,8 +385,10 @@ pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 	else
 	{
-		// we want from the mth char to the nth char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+		/* we want from the mth char to the
+		   nth char inclusive, so add one to
+		   the length. */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*n > length) {
 			length -= *m - 1;
 		}
@@ -426,10 +423,11 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 		buf = (char*)ib_util_malloc(1);
 		buf[0] = '\0';
 	}
-	else
-	{
-		// we want from the mth char to the (m+n)th char inclusive, so add one to the length.
-		// CVC: We need to compensate for n if it's longer than s's length
+	else {
+		/* we want from the mth char to the (m+n)th char inclusive,
+		 * so add one to the length.
+		 */
+		/* CVC: We need to compensate for n if it's longer than s's length */
 		if (*m + *n - 1 > length) {
 			length -= *m - 1;
 		}

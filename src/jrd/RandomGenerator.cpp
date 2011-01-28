@@ -21,9 +21,9 @@
  */
 
 #include "firebird.h"
-#include "../common/common.h"
+#include "common.h"
 #include "../jrd/RandomGenerator.h"
-#include "../common/os/guid.h"
+#include "../jrd/os/guid.h"
 
 
 namespace Jrd {

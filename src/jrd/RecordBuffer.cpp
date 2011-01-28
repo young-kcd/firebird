@@ -21,7 +21,7 @@
  */
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 
@@ -38,7 +38,7 @@ RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
 
 	record = FB_NEW_RPT(pool, length) Record(pool);
 	record->rec_format = format;
-	record->rec_length = (USHORT) length;
+	record->rec_length = length;
 }
 
 RecordBuffer::~RecordBuffer()
@@ -47,13 +47,23 @@ RecordBuffer::~RecordBuffer()
 	delete space;
 }
 
+size_t RecordBuffer::getCount() const
+{
+	return count;
+}
+
+Record* RecordBuffer::getTempRecord() const
+{
+	return record;
+}
+
 offset_t RecordBuffer::store(const Record* new_record)
 {
 	fb_assert(new_record->rec_length == length);
 
 	fb_assert(!filled);
 
-	space->write(count * length, new_record->rec_data, length);
+	space->write(count * length, (UCHAR*) new_record->rec_data, length);
 
 	return count++;
 }

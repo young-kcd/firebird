@@ -31,13 +31,6 @@
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
-#include "ProviderInterface.h"
-#include "../common/classes/ImplementHelper.h"
-namespace Jrd
-{
-	typedef Firebird::Status Status;
-}
-
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -56,48 +49,41 @@ class jrd_tra;
 class vcl;
 
 // This structure must occupy 8 bytes
-struct bid
-{
-	// This is how bid structure represented in public API.
-	// Must be present to enforce alignment rules when structure is declared on stack
-	struct bid_quad_struct
-	{
-		ULONG bid_quad_high;
-		ULONG bid_quad_low;
-	};
-	union // anonymous union
-	{
+struct bid {
+	union {
 		// Internal decomposition of the structure
 		RecordNumber::Packed bid_internal;
-		bid_quad_struct bid_quad;
+
+		// This is how bid structure represented in public API.
+		// Must be present to enforce alignment rules when structure is declared on stack
+		struct {
+			ULONG bid_quad_high;
+			ULONG bid_quad_low;
+		} bid_quad;
 	};
 
-	ULONG& bid_temp_id()
-	{
+	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	ULONG bid_temp_id() const
-	{
+	ULONG bid_temp_id() const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	bool isEmpty() const
-	{
+	bool isEmpty() const { 
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0;
+		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0; 
 	}
 
-	void clear()
-	{
+	void clear() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -105,8 +91,7 @@ struct bid
 		bid_quad.bid_quad_low = 0;
 	}
 
-	void set_temporary(ULONG temp_id)
-	{
+	void set_temporary(ULONG temp_id) {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -114,8 +99,7 @@ struct bid
 		bid_temp_id() = temp_id;
 	}
 
-	void set_permanent(USHORT relation_id, RecordNumber num)
-	{
+	void set_permanent(USHORT relation_id, RecordNumber num) {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -124,8 +108,7 @@ struct bid
 		num.bid_encode(&bid_internal);
 	}
 
-	RecordNumber get_permanent_number() const
-	{
+	RecordNumber get_permanent_number() const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -134,19 +117,18 @@ struct bid
 		return temp;
 	}
 
-	bool operator == (const bid& other) const
-	{
+	bool operator == (const bid& other) const {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high &&
+		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high && 
 			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
 	}
 };
 
-// Your basic blob block.
+/* Your basic blob block. */
 
-class blb : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION, pool_alloc<type_blb> >
+class blb : public pool_alloc<type_blb>
 {
 public:
 	blb(MemoryPool& pool, USHORT page_size)
@@ -155,32 +137,35 @@ public:
 	{
 	}
 
-	Attachment*	blb_attachment;		// database attachment
-	jrd_rel*	blb_relation;		// Relation, if known
-	jrd_tra*	blb_transaction;	// Parent transaction block
-	UCHAR*		blb_segment;		// Next segment to be addressed
-	BlobControl*	blb_filter;		// Blob filter control block, if any
-	bid			blb_blob_id;		// Id of materialized blob
-	vcl*		blb_pages;			// Vector of pages
-	USHORT blb_pointers;			// Max pointer on a page
-	USHORT blb_level;				// Storage type
-	USHORT blb_max_segment;			// Longest segment
-	USHORT blb_flags;				// Interesting stuff (see below)
-	USHORT blb_clump_size;			// Size of data clump
-	USHORT blb_space_remaining;		// Data space left
-	USHORT blb_max_pages;			// Max pages in vector
-	USHORT blb_fragment_size;		// Residual fragment size
-	SSHORT blb_sub_type;			// Blob's declared sub-type
-	UCHAR blb_charset;				// Blob's charset
-	USHORT blb_pg_space_id;			// page space
-	ULONG blb_sequence;				// Blob page sequence
-	ULONG blb_max_sequence;			// Number of data pages
-	ULONG blb_count;				// Number of segments
-	ULONG blb_length;				// Total length of data sans segments
-	ULONG blb_lead_page;			// First page number
-	ULONG blb_seek;					// Seek location
-	ULONG blb_temp_id;				// ID of newly created blob in transaction
-	size_t blb_temp_size;			// size stored in transaction temp space
+	Attachment*	blb_attachment;	/* database attachment */
+	jrd_rel*	blb_relation;	/* Relation, if known */
+	jrd_tra*	blb_transaction;	/* Parent transaction block */
+	blb*		blb_next;		/* Next blob in transaction */
+	UCHAR*		blb_segment;	/* Next segment to be addressed */
+	BlobControl*	blb_filter;	/* Blob filter control block, if any */
+	bid			blb_blob_id;	/* Id of materialized blob */
+	vcl*		blb_pages;		/* Vector of pages */
+	USHORT blb_pointers;		/* Max pointer on a page */
+	USHORT blb_level;			/* Storage type */
+	USHORT blb_max_segment;		/* Longest segment */
+	USHORT blb_flags;			/* Interesting stuff (see below) */
+	USHORT blb_clump_size;		/* Size of data clump */
+	USHORT blb_space_remaining;	/* Data space left */
+	USHORT blb_max_pages;		/* Max pages in vector */
+	USHORT blb_fragment_size;	/* Residual fragment size */
+	USHORT blb_source_interp;	/* source interp (for writing) */
+	USHORT blb_target_interp;	/* destination interp (for reading) */
+	SSHORT blb_sub_type;		/* Blob's declared sub-type */
+	UCHAR blb_charset;			// Blob's charset
+	USHORT blb_pg_space_id;		// page space
+	ULONG blb_sequence;			/* Blob page sequence */
+	ULONG blb_max_sequence;		/* Number of data pages */
+	ULONG blb_count;			/* Number of segments */
+	ULONG blb_length;			/* Total length of data sans segments */
+	ULONG blb_lead_page;		/* First page number */
+	ULONG blb_seek;				/* Seek location */
+	ULONG blb_temp_id;          // ID of newly created blob in transaction
+	size_t blb_temp_size;		// size stored in transaction temp space
 	offset_t blb_temp_offset;		// offset in transaction temp space
 
 private:
@@ -196,7 +181,7 @@ public:
 	UCHAR* getBuffer()
 	{
 		fb_assert(blb_has_buffer);
-		return (UCHAR*) blb_buffer.getBuffer(blb_buffer.getCapacity());
+		return (UCHAR*) blb_buffer.begin();
 	}
 
 	void freeBuffer()
@@ -205,28 +190,16 @@ public:
 		blb_buffer.free();
 		blb_has_buffer = false;
 	}
-
-	static void destroy(blb* blob, const bool purge_flag);
-
-public:
-	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void FB_CARG putSegment(Status* status, unsigned int length, const unsigned char* buffer);
-	virtual void FB_CARG cancel(Status* status);
-	virtual void FB_CARG close(Status* status);
-	virtual int FB_CARG seek(Status* status, int mode, int offset);			// returns position
 };
 
-const int BLB_temporary		= 1;		// Newly created blob
-const int BLB_eof			= 2;		// This blob is exhausted
-const int BLB_stream		= 4;		// Stream style blob
-const int BLB_closed		= 8;		// Temporary blob has been closed
-const int BLB_damaged		= 16;		// Blob is busted
-const int BLB_seek			= 32;		// Seek is pending
-const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
+const int BLB_temporary	= 1;			/* Newly created blob */
+const int BLB_eof		= 2;			/* This blob is exhausted */
+const int BLB_stream	= 4;			/* Stream style blob */
+const int BLB_closed	= 8;			/* Temporary blob has been closed */
+const int BLB_damaged	= 16;			/* Blob is busted */
+const int BLB_seek		= 32;			/* Seek is pending */
+const int BLB_user_def	= 64;			/* Blob is user created */
+const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 
 /* Blob levels are:
 
@@ -235,6 +208,17 @@ const int BLB_large_scan	= 64;		// Blob is larger than page buffer cache
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
 
+// mapping blob ids for REPLAY
+// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
+class blb_map : public pool_alloc<type_map>
+{
+    public:
+	blb_map*	map_next;
+	blb*		map_old_blob;
+	blb*		map_new_blob;
+};
+
 } //namespace Jrd
 
 #endif // JRD_BLB_H
+

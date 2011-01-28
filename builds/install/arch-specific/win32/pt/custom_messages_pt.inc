@@ -8,7 +8,7 @@ pt.CustomInstall=Instalação personalizada.
 pt.SuperServerComponent=Binários Super Server
 pt.ClassicServerComponent=Binários Classic Server
 pt.ServerComponent=Componentes do Servidor
-pt.DevAdminComponent=Componentes do Programador e das ferramentas de administração
+pt.DevAdminComponent=Componentes do programador e das ferramentas de administração
 pt.ClientComponent=Componentes do Cliente
 pt.UseGuardianTask=Usar o &Guardian para controlar o servidor?
 pt.UseApplicationTaskMsg=Executar como &Aplicação?
@@ -44,7 +44,7 @@ pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s 
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
-pt.FbRunning1=Um Servidor Firebird %s anterior já se encontra em execução.
+pt.FbRunning1=Um Servidor %s anterior já se encontra em execução.
 pt.FbRunning2=     Tem que fechar a aplicação ou parar o serviço
 pt.FbRunning3=                 antes de continuar.
 

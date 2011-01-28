@@ -27,10 +27,10 @@
 #ifndef JRD_FLU_H
 #define JRD_FLU_H
 
-// External modules for UDFs/BLOB filters/y-valve loader
+/* External modules for UDFs/BLOB filters/y-valve loader */
 
 #include "../common/classes/objects_array.h"
-#include "../common/os/mod_loader.h"
+#include "../jrd/os/mod_loader.h"
 
 namespace Jrd
 {
@@ -58,22 +58,22 @@ namespace Jrd
 			}
 
 /*			explicit InternalModule(MemoryPool& p)
-				: useCount(0), handle(0),
-				originalName(p), loadName(p)
-			{ }
-*/
-			InternalModule(MemoryPool& p,
+				: useCount(0), handle(0), 
+				originalName(p), loadName(p) { } */
+			InternalModule(MemoryPool& p, 
 						   ModuleLoader::Module* h,
-						   const Firebird::PathName& on,
+						   const Firebird::PathName& on, 
 						   const Firebird::PathName& ln)
-				: useCount(0), handle(h),
-					originalName(p, on), loadName(p, ln)
-			{ }
+				: useCount(0), handle(h), 
+				originalName(p, on), loadName(p, ln) { }
 
 			~InternalModule()
 			{
 				fb_assert(useCount == 0);
-				delete handle;
+				if (handle)
+				{
+					delete handle;
+				}
 			}
 
 			bool operator==(const Firebird::PathName &pn) const
@@ -112,7 +112,7 @@ namespace Jrd
 		static Module lookupModule(const char*, bool);
 
 		static InternalModule* scanModule(const Firebird::PathName& name);
-
+			
 	public:
 		typedef Firebird::Array<InternalModule*> LoadedModules;
 
@@ -165,4 +165,4 @@ namespace Jrd
 
 } // namespace Jrd
 
-#endif // JRD_FLU_H
+#endif /* JRD_FLU_H */

@@ -297,9 +297,7 @@ extern Yshort nunused;
 extern Yshort final_state;
 
 /* system variable */
-#ifndef _MSC_VER
 extern int errno;
-#endif
 
 /* global functions */
 
@@ -393,7 +391,7 @@ void lr0(void);
 
 /* main.c */
 void done(int);
-void onintr(int);
+void onintr(void);
 void set_signals(void);
 void usage(void);
 void getargs(int, char **);

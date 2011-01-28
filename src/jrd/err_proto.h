@@ -24,15 +24,14 @@
 #ifndef JRD_ERR_PROTO_H
 #define JRD_ERR_PROTO_H
 
-#include "fb_exception.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
-#include "../common/StatusArg.h"
-#include "../jrd/status.h"
+
+#ifndef REQUESTER
 
 namespace Jrd {
 
-// Index error types
+/* Index error types */
 
 enum idx_e {
 	idx_e_ok = 0,
@@ -43,25 +42,56 @@ enum idx_e {
 	idx_e_foreign_references_present
 };
 
-class jrd_rel;
+typedef idx_e IDX_E;
 
+class jrd_rel;
 } //namespace Jrd
 
-bool	ERR_post_warning(const Firebird::Arg::StatusVector& v);
+bool	ERR_post_warning(ISC_STATUS, ...);
 void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int, const TEXT* = NULL, int = 0);
 void	ERR_bugcheck_msg(const TEXT*);
 void	ERR_corrupt(int);
-void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT, const TEXT* = NULL);
+void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);
 void	ERR_error(int);
-void	ERR_post(const Firebird::Arg::StatusVector& v);
-void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);
-void	ERR_punt();
-void	ERR_warning(const Firebird::Arg::StatusVector& v);
+void	ERR_error_msg(const TEXT*);
+void	ERR_post(ISC_STATUS, ...);
+void	ERR_post_nothrow(ISC_STATUS, ...);
+void	ERR_punt(void);
+void	ERR_warning(ISC_STATUS, ...);
 void	ERR_log(int, int, const TEXT*);
-void	ERR_make_permanent(ISC_STATUS* s);
-void	ERR_make_permanent(Firebird::Arg::StatusVector& v);
-void	ERR_append_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
-void	ERR_build_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 
-#endif // JRD_ERR_PROTO_H
+#endif /* REQUESTER */
+
+const TEXT*		ERR_cstring(const TEXT*);
+inline const TEXT*		ERR_cstring(const Firebird::string& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_cstring(const Firebird::PathName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_cstring(const Firebird::MetaName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_string(const Firebird::string& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_string(const Firebird::PathName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+inline const TEXT*		ERR_string(const Firebird::MetaName& in_string)
+{
+	return ERR_cstring(in_string.c_str());
+}
+
+// AP: used ?
+
+const TEXT*		ERR_string(const TEXT*, int);
+
+#endif /* JRD_ERR_PROTO_H */
+

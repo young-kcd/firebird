@@ -29,6 +29,8 @@
 #ifndef CLASSES_TRISTATE_H
 #define CLASSES_TRISTATE_H
 
+#include "firebird.h"
+
 
 class TriState
 {
@@ -108,7 +110,7 @@ inline bool TriState::toggle()
 {
 	if (!m_init)
 		return false;
-
+		
 	m_val = !m_val;
 	return true;
 }

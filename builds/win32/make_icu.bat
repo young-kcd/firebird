@@ -17,6 +17,7 @@ if %MSVC_VERSION% GEQ 8 (
     @call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone make_icu_%FB_TARGET_PLATFORM%.log
 )
 
+
 if errorlevel 1 call :ERROR build failed - see make_icu_%FB_TARGET_PLATFORM%.log for details
 @goto :EOF
 
