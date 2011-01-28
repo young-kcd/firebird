@@ -745,7 +745,7 @@ public:
 	Firebird::Array<dsql_par*> msg_parameters;	// Parameter list
 	USHORT		msg_number;		// Message number
 	USHORT		msg_buffer_number;	// Message buffer number (used instead of msg_number for blob msgs)
-	USHORT		msg_length;		// Message length
+	ULONG		msg_length;		// Message length
 	USHORT		msg_parameter;	// Next parameter number
 	USHORT		msg_index;		// Next index into SQLDA
 };

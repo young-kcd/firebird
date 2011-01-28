@@ -3979,14 +3979,9 @@ void jrd_tra::transactRequest(Status* user_status,
 
 			request->req_attachment = tdbb->getAttachment();
 
-			USHORT len;
-
 			if (in_msg_length)
 			{
-				if (inMessage)
-					len = inMessage->format->fmt_length;
-				else
-					len = 0;
+				const ULONG len = inMessage ? inMessage->format->fmt_length : 0;
 
 				if (in_msg_length != len)
 				{
@@ -3999,10 +3994,7 @@ void jrd_tra::transactRequest(Status* user_status,
 
 			EXE_start(tdbb, request, transaction);
 
-			if (outMessage)
-				len = outMessage->format->fmt_length;
-			else
-				len = 0;
+			const ULONG len = outMessage ? outMessage->format->fmt_length : 0;
 
 			if (out_msg_length != len)
 			{

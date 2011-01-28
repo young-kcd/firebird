@@ -38,6 +38,7 @@ RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
 
 	record = FB_NEW_RPT(pool, length) Record(pool);
 	record->rec_format = format;
+	fb_assert(length <= MAX_RECORD_SIZE);
 	record->rec_length = (USHORT) length;
 }
 

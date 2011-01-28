@@ -403,7 +403,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	const dsql_par* const eof = statement->getEof();
 
 	dsc eofDesc = eof->par_desc;
-	eofDesc.dsc_address = msgBuffer + IPTR(eofDesc.dsc_address);
+	eofDesc.dsc_address = msgBuffer + (IPTR) eofDesc.dsc_address;
 	const bool eof_reached = eof && !*((USHORT*) eofDesc.dsc_address);
 
 	if (eof_reached)
@@ -522,13 +522,13 @@ void DSQL_insert(thread_db* tdbb,
 	{
 		// For put segment, use the user buffer and indicator directly.
 
-		const dsql_par* parameter = statement->getBlob()->blb_segment;
+		const dsql_par* const parameter = statement->getBlob()->blb_segment;
 
 		dsc userDesc;
 		if (!request->req_user_descs.get(parameter, userDesc))
 			userDesc.clear();
 
-		const UCHAR* buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
+		const UCHAR* const buffer = dsql_msg_buf + (IPTR) userDesc.dsc_address;
 		BLB_put_segment(tdbb, request->req_blb, buffer, userDesc.dsc_length);
 	}
 }
@@ -917,7 +917,7 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR* msgBuffer = request->req_msg_buffers[parameter->par_message->msg_buffer_number];
 
 	dsc desc = parameter->par_desc;
-	desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+	desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 	bid* blob_id = (bid*) desc.dsc_address;
 
@@ -926,7 +926,7 @@ static void execute_blob(thread_db* tdbb,
 		if (null)
 		{
 			desc = null->par_desc;
-			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+			desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 			if (*((SSHORT*) desc.dsc_address) < 0)
 				memset(blob_id, 0, sizeof(bid));
@@ -1232,7 +1232,7 @@ static void execute_request(thread_db* tdbb,
 			// second is either another record or the end of record message.
 			// In either case, there's more than one record.
 
-			UCHAR* message_buffer = (UCHAR*) gds__alloc((ULONG) message->msg_length);
+			UCHAR* message_buffer = (UCHAR*) gds__alloc(message->msg_length);
 
 			ISC_STATUS status = FB_SUCCESS;
 			ISC_STATUS_ARRAY localStatus;
@@ -1245,7 +1245,7 @@ static void execute_request(thread_db* tdbb,
 				try
 				{
 					JRD_receive(tdbb, request->req_request, message->msg_number,
-						message->msg_length, message_buffer);
+								message->msg_length, message_buffer);
 					status = FB_SUCCESS;
 				}
 				catch (Firebird::Exception&)
@@ -1323,14 +1323,14 @@ static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
 	if (null)
 	{
 		desc = null->par_desc;
-		desc.dsc_address = msgBuffer + IPTR(null->par_desc.dsc_address);
+		desc.dsc_address = msgBuffer + (IPTR) null->par_desc.dsc_address;
 
 		if (*((SSHORT*) desc.dsc_address))
 			return 0;
 	}
 
 	desc = parameter->par_desc;
-	desc.dsc_address = msgBuffer + IPTR(parameter->par_desc.dsc_address);
+	desc.dsc_address = msgBuffer + (IPTR) parameter->par_desc.dsc_address;
 
 	return *((SSHORT*) desc.dsc_address);
 }
@@ -2048,7 +2048,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 			if (!request->req_user_descs.get(parameter, desc))
 				desc.clear();
 
-			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
+			ULONG length = (IPTR) desc.dsc_address + desc.dsc_length;
 
 			if (length > msg_length || !desc.dsc_dtype)
 			{
@@ -2066,7 +2066,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				if (!request->req_user_descs.get(null_ind, userNullDesc))
 					userNullDesc.clear();
 
-				const USHORT null_offset = (IPTR) userNullDesc.dsc_address;
+				const ULONG null_offset = (IPTR) userNullDesc.dsc_address;
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 				{
@@ -2075,7 +2075,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				}
 
 				dsc nullDesc = null_ind->par_desc;
-				nullDesc.dsc_address = msgBuffer + IPTR(nullDesc.dsc_address);
+				nullDesc.dsc_address = msgBuffer + (IPTR) nullDesc.dsc_address;
 
 				if (toExternal)
 				{
@@ -2090,7 +2090,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 			}
 
 			dsc parDesc = parameter->par_desc;
-			parDesc.dsc_address = msgBuffer + IPTR(parDesc.dsc_address);
+			parDesc.dsc_address = msgBuffer + (IPTR) parDesc.dsc_address;
 
 			if (toExternal)
 			{
@@ -2146,10 +2146,10 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		fb_assert(parentMsgBuffer);
 
 		dsc parentDesc = dbkey->par_desc;
-		parentDesc.dsc_address = parentMsgBuffer + IPTR(parentDesc.dsc_address);
+		parentDesc.dsc_address = parentMsgBuffer + (IPTR) parentDesc.dsc_address;
 
 		dsc desc = parameter->par_desc;
-		desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 		MOVD_move(&parentDesc, &desc);
 
@@ -2157,7 +2157,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		if (null_ind != NULL)
 		{
 			desc = null_ind->par_desc;
-			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+			desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 			SSHORT* flag = (SSHORT*) desc.dsc_address;
 			*flag = 0;
@@ -2176,10 +2176,10 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		fb_assert(parentMsgBuffer);
 
 		dsc parentDesc = rec_version->par_desc;
-		parentDesc.dsc_address = parentMsgBuffer + IPTR(parentDesc.dsc_address);
+		parentDesc.dsc_address = parentMsgBuffer + (IPTR) parentDesc.dsc_address;
 
 		dsc desc = parameter->par_desc;
-		desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 		MOVD_move(&parentDesc, &desc);
 
@@ -2187,7 +2187,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		if (null_ind != NULL)
 		{
 			desc = null_ind->par_desc;
-			desc.dsc_address = msgBuffer + IPTR(desc.dsc_address);
+			desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
 			SSHORT* flag = (SSHORT*) desc.dsc_address;
 			*flag = 0;
@@ -2252,7 +2252,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	count += (*blr++) << 8;
 	count /= 2;
 
-	USHORT offset = 0;
+	ULONG offset = 0;
 	for (USHORT index = 1; index <= count; index++)
 	{
 		dsc desc;

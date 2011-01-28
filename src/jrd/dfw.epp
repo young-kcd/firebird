@@ -4926,8 +4926,6 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		}
 	}
 
-	format->fmt_length = (USHORT)offset;
-
 	// Release the temporary field blocks
 
 	while ( (tfb = stack) )
@@ -4936,7 +4934,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		delete tfb;
 	}
 
-	if (offset > MAX_FORMAT_SIZE)
+	if (offset > MAX_RECORD_SIZE)
 	{
 		delete format;
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
@@ -4944,6 +4942,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 				 Arg::Gds(isc_table_name) << Arg::Str(relation->rel_name));
 		// Msg361: new record size of %ld bytes is too big
 	}
+
+	format->fmt_length = offset;
 
 	Format* old_format;
 	if (format->fmt_version &&

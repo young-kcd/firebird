@@ -3776,7 +3776,7 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
-		desc->dsc_address = (UCHAR *) (IPTR) offset;
+		desc->dsc_address = (UCHAR*) (IPTR) offset;
 		offset += desc->dsc_length;
 
 		// ASF: Odd indexes are the nullable flag.
@@ -3791,7 +3791,7 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		}
 	}
 
-	if (offset > MAX_FORMAT_SIZE)
+	if (offset > MAX_MESSAGE_SIZE)
 		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	node->format->fmt_length = (USHORT) offset;

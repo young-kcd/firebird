@@ -98,7 +98,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 		offset += desc.dsc_length;
 	}
 
-	if (offset > MAX_FORMAT_SIZE)
+	if (offset > MAX_MESSAGE_SIZE)
 	{
 		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 	}

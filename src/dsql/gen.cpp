@@ -320,14 +320,14 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 		GEN_descriptor(dsqlScratch, &parameter->par_desc, false);
 	}
 
-	if (offset > MAX_FORMAT_SIZE)
+	if (offset > MAX_MESSAGE_SIZE)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 				  Arg::Gds(isc_imp_exc) <<
 				  Arg::Gds(isc_blktoobig));
 	}
 
-	message->msg_length = (USHORT) offset;
+	message->msg_length = offset;
 
 	dsqlScratch->ports.add(message);
 }

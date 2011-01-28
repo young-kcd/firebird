@@ -3035,7 +3035,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						length += desc->dsc_length;
 					}
 				}
-				format->fmt_length = (USHORT) length;
+				format->fmt_length = length;
 			}
 
 			prc_t prc_type = prc_legacy;
@@ -4555,13 +4555,13 @@ static void par_messages(thread_db* tdbb,
 			blr_length -= diff;
 		}
 
-		if (offset > MAX_FORMAT_SIZE)
+		if (offset > MAX_MESSAGE_SIZE)
 		{
 			ERR_post(Arg::Gds(isc_imp_exc) <<
 					 Arg::Gds(isc_blktoobig));
 		}
 
-		format->fmt_length = (USHORT) offset;
+		format->fmt_length = offset;
 
 		switch (msg_number)
 		{

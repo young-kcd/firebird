@@ -81,8 +81,6 @@ public:
 
 		void assign(USHORT length, const UCHAR* ptr)
 		{
-			// CVC: While length is USHORT, this assertion is redundant.
-			// fb_assert(length <= MAX_FORMAT_SIZE); // commented - AP - avoid gcc warning
 			offset = 0;
 			sizeLimit = length;
 			memcpy(buffer, ptr, length);
@@ -187,7 +185,7 @@ public:
 			offset += (ULONG) delta;
 		}
 
-		UCHAR buffer[MAX_FORMAT_SIZE];
+		UCHAR buffer[MAX_RECORD_SIZE];
 		ULONG offset;
 		ULONG sizeLimit;
 	};

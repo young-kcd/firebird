@@ -638,13 +638,13 @@ void INI_init2(thread_db* tdbb)
 
 			relation->rel_fields->resize(n);
 			format->fmt_count = n; // We are using less than the allocated members.
-			format->fmt_length = (USHORT)FLAG_BYTES(n);
+			format->fmt_length = FLAG_BYTES(n);
 			Format::fmt_desc_iterator desc = format->fmt_desc.begin();
 			for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH, ++desc)
 			{
 				if (n-- > 0)
 				{
-					format->fmt_length = (USHORT) MET_align(&(*desc), format->fmt_length);
+					format->fmt_length = MET_align(&(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 					format->fmt_length += desc->dsc_length;
 				}

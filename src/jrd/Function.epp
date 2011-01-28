@@ -880,7 +880,7 @@ void Function::makeFormat()
 		fun_in_msg_format.fmt_desc[i * 2 + 1] = arg_desc;
 	}
 
-	if (offset > MAX_FORMAT_SIZE)
+	if (offset > MAX_MESSAGE_SIZE)
 	{
 		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 	}
