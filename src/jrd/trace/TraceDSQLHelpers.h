@@ -188,6 +188,12 @@ public:
 
 	~TraceDSQLFetch()
 	{
+		// don't trace fetch after EOS
+		if (m_request && m_request->req_request && 
+			!(m_request->req_request->req_flags & req_active))
+		{
+			return;
+		}
 		fetch(true, res_failed);
 	}
 
