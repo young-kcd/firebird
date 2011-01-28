@@ -109,9 +109,6 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 		AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
 
-		const SSHORT length = gds__vax_integer(s + 1, 2);
-		SLONG start = gds__vax_integer(s + 3, length);
-
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			DBB IN RDB$DATABASE
 		{
