@@ -712,6 +712,22 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @goto :EOF
 
 
+:DO_MD5SUMS
+::=========
+:: Generate the md5sum checksum file
+::==================================
+if NOT DEFINED GNU_TOOLCHAIN (
+  call :WARNING GNU_TOOLCHAIN variable not defined. Cannot generate md5 sums.
+  @goto :EOF
+)
+@echo Generating md5sums for Firebird-%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%
+
+%GNU_TOOLCHAIN%\md5sum.exe %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_PRODUCT_VER_STRING%?%FBBUILD_PACKAGE_NUMBER%*.* > %FBBUILD_INSTALL_IMAGES%\Firebird-%FBBUILD_PRODUCT_VER_STRING%-%FBBUILD_PACKAGE_NUMBER%.md5sum
+
+::---------------
+@goto :EOF
+
+
 :HELP
 ::===
 @echo.
@@ -901,6 +917,8 @@ if %FBBUILD_ISX_PACK% EQU 1 (
 @(@call :ISX_PACK ) || (@echo Error calling ISX_PACK & @goto :EOF)
 @echo.
 )
+
+@(@call :DO_MD5SUMS ) || (@echo Error calling DO_MD5SUMS & @goto :EOF)
 
 @echo.
 @echo Completed building installation kit(s)
