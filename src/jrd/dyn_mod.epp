@@ -56,6 +56,7 @@
 #include "../jrd/dyn.h"
 #include "../jrd/ods.h"
 #include "../jrd/blb_proto.h"
+#include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
@@ -83,8 +84,6 @@ using namespace Firebird;
 
 DATABASE DB = STATIC "ODS.RDB";
 
-static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
-
 static void change_backup_mode(Global*, UCHAR verb);
 
 
@@ -100,18 +99,13 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
  *	Modify a database.
  *
  **************************************/
-	UCHAR s[128];
-
 	thread_db* tdbb = JRD_get_thread_data();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	try {
 
-		INF_database_info(alloc_info, sizeof(alloc_info), s, sizeof(s));
-
-		if (s[0] != isc_info_allocation) {
-			goto dyn_punt_84;
-		}
+		CCH_flush(tdbb, FLUSH_ALL, 0L);
+		SLONG start = PageSpace::maxAlloc(tdbb->getDatabase());
 
 		AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
 
@@ -192,12 +186,6 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		DYN_error_punt(true, 84);
 		// msg 84: "MODIFY DATABASE failed"
 	}
-
-	return;
-
-dyn_punt_84:
-	DYN_error_punt(true, 84);
-	// msg 84: "MODIFY DATABASE failed"
 }
 
 
