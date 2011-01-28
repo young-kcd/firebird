@@ -669,6 +669,7 @@ AC_CHECK_HEADERS(float.h)
 AC_CHECK_HEADERS(atomic.h)
 AC_CHECK_HEADERS(atomic_ops.h)
 AC_CHECK_HEADERS(utime.h)
+AC_CHECK_HEADERS(poll.h)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
@@ -786,6 +787,7 @@ AC_CHECK_FUNCS(semtimedop)
 AC_CHECK_FUNCS(fegetenv)
 AC_CHECK_FUNCS(strerror_r)
 AC_CHECK_FUNCS(fdatasync fsync)
+AC_CHECK_FUNCS(poll)
 dnl AC_CHECK_FUNCS(AO_compare_and_swap_full)
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[#include <atomic_ops.h>]], [[AO_T x; AO_compare_and_swap_full(&x, 0, 0); return 0;]])],

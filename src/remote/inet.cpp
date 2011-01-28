@@ -88,9 +88,13 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
-#ifdef HAVE_SYS_SELECT_H
+
+#if defined(HAVE_POLL_H)
+#include <poll.h>
+#elif defined(HAVE_SYS_SELECT_H)
 #include <sys/select.h>
 #endif
+
 #endif // !WIN_NT
 
 const int INET_RETRY_CALL = 5;
@@ -230,12 +234,175 @@ const SLONG DEF_MAX_DATA	= 8192;
 
 const int SELECT_TIMEOUT	= 60;		// Dispatch thread select timeout (sec)
 
-struct slct_t
+class Select
 {
-	int		slct_width;
-	int		slct_count;
+#ifdef HAVE_POLL
+private:
+	static const int SEL_INIT_EVENTS = POLLIN;
+	static const int SEL_CHECK_MASK = POLLIN;
+
+	pollfd* getPollFd(int n)
+	{
+		pollfd* const end = slct_poll.end();
+		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
+		{
+			if (n == pf->fd)
+			{
+				return pf;
+			}
+		}
+
+		return NULL;
+	}
+
+	static int compare(const void* a, const void* b)
+	{
+		// use C-cast here to be for sure compatible with libc
+		return ((pollfd*)a)->fd - ((pollfd*)b)->fd;
+	}
+#endif
+
+public:
+#ifdef HAVE_POLL
+	Select()
+		: slct_time(0), slct_count(0), slct_poll(*getDefaultMemoryPool())
+	{ }
+#else
+	Select()
+		: slct_time(0), slct_count(0), slct_width(0)
+	{
+		memset(&slct_fdset, 0, sizeof slct_fdset);
+	}
+#endif
+
+	enum HandleState {SEL_BAD, SEL_DISCONNECTED, SEL_NO_DATA, SEL_READY};
+
+	HandleState ok(const rem_port* port)
+	{
+		SOCKET n = port->port_handle;
+#if defined(WIN_NT)
+		return FD_ISSET(n, &slct_fdset) ? SEL_READY : SEL_NO_DATA;
+#elif defined(HAVE_POLL)
+		const pollfd* pf = getPollFd(n);
+		if (pf)
+		{
+			return pf->events & SEL_CHECK_MASK ? SEL_READY : SEL_NO_DATA;
+		}
+		return (n < 0) ? (port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD) : SEL_NO_DATA;
+#else
+		if (n < 0 || n >= FD_SETSIZE)
+		{
+			return port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD;
+		}
+		return (n < slct_width && FD_ISSET(n, &slct_fdset)) ? SEL_READY : SEL_NO_DATA;
+#endif
+	}
+
+	void unset(SOCKET handle)
+	{
+#if defined(HAVE_POLL)
+		pollfd* pf = getPollFd(handle);
+		if (pf)
+		{
+			pf->events = 0;
+		}
+#else
+		FD_CLR(handle, &slct_fdset);
+		--slct_count;
+#endif
+	}
+
+	void set(SOCKET handle)
+	{
+#ifdef HAVE_POLL
+		pollfd* pf = getPollFd(handle);
+		if (pf)
+		{
+			pf->events = SEL_INIT_EVENTS;
+			return;
+		}
+		pollfd f;
+		f.fd = handle;
+		f.events = SEL_INIT_EVENTS;
+		slct_poll.push(f);
+#else
+		FD_SET(handle, &slct_fdset);
+#ifdef WIN_NT
+		++slct_width;
+#else
+		slct_width = MAX(slct_width, handle + 1);
+#endif // WIN_NT
+#endif // HAVE_POLL
+	}
+
+	void clear()
+	{
+		slct_count = 0;
+#if defined(HAVE_POLL)
+		slct_poll.clear();
+#else
+		slct_width = 0;
+		FD_ZERO(&slct_fdset);
+#endif
+	}
+
+	int select(timeval* timeout)
+	{
+		bool hasRequest = false;
+
+#ifdef HAVE_POLL
+		pollfd* const end = slct_poll.end();
+		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
+		{
+			pf->revents = pf->events;
+			if (pf->events & SEL_CHECK_MASK)
+			{
+				hasRequest = true;
+			}
+		}
+
+		if (!hasRequest)
+		{
+			errno = NOTASOCKET;
+			return -1;
+		}
+
+		int milliseconds = timeout ? timeout->tv_sec * 1000 + timeout->tv_usec / 1000 : -1;
+		slct_count = ::poll(slct_poll.begin(), slct_poll.getCount(), milliseconds);
+
+		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
+		{
+			pf->events = pf->revents;
+		}
+#else
+#ifdef WIN_NT
+		slct_count = ::select(FD_SETSIZE, &slct_fdset, NULL, NULL, timeout);
+#else
+
+
+		slct_count = ::select(slct_width, &slct_fdset, NULL, NULL, timeout);
+#endif // WIN_NT
+#endif // HAVE_POLL
+
+
+		return slct_count;
+	}
+
+	int getCount()
+	{
+		return slct_count;
+	}
+
 	time_t	slct_time;
+
+private:
+	int		slct_count;
+#ifdef HAVE_POLL
+	Firebird::HalfStaticArray<pollfd, 8> slct_poll;
+#else
+	int		slct_width;
 	fd_set	slct_fdset;
+#endif
 };
 
 static bool		accept_connection(rem_port*, const P_CNCT*);
@@ -311,9 +478,9 @@ static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
-static void		select_port(rem_port*, slct_t*, RemPortPtr&);
+static void		select_port(rem_port*, Select*, RemPortPtr&);
 static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
-static bool		select_wait(rem_port*, slct_t*);
+static bool		select_wait(rem_port*, Select*);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
@@ -367,7 +534,7 @@ SLONG INET_remote_buffer;
 static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
-static slct_t INET_select = { 0, 0, 0 };
+static Select INET_select;
 static int INET_max_clients;
 static rem_port* inet_async_receive = NULL;
 
@@ -1266,20 +1433,15 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 		timeout.tv_sec = port->port_connect_timeout;
 		timeout.tv_usec = 0;
 
-		fd_set slct_fdset;
-		FD_ZERO(&slct_fdset);
-		FD_SET(port->port_channel, &slct_fdset);
+		Select slct;
+		slct.set(port->port_channel);
 
 		int inetErrNo = 0;
 
 		while (true)
 		{
-			const int count =
-#ifdef WIN_NT
-				select(FD_SETSIZE, &slct_fdset, NULL, NULL, &timeout);
-#else
-				select(port->port_channel + 1, &slct_fdset, NULL, NULL, &timeout);
-#endif
+			slct.select(&timeout);
+			const int count = slct.getCount();
 			inetErrNo = INET_ERRNO;
 
 			if (count != -1 || !INTERRUPT_ERROR(inetErrNo))
@@ -1565,10 +1727,10 @@ static void disconnect(rem_port* const port)
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary)
 	{
-		fprintf(stdout, "INET_count_send = %lu packets\n", INET_count_send);
-		fprintf(stdout, "INET_bytes_send = %lu bytes\n", INET_bytes_send);
-		fprintf(stdout, "INET_count_recv = %lu packets\n", INET_count_recv);
-		fprintf(stdout, "INET_bytes_recv = %lu bytes\n", INET_bytes_recv);
+		fprintf(stdout, "INET_count_send = %u packets\n", INET_count_send);
+		fprintf(stdout, "INET_bytes_send = %u bytes\n", INET_bytes_send);
+		fprintf(stdout, "INET_count_recv = %u packets\n", INET_count_recv);
+		fprintf(stdout, "INET_bytes_recv = %u bytes\n", INET_bytes_recv);
 		fflush(stdout);
 	}
 #endif
@@ -1927,7 +2089,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 			op_rec_count++;
 			if (INET_trace & TRACE_operations)
 			{
-				fprintf(stdout, "%04lu: OP Recd %5lu opcode %d\n",
+				fprintf(stdout, "%04u: OP Recd %5u opcode %d\n",
 						   inet_debug_timer(),
 						   op_rec_count, packet->p_operation);
 				fflush(stdout);
@@ -2052,7 +2214,7 @@ static rem_port* select_accept( rem_port* main_port)
 	return 0;
 }
 
-static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
+static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 {
 /**************************************
  *
@@ -2074,33 +2236,32 @@ static void select_port(rem_port* main_port, slct_t* selct, RemPortPtr& port)
 
 	for (port = main_port; port; port = port->port_next)
 	{
-		const SOCKET n = port->port_handle;
-#ifdef WIN_NT
-		const int ok = FD_ISSET(n, &selct->slct_fdset);
-#else
-		if (n < 0 || n >= FD_SETSIZE)
+		Select::HandleState result = selct->ok(port);
+		selct->unset(port->port_handle);
+		switch (result)
 		{
-			if (port->port_flags & PORT_disconnect)
-				continue;
+		case Select::SEL_BAD:
+			return;
 
-			return;
-		}
-		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
-#endif
-		if (ok)
-		{
+		case Select::SEL_DISCONNECTED:
+			continue;
+
+		case Select::SEL_READY:
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
-			FD_CLR(n, &selct->slct_fdset);
-			--selct->slct_count;
 			return;
+
+		default:
+			break;
 		}
-		if (port->port_dummy_timeout < 0) {
+
+		if (port->port_dummy_timeout < 0)
+		{
 			return;
 		}
 	}
 }
 
-static bool select_wait( rem_port* main_port, slct_t* selct)
+static bool select_wait( rem_port* main_port, Select* selct)
 {
 /**************************************
  *
@@ -2119,8 +2280,7 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 
 	for (;;)
 	{
-		selct->slct_count = selct->slct_width = 0;
-		FD_ZERO(&selct->slct_fdset);
+		selct->clear();
 		bool found = false;
 
 		// Use the time interval between select() calls to expire
@@ -2178,16 +2338,10 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 										 port->port_handle);
 
 								// this will lead to receive() which will break bad connection
-								selct->slct_count = selct->slct_width = 0;
-								FD_ZERO(&selct->slct_fdset);
+								selct->clear();
 								if (!badSocket)
 								{
-									FD_SET(port->port_handle, &selct->slct_fdset);
-#ifdef WIN_NT
-									++selct->slct_width;
-#else
-									selct->slct_width = port->port_handle + 1;
-#endif
+									selct->set(port->port_handle);
 								}
 								return true;
 							}
@@ -2197,12 +2351,7 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 					// if process is shuting down - don't listen on main port
 					if (!INET_shutting_down || port != main_port)
 					{
-						FD_SET(port->port_handle, &selct->slct_fdset);
-#ifdef WIN_NT
-						++selct->slct_width;
-#else
-						selct->slct_width = MAX(selct->slct_width, port->port_handle + 1);
-#endif
+						selct->set(port->port_handle);
 						found = true;
 					}
 				}
@@ -2233,30 +2382,26 @@ static bool select_wait( rem_port* main_port, slct_t* selct)
 			timeout.tv_sec = SELECT_TIMEOUT;
 			timeout.tv_usec = 0;
 
-#ifdef WIN_NT
-			selct->slct_count = select(FD_SETSIZE, &selct->slct_fdset, NULL, NULL, &timeout);
-#else
-			selct->slct_count = select(selct->slct_width, &selct->slct_fdset, NULL, NULL, &timeout);
-#endif
+			selct->select(&timeout);
 			const int inetErrNo = INET_ERRNO;
 
 			//if (INET_shutting_down) {
 			//	return false;
 			//}
 
-			if (selct->slct_count != -1)
+			if (selct->getCount() != -1)
 			{
 				// if selct->slct_count is zero it means that we timed out of
 				// select with nothing to read or accept, so clear the fd_set
 				// bit as this value is undefined on some platforms (eg. HP-UX),
 				// when the select call times out. Once these bits are cleared
 				// they can be used in select_port()
-				if (selct->slct_count == 0)
+				if (selct->getCount() == 0)
 				{
 					Firebird::MutexLockGuard guard(port_mutex);
 					for (rem_port* port = main_port; port; port = port->port_next)
 					{
-						FD_CLR(port->port_handle, &selct->slct_fdset);
+						selct->unset(port->port_handle);
 					}
 				}
 				return true;
@@ -2297,7 +2442,7 @@ static int send_full( rem_port* port, PACKET * packet)
 		op_sent_count++;
 		if (INET_trace & TRACE_operations)
 		{
-			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d\n", inet_debug_timer(),
+			fprintf(stdout, "%05u: OP Sent %5u opcode %d\n", inet_debug_timer(),
 				op_sent_count, packet->p_operation);
 			fflush(stdout);
 		}
@@ -2326,7 +2471,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 		op_sentp_count++;
 		if (INET_trace & TRACE_operations)
 		{
-			fprintf(stdout, "%05lu: OP Sent %5lu opcode %d (partial)\n", inet_debug_timer(),
+			fprintf(stdout, "%05u: OP Sent %5u opcode %d (partial)\n", inet_debug_timer(),
 				op_sentp_count, packet->p_operation);
 			fflush(stdout);
 		}
@@ -2905,7 +3050,7 @@ static void packet_print(const TEXT* string, const UCHAR* packet, int length, UL
 	for (int l = length; l > 0; --l)
 		sum += *packet++;
 
-	fprintf(stdout, "%05lu:    PKT %s\t(%lu): length = %4d, checksum = %d\n",
+	fprintf(stdout, "%05u:    PKT %s\t(%u): length = %4d, checksum = %d\n",
 			   inet_debug_timer(), string, counter, length, sum);
 	fflush(stdout);
 }
@@ -2978,18 +3123,14 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 		if ( !(port->port_flags & PORT_async) )
 		{
-			fd_set slct_fdset;
-			FD_ZERO(&slct_fdset);
-			FD_SET(ph, &slct_fdset);
+			Select slct;
+			slct.set(ph);
 
 			int slct_count;
 			for (;;)
 			{
-#if (defined WIN_NT)
-				slct_count = select(FD_SETSIZE, &slct_fdset, NULL, NULL, time_ptr);
-#else
-				slct_count = select(port->port_handle + 1, &slct_fdset, NULL, NULL, time_ptr);
-#endif
+				slct.select(time_ptr);
+				slct_count = slct.getCount();
 				inetErrNo = INET_ERRNO;
 
 				// restore original timeout value FSG 3 MAY 2001
@@ -3014,7 +3155,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 #ifdef DEBUG
 				if (INET_trace & TRACE_operations)
 				{
-					fprintf(stdout, "%05lu: OP Sent: op_dummy\n", inet_debug_timer());
+					fprintf(stdout, "%05u: OP Sent: op_dummy\n", inet_debug_timer());
 					fflush(stdout);
 				}
 #endif
