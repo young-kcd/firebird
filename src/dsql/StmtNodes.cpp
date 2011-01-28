@@ -3794,7 +3794,7 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	if (offset > MAX_MESSAGE_SIZE)
 		PAR_error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
-	node->format->fmt_length = (USHORT) offset;
+	node->format->fmt_length = offset;
 
 	return node;
 }
