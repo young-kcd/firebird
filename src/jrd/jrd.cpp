@@ -243,25 +243,25 @@ int Svc::release()
 	return 0;
 }
 
-class Provider : public StdPlugin<Firebird::PProvider, FB_P_PROVIDER_VERSION>
+class Provider : public StdPlugin<PProvider, FB_P_PROVIDER_VERSION>
 {
 public:
 	explicit Provider(IFactoryParameter*)
 	{ }
 
-	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
+	virtual IService* FB_CARG attachServiceManager(Status* status, const char* service,
 												 unsigned int spbLength, const unsigned char* spb);
-	//virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int count, ...);
-	//virtual Firebird::ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
+	//virtual ITransaction* startTransaction(Status* status, unsigned int count, ...);
+	//virtual ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
 	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
 	virtual int FB_CARG release();
 };
 
-static Firebird::AtomicCounter shutdownCounter;
+static AtomicCounter shutdownCounter;
 
 int Provider::release()
 {
@@ -280,22 +280,22 @@ int Provider::release()
 	return 1;
 }
 
-class EngineFactory : public Firebird::StackIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class EngineFactory : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	Firebird::Plugin* FB_CARG createPlugin(Firebird::IFactoryParameter* factoryParameter)
+	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
 	{
 		++shutdownCounter;
 		return new Provider(factoryParameter);
 	}
 };
 
-static Firebird::Static<EngineFactory> engineFactory;
+static Static<EngineFactory> engineFactory;
 
-void registerEngine(Firebird::IPlugin* iPlugin)
+void registerEngine(IPlugin* iPlugin)
 {
 	engineFactory->addRef();
-	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Engine12", &engineFactory);
+	iPlugin->registerPlugin(PluginType::Provider, "Engine12", &engineFactory);
 }
 
 } // namespace Jrd
@@ -684,7 +684,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public Firebird::StackIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceFailedConnection : public StackIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
@@ -3769,6 +3769,7 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 				Thread::kill(h);
 				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
 			}
+
 			Thread::waitForCompletion(h);
 		}
 		else

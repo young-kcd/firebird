@@ -73,7 +73,7 @@ const int MAX_OPN_EVENTS	= 40;
 class OpenEvents
 {
 public:
-	OpenEvents(Firebird::MemoryPool&) 
+	OpenEvents(Firebird::MemoryPool&)
 	{
 		memset(&m_events, 0, sizeof(m_events));
 		m_count = 0;
@@ -84,7 +84,7 @@ public:
 	{
 		process_id = 0;
 
-		openEvent* evnt = m_events + m_count;
+		Item* evnt = m_events + m_count;
 		m_count = 0;
 		while (evnt-- > m_events)
 			CloseHandle(evnt->handle);
@@ -92,11 +92,11 @@ public:
 
 	HANDLE getEvent(SLONG pid, SLONG signal_number)
 	{
-		openEvent* oldestEvent = NULL;
+		Item* oldestEvent = NULL;
 		ULONG oldestAge = ~0;
 
-		openEvent* evnt = m_events;
-		const openEvent* const end = evnt + m_count;
+		Item* evnt = m_events;
+		const Item* const end = evnt + m_count;
 		for (; evnt < end; evnt++)
 		{
 			if (evnt->pid == pid && evnt->signal == signal_number)
@@ -133,7 +133,7 @@ public:
 	}
 
 private:
-	class openEvent
+	class Item
 	{
 	public:
 		SLONG pid;
@@ -142,12 +142,12 @@ private:
 		ULONG age;
 	};
 
-	openEvent m_events[MAX_OPN_EVENTS];
+	Item m_events[MAX_OPN_EVENTS];
 	int m_count;
 	ULONG m_clock;
 };
 
-}; // namespace
+}  // namespace
 
 Firebird::GlobalPtr<OpenEvents> openEvents;
 
@@ -173,7 +173,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	HANDLE handle = openEvents->getEvent(pid, signal_number);
 	if (!handle)
 		return -1;
-		
+
 	return SetEvent(handle) ? 0 : -1;
 }
 

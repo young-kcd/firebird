@@ -3190,9 +3190,7 @@ namespace {
 	void portEventsShutdown(rem_port* port)
 	{
 		if (port->port_events_thread)
-		{
 			Thread::waitForCompletion(port->port_events_thread);
-		}
 	}
 }
 
@@ -5142,6 +5140,7 @@ static void check_response(Status* warning, Rdb* rdb, PACKET* packet)
 		vector[1] = isc_net_read_err;
 		vector[2] = isc_arg_end;
 	}
+
 	status_exception::raise(vector);
 }
 

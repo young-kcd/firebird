@@ -293,7 +293,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 			// Use descriptor for nulls signaling
 			USHORT null_flag = 0;
-			if (parameter->par_null && 
+			if (parameter->par_null &&
 				parameter->par_null->par_desc.dsc_address &&
 				*((SSHORT*) parameter->par_null->par_desc.dsc_address))
 			{
