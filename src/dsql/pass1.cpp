@@ -5975,7 +5975,7 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	dsql_nod* union_items = MAKE_node(nod_list, items->nod_count);
 
 	{ // scope block
-		SSHORT count = 0;
+		USHORT count = 0;
 		dsql_nod** uptr = items->nod_arg;
 		dsql_nod** ptr = union_items->nod_arg;
 
@@ -6838,7 +6838,7 @@ dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_
 	else
 		map = context->ctx_map;
 
-	int count = 0;
+	USHORT count = 0;
 
 	while (map)
 	{
@@ -6860,7 +6860,7 @@ dsql_nod* PASS1_post_map(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, dsql_
 		}
 
 		map = *next = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
-		map->map_position = (USHORT) count;
+		map->map_position = count;
 		map->map_node = node;
 		map->map_partition = partitionMap;
 	}
