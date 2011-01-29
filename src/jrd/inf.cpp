@@ -238,7 +238,7 @@ void INF_database_info(thread_db* tdbb,
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end = info + output_length;
 
-	const Attachment* const err_att = tdbb->getAttachment();
+	const Jrd::Attachment* const err_att = tdbb->getAttachment();
 
 	while (items < end_items && *items != isc_info_end)
 	{
@@ -587,7 +587,7 @@ void INF_database_info(thread_db* tdbb,
 				continue;
 			}
 
-			for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
+			for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 			{
 				if (att->att_flags & ATT_shutdown)
 					continue;
