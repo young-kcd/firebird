@@ -1300,9 +1300,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	// First, handle "AND" comparisons (all nodes except nod_or)
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
-		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-			continue;
-		}
 		jrd_nod* const node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type != nod_or))
 		{
@@ -1319,9 +1316,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(RecordSource** rsb)
 	InversionCandidate* invCandidate = NULL;
 	for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 	{
-		if (tail->opt_conjunct_flags & opt_conjunct_matched) {
-			continue;
-		}
 		jrd_nod* const node = tail->opt_conjunct_node;
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node && (node->nod_type == nod_or))
 		{
