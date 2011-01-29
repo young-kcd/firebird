@@ -596,12 +596,11 @@ void DSQL_prepare(thread_db* tdbb,
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
-	if (!length) {
+	if (length == 0)
 		length = strlen(string);
-	}
 
-	try {
-
+	try
+	{
 		// Figure out which parser version to use
 		// Since the API to dsql8_prepare is public and can not be changed, there needs to
 		// be a way to send the parser version to DSQL so that the parser can compare the keyword
@@ -708,20 +707,19 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 		// and thus deletes one isolated " in the middle of the cursor.
 		for (Firebird::string::iterator i = cursor.begin(); i < cursor.end(); ++i)
 		{
-			if (*i == '\"') {
+			if (*i == '\"')
 				cursor.erase(i);
-			}
 		}
 	}
 	else	// not quoted name
 	{
 		const Firebird::string::size_type i = cursor.find(' ');
 		if (i != Firebird::string::npos)
-		{
 			cursor.resize(i);
-		}
+
 		cursor.upper();
 	}
+
 	USHORT length = (USHORT) fb_utils::name_length(cursor.c_str());
 
 	if (length == 0)
@@ -730,9 +728,10 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 				  Arg::Gds(isc_dsql_decl_err) <<
 				  Arg::Gds(isc_dsql_cursor_invalid));
 	}
-	if (length > MAX_CURSOR_LENGTH) {
+
+	if (length > MAX_CURSOR_LENGTH)
 		length = MAX_CURSOR_LENGTH;
-	}
+
 	cursor.resize(length);
 
 	// If there already is a different cursor by the same name, bitch
@@ -751,9 +750,8 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 	// If there already is a cursor and its name isn't the same, ditto.
 	// We already know there is no cursor by this name in the hash table
 
-	if (!request->req_cursor) {
+	if (!request->req_cursor)
 		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(), length, SYM_cursor, request);
-	}
 	else
 	{
 		fb_assert(request->req_cursor != symbol);
@@ -890,7 +888,9 @@ static void execute_blob(thread_db* tdbb,
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
+
 	SSHORT filter = filter_sub_type(request, blob->blb_to);
+
 	if (filter)
 	{
 		*p++ = isc_bpb_target_type;
@@ -898,7 +898,9 @@ static void execute_blob(thread_db* tdbb,
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
+
 	filter = filter_sub_type(request, blob->blb_from);
+
 	if (filter)
 	{
 		*p++ = isc_bpb_source_type;
@@ -906,10 +908,11 @@ static void execute_blob(thread_db* tdbb,
 		*p++ = static_cast<UCHAR>(filter);
 		*p++ = filter >> 8;
 	}
+
 	USHORT bpb_length = p - bpb;
-	if (bpb_length == 1) {
+
+	if (bpb_length == 1)
 		bpb_length = 0;
-	}
 
 	dsql_par* parameter = blob->blb_blob_id;
 	const dsql_par* null = parameter->par_null;
@@ -990,15 +993,14 @@ static void execute_immediate(thread_db* tdbb,
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
-	if (!length) {
+	if (length == 0)
 		length = strlen(string);
-	}
 
 	dsql_dbb* const database = init(tdbb, attachment);
 	dsql_req* request = NULL;
 
-	try {
-
+	try
+	{
 		// Figure out which parser version to use
 		// Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
 		// be a way to send the parser version to DSQL so that the parser can compare the keyword
@@ -1016,7 +1018,7 @@ static void execute_immediate(thread_db* tdbb,
 		//
 		//  combined = (1 * 10) + 1 == 11
 		//
-		//  parser = (combined) %10 == 1
+		//  parser = (combined) % 10 == 1
 		//  dialect = (combined) / 19 == 1
 		//
 		// If the parser version is not part of the dialect, then assume that the
@@ -1194,6 +1196,7 @@ static void execute_request(thread_db* tdbb,
 	const bool isBlock = (statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	message = statement->getReceiveMsg();
+
 	if ((out_msg_length && message) || isBlock)
 	{
 		UCHAR temp_buffer[FB_DOUBLE_ALIGN * 2];
@@ -1204,9 +1207,8 @@ static void execute_request(thread_db* tdbb,
 
 		UCHAR* msgBuffer = request->req_msg_buffers[message->msg_buffer_number];
 
-		if (out_msg_length && out_blr_length) {
+		if (out_msg_length && out_blr_length)
 			parse_blr(request, out_blr_length, out_blr, out_msg_length, message->msg_parameters);
-		}
 		else if (!out_msg_length && isBlock)
 		{
 			message = &temp_msg;
@@ -1270,6 +1272,7 @@ static void execute_request(thread_db* tdbb,
 	}
 
 	UCHAR buffer[20]; // Not used after retrieved
+
 	if (statement->getType() == DsqlCompiledStatement::TYPE_UPDATE_CURSOR)
 	{
 		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
@@ -1459,9 +1462,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 							 explain_buffer.getCount(), explain_buffer.begin());
 
 			if (explain_buffer[0] == isc_info_truncated)
-			{
 				return 0;
-			}
 		}
 	}
 	catch (Firebird::Exception&)
@@ -1471,14 +1472,13 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 
 	char* buffer_ptr = *out_buffer;
 	char* plan;
+
 	for (int i = 0; i < 2; i++)
 	{
 		const UCHAR* explain = explain_buffer.begin();
 
 		if (*explain++ != isc_info_access_path)
-		{
 			return 0;
-		}
 
 		SLONG explain_length = (ULONG) *explain++;
 		explain_length += (ULONG) (*explain++) << 8;
@@ -1515,13 +1515,14 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 					(!realloc && full_len == ULONG(MAX_USHORT) - 4))
 				{
 					const ptrdiff_t diff = buffer_ptr + full_len - plan;
-					if (diff < 3) {
+					if (diff < 3)
 						plan -= 3 - diff;
-					}
+
 					fb_assert(plan > buffer_ptr);
 					*plan++ = '.';
 					*plan++ = '.';
 					*plan++ = '.';
+
 					if (!realloc)
 						return plan - buffer_ptr;
 
@@ -1535,6 +1536,7 @@ ULONG DSQL_get_plan_info(thread_db* tdbb,
 				// assume we have run out of room in the buffer, try again with a larger one
 				const size_t new_length = MAX_USHORT;
 				char* const temp = static_cast<char*>(gds__alloc(new_length));
+
 				if (!temp)
 				{
 					// NOMEM. Do not attempt one more try
@@ -2097,13 +2099,9 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
 				if (!flag || *flag >= 0)
-				{
 					MOVD_move(&parDesc, &desc);
-				}
 				else
-				{
 					memset(desc.dsc_address, 0, desc.dsc_length);
-				}
 			}
 			else if (!flag || *flag >= 0)
 			{
@@ -2115,9 +2113,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				}
 			}
 			else
-			{
 				memset(parDesc.dsc_address, 0, parDesc.dsc_length);
-			}
 
 			count--;
 		}
@@ -2230,17 +2226,17 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	// If there's no blr length, then the format of the current message buffer
 	// is identical to the format of the previous one.
 
-	if (!blr_length)
-	{
+	if (blr_length == 0)
 		return parameters.getCount();
-	}
 
 	if (*blr != blr_version4 && *blr != blr_version5)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
+
 	blr++;						// skip the blr_version
+
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
@@ -2253,6 +2249,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	count /= 2;
 
 	ULONG offset = 0;
+
 	for (USHORT index = 1; index <= count; index++)
 	{
 		dsc desc;
@@ -2368,6 +2365,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		USHORT align = type_alignments[desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);
+
 		desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc.dsc_length;
 
@@ -2380,6 +2378,7 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		align = type_alignments[dtype_short];
 		if (align)
 			offset = FB_ALIGN(offset, align);
+
 		const ULONG null_offset = offset;
 		offset += sizeof(SSHORT);
 
@@ -2456,7 +2455,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
-	if (!string_length)
+	if (string_length == 0)
 		string_length = strlen(string);
 
 	// Get rid of the trailing ";" if there is one.
@@ -2920,14 +2919,14 @@ static void sql_info(thread_db* tdbb,
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end_info = info + info_length;
 	UCHAR *start_info;
+
 	if (*items == isc_info_length)
 	{
 		start_info = info;
 		items++;
 	}
-	else {
+	else
 		start_info = NULL;
-	}
 
 	// CVC: Is it the idea that this pointer remains with its previous value
 	// in the loop or should it be made NULL in each iteration?
@@ -2942,6 +2941,7 @@ static void sql_info(thread_db* tdbb,
 		ULONG length;
 		USHORT number;
 		const UCHAR item = *items++;
+
 		switch (item)
 		{
 		case isc_info_sql_select:
@@ -2956,6 +2956,7 @@ static void sql_info(thread_db* tdbb,
 			}
 			*info++ = item;
 			break;
+
 		case isc_info_sql_stmt_type:
 			switch (statement->getType())
 			{
@@ -3018,32 +3019,32 @@ static void sql_info(thread_db* tdbb,
 			}
 			length = put_vax_long(buffer, (SLONG) number);
 			info = put_item(item, length, buffer, info, end_info);
-			if (!info) {
+			if (!info)
 				return;
-			}
 			break;
+
 		case isc_info_sql_sqlda_start:
 			length = *items++;
 			first_index = static_cast<USHORT>(gds__vax_integer(items, length));
 			items += length;
 			break;
+
 		case isc_info_sql_batch_fetch:
 			if (statement->getFlags() & DsqlCompiledStatement::FLAG_NO_BATCH)
 				number = 0;
 			else
 				number = 1;
 			length = put_vax_long(buffer, (SLONG) number);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
+			if (!(info = put_item(item, length, buffer, info, end_info)))
 				return;
-			}
 			break;
+
 		case isc_info_sql_records:
 			length = get_request_info(tdbb, request, sizeof(buffer), buffer);
 			if (length && !(info = put_item(item, length, buffer, info, end_info)))
-			{
 				return;
-			}
 			break;
+
 		case isc_info_sql_get_plan:
 			{
 				// be careful, get_plan_info() will reallocate the buffer to a
@@ -3086,23 +3087,21 @@ static void sql_info(thread_db* tdbb,
 				//	gds__free(buffer_ptr);
 				//}
 
-				if (!info) {
+				if (!info)
 					return;
-				}
 			}
 			break;
+
 		case isc_info_sql_num_variables:
 		case isc_info_sql_describe_vars:
 			if (messageFound)
 			{
 				number = message ? message->msg_index : 0;
 				length = put_vax_long(buffer, (SLONG) number);
-				if (!(info = put_item(item, length, buffer, info, end_info))) {
+				if (!(info = put_item(item, length, buffer, info, end_info)))
 					return;
-				}
-				if (item == isc_info_sql_num_variables) {
+				if (item == isc_info_sql_num_variables)
 					continue;
-				}
 
 				const UCHAR* end_describe = items;
 				while (end_describe < end_items &&
@@ -3113,23 +3112,21 @@ static void sql_info(thread_db* tdbb,
 
 				info = var_info(message, items, end_describe, info, end_info, first_index,
 					message == statement->getSendMsg());
-				if (!info) {
+				if (!info)
 					return;
-				}
 
 				items = end_describe;
-				if (*items == isc_info_sql_describe_end) {
+				if (*items == isc_info_sql_describe_end)
 					items++;
-				}
 				break;
 			}
 			// else fall into
+
 		default:
 			buffer[0] = item;
 			length = 1 + put_vax_long(buffer + 1, (SLONG) isc_infunk);
-			if (!(info = put_item(isc_info_error, length, buffer, info, end_info))) {
+			if (!(info = put_item(isc_info_error, length, buffer, info, end_info)))
 				return;
-			}
 		}
 	}
 

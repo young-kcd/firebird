@@ -257,7 +257,7 @@ private:
 	static int compare(const void* a, const void* b)
 	{
 		// use C-cast here to be for sure compatible with libc
-		return ((pollfd*)a)->fd - ((pollfd*)b)->fd;
+		return ((pollfd*) a)->fd - ((pollfd*) b)->fd;
 	}
 #endif
 
@@ -284,15 +284,11 @@ public:
 #elif defined(HAVE_POLL)
 		const pollfd* pf = getPollFd(n);
 		if (pf)
-		{
 			return pf->events & SEL_CHECK_MASK ? SEL_READY : SEL_NO_DATA;
-		}
-		return (n < 0) ? (port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD) : SEL_NO_DATA;
+		return n < 0 ? (port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD) : SEL_NO_DATA;
 #else
 		if (n < 0 || n >= FD_SETSIZE)
-		{
 			return port->port_flags & PORT_disconnect ? SEL_DISCONNECTED : SEL_BAD;
-		}
 		return (n < slct_width && FD_ISSET(n, &slct_fdset)) ? SEL_READY : SEL_NO_DATA;
 #endif
 	}
@@ -355,9 +351,7 @@ public:
 		{
 			pf->revents = pf->events;
 			if (pf->events & SEL_CHECK_MASK)
-			{
 				hasRequest = true;
-			}
 		}
 
 		if (!hasRequest)
@@ -370,19 +364,14 @@ public:
 		slct_count = ::poll(slct_poll.begin(), slct_poll.getCount(), milliseconds);
 
 		for (pollfd* pf = slct_poll.begin(); pf < end; ++pf)
-		{
 			pf->events = pf->revents;
-		}
 #else
 #ifdef WIN_NT
 		slct_count = ::select(FD_SETSIZE, &slct_fdset, NULL, NULL, timeout);
 #else
-
-
 		slct_count = ::select(slct_width, &slct_fdset, NULL, NULL, timeout);
 #endif // WIN_NT
 #endif // HAVE_POLL
-
 
 		return slct_count;
 	}
@@ -397,7 +386,7 @@ public:
 private:
 	int		slct_count;
 #ifdef HAVE_POLL
-	Firebird::HalfStaticArray<pollfd, 8> slct_poll;
+	HalfStaticArray<pollfd, 8> slct_poll;
 #else
 	int		slct_width;
 	fd_set	slct_fdset;
@@ -926,7 +915,7 @@ rem_port* INET_connect(const TEXT* name,
 		}
 
 		if (! setNoNagleOption(port))
- 		{
+		{
 			inet_error(true, port, "setsockopt TCP_NODELAY", isc_net_connect_listen_err, INET_ERRNO);
 		}
 	}
@@ -2135,13 +2124,12 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 	{
 		Select::HandleState result = selct->ok(port);
 		selct->unset(port->port_handle);
+
 		switch (result)
 		{
 		case Select::SEL_BAD:
 			if (port->port_state == rem_port::BROKEN)
-			{
 				continue;
-			}
 			return;
 
 		case Select::SEL_DISCONNECTED:
@@ -2156,9 +2144,7 @@ static void select_port(rem_port* main_port, Select* selct, RemPortPtr& port)
 		}
 
 		if (port->port_dummy_timeout < 0)
-		{
 			return;
-		}
 	}
 }
 
@@ -2262,9 +2248,9 @@ static bool select_wait( rem_port* main_port, Select* selct)
 
 		if (!found)
 		{
-			if (!INET_shutting_down && (main_port->port_server_flags & SRVR_multi_client)) {
+			if (!INET_shutting_down && (main_port->port_server_flags & SRVR_multi_client))
 				gds__log("INET/select_wait: client rundown complete, server exiting");
-			}
+
 			return false;
 		}
 

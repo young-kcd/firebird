@@ -102,8 +102,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	try {
-
+	try
+	{
 		CCH_flush(tdbb, FLUSH_ALL, 0L);
 		SLONG start = PageSpace::maxAlloc(tdbb->getDatabase());
 

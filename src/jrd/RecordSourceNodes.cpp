@@ -2909,7 +2909,7 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 		if (align)
 			offset = FB_ALIGN(offset, align);
 
-		desc3->dsc_address = (UCHAR*) (IPTR) offset;
+		desc3->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc3->dsc_length;
 	}
 

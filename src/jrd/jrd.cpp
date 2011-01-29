@@ -3831,7 +3831,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
  **************************************
 	try
 	{
-		if (!count || count > MAX_DB_PER_TRANS)
+		if (count == 0 || count > MAX_DB_PER_TRANS)
 		{
 			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) <<
 									Arg::Num(MAX_DB_PER_TRANS));
@@ -6960,10 +6960,8 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, USHORT count,
  *	Start a transaction.
  *
  **************************************/
-	if (!count || count > MAX_DB_PER_TRANS)
-	{
+	if (count == 0 || count > MAX_DB_PER_TRANS)
 		status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
-	}
 
 	HalfStaticArray<TEB, 16> tebs;
 	tebs.grow(count);
@@ -7049,7 +7047,8 @@ void JRD_compile(thread_db* tdbb,
 }
 
 
-namespace {
+namespace
+{
 	class DatabaseDirectoryList : public DirectoryList
 	{
 	private:
@@ -7064,6 +7063,7 @@ namespace {
 			initialize();
 		}
 	};
+
 	InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
 }
 

@@ -3776,7 +3776,7 @@ DmlNode* MessageNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		const USHORT alignment = PAR_desc(tdbb, csb, &*desc, &itemInfo);
 		if (alignment)
 			offset = FB_ALIGN(offset, alignment);
-		desc->dsc_address = (UCHAR*) (IPTR) offset;
+		desc->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc->dsc_length;
 
 		// ASF: Odd indexes are the nullable flag.

@@ -66,6 +66,7 @@
 #include "../common/StatusArg.h"
 #include "../common/classes/DbImplementation.h"
 
+using namespace Firebird;
 using namespace Jrd;
 
 
@@ -84,14 +85,14 @@ using namespace Jrd;
 #define STUFF_WORD(p, value)	{*p++ = value; *p++ = value >> 8;}
 #define STUFF(p, value)		*p++ = value
 
-typedef Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
+typedef HalfStaticArray<UCHAR, BUFFER_SMALL> CountsBuffer;
 
 static USHORT get_counts(thread_db*, USHORT, CountsBuffer&);
 
 #define CHECK_INPUT(fcn) \
 	{ \
 		if (!items || item_length <= 0 || !info || output_length <= 0) \
-			ERR_post(Firebird::Arg::Gds(isc_internal_rejected_params) << Firebird::Arg::Str(fcn)); \
+			ERR_post(Arg::Gds(isc_internal_rejected_params) << Arg::Str(fcn)); \
 	}
 
 
@@ -126,9 +127,8 @@ void INF_blob_info(const blb* blob,
 		start_info = info;
 		items++;
 	}
-	else {
+	else
 		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end)
 	{
@@ -390,7 +390,7 @@ void INF_database_info(thread_db* tdbb,
 			// since firebird 3.0) and second byte is implementation class (see table of classes
 			// in utl.cpp, array impl_class)
 			STUFF(p, 1);		// Count
-			STUFF(p, Firebird::DbImplementation::current.backwardCompatibleImplementation()); //Code
+			STUFF(p, DbImplementation::current.backwardCompatibleImplementation()); //Code
 			STUFF(p, 1);		// Class
 			length = p - buffer;
 			break;
@@ -403,7 +403,7 @@ void INF_database_info(thread_db* tdbb,
 			// isc_info_implementation pairs (used to correctly display implementation when
 			// old and new servers are mixed, see isc_version() in utl.cpp)
 			STUFF(p, 1);		// Count
-			Firebird::DbImplementation::current.stuff(&p);
+			DbImplementation::current.stuff(&p);
 			STUFF(p, 1);		// Class
 			STUFF(p, 0);		// Current depth of isc_info_implementation stack
 			length = p - buffer;
@@ -460,7 +460,7 @@ void INF_database_info(thread_db* tdbb,
 				counts_buffer.resize(BUFFER_SMALL);
 				const UCHAR* const end_buf = counts_buffer.end();
 				// May be simpler to code using a server-side version of isql's Extender class.
-				const Firebird::PathName& str_fn = dbb->dbb_database_name;
+				const PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
 				USHORT len = str_fn.length();
 				if (p + len + 1 >= end_buf)
@@ -918,11 +918,10 @@ void INF_request_info(const jrd_req* request,
 		start_info = info;
 		items++;
 	}
-	else {
+	else
 		start_info = 0;
-	}
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
+	HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 	UCHAR* buffer_ptr = buffer.getBuffer(BUFFER_TINY);
 
 	while (items < end_items && *items != isc_info_end)
@@ -1094,9 +1093,8 @@ void INF_transaction_info(const jrd_tra* transaction,
 		start_info = info;
 		items++;
 	}
-	else {
+	else
 		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end)
 	{

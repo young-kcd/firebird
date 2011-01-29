@@ -36,7 +36,7 @@ void DBG_parse_debug_info(thread_db* tdbb, bid* blob_id, Firebird::DbgInfo& dbgI
 
 	blb* blob = BLB_open(tdbb, attachment->getSysTransaction(), blob_id);
 	const ULONG length = blob->blb_length;
-	Firebird::HalfStaticArray<UCHAR, 128> tmp;
+	HalfStaticArray<UCHAR, 128> tmp;
 
 	UCHAR* temp = tmp.getBuffer(length);
 	BLB_get_data(tdbb, blob, temp, length);
@@ -61,7 +61,8 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 		{
 		case fb_dbg_map_src2blr:
 			{
-				if (data + 6 > end) {
+				if (data + 6 > end)
+				{
 					bad_format = true;
 					break;
 				}
@@ -82,7 +83,8 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 
 		case fb_dbg_map_varname:
 			{
-				if (data + 3 > end) {
+				if (data + 3 > end)
+				{
 					bad_format = true;
 					break;
 				}
@@ -94,7 +96,8 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 				// variable name string length
 				USHORT length = *data++;
 
-				if (data + length > end) {
+				if (data + length > end)
+				{
 					bad_format = true;
 					break;
 				}
@@ -108,7 +111,8 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 
 		case fb_dbg_map_argument:
 			{
-				if (data + 4 > end) {
+				if (data + 4 > end)
+				{
 					bad_format = true;
 					break;
 				}
@@ -125,7 +129,8 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, Firebird::DbgInfo& db
 				// argument name string length
 				USHORT length = *data++;
 
-				if (data + length > end) {
+				if (data + length > end)
+				{
 					bad_format = true;
 					break;
 				}
