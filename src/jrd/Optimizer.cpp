@@ -530,9 +530,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		// Check for any DB_KEY comparisons
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched)
-				continue;
-
 			BoolExprNode* const node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) && node)
@@ -550,9 +547,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		// First, handle "AND" comparisons (all nodes except OR)
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched)
-				continue;
-
 			BoolExprNode* const node = tail->opt_conjunct_node;
 			BinaryBoolNode* booleanNode = node->as<BinaryBoolNode>();
 
@@ -571,9 +565,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		// Second, handle "OR" comparisons
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
-			if (tail->opt_conjunct_flags & opt_conjunct_matched)
-				continue;
-
 			BoolExprNode* const node = tail->opt_conjunct_node;
 			BinaryBoolNode* booleanNode = node->as<BinaryBoolNode>();
 
@@ -1373,6 +1364,12 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					{
 						if (!matches.exist(currentInv->matches[j]))
 							matches.add(currentInv->matches[j]);
+					}
+
+					if (currentInv->boolean)
+					{
+						if (!matches.exist(currentInv->boolean))
+							matches.add(currentInv->boolean);
 					}
 
 					invCandidate->matches.join(matches);
