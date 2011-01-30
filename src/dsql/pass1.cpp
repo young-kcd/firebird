@@ -192,6 +192,7 @@ static void field_duplication(const TEXT*, const TEXT*, const dsql_nod*, const c
 static dsql_par* find_dbkey(const dsql_req*, const dsql_nod*);
 static dsql_par* find_record_version(const dsql_req*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
+static void get_contexts(DsqlContextStack& contexts, const dsql_nod* node);
 static dsql_nod* nullify_returning(DsqlCompilerScratch*, dsql_nod* input, dsql_nod** list = NULL);
 static dsql_ctx* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*);
@@ -1832,16 +1833,7 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 }
 
 
-/**
-
- 	get_context
-
-    @brief	Get the context of a relation or derived table.
-
-
-    @param node
-
- **/
+// Get the context of a relation, procedure or derived table.
 static dsql_ctx* get_context(const dsql_nod* node)
 {
 	const ProcedureSourceNode* procNode;
@@ -1857,6 +1849,40 @@ static dsql_ctx* get_context(const dsql_nod* node)
 
 	fb_assert(false);
 	return NULL;
+}
+
+
+// Get the contexts of a relation, procedure, derived table or a list of joins.
+static void get_contexts(DsqlContextStack& contexts, const dsql_nod* node)
+{
+	const ProcedureSourceNode* procNode;
+	const RelationSourceNode* relNode;
+	const RseNode* rseNode;
+
+	if ((procNode = ExprNode::as<ProcedureSourceNode>(node)))
+		contexts.push(procNode->dsqlContext);
+	else if ((relNode = ExprNode::as<RelationSourceNode>(node)))
+		contexts.push(relNode->dsqlContext);
+	else if ((rseNode = ExprNode::as<RseNode>(node)))
+	{
+		if (rseNode->dsqlContext)	// derived table
+			contexts.push(rseNode->dsqlContext);
+		else	// joins
+		{
+			dsql_nod** ptr = rseNode->dsqlStreams->nod_arg;
+
+			for (const dsql_nod* const* const end = ptr + rseNode->dsqlStreams->nod_count;
+				 ptr != end;
+				 ++ptr)
+			{
+				get_contexts(contexts, *ptr);
+			}
+		}
+	}
+	else
+	{
+		fb_assert(false);
+	}
 }
 
 
@@ -4345,7 +4371,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	target = ExprNode::as<RseNode>(ExprNode::as<RseNode>(
 		forNode->dsqlSelect)->dsqlStreams->nod_arg[0])->dsqlStreams->nod_arg[1];
 
-	dsql_ctx* usingCtx = get_context(source);
+	DsqlContextStack usingCtxs;
+	get_contexts(usingCtxs, source);
+
 	dsql_nod* update = NULL;
 	dsql_nod* matchedRet = NULL;
 	dsql_nod* nullRet = NULL;
@@ -4375,7 +4403,10 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		update->nod_arg[e_mdc_context] = (dsql_nod*) old_context;
 
 		dsqlScratch->scopeLevel++;	// go to the same level of source and target contexts
-		dsqlScratch->context->push(usingCtx);	// push the USING context
+
+		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+			dsqlScratch->context->push(itr.object());	// push the USING contexts
+
 		dsqlScratch->context->push(old_context);	// process old context values
 
 		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
@@ -4400,7 +4431,10 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		{
 			// Repush the source contexts.
 			dsqlScratch->scopeLevel++;	// go to the same level of source and target contexts
-			dsqlScratch->context->push(usingCtx);	// push the USING context
+
+			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+				dsqlScratch->context->push(itr.object());	// push the USING contexts
+
 			dsqlScratch->context->push(old_context);	// process old context values
 
 			mod_context->ctx_scope_level = old_context->ctx_scope_level;
@@ -4444,7 +4478,10 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		if (input->nod_arg[e_mrg_return])
 		{
 			dsqlScratch->scopeLevel++;	// go to the same level of source and target contexts
-			dsqlScratch->context->push(usingCtx);	// push the USING context
+
+			for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+				dsqlScratch->context->push(itr.object());	// push the USING contexts
+
 			dsqlScratch->context->push(context);	// process old context values
 
 			matchedRet = update->nod_arg[e_erc_return] = ReturningProcessor(
@@ -4465,7 +4502,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	if (whenNode)
 	{
 		dsqlScratch->scopeLevel++;	// go to the same level of the source context
-		dsqlScratch->context->push(usingCtx);	// push the USING context
+
+		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+			dsqlScratch->context->push(itr.object());	// push the USING contexts
 
 		// the INSERT relation should be processed in a higher level than the source context
 		dsqlScratch->scopeLevel++;
