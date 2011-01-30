@@ -210,6 +210,7 @@ static void field_unknown(const TEXT*, const TEXT*, const dsql_nod*);
 static dsql_par* find_dbkey(const CompiledStatement*, const dsql_nod*);
 static dsql_par* find_record_version(const CompiledStatement*, const dsql_nod*);
 static dsql_ctx* get_context(const dsql_nod* node);
+static void get_contexts(DsqlContextStack& contexts, const dsql_nod* node);
 #ifdef NOT_USED_OR_REPLACED
 static bool get_object_and_field(const dsql_nod* node,
 	const char** obj_name, const char** fld_name, bool do_collation);
@@ -2866,16 +2867,7 @@ static dsql_par* find_record_version(const CompiledStatement* statement, const d
 }
 
 
-/**
-
- 	get_context
-
-    @brief	Get the context of a relation or derived table.
-
-
-    @param node
-
- **/
+// Get the context of a relation, procedure or derived table.
 static dsql_ctx* get_context(const dsql_nod* node)
 {
 	fb_assert(node->nod_type == nod_relation || node->nod_type == nod_derived_table);
@@ -2885,6 +2877,25 @@ static dsql_ctx* get_context(const dsql_nod* node)
 
 	// nod_derived_table
 	return (dsql_ctx*) node->nod_arg[e_derived_table_context];
+}
+
+
+// Get the contexts of a relation, procedure, derived table or a list of joins.
+static void get_contexts(DsqlContextStack& contexts, const dsql_nod* node)
+{
+	if (node->nod_type == nod_relation)
+		contexts.push((dsql_ctx*) node->nod_arg[e_rel_context]);
+	else if (node->nod_type == nod_derived_table)
+		contexts.push((dsql_ctx*) node->nod_arg[e_derived_table_context]);
+	else if (node->nod_type == nod_join)
+	{
+		get_contexts(contexts, node->nod_arg[e_join_left_rel]);
+		get_contexts(contexts, node->nod_arg[e_join_rght_rel]);
+	}
+	else
+	{
+		fb_assert(false);
+	}
 }
 
 
@@ -7228,6 +7239,9 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 
 	dsql_nod* modify = NULL;
 
+	DsqlContextStack usingCtxs;
+	get_contexts(usingCtxs, source);
+
 	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_matched])
 	{
 		// get the assignments of the UPDATE statement
@@ -7254,7 +7268,10 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 		modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
 
 		statement->req_scope_level++;	// go to the same level of source and target contexts
-		statement->req_context->push(get_context(source));	// push the USING context
+
+		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+			statement->req_context->push(itr.object());	// push the USING contexts
+
 		statement->req_context->push(context);	// process old context values
 
 		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
@@ -7299,7 +7316,9 @@ static dsql_nod* pass1_merge(CompiledStatement* statement, dsql_nod* input)
 	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])
 	{
 		statement->req_scope_level++;	// go to the same level of the source context
-		statement->req_context->push(get_context(source));	// push the USING context
+
+		for (DsqlContextStack::iterator itr(usingCtxs); itr.hasData(); ++itr)
+			statement->req_context->push(itr.object());	// push the USING contexts
 
 		// the INSERT relation should be processed in a higher level than the source context
 		statement->req_scope_level++;
