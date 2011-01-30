@@ -23,6 +23,7 @@
 #define DSQL_COMPILER_SCRATCH_H
 
 #include "../common/common.h"
+#include "../jrd/jrd.h"
 #include "../dsql/dsql.h"
 #include "../dsql/BlrWriter.h"
 #include "../common/classes/array.h"
@@ -165,7 +166,7 @@ public:
 	}
 
 	void addCTEs(dsql_nod* list);
-	dsql_nod* findCTE(const dsql_str* name);
+	dsql_nod* findCTE(const Firebird::MetaName& name);
 	void clearCTEs();
 	void checkUnusedCTEs() const;
 
@@ -177,25 +178,27 @@ public:
 	// different CTE's.
 	// We also need to repeat this process if main select expression contains union with
 	// recursive CTE
-	void addCTEAlias(const dsql_str* alias)
+	void addCTEAlias(const Firebird::string& alias)
 	{
-		cteAliases.add(alias);
+		thread_db* tdbb = JRD_get_thread_data();
+		cteAliases.add(FB_NEW(*tdbb->getDefaultPool()) Firebird::string(*tdbb->getDefaultPool(), alias));
 	}
 
-	const dsql_str* getNextCTEAlias()
+	const Firebird::string* getNextCTEAlias()
 	{
 		return *(--currCteAlias);
 	}
 
-	void resetCTEAlias(const dsql_str* alias)
+	void resetCTEAlias(const Firebird::string& alias)
 	{
-		const dsql_str* const* begin = cteAliases.begin();
+		const Firebird::string* const* begin = cteAliases.begin();
 
 		currCteAlias = cteAliases.end() - 1;
 		fb_assert(currCteAlias >= begin);
 
-		const dsql_str* curr = *(currCteAlias);
-		while (strcmp(curr->str_data, alias->str_data))
+		const Firebird::string* curr = *(currCteAlias);
+
+		while (strcmp(curr->c_str(), alias.c_str()))
 		{
 			currCteAlias--;
 			fb_assert(currCteAlias >= begin);
@@ -258,8 +261,8 @@ public:
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions
-	Firebird::HalfStaticArray<const dsql_str*, 4> cteAliases; // CTE aliases in recursive members
-	const dsql_str* const* currCteAlias;
+	Firebird::HalfStaticArray<const Firebird::string*, 4> cteAliases; // CTE aliases in recursive members
+	const Firebird::string* const* currCteAlias;
 	bool psql;
 };
 

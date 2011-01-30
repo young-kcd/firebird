@@ -195,7 +195,7 @@ static dsql_ctx* get_context(const dsql_nod* node);
 static dsql_nod* nullify_returning(DsqlCompilerScratch*, dsql_nod* input, dsql_nod** list = NULL);
 static dsql_ctx* pass1_alias_list(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*);
-static dsql_str* pass1_alias_concat(const dsql_str*, const dsql_str*);
+static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
 static void pass1_blob(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
@@ -204,7 +204,7 @@ static dsql_ctx* pass1_cursor_context(DsqlCompilerScratch*, const dsql_nod*, con
 static dsql_nod* pass1_cursor_reference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_delete(DsqlCompilerScratch*, dsql_nod*);
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
-static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, dsql_str*);
+static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, const char*);
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
@@ -245,7 +245,7 @@ namespace
 		// Changes oldContext name to "OLD".
 		ReturningProcessor(DsqlCompilerScratch* aScratch, dsql_ctx* oldContext, dsql_ctx* modContext)
 			: scratch(aScratch),
-			  autoAlias(&oldContext->ctx_alias, MAKE_cstring(OLD_CONTEXT)->str_data),
+			  autoAlias(&oldContext->ctx_alias, OLD_CONTEXT),
 			  autoInternalAlias(&oldContext->ctx_internal_alias, oldContext->ctx_alias),
 			  autoFlags(&oldContext->ctx_flags, oldContext->ctx_flags | CTX_system | CTX_returning),
 			  hasModContext(modContext != NULL)
@@ -321,8 +321,8 @@ namespace
 
 	private:
 		DsqlCompilerScratch* scratch;
-		AutoSetRestore<const TEXT*> autoAlias;
-		AutoSetRestore<const TEXT*> autoInternalAlias;
+		AutoSetRestore<string> autoAlias;
+		AutoSetRestore<string> autoInternalAlias;
 		AutoSetRestore<USHORT> autoFlags;
 		bool hasModContext;
 	};
@@ -600,71 +600,64 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	// figure out whether this is a relation or a procedure
 	// and give an error if it is neither
 
-	dsql_str* relation_name;
+	MetaName relation_name;
+	const ProcedureSourceNode* procNode = NULL;
+	const RelationSourceNode* relNode = NULL;
+
 	switch (relation_node->nod_type)
 	{
-	case nod_rel_proc_name:
-		relation_name = (dsql_str*) relation_node->nod_arg[e_rpn_name];
-		break;
 	case nod_select_expr:
-		relation_name = (dsql_str*) relation_node->nod_arg[e_sel_alias];
+		if (relation_node->nod_arg[e_sel_alias])
+			relation_name = ((dsql_str*) relation_node->nod_arg[e_sel_alias])->str_data;
 		break;
 	default:
-		relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
+		{
+			if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
+				relation_name = procNode->dsqlName.identifier;
+			else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
+				relation_name = relNode->dsqlName;
+		}
 		break;
 	}
 
-	// CVC: Let's skim the context, too.
-	if (relation_name && relation_name->str_data)
-		fb_utils::exact_name(relation_name->str_data);
-
-	DEV_BLKCHK(relation_name, dsql_type_str);
-
 	const dsql_nod* cte = NULL;
-	const dsql_str* package = NULL;
 
 	if (relation_node->nod_type == nod_select_expr)
 	{
 		// No processing needed here for derived tables.
 	}
-	else if ((relation_node->nod_type == nod_rel_proc_name) &&
-		((package = (dsql_str*) relation_node->nod_arg[e_rpn_package]) ||
-			relation_node->nod_arg[e_rpn_inputs]))
+	else if (procNode && (procNode->dsqlName.package.hasData() || procNode->dsqlInputs))
 	{
 		procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-			QualifiedName(relation_name->str_data, (package ? package->str_data : NULL)));
+			procNode->dsqlName);
 
 		if (!procedure)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_procedure_err) <<
 					  Arg::Gds(isc_random) <<
-					  Arg::Str(QualifiedName(relation_name->str_data,
-					  			(package ? package->str_data : NULL)).toString()) <<
+					  Arg::Str(procNode->dsqlName.toString()) <<
 					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(relation_node->nod_line) <<
 					  									   Arg::Num(relation_node->nod_column));
 		}
 	}
 	else if ((cte = dsqlScratch->findCTE(relation_name)))
-	{
 		relation_node = cte;
-	}
 	else
 	{
-		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch,
-			relation_name->str_data);
+		relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, relation_name);
 
-		if (!relation && (relation_node->nod_type == nod_rel_proc_name))
+		if (!relation && procNode)
 		{
-			procedure = METD_get_procedure(dsqlScratch->getTransaction(), dsqlScratch,
-				QualifiedName(relation_name->str_data));
+			procedure = METD_get_procedure(dsqlScratch->getTransaction(),
+				dsqlScratch, procNode->dsqlName);
 		}
 
 		if (!relation && !procedure)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_relation_err) <<
-					  Arg::Gds(isc_random) << Arg::Str(relation_name->str_data) <<
+					  Arg::Gds(isc_random) << Arg::Str(relation_name) <<
 					  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(relation_node->nod_line) <<
 					  									   Arg::Num(relation_node->nod_column));
 		}
@@ -689,41 +682,41 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 		context->ctx_context = dsqlScratch->contextNumber++;
 
 	context->ctx_scope_level = dsqlScratch->scopeLevel;
+
 	// When we're in a outer-join part mark context for it.
-	if (dsqlScratch->inOuterJoin) {
+	if (dsqlScratch->inOuterJoin)
 		context->ctx_flags |= CTX_outer_join;
-	}
+
 	context->ctx_in_outer_join = dsqlScratch->inOuterJoin;
 
 	// find the context alias name, if it exists.
-	dsql_str* string;
+	const char* string = NULL;
 
-	if (relation_node->nod_type == nod_rel_proc_name)
-		string = (dsql_str*) relation_node->nod_arg[e_rpn_alias];
+	if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
+		string = procNode->alias.c_str();
+	else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
+		string = relNode->alias.c_str();
 	else if (relation_node->nod_type == nod_select_expr)
 	{
-		string = (dsql_str*) relation_node->nod_arg[e_sel_alias];
+		if (relation_node->nod_arg[e_sel_alias])
+			string = ((dsql_str*) relation_node->nod_arg[e_sel_alias])->str_data;
 		context->ctx_rse = relation_node->nod_arg[e_sel_query_spec];
 	}
-	else
-		string = (dsql_str*) relation_node->nod_arg[e_rln_alias];
 
 	if (string)
-		context->ctx_internal_alias = string->str_data;
-
-	DEV_BLKCHK(string, dsql_type_str);
+		context->ctx_internal_alias = string;
 
 	if (dsqlScratch->aliasRelationPrefix && relation_node->nod_type != nod_select_expr)
 	{
 		if (string)
-			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, string);
+			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, string)->str_data;
 		else
-			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name);
+			string = pass1_alias_concat(dsqlScratch->aliasRelationPrefix, relation_name.c_str())->str_data;
 	}
 
 	if (string)
 	{
-		context->ctx_alias = string->str_data;
+		context->ctx_alias = string;
 
 		// check to make sure the context is not already used at this same
 		// query level (if there are no subqueries, this checks that the
@@ -738,9 +731,9 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			const TEXT* conflict_name;
 			ISC_STATUS error_code;
 
-			if (conflict->ctx_alias)
+			if (conflict->ctx_alias.hasData())
 			{
-				conflict_name = conflict->ctx_alias;
+				conflict_name = conflict->ctx_alias.c_str();
 				error_code = isc_alias_conflict_err;
 				// alias %s conflicts with an alias in the same dsqlScratch.
 			}
@@ -759,7 +752,7 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			else
 				continue;
 
-			if (!strcmp(conflict_name, context->ctx_alias))
+			if (context->ctx_alias == conflict_name)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 						  Arg::Gds(error_code) << Arg::Str(conflict_name));
@@ -771,10 +764,9 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	{
 		USHORT count = 0;
 
-		if (relation_node->nod_arg[e_rpn_inputs])
+		if (procNode->dsqlInputs)
 		{
-			context->ctx_proc_inputs =
-				PASS1_node_psql(dsqlScratch, relation_node->nod_arg[e_rpn_inputs], false);
+			context->ctx_proc_inputs = PASS1_node_psql(dsqlScratch, procNode->dsqlInputs, false);
 			count = context->ctx_proc_inputs->nod_count;
 		}
 
@@ -783,18 +775,16 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			if (count > procedure->prc_in_count ||
 				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
-				ERRD_post(Arg::Gds(isc_prcmismat) <<
-						  Arg::Str(QualifiedName(relation_name->str_data,
-									package ? package->str_data : NULL).toString()));
+				ERRD_post(Arg::Gds(isc_prcmismat) << Arg::Str(procNode->dsqlName.toString()));
 			}
 
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdbb->getDefaultPool(), 0) dsql_nod);
-
+				AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdbb->getDefaultPool(), 0) dsql_nod);
 				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
-				for (dsql_fld* field = procedure->prc_inputs; *input; input++, field = field->fld_next)
+
+				for (dsql_fld* field = procedure->prc_inputs; *input; ++input, field = field->fld_next)
 				{
 					DEV_BLKCHK(field, dsql_type_fld);
 					DEV_BLKCHK(*input, dsql_type_nod);
@@ -845,6 +835,79 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_class_exprnode:
 		{
 			ExprNode* exprNode = reinterpret_cast<ExprNode*>(input->nod_arg[0]);
+			ProcedureSourceNode* procNode = NULL;
+			RelationSourceNode* relNode = NULL;
+
+			//// TODO: Move this to dsqlPass when possible.
+			if ((procNode = exprNode->as<ProcedureSourceNode>()) ||
+				(relNode = exprNode->as<RelationSourceNode>()))
+			{
+				bool couldBeCte = true;
+				MetaName rel_name;
+				string rel_alias;
+
+				if (procNode)
+				{
+					rel_name = procNode->dsqlName.identifier;
+					rel_alias = procNode->alias;
+					couldBeCte = !procNode->dsqlInputs && procNode->dsqlName.package.isEmpty();
+				}
+				else if (relNode)
+				{
+					rel_name = relNode->dsqlName;
+					rel_alias = relNode->alias;
+				}
+
+				if (rel_alias.isEmpty())
+					rel_alias = rel_name.c_str();
+
+				dsql_nod* cte = couldBeCte ? dsqlScratch->findCTE(rel_name) : NULL;
+
+				if (!cte)
+					return pass1_relation(dsqlScratch, input);
+
+				cte->nod_flags |= NOD_SELECT_EXPR_DT_CTE_USED;
+
+				if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RECURSIVE_CTE) &&
+					 dsqlScratch->currCtes.hasData() &&
+					 (dsqlScratch->currCtes.object() == cte))
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+							  // Recursive CTE member (%s) can refer itself only in FROM clause
+							  Arg::Gds(isc_dsql_cte_wrong_reference) << rel_name);
+				}
+
+				for (DsqlNodStack::const_iterator stack(dsqlScratch->currCtes); stack.hasData(); ++stack)
+				{
+					dsql_nod* cte1 = stack.object();
+					if (cte1 == cte)
+					{
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+								  // CTE %s has cyclic dependencies
+								  Arg::Gds(isc_dsql_cte_cycle) << rel_name);
+					}
+				}
+
+				dsql_nod* const query = cte->nod_arg[e_sel_query_spec];
+				const bool isRecursive =
+					(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
+
+				dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_sel_alias];
+				if (!isRecursive)
+					cte->nod_arg[e_sel_alias] = (dsql_nod*) MAKE_cstring(rel_alias.c_str());
+
+				dsqlScratch->currCtes.push(cte);
+
+				dsql_nod* derived_node = pass1_derived_table(dsqlScratch,
+					cte, (isRecursive ? rel_alias.c_str() : NULL));
+
+				if (!isRecursive)
+					cte->nod_arg[e_sel_alias] = (dsql_nod*) cte_name;
+
+				dsqlScratch->currCtes.pop();
+
+				return derived_node;
+			}
 
 			node = reinterpret_cast<dsql_nod*>(exprNode->dsqlPass(dsqlScratch));
 			if (node != input->nod_arg[0])
@@ -927,92 +990,35 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_var_name:
 		return pass1_variable(dsqlScratch, input);
 
-	case nod_relation_name:
-	case nod_rel_proc_name:
-		{
-			bool couldBeCte = true;
-			dsql_str* rel_name;
-			dsql_str* rel_alias;
-
-			if (input->nod_type == nod_rel_proc_name)
-			{
-				rel_name = (dsql_str*) input->nod_arg[e_rpn_name];
-				rel_alias = (dsql_str*) input->nod_arg[e_rpn_alias];
-				couldBeCte = !input->nod_arg[e_rpn_package] && !input->nod_arg[e_rpn_inputs];
-			}
-			else
-			{
-				// nod_relation_name
-				rel_name = (dsql_str*) input->nod_arg[e_rln_name];
-				rel_alias = (dsql_str*) input->nod_arg[e_rln_alias];
-			}
-
-			if (!rel_alias) {
-				rel_alias = rel_name;
-			}
-
-			//// // ASF: CORE-2699 - Common table expression context could be used with parameters
-			dsql_nod* cte = couldBeCte ? dsqlScratch->findCTE(rel_name) : NULL;
-			if (cte)
-			{
-				cte->nod_flags |= NOD_SELECT_EXPR_DT_CTE_USED;
-
-				if ((dsqlScratch->flags & DsqlCompilerScratch::FLAG_RECURSIVE_CTE) &&
-					 dsqlScratch->currCtes.hasData() &&
-					 (dsqlScratch->currCtes.object() == cte))
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  // Recursive CTE member (%s) can refer itself only in FROM clause
-							  Arg::Gds(isc_dsql_cte_wrong_reference) << Arg::Str(rel_name->str_data));
-				}
-
-				for (DsqlNodStack::const_iterator stack(dsqlScratch->currCtes); stack.hasData();
-					++stack)
-				{
-					dsql_nod* cte1 = stack.object();
-					if (cte1 == cte)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-								  // CTE %s has cyclic dependencies
-								  Arg::Gds(isc_dsql_cte_cycle) << Arg::Str(rel_name->str_data));
-					}
-				}
-
-				dsql_nod* const query = cte->nod_arg[e_sel_query_spec];
-				const bool isRecursive =
-					(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
-
-				dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_sel_alias];
-				if (!isRecursive)
-					cte->nod_arg[e_sel_alias] = (dsql_nod*) rel_alias;
-
-				dsqlScratch->currCtes.push(cte);
-
-				dsql_nod* derived_node =
-					pass1_derived_table(dsqlScratch, cte, (isRecursive ? rel_alias : NULL));
-
-				if (!isRecursive)
-					cte->nod_arg[e_sel_alias] = (dsql_nod*) cte_name;
-
-				dsqlScratch->currCtes.pop();
-
-				return derived_node;
-			}
-
-			return pass1_relation(dsqlScratch, input);
-		}
-
 	// access plan node types
 
 	case nod_plan_item:
 		{
-			RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
-				*tdbb->getDefaultPool());
-			relNode->dsqlContext = pass1_alias_list(dsqlScratch, input->nod_arg[0]);
+			dsql_ctx* context = pass1_alias_list(dsqlScratch, input->nod_arg[0]);
+			RecordSourceNode* recSource = NULL;
+
+			if (context->ctx_relation)
+			{
+				RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
+					*tdbb->getDefaultPool());
+				relNode->dsqlContext = context;
+				recSource = relNode;
+			}
+			else if (context->ctx_procedure)
+			{
+				// ASF: Note that usage of procedure name in a PLAN clause causes errors when
+				// parsing the BLR.
+				ProcedureSourceNode* procNode = FB_NEW(*tdbb->getDefaultPool()) ProcedureSourceNode(
+					*tdbb->getDefaultPool());
+				procNode->dsqlContext = context;
+				recSource = procNode;
+			}
+
+			fb_assert(recSource);
 
 			node = MAKE_node(input->nod_type, 2);
 			node->nod_arg[0] = sub1 = MAKE_node(nod_class_exprnode, 1);
-			sub1->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
+			sub1->nod_arg[0] = reinterpret_cast<dsql_nod*>(recSource);
 			node->nod_arg[1] = PASS1_node(dsqlScratch, input->nod_arg[1]);
 
 			return node;
@@ -1426,18 +1432,15 @@ void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
 			break;
 		}
 		// if this is the second loop add "and " before relation.
-		if (++loop > 2) {
+		if (++loop > 2)
 			strcat(buffer, "and ");
-		}
 		// Process relation when present.
 		if (relation)
 		{
-			if (!(relation->rel_flags & REL_view)) {
+			if (!(relation->rel_flags & REL_view))
 				strcat(buffer, "table ");
-			}
-			else {
+			else
 				strcat(buffer, "view ");
-			}
 			strcat(buffer, relation->rel_name.c_str());
 		}
 		else if (procedure)
@@ -1450,19 +1453,16 @@ void PASS1_ambiguity_check(DsqlCompilerScratch* dsqlScratch,
 		{
 			// When there's no relation and no procedure it's a derived table.
 			strcat(b, "derived table ");
-			if (context->ctx_alias) {
-				strcat(b, context->ctx_alias);
-			}
+			if (context->ctx_alias.hasData())
+				strcat(b, context->ctx_alias.c_str());
 		}
 		strcat(buffer, " ");
-		if (!p) {
+		if (!p)
 			p = b + strlen(b);
-		}
 	}
 
-	if (p) {
+	if (p)
 		*--p = 0;
-	}
 
 	if (dsqlScratch->clientDialect >= SQL_DIALECT_V6)
 	{
@@ -1775,15 +1775,13 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 
 	const dsql_msg* message = request->getStatement()->getReceiveMsg();
 	dsql_par* candidate = NULL;
-	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
-	DEV_BLKCHK(rel_name, dsql_type_str);
+	const MetaName& relName = ExprNode::as<RelationSourceNode>(relation_name)->dsqlName;
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
-		if (parameter->par_dbkey_relname.hasData() &&
-			parameter->par_dbkey_relname == rel_name->str_data)
+		if (parameter->par_dbkey_relname.hasData() && parameter->par_dbkey_relname == relName)
 		{
 			if (candidate)
 				return NULL;
@@ -1814,15 +1812,14 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 
 	const dsql_msg* message = request->getStatement()->getReceiveMsg();
 	dsql_par* candidate = NULL;
-	const dsql_str* rel_name = (dsql_str*) relation_name->nod_arg[e_rln_name];
-	DEV_BLKCHK(rel_name, dsql_type_str);
+	const MetaName& relName = ExprNode::as<RelationSourceNode>(relation_name)->dsqlName;
 
 	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
 		if (parameter->par_rec_version_relname.hasData() &&
-			parameter->par_rec_version_relname == rel_name->str_data)
+			parameter->par_rec_version_relname == relName)
 		{
 			if (candidate)
 				return NULL;
@@ -1847,10 +1844,13 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
  **/
 static dsql_ctx* get_context(const dsql_nod* node)
 {
+	const ProcedureSourceNode* procNode;
 	const RelationSourceNode* relNode;
 	const RseNode* rseNode;
 
-	if ((relNode = ExprNode::as<RelationSourceNode>(node)))
+	if ((procNode = ExprNode::as<ProcedureSourceNode>(node)))
+		return procNode->dsqlContext;
+	else if ((relNode = ExprNode::as<RelationSourceNode>(node)))
 		return relNode->dsqlContext;
 	else if ((rseNode = ExprNode::as<RseNode>(node)))
 		return rseNode->dsqlContext;
@@ -2322,8 +2322,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	DEV_BLKCHK(cursor, dsql_type_nod);
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
-	const dsql_str* rname = (dsql_str*) relation_name->nod_arg[e_rln_name];
-	DEV_BLKCHK(rname, dsql_type_str);
+	const MetaName& relName = ExprNode::as<RelationSourceNode>(relation_name)->dsqlName;
 
 	const dsql_str* string = (dsql_str*) cursor->nod_arg[e_cur_name];
 	DEV_BLKCHK(string, dsql_type_str);
@@ -2360,15 +2359,14 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 				dsql_ctx* candidate = relNode->dsqlContext;
 				DEV_BLKCHK(candidate, dsql_type_ctx);
 				const dsql_rel* relation = candidate->ctx_relation;
-				DEV_BLKCHK(rname, dsql_type_str);
 
-				if (relation->rel_name == rname->str_data)
+				if (relation->rel_name == relName)
 				{
 					if (context)
 					{
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 								  Arg::Gds(isc_dsql_cursor_err) <<
-								  Arg::Gds(isc_dsql_cursor_rel_ambiguous) << Arg::Str(rname->str_data) <<
+								  Arg::Gds(isc_dsql_cursor_rel_ambiguous) << Arg::Str(relName) <<
 								  											 Arg::Str(string->str_data));
 					}
 					else
@@ -2390,7 +2388,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(rname->str_data) <<
+				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(relName) <<
 															 Arg::Str(string->str_data));
 	}
 
@@ -2719,7 +2717,8 @@ static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
     @param input
 
  **/
-static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_str* cte_alias)
+static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
+	const char* cte_alias)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -2756,7 +2755,8 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		baseContext = temp.object();
 
 	dsqlScratch->context = &temp;
-	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(aliasRelationPrefix, alias);
+	dsqlScratch->aliasRelationPrefix = pass1_alias_concat(
+		aliasRelationPrefix, (alias ? alias->str_data : NULL));
 
 	dsql_nod* query = input->nod_arg[e_sel_query_spec];
 	dsql_nod* rse = NULL;
@@ -3019,7 +3019,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		dsqlScratch->recursiveCtx = context;
 		dsqlScratch->context = &temp;
 
-		dsqlScratch->resetCTEAlias(alias);
+		dsqlScratch->resetCTEAlias(alias->str_data);
 
 		rse = PASS1_rse(dsqlScratch, input, NULL);
 
@@ -3039,7 +3039,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		context->ctx_rse = rse;
 
 		if (cte_alias)
-			context->ctx_alias = cte_alias->str_data;
+			context->ctx_alias = cte_alias;
 
 		dsqlScratch->context = req_base;
 
@@ -3102,6 +3102,7 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 	DEV_BLKCHK(node, dsql_type_nod);
 
 	RseNode* rseNode;
+	ProcedureSourceNode* procNode;
 	RelationSourceNode* relNode;
 
 	if ((rseNode = ExprNode::as<RseNode>(node)))
@@ -3148,16 +3149,13 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 			}
 		}
 	}
-	else if ((relNode = ExprNode::as<RelationSourceNode>(node)))
+	else if ((procNode = ExprNode::as<ProcedureSourceNode>(node)))
 	{
-		dsql_ctx* context = relNode->dsqlContext;
-		DEV_BLKCHK(context, dsql_type_ctx);
-		dsql_prc* procedure;
-		dsql_rel* relation = context->ctx_relation;
+		dsql_ctx* context = procNode->dsqlContext;
 
-		if (relation)
+		if (context->ctx_procedure)
 		{
-			for (dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
+			for (dsql_fld* field = context->ctx_procedure->prc_outputs; field; field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
 
@@ -3170,9 +3168,14 @@ void PASS1_expand_select_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* node, 
 				}
 			}
 		}
-		else if (procedure = context->ctx_procedure)
+	}
+	else if ((relNode = ExprNode::as<RelationSourceNode>(node)))
+	{
+		dsql_ctx* context = relNode->dsqlContext;
+
+		if (context->ctx_relation)
 		{
-			for (dsql_fld* field = procedure->prc_outputs; field; field = field->fld_next)
+			for (dsql_fld* field = context->ctx_relation->rel_fields; field; field = field->fld_next)
 			{
 				DEV_BLKCHK(field, dsql_type_fld);
 
@@ -3352,12 +3355,29 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 					{
 						if (list)
 						{
-							RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool())
-								RelationSourceNode(*tdbb->getDefaultPool());
-							relNode->dsqlContext = stack.object();
+							dsql_ctx* stackContext = stack.object();
+
+							RecordSourceNode* recSource = NULL;
+
+							if (context->ctx_relation)
+							{
+								RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool())
+									RelationSourceNode(*tdbb->getDefaultPool());
+								relNode->dsqlContext = stackContext;
+								recSource = relNode;
+							}
+							else if (context->ctx_procedure)
+							{
+								ProcedureSourceNode* procNode = FB_NEW(*tdbb->getDefaultPool())
+									ProcedureSourceNode(*tdbb->getDefaultPool());
+								procNode->dsqlContext = stackContext;
+								recSource = procNode;
+							}
+
+							fb_assert(recSource);
 
 							node = MAKE_node(nod_class_exprnode, 1);
-							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
+							node->nod_arg[0] = reinterpret_cast<dsql_nod*>(recSource);
 
 							return node;
 						}
@@ -3443,9 +3463,9 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 					// table else continue;
 					if (qualifier)
 					{
-						if (context->ctx_alias)
+						if (context->ctx_alias.hasData())
 						{
-							if (strcmp(qualifier->str_data, context->ctx_alias))
+							if (context->ctx_alias != qualifier->str_data)
 								continue;
 						}
 						else
@@ -4259,16 +4279,16 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	if (updDelCondition || insCondition)
 	{
-		dsql_str* targetName = (dsql_str*) target->nod_arg[e_rln_alias];
+		const char* targetName = ExprNode::as<RelationSourceNode>(target)->alias.nullStr();
 		if (!targetName)
-			targetName = (dsql_str*) target->nod_arg[e_rln_name];
+			targetName = ExprNode::as<RelationSourceNode>(target)->dsqlName.c_str();
 
 		if (whenNode)	// WHEN MATCHED
 		{
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
 				pool, MAKE_node(nod_class_exprnode, 1));
 			missingNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName->str_data));
+				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName));
 
 			NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(
 				pool, MAKE_node(nod_class_exprnode, 1));
@@ -4288,7 +4308,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
 				pool, MAKE_node(nod_class_exprnode, 1));
 			missingNode->dsqlArg->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName->str_data));
+				FB_NEW(pool) RecordKeyNode(pool, blr_dbkey, targetName));
 
 			temp = MAKE_node(nod_class_exprnode, 1);
 			temp->nod_arg[0] = reinterpret_cast<dsql_nod*>(missingNode);
@@ -4587,21 +4607,37 @@ void PASS1_put_args_on_stack( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
     @param input
 
  **/
-static dsql_nod* pass1_relation( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
+static dsql_nod* pass1_relation(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
-		*tdbb->getDefaultPool());
-	relNode->dsqlContext = PASS1_make_context(dsqlScratch, input);
+	dsql_ctx* context = PASS1_make_context(dsqlScratch, input);
+	RecordSourceNode* node = NULL;
 
-	dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
-	node->nod_arg[0] = reinterpret_cast<dsql_nod*>(relNode);
+	if (context->ctx_relation)
+	{
+		RelationSourceNode* relNode = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
+			*tdbb->getDefaultPool(), context->ctx_relation->rel_name);
+		relNode->dsqlContext = context;
+		node = relNode;
+	}
+	else if (context->ctx_procedure)
+	{
+		ProcedureSourceNode* procNode = FB_NEW(*tdbb->getDefaultPool()) ProcedureSourceNode(
+			*tdbb->getDefaultPool(), context->ctx_procedure->prc_name);
+		procNode->dsqlContext = context;
+		node = procNode;
+	}
 
-	return node;
+	fb_assert(node);
+
+	dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
+
+	return nod;
 }
 
 
@@ -4767,18 +4803,16 @@ static dsql_ctx* pass1_alias(DsqlCompilerScratch* dsqlScratch, DsqlContextStack&
 		}
 
 		// check for matching alias.
-		if (context->ctx_internal_alias)
+		if (context->ctx_internal_alias.hasData())
 		{
-			if (!strcmp(context->ctx_internal_alias, alias->str_data))
-			{
+			if (context->ctx_internal_alias == alias->str_data)
 				return context;
-			}
 			continue;
 		}
 
 		// If an unnamed derived table and empty alias
 		if (context->ctx_rse && !context->ctx_relation && !context->ctx_procedure &&
-			(alias->str_length == 0))
+			alias->str_length == 0)
 		{
 			relation_context = context;
 		}
@@ -4816,35 +4850,34 @@ static dsql_ctx* pass1_alias(DsqlCompilerScratch* dsqlScratch, DsqlContextStack&
     @param input2
 
  **/
-static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* input2)
+static dsql_str* pass1_alias_concat(const dsql_str* input1, const char* input2)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(input1, dsql_type_str);
 	DEV_BLKCHK(input2, dsql_type_str);
 
-	int length = 0;
-	if (input1) {
-		length += input1->str_length;
-	}
-	if (input1 && input1->str_length && input2) {
-		length++; // Room for space character.
-	}
-	if (input2) {
-		length += input2->str_length;
-	}
+	int length = (input1 ? input1->str_length : 0);
+
+	if (input1 && input1->str_length && input2)
+		++length; // Room for space character.
+
+	if (input2)
+		length += strlen(input2);
+
 	dsql_str* output = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
 	output->str_length = length;
 	TEXT* ptr = output->str_data;
-	if (input1) {
+
+	if (input1)
 		strcat(ptr, input1->str_data);
-	}
-	if (input1 && input1->str_length && input2) {
+
+	if (input1 && input1->str_length && input2)
 		strcat(ptr, " ");
-	}
-	if (input2) {
-		strcat(ptr, input2->str_data);
-	}
+
+	if (input2)
+		strcat(ptr, input2);
+
 	return output;
 }
 
@@ -5002,7 +5035,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod* order,
 	dsql_nod* rows, dsql_nod* update_lock, USHORT flags)
 {
-	const TEXT* save_alias = NULL;
+	string save_alias;
 	const bool isRecursive = (input->nod_flags & NOD_SELECT_EXPR_RECURSIVE);
 
 	if (isRecursive)
@@ -5010,14 +5043,13 @@ static dsql_nod* pass1_rse( DsqlCompilerScratch* dsqlScratch, dsql_nod* input, d
 		fb_assert(dsqlScratch->recursiveCtx);
 		save_alias = dsqlScratch->recursiveCtx->ctx_alias;
 
-		dsqlScratch->recursiveCtx->ctx_alias = dsqlScratch->getNextCTEAlias()->str_data;
+		dsqlScratch->recursiveCtx->ctx_alias = *dsqlScratch->getNextCTEAlias();
 	}
 
 	dsql_nod* ret = pass1_rse_impl(dsqlScratch, input, order, rows, update_lock, flags);
 
-	if (isRecursive) {
+	if (isRecursive)
 		dsqlScratch->recursiveCtx->ctx_alias = save_alias;
-	}
 
 	return ret;
 }
@@ -6527,8 +6559,8 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	if (!dsqlScratch->isPsql())
 		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
 
-	const dsql_str* relation_name = (dsql_str*) input->nod_arg[e_upi_relation]->nod_arg[e_rpn_name];
-	const dsql_str* base_name = relation_name;
+	const MetaName& relation_name = ExprNode::as<RelationSourceNode>(input->nod_arg[e_upi_relation])->dsqlName;
+	MetaName base_name = relation_name;
 
 	dsql_nod* values = input->nod_arg[e_upi_values];
 
@@ -6560,11 +6592,11 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	if ((relation->rel_flags & REL_view) && !input->nod_arg[e_upi_matching])
 	{
 		dsql_rel* base_rel = METD_get_view_base(dsqlScratch->getTransaction(), dsqlScratch,
-			relation_name->str_data, view_fields);
+			relation_name.c_str(), view_fields);
 
 		// get the base table name if there is only one
 		if (base_rel)
-			base_name = MAKE_cstring(base_rel->rel_name.c_str());
+			base_name = base_rel->rel_name;
 		else
 			ERRD_post(Arg::Gds(isc_upd_ins_with_complex_view));
 	}
@@ -6590,10 +6622,10 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	{
 		equality_type = blr_eql;
 
-		matching = METD_get_primary_key(dsqlScratch->getTransaction(), base_name);
+		matching = METD_get_primary_key(dsqlScratch->getTransaction(), base_name.c_str());
 
 		if (!matching)
-			ERRD_post(Arg::Gds(isc_primary_key_required) << Arg::Str(base_name->str_data));
+			ERRD_post(Arg::Gds(isc_primary_key_required) << base_name);
 	}
 
 	// build a boolean to use in the UPDATE dsqlScratch
@@ -6688,9 +6720,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 		if (input->nod_arg[e_upi_matching])
 			ERRD_post(Arg::Gds(isc_upd_ins_doesnt_match_matching));
 		else
-		{
-			ERRD_post(Arg::Gds(isc_upd_ins_doesnt_match_pk) << Arg::Str(base_name->str_data));
-		}
+			ERRD_post(Arg::Gds(isc_upd_ins_doesnt_match_pk) << base_name);
 	}
 
 	// build the UPDATE node
@@ -6908,11 +6938,17 @@ static void remap_streams_to_parent_context( dsql_nod* input, dsql_ctx* parent_c
 
 	default:
 		{
+			ProcedureSourceNode* procNode;
 			RelationSourceNode* relNode;
 			RseNode* rseNode;
 			UnionSourceNode* unionNode;
 
-			if ((relNode = ExprNode::as<RelationSourceNode>(input)))
+			if ((procNode = ExprNode::as<ProcedureSourceNode>(input)))
+			{
+				DEV_BLKCHK(procNode->dsqlContext, dsql_type_ctx);
+				procNode->dsqlContext->ctx_parent = parent_context;
+			}
+			else if ((relNode = ExprNode::as<RelationSourceNode>(input)))
 			{
 				DEV_BLKCHK(relNode->dsqlContext, dsql_type_ctx);
 				relNode->dsqlContext->ctx_parent = parent_context;
@@ -6991,9 +7027,9 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 	}
 
 	const TEXT* table_name = NULL;
-	if (context->ctx_internal_alias && resolveByAlias) {
-		table_name = context->ctx_internal_alias;
-	}
+	if (context->ctx_internal_alias.hasData() && resolveByAlias)
+		table_name = context->ctx_internal_alias.c_str();
+
 	// AB: For a check constraint we should ignore the alias if the alias
 	// contains the "NEW" alias. This is because it is possible
 	// to reference a field by the complete table-name as alias
@@ -7003,11 +7039,9 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
 		if (!(qualifier && !strcmp(qualifier->str_data, table_name)))
 		{
-			if (!strcmp(table_name, NEW_CONTEXT))
-			{
+			if (strcmp(table_name, NEW_CONTEXT) == 0)
 				table_name = NULL;
-			}
-			else if (!strcmp(table_name, OLD_CONTEXT))
+			else if (strcmp(table_name, OLD_CONTEXT) == 0)
 			{
 				// Only use the OLD context if it is explicit used. That means the
 				// qualifer should hold the "OLD" alias.
@@ -7015,7 +7049,8 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 			}
 		}
 	}
-	if (table_name == NULL)
+
+	if (!table_name)
 	{
 		if (relation)
 			table_name = relation->rel_name.c_str();
@@ -7024,21 +7059,12 @@ static dsql_fld* resolve_context( DsqlCompilerScratch* dsqlScratch, const dsql_s
 	}
 
 	// If a context qualifier is present, make sure this is the proper context
-	if (qualifier && strcmp(qualifier->str_data, table_name)) {
+	if (qualifier && strcmp(qualifier->str_data, table_name) != 0)
 		return NULL;
-	}
 
 	// Lookup field in relation or procedure
 
-	dsql_fld* field;
-	if (relation) {
-		field = relation->rel_fields;
-	}
-	else {
-		field = procedure->prc_outputs;
-	}
-
-	return field;
+	return relation ? relation->rel_fields : procedure->prc_outputs;
 }
 
 
@@ -7450,12 +7476,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_put_segment:
 		verb = "put segment";
-		break;
-	case nod_relation_name:
-		verb = "relation name";
-		break;
-	case nod_rel_proc_name:
-		verb = "rel/proc name";
 		break;
 	case nod_revoke:
 		verb = "revoke";

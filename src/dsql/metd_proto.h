@@ -63,7 +63,7 @@ USHORT METD_get_domain_default(Jrd::jrd_tra*, const TEXT*, bool*, UCHAR*, USHORT
 bool METD_get_exception(Jrd::jrd_tra*, const Jrd::dsql_str*);
 Jrd::dsql_udf* METD_get_function(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);
-Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Jrd::dsql_str*);
+Jrd::dsql_nod* METD_get_primary_key(Jrd::jrd_tra*, const Firebird::MetaName&);
 Jrd::dsql_prc* METD_get_procedure(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*,
 	const Firebird::QualifiedName&);
 Jrd::dsql_rel* METD_get_relation(Jrd::jrd_tra*, Jrd::DsqlCompilerScratch*, const Firebird::MetaName&);

@@ -992,7 +992,7 @@ static void gen_plan( DsqlCompilerScratch* dsqlScratch, const dsql_nod* plan_exp
 		// when there is a need to differentiate the base tables of views
 
 		/*const*/ dsql_nod* arg = node->nod_arg[0];
-		ExprNode::as<RelationSourceNode>(arg)->genBlr(dsqlScratch);
+		reinterpret_cast<RecordSourceNode*>(arg->nod_arg[0])->genBlr(dsqlScratch);
 
 		// now stuff the access method for this stream
 		const dsql_str* index_string;
@@ -1598,14 +1598,15 @@ static void gen_table_lock( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tb
 	const dsql_nod* const* ptr = tbl_names->nod_arg;
 	for (const dsql_nod* const* const end = ptr + tbl_names->nod_count; ptr < end; ptr++)
 	{
-		if ((*ptr)->nod_type != nod_relation_name)
+		const RelationSourceNode* relNode = ExprNode::as<RelationSourceNode>(*ptr);
+
+		if (!relNode)
 			continue;
 
 		dsqlScratch->appendUChar(lock_mode);
 
 		// stuff table name
-		const dsql_str* temp = (dsql_str*) ((*ptr)->nod_arg[e_rln_name]);
-		dsqlScratch->appendNullString(temp->str_data);
+		dsqlScratch->appendNullString(relNode->dsqlName.c_str());
 
 		dsqlScratch->appendUChar(lock_level);
 	}

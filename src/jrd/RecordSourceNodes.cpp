@@ -225,7 +225,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	// if an alias was passed, store with the relation
 
 	if (aliasString)
-		node->alias = stringDup(*tdbb->getDefaultPool(), *aliasString);
+		node->alias = *aliasString;
 
 	// Scan the relation if it hasn't already been scanned for meta data
 
@@ -257,128 +257,34 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	return node;
 }
 
-bool RelationSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
-{
-	// Check if relation is a procedure.
-	if (dsqlContext->ctx_procedure)
-	{
-		// Check if a aggregate is buried inside the input parameters.
-		return visitor.visit(&dsqlContext->ctx_proc_inputs);
-	}
-
-	return false;
-}
-
-bool RelationSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
-{
-	return false;
-}
-
-bool RelationSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
-{
-	// If relation is a procedure, check if the parameters are valid.
-	if (dsqlContext->ctx_procedure)
-		return visitor.visit(&dsqlContext->ctx_proc_inputs);
-
-	return false;
-}
-
-bool RelationSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
-{
-	return false;
-}
-
-bool RelationSourceNode::dsqlFieldFinder(FieldFinder& visitor)
-{
-	return false;
-}
-
-bool RelationSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
-{
-	// Check if relation is a procedure.
-	if (dsqlContext->ctx_procedure)
-		visitor.visit(&dsqlContext->ctx_proc_inputs);	// Remap the input parameters.
-
-	return false;
-}
-
 bool RelationSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
 	const RelationSourceNode* o = other->as<RelationSourceNode>();
 	return o && dsqlContext == o->dsqlContext;
 }
 
+// Generate blr for a relation reference.
 void RelationSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	genRelation(dsqlScratch, dsqlContext);
-}
-
-// Generate blr for a relation reference.
-void RelationSourceNode::genRelation(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context)
-{
-	const dsql_rel* relation = context->ctx_relation;
-	const dsql_prc* procedure = context->ctx_procedure;
+	const dsql_rel* relation = dsqlContext->ctx_relation;
 
 	// if this is a trigger or procedure, don't want relation id used
-	if (relation)
+
+	if (DDL_ids(dsqlScratch))
 	{
-		if (DDL_ids(dsqlScratch))
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_rid2 : blr_rid);
-			dsqlScratch->appendUShort(relation->rel_id);
-		}
-		else
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_relation2 : blr_relation);
-			dsqlScratch->appendMetaString(relation->rel_name.c_str());
-		}
-
-		if (context->ctx_alias)
-			dsqlScratch->appendMetaString(context->ctx_alias);
-
-		GEN_stuff_context(dsqlScratch, context);
+		dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_rid2 : blr_rid);
+		dsqlScratch->appendUShort(relation->rel_id);
 	}
-	else if (procedure)
+	else
 	{
-		if (DDL_ids(dsqlScratch))
-		{
-			dsqlScratch->appendUChar(context->ctx_alias ? blr_pid2 : blr_pid);
-			dsqlScratch->appendUShort(procedure->prc_id);
-		}
-		else
-		{
-			if (procedure->prc_name.package.hasData())
-			{
-				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure4 : blr_procedure3);
-				dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
-				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
-			}
-			else
-			{
-				dsqlScratch->appendUChar(context->ctx_alias ? blr_procedure2 : blr_procedure);
-				dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
-			}
-		}
-
-		if (context->ctx_alias)
-			dsqlScratch->appendMetaString(context->ctx_alias);
-
-		GEN_stuff_context(dsqlScratch, context);
-
-		dsql_nod* inputs = context->ctx_proc_inputs;
-
-		if (inputs)
-		{
-			dsqlScratch->appendUShort(inputs->nod_count);
-
-			dsql_nod* const* ptr = inputs->nod_arg;
-
-			for (const dsql_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
-				GEN_expr(dsqlScratch, *ptr);
-		}
-		else
-			dsqlScratch->appendUShort(0);
+		dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_relation2 : blr_relation);
+		dsqlScratch->appendMetaString(relation->rel_name.c_str());
 	}
+
+	if (dsqlContext->ctx_alias.hasData())
+		dsqlScratch->appendMetaString(dsqlContext->ctx_alias.c_str());
+
+	GEN_stuff_context(dsqlScratch, dsqlContext);
 }
 
 RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -744,6 +650,104 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 		PAR_dependency(tdbb, csb, node->stream, (SSHORT) -1, "");
 
 	return node;
+}
+
+bool ProcedureSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	// Check if relation is a procedure.
+	if (dsqlContext->ctx_procedure)
+	{
+		// Check if a aggregate is buried inside the input parameters.
+		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+	}
+
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	// If relation is a procedure, check if the parameters are valid.
+	if (dsqlContext->ctx_procedure)
+		return visitor.visit(&dsqlContext->ctx_proc_inputs);
+
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	// Check if relation is a procedure.
+	if (dsqlContext->ctx_procedure)
+		visitor.visit(&dsqlContext->ctx_proc_inputs);	// Remap the input parameters.
+
+	return false;
+}
+
+bool ProcedureSourceNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
+{
+	const ProcedureSourceNode* o = other->as<ProcedureSourceNode>();
+	return o && dsqlContext == o->dsqlContext;
+}
+
+// Generate blr for a procedure reference.
+void ProcedureSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	const dsql_prc* procedure = dsqlContext->ctx_procedure;
+
+	// If this is a trigger or procedure, don't want procedure id used.
+
+	if (DDL_ids(dsqlScratch))
+	{
+		dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_pid2 : blr_pid);
+		dsqlScratch->appendUShort(procedure->prc_id);
+	}
+	else
+	{
+		if (procedure->prc_name.package.hasData())
+		{
+			dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure4 : blr_procedure3);
+			dsqlScratch->appendMetaString(procedure->prc_name.package.c_str());
+			dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+		}
+		else
+		{
+			dsqlScratch->appendUChar(dsqlContext->ctx_alias.hasData() ? blr_procedure2 : blr_procedure);
+			dsqlScratch->appendMetaString(procedure->prc_name.identifier.c_str());
+		}
+	}
+
+	if (dsqlContext->ctx_alias.hasData())
+		dsqlScratch->appendMetaString(dsqlContext->ctx_alias.c_str());
+
+	GEN_stuff_context(dsqlScratch, dsqlContext);
+
+	dsql_nod* inputs = dsqlContext->ctx_proc_inputs;
+
+	if (inputs)
+	{
+		dsqlScratch->appendUShort(inputs->nod_count);
+
+		dsql_nod* const* ptr = inputs->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + inputs->nod_count; ptr < end; ptr++)
+			GEN_expr(dsqlScratch, *ptr);
+	}
+	else
+		dsqlScratch->appendUShort(0);
 }
 
 ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
@@ -2445,7 +2449,7 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 
 	const jrd_rel* viewRelation = NULL;
 	const jrd_rel* planRelation = plan->relationNode->relation;
-	const char* planAlias = plan->relationNode->alias;
+	const char* planAlias = plan->relationNode->alias.c_str();
 
 	// find the tail for the relation specified in the RseNode
 

@@ -2826,18 +2826,19 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 		if (relationName.hasData())
 		{
-			dsql_nod* relationNode = FB_NEW_RPT(getPool(), e_rln_count) dsql_nod;
-			///trigger_node->nod_arg[e_trg_table] = relationNode;
-			relationNode->nod_type = nod_relation_name;
-			relationNode->nod_count = e_rln_count;
-			relationNode->nod_arg[e_rln_name] = (dsql_nod*)
-				MAKE_string(relationName.c_str(), relationName.length());
+			RelationSourceNode* relationNode = FB_NEW(getPool()) RelationSourceNode(getPool(),
+				relationName);
 
-			dsql_nod* const temp = relationNode->nod_arg[e_rln_alias];
+			dsql_nod* relationNod = MAKE_node(nod_class_exprnode, 1);
+			///trigger_node->nod_arg[e_trg_table] = relationNod;
+			relationNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(relationNode);
+
+			const string temp = relationNode->alias;	// always empty?
+
 			if (hasOldContext(type.value))
 			{
-				relationNode->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
-				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
+				relationNode->alias = OLD_CONTEXT;
+				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNod);
 				oldContext->ctx_flags |= CTX_system;
 			}
 			else
@@ -2845,14 +2846,14 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 			if (hasNewContext(type.value))
 			{
-				relationNode->nod_arg[e_rln_alias] = (dsql_nod*) MAKE_cstring(NEW_CONTEXT);
-				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
+				relationNode->alias = NEW_CONTEXT;
+				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNod);
 				newContext->ctx_flags |= CTX_system;
 			}
 			else
 				dsqlScratch->contextNumber++;
 
-			relationNode->nod_arg[e_rln_alias] = temp;
+			relationNode->alias = temp;
 		}
 
 		// generate the trigger blr
@@ -4543,6 +4544,14 @@ bool DropSequenceNode::deleteGenerator(thread_db* tdbb, jrd_tra* transaction, co
 //----------------------
 
 
+RelationNode::RelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
+	: DdlNode(p),
+	  dsqlNode(aDsqlNode),
+	  name(p, ExprNode::as<RelationSourceNode>(aDsqlNode)->dsqlName),
+	  elements(p)
+{
+}
+
 void RelationNode::FieldDefinition::modify(thread_db* tdbb, jrd_tra* transaction)
 {
 	AutoRequest request;
@@ -5251,17 +5260,17 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 				constraint.name = string->str_data;
 
 			dsql_nod* columns = constraintNode->nod_arg[Dsql::e_for_columns];
-			dsql_nod* refRelationNode = constraintNode->nod_arg[Dsql::e_for_reftable];
+			RelationSourceNode* refRelationNode = ExprNode::as<RelationSourceNode>(
+				constraintNode->nod_arg[Dsql::e_for_reftable]);
 
-			const dsql_str* refRelation = (dsql_str*) refRelationNode->nod_arg[Dsql::e_rln_name];
-			constraint.refRelation = refRelation->str_data;
+			constraint.refRelation = refRelationNode->dsqlName;
 
 			// If there is a referenced table name but no referenced field names, the
 			// primary key of the referenced table designates the referenced fields.
 			dsql_nod* refColumns = constraintNode->nod_arg[Dsql::e_for_refcolumns];
 			if (!refColumns)
 			{
-				refColumns = METD_get_primary_key(transaction, refRelation);
+				refColumns = METD_get_primary_key(transaction, refRelationNode->dsqlName);
 
 				// If there is NEITHER an explicitly referenced field name, NOR does
 				// the referenced table have a primary key to serve as the implicitly
@@ -5688,11 +5697,11 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	// errors in pre_store and pre_modify triggers. Also, what sense can I make from NEW in
 	// pre_delete? However, we clash at JRD with "no current record for fetch operation".
 
-	dsqlNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+	ExprNode::as<RelationSourceNode>(dsqlNode)->alias = OLD_CONTEXT;
 	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	oldContext->ctx_flags |= CTX_system;
 
-	dsqlNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(NEW_CONTEXT);
+	ExprNode::as<RelationSourceNode>(dsqlNode)->alias = NEW_CONTEXT;
 	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	newContext->ctx_flags |= CTX_system;
 
@@ -7254,7 +7263,8 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		if (relation || procedure)
 		{
 			const MetaName& refName = relation ? relation->rel_name : procedure->prc_name.identifier;
-			const char* contextName = context->ctx_alias ? context->ctx_alias : refName.c_str();
+			const char* contextName = context->ctx_alias.hasData() ?
+				context->ctx_alias.c_str() : refName.c_str();
 
 			ViewContextType ctxType;
 			if (relation)
@@ -7773,7 +7783,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 		context = dsqlScratch->context->object();
 
-		if (context->ctx_alias)
+		if (context->ctx_alias.hasData())
 		{
 			savContext = FB_NEW(pool) dsql_ctx(pool);
 			*savContext = *context;
@@ -7782,17 +7792,17 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	DDL_reset_context_stack(dsqlScratch);
 
-	dsql_nod* tempAlias = relationNode->nod_arg[Dsql::e_rln_alias];
+	string tempAlias = ExprNode::as<RelationSourceNode>(relationNode)->alias;
 
-	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(OLD_CONTEXT);
+	ExprNode::as<RelationSourceNode>(relationNode)->alias = OLD_CONTEXT;
 	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
 	oldContext->ctx_flags |= CTX_system;
 
-	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(NEW_CONTEXT);
+	ExprNode::as<RelationSourceNode>(relationNode)->alias = NEW_CONTEXT;
 	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
 	newContext->ctx_flags |= CTX_system;
 
-	relationNode->nod_arg[Dsql::e_rln_alias] = tempAlias;
+	ExprNode::as<RelationSourceNode>(relationNode)->alias = tempAlias;
 
 	if (savContext)
 	{
@@ -7875,10 +7885,12 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 
 	// Use the relation referenced in the select statement for rse.
 
-	dsql_nod* relationNode = MAKE_node(Dsql::nod_relation_name, (int) Dsql::e_rln_count);
-	relationNode->nod_arg[Dsql::e_rln_name] = fromList->nod_arg[0]->nod_arg[Dsql::e_rln_name];
-	relationNode->nod_arg[Dsql::e_rln_alias] = (dsql_nod*) MAKE_cstring(TEMP_CONTEXT);
-	*baseRelation = relationNode;
+	RelationSourceNode* relationNode = FB_NEW(pool) RelationSourceNode(pool,
+		ExprNode::as<RelationSourceNode>(fromList->nod_arg[0])->dsqlName);
+	relationNode->alias = TEMP_CONTEXT;
+
+	*baseRelation = MAKE_node(nod_class_exprnode, 1);
+	(*baseRelation)->nod_arg[0] = reinterpret_cast<dsql_nod*>(relationNode);
 
 	// Get the list of values and fields to compare to -- if there is no list of fields, get all
 	// fields in the base relation that are not computed.

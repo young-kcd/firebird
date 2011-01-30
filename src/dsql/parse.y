@@ -4506,13 +4506,33 @@ named_columns_join
 
 table_proc
 	: symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name
-		{ $$ = make_node (nod_rel_proc_name, (int) e_rpn_count, $1, $4, $2, NULL); }
+		{
+			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(QualifiedName(toName($1)));
+			node->dsqlInputs = $2;
+			node->alias = toString((dsql_str*) $4);
+			$$ = makeClassNode(node);
+		}
 	| symbol_procedure_name table_proc_inputs
-		{ $$ = make_node (nod_rel_proc_name, (int) e_rpn_count, $1, NULL, $2, NULL); }
+		{
+			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(QualifiedName(toName($1)));
+			node->dsqlInputs = $2;
+			$$ = makeClassNode(node);
+		}
 	| symbol_package_name '.' symbol_procedure_name table_proc_inputs as_noise symbol_table_alias_name
-		{ $$ = make_node (nod_rel_proc_name, (int) e_rpn_count, $3, $6, $4, $1); }
+		{
+			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(
+				QualifiedName(toName($3), toName($1)));
+			node->dsqlInputs = $4;
+			node->alias = toString((dsql_str*) $6);
+			$$ = makeClassNode(node);
+		}
 	| symbol_package_name '.' symbol_procedure_name table_proc_inputs
-		{ $$ = make_node (nod_rel_proc_name, (int) e_rpn_count, $3, NULL, $4, $1); }
+		{
+			ProcedureSourceNode* node = newNode<ProcedureSourceNode>(
+				QualifiedName(toName($3), toName($1)));
+			node->dsqlInputs = $4;
+			$$ = makeClassNode(node);
+		}
 	;
 
 table_proc_inputs
@@ -4523,12 +4543,16 @@ table_proc_inputs
 table_name
 	: simple_table_name
 	| symbol_table_name as_noise symbol_table_alias_name
-		{ $$ = make_node(nod_relation_name, (int) e_rln_count, $1, $3); }
+		{
+			RelationSourceNode* node = newNode<RelationSourceNode>(toName($1));
+			node->alias = toString((dsql_str*) $3);
+			$$ = makeClassNode(node);
+		}
 	;
 
 simple_table_name
 	: symbol_table_name
-		{ $$ = make_node(nod_relation_name, (int) e_rln_count, $1, NULL); }
+		{ $$ = makeClassNode(newNode<RelationSourceNode>(toName($1))); }
 	;
 
 join_type

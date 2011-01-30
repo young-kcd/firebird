@@ -109,9 +109,7 @@ enum nod_t
 	nod_start_savepoint,
 	nod_end_savepoint,
 	nod_cursor,
-	nod_relation_name,
 	nod_procedure_name,
-	nod_rel_proc_name,
 	nod_select_expr,
 	nod_order,
 	nod_flag,
@@ -361,16 +359,6 @@ enum node_args {
 	e_idx_table,
 	e_idx_fields,
 	e_idx_count,
-
-	e_rln_name = 0,			// nod_relation_name
-	e_rln_alias,
-	e_rln_count,
-
-	e_rpn_name = 0,			// nod_rel_proc_name
-	e_rpn_alias,
-	e_rpn_inputs,
-	e_rpn_package,
-	e_rpn_count,
 
 	e_while_cond = 0,		// nod_while
 	e_while_action,

@@ -1056,7 +1056,7 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 }
 
 
-dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_name)
+dsql_nod* METD_get_primary_key(jrd_tra* transaction, const MetaName& relationName)
 {
 /**************************************
  *
@@ -1084,7 +1084,7 @@ dsql_nod* METD_get_primary_key(jrd_tra* transaction, const dsql_str* relation_na
 		OVER RDB$INDEX_NAME CROSS
 		Z IN RDB$RELATION_CONSTRAINTS
 		OVER RDB$INDEX_NAME
-		WITH Z.RDB$RELATION_NAME EQ relation_name->str_data
+		WITH Z.RDB$RELATION_NAME EQ relationName.c_str()
 		AND Z.RDB$CONSTRAINT_TYPE EQ "PRIMARY KEY"
 		SORTED BY Y.RDB$FIELD_POSITION
 	{

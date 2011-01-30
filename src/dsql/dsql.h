@@ -655,7 +655,9 @@ class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
 	explicit dsql_ctx(MemoryPool& p)
-		: ctx_main_derived_contexts(p),
+		: ctx_alias(p),
+		  ctx_internal_alias(p),
+		  ctx_main_derived_contexts(p),
 		  ctx_childs_derived_table(p),
 	      ctx_imp_join(p),
 	      ctx_win_maps(p)
@@ -668,13 +670,13 @@ public:
 	dsql_map*			ctx_map;			// Maps for aggregates and unions
 	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
-	const TEXT*			ctx_alias;			// Context alias (can include concatenated derived table alias)
-	const TEXT*			ctx_internal_alias;	// Alias as specified in query
 	USHORT				ctx_context;		// Context id
 	USHORT				ctx_recursive;		// Secondary context id for recursive UNION (nobody referred to this context)
 	USHORT				ctx_scope_level;	// Subquery level within this request
 	USHORT				ctx_flags;			// Various flag values
 	USHORT				ctx_in_outer_join;	// inOuterJoin when context was created
+	Firebird::string	ctx_alias;			// Context alias (can include concatenated derived table alias)
+	Firebird::string	ctx_internal_alias;	// Alias as specified in query
 	DsqlContextStack	ctx_main_derived_contexts;	// contexts used for blr_derived_expr
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<

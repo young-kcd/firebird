@@ -434,14 +434,14 @@ void DsqlCompilerScratch::addCTEs(dsql_nod* with)
 			// Add CTE name into CTE aliases stack. It allows later to search for
 			// aliases of given CTE.
 			const dsql_str* cteName = (dsql_str*) (*cte)->nod_arg[Dsql::e_sel_alias];
-			addCTEAlias(cteName);
+			addCTEAlias(cteName->str_data);
 		}
 		else
 			ctes.add(*cte);
 	}
 }
 
-dsql_nod* DsqlCompilerScratch::findCTE(const dsql_str* name)
+dsql_nod* DsqlCompilerScratch::findCTE(const MetaName& name)
 {
 	for (size_t i = 0; i < ctes.getCount(); ++i)
 	{
@@ -450,8 +450,8 @@ dsql_nod* DsqlCompilerScratch::findCTE(const dsql_str* name)
 
 		const dsql_str* cteName = (dsql_str*) cte->nod_arg[Dsql::e_sel_alias];
 
-		if (name->str_length == cteName->str_length &&
-			strncmp(name->str_data, cteName->str_data, cteName->str_length) == 0)
+		if (name.length() == cteName->str_length &&
+			strncmp(name.c_str(), cteName->str_data, cteName->str_length) == 0)
 		{
 			return cte;
 		}
@@ -691,23 +691,6 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 
 		switch ((*pDstTable)->nod_type)
 		{
-			case Dsql::nod_rel_proc_name:
-			case Dsql::nod_relation_name:
-				if (pass1RelProcIsRecursive(*pDstTable))
-				{
-					if (found)
-					{
-						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-								  // Recursive member of CTE can't reference itself more than once
-								  Arg::Gds(isc_dsql_cte_mult_references));
-					}
-					found = true;
-
-					prev--;
-					dstTables->nod_count--;
-				}
-				break;
-
 			case Dsql::nod_select_expr:
 				break;
 
@@ -742,6 +725,24 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 
 					break;
 				}
+				else if (ExprNode::is<ProcedureSourceNode>(*pDstTable) ||
+					ExprNode::is<RelationSourceNode>(*pDstTable))
+				{
+					if (pass1RelProcIsRecursive(*pDstTable))
+					{
+						if (found)
+						{
+							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+									  // Recursive member of CTE can't reference itself more than once
+									  Arg::Gds(isc_dsql_cte_mult_references));
+						}
+						found = true;
+
+						--prev;
+						--dstTables->nod_count;
+					}
+					break;
+				}
 
 				// fall into
 			}
@@ -764,34 +765,33 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 // Check if table reference is recursive i.e. its name is equal to the name of current processing CTE.
 bool DsqlCompilerScratch::pass1RelProcIsRecursive(dsql_nod* input)
 {
-	const dsql_str* relName = NULL;
-	const dsql_str* relAlias = NULL;
+	MetaName relName;
+	string relAlias;
+	ProcedureSourceNode* procNode;
+	RelationSourceNode* relNode;
 
-	switch (input->nod_type)
+	if ((procNode = ExprNode::as<ProcedureSourceNode>(input)))
 	{
-		case Dsql::nod_rel_proc_name:
-			relName = (dsql_str*) input->nod_arg[Dsql::e_rpn_name];
-			relAlias = (dsql_str*) input->nod_arg[Dsql::e_rpn_alias];
-			break;
-
-		case Dsql::nod_relation_name:
-			relName = (dsql_str*) input->nod_arg[Dsql::e_rln_name];
-			relAlias = (dsql_str*) input->nod_arg[Dsql::e_rln_alias];
-			break;
-
-		default:
-			return false;
+		relName = procNode->dsqlName.identifier;
+		relAlias = procNode->alias;
 	}
+	else if ((relNode = ExprNode::as<RelationSourceNode>(input)))
+	{
+		relName = relNode->dsqlName;
+		relAlias = relNode->alias;
+	}
+	else
+		return false;
 
 	fb_assert(currCtes.hasData());
 	const dsql_nod* curr_cte = currCtes.object();
 	const dsql_str* cte_name = (dsql_str*) curr_cte->nod_arg[Dsql::e_sel_alias];
 
-	const bool recursive = (cte_name->str_length == relName->str_length) &&
-		(strncmp(relName->str_data, cte_name->str_data, cte_name->str_length) == 0);
+	const bool recursive = (cte_name->str_length == relName.length()) &&
+		(strncmp(relName.c_str(), cte_name->str_data, cte_name->str_length) == 0);
 
 	if (recursive)
-		addCTEAlias(relAlias ? relAlias : relName);
+		addCTEAlias(relAlias.hasData() ? relAlias.c_str() : relName.c_str());
 
 	return recursive;
 }

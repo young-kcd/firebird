@@ -4488,7 +4488,7 @@ void FieldNode::setParameterName(dsql_par* parameter) const
 		parameter->par_owner_name = dsqlContext->ctx_procedure->prc_owner.c_str();
 	}
 
-	parameter->par_rel_alias = dsqlContext->ctx_alias;
+	parameter->par_rel_alias = dsqlContext->ctx_alias.c_str();
 }
 
 // Generate blr for a field - field id's are preferred but not for trigger or view blr.
@@ -5847,7 +5847,7 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 
-		parameter->par_rel_alias = context->ctx_alias;
+		parameter->par_rel_alias = context->ctx_alias.c_str();
 	}
 }
 
@@ -6012,7 +6012,7 @@ void DerivedFieldNode::setParameterName(dsql_par* parameter) const
 			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 
-		parameter->par_rel_alias = context->ctx_alias;
+		parameter->par_rel_alias = context->ctx_alias.c_str();
 	}
 }
 
@@ -6989,9 +6989,9 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				if ((!context->ctx_relation ||
 						context->ctx_relation->rel_name != dsqlQualifier ||
-						!rlxAlias && context->ctx_internal_alias) &&
-					(!context->ctx_internal_alias ||
-						strcmp(dsqlQualifier.c_str(), context->ctx_internal_alias) != 0))
+						!rlxAlias && context->ctx_internal_alias.hasData()) &&
+					(context->ctx_internal_alias.isEmpty() ||
+						strcmp(dsqlQualifier.c_str(), context->ctx_internal_alias.c_str()) != 0))
 				{
 					continue;
 				}
@@ -7086,7 +7086,7 @@ void RecordKeyNode::setParameterName(dsql_par* parameter) const
 			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
 		}
 
-		parameter->par_rel_alias = context->ctx_alias;
+		parameter->par_rel_alias = context->ctx_alias.c_str();
 	}
 }
 
@@ -7102,10 +7102,10 @@ void RecordKeyNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	fb_assert(blrOp == blr_dbkey);
 
 	// Fix for bug 10072 check that the target is a relation
-	dsql_ctx* context = (dsql_ctx*) dsqlRelation->nod_arg[0];
-	dsql_rel* relation = context->ctx_relation;
+	RelationSourceNode* relNode = ExprNode::as<RelationSourceNode>(dsqlRelation);
+	dsql_rel* relation;
 
-	if (relation)
+	if (relNode && (relation = relNode->dsqlContext->ctx_relation))
 	{
 		desc->dsc_dtype = dtype_text;
 

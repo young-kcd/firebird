@@ -79,6 +79,7 @@
 #include "../dsql/ExprNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/RecordSourceNodes.h"
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/jrd.h"
@@ -894,12 +895,12 @@ static void define_index(DsqlCompilerScratch* dsqlScratch)
 
 	const dsql_nod* ddl_node = statement->getDdlNode();
 	dsql_nod* relation_node = (dsql_nod*) ddl_node->nod_arg[e_idx_table];
-	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
+	const MetaName& relation_name = ExprNode::as<RelationSourceNode>(relation_node)->dsqlName;
 	dsql_nod* field_list = ddl_node->nod_arg[e_idx_fields];
 	const dsql_str* index_name = (dsql_str*) ddl_node->nod_arg[e_idx_name];
 
 	dsqlScratch->appendNullString(isc_dyn_def_idx, index_name->str_data);
-	dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name->str_data);
+	dsqlScratch->appendNullString(isc_dyn_rel_name, relation_name.c_str());
 
 	// go through the fields list, making an index segment for each field,
 	// unless we have a computation, in which case generate an expression index
@@ -1593,6 +1594,7 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 	*dynsave = (UCHAR) (priv_count >> 8);
 
 	UCHAR dynVerb = 0;
+
 	switch (table->nod_type)
 	{
 	case nod_procedure_name:
@@ -1607,8 +1609,12 @@ static void modify_privilege(DsqlCompilerScratch* dsqlScratch,
 	default:
 		dynVerb = isc_dyn_rel_name;
 	}
-	const dsql_str* name = (dsql_str*) table->nod_arg[0];
-	dsqlScratch->appendNullString(dynVerb, name->str_data);
+
+	const char* name = dynVerb == isc_dyn_rel_name ?
+		ExprNode::as<RelationSourceNode>(table)->dsqlName.c_str() :
+		((dsql_str*) table->nod_arg[0])->str_data;
+
+	dsqlScratch->appendNullString(dynVerb, name);
 
 	put_user_grant(dsqlScratch, user);
 

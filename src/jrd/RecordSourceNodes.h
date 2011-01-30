@@ -26,6 +26,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/NestConst.h"
+#include "../common/classes/QualifiedName.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../dsql/Visitors.h"
@@ -267,12 +268,13 @@ protected:
 class RelationSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>
 {
 public:
-	explicit RelationSourceNode(MemoryPool& pool)
+	explicit RelationSourceNode(MemoryPool& pool, const Firebird::MetaName& aDsqlName = NULL)
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_RELATION>(pool),
+		  dsqlName(pool, aDsqlName),
 		  dsqlContext(NULL),
+		  alias(pool),
 		  relation(NULL),
 		  context(0),
-		  alias(NULL),
 		  view(NULL)
 	{
 	}
@@ -280,14 +282,10 @@ public:
 	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp,
 		bool parseContext);
 
-	static void genRelation(DsqlCompilerScratch* dsqlScratch, dsql_ctx* context);
-
-	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
-	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
-	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
-	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
-	virtual bool dsqlFieldFinder(FieldFinder& visitor);
-	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor)
+	{
+		return false;
+	}
 
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -335,10 +333,11 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 public:
+	Firebird::MetaName dsqlName;
 	dsql_ctx* dsqlContext;
+	Firebird::string alias;	// SQL alias for the relation
 	jrd_rel* relation;
-	SSHORT context;		// user-specified context number for the relation reference
-	const char* alias;	// SQL alias for the relation
+	SSHORT context;			// user-specified context number for the relation reference
 
 private:
 	jrd_rel* view;		// parent view for posting access
@@ -347,8 +346,13 @@ private:
 class ProcedureSourceNode : public TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>
 {
 public:
-	explicit ProcedureSourceNode(MemoryPool& pool)
+	explicit ProcedureSourceNode(MemoryPool& pool,
+			const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName())
 		: TypedNode<RecordSourceNode, RecordSourceNode::TYPE_PROCEDURE>(pool),
+		  dsqlName(pool, aDsqlName),
+		  dsqlContext(NULL),
+		  dsqlInputs(NULL),
+		  alias(pool),
 		  sourceList(NULL),
 		  targetList(NULL),
 		  in_msg(NULL),
@@ -359,6 +363,16 @@ public:
 	}
 
 	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp);
+
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual bool dsqlFieldRemapper(FieldRemapper& visitor);
+
+	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual ProcedureSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
 
@@ -395,6 +409,10 @@ private:
 	ProcedureScan* generate(thread_db* tdbb, OptimizerBlk* opt);
 
 public:
+	Firebird::QualifiedName dsqlName;
+	dsql_ctx* dsqlContext;
+	dsql_nod* dsqlInputs;
+	Firebird::string alias;
 	NestConst<ValueListNode> sourceList;
 	NestConst<ValueListNode> targetList;
 

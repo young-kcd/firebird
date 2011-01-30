@@ -989,13 +989,7 @@ public:
 		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
 	};
 
-	RelationNode(MemoryPool& p, dsql_nod* aDsqlNode)
-		: DdlNode(p),
-		  dsqlNode(aDsqlNode),
-		  name(p, ((dsql_str*) aDsqlNode->nod_arg[Dsql::e_rln_name])->str_data),
-		  elements(p)
-	{
-	}
+	RelationNode(MemoryPool& p, dsql_nod* aDsqlNode);
 
 	static void deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
