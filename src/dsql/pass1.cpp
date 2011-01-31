@@ -3695,20 +3695,19 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 	}
 
 	VariableNode* varNode = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
-	varNode->dsqlVar = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
+	varNode->dsqlVar = dsqlScratch->makeVariable(NULL, "", dsql_var::TYPE_HIDDEN,
+		0, 0, dsqlScratch->hiddenVarsNumber++);
 
 	dsql_nod* varNod = MAKE_node(nod_class_exprnode, 1);
 	varNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(varNode);
 
-	MAKE_desc(dsqlScratch, &varNode->dsqlVar->var_desc, expr);
-	varNod->nod_desc = varNode->dsqlVar->var_desc;
+	MAKE_desc(dsqlScratch, &varNode->dsqlVar->desc, expr);
+	varNod->nod_desc = varNode->dsqlVar->desc;
 
 	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
 	newExpr->nod_arg[e_hidden_var_expr] = expr;
 	newExpr->nod_arg[e_hidden_var_var] = varNod;
 	expr = newExpr;
-
-	dsqlScratch->hiddenVars.push(newExpr);
 
 	return varNod;
 }

@@ -85,14 +85,14 @@ public:
 		  clientDialect(0),
 		  inOuterJoin(0),
 		  aliasRelationPrefix(NULL),
-		  hiddenVars(p),
-		  hiddenVarsNumber(0),
 		  package(p),
 		  currCtes(p),
 		  recursiveCtx(0),
 		  recursiveCtxId(0),
 		  processingWindow(false),
 		  checkConstraintTrigger(false),
+		  hiddenVarsNumber(0),
+		  hiddenVariables(p),
 		  variables(p),
 		  outputVariables(p),
 		  ctes(p),
@@ -156,6 +156,7 @@ public:
 	void putType(const TypeClause& type, bool useSubType);
 	void putLocalVariables(const dsql_nod* parameters, SSHORT locals);
 	void putLocalVariable(dsql_var* variable, dsql_nod* hostParam, const dsql_str* collationName);
+	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT, USHORT, USHORT);
 	dsql_var* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);
 
@@ -247,8 +248,6 @@ public:
 	USHORT clientDialect;				// dialect passed into the API call
 	USHORT inOuterJoin;					// processing inside outer-join part
 	dsql_str* aliasRelationPrefix;		// prefix for every relation-alias.
-	DsqlNodStack hiddenVars;			// hidden variables
-	USHORT hiddenVarsNumber;			// next hidden variable number
 	Firebird::MetaName package;			// package being defined
 	DsqlNodStack currCtes;				// current processing CTE's
 	class dsql_ctx* recursiveCtx;		// context of recursive CTE
@@ -256,6 +255,8 @@ public:
 	bool processingWindow;				// processing window functions
 	bool checkConstraintTrigger;		// compiling a check constraint trigger
 	dsc domainValue;					// VALUE in the context of domain's check constraint
+	USHORT hiddenVarsNumber;			// next hidden variable number
+	Firebird::Array<dsql_var*> hiddenVariables;	// hidden variables
 	Firebird::Array<dsql_var*> variables;
 	Firebird::Array<dsql_var*> outputVariables;
 

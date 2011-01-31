@@ -68,7 +68,6 @@ enum BlockType
 	dsql_type_sym,
 	dsql_type_tra,
 	dsql_type_udf,
-	dsql_type_var,
 	dsql_type_blb,
 	dsql_type_prc,
 	dsql_type_intlsym,

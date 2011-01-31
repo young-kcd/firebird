@@ -46,14 +46,6 @@ namespace Jrd {
 		CONSTANT_SINT64		= 5, // stored as a SINT64
 		CONSTANT_BOOLEAN	= 6, // stored as a UCHAR
 	};
-
-	// Parameters to MAKE_variable
-	enum dsql_var_type
-	{
-		VAR_input,
-		VAR_output,
-		VAR_local
-	};
 }
 
 
@@ -73,7 +65,5 @@ void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::dsql_nod*);
 Jrd::dsql_str* MAKE_string(const char*, int);
 Jrd::dsql_sym* MAKE_symbol(Jrd::dsql_dbb*, const TEXT*, USHORT, Jrd::sym_type, Jrd::dsql_req*);
 Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
-Jrd::dsql_var* MAKE_variable(Jrd::dsql_fld*, const TEXT*, const Jrd::dsql_var_type type, USHORT,
-	USHORT, USHORT);
 
 #endif // DSQL_MAKE_PROTO_H

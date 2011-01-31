@@ -273,16 +273,14 @@ void DsqlCompilerScratch::putLocalVariables(const dsql_nod* parameters, SSHORT l
 				}
 			}
 
-			dsql_var* variable = MAKE_variable(field, field->fld_name.c_str(), VAR_local,
-				0, 0, locals);
-			variables.add(variable);
+			dsql_var* variable = makeVariable(field, field->fld_name.c_str(), dsql_var::TYPE_LOCAL, 0, 0, locals);
 
 			putLocalVariable(variable, parameter,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
 
 			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
 			// the descriptor.
-			MAKE_desc_from_field(&variable->var_desc, field);
+			MAKE_desc_from_field(&variable->desc, field);
 
 			++locals;
 		}
@@ -298,10 +296,10 @@ void DsqlCompilerScratch::putLocalVariables(const dsql_nod* parameters, SSHORT l
 void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostParam,
 	const dsql_str* collationName)
 {
-	dsql_fld* field = variable->var_field;
+	dsql_fld* field = variable->field;
 
 	appendUChar(blr_dcl_variable);
-	appendUShort(variable->var_variable_number);
+	appendUShort(variable->number);
 	DDL_resolve_intl_type(this, field, collationName);
 
 	//const USHORT dtype = field->fld_dtype;
@@ -327,18 +325,50 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostPar
 			appendUChar(blr_null);	// Initialize variable to NULL
 
 		appendUChar(blr_variable);
-		appendUShort(variable->var_variable_number);
+		appendUShort(variable->number);
 	}
 	else
 	{
 		appendUChar(blr_init_variable);
-		appendUShort(variable->var_variable_number);
+		appendUShort(variable->number);
 	}
 
-	if (variable->var_name[0])	// Not a function return value
-		putDebugVariable(variable->var_variable_number, variable->var_name);
+	if (variable->name.hasData())	// Not a function return value
+		putDebugVariable(variable->number, variable->name);
 
 	++hiddenVarsNumber;
+}
+
+// Make a variable.
+dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
+	const dsql_var::Type type, USHORT msgNumber, USHORT itemNumber, USHORT localNumber)
+{
+	DEV_BLKCHK(field, dsql_type_fld);
+
+	thread_db* tdbb = JRD_get_thread_data();
+
+	dsql_var* dsqlVar = FB_NEW(*tdbb->getDefaultPool()) dsql_var(*tdbb->getDefaultPool());
+	dsqlVar->type = type;
+	dsqlVar->msgNumber = msgNumber;
+	dsqlVar->msgItem = itemNumber;
+	dsqlVar->number = localNumber;
+	dsqlVar->field = field;
+	dsqlVar->name = name;
+
+	if (field)
+		MAKE_desc_from_field(&dsqlVar->desc, field);
+
+	if (type == dsql_var::TYPE_HIDDEN)
+		hiddenVariables.push(dsqlVar);
+	else
+	{
+		variables.push(dsqlVar);
+
+		if (type == dsql_var::TYPE_OUTPUT)
+			outputVariables.push(dsqlVar);
+	}
+
+	return dsqlVar;
 }
 
 // Try to resolve variable name against parameters and local variables.
@@ -347,9 +377,8 @@ dsql_var* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
 	for (dsql_var* const* i = variables.begin(); i != variables.end(); ++i)
 	{
 		const dsql_var* variable = *i;
-		DEV_BLKCHK(variable, dsql_type_var);
 
-		if (strcmp(varName->str_data, variable->var_name) == 0)
+		if (variable->name == varName->str_data)
 			return *i;
 	}
 
@@ -373,11 +402,11 @@ void DsqlCompilerScratch::genReturn(bool eosFlag)
 		const dsql_var* variable = *i;
 		appendUChar(blr_assignment);
 		appendUChar(blr_variable);
-		appendUShort(variable->var_variable_number);
+		appendUShort(variable->number);
 		appendUChar(blr_parameter2);
-		appendUChar(variable->var_msg_number);
-		appendUShort(variable->var_msg_item);
-		appendUShort(variable->var_msg_item + 1);
+		appendUChar(variable->msgNumber);
+		appendUShort(variable->msgItem);
+		appendUShort(variable->msgItem + 1);
 	}
 
 	if (hasEos)

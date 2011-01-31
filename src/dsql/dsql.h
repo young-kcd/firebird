@@ -349,16 +349,37 @@ enum udf_flags_vals {
 // Variables - input, output & local
 
 //! Variable block
-class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
+class dsql_var : public Firebird::PermanentStorage
 {
 public:
-	dsql_fld*	var_field;		// Field on which variable is based
-	int		var_type;			// Input, output or local var.
-	USHORT	var_msg_number;		// Message number containing variable
-	USHORT	var_msg_item;		// Item number in message
-	USHORT	var_variable_number;	// Local variable number
-	dsc		var_desc;
-	TEXT	var_name[2];
+	enum Type
+	{
+		TYPE_INPUT,
+		TYPE_OUTPUT,
+		TYPE_LOCAL,
+		TYPE_HIDDEN
+	};
+
+public:
+	explicit dsql_var(MemoryPool& p)
+		: PermanentStorage(p),
+		  name(p),
+		  field(NULL),
+		  type(TYPE_INPUT),
+		  msgNumber(0),
+		  msgItem(0),
+		  number(0)
+	{
+		desc.clear();
+	}
+
+	Firebird::MetaName name;
+	dsql_fld* field;	// Field on which variable is based
+	Type type;			// Input, output, local or hidden variable
+	USHORT msgNumber;	// Message number containing variable
+	USHORT msgItem;		// Item number in message
+	USHORT number;		// Local variable number
+	dsc desc;
 };
 
 

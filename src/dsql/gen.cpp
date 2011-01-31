@@ -87,31 +87,31 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
  *	Emit BLR for hidden variables.
  *
  **************************************/
-	if (dsqlScratch->hiddenVars.isEmpty())
+	if (dsqlScratch->hiddenVariables.isEmpty())
 		return;
 
 	if (inExpression)
 	{
 		dsqlScratch->appendUChar(blr_stmt_expr);
-		if (dsqlScratch->hiddenVars.getCount() > 1)
+		if (dsqlScratch->hiddenVariables.getCount() > 1)
 			dsqlScratch->appendUChar(blr_begin);
 	}
 
-	for (DsqlNodStack::const_iterator i(dsqlScratch->hiddenVars); i.hasData(); ++i)
+	for (Array<dsql_var*>::const_iterator i = dsqlScratch->hiddenVariables.begin();
+		 i != dsqlScratch->hiddenVariables.end();
+		 ++i)
 	{
-		const dsql_nod* varNod = i.object()->nod_arg[e_hidden_var_var];
-		const VariableNode* varNode = ExprNode::as<VariableNode>(varNod);
-		const dsql_var* var = varNode->dsqlVar;
+		const dsql_var* var = *i;
 		dsqlScratch->appendUChar(blr_dcl_variable);
-		dsqlScratch->appendUShort(var->var_variable_number);
-		GEN_descriptor(dsqlScratch, &varNode->dsqlVar->var_desc, true);
+		dsqlScratch->appendUShort(var->number);
+		GEN_descriptor(dsqlScratch, &var->desc, true);
 	}
 
-	if (inExpression && dsqlScratch->hiddenVars.getCount() > 1)
+	if (inExpression && dsqlScratch->hiddenVariables.getCount() > 1)
 		dsqlScratch->appendUChar(blr_end);
 
 	// Clear it for GEN_expr not regenerate them.
-	dsqlScratch->hiddenVars.clear();
+	dsqlScratch->hiddenVariables.clear();
 }
 
 
@@ -196,22 +196,21 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_stmt_expr);
 
 		// If it was not pre-declared, declare it now.
-		if (dsqlScratch->hiddenVars.hasData())
+		if (dsqlScratch->hiddenVariables.hasData())
 		{
-			const VariableNode* varNode = ExprNode::as<VariableNode>(node->nod_arg[e_hidden_var_var]);
-			const dsql_var* var = varNode->dsqlVar;
+			const dsql_var* var = ExprNode::as<VariableNode>(node->nod_arg[e_hidden_var_var])->dsqlVar;
 
 			dsqlScratch->appendUChar(blr_begin);
 			dsqlScratch->appendUChar(blr_dcl_variable);
-			dsqlScratch->appendUShort(var->var_variable_number);
-			GEN_descriptor(dsqlScratch, &varNode->dsqlVar->var_desc, true);
+			dsqlScratch->appendUShort(var->number);
+			GEN_descriptor(dsqlScratch, &var->desc, true);
 		}
 
 		dsqlScratch->appendUChar(blr_assignment);
 		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_expr]);
 		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_var]);
 
-		if (dsqlScratch->hiddenVars.hasData())
+		if (dsqlScratch->hiddenVariables.hasData())
 			dsqlScratch->appendUChar(blr_end);
 
 		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_var]);

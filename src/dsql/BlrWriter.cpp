@@ -155,21 +155,17 @@ void BlrWriter::putDebugSrcInfo(USHORT line, USHORT col)
 	debugData.add(offset >> 8);
 }
 
-void BlrWriter::putDebugVariable(USHORT number, const TEXT* name)
+void BlrWriter::putDebugVariable(USHORT number, const MetaName& name)
 {
-	fb_assert(name);
-
 	debugData.add(fb_dbg_map_varname);
 
 	debugData.add(number);
 	debugData.add(number >> 8);
 
-	USHORT len = strlen(name);
-	if (len > MAX_UCHAR)
-		len = MAX_UCHAR;
+	USHORT len = MIN(name.length(), MAX_UCHAR);
 	debugData.add(len);
 
-	debugData.add(reinterpret_cast<const UCHAR*>(name), len);
+	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
 }
 
 void BlrWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* name)

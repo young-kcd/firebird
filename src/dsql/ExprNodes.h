@@ -1387,7 +1387,7 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_var* dsqlVar;
+	NestConst<dsql_var> dsqlVar;
 	USHORT varId;
 	NestConst<DeclareVariableNode> varDecl;
 	NestConst<ItemInfo> varInfo;

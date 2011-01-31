@@ -2018,7 +2018,7 @@ void DDL_reset_context_stack(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->derivedContextNumber = 0;
 
 	dsqlScratch->hiddenVarsNumber = 0;
-	dsqlScratch->hiddenVars.clear();
+	dsqlScratch->hiddenVariables.clear();
 }
 
 

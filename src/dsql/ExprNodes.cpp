@@ -10030,28 +10030,28 @@ ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 void VariableNode::setParameterName(dsql_par* parameter) const
 {
-	parameter->par_name = parameter->par_alias = dsqlVar->var_field->fld_name.c_str();
+	parameter->par_name = parameter->par_alias = dsqlVar->field->fld_name.c_str();
 }
 
 void VariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	if (dsqlVar->var_type == VAR_input)
+	if (dsqlVar->type == dsql_var::TYPE_INPUT)
 	{
 		dsqlScratch->appendUChar(blr_parameter2);
-		dsqlScratch->appendUChar(dsqlVar->var_msg_number);
-		dsqlScratch->appendUShort(dsqlVar->var_msg_item);
-		dsqlScratch->appendUShort(dsqlVar->var_msg_item + 1);
+		dsqlScratch->appendUChar(dsqlVar->msgNumber);
+		dsqlScratch->appendUShort(dsqlVar->msgItem);
+		dsqlScratch->appendUShort(dsqlVar->msgItem + 1);
 	}
 	else
 	{
 		dsqlScratch->appendUChar(blr_variable);
-		dsqlScratch->appendUShort(dsqlVar->var_variable_number);
+		dsqlScratch->appendUShort(dsqlVar->number);
 	}
 }
 
 void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	*desc = dsqlVar->var_desc;
+	*desc = dsqlVar->desc;
 }
 
 bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
@@ -10060,11 +10060,11 @@ bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	if (!o)
 		return false;
 
-	if (strcmp(dsqlVar->var_name, o->dsqlVar->var_name) ||
-		dsqlVar->var_field != o->dsqlVar->var_field ||
-		dsqlVar->var_variable_number != o->dsqlVar->var_variable_number ||
-		dsqlVar->var_msg_item != o->dsqlVar->var_msg_item ||
-		dsqlVar->var_msg_number != o->dsqlVar->var_msg_number)
+	if (dsqlVar->name != o->dsqlVar->name ||
+		dsqlVar->field != o->dsqlVar->field ||
+		dsqlVar->number != o->dsqlVar->number ||
+		dsqlVar->msgItem != o->dsqlVar->msgItem ||
+		dsqlVar->msgNumber != o->dsqlVar->msgNumber)
 	{
 		return false;
 	}

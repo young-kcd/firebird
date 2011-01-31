@@ -1555,8 +1555,8 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 				dsqlScratch->appendUChar(blr_short);
 				dsqlScratch->appendUChar(0);
 
-				dsqlScratch->variables.add(MAKE_variable(parameter.legacyField,
-					parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
+				dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+					dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
 			}
 		}
 
@@ -1571,9 +1571,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->appendUChar(blr_short);
 		dsqlScratch->appendUChar(0);
 
-		dsql_var* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
-		dsqlScratch->variables.add(var);
-		dsqlScratch->outputVariables.add(var);
+		dsqlScratch->makeVariable(returnType.legacyField, "", dsql_var::TYPE_OUTPUT, 1, 0, 0);
 
 		if (parameters.getCount() != 0)
 		{
@@ -2322,8 +2320,8 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 			dsqlScratch->appendUChar(blr_short);
 			dsqlScratch->appendUChar(0);
 
-			dsqlScratch->variables.add(MAKE_variable(parameter.legacyField,
-				parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0));
+			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
 		}
 	}
 
@@ -2344,11 +2342,8 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 			dsqlScratch->appendUChar(blr_short);
 			dsqlScratch->appendUChar(0);
 
-			dsql_var* const var = MAKE_variable(parameter.legacyField,
-				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
-
-			dsqlScratch->variables.add(var);
-			dsqlScratch->outputVariables.add(var);
+			dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+				dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
 		}
 	}
 

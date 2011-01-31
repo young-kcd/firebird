@@ -2881,10 +2881,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = parameters[i];
 
-		dsql_var* var = MAKE_variable(parameter.legacyField,
-			parameter.name.c_str(), VAR_input, 0, (USHORT) (2 * i), 0);
-
-		dsqlScratch->variables.add(var);
+		dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+			dsql_var::TYPE_INPUT, 0, (USHORT) (2 * i), 0);
 	}
 
 	const unsigned returnsPos = dsqlScratch->variables.getCount();
@@ -2894,11 +2892,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		ParameterClause& parameter = returns[i];
 
-		dsql_var* var = MAKE_variable(parameter.legacyField,
-			parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
-
-		dsqlScratch->variables.add(var);
-		dsqlScratch->outputVariables.add(var);
+		dsqlScratch->makeVariable(parameter.legacyField, parameter.name.c_str(),
+			dsql_var::TYPE_OUTPUT, 1, (USHORT) (2 * i), i);
 	}
 
 	DsqlCompiledStatement* statement = dsqlScratch->getStatement();
@@ -2951,7 +2946,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	for (unsigned i = 0; i < returnsPos; ++i)
 	{
 		const dsql_var* variable = dsqlScratch->variables[i];
-		const dsql_fld* field = variable->var_field;
+		const dsql_fld* field = variable->field;
 
 		if (field->fld_full_domain || field->fld_not_nullable)
 		{
@@ -2963,8 +2958,8 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->putDtype(field, true);
 			dsqlScratch->appendUChar(blr_parameter2);
 			dsqlScratch->appendUChar(0);
-			dsqlScratch->appendUShort(variable->var_msg_item);
-			dsqlScratch->appendUShort(variable->var_msg_item + 1);
+			dsqlScratch->appendUShort(variable->msgItem);
+			dsqlScratch->appendUShort(variable->msgItem + 1);
 			dsqlScratch->appendUChar(blr_null);
 		}
 	}

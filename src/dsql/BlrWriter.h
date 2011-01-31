@@ -129,7 +129,7 @@ public:
 	void beginDebug();
 	void endDebug();
 	void putDebugSrcInfo(USHORT, USHORT);
-	void putDebugVariable(USHORT, const TEXT*);
+	void putDebugVariable(USHORT, const Firebird::MetaName&);
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
 	void appendDebugInfo();
 

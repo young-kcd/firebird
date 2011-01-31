@@ -808,29 +808,6 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 }
 
 
-// Make a variable node.
-dsql_var* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type type,
-	USHORT msg_number, USHORT item_number, USHORT local_number)
-{
-	DEV_BLKCHK(field, dsql_type_fld);
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_var* dsqlVar = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(name)) dsql_var;
-	dsqlVar->var_msg_number = msg_number;
-	dsqlVar->var_msg_item = item_number;
-	dsqlVar->var_variable_number = local_number;
-	dsqlVar->var_field = field;
-	strcpy(dsqlVar->var_name, name);
-	dsqlVar->var_type = type;
-
-	if (field)
-		MAKE_desc_from_field(&dsqlVar->var_desc, field);
-
-	return dsqlVar;
-}
-
-
 /**
 
 	MAKE_parameter_names
