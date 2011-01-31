@@ -156,7 +156,7 @@ public:
 	void putType(const TypeClause& type, bool useSubType);
 	void putLocalVariables(const dsql_nod* parameters, SSHORT locals);
 	void putLocalVariable(dsql_var* variable, dsql_nod* hostParam, const dsql_str* collationName);
-	VariableNode* resolveVariable(const dsql_str* varName);
+	dsql_var* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);
 
 	void resetContextStack()
@@ -256,8 +256,8 @@ public:
 	bool processingWindow;				// processing window functions
 	bool checkConstraintTrigger;		// compiling a check constraint trigger
 	dsc domainValue;					// VALUE in the context of domain's check constraint
-	Firebird::Array<VariableNode*> variables;
-	Firebird::Array<VariableNode*> outputVariables;
+	Firebird::Array<dsql_var*> variables;
+	Firebird::Array<dsql_var*> outputVariables;
 
 private:
 	Firebird::HalfStaticArray<dsql_nod*, 4> ctes; // common table expressions

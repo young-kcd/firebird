@@ -1388,7 +1388,6 @@ public:
 
 public:
 	dsql_var* dsqlVar;
-	dsc varDesc;
 	USHORT varId;
 	NestConst<DeclareVariableNode> varDecl;
 	NestConst<ItemInfo> varInfo;

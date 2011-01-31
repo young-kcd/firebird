@@ -273,17 +273,16 @@ void DsqlCompilerScratch::putLocalVariables(const dsql_nod* parameters, SSHORT l
 				}
 			}
 
-			VariableNode* varNode = MAKE_variable(field, field->fld_name.c_str(), VAR_local,
+			dsql_var* variable = MAKE_variable(field, field->fld_name.c_str(), VAR_local,
 				0, 0, locals);
-			variables.add(varNode);
+			variables.add(variable);
 
-			dsql_var* variable = varNode->dsqlVar;
 			putLocalVariable(variable, parameter,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
 
 			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
 			// the descriptor.
-			MAKE_desc_from_field(&varNode->varDesc, field);
+			MAKE_desc_from_field(&variable->var_desc, field);
 
 			++locals;
 		}
@@ -343,14 +342,14 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostPar
 }
 
 // Try to resolve variable name against parameters and local variables.
-VariableNode* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
+dsql_var* DsqlCompilerScratch::resolveVariable(const dsql_str* varName)
 {
-	for (VariableNode* const* i = variables.begin(); i != variables.end(); ++i)
+	for (dsql_var* const* i = variables.begin(); i != variables.end(); ++i)
 	{
-		const dsql_var* variable = (*i)->dsqlVar;
+		const dsql_var* variable = *i;
 		DEV_BLKCHK(variable, dsql_type_var);
 
-		if (!strcmp(varName->str_data, variable->var_name))
+		if (strcmp(varName->str_data, variable->var_name) == 0)
 			return *i;
 	}
 
@@ -369,9 +368,9 @@ void DsqlCompilerScratch::genReturn(bool eosFlag)
 	appendUChar(1);
 	appendUChar(blr_begin);
 
-	for (Array<VariableNode*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
+	for (Array<dsql_var*>::const_iterator i = outputVariables.begin(); i != outputVariables.end(); ++i)
 	{
-		const dsql_var* variable = (*i)->dsqlVar;
+		const dsql_var* variable = *i;
 		appendUChar(blr_assignment);
 		appendUChar(blr_variable);
 		appendUShort(variable->var_variable_number);

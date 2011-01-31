@@ -1571,7 +1571,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->appendUChar(blr_short);
 		dsqlScratch->appendUChar(0);
 
-		VariableNode* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
+		dsql_var* const var = MAKE_variable(returnType.legacyField, "", VAR_output, 1, 0, 0);
 		dsqlScratch->variables.add(var);
 		dsqlScratch->outputVariables.add(var);
 
@@ -1600,7 +1600,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 			}
 		}
 
-		dsql_var* const variable = dsqlScratch->outputVariables[0]->dsqlVar;
+		dsql_var* const variable = dsqlScratch->outputVariables[0];
 		dsqlScratch->putLocalVariable(variable, 0, NULL);
 
 		// ASF: This is here to not change the old logic (proc_flag)
@@ -2344,7 +2344,7 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 			dsqlScratch->appendUChar(blr_short);
 			dsqlScratch->appendUChar(0);
 
-			VariableNode* const var = MAKE_variable(parameter.legacyField,
+			dsql_var* const var = MAKE_variable(parameter.legacyField,
 				parameter.name.c_str(), VAR_output, 1, (USHORT) (2 * i), i);
 
 			dsqlScratch->variables.add(var);
@@ -2381,11 +2381,11 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 		}
 	}
 
-	for (Array<VariableNode*>::const_iterator i = dsqlScratch->outputVariables.begin();
+	for (Array<dsql_var*>::const_iterator i = dsqlScratch->outputVariables.begin();
 		 i != dsqlScratch->outputVariables.end();
 		 ++i)
 	{
-		dsqlScratch->putLocalVariable((*i)->dsqlVar, 0, NULL);
+		dsqlScratch->putLocalVariable(*i, 0, NULL);
 	}
 
 	// ASF: This is here to not change the old logic (proc_flag)

@@ -357,6 +357,7 @@ public:
 	USHORT	var_msg_number;		// Message number containing variable
 	USHORT	var_msg_item;		// Item number in message
 	USHORT	var_variable_number;	// Local variable number
+	dsc		var_desc;
 	TEXT	var_name[2];
 };
 

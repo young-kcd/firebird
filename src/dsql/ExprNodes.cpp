@@ -9998,7 +9998,6 @@ VariableNode::VariableNode(MemoryPool& pool)
 	  varDecl(NULL),
 	  varInfo(NULL)
 {
-	varDesc.clear();
 }
 
 DmlNode* VariableNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
@@ -10025,7 +10024,6 @@ ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
 	node->dsqlVar = dsqlVar;
-	node->varDesc = varDesc;
 
 	return node;
 }
@@ -10053,7 +10051,7 @@ void VariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void VariableNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	*desc = varDesc;
+	*desc = dsqlVar->var_desc;
 }
 
 bool VariableNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const

@@ -3671,6 +3671,8 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 // Create (if necessary) a hidden variable to store a temporary value.
 static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	// For some node types, it's better to not create temporary value.
 	if (expr->nod_type == nod_class_exprnode)
 	{
@@ -3692,13 +3694,14 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 		}
 	}
 
-	VariableNode* var = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
+	VariableNode* varNode = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
+	varNode->dsqlVar = MAKE_variable(NULL, "", VAR_local, 0, 0, dsqlScratch->hiddenVarsNumber++);
 
 	dsql_nod* varNod = MAKE_node(nod_class_exprnode, 1);
-	varNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(var);
+	varNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(varNode);
 
-	MAKE_desc(dsqlScratch, &var->varDesc, expr);
-	varNod->nod_desc = var->varDesc;
+	MAKE_desc(dsqlScratch, &varNode->dsqlVar->var_desc, expr);
+	varNod->nod_desc = varNode->dsqlVar->var_desc;
 
 	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
 	newExpr->nod_arg[e_hidden_var_expr] = expr;
@@ -6830,6 +6833,8 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
  **/
 static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	// CVC: I commented this variable and its usage because it wasn't useful for
 	// anything. I didn't delete it in case it's an implementation in progress
 	// by someone.
@@ -6857,10 +6862,13 @@ static dsql_nod* pass1_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* inpu
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	VariableNode* varNode = dsqlScratch->resolveVariable(var_name);
+	dsql_var* variable = dsqlScratch->resolveVariable(var_name);
 
-	if (varNode)
+	if (variable)
 	{
+		VariableNode* varNode = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
+		varNode->dsqlVar = variable;
+
 		dsql_nod* node = MAKE_node(nod_class_exprnode, 1);
 		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(varNode);
 		return node;

@@ -104,7 +104,7 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
 		const dsql_var* var = varNode->dsqlVar;
 		dsqlScratch->appendUChar(blr_dcl_variable);
 		dsqlScratch->appendUShort(var->var_variable_number);
-		GEN_descriptor(dsqlScratch, &varNode->varDesc, true);
+		GEN_descriptor(dsqlScratch, &varNode->dsqlVar->var_desc, true);
 	}
 
 	if (inExpression && dsqlScratch->hiddenVars.getCount() > 1)
@@ -204,7 +204,7 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 			dsqlScratch->appendUChar(blr_begin);
 			dsqlScratch->appendUChar(blr_dcl_variable);
 			dsqlScratch->appendUShort(var->var_variable_number);
-			GEN_descriptor(dsqlScratch, &varNode->varDesc, true);
+			GEN_descriptor(dsqlScratch, &varNode->dsqlVar->var_desc, true);
 		}
 
 		dsqlScratch->appendUChar(blr_assignment);
