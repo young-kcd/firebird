@@ -890,6 +890,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 	DeferredWork* work = sp->hash.lookup(tmp);
 	if (work)
 	{
+		work->dfw_count++;
 		return work;
 	}
 
