@@ -179,17 +179,16 @@ namespace Firebird
 		{
 			if (ptr != p)
 			{
+				if (p)
+				{
+					p->addRef();
+				}
 				if (ptr)
 				{
 					ptr->release();
 				}
 
 				ptr = p;
-
-				if (ptr)
-				{
-					ptr->addRef();
-				}
 			}
 
 			return ptr;
