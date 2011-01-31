@@ -1,3 +1,126 @@
+ 2011-01-31 00:13  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/pass1.cpp
+Refactor internals of DSQL variables.
+
+ 2011-01-31 00:12  asfernandes 
+   M src/dsql/parse.y
+Misc
+
+ 2011-01-30 01:17  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed CORE-3320 - Some MERGE syntax can crash the server.
+
+ 2011-01-30 00:25  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+Refactor nod_relation_name and nod_rel_proc_name.
+
+ 2011-01-29 17:30  asfernandes 
+   M src/jrd/inf.cpp
+Correction
+
+ 2011-01-29 17:24  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/dyn_mod.epp
+   M src/jrd/inf.cpp
+   M src/jrd/ini.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/remote/inet.cpp
+Misc
+
+ 2011-01-29 11:34  dimitr 
+   M src/jrd/Optimizer.cpp
+Front ported CORE-3312: Sub-optimal join plan when the slave table depends on the master one via the OR predicate.
+
+ 2011-01-28 18:58  dimitr 
+   M src/dsql/dsql.cpp
+More work on enlarging the message buffers. To be continued.
+
+ 2011-01-28 18:51  dimitr 
+   M src/dsql/StmtNodes.cpp
+More work on enlarging the message buffers. To be continued.
+
+ 2011-01-28 18:50  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/Function.epp
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/ini.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/val.h
+More work on enlarging the message buffers. To be continued.
+
+ 2011-01-28 17:56  alexpeshkoff 
+   M configure.in
+   M src/remote/inet.cpp
+Frontported fix for CORE-3194: Number of connections to linux superclassic has limit equal 508
+
+ 2011-01-28 17:22  dimitr 
+   M src/dsql/pass1.cpp
+Misc.
+
+ 2011-01-28 17:12  dimitr 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql_proto.h
+   M src/jrd/DebugInterface.cpp
+   M src/jrd/DebugInterface.h
+   M src/jrd/cmp.cpp
+   M src/jrd/cmp_proto.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_proto.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+Refactoring. Mostly short->long replacements for various buffer sizes.
+
+ 2011-01-28 16:07  dimitr 
+   M src/jrd/dyn_mod.epp
+Finalize my prior commit.
+
+ 2011-01-28 15:54  dimitr 
+   M src/jrd/dyn_mod.epp
+Favor a direct call instead of dealing with information buffers.
+
+ 2011-01-28 10:27  hvlad 
+   M src/jrd/trace/TraceDSQLHelpers.h
+Fixed bug CORE-3315 : Audit plugin records a sencond *FAILED* EXECUTE_STATEMENT_FINISH after a "normal" one
+
  2011-01-28 00:58  asfernandes 
    M src/common/os/win32/isc_ipc.cpp
    M src/jrd/jrd.cpp
