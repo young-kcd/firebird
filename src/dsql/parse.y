@@ -2248,16 +2248,15 @@ package_body_item
 	;
 
 
-local_declaration_list	: local_declarations
-			{ $$ = make_list ($1); }
-		|
-			{ $$ = NULL; }
-		;
+local_declaration_list
+	: /* nothing */			{ $$ = NULL; }
+	| local_declarations	{ $$ = make_list ($1); }
+	;
 
-local_declarations	: local_declaration
-		| local_declarations local_declaration
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+local_declarations
+	: local_declaration
+	| local_declarations local_declaration	{ $$ = make_node (nod_list, 2, $1, $2); }
+	;
 
 local_declaration
 	: stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
@@ -2268,113 +2267,108 @@ local_declaration
 		}
 	;
 
-local_declaration_item	: var_declaration_item
-		| cursor_declaration_item
-		;
+local_declaration_item
+	: var_declaration_item
+	| cursor_declaration_item
+	;
 
-var_declaration_item	: column_def_name domain_or_non_array_type collate_clause default_par_opt
-			{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, $4, NULL, $3, NULL, NULL, NULL); }
-		;
+var_declaration_item
+	: column_def_name domain_or_non_array_type collate_clause default_par_opt
+		{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, $4, NULL, $3, NULL, NULL, NULL); }
+	;
 
-var_decl_opt	: VARIABLE
-			{ $$ = NULL; }
-		|
-			{ $$ = NULL; }
-		;
+var_decl_opt
+	: /* nothing */		{ $$ = NULL; }
+	| VARIABLE			{ $$ = NULL; }
+	;
 
-cursor_declaration_item	: symbol_cursor_name scroll_opt CURSOR FOR '(' select ')'
-			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_EXPLICIT,
-				(int) e_cur_count, $1, $2, $6, NULL, NULL); }
- 		;
+cursor_declaration_item
+	: symbol_cursor_name scroll_opt CURSOR FOR '(' select ')'
+		{
+			$$ = make_flag_node (nod_cursor, NOD_CURSOR_EXPLICIT,
+				(int) e_cur_count, $1, $2, $6, NULL, NULL);
+		}
+	;
 
-scroll_opt	: SCROLL
-			{ $$ = make_node (nod_flag, 0, NULL); }
-		| NO SCROLL
-			{ $$ = NULL; }
-		|
-			{ $$ = NULL; }
-		;
+scroll_opt
+	: /* nothing */	{ $$ = NULL; }
+	| NO SCROLL		{ $$ = NULL; }
+	| SCROLL		{ $$ = make_node (nod_flag, 0, NULL); }
+	;
 
-proc_block	: proc_statement
-		| full_proc_block
-		;
+proc_block
+	: proc_statement
+	| full_proc_block
+	;
 
-full_proc_block	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-			{
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4);
-			}
-		;
+full_proc_block
+	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
+		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4); }
+	;
 
-full_proc_block_body	: proc_statements
-			{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), NULL); }
-		| proc_statements excp_hndl_statements
-			{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), make_list ($2)); }
-		|
-			{ $$ = make_node (nod_block, (int) e_blk_count, NULL, NULL);}
-		;
+full_proc_block_body
+	: // nothing
+		{ $$ = make_node (nod_block, (int) e_blk_count, NULL, NULL);}
+	| proc_statements
+		{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), NULL); }
+	| proc_statements excp_hndl_statements
+		{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), make_list ($2)); }
+	;
 
-proc_statements	: proc_block
-		| proc_statements proc_block
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
+proc_statements
+	: proc_block
+	| proc_statements proc_block
+		{ $$ = make_node (nod_list, 2, $1, $2); }
+	;
 
-proc_statement	: stmt_start_line stmt_start_column simple_proc_statement ';'
-			{
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
-			}
-		| stmt_start_line stmt_start_column complex_proc_statement
-			{
-				$$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3);
-			}
-		;
+proc_statement
+	: stmt_start_line stmt_start_column simple_proc_statement ';'
+		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3); }
+	| stmt_start_line stmt_start_column complex_proc_statement
+		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3); }
+	;
 
-stmt_start_line :
-		{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
+stmt_start_line
+	: /* nothing */	{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
+	;
 
-stmt_start_column :
+stmt_start_column
+	: // nothing
 		{
 			const USHORT column = (lex.last_token_bk - lex.line_start_bk + 1);
 			$$ = (dsql_nod*) (IPTR) column;
 		}
+	;
 
-simple_proc_statement	: assignment
-		| insert
-		| merge
-		| update
-		| update_or_insert
-		| delete
-		| singleton_select
-		| exec_procedure
-		| exec_sql
-			{ $$ = makeClassNode($1); }
-		| exec_into
-			{ $$ = makeClassNode($1); }
-		| exec_function
-		| excp_statement
-			{ $$ = makeClassNode($1); }
-		| raise_statement
-			{ $$ = makeClassNode($1); }
-		| post_event
-		| cursor_statement
-		| breakleave
-		| continue
-		| SUSPEND
-			{ $$ = makeClassNode(newNode<SuspendNode>()); }
-		| EXIT
-			{ $$ = makeClassNode(newNode<ExitNode>()); }
-		| RETURN value
-			{ $$ = makeClassNode(newNode<ReturnNode>($2)); }
-		;
+simple_proc_statement
+	: assignment
+	| insert
+	| merge
+	| update
+	| update_or_insert
+	| delete
+	| singleton_select
+	| exec_procedure
+	| exec_sql			{ $$ = makeClassNode($1); }
+	| exec_into			{ $$ = makeClassNode($1); }
+	| exec_function
+	| excp_statement	{ $$ = makeClassNode($1); }
+	| raise_statement	{ $$ = makeClassNode($1); }
+	| post_event
+	| cursor_statement
+	| breakleave
+	| continue
+	| SUSPEND			{ $$ = makeClassNode(newNode<SuspendNode>()); }
+	| EXIT				{ $$ = makeClassNode(newNode<ExitNode>()); }
+	| RETURN value		{ $$ = makeClassNode(newNode<ReturnNode>($2)); }
+	;
 
 complex_proc_statement
-	: in_autonomous_transaction
-		{ $$ = makeClassNode($1); }
-	| if_then_else
-		{ $$ = makeClassNode($1); }
+	: in_autonomous_transaction		{ $$ = makeClassNode($1); }
+	| if_then_else					{ $$ = makeClassNode($1); }
 	| while
 	| for_select
-	| for_exec_into
-		{ $$ = makeClassNode($1); }
+	| for_exec_into					{ $$ = makeClassNode($1); }
 	;
 
 in_autonomous_transaction
@@ -2396,8 +2390,7 @@ excp_statement
 	;
 
 raise_statement
-	: EXCEPTION
-		{ $$ = newNode<ExceptionNode>(); }
+	: EXCEPTION		{ $$ = newNode<ExceptionNode>(); }
 	;
 
 for_select
@@ -2574,27 +2567,26 @@ singleton_select
 		}
 	;
 
-variable	: ':' symbol_variable_name
-			{ $$ = make_node (nod_var_name, (int) e_vrn_count, $2); }
-		;
+variable
+	: ':' symbol_variable_name	{ $$ = make_node (nod_var_name, (int) e_vrn_count, $2); }
+	;
 
-variable_list	: variable
- 		| column_name
-		| variable_list ',' column_name
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		| variable_list ',' variable
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+variable_list
+	: variable
+	| column_name
+	| variable_list ',' column_name		{ $$ = make_node (nod_list, 2, $1, $3); }
+	| variable_list ',' variable		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-while		: label_opt WHILE '(' search_condition ')' DO proc_block
-			{ $$ = make_node (nod_while, (int) e_while_count, $4, $7, $1); }
-		;
+while
+	: label_opt WHILE '(' search_condition ')' DO proc_block
+		{ $$ = make_node (nod_while, (int) e_while_count, $4, $7, $1); }
+	;
 
-label_opt	: symbol_label_name ':'
-			{ $$ = make_node (nod_label, (int) e_label_count, $1, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+label_opt
+	: /* nothing */				{ $$ = NULL; }
+	| symbol_label_name ':'		{ $$ = make_node (nod_label, (int) e_label_count, $1, NULL); }
+	;
 
 breakleave
 	: KW_BREAK
@@ -2620,38 +2612,37 @@ continue
 		}
 	;
 
-cursor_def	: AS CURSOR symbol_cursor_name
-			{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_FOR,
-				(int) e_cur_count, $3, NULL, NULL, NULL, NULL); }
-		|
-			{ $$ = NULL; }
-		;
-
-excp_hndl_statements	: excp_hndl_statement
-		| excp_hndl_statements excp_hndl_statement
-			{ $$ = make_node (nod_list, 2, $1, $2); }
-		;
-
-excp_hndl_statement	: WHEN errors DO proc_block
-			{ $$ = make_node (nod_on_error, (int) e_err_count, make_list ($2), $4); }
-		;
-
-errors	: err
-	| errors ',' err
-		{ $$ = make_node (nod_list, 2, $1, $3); }
+cursor_def
+	: // nothing
+		{ $$ = NULL; }
+	| AS CURSOR symbol_cursor_name
+		{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_FOR,
+			(int) e_cur_count, $3, NULL, NULL, NULL, NULL); }
 	;
 
-err	: SQLCODE signed_short_integer
-		{ $$ = make_node (nod_sqlcode, 1, (dsql_nod*)(IPTR) $2); }
-	| GDSCODE symbol_gdscode_name
-		{ $$ = make_node (nod_gdscode, 1, $2); }
-	| EXCEPTION symbol_exception_name
-		{ $$ = make_node (nod_exception, 1, $2); }
-	| ANY
-		{ $$ = make_node (nod_default, 1, NULL); }
+excp_hndl_statements
+	: excp_hndl_statement
+	| excp_hndl_statements excp_hndl_statement	{ $$ = make_node (nod_list, 2, $1, $2); }
 	;
 
-cursor_statement	: open_cursor
+excp_hndl_statement
+	: WHEN errors DO proc_block
+		{ $$ = make_node (nod_on_error, (int) e_err_count, make_list ($2), $4); }
+	;
+
+errors
+	: err
+	| errors ',' err	{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
+
+err	: SQLCODE signed_short_integer		{ $$ = make_node (nod_sqlcode, 1, (dsql_nod*)(IPTR) $2); }
+	| GDSCODE symbol_gdscode_name		{ $$ = make_node (nod_gdscode, 1, $2); }
+	| EXCEPTION symbol_exception_name	{ $$ = make_node (nod_exception, 1, $2); }
+	| ANY								{ $$ = make_node (nod_default, 1, NULL); }
+	;
+
+cursor_statement
+	: open_cursor
 	| fetch_cursor
 	| close_cursor
 	;
@@ -2711,21 +2702,17 @@ exec_procedure
 		{ $$ = makeClassNode(newNode<ExecProcedureNode>(QualifiedName(toName($5), toName($3)), $6, $7)); }
 	;
 
-proc_inputs	: value_list
-			{ $$ = make_list ($1); }
-		| '(' value_list ')'
-			{ $$ = make_list ($2); }
-		|
-			{ $$ = NULL; }
-		;
+proc_inputs
+	: /* nothing */			{ $$ = NULL; }
+	| value_list			{ $$ = make_list ($1); }
+	| '(' value_list ')'	{ $$ = make_list ($2); }
+	;
 
-proc_outputs_opt	: RETURNING_VALUES variable_list
-			{ $$ = make_list ($2); }
-		| RETURNING_VALUES '(' variable_list  ')'
-			{ $$ = make_list ($3); }
-		|
-			{ $$ = NULL; }
-		;
+proc_outputs_opt
+	: /* nothing */								{ $$ = NULL; }
+	| RETURNING_VALUES variable_list			{ $$ = make_list ($2); }
+	| RETURNING_VALUES '(' variable_list ')'	{ $$ = make_list ($3); }
+	;
 
 // EXECUTE BLOCK
 
@@ -2796,46 +2783,48 @@ alter_view_clause
 
 // these rules will capture the input string for storage in metadata
 
-begin_string	:
-			{ lex.beginnings.push(lex_position()); }
-		;
-/*
-end_string	:
-			{
-				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start,
-					(lex_position() == lex.end) ? lex_position() - start : lex.last_token - start);
-			}
-		;
-*/
-begin_trigger	:
-			{ lex.beginnings.push(lex.last_token); }
-		;
-
-end_trigger	:
-			{
-				const TEXT* start = lex.beginnings.pop();
-				string str;
-				transformString(start, lex_position() - start, str);
-				$$ = MAKE_string(str.c_str(), str.length());
-			}
-		;
-
-end_default	:
-			{
-				const TEXT* start = lex.beginnings.pop();
-				$$ = (dsql_nod*) MAKE_string(start,
-					(yychar <= 0 ? lex_position() : lex.last_token) - start);
-			}
-		;
-
-check_opt
-	:
-		{ $$ = false; }
-	| WITH CHECK OPTION
-		{ $$ = true; }
+begin_string
+	: /* nothing */		{ lex.beginnings.push(lex_position()); }
 	;
 
+/*
+end_string
+	:
+		{
+			const TEXT* start = lex.beginnings.pop();
+			$$ = (dsql_nod*) MAKE_string(start,
+				(lex_position() == lex.end) ? lex_position() - start : lex.last_token - start);
+		}
+	;
+*/
+
+begin_trigger
+	: /* nothing */		{ lex.beginnings.push(lex.last_token); }
+	;
+
+end_trigger
+	: // nothing
+		{
+			const TEXT* start = lex.beginnings.pop();
+			string str;
+			transformString(start, lex_position() - start, str);
+			$$ = MAKE_string(str.c_str(), str.length());
+		}
+	;
+
+end_default
+	: // nothing
+		{
+			const TEXT* start = lex.beginnings.pop();
+			$$ = (dsql_nod*) MAKE_string(start,
+				(yychar <= 0 ? lex_position() : lex.last_token) - start);
+		}
+	;
+
+check_opt
+	: /* nothing */			{ $$ = false; }
+	| WITH CHECK OPTION		{ $$ = true; }
+	;
 
 
 // CREATE TRIGGER
@@ -3224,61 +3213,62 @@ alter_column_name  : keyword_or_column
 // below are reserved words that could be used as column identifiers
 // in the previous versions
 
-keyword_or_column	: valid_symbol_name
-		| ADMIN					// added in IB 5.0
-		| COLUMN				// added in IB 6.0
-		| EXTRACT
-		| YEAR
-		| MONTH
-		| DAY
-		| HOUR
-		| MINUTE
-		| SECOND
-		| TIME
-		| TIMESTAMP
-		| CURRENT_DATE
-		| CURRENT_TIME
-		| CURRENT_TIMESTAMP
-		| CURRENT_USER			// added in FB 1.0
-		| CURRENT_ROLE
-		| RECREATE
-		| CURRENT_CONNECTION	// added in FB 1.5
-		| CURRENT_TRANSACTION
-		| BIGINT
-		| CASE
-		| RELEASE
-		| ROW_COUNT
-		| SAVEPOINT
-		| OPEN					// added in FB 2.0
-		| CLOSE
-		| FETCH
-		| ROWS
-		| USING
-		| CROSS
-		| BIT_LENGTH
-		| BOTH
-		| CHAR_LENGTH
-		| CHARACTER_LENGTH
-		| COMMENT
-		| LEADING
-		| KW_LOWER
-		| OCTET_LENGTH
-		| TRAILING
-		| TRIM
-		| CONNECT				// added in FB 2.1
-		| DISCONNECT
-		| GLOBAL
-		| INSENSITIVE
-		| RECURSIVE
-		| SENSITIVE
-		| START
-		| SIMILAR				// added in FB 2.5
-		| OVER					// added in FB 3.0
-		| SCROLL
-		| RETURN
-		| DETERMINISTIC
-		| SQLSTATE
-		;
+keyword_or_column
+	: valid_symbol_name
+	| ADMIN					// added in IB 5.0
+	| COLUMN				// added in IB 6.0
+	| EXTRACT
+	| YEAR
+	| MONTH
+	| DAY
+	| HOUR
+	| MINUTE
+	| SECOND
+	| TIME
+	| TIMESTAMP
+	| CURRENT_DATE
+	| CURRENT_TIME
+	| CURRENT_TIMESTAMP
+	| CURRENT_USER			// added in FB 1.0
+	| CURRENT_ROLE
+	| RECREATE
+	| CURRENT_CONNECTION	// added in FB 1.5
+	| CURRENT_TRANSACTION
+	| BIGINT
+	| CASE
+	| RELEASE
+	| ROW_COUNT
+	| SAVEPOINT
+	| OPEN					// added in FB 2.0
+	| CLOSE
+	| FETCH
+	| ROWS
+	| USING
+	| CROSS
+	| BIT_LENGTH
+	| BOTH
+	| CHAR_LENGTH
+	| CHARACTER_LENGTH
+	| COMMENT
+	| LEADING
+	| KW_LOWER
+	| OCTET_LENGTH
+	| TRAILING
+	| TRIM
+	| CONNECT				// added in FB 2.1
+	| DISCONNECT
+	| GLOBAL
+	| INSENSITIVE
+	| RECURSIVE
+	| SENSITIVE
+	| START
+	| SIMILAR				// added in FB 2.5
+	| OVER					// added in FB 3.0
+	| SCROLL
+	| RETURN
+	| DETERMINISTIC
+	| SQLSTATE
+	;
 
 col_opt	: ALTER
 			{ $$ = NULL; }
