@@ -98,6 +98,10 @@
 #endif
 
 #ifdef DEV_BUILD
+#define VALIDATE_LOCK_TABLE
+#endif
+
+#ifdef DEV_BUILD
 #define ASSERT_ACQUIRED fb_assert(sh_mem_header->lhb_active_owner)
 #ifdef HAVE_OBJECT_MAP
 #define LOCK_DEBUG_REMAP
@@ -1533,7 +1537,6 @@ void LockManager::blocking_action_thread()
 }
 
 
-#ifdef DEV_BUILD
 void LockManager::bug_assert(const TEXT* string, ULONG line)
 {
 /**************************************
@@ -1557,7 +1560,6 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 
 	bug(NULL, buffer);	// Never returns
 }
-#endif
 
 
 void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
@@ -1978,7 +1980,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		// If the blocking queue is not empty, then the owner still has some
 		// AST's to process (or lock reposts).
 		// hvlad: also lock maybe just granted to owner and blocked owners have no
-		// time to send blocking ATS
+		// time to send blocking AST
 		// Remember this fact because they still might be part of a deadlock.
 
 		if (owner->own_flags & (OWN_signaled | OWN_wakeup) || !SRQ_EMPTY((owner->own_blocks)) ||
@@ -3305,8 +3307,6 @@ bool LockManager::signal_owner(Database* database, own* blocking_owner, SRQ_PTR 
 }
 
 
-#ifdef VALIDATE_LOCK_TABLE
-
 const USHORT EXPECT_inuse = 0;
 const USHORT EXPECT_freed = 1;
 
@@ -3475,7 +3475,7 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 	const lbl* lock = (lbl*) SRQ_ABS_PTR(lock_ptr);
 
 	if (freed == EXPECT_freed)
-		CHECK(lock->lbl_type == type_null)
+		CHECK(lock->lbl_type == type_null);
 	else
 		CHECK(lock->lbl_type == type_lbl);
 
@@ -3556,8 +3556,9 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		direct_counts[request->lrq_state]++;
 	}
 
-	if ((freed == EXPECT_inuse) && (lrq_ptr != 0))
+	if ((freed == EXPECT_inuse) && (lrq_ptr != 0)) {
 		CHECK(found == 1);		// request is in lock's queue
+	}
 
 
 	if (freed == EXPECT_inuse)
@@ -3599,7 +3600,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 
 	CHECK(owner->own_type == type_own);
 	if (freed == EXPECT_freed)
-		CHECK(owner->own_owner_type == 0)
+		CHECK(owner->own_owner_type == 0);
 	else {
 		CHECK(owner->own_owner_type <= 2);
 	}
@@ -3748,7 +3749,7 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
 	const lrq* const request = (lrq*) SRQ_ABS_PTR(lrq_ptr);
 
 	if (freed == EXPECT_freed)
-		CHECK(request->lrq_type == type_null)
+		CHECK(request->lrq_type == type_null);
 	else
 		CHECK(request->lrq_type == type_lrq);
 
@@ -3762,8 +3763,9 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
 	CHECK(!(request->lrq_flags & (LRQ_converting | LRQ_timed_out)));
 
 	// Once a request is rejected, it CAN'T be pending any longer
-	if (request->lrq_flags & LRQ_rejected)
+	if (request->lrq_flags & LRQ_rejected) {
 		CHECK(!(request->lrq_flags & LRQ_pending));
+	}
 
 	// Can't both be scanned & marked for deadlock walk
 	CHECK((request->lrq_flags & (LRQ_deadlock | LRQ_scanned)) != (LRQ_deadlock | LRQ_scanned));
@@ -3808,8 +3810,6 @@ void LockManager::validate_shb(const SRQ_PTR shb_ptr)
 
 	validate_history(secondary_header->shb_history);
 }
-
-#endif	// VALIDATE_LOCK_TABLE
 
 
 USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lck_wait)
