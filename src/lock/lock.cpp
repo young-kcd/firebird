@@ -3593,9 +3593,9 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 		direct_counts[request->lrq_state]++;
 	}
 
-	if ((freed == EXPECT_inuse) && (lrq_ptr != 0))
+	if ((freed == EXPECT_inuse) && (lrq_ptr != 0)) {
 		CHECK(found == 1);		// request is in lock's queue
-
+	}
 
 	if (freed == EXPECT_inuse)
 	{
@@ -3799,8 +3799,9 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
 	CHECK(!(request->lrq_flags & (LRQ_converting | LRQ_timed_out)));
 
 	// Once a request is rejected, it CAN'T be pending any longer
-	if (request->lrq_flags & LRQ_rejected)
+	if (request->lrq_flags & LRQ_rejected) {
 		CHECK(!(request->lrq_flags & LRQ_pending));
+	}
 
 	// Can't both be scanned & marked for deadlock walk
 	CHECK((request->lrq_flags & (LRQ_deadlock | LRQ_scanned)) != (LRQ_deadlock | LRQ_scanned));
