@@ -1,3 +1,31 @@
+ 2011-01-31 10:32  hvlad 
+   M src/jrd/dfw.epp
+Fixed bug CORE-3095 : Client receive event's with count equal to 1 despite of how many times EVENT was POSTed in same transaction
+
+ 2011-01-30 14:31  asfernandes 
+   M src/dsql/pass1.cpp
+Backported fix for CORE-3320 - Some MERGE syntax can crash the server.
+
+ 2011-01-29 12:15  dimitr 
+   M src/jrd/met.epp
+Attempted to fix CORE-3314: Dependencies are not removed after dropping the procedure and the table it depends on in the same transaction.
+The main goal of MET_clear_cache() is to release the cached requests, not to cleanup the metadata at all (and it's not done for triggers, BTW). So setting PRC_obsolete and keeping the object cached seems safe, it will be rescanned upon the next reference.
+The fix is to be field tested by the customer.
+
+ 2011-01-29 11:30  dimitr 
+   M src/jrd/Optimizer.cpp
+These checks don't seem required for the new ODS 11 optimizer logic. But they may cause bad effects, see the second example in CORE-3312: Sub-optimal join plan when the slave table depends on the master one via the OR predicate.
+Let's remove them and see whether any regressions arise.
+
+ 2011-01-28 16:52  alexpeshkoff 
+   M configure.in
+   M src/remote/inet.cpp
+Fixed CORE-3194: Number of connections to linux superclassic has limit equal 508
+
+ 2011-01-28 09:17  hvlad 
+   M src/jrd/trace/TraceDSQLHelpers.h
+Fixed bug CORE-3315 : Audit plugin records a sencond *FAILED* EXECUTE_STATEMENT_FINISH after a "normal" one
+
  2011-01-20 07:00  dimitr 
    M src/jrd/Optimizer.cpp
 Fixed CORE-3312: Sub-optimal join plan when the slave table depends on the master one via the OR predicate.
