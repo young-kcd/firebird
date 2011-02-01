@@ -1574,7 +1574,6 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 
 	bug(NULL, buffer);	// Never returns
 }
-//#endif
 
 
 void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
