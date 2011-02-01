@@ -694,9 +694,9 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 	const char* string = NULL;
 
 	if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
-		string = procNode->alias.c_str();
+		string = procNode->alias.nullStr();
 	else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
-		string = relNode->alias.c_str();
+		string = relNode->alias.nullStr();
 	else if (relation_node->nod_type == nod_select_expr)
 	{
 		if (relation_node->nod_arg[e_sel_alias])
