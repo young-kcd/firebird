@@ -34,6 +34,8 @@
 #include "../yvalve/PluginManager.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/fb_pair.h"
+#include "../common/classes/rwlock.h"
+#include "../common/isc_proto.h"
 
 namespace Firebird {
 
@@ -42,7 +44,7 @@ class MasterImplementation : public StackIface<IMaster, IMaster::VERSION>
 public:
 	Status* FB_CARG getStatusInstance();
 	IPlugin* FB_CARG getPluginInterface();
-	void FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass);
+	int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass);
 };
 
 class UserStatus : public Firebird::StdIface<Firebird::BaseStatus, FB_STATUS_VERSION>
@@ -84,32 +86,59 @@ namespace {
 
 	typedef Firebird::Pair<Firebird::NonPooled<U_IPTR, FunctionPtr*> > FunctionPair;
 	GlobalPtr<GenericMap<FunctionPair> > functionMap;
+	GlobalPtr<RWLock> mapLock;
 }
 
-void FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
-													int desiredVersion,
-													void* missingFunctionClass)
+int FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
+												   int desiredVersion,
+												   void* missingFunctionClass)
 {
 	if (toUpgrade->version() >= desiredVersion)
-		return;
+		return 0;
 
-	CVirtualClass* target = (CVirtualClass*) toUpgrade;
 	FunctionPtr* newTab = NULL;
-
-	if (!functionMap->get((U_IPTR) target->vTab, newTab))
+	try
 	{
-		CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
-		newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
+		CVirtualClass* target = (CVirtualClass*) toUpgrade;
 
-		for (int i = 0; i < toUpgrade->version(); ++i)
-			newTab[i] = target->vTab[i];
-		for (int j = toUpgrade->version(); j < desiredVersion; ++j)
-			newTab[j] = miss->vTab[0];
+		{ // sync scope
+			ReadLockGuard sync(mapLock);
+			if (functionMap->get((U_IPTR) target->vTab, newTab))
+			{
+				target->vTab = newTab;
+				return 0;
+			}
+		}
 
-		functionMap->put((U_IPTR) target->vTab, newTab);
+		WriteLockGuard sync(mapLock);
+		if (!functionMap->get((U_IPTR) target->vTab, newTab))
+		{
+			CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
+			newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
+
+			for (int i = 0; i < toUpgrade->version(); ++i)
+				newTab[i] = target->vTab[i];
+			for (int j = toUpgrade->version(); j < desiredVersion; ++j)
+				newTab[j] = miss->vTab[0];
+
+			functionMap->put((U_IPTR) target->vTab, newTab);
+		}
+		target->vTab = newTab;
 	}
 
-	target->vTab = newTab;
+	catch (const Exception& ex)
+	{
+		ISC_STATUS_ARRAY s;
+		ex.stuff_exception(s);
+		iscLogStatus("upgradeInterface", s);
+		if (newTab)
+		{
+			delete[] newTab;
+		}
+		return -1;
+	}
+
+	return 0;
 }
 
 } // namespace Firebird

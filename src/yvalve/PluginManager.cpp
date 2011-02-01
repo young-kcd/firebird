@@ -649,7 +649,10 @@ namespace
 		p->owner(currentPlugin);
 		currentPlugin->addRef();
 
-		masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass);
+		if (masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass) < 0)
+		{
+			return NULL;
+		}
 		return p;
 	}
 }

@@ -74,7 +74,7 @@ public:
 
 	virtual Status* FB_CARG getStatusInstance() = 0;
 	virtual IPlugin* FB_CARG getPluginInterface() = 0;
-	virtual void FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
+	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 };
 
 } // namespace Firebird
