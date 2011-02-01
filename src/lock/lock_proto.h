@@ -110,10 +110,6 @@ const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 #define USE_BLOCKING_THREAD
 #endif
 
-#ifdef DEV_BUILD
-#define VALIDATE_LOCK_TABLE
-#endif
-
 // Lock header block -- one per lock file, lives up front
 
 struct lhb
@@ -354,17 +350,13 @@ private:
 	void blocking_action(thread_db*, SRQ_PTR, SRQ_PTR);
 	void blocking_action_thread();
 	void bug(ISC_STATUS*, const TEXT*);
-#ifdef DEV_BUILD
 	void bug_assert(const TEXT*, ULONG);
-#endif
 	bool create_owner(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 	bool create_process(ISC_STATUS*);
 	void deadlock_clear();
 	lrq* deadlock_scan(own*, lrq*);
 	lrq* deadlock_walk(lrq*, bool*);
-#ifdef DEBUG
 	void debug_delay(ULONG);
-#endif
 	lbl* find_lock(SRQ_PTR, USHORT, const UCHAR*, USHORT, USHORT*);
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
@@ -389,8 +381,7 @@ private:
 	void release_mutex();
 	void release_request(lrq*);
 	bool signal_owner(thread_db*, own*, SRQ_PTR);
-//#define VALIDATE_LOCK_TABLE
-#ifdef VALIDATE_LOCK_TABLE
+
 	void validate_history(const SRQ_PTR history_header);
 	void validate_parent(const lhb*, const SRQ_PTR);
 	void validate_lhb(const lhb*);
@@ -398,7 +389,7 @@ private:
 	void validate_owner(const SRQ_PTR, USHORT);
 	void validate_request(const SRQ_PTR, USHORT, USHORT);
 	void validate_shb(const SRQ_PTR);
-#endif
+
 	USHORT wait_for_request(thread_db*, lrq*, SSHORT);
 	bool attach_shared_file(ISC_STATUS* status);
 	void detach_shared_file(ISC_STATUS* status);
