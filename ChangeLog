@@ -1,3 +1,33 @@
+ 2011-02-01 01:27  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed the problem reported privately by Dmitry.
+
+ 2011-01-31 14:47  asfernandes 
+   M src/dsql/BlrWriter.cpp
+   M src/dsql/BlrWriter.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/pass1.cpp
+   M src/include/fb_blk.h
+Another small refactor on variables in DSQL.
+
+ 2011-01-31 14:05  alexpeshkoff 
+   M src/common/classes/RefCounted.h
+Fixed order of function calls, thanks to Dmitry Kovalenko
+
+ 2011-01-31 10:40  hvlad 
+   M src/jrd/dfw.epp
+Fixed bug CORE-3095 : Client receive event's with count equal to 1 despite of how many times EVENT was POSTed in same transaction
+
  2011-01-31 00:13  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DsqlCompilerScratch.cpp
