@@ -2813,6 +2813,7 @@ static const LPCSTR FAST_MUTEX_MAP_NAME	= "%s_FM_MAP";
 static const int DEFAULT_INTERLOCKED_SPIN_COUNT	= 0;
 static const int DEFAULT_INTERLOCKED_SPIN_COUNT_SMP	= 200;
 
+static SLONG pid = 0;
 
 typedef WINBASEAPI BOOL (WINAPI *pfnSwitchToThread) ();
 static inline BOOL switchToThread()
@@ -2904,6 +2905,7 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 #ifdef _DEBUG
 			lpSect->dwThreadId = GetCurrentThreadId();
 #endif
+			lpSect->lOwnerPID = pid;
 			unlockSharedSection(lpSect);
 			return WAIT_OBJECT_0;
 		}
@@ -2922,11 +2924,36 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		unlockSharedSection(lpSect);
 
 		// TODO actual timeout can be of any length
-		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
+		const DWORD tm = (dwMilliseconds == INFINITE) ? 5000 : 
+			((dwMilliseconds > 5000) ? 5000 : dwMilliseconds);
+		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, tm);
+
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 
-		if (dwResult != WAIT_OBJECT_0)
+		if (dwMilliseconds != INFINITE)
+			dwMilliseconds -= tm;
+
+//		if (dwResult != WAIT_OBJECT_0)
+//			return dwResult;
+
+		if (dwResult == WAIT_ABANDONED)
 			return dwResult;
+		if (dwResult == WAIT_TIMEOUT && !dwMilliseconds)
+			return dwResult;
+
+		lockSharedSection(lpSect, lpMutex->lSpinCount);
+		if (lpSect->lOwnerPID > 0 && !lpSect->lAvailable)
+		{
+			if (!ISC_check_process_existence(lpSect->lOwnerPID))
+			{
+#ifdef DEBUG
+				gds__log("enterFastMutex: dead process detected, pid = %d", lpSect->lOwnerPID);
+#endif
+				lpSect->lOwnerPID = 0;
+				lpSect->lAvailable++;
+			}
+		}
+		unlockSharedSection(lpSect);
 	}
 }
 
@@ -2944,6 +2971,7 @@ static bool leaveFastMutex(FAST_MUTEX* lpMutex)
 	lpSect->lAvailable++;
 	if (lpSect->lThreadsWaiting)
 		SetEvent(lpMutex->hEvent);
+	lpSect->lOwnerPID = -pid;
 	unlockSharedSection(lpSect);
 
 	return true;
@@ -2970,6 +2998,9 @@ static inline void setupMutex(FAST_MUTEX* lpMutex)
 static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAttributes,
 								BOOL bInitialState, LPCSTR lpName)
 {
+	if (pid == 0)
+		pid = GetCurrentProcessId();
+
 	LPCSTR name = lpName;
 
 	if (strlen(lpName) + strlen(FAST_MUTEX_EVT_NAME) - 2 >= MAXPATHLEN)
@@ -3018,6 +3049,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 					lpMutex->lpSharedInfo->lSpinLock = 0;
 					lpMutex->lpSharedInfo->lThreadsWaiting = 0;
 					lpMutex->lpSharedInfo->lAvailable = bInitialState ? 0 : 1;
+					lpMutex->lpSharedInfo->lOwnerPID = bInitialState ? pid : 0;
 					InterlockedExchange(FIX_TYPE(&lpMutex->lpSharedInfo->fInitialized), 1);
 				}
 				else

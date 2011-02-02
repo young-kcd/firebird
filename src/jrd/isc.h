@@ -122,6 +122,7 @@ struct FAST_MUTEX_SHARED_SECTION
 	SLONG   lSpinLock;
 	SLONG   lThreadsWaiting;
 	SLONG   lAvailable;
+	SLONG	lOwnerPID;
 #ifdef _DEBUG
 	DWORD  dwThreadId;
 #endif
