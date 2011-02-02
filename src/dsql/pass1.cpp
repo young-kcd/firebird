@@ -8144,11 +8144,19 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 
 	dsql_nod* node = MAKE_node(nod_simple_case, 3);
 
-	// build case_operand node
-	node->nod_arg[e_simple_case_case_operand] =
-		PASS1_node(request, input->nod_arg[0], proc_flag);
-
 	dsql_nod* list = input->nod_arg[1];
+
+	// build case_operand node
+	{ // scope block
+		DsqlNodStack stack;
+		dsql_nod** ptr = list->nod_arg;
+		for (const dsql_nod* const* const end = ptr + list->nod_count;
+			ptr < end; ptr += 2)
+		{
+			pass1_put_args_on_stack(request, input->nod_arg[0], stack, proc_flag);
+		}
+		node->nod_arg[e_simple_case_case_operands] = MAKE_list(stack);
+	} // end scope block
 
 	// build when_operand list
 	{ // scope block
@@ -8176,7 +8184,7 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 	} // end scope block
 
 	// Check if there is a parameter in the case/when operand list
-	bool setParameters = (node->nod_arg[e_simple_case_case_operand]->nod_type == nod_parameter);
+	bool setParameters = (input->nod_arg[0]->nod_type == nod_parameter);
 	if (!setParameters)
 	{
 		list = node->nod_arg[e_simple_case_when_operands];
@@ -8201,7 +8209,7 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 
 		{ // scope block
 			int i = 0;
-			node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
+			node1->nod_arg[i++] = input->nod_arg[0];
 			dsql_nod** ptr = list->nod_arg;
 			for (const dsql_nod* const* const end = ptr + list->nod_count;
 				ptr < end; ++ptr, ++i)
@@ -8209,8 +8217,16 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input, bool pro
 				node1->nod_arg[i] = *ptr;
 			}
 			MAKE_desc_from_list(request, &node1->nod_desc, node1, NULL, "CASE");
-			// Set parameter describe information
-			set_parameter_type(request, node->nod_arg[e_simple_case_case_operand], node1, false);
+		} // end scope block
+
+		{ // scope block
+			dsql_nod* simple_case = node->nod_arg[e_simple_case_case_operands];
+			dsql_nod** ptr = simple_case->nod_arg;
+			for (const dsql_nod* const* const end = ptr + simple_case->nod_count;
+				ptr < end; ptr++)
+			{
+				set_parameter_type(request, *ptr, node1, false);
+			}
 		} // end scope block
 
 		{ // scope block

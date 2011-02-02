@@ -970,7 +970,7 @@ enum node_args {
 	// CASE <case_operand> {WHEN <when_operand> THEN <when_result>}.. [ELSE <else_result>] END
 	// Node-constants for after pass1
 
-	e_simple_case_case_operand = 0,	// 1 value
+	e_simple_case_case_operands = 0,// 1 value
 	e_simple_case_when_operands,	// list
 	e_simple_case_results,			// list including else_result
 

@@ -2511,17 +2511,19 @@ static void gen_simple_case( dsql_req* request, const dsql_nod* node)
 	stuff(request, blr_cast);
 	gen_descriptor(request, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
+	dsql_nod* case_list = node->nod_arg[e_simple_case_case_operands];
 	dsql_nod* when_list = node->nod_arg[e_simple_case_when_operands];
 	dsql_nod* results_list = node->nod_arg[e_simple_case_results];
 
+	dsql_nod* const* cptr = case_list->nod_arg;
 	dsql_nod* const* wptr = when_list->nod_arg;
 	dsql_nod* const* rptr = results_list->nod_arg;
 	for (const dsql_nod* const* const end = wptr + count; wptr < end;
-		wptr++, rptr++)
+		wptr++, rptr++, cptr++)
 	{
 		stuff(request, blr_value_if);
 		stuff(request, blr_eql);
-		GEN_expr(request, node->nod_arg[e_simple_case_case_operand]);
+		GEN_expr(request, *cptr);
 		GEN_expr(request, *wptr);
 		GEN_expr(request, *rptr);
 	}
