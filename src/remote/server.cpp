@@ -328,6 +328,8 @@ static Firebird::GlobalPtr<Firebird::Mutex> request_que_mutex;
 static server_req_t* request_que		= NULL;
 static server_req_t* free_requests		= NULL;
 static server_req_t* active_requests	= NULL;
+static int ports_active					= 0;	// length of active_requests
+static int ports_pending				= 0;	// length of request_que
 
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
 static srvr* servers = NULL;
@@ -995,6 +997,7 @@ static void append_request_next(server_req_t* request, server_req_t** que_inst)
 		que_inst = &(*que_inst)->req_next;
 
 	*que_inst = request;
+	ports_pending++;
 }
 
 
@@ -5168,6 +5171,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 			REMOTE_TRACE(("Dequeue request %p", request_que));
 			request_que = request->req_next;
+			ports_pending--;
 			reqQueGuard.leave();
 
 			while (request)
@@ -5192,6 +5196,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 					Firebird::MutexLockGuard queGuard(request_que_mutex);
 					request->req_next = active_requests;
 					active_requests = request;
+					ports_active++;
 				}
 
 				// Validate port.  If it looks ok, process request
@@ -5265,6 +5270,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						if (*req_ptr == request)
 						{
 							*req_ptr = request->req_next;
+							ports_active--;
 							break;
 						}
 					}
@@ -5312,6 +5318,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 							append_request_next(next, &request_que);
 							request = request_que;
 							request_que = request->req_next;
+							ports_pending--;
 						}
 						else {
 							request = NULL;
@@ -5322,8 +5329,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 		}
 		else
 		{
-			reqQueGuard.leave();
 			worker.setState(false);
+			reqQueGuard.leave();
 
 			if (Worker::isShuttingDown())
 				break;
@@ -5535,6 +5542,22 @@ void Worker::setState(const bool active)
 
 bool Worker::wakeUp()
 {
+	Firebird::MutexLockGuard reqQueGuard(request_que_mutex);
+#ifdef _DEBUG
+	int cnt = 0;
+	for (server_req_t* req = request_que; req; req = req->req_next)
+		cnt++;
+	fb_assert(cnt == ports_pending);
+
+	cnt = 0;
+	for (server_req_t* req = active_requests; req; req = req->req_next)
+		cnt++;
+	fb_assert(cnt == ports_active);
+#endif
+
+	if (!ports_pending)
+		return true;
+
 	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
 	{
@@ -5543,6 +5566,8 @@ bool Worker::wakeUp()
 		idle->m_sem.release();
 		return true;
 	}
+	if (m_cntAll >= ports_active + ports_pending)
+		return true;
 	return (m_cntAll >= MAX_THREADS);
 }
 
@@ -5599,9 +5624,12 @@ void Worker::insert(const bool active)
 
 void Worker::start(USHORT flags)
 {
-	Firebird::MutexLockGuard guard(m_mutex);
 	if (!isShuttingDown() && !wakeUp())
 	{
+		if (isShuttingDown())
+			return;
+
+		Firebird::MutexLockGuard guard(m_mutex);
 		if (gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0) == 0)
 		{
 			++m_cntAll;
