@@ -246,15 +246,13 @@ static inline SharedLatch* findSharedLatch(thread_db* tdbb, BufferDesc* bdb)
 //#define LATCH_MUTEX_RELEASE
 //
 
-const PageNumber JOURNAL_PAGE(DB_PAGE_SPACE,	-1);
-const PageNumber SHADOW_PAGE(DB_PAGE_SPACE,		-2);
-const PageNumber FREE_PAGE(DB_PAGE_SPACE,		-3);
-const PageNumber CHECKPOINT_PAGE(DB_PAGE_SPACE,	-4);
-const PageNumber MIN_PAGE_NUMBER(DB_PAGE_SPACE,	-5);
+#pragma FB_COMPILER_MESSAGE("These special values must die!")
+const PageNumber JOURNAL_PAGE(DB_PAGE_SPACE, -1);
+const PageNumber FREE_PAGE(DB_PAGE_SPACE, -2);
 
-const int PRE_SEARCH_LIMIT	= 256;
-const int PRE_EXISTS		= -1;
-const int PRE_UNKNOWN		= -2;
+const int PRE_SEARCH_LIMIT = 256;
+const int PRE_EXISTS = -1;
+const int PRE_UNKNOWN = -2;
 
 
 int CCH_down_grade_dbb(void* ast_object)
@@ -3636,7 +3634,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 	  find_page:
 
 		bcb = dbb->dbb_bcb;
-		if (page.getPageNum() >= 0)
+		if (page < FREE_PAGE)
 		{
 			// Check to see if buffer has already been assigned to page
 
@@ -3670,7 +3668,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			}
 		}
 #ifdef CACHE_WRITER
-		else if ((page == FREE_PAGE) || (page == CHECKPOINT_PAGE))
+		else if (page == FREE_PAGE)
 		{
 			// This code is only used by the background I/O threads:
 			// cache writer, cache reader and garbage collector.
@@ -3680,38 +3678,25 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
-				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
-				if (page == FREE_PAGE)
-				{
-					if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
-					{
-						continue;
-					}
-					if (bdb->bdb_flags & BDB_db_dirty)
-					{
-						//BCB_MUTEX_RELEASE;
-						return bdb;
-					}
-					if (!--walk)
-					{
-						bcb->bcb_flags &= ~BCB_free_pending;
-						break;
-					}
-				}
-				else	// if (page == CHECKPOINT_PAGE)
-				{
+				BufferDesc* const bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
 
-					if (bdb->bdb_flags & BDB_checkpoint)
-					{
-						//BCB_MUTEX_RELEASE;
-						return bdb;
-					}
+				if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
+				{
+					continue;
+				}
+				if (bdb->bdb_flags & BDB_db_dirty)
+				{
+					//BCB_MUTEX_RELEASE;
+					return bdb;
+				}
+				if (!--walk)
+				{
+					bcb->bcb_flags &= ~BCB_free_pending;
+					break;
 				}
 			}
 
-			if (page == FREE_PAGE) {
-				bcb->bcb_flags &= ~BCB_free_pending;
-			}
+			bcb->bcb_flags &= ~BCB_free_pending;
 
 			//BCB_MUTEX_RELEASE;
 			return NULL;
@@ -3732,7 +3717,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				que_inst = bcb->bcb_empty.que_forward;
 				QUE_DELETE(*que_inst);
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-				if (page.getPageNum() >= 0)
+				if (page < FREE_PAGE)
 				{
 					QUE_INSERT(*mod_que, *que_inst);
 #ifdef SUPERSERVER_V2
@@ -3767,7 +3752,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					BUGCHECK(302);	// msg 302 unexpected page change
 				}
 #ifndef SUPERSERVER
-				if (page.getPageNum() >= 0)
+				if (page < FREE_PAGE)
 				{
 					CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
 					bdb->bdb_lock->lck_logical = LCK_none;
@@ -3881,7 +3866,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			// in it's new spot, provided it's not a negative (scratch) page
 
 			//BCB_MUTEX_ACQUIRE;
-			if (bdb->bdb_page.getPageNum() >= 0) {
+			if (bdb->bdb_page < FREE_PAGE) {
 				QUE_DELETE(bdb->bdb_que);
 			}
 			QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
@@ -5283,7 +5268,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		BackupManager* bm = dbb->dbb_backup_manager;
 		const int backup_state = bm->getState();
 
-		if (bdb->bdb_page.getPageNum() >= 0)
+		if (bdb->bdb_page < FREE_PAGE)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
 			page->pag_pageno = bdb->bdb_page.getPageNum();
