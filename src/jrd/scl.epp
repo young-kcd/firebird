@@ -691,20 +691,23 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
         // If you think that an unknown role cannot be granted, think again: someone made sure
         // in DYN that SYSDBA can do almost anything, including invalid grants.
 
-        FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-            CROSS UU IN RDB$USER_PRIVILEGES
-            WITH RR.RDB$ROLE_NAME        EQ sql_role
-            AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
-            AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
-            AND (UU.RDB$USER             EQ login_name
-                 OR UU.RDB$USER          EQ "PUBLIC")
-            AND UU.RDB$USER_TYPE         EQ obj_user
-            AND UU.RDB$PRIVILEGE         EQ "M"
+		if (!(tempId.usr_flags & USR_trole))
 		{
-            if (!UU.RDB$USER.NULL)
-                found = true;
+			FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+				CROSS UU IN RDB$USER_PRIVILEGES
+				WITH RR.RDB$ROLE_NAME        EQ sql_role
+				AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
+				AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
+				AND (UU.RDB$USER             EQ login_name
+					 OR UU.RDB$USER          EQ "PUBLIC")
+				AND UU.RDB$USER_TYPE         EQ obj_user
+				AND UU.RDB$PRIVILEGE         EQ "M"
+			{
+				if (!UU.RDB$USER.NULL)
+					found = true;
+			}
+			END_FOR
 		}
-        END_FOR
 
 		if (!found && (tempId.usr_flags & USR_trole))
 		{
