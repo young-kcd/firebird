@@ -1,3 +1,23 @@
+ 2011-02-02 00:57  asfernandes 
+   M src/lock/lock.cpp
+Correction
+
+ 2011-02-02 00:54  asfernandes 
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Misc
+
+ 2011-02-01 15:19  hvlad 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Move VALIDATE_LOCK_TABLE from lock.h into lock.cpp : at allows to rebuild just lock.cpp if some need to disable validation of lock table in DEBUG build or enable validation in RELEASE build.
+
+ 2011-02-01 13:11  alexpeshkoff 
+   M src/include/Interface.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+MT safety and exceptions processing in upgradeInterface
+
  2011-02-01 01:27  asfernandes 
    M src/dsql/pass1.cpp
 Fixed the problem reported privately by Dmitry.
