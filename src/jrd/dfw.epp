@@ -5141,20 +5141,24 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 									RFR.RDB$FIELD_ID = REL.RDB$FIELD_ID;
 									RFR.RDB$FIELD_ID.NULL = FALSE;
 
-									bool notNull = (RFR.RDB$NULL_FLAG.NULL ?
-										(FLD.RDB$NULL_FLAG.NULL ? false : (bool) FLD.RDB$NULL_FLAG) :
-										(bool) RFR.RDB$NULL_FLAG);
-
-									if (notNull)
+									// If the table is being altered, check validity of NOT NULL fields.
+									if (!REL.RDB$FORMAT.NULL)
 									{
-										dsc desc;
-										desc.makeText(strlen(REL.RDB$RELATION_NAME), CS_METADATA,
-											(UCHAR*) REL.RDB$RELATION_NAME);
+										bool notNull = (RFR.RDB$NULL_FLAG.NULL ?
+											(FLD.RDB$NULL_FLAG.NULL ? false : (bool) FLD.RDB$NULL_FLAG) :
+											(bool) RFR.RDB$NULL_FLAG);
 
-										DeferredWork* work = DFW_post_work(transaction,
-											dfw_check_not_null, &desc, 0);
-										SortedArray<int>& ids = DFW_get_ids(work);
-										ids.add(RFR.RDB$FIELD_ID);
+										if (notNull)
+										{
+											dsc desc;
+											desc.makeText(strlen(REL.RDB$RELATION_NAME), CS_METADATA,
+												(UCHAR*) REL.RDB$RELATION_NAME);
+
+											DeferredWork* work = DFW_post_work(transaction,
+												dfw_check_not_null, &desc, 0);
+											SortedArray<int>& ids = DFW_get_ids(work);
+											ids.add(RFR.RDB$FIELD_ID);
+										}
 									}
 								}
 
