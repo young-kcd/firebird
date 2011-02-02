@@ -2090,6 +2090,16 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		return NULL;
 	}
 
+	if (!init_flag)
+	{
+		if ((GetLastError() != ERROR_ALREADY_EXISTS) ||	SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
+		{
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			goto retry;
+		}
+	}
+
 /* Create a file mapping object that will be used to make remapping possible.
    The current length of real mapped file and its name are saved in it. */
 
@@ -2212,12 +2222,19 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	if (init_flag)
 	{
 		FlushViewOfFile(address, 0);
-		SetEvent(event_handle);
+
+		DWORD err = 0;
 		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
 			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
-			error(status_vector, "SetFilePointer", GetLastError());
+			err = GetLastError();
+		}
+
+		SetEvent(event_handle);
+		if (err)
+		{
+			error(status_vector, "SetFilePointer", err);
 			return NULL;
 		}
 	}
