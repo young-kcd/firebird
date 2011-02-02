@@ -111,6 +111,7 @@ int FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
 		}
 
 		WriteLockGuard sync(mapLock);
+
 		if (!functionMap->get((U_IPTR) target->vTab, newTab))
 		{
 			CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
@@ -123,9 +124,9 @@ int FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
 
 			functionMap->put((U_IPTR) target->vTab, newTab);
 		}
+
 		target->vTab = newTab;
 	}
-
 	catch (const Exception& ex)
 	{
 		ISC_STATUS_ARRAY s;

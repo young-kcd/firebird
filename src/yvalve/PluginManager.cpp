@@ -653,6 +653,7 @@ namespace
 		{
 			return NULL;
 		}
+
 		return p;
 	}
 }
