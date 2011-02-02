@@ -252,6 +252,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 		p = results;
 		bool ignoreTruncation = false;
+		bool dirty = false;
 		noData = true;
 
 		while (*p != isc_info_end)
@@ -273,6 +274,7 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 						fprintf(stdout, "%s", p);
 						p[l] = ch;
 						p += l;
+						dirty = true;
 					}
 					noData = (l == 0);
 				}
@@ -285,6 +287,11 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 
 			case isc_info_svc_timeout:
 				noData = false;
+				if (dirty)
+				{
+					fflush(stdout);
+					dirty = false;
+				}
 				break;
 
 			default:
