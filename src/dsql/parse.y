@@ -4464,7 +4464,7 @@ substring_function	: SUBSTRING '(' value FROM value string_length_opt ')'
 string_length_opt	: FOR value
 			{ $$ = $2; }
 		|
-			{ $$ = MAKE_const_slong (SHRT_POS_MAX); }
+			{ $$ = MAKE_const_slong (LONG_POS_MAX); }
 		;
 
 trim_function	: TRIM '(' trim_specification value FROM value ')'
