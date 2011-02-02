@@ -5827,7 +5827,7 @@ substring_function
 	;
 
 string_length_opt
-	:			{ $$ = MAKE_const_slong(SHRT_POS_MAX); }
+	:			{ $$ = MAKE_const_slong(LONG_POS_MAX); }
 	| FOR value { $$ = $2; }
 	;
 
