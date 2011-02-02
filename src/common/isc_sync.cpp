@@ -2232,7 +2232,7 @@ bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 		SetEvent(event_handle);
 		if (err)
 		{
-			error(statusVector, "SetFilePointer", GetLastError());
+			error(statusVector, "SetFilePointer", err);
 			return false;
 		}
 	}
