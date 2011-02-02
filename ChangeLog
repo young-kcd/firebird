@@ -1,3 +1,16 @@
+ 2011-02-01 15:17  hvlad 
+   M src/lock/lock.cpp
+Warnings
+
+ 2011-02-01 15:05  hvlad 
+   M src/lock/lock.cpp
+Misc
+
+ 2011-02-01 15:01  hvlad 
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Move VALIDATE_LOCK_TABLE from lock.h into lock.cpp : at allows to rebuild just lock.cpp if some need to disable validation of lock table in DEBUG build or enable validation in RELEASE build.
+
  2011-01-31 10:32  hvlad 
    M src/jrd/dfw.epp
 Fixed bug CORE-3095 : Client receive event's with count equal to 1 despite of how many times EVENT was POSTed in same transaction
