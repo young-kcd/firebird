@@ -455,6 +455,9 @@ void AvgAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
 
+	if (desc->isNull())
+		return;
+
 	if (dialect1)
 	{
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) && !DTYPE_IS_TEXT(desc->dsc_dtype))
@@ -871,6 +874,9 @@ void SumAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, dsqlArg);
 	desc->setNullable(true);
+
+	if (desc->isNull())
+		return;
 
 	if (dialect1)
 	{
