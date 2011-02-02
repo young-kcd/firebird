@@ -2089,6 +2089,16 @@ bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 		return false;
 	}
 
+	if (!init_flag)
+	{
+		if ((GetLastError() != ERROR_ALREADY_EXISTS) ||	SetFilePointer(file_handle, 0, NULL, FILE_END) == 0)
+		{
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			goto retry;
+		}
+	}
+
 	// Create a file mapping object that will be used to make remapping possible.
 	// The current length of real mapped file and its name are saved in it.
 
@@ -2210,10 +2220,17 @@ bool SharedMemoryBase::mapFile(Arg::StatusVector& statusVector,
 	if (init_flag)
 	{
 		FlushViewOfFile(address, 0);
-		SetEvent(event_handle);
+
+		DWORD err = 0;
 		if (SetFilePointer(sh_mem_handle, length, NULL, FILE_BEGIN) == INVALID_SET_FILE_POINTER ||
 			!SetEndOfFile(sh_mem_handle) ||
 			!FlushViewOfFile(address, 0))
+		{
+			err = GetLastError();
+		}
+
+		SetEvent(event_handle);
+		if (err)
 		{
 			error(statusVector, "SetFilePointer", GetLastError());
 			return false;
