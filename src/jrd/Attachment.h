@@ -157,6 +157,7 @@ public:
 	SSHORT		att_client_charset;			// user's charset specified in dpb
 	SSHORT		att_charset;				// current (client or external) attachment charset
 	Lock*		att_long_locks;				// outstanding two phased locks
+	Lock*		att_wait_lock;				// lock at which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached

@@ -4549,85 +4549,25 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_YIELD();
 	}
 
-	// Test various flags and unwind/throw if required.
-	// But do that only if we're neither in the verb cleanup state
-	// nor currently detaching, as these actions should never be interrupted.
-
-	if (!(tdbb->tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching)))
+	try
 	{
-		// If database has been shutdown then get out
+		tdbb->checkCancelState(punt);
+	}
+	catch (const status_exception& ex)
+	{
+		tdbb->tdbb_flags |= TDBB_sys_error;
 
-		Jrd::Attachment* const attachment = tdbb->getAttachment();
-		jrd_tra* const transaction = tdbb->getTransaction();
-		jrd_req* const request = tdbb->getRequest();
+		const Arg::StatusVector status(ex.value());
 
-		try
+		if (punt)
 		{
-			if (attachment)
-			{
-				if (attachment->att_flags & ATT_shutdown)
-				{
-					if (dbb->dbb_ast_flags & DBB_shutdown)
-					{
-						status_exception::raise(Arg::Gds(isc_shutdown) <<
-												Arg::Str(attachment->att_filename));
-					}
-					else if (!(tdbb->tdbb_flags & TDBB_shutdown_manager))
-					{
-						status_exception::raise(Arg::Gds(isc_att_shutdown));
-					}
-				}
-
-				// If a cancel has been raised, defer its acknowledgement
-				// when executing in the context of an internal request or
-				// the system transaction.
-
-				if ((attachment->att_flags & ATT_cancel_raise) &&
-					!(attachment->att_flags & ATT_cancel_disable))
-				{
-					if ((!request ||
-						 !(request->getStatement()->flags &
-						 	(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER))) &&
-						(!transaction || !(transaction->tra_flags & TRA_system)))
-					{
-						attachment->att_flags &= ~ATT_cancel_raise;
-						status_exception::raise(Arg::Gds(isc_cancelled));
-					}
-				}
-			}
-
-			// Handle request cancellation
-
-			if (transaction && (transaction->tra_flags & TRA_cancel_request))
-			{
-				transaction->tra_flags &= ~TRA_cancel_request;
-				status_exception::raise(Arg::Gds(isc_cancelled));
-			}
-
-			// Check the thread state for already posted system errors. If any still persists,
-			// then someone tries to ignore our attempts to interrupt him. Let's insist.
-
-			if (tdbb->tdbb_flags & TDBB_sys_error)
-			{
-				status_exception::raise(Arg::Gds(isc_cancelled));
-			}
+			CCH_unwind(tdbb, false);
+			ERR_post(status);
 		}
-		catch (const status_exception& ex)
+		else
 		{
-			tdbb->tdbb_flags |= TDBB_sys_error;
-
-			const Arg::StatusVector status(ex.value());
-
-			if (punt)
-			{
-				CCH_unwind(tdbb, false);
-				ERR_post(status);
-			}
-			else
-			{
-				ERR_build_status(tdbb->tdbb_status_vector, status);
-				return true;
-			}
+			ERR_build_status(tdbb->tdbb_status_vector, status);
+			return true;
 		}
 	}
 
@@ -6161,6 +6101,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
 			if ((transaction->tra_flags & TRA_prepared) || (dbb->dbb_ast_flags & DBB_shutdown) ||
 				(att_flags & ATT_shutdown))
 			{
+				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, true);
 				TRA_release_transaction(tdbb, transaction);
 			}
 			else if (force_flag)
@@ -6639,6 +6580,83 @@ SSHORT thread_db::getCharSet() const
 		return request->charSetId;
 
 	return attachment->att_charset;
+}
+
+bool thread_db::checkCancelState(bool punt)
+{
+	// Test various flags and unwind/throw if required.
+	// But do that only if we're neither in the verb cleanup state
+	// nor currently detaching, as these actions should never be interrupted.
+	// Also don't break wait in LM if it is not safe.
+
+	if (tdbb_flags & (TDBB_verb_cleanup | TDBB_detaching | TDBB_wait_cancel_disable))
+		return false;
+
+	if (attachment)
+	{
+		if (attachment->att_flags & ATT_shutdown)
+		{
+			if (database->dbb_ast_flags & DBB_shutdown)
+			{
+				if (!punt)
+					return true;
+
+				status_exception::raise(Arg::Gds(isc_shutdown) <<
+										Arg::Str(attachment->att_filename));
+			}
+			else if (!(tdbb_flags & TDBB_shutdown_manager))
+			{
+				if (!punt)
+					return true;
+
+				status_exception::raise(Arg::Gds(isc_att_shutdown));
+			}
+		}
+
+		// If a cancel has been raised, defer its acknowledgement
+		// when executing in the context of an internal request or
+		// the system transaction.
+
+		if ((attachment->att_flags & ATT_cancel_raise) &&
+			!(attachment->att_flags & ATT_cancel_disable))
+		{
+			if ((!request ||
+					!(request->getStatement()->flags &
+					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER))) &&
+				(!transaction || !(transaction->tra_flags & TRA_system)))
+			{
+				if (!punt)
+					return true;
+
+				attachment->att_flags &= ~ATT_cancel_raise;
+				status_exception::raise(Arg::Gds(isc_cancelled));
+			}
+		}
+	}
+
+	// Handle request cancellation
+
+	if (transaction && (transaction->tra_flags & TRA_cancel_request))
+	{
+		if (!punt)
+			return true;
+
+		transaction->tra_flags &= ~TRA_cancel_request;
+		status_exception::raise(Arg::Gds(isc_cancelled));
+	}
+
+	// Check the thread state for already posted system errors. If any still persists,
+	// then someone tries to ignore our attempts to interrupt him. Let's insist.
+
+	if (tdbb_flags & TDBB_sys_error)
+	{
+		if (!punt)
+			return true;
+
+		status_exception::raise(Arg::Gds(isc_cancelled));
+	}
+
+	return false;
 }
 
 // end thread_db methods
@@ -7172,6 +7190,7 @@ void JRD_cancel_operation(thread_db* tdbb, Jrd::Attachment* attachment, int opti
 		{
 			attachment->att_flags |= ATT_cancel_raise;
 			attachment->cancelExternalConnection(tdbb);
+			LCK_cancel_wait(attachment);
 		}
 		break;
 

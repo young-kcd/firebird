@@ -825,6 +825,38 @@ void LockManager::repost(Database* database, lock_ast_t ast, void* arg, SRQ_PTR 
 }
 
 
+bool LockManager::cancelWait(SRQ_PTR owner_offset)
+{
+/**************************************
+ *
+ *	c a n c e l W a i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wakeup waiting owner to make it check if wait should be cancelled.
+ *	As this routine could be called asyncronous, take extra care and 
+ *	don't trust the input params blindly.
+ *
+ **************************************/
+	LOCK_TRACE(("cancelWait (%ld)\n", owner_offset));
+
+	if (!owner_offset)
+		return false;
+
+	Firebird::MutexLockGuard guard(m_localMutex);
+
+	acquire_shmem(DUMMY_OWNER);
+	
+	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
+	if (owner->own_type == type_own)
+		post_wakeup(owner);
+	
+	release_shmem(DUMMY_OWNER);
+	return true;
+}
+
+
 SLONG LockManager::queryData(SRQ_PTR parent_request, const USHORT series, const USHORT aggregate)
 {
 /**************************************
@@ -1187,7 +1219,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	// the lock mutex.  In that event, lets see if there is any unfinished work
 	// left around that we need to finish up.
 
-	if (prior_active)
+	if (prior_active > 0)
 	{
 		post_history(his_active, owner_offset, prior_active, (SRQ_PTR) 0, false);
 		shb* const recover = (shb*) SRQ_ABS_PTR(sh_mem_header->lhb_secondary);
@@ -3997,8 +4029,11 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 
 		// See if we've waited beyond the lock timeout -
 		// if so we mark our own request as rejected
+		
+		// !!! this will be changed to have no dependency on thread_db !!!
+		const bool cancelled = JRD_get_thread_data()->checkCancelState(false); 
 
-		if (lck_wait < 0 && lock_timeout <= current_time)
+		if (cancelled || lck_wait < 0 && lock_timeout <= current_time)
 		{
 			// We're going to reject our lock - it's the callers responsibility
 			// to do cleanup and make sure post_pending() is called to wakeup
@@ -4006,6 +4041,7 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 			request->lrq_flags |= LRQ_rejected;
 			request->lrq_flags &= ~LRQ_pending;
 			lock->lbl_pending_lrq_count--;
+			
 			// and test - may be timeout due to missing process to deliver request
 			probe_processes();
 			release_shmem(owner_offset);

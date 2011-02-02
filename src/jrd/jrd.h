@@ -505,6 +505,8 @@ public:
 		//attStat->bumpValue(index, relation_id);
 		//dbbStat->bumpValue(index, relation_id);
 	}
+
+	bool checkCancelState(bool punt);
 };
 
 // tdbb_flags
@@ -519,6 +521,7 @@ const USHORT TDBB_sys_error				= 64;	// error shouldn't be handled by the looper
 const USHORT TDBB_verb_cleanup			= 128;	// verb cleanup is in progress
 const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page space in GTT operations
 const USHORT TDBB_detaching				= 512;	// detach is in progress
+const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
 
 
 class ThreadContextHolder

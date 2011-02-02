@@ -332,6 +332,7 @@ public:
 	bool dequeue(const SRQ_PTR);
 
 	void repost(Database*, lock_ast_t, void*, SRQ_PTR);
+	bool cancelWait(SRQ_PTR);
 
 	SLONG queryData(SRQ_PTR, const USHORT, const USHORT);
 	SLONG readData(SRQ_PTR);

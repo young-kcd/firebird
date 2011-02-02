@@ -1727,6 +1727,7 @@ static int blocking_ast_attachment(void* ast_object)
 
 		attachment->att_flags |= ATT_shutdown;
 		attachment->cancelExternalConnection(tdbb);
+		LCK_cancel_wait(attachment);
 
 		JRD_shutdown_attachments(dbb);
 
