@@ -32,6 +32,7 @@ namespace Jrd {
 }
 
 void	LCK_assert(Jrd::thread_db*, Jrd::Lock*);
+bool	LCK_cancel_wait(Jrd::Attachment*);
 bool	LCK_convert(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
 bool	LCK_convert_opt(Jrd::thread_db*, Jrd::Lock*, USHORT);
 void	LCK_downgrade(Jrd::thread_db*, Jrd::Lock*);

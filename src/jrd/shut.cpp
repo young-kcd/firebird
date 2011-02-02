@@ -563,6 +563,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 		{
 			attachment->att_flags |= ATT_shutdown;
 			attachment->cancelExternalConnection(tdbb);
+			LCK_cancel_wait(attachment);
 		}
 	}
 

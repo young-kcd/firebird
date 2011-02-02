@@ -1989,6 +1989,7 @@ static int blocking_ast_transaction(void* ast_object)
 		transaction->tra_flags |= TRA_cancel_request;
 
 		att->cancelExternalConnection(tdbb);
+		LCK_cancel_wait(att);
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op

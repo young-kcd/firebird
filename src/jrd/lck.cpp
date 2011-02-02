@@ -211,6 +211,61 @@ inline bool checkLock(const Lock* l)
 #define LCK_CHECK_LOCK(x)	true	// nothing
 #endif
 
+namespace {
+// This class is used as a guard around long waiting call into LM and have 
+// two purposes :
+//	- set and restore att_wait_lock while waiting inside the LM
+//	- set or clear and restore TDBB_wait_cancel_disable flag in dependence
+//	  of safety of cancelling lock waiting. Currently we can safely cancel
+//	  only LCK_tra locks
+
+class WaitCancelGuard
+{
+public:
+	WaitCancelGuard(thread_db* tdbb, Lock* lock, int wait) :
+	  m_tdbb(tdbb),
+	  m_save_lock(NULL)
+	{
+		Attachment* att = m_tdbb->getAttachment();
+		m_save_lock = att->att_wait_lock;
+
+		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable); 
+		m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+
+		if (!wait)
+			return;
+
+		switch (lock->lck_type)
+		{
+		case LCK_tra:
+			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
+			att->att_wait_lock = lock;
+		break;
+
+		default:
+			;
+		}
+	}
+
+	~WaitCancelGuard()
+	{
+		Attachment* att = m_tdbb->getAttachment();
+		att->att_wait_lock = m_save_lock;
+
+		if (m_cancel_disabled) 
+			m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+		else
+			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
+	}
+
+private:
+	thread_db* m_tdbb;
+	Lock* m_save_lock;
+	bool m_cancel_disabled;
+};
+
+} // namespace
+
 
 void LCK_assert(thread_db* tdbb, Lock* lock)
 {
@@ -259,6 +314,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Attachment* const old_attachment = lock->lck_attachment;
 	set_lock_attachment(lock, tdbb->getAttachment());
 
+	WaitCancelGuard guard(tdbb, lock, wait);
 	const bool result = CONVERT(tdbb, lock, level, wait);
 
 	if (!result)
@@ -270,6 +326,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		case isc_deadlock:
 		case isc_lock_conflict:
 		case isc_lock_timeout:
+			tdbb->checkCancelState(true);
 			return false;
 		case isc_lockmanerr:
 			dbb->dbb_flags |= DBB_bugcheck;
@@ -313,6 +370,27 @@ bool LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return true;
+}
+
+
+bool LCK_cancel_wait(Attachment* attachment)
+{
+/**************************************
+ *
+ *	L C K _ c a n c e l _ w a i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Try to cancel waiting of attachment inside the LM	
+ *
+ **************************************/
+	Database *dbb = attachment->att_database;
+
+	if (attachment->att_wait_lock)
+		return dbb->dbb_lock_mgr->cancelWait(attachment->att_wait_lock->lck_owner_handle);
+
+	return false;
 }
 
 
@@ -535,6 +613,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	Database* dbb = lock->lck_dbb;
     set_lock_attachment(lock, tdbb->getAttachment());
 
+	WaitCancelGuard guard(tdbb, lock, wait);
 	ENQUEUE(tdbb, lock, level, wait);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	if (!lock->lck_id)
@@ -548,6 +627,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		case isc_deadlock:
 		case isc_lock_conflict:
 		case isc_lock_timeout:
+			tdbb->checkCancelState(true);
 			return false;
 		case isc_lockmanerr:
 			dbb->dbb_flags |= DBB_bugcheck;

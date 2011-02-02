@@ -313,6 +313,7 @@ public:
 	ULONG		att_flags;					// Flags describing the state of the attachment
 	SSHORT		att_charset;				// user's charset specified in dpb
 	Lock*		att_long_locks;				// outstanding two phased locks
+	Lock*		att_wait_lock;				// lock at which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
@@ -778,6 +779,8 @@ public:
 		//attStat->bumpValue(index, relation_id);
 		//dbbStat->bumpValue(index, relation_id);
 	}
+
+	bool checkCancelState(bool punt);
 };
 
 // tdbb_flags
@@ -793,6 +796,7 @@ const USHORT TDBB_sys_error				= 128;	// error shouldn't be handled by the loope
 const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
 const USHORT TDBB_use_db_page_space		= 512;	// use database (not temporary) page space in GTT operations
 const USHORT TDBB_detaching				= 1024;	// detach is in progress
+const USHORT TDBB_wait_cancel_disable	= 2048;	// don't cancel current waiting operation
 
 
 class ThreadContextHolder
