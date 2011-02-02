@@ -108,10 +108,10 @@
 #define DEBUG_REMAP_INTERVAL 5000
 static ULONG debug_remap_count = 0;
 #endif
-#define CHECK(x)	{ if (!(x)) bug_assert ("consistency check", __LINE__); }
+#define CHECK(x)	do { if (!(x)) bug_assert ("consistency check", __LINE__); } while (false)
 #else // DEV_BUILD
 #define	ASSERT_ACQUIRED
-#define CHECK(x)
+#define CHECK(x)	do { } while (false)
 #endif // DEV_BUILD
 
 #ifdef DEBUG_LM
@@ -3485,7 +3485,7 @@ void LockManager::validate_lock(const SRQ_PTR lock_ptr, USHORT freed, const SRQ_
 
 	// The lbl_count's should never roll over to be negative
 	for (ULONG i = 0; i < FB_NELEM(lock->lbl_counts); i++)
-		CHECK(!(lock->lbl_counts[i] & 0x8000))
+		CHECK(!(lock->lbl_counts[i] & 0x8000));
 
 	// The count of pending locks should never roll over to be negative
 	CHECK(!(lock->lbl_pending_lrq_count & 0x8000));
