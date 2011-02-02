@@ -596,35 +596,38 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
         if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE)) {
             bool found = false;
 
-            jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
+			if (!(tempId.usr_flags & USR_trole))
+			{
+	            jrd_req* request = CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
-            // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
-            // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
-            // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
-            // This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
-            // If you think that an unknown role cannot be granted, think again: someone made sure
-            // in DYN that SYSDBA can do almost anything, including invalid grants.
+	            // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
+    	        // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+        	    // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
+    	       	// This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
+	            // If you think that an unknown role cannot be granted, think again: someone made sure
+        	    // in DYN that SYSDBA can do almost anything, including invalid grants.
 
-            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-                CROSS UU IN RDB$USER_PRIVILEGES
-                WITH RR.RDB$ROLE_NAME        EQ sql_role
-                AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
-                AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
-                AND (UU.RDB$USER             EQ login_name
-                     OR UU.RDB$USER          EQ "PUBLIC")
-                AND UU.RDB$USER_TYPE         EQ obj_user
-                AND UU.RDB$PRIVILEGE         EQ "M"
+            	FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+                	CROSS UU IN RDB$USER_PRIVILEGES
+	                WITH RR.RDB$ROLE_NAME        EQ sql_role
+    	            AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
+        	        AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
+            	    AND (UU.RDB$USER             EQ login_name
+                	     OR UU.RDB$USER          EQ "PUBLIC")
+	                AND UU.RDB$USER_TYPE         EQ obj_user
+    	            AND UU.RDB$PRIVILEGE         EQ "M"
 
-                if (!REQUEST (irq_verify_role_name))
-                    REQUEST (irq_verify_role_name) = request;
+        	        if (!REQUEST (irq_verify_role_name))
+            	        REQUEST (irq_verify_role_name) = request;
 
-                if (!UU.RDB$USER.NULL)
-                    found = true;
+                	if (!UU.RDB$USER.NULL)
+                    	found = true;
 
-            END_FOR;
+	            END_FOR;
 
-            if (!REQUEST (irq_verify_role_name))
-                REQUEST (irq_verify_role_name) = request;
+    	        if (!REQUEST (irq_verify_role_name))
+        	        REQUEST (irq_verify_role_name) = request;
+			}
 
 			if (!found && (tempId.usr_flags & USR_trole))
 			{
