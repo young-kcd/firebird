@@ -969,20 +969,6 @@ void INF_request_info(const jrd_req* request,
 			length = INF_convert(request->req_records_deleted, buffer_ptr);
 			break;
 
-		case isc_info_access_path:
-			buffer_ptr = buffer.getBuffer(output_length);
-			if (!OPT_access_path(request, buffer_ptr, buffer.getCount(), &length))
-			{
-				*info = isc_info_truncated;
-				return;
-			}
-			if (length > MAX_USHORT) // damn INF_put_item, it only handles USHORT lengths
-			{
-				*info = isc_info_truncated;
-				return;
-			}
-			break;
-
 		case isc_info_state:
 			if (!(request->req_flags & req_active))
 				length = INF_convert(isc_info_req_inactive, buffer_ptr);
@@ -1035,7 +1021,6 @@ void INF_request_info(const jrd_req* request,
 			}
 			break;
 
-		case isc_info_request_cost:
 		default:
 			buffer_ptr[0] = item;
 			item = isc_info_error;

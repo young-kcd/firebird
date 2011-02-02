@@ -118,16 +118,29 @@ bool BitmapTableScan::getRecord(thread_db* tdbb) const
 	return false;
 }
 
-void BitmapTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void BitmapTableScan::print(thread_db* tdbb, string& plan,
+							bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Persistent Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		printInversion(tdbb, m_inversion, plan, true, level);
+	}
+	else
+	{
+		if (!level)
+		{
+			plan += "(";
+		}
 
-	buffer.add(isc_info_rsb_relation);
-	dumpName(tdbb, m_name, buffer);
+		plan += printName(tdbb, m_name) + " INDEX (";
+		string indices;
+		printInversion(tdbb, m_inversion, indices, false, level);
+		plan += indices + ")";
 
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_indexed);
-	dumpInversion(tdbb, m_inversion, buffer);
-
-	buffer.add(isc_info_rsb_end);
+		if (!level)
+		{
+			plan += ")";
+		}
+	}
 }

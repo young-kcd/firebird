@@ -84,7 +84,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	}
 
 	const size_t count = fields.getCount();
-	Format* format = Format::newFormat(csb->csb_pool, count);
+	Format* const format = Format::newFormat(csb->csb_pool, count);
 	ULONG offset = FLAG_BYTES(count);
 
 	for (size_t i = 0; i < count; i++)
@@ -288,16 +288,14 @@ bool BufferedStream::lockRecord(thread_db* tdbb) const
 	return m_next->lockRecord(tdbb);
 }
 
-void BufferedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Record Buffer";
+	}
 
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_buffer);
-
-	m_next->dump(tdbb, buffer);
-
-	buffer.add(isc_info_rsb_end);
+	m_next->print(tdbb, plan, detailed, level);
 }
 
 void BufferedStream::markRecursive()

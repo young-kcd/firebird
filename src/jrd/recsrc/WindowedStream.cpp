@@ -58,7 +58,7 @@ namespace
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -116,7 +116,7 @@ namespace
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan, bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -191,9 +191,9 @@ namespace
 		return m_next->lockRecord(tdbb);
 	}
 
-	void BufferedStreamWindow::dump(thread_db* tdbb, UCharBuffer& buffer) const
+	void BufferedStreamWindow::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 	{
-		m_next->dump(tdbb, buffer);
+		m_next->print(tdbb, plan, detailed, level);
 	}
 
 	void BufferedStreamWindow::markRecursive()
@@ -352,14 +352,22 @@ namespace
 		return false; // compiler silencer
 	}
 
-	void WindowJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
+	void WindowJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 	{
-		buffer.add(isc_info_rsb_begin);
-
-		m_outer->dump(tdbb, buffer);
-		m_inner->dump(tdbb, buffer);
-
-		buffer.add(isc_info_rsb_end);
+		if (detailed)
+		{
+			plan += printIndent(level) + "Window Join";
+			m_outer->print(tdbb, plan, true, level + 1);
+			m_inner->print(tdbb, plan, true, level + 1);
+		}
+		else
+		{
+			plan += "(";
+			m_outer->print(tdbb, plan, false, level + 1);
+			plan += ", ";
+			m_inner->print(tdbb, plan, false, level + 1);
+			plan += ")";
+		}
 	}
 
 	void WindowJoin::markRecursive()
@@ -570,16 +578,14 @@ bool WindowedStream::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void WindowedStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void WindowedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Window";
+	}
 
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_window);
-
-	m_joinedStream->dump(tdbb, buffer);
-
-	buffer.add(isc_info_rsb_end);
+	m_next->print(tdbb, plan, detailed, level);
 }
 
 void WindowedStream::markRecursive()

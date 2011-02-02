@@ -42,6 +42,7 @@
 #include "../../jrd/evl_proto.h"
 #include "../../jrd/intl_proto.h"
 #include "../../jrd/mov_proto.h"
+#include "../../jrd/opt_proto.h"
 #include "../../jrd/pag_proto.h"
 #include "../../common/os/path_utils.h"
 #include "../../common/config/os/config_root.h"
@@ -177,12 +178,6 @@ void BLRPrinter::print_blr(void* arg, SSHORT offset, const char* line)
 
 /// TraceSQLStatementImpl
 
-TraceSQLStatementImpl::~TraceSQLStatementImpl()
-{
-	if (m_plan)
-		gds__free(m_plan);
-}
-
 int TraceSQLStatementImpl::getStmtID()
 {
 	if (m_stmt->req_request)
@@ -246,21 +241,12 @@ const char* TraceSQLStatementImpl::getTextUTF8()
 
 const char* TraceSQLStatementImpl::getPlan()
 {
-	if (!m_plan && m_stmt->req_request)
+	if (m_plan.isEmpty())
 	{
-		char buff;
-		m_plan = &buff;
-
-		const size_t len = DSQL_get_plan_info(JRD_get_thread_data(),
-			m_stmt, sizeof(buff), &m_plan);
-
-		if (len)
-			m_plan[len] = 0;
-		else
-			m_plan = NULL;
+		m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, false);
 	}
 
-	return m_plan;
+	return m_plan.c_str();
 }
 
 PerformanceInfo* TraceSQLStatementImpl::getPerf()

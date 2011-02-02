@@ -150,12 +150,9 @@ public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
 		m_stmt(stmt),
 		m_perf(perf),
-		m_plan(NULL),
 		m_inputs(*getDefaultMemoryPool(), m_stmt->getStatement()->getSendMsg() ?
 			&m_stmt->getStatement()->getSendMsg()->msg_parameters : NULL)
 	{}
-
-	~TraceSQLStatementImpl();
 
 	virtual int FB_CARG getStmtID();
 	virtual PerformanceInfo* FB_CARG getPerf();
@@ -185,7 +182,7 @@ private:
 
 	const dsql_req* const m_stmt;
 	PerformanceInfo* const m_perf;
-	char* m_plan;
+	Firebird::string m_plan;
 	DSQLParamsImpl m_inputs;
 	Firebird::string m_textUTF8;
 };

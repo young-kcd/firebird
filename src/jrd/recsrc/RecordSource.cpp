@@ -45,9 +45,9 @@ using namespace Jrd;
 // Record source class
 // -------------------
 
-void RecordSource::dumpName(thread_db* tdbb, const Firebird::string& name, UCharBuffer& buffer)
+string RecordSource::printName(thread_db* tdbb, const string& name)
 {
-	size_t nameLength = name.length();
+	ULONG nameLength = (ULONG) name.length();
 	const UCHAR* namePtr = (UCHAR*) name.c_str();
 
 	MoveBuffer nameBuffer;
@@ -55,8 +55,8 @@ void RecordSource::dumpName(thread_db* tdbb, const Firebird::string& name, UChar
 	const CHARSET_ID charset = tdbb->getCharSet();
 	if (charset != CS_METADATA && charset != CS_NONE)
 	{
-		const size_t bufferLength = INTL_convert_bytes(tdbb, charset, NULL, 0,
-													   CS_METADATA, namePtr, nameLength, ERR_post);
+		const ULONG bufferLength = INTL_convert_bytes(tdbb, charset, NULL, 0,
+													  CS_METADATA, namePtr, nameLength, ERR_post);
 		nameBuffer.getBuffer(bufferLength);
 		nameLength = INTL_convert_bytes(tdbb, charset, nameBuffer.begin(), bufferLength,
 										CS_METADATA, namePtr, nameLength, ERR_post);
@@ -64,52 +64,76 @@ void RecordSource::dumpName(thread_db* tdbb, const Firebird::string& name, UChar
 		namePtr = nameBuffer.begin();
 	}
 
-	fb_assert(nameLength <= MAX_UCHAR);
-
-	buffer.add((UCHAR) nameLength);
-	buffer.add(namePtr, nameLength);
+	return string(namePtr, nameLength);
 }
 
-void RecordSource::dumpInversion(thread_db* tdbb, const InversionNode* inversion, UCharBuffer& buffer)
+string RecordSource::printIndent(unsigned level)
 {
-	// spit out the node type
-	switch (inversion->type)
+	fb_assert(level);
+
+	const string indent(level * 4, ' ');
+	return string("\n" + indent + "-> ");
+}
+
+void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversion,
+								  string& plan, bool detailed, unsigned level, bool navigation)
+{
+	if (detailed)
 	{
-	case InversionNode::TYPE_AND:
-		buffer.add(isc_info_rsb_and);
-		break;
-	case InversionNode::TYPE_OR:
-	case InversionNode::TYPE_IN:
-		buffer.add(isc_info_rsb_or);
-		break;
-	case InversionNode::TYPE_DBKEY:
-		buffer.add(isc_info_rsb_dbkey);
-		break;
-	case InversionNode::TYPE_INDEX:
-		buffer.add(isc_info_rsb_index);
-		break;
+		plan += printIndent(++level);
 	}
 
-	// dump sub-nodes or the actual index info
 	switch (inversion->type)
 	{
 	case InversionNode::TYPE_AND:
+		if (detailed)
+		{
+			plan += "Bitmap And";
+		}
+		printInversion(tdbb, inversion->node1, plan, detailed, level);
+		printInversion(tdbb, inversion->node2, plan, detailed, level);
+		break;
+
 	case InversionNode::TYPE_OR:
 	case InversionNode::TYPE_IN:
-		dumpInversion(tdbb, inversion->node1, buffer);
-		dumpInversion(tdbb, inversion->node2, buffer);
-		break;
-	case InversionNode::TYPE_INDEX:
+		if (detailed)
 		{
-			const IndexRetrieval* const retrieval = inversion->retrieval;
+			plan += "Bitmap Or";
+		}
+		printInversion(tdbb, inversion->node1, plan, detailed, level);
+		printInversion(tdbb, inversion->node2, plan, detailed, level);
+		break;
 
-			Firebird::MetaName indexName;
-			MET_lookup_index(tdbb, indexName, retrieval->irb_relation->rel_name,
-							 (USHORT) (retrieval->irb_index + 1));
-
-			dumpName(tdbb, indexName.c_str(), buffer);
+	case InversionNode::TYPE_DBKEY:
+		if (detailed)
+		{
+			plan += "DBKEY";
 		}
 		break;
+
+	case InversionNode::TYPE_INDEX:
+		{
+			MetaName indexName;
+			MET_lookup_index(tdbb, indexName, inversion->retrieval->irb_relation->rel_name,
+							 (USHORT) (inversion->retrieval->irb_index + 1));
+
+			if (detailed)
+			{
+				if (!navigation)
+				{
+					plan += "Bitmap" + printIndent(++level);
+				}
+				plan += "Index \"" + printName(tdbb, indexName.c_str()) + "\" Scan";
+			}
+			else
+			{
+				plan += (plan.length() ? ", " : "") + printName(tdbb, indexName.c_str());
+			}
+		}
+		break;
+
+	default:
+		fb_assert(false);
 	}
 }
 

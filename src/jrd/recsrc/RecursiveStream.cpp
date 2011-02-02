@@ -238,18 +238,23 @@ bool RecursiveStream::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void RecursiveStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void RecursiveStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_recursive);
-
-	buffer.add(2);
-	m_root->dump(tdbb, buffer);
-	m_inner->dump(tdbb, buffer);
-
-	buffer.add(isc_info_rsb_end);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Recursion";
+		m_root->print(tdbb, plan, true, level);
+		m_inner->print(tdbb, plan, true, level);
+	}
+	else
+	{
+		level++;
+		plan += "(";
+		m_root->print(tdbb, plan, false, level);
+		plan += ", ";
+		m_inner->print(tdbb, plan, false, level);
+		plan += ")";
+	}
 }
 
 void RecursiveStream::markRecursive()

@@ -171,24 +171,30 @@ bool Union::lockRecord(thread_db* tdbb) const
 	return m_args[impure->irsb_count]->lockRecord(tdbb);
 }
 
-void Union::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_union);
-
-	const size_t count = m_args.getCount();
-	// This place must be reviewed if we allow more than 255 unions
-	fb_assert(count <= USHORT(MAX_UCHAR));
-	buffer.add((UCHAR) count);
-
-	for (size_t i = 0; i < count; i++)
+	if (detailed)
 	{
-		m_args[i]->dump(tdbb, buffer);
+		plan += printIndent(++level) + "Union";
+		for (size_t i = 0; i < m_args.getCount(); i++)
+		{
+			m_args[i]->print(tdbb, plan, true, level);
+		}
 	}
-
-	buffer.add(isc_info_rsb_end);
+	else
+	{
+		level++;
+		plan += "(";
+		for (size_t i = 0; i < m_args.getCount(); i++)
+		{
+			if (i)
+			{
+				plan += ", ";
+			}
+			m_args[i]->print(tdbb, plan, true, level);
+		}
+		plan += ")";
+	}
 }
 
 void Union::markRecursive()

@@ -41,7 +41,7 @@ namespace Jrd {
 	class MapNode;
 }
 
-bool OPT_access_path(const Jrd::jrd_req*, UCHAR*, SLONG, ULONG*);
+Firebird::string OPT_get_plan(Jrd::thread_db*, const Jrd::jrd_req*, bool);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db*, Jrd::CompilerScratch*,
 	Jrd::RseNode*, Jrd::BoolExprNodeStack* const);
 void OPT_gen_aggregate_distincts(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::MapNode*);

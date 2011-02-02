@@ -61,7 +61,8 @@ namespace Jrd
 		virtual bool refetchRecord(thread_db* tdbb) const = 0;
 		virtual bool lockRecord(thread_db* tdbb) const = 0;
 
-		virtual void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const = 0;
+		virtual void print(thread_db* tdbb, Firebird::string& plan,
+						   bool detailed, unsigned level) const = 0;
 
 		virtual void markRecursive() = 0;
 		virtual void invalidateRecords(jrd_req* request) const = 0;
@@ -95,10 +96,10 @@ namespace Jrd
 			: m_impure(0), m_recursive(false)
 		{}
 
-		static void dumpName(thread_db* tdbb, const Firebird::string& name,
-			Firebird::UCharBuffer& buffer);
-		static void dumpInversion(thread_db* tdbb, const InversionNode* inversion,
-			Firebird::UCharBuffer& buffer);
+		static Firebird::string printName(thread_db* tdbb, const Firebird::string& name);
+		static Firebird::string printIndent(unsigned level);
+		static void printInversion(thread_db* tdbb, const InversionNode* inversion,
+			Firebird::string& plan, bool detailed, unsigned level, bool navigation = false);
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
 		static void restoreRecord(thread_db* tdbb, record_param* rpb);
@@ -144,7 +145,8 @@ namespace Jrd
 
 		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 	private:
 		const Firebird::string m_name;
@@ -166,7 +168,8 @@ namespace Jrd
 
 		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 	private:
 		const Firebird::string m_name;
@@ -199,7 +202,8 @@ namespace Jrd
 
 		bool getRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void setInversion(InversionNode* inversion)
 		{
@@ -241,7 +245,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 	private:
 		const Firebird::string m_name;
@@ -259,7 +264,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 	protected:
 		virtual bool retrieveRecord(thread_db* tdbb, jrd_rel* relation,
@@ -289,7 +295,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 	private:
 		void assignParams(thread_db* tdbb, const dsc* from_desc, const dsc* flag_desc,
@@ -317,7 +324,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -343,7 +351,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -374,7 +383,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -406,7 +416,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -433,7 +444,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -526,7 +538,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -606,7 +619,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -641,7 +655,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -702,7 +717,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -744,7 +760,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -776,7 +793,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -811,7 +829,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -877,7 +896,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -917,7 +937,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
@@ -956,7 +977,8 @@ namespace Jrd
 		bool refetchRecord(thread_db* tdbb) const;
 		bool lockRecord(thread_db* tdbb) const;
 
-		void dump(thread_db* tdbb, Firebird::UCharBuffer& buffer) const;
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
 
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;

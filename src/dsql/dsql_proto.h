@@ -59,9 +59,5 @@ void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
 void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
 				   ULONG, const UCHAR*, ULONG, UCHAR*);
-ULONG DSQL_get_plan_info(Jrd::thread_db*,
-						  const Jrd::dsql_req*,
-						  SLONG, char**,
-						  const bool realloc = true);
 
 #endif //  DSQL_DSQL_PROTO_H

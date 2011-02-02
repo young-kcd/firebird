@@ -312,25 +312,30 @@ bool HashJoin::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void HashJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_hash);
-
-	const size_t count = m_args.getCount() + 1;
-	// This place must be reviewed if we allow more than 255 joins
-	fb_assert(count <= USHORT(MAX_UCHAR));
-	buffer.add((UCHAR) count);
-
-	m_leader->dump(tdbb, buffer);
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	if (detailed)
 	{
-		m_args[i]->dump(tdbb, buffer);
+		plan += printIndent(++level) + "Hash Join (inner)";
+		for (int i = 0; i < m_args.getCount(); i++)
+		{
+			m_args[i]->print(tdbb, plan, true, level);
+		}
 	}
-
-	buffer.add(isc_info_rsb_end);
+	else
+	{
+		level++;
+		plan += "HASH (";
+		for (int i = 0; i < m_args.getCount(); i++)
+		{
+			if (i)
+			{
+				plan += ", ";
+			}
+			m_args[i]->print(tdbb, plan, false, level);
+		}
+		plan += ")";
+	}
 }
 
 void HashJoin::markRecursive()

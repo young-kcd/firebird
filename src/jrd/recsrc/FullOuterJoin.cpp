@@ -117,20 +117,23 @@ bool FullOuterJoin::lockRecord(thread_db* tdbb) const
 	return false; // compiler silencer
 }
 
-void FullOuterJoin::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void FullOuterJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_union);
-
-	const size_t count = 2;
-	buffer.add((UCHAR) count);
-
-	m_arg1->dump(tdbb, buffer);
-	m_arg2->dump(tdbb, buffer);
-
-	buffer.add(isc_info_rsb_end);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Full Outer Join";
+		m_arg1->print(tdbb, plan, true, level);
+		m_arg2->print(tdbb, plan, true, level);
+	}
+	else
+	{
+		level++;
+		plan += "JOIN (";
+		m_arg1->print(tdbb, plan, false, level);
+		plan += ", ";
+		m_arg2->print(tdbb, plan, false, level);
+		plan += ")";
+	}
 }
 
 void FullOuterJoin::markRecursive()

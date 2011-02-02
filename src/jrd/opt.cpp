@@ -354,45 +354,33 @@ static const UCHAR sort_dtypes[] =
 };
 
 
-bool OPT_access_path(const jrd_req* request, UCHAR* buffer, SLONG buffer_length, ULONG* return_length)
+string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
 {
 /**************************************
  *
- *	O P T _ a c c e s s _ p a t h
+ *	O P T _ g e t _ p l a n
  *
  **************************************
  *
  * Functional description
- *	Returns a formatted access path for all
- *	RseNode's in the specified request.
+ *	Returns a formatted textual plan for all
+ *	RecordSelExpr's in the specified request.
  *
  **************************************/
-	DEV_BLKCHK(request, type_req);
+	string plan;
 
-	thread_db* tdbb = JRD_get_thread_data();
-
-	if (!buffer || buffer_length < 0 || !return_length)
-		return false;
-
-	// loop through all RSEs in the request, and describe the rsb tree for that rsb
-
-	UCharBuffer infoBuffer;
-
-	Array<const RecordSource*>& fors = request->getStatement()->fors;
-	for (size_t i = 0; i < fors.getCount(); i++)
-		fors[i]->dump(tdbb, infoBuffer);
-
-	const size_t length = infoBuffer.getCount();
-
-	if (length > static_cast<ULONG>(buffer_length))
+	if (request)
 	{
-		*return_length = 0;
-		return false;
+		Array<const RecordSource*>& fors = request->getStatement()->fors;
+
+		for (size_t i = 0; i < fors.getCount(); i++)
+		{
+			plan += detailed ? "\nSelect Expression" : "\nPLAN ";
+			fors[i]->print(tdbb, plan, detailed, 0);
+		}
 	}
 
-	*return_length = (ULONG) length;
-	memcpy(buffer, infoBuffer.begin(), length);
-	return true;
+	return plan;
 }
 
 

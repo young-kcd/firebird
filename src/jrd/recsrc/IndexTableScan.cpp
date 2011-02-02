@@ -236,25 +236,42 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 	return false;
 }
 
-void IndexTableScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-
-	buffer.add(isc_info_rsb_relation);
-	dumpName(tdbb, m_name, buffer);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_navigate);
-	dumpInversion(tdbb, m_index, buffer);
-
-	if (m_inversion)
+	if (detailed)
 	{
-		buffer.add(isc_info_rsb_type);
-		buffer.add(isc_info_rsb_indexed);
-		dumpInversion(tdbb, m_inversion, buffer);
+		plan += printIndent(++level) + "Persistent Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		printInversion(tdbb, m_index, plan, true, level, true);
+		if (m_inversion)
+		{
+			printInversion(tdbb, m_inversion, plan, true, ++level);
+		}
 	}
+	else
+	{
+		if (!level)
+		{
+			plan += "(";
+		}
 
-	buffer.add(isc_info_rsb_end);
+		plan += printName(tdbb, m_name) + " ORDER ";
+		string index;
+		printInversion(tdbb, m_index, index, false, level);
+		plan += index;
+
+		if (m_inversion)
+		{
+			plan += " INDEX (";
+			string indices;
+			printInversion(tdbb, m_inversion, indices, false, level);
+			plan += indices + ")";
+		}
+
+		if (!level)
+		{
+			plan += ")";
+		}
+	}
 }
 
 int IndexTableScan::compareKeys(const index_desc* idx,

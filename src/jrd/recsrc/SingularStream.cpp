@@ -110,16 +110,14 @@ bool SingularStream::lockRecord(thread_db* tdbb) const
 	return m_next->lockRecord(tdbb);
 }
 
-void SingularStream::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void SingularStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Singularity Check";
+	}
 
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_singular);
-
-	m_next->dump(tdbb, buffer);
-
-	buffer.add(isc_info_rsb_end);
+	m_next->print(tdbb, plan, detailed, level);
 }
 
 void SingularStream::markRecursive()

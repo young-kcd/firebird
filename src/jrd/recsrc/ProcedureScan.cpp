@@ -239,21 +239,26 @@ bool ProcedureScan::lockRecord(thread_db* /*tdbb*/) const
 	return false; // compiler silencer
 }
 
-void ProcedureScan::dump(thread_db* tdbb, UCharBuffer& buffer) const
+void ProcedureScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
-	buffer.add(isc_info_rsb_begin);
-	buffer.add(isc_info_rsb_procedure);
+	if (detailed)
+	{
+		plan += printIndent(++level) + "Procedure \"" + printName(tdbb, m_name) + "\" Scan";
+	}
+	else
+	{
+		if (!level)
+		{
+			plan += "(";
+		}
 
-	buffer.add(isc_info_rsb_begin);
+		plan += printName(tdbb, m_name) + " NATURAL";
 
-	buffer.add(isc_info_rsb_relation);
-	dumpName(tdbb, m_name, buffer);
-
-	buffer.add(isc_info_rsb_type);
-	buffer.add(isc_info_rsb_sequential);
-
-	buffer.add(isc_info_rsb_end);
-	buffer.add(isc_info_rsb_end);
+		if (!level)
+		{
+			plan += ")";
+		}
+	}
 }
 
 void ProcedureScan::assignParams(thread_db* tdbb,

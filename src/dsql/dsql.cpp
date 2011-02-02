@@ -61,7 +61,9 @@
 #include "../jrd/ini_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/opt_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceDSQLHelpers.h"
 #include "../common/classes/init.h"
@@ -87,16 +89,14 @@ static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, ULONG, const UCHAR*,
 	ULONG, const UCHAR*, ULONG, const UCHAR*, ULONG, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
-static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
-static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, ULONG, const UCHAR*, ULONG, UCHAR*,
 	const UCHAR* = 0);
 static USHORT	parse_blr(dsql_req*, ULONG, const UCHAR*, const ULONG, const Array<dsql_par*>&);
 static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
 static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
-static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
+static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
@@ -123,11 +123,6 @@ unsigned DSQL_debug = 0;
 
 namespace
 {
-	const UCHAR explain_info[] =
-	{
-		isc_info_access_path
-	};
-
 	const UCHAR record_info[] =
 	{
 		isc_info_req_update_count, isc_info_req_delete_count,
@@ -1341,226 +1336,6 @@ static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
 
 /**
 
- 	get_indices
-
-    @brief	Retrieve the indices from the index tree in
- 	the request info buffer (explain_ptr), and print them out
- 	in the plan buffer. Return true on success and false on failure.
-
-
-    @param explain_length_ptr
-    @param explain_ptr
-    @param plan_length_ptr
-    @param plan_ptr
-
- **/
-static bool get_indices(SLONG* explain_length_ptr, const UCHAR** explain_ptr,
-						SLONG* plan_length_ptr, SCHAR** plan_ptr)
-{
-	USHORT length;
-
-	SLONG explain_length = *explain_length_ptr;
-	const UCHAR* explain = *explain_ptr;
-	SLONG& plan_length = *plan_length_ptr;
-	SCHAR*& plan = *plan_ptr;
-
-	// go through the index tree information, just
-	// extracting the indices used
-
-	explain_length--;
-	switch (*explain++)
-	{
-	case isc_info_rsb_and:
-	case isc_info_rsb_or:
-		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
-			return false;
-		if (!get_indices(&explain_length, &explain, &plan_length, &plan))
-			return false;
-		break;
-
-	case isc_info_rsb_dbkey:
-		break;
-
-	case isc_info_rsb_index:
-		explain_length--;
-		length = *explain++;
-
-		// if this isn't the first index, put out a comma
-
-		if (plan[-1] != '(' && plan[-1] != ' ')
-		{
-			plan_length -= 2;
-			if (plan_length < 0)
-				return false;
-			*plan++ = ',';
-			*plan++ = ' ';
-		}
-
-		// now put out the index name
-
-		if ((plan_length -= length) < 0)
-			return false;
-		explain_length -= length;
-		while (length--)
-			*plan++ = *explain++;
-		break;
-
-	default:
-		return false;
-	}
-
-	*explain_length_ptr = explain_length;
-	*explain_ptr = explain;
-	//*plan_length_ptr = plan_length;
-	//*plan_ptr = plan;
-
-	return true;
-}
-
-
-/**
-
- 	DSQL_get_plan_info
-
-    @brief	Get the access plan for the request and turn
- 	it into a textual representation suitable for
- 	human reading.
-
-
-    @param request
-    @param buffer_length
-    @param out_buffer
-	@param realloc
-
- **/
-ULONG DSQL_get_plan_info(thread_db* tdbb,
-						 const dsql_req* request,
-						 SLONG buffer_length,
-						 char** out_buffer,
-						 const bool realloc)
-{
-	if (!request->req_request)	// DDL
-		return 0;
-
-	Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> explain_buffer;
-	explain_buffer.resize(BUFFER_LARGE);
-
-	// get the access path info for the underlying request from the engine
-
-	try
-	{
-		INF_request_info(request->req_request,
-						 sizeof(explain_info), explain_info,
-						 explain_buffer.getCount(), explain_buffer.begin());
-
-		if (explain_buffer[0] == isc_info_truncated)
-		{
-			explain_buffer.resize(MAX_USHORT);
-
-			INF_request_info(request->req_request,
-							 sizeof(explain_info), explain_info,
-							 explain_buffer.getCount(), explain_buffer.begin());
-
-			if (explain_buffer[0] == isc_info_truncated)
-				return 0;
-		}
-	}
-	catch (Firebird::Exception&)
-	{
-		return 0;
-	}
-
-	char* buffer_ptr = *out_buffer;
-	char* plan;
-
-	for (int i = 0; i < 2; i++)
-	{
-		const UCHAR* explain = explain_buffer.begin();
-
-		if (*explain++ != isc_info_access_path)
-			return 0;
-
-		SLONG explain_length = (ULONG) *explain++;
-		explain_length += (ULONG) (*explain++) << 8;
-
-		plan = buffer_ptr;
-
-		// CVC: What if we need to do 2nd pass? Those variables were only initialized
-		// at the begining of the function hence they had trash the second time.
-		USHORT join_count = 0, level = 0;
-
-		const ULONG full_len = buffer_length;
-		memset(plan, 0, full_len);
-		// This is testing code for the limit case,
-		// please do not enable for normal operations.
-		/*
-		if (full_len == ULONG(MAX_USHORT) - 4)
-		{
-			const size_t test_offset = 55000;
-			memset(plan, '.', test_offset);
-			plan += test_offset;
-			buffer_length -= test_offset;
-		}
-		*/
-
-		// keep going until we reach the end of the explain info
-		while (explain_length > 0 && buffer_length > 0)
-		{
-			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan, &join_count, &level))
-			{
-				// don't allocate buffer of the same length second time
-				// and let user know plan is incomplete
-
-				if (buffer_ptr != *out_buffer ||
-					(!realloc && full_len == ULONG(MAX_USHORT) - 4))
-				{
-					const ptrdiff_t diff = buffer_ptr + full_len - plan;
-					if (diff < 3)
-						plan -= 3 - diff;
-
-					fb_assert(plan > buffer_ptr);
-					*plan++ = '.';
-					*plan++ = '.';
-					*plan++ = '.';
-
-					if (!realloc)
-						return plan - buffer_ptr;
-
-					++i;
-					break;
-				}
-
-				if (!realloc)
-					return full_len - buffer_length;
-
-				// assume we have run out of room in the buffer, try again with a larger one
-				const size_t new_length = MAX_USHORT;
-				char* const temp = static_cast<char*>(gds__alloc(new_length));
-
-				if (!temp)
-				{
-					// NOMEM. Do not attempt one more try
-					i++;
-					break;
-				}
-
-				buffer_ptr = temp;
-				buffer_length = (SLONG) new_length;
-				break;
-			}
-		}
-
-		if (buffer_ptr == *out_buffer)
-			break;
-	}
-
-	*out_buffer = buffer_ptr;
-	return plan - *out_buffer;
-}
-
-
-/**
-
  	get_request_info
 
     @brief	Get the records updated/deleted for record
@@ -1626,348 +1401,6 @@ static USHORT get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_
 	}
 
 	return data - buffer;
-}
-
-
-/**
-
- 	get_rsb_item
-
-    @brief	Use recursion to print out a reverse-polish
- 	access plan of joins and join types. Return true on success
- 	and false on failure
-
-
-    @param explain_length_ptr
-    @param explain_ptr
-    @param plan_length_ptr
-    @param plan_ptr
-    @param parent_join_count
-    @param level_ptr
-
- **/
-static bool get_rsb_item(SLONG*		explain_length_ptr,
-							const UCHAR**	explain_ptr,
-							SLONG*		plan_length_ptr,
-							SCHAR**		plan_ptr,
-							USHORT*		parent_join_count,
-							USHORT*		level_ptr)
-{
-	const SCHAR* p;
-	SSHORT rsb_type;
-
-	SLONG explain_length = *explain_length_ptr;
-	const UCHAR* explain = *explain_ptr;
-	SLONG& plan_length = *plan_length_ptr;
-	SCHAR*& plan = *plan_ptr;
-
-	explain_length--;
-	switch (*explain++)
-	{
-	case isc_info_rsb_begin:
-		if (!*level_ptr)
-		{
-			// put out the PLAN prefix
-
-			p = "\nPLAN ";
-			if ((plan_length -= strlen(p)) < 0)
-				return false;
-			while (*p)
-				*plan++ = *p++;
-		}
-
-		(*level_ptr)++;
-		break;
-
-	case isc_info_rsb_end:
-		if (*level_ptr) {
-			(*level_ptr)--;
-		}
-		// else --*parent_join_count; ???
-		break;
-
-	case isc_info_rsb_relation:
-
-		// for the single relation case, initiate
-		// the relation with a parenthesis
-
-		if (!*parent_join_count)
-		{
-			if (--plan_length < 0)
-				return false;
-			*plan++ = '(';
-		}
-
-		// if this isn't the first relation, put out a comma
-
-		if (plan[-1] != '(')
-		{
-			plan_length -= 2;
-			if (plan_length < 0)
-				return false;
-			*plan++ = ',';
-			*plan++ = ' ';
-		}
-
-		// put out the relation name
-		{ // scope to keep length local.
-			explain_length--;
-			SSHORT length = (USHORT) *explain++;
-			explain_length -= length;
-			if ((plan_length -= length) < 0)
-				return false;
-			while (length--)
-				*plan++ = *explain++;
-		} // scope
-		break;
-
-	case isc_info_rsb_type:
-		explain_length--;
-		// for stream types which have multiple substreams, print out
-		// the stream type and recursively print out the substreams so
-		// we will know where to put the parentheses
-		switch (rsb_type = *explain++)
-		{
-		case isc_info_rsb_union:
-		case isc_info_rsb_recursive:
-
-			// put out all the substreams of the join
-			{ // scope to have union_count, union_level and union_join_count local.
-				explain_length--;
-				fb_assert(*explain > 0U);
-				USHORT union_count = (USHORT) *explain++ - 1;
-
-				// finish the first union member
-
-				USHORT union_level = *level_ptr;
-				USHORT union_join_count = union_count ? 0 : 1;
-				while (explain_length > 0 && plan_length > 0)
-				{
-					if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan,
-									  &union_join_count, &union_level))
-					{
-						return false;
-					}
-					if (union_level == *level_ptr)
-						break;
-				}
-
-				// for the rest of the members, start the level at 0 so each
-				// gets its own "PLAN ... " line
-
-				while (union_count)
-				{
-					union_join_count = 0;
-					union_level = 0;
-					while (explain_length > 0 && plan_length > 0)
-					{
-						if (!get_rsb_item(&explain_length, &explain, &plan_length,
-										  &plan, &union_join_count, &union_level))
-						{
-							return false;
-						}
-						if (!union_level)
-							break;
-					}
-					union_count--;
-				}
-			} // scope
-			break;
-
-		case isc_info_rsb_cross:
-		case isc_info_rsb_left_cross:
-		case isc_info_rsb_merge:
-		case isc_info_rsb_hash:
-
-			// if this join is itself part of a join list,
-			// but not the first item, then put out a comma
-
-			if (*parent_join_count && plan[-1] != '(')
-			{
-				plan_length -= 2;
-				if (plan_length < 0)
-					return false;
-				*plan++ = ',';
-				*plan++ = ' ';
-			}
-
-			// put out the join type
-
-			if (rsb_type == isc_info_rsb_merge)
-				p = "MERGE (";
-			else if (rsb_type == isc_info_rsb_hash)
-				p = "HASH (";
-			else
-				p = "JOIN (";
-
-			if ((plan_length -= strlen(p)) < 0)
-				return false;
-			while (*p)
-				*plan++ = *p++;
-
-			// put out all the substreams of the join
-
-			explain_length--;
-			{ // scope to have join_count local.
-				USHORT join_count = (USHORT) *explain++;
-				while (join_count && explain_length > 0 && plan_length > 0)
-				{
-					if (!get_rsb_item(&explain_length, &explain, &plan_length,
-									  &plan, &join_count, level_ptr))
-					{
-						return false;
-					}
-					// CVC: Here's the additional stop condition.
-					if (!*level_ptr) {
-						break;
-					}
-				}
-			} // scope
-
-			// put out the final parenthesis for the join
-
-			if (--plan_length < 0)
-				return false;
-			*plan++ = ')';
-
-			// this qualifies as a stream, so decrement the join count
-
-			if (*parent_join_count)
-				-- * parent_join_count;
-			break;
-
-		case isc_info_rsb_indexed:
-		case isc_info_rsb_navigate:
-		case isc_info_rsb_sequential:
-		case isc_info_rsb_ext_sequential:
-		case isc_info_rsb_ext_indexed:
-		case isc_info_rsb_virt_sequential:
-			switch (rsb_type)
-			{
-			case isc_info_rsb_indexed:
-			case isc_info_rsb_ext_indexed:
-				p = " INDEX (";
-				break;
-			case isc_info_rsb_navigate:
-				p = " ORDER ";
-				break;
-			default:
-				p = " NATURAL";
-			}
-
-			if ((plan_length -= strlen(p)) < 0)
-				return false;
-			while (*p)
-				*plan++ = *p++;
-
-			// print out additional index information
-
-			if (rsb_type == isc_info_rsb_indexed || rsb_type == isc_info_rsb_navigate ||
-				rsb_type == isc_info_rsb_ext_indexed)
-			{
-				if (!get_indices(&explain_length, &explain, &plan_length, &plan))
-					return false;
-			}
-
-			if (rsb_type == isc_info_rsb_navigate && *explain == isc_info_rsb_indexed)
-			{
-				USHORT idx_count = 1;
-				if (!get_rsb_item(&explain_length, &explain, &plan_length, &plan, &idx_count, level_ptr))
-				{
-					return false;
-				}
-			}
-
-			if (rsb_type == isc_info_rsb_indexed || rsb_type == isc_info_rsb_ext_indexed)
-			{
-				if (--plan_length < 0)
-					return false;
-				*plan++ = ')';
-			}
-
-			// detect the end of a single relation and put out a final parenthesis
-
-			if (!*parent_join_count)
-			{
-				if (--plan_length < 0)
-					return false;
-				*plan++ = ')';
-			}
-
-			// this also qualifies as a stream, so decrement the join count
-
-			if (*parent_join_count)
-				-- * parent_join_count;
-			break;
-
-		case isc_info_rsb_sort:
-
-			// if this sort is on behalf of a union, don't bother to
-			// print out the sort, because unions handle the sort on all
-			// substreams at once, and a plan maps to each substream
-			// in the union, so the sort doesn't really apply to a particular plan
-
-			if (explain_length > 2 && (explain[0] == isc_info_rsb_begin) &&
-				(explain[1] == isc_info_rsb_type) && (explain[2] == isc_info_rsb_union))
-			{
-				break;
-			}
-
-			// if this isn't the first item in the list, put out a comma
-
-			if (*parent_join_count && plan[-1] != '(')
-			{
-				plan_length -= 2;
-				if (plan_length < 0)
-					return false;
-				*plan++ = ',';
-				*plan++ = ' ';
-			}
-
-			p = "SORT (";
-
-			if ((plan_length -= strlen(p)) < 0)
-				return false;
-			while (*p)
-				*plan++ = *p++;
-
-			// the rsb_sort should always be followed by a begin...end block,
-			// allowing us to include everything inside the sort in parentheses
-
-			{ // scope to have save_level local.
-				const USHORT save_level = *level_ptr;
-				while (explain_length > 0 && plan_length > 0)
-				{
-					if (!get_rsb_item(&explain_length, &explain, &plan_length,
-									  &plan, parent_join_count, level_ptr))
-					{
-						return false;
-					}
-					if (*level_ptr == save_level)
-						break;
-				}
-
-				if (--plan_length < 0)
-					return false;
-				*plan++ = ')';
-			} // scope
-			break;
-
-		default:
-			break;
-		} // switch (rsb_type = *explain++)
-		break;
-
-	default:
-		break;
-	}
-
-	*explain_length_ptr = explain_length;
-	*explain_ptr = explain;
-	//*plan_length_ptr = plan_length;
-	//*plan_ptr = plan;
-
-	return true;
 }
 
 
@@ -2759,15 +2192,13 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
     @param string
     @param ptr
     @param end
-	@param copy
 
  **/
-static UCHAR* put_item(UCHAR item,
-					   const USHORT	length,
-					   const UCHAR* string,
-					   UCHAR* ptr,
-					   const UCHAR* const end,
-					   const bool copy)
+static UCHAR* put_item(	UCHAR	item,
+						const USHORT	length,
+						const UCHAR* string,
+						UCHAR*	ptr,
+						const UCHAR* const end)
 {
 	if (ptr + length + 3 >= end)
 	{
@@ -2780,7 +2211,7 @@ static UCHAR* put_item(UCHAR item,
 	*ptr++ = (UCHAR) length;
 	*ptr++ = length >> 8;
 
-	if (length && copy)
+	if (length)
 		memcpy(ptr, string, length);
 
 	return ptr + length;
@@ -3046,46 +2477,46 @@ static void sql_info(thread_db* tdbb,
 			break;
 
 		case isc_info_sql_get_plan:
+		case isc_info_sql_explain_plan:
 			{
-				// be careful, get_plan_info() will reallocate the buffer to a
-				// larger size if it is not big enough
-				//UCHAR* buffer_ptr = buffer;
-				UCHAR* buffer_ptr = info + 3;
-				// Somebody decided to put a platform-dependent NEWLINE at the beginning,
-				// see get_rsb_item! This idea predates FB1.
-				static const size_t minPlan = strlen("\nPLAN (T NATURAL)");
+				const bool detailed = (item == isc_info_sql_explain_plan);
+				string plan = OPT_get_plan(tdbb, request->req_request, detailed);
 
-				if (info + minPlan + 3 >= end_info)
+				if (plan.hasData())
 				{
-					fb_assert(info < end_info);
-					*info = isc_info_truncated;
-					info = NULL;
-					length = 0;
-				}
-				else
-				{
-					//length = DSQL_get_plan_info(tdbb, request, sizeof(buffer),
-					//					reinterpret_cast<SCHAR**>(&buffer_ptr));
-					length = DSQL_get_plan_info(tdbb, request, (end_info - info - 4),
-										reinterpret_cast<char**>(&buffer_ptr),
-										false);
-				}
+					const ULONG buffer_length = end_info - info - 3; // 1-byte item + 2-byte length
+					const ULONG max_length = MIN(buffer_length, MAX_USHORT);
 
-				if (length)
-				{
-					if (length > MAX_USHORT)
+					if (plan.length() > max_length)
 					{
+						// If the plan doesn't fit the supplied buffer or exceeds the API limits,
+						// truncate it to the rightmost space and add ellipsis to the end
+						plan.resize(max_length);
+
+						while (plan.length() > max_length - 4)
+						{
+							const size_t pos = plan.find_last_of(' ');
+							if (pos == string::npos)
+								break;
+							plan.resize(pos);
+						}
+
+						plan += " ...";
+					}
+
+					if (plan.length() > max_length)
+					{
+						// If it's still too long, give up
 						fb_assert(info < end_info);
 						*info = isc_info_truncated;
 						info = NULL;
 					}
 					else
-						info = put_item(item, length, buffer_ptr, info, end_info, false);
+					{
+						info = put_item(item, plan.length(), reinterpret_cast<const UCHAR*>(plan.c_str()),
+										info, end_info);
+					}
 				}
-
-				//if (length > sizeof(buffer) || buffer_ptr != buffer) {
-				//	gds__free(buffer_ptr);
-				//}
 
 				if (!info)
 					return;
