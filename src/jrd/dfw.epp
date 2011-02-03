@@ -4892,17 +4892,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		if (tfb->tfb_flags & TFB_computed)
 			desc->dsc_dtype |= COMPUTED_FLAG;
 
-		impure_value& defRef = format->fmt_defaults[tfb->tfb_id];
-		defRef = tfb->tfb_default;
-		defRef.vlu_misc = tfb->tfb_default.vlu_misc;
-
-		if (tfb->tfb_default.vlu_string)
-		{
-			fb_assert(defRef.vlu_desc.dsc_dtype == dtype_text);
-			defRef.vlu_desc.dsc_address = defRef.vlu_string->str_data;
-		}
-		else
-			defRef.vlu_desc.dsc_address = (UCHAR*) &defRef.vlu_misc;
+		format->fmt_defaults[tfb->tfb_id] = tfb->tfb_default;
 	}
 
 	// Compute the offsets of the various fields
@@ -5268,32 +5258,18 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 							if (result)
 							{
-								tfb->tfb_default.vlu_desc = *result;
+								dsc desc = *result;
 
-								if (result->isText() || result->isBlob())
+								if (desc.isText() || desc.isBlob())
 								{
 									UCHAR* ptr = NULL;
 									MoveBuffer buffer;
-									int len = MOV_make_string2(tdbb, result, CS_NONE, &ptr, buffer, true);
+									const int len = MOV_make_string2(tdbb, &desc, CS_NONE, &ptr, buffer, true);
 									fb_assert(ULONG(len) < ULONG(MAX_USHORT));
-
-									VaryingString* newString = FB_NEW_RPT(*dbb->dbb_permanent,
-										len) VaryingString();
-									newString->str_length = USHORT(len);
-									memcpy(newString->str_data, ptr, len);
-
-									tfb->tfb_default.vlu_string = newString;
-									tfb->tfb_default.vlu_desc.dsc_dtype = dtype_text;
-									tfb->tfb_default.vlu_desc.dsc_length = USHORT(len);
-									tfb->tfb_default.vlu_desc.dsc_address = newString->str_data;
+									desc.makeText(len, ttype_none, ptr);
 								}
-								else
-								{
-									memcpy(&tfb->tfb_default.vlu_misc, result->dsc_address,
-										result->dsc_length);
-									tfb->tfb_default.vlu_desc.dsc_address =
-										(UCHAR*) &tfb->tfb_default.vlu_misc;
-								}
+
+								EVL_make_value(tdbb, &desc, &tfb->tfb_default);
 							}
 						}
 						catch (const Exception&)

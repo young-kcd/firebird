@@ -72,6 +72,7 @@
 #include "../jrd/dfw_proto.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/err_proto.h"
+#include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/ext_proto.h"
 #include "../jrd/flu_proto.h"
@@ -1255,21 +1256,9 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 			const Ods::Descriptor* odsDflDesc = (Ods::Descriptor*) p;
 			p = (UCHAR*) (odsDflDesc + 1);
 
-			dsc& desc = format->fmt_defaults[offset].vlu_desc;
-			desc = *odsDflDesc;
-
-			if (desc.dsc_dtype == dtype_text)
-			{
-				VaryingString* vluString = FB_NEW_RPT(*dbb->dbb_permanent,
-					desc.dsc_length) VaryingString();
-				vluString->str_length = desc.dsc_length;
-				format->fmt_defaults[offset].vlu_string = vluString;
-				desc.dsc_address = format->fmt_defaults[offset].vlu_string->str_data;
-			}
-			else
-				desc.dsc_address = (UCHAR*) &format->fmt_defaults[offset].vlu_misc;
-
-			memcpy(desc.dsc_address, p, desc.dsc_length);
+			dsc desc = *odsDflDesc;
+			desc.dsc_address = const_cast<UCHAR*>(p);
+			EVL_make_value(tdbb, &desc, &format->fmt_defaults[offset]);
 
 			p += desc.dsc_length;
 		}
