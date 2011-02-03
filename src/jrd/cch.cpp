@@ -4884,8 +4884,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			// This code is only used by the background I/O threads:
 			// cache writer, cache reader and garbage collector.
 
-			Database::Checkout dcoHolder(dbb);
-
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
