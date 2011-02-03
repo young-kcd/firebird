@@ -4622,8 +4622,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 			/* This code is only used by the background I/O threads:
 			   cache writer, cache reader and garbage collector. */
 
-			THREAD_EXIT();
-
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
@@ -4635,7 +4633,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 						continue;
 					}
 					if (bdb->bdb_flags & BDB_db_dirty) {
-						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4647,7 +4644,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				else {			/* if (page == CHECKPOINT_PAGE) */
 
 					if (bdb->bdb_flags & BDB_checkpoint) {
-						THREAD_ENTER();
 //						BCB_MUTEX_RELEASE;
 						return bdb;
 					}
@@ -4658,7 +4654,6 @@ static BufferDesc* get_buffer(thread_db* tdbb, SLONG page, LATCH latch, SSHORT l
 				bcb->bcb_flags &= ~BCB_free_pending;
 			}
 
-			THREAD_ENTER();
 //			BCB_MUTEX_RELEASE;
 			return NULL;
 		}
