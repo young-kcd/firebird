@@ -789,7 +789,7 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	desc->makeLong(0);
+	desc->makeInt64(0);
 }
 
 void CountAggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -802,8 +802,8 @@ void CountAggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void CountAggNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
-	desc->dsc_dtype = dtype_long;
-	desc->dsc_length = sizeof(SLONG);
+	desc->dsc_dtype = dtype_int64;
+	desc->dsc_length = sizeof(SINT64);
 	desc->dsc_scale = 0;
 	desc->dsc_sub_type = 0;
 	desc->dsc_flags = 0;
@@ -823,13 +823,13 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 	AggNode::aggInit(tdbb, request);
 
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	impure->make_long(0);
+	impure->make_int64(0);
 }
 
 void CountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	++impure->vlu_misc.vlu_long;
+	++impure->vlu_misc.vlu_int64;
 }
 
 dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
