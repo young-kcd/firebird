@@ -1072,7 +1072,7 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		if (!v)
 		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_sysf_argmustbe_nonzero) << Arg::Str(function->name));;
+									Arg::Gds(isc_sysf_argmustbe_nonzero) << Arg::Str(function->name));
 		}
 		rc = fbcot(v);
 		break;
@@ -1235,22 +1235,31 @@ dsc* evlAsciiVal(thread_db* tdbb, const SysFunction*, const NestValueArray& args
 }
 
 
-dsc* evlAtan2(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
+dsc* evlAtan2(thread_db* tdbb, const SysFunction* function, const NestValueArray& args,
 	impure_value* impure)
 {
 	fb_assert(args.getCount() == 2);
 
 	jrd_req* request = tdbb->getRequest();
 
-	const dsc* value1 = EVL_expr(tdbb, request, args[0]);
-	if (request->req_flags & req_null)	// return NULL if value1 is NULL
+	const dsc* desc1 = EVL_expr(tdbb, request, args[0]);
+	if (request->req_flags & req_null)	// return NULL if desc1 is NULL
 		return NULL;
 
-	const dsc* value2 = EVL_expr(tdbb, request, args[1]);
-	if (request->req_flags & req_null)	// return NULL if value2 is NULL
+	const dsc* desc2 = EVL_expr(tdbb, request, args[1]);
+	if (request->req_flags & req_null)	// return NULL if desc2 is NULL
 		return NULL;
 
-	impure->vlu_misc.vlu_double = atan2(MOV_get_double(value1), MOV_get_double(value2));
+	double value1 = MOV_get_double(desc1);
+	double value2 = MOV_get_double(desc2);
+
+	if (value1 == 0 && value2 == 0)
+	{
+		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
+								Arg::Gds(isc_sysf_argscant_both_be_zero) << Arg::Str(function->name));
+	}
+
+	impure->vlu_misc.vlu_double = atan2(value1, value2);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;

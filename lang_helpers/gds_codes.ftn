@@ -1458,6 +1458,8 @@ C --
       PARAMETER (GDS__cannot_copy_stmt                 = 335545022)
       INTEGER*4 GDS__invalid_boolean_usage           
       PARAMETER (GDS__invalid_boolean_usage            = 335545023)
+      INTEGER*4 GDS__sysf_argscant_both_be_zero      
+      PARAMETER (GDS__sysf_argscant_both_be_zero       = 335545024)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
