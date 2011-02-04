@@ -1,3 +1,52 @@
+ 2011-02-03 08:00  dimitr 
+   M src/jrd/cch.cpp
+Removed the supposedly wrong checkout (it was added in v2.0), as theoretically it can lead to race conditions in the page cache.
+
+ 2011-02-02 14:55  hvlad 
+   M src/remote/server.cpp
+Fixed bug CORE-3327 : Thread pool in network server could create more threads than necessary
+
+ 2011-02-02 12:10  hvlad 
+   M src/jrd/isc.h
+   M src/jrd/isc_sync.cpp
+Fixed bug CORE-3326 : Fast mutex could be left in locked state by dead process
+
+ 2011-02-02 11:50  hvlad 
+   M src/jrd/isc_sync.cpp
+Fixed bug CORE-3325 : At high load it is possible that new process could fail to map shared memory 
+
+ 2011-02-02 11:36  hvlad 
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Improvement CORE-3324 : ftracemgr should flush its output from time to time
+
+ 2011-02-02 11:31  alexpeshkoff 
+   M src/jrd/scl.epp
+Backported fix for CORE-3329:Windows administrator gets RDB$ADMIN role when this is not expected
+
+ 2011-02-02 10:27  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lck.cpp
+   M src/jrd/lck_proto.h
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/tra.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+Improvement CORE-3323 : Ability to cancel waiting in lock manager
+
+ 2011-02-02 10:12  dimitr 
+   M src/dsql/parse.y
+Fixed CORE-3245: SUBSTRING on long blobs truncates result to 32767 if third argument not present.
+
+ 2011-02-02 08:15  dimitr 
+   M src/lock/lock.cpp
+Backported Adriano's correction.
+
+ 2011-02-02 07:54  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed deadlock caused by my commit for CORE-3194
+
  2011-02-01 15:17  hvlad 
    M src/lock/lock.cpp
 Warnings
