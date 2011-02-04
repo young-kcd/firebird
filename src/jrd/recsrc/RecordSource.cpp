@@ -127,7 +127,7 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 			}
 			else
 			{
-				plan += (plan.length() ? ", " : "") + printName(tdbb, indexName.c_str());
+				plan += (plan.hasData() ? ", " : "") + printName(tdbb, indexName.c_str());
 			}
 		}
 		break;

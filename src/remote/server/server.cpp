@@ -5421,6 +5421,7 @@ void Worker::setState(const bool active)
 bool Worker::wakeUp()
 {
 	MutexLockGuard reqQueGuard(request_que_mutex);
+
 #ifdef _DEBUG
 	int cnt = 0;
 	for (server_req_t* req = request_que; req; req = req->req_next)
@@ -5437,6 +5438,7 @@ bool Worker::wakeUp()
 		return true;
 
 	MutexLockGuard guard(m_mutex);
+
 	if (m_idleWorkers)
 	{
 		Worker* idle = m_idleWorkers;
@@ -5444,8 +5446,10 @@ bool Worker::wakeUp()
 		idle->m_sem.release();
 		return true;
 	}
+
 	if (m_cntAll >= ports_active + ports_pending)
 		return true;
+
 	return (m_cntAll >= MAX_THREADS);
 }
 
@@ -5513,7 +5517,7 @@ void Worker::start(USHORT flags)
 			Thread::start(loopThread, (void*)(IPTR) flags, THREAD_medium);
 			++m_cntAll;
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			if (!m_cntAll)
 			{

@@ -363,8 +363,7 @@ string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
  **************************************
  *
  * Functional description
- *	Returns a formatted textual plan for all
- *	RecordSelExpr's in the specified request.
+ *	Returns a formatted textual plan for all RseNode's in the specified request.
  *
  **************************************/
 	string plan;

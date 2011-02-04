@@ -165,7 +165,7 @@ private:
 	class DSQLParamsImpl : public Firebird::StackIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 	{
 	public:
-		DSQLParamsImpl(Firebird::MemoryPool &pool, const Firebird::Array<dsql_par*>* params) :
+		DSQLParamsImpl(Firebird::MemoryPool& pool, const Firebird::Array<dsql_par*>* params) :
 			m_params(params),
 			m_descs(pool)
 		{}
@@ -191,7 +191,7 @@ private:
 class TraceFailedSQLStatement : public Firebird::StackIface<TraceSQLStatement, FB_TRACE_SQL_VERSION>
 {
 public:
-	TraceFailedSQLStatement(Firebird::string &text) :
+	TraceFailedSQLStatement(Firebird::string& text) :
 		m_text(text)
 	{}
 
@@ -334,7 +334,7 @@ private:
 class TraceInitInfoImpl : public Firebird::StackIface<TraceInitInfo, FB_TRACE_INIT_INFO_VERSION>
 {
 public:
-	TraceInitInfoImpl(const Firebird::TraceSession &session, const Attachment* att,
+	TraceInitInfoImpl(const Firebird::TraceSession& session, const Attachment* att,
 					const char* filename) :
 		m_session(session),
 		m_trace_conn(att),

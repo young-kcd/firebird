@@ -6622,7 +6622,7 @@ bool thread_db::checkCancelState(bool punt)
 		{
 			if ((!request ||
 					!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER))) &&
+						(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER))) &&
 				(!transaction || !(transaction->tra_flags & TRA_system)))
 			{
 				if (!punt)

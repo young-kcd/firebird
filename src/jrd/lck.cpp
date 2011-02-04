@@ -206,7 +206,7 @@ inline bool checkLock(const Lock* l)
 #endif
 
 namespace {
-// This class is used as a guard around long waiting call into LM and have 
+// This class is used as a guard around long waiting call into LM and have
 // two purposes :
 //	- set and restore att_wait_lock while waiting inside the LM
 //	- set or clear and restore TDBB_wait_cancel_disable flag in dependence
@@ -223,21 +223,16 @@ public:
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		m_save_lock = att->att_wait_lock;
 
-		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable); 
+		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable);
 		m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
 
 		if (!wait)
 			return;
 
-		switch (lock->lck_type)
+		if (lock->lck_type == LCK_tra)
 		{
-		case LCK_tra:
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 			att->att_wait_lock = lock;
-		break;
-
-		default:
-			;
 		}
 	}
 
@@ -246,7 +241,7 @@ public:
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		att->att_wait_lock = m_save_lock;
 
-		if (m_cancel_disabled) 
+		if (m_cancel_disabled)
 			m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
 		else
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
@@ -379,7 +374,7 @@ bool LCK_cancel_wait(Jrd::Attachment* attachment)
  **************************************
  *
  * Functional description
- *	Try to cancel waiting of attachment inside the LM	
+ *	Try to cancel waiting of attachment inside the LM.
  *
  **************************************/
 	Database *dbb = attachment->att_database;
