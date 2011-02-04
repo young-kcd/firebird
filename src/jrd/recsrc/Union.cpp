@@ -191,7 +191,7 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 			{
 				plan += ", ";
 			}
-			m_args[i]->print(tdbb, plan, true, level);
+			m_args[i]->print(tdbb, plan, false, level);
 		}
 		plan += ")";
 	}
