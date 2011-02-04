@@ -362,11 +362,21 @@ namespace
 		}
 		else
 		{
-			plan += "(";
+			if (!level)
+			{
+				plan += "(";
+			}
+
 			m_outer->print(tdbb, plan, false, level + 1);
+
 			plan += ", ";
+
 			m_inner->print(tdbb, plan, false, level + 1);
-			plan += ")";
+
+			if (!level)
+			{
+				plan += ")";
+			}
 		}
 	}
 

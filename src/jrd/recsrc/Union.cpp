@@ -176,6 +176,7 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Union";
+
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			m_args[i]->print(tdbb, plan, true, level);
@@ -183,17 +184,25 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 	}
 	else
 	{
-		level++;
-		plan += "(";
+		if (!level)
+		{
+			plan += "(";
+		}
+
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 			{
 				plan += ", ";
 			}
-			m_args[i]->print(tdbb, plan, false, level);
+
+			m_args[i]->print(tdbb, plan, false, level + 1);
 		}
-		plan += ")";
+
+		if (!level)
+		{
+			plan += ")";
+		}
 	}
 }
 
