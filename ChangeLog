@@ -1,3 +1,7 @@
+ 2011-02-03 08:00  dimitr 
+   M src/jrd/cch.cpp
+Removed the supposedly wrong checkout (it was added in v2.0), as theoretically it can lead to race conditions in the page cache.
+
  2011-01-12 10:56  dimitr 
    M doc/license/README.license.usage.txt
 Corrected the license URLs.
