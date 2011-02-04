@@ -8721,11 +8721,13 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
-		//const ULONG totLen = length * charSet->maxBytesPerChar();
+
+		const FB_UINT64 byte_offset = start * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_length = length * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())
 		{
-			buffer.getBuffer(MIN(blob->blb_length, (start + length) * charSet->maxBytesPerChar()));
+			buffer.getBuffer(MIN(blob->blb_length, byte_offset + byte_length));
 			dataLen = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount(), false);
 
 			HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
@@ -8735,10 +8737,10 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 				buffer2.getCapacity(), buffer2.begin(), start, length);
 			BLB_put_data(tdbb, newBlob, buffer2.begin(), dataLen);
 		}
-		else
+		else if (byte_offset < blob->blb_length)
 		{
-			start *= charSet->maxBytesPerChar();
-			length *= charSet->maxBytesPerChar();
+			start = byte_offset;
+			length = MIN(blob->blb_length, byte_length);
 
 			while (!(blob->blb_flags & BLB_eof) && start)
 			{
