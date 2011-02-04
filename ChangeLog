@@ -1,3 +1,17 @@
+ 2011-02-03 08:00  dimitr 
+   M src/jrd/cch.cpp
+Removed the supposedly wrong checkout (it was added in v2.0), as theoretically it can lead to race conditions in the page cache.
+
+ 2011-02-02 12:56  dimitr 
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/pass1.cpp
+Simplified and sub-optimal fix (without hidden variables) for CORE-3296: Error "context already in use" for the simple case function with a sub-select operand.
+
+ 2011-02-02 10:14  dimitr 
+   M src/dsql/parse.y
+Fixed CORE-3245: SUBSTRING on long blobs truncates result to 32767 if third argument not present.
+
  2011-01-31 12:11  hvlad 
    M src/jrd/dfw.epp
 Backport fix for bug CORE-3095 : Client receive event's with count equal to 1 despite of how many times EVENT was POSTed in same transaction
