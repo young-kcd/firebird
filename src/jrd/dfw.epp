@@ -4892,7 +4892,16 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 		if (tfb->tfb_flags & TFB_computed)
 			desc->dsc_dtype |= COMPUTED_FLAG;
 
-		format->fmt_defaults[tfb->tfb_id] = tfb->tfb_default;
+		impure_value& defRef = format->fmt_defaults[tfb->tfb_id];
+		defRef = tfb->tfb_default;
+
+		if (tfb->tfb_default.vlu_string)
+		{
+			fb_assert(defRef.vlu_desc.dsc_dtype == dtype_text);
+			defRef.vlu_desc.dsc_address = defRef.vlu_string->str_data;
+		}
+		else
+			defRef.vlu_desc.dsc_address = (UCHAR*) &defRef.vlu_misc;
 	}
 
 	// Compute the offsets of the various fields
@@ -5259,11 +5268,11 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 							if (result)
 							{
 								dsc desc = *result;
+								MoveBuffer buffer;
 
 								if (desc.isText() || desc.isBlob())
 								{
 									UCHAR* ptr = NULL;
-									MoveBuffer buffer;
 									const int len = MOV_make_string2(tdbb, &desc, CS_NONE, &ptr, buffer, true);
 									fb_assert(ULONG(len) < ULONG(MAX_USHORT));
 									desc.makeText(len, ttype_none, ptr);
