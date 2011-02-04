@@ -120,7 +120,7 @@ inline void impure_value::make_int64(const SINT64 val, const signed char scale)
 
 struct impure_value_ex : public impure_value
 {
-	SLONG vlux_count;
+	SINT64 vlux_count;
 	blb* vlu_blob;
 };
 
