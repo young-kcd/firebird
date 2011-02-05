@@ -90,7 +90,7 @@ private:
 class CountAggNode : public AggNode
 {
 public:
-	explicit CountAggNode(MemoryPool& pool, bool aDistinct, dsql_nod* aArg = NULL);
+	explicit CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 

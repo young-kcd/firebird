@@ -771,15 +771,16 @@ static RegisterNode<CountAggNode> regCountAggNodeLegacy(blr_agg_count);
 
 static AggNode::Register<CountAggNode> countAggInfo("COUNT", blr_agg_count2, blr_agg_count_distinct);
 
-CountAggNode::CountAggNode(MemoryPool& pool, bool aDistinct, dsql_nod* aArg)
-	: AggNode(pool, countAggInfo, aDistinct, false, aArg)
+CountAggNode::CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, dsql_nod* aArg)
+	: AggNode(pool, countAggInfo, aDistinct, aDialect1, aArg)
 {
 }
 
 DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	CountAggNode* node = FB_NEW(pool) CountAggNode(pool,
-		(blrOp == blr_agg_count_distinct));
+		(blrOp == blr_agg_count_distinct),
+		(csb->csb_g_flags & csb_blr_version4));
 
 	if (blrOp != blr_agg_count)
 		node->arg = PAR_parse_value(tdbb, csb);
@@ -789,7 +790,10 @@ DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 void CountAggNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	desc->makeInt64(0);
+	if (dialect1)
+		desc->makeLong(0);
+	else
+		desc->makeInt64(0);
 }
 
 void CountAggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -802,13 +806,16 @@ void CountAggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void CountAggNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
-	desc->makeInt64(0);
+	if (dialect1)
+		desc->makeLong(0);
+	else
+		desc->makeInt64(0);
 }
 
 ValueExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
 	CountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CountAggNode(*tdbb->getDefaultPool(),
-		distinct);
+		distinct, dialect1);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
@@ -825,7 +832,11 @@ void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 void CountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* request, dsc* /*desc*/) const
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
-	++impure->vlu_misc.vlu_int64;
+
+	if (dialect1)
+		++impure->vlu_misc.vlu_long;
+	else
+		++impure->vlu_misc.vlu_int64;
 }
 
 dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
@@ -840,7 +851,7 @@ dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 
 AggNode* CountAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) const
 {
-	return FB_NEW(getPool()) CountAggNode(getPool(), distinct,
+	return FB_NEW(getPool()) CountAggNode(getPool(), distinct, dialect1,
 		PASS1_node(dsqlScratch, dsqlArg));
 }
 

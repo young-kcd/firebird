@@ -5565,11 +5565,11 @@ non_aggregate_function
 
 aggregate_function
 	: COUNT '(' '*' ')'
-		{ $$ = newNode<CountAggNode>(false); }
+		{ $$ = newNode<CountAggNode>(false, (client_dialect < SQL_DIALECT_V6_TRANSITION)); }
 	| COUNT '(' all_noise value ')'
-		{ $$ = newNode<CountAggNode>(false, $4); }
+		{ $$ = newNode<CountAggNode>(false, (client_dialect < SQL_DIALECT_V6_TRANSITION), $4); }
 	| COUNT '(' DISTINCT value ')'
-		{ $$ = newNode<CountAggNode>(true, $4); }
+		{ $$ = newNode<CountAggNode>(true, (client_dialect < SQL_DIALECT_V6_TRANSITION), $4); }
 	| SUM '(' all_noise value ')'
 		{
 			$$ = newNode<SumAggNode>(false,
