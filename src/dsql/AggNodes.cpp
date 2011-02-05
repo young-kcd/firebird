@@ -802,11 +802,7 @@ void CountAggNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void CountAggNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
-	desc->dsc_dtype = dtype_int64;
-	desc->dsc_length = sizeof(SINT64);
-	desc->dsc_scale = 0;
-	desc->dsc_sub_type = 0;
-	desc->dsc_flags = 0;
+	desc->makeInt64(0);
 }
 
 ValueExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier)
