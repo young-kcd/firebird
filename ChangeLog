@@ -1,3 +1,46 @@
+ 2011-02-05 01:49  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/parse.y
+Fix problem with COUNT in dialect 1.
+
+ 2011-02-05 00:04  asfernandes 
+   M src/dsql/AggNodes.cpp
+Misc
+
+ 2011-02-04 23:58  asfernandes 
+   M src/common/isc_sync.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/lock/lock.cpp
+   M src/remote/server/server.cpp
+Misc
+
+ 2011-02-04 12:13  dimitr 
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/Union.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+Slightly clearer output.
+
+ 2011-02-04 10:02  dimitr 
+   M src/jrd/recsrc/Union.cpp
+Correction.
+
+ 2011-02-04 08:42  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3335: Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING function and its boundary arguments.
+
+ 2011-02-04 07:53  dimitr 
+   M src/jrd/val.h
+Make all aggregates aware of big tables (more than 2^31 rows).
+
+ 2011-02-04 07:45  dimitr 
+   M src/jrd/dfw.epp
+Corrections, thanks to Adriano.
+
  2011-02-03 14:51  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
