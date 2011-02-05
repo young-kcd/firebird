@@ -1,3 +1,7 @@
+ 2011-02-04 08:41  dimitr 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3335: Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING function and its boundary arguments.
+
  2011-02-03 08:00  dimitr 
    M src/jrd/cch.cpp
 Removed the supposedly wrong checkout (it was added in v2.0), as theoretically it can lead to race conditions in the page cache.
