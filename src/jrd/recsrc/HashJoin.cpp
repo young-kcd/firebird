@@ -317,6 +317,7 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Hash Join (inner)";
+		m_leader->print(tdbb, plan, true, level);
 		for (int i = 0; i < m_args.getCount(); i++)
 		{
 			m_args[i]->print(tdbb, plan, true, level);
