@@ -52,9 +52,8 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, UCHAR s
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	m_offset = size;
 	size += sizeof(index_desc);
-	fb_assert(size < size_t(MAX_USHORT));
 
-	m_impure = CMP_impure(csb, size);
+	m_impure = CMP_impure(csb, static_cast<ULONG>(size));
 }
 
 void IndexTableScan::open(thread_db* tdbb) const

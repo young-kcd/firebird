@@ -41,9 +41,8 @@ MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
 					 SortedStream* const* args, const NestValueArray* const* keys)
 	: m_args(csb->csb_pool), m_keys(csb->csb_pool)
 {
-	size_t size = sizeof(struct Impure) + count * sizeof(Impure::irsb_mrg_repeat);
-	fb_assert(size < size_t(MAX_USHORT));
-	m_impure = CMP_impure(csb, (USHORT) size);
+	const size_t size = sizeof(struct Impure) + count * sizeof(Impure::irsb_mrg_repeat);
+	m_impure = CMP_impure(csb, static_cast<ULONG>(size));
 
 	m_args.resize(count);
 	m_keys.resize(count);
