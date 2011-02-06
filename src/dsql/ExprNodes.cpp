@@ -2897,6 +2897,126 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+static RegisterNode<CoalesceNode> regCoalesceNode(blr_coalesce);
+
+DmlNode* CoalesceNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	CoalesceNode* node = FB_NEW(pool) CoalesceNode(pool);
+	node->args = PAR_args(tdbb, csb);
+	return node;
+}
+
+void CoalesceNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "CoalesceNode\n";
+	nodes.add(dsqlArgs);
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	CoalesceNode* node = FB_NEW(getPool()) CoalesceNode(getPool(),
+		PASS1_node(dsqlScratch, dsqlArgs));
+
+	AutoPtr<dsql_nod> nod(MAKE_node(Dsql::nod_class_exprnode, 1));
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
+	node->setParameterType(dsqlScratch, nod, false);
+
+	return node;
+}
+
+void CoalesceNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = "COALESCE";
+}
+
+bool CoalesceNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* node, bool forceVarChar)
+{
+	// Set descriptor for output node.
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
+
+	bool ret = false;
+	dsql_nod* const* ptr = dsqlArgs->nod_arg;
+
+	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr != end; ++ptr)
+		ret |= PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
+
+	return ret;
+}
+
+void CoalesceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_coalesce);
+	dsqlScratch->appendUChar(dsqlArgs->nod_count);
+
+	dsql_nod* const* ptr = dsqlArgs->nod_arg;
+
+	for (const dsql_nod* const* const end = ptr + dsqlArgs->nod_count; ptr != end; ++ptr)
+		GEN_expr(dsqlScratch, *ptr);
+}
+
+void CoalesceNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc_from_list(dsqlScratch, desc, dsqlArgs, "COALESCE");
+}
+
+void CoalesceNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	Array<dsc> descs;
+	descs.resize(args->args.getCount());
+
+	unsigned i = 0;
+	Array<const dsc*> descPtrs;
+	descPtrs.resize(args->args.getCount());
+
+	for (NestConst<ValueExprNode>* p = args->args.begin(); p != args->args.end(); ++p, ++i)
+	{
+		(*p)->getDesc(tdbb, csb, &descs[i]);
+		descPtrs[i] = &descs[i];
+	}
+
+	DataTypeUtil(tdbb).makeFromList(desc, "COALESCE", descPtrs.getCount(), descPtrs.begin());
+}
+
+ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	CoalesceNode* node = FB_NEW(*tdbb->getDefaultPool()) CoalesceNode(*tdbb->getDefaultPool());
+	node->args = copier.copy(tdbb, args);
+	return node;
+}
+
+ValueExprNode* CoalesceNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* CoalesceNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	const NestConst<ValueExprNode>* ptr = args->args.begin();
+	const NestConst<ValueExprNode>* end = args->args.end();
+
+	for (; ptr != end; ++ptr)
+	{
+		dsc* desc = EVL_expr(tdbb, request, *ptr);
+
+		if (desc && !(request->req_flags & req_null))
+			return desc;
+	}
+
+	return NULL;
+}
+
+
+//--------------------
+
+
 static RegisterNode<ConcatenateNode> regConcatenateNode(blr_concatenate);
 
 ConcatenateNode::ConcatenateNode(MemoryPool& pool, dsql_nod* aArg1, dsql_nod* aArg2)
@@ -3651,6 +3771,198 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 {
 	return FB_NEW(getPool()) CurrentUserNode(getPool());
+}
+
+
+//--------------------
+
+
+static RegisterNode<DecodeNode> regDecodeNode(blr_decode);
+
+DmlNode* DecodeNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+{
+	DecodeNode* node = FB_NEW(pool) DecodeNode(pool);
+	node->test = PAR_parse_value(tdbb, csb);
+	node->conditions = PAR_args(tdbb, csb);
+	node->values = PAR_args(tdbb, csb);
+	return node;
+}
+
+void DecodeNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text = "DecodeNode\n";
+	nodes.add(dsqlTest);
+	nodes.add(dsqlConditions);
+	nodes.add(dsqlValues);
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	DecodeNode* node = FB_NEW(getPool()) DecodeNode(getPool(), PASS1_node(dsqlScratch, dsqlTest),
+		PASS1_node(dsqlScratch, dsqlConditions), PASS1_node(dsqlScratch, dsqlValues));
+	node->label = label;
+
+	AutoPtr<dsql_nod> nod(MAKE_node(Dsql::nod_class_exprnode, 1));
+	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
+	node->setParameterType(dsqlScratch, nod, false);
+
+	return node;
+}
+
+void DecodeNode::setParameterName(dsql_par* parameter) const
+{
+	parameter->par_name = parameter->par_alias = label;
+}
+
+bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
+	dsql_nod* node, bool forceVarChar)
+{
+	// Check if there is a parameter in the test/conditions.
+	bool setParameters = ExprNode::is<ParameterNode>(dsqlTest);
+
+	if (!setParameters)
+	{
+		dsql_nod** ptr = dsqlConditions->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + dsqlConditions->nod_count; ptr != end; ++ptr)
+		{
+			if (ExprNode::is<ParameterNode>(*ptr))
+			{
+				setParameters = true;
+				break;
+			}
+		}
+	}
+
+	// Build list for making describe information for the test and conditions.
+
+	if (setParameters)
+	{
+		AutoPtr<dsql_nod> node1(MAKE_node(Dsql::nod_list, dsqlConditions->nod_count + 1));
+		unsigned i = 0;
+
+		node1->nod_arg[i++] = dsqlTest;
+		dsql_nod** ptr = dsqlConditions->nod_arg;
+
+		for (const dsql_nod* const* const end = ptr + dsqlConditions->nod_count; ptr != end; ++ptr, ++i)
+			node1->nod_arg[i] = *ptr;
+
+		MAKE_desc_from_list(dsqlScratch, &node1->nod_desc, node1, label.c_str());
+
+		if (!node1->nod_desc.isUnknown())
+		{
+			// Set parameter describe information.
+			PASS1_set_parameter_type(dsqlScratch, dsqlTest, node1, false);
+
+			dsql_nod** ptr = dsqlConditions->nod_arg;
+
+			for (const dsql_nod* const* const end = ptr + dsqlConditions->nod_count; ptr != end; ++ptr)
+				PASS1_set_parameter_type(dsqlScratch, *ptr, node1, false);
+		}
+	}
+
+	// Set descriptor for output node.
+	MAKE_desc(dsqlScratch, &node->nod_desc, node);
+
+	bool ret = false;
+	dsql_nod* const* ptr = dsqlValues->nod_arg;
+
+	for (const dsql_nod* const* const end = ptr + dsqlValues->nod_count; ptr != end; ++ptr)
+		ret |= PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
+
+	return ret;
+}
+
+void DecodeNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_decode);
+	GEN_expr(dsqlScratch, dsqlTest);
+
+	dsqlScratch->appendUChar(dsqlConditions->nod_count);
+
+	dsql_nod* const* ptr = dsqlConditions->nod_arg;
+	for (const dsql_nod* const* const end = ptr + dsqlConditions->nod_count; ptr != end; ++ptr)
+		GEN_expr(dsqlScratch, *ptr);
+
+	dsqlScratch->appendUChar(dsqlValues->nod_count);
+
+	ptr = dsqlValues->nod_arg;
+	for (const dsql_nod* const* const end = ptr + dsqlValues->nod_count; ptr != end; ++ptr)
+		GEN_expr(dsqlScratch, *ptr);
+}
+
+void DecodeNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc_from_list(dsqlScratch, desc, dsqlValues, label.c_str());
+	desc->setNullable(true);
+}
+
+void DecodeNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	Array<dsc> descs;
+	descs.resize(values->args.getCount());
+
+	unsigned i = 0;
+	Array<const dsc*> descPtrs;
+	descPtrs.resize(values->args.getCount());
+
+	for (NestConst<ValueExprNode>* p = values->args.begin(); p != values->args.end(); ++p, ++i)
+	{
+		(*p)->getDesc(tdbb, csb, &descs[i]);
+		descPtrs[i] = &descs[i];
+	}
+
+	DataTypeUtil(tdbb).makeFromList(desc, label.c_str(), descPtrs.getCount(), descPtrs.begin());
+
+	desc->setNullable(true);
+}
+
+ValueExprNode* DecodeNode::copy(thread_db* tdbb, NodeCopier& copier)
+{
+	DecodeNode* node = FB_NEW(*tdbb->getDefaultPool()) DecodeNode(*tdbb->getDefaultPool());
+	node->test = copier.copy(tdbb, test);
+	node->conditions = copier.copy(tdbb, conditions);
+	node->values = copier.copy(tdbb, values);
+	return node;
+}
+
+ValueExprNode* DecodeNode::pass2(thread_db* tdbb, CompilerScratch* csb)
+{
+	ValueExprNode::pass2(tdbb, csb);
+
+	dsc desc;
+	getDesc(tdbb, csb, &desc);
+	impureOffset = CMP_impure(csb, sizeof(impure_value));
+
+	return this;
+}
+
+dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* testDesc = EVL_expr(tdbb, request, test);
+
+	// The comparations are done with "equal" operator semantics, so if the test value is
+	// NULL we have nothing to compare.
+	if (testDesc && !(request->req_flags & req_null))
+	{
+		const NestConst<ValueExprNode>* conditionsPtr = conditions->args.begin();
+		const NestConst<ValueExprNode>* conditionsEnd = conditions->args.end();
+		const NestConst<ValueExprNode>* valuesPtr = values->args.begin();
+
+		for (; conditionsPtr != conditionsEnd; ++conditionsPtr, ++valuesPtr)
+		{
+			dsc* desc = EVL_expr(tdbb, request, *conditionsPtr);
+
+			if (desc && !(request->req_flags & req_null) && MOV_compare(testDesc, desc) == 0)
+				return EVL_expr(tdbb, request, *valuesPtr);
+		}
+	}
+
+	if (values->args.getCount() > conditions->args.getCount())
+		return EVL_expr(tdbb, request, values->args.back());
+	else
+		return NULL;
 }
 
 
@@ -7554,11 +7866,15 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 
 void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
+	fb_assert(false);
+
 	expr->getDesc(tdbb, csb, desc);
 }
 
 ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
 {
+	fb_assert(false);
+
 	StmtExprNode* node = FB_NEW(*tdbb->getDefaultPool()) StmtExprNode(*tdbb->getDefaultPool());
 	node->stmt = copier.copy(tdbb, stmt);
 	node->expr = copier.copy(tdbb, expr);
@@ -7567,12 +7883,16 @@ ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
 
 ValueExprNode* StmtExprNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	fb_assert(false);
+
 	doPass1(tdbb, csb, stmt.getAddress());
 	return ValueExprNode::pass1(tdbb, csb);
 }
 
 ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	fb_assert(false);
+
 	StmtNode::doPass2(tdbb, csb, stmt.getAddress(), NULL);
 
 	ValueExprNode::pass2(tdbb, csb);
@@ -7586,6 +7906,8 @@ ValueExprNode* StmtExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 dsc* StmtExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
+	fb_assert(false);
+
 	EXE_looper(tdbb, request, stmt.getObject(), true);
 
 	dsc* desc = EVL_expr(tdbb, request, expr);
@@ -9874,7 +10196,45 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	node->condition = PAR_parse_boolean(tdbb, csb);
 	node->trueValue = PAR_parse_value(tdbb, csb);
 	node->falseValue = PAR_parse_value(tdbb, csb);
-	return node;
+
+	// Get rid of blr_stmt_expr expressions.
+
+	MissingBoolNode* missing = node->condition->as<MissingBoolNode>();
+	if (!missing)
+		return node;
+
+	StmtExprNode* missingCond = missing->arg->as<StmtExprNode>();
+	if (!missingCond)
+		return node;
+
+	CompoundStmtNode* stmt = missingCond->stmt->as<CompoundStmtNode>();
+	DeclareVariableNode* declStmt = NULL;
+	AssignmentNode* assignStmt;
+
+	if (stmt)
+	{
+		if (stmt->statements.getCount() != 2 ||
+			!(declStmt = stmt->statements[0]->as<DeclareVariableNode>()) ||
+			!(assignStmt = stmt->statements[1]->as<AssignmentNode>()))
+		{
+			return node;
+		}
+	}
+	else if (!(assignStmt = missingCond->stmt->as<AssignmentNode>()))
+		return node;
+
+	VariableNode* var = node->falseValue->as<VariableNode>();
+	VariableNode* var2 = assignStmt->asgnTo->as<VariableNode>();
+
+	if (!var || !var2 || var->varId != var2->varId || (declStmt && declStmt->varId != var->varId))
+		return node;
+
+	CoalesceNode* coalesceNode = FB_NEW(pool) CoalesceNode(pool);
+	coalesceNode->args = FB_NEW(pool) ValueListNode(pool, 2);
+	coalesceNode->args->args[0] = assignStmt->asgnFrom;
+	coalesceNode->args->args[1] = node->trueValue;
+
+	return coalesceNode;
 }
 
 void ValueIfNode::print(string& text, Array<dsql_nod*>& nodes) const

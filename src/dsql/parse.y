@@ -5882,35 +5882,87 @@ case_abbreviation
 	| IIF '(' search_condition ',' value ',' value ')'
 		{ $$ = makeClassNode(newNode<ValueIfNode>($3, $5, $7)); }
 	| COALESCE '(' value ',' value_list ')'
-		{ $$ = make_node (nod_coalesce, 2, $3, $5); }
+		{ $$ = makeClassNode(newNode<CoalesceNode>(make_list(make_node(nod_list, 2, $3, $5)))); }
 	| DECODE '(' value ',' decode_pairs ')'
 		{
-			$$ = make_node(nod_simple_case, 3, $3, make_list($5),
-				makeClassNode(newNode<NullNode>()));
+			dsql_nod* list = make_list($5);
+			DsqlNodStack conditions;
+			DsqlNodStack values;
+
+			for (unsigned i = 0; i < list->nod_count; i += 2)
+			{
+				conditions.push(list->nod_arg[i]);
+				values.push(list->nod_arg[i + 1]);
+			}
+
+			$$ = makeClassNode(newNode<DecodeNode>($3, MAKE_list(conditions), MAKE_list(values)));
 		}
 	| DECODE '(' value ',' decode_pairs ',' value ')'
-		{ $$ = make_node(nod_simple_case, 3, $3, make_list($5), $7); }
+		{
+			dsql_nod* list = make_list($5);
+			DsqlNodStack conditions;
+			DsqlNodStack values;
+
+			for (unsigned i = 0; i < list->nod_count; i += 2)
+			{
+				conditions.push(list->nod_arg[i]);
+				values.push(list->nod_arg[i + 1]);
+			}
+
+			values.push($7);
+
+			$$ = makeClassNode(newNode<DecodeNode>($3, MAKE_list(conditions), MAKE_list(values)));
+		}
 	;
 
-case_specification	: simple_case
-		| searched_case
-		;
+case_specification
+	: simple_case
+	| searched_case
+	;
 
 simple_case
 	: CASE case_operand simple_when_clause END
 		{
-			$$ = make_node (nod_simple_case, 3, $2, make_list($3),
-				makeClassNode(newNode<NullNode>()));
+			dsql_nod* list = make_list($3);
+			DsqlNodStack conditions;
+			DsqlNodStack values;
+
+			for (unsigned i = 0; i < list->nod_count; i += 2)
+			{
+				conditions.push(list->nod_arg[i]);
+				values.push(list->nod_arg[i + 1]);
+			}
+
+			DecodeNode* decodeNode = newNode<DecodeNode>($2, MAKE_list(conditions), MAKE_list(values));
+			decodeNode->label = "CASE";
+			$$ = makeClassNode(decodeNode);
 		}
 	| CASE case_operand simple_when_clause ELSE case_result END
-		{ $$ = make_node (nod_simple_case, 3, $2, make_list($3), $5); }
+		{
+			dsql_nod* list = make_list($3);
+			DsqlNodStack conditions;
+			DsqlNodStack values;
+
+			for (unsigned i = 0; i < list->nod_count; i += 2)
+			{
+				conditions.push(list->nod_arg[i]);
+				values.push(list->nod_arg[i + 1]);
+			}
+
+			values.push($5);
+
+			DecodeNode* decodeNode = newNode<DecodeNode>($2, MAKE_list(conditions), MAKE_list(values));
+			decodeNode->label = "CASE";
+			$$ = makeClassNode(decodeNode);
+		}
 	;
 
-simple_when_clause	: WHEN when_operand THEN case_result
-				{ $$ = make_node (nod_list, 2, $2, $4); }
-			| simple_when_clause WHEN when_operand THEN case_result
-				{ $$ = make_node (nod_list, 2, $1, make_node (nod_list, 2, $3, $5)); }
-			;
+simple_when_clause
+	: WHEN when_operand THEN case_result
+		{ $$ = make_node(nod_list, 2, $2, $4); }
+	| simple_when_clause WHEN when_operand THEN case_result
+		{ $$ = make_node(nod_list, 2, $1, make_node(nod_list, 2, $3, $5)); }
+	;
 
 searched_case
 	: CASE searched_when_clause END
@@ -5922,20 +5974,24 @@ searched_case
 		{ $$ = make_node (nod_searched_case, 2, make_list($2), $4); }
 	;
 
-searched_when_clause	: WHEN search_condition THEN case_result
-			{ $$ = make_node (nod_list, 2, $2, $4); }
-		| searched_when_clause WHEN search_condition THEN case_result
-			{ $$ = make_node (nod_list, 2, $1, make_node (nod_list, 2, $3, $5)); }
-		;
+searched_when_clause
+	: WHEN search_condition THEN case_result
+		{ $$ = make_node(nod_list, 2, $2, $4); }
+	| searched_when_clause WHEN search_condition THEN case_result
+		{ $$ = make_node(nod_list, 2, $1, make_node(nod_list, 2, $3, $5)); }
+	;
 
-when_operand	: value
-		;
+when_operand
+	: value
+	;
 
-case_operand	: value
-		;
+case_operand
+	: value
+	;
 
-case_result	: value
-		;
+case_result
+	: value
+	;
 
 decode_pairs
 	: value ',' value

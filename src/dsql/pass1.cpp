@@ -199,7 +199,6 @@ static dsql_ctx* pass1_alias(DsqlCompilerScratch*, DsqlContextStack&, dsql_str*)
 static dsql_str* pass1_alias_concat(const dsql_str*, const char*);
 static dsql_rel* pass1_base_table(DsqlCompilerScratch*, const dsql_rel*, const dsql_str*);
 static void pass1_blob(DsqlCompilerScratch*, dsql_nod*);
-static dsql_nod* pass1_coalesce(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_collate(DsqlCompilerScratch*, dsql_nod*, const dsql_str*);
 static dsql_ctx* pass1_cursor_context(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
 static dsql_nod* pass1_cursor_reference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
@@ -209,7 +208,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch*, dsql_nod*, const char
 static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr);
+static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* expr);
 static dsql_nod* pass1_insert(DsqlCompilerScratch*, dsql_nod*, bool);
 static void pass1_limit(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, RseNode*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
@@ -220,7 +219,6 @@ static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*
 static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_searched_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
-static dsql_nod* pass1_simple_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sort(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static void pass1_union_auto_cast(DsqlCompilerScratch*, dsql_nod*, const dsc&, SSHORT,
@@ -343,28 +341,7 @@ AggregateFinder::AggregateFinder(const DsqlCompilerScratch* aDsqlScratch, bool a
 bool AggregateFinder::internalVisit(const dsql_nod* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (!node)
-		return false;
-
-	bool aggregate = false;
-
-	switch (node->nod_type)
-	{
-		case nod_coalesce:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-				aggregate |= visit(ptr);
-			return aggregate;
-		}
-
-		default:
-			return visitChildren(node);
-	}
-
-	return false; // to cover the first three cases in the switch
-	// This comment seems outdated because this code is unreachable.
+	return node && visitChildren(node);
 }
 
 
@@ -380,27 +357,7 @@ Aggregate2Finder::Aggregate2Finder(USHORT aCheckScopeLevel, FieldMatchType aMatc
 bool Aggregate2Finder::internalVisit(const dsql_nod* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (!node)
-		return false;
-
-	bool found = false;
-
-	switch (node->nod_type)
-	{
-		case nod_coalesce:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-				found |= visit(ptr);
-			break;
-		}
-
-		default:
-			return visitChildren(node);
-	}
-
-	return found;
+	return node && visitChildren(node);
 }
 
 
@@ -415,27 +372,7 @@ FieldFinder::FieldFinder(USHORT aCheckScopeLevel, FieldMatchType aMatchType)
 bool FieldFinder::internalVisit(const dsql_nod* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (!node)
-		return false;
-
-	bool found = false;
-
-	switch (node->nod_type)
-	{
-		case nod_coalesce:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				found |= visit(ptr);
-			break;
-		}
-
-		default:
-			return visitChildren(node);
-	}
-
-	return found;
+	return node && visitChildren(node);
 }
 
 
@@ -480,15 +417,8 @@ bool InvalidReferenceFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_coalesce:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-				invalid |= visit(ptr);
-			break;
-		}
-
 		case nod_plan_expr:
+			fb_assert(false);
 			return false;
 
 		default:
@@ -516,24 +446,7 @@ FieldRemapper::FieldRemapper(DsqlCompilerScratch* aDsqlScratch, dsql_ctx* aConte
 bool FieldRemapper::internalVisit(dsql_nod* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
-
-	if (!node)
-		return false;
-
-	switch (node->nod_type)
-	{
-		case nod_coalesce:
-			// ASF: We had deliberately changed nod_count to 1, to not process the second list.
-			// But we should remap its fields. CORE-2176
-			visit(&node->nod_arg[0]);
-			visit(&node->nod_arg[1]);
-			break;
-
-		default:
-			return visitChildren(node);
-	}
-
-	return false;
+	return node && visitChildren(node);
 }
 
 
@@ -551,17 +464,6 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-		case nod_coalesce:
-		{
-			const dsql_nod* const* ptr = node->nod_arg;
-			for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
-			{
-				if (visit(ptr))
-					return true;
-			}
-			break;
-		}
-
 		case nod_field_name:
 			return false;
 
@@ -926,12 +828,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 		node->nod_desc = sub1->nod_desc;
 		return node;
-
-	case nod_coalesce:
-		return pass1_coalesce(dsqlScratch, input);
-
-	case nod_simple_case:
-		return pass1_simple_case(dsqlScratch, input);
 
 	case nod_searched_case:
 		return pass1_searched_case(dsqlScratch, input);
@@ -1918,12 +1814,6 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 	if (!node1 || !node2)
 		return false;
 
-	if (node1->nod_type == nod_hidden_var)
-		node1 = node1->nod_arg[e_hidden_var_expr];
-
-	if (node2->nod_type == nod_hidden_var)
-		node2 = node2->nod_arg[e_hidden_var_expr];
-
 	const CastNode* castNode1 = ExprNode::as<CastNode>(node1);
 
 	if (ignore_map_cast && castNode1)
@@ -2211,69 +2101,6 @@ static void pass1_blob( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			parameter->par_desc.dsc_length = sizeof(SSHORT);
 		}
 	}
-}
-
-
-/**
-
- 	pass1_coalesce
-
-    @brief	Handle a reference to a coalesce function.
-
-	COALESCE(expr-1, expr-2 [, expr-n])
-	is the same as :
-	CASE WHEN (expr-1 IS NULL) THEN expr-2 ELSE expr-1 END
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_coalesce( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
-
-	dsql_nod* node = MAKE_node(nod_coalesce, 2);
-	node->nod_count = 1;	// we do not want to reprocess the second list later
-
-	// Pass list of arguments 2..n on stack and make a list from it
-	DsqlNodStack stack;
-	PASS1_put_args_on_stack(dsqlScratch, input->nod_arg[0], stack);
-	PASS1_put_args_on_stack(dsqlScratch, input->nod_arg[1], stack);
-	node->nod_arg[0] = MAKE_list(stack);
-
-	DsqlNodStack stack2;
-	dsql_nod** ptr = node->nod_arg[0]->nod_arg;
-	const dsql_nod* const* end = ptr + node->nod_arg[0]->nod_count;
-
-	for (; ptr < end - 1; ptr++)
-	{
-		dsql_nod* var = pass1_hidden_variable(dsqlScratch, *ptr);
-
-		if (var)
-			stack2.push(var);
-		else
-			stack2.push(*ptr);
-	}
-
-	node->nod_arg[1] = MAKE_list(stack2);
-
-	// Set descriptor for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node);
-
-	// Set parameter-types if parameters are there
-	ptr = node->nod_arg[0]->nod_arg;
-	for (; ptr < end; ptr++) {
-		PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
-	}
-	ptr = node->nod_arg[1]->nod_arg;
-	end = ptr + node->nod_arg[1]->nod_count;
-	for (; ptr < end; ptr++) {
-		PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
-	}
-
-	return node;
 }
 
 
@@ -3669,7 +3496,7 @@ static dsql_nod* pass1_group_by_list(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 
 
 // Create (if necessary) a hidden variable to store a temporary value.
-static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod*& expr)
+static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_nod* expr)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -3703,11 +3530,6 @@ static dsql_nod* pass1_hidden_variable(DsqlCompilerScratch* dsqlScratch, dsql_no
 
 	MAKE_desc(dsqlScratch, &varNode->dsqlVar->desc, expr);
 	varNod->nod_desc = varNode->dsqlVar->desc;
-
-	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
-	newExpr->nod_arg[e_hidden_var_expr] = expr;
-	newExpr->nod_arg[e_hidden_var_var] = varNod;
-	expr = newExpr;
 
 	return varNod;
 }
@@ -5684,126 +5506,6 @@ static dsql_nod* pass1_sel_list(DsqlCompilerScratch* dsqlScratch, dsql_nod* inpu
 
 /**
 
- 	pass1_simple_case
-
-    @brief	Handle a reference to a simple case expression.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_simple_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
-
-	dsql_nod* node = MAKE_node(nod_simple_case, 4);
-	node->nod_count = 3;	// we do not want to reprocess e_simple_case_case_operand2 later
-
-	// build case_operand node
-	node->nod_arg[e_simple_case_case_operand] = PASS1_node(dsqlScratch, input->nod_arg[0]);
-	node->nod_arg[e_simple_case_case_operand2] = pass1_hidden_variable(
-		dsqlScratch, node->nod_arg[e_simple_case_case_operand]);
-
-	// If a hidden variable was generated, it will be stored in e_simple_case_case_operand2 and
-	// we'll use it in GEN. Otherwise, e_simple_case_case_operand2 is NULL and we should use the
-	// original expression (e_simple_case_case_operand) in GEN.
-
-	dsql_nod* list = input->nod_arg[1];
-
-	// build when_operand list
-	{ // scope block
-		DsqlNodStack stack;
-		dsql_nod** ptr = list->nod_arg;
-
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr += 2)
-			PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
-
-		node->nod_arg[e_simple_case_when_operands] = MAKE_list(stack);
-	} // end scope block
-
-	// build when_result list including else_result at the end
-	// else_result is included for easy handling in MAKE_desc()
-	{ // scope block
-		DsqlNodStack stack;
-		dsql_nod** ptr = list->nod_arg;
-		const dsql_nod* const* const end = ptr + list->nod_count;
-
-		for (++ptr; ptr < end; ptr += 2)
-			PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
-
-		PASS1_put_args_on_stack(dsqlScratch, input->nod_arg[2], stack);
-		node->nod_arg[e_simple_case_results] = MAKE_list(stack);
-	} // end scope block
-
-	// Check if there is a parameter in the case/when operand list
-	bool setParameters = ExprNode::is<ParameterNode>(node->nod_arg[e_simple_case_case_operand]);
-
-	if (!setParameters)
-	{
-		list = node->nod_arg[e_simple_case_when_operands];
-		dsql_nod** ptr = list->nod_arg;
-
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr)
-		{
-			if (ExprNode::is<ParameterNode>(*ptr))
-			{
-				setParameters = true;
-				break;
-			}
-		}
-	}
-
-	// build list for making describe information from
-	// case_operand and when_operands this is used for
-	// setting parameter describers if used in this case.
-	if (setParameters)
-	{
-		list = node->nod_arg[e_simple_case_when_operands];
-		dsql_nod* node1 = MAKE_node(nod_list, list->nod_count + 1);
-
-		{ // scope block
-			int i = 0;
-			node1->nod_arg[i++] = node->nod_arg[e_simple_case_case_operand];
-			dsql_nod** ptr = list->nod_arg;
-
-			for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr, ++i)
-				node1->nod_arg[i] = *ptr;
-
-			MAKE_desc_from_list(dsqlScratch, &node1->nod_desc, node1, "CASE");
-			// Set parameter describe information
-			PASS1_set_parameter_type(dsqlScratch, node->nod_arg[e_simple_case_case_operand], node1, false);
-		} // end scope block
-
-		{ // scope block
-			dsql_nod* simple_when = node->nod_arg[e_simple_case_when_operands];
-			dsql_nod** ptr = simple_when->nod_arg;
-
-			for (const dsql_nod* const* const end = ptr + simple_when->nod_count; ptr < end; ptr++)
-				PASS1_set_parameter_type(dsqlScratch, *ptr, node1, false);
-		} // end scope block
-
-		// Clean up temporary used node
-		delete node1;
-	}
-
-	// Set describer for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node);
-	// Set parameter describe information for evt. results parameters
-	dsql_nod* simple_res = node->nod_arg[e_simple_case_results];
-	dsql_nod** ptr = simple_res->nod_arg;
-
-	for (const dsql_nod* const* const end = ptr + simple_res->nod_count; ptr < end; ptr++)
-		PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
-
-	return node;
-}
-
-
-/**
-
  	pass1_sort
 
     @brief	Process ORDER BY list, which may contain
@@ -6734,8 +6436,8 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 					if (var)
 					{
 						dsql_nod* varAssign = MAKE_node(nod_assign, e_asgn_count);
-						varAssign->nod_arg[e_asgn_value] = expr->nod_arg[e_hidden_var_expr];
-						varAssign->nod_arg[e_asgn_field] = expr->nod_arg[e_hidden_var_var];
+						varAssign->nod_arg[e_asgn_value] = expr;
+						varAssign->nod_arg[e_asgn_field] = var;
 						varStack.push(varAssign);
 
 						assign->nod_arg[e_asgn_value] = expr = var;
@@ -7134,27 +6836,14 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);
 
-	if (in_node == NULL)
+	if (!in_node || in_node->nod_type != nod_class_exprnode)
 		return false;
 
-	switch (in_node->nod_type)
-	{
-		case nod_class_exprnode:
-		{
-			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
-			if (exprNode->kind == DmlNode::KIND_VALUE)
-				return exprNode->setParameterType(dsqlScratch, node, force_varchar);
-			else
-				return false;
-		}
-
-		case nod_hidden_var:
-			return PASS1_set_parameter_type(dsqlScratch, in_node->nod_arg[e_hidden_var_expr],
-				node, force_varchar);
-
-		default:
-			return false;
-	}
+	ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
+	if (exprNode->kind == DmlNode::KIND_VALUE)
+		return exprNode->setParameterType(dsqlScratch, node, force_varchar);
+	else
+		return false;
 }
 
 
@@ -7259,10 +6948,6 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
 				}
 			}
 		}
-		return;
-
-	case nod_hidden_var:
-		set_parameter_name(par_node->nod_arg[e_hidden_var_expr], fld_node, relation);
 		return;
 
 	default:
@@ -7540,14 +7225,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_unique:
 		verb = "unique";
-		break;
-
-	case nod_coalesce:
-		verb = "coalesce";
-		break;
-
-	case nod_simple_case:
-		verb = "simple_case";
 		break;
 
 	case nod_searched_case:
@@ -7898,10 +7575,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);
 		ptr = subNodes.begin();
 		end = subNodes.end();
-		break;
-
-	case nod_hidden_var:
-		verb = "hidden_var";
 		break;
 
 	case nod_mod_field_null_flag:

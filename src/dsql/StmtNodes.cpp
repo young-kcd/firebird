@@ -2978,14 +2978,16 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->loopLevel = 0;
 
 	dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
-	GEN_hidden_variables(dsqlScratch, false);
+	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
 	// Put a label before body of procedure, so that
 	// any exit statement can get out
 	dsqlScratch->appendUChar(blr_label);
 	dsqlScratch->appendUChar(0);
+
 	GEN_statement(dsqlScratch, stmtNode);
+
 	if (returns.hasData())
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
 	else

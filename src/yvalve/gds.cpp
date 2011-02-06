@@ -334,7 +334,9 @@ static const UCHAR
 	exec_stmt[] = { op_exec_stmt, 0},
 	derived_expr[] = { op_derived_expr, 0},
 	window[] = {op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},
-	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0};
+	partition_by[] = {op_byte, op_line, op_partition_args, op_verb, 0},
+	decode[] = { op_line, op_verb, op_indent, op_byte, op_line, op_args, op_indent, op_byte,
+				 op_line, op_args, 0};
 
 
 #include "../jrd/blp.h"

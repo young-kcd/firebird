@@ -395,5 +395,7 @@
 #define blr_agg_function			(unsigned char) 199
 #define blr_substring_similar		(unsigned char) 200
 #define blr_bool_as_value			(unsigned char) 201
+#define blr_coalesce				(unsigned char) 202
+#define blr_decode					(unsigned char) 203
 
 #endif // JRD_BLR_H

@@ -165,8 +165,6 @@ enum nod_t
 	nod_mod_field_pos,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
 	nod_searched_case, // searched CASE function
-	nod_simple_case, // simple CASE function
-	nod_coalesce, // COALESCE function
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
 	nod_difference_file,
@@ -195,7 +193,6 @@ enum nod_t
 	nod_trg_ext,
 	nod_class_stmtnode,
 	nod_class_exprnode,
-	nod_hidden_var,
 	nod_package_name,
 	nod_package_obj,
 	nod_mod_field_null_flag,
@@ -519,14 +516,6 @@ enum node_args {
 	e_udf_param_type,		// Basically, by_reference or by_descriptor
 	e_udf_param_count,
 
-	// CASE <case_operand> {WHEN <when_operand> THEN <when_result>}.. [ELSE <else_result>] END
-	// Node-constants for after pass1
-
-	e_simple_case_case_operand = 0,	// 1 value
-	e_simple_case_when_operands,	// list
-	e_simple_case_results,			// list including else_result
-	e_simple_case_case_operand2,	// operand for use after the first test
-
 	// CASE {WHEN <search_condition> THEN <when_result>}.. [ELSE <else_result>] END
 	// Node-constants for after pass1
 
@@ -566,10 +555,6 @@ enum node_args {
 	e_user_last,
 	e_user_admin,
 	e_user_count,
-
-	e_hidden_var_expr = 0,			// nod_hidden_var
-	e_hidden_var_var,
-	e_hidden_var_count,
 
 	e_mod_fld_null_flag_field = 0,				// nod_mod_field_null_flag
 	e_mod_fld_null_flag_value,

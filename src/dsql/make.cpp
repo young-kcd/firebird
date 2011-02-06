@@ -381,18 +381,8 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		}
 		return;
 
-	case nod_simple_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_simple_case_results], "CASE");
-		*desc = desc1;
-		return;
-
 	case nod_searched_case:
 		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_searched_case_results], "CASE");
-		*desc = desc1;
-		return;
-
-	case nod_coalesce:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[0], "COALESCE");
 		*desc = desc1;
 		return;
 
@@ -404,10 +394,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 
 	case nod_alias:
 		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
-		return;
-
-	case nod_hidden_var:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_hidden_var_expr]);
 		return;
 
 	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
@@ -854,12 +840,7 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		break;
 
 	case nod_searched_case:
-	case nod_simple_case:
 		name_alias = "CASE";
-		break;
-
-	case nod_coalesce:
-		name_alias = "COALESCE";
 		break;
 	}
 

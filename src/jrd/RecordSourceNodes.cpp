@@ -2005,11 +2005,18 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 				{	// scope
 					PsqlChanger changer(dsqlScratch, false);
+					CoalesceNode* coalesce;
 
-					if (temp->nod_type == Dsql::nod_coalesce)
+					if ((coalesce = ExprNode::as<CoalesceNode>(temp)))
 					{
-						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[0], stack);
-						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[1], stack);
+						dsql_nod** ptr = coalesce->dsqlArgs->nod_arg;
+
+						for (dsql_nod** end = ptr + coalesce->dsqlArgs->nod_count;
+							 ptr != end;
+							 ++ptr)
+						{
+							PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
+						}
 					}
 					else
 						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
@@ -2017,21 +2024,27 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					if ((temp = impJoinRight->value)->nod_type == Dsql::nod_alias)
 						temp = temp->nod_arg[Dsql::e_alias_value];
 
-					if (temp->nod_type == Dsql::nod_coalesce)
+					if ((coalesce = ExprNode::as<CoalesceNode>(temp)))
 					{
-						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[0], stack);
-						PASS1_put_args_on_stack(dsqlScratch, temp->nod_arg[1], stack);
+						dsql_nod** ptr = coalesce->dsqlArgs->nod_arg;
+
+						for (dsql_nod** end = ptr + coalesce->dsqlArgs->nod_count;
+							 ptr != end;
+							 ++ptr)
+						{
+							PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
+						}
 					}
 					else
 						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
 				}
 
-				dsql_nod* coalesce = MAKE_node(Dsql::nod_coalesce, 2);
-				coalesce->nod_arg[0] = stack.pop();
-				coalesce->nod_arg[1] = MAKE_list(stack);
+				CoalesceNode* coalesce = FB_NEW(getPool()) CoalesceNode(getPool(), MAKE_list(stack));
 
 				impJoinLeft->value = MAKE_node(Dsql::nod_alias, Dsql::e_alias_count);
-				impJoinLeft->value->nod_arg[Dsql::e_alias_value] = coalesce;
+				impJoinLeft->value->nod_arg[Dsql::e_alias_value] = MAKE_node(Dsql::nod_class_exprnode, 1);
+				impJoinLeft->value->nod_arg[Dsql::e_alias_value]->nod_arg[0] =
+					reinterpret_cast<dsql_nod*>(coalesce);
 				impJoinLeft->value->nod_arg[Dsql::e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
 				impJoinLeft->value->nod_arg[Dsql::e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
 

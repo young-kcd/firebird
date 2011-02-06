@@ -64,18 +64,16 @@ using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
 
-static void gen_coalesce(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
-static void gen_simple_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 
 
-void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
+void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
 {
 /**************************************
  *
@@ -90,13 +88,6 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
 	if (dsqlScratch->hiddenVariables.isEmpty())
 		return;
 
-	if (inExpression)
-	{
-		dsqlScratch->appendUChar(blr_stmt_expr);
-		if (dsqlScratch->hiddenVariables.getCount() > 1)
-			dsqlScratch->appendUChar(blr_begin);
-	}
-
 	for (Array<dsql_var*>::const_iterator i = dsqlScratch->hiddenVariables.begin();
 		 i != dsqlScratch->hiddenVariables.end();
 		 ++i)
@@ -106,9 +97,6 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch, bool inExpression)
 		dsqlScratch->appendUShort(var->number);
 		GEN_descriptor(dsqlScratch, &var->desc, true);
 	}
-
-	if (inExpression && dsqlScratch->hiddenVariables.getCount() > 1)
-		dsqlScratch->appendUChar(blr_end);
 
 	// Clear it for GEN_expr not regenerate them.
 	dsqlScratch->hiddenVariables.clear();
@@ -176,12 +164,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUShort(0);		// Field id
 		return;
 
-    case nod_coalesce:
-		gen_coalesce(dsqlScratch, node);
-		return;
-    case nod_simple_case:
-		gen_simple_case(dsqlScratch, node);
-		return;
     case nod_searched_case:
 		gen_searched_case(dsqlScratch, node);
 		return;
@@ -190,30 +172,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_assignment);
 		GEN_expr(dsqlScratch, node->nod_arg[0]);
 		GEN_expr(dsqlScratch, node->nod_arg[1]);
-		return;
-
-	case nod_hidden_var:
-		dsqlScratch->appendUChar(blr_stmt_expr);
-
-		// If it was not pre-declared, declare it now.
-		if (dsqlScratch->hiddenVariables.hasData())
-		{
-			const dsql_var* var = ExprNode::as<VariableNode>(node->nod_arg[e_hidden_var_var])->dsqlVar;
-
-			dsqlScratch->appendUChar(blr_begin);
-			dsqlScratch->appendUChar(blr_dcl_variable);
-			dsqlScratch->appendUShort(var->number);
-			GEN_descriptor(dsqlScratch, &var->desc, true);
-		}
-
-		dsqlScratch->appendUChar(blr_assignment);
-		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_expr]);
-		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_var]);
-
-		if (dsqlScratch->hiddenVariables.hasData())
-			dsqlScratch->appendUChar(blr_end);
-
-		GEN_expr(dsqlScratch, node->nod_arg[e_hidden_var_var]);
 		return;
 
 	default:
@@ -371,7 +329,7 @@ void GEN_request(DsqlCompilerScratch* scratch, dsql_nod* node)
 	{
 		scratch->appendUChar(blr_begin);
 
-		GEN_hidden_variables(scratch, false);
+		GEN_hidden_variables(scratch);
 
 		switch (statement->getType())
 		{
@@ -722,54 +680,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 				  Arg::Gds(isc_dsql_internal_err) <<
 				  // gen.c: node not supported
 				  Arg::Gds(isc_node_err));
-	}
-}
-
-
-/**
-
- gen_coalesce
-
-    @brief      Generate BLR for coalesce function
-
-	Generate the blr values, begin with a cast and then :
-
-	blr_value_if
-	blr_missing
-	blr for expression 1
-		blr_value_if
-		blr_missing
-		blr for expression n-1
-		expression n
-	blr for expression n-1
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_coalesce( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	// blr_value_if is used for building the coalesce function
-	dsql_nod* list = node->nod_arg[0];
-	dsqlScratch->appendUChar(blr_cast);
-	GEN_descriptor(dsqlScratch, &node->nod_desc, true);
-	dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + (list->nod_count - 1); ptr < end; ptr++)
-	{
-		// IF (expression IS NULL) THEN
-		dsqlScratch->appendUChar(blr_value_if);
-		dsqlScratch->appendUChar(blr_missing);
-		GEN_expr(dsqlScratch, *ptr);
-	}
-	// Return values
-	GEN_expr(dsqlScratch, *ptr);
-	list = node->nod_arg[1];
-	const dsql_nod* const* const begin = list->nod_arg;
-	ptr = list->nod_arg + list->nod_count;
-	// if all expressions are NULL return NULL
-	for (ptr--; ptr >= begin; ptr--)
-	{
-		GEN_expr(dsqlScratch, *ptr);
 	}
 }
 
@@ -1342,49 +1252,8 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 }
 
 
-/**
-
- gen_simple_case
-
-    @brief      Generate BLR for CASE function (simple)
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_simple_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	// blr_value_if is used for building the case expression
-
-	dsqlScratch->appendUChar(blr_cast);
-	GEN_descriptor(dsqlScratch, &node->nod_desc, true);
-	const SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
-	dsql_nod* when_list = node->nod_arg[e_simple_case_when_operands];
-	dsql_nod* results_list = node->nod_arg[e_simple_case_results];
-
-	dsql_nod* const* wptr = when_list->nod_arg;
-	dsql_nod* const* rptr = results_list->nod_arg;
-	for (const dsql_nod* const* const end = wptr + count; wptr < end; wptr++, rptr++)
-	{
-		dsqlScratch->appendUChar(blr_value_if);
-		dsqlScratch->appendUChar(blr_eql);
-
-		if (wptr == when_list->nod_arg || !node->nod_arg[e_simple_case_case_operand2])
-			GEN_expr(dsqlScratch, node->nod_arg[e_simple_case_case_operand]);
-		else
-			GEN_expr(dsqlScratch, node->nod_arg[e_simple_case_case_operand2]);
-
-		GEN_expr(dsqlScratch, *wptr);
-		GEN_expr(dsqlScratch, *rptr);
-	}
-	// else_result
-	GEN_expr(dsqlScratch, node->nod_arg[e_simple_case_results]->nod_arg[count]);
-}
-
-
 // Generate a sort clause.
-void GEN_sort( DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
+void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 {
 	dsqlScratch->appendUChar(blr_sort);
 	dsqlScratch->appendUChar(list->nod_count);

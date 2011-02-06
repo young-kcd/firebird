@@ -1607,15 +1607,19 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 
 		dsqlScratch->putLocalVariables(localDeclList, 1);
 
+		dsqlScratch->loopLevel = 0;
+		dsqlScratch->cursorNumber = 0;
+
+		dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+		GEN_hidden_variables(dsqlScratch);
+
 		dsqlScratch->appendUChar(blr_stall);
 		// put a label before body of procedure,
 		// so that any EXIT statement can get out
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar(0);
-		dsqlScratch->loopLevel = 0;
-		dsqlScratch->cursorNumber = 0;
 
-		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
+		GEN_statement(dsqlScratch, stmtNode);
 
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		dsqlScratch->appendUChar(blr_end);
@@ -2389,15 +2393,19 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 
 	dsqlScratch->putLocalVariables(localDeclList, returns.getCount());
 
+	dsqlScratch->loopLevel = 0;
+	dsqlScratch->cursorNumber = 0;
+
+	dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+	GEN_hidden_variables(dsqlScratch);
+
 	dsqlScratch->appendUChar(blr_stall);
 	// put a label before body of procedure,
 	// so that any EXIT statement can get out
 	dsqlScratch->appendUChar(blr_label);
 	dsqlScratch->appendUChar(0);
-	dsqlScratch->loopLevel = 0;
-	dsqlScratch->cursorNumber = 0;
 
-	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
+	GEN_statement(dsqlScratch, stmtNode);
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 	dsqlScratch->appendUChar(blr_end);
@@ -3416,7 +3424,6 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 					dsql_nod* node = PASS1_node(dsqlScratch, nameType.legacyDefault->nod_arg[e_dft_default]);
 
-					GEN_hidden_variables(dsqlScratch, true);
 					GEN_expr(dsqlScratch, node);
 
 					dsqlScratch->appendUChar(blr_eoc);
@@ -3447,7 +3454,6 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 					dsql_nod* node = PASS1_node(dsqlScratch, check->nod_arg[e_cnstr_condition]);
 
-					GEN_hidden_variables(dsqlScratch, true);
 					GEN_expr(dsqlScratch, node);
 
 					dsqlScratch->appendUChar(blr_eoc);
@@ -3979,7 +3985,6 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				dsql_nod* node = PASS1_node(dsqlScratch, setConstraint->nod_arg[e_cnstr_condition]);
 
-				GEN_hidden_variables(dsqlScratch, true);
 				GEN_expr(dsqlScratch, node);
 
 				dsqlScratch->appendUChar(blr_eoc);
@@ -4009,7 +4014,6 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				dsql_nod* node = PASS1_node(dsqlScratch, setDefault->nod_arg[e_dft_default]);
 
-				GEN_hidden_variables(dsqlScratch, true);
 				GEN_expr(dsqlScratch, node);
 
 				dsqlScratch->appendUChar(blr_eoc);
@@ -5119,7 +5123,6 @@ void RelationNode::defineComputed(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 	dsqlScratch->getDebugData().clear();
 	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-	GEN_hidden_variables(dsqlScratch, true);
 	GEN_expr(dsqlScratch, input);
 	dsqlScratch->appendUChar(blr_eoc);
 
@@ -5176,7 +5179,6 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 	dsqlScratch->getDebugData().clear();
 	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
 
-	GEN_hidden_variables(dsqlScratch, true);
 	GEN_expr(dsqlScratch, input);
 	dsqlScratch->appendUChar(blr_eoc);
 
@@ -5708,7 +5710,6 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	condition->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
 	condition = PASS1_node(dsqlScratch, condition);
 
-	GEN_hidden_variables(dsqlScratch, false);
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, condition);
 
@@ -5800,7 +5801,6 @@ void RelationNode::defineSetDefaultTrigger(DsqlCompilerScratch* dsqlScratch,
 				dsqlScratch->getBlrData().clear();
 				dsqlScratch->getDebugData().clear();
 
-				GEN_hidden_variables(dsqlScratch, true);
 				GEN_expr(dsqlScratch, default_node->nod_arg[Dsql::e_dft_default]);
 
 				foundDefault = true;
@@ -7165,10 +7165,6 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	dsqlScratch->getBlrData().clear();
 	dsqlScratch->appendUChar(dsqlScratch->isVersion4() ? blr_version4 : blr_version5);
-
-	// ASF: Call GEN_hidden_variables could be a optimization for views to not have
-	// blr_dcl_variables inside RSE loops, but this is currently not possible because it will
-	// mix the variables from view fields and view body.
 
 	GEN_expr(dsqlScratch, rse);
 	dsqlScratch->appendUChar(blr_eoc);

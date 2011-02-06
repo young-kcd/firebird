@@ -155,6 +155,38 @@ public:
 };
 
 
+class CoalesceNode : public TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>
+{
+public:
+	explicit CoalesceNode(MemoryPool& pool, dsql_nod* aDsqlArgs = NULL)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_COALESCE>(pool),
+		  dsqlArgs(aDsqlArgs),
+		  args(NULL)
+	{
+		addChildNode(dsqlArgs, args);
+	}
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	dsql_nod* dsqlArgs;
+	NestConst<ValueListNode> args;
+};
+
+
 class ConcatenateNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CONCATENATE>
 {
 public:
@@ -302,6 +334,53 @@ public:
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
 	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+};
+
+
+class DecodeNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>
+{
+public:
+	explicit DecodeNode(MemoryPool& pool, dsql_nod* aDsqlTest = NULL,
+				dsql_nod* aDsqlConditions = NULL, dsql_nod* aDsqlValues = NULL)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_DECODE>(pool),
+		  label(pool),
+		  dsqlTest(aDsqlTest),
+		  dsqlConditions(aDsqlConditions),
+		  dsqlValues(aDsqlValues),
+		  test(NULL),
+		  conditions(NULL),
+		  values(NULL)
+	{
+		addChildNode(dsqlTest, test);
+		addChildNode(dsqlConditions, conditions);
+		addChildNode(dsqlValues, values);
+
+		label = "DECODE";
+	}
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual bool setParameterType(DsqlCompilerScratch* dsqlScratch,
+		dsql_nod* node, bool forceVarChar);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ValueExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
+
+public:
+	Firebird::string label;
+	dsql_nod* dsqlTest;
+	dsql_nod* dsqlConditions;
+	dsql_nod* dsqlValues;
+	NestConst<ValueExprNode> test;
+	NestConst<ValueListNode> conditions;
+	NestConst<ValueListNode> values;
 };
 
 

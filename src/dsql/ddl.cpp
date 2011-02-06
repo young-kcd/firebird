@@ -673,7 +673,6 @@ static void define_computed(DsqlCompilerScratch* dsqlScratch,
 	// generate the blr expression
 
 	dsqlScratch->beginBlr(isc_dyn_fld_computed_blr);
-	GEN_hidden_variables(dsqlScratch, true);
 	GEN_expr(dsqlScratch, input);
 	dsqlScratch->endBlr();
 

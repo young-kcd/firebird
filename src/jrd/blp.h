@@ -237,5 +237,7 @@ static const struct
 	{"agg_function", function},
 	{"substring_similar", three},
 	{"bool_as_value", one},
+	{"coalesce", byte_args},
+	{"decode", decode},
 	{0, 0}
 };
