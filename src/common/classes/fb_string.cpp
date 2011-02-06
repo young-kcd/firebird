@@ -88,14 +88,14 @@ namespace Firebird
 	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
 
 	AbstractString::AbstractString(const size_type limit, const AbstractString& v)
-		: max_length(limit)
+		: max_length(static_cast<internal_size_type>(limit))
 	{
 		initialize(v.length());
 		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
 	AbstractString::AbstractString(const size_type limit, const size_type sizeL, const void* dataL)
-		: max_length(limit)
+		: max_length(static_cast<internal_size_type>(limit))
 	{
 		initialize(sizeL);
 		memcpy(stringBuffer, dataL, sizeL);
@@ -103,7 +103,7 @@ namespace Firebird
 
 	AbstractString::AbstractString(const size_type limit, const_pointer p1, const size_type n1,
 				 const_pointer p2, const size_type n2)
-		: max_length(limit)
+		: max_length(static_cast<internal_size_type>(limit))
 	{
 		// CVC: npos must be maximum size_type value for all platforms.
 		// fb_assert(n2 < npos - n1 && n1 + n2 <= max_length());
@@ -118,7 +118,7 @@ namespace Firebird
 	}
 
 	AbstractString::AbstractString(const size_type limit, const size_type sizeL, char_type c)
-		: max_length(limit)
+		: max_length(static_cast<internal_size_type>(limit))
 	{
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);

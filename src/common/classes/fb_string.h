@@ -162,7 +162,8 @@ namespace Firebird
 		AbstractString(const size_type limit, const AbstractString& v);
 
 		AbstractString(const size_type limit) :
-			max_length(limit), stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+			max_length(static_cast<internal_size_type>(limit)),
+			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
 			stringBuffer[0] = 0;
 		}
@@ -170,20 +171,21 @@ namespace Firebird
 		AbstractString(const size_type limit, const size_type sizeL, char_type c);
 
 		AbstractString(const size_type limit, MemoryPool& p) : AutoStorage(p),
-			max_length(limit), stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
+			max_length(static_cast<internal_size_type>(limit)),
+			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
 			stringBuffer[0] = 0;
 		}
 
 		AbstractString(const size_type limit, MemoryPool& p, const AbstractString& v)
-			: AutoStorage(p), max_length(limit)
+			: AutoStorage(p), max_length(static_cast<internal_size_type>(limit))
 		{
 			initialize(v.length());
 			memcpy(stringBuffer, v.c_str(), stringLength);
 		}
 
 		AbstractString(const size_type limit, MemoryPool& p, const void* s, const size_type l)
-			: AutoStorage(p), max_length(limit)
+			: AutoStorage(p), max_length(static_cast<internal_size_type>(limit))
 		{
 			initialize(l);
 			memcpy(stringBuffer, s, l);
