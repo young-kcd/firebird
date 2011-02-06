@@ -583,16 +583,18 @@ void DSQL_prepare(thread_db* tdbb,
 
 	dsql_req* request = NULL;
 
-	if (!string)
+	if (string && !length)
+	{
+		length = strlen(string);
+	}
+
+	if (!string || !length)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
 				  // CVC: Nothing will be line 1, column 1 for the user.
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
-
-	if (length == 0)
-		length = strlen(string);
 
 	try
 	{
