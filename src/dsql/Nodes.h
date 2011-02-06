@@ -236,7 +236,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch) = 0;
 	virtual DmlNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual DmlNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
-	virtual DmlNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+	virtual DmlNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 
 public:
 	const Kind kind;
@@ -531,7 +531,7 @@ public:
 		SortedStreamList* streamList);
 	virtual ExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ExprNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+	virtual ExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 
 protected:
 	virtual bool dsqlVisit(ConstDsqlNodeVisitor& visitor);
@@ -605,7 +605,7 @@ public:
 	{
 	}
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const = 0;
 };
 
@@ -648,7 +648,7 @@ public:
 	// Compute descriptor for value expression.
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc) = 0;
 
-	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const = 0;
 
 public:
@@ -982,7 +982,7 @@ public:
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 
-	virtual StmtNode* copy(thread_db* tdbb, NodeCopier& copier)
+	virtual StmtNode* copy(thread_db* tdbb, NodeCopier& copier) const
 	{
 		fb_assert(false);
 		Firebird::status_exception::raise(
@@ -1027,10 +1027,10 @@ public:
 		return this;
 	}
 
-	virtual DsqlOnlyStmtNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/)
+	virtual DsqlOnlyStmtNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 	{
 		fb_assert(false);
-		return this;
+		return NULL;
 	}
 
 	const StmtNode* execute(thread_db* /*tdbb*/, jrd_req* /*request*/, ExeState* /*exeState*/) const

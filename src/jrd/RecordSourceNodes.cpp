@@ -59,12 +59,12 @@ static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 //--------------------
 
 
-SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier)
+SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SortNode* newSort = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 	newSort->unique = unique;
 
-	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
+	for (const NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 		newSort->expressions.add(copier.copy(tdbb, *i));
 
 	newSort->descending = descending;
@@ -115,13 +115,13 @@ void SortNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 //--------------------
 
 
-MapNode* MapNode::copy(thread_db* tdbb, NodeCopier& copier)
+MapNode* MapNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	MapNode* newMap = FB_NEW(*tdbb->getDefaultPool()) MapNode(*tdbb->getDefaultPool());
 
-	NestConst<ValueExprNode>* target = targetList.begin();
+	const NestConst<ValueExprNode>* target = targetList.begin();
 
-	for (NestConst<ValueExprNode>* source = sourceList.begin();
+	for (const NestConst<ValueExprNode>* source = sourceList.begin();
 		 source != sourceList.end();
 		 ++source, ++target)
 	{
@@ -287,7 +287,7 @@ void RelationSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_stuff_context(dsqlScratch, dsqlContext);
 }
 
-RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
+RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
@@ -750,7 +750,7 @@ void ProcedureSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUShort(0);
 }
 
-ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
+ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
@@ -1069,7 +1069,7 @@ void AggregateSourceNode::genMap(DsqlCompilerScratch* dsqlScratch, dsql_map* map
 	}
 }
 
-AggregateSourceNode* AggregateSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
+AggregateSourceNode* AggregateSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
@@ -1299,7 +1299,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, S
 	return node;
 }
 
-UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
+UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	if (!copier.remap)
 		BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
@@ -1329,10 +1329,10 @@ UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
 	copier.csb->csb_rpt[newStream].csb_flags |=
 		copier.csb->csb_rpt[oldStream].csb_flags & csb_no_dbkey;
 
-	NestConst<RseNode>* ptr = clauses.begin();
-	NestConst<MapNode>* ptr2 = maps.begin();
+	const NestConst<RseNode>* ptr = clauses.begin();
+	const NestConst<MapNode>* ptr2 = maps.begin();
 
-	for (NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr, ++ptr2)
+	for (const NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr, ++ptr2)
 	{
 		newSource->clauses.add((*ptr)->copy(tdbb, copier));
 		newSource->maps.add((*ptr2)->copy(tdbb, copier));
@@ -1573,7 +1573,7 @@ void WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* csb)
 	partition.map = parseMap(tdbb, csb, partition.stream);
 }
 
-WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
+WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	if (!copier.remap)
 		BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
@@ -1583,7 +1583,7 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier)
 
 	newSource->rse = rse->copy(tdbb, copier);
 
-	for (ObjectsArray<Partition>::iterator inputPartition = partitions.begin();
+	for (ObjectsArray<Partition>::const_iterator inputPartition = partitions.begin();
 		 inputPartition != partitions.end();
 		 ++inputPartition)
 	{
@@ -2073,13 +2073,13 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier)
+RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	RseNode* newSource = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
 
-	NestConst<RecordSourceNode>* ptr = rse_relations.begin();
+	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
-	for (NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
+	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
 		newSource->rse_relations.add((*ptr)->copy(tdbb, copier));
 
 	newSource->flags = flags;

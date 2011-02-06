@@ -72,7 +72,7 @@ namespace
 		}
 
 	protected:
-		virtual USHORT getFieldId(FieldNode* field)
+		virtual USHORT getFieldId(const FieldNode* field)
 		{
 			if (field->byId && field->fieldId == 0 && field->fieldStream == 0)
 				return fldId;
@@ -174,7 +174,7 @@ void AssignmentNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-AssignmentNode* AssignmentNode::copy(thread_db* tdbb, NodeCopier& copier)
+AssignmentNode* AssignmentNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	AssignmentNode* node = FB_NEW(*tdbb->getDefaultPool()) AssignmentNode(*tdbb->getDefaultPool());
 	node->asgnFrom = copier.copy(tdbb, asgnFrom);
@@ -573,14 +573,14 @@ void CompoundStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-CompoundStmtNode* CompoundStmtNode::copy(thread_db* tdbb, NodeCopier& copier)
+CompoundStmtNode* CompoundStmtNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	CompoundStmtNode* node = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
 	node->onlyAssignments = onlyAssignments;
 
 	NestConst<StmtNode>* j = node->statements.getBuffer(statements.getCount());
 
-	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i, ++j)
+	for (const NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i, ++j)
 		*j = copier.copy(tdbb, *i);
 
 	return node;
@@ -1069,11 +1069,8 @@ void DeclareVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-DeclareVariableNode* DeclareVariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+DeclareVariableNode* DeclareVariableNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	if (copier.csb->csb_remap_variable == 0)
-		return this;
-
 	DeclareVariableNode* node = FB_NEW(*tdbb->getDefaultPool()) DeclareVariableNode(*tdbb->getDefaultPool());
 	node->varId = varId + copier.csb->csb_remap_variable;
 	node->varDesc = varDesc;
@@ -2695,11 +2692,8 @@ void InitVariableNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-InitVariableNode* InitVariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+InitVariableNode* InitVariableNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	if (copier.csb->csb_remap_variable == 0)
-		return this;
-
 	InitVariableNode* node = FB_NEW(*tdbb->getDefaultPool()) InitVariableNode(*tdbb->getDefaultPool());
 	node->varId = varId + copier.csb->csb_remap_variable;
 	node->varDecl = varDecl;
@@ -3814,7 +3808,7 @@ void MessageNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 }
 
-MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& copier)
+MessageNode* MessageNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	MessageNode* node = FB_NEW(*tdbb->getDefaultPool()) MessageNode(*tdbb->getDefaultPool());
 	node->messageNumber = messageNumber;

@@ -63,7 +63,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual AssignmentNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual AssignmentNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual AssignmentNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual AssignmentNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual AssignmentNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
@@ -121,7 +121,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual CompoundStmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual CompoundStmtNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual CompoundStmtNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual CompoundStmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual CompoundStmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
@@ -255,7 +255,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual DeclareVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual DeclareVariableNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual DeclareVariableNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual DeclareVariableNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual DeclareVariableNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
@@ -519,7 +519,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual InitVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual InitVariableNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual InitVariableNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual InitVariableNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual InitVariableNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
@@ -743,7 +743,7 @@ public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual MessageNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
-	virtual MessageNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual MessageNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual MessageNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual MessageNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;

@@ -100,38 +100,6 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-#ifdef NOT_USED_OR_REPLACED
-namespace
-{
-	// Node copier for views.
-	class ViewNodeCopier : public NodeCopier
-	{
-	public:
-		ViewNodeCopier(CompilerScratch* aCsb, UCHAR* aRemap)
-			: NodeCopier(aCsb, aRemap)
-		{
-		}
-
-	protected:
-		virtual bool remapArgument()
-		{
-			return true;
-		}
-
-		virtual USHORT remapField(USHORT stream, USHORT fldId)
-		{
-			jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-			jrd_fld* field = MET_get_field(relation, fldId);
-
-			if (field->fld_source)
-				fldId = field->fld_source->as<FieldNode>()->fieldId;
-
-			return fldId;
-		}
-	};
-}	// namespace
-#endif	// NOT_USED_OR_REPLACED
-
 #ifdef CMP_DEBUG
 #include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
@@ -700,7 +668,7 @@ UCHAR* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 }
 
 
-USHORT NodeCopier::getFieldId(FieldNode* field)
+USHORT NodeCopier::getFieldId(const FieldNode* field)
 {
 	return field->fieldId;
 }

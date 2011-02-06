@@ -302,7 +302,7 @@ public:
 public:
 	// Copy an expression tree remapping field streams. If the map isn't present, don't remap.
 	template <typename T>
-	T* copy(thread_db* tdbb, T* input)
+	T* copy(thread_db* tdbb, const T* input)
 	{
 		if (!input)
 			return NULL;
@@ -314,26 +314,21 @@ public:
 	}
 
 	template <typename T>
-	T* copy(thread_db* tdbb, NestConst<T>& input)
+	T* copy(thread_db* tdbb, const NestConst<T>& input)
 	{
 		return copy(tdbb, input.getObject());
 	}
 
 	template <typename T>
-	static T* copy(thread_db* tdbb, CompilerScratch* csb, T* input, UCHAR* remap)
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, const T* input, UCHAR* remap)
 	{
 		return NodeCopier(csb, remap).copy(tdbb, input);
 	}
 
 	template <typename T>
-	static T* copy(thread_db* tdbb, CompilerScratch* csb, NestConst<T>& input, UCHAR* remap)
+	static T* copy(thread_db* tdbb, CompilerScratch* csb, const NestConst<T>& input, UCHAR* remap)
 	{
 		return NodeCopier(csb, remap).copy(tdbb, input.getObject());
-	}
-
-	virtual bool remapArgument()
-	{
-		return false;
 	}
 
 	virtual USHORT remapField(USHORT /*stream*/, USHORT fldId)
@@ -341,15 +336,15 @@ public:
 		return fldId;
 	}
 
-	virtual USHORT getFieldId(FieldNode* input);
+	virtual USHORT getFieldId(const FieldNode* input);
 
 private:
-	template <typename T1, typename T2> void postCopy(T1* source, T2* target, ExprNode* /*dummy*/)
+	template <typename T1, typename T2> void postCopy(const T1* source, T2* target, ExprNode* /*dummy*/)
 	{
 		target->nodFlags = source->nodFlags;
 	}
 
-	void postCopy(StmtNode* /*source*/, StmtNode* /*target*/, StmtNode* /*dummy*/)
+	void postCopy(const StmtNode* /*source*/, StmtNode* /*target*/, StmtNode* /*dummy*/)
 	{
 	}
 

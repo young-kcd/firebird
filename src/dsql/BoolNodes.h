@@ -43,7 +43,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
 		USHORT stream) /*const*/;
@@ -86,7 +86,7 @@ public:
 		return blrOp == blr_equiv ? true : BoolExprNode::jrdPossibleUnknownFinder();
 	}
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
 		USHORT stream) /*const*/;
@@ -134,7 +134,7 @@ public:
 		return true;
 	}
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Boolean2(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
@@ -162,7 +162,7 @@ public:
 		return true;
 	}
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool execute(thread_db* tdbb, jrd_req* request) const;
 
@@ -197,7 +197,7 @@ public:
 		return true;
 	}
 
-	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
 		USHORT stream) /*const*/;

@@ -1414,7 +1414,7 @@ void ArithmeticNode::getDescDialect3(thread_db* /*tdbb*/, dsc* desc, dsc& desc1,
 	ERR_post(Arg::Gds(isc_datype_notsup));	// data type not supported for arithmetic
 }
 
-ValueExprNode* ArithmeticNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ArithmeticNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ArithmeticNode* node = FB_NEW(*tdbb->getDefaultPool()) ArithmeticNode(*tdbb->getDefaultPool(),
 		blrOp, dialect1);
@@ -2540,7 +2540,7 @@ void BoolAsValueNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->setNullable(true);
 }
 
-ValueExprNode* BoolAsValueNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* BoolAsValueNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	BoolAsValueNode* node = FB_NEW(*tdbb->getDefaultPool()) BoolAsValueNode(*tdbb->getDefaultPool());
 	node->boolean = copier.copy(tdbb, boolean);
@@ -2715,7 +2715,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	////	desc->setNull();
 }
 
-ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CastNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	CastNode* node = FB_NEW(getPool()) CastNode(getPool());
 
@@ -2979,7 +2979,7 @@ void CoalesceNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	DataTypeUtil(tdbb).makeFromList(desc, "COALESCE", descPtrs.getCount(), descPtrs.begin());
 }
 
-ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* CoalesceNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	CoalesceNode* node = FB_NEW(*tdbb->getDefaultPool()) CoalesceNode(*tdbb->getDefaultPool());
 	node->args = copier.copy(tdbb, args);
@@ -3095,7 +3095,7 @@ void ConcatenateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
 }
 
-ValueExprNode* ConcatenateNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ConcatenateNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ConcatenateNode* node = FB_NEW(*tdbb->getDefaultPool()) ConcatenateNode(*tdbb->getDefaultPool());
 	node->arg1 = copier.copy(tdbb, arg1);
@@ -3330,7 +3330,7 @@ void CurrentDateNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentDateNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* CurrentDateNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentDateNode(*tdbb->getDefaultPool());
 }
@@ -3429,7 +3429,7 @@ void CurrentTimeNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentTimeNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* CurrentTimeNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeNode(*tdbb->getDefaultPool(), precision);
 }
@@ -3539,7 +3539,7 @@ void CurrentTimeStampNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/
 	desc->dsc_length = type_lengths[desc->dsc_dtype];
 }
 
-ValueExprNode* CurrentTimeStampNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* CurrentTimeStampNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentTimeStampNode(*tdbb->getDefaultPool(), precision);
 }
@@ -3632,7 +3632,7 @@ void CurrentRoleNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 	desc->dsc_flags = 0;
 }
 
-ValueExprNode* CurrentRoleNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* CurrentRoleNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentRoleNode(*tdbb->getDefaultPool());
 }
@@ -3727,7 +3727,7 @@ void CurrentUserNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc
 	desc->dsc_flags = 0;
 }
 
-ValueExprNode* CurrentUserNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* CurrentUserNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) CurrentUserNode(*tdbb->getDefaultPool());
 }
@@ -3918,7 +3918,7 @@ void DecodeNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->setNullable(true);
 }
 
-ValueExprNode* DecodeNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* DecodeNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	DecodeNode* node = FB_NEW(*tdbb->getDefaultPool()) DecodeNode(*tdbb->getDefaultPool());
 	node->test = copier.copy(tdbb, test);
@@ -4034,7 +4034,7 @@ void DerivedExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	arg->getDesc(tdbb, csb, desc);
 }
 
-ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	DerivedExprNode* node = FB_NEW(*tdbb->getDefaultPool()) DerivedExprNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
@@ -4126,7 +4126,7 @@ void DomainValidationNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/
 	*desc = domDesc;
 }
 
-ValueExprNode* DomainValidationNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* DomainValidationNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	DomainValidationNode* node =
 		FB_NEW(*tdbb->getDefaultPool()) DomainValidationNode(*tdbb->getDefaultPool());
@@ -4293,7 +4293,7 @@ void ExtractNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* ExtractNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ExtractNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ExtractNode* node = FB_NEW(*tdbb->getDefaultPool()) ExtractNode(*tdbb->getDefaultPool(), blrSubOp);
 	node->arg = copier.copy(tdbb, arg);
@@ -4955,7 +4955,7 @@ void FieldNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	USHORT fldId = copier.getFieldId(this);
 	USHORT stream = fieldStream;
@@ -5325,7 +5325,7 @@ void GenIdNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->makeInt64(0);
 }
 
-ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	GenIdNode* node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(*tdbb->getDefaultPool(),
 		dialect1, name);
@@ -5476,7 +5476,7 @@ void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		desc->makeLong(0);
 }
 
-ValueExprNode* InternalInfoNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* InternalInfoNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	InternalInfoNode* node = FB_NEW(*tdbb->getDefaultPool()) InternalInfoNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
@@ -5942,9 +5942,17 @@ void LiteralNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* LiteralNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	return this;
+	LiteralNode* node = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	node->litDesc = litDesc;
+
+	UCHAR* p = FB_NEW(*tdbb->getDefaultPool()) UCHAR[node->litDesc.dsc_length];
+	node->litDesc.dsc_address = p;
+
+	memcpy(p, litDesc.dsc_address, litDesc.dsc_length);
+
+	return node;
 }
 
 bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
@@ -6501,7 +6509,7 @@ void NegateNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	nodFlags = arg->nodFlags & (FLAG_DOUBLE | FLAG_QUAD);
 }
 
-ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* NegateNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	NegateNode* node = FB_NEW(*tdbb->getDefaultPool()) NegateNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
@@ -6632,7 +6640,7 @@ void NullNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 	desc->setNull();
 }
 
-ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* NullNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 }
@@ -6849,7 +6857,7 @@ void OverNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* /*des
 	fb_assert(false);
 }
 
-ValueExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/)
+ValueExprNode* OverNode::copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const
 {
 	fb_assert(false);
 	return NULL;
@@ -7116,11 +7124,8 @@ void ParameterNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	*desc = message->format->fmt_desc[argNumber];
 }
 
-ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	if (copier.remapArgument())
-		return this;
-
 	ParameterNode* node = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
 	node->argNumber = argNumber;
 
@@ -7492,7 +7497,7 @@ void RecordKeyNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* RecordKeyNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	RecordKeyNode* node = FB_NEW(*tdbb->getDefaultPool()) RecordKeyNode(*tdbb->getDefaultPool(), blrOp);
 	node->recStream = recStream;
@@ -7794,7 +7799,7 @@ void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
 		IBERROR(306); // Found array data type with more than 16 dimensions
 }
 
-ValueExprNode* ScalarNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ScalarNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ScalarNode* node = FB_NEW(*tdbb->getDefaultPool()) ScalarNode(*tdbb->getDefaultPool());
 	node->field = copier.copy(tdbb, field);
@@ -7871,7 +7876,7 @@ void StmtExprNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	expr->getDesc(tdbb, csb, desc);
 }
 
-ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* StmtExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	fb_assert(false);
 
@@ -7998,7 +8003,7 @@ void StrCaseNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* StrCaseNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* StrCaseNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	StrCaseNode* node = FB_NEW(*tdbb->getDefaultPool()) StrCaseNode(*tdbb->getDefaultPool(), blrOp);
 	node->arg = copier.copy(tdbb, arg);
@@ -8202,7 +8207,7 @@ void StrLenNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	desc->makeLong(0);
 }
 
-ValueExprNode* StrLenNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* StrLenNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	StrLenNode* node = FB_NEW(*tdbb->getDefaultPool()) StrLenNode(*tdbb->getDefaultPool(), blrSubOp);
 	node->arg = copier.copy(tdbb, arg);
@@ -8592,7 +8597,7 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SubQueryNode* node = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(), blrOp);
 	node->nodScale = nodScale;
@@ -8963,7 +8968,7 @@ void SubstringNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* SubstringNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* SubstringNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SubstringNode* node = FB_NEW(*tdbb->getDefaultPool()) SubstringNode(
 		*tdbb->getDefaultPool());
@@ -9228,7 +9233,7 @@ void SubstringSimilarNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* d
 	escape->getDesc(tdbb, csb, &tempDesc);
 }
 
-ValueExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* SubstringSimilarNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SubstringSimilarNode* node = FB_NEW(*tdbb->getDefaultPool()) SubstringSimilarNode(
 		*tdbb->getDefaultPool());
@@ -9489,7 +9494,7 @@ void SysFuncCallNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 		delete *pArgs;
 }
 
-ValueExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* SysFuncCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SysFuncCallNode* node = FB_NEW(*tdbb->getDefaultPool()) SysFuncCallNode(
 		*tdbb->getDefaultPool(), name);
@@ -9718,7 +9723,7 @@ void TrimNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 }
 
-ValueExprNode* TrimNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* TrimNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	TrimNode* node = FB_NEW(*tdbb->getDefaultPool()) TrimNode(*tdbb->getDefaultPool(), where);
 	node->value = copier.copy(tdbb, value);
@@ -10057,7 +10062,7 @@ void UdfCallNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* de
 		desc->clear();
 }
 
-ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* UdfCallNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	UdfCallNode* node = FB_NEW(*tdbb->getDefaultPool()) UdfCallNode(*tdbb->getDefaultPool(), name);
 	node->args = copier.copy(tdbb, args);
@@ -10295,7 +10300,7 @@ void ValueIfNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	val->getDesc(tdbb, csb, desc);
 }
 
-ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* ValueIfNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ValueIfNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueIfNode(*tdbb->getDefaultPool());
 	node->condition = copier.copy(tdbb, condition);
@@ -10334,14 +10339,14 @@ ValueListNode::ValueListNode(MemoryPool& pool, unsigned count)
 		addChildNode((args[i] = NULL));
 }
 
-ValueListNode* ValueListNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueListNode* ValueListNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ValueListNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
 		args.getCount());
 
 	NestConst<ValueExprNode>* j = node->args.begin();
 
-	for (NestConst<ValueExprNode>* i = args.begin(); i != args.end(); ++i, ++j)
+	for (const NestConst<ValueExprNode>* i = args.begin(); i != args.end(); ++i, ++j)
 		*j = copier.copy(tdbb, *i);
 
 	return node;
@@ -10439,19 +10444,14 @@ void VariableNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	*desc = varDecl->varDesc;
 }
 
-ValueExprNode* VariableNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* VariableNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	if (copier.csb->csb_remap_variable != 0)
-	{
-		VariableNode* node = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
-		node->varId = copier.csb->csb_remap_variable + varId;
-		node->varDecl = varDecl;
-		node->varInfo = varInfo;
+	VariableNode* node = FB_NEW(*tdbb->getDefaultPool()) VariableNode(*tdbb->getDefaultPool());
+	node->varId = copier.csb->csb_remap_variable + varId;
+	node->varDecl = varDecl;
+	node->varInfo = varInfo;
 
-		return node;
-	}
-
-	return this;
+	return node;
 }
 
 ValueExprNode* VariableNode::pass1(thread_db* tdbb, CompilerScratch* csb)

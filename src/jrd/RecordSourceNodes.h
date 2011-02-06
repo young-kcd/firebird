@@ -55,7 +55,7 @@ public:
 	{
 	}
 
-	SortNode* copy(thread_db* tdbb, NodeCopier& copier);
+	SortNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	SortNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	SortNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use, bool allowOnlyCurrentStream);
@@ -77,7 +77,7 @@ public:
 	{
 	}
 
-	MapNode* copy(thread_db* tdbb, NodeCopier& copier);
+	MapNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	MapNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	MapNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
@@ -222,7 +222,7 @@ public:
 		list.add(getStream());
 	}
 
-	virtual RecordSourceNode* copy(thread_db* tdbb, NodeCopier& copier) = 0;
+	virtual RecordSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const = 0;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const = 0;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -290,7 +290,7 @@ public:
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual RelationSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 
 	virtual RecordSourceNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
@@ -374,7 +374,7 @@ public:
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual ProcedureSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual ProcedureSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
 	virtual void ignoreDbKey(thread_db* /*tdbb*/, CompilerScratch* /*csb*/) const
 	{
@@ -450,7 +450,7 @@ public:
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual AggregateSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual AggregateSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -502,7 +502,7 @@ public:
 
 	static UnionSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp);
 
-	virtual UnionSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual UnionSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 
 	virtual RecordSourceNode* pass1(thread_db* /*tdbb*/, CompilerScratch* /*csb*/)
@@ -573,7 +573,7 @@ public:
 	}
 
 	virtual void getStreams(StreamsArray& list) const;
-	virtual WindowSourceNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual WindowSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -682,7 +682,7 @@ public:
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
-	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier);
+	virtual RseNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 	virtual RseNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,

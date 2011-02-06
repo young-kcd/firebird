@@ -99,7 +99,7 @@ void DenseRankWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, ds
 	desc->makeInt64(0);
 }
 
-ValueExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* DenseRankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) DenseRankWinNode(*tdbb->getDefaultPool());
 }
@@ -153,7 +153,7 @@ void RankWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* de
 	desc->makeInt64(0);
 }
 
-ValueExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* RankWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) RankWinNode(*tdbb->getDefaultPool());
 }
@@ -224,7 +224,7 @@ void RowNumberWinNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, ds
 	desc->makeInt64(0);
 }
 
-ValueExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/)
+ValueExprNode* RowNumberWinNode::copy(thread_db* tdbb, NodeCopier& /*copier*/) const
 {
 	return FB_NEW(*tdbb->getDefaultPool()) RowNumberWinNode(*tdbb->getDefaultPool());
 }
@@ -354,7 +354,7 @@ LagWinNode::LagWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql_n
 {
 }
 
-ValueExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* LagWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	LagWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LagWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);
@@ -382,7 +382,7 @@ LeadWinNode::LeadWinNode(MemoryPool& pool, dsql_nod* aArg, dsql_nod* aRows, dsql
 {
 }
 
-ValueExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier)
+ValueExprNode* LeadWinNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	LeadWinNode* node = FB_NEW(*tdbb->getDefaultPool()) LeadWinNode(*tdbb->getDefaultPool());
 	node->arg = copier.copy(tdbb, arg);

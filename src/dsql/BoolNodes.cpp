@@ -195,7 +195,7 @@ bool BinaryBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*co
 		arg2->expressionEqual(tdbb, csb, otherNode->arg1, stream);
 }
 
-BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
+BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	BinaryBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(),
 		blrOp);
@@ -606,7 +606,7 @@ bool ComparativeBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb,
 }
 
 
-BoolExprNode* ComparativeBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
+BoolExprNode* ComparativeBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	ComparativeBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) ComparativeBoolNode(
 		*tdbb->getDefaultPool(), blrOp);
@@ -1436,7 +1436,7 @@ void MissingBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-BoolExprNode* MissingBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
+BoolExprNode* MissingBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	MissingBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) MissingBoolNode(
 		*tdbb->getDefaultPool());
@@ -1513,7 +1513,7 @@ void NotBoolNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	GEN_expr(dsqlScratch, dsqlArg);
 }
 
-BoolExprNode* NotBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
+BoolExprNode* NotBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	NotBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) NotBoolNode(*tdbb->getDefaultPool());
 	node->nodFlags = nodFlags;
@@ -1741,7 +1741,7 @@ bool RseBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const
 	return blrOp == otherNode->blrOp;
 }
 
-BoolExprNode* RseBoolNode::copy(thread_db* tdbb, NodeCopier& copier)
+BoolExprNode* RseBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	RseBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) RseBoolNode(
 		*tdbb->getDefaultPool(), blrOp);
