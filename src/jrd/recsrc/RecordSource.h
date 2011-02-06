@@ -968,7 +968,7 @@ namespace Jrd
 					    RecordSource* root, RecordSource* inner,
 					    const MapNode* rootMap, const MapNode* innerMap,
 					    size_t streamCount, const UCHAR* innerStreams,
-					    size_t saveOffset);
+					    ULONG saveOffset);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -992,7 +992,7 @@ namespace Jrd
 		const MapNode* const m_rootMap;
 		const MapNode* const m_innerMap;
 		StreamsArray m_innerStreams;
-		const size_t m_saveOffset;
+		const ULONG m_saveOffset;
 		size_t m_saveSize;
 	};
 

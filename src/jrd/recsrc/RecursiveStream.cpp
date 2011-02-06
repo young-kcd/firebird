@@ -41,7 +41,7 @@ RecursiveStream::RecursiveStream(CompilerScratch* csb, UCHAR stream, UCHAR mapSt
 							     RecordSource* root, RecordSource* inner,
 							     const MapNode* rootMap, const MapNode* innerMap,
 							     size_t streamCount, const UCHAR* innerStreams,
-							     size_t saveOffset)
+							     ULONG saveOffset)
 	: RecordStream(csb, stream),
 	  m_mapStream(mapStream),
 	  m_root(root), m_inner(inner),
