@@ -326,6 +326,8 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	{
 		level++;
 		plan += "HASH (";
+		m_leader->print(tdbb, plan, false, level);
+		plan += ", ";
 		for (int i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
