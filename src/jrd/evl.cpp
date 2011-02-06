@@ -145,7 +145,6 @@ dsc* EVL_assign_to(thread_db* tdbb, const ValueExprNode* node)
 
 	int arg_number;
 	const dsc* desc;
-	const Format* format;
 	const MessageNode* message;
 	Record* record;
 	const ParameterNode* paramNode;
