@@ -406,7 +406,7 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 		{
 			fb_assert(!desc->isBlob());
 
-			size_t length = desc->dsc_length;
+			USHORT length = desc->dsc_length;
 			const UCHAR* address = desc->dsc_address;
 
 			MoveBuffer buffer;
@@ -423,7 +423,7 @@ size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
 				}
 				else if (desc->dsc_dtype == dtype_cstring)
 				{
-					length = strlen((char*) address);
+					length = static_cast<USHORT>(strlen((char*) address));
 				}
 
 				if (IS_INTL_DATA(desc))
