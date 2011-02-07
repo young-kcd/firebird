@@ -108,6 +108,7 @@
     <ClCompile Include="..\..\..\src\jrd\recsrc\AggregatedStream.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\BitmapTableScan.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\BufferedStream.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\recsrc\ConditionalStream.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\Cursor.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\ExternalTableScan.cpp" />
     <ClCompile Include="..\..\..\src\jrd\recsrc\FilteredStream.cpp" />

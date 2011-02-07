@@ -619,6 +619,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\jrd\recsrc\ConditionalStream.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\jrd\recsrc\Cursor.cpp"
 					>
 				</File>

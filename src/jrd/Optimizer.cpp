@@ -382,6 +382,7 @@ InversionCandidate::InversionCandidate(MemoryPool& p) :
 	nonFullMatchedSegments = MAX_INDEX_SEGMENTS + 1;
 	matchedSegments = 0;
 	boolean = NULL;
+	condition = NULL;
 	inversion = NULL;
 	scratch = NULL;
 	used = false;
@@ -1341,7 +1342,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			{
 				// If this is a unique full equal matched inversion we're done, so
 				// we can make the inversion and return it.
-				if (currentInv->unique && currentInv->dependencies)
+				if (currentInv->unique && currentInv->dependencies && !currentInv->condition)
 				{
 					if (!invCandidate)
 						invCandidate = FB_NEW(pool) InversionCandidate(pool);
@@ -1413,6 +1414,20 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				}
 				else
 				{
+					// Prefer unconditional inversions
+					if (currentInv->condition)
+					{
+						currentInv->used = true;
+						restartLoop = true;
+						break;
+					}
+					else if (bestCandidate->condition)
+					{
+						bestCandidate = currentInv;
+						restartLoop = true;
+						break;
+					}
+
 					if (currentInv->unique && !bestCandidate->unique)
 					{
 						// A unique full equal match is better than anything else.
@@ -1570,6 +1585,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					invCandidate->nonFullMatchedSegments = 0;
 					invCandidate->matchedSegments = bestCandidate->matchedSegments;
 					invCandidate->dependencies = bestCandidate->dependencies;
+					invCandidate->condition = bestCandidate->condition;
+
 					for (size_t j = 0; j < bestCandidate->matches.getCount(); j++)
 					{
 						if (!matches.exist(bestCandidate->matches[j])) {
@@ -1585,6 +1602,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 				}
 				else
 				{
+					fb_assert(!bestCandidate->condition);
+
 					if (!bestCandidate->inversion && bestCandidate->scratch)
 					{
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
@@ -2115,8 +2134,6 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			getInversionCandidates(&inversions, &indexOrScratches, scope);
 
 		invCandidate1 = makeInversion(&inversions);
-		if (!invCandidate1)
-			return NULL;
 
 		// Clear list to remove previously matched conjunctions
 		indexOrScratches.clear();
@@ -2148,7 +2165,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		invCandidate2 = makeInversion(&inversions);
 
-		if (invCandidate2)
+		if (invCandidate1 && invCandidate2)
 		{
 			InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 			invCandidate->inversion = composeInversion(invCandidate1->inversion,
@@ -2161,6 +2178,23 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			invCandidate->matchedSegments =
 				MIN(invCandidate1->matchedSegments, invCandidate2->matchedSegments);
 			invCandidate->dependencies = invCandidate1->dependencies + invCandidate2->dependencies;
+
+			if (invCandidate1->condition && invCandidate2->condition)
+			{
+				BinaryBoolNode* const newNode =
+					FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+				newNode->arg1 = invCandidate1->condition;
+				newNode->arg2 = invCandidate2->condition;
+				invCandidate->condition = newNode;
+			}
+			else if (invCandidate1->condition)
+			{
+				invCandidate->condition = invCandidate1->condition;
+			}
+			else if (invCandidate2->condition)
+			{
+				invCandidate->condition = invCandidate2->condition;
+			}
 
 			// Add matches conjunctions that exists in both left and right inversion
 			if ((invCandidate1->matches.getCount()) && (invCandidate2->matches.getCount()))
@@ -2178,6 +2212,16 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			}
 
 			return invCandidate;
+		}
+		else if (invCandidate1)
+		{
+			invCandidate1->condition = binaryNode->arg2;
+			return invCandidate1;
+		}
+		else if (invCandidate2)
+		{
+			invCandidate2->condition = binaryNode->arg1;
+			return invCandidate2;
 		}
 
 		return NULL;

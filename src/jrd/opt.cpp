@@ -166,7 +166,7 @@ namespace Jrd
 
 		bool isComputable(CompilerScratch* csb) const
 		{
-			return m_node ? m_node->computable(csb, -1, false, false, NULL) : true;
+			return m_node ? m_node->computable(csb, -1, false, false) : true;
 		}
 
 	protected:
@@ -2193,8 +2193,8 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		(inner_flag ? opt->opt_base_missing_conjuncts : opt->opt_conjuncts.getCount());
 
 	RecordSource* rsb = NULL;
-	IndexTableScan* nav_rsb = NULL;
 	InversionNode* inversion = NULL;
+	BoolExprNode* condition = NULL;
 
 	if (relation->rel_file)
 	{
@@ -2216,12 +2216,26 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else
 	{
 		// Persistent table
+		IndexTableScan* nav_rsb = NULL;
 		OptimizerRetrieval optimizerRetrieval(*tdbb->getDefaultPool(), opt, stream,
 											  outer_flag, inner_flag, sort_ptr);
 		AutoPtr<InversionCandidate> candidate(optimizerRetrieval.getInversion(&nav_rsb));
 
-		if (candidate && candidate->inversion)
+		if (candidate)
+		{
 			inversion = candidate->inversion;
+			condition = candidate->condition;
+		}
+
+		if (nav_rsb)
+		{
+			if (inversion && !condition)
+			{
+				nav_rsb->setInversion(inversion);
+			}
+
+			rsb = nav_rsb;
+		}
 	}
 
 	if (outer_flag)
@@ -2278,17 +2292,22 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		}
 	}
 
-	if (nav_rsb)
-	{
-		nav_rsb->setInversion(inversion);
-		fb_assert(!rsb);
-		rsb = nav_rsb;
-	}
-
 	if (!rsb)
 	{
 		if (inversion)
+		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
+
+			if (condition &&
+				condition->computable(csb, -1, false, false) &&
+				!condition->jrdStreamFinder(csb, stream))
+			{
+				RecordSource* const other_rsb =
+					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+
+				rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, other_rsb, rsb, condition);
+			}
+		}
 		else
 		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);

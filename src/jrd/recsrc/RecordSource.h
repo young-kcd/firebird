@@ -996,6 +996,41 @@ namespace Jrd
 		size_t m_saveSize;
 	};
 
+	class ConditionalStream : public RecordSource
+	{
+		struct Impure : public RecordSource::Impure
+		{
+			const RecordSource* irsb_next;
+		};
+
+	public:
+		ConditionalStream(CompilerScratch* csb, RecordSource* first, RecordSource* second,
+						  BoolExprNode* boolean);
+
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
+
+		bool getRecord(thread_db* tdbb) const;
+		bool refetchRecord(thread_db* tdbb) const;
+		bool lockRecord(thread_db* tdbb) const;
+
+		void print(thread_db* tdbb, Firebird::string& plan,
+				   bool detailed, unsigned level) const;
+
+		void markRecursive();
+		void invalidateRecords(jrd_req* request) const;
+
+		void findUsedStreams(StreamsArray& streams) const;
+		void nullRecords(thread_db* tdbb) const;
+		void saveRecords(thread_db* tdbb) const;
+		void restoreRecords(thread_db* tdbb) const;
+
+	private:
+		NestConst<RecordSource> m_first;
+		NestConst<RecordSource> m_second;
+		NestConst<BoolExprNode> const m_boolean;
+	};
+
 } // namespace
 
 #endif // JRD_RECORD_SOURCE_H

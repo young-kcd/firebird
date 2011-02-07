@@ -141,6 +141,7 @@ public:
 	int				indexes;
 	int				dependencies;
 	BoolExprNode*	boolean;
+	BoolExprNode*	condition;
 	InversionNode*	inversion;
 	IndexScratch*	scratch;
 	bool			used;
