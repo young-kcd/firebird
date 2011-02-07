@@ -2876,7 +2876,27 @@ static jrd_nod* copy(thread_db* tdbb,
 		return input;
 
 	case nod_literal:
-		return input;
+		{
+			dsc* inputDesc = &((Literal*) input)->lit_desc;
+
+			const int count = lit_delta +
+				(inputDesc->dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
+
+			jrd_nod* node = PAR_make_node(tdbb, count);
+			node->nod_type = nod_literal;
+			node->nod_count = 0;
+
+			Literal* literal = (Literal*) node;
+			UCHAR* p = reinterpret_cast<UCHAR*>(literal->lit_data);
+
+			literal->lit_desc = *inputDesc;
+			literal->lit_desc.dsc_address = p;
+			literal->lit_desc.dsc_flags = 0;
+
+			memcpy(p, inputDesc->dsc_address, inputDesc->dsc_length);
+
+			return node;
+		}
 
 	case nod_field:
 		{
