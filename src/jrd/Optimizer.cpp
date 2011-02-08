@@ -270,7 +270,8 @@ bool OPT_computable(CompilerScratch* csb, jrd_nod* node, SSHORT stream,
 		return false;
 	}
 
-	for (ptr = rse->rse_relation, end = ptr + rse->rse_count; ptr < end; ptr++)
+	ptr = rse->rse_relation;
+	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
 	{
 		if (!OPT_computable(csb, (*ptr), stream, idx_use, allowOnlyCurrentStream))
 		{
