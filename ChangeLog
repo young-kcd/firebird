@@ -1,3 +1,7 @@
+ 2011-02-07 14:32  asfernandes 
+   M src/jrd/cmp.cpp
+Backport simplified fix for CORE-3255 - The server could crash using views with GROUP BY.
+
  2011-02-04 08:41  dimitr 
    M src/jrd/SysFunction.cpp
 Fixed CORE-3335: Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING function and its boundary arguments.
