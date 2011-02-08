@@ -807,7 +807,6 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 **/
 void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 {
-	const dsql_fld* field;
 	const dsql_ctx* context = NULL;
 	const dsql_str* string;
 	const dsql_nod* alias;
