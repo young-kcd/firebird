@@ -1,3 +1,14 @@
+ 2011-02-07 17:54  dimitr 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+   A src/jrd/recsrc/ConditionalStream.cpp
+   M src/jrd/recsrc/RecordSource.h
+Implement CORE-3076: Better performance for (table.field = :param or :param = -1) in where clause.
+
  2011-02-06 21:59  asfernandes 
    M src/dsql/AggNodes.cpp
    M src/dsql/AggNodes.h
