@@ -1932,6 +1932,10 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			JRD_reschedule(tdbb, 0, true);
 		}
 
+		// Reset the local transaction pointer as the current transaction (req_transaction)
+		// could have been changed inside the loop (see InAutonomousTransactionNode::execute)
+		transaction = request->req_transaction;
+
 		switch (node->nod_type)
 		{
 		case nod_asn_list:
@@ -2818,6 +2822,10 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		request->adjustCallerStats();
 
+		// Reset the local transaction pointer as the current transaction (req_transaction)
+		// could have been changed inside the loop (see InAutonomousTransactionNode::execute)
+		transaction = request->req_transaction;
+
 		// Skip this handling for errors coming from the nested looper calls,
 		// as they're already handled properly. The only need is to undo
 		// our own savepoints.
@@ -2862,6 +2870,10 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	} // while()
 
 	request->adjustCallerStats();
+
+	// Reset the local transaction pointer as the current transaction (req_transaction)
+	// could have been changed inside the loop (see InAutonomousTransactionNode::execute)
+	transaction = request->req_transaction;
 
 	fb_assert(request->req_auto_trans.getCount() == 0);
 
