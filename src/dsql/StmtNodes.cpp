@@ -3643,7 +3643,7 @@ LabelNode* LabelNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* exeState) const
+const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeState* /*exeState*/) const
 {
 	switch (request->req_operation)
 	{
