@@ -1303,8 +1303,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
  *	execution on stall or request complete.
  *
  **************************************/
-	jrd_tra* transaction = request->req_transaction;
-	if (!transaction)
+	if (!request->req_transaction)
 		ERR_post(Arg::Gds(isc_req_no_trans));
 
 	SET_TDBB(tdbb);
@@ -1320,8 +1319,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 
 	tdbb->setRequest(request);
-	jrd_tra* old_transaction = tdbb->getTransaction();
-	tdbb->setTransaction(transaction);
+	tdbb->setTransaction(request->req_transaction);
 
 	if (!stmtExpr)
 	{
@@ -1331,8 +1329,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	else
 		request->req_operation = jrd_req::req_evaluate;
 
-	const SLONG save_point_number = (transaction->tra_save_point) ?
-		transaction->tra_save_point->sav_number : 0;
+	const SLONG save_point_number = (request->req_transaction->tra_save_point) ?
+		request->req_transaction->tra_save_point->sav_number : 0;
 
 	tdbb->tdbb_flags &= ~(TDBB_stack_trace_done | TDBB_sys_error);
 
@@ -1479,19 +1477,22 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 		request->adjustCallerStats();
 
+		// Ensure the transaction hasn't disappeared in the meantime
+		fb_assert(request->req_transaction);
+
 		// Skip this handling for errors coming from the nested looper calls,
 		// as they're already handled properly. The only need is to undo
 		// our own savepoints.
 		if (exeState.catchDisabled)
 		{
-			if (transaction != sysTransaction)
+			if (request->req_transaction != sysTransaction)
 			{
-				for (const Savepoint* save_point = transaction->tra_save_point;
+				for (const Savepoint* save_point = request->req_transaction->tra_save_point;
 					((save_point) && (save_point_number <= save_point->sav_number));
-					save_point = transaction->tra_save_point)
+					save_point = request->req_transaction->tra_save_point)
 				{
-					++transaction->tra_save_point->sav_verb_count;
-					EXE_verb_cleanup(tdbb, transaction);
+					++request->req_transaction->tra_save_point->sav_verb_count;
+					EXE_verb_cleanup(tdbb, request->req_transaction);
 				}
 			}
 
@@ -1504,10 +1505,11 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		}
 
 		// Since an error happened, the current savepoint needs to be undone
-		if (transaction != sysTransaction && transaction->tra_save_point)
+		if (request->req_transaction != sysTransaction &&
+			request->req_transaction->tra_save_point)
 		{
-			++transaction->tra_save_point->sav_verb_count;
-			EXE_verb_cleanup(tdbb, transaction);
+			++request->req_transaction->tra_save_point->sav_verb_count;
+			EXE_verb_cleanup(tdbb, request->req_transaction);
 		}
 
 		exeState.errorPending = true;
@@ -1548,7 +1550,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 end:
 	request->req_next = node;
-	tdbb->setTransaction(old_transaction);
+	tdbb->setTransaction(exeState.oldTransaction);
 	tdbb->setRequest(exeState.oldRequest);
 
 	if (!stmtExpr)
@@ -1557,20 +1559,23 @@ end:
 		request->req_caller = NULL;
 	}
 
+	// Ensure the transaction hasn't disappeared in the meantime
+	fb_assert(request->req_transaction);
+
 	// In the case of a pending error condition (one which did not
 	// result in a exception to the top of looper), we need to
 	// delete the last savepoint
 
 	if (exeState.errorPending)
 	{
-		if (transaction != sysTransaction)
+		if (request->req_transaction != sysTransaction)
 		{
-			for (const Savepoint* save_point = transaction->tra_save_point;
+			for (const Savepoint* save_point = request->req_transaction->tra_save_point;
 				((save_point) && (save_point_number <= save_point->sav_number));
-				 save_point = transaction->tra_save_point)
+				 save_point = request->req_transaction->tra_save_point)
 			{
-				++transaction->tra_save_point->sav_verb_count;
-				EXE_verb_cleanup(tdbb, transaction);
+				++request->req_transaction->tra_save_point->sav_verb_count;
+				EXE_verb_cleanup(tdbb, request->req_transaction);
 			}
 		}
 

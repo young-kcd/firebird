@@ -888,6 +888,7 @@ public:
 		ExeState(thread_db* tdbb)
 			: oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
+			  oldTransaction(tdbb->getTransaction()),
 			  errorPending(false),
 			  catchDisabled(false),
 			  whichEraseTrig(ALL_TRIGS),
@@ -898,10 +899,11 @@ public:
 		{
 		}
 
-		MemoryPool* oldPool;	// Save the old pool to restore on exit.
-		jrd_req* oldRequest;	// Save the old request to restore on exit.
-		bool errorPending;		// Is there an error pending to be handled?
-		bool catchDisabled;		// Catch errors so we can unwind cleanly.
+		MemoryPool* oldPool;		// Save the old pool to restore on exit.
+		jrd_req* oldRequest;		// Save the old request to restore on exit.
+		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.
+		bool errorPending;			// Is there an error pending to be handled?
+		bool catchDisabled;			// Catch errors so we can unwind cleanly.
 		WhichTrigger whichEraseTrig;
 		WhichTrigger whichStoTrig;
 		WhichTrigger whichModTrig;
