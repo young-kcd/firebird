@@ -1319,7 +1319,7 @@ static int set_hdr_str(TEXT header_str[], const TEXT* in_str, SLONG pos, SLONG l
 			header_str[indx] = *t_str;
 			break;
 		}
-		*t_str++;
+		++t_str;
 	}
 	return FB_SUCCESS;
 }

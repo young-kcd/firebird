@@ -98,13 +98,6 @@ namespace
 		printMsg(number, dummy, newLine);
 	}
 
-	bool getMsg(USHORT number, char* buffer, size_t bufsize, const SafeArg& arg)
-	{
-		if (!number || !buffer || bufsize < 10)
-			return false;
-		return fb_msg_format(NULL, nbackup_msg_fac, number, bufsize, buffer, arg) > 0;
-	}
-
 	void usage(UtilSvc* uSvc, const ISC_STATUS code, const char* message = NULL)
 	{
 		/*
