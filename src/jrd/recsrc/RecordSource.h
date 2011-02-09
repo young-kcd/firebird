@@ -603,6 +603,7 @@ namespace Jrd
 		{
 			State state;
 			FB_UINT64 pending;
+			impure_value* impureValues;
 		};
 
 	public:

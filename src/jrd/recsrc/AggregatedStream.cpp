@@ -79,6 +79,15 @@ void AggregatedStream::open(thread_db* tdbb) const
 	impure->pending = 0;
 	VIO_record(tdbb, &request->req_rpb[m_stream], m_format, tdbb->getDefaultPool());
 
+	unsigned impureCount = m_group ? m_group->getCount() : 0;
+	impureCount += m_order ? m_order->getCount() : 0;
+
+	if (!impure->impureValues)
+	{
+		impure->impureValues = FB_NEW(*tdbb->getDefaultPool()) impure_value[impureCount];
+		memset(impure->impureValues, 0, sizeof(impure_value) * impureCount);
+	}
+
 	m_next->open(tdbb);
 }
 
@@ -271,8 +280,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
 
-	impure_value vtemp;
-	vtemp.vlu_string = NULL;
+	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	// if we found the last record last time, we're all done
 
@@ -317,38 +325,43 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 			}
 		}
 
+		unsigned impureOffset = 0;
 		const NestConst<ValueExprNode>* ptrValue, *endValue;
 		dsc* desc;
 
 		if (m_group)
 		{
-			for (ptrValue = m_group->begin(), endValue = m_group->end(); ptrValue != endValue; ++ptrValue)
+			for (ptrValue = m_group->begin(), endValue = m_group->end();
+				 ptrValue != endValue;
+				 ++ptrValue, ++impureOffset)
 			{
 				const ValueExprNode* from = *ptrValue;
-				impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
+				impure_value* target = &impure->impureValues[impureOffset];
 
 				desc = EVL_expr(tdbb, request, from);
 
 				if (request->req_flags & req_null)
-					impure->vlu_desc.dsc_address = NULL;
+					target->vlu_desc.dsc_address = NULL;
 				else
-					EVL_make_value(tdbb, desc, impure);
+					EVL_make_value(tdbb, desc, target);
 			}
 		}
 
 		if (m_order)
 		{
-			for (ptrValue = m_order->begin(), endValue = m_order->end(); ptrValue != endValue; ++ptrValue)
+			for (ptrValue = m_order->begin(), endValue = m_order->end();
+				 ptrValue != endValue;
+				 ++ptrValue, ++impureOffset)
 			{
 				const ValueExprNode* from = *ptrValue;
-				impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
+				impure_value* target = &impure->impureValues[impureOffset];
 
 				desc = EVL_expr(tdbb, request, from);
 
 				if (request->req_flags & req_null)
-					impure->vlu_desc.dsc_address = NULL;
+					target->vlu_desc.dsc_address = NULL;
 				else
-					EVL_make_value(tdbb, desc, impure);
+					EVL_make_value(tdbb, desc, target);
 			}
 		}
 
@@ -358,6 +371,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 		while (state != STATE_EOF_FOUND)
 		{
+			impureOffset = 0;
 			state = STATE_PENDING;
 
 			if (first)
@@ -371,22 +385,16 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				{
 					for (ptrValue = m_group->begin(), endValue = m_group->end();
 						 ptrValue != endValue;
-						 ++ptrValue)
+						 ++ptrValue, ++impureOffset)
 					{
 						const ValueExprNode* from = *ptrValue;
-						impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
-
-						if (impure->vlu_desc.dsc_address)
-							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
-						else
-							vtemp.vlu_desc.dsc_address = NULL;
+						impure_value* vtemp = &impure->impureValues[impureOffset];
 
 						desc = EVL_expr(tdbb, request, from);
 
 						if (request->req_flags & req_null)
 						{
-							impure->vlu_desc.dsc_address = NULL;
-							if (vtemp.vlu_desc.dsc_address)
+							if (vtemp->vlu_desc.dsc_address)
 							{
 								if (m_order)
 									state = STATE_GROUPING;
@@ -395,8 +403,7 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 						}
 						else
 						{
-							EVL_make_value(tdbb, desc, impure);
-							if (!vtemp.vlu_desc.dsc_address || MOV_compare(&vtemp.vlu_desc, desc))
+							if (!vtemp->vlu_desc.dsc_address || MOV_compare(&vtemp->vlu_desc, desc) != 0)
 							{
 								if (m_order)
 									state = STATE_GROUPING;
@@ -410,28 +417,21 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 				{
 					for (ptrValue = m_order->begin(), endValue = m_order->end();
 						 ptrValue != endValue;
-						 ++ptrValue)
+						 ++ptrValue, ++impureOffset)
 					{
 						const ValueExprNode* from = *ptrValue;
-						impure_value* impure = request->getImpure<impure_value>(from->impureOffset);
-
-						if (impure->vlu_desc.dsc_address)
-							EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
-						else
-							vtemp.vlu_desc.dsc_address = NULL;
+						impure_value* vtemp = &impure->impureValues[impureOffset];
 
 						desc = EVL_expr(tdbb, request, from);
 
 						if (request->req_flags & req_null)
 						{
-							impure->vlu_desc.dsc_address = NULL;
-							if (vtemp.vlu_desc.dsc_address)
+							if (vtemp->vlu_desc.dsc_address)
 								goto break_out;
 						}
 						else
 						{
-							EVL_make_value(tdbb, desc, impure);
-							if (!vtemp.vlu_desc.dsc_address || MOV_compare(&vtemp.vlu_desc, desc))
+							if (!vtemp->vlu_desc.dsc_address || MOV_compare(&vtemp->vlu_desc, desc) != 0)
 								goto break_out;
 						}
 					}
@@ -469,8 +469,6 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 		break_out:
 
 		// Finish up any residual computations and get out
-
-		delete vtemp.vlu_string;
 
 		for (const NestConst<ValueExprNode>* source = m_map->sourceList.begin(),
 				*target = m_map->targetList.begin();
