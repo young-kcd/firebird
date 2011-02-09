@@ -1469,6 +1469,9 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		}
 
 		node = node->execute(tdbb, request, &exeState);
+
+		if (exeState.exit)
+			return node;
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

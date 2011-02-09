@@ -1534,6 +1534,7 @@ const StmtNode* ErrorHandlerNode::execute(thread_db* /*tdbb*/, jrd_req* request,
 	{
 		fb_assert(request->req_caller == exeState->oldRequest);
 		request->req_caller = NULL;
+		exeState->exit = true;
 		return this;
 	}
 

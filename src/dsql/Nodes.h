@@ -895,7 +895,8 @@ public:
 			  whichStoTrig(ALL_TRIGS),
 			  whichModTrig(ALL_TRIGS),
 			  topNode(NULL),
-			  prevNode(NULL)
+			  prevNode(NULL),
+			  exit(false)
 		{
 		}
 
@@ -909,6 +910,7 @@ public:
 		WhichTrigger whichModTrig;
 		const StmtNode* topNode;
 		const StmtNode* prevNode;
+		bool exit;
 	};
 
 public:
