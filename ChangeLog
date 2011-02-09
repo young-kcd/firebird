@@ -1,3 +1,12 @@
+ 2011-02-09 00:29  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/RecordSource.h
+Do not reuse arbitrary nodes' impure space in aggregate. Relates to CORE-3255.
+
+ 2011-02-08 17:34  dimitr 
+   M src/dsql/make.cpp
+Misc.
+
  2011-02-07 17:54  dimitr 
    M builds/win32/msvc10/engine.vcxproj
    M builds/win32/msvc8/engine.vcproj
