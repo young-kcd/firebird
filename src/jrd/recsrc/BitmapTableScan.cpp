@@ -123,7 +123,7 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Persistent Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Access By ID";
 		printInversion(tdbb, m_inversion, plan, true, level);
 	}
 	else

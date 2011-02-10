@@ -239,7 +239,7 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Persistent Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Access By ID";
 		printInversion(tdbb, m_index, plan, true, level, true);
 		if (m_inversion)
 		{
