@@ -1,3 +1,7 @@
+ 2011-02-09 10:47  dimitr 
+   M src/jrd/exe.cpp
+Simplified fix for CORE-3340 (Error in autonomous transaction with empty exception handler: can insert duplicate values into PK/UK column) and its cousin CORE-3341 (Events might not be posted inside the autonomous transaction). It's actually the same bug with different visible effects.
+
  2011-02-07 14:32  asfernandes 
    M src/jrd/cmp.cpp
 Backport simplified fix for CORE-3255 - The server could crash using views with GROUP BY.
