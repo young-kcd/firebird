@@ -187,7 +187,6 @@ namespace Jrd
 			RecordBitmap* irsb_nav_records_visited;		// bitmap of records already retrieved
 			BtrPageGCLock* irsb_nav_btr_gc_lock;		// lock to prevent removal of currently walked index page
 			USHORT irsb_nav_offset;						// page offset of current index node
-			USHORT irsb_nav_lower_length;				// length of lower key value
 			USHORT irsb_nav_upper_length;				// length of upper key value
 			USHORT irsb_nav_length;						// length of expanded key
 			UCHAR irsb_nav_data[1];						// expanded key, upper bound, and index desc
