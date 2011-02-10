@@ -1,3 +1,24 @@
+ 2011-02-09 21:26  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+Fixed hang found with CORE-3340 test-case.
+
+ 2011-02-09 21:25  asfernandes 
+   M src/burp/split/spit.cpp
+   M src/jrd/trace/TraceCmdLine.cpp
+   M src/utilities/nbackup/nbackup.cpp
+Warnings
+
+ 2011-02-09 10:59  dimitr 
+   M src/dsql/Nodes.h
+   M src/jrd/exe.cpp
+Fixed CORE-3340 (Error in autonomous transaction with empty exception handler: can insert duplicate values into PK/UK column).
+
+ 2011-02-09 10:57  dimitr 
+   M src/dsql/StmtNodes.cpp
+Misc.
+
  2011-02-09 00:29  asfernandes 
    M src/jrd/recsrc/AggregatedStream.cpp
    M src/jrd/recsrc/RecordSource.h
