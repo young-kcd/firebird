@@ -1258,7 +1258,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 
 			dsc desc = *odsDflDesc;
 			desc.dsc_address = const_cast<UCHAR*>(p);
-			EVL_make_value(tdbb, &desc, &format->fmt_defaults[offset]);
+			EVL_make_value(tdbb, &desc, &format->fmt_defaults[offset], dbb->dbb_permanent);
 
 			p += desc.dsc_length;
 		}

@@ -393,7 +393,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 }
 
 
-void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
+void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value, MemoryPool* pool)
 {
 /**************************************
  *
@@ -411,33 +411,33 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 	const dsc from = *desc;
 	value->vlu_desc = *desc;
-	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
+	value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc;
 
 	switch (from.dsc_dtype)
 	{
 	case dtype_short:
-		value->vlu_misc.vlu_short = *((SSHORT *) from.dsc_address);
+		value->vlu_misc.vlu_short = *((SSHORT*) from.dsc_address);
 		return;
 
 	case dtype_long:
 	case dtype_real:
 	case dtype_sql_time:
 	case dtype_sql_date:
-		value->vlu_misc.vlu_long = *((SLONG *) from.dsc_address);
+		value->vlu_misc.vlu_long = *((SLONG*) from.dsc_address);
 		return;
 
 	case dtype_int64:
-		value->vlu_misc.vlu_int64 = *((SINT64 *) from.dsc_address);
+		value->vlu_misc.vlu_int64 = *((SINT64*) from.dsc_address);
 		return;
 
 	case dtype_double:
-		value->vlu_misc.vlu_double = *((double *) from.dsc_address);
+		value->vlu_misc.vlu_double = *((double*) from.dsc_address);
 		return;
 
 	case dtype_timestamp:
 	case dtype_quad:
-		value->vlu_misc.vlu_dbkey[0] = ((SLONG *) from.dsc_address)[0];
-		value->vlu_misc.vlu_dbkey[1] = ((SLONG *) from.dsc_address)[1];
+		value->vlu_misc.vlu_dbkey[0] = ((SLONG*) from.dsc_address)[0];
+		value->vlu_misc.vlu_dbkey[1] = ((SLONG*) from.dsc_address)[1];
 		return;
 
 	case dtype_text:
@@ -447,7 +447,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		break;
 
 	case dtype_blob:
-		value->vlu_misc.vlu_bid = *(bid*)from.dsc_address;
+		value->vlu_misc.vlu_bid = *(bid*) from.dsc_address;
 		return;
 
 	case dtype_boolean:
@@ -470,15 +470,21 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	const USHORT length = MOV_get_string_ptr(&from, &ttype, &address, &temp, sizeof(temp));
 
 	// Allocate a string block of sufficient size.
+
 	VaryingString* string = value->vlu_string;
+
 	if (string && string->str_length < length)
 	{
 		delete string;
 		string = NULL;
 	}
+
 	if (!string)
 	{
-		string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
+		if (!pool)
+			pool = tdbb->getDefaultPool();
+
+		string = value->vlu_string = FB_NEW_RPT(*pool, length) VaryingString();
 		string->str_length = length;
 	}
 
@@ -487,10 +493,9 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 	value->vlu_desc.dsc_address = target;
 	value->vlu_desc.dsc_sub_type = 0;
 	value->vlu_desc.dsc_scale = 0;
+
 	if (from.dsc_dtype == dtype_dbkey)
-	{
 		value->vlu_desc.dsc_dtype = dtype_dbkey;
-	}
 	else
 	{
 		value->vlu_desc.dsc_dtype = dtype_text;

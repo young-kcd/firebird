@@ -5278,7 +5278,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 									desc.makeText(len, ttype_none, ptr);
 								}
 
-								EVL_make_value(tdbb, &desc, &tfb->tfb_default);
+								EVL_make_value(tdbb, &desc, &tfb->tfb_default, dbb->dbb_permanent);
 							}
 						}
 						catch (const Exception&)
