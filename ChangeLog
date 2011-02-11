@@ -1,3 +1,19 @@
+ 2011-02-11 00:43  asfernandes 
+   M src/jrd/dfw.epp
+   M src/jrd/evl.cpp
+   M src/jrd/evl_proto.h
+   M src/jrd/met.epp
+Simplified fix for problem with default values in formats.
+
+ 2011-02-10 20:22  dimitr 
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+Misc.
+
+ 2011-02-10 14:52  dimitr 
+   M src/jrd/recsrc/RecordSource.h
+Misc.
+
  2011-02-09 21:26  asfernandes 
    M src/dsql/Nodes.h
    M src/dsql/StmtNodes.cpp
