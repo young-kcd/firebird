@@ -58,11 +58,10 @@ using namespace Firebird;
 namespace Jrd {
 
 
-// Try to merge this function with node_equality() into 1 function.
-
-// Wrapper for OPT_expression_equal2().
-bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, const index_desc* idx,
-	ValueExprNode* node, USHORT stream)
+// Check the index for being an expression one and
+// matching both the given stream and the given expression tree
+bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_desc* idx,
+						  ValueExprNode* node, USHORT stream)
 {
 	DEV_BLKCHK(node, type_nod);
 
@@ -70,17 +69,23 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, const index_des
 
 	if (idx && idx->idx_expression_statement && idx->idx_expression)
 	{
+		SortedArray<int> streams;
+		node->jrdStreamsCollector(streams);
+
+		if (streams.getCount() != 1 || streams[0] != stream)
+		{
+			return false;
+		}
+
 		fb_assert(idx->idx_flags & idx_expressn);
-		return OPT_expression_equal2(tdbb, csb, idx->idx_expression, node, stream);
+		return OPT_expression_equal(tdbb, csb, idx->idx_expression, node);
 	}
 
 	return false;
 }
 
-// Determine if two expression trees are the same for the purposes of matching one half of a boolean
-// expression to an index.
-bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2,
-	USHORT stream)
+// Determine if two expression trees are the same
+bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2)
 {
 	if (node1->type != node2->type)
 	{
@@ -93,7 +98,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node
 			static_cast<ValueExprNode*>(node2)->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, castNode->source, node2, stream))
+				OPT_expression_equal(tdbb, csb, castNode->source, node2))
 			{
 				return true;
 			}
@@ -105,7 +110,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node
 			castNode->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal2(tdbb, csb, node1, castNode->source, stream))
+				OPT_expression_equal(tdbb, csb, node1, castNode->source))
 			{
 				return true;
 			}
@@ -114,7 +119,7 @@ bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node
 		return false;
 	}
 
-	return node1->expressionEqual(tdbb, csb, node2, stream);
+	return node1->sameAs(tdbb, csb, node2);
 }
 
 
@@ -730,7 +735,7 @@ IndexTableScan* OptimizerRetrieval::generateNavigation()
 
 			if (idx->idx_flags & idx_expressn)
 			{
-				if (!OPT_expression_equal(tdbb, csb, idx, node, stream))
+				if (!checkExpressionIndex(tdbb, csb, idx, node, stream))
 				{
 					usableIndex = false;
 					break;
@@ -1706,11 +1711,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!OPT_expression_equal(tdbb, csb, indexScratch->idx, match, stream) ||
+		if (!checkExpressionIndex(tdbb, csb, indexScratch->idx, match, stream) ||
 			(value && !value->computable(csb, stream, true, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
-				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
 				match->computable(csb, stream, true, false))
 			{
 				ValueExprNode* temp = match;
@@ -2378,13 +2383,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		// we use starting with against it? Is that allowed?
 		fb_assert(indexScratch->idx->idx_expression != NULL);
 
-		if (!(OPT_expression_equal(tdbb, csb, indexScratch->idx, field, stream) ||
+		if (!(checkExpressionIndex(tdbb, csb, indexScratch->idx, field, stream) ||
 			(value && !value->computable(csb, stream, true, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
-				OPT_expression_equal(tdbb, csb, indexScratch->idx, value, stream) &&
+				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
 				field->computable(csb, stream, true, false))
 			{
 				field = value;

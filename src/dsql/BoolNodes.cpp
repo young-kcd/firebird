@@ -176,23 +176,22 @@ bool BinaryBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool BinaryBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
-	USHORT stream)
+bool BinaryBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
 {
 	BinaryBoolNode* otherNode = other->as<BinaryBoolNode>();
 
 	if (!otherNode || blrOp != otherNode->blrOp)
 		return false;
 
-	if (arg1->expressionEqual(tdbb, csb, otherNode->arg1, stream) &&
-		arg2->expressionEqual(tdbb, csb, otherNode->arg2, stream))
+	if (arg1->sameAs(tdbb, csb, otherNode->arg1) &&
+		arg2->sameAs(tdbb, csb, otherNode->arg2))
 	{
 		return true;
 	}
 
 	// A AND B is equivalent to B AND A, ditto for A OR B and B OR A.
-	return arg1->expressionEqual(tdbb, csb, otherNode->arg2, stream) &&
-		arg2->expressionEqual(tdbb, csb, otherNode->arg1, stream);
+	return arg1->sameAs(tdbb, csb, otherNode->arg2) &&
+		arg2->sameAs(tdbb, csb, otherNode->arg1);
 }
 
 BoolExprNode* BinaryBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -570,21 +569,20 @@ bool ComparativeBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) c
 }
 
 
-bool ComparativeBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb,
-	/*const*/ ExprNode* other, USHORT stream)
+bool ComparativeBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
 {
 	ComparativeBoolNode* otherNode = other->as<ComparativeBoolNode>();
 
 	if (!otherNode || blrOp != otherNode->blrOp)
 		return false;
 
-	bool matching = OPT_expression_equal2(tdbb, csb, arg1, otherNode->arg1, stream) &&
-		OPT_expression_equal2(tdbb, csb, arg2, otherNode->arg2, stream);
+	bool matching = OPT_expression_equal(tdbb, csb, arg1, otherNode->arg1) &&
+		OPT_expression_equal(tdbb, csb, arg2, otherNode->arg2);
 
 	if (matching)
 	{
 		matching = !arg3 == !otherNode->arg3 &&
-			(!arg3 || OPT_expression_equal2(tdbb, csb, arg3, otherNode->arg3, stream));
+			(!arg3 || OPT_expression_equal(tdbb, csb, arg3, otherNode->arg3));
 
 		if (matching)
 			return true;
@@ -595,8 +593,8 @@ bool ComparativeBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb,
 	if (blrOp == blr_eql || blrOp == blr_equiv || blrOp == blr_neq)
 	{
 		// A = B is equivalent to B = A, etc.
-		if (OPT_expression_equal2(tdbb, csb, arg1, otherNode->arg2, stream) &&
-			OPT_expression_equal2(tdbb, csb, arg2, otherNode->arg1, stream))
+		if (OPT_expression_equal(tdbb, csb, arg1, otherNode->arg2) &&
+			OPT_expression_equal(tdbb, csb, arg2, otherNode->arg1))
 		{
 			return true;
 		}
@@ -1729,10 +1727,9 @@ bool RseBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	return blrOp == o->blrOp;
 }
 
-bool RseBoolNode::expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
-	USHORT stream)
+bool RseBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
 {
-	if (!BoolExprNode::expressionEqual(tdbb, csb, other, stream))
+	if (!BoolExprNode::sameAs(tdbb, csb, other))
 		return false;
 
 	RseBoolNode* otherNode = other->as<RseBoolNode>();

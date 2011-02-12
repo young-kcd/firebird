@@ -75,9 +75,7 @@ class PlanNode;
 class River;
 class SortNode;
 
-bool OPT_expression_equal(thread_db*, CompilerScratch*, const index_desc*, ValueExprNode*, USHORT);
-bool OPT_expression_equal2(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2,
-	USHORT stream);
+bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 Firebird::string OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 

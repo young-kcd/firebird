@@ -251,8 +251,7 @@ public:
 		return false;
 	}
 
-	virtual bool expressionEqual(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other,
-		USHORT stream) /*const*/
+	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/
 	{
 		return false;
 	}
