@@ -50,7 +50,7 @@ struct dynKey
 	UCHAR* keyData;
 };
 
-typedef Firebird::Array<dynKey*> keyList;
+typedef Firebird::HalfStaticArray<dynKey*, 32> keyList;
 typedef Firebird::HalfStaticArray<Ods::IndexJumpNode, 32> jumpNodeList;
 
 namespace BTreeNode {

@@ -175,7 +175,7 @@ static void copy_key(const temporary_key*, temporary_key*);
 static contents delete_node(thread_db*, WIN*, UCHAR*);
 static void delete_tree(thread_db*, USHORT, USHORT, PageNumber, PageNumber);
 static DSC* eval(thread_db*, const ValueExprNode*, DSC*, bool*);
-static SLONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, AutoPtr<Sort>&, SelectivityList&);
+static ULONG fast_load(thread_db*, jrd_rel*, index_desc*, USHORT, AutoPtr<Sort>&, SelectivityList&);
 
 static index_root_page* fetch_root(thread_db*, WIN*, const jrd_rel*, const RelationPages*);
 static UCHAR* find_node_start_point(btree_page*, temporary_key*, UCHAR*, USHORT*,
@@ -1949,7 +1949,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 	const ULONG segments = root->irt_rpt[id].irt_keys;
 
 	// SSHORT count, stuff_count, pos, i;
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList;
 	duplicatesList.grow(segments);
 	memset(duplicatesList.begin(), 0, segments * sizeof(ULONG));
 
@@ -2787,7 +2787,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 	USHORT newNextPrefix = nextNode.prefix;
 	USHORT newNextLength = 0;
 	USHORT length = MAX(removingNode.length + removingNode.prefix, nextNode.length + nextNode.prefix);
-	HalfStaticArray<UCHAR, MAX_KEY> tempBuf(*tdbb->getDefaultPool());
+	HalfStaticArray<UCHAR, MAX_KEY> tempBuf;
 	UCHAR* tempData = tempBuf.getBuffer(length);
 	length = 0;
 	if (nextNode.prefix > removingNode.prefix)
@@ -2834,7 +2834,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 		// Only update offsets pointing after the deleted node and
 		// remove jump nodes pointing to the deleted node or node
 		// next to the deleted one.
-		jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
+		jumpNodeList tmpJumpNodes;
 		jumpNodeList* jumpNodes = &tmpJumpNodes;
 
 		IndexJumpInfo jumpInfo;
@@ -3043,7 +3043,7 @@ static DSC* eval(thread_db* tdbb, const ValueExprNode* node, DSC* temp, bool* is
 }
 
 
-static SLONG fast_load(thread_db* tdbb,
+static ULONG fast_load(thread_db* tdbb,
 					   jrd_rel* relation,
 					   index_desc* idx,
 					   USHORT key_length,
@@ -3062,7 +3062,6 @@ static SLONG fast_load(thread_db* tdbb,
  *	comprehendable.
  *
  **************************************/
-
  	temporary_key keys[MAX_LEVELS];
 	btree_page* buckets[MAX_LEVELS];
 	win_for_array windows[MAX_LEVELS];
@@ -3076,7 +3075,6 @@ static SLONG fast_load(thread_db* tdbb,
 	TEXT debugtext[1024];
 	//  ,__FILE__, __LINE__
 #endif
-
 
 	SET_TDBB(tdbb);
 	const Database* dbb = tdbb->getDatabase();
@@ -3106,13 +3104,12 @@ static SLONG fast_load(thread_db* tdbb,
 	// Jump information initialization
 
 	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
-	jumpNodeListContainer* jumpNodes = FB_NEW(*tdbb->getDefaultPool())
-		jumpNodeListContainer(*tdbb->getDefaultPool());
-	jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+	jumpNodeListContainer jumpNodes;
+	jumpNodes.push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
 
-	keyList* jumpKeys = FB_NEW(*tdbb->getDefaultPool()) keyList(*tdbb->getDefaultPool());
-	jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
-	(*jumpKeys)[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+	keyList jumpKeys;
+	jumpKeys.push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+	jumpKeys[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 
 	IndexJumpInfo jumpInfo;
 	jumpInfo.jumpAreaSize = 0;
@@ -3155,7 +3152,7 @@ static SLONG fast_load(thread_db* tdbb,
 		flags |= btr_jump_info;
 	}
 
-	WIN* window = 0;
+	WIN* window = NULL;
 	bool error = false;
 	ULONG count = 0;
 	ULONG duplicates = 0;
@@ -3165,7 +3162,7 @@ static SLONG fast_load(thread_db* tdbb,
 	// hvlad: look at IDX_create_index for explanations about NULL indicator below
 	const int nullIndLen = !descending && (idx->idx_count == 1) ? 1 : 0;
 
-	Firebird::HalfStaticArray<ULONG, 4> duplicatesList(*tdbb->getDefaultPool());
+	Firebird::HalfStaticArray<ULONG, 4> duplicatesList;
 
 	try {
 		// Allocate and format the first leaf level bucket.  Awkwardly,
@@ -3224,8 +3221,8 @@ static SLONG fast_load(thread_db* tdbb,
 		split_key.key_length = 0;
 		temp_key.key_flags = 0;
 		temp_key.key_length = 0;
-		dynKey* jumpKey = (*jumpKeys)[0];
-		jumpNodeList* leafJumpNodes = (*jumpNodes)[0];
+		dynKey* jumpKey = jumpKeys[0];
+		jumpNodeList* leafJumpNodes = jumpNodes[0];
 		bool duplicate = false;
 		totalJumpSize[0] = 0;
 		const USHORT headerSize = (pointer - (UCHAR*)bucket);
@@ -3549,16 +3546,16 @@ static SLONG fast_load(thread_db* tdbb,
 					key->key_length = 0;
 
 					// Initialize jumpNodes variables for new level
-					jumpNodes->push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
-					jumpKeys->push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
-					(*jumpKeys)[level]->keyLength = 0;
-					(*jumpKeys)[level]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+					jumpNodes.push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+					jumpKeys.push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+					jumpKeys[level]->keyLength = 0;
+					jumpKeys[level]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
 					totalJumpSize[level] = 0;
 					newAreaPointers[level] = levelPointer + jumpInfo.jumpAreaSize;
 				}
 
-				dynKey* pageJumpKey = (*jumpKeys)[level];
-				jumpNodeList* pageJumpNodes = (*jumpNodes)[level];
+				dynKey* pageJumpKey = jumpKeys[level];
+				jumpNodeList* pageJumpNodes = jumpNodes[level];
 
 				// Compute the prefix in preparation of insertion
 				prefix = BTreeNode::computePrefix(key->key_data, key->key_length,
@@ -3756,7 +3753,7 @@ static SLONG fast_load(thread_db* tdbb,
 			}
 
 			// Store jump nodes on page if needed.
-			jumpNodeList* pageJumpNodes = (*jumpNodes)[level];
+			jumpNodeList* pageJumpNodes = jumpNodes[level];
 			if (useJumpInfo && totalJumpSize[level])
 			{
 				// Slide down current nodes;
@@ -3802,7 +3799,7 @@ static SLONG fast_load(thread_db* tdbb,
 		}
 
 		// Finally clean up dynamic memory used.
-		for (jumpNodeListContainer::iterator itr = jumpNodes->begin(); itr < jumpNodes->end(); ++itr)
+		for (jumpNodeListContainer::iterator itr = jumpNodes.begin(); itr < jumpNodes.end(); ++itr)
 		{
 			jumpNodeList* freeJumpNodes = *itr;
 			IndexJumpNode* walkJumpNode = freeJumpNodes->begin();
@@ -3812,13 +3809,11 @@ static SLONG fast_load(thread_db* tdbb,
 			freeJumpNodes->clear();
 			delete freeJumpNodes;
 		}
-		delete jumpNodes;
-		for (keyList::iterator itr3 = jumpKeys->begin(); itr3 < jumpKeys->end(); ++itr3)
+		for (keyList::iterator itr = jumpKeys.begin(); itr < jumpKeys.end(); ++itr)
 		{
-			delete[] (*itr3)->keyData;
-			delete (*itr3);
+			delete[] (*itr)->keyData;
+			delete (*itr);
 		}
-		delete jumpKeys;
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
@@ -3838,19 +3833,6 @@ static SLONG fast_load(thread_db* tdbb,
 
 		if (error)
 		{
-			// CCH_unwind does not released page buffers (as we
-			// set TDBB_no_cache_unwind flag), do it now
-			for (int i = 0; i < MAX_LEVELS; i++)
-			{
-				if (windows[i].win_bdb)
-					CCH_RELEASE(tdbb, &windows[i]);
-			}
-
-			if (window)
-			{
-				delete_tree(tdbb, relation->rel_id, idx->idx_id,
-							window->win_page, PageNumber(window->win_page.getPageSpaceID(), 0));
-			}
 			ERR_punt();
 		}
 
@@ -3867,25 +3849,29 @@ static SLONG fast_load(thread_db* tdbb,
 		else {
 			selectivity[0] = (float) (count ? (1.0 / (float) (count - duplicates)) : 0.0);
 		}
-
-		return window->win_page.getPageNum();
-
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		// CVC: I don't understand this condition, because "error" is a local var,
-		// not a parameter by reference. It has no effect setting error to true here.
-		// In practice, it means that without error, we return pageNumber being -1.
-#pragma FB_COMPILER_MESSAGE("Strange logic here, please review")
-		if (!error) {
-			error = true;
+
+		// CCH_unwind does not released page buffers (as we
+		// set TDBB_no_cache_unwind flag), do it now
+		for (int i = 0; i < MAX_LEVELS; i++)
+		{
+			if (windows[i].win_bdb)
+				CCH_RELEASE(tdbb, &windows[i]);
 		}
-		else {
-			ERR_punt();
+
+		if (window)
+		{
+			delete_tree(tdbb, relation->rel_id, idx->idx_id,
+						window->win_page, PageNumber(window->win_page.getPageSpaceID(), 0));
 		}
+
+		throw;
 	}
-	return -1L; // lint
+
+	return window->win_page.getPageNum();
 }
 
 
@@ -3912,6 +3898,10 @@ static index_root_page* fetch_root(thread_db* tdbb, WIN* window, const jrd_rel* 
 			return NULL;
 
 		DPM_scan_pages(tdbb);
+
+		if (!relPages->rel_index_root)
+			return NULL;
+
 		window->win_page = relPages->rel_index_root;
 	}
 
@@ -4826,14 +4816,14 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 		newBucket->btr_length += l;
 
 		// Generate new jump nodes.
-		jumpNodeList* jumpNodes = FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool());
+		jumpNodeList jumpNodes;
 		USHORT jumpersNewSize = 0;
 		// Update jump information on scratch page, so generate_jump_nodes
 		// can deal with it.
 		jumpInfo.firstNodeOffset = headerSize;
 		jumpInfo.jumpers = 0;
 		BTreeNode::writeJumpInfo(newBucket, &jumpInfo);
-		generate_jump_nodes(tdbb, newBucket, jumpNodes, 0, &jumpersNewSize, NULL, NULL);
+		generate_jump_nodes(tdbb, newBucket, &jumpNodes, 0, &jumpersNewSize, NULL, NULL);
 
 		// Now we know exact how big our updated left page is, so check size
 		// again to be sure it all will fit.
@@ -4846,12 +4836,10 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 			if (right_page) {
 				CCH_RELEASE(tdbb, &right_window);
 			}
-			IndexJumpNode* walkJumpNode = jumpNodes->begin();
-			for (size_t i = 0; i < jumpNodes->getCount(); i++) {
+			IndexJumpNode* walkJumpNode = jumpNodes.begin();
+			for (size_t i = 0; i < jumpNodes.getCount(); i++) {
 				delete[] walkJumpNode[i].data;
 			}
-			jumpNodes->clear();
-			delete jumpNodes;
 			return contents_above_threshold;
 		}
 
@@ -4903,11 +4891,11 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 
 		// Finally write all data to left page.
 		jumpInfo.firstNodeOffset = headerSize + jumpersNewSize;
-		jumpInfo.jumpers = jumpNodes->getCount();
+		jumpInfo.jumpers = jumpNodes.getCount();
 		pointer = BTreeNode::writeJumpInfo(left_page, &jumpInfo);
 		// Write jump nodes.
-		IndexJumpNode* walkJumpNode = jumpNodes->begin();
-		for (size_t i = 0; i < jumpNodes->getCount(); i++)
+		IndexJumpNode* walkJumpNode = jumpNodes.begin();
+		for (size_t i = 0; i < jumpNodes.getCount(); i++)
 		{
 			// Update offset to real position with new jump nodes.
 			walkJumpNode[i].offset += jumpersNewSize;
@@ -4919,9 +4907,6 @@ static contents garbage_collect(thread_db* tdbb, WIN* window, ULONG parent_numbe
 		// Update page header information.
 		left_page->btr_prefix_total = newBucket->btr_prefix_total;
 		left_page->btr_length = newBucket->btr_length + jumpersNewSize;
-
-		jumpNodes->clear();
-		delete jumpNodes;
 	}
 	else
 	{
@@ -5338,7 +5323,7 @@ static ULONG insert_node(thread_db* tdbb,
 
 	// Update the values for the next node after our new node.
 	// First, store needed data for beforeInsertNode into tempData.
-	HalfStaticArray<UCHAR, MAX_KEY> tempBuf(*tdbb->getDefaultPool());
+	HalfStaticArray<UCHAR, MAX_KEY> tempBuf;
 	UCHAR* tempData = tempBuf.getBuffer(newLength);
 	memcpy(tempData, beforeInsertNode.data + newPrefix - beforeInsertNode.prefix, newLength);
 
@@ -5397,7 +5382,7 @@ static ULONG insert_node(thread_db* tdbb,
 	USHORT newPrefixTotalBySplit = 0;
 	USHORT splitJumpNodeIndex = 0;
 	IndexJumpInfo jumpInfo;
-	jumpNodeList tmpJumpNodes(*tdbb->getDefaultPool());
+	jumpNodeList tmpJumpNodes;
 	jumpNodeList* jumpNodes = &tmpJumpNodes;
 
 	USHORT ensureEndInsert = 0;
