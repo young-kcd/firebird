@@ -1,3 +1,12 @@
+ 2011-02-12 02:00  asfernandes 
+   M src/dsql/PackageNodes.epp
+   M src/dsql/PackageNodes.h
+Fixed problem with packages reported privately by Vlad.
+
+ 2011-02-11 14:26  asfernandes 
+   M src/jrd/exe.cpp
+Fixed DDL trigger crash reported in fb-devel.
+
  2011-02-11 00:43  asfernandes 
    M src/jrd/dfw.epp
    M src/jrd/evl.cpp
