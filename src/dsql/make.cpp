@@ -502,16 +502,14 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	DEV_BLKCHK(field, dsql_type_fld);
 	DEV_BLKCHK(indices, dsql_type_nod);
 
-	thread_db* tdbb = JRD_get_thread_data();
-	FieldNode* node = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
-	node->dsqlContext = context;
-	node->dsqlField = field;
+	thread_db* const tdbb = JRD_get_thread_data();
+	FieldNode* const node =
+		FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool(), context, field, indices);
 
 	if (field->fld_dimensions)
 	{
 		if (indices)
 		{
-			node->dsqlIndices = indices;
 			MAKE_desc_from_field(&node->dsqlDesc, field);
 			node->dsqlDesc.dsc_dtype = static_cast<UCHAR>(field->fld_element_dtype);
 			node->dsqlDesc.dsc_length = field->fld_element_length;

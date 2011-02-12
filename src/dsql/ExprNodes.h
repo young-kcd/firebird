@@ -508,7 +508,8 @@ public:
 class FieldNode : public TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>
 {
 public:
-	explicit FieldNode(MemoryPool& pool);
+	FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, dsql_nod* indices);
+	FieldNode(MemoryPool& pool, USHORT stream, USHORT id, bool aById);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -562,15 +563,14 @@ public:
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 public:
-	dsql_ctx* dsqlContext;
-	dsql_fld* dsqlField;
-	dsql_nod* dsqlIndices;
+	dsql_ctx* const dsqlContext;
+	dsql_fld* const dsqlField;
+	dsql_nod* const dsqlIndices;
 	dsc dsqlDesc;
-	bool byId;
-	USHORT fieldStream;
-	USHORT fieldId;
+	const bool byId;
+	const USHORT fieldStream;
+	const USHORT fieldId;
 	const Format* format;
-	NestConst<ValueExprNode> defaultValue;
 };
 
 

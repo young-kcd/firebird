@@ -608,7 +608,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 }
 
 
-ValueExprNode* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
+ValueExprNode* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id, bool byId)
 {
 /**************************************
  *
@@ -622,11 +622,7 @@ ValueExprNode* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
  **************************************/
 	SET_TDBB(tdbb);
 
-	FieldNode* fieldNode = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
-	fieldNode->fieldId = id;
-	fieldNode->fieldStream = stream;
-
-	return fieldNode;
+	return FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool(), stream, id, byId);
 }
 
 
@@ -648,17 +644,8 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
 
 	const USHORT stream = csb->csb_rpt[context].csb_stream;
 
-    /* CVC: This is just another case of a custom function that isn't prepared
-       for quoted identifiers and that causes views with fields names like "z x"
-       to fail miserably. Since this function was truncating field names like "z x",
-       MET_lookup_field() call below failed and hence the function returned NULL
-       so only caller MET_scan_relation() did field->fld_source = 0;
-       This means a field without entry in rdb$fields. This is the origin of the
-       mysterious message "cannot access column z x in view VF" when selecting from
-       such view that has field "z x". This closes Firebird Bug #227758. */
-	// solved by using MetaName& as parameter - AP
-	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
-	jrd_prc* procedure = csb->csb_rpt[stream].csb_procedure;
+	jrd_rel* const relation = csb->csb_rpt[stream].csb_relation;
+	jrd_prc* const procedure = csb->csb_rpt[stream].csb_procedure;
 
 	const SSHORT id = procedure ? PAR_find_proc_field(procedure, base_field) :
 		MET_lookup_field(tdbb, csb->csb_rpt[stream].csb_relation, base_field);
@@ -666,57 +653,11 @@ ValueExprNode* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, USHORT cont
 	if (id < 0)
 		return NULL;
 
-	/* If rel_fields is NULL this means that the relation is
-	 * in a temporary state (partially loaded).  In this case
-	 * there is nothing we can do but post an error and exit.
-	 * Note: This will most likely happen if we have a large list
-	 * of deferred work which can not complete because of some
-	 * error, and while we are trying to commit, we find
-	 * that we have a dependency on something later in the list.
-	 * IF there were no error, then the dependency woyld have
-	 * been resolved, because we would have fully loaded the
-	 * relation, but if it can not be loaded, then we have this
-	 * problem. The only thing that can be done to remedy this
-	 * problem is to rollback.  This will clear the DeferredWork list and
-	 * allow the user to remedy the original error.  Note: it would
-	 * be incorrect for us (the server) to perform the rollback
-	 * implicitly, because this is a task for the user to do, and
-	 * should never be decided by the server. This fixes bug 10052 */
-
-	// CVC: The code for procedures now compiles correctly, but Vlad has
-	// pointed out that we don't have default for output fields, therefore
-	// the code is commented till better times.
-	jrd_fld* field = NULL;
-	/*
-	Parameter* param = NULL;
-
-	if (procedure)
-	{
-		param = (*procedure->prc_output_fields)[id];
-	}
-	else
-	*/
-	if (relation)
-	{
-		if (!relation->rel_fields) {
-			ERR_post(Arg::Gds(isc_depend_on_uncommitted_rel));
-		}
-		field = (*relation->rel_fields)[id];
-	}
-
 	if (csb->csb_g_flags & csb_get_dependencies) {
 		PAR_dependency(tdbb, csb, stream, id, base_field);
 	}
 
-	ValueExprNode* temp_node = PAR_gen_field(tdbb, stream, id);
-
-	if (field)
-	{
-		if (field->fld_default_value && field->fld_not_null)
-			temp_node->as<FieldNode>()->defaultValue = field->fld_default_value;
-	}
-
-	return temp_node;
+	return PAR_gen_field(tdbb, stream, id);
 }
 
 

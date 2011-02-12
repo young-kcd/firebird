@@ -4515,16 +4515,28 @@ dsc* ExtractNode::execute(thread_db* tdbb, jrd_req* request) const
 static RegisterNode<FieldNode> regFieldNodeFid(blr_fid);
 static RegisterNode<FieldNode> regFieldNodeField(blr_field);
 
-FieldNode::FieldNode(MemoryPool& pool)
+FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
+	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
+	  dsqlContext(context),
+	  dsqlField(field),
+	  dsqlIndices(indices),
+	  byId(false),
+	  fieldStream(0),
+	  fieldId(0),
+	  format(NULL)
+{
+	dsqlDesc.clear();
+}
+
+FieldNode::FieldNode(MemoryPool& pool, USHORT stream, USHORT id, bool aById)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_FIELD>(pool),
 	  dsqlContext(NULL),
 	  dsqlField(NULL),
 	  dsqlIndices(NULL),
-	  byId(false),
-	  fieldStream(0),
-	  fieldId(0),
-	  format(NULL),
-	  defaultValue(NULL)
+	  byId(aById),
+	  fieldStream(stream),
+	  fieldId(id),
+	  format(NULL)
 {
 	dsqlDesc.clear();
 }
@@ -4667,25 +4679,13 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 			PAR_dependency(tdbb, csb, stream, id, name);
 	}
 
-	FieldNode* node = ExprNode::as<FieldNode>(PAR_gen_field(tdbb, stream, id));
-	fb_assert(node);
-
-	node->byId = byId;
-
 	if (is_column)
 	{
-		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
+		jrd_rel* const temp_rel = csb->csb_rpt[stream].csb_relation;
 
 		if (temp_rel)
 		{
-			jrd_fld* field;
-
-			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
-			{
-				if (field->fld_default_value && field->fld_not_null)
-					node->defaultValue = field->fld_default_value;
-			}
-			else
+			if (id >= (int) temp_rel->rel_fields->count() || !(*temp_rel->rel_fields)[id])
 			{
 				if (temp_rel->rel_flags & REL_system)
 					return FB_NEW(pool) NullNode(pool);
@@ -4693,7 +4693,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 		}
 	}
 
-	return node;
+	return PAR_gen_field(tdbb, stream, id, byId);
 }
 
 void FieldNode::print(string& text, Array<dsql_nod*>& nodes) const
@@ -4933,15 +4933,11 @@ void FieldNode::findDependentFromStreams(const OptimizerRetrieval* optRet, Sorte
 
 void FieldNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	const Format* format = CMP_format(tdbb, csb, fieldStream);
+	const Format* const format = CMP_format(tdbb, csb, fieldStream);
 
 	if (fieldId >= format->fmt_count)
 	{
-		desc->dsc_dtype = dtype_unknown;
-		desc->dsc_length = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_sub_type = 0;
-		desc->dsc_flags = 0;
+		desc->clear();
 	}
 	else
 	{
@@ -4982,15 +4978,7 @@ ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier) const
 		stream = copier.remap[stream];
 	}
 
-	FieldNode* node = ExprNode::as<FieldNode>(PAR_gen_field(tdbb, stream, fldId));
-	fb_assert(node);
-
-	node->byId = byId;
-
-	if (defaultValue)
-		node->defaultValue = defaultValue;
-
-	return node;
+	return PAR_gen_field(tdbb, stream, fldId, byId);
 }
 
 ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
