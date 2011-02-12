@@ -40,6 +40,7 @@ public:
 			Item item;
 			item.type = FUNCTION;
 			item.function = function;
+			item.dsqlScratch = NULL;
 			return item;
 		}
 
@@ -48,6 +49,7 @@ public:
 			Item item;
 			item.type = PROCEDURE;
 			item.procedure = procedure;
+			item.dsqlScratch = NULL;
 			return item;
 		}
 
@@ -62,6 +64,8 @@ public:
 			CreateAlterFunctionNode* function;
 			CreateAlterProcedureNode* procedure;
 		};
+
+		DsqlCompilerScratch* dsqlScratch;
 	};
 
 public:

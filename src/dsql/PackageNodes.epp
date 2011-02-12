@@ -405,8 +405,11 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
 		DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
-		DsqlCompilerScratch* itemScratch = FB_NEW(getPool()) DsqlCompilerScratch(getPool(),
-			dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
+
+		DsqlCompilerScratch* itemScratch = (*items)[i].dsqlScratch =
+			FB_NEW(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+				dsqlScratch->getTransaction(), itemStatement);
+
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
 		itemScratch->package = name;
 		itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
@@ -477,12 +480,12 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlS
 		{
 			case Item::FUNCTION:
 				(*items)[i].function->packageOwner = owner;
-				(*items)[i].function->executeDdl(tdbb, dsqlScratch, transaction);
+				(*items)[i].function->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
 				break;
 
 			case Item::PROCEDURE:
 				(*items)[i].procedure->packageOwner = owner;
-				(*items)[i].procedure->executeDdl(tdbb, dsqlScratch, transaction);
+				(*items)[i].procedure->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
 				break;
 		}
 	}
@@ -773,8 +776,11 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
 			DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
-			DsqlCompilerScratch* itemScratch = FB_NEW(getPool()) DsqlCompilerScratch(getPool(),
-				dsqlScratch->getAttachment(), dsqlScratch->getTransaction(), itemStatement);
+
+			DsqlCompilerScratch* itemScratch = (*arrays[i])[j].dsqlScratch =
+				FB_NEW(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+					dsqlScratch->getTransaction(), itemStatement);
+
 			itemScratch->clientDialect = dsqlScratch->clientDialect;
 			itemScratch->package = name;
 			itemStatement->setDdlNode(MAKE_node(nod_class_stmtnode, 1));
@@ -885,7 +891,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 							func->privateScope = !headerFuncs.exist(Signature(func->name));
 
 						func->packageOwner = owner;
-						func->executeDdl(tdbb, dsqlScratch, transaction);
+						func->executeDdl(tdbb, (*arrays[i])[j].dsqlScratch, transaction);
 					}
 					break;
 
@@ -897,7 +903,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 							proc->privateScope = !headerProcs.exist(Signature(proc->name));
 
 						proc->packageOwner = owner;
-						proc->executeDdl(tdbb, dsqlScratch, transaction);
+						proc->executeDdl(tdbb, (*arrays[i])[j].dsqlScratch, transaction);
 					}
 					break;
 			}
