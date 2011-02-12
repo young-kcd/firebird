@@ -85,7 +85,8 @@ bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_des
 }
 
 // Determine if two expression trees are the same
-bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1, ExprNode* node2)
+bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
+	ValueExprNode* node1, ValueExprNode* node2)
 {
 	if (node1->type != node2->type)
 	{
@@ -95,7 +96,7 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1
 		if ((castNode = node1->as<CastNode>()) && node2->is<FieldNode>())
 		{
 			castNode->getDesc(tdbb, csb, &desc1);
-			static_cast<ValueExprNode*>(node2)->getDesc(tdbb, csb, &desc2);
+			node2->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
 				OPT_expression_equal(tdbb, csb, castNode->source, node2))
@@ -106,7 +107,7 @@ bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb, ExprNode* node1
 
 		if (node1->is<FieldNode>() && (castNode = node2->as<CastNode>()))
 		{
-			static_cast<ValueExprNode*>(node1)->getDesc(tdbb, csb, &desc1);
+			node1->getDesc(tdbb, csb, &desc1);
 			castNode->getDesc(tdbb, csb, &desc2);
 
 			if (DSC_EQUIV(&desc1, &desc2, true) &&
