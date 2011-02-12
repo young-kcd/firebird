@@ -505,7 +505,7 @@ public:
 	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/;
 
 	// See if node is presently computable.
-	// A node is said to be computable, if all the streams involved 
+	// A node is said to be computable, if all the streams involved
 	// in that node are csb_active. The csb_active flag defines
 	// all the streams available in the current scope of the query.
 	virtual bool computable(CompilerScratch* csb, SSHORT stream,
@@ -894,7 +894,7 @@ public:
 		WhichTrigger whichModTrig;
 		const StmtNode* topNode;
 		const StmtNode* prevNode;
-		bool exit;
+		bool exit;					// Exit the looper when true.
 	};
 
 public:
