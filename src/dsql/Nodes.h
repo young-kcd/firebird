@@ -502,6 +502,7 @@ public:
 		return this;
 	}
 
+	// Determine if two expression trees are the same.
 	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/;
 
 	// See if node is presently computable.

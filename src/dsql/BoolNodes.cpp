@@ -576,13 +576,12 @@ bool ComparativeBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*
 	if (!otherNode || blrOp != otherNode->blrOp)
 		return false;
 
-	bool matching = OPT_expression_equal(tdbb, csb, arg1, otherNode->arg1) &&
-		OPT_expression_equal(tdbb, csb, arg2, otherNode->arg2);
+	bool matching = arg1->sameAs(tdbb, csb, otherNode->arg1) &&
+		arg2->sameAs(tdbb, csb, otherNode->arg2);
 
 	if (matching)
 	{
-		matching = !arg3 == !otherNode->arg3 &&
-			(!arg3 || OPT_expression_equal(tdbb, csb, arg3, otherNode->arg3));
+		matching = !arg3 == !otherNode->arg3 && (!arg3 || arg3->sameAs(tdbb, csb, otherNode->arg3));
 
 		if (matching)
 			return true;
@@ -593,11 +592,8 @@ bool ComparativeBoolNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*
 	if (blrOp == blr_eql || blrOp == blr_equiv || blrOp == blr_neq)
 	{
 		// A = B is equivalent to B = A, etc.
-		if (OPT_expression_equal(tdbb, csb, arg1, otherNode->arg2) &&
-			OPT_expression_equal(tdbb, csb, arg2, otherNode->arg1))
-		{
+		if (arg1->sameAs(tdbb, csb, otherNode->arg2) && arg2->sameAs(tdbb, csb, otherNode->arg1))
 			return true;
-		}
 	}
 
 	return false;

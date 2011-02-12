@@ -78,49 +78,10 @@ bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_des
 		}
 
 		fb_assert(idx->idx_flags & idx_expressn);
-		return OPT_expression_equal(tdbb, csb, idx->idx_expression, node);
+		return idx->idx_expression->sameAs(tdbb, csb, node);
 	}
 
 	return false;
-}
-
-// Determine if two expression trees are the same
-bool OPT_expression_equal(thread_db* tdbb, CompilerScratch* csb,
-	ValueExprNode* node1, ValueExprNode* node2)
-{
-	if (node1->type != node2->type)
-	{
-		dsc desc1, desc2;
-		CastNode* castNode;
-
-		if ((castNode = node1->as<CastNode>()) && node2->is<FieldNode>())
-		{
-			castNode->getDesc(tdbb, csb, &desc1);
-			node2->getDesc(tdbb, csb, &desc2);
-
-			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal(tdbb, csb, castNode->source, node2))
-			{
-				return true;
-			}
-		}
-
-		if (node1->is<FieldNode>() && (castNode = node2->as<CastNode>()))
-		{
-			node1->getDesc(tdbb, csb, &desc1);
-			castNode->getDesc(tdbb, csb, &desc2);
-
-			if (DSC_EQUIV(&desc1, &desc2, true) &&
-				OPT_expression_equal(tdbb, csb, node1, castNode->source))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	return node1->sameAs(tdbb, csb, node2);
 }
 
 

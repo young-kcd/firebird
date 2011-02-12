@@ -1441,22 +1441,16 @@ bool ArithmeticNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ Exp
 	if (!otherNode || blrOp != otherNode->blrOp || dialect1 != otherNode->dialect1)
 		return false;
 
-	if (OPT_expression_equal(tdbb, csb, arg1, otherNode->arg1) &&
-		OPT_expression_equal(tdbb, csb, arg2, otherNode->arg2))
-	{
+	if (arg1->sameAs(tdbb, csb, otherNode->arg1) && arg2->sameAs(tdbb, csb, otherNode->arg2))
 		return true;
-	}
 
 	if (blrOp == blr_add || blrOp == blr_multiply)
 	{
 		// A + B is equivalent to B + A, ditto for A * B and B * A.
 		// Note: If one expression is A + B + C, but the other is B + C + A we won't
 		// necessarily match them.
-		if (OPT_expression_equal(tdbb, csb, arg1, otherNode->arg2) &&
-			OPT_expression_equal(tdbb, csb, arg2, otherNode->arg1))
-		{
+		if (arg1->sameAs(tdbb, csb, otherNode->arg2) && arg2->sameAs(tdbb, csb, otherNode->arg1))
 			return true;
-		}
 	}
 
 	return false;
@@ -2737,6 +2731,18 @@ bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other)
 {
+	FieldNode* fieldNode = other->as<FieldNode>();
+
+	if (fieldNode)
+	{
+		dsc desc1, desc2;
+		getDesc(tdbb, csb, &desc1);
+		fieldNode->getDesc(tdbb, csb, &desc2);
+
+		if (DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, fieldNode))
+			return true;
+	}
+
 	if (!ExprNode::sameAs(tdbb, csb, other))
 		return false;
 
@@ -2748,8 +2754,7 @@ bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 	getDesc(tdbb, csb, &desc1);
 	o->getDesc(tdbb, csb, &desc2);
 
-	return DSC_EQUIV(&desc1, &desc2, true) &&
-		OPT_expression_equal(tdbb, csb, source, o->source);
+	return DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, o->source);
 }
 
 ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -4880,6 +4885,18 @@ bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 
 bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/
 {
+	CastNode* castNode = other->as<CastNode>();
+
+	if (castNode)
+	{
+		dsc desc1, desc2;
+		getDesc(tdbb, csb, &desc1);
+		castNode->getDesc(tdbb, csb, &desc2);
+
+		if (DSC_EQUIV(&desc1, &desc2, true) && sameAs(tdbb, csb, castNode->source))
+			return true;
+	}
+
 	const FieldNode* o = other->as<FieldNode>();
 	return o && fieldId == o->fieldId && fieldStream == o->fieldStream;
 }
