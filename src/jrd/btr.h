@@ -36,9 +36,6 @@
 #include "../jrd/sbm.h"
 #include "../jrd/lck.h"
 
-// 64 turns out not to be enough indexes
-// #define MAX_IDX		 64		// that should be plenty of indexes
-
 #define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
 
 struct dsc;

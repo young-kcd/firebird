@@ -522,7 +522,7 @@ namespace Jrd
 			}
 
 			USHORT length;			// sort record length
-			USHORT keyLength;		// key length in longwords
+			USHORT keyLength;		// key length
 			USHORT flags;			// misc sort flags
 			Firebird::Array<sort_key_def> keyItems;	// address of key descriptors
 			Firebird::Array<Item> items;

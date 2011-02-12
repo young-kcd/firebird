@@ -119,7 +119,7 @@ void SortedStream::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		plan+= printIndent(++level) + "Sort";
+		plan += printIndent(++level) + "Sort";
 		m_next->print(tdbb, plan, true, level);
 	}
 	else
@@ -253,7 +253,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 				// then want to sort by language dependent order.
 
 				if (IS_INTL_DATA(&item->desc) &&
-					(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength * sizeof(ULONG))
+					(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength)
 				{
 					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->desc), from, &to,
 						(m_map->flags & FLAG_UNIQUE ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
@@ -330,7 +330,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		// list that contains the data to send back
 
 		if (IS_INTL_DATA(&item->desc) &&
-			(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength * sizeof(ULONG))
+			(USHORT)(IPTR) item->desc.dsc_address < m_map->keyLength)
 		{
 			continue;
 		}

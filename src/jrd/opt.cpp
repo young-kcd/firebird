@@ -944,6 +944,8 @@ static void check_sorts(RseNode* rse)
 		sub_rse->type == AggregateSourceNode::TYPE &&
 		(group = static_cast<AggregateSourceNode*>(sub_rse)->group))
 	{
+		MapNode* const map = static_cast<AggregateSourceNode*>(sub_rse)->map;
+
 		// if all the fields of the project are the same as all the fields
 		// of the group by, get rid of the project.
 
@@ -959,7 +961,7 @@ static void check_sorts(RseNode* rse)
 
 				for (; group_ptr != group_end; ++group_ptr)
 				{
-					if (map_equal(*group_ptr, *project_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
+					if (map_equal(*group_ptr, *project_ptr, map))
 						break;
 				}
 
@@ -990,7 +992,7 @@ static void check_sorts(RseNode* rse)
 
 				for (; group_ptr != group_end; ++group_ptr)
 				{
-					if (map_equal(*group_ptr, *sort_ptr, static_cast<AggregateSourceNode*>(sub_rse)->map))
+					if (map_equal(*group_ptr, *sort_ptr, map))
 						break;
 				}
 
@@ -2514,7 +2516,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const UCHAR* s
 	}
 
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
-	map->keyLength = (USHORT) map_length >> SHIFTLONG;
+	map->keyLength = (USHORT) map_length;
 	USHORT flag_offset = (USHORT) map_length;
 	map_length += items - sort->expressions.getCount();
 
