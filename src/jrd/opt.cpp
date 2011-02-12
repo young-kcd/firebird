@@ -166,7 +166,7 @@ namespace Jrd
 
 		bool isComputable(CompilerScratch* csb) const
 		{
-			return m_node ? m_node->computable(csb, -1, false, false) : true;
+			return m_node ? m_node->computable(csb, -1, false) : true;
 		}
 
 	protected:
@@ -2254,7 +2254,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			BoolExprNode* node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				node->computable(csb, -1, false, false))
+				node->computable(csb, -1, false))
 			{
 				compose(tdbb, return_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2278,12 +2278,12 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, -1, false, false))
+			node->computable(csb, -1, false))
 		{
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
 			if ((inversion && node->jrdStreamFinder(csb, stream)) ||
-				(!inversion && node->computable(csb, stream, false, true)))
+				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(tdbb, &boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2301,7 +2301,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
 
 			if (condition &&
-				condition->computable(csb, -1, false, false) &&
+				condition->computable(csb, -1, false) &&
 				!condition->jrdStreamFinder(csb, stream))
 			{
 				RecordSource* const other_rsb =
@@ -2847,7 +2847,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 			BoolExprNode* const node = tail->opt_conjunct_node;
 
 			if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-				node->computable(csb, -1, false, false))
+				node->computable(csb, -1, false))
 			{
 				compose(tdbb, &river_boolean, node);
 				tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2942,7 +2942,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, -1, false, false))
+			node->computable(csb, -1, false))
 		{
 			compose(tdbb, &boolean, node);
 			tail->opt_conjunct_flags |= opt_conjunct_used;

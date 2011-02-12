@@ -627,7 +627,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 		BoolExprNode* const node = tail->opt_conjunct_node;
 
 		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
-			node->computable(csb, stream, false, true) &&
+			node->computable(csb, stream, true) &&
 			!invCandidate->matches.exist(node))
 		{
 			const ComparativeBoolNode* const cmpNode = node->as<ComparativeBoolNode>();
@@ -1712,11 +1712,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	    fb_assert(indexScratch->idx->idx_expression != NULL);
 
 		if (!checkExpressionIndex(tdbb, csb, indexScratch->idx, match, stream) ||
-			(value && !value->computable(csb, stream, true, false)))
+			(value && !value->computable(csb, stream, false)))
 		{
 			if ((!cmpNode || cmpNode->blrOp != blr_starting) && value &&
 				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
-				match->computable(csb, stream, true, false))
+				match->computable(csb, stream, false))
 			{
 				ValueExprNode* temp = match;
 				match = value;
@@ -1736,7 +1736,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 		if (!(fieldNode = match->as<FieldNode>()) ||
 			fieldNode->fieldStream != stream ||
-			(value && !value->computable(csb, stream, true, false)))
+			(value && !value->computable(csb, stream, false)))
 		{
 			ValueExprNode* temp = match;
 			match = value;
@@ -1744,7 +1744,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 			if ((!match || !(fieldNode = match->as<FieldNode>())) ||
 				fieldNode->fieldStream != stream ||
-				!value->computable(csb, stream, true, false))
+				!value->computable(csb, stream, false))
 			{
 				return false;
 			}
@@ -1817,7 +1817,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 				switch (cmpNode->blrOp)
 				{
 					case blr_between:
-						if (!forward || !value2->computable(csb, stream, true, false))
+						if (!forward || !value2->computable(csb, stream, false))
 							return false;
 						segment[i]->matches.add(boolean);
 						// AB: If we have already an exact match don't
@@ -2047,7 +2047,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	// If the value isn't computable, this has been a waste of time
 
-	if (!value->computable(csb, stream, false, false))
+	if (!value->computable(csb, stream, false))
 		return NULL;
 
 	// If this is a concatenation, find an appropriate dbkey
@@ -2384,13 +2384,13 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		fb_assert(indexScratch->idx->idx_expression != NULL);
 
 		if (!(checkExpressionIndex(tdbb, csb, indexScratch->idx, field, stream) ||
-			(value && !value->computable(csb, stream, true, false))))
+			(value && !value->computable(csb, stream, false))))
 		{
 			// AB: Can we swap de left and right sides by a starting with?
 			// X STARTING WITH 'a' that is never the same as 'a' STARTING WITH X
 			if (value &&
 				checkExpressionIndex(tdbb, csb, indexScratch->idx, value, stream) &&
-				field->computable(csb, stream, true, false))
+				field->computable(csb, stream, false))
 			{
 				field = value;
 				value = cmpNode->arg1;
@@ -2439,7 +2439,7 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_byte_array ||
 				indexScratch->idx->idx_rpt[segment].idx_itype == idx_metadata ||
 				indexScratch->idx->idx_rpt[segment].idx_itype >= idx_first_intl_string) ||
-			!value->computable(csb, stream, false, false))
+			!value->computable(csb, stream, false))
 		{
 			return false;
 		}

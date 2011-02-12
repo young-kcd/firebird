@@ -184,12 +184,12 @@ bool ExprNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 	return true;
 }
 
-bool ExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool ExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (**i && !(*i)->getExpr()->computable(csb, stream, idxUse, allowOnlyCurrentStream))
+		if (**i && !(*i)->getExpr()->computable(csb, stream, allowOnlyCurrentStream))
 			return false;
 	}
 
@@ -3985,7 +3985,7 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
@@ -4884,7 +4884,7 @@ bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode
 	return o && fieldId == o->fieldId && fieldStream == o->fieldStream;
 }
 
-bool FieldNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool FieldNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
@@ -7445,7 +7445,7 @@ void RecordKeyNode::jrdStreamsCollector(SortedArray<int>& streamList)
 		streamList.add(recStream);
 }
 
-bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool RecordKeyNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (allowOnlyCurrentStream)
@@ -8476,13 +8476,13 @@ void SubQueryNode::jrdStreamsCollector(SortedArray<int>& streamList)
 		value1->jrdStreamsCollector(streamList);
 }
 
-bool SubQueryNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool SubQueryNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	if (value2 && !value2->computable(csb, stream, idxUse, allowOnlyCurrentStream))
+	if (value2 && !value2->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
-	return rse->computable(csb, stream, idxUse, allowOnlyCurrentStream, value1);
+	return rse->computable(csb, stream, allowOnlyCurrentStream, value1);
 }
 
 void SubQueryNode::findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList)

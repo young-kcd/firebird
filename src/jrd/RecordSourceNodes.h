@@ -58,7 +58,7 @@ public:
 	SortNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	SortNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	SortNode* pass2(thread_db* tdbb, CompilerScratch* csb);
-	bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use, bool allowOnlyCurrentStream);
+	bool computable(CompilerScratch* csb, SSHORT stream, bool allowOnlyCurrentStream);
 	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
 
 	bool unique;						// sorts using unique key - for distinct and group by
@@ -318,7 +318,7 @@ public:
 		streams[++streams[0]] = getStream();
 	}
 
-	virtual bool computable(CompilerScratch* /*csb*/, SSHORT /*stream*/, bool /*idx_use*/,
+	virtual bool computable(CompilerScratch* /*csb*/, SSHORT /*stream*/,
 		bool /*allowOnlyCurrentStream*/, ValueExprNode* /*value*/)
 	{
 		return true;
@@ -394,7 +394,7 @@ public:
 	{
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
@@ -462,7 +462,7 @@ public:
 	{
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
@@ -515,7 +515,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
 	virtual void computeDbKeyStreams(UCHAR* streams) const;
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
@@ -585,7 +585,7 @@ public:
 	{
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
@@ -695,7 +695,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(USHORT checkStream) const;
 	virtual void computeDbKeyStreams(UCHAR* streams) const;
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);

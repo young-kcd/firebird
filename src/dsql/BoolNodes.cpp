@@ -82,13 +82,13 @@ namespace
 //--------------------
 
 
-bool BoolExprNode::computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+bool BoolExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	if (nodFlags & FLAG_DEOPTIMIZE)
 		return false;
 
-	return ExprNode::computable(csb, stream, idxUse, allowOnlyCurrentStream);
+	return ExprNode::computable(csb, stream, allowOnlyCurrentStream);
 }
 
 BoolExprNode* BoolExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)

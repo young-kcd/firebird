@@ -92,12 +92,11 @@ SortNode* SortNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-bool SortNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
-	bool allowOnlyCurrentStream)
+bool SortNode::computable(CompilerScratch* csb, SSHORT stream, bool allowOnlyCurrentStream)
 {
 	for (NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
 	{
-		if (!(*i)->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+		if (!(*i)->computable(csb, stream, allowOnlyCurrentStream))
 			return false;
 	}
 
@@ -876,13 +875,13 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 		sourceList, targetList, in_msg);
 }
 
-bool ProcedureSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+bool ProcedureSourceNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	if (sourceList && !sourceList->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+	if (sourceList && !sourceList->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
-	if (targetList && !targetList->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+	if (targetList && !targetList->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
 	return true;
@@ -1243,11 +1242,11 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	return rsb;
 }
 
-bool AggregateSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+bool AggregateSourceNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	rse->rse_sorted = group;
-	return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL);
+	return rse->computable(csb, stream, allowOnlyCurrentStream, NULL);
 }
 
 void AggregateSourceNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -1504,14 +1503,14 @@ void UnionSourceNode::computeDbKeyStreams(UCHAR* streams) const
 		(*ptr)->computeDbKeyStreams(streams);
 }
 
-bool UnionSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+bool UnionSourceNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
 	NestConst<RseNode>* ptr = clauses.begin();
 
 	for (NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr)
 	{
-		if (!(*ptr)->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL))
+		if (!(*ptr)->computable(csb, stream, allowOnlyCurrentStream, NULL))
 			return false;
 	}
 
@@ -1736,10 +1735,10 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 	return rsb;
 }
 
-bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	return rse->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL);
+	return rse->computable(csb, stream, allowOnlyCurrentStream, NULL);
 }
 
 void WindowSourceNode::getStreams(StreamsArray& list) const
@@ -2641,13 +2640,13 @@ void RseNode::computeDbKeyStreams(UCHAR* streams) const
 		(*ptr)->computeDbKeyStreams(streams);
 }
 
-bool RseNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
+bool RseNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* value)
 {
-	if (rse_first && !rse_first->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+	if (rse_first && !rse_first->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
-    if (rse_skip && !rse_skip->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+    if (rse_skip && !rse_skip->computable(csb, stream, allowOnlyCurrentStream))
         return false;
 
 	const NestConst<RecordSourceNode>* const end = rse_relations.end();
@@ -2669,21 +2668,21 @@ bool RseNode::computable(CompilerScratch* csb, SSHORT stream, bool idx_use,
 	bool result = true;
 
 	// Check sub-stream
-	if ((rse_boolean && !rse_boolean->computable(csb, stream, idx_use, allowOnlyCurrentStream)) ||
-	    (rse_sorted && !rse_sorted->computable(csb, stream, idx_use, allowOnlyCurrentStream)) ||
-	    (rse_projection && !rse_projection->computable(csb, stream, idx_use, allowOnlyCurrentStream)))
+	if ((rse_boolean && !rse_boolean->computable(csb, stream, allowOnlyCurrentStream)) ||
+	    (rse_sorted && !rse_sorted->computable(csb, stream, allowOnlyCurrentStream)) ||
+	    (rse_projection && !rse_projection->computable(csb, stream, allowOnlyCurrentStream)))
 	{
 		result = false;
 	}
 
 	for (ptr = rse_relations.begin(); ptr != end && result; ++ptr)
 	{
-		if (!(*ptr)->computable(csb, stream, idx_use, allowOnlyCurrentStream, NULL))
+		if (!(*ptr)->computable(csb, stream, allowOnlyCurrentStream, NULL))
 			result = false;
 	}
 
 	// Check value expression, if any
-	if (result && value && !value->computable(csb, stream, idx_use, allowOnlyCurrentStream))
+	if (result && value && !value->computable(csb, stream, allowOnlyCurrentStream))
 		result = false;
 
 	// Reset streams inactive

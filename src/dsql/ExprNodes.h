@@ -417,7 +417,7 @@ public:
 		fb_assert(false);
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -549,7 +549,7 @@ public:
 		return true;
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -934,7 +934,7 @@ public:
 	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream);
 	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -1147,7 +1147,7 @@ public:
 	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream);
 	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,

@@ -505,25 +505,10 @@ public:
 	virtual bool sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode* other) /*const*/;
 
 	// See if node is presently computable.
-	// Note that a field is not computable
-	// with respect to its own stream.
-	//
-	// There are two different uses of OPT_computable().
-	// (a) idx_use == false: when an unused conjunct is to be picked for making
-	//     into a boolean and in making a db_key.
-	//     In this case, a node is said to be computable, if all the streams
-	//     involved in that node are csb_active. The csb_active flag
-	//     defines all the streams available in the current scope of the
-	//     query.
-	// (b) idx_use == true: to determine if we can use an
-	//     index on the conjunct we have already chosen.
-	//     In order to use an index on a conjunct, it is required that the
-	//     all the streams involved in the conjunct are currently active
-	//     or have been already processed before and made into rivers.
-	//     Because, here we want to differentiate between streams we have
-	//     not yet worked on and those that we have worked on or are currently
-	//     working on.
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	// A node is said to be computable, if all the streams involved 
+	// in that node are csb_active. The csb_active flag defines
+	// all the streams available in the current scope of the query.
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
 
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
@@ -585,7 +570,7 @@ public:
 		return this;
 	}
 
-	virtual bool computable(CompilerScratch* csb, SSHORT stream, bool idxUse,
+	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value = NULL);
 
 	virtual BoolExprNode* pass1(thread_db* tdbb, CompilerScratch* csb)
