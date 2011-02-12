@@ -287,22 +287,26 @@ const Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 
 	DEV_BLKCHK(csb, type_csb);
 
-	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
+	CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 
-	if (tail->csb_format) {
-		return tail->csb_format;
+	if (!tail->csb_format)
+	{
+		if (tail->csb_relation)
+		{
+			tail->csb_format = MET_current(tdbb, tail->csb_relation);
+		}
+		else if (tail->csb_procedure)
+		{
+			tail->csb_format = tail->csb_procedure->prc_format;
+		}
+		else
+		{
+			IBERROR(222);	// msg 222 bad blr - invalid stream
+		}
 	}
 
-	if (tail->csb_relation) {
-		return tail->csb_format = MET_current(tdbb, tail->csb_relation);
-	}
-
-	if (tail->csb_procedure) {
-		return tail->csb_format = tail->csb_procedure->prc_format;
-	}
-
-	IBERROR(222);				// msg 222 bad blr - invalid stream
-	return NULL;
+	fb_assert(tail->csb_format);
+	return tail->csb_format;
 }
 
 
