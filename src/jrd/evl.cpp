@@ -365,12 +365,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 			return format && !(*desc = format->fmt_defaults[id].vlu_desc).isUnknown();
 		}
 
-		desc->dsc_dtype = dtype_text;
-		desc->dsc_length = 1;
-		desc->dsc_sub_type = 0;
-		desc->dsc_scale = 0;
-		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_address = (UCHAR*) " ";
+		desc->makeText(1, ttype_ascii, (UCHAR*) " ");
 		return false;
 	}
 
