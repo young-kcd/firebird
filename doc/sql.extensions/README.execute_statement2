@@ -76,8 +76,6 @@ Syntax and notes :
 
 - by default COMMON TRANSACTION is used
 
-- if AS USER clause is omitted then CURRENT_USER is used
-
 - if PASSWORD clause is omitted then 
 	a) if <user_name> is omitted, NULL or equal to CURRENT_USER value and
 		if <role_name> is omitted, NULL or equal to CURRENT_ROLE value
@@ -88,8 +86,9 @@ Syntax and notes :
 			CURRENT_USER/CURRENT_ROLE is effective user account and role
 		a3) for remote database - operating system account under which engine
 			process is currently run is effective user account.
-	b) else only isc_dpb_user_name (and isc_dpb_sql_role_name) will be present in DPB and
-		native autentication is performed.
+	b) else isc_dpb_user_name (if <user_name> is present and not empty) and isc_dpb_sql_role_name 
+	   (if <role_name> is present and not empty) will be filled in DPB and native autentication 
+	   is performed.
 
 - if WITH CALLER PRIVILEGES is specified and ON EXTERNAL DATA SOURCE is omitted, then
 	the statement is prepared using additional privileges of caller stored procedure or trigger
