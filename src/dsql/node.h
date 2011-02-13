@@ -515,12 +515,6 @@ enum node_args {
 	e_udf_param_type,		// Basically, by_reference or by_descriptor
 	e_udf_param_count,
 
-	// CASE {WHEN <search_condition> THEN <when_result>}.. [ELSE <else_result>] END
-	// Node-constants for after pass1
-
-	e_searched_case_search_conditions = 0,	// list boolean expressions
-	e_searched_case_results,				// list including else_result
-
 	e_label_name = 0,
 	e_label_number,
 	e_label_count,
