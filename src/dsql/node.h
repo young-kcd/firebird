@@ -164,7 +164,6 @@ enum nod_t
 	nod_mod_field_type,
 	nod_mod_field_pos,
 	nod_udf_param, // there should be a way to signal a param by descriptor!
-	nod_searched_case, // searched CASE function
 	nod_for_update, // FOR UPDATE clause
 	nod_label, // label support
 	nod_difference_file,

@@ -386,7 +386,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 			ret |= visit(&node->nod_arg[e_order_field]);
 			break;
 
-		case nod_searched_case:
 		case nod_list:
 		{
 			T2 ptr = node->nod_arg;

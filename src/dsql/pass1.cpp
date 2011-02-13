@@ -217,7 +217,6 @@ static dsql_nod* pass1_relation(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_returning(DsqlCompilerScratch*, const dsql_nod*);
 static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
-static dsql_nod* pass1_searched_case(DsqlCompilerScratch*, dsql_nod*);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
 static dsql_nod* pass1_sort(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_union(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
@@ -828,9 +827,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
 		node->nod_desc = sub1->nod_desc;
 		return node;
-
-	case nod_searched_case:
-		return pass1_searched_case(dsqlScratch, input);
 
 	case nod_collate:
 		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_coll_source]);
@@ -5413,65 +5409,6 @@ static dsql_nod* pass1_rse_impl( DsqlCompilerScratch* dsqlScratch, dsql_nod* inp
 
 /**
 
- 	pass1_searched_case
-
-    @brief	Handle a reference to a searched case expression.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_searched_case( DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
-{
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
-
-	dsql_nod* node = MAKE_node(nod_searched_case, 2);
-
-	dsql_nod* list = input->nod_arg[0];
-
-	// build boolean-expression list
-	{ // scope block
-		DsqlNodStack stack;
-		dsql_nod** ptr = list->nod_arg;
-		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; ptr += 2)
-			PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
-
-		node->nod_arg[e_searched_case_search_conditions] = MAKE_list(stack);
-	} // end scope block
-
-	// build when_result list including else_result at the end
-	// else_result is included for easy handling in MAKE_desc()
-	{ // scope block
-		DsqlNodStack stack;
-		dsql_nod** ptr = list->nod_arg;
-		const dsql_nod* const* const end = ptr + list->nod_count;
-		for (++ptr; ptr < end; ptr += 2)
-			PASS1_put_args_on_stack(dsqlScratch, *ptr, stack);
-
-		PASS1_put_args_on_stack(dsqlScratch, input->nod_arg[1], stack);
-		node->nod_arg[e_searched_case_results] = MAKE_list(stack);
-	} // end scope block
-
-	// Set describer for output node
-	MAKE_desc(dsqlScratch, &node->nod_desc, node);
-
-	// Set parameter-types if parameters are there in the result nodes
-	dsql_nod* case_results = node->nod_arg[e_searched_case_results];
-	dsql_nod** ptr = case_results->nod_arg;
-	for (const dsql_nod* const* const end = ptr + case_results->nod_count; ptr < end; ptr++)
-	{
-		PASS1_set_parameter_type(dsqlScratch, *ptr, node, false);
-	}
-
-	return node;
-}
-
-
-/**
-
  	pass1_sel_list
 
     @brief	Compile a select list.
@@ -7225,10 +7162,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_unique:
 		verb = "unique";
-		break;
-
-	case nod_searched_case:
-		verb = "searched_case";
 		break;
 
 	case nod_rows:

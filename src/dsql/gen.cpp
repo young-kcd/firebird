@@ -66,7 +66,6 @@ using namespace Firebird;
 
 static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
-static void gen_searched_case(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
@@ -162,10 +161,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_fid);
 		dsqlScratch->appendUChar(0);		// Context
 		dsqlScratch->appendUShort(0);		// Field id
-		return;
-
-    case nod_searched_case:
-		gen_searched_case(dsqlScratch, node);
 		return;
 
 	case nod_assign:
@@ -1052,39 +1047,6 @@ void GEN_rse( DsqlCompilerScratch* dsqlScratch, const dsql_nod* rseNod)
 	}
 
 	dsqlScratch->appendUChar(blr_end);
-}
-
-
-/**
-
- gen_searched_case
-
-    @brief      Generate BLR for CASE function (searched)
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_searched_case( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	// blr_value_if is used for building the case expression
-
-	dsqlScratch->appendUChar(blr_cast);
-	GEN_descriptor(dsqlScratch, &node->nod_desc, true);
-	const SSHORT count = node->nod_arg[e_searched_case_search_conditions]->nod_count;
-	dsql_nod* boolean_list = node->nod_arg[e_searched_case_search_conditions];
-	dsql_nod* results_list = node->nod_arg[e_searched_case_results];
-	dsql_nod* const* bptr = boolean_list->nod_arg;
-	dsql_nod* const* rptr = results_list->nod_arg;
-	for (const dsql_nod* const* const end = bptr + count; bptr < end; bptr++, rptr++)
-	{
-		dsqlScratch->appendUChar(blr_value_if);
-		GEN_expr(dsqlScratch, *bptr);
-		GEN_expr(dsqlScratch, *rptr);
-	}
-	// else_result
-	GEN_expr(dsqlScratch, node->nod_arg[e_searched_case_results]->nod_arg[count]);
 }
 
 

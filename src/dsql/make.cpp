@@ -381,11 +381,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		}
 		return;
 
-	case nod_searched_case:
-		MAKE_desc_from_list(dsqlScratch, &desc1, node->nod_arg[e_searched_case_results], "CASE");
-		*desc = desc1;
-		return;
-
 #ifdef DEV_BUILD
 	case nod_collate:
 		ERRD_bugcheck("Not expecting nod_collate in dsql/MAKE_desc");
@@ -834,10 +829,6 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		}
 
 		parameter->par_alias = string->str_data;
-		break;
-
-	case nod_searched_case:
-		name_alias = "CASE";
 		break;
 	}
 
