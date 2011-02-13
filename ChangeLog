@@ -1,3 +1,72 @@
+ 2011-02-12 21:32  dimitr 
+   M src/jrd/btn.h
+   M src/jrd/btr.cpp
+Fixed the error handling behavior in fast_load(), now it corresponds to the original (FB1) one.
+Fixed a possible bugcheck because of an unexpectedly missing index root page.
+Simplified the various jump node structures usage.
+
+ 2011-02-12 20:35  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/make.cpp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+Cleaned up the unused FieldNode::defaultValue. Added a bit of constness to the class members.
+
+ 2011-02-12 20:32  dimitr 
+   M src/jrd/cmp.cpp
+Misc.
+
+ 2011-02-12 20:26  dimitr 
+   M src/jrd/evl.cpp
+Misc.
+
+ 2011-02-12 18:11  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Refactored out OPT_expression_equal while fixing checking of sameAs involving CASTs. Problem saw by Dmitry.
+
+ 2011-02-12 17:41  asfernandes 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Avoid casts.
+
+ 2011-02-12 17:26  asfernandes 
+   M src/dsql/Nodes.h
+Misc
+
+ 2011-02-12 14:13  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/opt.cpp
+Cleaned up the unused (since FB2) parameter.
+
+ 2011-02-12 14:01  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.h
+Refactored expression equality to make it independent from the stream being optimized.
+
+ 2011-02-12 08:59  dimitr 
+   M src/jrd/btr.h
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SortedStream.cpp
+Misc.
+
  2011-02-12 02:00  asfernandes 
    M src/dsql/PackageNodes.epp
    M src/dsql/PackageNodes.h
