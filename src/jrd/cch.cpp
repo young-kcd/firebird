@@ -3634,7 +3634,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 	  find_page:
 
 		bcb = dbb->dbb_bcb;
-		if (page < FREE_PAGE)
+		if (page != FREE_PAGE)
 		{
 			// Check to see if buffer has already been assigned to page
 
@@ -3715,7 +3715,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				que_inst = bcb->bcb_empty.que_forward;
 				QUE_DELETE(*que_inst);
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-				if (page < FREE_PAGE)
+				if (page != FREE_PAGE)
 				{
 					QUE_INSERT(*mod_que, *que_inst);
 #ifdef SUPERSERVER_V2
@@ -3750,7 +3750,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 					BUGCHECK(302);	// msg 302 unexpected page change
 				}
 #ifndef SUPERSERVER
-				if (page < FREE_PAGE)
+				if (page != FREE_PAGE)
 				{
 					CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
 					bdb->bdb_lock->lck_logical = LCK_none;
@@ -3864,7 +3864,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			// in it's new spot, provided it's not a negative (scratch) page
 
 			//BCB_MUTEX_ACQUIRE;
-			if (bdb->bdb_page < FREE_PAGE) {
+			if (bdb->bdb_page != FREE_PAGE) {
 				QUE_DELETE(bdb->bdb_que);
 			}
 			QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
@@ -5266,7 +5266,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 		BackupManager* bm = dbb->dbb_backup_manager;
 		const int backup_state = bm->getState();
 
-		if (bdb->bdb_page < FREE_PAGE)
+		if (bdb->bdb_page != FREE_PAGE)
 		{
 			fb_assert(backup_state != nbak_state_unknown);
 			page->pag_pageno = bdb->bdb_page.getPageNum();
