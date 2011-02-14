@@ -123,7 +123,7 @@ Syntax and notes :
 				
 		At PSQL level this errors could be handled using appropriate GDS code, for example
 
-			WHEN GDSCODE isc_eds_statement
+			WHEN GDSCODE eds_statement
 			
 		Note, that original error codes is not accessible in WHEN statement. This could be
 		improved in the future.
@@ -133,7 +133,7 @@ Syntax and notes :
 		raised isc_lock_conflict error, this error will be passed to the caller and
 		could be handled using following handler
 		
-			WHEN GDSCODE isc_lock_conflict
+			WHEN GDSCODE lock_conflict
 			
 
 
