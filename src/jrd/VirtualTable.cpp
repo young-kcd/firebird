@@ -129,20 +129,13 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 	irsb_virtual* const impure =
 		(irsb_virtual*) ((UCHAR *) request + rsb->rsb_impure);
 
-	const Record* const record = rpb->rpb_record;
-	const Format* format = NULL;
-	if (!record || !record->rec_format) {
-		format = MET_current(tdbb, relation);
-		VIO_record(tdbb, rpb, format, request->req_pool);
-	}
-	else {
-		format = record->rec_format;
-	}
+	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
+	impure->irsb_record_buffer = snapshot->getData(relation);
+
+	const Format* const format = snapshot->getFormat(relation);
+	VIO_record(tdbb, rpb, format, request->req_pool);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
-
-	DatabaseSnapshot* snapshot = DatabaseSnapshot::create(tdbb);
-	impure->irsb_record_buffer = snapshot->getData(relation);
 }
 
 

@@ -618,17 +618,33 @@ DatabaseSnapshot::~DatabaseSnapshot()
 }
 
 
+const DatabaseSnapshot::RelationData* DatabaseSnapshot::getRelationData(int id) const
+{
+	for (size_t i = 0; i < snapshot.getCount(); i++)
+	{
+		if (snapshot[i].rel_id == id)
+			return &snapshot[i];
+	}
+
+	return NULL;
+}
+
+
+const Format* DatabaseSnapshot::getFormat(const jrd_rel* relation) const
+{
+	fb_assert(relation);
+
+	const RelationData* const relData = getRelationData(relation->rel_id);
+	return relData ? relData->format : NULL;
+}
+
+
 RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 {
 	fb_assert(relation);
 
-	for (size_t i = 0; i < snapshot.getCount(); i++)
-	{
-		if (snapshot[i].rel_id == relation->rel_id)
-			return snapshot[i].data;
-	}
-
-	return NULL;
+	const RelationData* const relData = getRelationData(relation->rel_id);
+	return relData ? relData->data : NULL;
 }
 
 
@@ -636,15 +652,16 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 											MemoryPool& pool,
 											int rel_id)
 {
-	jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
+	jrd_rel* const relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
 	fb_assert(relation->isVirtual());
-	Format* format = MET_current(tdbb, relation);
+
+	const Format* const format = MET_current(tdbb, relation);
 	fb_assert(format);
 
-	RecordBuffer* buffer = FB_NEW(pool) RecordBuffer(pool, format);
-	RelationData data = {relation->rel_id, buffer};
+	RecordBuffer* const buffer = FB_NEW(pool) RecordBuffer(pool, format);
+	RelationData data = {relation->rel_id, format, buffer};
 	snapshot.add(data);
 
 	return buffer;
@@ -666,9 +683,18 @@ void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField
 	fb_assert(record);
 
 	const Format* const format = record->rec_format;
-	fb_assert(format && field.id < format->fmt_count);
+	fb_assert(format);
 
-	dsc to_desc = format->fmt_desc[field.id];
+	dsc to_desc;
+
+	if (field.id < format->fmt_count)
+	{
+		to_desc = format->fmt_desc[field.id];
+	}
+
+	if (to_desc.isUnknown())
+		return;
+
 	to_desc.dsc_address += (IPTR) record->rec_data;
 
 	if (field.type == VALUE_GLOBAL_ID)
