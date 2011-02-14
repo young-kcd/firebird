@@ -1333,7 +1333,7 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 
 	DSC desc;
 	PAR_desc(csb, &desc);
-	const SSHORT count = lit_delta +
+	const int count = lit_delta +
 		(desc.dsc_length + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
 	jrd_nod* node = PAR_make_node(tdbb, count);
 	Literal* literal = (Literal*) node;
@@ -1343,7 +1343,7 @@ static jrd_nod* par_literal(thread_db* tdbb, CompilerScratch* csb)
 	literal->lit_desc.dsc_address = p;
 	literal->lit_desc.dsc_flags = 0;
 	const UCHAR* q = csb->csb_running;
-	SSHORT l = desc.dsc_length;
+	USHORT l = desc.dsc_length;
 
 	switch (desc.dsc_dtype) {
 	case dtype_short:
