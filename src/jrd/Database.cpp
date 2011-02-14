@@ -111,43 +111,73 @@ namespace Jrd
 		}
 	}
 
-	SLONG Database::genSharedUniqueNumber(thread_db* tdbb)
+	// Database::SharedCounter implementation
+
+	Database::SharedCounter::SharedCounter()
 	{
-		const int SHARED_COUNTER_CACHE_SIZE = 16;
-
-		if (!dbb_sh_counter_lock)
-		{
-			Lock* lock = FB_NEW_RPT(*dbb_permanent, sizeof(SLONG)) Lock();
-			dbb_sh_counter_lock = lock;
-			lock->lck_type = LCK_shared_counter;
-			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-			lock->lck_parent = dbb_lock;
-			lock->lck_length = sizeof(SLONG);
-			lock->lck_key.lck_long = 0;
-			lock->lck_dbb = this;
-			lock->lck_ast = blockingAstSharedCounter;
-			lock->lck_object = this;
-			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
-
-			dbb_sh_counter_curr = 1;
-			dbb_sh_counter_max = 0;
-		}
-
-		if (dbb_sh_counter_curr > dbb_sh_counter_max)
-		{
-			LCK_convert(tdbb, dbb_sh_counter_lock, LCK_PW, LCK_WAIT);
-
-			dbb_sh_counter_curr = LCK_read_data(tdbb, dbb_sh_counter_lock);
-			dbb_sh_counter_max = dbb_sh_counter_curr + SHARED_COUNTER_CACHE_SIZE - 1;
-			LCK_write_data(tdbb, dbb_sh_counter_lock, dbb_sh_counter_max + 1);
-		}
-
-		return dbb_sh_counter_curr++;
+		memset(m_counters, 0, sizeof(m_counters));
 	}
 
-	int Database::blockingAstSharedCounter(void* ast_object)
+	void Database::SharedCounter::shutdown(thread_db* tdbb)
 	{
-		Database* dbb = static_cast<Database*>(ast_object);
+		for (size_t i = 0; i < TOTAL_ITEMS; i++)
+		{
+			if (m_counters[i].lock)
+				LCK_release(tdbb, m_counters[i].lock);
+
+			delete m_counters[i].lock;
+			m_counters[i].lock = NULL;
+		}
+	}
+
+	SLONG Database::SharedCounter::generate(thread_db* tdbb, ULONG space, ULONG prefetch)
+	{
+		fb_assert(space < TOTAL_ITEMS);
+		ValueCache* const counter = &m_counters[space];
+		Database* const dbb = tdbb->getDatabase();
+
+		if (!counter->lock)
+		{
+			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+			counter->lock = lock;
+			lock->lck_type = LCK_shared_counter;
+			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+			lock->lck_parent = dbb->dbb_lock;
+			lock->lck_length = sizeof(SLONG);
+			lock->lck_key.lck_long = space;
+			lock->lck_dbb = dbb;
+			lock->lck_ast = blockingAst;
+			lock->lck_object = counter;
+			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
+
+			counter->curVal = 1;
+			counter->maxVal = 0;
+		}
+
+		if (counter->curVal > counter->maxVal)
+		{
+			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+
+			counter->curVal = LCK_read_data(tdbb, counter->lock);
+
+			if (!counter->curVal)
+			{
+				// zero IDs are somewhat special, so let's better skip them
+				counter->curVal = 1;
+			}
+
+			counter->maxVal = counter->curVal + prefetch - 1;
+			LCK_write_data(tdbb, counter->lock, counter->maxVal + 1);
+		}
+
+		return counter->curVal++;
+	}
+
+	int Database::SharedCounter::blockingAst(void* ast_object)
+	{
+		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
+		fb_assert(counter && counter->lock);
+		Database* const dbb = counter->lock->lck_dbb;
 
 		try
 		{
@@ -155,11 +185,11 @@ namespace Jrd
 
 			ThreadContextHolder tdbb;
 			tdbb->setDatabase(dbb);
-			// tdbb->setAttachment(dbb->dbb_sh_counter_lock->lck_attachment);
+			// tdbb->setAttachment(counter->lock->lck_attachment);
 
 			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-			LCK_downgrade(tdbb, dbb->dbb_sh_counter_lock);
+			LCK_downgrade(tdbb, counter->lock);
 		}
 		catch (const Firebird::Exception&)
 		{} // no-op

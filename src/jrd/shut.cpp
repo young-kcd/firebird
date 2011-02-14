@@ -620,10 +620,9 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 			LCK_release(tdbb, dbb->dbb_shadow_lock);
 		if (dbb->dbb_retaining_lock)
 			LCK_release(tdbb, dbb->dbb_retaining_lock);
-		if (dbb->dbb_sh_counter_lock)
-			LCK_release(tdbb, dbb->dbb_sh_counter_lock);
 		if (dbb->dbb_lock)
 			LCK_release(tdbb, dbb->dbb_lock);
+		dbb->dbb_shared_counter.shutdown(tdbb);
 		dbb->dbb_backup_manager->shutdown(tdbb);
 		dbb->dbb_ast_flags |= DBB_shutdown_locks;
 	}

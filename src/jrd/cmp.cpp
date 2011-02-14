@@ -556,7 +556,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
-	clone->req_id = fb_utils::genUniqueId();
+	clone->req_id = dbb->generateStatementId(tdbb);
 
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
@@ -2147,7 +2147,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
 	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
-	request->req_id = fb_utils::genUniqueId();
+	request->req_id = dbb->generateStatementId(tdbb);
 
 	// CVC: Unused.
 	//request->req_variables = csb->csb_variables;

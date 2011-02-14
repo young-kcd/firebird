@@ -5346,9 +5346,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
 
-	if (dbb->dbb_sh_counter_lock)
-		LCK_release(tdbb, dbb->dbb_sh_counter_lock);
-
+	dbb->dbb_shared_counter.shutdown(tdbb);
 	dbb->destroyIntlObjects();
 
 	// Shut down any extern relations
