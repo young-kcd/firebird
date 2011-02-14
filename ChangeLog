@@ -1,3 +1,20 @@
+ 2011-02-13 19:16  hvlad 
+   M doc/sql.extensions/README.execute_statement2
+Correction
+
+ 2011-02-13 14:48  asfernandes 
+   M src/dsql/node.h
+Refactored searched CASE.
+
+ 2011-02-13 14:44  asfernandes 
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactored searched CASE.
+
  2011-02-12 21:32  dimitr 
    M src/jrd/btn.h
    M src/jrd/btr.cpp
