@@ -1,3 +1,7 @@
+ 2011-02-14 13:20  dimitr 
+   M src/jrd/par.cpp
+Fixed CORE-3097: Updating blob field cause server crash with ACCESS_VIOLATION exception. Only v2.0 is affected.
+
  2011-02-08 21:05  hvlad 
    M src/jrd/Optimizer.cpp
 Fixed compilation error
