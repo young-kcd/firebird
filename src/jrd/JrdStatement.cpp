@@ -347,7 +347,7 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 
 	// Create the request.
 	jrd_req* const request = FB_NEW(*pool) jrd_req(attachment, this, parentStats);
-	request->req_id = dbb->generateTransactionId(tdbb);
+	request->req_id = dbb->generateStatementId(tdbb);
 
 	requests[level] = request;
 
