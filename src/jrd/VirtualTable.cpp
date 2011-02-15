@@ -144,8 +144,7 @@ void VirtualTable::open(thread_db* tdbb, RecordSource* rsb)
 	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
 	impure->irsb_record_buffer = snapshot->getData(relation);
 
-	const Format* const format = snapshot->getFormat(relation);
-	VIO_record(tdbb, rpb, format, request->req_pool);
+	VIO_record(tdbb, rpb, impure->irsb_record_buffer->getFormat(), request->req_pool);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }

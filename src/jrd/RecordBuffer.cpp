@@ -57,6 +57,11 @@ Record* RecordBuffer::getTempRecord() const
 	return record;
 }
 
+const Format* RecordBuffer::getFormat() const
+{
+	return record->rec_format;
+}
+
 offset_t RecordBuffer::store(const Record* new_record)
 {
 	fb_assert(new_record->rec_length == length);

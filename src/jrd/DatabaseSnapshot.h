@@ -180,7 +180,6 @@ class DatabaseSnapshot
 	struct RelationData
 	{
 		int rel_id;
-		const Format* format;
 		RecordBuffer* data;
 	};
 
@@ -319,7 +318,6 @@ private:
 public:
 	~DatabaseSnapshot();
 
-	const Format* getFormat(const jrd_rel*) const;
 	RecordBuffer* getData(const jrd_rel*) const;
 
 	static DatabaseSnapshot* create(thread_db*);
@@ -332,7 +330,6 @@ private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
 	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
-	const RelationData* getRelationData(int id) const;
 
 	static void dumpData(thread_db*);
 
