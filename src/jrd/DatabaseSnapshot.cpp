@@ -618,33 +618,17 @@ DatabaseSnapshot::~DatabaseSnapshot()
 }
 
 
-const DatabaseSnapshot::RelationData* DatabaseSnapshot::getRelationData(int id) const
-{
-	for (size_t i = 0; i < snapshot.getCount(); i++)
-	{
-		if (snapshot[i].rel_id == id)
-			return &snapshot[i];
-	}
-
-	return NULL;
-}
-
-
-const Format* DatabaseSnapshot::getFormat(const jrd_rel* relation) const
-{
-	fb_assert(relation);
-
-	const RelationData* const relData = getRelationData(relation->rel_id);
-	return relData ? relData->format : NULL;
-}
-
-
 RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 {
 	fb_assert(relation);
 
-	const RelationData* const relData = getRelationData(relation->rel_id);
-	return relData ? relData->data : NULL;
+	for (size_t i = 0; i < snapshot.getCount(); i++)
+	{
+		if (snapshot[i].rel_id == relation->rel_id)
+			return snapshot[i].data;
+	}
+
+	return NULL;
 }
 
 
@@ -661,7 +645,7 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 	fb_assert(format);
 
 	RecordBuffer* const buffer = FB_NEW(pool) RecordBuffer(pool, format);
-	RelationData data = {relation->rel_id, format, buffer};
+	RelationData data = {relation->rel_id, buffer};
 	snapshot.add(data);
 
 	return buffer;

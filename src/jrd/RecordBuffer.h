@@ -35,6 +35,7 @@ public:
 
 	size_t getCount() const;
 	Record* getTempRecord() const;
+	const Format* getFormat() const;
 
 	offset_t store(const Record*);
 	bool fetch(offset_t, Record*);
