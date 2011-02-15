@@ -37,7 +37,7 @@
 
 #ifdef WIN_NT
 #include <sys/types.h>
-#include <winsock.h>
+#include <winsock2.h>
 typedef	char *	caddr_t;
 #else // WIN_NT
 #include <sys/types.h>
