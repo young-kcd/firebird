@@ -36,8 +36,6 @@
 #include "../jrd/sbm.h"
 #include "../jrd/lck.h"
 
-#define MAX_KEY_LIMIT		(dbb->dbb_page_size / 4)
-
 struct dsc;
 
 namespace Jrd {

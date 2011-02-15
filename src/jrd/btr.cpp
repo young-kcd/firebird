@@ -1219,7 +1219,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 			}
 		}
 
-		if (key->key_length >= MAX_KEY_LIMIT) {
+		if (key->key_length >= dbb->getMaxIndexKeyLength()) {
 			result = idx_e_keytoobig;
 		}
 
@@ -1505,7 +1505,7 @@ idx_e BTR_make_key(thread_db* tdbb,
 		}
 	}
 
-	if (key->key_length >= MAX_KEY_LIMIT) {
+	if (key->key_length >= dbb->getMaxIndexKeyLength()) {
 		result = idx_e_keytoobig;
 	}
 

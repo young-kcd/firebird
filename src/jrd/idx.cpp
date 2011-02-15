@@ -275,9 +275,7 @@ void IDX_create_index(thread_db* tdbb,
 	const int nullIndLen = !isDescending && (idx->idx_count == 1) ? 1 : 0;
 	const USHORT key_length = ROUNDUP(BTR_key_length(tdbb, relation, idx) + nullIndLen, sizeof(SINT64));
 
-	const USHORT max_key_size = MAX_KEY_LIMIT;
-
-	if (key_length >= max_key_size)
+	if (key_length >= dbb->getMaxIndexKeyLength())
 	{
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));

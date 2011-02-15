@@ -652,6 +652,11 @@ public:
 		return dbb_shared_counter.generate(tdbb, SharedCounter::STATEMENT_ID_SPACE);
 	}
 
+	USHORT getMaxIndexKeyLength() const
+	{
+		return dbb_page_size / 4;
+	}
+
 private:
 	static int blockingAstSharedCounter(void*);
 
