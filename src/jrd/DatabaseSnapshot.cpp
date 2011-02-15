@@ -1059,7 +1059,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int st
 	DumpRecord record(rel_mon_statements);
 
 	// request id
-	record.storeGlobalId(f_mon_stmt_id, getGlobalId(request->req_id));
+	record.storeInteger(f_mon_stmt_id, request->req_id);
 	// attachment id
 	if (request->req_attachment)
 	{
@@ -1108,13 +1108,13 @@ void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_
 	DumpRecord record(rel_mon_calls);
 
 	// call id
-	record.storeGlobalId(f_mon_call_id, getGlobalId(request->req_id));
+	record.storeInteger(f_mon_call_id, request->req_id);
 	// statement id
-	record.storeGlobalId(f_mon_call_stmt_id, getGlobalId(initialRequest->req_id));
+	record.storeInteger(f_mon_call_stmt_id, initialRequest->req_id);
 	// caller id
 	if (initialRequest != request->req_caller)
 	{
-		record.storeGlobalId(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
+		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
 	}
 
 	JrdStatement* statement = request->getStatement();

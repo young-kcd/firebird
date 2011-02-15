@@ -2579,7 +2579,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	new_number = bump_transaction_id(tdbb, &window);
 #else
 	if (dbb->dbb_flags & DBB_read_only)
-		new_number = dbb->dbb_next_transaction + dbb->genSharedUniqueNumber(tdbb);
+		new_number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 	else
 	{
 		const header_page* header = bump_transaction_id(tdbb, &window);
@@ -3274,7 +3274,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 #else // SUPERSERVER_V2
 	if (dbb->dbb_flags & DBB_read_only)
 	{
-		number = dbb->dbb_next_transaction + dbb->genSharedUniqueNumber(tdbb);
+		number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 		oldest = dbb->dbb_oldest_transaction;
 		oldest_active = dbb->dbb_oldest_active;
 		oldest_snapshot = dbb->dbb_oldest_snapshot;

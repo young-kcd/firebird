@@ -748,7 +748,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 	// Get new attachment id
 
 	if (dbb->dbb_flags & DBB_read_only) {
-		attachment->att_attachment_id = dbb->dbb_attachment_id + dbb->genSharedUniqueNumber(tdbb);
+		attachment->att_attachment_id = dbb->dbb_attachment_id + dbb->generateAttachmentId(tdbb);
 	}
 	else
 	{

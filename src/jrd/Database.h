@@ -390,6 +390,39 @@ public:
 		Firebird::Mutex& mutex;
 	};
 
+	class SharedCounter
+	{
+		static const ULONG DEFAULT_CACHE_SIZE = 16;
+
+		struct ValueCache
+		{
+			Lock* lock;
+			SLONG curVal;
+			SLONG maxVal;
+		};
+
+	public:
+
+		enum
+		{
+			ATTACHMENT_ID_SPACE = 0,
+			TRANSACTION_ID_SPACE = 1,
+			STATEMENT_ID_SPACE = 2,
+			TOTAL_ITEMS = 3
+		};
+
+		SharedCounter();
+
+		SLONG generate(thread_db* tdbb, ULONG space, ULONG prefetch = DEFAULT_CACHE_SIZE);
+		void shutdown(thread_db* tdbb);
+
+	private:
+
+		static int blockingAst(void* arg);
+
+		ValueCache m_counters[TOTAL_ITEMS];
+	};
+
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
 	static Database* create()
@@ -450,9 +483,6 @@ public:
 	vec<jrd_prc*>*	dbb_procedures;		// scanned procedures
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
-	Lock*		dbb_sh_counter_lock;	// lock which holds shared counter value
-	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock
-	SLONG		dbb_sh_counter_max;		// maximum cached value of shared counter lock
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
@@ -554,6 +584,8 @@ public:
 	ExternalFileDirectoryList* dbb_external_file_directory_list;
 	Firebird::RefPtr<Config> dbb_config;
 
+	SharedCounter dbb_shared_counter;
+
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
 
@@ -603,8 +635,22 @@ public:
 	void releaseIntlObjects();			// defined in intl.cpp
 	void destroyIntlObjects();			// defined in intl.cpp
 
-	SLONG genSharedUniqueNumber(thread_db* tdbb);
 	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
+
+	SLONG generateAttachmentId(thread_db* tdbb)
+	{
+		return dbb_shared_counter.generate(tdbb, SharedCounter::ATTACHMENT_ID_SPACE, 1);
+	}
+
+	SLONG generateTransactionId(thread_db* tdbb)
+	{
+		return dbb_shared_counter.generate(tdbb, SharedCounter::TRANSACTION_ID_SPACE, 1);
+	}
+
+	SLONG generateStatementId(thread_db* tdbb)
+	{
+		return dbb_shared_counter.generate(tdbb, SharedCounter::STATEMENT_ID_SPACE);
+	}
 
 private:
 	static int blockingAstSharedCounter(void*);
