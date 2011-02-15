@@ -71,6 +71,13 @@ using namespace Firebird;
 using namespace Jrd;
 
 
+const Format* MonitoringTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
+{
+	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
+	return snapshot->getData(relation)->getFormat();
+}
+
+
 bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 										 FB_UINT64 position, Record* record) const
 {
@@ -600,14 +607,15 @@ RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
 
 RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
 {
-	jrd_rel* relation = MET_lookup_relation_id(tdbb, rel_id, false);
+	jrd_rel* const relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
 	MET_scan_relation(tdbb, relation);
 	fb_assert(relation->isVirtual());
-	Format* format = MET_current(tdbb, relation);
+
+	const Format* const format = MET_current(tdbb, relation);
 	fb_assert(format);
 
-	RecordBuffer* buffer = FB_NEW(pool) RecordBuffer(pool, format);
+	RecordBuffer* const buffer = FB_NEW(pool) RecordBuffer(pool, format);
 	RelationData data = {relation->rel_id, buffer};
 	snapshot.add(data);
 
@@ -632,9 +640,18 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 	fb_assert(record);
 
 	const Format* const format = record->rec_format;
-	fb_assert(format && field.id < format->fmt_count);
+	fb_assert(format);
 
-	dsc to_desc = format->fmt_desc[field.id];
+	dsc to_desc;
+
+	if (field.id < format->fmt_count)
+	{
+		to_desc = format->fmt_desc[field.id];
+	}
+
+	if (to_desc.isUnknown())
+		return;
+
 	to_desc.dsc_address += (IPTR) record->rec_data;
 
 	if (field.type == VALUE_GLOBAL_ID)

@@ -45,6 +45,7 @@ public:
 		: VirtualTableScan(csb, name, stream)
 	{}
 
+	const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const;
 	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
 };
 

@@ -74,3 +74,8 @@ bool RecordBuffer::fetch(offset_t position, Record* to_record)
 
 	return true;
 }
+
+const Format* RecordBuffer::getFormat() const
+{
+	return record->rec_format;
+}

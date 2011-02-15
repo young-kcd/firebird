@@ -267,6 +267,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const;
 
 	protected:
+		virtual const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const = 0;
 		virtual bool retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 									FB_UINT64 position, Record* record) const = 0;
 

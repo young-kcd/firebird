@@ -44,6 +44,8 @@ public:
 		return record;
 	}
 
+	const Format* getFormat() const;
+
 	offset_t store(const Record*);
 	bool fetch(offset_t, Record*);
 

@@ -54,18 +54,7 @@ void VirtualTableScan::open(thread_db* tdbb) const
 	rpb->getWindow(tdbb).win_flags = 0;
 
 	jrd_rel* const relation = rpb->rpb_relation;
-
-	const Record* const record = rpb->rpb_record;
-	const Format* format = NULL;
-	if (!record || !record->rec_format)
-	{
-		format = MET_current(tdbb, relation);
-		VIO_record(tdbb, rpb, format, request->req_pool);
-	}
-	else
-	{
-		format = record->rec_format;
-	}
+	VIO_record(tdbb, rpb, getFormat(tdbb, relation), request->req_pool);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }

@@ -38,6 +38,13 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+const Format* UsersTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
+{
+	jrd_tra* const transaction = tdbb->getTransaction();
+	return transaction->getUserManagement()->getList(tdbb, relation)->getFormat();
+}
+
+
 bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 									FB_UINT64 position, Record* record) const
 {
