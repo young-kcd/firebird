@@ -520,7 +520,6 @@ struct tx_inv_page
 
 
 // Generator Page
-// For ODS12 and beyond
 
 struct generator_page
 {
