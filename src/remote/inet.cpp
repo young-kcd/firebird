@@ -941,7 +941,7 @@ rem_port* INET_connect(const TEXT* name,
 		inet_error(true, port, "bind", isc_net_connect_listen_err, INET_ERRNO);
 	}
 
-	n = listen(port->port_handle, 5);
+	n = listen(port->port_handle, SOMAXCONN);
 
 	if (n == -1)
 	{
