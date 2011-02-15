@@ -1019,7 +1019,7 @@ rem_port* INET_connect(const TEXT* name,
 		return NULL;
 	}
 
-	n = listen(port->port_handle, 5);
+	n = listen(port->port_handle, SOMAXCONN);
 
 	if (n == -1)
 	{
