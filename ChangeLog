@@ -1,3 +1,26 @@
+ 2011-02-14 17:05  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/tra.cpp
+Refactored the shared counter to support multiple number spaces.
+Changed att_id and tra_id to be generated sequentially (without caching), as agreed with Vlad privately.
+Fixed CORE-2305: Make mon$statement_id value constant among monitoring snapshots.
+
+ 2011-02-14 15:20  hvlad 
+   M doc/sql.extensions/README.execute_statement2
+Fixed bug CORE-3349 : Constants isc_lock_conflict / isc_eds_statement not recognized in PSQL
+
+ 2011-02-14 11:10  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/VirtualTable.cpp
+Fixed CORE-3138: Internal error or crash occurs when accessing any MON$ table after altering its structure.
+
  2011-02-13 19:14  hvlad 
    M doc/sql.extensions/README.execute_statement2
 Correction
