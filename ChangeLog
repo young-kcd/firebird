@@ -1,3 +1,9 @@
+ 2011-02-14 10:38  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/VirtualTable.cpp
+Fixed CORE-3138: Internal error or crash occurs when accessing any MON$ table after altering its structure.
+
  2011-02-04 08:41  dimitr 
    M src/jrd/SysFunction.cpp
 Fixed CORE-3335: Wrong results (internal wrapping occured) for the multi-byte blob SUBSTRING function and its boundary arguments.
