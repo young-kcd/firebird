@@ -4381,6 +4381,8 @@ select_items
 select_item
 	: value
 	| value as_noise symbol_item_alias_name		{ $$ = make_node(nod_alias, 2, $1, $3); }
+	| symbol_table_alias_name '.' '*'
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
 	;
 
 as_noise
@@ -4934,8 +4936,6 @@ column_name
 	: simple_column_name
 	| symbol_table_alias_name '.' symbol_column_name
 		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
-	| symbol_table_alias_name '.' '*'
-		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
 	;
 
 simple_column_name
