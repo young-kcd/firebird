@@ -5275,7 +5275,7 @@ common_value
 		| symbol_table_alias_name '.' DB_KEY
 			{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey, toName($1))); }
 		| KW_VALUE
-			{ $$ = make_node (nod_dom_value, 0, NULL); }
+			{ $$ = makeClassNode(newNode<DomainValidationNode>()); }
 		| datetime_value_expression
 			{ $$ = makeClassNode($1); }
 		| null_value

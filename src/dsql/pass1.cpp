@@ -928,17 +928,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node->nod_arg[1] = input->nod_arg[1];
 		return node;
 
-	case nod_dom_value:
-		if (dsqlScratch->domainValue.isUnknown())
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-					  Arg::Gds(isc_dsql_domain_err));
-		}
-
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_desc = dsqlScratch->domainValue;
-		return node;
-
 	case nod_returning:
 		return pass1_returning(dsqlScratch, input);
 
@@ -7278,9 +7267,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_end_savepoint:
 		verb = "end_savepoint";
-		break;
-	case nod_dom_value:
-		verb = "dom_value";
 		break;
 	case nod_user_group:
 		verb = "user_group";

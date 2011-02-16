@@ -157,12 +157,6 @@ void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_expr(dsqlScratch, node->nod_arg[e_alias_value]);
 		return;
 
-	case nod_dom_value:
-		dsqlScratch->appendUChar(blr_fid);
-		dsqlScratch->appendUChar(0);		// Context
-		dsqlScratch->appendUShort(0);		// Field id
-		return;
-
 	case nod_assign:
 		dsqlScratch->appendUChar(blr_assignment);
 		GEN_expr(dsqlScratch, node->nod_arg[0]);

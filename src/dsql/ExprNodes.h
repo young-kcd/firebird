@@ -444,27 +444,15 @@ public:
 		domDesc.clear();
 	}
 
-	// This is a non-DSQL node.
-
-	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
-	{
-		fb_assert(false);
-	}
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual void setParameterName(dsql_par* parameter) const
 	{
-		fb_assert(false);
 	}
 
-	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
-	{
-		fb_assert(false);
-	}
-
-	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
-	{
-		fb_assert(false);
-	}
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;

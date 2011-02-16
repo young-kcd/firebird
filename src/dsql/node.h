@@ -114,7 +114,6 @@ enum nod_t
 	nod_order,
 	nod_flag,
 	nod_unique,
-	nod_dom_value,
 	nod_field_name,
 	nod_alias,
 	nod_user_name,

@@ -4123,6 +4123,38 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+void DomainValidationNode::print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+{
+	text.printf("DomainValidationNode");
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* DomainValidationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	if (dsqlScratch->domainValue.isUnknown())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_dsql_domain_err));
+	}
+
+	DomainValidationNode* node = FB_NEW(getPool()) DomainValidationNode(getPool());
+	node->domDesc = dsqlScratch->domainValue;
+
+	return node;
+}
+
+void DomainValidationNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->appendUChar(blr_fid);
+	dsqlScratch->appendUChar(0);		// context
+	dsqlScratch->appendUShort(0);		// field id
+}
+
+void DomainValidationNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	*desc = domDesc;
+}
+
 void DomainValidationNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
 {
 	*desc = domDesc;

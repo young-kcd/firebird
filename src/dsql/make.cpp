@@ -404,17 +404,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 
 	default:
 		fb_assert(false);			// unexpected dsql_nod type
-
-	case nod_dom_value:		// computed value not used
-		// By the time we get here, any nod_dom_value node should have had
-		// its descriptor set to the type of the domain being created, or
-		// to the type of the existing domain to which a CHECK constraint
-		// is being added.
-
-		fb_assert(node->nod_desc.dsc_dtype != dtype_unknown);
-		if (desc != &node->nod_desc)
-			*desc = node->nod_desc;
-		return;
 	}
 }
 
