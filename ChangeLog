@@ -1,3 +1,16 @@
+ 2011-02-15 10:07  hvlad 
+   M src/remote/inet.cpp
+   M src/remote/xdr.h
+Fixed bug CORE-3351 : Windows client could put 10054 error messages into firebird.log at connection time
+
+ 2011-02-15 08:38  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/RecordBuffer.h
+   M src/jrd/VirtualTable.cpp
+Reworked my yesterday's fix to simplify it.
+
  2011-02-14 17:05  dimitr 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
