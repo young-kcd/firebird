@@ -1,3 +1,59 @@
+ 2011-02-16 01:38  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Visitors.h
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactored nod_dom_value.
+
+ 2011-02-15 11:04  dimitr 
+   M src/jrd/ods.h
+Totally misc.
+
+ 2011-02-15 10:10  hvlad 
+   M src/common/xdr.h
+   M src/remote/inet.cpp
+Fixed bug CORE-3351 : Windows client could put 10054 error messages into firebird.log at connection time
+
+ 2011-02-15 08:47  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/RecordBuffer.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/VirtualTableScan.cpp
+Front ported CORE-3138: Internal error or crash occurs when accessing any MON$ table after altering its structure.
+
+ 2011-02-15 07:32  dimitr 
+   M src/jrd/Database.h
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/idx.cpp
+Misc.
+
+ 2011-02-15 07:20  dimitr 
+   M src/jrd/JrdStatement.cpp
+Correction.
+
+ 2011-02-15 07:16  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/tra.cpp
+Front ported:
+Refactored the shared counter to support multiple number spaces.
+Changed att_id and tra_id to be generated sequentially (without caching), as agreed with Vlad privately.
+Fixed CORE-2305: Make mon$statement_id value constant among monitoring snapshots.
+
  2011-02-14 15:21  hvlad 
    M doc/sql.extensions/README.execute_statement2
 Fixed bug CORE-3349 : Constants isc_lock_conflict / isc_eds_statement not recognized in PSQL
