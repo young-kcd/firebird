@@ -4862,91 +4862,94 @@ exec_function
 
 // BLOB get and put
 
-blob_io			: READ BLOB simple_column_name FROM simple_table_name filter_clause_io segment_clause_io
-			{ $$ = make_node (nod_get_segment, (int) e_blb_count, $3, $5, $6, $7); }
-				| INSERT BLOB simple_column_name INTO simple_table_name filter_clause_io segment_clause_io
-			{ $$ = make_node (nod_put_segment, (int) e_blb_count, $3, $5, $6, $7); }
-		;
-
-filter_clause_io	: FILTER FROM blob_subtype_value_io TO blob_subtype_value_io
-			{ $$ = make_node (nod_list, 2, $3, $5); }
-		| FILTER TO blob_subtype_value_io
-			{ $$ = make_node (nod_list, 2, NULL, $3); }
-		|
-			{ $$ = NULL; }
-		;
-
-blob_subtype_value_io : blob_subtype_io
-		| parameter
-		;
-
-blob_subtype_io
-	: signed_short_integer
-		{ $$ = MAKE_const_slong($1); }
+blob_io
+	: READ BLOB simple_column_name FROM simple_table_name filter_clause_io segment_clause_io
+		{ $$ = make_node (nod_get_segment, (int) e_blb_count, $3, $5, $6, $7); }
+	| INSERT BLOB simple_column_name INTO simple_table_name filter_clause_io segment_clause_io
+		{ $$ = make_node (nod_put_segment, (int) e_blb_count, $3, $5, $6, $7); }
 	;
 
-segment_clause_io	: MAX_SEGMENT segment_length_io
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+filter_clause_io
+	: /* nothing */
+		{ $$ = NULL; }
+	| FILTER FROM blob_subtype_value_io TO blob_subtype_value_io
+		{ $$ = make_node (nod_list, 2, $3, $5); }
+	| FILTER TO blob_subtype_value_io
+		{ $$ = make_node (nod_list, 2, NULL, $3); }
+	;
+
+blob_subtype_value_io
+	: blob_subtype_io
+	| parameter
+	;
+
+blob_subtype_io
+	: signed_short_integer	{ $$ = MAKE_const_slong($1); }
+	;
+
+segment_clause_io
+	: /* nothing */						{ $$ = NULL; }
+	| MAX_SEGMENT segment_length_io		{ $$ = $2; }
+	;
 
 segment_length_io
-	: unsigned_short_integer
-		{ $$ = MAKE_const_slong($1); }
+	: unsigned_short_integer	{ $$ = MAKE_const_slong($1); }
 	| parameter
 	;
 
 
 // column specifications
 
-column_parens_opt : column_parens
-		|
-			{ $$ = NULL; }
-		;
+column_parens_opt
+	: /* nothing */		{ $$ = NULL; }
+	| column_parens
+	;
 
-column_parens	: '(' column_list ')'
-			{ $$ = make_list ($2); }
-		;
+column_parens
+	: '(' column_list ')'	{ $$ = make_list ($2); }
+	;
 
-column_list	: simple_column_name
-		| column_list ',' simple_column_name
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+column_list
+	: simple_column_name
+	| column_list ',' simple_column_name	{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
 // begin IBO hack
-ins_column_parens_opt : ins_column_parens
-		|
-			{ $$ = NULL; }
-		;
+ins_column_parens_opt
+	: /* nothing */		{ $$ = NULL; }
+	| ins_column_parens
+	;
 
-ins_column_parens	: '(' ins_column_list ')'
-			{ $$ = make_list ($2); }
-		;
+ins_column_parens
+	: '(' ins_column_list ')'	{ $$ = make_list ($2); }
+	;
 
-ins_column_list	: update_column_name
-		| ins_column_list ',' update_column_name
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+ins_column_list
+	: update_column_name
+	| ins_column_list ',' update_column_name	{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 // end IBO hack
 
-column_name	 : simple_column_name
-		| symbol_table_alias_name '.' symbol_column_name
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
-		| symbol_table_alias_name '.' '*'
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
-		;
+column_name
+	: simple_column_name
+	| symbol_table_alias_name '.' symbol_column_name
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
+	| symbol_table_alias_name '.' '*'
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
+	;
 
-simple_column_name : symbol_column_name
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
-		;
+simple_column_name
+	: symbol_column_name
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
+	;
 
-update_column_name : simple_column_name
-// CVC: This option should be deprecated! The only allowed syntax should be
-// Update...set column = expr, without qualifier for the column.
-		| symbol_table_alias_name '.' symbol_column_name
-			{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
-		;
+update_column_name
+	: simple_column_name
+	// CVC: This option should be deprecated! The only allowed syntax should be
+	// Update...set column = expr, without qualifier for the column.
+	| symbol_table_alias_name '.' symbol_column_name
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, $3); }
+	;
 
 // boolean expressions
 
