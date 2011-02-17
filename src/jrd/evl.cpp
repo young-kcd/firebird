@@ -4767,14 +4767,8 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	// Get address and length of search string - make it string if necessary
 	// but don't transliterate character set if the source blob is binary
-	VaryStr<256> temp2;
 	if (!computed_invariant) {
-		if (type1 == ttype_none) {
-			l2 = MOV_get_string(desc2, &p2, &temp2, sizeof(temp2));
-		}
-		else {
-			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
-		}
+		l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 	}
 
 	blb* blob =	BLB_open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
