@@ -820,14 +820,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 		return input;
 
-	case nod_alias:
-		node = MAKE_node(input->nod_type, e_alias_count);
-		node->nod_arg[e_alias_value] = sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_alias_value]);
-		node->nod_arg[e_alias_alias] = input->nod_arg[e_alias_alias];
-		MAKE_desc(dsqlScratch, &sub1->nod_desc, sub1);
-		node->nod_desc = sub1->nod_desc;
-		return node;
-
 	case nod_collate:
 		sub1 = PASS1_node(dsqlScratch, input->nod_arg[e_coll_source]);
 		node = pass1_collate(dsqlScratch, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
@@ -1835,21 +1827,20 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 		return PASS1_node_match(mapNode1->map->map_node, node2, ignore_map_cast);
 	}
 
-	// We don't care about the alias itself but only about its field.
-	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias))
-	{
-		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias))
-		{
-			return PASS1_node_match(node1->nod_arg[e_alias_value],
-							  node2->nod_arg[e_alias_value], ignore_map_cast);
-		}
+	const DsqlAliasNode* aliasNode1 = ExprNode::as<DsqlAliasNode>(node1);
+	const DsqlAliasNode* aliasNode2 = ExprNode::as<DsqlAliasNode>(node2);
 
-		if (node1->nod_type == nod_alias) {
-			return PASS1_node_match(node1->nod_arg[e_alias_value], node2, ignore_map_cast);
-		}
-		if (node2->nod_type == nod_alias) {
-			return PASS1_node_match(node1, node2->nod_arg[e_alias_value], ignore_map_cast);
-		}
+	// We don't care about the alias itself but only about its field.
+	if (aliasNode1 || aliasNode2)
+	{
+		if (aliasNode1 && aliasNode2)
+			return PASS1_node_match(aliasNode1->value, aliasNode2->value, ignore_map_cast);
+
+		if (aliasNode1)
+			return PASS1_node_match(aliasNode1->value, node2, ignore_map_cast);
+
+		if (aliasNode2)
+			return PASS1_node_match(node1, aliasNode2->value, ignore_map_cast);
 	}
 
 	// Handle derived fields.
@@ -3821,32 +3812,24 @@ dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql_str* n
 	{
 		dsql_nod* matchingNode = NULL;
 		dsql_nod* node = *ptr;
+		DsqlAliasNode* aliasNode;
 		FieldNode* fieldNode;
 		DerivedFieldNode* derivedField;
 
-		switch (node->nod_type)
+		if ((aliasNode = ExprNode::as<DsqlAliasNode>(node)))
 		{
-			case nod_alias:
-				{
-					const dsql_str* alias = (dsql_str*) node->nod_arg[e_alias_alias];
-					if (!strcmp(alias->str_data, name->str_data)) {
-						matchingNode = node;
-					}
-				}
-				break;
-
-			default:
-				if ((fieldNode = ExprNode::as<FieldNode>(node)))
-				{
-					if (fieldNode->dsqlField->fld_name == name->str_data)
-						matchingNode = node;
-				}
-				else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
-				{
-					if (strcmp(derivedField->name.c_str(), name->str_data) == 0)
-						matchingNode = node;
-				}
-				break;
+			if (aliasNode->name == name->str_data)
+				matchingNode = node;
+		}
+		else if ((fieldNode = ExprNode::as<FieldNode>(node)))
+		{
+			if (fieldNode->dsqlField->fld_name == name->str_data)
+				matchingNode = node;
+		}
+		else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
+		{
+			if (strcmp(derivedField->name.c_str(), name->str_data) == 0)
+				matchingNode = node;
 		}
 
 		if (matchingNode)
@@ -3859,40 +3842,27 @@ dsql_nod* PASS1_lookup_alias(DsqlCompilerScratch* dsqlScratch, const dsql_str* n
 				// There was already a node matched, thus raise ambiguous field name error.
 				TEXT buffer1[256];
 				buffer1[0] = 0;
-				switch (returnNode->nod_type)
-				{
-					case nod_alias:
-						strcat(buffer1, "an alias");
-						break;
 
-					default:
-						if (ExprNode::is<FieldNode>(returnNode))
-							strcat(buffer1, "a field");
-						else if (ExprNode::is<DerivedFieldNode>(returnNode))
-							strcat(buffer1, "a derived field");
-						else
-							strcat(buffer1, "an item");
-						break;
-				}
+				if (ExprNode::is<DsqlAliasNode>(returnNode))
+					strcat(buffer1, "an alias");
+				else if (ExprNode::is<FieldNode>(returnNode))
+					strcat(buffer1, "a field");
+				else if (ExprNode::is<DerivedFieldNode>(returnNode))
+					strcat(buffer1, "a derived field");
+				else
+					strcat(buffer1, "an item");
 
 				TEXT buffer2[256];
 				buffer2[0] = 0;
 
-				switch (matchingNode->nod_type)
-				{
-					case nod_alias:
-						strcat(buffer2, "an alias");
-						break;
-
-					default:
-						if (ExprNode::is<FieldNode>(matchingNode))
-							strcat(buffer2, "a field");
-						else if (ExprNode::is<DerivedFieldNode>(matchingNode))
-							strcat(buffer2, "a derived field");
-						else
-							strcat(buffer2, "an item");
-						break;
-				}
+				if (ExprNode::is<DsqlAliasNode>(matchingNode))
+					strcat(buffer2, "an alias");
+				else if (ExprNode::is<FieldNode>(matchingNode))
+					strcat(buffer2, "a field");
+				else if (ExprNode::is<DerivedFieldNode>(matchingNode))
+					strcat(buffer2, "a derived field");
+				else
+					strcat(buffer2, "an item");
 
 				strcat(buffer2, " in the select list with name");
 
@@ -3927,90 +3897,75 @@ static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch* dsqlScratch, thre
 	DEV_BLKCHK(select_item, dsql_type_nod);
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
+	DsqlAliasNode* aliasNode;
+	SubQueryNode* subQueryNode;
+	DsqlMapNode* mapNode;
+	FieldNode* fieldNode;
+	DerivedFieldNode* derivedField;
 
-	switch (select_item->nod_type)
+	if ((aliasNode = ExprNode::as<DsqlAliasNode>(select_item)))
 	{
-		case nod_alias:
-			{
-				const dsql_str* alias_alias = (dsql_str*) select_item->nod_arg[e_alias_alias];
+		// Create a derived field and ignore alias node.
+		DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+			aliasNode->name, dsqlScratch->scopeLevel, aliasNode->value);
 
-				// Create a derived field and ignore alias node.
+		dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+		nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+		nod->nod_desc = aliasNode->value->nod_desc;
 
-				DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
-					alias_alias->str_data, dsqlScratch->scopeLevel, select_item->nod_arg[e_alias_value]);
+		return nod;
+	}
+	else if ((subQueryNode = ExprNode::as<SubQueryNode>(select_item)))
+	{
+		// Try to generate derived field from sub-select
+		dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb,
+			subQueryNode->dsqlValue1);
 
-				dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-				nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
-				nod->nod_desc = select_item->nod_desc;
+		if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
+		{
+			derivedField->dsqlValue = select_item;
+			return derived_field;
+		}
+	}
+	else if ((mapNode = ExprNode::as<DsqlMapNode>(select_item)))
+	{
+		// Aggregate's have map on top.
+		dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb, mapNode->map->map_node);
 
-				return nod;
-			}
+		// If we had succesfully made a derived field node change it with orginal map.
+		if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
+		{
+			derivedField->dsqlValue = select_item;
+			derivedField->scope = dsqlScratch->scopeLevel;
+			derived_field->nod_desc = select_item->nod_desc;
+			return derived_field;
+		}
+	}
+	else if ((fieldNode = ExprNode::as<FieldNode>(select_item)))
+	{
+		// Create a derived field and hook in.
 
-		case nod_class_exprnode:
-			{
-				SubQueryNode* subQueryNode;
-				DsqlMapNode* mapNode;
-				FieldNode* fieldNode;
-				DerivedFieldNode* derivedField;
+		DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+			fieldNode->dsqlField->fld_name, dsqlScratch->scopeLevel, select_item);
 
-				if ((subQueryNode = ExprNode::as<SubQueryNode>(select_item)))
-				{
-					// Try to generate derived field from sub-select
-					dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb,
-						subQueryNode->dsqlValue1);
+		dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+		nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+		nod->nod_desc = fieldNode->dsqlDesc;
 
-					if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
-					{
-						derivedField->dsqlValue = select_item;
-						return derived_field;
-					}
-				}
-				else if ((mapNode = ExprNode::as<DsqlMapNode>(select_item)))
-				{
-					// Aggregate's have map on top.
-					dsql_nod* derived_field = pass1_make_derived_field(dsqlScratch, tdbb, mapNode->map->map_node);
+		return nod;
+	}
+	else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
+	{
+		// Create a derived field that points to a derived field.
 
-					// If we had succesfully made a derived field node change it with orginal map.
-					if ((derivedField = ExprNode::as<DerivedFieldNode>(derived_field)))
-					{
-						derivedField->dsqlValue = select_item;
-						derivedField->scope = dsqlScratch->scopeLevel;
-						derived_field->nod_desc = select_item->nod_desc;
-						return derived_field;
-					}
-				}
-				else if ((fieldNode = ExprNode::as<FieldNode>(select_item)))
-				{
-					// Create a derived field and hook in.
+		DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
+			derivedField->name, dsqlScratch->scopeLevel, select_item);
 
-					DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
-						fieldNode->dsqlField->fld_name, dsqlScratch->scopeLevel, select_item);
+		dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
+		nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
+		nod->nod_desc = select_item->nod_desc;
 
-					dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-					nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
-					nod->nod_desc = fieldNode->dsqlDesc;
-
-					return nod;
-				}
-				else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
-				{
-					// Create a derived field that points to a derived field.
-
-					DerivedFieldNode* newField = FB_NEW(pool) DerivedFieldNode(pool,
-						derivedField->name, dsqlScratch->scopeLevel, select_item);
-
-					dsql_nod* nod = MAKE_node(nod_class_exprnode, 1);
-					nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(newField);
-					nod->nod_desc = select_item->nod_desc;
-
-					return nod;
-				}
-
-				break;
-			}
-
-		default:
-			break;
+		return nod;
 	}
 
 	return select_item;
@@ -5836,15 +5791,15 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						// Because this select item has a different descriptor then
 						// our finally descriptor CAST it.
 						dsql_nod* cast_node = NULL;
-						dsql_nod* alias_node = NULL;
+						DsqlAliasNode* newAliasNode = NULL;
+						DsqlAliasNode* aliasNode;
 						DerivedFieldNode* derivedField;
 
 						// Pick a existing cast if available else make a new one.
-						if (select_item->nod_type == nod_alias &&
-							select_item->nod_arg[e_alias_value] &&
-							ExprNode::is<CastNode>(select_item->nod_arg[e_alias_value]))
+						if ((aliasNode = ExprNode::as<DsqlAliasNode>(select_item)) &&
+							aliasNode->value && ExprNode::is<CastNode>(aliasNode->value))
 						{
-							cast_node = select_item->nod_arg[e_alias_value];
+							cast_node = aliasNode->value;
 						}
 						else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)) &&
 							ExprNode::is<CastNode>(derivedField->dsqlValue))
@@ -5867,8 +5822,8 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 							// We want to leave the ALIAS node on his place, because a UNION
 							// uses the select_items from the first sub-rse to determine the
 							// columnname.
-							if (select_item->nod_type == nod_alias)
-								castNode->dsqlSource = select_item->nod_arg[e_alias_value];
+							if ((aliasNode = ExprNode::as<DsqlAliasNode>(select_item)))
+								castNode->dsqlSource = aliasNode->value;
 							else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 								castNode->dsqlSource = derivedField->dsqlValue;
 							else
@@ -5889,14 +5844,10 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 
 							if ((fieldNode = ExprNode::as<FieldNode>(name_node)))
 							{
-								// Create new node for alias and copy fieldname
-								alias_node = MAKE_node(nod_alias, e_alias_count);
-								// Copy fieldname to a new string.
-								dsql_str* str_alias = FB_NEW_RPT(*tdbb->getDefaultPool(),
-									fieldNode->dsqlField->fld_name.length()) dsql_str;
-								strcpy(str_alias->str_data, fieldNode->dsqlField->fld_name.c_str());
-								str_alias->str_length = fieldNode->dsqlField->fld_name.length();
-								alias_node->nod_arg[e_alias_alias] = (dsql_nod*) str_alias;
+								// Create new node for alias and copy fieldname.
+								newAliasNode = FB_NEW(*tdbb->getDefaultPool()) DsqlAliasNode(
+									*tdbb->getDefaultPool(), fieldNode->dsqlField->fld_name, NULL);
+								// The alias value will be assigned a bit later.
 							}
 						}
 
@@ -5928,10 +5879,10 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						if (select_item->nod_desc.dsc_flags & DSC_nullable)
 							cast_node->nod_desc.dsc_flags |= DSC_nullable;
 
-						if (select_item->nod_type == nod_alias)
+						if ((aliasNode = ExprNode::as<DsqlAliasNode>(select_item)))
 						{
-							select_item->nod_arg[e_alias_value] = cast_node;
-							select_item->nod_desc = desc;
+							aliasNode->value = cast_node;
+							aliasNode->value->nod_desc = desc;
 						}
 						else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 						{
@@ -5942,11 +5893,13 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						{
 							// If a new alias was created for keeping original field-name
 							// make the alias the "top" node.
-							if (alias_node)
+							if (newAliasNode)
 							{
-								alias_node->nod_arg[e_alias_value] = cast_node;
-								alias_node->nod_desc = cast_node->nod_desc;
-								input->nod_arg[position] = alias_node;
+								newAliasNode->value = cast_node;
+								newAliasNode->value->nod_desc = cast_node->nod_desc;
+								input->nod_arg[position] = MAKE_node(nod_class_exprnode, 1);
+								input->nod_arg[position]->nod_arg[0] =
+									reinterpret_cast<dsql_nod*>(newAliasNode);
 							}
 							else
 								input->nod_arg[position] = cast_node;
@@ -7038,9 +6991,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	switch (node->nod_type)
 	{
-	case nod_alias:
-		verb = "alias";
-		break;
 	case nod_all:
 		verb = "all";
 		break;

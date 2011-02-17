@@ -7358,37 +7358,27 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		const dsql_nod* nameNode = fieldNode;
 		const char* aliasName = NULL;
 
-		while (nameNode->nod_type == Dsql::nod_alias ||
+		while (ExprNode::is<DsqlAliasNode>(nameNode) ||
 			ExprNode::is<DerivedFieldNode>(nameNode) ||
 			ExprNode::is<DsqlMapNode>(nameNode))
 		{
-			switch (nameNode->nod_type)
+			const DsqlAliasNode* aliasNode;
+			const DsqlMapNode* mapNode;
+			const DerivedFieldNode* derivedField;
+
+			if ((aliasNode = ExprNode::as<DsqlAliasNode>(nameNode)))
 			{
-				case Dsql::nod_alias:
-					if (!aliasName)
-						aliasName = ((dsql_str*) nameNode->nod_arg[Dsql::e_alias_alias])->str_data;
-					nameNode = nameNode->nod_arg[Dsql::e_alias_value];
-					break;
-
-				case Dsql::nod_class_exprnode:
-				{
-					const DsqlMapNode* mapNode;
-					const DerivedFieldNode* derivedField;
-
-					if ((mapNode = ExprNode::as<DsqlMapNode>(nameNode)))
-						nameNode = mapNode->map->map_node;
-					else if ((derivedField = ExprNode::as<DerivedFieldNode>(nameNode)))
-					{
-						if (!aliasName)
-							aliasName = derivedField->name.c_str();
-						nameNode = derivedField->dsqlValue;
-					}
-
-					break;
-				}
-
-				default:
-					break;
+				if (!aliasName)
+					aliasName = aliasNode->name.c_str();
+				nameNode = aliasNode->value;
+			}
+			else if ((mapNode = ExprNode::as<DsqlMapNode>(nameNode)))
+				nameNode = mapNode->map->map_node;
+			else if ((derivedField = ExprNode::as<DerivedFieldNode>(nameNode)))
+			{
+				if (!aliasName)
+					aliasName = derivedField->name.c_str();
+				nameNode = derivedField->dsqlValue;
 			}
 		}
 
@@ -7407,8 +7397,10 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 		// Check if this is a field or an expression.
 
-		if (fieldNode->nod_type == Dsql::nod_alias)
-			fieldNode = fieldNode->nod_arg[Dsql::e_alias_value];
+		const DsqlAliasNode* aliasNode = ExprNode::as<DsqlAliasNode>(fieldNode);
+
+		if (aliasNode)
+			fieldNode = aliasNode->value;
 
 		dsql_fld* field = NULL;
 		const dsql_ctx* context = NULL;
@@ -7923,8 +7915,10 @@ void CreateAlterViewNode::defineUpdateAction(DsqlCompilerScratch* dsqlScratch,
 	for (; (ptr < end) && (ptr2 < end2); ptr++, ptr2++)
 	{
 		dsql_nod* fieldNode = *ptr;
-		if (fieldNode->nod_type == Dsql::nod_alias)
-			fieldNode = fieldNode->nod_arg[Dsql::e_alias_value];
+		DsqlAliasNode* aliasNode;
+
+		if ((aliasNode = ExprNode::as<DsqlAliasNode>(fieldNode)))
+			fieldNode = aliasNode->value;
 
 		// Generate the actual comparisons.
 

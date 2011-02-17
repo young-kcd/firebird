@@ -115,7 +115,6 @@ enum nod_t
 	nod_flag,
 	nod_unique,
 	nod_field_name,
-	nod_alias,
 	nod_user_name,
 	nod_user_group,
 	nod_var_name,
@@ -390,11 +389,6 @@ enum node_args {
 	e_grant_grant,
 	e_grant_grantor,
 	e_grant_count,
-
-	e_alias_value = 0,		// nod_alias
-	e_alias_alias,
-	e_alias_imp_join,
-	e_alias_count,
 
 	e_rct_name = 0,			// nod_rel_constraint
 	e_rct_type,

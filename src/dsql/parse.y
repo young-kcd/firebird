@@ -4380,7 +4380,8 @@ select_items
 
 select_item
 	: value
-	| value as_noise symbol_item_alias_name		{ $$ = make_node(nod_alias, 2, $1, $3); }
+	| value as_noise symbol_item_alias_name
+		{ $$ = makeClassNode(newNode<DsqlAliasNode>(toName($3), $1)); }
 	| symbol_table_alias_name '.' '*'
 		{ $$ = make_node (nod_field_name, (int) e_fln_count, $1, NULL); }
 	;

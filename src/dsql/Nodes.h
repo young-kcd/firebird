@@ -325,6 +325,7 @@ public:
 	{
 		// Value types
 		TYPE_AGGREGATE,
+		TYPE_ALIAS,
 		TYPE_ARITHMETIC,
 		TYPE_BOOL_AS_VALUE,
 		TYPE_CAST,

@@ -1888,22 +1888,16 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				{
 					const TEXT* name = NULL;
 					dsql_nod* item = j.object();
+					DsqlAliasNode* aliasNode;
 					FieldNode* fieldNode;
 					DerivedFieldNode* derivedField;
 
-					switch (item->nod_type)
-					{
-						case Dsql::nod_alias:
-							name = reinterpret_cast<dsql_str*>(item->nod_arg[Dsql::e_alias_alias])->str_data;
-							break;
-
-						default:
-							if ((fieldNode = ExprNode::as<FieldNode>(item)))
-								name = fieldNode->dsqlField->fld_name.c_str();
-							else if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
-								name = derivedField->name.c_str();
-							break;
-					}
+					if ((aliasNode = ExprNode::as<DsqlAliasNode>(item)))
+						name = aliasNode->name.c_str();
+					else if ((fieldNode = ExprNode::as<FieldNode>(item)))
+						name = fieldNode->dsqlField->fld_name.c_str();
+					else if ((derivedField = ExprNode::as<DerivedFieldNode>(item)))
+						name = derivedField->name.c_str();
 
 					if (name)
 					{
@@ -1999,18 +1993,20 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				DsqlNodStack stack;
 
 				dsql_nod* temp = impJoinLeft->value;
-				if (temp->nod_type == Dsql::nod_alias)
-					temp = temp->nod_arg[Dsql::e_alias_value];
+				DsqlAliasNode* aliasNode = ExprNode::as<DsqlAliasNode>(temp);
+				CoalesceNode* coalesceNode;
+
+				if (aliasNode)
+					temp = aliasNode->value;
 
 				{	// scope
 					PsqlChanger changer(dsqlScratch, false);
-					CoalesceNode* coalesce;
 
-					if ((coalesce = ExprNode::as<CoalesceNode>(temp)))
+					if ((coalesceNode = ExprNode::as<CoalesceNode>(temp)))
 					{
-						dsql_nod** ptr = coalesce->dsqlArgs->nod_arg;
+						dsql_nod** ptr = coalesceNode->dsqlArgs->nod_arg;
 
-						for (dsql_nod** end = ptr + coalesce->dsqlArgs->nod_count;
+						for (dsql_nod** end = ptr + coalesceNode->dsqlArgs->nod_count;
 							 ptr != end;
 							 ++ptr)
 						{
@@ -2020,14 +2016,16 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					else
 						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
 
-					if ((temp = impJoinRight->value)->nod_type == Dsql::nod_alias)
-						temp = temp->nod_arg[Dsql::e_alias_value];
+					temp = impJoinRight->value;
 
-					if ((coalesce = ExprNode::as<CoalesceNode>(temp)))
+					if ((aliasNode = ExprNode::as<DsqlAliasNode>(temp)))
+						temp = aliasNode->value;
+
+					if ((coalesceNode = ExprNode::as<CoalesceNode>(temp)))
 					{
-						dsql_nod** ptr = coalesce->dsqlArgs->nod_arg;
+						dsql_nod** ptr = coalesceNode->dsqlArgs->nod_arg;
 
-						for (dsql_nod** end = ptr + coalesce->dsqlArgs->nod_count;
+						for (dsql_nod** end = ptr + coalesceNode->dsqlArgs->nod_count;
 							 ptr != end;
 							 ++ptr)
 						{
@@ -2038,14 +2036,16 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						PASS1_put_args_on_stack(dsqlScratch, temp, stack);
 				}
 
-				CoalesceNode* coalesce = FB_NEW(getPool()) CoalesceNode(getPool(), MAKE_list(stack));
+				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), MAKE_list(stack));
 
-				impJoinLeft->value = MAKE_node(Dsql::nod_alias, Dsql::e_alias_count);
-				impJoinLeft->value->nod_arg[Dsql::e_alias_value] = MAKE_node(Dsql::nod_class_exprnode, 1);
-				impJoinLeft->value->nod_arg[Dsql::e_alias_value]->nod_arg[0] =
-					reinterpret_cast<dsql_nod*>(coalesce);
-				impJoinLeft->value->nod_arg[Dsql::e_alias_alias] = reinterpret_cast<dsql_nod*>(fldName);
-				impJoinLeft->value->nod_arg[Dsql::e_alias_imp_join] = reinterpret_cast<dsql_nod*>(impJoinLeft);
+				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), fldName->str_data,
+					MAKE_node(Dsql::nod_class_exprnode, 1));
+
+				impJoinLeft->value = MAKE_node(Dsql::nod_class_exprnode, 1);
+				impJoinLeft->value->nod_arg[0] = reinterpret_cast<dsql_nod*>(aliasNode);
+
+				aliasNode->value->nod_arg[0] = reinterpret_cast<dsql_nod*>(coalesceNode);
+				aliasNode->implicitJoin = impJoinLeft;
 
 				impJoinRight->visibleInContext = NULL;
 
@@ -3122,25 +3122,16 @@ static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* n
 		PASS1_field_unknown(qualifier.c_str(), name->str_data, flawedNode);
 	}
 
+	DsqlAliasNode* aliasNode;
 	FieldNode* fieldNode;
 	DerivedFieldNode* derivedField;
 
-	if ((fieldNode = ExprNode::as<FieldNode>(node)))
-	{
+	if ((aliasNode = ExprNode::as<DsqlAliasNode>(node)))
+		ctx = aliasNode->implicitJoin->visibleInContext;
+	else if ((fieldNode = ExprNode::as<FieldNode>(node)))
 		ctx = fieldNode->dsqlContext;
-		return node;
-	}
 	else if ((derivedField = ExprNode::as<DerivedFieldNode>(node)))
-	{
 		ctx = derivedField->context;
-		return node;
-	}
-
-	if (node->nod_type == Dsql::nod_alias)
-	{
-		fb_assert(node->nod_count >= (int) Dsql::e_alias_imp_join - 1);
-		ctx = reinterpret_cast<ImplicitJoin*>(node->nod_arg[Dsql::e_alias_imp_join])->visibleInContext;
-	}
 	else
 	{
 		fb_assert(false);

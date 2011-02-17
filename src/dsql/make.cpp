@@ -387,10 +387,6 @@ void MAKE_desc(DsqlCompilerScratch* dsqlScratch, dsc* desc, dsql_nod* node)
 		return;
 #endif
 
-	case nod_alias:
-		MAKE_desc(dsqlScratch, desc, node->nod_arg[e_alias_value]);
-		return;
-
 	case nod_select_expr:	// this should come from pass1_any call to set_parameter_type
 		{
 			node = node->nod_arg[e_sel_query_spec];
@@ -795,32 +791,10 @@ void MAKE_parameter_names(dsql_par* parameter, const dsql_nod* item)
 
 	fb_assert(parameter && item);
 
-	const char* name_alias = NULL;
-	const ValueExprNode* exprNode;
-
-	switch (item->nod_type)
+	if (item->nod_type == nod_class_exprnode)
 	{
-	case nod_class_exprnode:
-		{
-			ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(item->nod_arg[0]);
-			if (exprNode->kind == DmlNode::KIND_VALUE)
-				exprNode->setParameterName(parameter);
-		}
-		break;
-	case nod_alias:
-		string = (dsql_str*) item->nod_arg[e_alias_alias];
-		alias = item->nod_arg[e_alias_value];
-
-		if ((exprNode = ExprNode::as<RecordKeyNode>(alias)) ||
-			(exprNode = ExprNode::as<FieldNode>(alias)))
-		{
+		ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(item->nod_arg[0]);
+		if (exprNode->kind == DmlNode::KIND_VALUE)
 			exprNode->setParameterName(parameter);
-		}
-
-		parameter->par_alias = string->str_data;
-		break;
 	}
-
-	if (name_alias)
-		parameter->par_name = parameter->par_alias = name_alias;
 }

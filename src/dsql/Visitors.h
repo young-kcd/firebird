@@ -375,10 +375,6 @@ inline bool DsqlNodeVisitor<T, T2>::visitChildren(T node)
 			break;
 		}
 
-		case nod_alias:
-			ret |= visit(&node->nod_arg[e_alias_value]);
-			break;
-
 		case nod_order:
 			ret |= visit(&node->nod_arg[e_order_field]);
 			break;

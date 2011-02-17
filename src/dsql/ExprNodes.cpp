@@ -6040,6 +6040,44 @@ dsc* LiteralNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
+void DsqlAliasNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("DsqlAliasNode");
+	ExprNode::print(text, nodes);
+}
+
+ValueExprNode* DsqlAliasNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	DsqlAliasNode* node = FB_NEW(getPool()) DsqlAliasNode(getPool(), name,
+		PASS1_node(dsqlScratch, value));
+	MAKE_desc(dsqlScratch, &node->value->nod_desc, node->value);
+	return node;
+}
+
+void DsqlAliasNode::setParameterName(dsql_par* parameter) const
+{
+	const ValueExprNode* exprNode;
+
+	if ((exprNode = ExprNode::as<RecordKeyNode>(value)) || (exprNode = ExprNode::as<FieldNode>(value)))
+		exprNode->setParameterName(parameter);
+
+	parameter->par_alias = name;
+}
+
+void DsqlAliasNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	GEN_expr(dsqlScratch, value);
+}
+
+void DsqlAliasNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	MAKE_desc(dsqlScratch, desc, value);
+}
+
+
+//--------------------
+
+
 DsqlMapNode::DsqlMapNode(MemoryPool& pool, dsql_ctx* aContext, dsql_map* aMap)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_MAP>(pool),
 	  context(aContext),
@@ -6135,41 +6173,32 @@ void DsqlMapNode::setParameterName(dsql_par* parameter) const
 	const char* nameAlias = NULL;
 	const FieldNode* fieldNode = NULL;
 	const dsql_nod* alias;
-	const dsql_str* str;
 
-	switch (nestNode->nod_type)
+	const AggNode* aggNode;
+	const DsqlAliasNode* aliasNode;
+	const LiteralNode* literalNode;
+	const DerivedFieldNode* derivedField;
+
+	if ((aggNode = ExprNode::as<AggNode>(nestNode)))
+		aggNode->setParameterName(parameter);
+	else if ((aliasNode = ExprNode::as<DsqlAliasNode>(nestNode)))
 	{
-		case Dsql::nod_alias:
-			str = (dsql_str*) nestNode->nod_arg[Dsql::e_alias_alias];
-			parameter->par_alias = str->str_data;
-			alias = nestNode->nod_arg[Dsql::e_alias_value];
-			fieldNode = ExprNode::as<FieldNode>(alias);
-			break;
-
-		case Dsql::nod_class_exprnode:
-		{
-			const AggNode* aggNode;
-			const LiteralNode* literalNode;
-			const DerivedFieldNode* derivedField;
-
-			if ((aggNode = ExprNode::as<AggNode>(nestNode)))
-				aggNode->setParameterName(parameter);
-			else if ((literalNode = ExprNode::as<LiteralNode>(nestNode)))
-				literalNode->setParameterName(parameter);
-			else if (ExprNode::is<RecordKeyNode>(nestNode))
-				nameAlias = DB_KEY_NAME;
-			else if ((derivedField = ExprNode::as<DerivedFieldNode>(nestNode)))
-			{
-				parameter->par_alias = derivedField->name;
-				alias = derivedField->dsqlValue;
-				fieldNode = ExprNode::as<FieldNode>(alias);
-			}
-			else if ((fieldNode = ExprNode::as<FieldNode>(nestNode)))
-				nameAlias = fieldNode->dsqlField->fld_name.c_str();
-
-			break;
-		}
-	} // switch(nestNode->nod_type)
+		parameter->par_alias = aliasNode->name;
+		alias = aliasNode->value;
+		fieldNode = ExprNode::as<FieldNode>(alias);
+	}
+	else if ((literalNode = ExprNode::as<LiteralNode>(nestNode)))
+		literalNode->setParameterName(parameter);
+	else if (ExprNode::is<RecordKeyNode>(nestNode))
+		nameAlias = DB_KEY_NAME;
+	else if ((derivedField = ExprNode::as<DerivedFieldNode>(nestNode)))
+	{
+		parameter->par_alias = derivedField->name;
+		alias = derivedField->dsqlValue;
+		fieldNode = ExprNode::as<FieldNode>(alias);
+	}
+	else if ((fieldNode = ExprNode::as<FieldNode>(nestNode)))
+		nameAlias = fieldNode->dsqlField->fld_name.c_str();
 
 	const dsql_ctx* context = NULL;
 	const dsql_fld* field;

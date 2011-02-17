@@ -680,6 +680,49 @@ public:
 };
 
 
+class DsqlAliasNode : public TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>
+{
+public:
+	DsqlAliasNode(MemoryPool& pool, const Firebird::MetaName& aName, dsql_nod* aValue)
+		: TypedNode<ValueExprNode, ExprNode::TYPE_ALIAS>(pool),
+		  name(aName),
+		  value(aValue),
+		  implicitJoin(NULL)
+	{
+		addChildNode(value);
+	}
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+
+	virtual void setParameterName(dsql_par* parameter) const;
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+	{
+		fb_assert(false);
+	}
+
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+public:
+	const Firebird::MetaName name;
+	dsql_nod* value;
+	NestConst<ImplicitJoin> implicitJoin;
+};
+
+
 class DsqlMapNode : public TypedNode<ValueExprNode, ExprNode::TYPE_MAP>
 {
 public:
