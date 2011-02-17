@@ -396,6 +396,7 @@ enum dfw_t {
 	dfw_begin_backup,
 	dfw_end_backup,
 	dfw_user_management,
+	dfw_create_generator,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory

@@ -357,6 +357,7 @@ static bool modify_trigger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool create_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_collation(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_exception(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool create_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool modify_generator(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_udf(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
@@ -448,6 +449,7 @@ static const deferred_task task_table[] =
 	{ dfw_create_collation, create_collation },
 	{ dfw_delete_collation, delete_collation },
 	{ dfw_delete_exception, delete_exception },
+	{ dfw_create_generator, create_generator },
 	{ dfw_delete_generator, delete_generator },
 	{ dfw_modify_generator, modify_generator },
 	{ dfw_delete_udf, delete_udf },
@@ -2896,6 +2898,40 @@ static bool delete_exception(thread_db*	tdbb,
 
 	case 4:
 		break;
+	}
+
+	return false;
+}
+
+
+static bool create_generator(thread_db* tdbb,
+							 SSHORT phase,
+							 DeferredWork* work,
+							 jrd_tra* /*transaction*/)
+{
+/**************************************
+ *
+ *	c r e a t e _ g e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize the generator after creation.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	switch (phase)
+	{
+		case 1:
+			{
+				const SLONG id = MET_lookup_generator(tdbb, work->dfw_name);
+				if (id >= 0)
+				{
+					DPM_gen_id(tdbb, id, true, 0);
+				}
+			}
+			break;
 	}
 
 	return false;

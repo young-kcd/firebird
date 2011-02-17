@@ -2000,7 +2000,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-SLONG MET_lookup_generator(thread_db* tdbb, const TEXT* name)
+SLONG MET_lookup_generator(thread_db* tdbb, const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -2009,15 +2009,14 @@ SLONG MET_lookup_generator(thread_db* tdbb, const TEXT* name)
  **************************************
  *
  * Functional description
- *      Lookup generator (aka gen_id).  If we can't find it, make a new one.
- * CVC: I don't see how this function "makes" a new generator; it simply
- *		returns -1 if the name is not found.
+ *      Lookup generator ID by its name.
+ *		If the name is not found, return -1.
  *
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (!strcmp(name, "RDB$GENERATORS"))
+	if (name == "RDB$GENERATORS")
 		return 0;
 
 	SLONG gen_id = -1;
@@ -2025,7 +2024,7 @@ SLONG MET_lookup_generator(thread_db* tdbb, const TEXT* name)
 	jrd_req* request = CMP_find_request(tdbb, irq_r_gen_id, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
-		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ name
+		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ name.c_str()
 
 		if (!REQUEST(irq_r_gen_id))
 			REQUEST(irq_r_gen_id) = request;

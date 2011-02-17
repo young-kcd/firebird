@@ -3119,7 +3119,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			Firebird::MetaName name;
 
 			par_name(csb, name);
-			const SLONG tmp = MET_lookup_generator(tdbb, name.c_str());
+			const SLONG tmp = MET_lookup_generator(tdbb, name);
 			if (tmp < 0) {
 				error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 			}
