@@ -5288,7 +5288,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	MetaName name;
 	PAR_name(csb, name);
 
-	const SLONG id = MET_lookup_generator(tdbb, name.c_str());
+	const SLONG id = MET_lookup_generator(tdbb, name);
 	if (id < 0)
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 

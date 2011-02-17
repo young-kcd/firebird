@@ -4724,7 +4724,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 
 				GenIdNode* genNode = FB_NEW(csb->csb_pool) GenIdNode(csb->csb_pool,
 					(csb->csb_g_flags & csb_blr_version4), (*ptr1)->fld_generator_name);
-				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name.c_str());
+				genNode->id = MET_lookup_generator(tdbb, (*ptr1)->fld_generator_name);
 				genNode->arg = literal;
 
 				assign->asgnFrom = genNode;
@@ -5219,7 +5219,7 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 	SetGeneratorNode* node = FB_NEW(pool) SetGeneratorNode(pool);
 
-	node->genId = MET_lookup_generator(tdbb, name.c_str());
+	node->genId = MET_lookup_generator(tdbb, name);
 	if (node->genId < 0)
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 

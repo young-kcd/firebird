@@ -480,6 +480,7 @@ enum dfw_t {
 	dfw_drop_package_body,
 	dfw_check_not_null,
 	dfw_store_view_context_type,
+	dfw_create_generator,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
