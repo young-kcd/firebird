@@ -1,3 +1,11 @@
+ 2011-02-16 14:38  asfernandes 
+   M src/dsql/parse.y
+Move ALIAS.* construct from column_name to select_item.
+
+ 2011-02-16 14:37  asfernandes 
+   M src/dsql/parse.y
+Misc
+
  2011-02-16 01:38  asfernandes 
    M src/dsql/ExprNodes.cpp
    M src/dsql/ExprNodes.h
