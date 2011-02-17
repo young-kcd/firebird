@@ -10589,7 +10589,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 
 						parameter->par_desc.dsc_length += sizeof(USHORT);
 					}
-					else if (parameter->par_desc.dsc_dtype > dtype_any_text)
+					else if (!parameter->par_desc.isText() && !parameter->par_desc.isBlob())
 					{
 						const USHORT toCharSetBPC = METD_get_charset_bpc(
 							statement, att->att_charset);
@@ -10602,7 +10602,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 							sizeof(USHORT);
 						parameter->par_desc.dsc_sub_type = 0;
 						parameter->par_desc.dsc_scale = 0;
-						parameter->par_desc.dsc_ttype() = ttype_dynamic;
+						parameter->par_desc.setTextType(att->att_charset);
 					}
 				}
 				return true;
