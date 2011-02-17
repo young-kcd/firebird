@@ -4628,7 +4628,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256];
+	UCHAR *p1, *p2 = NULL, temp1[256];
 	SLONG l2 = 0;
 	USHORT type1;
 	MoveBuffer match_str;
@@ -4681,15 +4681,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 		 * but don't transliterate character set if the source blob is binary
 		 */
 		if (!computed_invariant) {
-			if (type1 == ttype_none) {
-				l2 =
-					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
-								sizeof(temp2));
-			} 
-			else {
-				l2 =
-					MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
-			}
+			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 		}
 
 		blb* blob =	BLB_open(tdbb, request->req_transaction,
