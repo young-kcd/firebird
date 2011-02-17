@@ -7097,7 +7097,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 			dsqlParameter->par_desc.dsc_length += sizeof(USHORT);
 		}
-		else if (dsqlParameter->par_desc.dsc_dtype > dtype_any_text)
+		else if (!dsqlParameter->par_desc.isText() && !dsqlParameter->par_desc.isBlob())
 		{
 			const USHORT toCharSetBPC = METD_get_charset_bpc(
 				dsqlScratch->getTransaction(), tdbb->getCharSet());
@@ -7109,7 +7109,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 			dsqlParameter->par_desc.dsc_length = LIKE_PARAM_LEN * toCharSetBPC + sizeof(USHORT);
 			dsqlParameter->par_desc.dsc_sub_type = 0;
 			dsqlParameter->par_desc.dsc_scale = 0;
-			dsqlParameter->par_desc.dsc_ttype() = ttype_dynamic;
+			dsqlParameter->par_desc.setTextType(tdbb->getCharSet());
 		}
 	}
 
