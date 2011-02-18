@@ -5145,7 +5145,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
- *	t h r e a d
+ *	l o o p T h r e a d
  *
  **************************************
  *
