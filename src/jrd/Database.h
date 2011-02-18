@@ -396,13 +396,12 @@ public:
 
 		struct ValueCache
 		{
-			Lock* lock;
-			SLONG curVal;
-			SLONG maxVal;
+			Lock* lock;		// lock which holds shared counter value
+			SLONG curVal;	// current value of shared counter lock
+			SLONG maxVal;	// maximum cached value of shared counter lock
 		};
 
 	public:
-
 		enum
 		{
 			ATTACHMENT_ID_SPACE = 0,
@@ -417,7 +416,6 @@ public:
 		void shutdown(thread_db* tdbb);
 
 	private:
-
 		static int blockingAst(void* arg);
 
 		ValueCache m_counters[TOTAL_ITEMS];

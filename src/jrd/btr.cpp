@@ -3812,7 +3812,7 @@ static ULONG fast_load(thread_db* tdbb,
 		for (keyList::iterator itr = jumpKeys.begin(); itr < jumpKeys.end(); ++itr)
 		{
 			delete[] (*itr)->keyData;
-			delete (*itr);
+			delete *itr;
 		}
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -3829,12 +3829,10 @@ static ULONG fast_load(thread_db* tdbb,
 
 	// If index flush fails, try to delete the index tree.
 	// If the index delete fails, just go ahead and punt.
-	try {
-
+	try
+	{
 		if (error)
-		{
 			ERR_punt();
-		}
 
 		CCH_flush(tdbb, FLUSH_ALL, 0);
 

@@ -115,51 +115,41 @@ void GEN_hidden_variables(DsqlCompilerScratch* dsqlScratch)
  **/
 void GEN_expr(DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
-	switch (node->nod_type)
+	if (node->nod_type == nod_class_exprnode)
 	{
-	case nod_class_exprnode:
+		ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
+
+		if (exprNode->is<RseNode>())
 		{
-			ExprNode* exprNode = reinterpret_cast<ExprNode*>(node->nod_arg[0]);
-
-			if (exprNode->is<RseNode>())
-			{
-				GEN_rse(dsqlScratch, node);
-				return;
-			}
-
-			exprNode->genBlr(dsqlScratch);
-
-			// Check whether the node we just processed is for a dialect 3
-			// operation which gives a different result than the corresponding
-			// operation in dialect 1. If it is, and if the client dialect is 2,
-			// issue a warning about the difference.
-
-			// ASF: Shouldn't we check nod_gen_id2 too?
-
-			if (exprNode->dsqlCompatDialectVerb &&
-				dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
-			{
-				dsc desc;
-				MAKE_desc(dsqlScratch, &desc, node);
-
-				if (desc.dsc_dtype == dtype_int64)
-				{
-					ERRD_post_warning(
-						Arg::Warning(isc_dsql_dialect_warning_expr) <<
-						Arg::Str(exprNode->dsqlCompatDialectVerb));
-				}
-			}
-
+			GEN_rse(dsqlScratch, node);
 			return;
 		}
 
-	case nod_assign:
-		dsqlScratch->appendUChar(blr_assignment);
-		GEN_expr(dsqlScratch, node->nod_arg[0]);
-		GEN_expr(dsqlScratch, node->nod_arg[1]);
-		return;
+		exprNode->genBlr(dsqlScratch);
 
-	default:
+		// Check whether the node we just processed is for a dialect 3
+		// operation which gives a different result than the corresponding
+		// operation in dialect 1. If it is, and if the client dialect is 2,
+		// issue a warning about the difference.
+
+		// ASF: Shouldn't we check nod_gen_id2 too?
+
+		if (exprNode->dsqlCompatDialectVerb &&
+			dsqlScratch->clientDialect == SQL_DIALECT_V6_TRANSITION)
+		{
+			dsc desc;
+			MAKE_desc(dsqlScratch, &desc, node);
+
+			if (desc.dsc_dtype == dtype_int64)
+			{
+				ERRD_post_warning(
+					Arg::Warning(isc_dsql_dialect_warning_expr) <<
+					Arg::Str(exprNode->dsqlCompatDialectVerb));
+			}
+		}
+	}
+	else
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<
 				  // expression evaluation not supported

@@ -2733,10 +2733,11 @@ bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 {
 	FieldNode* fieldNode = other->as<FieldNode>();
 
+	dsc desc1, desc2;
+	getDesc(tdbb, csb, &desc1);
+
 	if (fieldNode)
 	{
-		dsc desc1, desc2;
-		getDesc(tdbb, csb, &desc1);
 		fieldNode->getDesc(tdbb, csb, &desc2);
 
 		if (DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, fieldNode))
@@ -2749,9 +2750,6 @@ bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 	CastNode* o = other->as<CastNode>();
 	fb_assert(o);
 
-	dsc desc1, desc2;
-
-	getDesc(tdbb, csb, &desc1);
 	o->getDesc(tdbb, csb, &desc2);
 
 	return DSC_EQUIV(&desc1, &desc2, true) && source->sameAs(tdbb, csb, o->source);

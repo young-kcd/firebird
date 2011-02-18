@@ -86,8 +86,8 @@ Syntax and notes :
 			CURRENT_USER/CURRENT_ROLE is effective user account and role
 		a3) for remote database - operating system account under which engine
 			process is currently run is effective user account.
-	b) else isc_dpb_user_name (if <user_name> is present and not empty) and isc_dpb_sql_role_name 
-	   (if <role_name> is present and not empty) will be filled in DPB and native autentication 
+	b) else isc_dpb_user_name (if <user_name> is present and not empty) and isc_dpb_sql_role_name
+	   (if <role_name> is present and not empty) will be filled in DPB and native autentication
 	   is performed.
 
 - if WITH CALLER PRIVILEGES is specified and ON EXTERNAL DATA SOURCE is omitted, then
