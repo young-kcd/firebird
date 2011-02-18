@@ -2883,8 +2883,8 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, value->getCharSet());
 
-		const FB_UINT64 byte_offset = offset * charSet->maxBytesPerChar();
-		const FB_UINT64 byte_length = length * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_offset = FB_UINT64(offset) * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_length = FB_UINT64(length) * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())
 		{
