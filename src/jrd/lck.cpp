@@ -212,7 +212,7 @@ inline bool checkLock(const Lock* l)
 #endif
 
 namespace {
-// This class is used as a guard around long waiting call into LM and have 
+// This class is used as a guard around long waiting call into LM and has
 // two purposes :
 //	- set and restore att_wait_lock while waiting inside the LM
 //	- set or clear and restore TDBB_wait_cancel_disable flag in dependence
