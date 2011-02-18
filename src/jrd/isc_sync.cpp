@@ -2924,8 +2924,7 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		unlockSharedSection(lpSect);
 
 		// TODO actual timeout can be of any length
-		const DWORD tm = (dwMilliseconds == INFINITE) ? 5000 : 
-			((dwMilliseconds > 5000) ? 5000 : dwMilliseconds);
+		const DWORD tm = (dwMilliseconds == INFINITE || dwMilliseconds > 5000) ? 5000 :  dwMilliseconds;
 		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, tm);
 
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
