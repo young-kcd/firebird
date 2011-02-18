@@ -571,8 +571,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		{
 			if (!create)
 			{
-				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name,
-										   IRQ_REQUESTS);
+				jrd_req* request = CMP_find_request(tdbb, irq_get_role_name, IRQ_REQUESTS);
 
 				FOR(REQUEST_HANDLE request) X IN RDB$ROLES
 					WITH X.RDB$ROLE_NAME EQ login_name
