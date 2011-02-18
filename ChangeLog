@@ -1,3 +1,21 @@
+ 2011-02-17 17:25  dimitr 
+   M src/jrd/evl.cpp
+Fixed inability to execute LIKE/STARTING/etc if the second argument is a small (<32KB) blob and the first one is a blob of charset NONE. This is partially related to CORE-3233, see my comment there.
+
+ 2011-02-17 07:38  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-3353: Predicate (blob_field LIKE ?) describes the parameter as VARCHAR(30) rather than as BLOB.
+Also, let's never transfer the CS_dynamic pseudo-charset to the client side.
+
+ 2011-02-17 06:00  dimitr 
+   M src/jrd/dfw.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Fixed CORE-3058: New generators are created with wrong value when more than 32K generators was previously created.
+
  2011-02-15 10:07  hvlad 
    M src/remote/inet.cpp
    M src/remote/xdr.h
