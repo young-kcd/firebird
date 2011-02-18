@@ -910,7 +910,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 		// Get address and length of search string - convert to datatype of data
 
 		if (!computed_invariant)
-			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
+			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str, false);
 
 		VaryStr<256> temp1;
 		USHORT xtype1;
@@ -937,7 +937,7 @@ bool ComparativeBoolNode::stringBoolean(thread_db* tdbb, jrd_req* request, dsc* 
 	// but don't transliterate character set if the source blob is binary
 	if (!computed_invariant)
 	{
-		l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
+		l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str, false);
 	}
 
 	blb* blob =	BLB_open(tdbb, request->req_transaction, reinterpret_cast<bid*>(desc1->dsc_address));
