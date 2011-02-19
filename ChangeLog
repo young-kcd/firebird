@@ -1,3 +1,31 @@
+ 2011-02-18 06:52  dimitr 
+   M src/isql/isql.epp
+Restored the pre-v2.5 logic by the customer request.
+
+ 2011-02-18 06:26  dimitr 
+   M src/jrd/evl.cpp
+Fixed the main reason for CORE-3233: LIKE, STARTING and CONTAINING fail if second operand >= 32K. Thanks to Adriano.
+
+ 2011-02-18 04:37  robocop 
+   M src/jrd/SysFunction.cpp
+Make sure at least one operand is promoted to FB_UINT64 before doing the multiplication.
+
+ 2011-02-18 04:35  robocop 
+   M src/remote/server.cpp
+Misc.
+
+ 2011-02-18 04:33  robocop 
+   M src/jrd/scl.epp
+Misc.
+
+ 2011-02-18 04:32  robocop 
+   M src/jrd/lck.cpp
+Misc.
+
+ 2011-02-18 04:30  robocop 
+   M src/jrd/isc_sync.cpp
+Simplification.
+
  2011-02-17 17:25  dimitr 
    M src/jrd/evl.cpp
 Fixed inability to execute LIKE/STARTING/etc if the second argument is a small (<32KB) blob and the first one is a blob of charset NONE. This is partially related to CORE-3233, see my comment there.
