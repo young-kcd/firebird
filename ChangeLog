@@ -1,3 +1,7 @@
+ 2011-02-18 06:28  dimitr 
+   M src/dsql/BoolNodes.cpp
+Fixed the main reason for CORE-3233: LIKE, STARTING and CONTAINING fail if second operand >= 32K. Thanks to Adriano.
+
  2011-02-18 00:52  asfernandes 
    M doc/sql.extensions/README.execute_statement2
    M src/dsql/ExprNodes.cpp
