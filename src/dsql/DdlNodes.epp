@@ -597,7 +597,8 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 
 	fb_assert(action > 0);	// first element is NULL
 	DdlTriggerContext context;
-	context.ddlEvent = DDL_TRIGGER_ACTION_NAMES[action];
+	context.eventType = DDL_TRIGGER_ACTION_NAMES[action][0];
+	context.objectType = DDL_TRIGGER_ACTION_NAMES[action][1];
 	context.objectName = objectName;
 	context.sqlText = sqlText;
 

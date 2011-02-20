@@ -294,7 +294,10 @@ const string SHOW_trigger_action(SINT64 type)
 				buffer += " ";
 
 				if (pos < FB_NELEM(DDL_TRIGGER_ACTION_NAMES))
-					buffer += DDL_TRIGGER_ACTION_NAMES[pos];
+				{
+					buffer += string(DDL_TRIGGER_ACTION_NAMES[pos][0]) + " " +
+						DDL_TRIGGER_ACTION_NAMES[pos][1];
+				}
 				else
 					buffer += "<unknown>";
 			}

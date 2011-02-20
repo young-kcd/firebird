@@ -110,7 +110,9 @@ DDL_TRIGGER context namespace:
 	stack.
 
 	The context elements are:
-	- DDL_EVENT: event name (<ddl event item>)
+	- EVENT_TYPE: event type (CREATE, ALTER, DROP)
+	- OBJECT_TYPE: object type (TABLE, VIEW etc)
+	- DDL_EVENT: event name (<ddl event item>, which is EVENT_TYPE || ' ' || OBJECT_TYPE)
 	- OBJECT_NAME: metadata object name
 	- SQL_TEXT: sql statement text
 
@@ -198,6 +200,8 @@ create table ddl_log (
     id bigint not null primary key,
     moment timestamp not null,
     user_name varchar(31) not null,
+    event_type varchar(25) not null,
+    object_type varchar(25) not null,
     ddl_event varchar(25) not null,
     object_name varchar(31) not null,
     sql_text blob sub_type text not null,
@@ -214,8 +218,11 @@ begin
     -- didn't run, the log will survive.
     in autonomous transaction do
     begin
-        insert into ddl_log (id, moment, user_name, ddl_event, object_name, sql_text, ok)
+        insert into ddl_log (id, moment, user_name, event_type, object_type, ddl_event, object_name,
+                             sql_text, ok)
             values (next value for ddl_seq, current_timestamp, current_user,
+                    rdb$get_context('DDL_TRIGGER', 'EVENT_TYPE'),
+                    rdb$get_context('DDL_TRIGGER', 'OBJECT_TYPE'),
                     rdb$get_context('DDL_TRIGGER', 'DDL_EVENT'),
                     rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME'),
                     rdb$get_context('DDL_TRIGGER', 'SQL_TEXT'),

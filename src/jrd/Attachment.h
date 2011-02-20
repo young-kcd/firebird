@@ -92,13 +92,15 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 struct DdlTriggerContext
 {
 	DdlTriggerContext()
-		: ddlEvent(*getDefaultMemoryPool()),
+		: eventType(*getDefaultMemoryPool()),
+		  objectType(*getDefaultMemoryPool()),
 		  objectName(*getDefaultMemoryPool()),
 		  sqlText(*getDefaultMemoryPool())
 	{
 	}
 
-	Firebird::string ddlEvent;
+	Firebird::string eventType;
+	Firebird::string objectType;
 	Firebird::MetaName objectName;
 	Firebird::string sqlText;
 };

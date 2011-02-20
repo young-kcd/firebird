@@ -210,6 +210,8 @@ const char
 	SESSION_ID_NAME[] = "SESSION_ID",
 	CURRENT_USER_NAME[] = "CURRENT_USER",
 	CURRENT_ROLE_NAME[] = "CURRENT_ROLE",
+	EVENT_TYPE_NAME[] = "EVENT_TYPE",
+	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
 	DDL_EVENT_NAME[] = "DDL_EVENT",
 	OBJECT_NAME[] = "OBJECT_NAME",
 	SQL_TEXT_NAME[] = "SQL_TEXT";
@@ -2136,8 +2138,12 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		const DdlTriggerContext& context = Stack<DdlTriggerContext>::const_iterator(
 			attachment->ddlTriggersContext).object();
 
-		if (nameStr == DDL_EVENT_NAME)
-			resultStr = context.ddlEvent;
+		if (nameStr == EVENT_TYPE_NAME)
+			resultStr = context.eventType;
+		else if (nameStr == OBJECT_TYPE_NAME)
+			resultStr = context.objectType;
+		else if (nameStr == DDL_EVENT_NAME)
+			resultStr = context.eventType + " " + context.objectType;
 		else if (nameStr == OBJECT_NAME)
 		{
 			resultStr = context.objectName.c_str();
