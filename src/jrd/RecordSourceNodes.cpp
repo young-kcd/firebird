@@ -71,9 +71,12 @@ namespace
 				(*ptr)->getStreams(m_streams);
 			}
 
+			m_flags.resize(m_streams.getCount());
+
 			for (size_t i = 0; i < m_streams.getCount(); i++)
 			{
 				const UCHAR stream = m_streams[i];
+				m_flags[i] = m_csb->csb_rpt[stream].csb_flags;
 				m_csb->csb_rpt[stream].csb_flags |= (csb_active | csb_sub_stream);
 			}
 		}
