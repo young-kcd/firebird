@@ -125,7 +125,7 @@ void SingularStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SingularStream::findUsedStreams(StreamsArray& streams) const
+void SingularStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

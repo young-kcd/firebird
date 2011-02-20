@@ -93,7 +93,7 @@ public:
 
 	RseNode* const rse;
 	BoolExprNodeStack* parentStack;
-	StreamsArray outerStreams, subStreams;
+	StreamList outerStreams, subStreams;
 	BoolExprNodeStack conjunctStack;
 	SLONG conjunctCount;
 	stream_array_t compileStreams, beds, localStreams, keyStreams;

@@ -120,7 +120,7 @@ void FilteredStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FilteredStream::findUsedStreams(StreamsArray& streams) const
+void FilteredStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

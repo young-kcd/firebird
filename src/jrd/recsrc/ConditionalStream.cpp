@@ -137,7 +137,7 @@ void ConditionalStream::markRecursive()
 	m_second->markRecursive();
 }
 
-void ConditionalStream::findUsedStreams(StreamsArray& streams) const
+void ConditionalStream::findUsedStreams(StreamList& streams) const
 {
 	m_first->findUsedStreams(streams);
 	m_second->findUsedStreams(streams);

@@ -130,7 +130,7 @@ void FirstRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void FirstRowsStream::findUsedStreams(StreamsArray& streams) const
+void FirstRowsStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

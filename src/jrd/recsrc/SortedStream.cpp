@@ -136,7 +136,7 @@ void SortedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SortedStream::findUsedStreams(StreamsArray& streams) const
+void SortedStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

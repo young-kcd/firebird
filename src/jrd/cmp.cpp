@@ -830,10 +830,10 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 	{
 		const RecordSourceNode* const node = *ptr;
 
-		StreamsArray streams;
+		StreamList streams;
 		node->getStreams(streams);
 
-		for (StreamsArray::iterator i = streams.begin(); i != streams.end(); ++i)
+		for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
 			csb->csb_rpt[*i].csb_flags &= ~csb_active;
 	}
 

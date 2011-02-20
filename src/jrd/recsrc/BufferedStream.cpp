@@ -45,12 +45,12 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
-	StreamsArray streams;
+	StreamList streams;
 	m_next->findUsedStreams(streams);
 
 	Array<dsc> fields;
 
-	for (StreamsArray::iterator i = streams.begin(); i != streams.end(); ++i)
+	for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
 	{
 		const UCHAR stream = *i;
 		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
@@ -303,7 +303,7 @@ void BufferedStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void BufferedStream::findUsedStreams(StreamsArray& streams) const
+void BufferedStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

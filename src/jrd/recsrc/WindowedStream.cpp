@@ -63,7 +63,7 @@ namespace
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -121,7 +121,7 @@ namespace
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -201,7 +201,7 @@ namespace
 		m_next->markRecursive();
 	}
 
-	void BufferedStreamWindow::findUsedStreams(StreamsArray& streams) const
+	void BufferedStreamWindow::findUsedStreams(StreamList& streams) const
 	{
 		m_next->findUsedStreams(streams);
 	}
@@ -386,7 +386,7 @@ namespace
 		m_inner->markRecursive();
 	}
 
-	void WindowJoin::findUsedStreams(StreamsArray& streams) const
+	void WindowJoin::findUsedStreams(StreamList& streams) const
 	{
 		m_outer->findUsedStreams(streams);
 		m_inner->findUsedStreams(streams);
@@ -488,7 +488,7 @@ WindowedStream::WindowedStream(CompilerScratch* csb,
 
 	// Process ordered partitions.
 
-	StreamsArray streams;
+	StreamList streams;
 
 	for (ObjectsArray<WindowSourceNode::Partition>::iterator partition = partitions.begin();
 		 partition != partitions.end();
@@ -608,7 +608,7 @@ void WindowedStream::invalidateRecords(jrd_req* request) const
 	m_joinedStream->invalidateRecords(request);
 }
 
-void WindowedStream::findUsedStreams(StreamsArray& streams) const
+void WindowedStream::findUsedStreams(StreamList& streams) const
 {
 	m_joinedStream->findUsedStreams(streams);
 }

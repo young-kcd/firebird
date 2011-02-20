@@ -278,7 +278,6 @@ private:
 	int remainingStreams;
 };
 
-typedef Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> StreamList;
 typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
 
 } // namespace Jrd

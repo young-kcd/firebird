@@ -217,7 +217,7 @@ public:
 	}
 
 	// Identify the streams that make up an RseNode.
-	virtual void getStreams(StreamsArray& list) const
+	virtual void getStreams(StreamList& list) const
 	{
 		list.add(getStream());
 	}
@@ -571,7 +571,7 @@ public:
 		return 0;
 	}
 
-	virtual void getStreams(StreamsArray& list) const;
+	virtual void getStreams(StreamList& list) const;
 	virtual WindowSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -667,7 +667,7 @@ public:
 		return obj;
 	}
 
-	virtual void getStreams(StreamsArray& /*list*/) const
+	virtual void getStreams(StreamList& /*list*/) const
 	{
 	}
 

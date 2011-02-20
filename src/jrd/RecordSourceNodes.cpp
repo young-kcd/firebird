@@ -89,7 +89,7 @@ namespace
 
 	private:
 		CompilerScratch* m_csb;
-		HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+		StreamList m_streams;
 		HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
 	};
 }
@@ -1762,10 +1762,10 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(opt->opt_csb, partitions,
 		OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
 
-	StreamsArray rsbStreams;
+	StreamList rsbStreams;
 	rsb->findUsedStreams(rsbStreams);
 
-	for (StreamsArray::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
+	for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
 	{
 		fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
 		opt->localStreams[++opt->localStreams[0]] = *i;
@@ -1780,7 +1780,7 @@ bool WindowSourceNode::computable(CompilerScratch* csb, SSHORT stream,
 	return rse->computable(csb, stream, allowOnlyCurrentStream, NULL);
 }
 
-void WindowSourceNode::getStreams(StreamsArray& list) const
+void WindowSourceNode::getStreams(StreamList& list) const
 {
 	for (ObjectsArray<Partition>::const_iterator partition = partitions.begin();
 		 partition != partitions.end();
@@ -2370,7 +2370,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		// For an INNER JOIN mark previous generated RecordSource's as active.
 		if (opt->rse->rse_jointype == blr_left)
 		{
-			for (StreamsArray::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
+			for (StreamList::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
 				opt->opt_csb->csb_rpt[*i].csb_flags |= csb_active;
 		}
 
@@ -2419,7 +2419,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 
 		if (opt->rse->rse_jointype == blr_left)
 		{
-			for (StreamsArray::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
+			for (StreamList::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
 				opt->opt_csb->csb_rpt[*i].csb_flags &= ~csb_active;
 		}
 	}
@@ -2442,10 +2442,10 @@ void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) cons
 			static_cast<const RseNode*>(node)->computeRseStreams(csb, streams);
 		else
 		{
-			StreamsArray sourceStreams;
+			StreamList sourceStreams;
 			node->getStreams(sourceStreams);
 
-			for (StreamsArray::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
+			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
 			{
 				fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
 				streams[++streams[0]] = (UCHAR) *i;

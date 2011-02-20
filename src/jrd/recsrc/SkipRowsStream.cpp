@@ -131,7 +131,7 @@ void SkipRowsStream::markRecursive()
 	m_next->markRecursive();
 }
 
-void SkipRowsStream::findUsedStreams(StreamsArray& streams) const
+void SkipRowsStream::findUsedStreams(StreamList& streams) const
 {
 	m_next->findUsedStreams(streams);
 }

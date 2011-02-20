@@ -67,7 +67,7 @@ namespace Jrd
 		virtual void markRecursive() = 0;
 		virtual void invalidateRecords(jrd_req* request) const = 0;
 
-		virtual void findUsedStreams(StreamsArray& streams) const = 0;
+		virtual void findUsedStreams(StreamList& streams) const = 0;
 		virtual void nullRecords(thread_db* tdbb) const = 0;
 		virtual void saveRecords(thread_db* tdbb) const = 0;
 		virtual void restoreRecords(thread_db* tdbb) const = 0;
@@ -122,7 +122,7 @@ namespace Jrd
 		virtual void markRecursive();
 		virtual void invalidateRecords(jrd_req* request) const;
 
-		virtual void findUsedStreams(StreamsArray& streams) const;
+		virtual void findUsedStreams(StreamList& streams) const;
 		virtual void nullRecords(thread_db* tdbb) const;
 		virtual void saveRecords(thread_db* tdbb) const;
 		virtual void restoreRecords(thread_db* tdbb) const;
@@ -330,7 +330,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -357,7 +357,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -389,7 +389,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -422,7 +422,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -450,7 +450,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -544,7 +544,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -626,7 +626,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 
 	private:
 		void init(CompilerScratch* csb);
@@ -662,7 +662,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -724,7 +724,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -767,7 +767,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -800,7 +800,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -836,7 +836,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -903,7 +903,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;
@@ -947,7 +947,7 @@ namespace Jrd
 	private:
 		Firebird::Array<NestConst<RecordSource> > m_args;
 		Firebird::Array<NestConst<MapNode> > m_maps;
-		StreamsArray m_streams;
+		StreamList m_streams;
 	};
 
 	class RecursiveStream : public RecordStream
@@ -992,7 +992,7 @@ namespace Jrd
 		NestConst<RecordSource> m_inner;
 		const MapNode* const m_rootMap;
 		const MapNode* const m_innerMap;
-		StreamsArray m_innerStreams;
+		StreamList m_innerStreams;
 		const ULONG m_saveOffset;
 		size_t m_saveSize;
 	};
@@ -1021,7 +1021,7 @@ namespace Jrd
 		void markRecursive();
 		void invalidateRecords(jrd_req* request) const;
 
-		void findUsedStreams(StreamsArray& streams) const;
+		void findUsedStreams(StreamList& streams) const;
 		void nullRecords(thread_db* tdbb) const;
 		void saveRecords(thread_db* tdbb) const;
 		void restoreRecords(thread_db* tdbb) const;

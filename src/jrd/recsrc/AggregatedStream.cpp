@@ -240,7 +240,7 @@ void AggregatedStream::invalidateRecords(jrd_req* request) const
 	m_next->invalidateRecords(request);
 }
 
-void AggregatedStream::findUsedStreams(StreamsArray& streams) const
+void AggregatedStream::findUsedStreams(StreamList& streams) const
 {
 	RecordStream::findUsedStreams(streams);
 	if (m_bufferedStream)

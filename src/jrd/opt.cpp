@@ -616,7 +616,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		rse->rse_aggregate = aggregate = NULL;
 
 	// AB: Mark the previous used streams (sub-RseNode's) as active
-	for (StreamsArray::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
+	for (StreamList::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
 		csb->csb_rpt[*i].csb_flags |= csb_active;
 
 	// outer joins require some extra processing
@@ -641,7 +641,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 			// AB: Mark the previous used streams (sub-RseNode's) again
 			// as active, because a SORT/MERGE could reset the flags
-			for (StreamsArray::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
+			for (StreamList::iterator i = opt->subStreams.begin(); i != opt->subStreams.end(); ++i)
 				csb->csb_rpt[*i].csb_flags |= csb_active;
 		}
 
@@ -3444,10 +3444,10 @@ static void set_rse_inactive(CompilerScratch* csb, const RseNode* rse)
 			set_rse_inactive(csb, static_cast<const RseNode*>(node));
 		else
 		{
-			StreamsArray sourceStreams;
+			StreamList sourceStreams;
 			node->getStreams(sourceStreams);
 
-			for (StreamsArray::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
+			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
 				csb->csb_rpt[*i].csb_flags &= ~csb_active;
 		}
 	}
