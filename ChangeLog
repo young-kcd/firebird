@@ -1,3 +1,12 @@
+ 2011-02-20 01:08  asfernandes 
+   M doc/sql.extensions/README.ddl_triggers.txt
+   M src/dsql/DdlNodes.epp
+   M src/isql/show.epp
+   M src/jrd/Attachment.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/constants.h
+Added EVENT_TYPE and OBJECT_TYPE to DDL_TRIGGER context. Improvement suggested by Thomas Steinmaurer.
+
  2011-02-18 06:28  dimitr 
    M src/dsql/BoolNodes.cpp
 Fixed the main reason for CORE-3233: LIKE, STARTING and CONTAINING fail if second operand >= 32K. Thanks to Adriano.
