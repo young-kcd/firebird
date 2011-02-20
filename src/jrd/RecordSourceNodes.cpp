@@ -55,6 +55,45 @@ static dsql_nod* resolveUsingField(DsqlCompilerScratch* dsqlScratch, dsql_str* n
 	DsqlNodStack& stack, const dsql_nod* flawedNode, const TEXT* side, dsql_ctx*& ctx);
 static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
+namespace
+{
+	class AutoActivateResetStreams : public Firebird::AutoStorage
+	{
+	public:
+		AutoActivateResetStreams(CompilerScratch* csb, const RseNode* rse)
+			: m_csb(csb), m_streams(getPool()), m_flags(getPool())
+		{
+			const NestConst<RecordSourceNode>* const end = rse->rse_relations.end();
+			const NestConst<RecordSourceNode>* ptr;
+
+			for (ptr = rse->rse_relations.begin(); ptr != end; ++ptr)
+			{
+				(*ptr)->getStreams(m_streams);
+			}
+
+			for (size_t i = 0; i < m_streams.getCount(); i++)
+			{
+				const UCHAR stream = m_streams[i];
+				m_csb->csb_rpt[stream].csb_flags |= (csb_active | csb_sub_stream);
+			}
+		}
+
+		~AutoActivateResetStreams()
+		{
+			for (size_t i = 0; i < m_streams.getCount(); i++)
+			{
+				const UCHAR stream = m_streams[i];
+				m_csb->csb_rpt[stream].csb_flags = m_flags[i];
+			}
+		}
+
+	private:
+		CompilerScratch* m_csb;
+		Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+		Firebird::HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
+	};
+}
+
 
 //--------------------
 
@@ -2653,52 +2692,27 @@ bool RseNode::computable(CompilerScratch* csb, SSHORT stream,
 	NestConst<RecordSourceNode>* ptr;
 
 	// Set sub-streams of rse active
-
-	for (ptr = rse_relations.begin(); ptr != end; ++ptr)
-	{
-		const RecordSourceNode* const node = *ptr;
-
-		StreamsArray streams;
-		node->getStreams(streams);
-
-		for (StreamsArray::iterator i = streams.begin(); i != streams.end(); ++i)
-			csb->csb_rpt[*i].csb_flags |= (csb_active | csb_sub_stream);
-	}
-
-	bool result = true;
+	AutoActivateResetStreams activator(csb, this);
 
 	// Check sub-stream
 	if ((rse_boolean && !rse_boolean->computable(csb, stream, allowOnlyCurrentStream)) ||
 	    (rse_sorted && !rse_sorted->computable(csb, stream, allowOnlyCurrentStream)) ||
 	    (rse_projection && !rse_projection->computable(csb, stream, allowOnlyCurrentStream)))
 	{
-		result = false;
+		return false;
 	}
-
-	for (ptr = rse_relations.begin(); ptr != end && result; ++ptr)
-	{
-		if (!(*ptr)->computable(csb, stream, allowOnlyCurrentStream, NULL))
-			result = false;
-	}
-
-	// Check value expression, if any
-	if (result && value && !value->computable(csb, stream, allowOnlyCurrentStream))
-		result = false;
-
-	// Reset streams inactive
 
 	for (ptr = rse_relations.begin(); ptr != end; ++ptr)
 	{
-		const RecordSourceNode* const node = *ptr;
-
-		StreamsArray streams;
-		node->getStreams(streams);
-
-		for (StreamsArray::iterator i = streams.begin(); i != streams.end(); ++i)
-			csb->csb_rpt[*i].csb_flags &= ~(csb_active | csb_sub_stream);
+		if (!(*ptr)->computable(csb, stream, allowOnlyCurrentStream, NULL))
+			return false;
 	}
 
-	return result;
+	// Check value expression, if any
+	if (value && !value->computable(csb, stream, allowOnlyCurrentStream))
+		return false;
+
+	return true;
 }
 
 void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
