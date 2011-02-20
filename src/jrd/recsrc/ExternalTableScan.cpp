@@ -130,7 +130,7 @@ void ExternalTableScan::print(thread_db* tdbb, string& plan,
 	if (detailed)
 	{
 		plan += printIndent(++level);
-		plan += "Table \"" + printName(tdbb, m_name) + "\" Scan";
+		plan += "Table \"" + printName(tdbb, m_name) + "\" Full Scan";
 	}
 	else
 	{

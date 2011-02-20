@@ -131,7 +131,7 @@ void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Scan";
+		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Full Scan";
 	}
 	else
 	{
