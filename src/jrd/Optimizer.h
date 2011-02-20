@@ -72,8 +72,10 @@ class OptimizerBlk;
 class jrd_rel;
 
 bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
+void OPT_compute_rse_streams(const RecordSelExpr*, UCHAR*);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*, jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*, jrd_nod*, USHORT);
+void OPT_get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
 VaryingString* OPT_make_alias(thread_db*, const CompilerScratch*, const CompilerScratch::csb_repeat*);
 jrd_nod* OPT_make_binary_node(nod_t, jrd_nod*, jrd_nod*, bool);
@@ -296,6 +298,7 @@ private:
 	int remainingStreams;
 };
 
+typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 } // namespace Jrd
 

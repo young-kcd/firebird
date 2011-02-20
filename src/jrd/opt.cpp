@@ -102,7 +102,6 @@ static void clear_bounds(OptimizerBlk*, const index_desc*);
 static jrd_nod* compose(jrd_nod**, jrd_nod*, nod_t);
 static void compute_dependencies(const jrd_nod*, ULONG*);
 static void compute_dbkey_streams(const CompilerScratch*, const jrd_nod*, UCHAR*);
-static void compute_rse_streams(const CompilerScratch*, const RecordSelExpr*, UCHAR*);
 static bool check_for_nod_from(const jrd_nod*);
 static SLONG decompose(thread_db*, jrd_nod*, NodeStack&, CompilerScratch*);
 static USHORT distribute_equalities(NodeStack&, CompilerScratch*, USHORT);
@@ -147,7 +146,6 @@ static RecordSource* gen_sort(thread_db*, OptimizerBlk*, const UCHAR*, const UCH
 							RecordSource*, jrd_nod*, bool);
 static bool gen_sort_merge(thread_db*, OptimizerBlk*, RiverStack&);
 static RecordSource* gen_union(thread_db*, OptimizerBlk*, jrd_nod*, UCHAR *, USHORT, NodeStack*, UCHAR);
-static void get_expression_streams(const jrd_nod*, Firebird::SortedArray<int>&);
 static void get_inactivities(const CompilerScratch*, ULONG*);
 static jrd_nod* get_unmapped_node(thread_db*, jrd_nod*, jrd_nod*, UCHAR, bool);
 static IndexedRelationship* indexed_relationship(thread_db*, OptimizerBlk*, USHORT);
@@ -251,8 +249,6 @@ static const UCHAR sort_dtypes[] =
 	SKD_int64,					// dtype_int64
 	SKD_text					// dtype_dbkey - use text sort for backward compatibility
 };
-
-typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 
 
 bool OPT_access_path(const jrd_req* request,
@@ -455,8 +451,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			break;
 
 		case nod_rse:
-			compute_rse_streams(csb, (RecordSelExpr*) node, beds);
-			compute_rse_streams(csb, (RecordSelExpr*) node, local_streams);
+			OPT_compute_rse_streams((RecordSelExpr*) node, beds);
+			OPT_compute_rse_streams((RecordSelExpr*) node, local_streams);
 			compute_dbkey_streams(csb, node, key_streams);
 			// pass RecordSelExpr boolean only to inner substreams because join condition
 			// should never exclude records from outer substreams
@@ -1658,7 +1654,7 @@ static void check_sorts(RecordSelExpr* rse)
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
 				Firebird::SortedArray<int> streams;
-				get_expression_streams(*sort_ptr, streams);
+				OPT_get_expression_streams(*sort_ptr, streams);
 				// We can use this sort only if there's a single stream
 				// referenced by the expression.
 				if (streams.getCount() == 1) {
@@ -2004,36 +2000,6 @@ static void compute_dbkey_streams(const CompilerScratch* csb, const jrd_nod* nod
 	}
 }
 
-
-static void compute_rse_streams(const CompilerScratch* csb, const RecordSelExpr* rse, UCHAR* streams)
-{
-/**************************************
- *
- *	c o m p u t e _ r s e _ s t r e a m s
- *
- **************************************
- *
- * Functional description
- *	Identify the streams that make up an RecordSelExpr.
- *
- **************************************/
-	DEV_BLKCHK(csb, type_csb);
-	DEV_BLKCHK(rse, type_nod);
-
-	const jrd_nod* const* ptr = rse->rse_relation;
-	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
-	{
-		const jrd_nod* node = *ptr;
-		if (node->nod_type != nod_rse)
-		{
-			fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-			streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[STREAM_INDEX(node)];
-		}
-		else {
-			compute_rse_streams(csb, (const RecordSelExpr*) node, streams);
-		}
-	}
-}
 
 static bool check_for_nod_from(const jrd_nod* node)
 {
@@ -3223,6 +3189,15 @@ static bool expression_contains_stream(CompilerScratch* csb,
 			return true;
 		}
 
+		stream_array_t temp_streams;
+		temp_streams[0] = 0;
+		OPT_compute_rse_streams(rse, temp_streams);
+
+		for (UCHAR i = 1; i <= temp_streams[0]; i++)
+		{
+			if (stream == temp_streams[i])
+				return true;
+		}
 	}
 
 	return false;
@@ -6035,126 +6010,6 @@ static RecordSource* gen_union(thread_db* tdbb,
 	}
 
 	return rsb;
-}
-
-
-static void get_expression_streams(const jrd_nod* node,
-								   Firebird::SortedArray<int>& streams)
-{
-/**************************************
- *
- *  g e t _ e x p r e s s i o n _ s t r e a m s
- *
- **************************************
- *
- * Functional description
- *  Return all streams referenced by the expression.
- *
- **************************************/
-	DEV_BLKCHK(node, type_nod);
-
-	if (!node) {
-		return;
-	}
-
-	RecordSelExpr* rse = NULL;
-
-	int n;
-	size_t pos;
-
-	switch (node->nod_type)
-	{
-
-		case nod_field:
-			n = (int)(IPTR) node->nod_arg[e_fld_stream];
-			if (!streams.find(n, pos))
-				streams.add(n);
-			break;
-
-		case nod_rec_version:
-		case nod_dbkey:
-			n = (int)(IPTR) node->nod_arg[0];
-			if (!streams.find(n, pos))
-				streams.add(n);
-			break;
-
-		case nod_cast:
-			get_expression_streams(node->nod_arg[e_cast_source], streams);
-			break;
-
-		case nod_extract:
-			get_expression_streams(node->nod_arg[e_extract_value], streams);
-			break;
-
-		case nod_strlen:
-			get_expression_streams(node->nod_arg[e_strlen_value], streams);
-			break;
-
-		case nod_function:
-			get_expression_streams(node->nod_arg[e_fun_args], streams);
-			break;
-
-		case nod_procedure:
-			get_expression_streams(node->nod_arg[e_prc_inputs], streams);
-			break;
-
-		case nod_any:
-		case nod_unique:
-		case nod_ansi_any:
-		case nod_ansi_all:
-		case nod_exists:
-			get_expression_streams(node->nod_arg[e_any_rse], streams);
-			break;
-
-		case nod_argument:
-		case nod_current_date:
-		case nod_current_role:
-		case nod_current_time:
-		case nod_current_timestamp:
-		case nod_gen_id:
-		case nod_gen_id2:
-		case nod_internal_info:
-		case nod_literal:
-		case nod_null:
-		case nod_user_name:
-		case nod_variable:
-			break;
-
-		case nod_rse:
-			rse = (RecordSelExpr*) node;
-			break;
-
-		case nod_average:
-		case nod_count:
-		//case nod_count2:
-		case nod_from:
-		case nod_max:
-		case nod_min:
-		case nod_total:
-			get_expression_streams(node->nod_arg[e_stat_rse], streams);
-			get_expression_streams(node->nod_arg[e_stat_value], streams);
-			break;
-
-		// go into the node arguments
-		default:
-		{
-			const jrd_nod* const* ptr = node->nod_arg;
-			// Check all sub-nodes of this node.
-			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
-			{
-				get_expression_streams(*ptr, streams);
-			}
-			break;
-		}
-	}
-
-	if (rse) {
-		get_expression_streams(rse->rse_first, streams);
-		get_expression_streams(rse->rse_skip, streams);
-		get_expression_streams(rse->rse_boolean, streams);
-		get_expression_streams(rse->rse_sorted, streams);
-		get_expression_streams(rse->rse_projection, streams);
-	}
 }
 
 

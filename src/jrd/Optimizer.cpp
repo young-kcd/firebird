@@ -211,12 +211,23 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	case nod_derived_expr:
 		{
+			const jrd_nod* const exprNode = node->nod_arg[e_derived_expr_expr];
 			const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-			const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+			const USHORT* const streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+
+			Firebird::SortedArray<int> expressionStreams;
+			OPT_get_expression_streams(exprNode, expressionStreams);
 
 			for (unsigned i = 0; i < streamCount; ++i)
 			{
 				n = streamList[i];
+
+				if (expressionStreams.exist(n))
+				{
+					// We've already checked computability of the expression,
+					// so any stream it refers to is known to be active
+					continue;
+				}
 
 				if (allowOnlyCurrentStream)
 				{
@@ -322,7 +333,35 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 }
 
 
-// Try to merge this function with node_equality() into 1 function.
+void OPT_compute_rse_streams(const RecordSelExpr* rse, UCHAR* streams)
+{
+/**************************************
+ *
+ *	c o m p u t e _ r s e _ s t r e a m s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Identify the streams that make up an RecordSelExpr.
+ *
+ **************************************/
+	DEV_BLKCHK(rse, type_nod);
+
+	const jrd_nod* const* ptr = rse->rse_relation;
+	for (const jrd_nod* const* const end = ptr + rse->rse_count; ptr < end; ptr++)
+	{
+		const jrd_nod* node = *ptr;
+		if (node->nod_type != nod_rse)
+		{
+			fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
+			streams[++streams[0]] = (UCHAR)(IPTR) node->nod_arg[STREAM_INDEX(node)];
+		}
+		else {
+			OPT_compute_rse_streams((const RecordSelExpr*) node, streams);
+		}
+	}
+}
+
 
 bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 							 const index_desc* idx, jrd_nod* node,
@@ -657,6 +696,137 @@ bool OPT_expression_equal2(thread_db* tdbb, OptimizerBlk* opt,
 	}
 
 	return false;
+}
+
+
+void OPT_get_expression_streams(const jrd_nod* node, Firebird::SortedArray<int>& streams)
+{
+/**************************************
+ *
+ *  g e t _ e x p r e s s i o n _ s t r e a m s
+ *
+ **************************************
+ *
+ * Functional description
+ *  Return all streams referenced by the expression.
+ *
+ **************************************/
+	DEV_BLKCHK(node, type_nod);
+
+	if (!node) {
+		return;
+	}
+
+	RecordSelExpr* rse = NULL;
+
+	int n;
+	size_t pos;
+
+	switch (node->nod_type)
+	{
+
+		case nod_field:
+			n = (int)(IPTR) node->nod_arg[e_fld_stream];
+			if (!streams.find(n, pos))
+				streams.add(n);
+			break;
+
+		case nod_rec_version:
+		case nod_dbkey:
+			n = (int)(IPTR) node->nod_arg[0];
+			if (!streams.find(n, pos))
+				streams.add(n);
+			break;
+
+		case nod_cast:
+			OPT_get_expression_streams(node->nod_arg[e_cast_source], streams);
+			break;
+
+		case nod_extract:
+			OPT_get_expression_streams(node->nod_arg[e_extract_value], streams);
+			break;
+
+		case nod_strlen:
+			OPT_get_expression_streams(node->nod_arg[e_strlen_value], streams);
+			break;
+
+		case nod_function:
+			OPT_get_expression_streams(node->nod_arg[e_fun_args], streams);
+			break;
+
+		case nod_procedure:
+			OPT_get_expression_streams(node->nod_arg[e_prc_inputs], streams);
+			break;
+
+		case nod_any:
+		case nod_unique:
+		case nod_ansi_any:
+		case nod_ansi_all:
+		case nod_exists:
+			OPT_get_expression_streams(node->nod_arg[e_any_rse], streams);
+			break;
+
+		case nod_argument:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
+		case nod_gen_id:
+		case nod_gen_id2:
+		case nod_internal_info:
+		case nod_literal:
+		case nod_null:
+		case nod_user_name:
+		case nod_variable:
+			break;
+
+		case nod_rse:
+			rse = (RecordSelExpr*) node;
+			break;
+
+		case nod_average:
+		case nod_count:
+		//case nod_count2:
+		case nod_from:
+		case nod_max:
+		case nod_min:
+		case nod_total:
+			OPT_get_expression_streams(node->nod_arg[e_stat_rse], streams);
+			OPT_get_expression_streams(node->nod_arg[e_stat_value], streams);
+			break;
+
+		// go into the node arguments
+		default:
+		{
+			const jrd_nod* const* ptr = node->nod_arg;
+			// Check all sub-nodes of this node.
+			for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
+			{
+				OPT_get_expression_streams(*ptr, streams);
+			}
+			break;
+		}
+	}
+
+	if (rse) {
+		OPT_get_expression_streams(rse->rse_first, streams);
+		OPT_get_expression_streams(rse->rse_skip, streams);
+		OPT_get_expression_streams(rse->rse_boolean, streams);
+		OPT_get_expression_streams(rse->rse_sorted, streams);
+		OPT_get_expression_streams(rse->rse_projection, streams);
+
+		stream_array_t temp_streams;
+		temp_streams[0] = 0;
+		OPT_compute_rse_streams(rse, temp_streams);
+
+		for (UCHAR i = 1; i <= temp_streams[0]; i++)
+		{
+			n = temp_streams[i];
+
+			if (!streams.find(n, pos))
+				streams.add(n);
+		}
+	}
 }
 
 
