@@ -3991,9 +3991,12 @@ DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
+	if (!arg->computable(csb, stream, allowOnlyCurrentStream))
+		return false;
+
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
 	{
-		USHORT n = *i;
+		const USHORT n = *i;
 
 		if (allowOnlyCurrentStream)
 		{
@@ -4016,6 +4019,8 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 void DerivedExprNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 	SortedStreamList* streamList)
 {
+	arg->findDependentFromStreams(optRet, streamList);
+
 	for (USHORT* i = this->streamList.begin(); i != this->streamList.end(); ++i)
 	{
 		int derivedStream = *i;
