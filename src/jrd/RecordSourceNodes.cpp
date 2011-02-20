@@ -2750,6 +2750,15 @@ bool RseNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
 	if (rse_sorted || rse_projection)
 		return true;
 
+	NestConst<RecordSourceNode>* ptr;
+	const NestConst<RecordSourceNode>* end;
+
+	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
+	{
+		if ((*ptr)->jrdStreamFinder(csb, findStream))
+			return true;
+	}
+
 	return false;
 }
 
@@ -2768,6 +2777,12 @@ void RseNode::jrdStreamsCollector(SortedArray<int>& streamList)
 	// handled.
 	// rse_sorted->jrdStreamsCollector(streamList);
 	// rse_projection->jrdStreamsCollector(streamList);
+
+	NestConst<RecordSourceNode>* ptr;
+	const NestConst<RecordSourceNode>* end;
+
+	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
+		(*ptr)->jrdStreamsCollector(streamList);
 }
 
 
