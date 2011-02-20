@@ -3994,7 +3994,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	if (!arg->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
-	Firebird::SortedArray<int> argStreams;
+	SortedArray<int> argStreams;
 	arg->jrdStreamsCollector(argStreams);
 
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
@@ -4004,7 +4004,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 		if (argStreams.exist(n))
 		{
 			// We've already checked computability of the argument,
-			// so any stream it refers to is known to be active
+			// so any stream it refers to is known to be active.
 			continue;
 		}
 

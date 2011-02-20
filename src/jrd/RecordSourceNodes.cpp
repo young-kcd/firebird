@@ -57,7 +57,7 @@ static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 namespace
 {
-	class AutoActivateResetStreams : public Firebird::AutoStorage
+	class AutoActivateResetStreams : public AutoStorage
 	{
 	public:
 		AutoActivateResetStreams(CompilerScratch* csb, const RseNode* rse)
@@ -89,8 +89,8 @@ namespace
 
 	private:
 		CompilerScratch* m_csb;
-		Firebird::HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
-		Firebird::HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
+		HalfStaticArray<UCHAR, OPT_STATIC_ITEMS> m_streams;
+		HalfStaticArray<USHORT, OPT_STATIC_ITEMS> m_flags;
 	};
 }
 
