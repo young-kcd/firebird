@@ -2276,7 +2276,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 }
 
 
-bool BTR_types_comparable(const dsc& target, const dsc& source, int flags)
+bool BTR_types_comparable(const dsc& target, const dsc& source)
 {
 /**************************************
  *
@@ -2298,26 +2298,19 @@ bool BTR_types_comparable(const dsc& target, const dsc& source, int flags)
 	}
 	else if (DTYPE_IS_NUMERIC(target.dsc_dtype))
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			DTYPE_IS_NUMERIC(source.dsc_dtype));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_NUMERIC(source.dsc_dtype));
 	}
 	else if (target.dsc_dtype == dtype_sql_date)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_date ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_date);
 	}
 	else if (target.dsc_dtype == dtype_sql_time)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_time ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_time);
 	}
 	else if (target.dsc_dtype == dtype_timestamp)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			DTYPE_IS_DATE(source.dsc_dtype) ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_DATE(source.dsc_dtype));
 	}
 	else
 	{
