@@ -464,6 +464,7 @@ bool SubSelectFinder::internalVisit(const dsql_nod* node)
 	switch (node->nod_type)
 	{
 		case nod_field_name:
+		case nod_var_name:
 			return false;
 
 		case nod_order:
@@ -2520,7 +2521,7 @@ static dsql_nod* process_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 // Extract relation and procedure context and expand derived child contexts.
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 {
-	if (context->ctx_relation || context->ctx_procedure)
+	if (context->ctx_relation || context->ctx_procedure || context->ctx_map)
 	{
 		if (context->ctx_parent)
 			context = context->ctx_parent;
@@ -2639,24 +2640,12 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		if (queryNode)
 			foundSubSelect = SubSelectFinder::find(queryNode->dsqlSelectList);
 
-		int unionContexts = 0;
-
 		if (foundSubSelect)
 		{
-			DsqlContextStack::const_iterator baseUnion(dsqlScratch->unionContext);
-
 			dsql_nod* union_expr = MAKE_node(nod_list, 1);
 			union_expr->nod_arg[0] = input;
 			union_expr->nod_flags = NOD_UNION_ALL;
 			rse = pass1_union(dsqlScratch, union_expr, NULL, NULL, NULL, 0);
-
-			for (DsqlContextStack::const_iterator i(dsqlScratch->unionContext);
-				 i.hasData() && i != baseUnion;
-				 ++i)
-			{
-				temp.push(i.object());
-				++unionContexts;
-			}
 		}
 		else
 			rse = PASS1_rse(dsqlScratch, input, NULL);
@@ -2670,11 +2659,7 @@ static dsql_nod* pass1_derived_table(DsqlCompilerScratch* dsqlScratch, dsql_nod*
 		{
 			dsql_ctx* childCtx = temp.pop();
 
-			// Do not put the just pushed union contexts in derivedContext. Otherwise duplicate
-			// records will appear in RDB$VIEW_RELATIONS.
-			if (--unionContexts < 0)
-				dsqlScratch->derivedContext.push(childCtx);
-
+			dsqlScratch->derivedContext.push(childCtx);
 			context->ctx_childs_derived_table.push(childCtx);
 
 			// Collect contexts that will be used for blr_derived_expr generation.
@@ -5535,6 +5520,15 @@ static dsql_nod* pass1_union( DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		union_context->ctx_context = dsqlScratch->recursiveCtxId;
 	else
 		union_context->ctx_context = dsqlScratch->contextNumber++;
+
+	union_context->ctx_scope_level = dsqlScratch->scopeLevel;
+
+	// When we're in a outer-join part mark context for it.
+	if (dsqlScratch->inOuterJoin)
+		union_context->ctx_flags |= CTX_outer_join;
+	union_context->ctx_in_outer_join = dsqlScratch->inOuterJoin;
+
+	dsqlScratch->context->push(union_context);
 
 	unionSource->dsqlClauses = MAKE_node(nod_list, input->nod_count);
 

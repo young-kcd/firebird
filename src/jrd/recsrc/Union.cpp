@@ -109,10 +109,12 @@ void Union::close(thread_db* tdbb) const
 bool Union::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
+	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
+		rpb->rpb_number.setValid(false);
 		return false;
 	}
 
@@ -124,6 +126,7 @@ bool Union::getRecord(thread_db* tdbb) const
 		impure->irsb_count++;
 		if (impure->irsb_count >= m_args.getCount())
 		{
+			rpb->rpb_number.setValid(false);
 			return false;
 		}
 		m_args[impure->irsb_count]->open(tdbb);
@@ -142,6 +145,7 @@ bool Union::getRecord(thread_db* tdbb) const
 		EXE_assignment(tdbb, *source, *target);
 	}
 
+	rpb->rpb_number.setValid(true);
 	return true;
 }
 

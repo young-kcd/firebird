@@ -117,11 +117,13 @@ void RecursiveStream::close(thread_db* tdbb) const
 bool RecursiveStream::getRecord(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();
+	record_param* const rpb = &request->req_rpb[m_stream];
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 	Impure* const saveImpure = request->getImpure<Impure>(m_saveOffset);
 
 	if (!(impure->irsb_flags & irsb_open))
 	{
+		rpb->rpb_number.setValid(false);
 		return false;
 	}
 
@@ -188,6 +190,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	{
 		if (impure->irsb_level == 1)
 		{
+			rpb->rpb_number.setValid(false);
 			return false;
 		}
 
@@ -224,6 +227,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	// copy target (next level) record into main (current level) record
 	memcpy(record->rec_data, mapRecord->rec_data, record->rec_length);
 
+	rpb->rpb_number.setValid(true);
 	return true;
 }
 
