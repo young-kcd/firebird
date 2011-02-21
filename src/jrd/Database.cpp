@@ -176,7 +176,11 @@ namespace Jrd
 	int Database::SharedCounter::blockingAst(void* ast_object)
 	{
 		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
-		fb_assert(counter && counter->lock);
+		fb_assert(counter);
+
+		if (!counter->lock)
+			return 0;
+
 		Database* const dbb = counter->lock->lck_dbb;
 
 		try
