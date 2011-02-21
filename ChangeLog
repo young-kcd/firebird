@@ -1,3 +1,57 @@
+ 2011-02-20 15:36  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed the porting mistake, thanks to Adriano.
+
+ 2011-02-20 15:34  dimitr 
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/cmp.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ConditionalStream.cpp
+   M src/jrd/recsrc/FilteredStream.cpp
+   M src/jrd/recsrc/FirstRowsStream.cpp
+   M src/jrd/recsrc/FullOuterJoin.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/LockedStream.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SkipRowsStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/recsrc/WindowedStream.cpp
+   M src/jrd/rse.h
+Removed duplicated type declaration.
+
+ 2011-02-20 15:20  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+Misc
+
+ 2011-02-20 14:43  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Front ported the old fix for CORE-3283: BAD PLAN with using LEFT OUTER JOIN in SUBSELECT.
+
+ 2011-02-20 13:23  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-3176: View with "subselect" column join table and not use index.
+
+ 2011-02-20 13:19  dimitr 
+   M src/jrd/recsrc/ExternalTableScan.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+Totally misc.
+
+ 2011-02-20 13:18  dimitr 
+   M src/dsql/ExprNodes.cpp
+In v2.5, we checked both the derived expression argument and its streams. Now I see the former part was lost. Supposedly, this was just a mistake, hence fixed.
+
  2011-02-20 01:08  asfernandes 
    M doc/sql.extensions/README.ddl_triggers.txt
    M src/dsql/DdlNodes.epp
