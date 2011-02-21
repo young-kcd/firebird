@@ -2355,12 +2355,20 @@ static bool get_record(thread_db*	tdbb,
 
 	case rsb_union:
 		if (!get_union(tdbb, rsb, impure))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_recursive_union:
 		if (!RSBRecurse::get(tdbb, rsb, (irsb_recurse*) impure))
+		{
+			rpb->rpb_number.setValid(false);
 			return false;
+		}
+		rpb->rpb_number.setValid(true);
 		break;
 
 	case rsb_aggregate:
@@ -2370,6 +2378,7 @@ static bool get_record(thread_db*	tdbb,
 			rpb->rpb_number.setValid(true);
 			break;
 		}
+		rpb->rpb_number.setValid(false);
 		return false;
 
 	case rsb_ext_sequential:

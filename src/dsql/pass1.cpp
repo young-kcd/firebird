@@ -4790,7 +4790,7 @@ static dsql_nod* process_returning(CompiledStatement* statement,
 // Extract relation and procedure context and expand derived child contexts.
 static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 {
-	if (context->ctx_relation || context->ctx_procedure)
+	if (context->ctx_relation || context->ctx_procedure || context->ctx_map)
 	{
 		if (context->ctx_parent)
 			context = context->ctx_parent;
@@ -4909,24 +4909,12 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 			foundSubSelect = pass1_found_sub_select(query->nod_arg[e_qry_list]);
 		}
 
-		int unionContexts = 0;
-
 		if (foundSubSelect)
 		{
-			DsqlContextStack::const_iterator baseUnion(statement->req_union_context);
-
 			dsql_nod* union_expr = MAKE_node(nod_list, 1);
 			union_expr->nod_arg[0] = select_expr;
 			union_expr->nod_flags = NOD_UNION_ALL;
 			rse = pass1_union(statement, union_expr, NULL, NULL, 0);
-
-			for (DsqlContextStack::const_iterator i(statement->req_union_context);
-				 i.hasData() && i != baseUnion;
-				 ++i)
-			{
-				temp.push(i.object());
-				++unionContexts;
-			}
 		}
 		else
 			rse = PASS1_rse(statement, select_expr, NULL);
@@ -4940,11 +4928,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		{
 			dsql_ctx* childCtx = temp.pop();
 
-			// Do not put the just pushed union contexts in req_dt_context. Otherwise duplicate
-			// records will appear in RDB$VIEW_RELATIONS.
-			if (--unionContexts < 0)
-				statement->req_dt_context.push(childCtx);
-
+			statement->req_dt_context.push(childCtx);
 			context->ctx_childs_derived_table.push(childCtx);
 
 			// Collect contexts that will be used for blr_derived_expr generation.
@@ -6238,6 +6222,7 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_internal_info:
 		case nod_dom_value:
 		case nod_field_name:
+		case nod_var_name:
 			return false;
 
 		case nod_hidden_var:
@@ -8895,6 +8880,15 @@ static dsql_nod* pass1_union( CompiledStatement* statement, dsql_nod* input,
 	else {
 		union_context->ctx_context = statement->req_context_number++;
 	}
+
+	union_context->ctx_scope_level = statement->req_scope_level;
+	// When we're in a outer-join part mark context for it.
+	if (statement->req_in_outer_join) {
+		union_context->ctx_flags |= CTX_outer_join;
+	}
+	union_context->ctx_in_outer_join = statement->req_in_outer_join;
+
+	statement->req_context->push(union_context);
 
 	// process all the sub-rse's.
 	{ // scope block
