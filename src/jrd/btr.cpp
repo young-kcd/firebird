@@ -2297,7 +2297,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id, SelectivityL
 }
 
 
-bool BTR_types_comparable(const dsc& target, const dsc& source, const int flags)
+bool BTR_types_comparable(const dsc& target, const dsc& source)
 {
 /**************************************
  *

@@ -2575,7 +2575,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 		CMP_get_desc(tdbb, optimizer->opt_csb, match, &desc1);
 		CMP_get_desc(tdbb, optimizer->opt_csb, value, &desc2);
 
-		if (!BTR_types_comparable(desc1, desc2, value->nod_flags))
+		if (!BTR_types_comparable(desc1, desc2))
 			return false;
 
 		// if the indexed column is of type int64, we need to inject an
