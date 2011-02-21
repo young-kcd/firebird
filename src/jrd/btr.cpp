@@ -2325,20 +2325,17 @@ bool BTR_types_comparable(const dsc& target, const dsc& source, const int flags)
 
 	if (target.dsc_dtype == dtype_sql_date)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_date ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_date);
 	}
 
 	if (target.dsc_dtype == dtype_sql_time)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_time ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_sql_time);
 	}
 
 	if (target.dsc_dtype == dtype_timestamp)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_DATE(source.dsc_dtype) ||
-			(flags & nod_date));
+		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_DATE(source.dsc_dtype));
 	}
 
 	fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
