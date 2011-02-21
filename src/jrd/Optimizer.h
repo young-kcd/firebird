@@ -53,7 +53,7 @@ const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_STARTING = 0.01;
 
 const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
-const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.5;
+const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.3;
 
 const double MAXIMUM_SELECTIVITY = 1.0;
 const double DEFAULT_SELECTIVITY = 0.1;
@@ -61,8 +61,11 @@ const double DEFAULT_SELECTIVITY = 0.1;
 const double MINIMUM_CARDINALITY = 1.0;
 const double THRESHOLD_CARDINALITY = 5.0;
 
-// Default (Minimum) cost (nr. of pages) for an index.
-const int DEFAULT_INDEX_COST = 1;
+// Default depth of an index tree (including one leaf page),
+// also representing the minimal cost of the index scan.
+// We assume that the root page would be always cached,
+// so it's not included here.
+const int DEFAULT_INDEX_COST = 3;
 
 
 struct index_desc;

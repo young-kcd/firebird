@@ -573,7 +573,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion(IndexTableScan** rsb)
 	if (invCandidate->unique)
 	{
 		// Set up the unique retrieval cost to be fixed and not dependent on
-		// possibly outdated statistics
+		// possibly outdated statistics. It includes N index scans plus one data page fetch.
 		invCandidate->cost = DEFAULT_INDEX_COST * invCandidate->indexes + 1;
 	}
 	else
@@ -968,13 +968,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->unique = unique;
 				invCandidate->selectivity = selectivity;
 				// Calculate the cost (only index pages) for this index.
-				// The constant DEFAULT_INDEX_COST 1 is an average for
-				// the rootpage and non-leaf pages.
-				// Assuming the rootpage will stay in cache else the index
-				// cost is calculted too high. Better would be including
-				// the index-depth, but this is not possible due lack
-				// on information at this time.
-				invCandidate->cost = DEFAULT_INDEX_COST + (scratch.selectivity * scratch.cardinality);
+				invCandidate->cost = DEFAULT_INDEX_COST - 1 + scratch.selectivity * scratch.cardinality;
 				invCandidate->nonFullMatchedSegments = scratch.nonFullMatchedSegments;
 				invCandidate->matchedSegments = MAX(scratch.lowerCount, scratch.upperCount);
 				invCandidate->indexes = 1;
@@ -2137,8 +2131,8 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 			invCandidate->inversion = composeInversion(invCandidate1->inversion,
 				invCandidate2->inversion, InversionNode::TYPE_OR);
-			invCandidate->unique = (invCandidate1->unique && invCandidate2->unique);
-			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity;
+			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity -
+				invCandidate1->selectivity * invCandidate2->selectivity;
 			invCandidate->cost = invCandidate1->cost + invCandidate2->cost;
 			invCandidate->indexes = invCandidate1->indexes + invCandidate2->indexes;
 			invCandidate->nonFullMatchedSegments = 0;
