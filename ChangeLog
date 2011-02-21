@@ -1,3 +1,9 @@
+ 2011-02-20 13:25  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Fixed CORE-3176: View with "subselect" column join table and not use index.
+
  2011-02-18 06:52  dimitr 
    M src/isql/isql.epp
 Restored the pre-v2.5 logic by the customer request.
