@@ -100,7 +100,6 @@ enum nod_t
 	nod_while,
 	nod_erase_current,
 	nod_modify_current,
-	nod_block,
 	nod_on_error,
 	nod_sqlcode,
 	nod_gdscode,
@@ -218,10 +217,6 @@ enum node_args {
 	e_ary_array = 0,		// nod_array
 	e_ary_indices,
 	e_ary_count,
-
-	e_blk_action = 0,		// nod_block
-	e_blk_errs,
-	e_blk_count,
 
 	e_err_errs = 0,			// nod_on_error
 	e_err_action,
@@ -574,7 +569,6 @@ public:
 enum nod_flags_vals {
 	NOD_UNION_ALL			= 1, // nod_list
 	NOD_UNION_RECURSIVE 	= 2,
-	NOD_SIMPLE_LIST			= 4,	// no need to enclose with blr_begin ... blr_end
 
 	NOD_READ_ONLY			= 1, // nod_access
 	NOD_READ_WRITE			= 2,

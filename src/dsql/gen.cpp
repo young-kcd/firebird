@@ -541,20 +541,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_expr(dsqlScratch, node->nod_arg[1]);
 		return;
 
-	case nod_block:
-		dsqlScratch->appendUChar(blr_block);
-		GEN_statement(dsqlScratch, node->nod_arg[e_blk_action]);
-		if (node->nod_count > 1)
-		{
-			temp = node->nod_arg[e_blk_errs];
-			for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-			{
-				GEN_statement(dsqlScratch, *ptr);
-			}
-		}
-		dsqlScratch->appendUChar(blr_end);
-		return;
-
 	case nod_class_stmtnode:
 		{
 			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
@@ -571,14 +557,10 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		return;
 
 	case nod_list:
-		if (!(node->nod_flags & NOD_SIMPLE_LIST))
-			dsqlScratch->appendUChar(blr_begin);
+		dsqlScratch->appendUChar(blr_begin);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
-		{
 			GEN_statement(dsqlScratch, *ptr);
-		}
-		if (!(node->nod_flags & NOD_SIMPLE_LIST))
-			dsqlScratch->appendUChar(blr_end);
+		dsqlScratch->appendUChar(blr_end);
 		return;
 
 	case nod_erase:

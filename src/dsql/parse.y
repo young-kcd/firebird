@@ -650,6 +650,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::AggNode* aggNode;
 	Jrd::SysFuncCallNode* sysFuncCallNode;
 	Jrd::ValueIfNode* valueIfNode;
+	Jrd::CompoundStmtNode* compoundStmtNode;
 	Jrd::CursorStmtNode* cursorStmtNode;
 	Jrd::ExecStatementNode* execStatementNode;
 }
@@ -661,7 +662,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
 %type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
-%type <legacyNode> array_spec array_type as_opt assignment assignments
+%type <legacyNode> array_spec array_type as_opt assignment
+%type <compoundStmtNode> assignments
 %type <legacyStr>  admin_opt
 
 %type <legacyNode> begin_string begin_trigger
@@ -699,7 +701,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  db_name ddl_desc
 
 %type <legacyNode> end_default err errors event_argument_opt exception_clause
-%type <legacyNode> excp_hndl_statement excp_hndl_statements
+%type <legacyNode> excp_hndl_statement
+%type <compoundStmtNode> excp_hndl_statements
 %type <legacyNode> exec_function exec_procedure
 %type <legacyNode> extra_indices_opt
 %type <legacyNode> execute_privilege
@@ -738,7 +741,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> keyword_or_column
 
 %type <legacyNode> label_opt limit_clause
-%type <legacyNode> local_declaration local_declaration_item local_declaration_list local_declarations
+%type <legacyNode> local_declaration local_declaration_item
+%type <compoundStmtNode> local_declaration_list local_declarations
 %type <legacyNode> lock_clause lock_mode lock_type lock_wait
 %type <legacyStr>  lastname_opt
 %type <int32Val>   long_integer
@@ -766,7 +770,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
 %type <legacyNode> post_event prec_scale primary_constraint privilege
 %type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt
-%type <legacyNode> proc_statement proc_statements
+%type <legacyNode> proc_statement
+%type <compoundStmtNode> proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
 
@@ -2252,12 +2257,20 @@ package_body_item
 
 local_declaration_list
 	: /* nothing */			{ $$ = NULL; }
-	| local_declarations	{ $$ = make_list ($1); }
+	| local_declarations
 	;
 
 local_declarations
 	: local_declaration
-	| local_declarations local_declaration	{ $$ = make_node (nod_list, 2, $1, $2); }
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->dsqlStatements.add($1);
+		}
+	| local_declarations local_declaration
+		{
+			$1->dsqlStatements.add($2);
+			$$ = $1;
+		}
 	;
 
 local_declaration
@@ -2310,17 +2323,33 @@ full_proc_block
 
 full_proc_block_body
 	: // nothing
-		{ $$ = make_node (nod_block, (int) e_blk_count, NULL, NULL);}
+		{ $$ = makeClassNode(newNode<CompoundStmtNode>()); }
 	| proc_statements
-		{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), NULL); }
+		{
+			BlockNode* node = newNode<BlockNode>();
+			node->action = $1;
+			$$ = makeClassNode(node);
+		}
 	| proc_statements excp_hndl_statements
-		{ $$ = make_node (nod_block, (int) e_blk_count, make_list ($1), make_list ($2)); }
+		{
+			BlockNode* node = newNode<BlockNode>();
+			node->action = $1;
+			node->handlers = $2;
+			$$ = makeClassNode(node);
+		}
 	;
 
 proc_statements
 	: proc_block
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->dsqlStatements.add($1);
+		}
 	| proc_statements proc_block
-		{ $$ = make_node (nod_list, 2, $1, $2); }
+		{
+			$1->dsqlStatements.add($2);
+			$$ = $1;
+		}
 	;
 
 proc_statement
@@ -2624,7 +2653,15 @@ cursor_def
 
 excp_hndl_statements
 	: excp_hndl_statement
-	| excp_hndl_statements excp_hndl_statement	{ $$ = make_node (nod_list, 2, $1, $2); }
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->dsqlStatements.add($1);
+		}
+	| excp_hndl_statements excp_hndl_statement
+		{
+			$1->dsqlStatements.add($2);
+			$$ = $1;
+		}
 	;
 
 excp_hndl_statement
@@ -4746,9 +4783,9 @@ merge_when_not_matched_clause
 
 merge_update_specification
 	: THEN UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, NULL, make_list($4)); }
+		{ $$ = make_node(nod_merge_update, e_mrg_update_count, NULL, makeClassNode($4)); }
 	| AND search_condition THEN UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, $2, make_list($6)); }
+		{ $$ = make_node(nod_merge_update, e_mrg_update_count, $2, makeClassNode($6)); }
 	| THEN KW_DELETE
 		{ $$ = make_node(nod_merge_delete, e_mrg_delete_count, NULL); }
 	| AND search_condition THEN KW_DELETE
@@ -4792,7 +4829,7 @@ update_searched
 	: UPDATE table_name SET assignments where_clause plan_clause
 			order_clause rows_clause returning_clause
 		{
-			$$ = make_node(nod_update, (int) e_upd_count, $2, make_list($4),
+			$$ = make_node(nod_update, (int) e_upd_count, $2, makeClassNode($4),
 				$5, $6, $7, $8, NULL, $9, NULL);
 		}
 	;
@@ -4801,7 +4838,7 @@ update_positioned
 	: UPDATE table_name SET assignments cursor_clause
 		{
 			$$ = make_node(nod_update, (int) e_upd_count,
-				$2, make_list($4), NULL, NULL, NULL, NULL, $5, NULL, NULL);
+				$2, makeClassNode($4), NULL, NULL, NULL, NULL, $5, NULL, NULL);
 		}
 	;
 
@@ -4842,7 +4879,15 @@ cursor_clause
 
 assignments
 	: assignment
-	| assignments ',' assignment	{ $$ = make_node(nod_list, 2, $1, $3); }
+		{
+			$$ = newNode<CompoundStmtNode>();
+			$$->dsqlStatements.add($1);
+		}
+	| assignments ',' assignment
+		{
+			$1->dsqlStatements.add($3);
+			$$ = $1;
+		}
 	;
 
 assignment

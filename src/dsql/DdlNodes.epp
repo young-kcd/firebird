@@ -24,6 +24,7 @@
 #include "../dsql/DdlNodes.h"
 #include "../dsql/BoolNodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../dsql/node.h"
 #include "../jrd/blr.h"
 #include "../jrd/btr.h"
@@ -1063,7 +1064,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_FUNCTION);
 
-	const dsql_nod* variables = localDeclList;
+	const CompoundStmtNode* variables = localDeclList;
 	if (variables)
 	{
 		// insure that variable names do not duplicate parameter names
@@ -1076,8 +1077,8 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			names.add(parameter.name);
 		}
 
-		const dsql_nod* const* ptr = variables->nod_arg;
-		for (const dsql_nod* const* const end = ptr + variables->nod_count; ptr < end; ptr++)
+		const dsql_nod* const* ptr = variables->dsqlStatements.begin();
+		for (const dsql_nod* const* const end = variables->dsqlStatements.end(); ptr != end; ++ptr)
 		{
 			if ((*ptr)->nod_type == nod_def_field)
 			{
@@ -1812,7 +1813,7 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE);
 
-	const dsql_nod* variables = localDeclList;
+	const CompoundStmtNode* variables = localDeclList;
 	if (variables)
 	{
 		// insure that variable names do not duplicate parameter names
@@ -1831,8 +1832,8 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			names.add(parameter.name);
 		}
 
-		const dsql_nod* const* ptr = variables->nod_arg;
-		for (const dsql_nod* const* const end = ptr + variables->nod_count; ptr < end; ptr++)
+		const dsql_nod* const* ptr = variables->dsqlStatements.begin();
+		for (const dsql_nod* const* const end = variables->dsqlStatements.end(); ptr != end; ++ptr)
 		{
 			if ((*ptr)->nod_type == nod_def_field)
 			{
@@ -5674,9 +5675,12 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	blrWriter.init(dsqlScratch);
 
 	// Specify that the trigger should abort if the condition is not met.
-	dsql_nod* actionNode = MAKE_node(Dsql::nod_list, 1);
-	actionNode->nod_arg[0] = MAKE_node(Dsql::nod_gdscode, 1);
-	actionNode->nod_arg[0]->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+	CompoundStmtNode* actionNode = FB_NEW(pool) CompoundStmtNode(pool);
+	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_gdscode, 1));
+	actionNode->dsqlStatements.front()->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+
+	dsql_nod* actionNod = MAKE_node(Dsql::nod_class_stmtnode, 1);
+	actionNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(actionNode);
 
 	// Generate the trigger blr.
 
@@ -5715,7 +5719,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	GEN_expr(dsqlScratch, condition);
 
 	// Generate the action statement for the trigger.
-	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, actionNode));
+	GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, actionNod));
 
 	dsqlScratch->appendUChar(blr_end);	// of if (as there's no ELSE branch)
 	dsqlScratch->appendUChar(blr_end);	// of begin
@@ -7710,9 +7714,9 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	// Specify that the trigger should abort if the condition is not met.
-	dsql_nod* actionNode = MAKE_node(Dsql::nod_list, 1);
-	actionNode->nod_arg[0] = MAKE_node(Dsql::nod_gdscode, 1);
-	actionNode->nod_arg[0]->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+	CompoundStmtNode* actionNode = FB_NEW(pool) CompoundStmtNode(pool);
+	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_gdscode, 1));
+	actionNode->dsqlStatements.front()->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
 
 	// Create the UPDATE trigger.
 
@@ -7736,7 +7740,7 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 
 // Define a trigger for a VIEW WITH CHECK OPTION.
 void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	dsql_nod* rse, dsql_nod* items, dsql_nod* actions, TriggerType triggerType)
+	dsql_nod* rse, dsql_nod* items, CompoundStmtNode* actions, TriggerType triggerType)
 {
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
@@ -7829,9 +7833,9 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	// Generate the action statements for the trigger.
 
-	dsql_nod** ptr = actions->nod_arg;
+	dsql_nod** ptr = actions->dsqlStatements.begin();
 
-	for (const dsql_nod* const* const end = ptr + actions->nod_count; ptr != end; ++ptr)
+	for (const dsql_nod* const* const end = actions->dsqlStatements.end(); ptr != end; ++ptr)
 		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, *ptr));
 
 	dsqlScratch->appendUChar(blr_end);	// of begin

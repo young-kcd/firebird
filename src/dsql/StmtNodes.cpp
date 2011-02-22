@@ -152,7 +152,7 @@ void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 static RegisterNode<AssignmentNode> regAssignmentNode(blr_assignment);
 
-DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
 	AssignmentNode* node = FB_NEW(pool) AssignmentNode(pool);
 	node->asgnFrom = PAR_parse_value(tdbb, csb);
@@ -285,7 +285,20 @@ DmlNode* BlockNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 BlockNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	BlockNode* node = FB_NEW(getPool()) BlockNode(getPool());
+
+	if (handlers)
+		++dsqlScratch->errorHandlers;
+
+	node->action = action->dsqlPass(dsqlScratch);
+
+	if (handlers)
+	{
+		node->handlers = handlers->dsqlPass(dsqlScratch);
+		--dsqlScratch->errorHandlers;
+	}
+
+	return node;
 }
 
 void BlockNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
@@ -295,6 +308,18 @@ void BlockNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void BlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_block);
+	action->genBlr(dsqlScratch);
+
+	if (handlers)
+	{
+		const dsql_nod* const* end = handlers->dsqlStatements.end();
+
+		for (dsql_nod** ptr = handlers->dsqlStatements.begin(); ptr != end; ++ptr)
+			GEN_statement(dsqlScratch, *ptr);
+	}
+
+	dsqlScratch->appendUChar(blr_end);
 }
 
 BlockNode* BlockNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -561,7 +586,21 @@ DmlNode* CompoundStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	CompoundStmtNode* node = FB_NEW(getPool()) CompoundStmtNode(getPool());
+
+	for (dsql_nod** i = dsqlStatements.begin(); i != dsqlStatements.end(); ++i)
+	{
+		dsql_nod* ptr = *i;
+
+		if (ptr->nod_type == Dsql::nod_assign)
+			ptr = PASS1_node(dsqlScratch, ptr);
+		else
+			ptr = PASS1_statement(dsqlScratch, ptr);
+
+		node->dsqlStatements.add(ptr);
+	}
+
+	return node;
 }
 
 void CompoundStmtNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
@@ -571,6 +610,12 @@ void CompoundStmtNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void CompoundStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_begin);
+
+	for (dsql_nod** i = dsqlStatements.begin(); i != dsqlStatements.end(); ++i)
+		GEN_statement(dsqlScratch, *i);
+
+	dsqlScratch->appendUChar(blr_end);
 }
 
 CompoundStmtNode* CompoundStmtNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -2815,7 +2860,7 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->body = body;
 
 	const size_t count = node->parameters.getCount() + node->returns.getCount() +
-		(node->localDeclList ? node->localDeclList->nod_count : 0);
+		(node->localDeclList ? node->localDeclList->statements.getCount() : 0);
 
 	if (count != 0)
 	{
@@ -2861,7 +2906,13 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 		text += "    " + s + "\n";
 	}
 
-	nodes.add(localDeclList);
+	if (localDeclList)
+	{
+		string s;
+		localDeclList->print(s, nodes);
+		text += s + "\n";
+	}
+
 	nodes.add(body);
 }
 

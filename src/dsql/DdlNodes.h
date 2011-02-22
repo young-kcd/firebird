@@ -39,6 +39,8 @@
 
 namespace Jrd {
 
+class CompoundStmtNode;
+
 
 class ExternalClause
 {
@@ -284,7 +286,7 @@ public:
 	bool deterministic;
 	Firebird::Array<ParameterClause> parameters;
 	TypeClause returnType;
-	dsql_nod* localDeclList;
+	NestConst<CompoundStmtNode> localDeclList;
 	Firebird::string source;
 	dsql_nod* body;
 	bool compiled;
@@ -389,7 +391,7 @@ public:
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
 	Firebird::string source;
-	dsql_nod* localDeclList;
+	NestConst<CompoundStmtNode> localDeclList;
 	dsql_nod* body;
 	bool compiled;
 	bool invalid;
@@ -550,7 +552,7 @@ private:
 public:
 	bool create;
 	bool alter;
-	dsql_nod* localDeclList;
+	NestConst<CompoundStmtNode> localDeclList;
 	dsql_nod* body;
 	bool compiled;
 	bool invalid;
@@ -1150,7 +1152,7 @@ protected:
 private:
 	void createCheckTriggers(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_nod* items);
 	void createCheckTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-		dsql_nod* rse, dsql_nod* items, dsql_nod* actions, TriggerType triggerType);
+		dsql_nod* rse, dsql_nod* items, CompoundStmtNode* actions, TriggerType triggerType);
 	void defineUpdateAction(DsqlCompilerScratch* dsqlScratch, dsql_nod** baseAndNode,
 		dsql_nod** baseRelation, dsql_nod* items);
 	static dsql_nod* replaceFieldNames(dsql_nod* input, dsql_nod* searchFields,

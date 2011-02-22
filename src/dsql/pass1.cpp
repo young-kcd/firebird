@@ -1116,21 +1116,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = pass1_savepoint(dsqlScratch, pass1_merge(dsqlScratch, input));
 		break;
 
-	case nod_block:
-		if (input->nod_arg[e_blk_errs])
-			dsqlScratch->errorHandlers++;
-		else if (input->nod_arg[e_blk_action])
-		{
-			input->nod_count = 1;
-			if (!dsqlScratch->errorHandlers)
-				input->nod_type = nod_list;
-		}
-		else
-		{
-			input->nod_count = 0;
-			input->nod_type = nod_list;
-		}
-
 	case nod_list:
 		{
 			node = MAKE_node(input->nod_type, input->nod_count);
@@ -1145,8 +1130,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					*ptr2++ = PASS1_statement(dsqlScratch, *ptr);
 				DEV_BLKCHK(*(ptr2 - 1), dsql_type_nod);
 			}
-			if (input->nod_type == nod_block && input->nod_arg[e_blk_errs])
-				dsqlScratch->errorHandlers--;
 			return node;
 		}
 
@@ -1397,13 +1380,13 @@ static void assign_fld_dtype_from_dsc( dsql_fld* field, const dsc* nod_desc)
 	sorted array
 	if success, add them into array
  **/
-void PASS1_check_unique_fields_names(StrArray& names, const dsql_nod* fields)
+void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fields)
 {
 	if (!fields)
 		return;
 
-	const dsql_nod* const* ptr = fields->nod_arg;
-	const dsql_nod* const* const end = ptr + fields->nod_count;
+	const dsql_nod* const* ptr = fields->dsqlStatements.begin();
+	const dsql_nod* const* const end = fields->dsqlStatements.end();
 	const dsql_fld* field;
 	const dsql_str* str;
 	const char* name = NULL;
@@ -1510,9 +1493,18 @@ static dsql_nod* explode_fields(dsql_rel* relation)
 static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_fields,
 							   const bool is_insert, const char* dsqlScratch)
 {
-	for (int i = 0; i < fields->nod_count; ++i)
+	const CompoundStmtNode* statements = StmtNode::as<CompoundStmtNode>(fields);
+	size_t count = (statements ? statements->dsqlStatements.getCount() : fields->nod_count);
+	const dsql_nod* const* fieldsArgs =
+		(statements ? statements->dsqlStatements.begin() : fields->nod_arg);
+
+	statements = StmtNode::as<CompoundStmtNode>(old_fields);
+	const dsql_nod* const* oldFieldsArgs =
+		(statements ? statements->dsqlStatements.begin() : old_fields->nod_arg);
+
+	for (int i = 0; i < count; ++i)
 	{
-		const dsql_nod* elem1 = fields->nod_arg[i];
+		const dsql_nod* elem1 = fieldsArgs[i];
 		if (elem1->nod_type == nod_assign && !is_insert)
 			elem1 = elem1->nod_arg[e_asgn_field];
 
@@ -1524,7 +1516,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 
 			for (int j = i + 1; j < fields->nod_count; ++j)
 			{
-				const dsql_nod* elem2 = fields->nod_arg[j];
+				const dsql_nod* elem2 = fieldsArgs[j];
 				if (elem2->nod_type == nod_assign && !is_insert)
 					elem2 = elem2->nod_arg[e_asgn_field];
 
@@ -1540,7 +1532,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 						const dsql_rel* bad_rel = tmp_ctx ? tmp_ctx->ctx_relation : 0;
 						field_duplication((bad_rel ? bad_rel->rel_name.c_str() : 0),
 							n2.c_str(),
-							(is_insert ? old_fields->nod_arg[j] : old_fields->nod_arg[j]->nod_arg[1]),
+							(is_insert ? oldFieldsArgs[j] : oldFieldsArgs[j]->nod_arg[1]),
 							dsqlScratch);
 					}
 				}
@@ -1915,6 +1907,7 @@ bool PASS1_node_match(const dsql_nod* node1, const dsql_nod* node2, bool ignore_
 static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* input, dsql_nod** list)
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	DEV_BLKCHK(input, dsql_type_nod);
 
@@ -1956,10 +1949,12 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 	// nod_returning was already processed
 	fb_assert(returning->nod_type == nod_list);
 
-	dsql_nod* null_assign = MAKE_node(nod_list, returning->nod_count);
+	CompoundStmtNode* nullAssign = FB_NEW(pool) CompoundStmtNode(pool);
+	dsql_nod* nullAssignNod = MAKE_node(nod_class_stmtnode, 1);
+	nullAssignNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(nullAssign);
 
 	dsql_nod** ret_ptr = returning->nod_arg;
-	dsql_nod** null_ptr = null_assign->nod_arg;
+	dsql_nod** null_ptr = nullAssign->dsqlStatements.getBuffer(returning->nod_count);
 	dsql_nod* temp;
 
 	for (const dsql_nod* const* const end = ret_ptr + returning->nod_count; ret_ptr < end;
@@ -1979,11 +1974,11 @@ static dsql_nod* nullify_returning(DsqlCompilerScratch* dsqlScratch, dsql_nod* i
 	if (list)
 	{
 		*list = MAKE_node(nod_list, 2);
-		(*list)->nod_arg[0] = null_assign;
+		(*list)->nod_arg[0] = nullAssignNod;
 		(*list)->nod_arg[1] = input;
 	}
 
-	return null_assign;	// return the initialization statement
+	return nullAssignNod;	// return the initialization statement
 }
 
 
@@ -4104,7 +4099,9 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	// build a FOR SELECT node
 	ForNode* forNode = FB_NEW(pool) ForNode(pool);
 	forNode->dsqlSelect = select;
-	forNode->dsqlAction = MAKE_node(nod_list, 0);
+	forNode->dsqlAction = MAKE_node(nod_class_stmtnode, 1);
+	forNode->dsqlAction->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+		FB_NEW(pool) CompoundStmtNode(pool));
 
 	dsql_nod* for_select = MAKE_node(nod_class_stmtnode, 1);
 	for_select->nod_arg[0] = (dsql_nod*) forNode;
@@ -4130,15 +4127,16 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	if (whenNode && whenNode->nod_type == nod_merge_update)
 	{
 		// get the assignments of the UPDATE dsqlScratch
-		dsql_nod* list = whenNode->nod_arg[e_mrg_update_statement];
-		fb_assert(list->nod_type == nod_list);
+		CompoundStmtNode* stmts = StmtNode::as<CompoundStmtNode>(
+			whenNode->nod_arg[e_mrg_update_statement]);
+		fb_assert(stmts);
 
 		Array<dsql_nod*> org_values, new_values;
 
 		// separate the new and org values to process in correct contexts
-		for (int i = 0; i < list->nod_count; ++i)
+		for (size_t i = 0; i < stmts->dsqlStatements.getCount(); ++i)
 		{
-			const dsql_nod* const assign = list->nod_arg[i];
+			const dsql_nod* const assign = stmts->dsqlStatements[i];
 			fb_assert(assign->nod_type == nod_assign);
 			org_values.add(assign->nod_arg[e_asgn_value]);
 			new_values.add(assign->nod_arg[e_asgn_field]);
@@ -4200,9 +4198,13 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		}
 
 		// recreate list of assignments
-		update->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
+		CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
+		list->dsqlStatements.resize(stmts->dsqlStatements.getCount());
 
-		for (int i = 0; i < list->nod_count; ++i)
+		update->nod_arg[e_mdc_statement] = MAKE_node(nod_class_stmtnode, 1);
+		update->nod_arg[e_mdc_statement]->nod_arg[0] = reinterpret_cast<dsql_nod*>(list);
+
+		for (int i = 0; i < list->dsqlStatements.getCount(); ++i)
 		{
 			if (!PASS1_set_parameter_type(dsqlScratch, org_values[i], new_values[i], false))
 				PASS1_set_parameter_type(dsqlScratch, new_values[i], org_values[i], false);
@@ -4210,7 +4212,7 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
 			assign->nod_arg[e_asgn_value] = org_values[i];
 			assign->nod_arg[e_asgn_field] = new_values[i];
-			list->nod_arg[i] = assign;
+			list->dsqlStatements[i] = assign;
 		}
 
 		// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
@@ -4342,10 +4344,12 @@ static dsql_nod* pass1_merge(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 
 	if (nullRet)
 	{
-		dsql_nod* temp = MAKE_node(nod_list, 2);
-		temp->nod_arg[0] = nullRet;
-		temp->nod_arg[1] = for_select;
-		for_select = temp;
+		CompoundStmtNode* temp = FB_NEW(pool) CompoundStmtNode(pool);
+		temp->dsqlStatements.add(nullRet);
+		temp->dsqlStatements.add(for_select);
+
+		for_select = MAKE_node(nod_class_stmtnode, 1);
+		for_select->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
 	}
 
 	Node* sendNode = (FB_NEW(pool) MergeSendNode(pool, for_select))->dsqlPass(dsqlScratch);
@@ -5973,14 +5977,14 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 
 	// Separate old and new context references
 
-	Firebird::Array<dsql_nod*> org_values, new_values;
+	Array<dsql_nod*> org_values, new_values;
 
-	dsql_nod* list = input->nod_arg[e_upd_statement];
-	fb_assert(list->nod_type == nod_list);
+	CompoundStmtNode* assignments = StmtNode::as<CompoundStmtNode>(input->nod_arg[e_upd_statement]);
+	fb_assert(assignments);
 
-	for (int i = 0; i < list->nod_count; ++i)
+	for (size_t i = 0; i < assignments->dsqlStatements.getCount(); ++i)
 	{
-		const dsql_nod* const assign = list->nod_arg[i];
+		const dsql_nod* const assign = assignments->dsqlStatements[i];
 		fb_assert(assign->nod_type == nod_assign);
 		org_values.add(assign->nod_arg[e_asgn_value]);
 		new_values.add(assign->nod_arg[e_asgn_field]);
@@ -6031,15 +6035,23 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 		anode->nod_arg[e_mdc_return] = process_returning(dsqlScratch, input->nod_arg[e_upd_return]);
 
 		dsqlScratch->context->pop();
+
 		// Recreate list of assignments
-		anode->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
-		for (int i = 0; i < list->nod_count; ++i)
+
+		CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
+		list->dsqlStatements.resize(assignments->dsqlStatements.getCount());
+
+		anode->nod_arg[e_mdc_statement] = MAKE_node(nod_class_stmtnode, 1);
+		anode->nod_arg[e_mdc_statement]->nod_arg[0] = reinterpret_cast<dsql_nod*>(list);
+
+		for (int i = 0; i < list->dsqlStatements.getCount(); ++i)
 		{
 			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
 			assign->nod_arg[e_asgn_value] = org_values[i];
 			assign->nod_arg[e_asgn_field] = new_values[i];
-			list->nod_arg[i] = assign;
+			list->dsqlStatements[i] = assign;
 		}
+
 		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
 		field_appears_once(anode->nod_arg[e_mdc_statement],
 						   input->nod_arg[e_upd_statement],
@@ -6123,26 +6135,30 @@ static dsql_nod* pass1_update(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 	dsqlScratch->context->pop();
 
 	// Recreate list of assignments
-	node->nod_arg[e_mod_statement] = list = MAKE_node(nod_list, list->nod_count);
 
-	for (int j = 0; j < list->nod_count; ++j)
+	CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
+	list->dsqlStatements.resize(assignments->dsqlStatements.getCount());
+
+	node->nod_arg[e_mod_statement] = MAKE_node(nod_class_stmtnode, 1);
+	node->nod_arg[e_mod_statement]->nod_arg[0] = reinterpret_cast<dsql_nod*>(list);
+
+	for (int j = 0; j < list->dsqlStatements.getCount(); ++j)
 	{
 		dsql_nod* const sub1 = org_values[j];
 		dsql_nod* const sub2 = new_values[j];
+
 		if (!PASS1_set_parameter_type(dsqlScratch, sub1, sub2, false))
-		{
 			PASS1_set_parameter_type(dsqlScratch, sub2, sub1, false);
-		}
+
 		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
 		assign->nod_arg[e_asgn_value] = sub1;
 		assign->nod_arg[e_asgn_field] = sub2;
-		list->nod_arg[j] = assign;
+		list->dsqlStatements[j] = assign;
 	}
 
 	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-	field_appears_once(node->nod_arg[e_mod_statement],
-					   input->nod_arg[e_upd_statement],
-					   false, "UPDATE");
+	field_appears_once(node->nod_arg[e_mod_statement], input->nod_arg[e_upd_statement],
+		false, "UPDATE");
 
 	set_parameters_name(node->nod_arg[e_mod_statement], node->nod_arg[e_mod_update]);
 
@@ -6250,7 +6266,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 
 	DsqlNodStack varStack;
 
-	DsqlNodStack stack;
+	CompoundStmtNode* assignments = FB_NEW(pool) CompoundStmtNode(pool);
 	dsql_nod** field_ptr = fields->nod_arg;
 	dsql_nod** value_ptr = values->nod_arg;
 
@@ -6263,7 +6279,7 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
 		assign->nod_arg[e_asgn_value] = *value_ptr;
 		assign->nod_arg[e_asgn_field] = *field_ptr;
-		stack.push(assign);
+		assignments->dsqlStatements.add(assign);
 
 		dsql_nod* temp = *value_ptr;
 		dsql_nod* temp2 = insert->nod_arg[e_sto_statement]->nod_arg[field_ptr - fields->nod_arg]->nod_arg[1];
@@ -6342,7 +6358,8 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	// build the UPDATE node
 	dsql_nod* update = MAKE_node(nod_update, e_upd_count);
 	update->nod_arg[e_upd_relation] = input->nod_arg[e_upi_relation];
-	update->nod_arg[e_upd_statement] = MAKE_list(stack);
+	update->nod_arg[e_upd_statement] = MAKE_node(nod_class_stmtnode, 1);
+	update->nod_arg[e_upd_statement]->nod_arg[0] = reinterpret_cast<dsql_nod*>(assignments);
 	update->nod_arg[e_upd_boolean] = match;
 
 	if (input->nod_arg[e_upi_return])
@@ -6379,18 +6396,23 @@ static dsql_nod* pass1_update_or_insert(DsqlCompilerScratch* dsqlScratch, dsql_n
 	ifNode->dsqlTrueAction = insert;
 
 	// build the temporary vars / UPDATE / IF nodes
-	dsql_nod* list = MAKE_node(nod_list, 3);
-	list->nod_arg[0] = MAKE_list(varStack);
-	list->nod_arg[0]->nod_flags |= NOD_SIMPLE_LIST;
-	list->nod_arg[1] = update;
-	list->nod_arg[2] = MAKE_node(nod_class_stmtnode, 1);
-	list->nod_arg[2]->nod_arg[0] = (dsql_nod*) ifNode;
+	CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
+
+	while (varStack.hasData())
+		list->dsqlStatements.add(varStack.pop());
+
+	list->dsqlStatements.add(update);
+	list->dsqlStatements.add(MAKE_node(nod_class_stmtnode, 1));
+	list->dsqlStatements.back()->nod_arg[0] = (dsql_nod*) ifNode;
+
+	dsql_nod* listNod = MAKE_node(nod_class_stmtnode, 1);
+	listNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(list);
 
 	// if RETURNING is present, type is already DsqlCompiledStatement::TYPE_EXEC_PROCEDURE
 	if (!input->nod_arg[e_upi_return])
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_INSERT);
 
-	return list;
+	return listNod;
 }
 
 
@@ -6731,7 +6753,7 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
     @param rel_node
 
  **/
-static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
+static void set_parameters_name(dsql_nod* list_node, const dsql_nod* rel_node)
 {
 	DEV_BLKCHK(list_node, dsql_type_nod);
 	DEV_BLKCHK(rel_node, dsql_type_nod);
@@ -6740,10 +6762,14 @@ static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
 	DEV_BLKCHK(context, dsql_type_ctx);
 	const dsql_rel* relation = context->ctx_relation;
 
-	dsql_nod** ptr = list_node->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list_node->nod_count; ptr < end; ptr++)
+	CompoundStmtNode* statements = StmtNode::as<CompoundStmtNode>(list_node);
+	size_t count = (statements ? statements->dsqlStatements.getCount() : list_node->nod_count);
+	dsql_nod** ptr = (statements ? statements->dsqlStatements.begin() : list_node->nod_arg);
+
+	for (const dsql_nod* const* const end = ptr + count; ptr != end; ++ptr)
 	{
 		DEV_BLKCHK(*ptr, dsql_type_nod);
+
 		if ((*ptr)->nod_type == nod_assign)
 			set_parameter_name((*ptr)->nod_arg[e_asgn_value], (*ptr)->nod_arg[e_asgn_field], relation);
 		else
@@ -6843,13 +6869,17 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node, co
  **/
 static dsql_nod* pass1_savepoint(const DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	if (dsqlScratch->errorHandlers)
 	{
-		dsql_nod* temp = MAKE_node(nod_list, 3);
-		temp->nod_arg[0] = MAKE_node(nod_start_savepoint, 0);
-		temp->nod_arg[1] = node;
-		temp->nod_arg[2] = MAKE_node(nod_end_savepoint, 0);
-		node = temp;
+		CompoundStmtNode* temp = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
+		temp->dsqlStatements.add(MAKE_node(nod_start_savepoint, 0));
+		temp->dsqlStatements.add(node);
+		temp->dsqlStatements.add(MAKE_node(nod_end_savepoint, 0));
+
+		dsql_nod* node = MAKE_node(nod_class_stmtnode, 1);
+		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
 	}
 
 	return node;
@@ -7103,9 +7133,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	// IOL: missing node types
 	case nod_on_error:
 		verb = "on error";
-		break;
-	case nod_block:
-		verb = "block";
 		break;
 	case nod_default:
 		verb = "default";

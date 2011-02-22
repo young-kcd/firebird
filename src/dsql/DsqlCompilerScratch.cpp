@@ -23,6 +23,7 @@
 #include "../dsql/DsqlCompilerScratch.h"
 #include "../dsql/DdlNodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/blr.h"
 #include "../jrd/RecordSourceNodes.h"
@@ -242,14 +243,14 @@ void DsqlCompilerScratch::putType(const TypeClause& type, bool useSubType)
 }
 
 // Emit dyn for the local variables declared in a procedure or trigger.
-void DsqlCompilerScratch::putLocalVariables(const dsql_nod* parameters, SSHORT locals)
+void DsqlCompilerScratch::putLocalVariables(const CompoundStmtNode* parameters, USHORT locals)
 {
 	if (!parameters)
 		return;
 
-	dsql_nod* const* ptr = parameters->nod_arg;
+	dsql_nod* const* ptr = parameters->dsqlStatements.begin();
 
-	for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
+	for (const dsql_nod* const* const end = parameters->dsqlStatements.end(); ptr != end; ++ptr)
 	{
 		dsql_nod* parameter = *ptr;
 

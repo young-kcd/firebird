@@ -110,6 +110,7 @@ class CompoundStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT
 public:
 	explicit CompoundStmtNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>(pool),
+		  dsqlStatements(pool),
 		  statements(pool),
 		  onlyAssignments(false)
 	{
@@ -127,6 +128,7 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	Firebird::Array<dsql_nod*> dsqlStatements;
 	Firebird::Array<NestConst<StmtNode> > statements;
 	bool onlyAssignments;
 };
@@ -553,7 +555,7 @@ private:
 public:
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
-	dsql_nod* localDeclList;
+	NestConst<CompoundStmtNode> localDeclList;
 	dsql_nod* body;
 };
 

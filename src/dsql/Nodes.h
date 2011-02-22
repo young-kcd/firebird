@@ -969,6 +969,12 @@ public:
 		*node = (*node)->pass2(tdbb, csb);
 	}
 
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
+	{
+		DmlNode::dsqlPass(dsqlScratch);
+		return this;
+	}
+
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 
