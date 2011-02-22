@@ -1,3 +1,10 @@
+ 2011-02-21 11:15  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/opt.cpp
+Fixed CORE-3355: Wrong comparison of DATE and TIMESTAMP if index is used.
+
  2011-02-18 06:26  dimitr 
    M src/jrd/evl.cpp
 Fixed the main reason for CORE-3233: LIKE, STARTING and CONTAINING fail if second operand >= 32K. Thanks to Adriano.
