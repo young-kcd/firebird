@@ -1712,7 +1712,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	// check datatypes to ensure that the index scan is guaranteed
 	// to deliver correct results
 
-	bool excludeBound = (cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_lss);
+	bool excludeBound = cmpNode && (cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_lss);
 
 	if (value)
 	{
