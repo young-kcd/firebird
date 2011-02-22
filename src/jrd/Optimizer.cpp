@@ -2569,6 +2569,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	// check datatypes to ensure that the index scan is guaranteed
 	// to deliver correct results
 
+	bool excludeBound = (boolean->nod_type == nod_gtr || boolean->nod_type == nod_lss);
+
 	if (value)
 	{
 		dsc desc1, desc2;
@@ -2606,6 +2608,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 				value2 = cast;
 			}
 		}
+		// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
+		else if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
+		{
+			excludeBound = false;
+		}
 	}
 
 	// match the field to an index, if possible, and save the value to be matched
@@ -2616,14 +2623,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 	IndexScratchSegment** segment = indexScratch->segments.begin();
 	for (int i = 0; i < indexScratch->idx->idx_count; i++)
 	{
-
 		if ((indexScratch->idx->idx_flags & idx_expressn) ||
 			(USHORT)(IPTR) match->nod_arg[e_fld_id] == indexScratch->idx->idx_rpt[i].idx_field)
 		{
-
 			switch (boolean->nod_type)
 			{
-
 				case nod_between:
 					if (!forward || !OPT_computable(optimizer->opt_csb, value2, stream, true, false))
 					{
@@ -2672,9 +2676,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 						(segment[i]->scanType == segmentScanBetween)))
 					{
 						if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
-							segment[i]->excludeLower = (boolean->nod_type == nod_gtr);
+							segment[i]->excludeLower = excludeBound;
 						else
-							segment[i]->excludeUpper = (boolean->nod_type == nod_gtr);
+							segment[i]->excludeUpper = excludeBound;
 
 						if (forward)
 						{
@@ -2703,9 +2707,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 						(segment[i]->scanType == segmentScanBetween)))
 					{
 						if (forward != isDesc)
-							segment[i]->excludeUpper = (boolean->nod_type == nod_lss);
+							segment[i]->excludeUpper = excludeBound;
 						else
-							segment[i]->excludeLower = (boolean->nod_type == nod_lss);
+							segment[i]->excludeLower = excludeBound;
 
 						if (forward)
 						{
@@ -2725,7 +2729,6 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 						}
 					}
 					break;
-
 
 				case nod_starts:
 					// Check if validate for using index
@@ -2772,7 +2775,6 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
 				// If this is the first segment, then this index is a candidate.
 				indexScratch->candidate = true;
 			}
-
 		}
 	}
 

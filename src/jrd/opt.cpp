@@ -1198,21 +1198,33 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation, i
 		 (tail->opt_lower || tail->opt_upper) && tail->opt_match && (tail < end);
 		 tail++)
 	{
-		switch (tail->opt_match->nod_type)
+		if (tail->opt_match->nod_type == nod_gtr ||
+			tail->opt_match->nod_type == nod_lss)
 		{
-			case nod_gtr:
-				if (retrieval->irb_generic & irb_descending)
-					includeUpper = false;
-				else
-					includeLower = false;
+			dsc desc1, desc2;
+			CMP_get_desc(tdbb, opt->opt_csb, tail->opt_match->nod_arg[0], &desc1);
+			CMP_get_desc(tdbb, opt->opt_csb, tail->opt_match->nod_arg[1], &desc2);
+
+			// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
+			if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
 				break;
 
-			case nod_lss:
-				if (retrieval->irb_generic & irb_descending)
+			if (retrieval->irb_generic & irb_descending)
+			{
+				if (tail->opt_match->nod_type == nod_gtr)
+					includeUpper = false;
+				else
+					includeLower = false;
+			}
+			else
+			{
+				if (tail->opt_match->nod_type == nod_gtr)
 					includeLower = false;
 				else
 					includeUpper = false;
-				break;
+			}
+
+			break;
 		}
 	}
 
