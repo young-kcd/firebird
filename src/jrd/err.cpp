@@ -470,8 +470,7 @@ void ERR_punt()
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->getAttachment()->att_filename.hasData() ?
-						tdbb->getAttachment()->att_filename.c_str() : NULL,
+		gds__log_status(dbb->dbb_filename.hasData() ? dbb->dbb_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{
