@@ -1712,6 +1712,8 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 	// check datatypes to ensure that the index scan is guaranteed
 	// to deliver correct results
 
+	bool excludeBound = (cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_lss);
+
 	if (value)
 	{
 		dsc desc1, desc2;
@@ -1746,6 +1748,11 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 				value2 = cast;
 			}
+		}
+		// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
+		else if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
+		{
+			excludeBound = false;
 		}
 	}
 
@@ -1856,9 +1863,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 							(segment[i]->scanType == segmentScanBetween)))
 						{
 							if (forward != isDesc) // (forward && !isDesc || !forward && isDesc)
-								segment[i]->excludeLower = (cmpNode->blrOp == blr_gtr);
+								segment[i]->excludeLower = excludeBound;
 							else
-								segment[i]->excludeUpper = (cmpNode->blrOp == blr_gtr);
+								segment[i]->excludeUpper = excludeBound;
 
 							if (forward)
 							{
@@ -1887,9 +1894,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 							(segment[i]->scanType == segmentScanBetween)))
 						{
 							if (forward != isDesc)
-								segment[i]->excludeUpper = (cmpNode->blrOp == blr_lss);
+								segment[i]->excludeUpper = excludeBound;
 							else
-								segment[i]->excludeLower = (cmpNode->blrOp == blr_lss);
+								segment[i]->excludeLower = excludeBound;
 
 							if (forward)
 							{
