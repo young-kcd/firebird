@@ -61,6 +61,7 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
+#include "../jrd/dpm_proto.h"
 #include "../jrd/dyn_proto.h"
 #include "../jrd/dyn_df_proto.h"
 #include "../jrd/dyn_ut_proto.h"
@@ -1608,6 +1609,8 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 				b_ending_store = true;
 
 			END_STORE;
+
+			DPM_gen_id(tdbb, gen_id, true, 0);
 
 			break;
 		}

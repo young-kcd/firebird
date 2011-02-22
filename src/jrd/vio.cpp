@@ -2778,11 +2778,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			} // scope
 			break;
 
-		case rel_gens:
-			EVL_field(0, rpb->rpb_record, f_gen_name, &desc);
-			DFW_post_work(transaction, dfw_create_generator, &desc, 0);
-			break;
-
 		default:    // Shut up compiler warnings
 			break;
 		}
