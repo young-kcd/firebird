@@ -953,8 +953,10 @@ public:
 class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
-	explicit SetGeneratorNode(MemoryPool& pool)
+	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& aName, dsql_nod* aDsqlValue = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>(pool),
+		  name(aName),
+		  dsqlValue(aDsqlValue),
 		  value(NULL),
 		  genId(0)
 	{
@@ -971,6 +973,8 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	Firebird::MetaName name;
+	dsql_nod* dsqlValue;
 	NestConst<ValueExprNode> value;
 	USHORT genId;
 };

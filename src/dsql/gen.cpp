@@ -548,14 +548,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		}
 		return;
 
-	case nod_set_generator:
-	case nod_set_generator2:
-		dsqlScratch->appendUChar(blr_set_generator);
-		string = (dsql_str*) node->nod_arg[e_gen_id_name];
-		dsqlScratch->appendNullString(string->str_data);
-		GEN_expr(dsqlScratch, node->nod_arg[e_gen_id_value]);
-		return;
-
 	case nod_list:
 		dsqlScratch->appendUChar(blr_begin);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)

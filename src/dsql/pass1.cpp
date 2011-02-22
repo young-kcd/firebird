@@ -1193,20 +1193,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_gdscode:
 		return input;
 
-	case nod_set_generator:
-		node = MAKE_node(input->nod_type, e_gen_id_count);
-		node->nod_arg[e_gen_id_value] = PASS1_node(dsqlScratch, input->nod_arg[e_gen_id_value]);
-		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
-		break;
-
-	case nod_set_generator2:
-		node = MAKE_node(input->nod_type, e_gen_id_count);
-		node->nod_arg[e_gen_id_value] = PASS1_node(dsqlScratch, input->nod_arg[e_gen_id_value]);
-		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
-		break;
-
 	case nod_cursor:
 		{
 			fb_assert(input->nod_flags > 0);
@@ -7289,12 +7275,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_def_computed:
 		verb = "def_computed";
-		break;
-	case nod_set_generator:
-		verb = "set_generator";
-		break;
-	case nod_set_generator2:
-		verb = "set_generator2";
 		break;
 	case nod_mod_index:
 		verb = "mod_index";

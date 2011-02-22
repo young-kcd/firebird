@@ -143,8 +143,6 @@ enum nod_t
 	nod_natural,
 	nod_index,
 	nod_index_order,
-	nod_set_generator,
-	nod_set_generator2,
 	nod_mod_index,	// alter index
 	nod_idx_active,
 	nod_idx_inactive,
@@ -444,11 +442,6 @@ enum node_args {
 	e_filter_entry_pt,
 	e_filter_module,
 	e_filter_count,
-
-	e_gen_id_name = 0,		// Not a DSQL_NOD   nod_set_generator
-	e_gen_id_value,
-	e_gen_id_count,
-
 
 	e_udf_name = 0,			//
 	e_udf_entry_pt,

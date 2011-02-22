@@ -5268,7 +5268,7 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	MetaName name;
 	PAR_name(csb, name);
 
-	SetGeneratorNode* node = FB_NEW(pool) SetGeneratorNode(pool);
+	SetGeneratorNode* node = FB_NEW(pool) SetGeneratorNode(pool, name);
 
 	node->genId = MET_lookup_generator(tdbb, name);
 	if (node->genId < 0)
@@ -5281,7 +5281,12 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 SetGeneratorNode* SetGeneratorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	SetGeneratorNode* node = FB_NEW(getPool()) SetGeneratorNode(getPool(), name,
+		PASS1_node(dsqlScratch, dsqlValue));
+
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_GENERATOR);
+
+	return node;
 }
 
 void SetGeneratorNode::print(string& text, Array<dsql_nod*>& nodes) const
@@ -5291,6 +5296,9 @@ void SetGeneratorNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void SetGeneratorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_set_generator);
+	dsqlScratch->appendNullString(name.c_str());
+	GEN_expr(dsqlScratch, dsqlValue);
 }
 
 SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)

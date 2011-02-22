@@ -3345,16 +3345,16 @@ alter_index_clause	: symbol_index_name ACTIVE
 
 alter_sequence_clause
 	: symbol_generator_name RESTART WITH signed_long_integer
-		{ $$ = make_node(nod_set_generator2, e_gen_id_count, $1, MAKE_const_slong($4)); }
+		{ $$ = makeClassNode(newNode<SetGeneratorNode>(toName($1), MAKE_const_slong($4))); }
 	| symbol_generator_name RESTART WITH NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count,
-				$1, MAKE_constant((dsql_str*) $4, CONSTANT_SINT64));
+			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($1),
+				MAKE_constant((dsql_str*) $4, CONSTANT_SINT64)));
 		}
 	| symbol_generator_name RESTART WITH '-' NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count, $1,
-				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64))));
+			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($1),
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)))));
 		}
 	;
 
@@ -3982,7 +3982,6 @@ precision_opt
 	;
 
 
-
 // SET statements
 set		: set_transaction
 		| set_generator
@@ -3992,16 +3991,16 @@ set		: set_transaction
 
 set_generator
 	: SET GENERATOR symbol_generator_name TO signed_long_integer
-		{ $$ = make_node(nod_set_generator2, e_gen_id_count, $3, MAKE_const_slong($5)); }
+		{ $$ = makeClassNode(newNode<SetGeneratorNode>(toName($3), MAKE_const_slong($5))); }
 	| SET GENERATOR symbol_generator_name TO NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count,
-				$3, MAKE_constant((dsql_str*) $5, CONSTANT_SINT64));
+			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($3),
+				MAKE_constant((dsql_str*) $5, CONSTANT_SINT64)));
 		}
 	| SET GENERATOR symbol_generator_name TO '-' NUMBER64BIT
 		{
-			$$ = make_node(nod_set_generator2, e_gen_id_count, $3,
-				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64))));
+			$$ = makeClassNode(newNode<SetGeneratorNode>(toName($3),
+				makeClassNode(newNode<NegateNode>(MAKE_constant((dsql_str*) $6, CONSTANT_SINT64)))));
 		}
 	;
 
