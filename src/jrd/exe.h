@@ -419,8 +419,7 @@ const int e_fun_length		= 2;
 // Generate id
 
 const int e_gen_value		= 0;
-const int e_gen_relation	= 1;
-const int e_gen_id			= 1;	// Generator id (replaces e_gen_relation)
+const int e_gen_id			= 1;
 const int e_gen_length		= 2;
 
 // Protection mask

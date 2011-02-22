@@ -3123,7 +3123,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 			if (tmp < 0) {
 				error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 			}
-			node->nod_arg[e_gen_relation] = (jrd_nod*) (IPTR) tmp;
+			node->nod_arg[e_gen_id] = (jrd_nod*) (IPTR) tmp;
 			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
 
             /* CVC: There're thousand ways to go wrong, but I don't see any value

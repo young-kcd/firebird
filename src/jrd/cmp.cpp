@@ -2977,7 +2977,7 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_type = input->nod_type;
 		node->nod_arg[e_gen_value] =
 			copy(tdbb, csb, input->nod_arg[e_gen_value], remap, field_id, message, remap_fld);
-		node->nod_arg[e_gen_relation] = input->nod_arg[e_gen_relation];
+		node->nod_arg[e_gen_id] = input->nod_arg[e_gen_id];
 		return (node);
 
 	case nod_cast:
