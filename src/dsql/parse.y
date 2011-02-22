@@ -728,7 +728,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> having_clause
 
 %type <legacyNode> identity_clause in_predicate_value
-%type <legacyNode> index_definition index_list init_alter_db
+%type <legacyNode> index_definition index_list
 %type <legacyNode> ins_column_list ins_column_parens
 %type <legacyNode> ins_column_parens_opt insert integer_keyword
 %type <legacyNode> iso_mode isolation_mode
@@ -761,8 +761,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type named_param(<execStatementNode>) named_params_list(<execStatementNode>)
 %type not_named_param(<execStatementNode>) not_named_params_list(<execStatementNode>)
 
-%type <legacyNode> open_cursor opt_snapshot optional_retain
-%type <legacyNode> optional_savepoint optional_work order_clause order_direction order_item order_list
+%type <legacyNode> open_cursor optional_retain
+%type optional_savepoint opt_snapshot optional_work
+%type <legacyNode> order_clause order_direction order_item order_list
 %type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
 %type output_proc_parameters(<parametersClause>)
 
@@ -3145,8 +3146,8 @@ alter_clause
 		{ $$ = makeClassNode($2); }
 	| PACKAGE alter_package_clause
 		{ $$ = makeClassNode($2); }
-	| DATABASE init_alter_db alter_db
-		{ $$ = make_node (nod_mod_database, (int) e_adb_count, make_list ($3)); }
+	| DATABASE alter_db
+		{ $$ = make_node(nod_mod_database, (int) e_adb_count, make_list($2)); }
 	| DOMAIN alter_domain
 		{ $$ = makeClassNode($2); }
 	| INDEX alter_index_clause
@@ -3410,14 +3411,11 @@ module_op	: MODULE_NAME sql_string
 
 // ALTER DATABASE
 
-init_alter_db	:
-			{ $$ = NULL; }
-		;
-
-alter_db	: db_alter_clause
-		| alter_db db_alter_clause
-				{ $$ = make_node (nod_list, (int) 2, $1, $2); }
-		;
+alter_db
+	: db_alter_clause
+	| alter_db db_alter_clause
+			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+	;
 
 db_alter_clause
 	: ADD db_file_list
@@ -3574,30 +3572,33 @@ domain_type
 	;
 
 
-non_array_type	: simple_type
-		| blob_type
-		;
+non_array_type
+	: simple_type
+	| blob_type
+	;
 
-array_type	: non_charset_simple_type '[' array_spec ']'
-			{
-				lex.g_field->fld_ranges = make_list ($3);
-				lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
-				lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
-				$$ = $1;
-			}
-		| character_type '[' array_spec ']' charset_clause
-			{
-				lex.g_field->fld_ranges = make_list ($3);
-				lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
-				lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
-				$$ = $1;
-			}
-		;
+array_type
+	: non_charset_simple_type '[' array_spec ']'
+		{
+			lex.g_field->fld_ranges = make_list ($3);
+			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			$$ = $1;
+		}
+	| character_type '[' array_spec ']' charset_clause
+		{
+			lex.g_field->fld_ranges = make_list ($3);
+			lex.g_field->fld_dimensions = lex.g_field->fld_ranges->nod_count / 2;
+			lex.g_field->fld_element_dtype = lex.g_field->fld_dtype;
+			$$ = $1;
+		}
+	;
 
-array_spec	: array_range
-		| array_spec ',' array_range
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+array_spec
+	: array_range
+	| array_spec ',' array_range
+		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
 array_range
 	: signed_long_integer
@@ -3611,91 +3612,94 @@ array_range
 		{ $$ = make_node(nod_list, 2, MAKE_const_slong($1), MAKE_const_slong($3)); }
 	;
 
-simple_type	: non_charset_simple_type
-		| character_type charset_clause
-		;
+simple_type
+	: non_charset_simple_type
+	| character_type charset_clause
+	;
 
-non_charset_simple_type	: national_character_type
-		| numeric_type
-		| float_type
-		| BIGINT
+non_charset_simple_type
+	: national_character_type
+	| numeric_type
+	| float_type
+	| BIGINT
+		{
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
-				if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				{
-					ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
-																		Arg::Str("BIGINT"));
-				}
-				if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				{
-					ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
 																	Arg::Str("BIGINT"));
-				}
-				lex.g_field->fld_dtype = dtype_int64;
-				lex.g_field->fld_length = sizeof (SINT64);
 			}
-		| integer_keyword
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
-				lex.g_field->fld_dtype = dtype_long;
-				lex.g_field->fld_length = sizeof (SLONG);
+				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+																Arg::Str("BIGINT"));
 			}
-		| SMALLINT
+			lex.g_field->fld_dtype = dtype_int64;
+			lex.g_field->fld_length = sizeof (SINT64);
+		}
+	| integer_keyword
+		{
+			lex.g_field->fld_dtype = dtype_long;
+			lex.g_field->fld_length = sizeof (SLONG);
+		}
+	| SMALLINT
+		{
+			lex.g_field->fld_dtype = dtype_short;
+			lex.g_field->fld_length = sizeof (SSHORT);
+		}
+	| DATE
+		{
+			stmt_ambiguous = true;
+			if (client_dialect <= SQL_DIALECT_V5)
 			{
-				lex.g_field->fld_dtype = dtype_short;
-				lex.g_field->fld_length = sizeof (SSHORT);
-			}
-		| DATE
-			{
-				stmt_ambiguous = true;
-				if (client_dialect <= SQL_DIALECT_V5)
-				{
-					// Post warning saying that DATE is equivalent to TIMESTAMP
-					ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
-									  Arg::Warning(isc_dtype_renamed));
-					lex.g_field->fld_dtype = dtype_timestamp;
-					lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
-				}
-				else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-					yyabandon (-104, isc_transitional_date);
-				else
-				{
-					lex.g_field->fld_dtype = dtype_sql_date;
-					lex.g_field->fld_length = sizeof (ULONG);
-				}
-			}
-		| TIME
-			{
-				if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
-																			  Arg::Str("TIME"));
-				}
-				if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-							  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
-																			  Arg::Str("TIME"));
-				}
-				lex.g_field->fld_dtype = dtype_sql_time;
-				lex.g_field->fld_length = sizeof (SLONG);
-			}
-		| TIMESTAMP
-			{
+				// Post warning saying that DATE is equivalent to TIMESTAMP
+				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
+								  Arg::Warning(isc_dtype_renamed));
 				lex.g_field->fld_dtype = dtype_timestamp;
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 			}
-		| KW_BOOLEAN
+			else if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+				yyabandon (-104, isc_transitional_date);
+			else
 			{
-				lex.g_field->fld_dtype = dtype_boolean;
-				lex.g_field->fld_length = sizeof(UCHAR);
+				lex.g_field->fld_dtype = dtype_sql_date;
+				lex.g_field->fld_length = sizeof (ULONG);
 			}
-		;
+		}
+	| TIME
+		{
+			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) <<
+																		  Arg::Str("TIME"));
+			}
+			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
+			{
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) <<
+																		  Arg::Str("TIME"));
+			}
+			lex.g_field->fld_dtype = dtype_sql_time;
+			lex.g_field->fld_length = sizeof (SLONG);
+		}
+	| TIMESTAMP
+		{
+			lex.g_field->fld_dtype = dtype_timestamp;
+			lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
+		}
+	| KW_BOOLEAN
+		{
+			lex.g_field->fld_dtype = dtype_boolean;
+			lex.g_field->fld_length = sizeof(UCHAR);
+		}
+	;
 
-integer_keyword	: INTEGER
-		| KW_INT
-		;
+integer_keyword
+	: INTEGER
+	| KW_INT
+	;
 
 
 // allow a blob to be specified with any combination of segment length and subtype
@@ -3730,33 +3734,23 @@ blob_type
 	;
 
 blob_segsize
-	: SEGMENT KW_SIZE unsigned_short_integer
-	  	{
-			lex.g_field->fld_seg_length = (USHORT) $3;
-	  	}
-	|
-	  	{
-			lex.g_field->fld_seg_length = (USHORT) 80;
-	  	}
+	: // nothing
+		{ lex.g_field->fld_seg_length = (USHORT) 80; }
+	| SEGMENT KW_SIZE unsigned_short_integer
+		{ lex.g_field->fld_seg_length = (USHORT) $3; }
 	;
 
 blob_subtype
-	: SUB_TYPE signed_short_integer
-		{
-			lex.g_field->fld_sub_type = (USHORT) $2;
-		}
+	: // nothing
+		{ lex.g_field->fld_sub_type = (USHORT) 0; }
+	| SUB_TYPE signed_short_integer
+		{ lex.g_field->fld_sub_type = (USHORT) $2; }
 	| SUB_TYPE symbol_blob_subtype_name
-		{
-			lex.g_field->fld_sub_type_name = $2;
-		}
-	|
-		{
-			lex.g_field->fld_sub_type = (USHORT) 0;
-		}
+		{ lex.g_field->fld_sub_type_name = $2; }
 	;
 
 charset_clause
-	:
+	: // nothing
 		{ $$ = NULL; }
 	| CHARACTER SET symbol_character_set_name
 		{
@@ -3810,20 +3804,22 @@ character_type
 		}
 	;
 
-varying_keyword 	   : VARCHAR
-			   | CHARACTER VARYING
-			   | KW_CHAR VARYING
-			   ;
+varying_keyword
+	: VARCHAR
+	| CHARACTER VARYING
+	| KW_CHAR VARYING
+	;
 
-character_keyword 	   : CHARACTER
-			   | KW_CHAR
-			   ;
+character_keyword
+	: CHARACTER
+	| KW_CHAR
+	;
 
-national_character_keyword : NCHAR
-			   | NATIONAL CHARACTER
-			   | NATIONAL KW_CHAR
-			   ;
-
+national_character_keyword
+	: NCHAR
+	| NATIONAL CHARACTER
+	| NATIONAL KW_CHAR
+	;
 
 
 // numeric type
@@ -3989,10 +3985,11 @@ precision_opt
 
 
 // SET statements
-set		: set_transaction
-		| set_generator
-		| set_statistics
-		;
+set
+	: set_transaction
+	| set_generator
+	| set_statistics
+	;
 
 
 set_generator
@@ -4013,10 +4010,11 @@ set_generator
 
 // transaction statements
 
-savepoint	: set_savepoint
-		| release_savepoint
-		| undo_savepoint
-		;
+savepoint
+	: set_savepoint
+	| release_savepoint
+	| undo_savepoint
+	;
 
 set_savepoint
 	: SAVEPOINT symbol_savepoint_name
@@ -4039,10 +4037,8 @@ release_savepoint
 	;
 
 release_only_opt
-	:
-		{ $$ = false; }
-	| ONLY
-		{ $$ = true; }
+	: /* nothing */		{ $$ = false; }
+	| ONLY				{ $$ = true; }
 	;
 
 undo_savepoint
@@ -4056,152 +4052,162 @@ undo_savepoint
 	;
 
 optional_savepoint
-	: SAVEPOINT
-	| { $$ = NULL; }
+	: // nothing
+	| SAVEPOINT
 	;
 
-commit		: COMMIT optional_work optional_retain
-			{ $$ = make_node (nod_commit, e_commit_count, $3); }
-		;
+commit
+	: COMMIT optional_work optional_retain
+		{ $$ = make_node (nod_commit, e_commit_count, $3); }
+	;
 
-rollback	: ROLLBACK optional_work optional_retain
-			{ $$ = make_node (nod_rollback, e_rollback_count, $3); }
-		;
+rollback
+	: ROLLBACK optional_work optional_retain
+		{ $$ = make_node (nod_rollback, e_rollback_count, $3); }
+	;
 
 optional_work
-	: WORK
-	| { $$ = NULL; }
+	: // nothing
+	| WORK
 	;
 
-optional_retain	: RETAIN opt_snapshot
-			{ $$ = make_node (nod_retain, 0, NULL); }
-		|
-		 	{ $$ = NULL; }
-		;
+optional_retain
+	: /* nothing */		 	{ $$ = NULL; }
+	| RETAIN opt_snapshot	{ $$ = make_node(nod_retain, 0, NULL); }
+	;
 
-opt_snapshot	: SNAPSHOT
-		|
-		 	{ $$ = NULL; }
-		;
+opt_snapshot
+	: // nothing
+	| SNAPSHOT
+	;
 
-set_transaction	: SET TRANSACTION tran_opt_list_m
-			{$$ = make_node (nod_trans, 1, make_list ($3)); }
-		;
+set_transaction
+	: SET TRANSACTION tran_opt_list_m
+		{ $$ = make_node (nod_trans, 1, make_list ($3)); }
+	;
 
-tran_opt_list_m	: tran_opt_list
-		|
-		 	{ $$ = NULL; }
-		;
+tran_opt_list_m
+	: /* nothing */		{ $$ = NULL; }
+	| tran_opt_list
+	;
 
-tran_opt_list	: tran_opt
-		| tran_opt_list tran_opt
-			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
-		;
+tran_opt_list
+	: tran_opt
+	| tran_opt_list tran_opt
+		{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+	;
 
-tran_opt	: access_mode
-		| lock_wait
-		| isolation_mode
-		| tra_misc_options
-		| tra_timeout
-		| tbl_reserve_options
-		;
+tran_opt
+	: access_mode
+	| lock_wait
+	| isolation_mode
+	| tra_misc_options
+	| tra_timeout
+	| tbl_reserve_options
+	;
 
-access_mode	: READ ONLY
-			{ $$ = make_flag_node (nod_access, NOD_READ_ONLY, (int) 0, NULL); }
-		| READ WRITE
-			{ $$ = make_flag_node (nod_access, NOD_READ_WRITE, (int) 0, NULL); }
-		;
+access_mode
+	: READ ONLY
+		{ $$ = make_flag_node (nod_access, NOD_READ_ONLY, (int) 0, NULL); }
+	| READ WRITE
+		{ $$ = make_flag_node (nod_access, NOD_READ_WRITE, (int) 0, NULL); }
+	;
 
-lock_wait	: WAIT
-			{ $$ = make_flag_node (nod_wait, NOD_WAIT, (int) 0, NULL); }
-		| NO WAIT
-			{ $$ = make_flag_node (nod_wait, NOD_NO_WAIT, (int) 0, NULL); }
-		;
+lock_wait
+	: WAIT
+		{ $$ = make_flag_node (nod_wait, NOD_WAIT, (int) 0, NULL); }
+	| NO WAIT
+		{ $$ = make_flag_node (nod_wait, NOD_NO_WAIT, (int) 0, NULL); }
+	;
 
-isolation_mode	: ISOLATION LEVEL iso_mode
-			{ $$ = $3;}
-		| iso_mode
-		;
+isolation_mode
+	: ISOLATION LEVEL iso_mode	{ $$ = $3;}
+	| iso_mode
+	;
 
-iso_mode	: snap_shot
-			{ $$ = $1;}
-		| READ UNCOMMITTED version_mode
-			{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
-		| READ COMMITTED version_mode
-			{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
-		;
+iso_mode
+	: snap_shot
+		{ $$ = $1;}
+	| READ UNCOMMITTED version_mode
+		{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
+	| READ COMMITTED version_mode
+		{ $$ = make_flag_node (nod_isolation, NOD_READ_COMMITTED, 1, $3); }
+	;
 
-snap_shot	: SNAPSHOT
-			{ $$ = make_flag_node (nod_isolation, NOD_CONCURRENCY, 0, NULL); }
-		| SNAPSHOT TABLE
-			{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
-		| SNAPSHOT TABLE STABILITY
-			{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
-		;
+snap_shot
+	: SNAPSHOT
+		{ $$ = make_flag_node (nod_isolation, NOD_CONCURRENCY, 0, NULL); }
+	| SNAPSHOT TABLE
+		{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
+	| SNAPSHOT TABLE STABILITY
+		{ $$ = make_flag_node (nod_isolation, NOD_CONSISTENCY, 0, NULL); }
+	;
 
-version_mode	: VERSION
-			{ $$ = make_flag_node (nod_version, NOD_VERSION, 0, NULL); }
-		| NO VERSION
-			{ $$ = make_flag_node (nod_version, NOD_NO_VERSION, 0, NULL); }
-		|
-			{ $$ = 0; }
-		;
+version_mode
+	: /* nothing */	{ $$ = NULL; }
+	| VERSION		{ $$ = make_flag_node (nod_version, NOD_VERSION, 0, NULL); }
+	| NO VERSION	{ $$ = make_flag_node (nod_version, NOD_NO_VERSION, 0, NULL); }
+	;
 
-tra_misc_options: NO AUTO UNDO
-			{ $$ = make_flag_node(nod_tra_misc, NOD_NO_AUTO_UNDO, 0, NULL); }
-		| KW_IGNORE LIMBO
-			{ $$ = make_flag_node(nod_tra_misc, NOD_IGNORE_LIMBO, 0, NULL); }
-		| RESTART REQUESTS
-			{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
-		;
+tra_misc_options
+	: NO AUTO UNDO
+		{ $$ = make_flag_node(nod_tra_misc, NOD_NO_AUTO_UNDO, 0, NULL); }
+	| KW_IGNORE LIMBO
+		{ $$ = make_flag_node(nod_tra_misc, NOD_IGNORE_LIMBO, 0, NULL); }
+	| RESTART REQUESTS
+		{ $$ = make_flag_node(nod_tra_misc, NOD_RESTART_REQUESTS, 0, NULL); }
+	;
 
 tra_timeout
 	: LOCK TIMEOUT nonneg_short_integer
 		{ $$ = make_node(nod_lock_timeout, 1, MAKE_const_slong($3)); }
 	;
 
-tbl_reserve_options: RESERVING restr_list
-			{ $$ = make_node (nod_reserve, 1, make_list ($2)); }
-		;
+tbl_reserve_options
+	: RESERVING restr_list
+		{ $$ = make_node (nod_reserve, 1, make_list ($2)); }
+	;
 
-lock_type	: KW_SHARED
-			{ $$ = (dsql_nod*) NOD_SHARED; }
-		| PROTECTED
-			{ $$ = (dsql_nod*) NOD_PROTECTED; }
-		|
-			{ $$ = (dsql_nod*) 0; }
-		;
+lock_type
+	: /* nothing */		{ $$ = NULL; }
+	| KW_SHARED			{ $$ = (dsql_nod*) NOD_SHARED; }
+	| PROTECTED			{ $$ = (dsql_nod*) NOD_PROTECTED; }
+	;
 
-lock_mode	: READ
-			{ $$ = (dsql_nod*) NOD_READ; }
-		| WRITE
-			{ $$ = (dsql_nod*) NOD_WRITE; }
-		;
+lock_mode
+	: READ		{ $$ = (dsql_nod*) NOD_READ; }
+	| WRITE		{ $$ = (dsql_nod*) NOD_WRITE; }
+	;
 
-restr_list	: restr_option
-		| restr_list ',' restr_option
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+restr_list
+	: restr_option
+	| restr_list ',' restr_option
+		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
-restr_option	: table_list table_lock
-			{ $$ = make_node (nod_table_lock, (int) 2, make_list ($1), $2); }
-		;
+restr_option
+	: table_list table_lock
+		{ $$ = make_node (nod_table_lock, (int) 2, make_list ($1), $2); }
+	;
 
-table_lock	: FOR lock_type lock_mode
-			{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT)(IPTR) $2 | (SSHORT)(IPTR) $3), (SSHORT) 0, NULL); }
-		|
-			{ $$ = 0; }
-		;
+table_lock
+	: // nothing
+		{ $$ = NULL; }
+	| FOR lock_type lock_mode
+		{ $$ = make_flag_node (nod_lock_mode, (SSHORT) ((SSHORT)(IPTR) $2 | (SSHORT)(IPTR) $3), (SSHORT) 0, NULL); }
+	;
 
-table_list	: simple_table_name
-		| table_list ',' simple_table_name
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+table_list
+	: simple_table_name
+	| table_list ',' simple_table_name
+		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
 
-set_statistics	: SET STATISTICS INDEX symbol_index_name
-				{ $$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
-			;
+set_statistics
+	: SET STATISTICS INDEX symbol_index_name
+		{ $$ = make_node (nod_set_statistics, (int) e_stat_count, $4); }
+	;
 
 comment
 	: COMMENT ON ddl_type0 IS ddl_desc
