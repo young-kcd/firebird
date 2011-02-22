@@ -1,3 +1,23 @@
+ 2011-02-21 20:56  dimitr 
+   M src/jrd/Database.cpp
+Correction.
+
+ 2011-02-21 11:12  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/opt.cpp
+Cleanup.
+
+ 2011-02-21 11:05  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-3355: Wrong comparison of DATE and TIMESTAMP if index is used.
+
+ 2011-02-21 07:51  dimitr 
+   M src/dsql/pass1.cpp
+   M src/jrd/rse.cpp
+Fixed CORE-3173: Empty result when select from SP that contains two CTE (second of them with GROUP BY clause) and INNER join.
+
  2011-02-20 13:25  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/Optimizer.h
