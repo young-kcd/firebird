@@ -1173,21 +1173,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = pass1_savepoint(dsqlScratch, pass1_update(dsqlScratch, input, false));
 		break;
 
-	case nod_while:
-		{
-			node = MAKE_node(input->nod_type, input->nod_count);
-			node->nod_arg[e_while_cond] = PASS1_node(dsqlScratch, input->nod_arg[e_while_cond]);
-
-			// CVC: loop numbers should be incremented before analyzing the body
-			// to preserve nesting <==> increasing level number
-			dsqlScratch->loopLevel++;
-			node->nod_arg[e_while_label] = PASS1_label(dsqlScratch, false, input->nod_arg[e_while_label]);
-			node->nod_arg[e_while_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_while_action]);
-			dsqlScratch->loopLevel--;
-			dsqlScratch->labels.pop();
-		}
-		break;
-
 	case nod_exception:
 	case nod_sqlcode:
 	case nod_gdscode:
@@ -7338,10 +7323,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_end_backup:
 		verb = "end_backup";
-		break;
-
-	case nod_while:
-		verb = "while";
 		break;
 
 	case nod_label:

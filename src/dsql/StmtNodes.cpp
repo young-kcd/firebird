@@ -3733,7 +3733,19 @@ DmlNode* LoopNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 
 LoopNode* LoopNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	LoopNode* node = FB_NEW(getPool()) LoopNode(getPool());
+
+	node->dsqlExpr = PASS1_node(dsqlScratch, dsqlExpr);
+
+	// CVC: Loop numbers should be incremented before analyzing the body
+	// to preserve nesting <==> increasing level number.
+	++dsqlScratch->loopLevel;
+	node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
+	node->dsqlStatement = PASS1_statement(dsqlScratch, dsqlStatement);
+	--dsqlScratch->loopLevel;
+	dsqlScratch->labels.pop();
+
+	return node;
 }
 
 void LoopNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
@@ -3743,6 +3755,16 @@ void LoopNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_label);
+	dsqlScratch->appendUChar((UCHAR)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	dsqlScratch->appendUChar(blr_loop);
+	dsqlScratch->appendUChar(blr_begin);
+	dsqlScratch->appendUChar(blr_if);
+	GEN_expr(dsqlScratch, dsqlExpr);
+	GEN_statement(dsqlScratch, dsqlStatement);
+	dsqlScratch->appendUChar(blr_leave);
+	dsqlScratch->appendUChar((UCHAR)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	dsqlScratch->appendUChar(blr_end);
 }
 
 LoopNode* LoopNode::pass1(thread_db* tdbb, CompilerScratch* csb)

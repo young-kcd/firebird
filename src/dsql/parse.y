@@ -2611,7 +2611,13 @@ variable_list
 
 while
 	: label_opt WHILE '(' search_condition ')' DO proc_block
-		{ $$ = make_node (nod_while, (int) e_while_count, $4, $7, $1); }
+		{
+			LoopNode* node = newNode<LoopNode>();
+			node->dsqlLabel = $1;
+			node->dsqlExpr = $4;
+			node->dsqlStatement = $7;
+			$$ = makeClassNode(node);
+		}
 	;
 
 label_opt

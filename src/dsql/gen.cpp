@@ -582,19 +582,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_end_savepoint);
 		return;
 
-	case nod_while:
-		dsqlScratch->appendUChar(blr_label);
-		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
-		dsqlScratch->appendUChar(blr_loop);
-		dsqlScratch->appendUChar(blr_begin);
-		dsqlScratch->appendUChar(blr_if);
-		GEN_expr(dsqlScratch, node->nod_arg[e_while_cond]);
-		GEN_statement(dsqlScratch, node->nod_arg[e_while_action]);
-		dsqlScratch->appendUChar(blr_leave);
-		dsqlScratch->appendUChar((int)(IPTR) node->nod_arg[e_while_label]->nod_arg[e_label_number]);
-		dsqlScratch->appendUChar(blr_end);
-		return;
-
 	case nod_sqlcode:
 	case nod_gdscode:
 		dsqlScratch->appendUChar(blr_abort);

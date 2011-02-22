@@ -709,6 +709,9 @@ class LoopNode : public TypedNode<StmtNode, StmtNode::TYPE_LOOP>
 public:
 	explicit LoopNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_LOOP>(pool),
+		  dsqlLabel(NULL),
+		  dsqlExpr(NULL),
+		  dsqlStatement(NULL),
 		  statement(NULL)
 	{
 	}
@@ -724,6 +727,9 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	dsql_nod* dsqlLabel;
+	dsql_nod* dsqlExpr;
+	dsql_nod* dsqlStatement;
 	NestConst<StmtNode> statement;
 };
 

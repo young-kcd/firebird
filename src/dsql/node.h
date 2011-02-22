@@ -97,7 +97,6 @@ enum nod_t
 	nod_modify,
 	nod_erase,
 	nod_assign,
-	nod_while,
 	nod_erase_current,
 	nod_modify_current,
 	nod_on_error,
@@ -346,11 +345,6 @@ enum node_args {
 	e_idx_table,
 	e_idx_fields,
 	e_idx_count,
-
-	e_while_cond = 0,		// nod_while
-	e_while_action,
-	e_while_label,
-	e_while_count,
 
 	e_drl_name = 0,			// relation support
 	e_drl_elements,
