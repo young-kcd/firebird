@@ -1,3 +1,44 @@
+ 2011-02-22 01:57  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor SET GENERATOR / ALTER SEQUENCE.
+
+ 2011-02-22 00:51  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactoring nod_list and nod_block statements.
+
+ 2011-02-21 11:18  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+Fixed CORE-3355: Wrong comparison of DATE and TIMESTAMP if index is used.
+
+ 2011-02-21 10:09  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+Misc optimizer tuning.
+
+ 2011-02-21 08:04  dimitr 
+   M src/dsql/pass1.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/Union.cpp
+Fixed CORE-3173: Empty result when select from SP that contains two CTE (second of them with GROUP BY clause) and INNER join.
+
  2011-02-20 15:36  dimitr 
    M src/jrd/RecordSourceNodes.cpp
 Fixed the porting mistake, thanks to Adriano.
