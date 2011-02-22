@@ -104,8 +104,6 @@ enum nod_t
 	nod_gdscode,
 	nod_exception,
 	nod_default,
-	nod_start_savepoint,
-	nod_end_savepoint,
 	nod_cursor,
 	nod_procedure_name,
 	nod_select_expr,

@@ -574,14 +574,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		GEN_statement(dsqlScratch, node->nod_arg[e_err_action]);
 		return;
 
-	case nod_start_savepoint:
-		dsqlScratch->appendUChar(blr_start_savepoint);
-		return;
-
-	case nod_end_savepoint:
-		dsqlScratch->appendUChar(blr_end_savepoint);
-		return;
-
 	case nod_sqlcode:
 	case nod_gdscode:
 		dsqlScratch->appendUChar(blr_abort);

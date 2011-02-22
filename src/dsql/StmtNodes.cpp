@@ -5601,6 +5601,7 @@ void SavePointNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void SavePointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blrOp);
 }
 
 const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const

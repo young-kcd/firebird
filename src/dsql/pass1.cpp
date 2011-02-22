@@ -6844,12 +6844,21 @@ static dsql_nod* pass1_savepoint(const DsqlCompilerScratch* dsqlScratch, dsql_no
 
 	if (dsqlScratch->errorHandlers)
 	{
-		CompoundStmtNode* temp = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
-		temp->dsqlStatements.add(MAKE_node(nod_start_savepoint, 0));
-		temp->dsqlStatements.add(node);
-		temp->dsqlStatements.add(MAKE_node(nod_end_savepoint, 0));
+		MemoryPool& pool = *tdbb->getDefaultPool();
 
-		dsql_nod* node = MAKE_node(nod_class_stmtnode, 1);
+		CompoundStmtNode* temp = FB_NEW(pool) CompoundStmtNode(pool);
+
+		temp->dsqlStatements.add(MAKE_node(nod_class_stmtnode, 1));
+		temp->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+			FB_NEW(pool) SavePointNode(pool, blr_start_savepoint));
+
+		temp->dsqlStatements.add(node);
+
+		temp->dsqlStatements.add(MAKE_node(nod_class_stmtnode, 1));
+		temp->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+			FB_NEW(pool) SavePointNode(pool, blr_end_savepoint));
+
+		node = MAKE_node(nod_class_stmtnode, 1);
 		node->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
 	}
 
@@ -7203,12 +7212,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_exception:
 		verb = "exception";
-		break;
-	case nod_start_savepoint:
-		verb = "start_savepoint";
-		break;
-	case nod_end_savepoint:
-		verb = "end_savepoint";
 		break;
 	case nod_user_group:
 		verb = "user_group";
