@@ -1,3 +1,25 @@
+ 2011-02-22 14:30  hvlad 
+   M src/jrd/err.cpp
+Fixed bug CORE-3125 : AV in Worker::shutdown
+
+ 2011-02-22 12:25  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/opt.cpp
+Better solution for CORE-3355, as suggested by Vlad.
+
+ 2011-02-22 10:12  dimitr 
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.h
+   M src/jrd/par.cpp
+Misc.
+
+ 2011-02-22 10:11  dimitr 
+   M src/jrd/dfw.epp
+   M src/jrd/dyn_def.epp
+   M src/jrd/vio.cpp
+Reworked fix for CORE-3058. The new one is a poor man's solution which doesn't handle direct system table updates, but a more generic solution seems being an overkill for a point release.
+
  2011-02-21 20:56  dimitr 
    M src/jrd/Database.cpp
 Correction.
