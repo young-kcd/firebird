@@ -1,3 +1,9 @@
+ 2011-02-22 12:21  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/opt.cpp
+Better solution for CORE-3355, as suggested by Vlad.
+
  2011-02-21 11:15  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/btr.cpp
