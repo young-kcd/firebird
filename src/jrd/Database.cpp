@@ -118,15 +118,20 @@ namespace Jrd
 		memset(m_counters, 0, sizeof(m_counters));
 	}
 
+	Database::SharedCounter::~SharedCounter()
+	{
+		for (size_t i = 0; i < TOTAL_ITEMS; i++)
+		{
+			delete m_counters[i].lock;
+		}
+	}
+
 	void Database::SharedCounter::shutdown(thread_db* tdbb)
 	{
 		for (size_t i = 0; i < TOTAL_ITEMS; i++)
 		{
 			if (m_counters[i].lock)
 				LCK_release(tdbb, m_counters[i].lock);
-
-			delete m_counters[i].lock;
-			m_counters[i].lock = NULL;
 		}
 	}
 
@@ -176,10 +181,7 @@ namespace Jrd
 	int Database::SharedCounter::blockingAst(void* ast_object)
 	{
 		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
-		fb_assert(counter);
-
-		if (!counter->lock)
-			return 0;
+		fb_assert(counter && counter->lock);
 
 		Database* const dbb = counter->lock->lck_dbb;
 

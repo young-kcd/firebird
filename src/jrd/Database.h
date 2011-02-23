@@ -302,6 +302,7 @@ public:
 		};
 
 		SharedCounter();
+		~SharedCounter();
 
 		SLONG generate(thread_db* tdbb, ULONG space, ULONG prefetch = DEFAULT_CACHE_SIZE);
 		void shutdown(thread_db* tdbb);
