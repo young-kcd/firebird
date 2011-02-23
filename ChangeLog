@@ -1,3 +1,40 @@
+ 2011-02-22 16:06  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/pass1.cpp
+Refactor nod_start_savepoint and nod_end_savepoint.
+
+ 2011-02-22 15:44  asfernandes 
+   M src/dsql/parse.y
+Misc
+
+ 2011-02-22 15:30  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactor nod_while.
+
+ 2011-02-22 15:29  asfernandes 
+   M src/jrd/Optimizer.cpp
+Correction.
+
+ 2011-02-22 15:28  asfernandes 
+   M src/jrd/err.cpp
+Misc
+
+ 2011-02-22 14:31  hvlad 
+   M src/jrd/err.cpp
+Fixed bug CORE-3125 : AV in Worker::shutdown
+
+ 2011-02-22 12:43  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/btr.cpp
+Better solution for CORE-3355, as suggested by Vlad.
+
  2011-02-22 01:57  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
