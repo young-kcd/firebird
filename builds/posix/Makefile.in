@@ -213,7 +213,7 @@ SECURITY_TMP = security.tmp
 
 databases:		yachts.lnk msg.timestamp $(HELP_FDB) $(SECURITY_FDB)
 
-export LD_LIBRARY_PATH += $(FIREBIRD)/lib
+export LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(FIREBIRD)/lib
 
 yachts.lnk:		metadata.fdb
 	-$(RM) $@
