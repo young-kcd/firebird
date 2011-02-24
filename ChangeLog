@@ -1,3 +1,8 @@
+ 2011-02-23 14:08  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+More conservative implementation. It should also fix CORE-3356.
+
  2011-02-22 14:30  hvlad 
    M src/jrd/err.cpp
 Fixed bug CORE-3125 : AV in Worker::shutdown
