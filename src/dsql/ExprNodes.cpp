@@ -2757,6 +2757,8 @@ bool CastNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode*
 
 ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
+	ValueExprNode::pass1(tdbb, csb);
+
 	dsc desc;
 	getDesc(tdbb, csb, &desc);
 
@@ -2769,7 +2771,7 @@ ValueExprNode* CastNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			Resource::rsc_collation, ttype);
 	}
 
-	return ValueExprNode::pass1(tdbb, csb);
+	return this;
 }
 
 ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
