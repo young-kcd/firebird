@@ -2520,6 +2520,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, jrd_nod* boole
  **************************************/
 	bool forward = true;
 
+	if (boolean->nod_flags & nod_deoptimize)
+		return false;
+
 	jrd_nod* match = boolean->nod_arg[0];
 	jrd_nod* value = (boolean->nod_count < 2) ? NULL : boolean->nod_arg[1];
 	jrd_nod* value2 = (boolean->nod_type == nod_between) ? boolean->nod_arg[2] : NULL;
