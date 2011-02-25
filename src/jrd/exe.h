@@ -582,26 +582,6 @@ const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
 
-// Exception condition list
-
-struct xcp_repeat
-{
-	SSHORT xcp_type;
-	SLONG xcp_code;
-};
-
-class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
-{
-public:
-	SLONG xcp_count;
-	xcp_repeat xcp_rpt[1];
-};
-
-const int xcp_sql_code	= 1;
-const int xcp_gds_code	= 2;
-const int xcp_xcp_code	= 3;
-const int xcp_default	= 4;
-
 class StatusXcp
 {
 	ISC_STATUS_ARRAY status;

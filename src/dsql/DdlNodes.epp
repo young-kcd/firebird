@@ -92,6 +92,8 @@ static void updateRdbFields(const TypeClause& type,
 	SSHORT& collationIdNull, SSHORT& collationId,
 	SSHORT& segmentLengthNull, SSHORT& segmentLength);
 
+static const char* const CHECK_CONSTRAINT_EXCEPTION = "check_constraint";
+
 DATABASE DB = STATIC "ODS.RDB";
 
 
@@ -5676,8 +5678,12 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	// Specify that the trigger should abort if the condition is not met.
 	CompoundStmtNode* actionNode = FB_NEW(pool) CompoundStmtNode(pool);
-	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_gdscode, 1));
-	actionNode->dsqlStatements.front()->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+
+	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
+	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
+
+	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
+	actionNode->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(exceptionNode);
 
 	dsql_nod* actionNod = MAKE_node(Dsql::nod_class_stmtnode, 1);
 	actionNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(actionNode);
@@ -7715,8 +7721,12 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 
 	// Specify that the trigger should abort if the condition is not met.
 	CompoundStmtNode* actionNode = FB_NEW(pool) CompoundStmtNode(pool);
-	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_gdscode, 1));
-	actionNode->dsqlStatements.front()->nod_arg[0] = (dsql_nod*) MAKE_cstring("check_constraint");
+
+	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
+	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
+
+	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
+	actionNode->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(exceptionNode);
 
 	// Create the UPDATE trigger.
 

@@ -1133,12 +1133,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 			return node;
 		}
 
-	case nod_on_error:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_err_errs] = input->nod_arg[e_err_errs];
-		node->nod_arg[e_err_action] = PASS1_statement(dsqlScratch, input->nod_arg[e_err_action]);
-		return node;
-
 	case nod_select:
 		{
 			node = PASS1_rse(dsqlScratch, input->nod_arg[e_select_expr], input->nod_arg[e_select_lock]);
@@ -1172,11 +1166,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 	case nod_update:
 		node = pass1_savepoint(dsqlScratch, pass1_update(dsqlScratch, input, false));
 		break;
-
-	case nod_exception:
-	case nod_sqlcode:
-	case nod_gdscode:
-		return input;
 
 	case nod_cursor:
 		{
@@ -7111,12 +7100,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "rows";
 		break;
 	// IOL: missing node types
-	case nod_on_error:
-		verb = "on error";
-		break;
-	case nod_default:
-		verb = "default";
-		break;
 	case nod_plan_expr:
 		verb = "plan";
 		break;
@@ -7203,15 +7186,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_modify_current:
 		verb = "modify_current";
-		break;
-	case nod_sqlcode:
-		verb = "sqlcode";
-		break;
-	case nod_gdscode:
-		verb = "gdscode";
-		break;
-	case nod_exception:
-		verb = "exception";
 		break;
 	case nod_user_group:
 		verb = "user_group";

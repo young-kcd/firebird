@@ -42,7 +42,6 @@ enum BlockType
 	type_map,
 	type_prm,
 	type_sav,
-	type_xcp,
 	type_idb,
 	type_tpc,
 	type_svc,

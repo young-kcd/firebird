@@ -99,11 +99,6 @@ enum nod_t
 	nod_assign,
 	nod_erase_current,
 	nod_modify_current,
-	nod_on_error,
-	nod_sqlcode,
-	nod_gdscode,
-	nod_exception,
-	nod_default,
 	nod_cursor,
 	nod_procedure_name,
 	nod_select_expr,
@@ -212,10 +207,6 @@ enum node_args {
 	e_ary_array = 0,		// nod_array
 	e_ary_indices,
 	e_ary_count,
-
-	e_err_errs = 0,			// nod_on_error
-	e_err_action,
-	e_err_count,
 
 	e_vrn_name = 0,			// nod_variable_name
 	e_vrn_count,

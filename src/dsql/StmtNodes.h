@@ -32,9 +32,54 @@
 
 namespace Jrd {
 
-class PsqlException;
 class CompoundStmtNode;
 class RelationSourceNode;
+
+
+class ExceptionItem : public Firebird::PermanentStorage
+{
+public:
+	enum Type
+	{
+		SQL_CODE = 1,
+		GDS_CODE = 2,
+		XCP_CODE = 3,
+		XCP_DEFAULT = 4
+	};
+
+	ExceptionItem(MemoryPool& pool, const ExceptionItem& o)
+		: PermanentStorage(pool),
+		  type(o.type),
+		  code(o.code),
+		  name(pool, o.name)
+	{
+	}
+
+	ExceptionItem(MemoryPool& pool)
+		: PermanentStorage(pool),
+		  type(Type(0)),
+		  code(0),
+		  name(pool)
+	{
+	}
+
+	ExceptionItem& operator =(const ExceptionItem& o)
+	{
+		type = o.type;
+		code = o.code;
+		name = o.name;
+		return *this;
+	}
+
+	Type type;
+	SLONG code;
+	// ASF: There is some inconsistencies in the type of 'name'. Metanames has maximum of 31 chars,
+	// while there are system exceptions with 32 chars. The parser always expects metanames, but
+	// I'm following the legacy code and making this a string.
+	Firebird::string name;
+};
+
+typedef Firebird::ObjectsArray<ExceptionItem> ExceptionArray;
 
 
 struct ValidateInfo
@@ -97,7 +142,7 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
-	static bool testAndFixupError(thread_db* tdbb, jrd_req* request, const PsqlException* conditions);
+	static bool testAndFixupError(thread_db* tdbb, jrd_req* request, const ExceptionArray& conditions);
 
 public:
 	NestConst<StmtNode> action;
@@ -305,8 +350,9 @@ class ErrorHandlerNode : public TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER
 public:
 	explicit ErrorHandlerNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER>(pool),
+		  dsqlAction(NULL),
 		  action(NULL),
-		  conditions(NULL)
+		  conditions(pool)
 	{
 	}
 
@@ -321,8 +367,9 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	dsql_nod* dsqlAction;
 	NestConst<StmtNode> action;
-	NestConst<PsqlException> conditions;
+	ExceptionArray conditions;
 };
 
 
@@ -563,12 +610,23 @@ public:
 class ExceptionNode : public TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>
 {
 public:
-	explicit ExceptionNode(MemoryPool& pool, const Firebird::MetaName& aName = "",
+	ExceptionNode(MemoryPool& pool, const Firebird::MetaName& name,
 				dsql_nod* aDsqlMessageExpr = NULL, dsql_nod* aDsqlParameters = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>(pool),
-		  name(pool, aName),
 		  dsqlMessageExpr(aDsqlMessageExpr),
 		  dsqlParameters(aDsqlParameters),
+		  messageExpr(NULL),
+		  parameters(NULL)
+	{
+		exception = FB_NEW(pool) ExceptionItem(pool);
+		exception->type = ExceptionItem::XCP_CODE;
+		exception->name = name.c_str();
+	}
+
+	explicit ExceptionNode(MemoryPool& pool)
+		: TypedNode<StmtNode, StmtNode::TYPE_EXCEPTION>(pool),
+		  dsqlMessageExpr(NULL),
+		  dsqlParameters(NULL),
 		  messageExpr(NULL),
 		  parameters(NULL),
 		  exception(NULL)
@@ -589,12 +647,11 @@ private:
 	void setError(thread_db* tdbb) const;
 
 public:
-	Firebird::MetaName name;
 	dsql_nod* dsqlMessageExpr;
 	dsql_nod* dsqlParameters;
 	NestConst<ValueExprNode> messageExpr;
 	NestConst<ValueListNode> parameters;
-	NestConst<PsqlException> exception;
+	NestConst<ExceptionItem> exception;
 };
 
 

@@ -642,6 +642,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CreateAlterTriggerNode* createAlterTriggerNode;
 	Jrd::CreateAlterPackageNode* createAlterPackageNode;
 	Firebird::Array<Jrd::CreateAlterPackageNode::Item>* packageItems;
+	Jrd::ExceptionArray* exceptionArray;
 	Jrd::CreateAlterPackageNode::Item packageItem;
 	Jrd::CreatePackageBodyNode* createPackageBodyNode;
 	Jrd::CreateRelationNode* createRelationNode;
@@ -652,6 +653,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::ValueIfNode* valueIfNode;
 	Jrd::CompoundStmtNode* compoundStmtNode;
 	Jrd::CursorStmtNode* cursorStmtNode;
+	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
 }
 
@@ -700,7 +702,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> drop_clause drop_user_clause
 %type <legacyStr>  db_name ddl_desc
 
-%type <legacyNode> end_default err errors event_argument_opt exception_clause
+%type <legacyNode> end_default event_argument_opt exception_clause
+%type err(<exceptionArray>) errors(<exceptionArray>)
 %type <legacyNode> excp_hndl_statement
 %type <compoundStmtNode> excp_hndl_statements
 %type <legacyNode> exec_function exec_procedure
@@ -2672,19 +2675,45 @@ excp_hndl_statements
 	;
 
 excp_hndl_statement
-	: WHEN errors DO proc_block
-		{ $$ = make_node (nod_on_error, (int) e_err_count, make_list ($2), $4); }
+	: WHEN
+			{ $<errorHandlerNode>$ = newNode<ErrorHandlerNode>(); }
+		errors(&$<errorHandlerNode>2->conditions) DO proc_block
+			{
+				ErrorHandlerNode* node = $<errorHandlerNode>2;
+				node->dsqlAction = $5;
+				$$ = makeClassNode(node);
+			}
 	;
 
-errors
-	: err
-	| errors ',' err	{ $$ = make_node (nod_list, 2, $1, $3); }
+errors($exceptionArray)
+	: err($exceptionArray)
+	| errors ',' err($exceptionArray)
 	;
 
-err	: SQLCODE signed_short_integer		{ $$ = make_node (nod_sqlcode, 1, (dsql_nod*)(IPTR) $2); }
-	| GDSCODE symbol_gdscode_name		{ $$ = make_node (nod_gdscode, 1, $2); }
-	| EXCEPTION symbol_exception_name	{ $$ = make_node (nod_exception, 1, $2); }
-	| ANY								{ $$ = make_node (nod_default, 1, NULL); }
+err($exceptionArray)
+	: SQLCODE signed_short_integer
+		{
+			ExceptionItem& item = $exceptionArray->add();
+			item.type = ExceptionItem::SQL_CODE;
+			item.code = $2;
+		}
+	| GDSCODE symbol_gdscode_name
+		{
+			ExceptionItem& item = $exceptionArray->add();
+			item.type = ExceptionItem::GDS_CODE;
+			item.name = toName($2).c_str();
+		}
+	| EXCEPTION symbol_exception_name
+		{
+			ExceptionItem& item = $exceptionArray->add();
+			item.type = ExceptionItem::XCP_CODE;
+			item.name = toName($2).c_str();
+		}
+	| ANY
+		{
+			ExceptionItem& item = $exceptionArray->add();
+			item.type = ExceptionItem::XCP_DEFAULT;
+		}
 	;
 
 cursor_statement

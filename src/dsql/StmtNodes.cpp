@@ -411,7 +411,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 ++ptr)
 				{
 					const ErrorHandlerNode* handlerNode = (*ptr)->as<ErrorHandlerNode>();
-					const PsqlException* xcpNode = handlerNode->conditions;
+					const ExceptionArray& xcpNode = handlerNode->conditions;
 
 					if (testAndFixupError(tdbb, request, xcpNode))
 					{
@@ -512,7 +512,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 }
 
 // Test for match of current state with list of error conditions. Fix type and code of the exception.
-bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const PsqlException* conditions)
+bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const ExceptionArray& conditions)
 {
 	if (tdbb->tdbb_flags & TDBB_sys_error)
 		return false;
@@ -522,32 +522,32 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const PsqlE
 
 	bool found = false;
 
-	for (USHORT i = 0; i < conditions->xcp_count; i++)
+	for (USHORT i = 0; i < conditions.getCount(); i++)
 	{
-		switch (conditions->xcp_rpt[i].xcp_type)
+		switch (conditions[i].type)
 		{
-			case xcp_sql_code:
-				if (sqlcode == conditions->xcp_rpt[i].xcp_code)
+			case ExceptionItem::SQL_CODE:
+				if (sqlcode == conditions[i].code)
 					found = true;
 				break;
 
-			case xcp_gds_code:
-				if (statusVector[1] == conditions->xcp_rpt[i].xcp_code)
+			case ExceptionItem::GDS_CODE:
+				if (statusVector[1] == conditions[i].code)
 					found = true;
 				break;
 
-			case xcp_xcp_code:
+			case ExceptionItem::XCP_CODE:
 				// Look at set_error() routine to understand how the
 				// exception ID info is encoded inside the status vector.
 				if ((statusVector[1] == isc_except) &&
-					(statusVector[3] == conditions->xcp_rpt[i].xcp_code))
+					(statusVector[3] == conditions[i].code))
 				{
 					found = true;
 				}
 
 				break;
 
-			case xcp_default:
+			case ExceptionItem::XCP_DEFAULT:
 				found = true;
 				break;
 
@@ -1488,52 +1488,43 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	ErrorHandlerNode* node = FB_NEW(pool) ErrorHandlerNode(pool);
 
 	const USHORT n = csb->csb_blr_reader.getWord();
-	node->conditions = FB_NEW_RPT(*tdbb->getDefaultPool(), n) PsqlException();
-	node->conditions->xcp_count = n;
 
 	for (unsigned i = 0; i < n; i++)
 	{
 		const USHORT codeType = csb->csb_blr_reader.getByte();
-		xcp_repeat& item = node->conditions->xcp_rpt[i];
+		ExceptionItem& item = node->conditions.add();
 
 		switch (codeType)
 		{
 			case blr_sql_code:
-				item.xcp_type = xcp_sql_code;
-				item.xcp_code = (SSHORT) csb->csb_blr_reader.getWord();
+				item.type = ExceptionItem::SQL_CODE;
+				item.code = (SSHORT) csb->csb_blr_reader.getWord();
 				break;
 
 			case blr_gds_code:
-			{
-				string name;
-				item.xcp_type = xcp_gds_code;
-				PAR_name(csb, name);
-				name.lower();
-				SLONG codeNumber = PAR_symbol_to_gdscode(name);
-				if (codeNumber)
-					item.xcp_code = codeNumber;
-				else
-					PAR_error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+				item.type = ExceptionItem::GDS_CODE;
+				PAR_name(csb, item.name);
+				item.name.lower();
+				if (!(item.code = PAR_symbol_to_gdscode(item.name)))
+					PAR_error(csb, Arg::Gds(isc_codnotdef) << item.name);
 				break;
-			}
 
 			case blr_exception:
 			{
-				MetaName name;
-				item.xcp_type = xcp_xcp_code;
-				PAR_name(csb, name);
-				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
+				item.type = ExceptionItem::XCP_CODE;
+				PAR_name(csb, item.name);
+				if (!(item.code = MET_lookup_exception_number(tdbb, item.name)))
+					PAR_error(csb, Arg::Gds(isc_xcpnotdef) << item.name);
 
 				CompilerScratch::Dependency dependency(obj_exception);
-				dependency.number = item.xcp_code;
+				dependency.number = item.code;
 				csb->csb_dependencies.push(dependency);
 				break;
 			}
 
 			case blr_default_code:
-				item.xcp_type = xcp_default;
-				item.xcp_code = 0;
+				item.type = ExceptionItem::XCP_DEFAULT;
+				item.code = 0;
 				break;
 
 			default:
@@ -1549,7 +1540,10 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 ErrorHandlerNode* ErrorHandlerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	return this;
+	ErrorHandlerNode* node = FB_NEW(getPool()) ErrorHandlerNode(getPool());
+	node->conditions = conditions;
+	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
+	return node;
 }
 
 void ErrorHandlerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
@@ -1559,6 +1553,39 @@ void ErrorHandlerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_error_handler);
+	dsqlScratch->appendUShort(USHORT(conditions.getCount()));
+
+	for (ExceptionArray::iterator i = conditions.begin(); i != conditions.end(); ++i)
+	{
+		switch (i->type)
+		{
+			case ExceptionItem::SQL_CODE:
+				dsqlScratch->appendUChar(blr_sql_code);
+				dsqlScratch->appendUShort(i->code);
+				break;
+
+			case ExceptionItem::GDS_CODE:
+				dsqlScratch->appendUChar(blr_gds_code);
+				dsqlScratch->appendNullString(i->name.c_str());
+				break;
+
+			case ExceptionItem::XCP_CODE:
+				dsqlScratch->appendUChar(blr_exception);
+				dsqlScratch->appendNullString(i->name.c_str());
+				break;
+
+			case ExceptionItem::XCP_DEFAULT:
+				dsqlScratch->appendUChar(blr_default_code);
+				break;
+
+			default:
+				fb_assert(false);
+				break;
+		}
+	}
+
+	GEN_statement(dsqlScratch, dsqlAction);
 }
 
 ErrorHandlerNode* ErrorHandlerNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -3075,45 +3102,37 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	const UCHAR type = csb->csb_blr_reader.peekByte();
 	const USHORT codeType = csb->csb_blr_reader.getByte();
 
-	// Don't create PsqlException if blr_raise is used.
+	// Don't create ExceptionItem if blr_raise is used.
 	if (codeType != blr_raise)
 	{
-		node->exception = FB_NEW_RPT(pool, 1) PsqlException();
-		node->exception->xcp_count = 1;
-		xcp_repeat& item = node->exception->xcp_rpt[0];
+		node->exception = FB_NEW(pool) ExceptionItem(pool);
 
 		switch (codeType)
 		{
 			case blr_sql_code:
-				item.xcp_type = xcp_sql_code;
-				item.xcp_code = (SSHORT) csb->csb_blr_reader.getWord();
+				node->exception->type = ExceptionItem::SQL_CODE;
+				node->exception->code = (SSHORT) csb->csb_blr_reader.getWord();
 				break;
 
 			case blr_gds_code:
-				{
-					string exName;
-					item.xcp_type = xcp_gds_code;
-					PAR_name(csb, exName);
-					exName.lower();
-					SLONG code_number = PAR_symbol_to_gdscode(exName);
-					if (code_number)
-						item.xcp_code = code_number;
-					else
-						PAR_error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(exName));
-				}
+				node->exception->type = ExceptionItem::GDS_CODE;
+				PAR_name(csb, node->exception->name);
+				node->exception->name.lower();
+				if (!(node->exception->code = PAR_symbol_to_gdscode(node->exception->name)))
+					PAR_error(csb, Arg::Gds(isc_codnotdef) << node->exception->name);
 				break;
 
 			case blr_exception:
 			case blr_exception_msg:
 			case blr_exception_params:
 				{
-					item.xcp_type = xcp_xcp_code;
-					PAR_name(csb, node->name);
-					if (!(item.xcp_code = MET_lookup_exception_number(tdbb, node->name)))
-						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(node->name));
+					node->exception->type = ExceptionItem::XCP_CODE;
+					PAR_name(csb, node->exception->name);
+					if (!(node->exception->code = MET_lookup_exception_number(tdbb, node->exception->name)))
+						PAR_error(csb, Arg::Gds(isc_xcpnotdef) << node->exception->name);
 
 					CompilerScratch::Dependency dependency(obj_exception);
-					dependency.number = item.xcp_code;
+					dependency.number = node->exception->code;
 					csb->csb_dependencies.push(dependency);
 				}
 				break;
@@ -3138,7 +3157,8 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
-	node->name = name;
+	if (exception)
+		node->exception = FB_NEW(getPool()) ExceptionItem(getPool(), *exception);
 	node->dsqlMessageExpr = PASS1_node(dsqlScratch, dsqlMessageExpr);
 	node->dsqlParameters = PASS1_node(dsqlScratch, dsqlParameters);
 
@@ -3147,7 +3167,7 @@ StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 void ExceptionNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
-	text.printf("ExceptionNode: Name: %s", name.c_str());
+	text.printf("ExceptionNode: Name: %s", (exception ? exception->name.c_str() : ""));
 	if (dsqlMessageExpr)
 		nodes.add(dsqlMessageExpr);
 }
@@ -3156,9 +3176,9 @@ void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_abort);
 
-	// If exception name is undefined, it means we have re-initiate semantics here,
+	// If exception is NULL, it means we have re-initiate semantics here,
 	// so blr_raise verb should be generated.
-	if (name.isEmpty())
+	if (!exception)
 	{
 		dsqlScratch->appendUChar(blr_raise);
 		return;
@@ -3170,10 +3190,12 @@ void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar(blr_exception_params);
 	else if (dsqlMessageExpr)
 		dsqlScratch->appendUChar(blr_exception_msg);
+	else if (exception->type == ExceptionItem::GDS_CODE)
+		dsqlScratch->appendUChar(blr_gds_code);
 	else	// Otherwise go usual way, i.e. generate blr_exception.
 		dsqlScratch->appendUChar(blr_exception);
 
-	dsqlScratch->appendNullString(name.c_str());
+	dsqlScratch->appendNullString(exception->name.c_str());
 
 	// If exception parameters or value is defined, generate appropriate BLR verbs.
 	if (dsqlParameters)
@@ -3277,14 +3299,14 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 	message[length] = 0;
 
-	SLONG xcpCode = exception->xcp_rpt[0].xcp_code;
+	SLONG xcpCode = exception->code;
 
-	switch (exception->xcp_rpt[0].xcp_type)
+	switch (exception->type)
 	{
-		case xcp_sql_code:
+		case ExceptionItem::SQL_CODE:
 			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(xcpCode));
 
-		case xcp_gds_code:
+		case ExceptionItem::GDS_CODE:
 			if (xcpCode == isc_check_constraint)
 			{
 				MET_lookup_cnstrt_for_trigger(tdbb, exName, relationName,
@@ -3294,7 +3316,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 			else
 				ERR_post(Arg::Gds(xcpCode));
 
-		case xcp_xcp_code:
+		case ExceptionItem::XCP_CODE:
 		{
 			string tempStr;
 			const TEXT* s;

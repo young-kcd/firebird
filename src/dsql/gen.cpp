@@ -64,7 +64,6 @@ using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
 
-static void gen_error_condition(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
 static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
@@ -563,23 +562,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		gen_statement(dsqlScratch, node);
 		return;
 
-	case nod_on_error:
-		dsqlScratch->appendUChar(blr_error_handler);
-		temp = node->nod_arg[e_err_errs];
-		dsqlScratch->appendUShort(temp->nod_count);
-		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++)
-		{
-			gen_error_condition(dsqlScratch, *ptr);
-		}
-		GEN_statement(dsqlScratch, node->nod_arg[e_err_action]);
-		return;
-
-	case nod_sqlcode:
-	case nod_gdscode:
-		dsqlScratch->appendUChar(blr_abort);
-		gen_error_condition(dsqlScratch, node);
-		return;
-
 	case nod_cursor:
 		dsqlScratch->appendUChar(blr_dcl_cursor);
 		dsqlScratch->appendUShort((int)(IPTR) node->nod_arg[e_cur_number]);
@@ -716,51 +698,6 @@ void GEN_descriptor( DsqlCompilerScratch* dsqlScratch, const dsc* desc, bool tex
 		// don't understand dtype
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_datatype_err));
-	}
-}
-
-
-/**
-
- 	gen_error_condition
-
-    @brief	Generate blr for an error condtion
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_error_condition( DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	const dsql_str* string;
-
-	switch (node->nod_type)
-	{
-	case nod_sqlcode:
-		dsqlScratch->appendUChar(blr_sql_code);
-		dsqlScratch->appendUShort((USHORT)(IPTR) node->nod_arg[0]);
-		return;
-
-	case nod_gdscode:
-		dsqlScratch->appendUChar(blr_gds_code);
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(string->str_data);
-		return;
-
-	case nod_exception:
-		dsqlScratch->appendUChar(blr_exception);
-		string = (dsql_str*) node->nod_arg[0];
-		dsqlScratch->appendNullString(string->str_data);
-		return;
-
-	case nod_default:
-		dsqlScratch->appendUChar(blr_default_code);
-		return;
-
-	default:
-		fb_assert(false);
-		return;
 	}
 }
 
