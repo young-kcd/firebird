@@ -2123,31 +2123,31 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 
 	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_NUMERIC(source.dsc_dtype));
+		return DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_NUMERIC(source.dsc_dtype);
 	}
 
 	if (target.dsc_dtype == dtype_sql_date)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+		return DTYPE_IS_TEXT(source.dsc_dtype) ||
 			source.dsc_dtype == dtype_sql_date ||
-			source.dsc_dtype == dtype_timestamp);
+			source.dsc_dtype == dtype_timestamp;
 	}
 
 	if (target.dsc_dtype == dtype_sql_time)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
+		return DTYPE_IS_TEXT(source.dsc_dtype) ||
 			source.dsc_dtype == dtype_sql_time ||
-			source.dsc_dtype == dtype_timestamp);
+			source.dsc_dtype == dtype_timestamp;
 	}
 
 	if (target.dsc_dtype == dtype_timestamp)
 	{
-		return (DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_DATE(source.dsc_dtype));
+		return DTYPE_IS_TEXT(source.dsc_dtype) || DTYPE_IS_DATE(source.dsc_dtype);
 	}
 
 	if (target.dsc_dtype == dtype_boolean)
 	{
-		return (source.dsc_dtype == dtype_boolean);
+		return source.dsc_dtype == dtype_boolean;
 	}
 
 	fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
