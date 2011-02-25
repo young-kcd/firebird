@@ -1760,9 +1760,7 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		case blr_ansi_any:
 			if (nodFlags & FLAG_DEOPTIMIZE)
 			{
-				nodFlags &= ~FLAG_DEOPTIMIZE;
-
-				// Deoptimize the conjunct, not the ALL node itself
+				// Deoptimize the conjunct
 				BoolExprNode* boolean = rse->rse_boolean;
 
 				if (boolean)
@@ -1811,7 +1809,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	// the unoptimized boolean expression must be used, since the
 	// processing of these clauses is order dependant (see FilteredStream.cpp)
 
-	if (blrOp == blr_ansi_any || blrOp == blr_ansi_all)
+	if ((blrOp == blr_ansi_any || blrOp == blr_ansi_all) && (nodFlags & FLAG_DEOPTIMIZE))
 	{
 		const bool ansiAny = blrOp == blr_ansi_any;
 		const bool ansiNot = nodFlags & FLAG_ANSI_NOT;
