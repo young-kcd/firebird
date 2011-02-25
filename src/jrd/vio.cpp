@@ -1877,10 +1877,14 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
 #endif
-	if (rpb->rpb_stream_flags & RPB_s_undo_data) 
+	if (rpb->rpb_stream_flags & RPB_s_undo_data)
+	{
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
+	}
 	else
+	{
 		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
+	}
 
 	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
 	{
@@ -2650,10 +2654,14 @@ bool VIO_next_record(thread_db* tdbb,
 		}
 	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
 
-	if (rpb->rpb_stream_flags & RPB_s_undo_data) 
+	if (rpb->rpb_stream_flags & RPB_s_undo_data)
+	{
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
+	}
 	else
+	{
 		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
+	}
 
 	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
 	{
