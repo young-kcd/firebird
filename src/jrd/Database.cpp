@@ -155,15 +155,20 @@ namespace Jrd
 		memset(m_counters, 0, sizeof(m_counters));
 	}
 
+	Database::SharedCounter::~SharedCounter()
+	{
+		for (size_t i = 0; i < TOTAL_ITEMS; i++)
+		{
+			delete m_counters[i].lock;
+		}
+	}
+
 	void Database::SharedCounter::shutdown(thread_db* tdbb)
 	{
 		for (size_t i = 0; i < TOTAL_ITEMS; i++)
 		{
 			if (m_counters[i].lock)
 				LCK_release(tdbb, m_counters[i].lock);
-
-			delete m_counters[i].lock;
-			m_counters[i].lock = NULL;
 		}
 	}
 
