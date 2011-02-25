@@ -1,3 +1,23 @@
+ 2011-02-25 02:52  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/include/fb_blk.h
+   M src/jrd/exe.h
+Refactor DSQL exceptions: nod_on_error, nod_sqlcode, nod_gdscode, nod_exception and nod_default.
+
+ 2011-02-25 01:03  asfernandes 
+   M src/jrd/btr.cpp
+Misc
+
+ 2011-02-24 14:06  alexpeshkoff 
+   M builds/posix/Makefile.in
+Damyan's fix for an error, noticed by him
+
  2011-02-22 16:06  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/gen.cpp
