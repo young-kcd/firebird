@@ -106,6 +106,16 @@ static void garbage_collect_idx(thread_db*, record_param*, Record*, Record*);
 #ifdef GARBAGE_THREAD
 static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
+
+enum UndoDataRet {
+	udExists,
+	udNotExists, 
+	udForceBack, 
+	udNone
+};
+
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb);
+
 static void list_staying(thread_db*, record_param*, RecordStack&);
 #ifdef GARBAGE_THREAD
 static void notify_garbage_collector(thread_db*, record_param *, SLONG = -1);
@@ -586,7 +596,24 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		}
 	}
 
-	if ((state == tra_committed || state == tra_us) &&
+	rpb->rpb_stream_flags &= ~RPB_s_undo_data;
+	bool forceBack = false;
+	if (state == tra_us && !(transaction->tra_flags & TRA_system))
+	{
+		switch (get_undo_data(tdbb, transaction, rpb))
+		{
+		case udExists:
+			return true;
+		case udNotExists:
+			return false;
+		case udForceBack:
+			forceBack = true; // fall thru
+		case udNone:
+			break;
+		}
+	}
+
+	if ((state == tra_committed || state == tra_us) && !forceBack &&
 		!(rpb->rpb_flags & (rpb_deleted | rpb_damaged)) &&
 		(rpb->rpb_b_page == 0 || rpb->rpb_transaction_nr >= transaction->tra_oldest_active))
 	{
@@ -691,6 +718,12 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 				continue;
 			}
+		}
+
+		if (state == tra_us && forceBack)
+		{
+			state = tra_active;
+			forceBack = false;
 		}
 
 		switch (state)
@@ -906,6 +939,21 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 						rpb->rpb_transaction_nr, transaction->tra_number);
 			}
 #endif
+
+			if (state == tra_us && !(transaction->tra_flags & TRA_system))
+			{
+				switch (get_undo_data(tdbb, transaction, rpb))
+				{
+				case udExists:
+					return true;
+				case udNotExists:
+					return false;
+				case udForceBack:
+					forceBack = true; // fall
+				case udNone:
+					break;
+				}
+			}
 
 			if (rpb->rpb_flags & rpb_deleted)
 			{
@@ -1829,7 +1877,12 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 			 rpb->rpb_f_page, rpb->rpb_f_line);
 	}
 #endif
-	if (pool)
+	if (rpb->rpb_stream_flags & RPB_s_undo_data) 
+		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
+	else
+		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
+
+	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
 	{
 		if (rpb->rpb_stream_flags & RPB_s_no_data)
 		{
@@ -2597,7 +2650,12 @@ bool VIO_next_record(thread_db* tdbb,
 		}
 	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
 
-	if (pool)
+	if (rpb->rpb_stream_flags & RPB_s_undo_data) 
+		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
+	else
+		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
+
+	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
 	{
 		if (rpb->rpb_stream_flags & RPB_s_no_data) {
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -2706,7 +2764,10 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
-	VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
+	if (!(rpb->rpb_stream_flags & RPB_s_undo_data)) 
+	{
+		VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
+	}
 
 	// If record is present, and the transaction is read committed,
 	// make sure the record has not been updated.  Also, punt after
@@ -4317,6 +4378,85 @@ gc_exit:
 	return 0;
 }
 #endif
+
+
+static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb)
+/**********************************************************
+ *
+ *  g e t _ u n d o _ d a t a
+ *
+ **********************************************************
+ *
+ * This is helper routine for the VIO_chase_record_version. It is used to make 
+ * cursor stable - i.e. cursor should ignore changes made to the record by the 
+ * inner code. Of course, it is called only when record version was created by 
+ * current transaction: rpb->rpb_transaction_nr == transaction->tra_number.
+ *
+ * Possible cases and actions:
+ *
+ * - If record was not changed under current savepoint, return udNone. 
+ *		VIO_chase_record_version should continue own processing.
+ * 
+ * - If record was added under current savepoint return udNotExists. 
+ *		VIO_chase_record_version should return false.
+ *
+ * If record was modified or deleted under current savepoint, we should read 
+ * its previous version:
+ * - If previous version is present at undo-log, copy it into rpb and return 
+ *	 udExists.
+ *		VIO_chase_record_version should return true.
+ * - If previous version is not present at undo-log, return udForceBack.
+ *		VIO_chase_record_version should continue own processing and read back 
+ *		version from disk.
+ *
+ * If record version was restored from undo log (or record was just added and  
+ * have no backversions) mark rpb with RPB_s_undo_data to let caller know that
+ * page already released.
+ *
+ **********************************************************/
+{
+	if (!transaction->tra_save_point)
+		return udNone;
+
+	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
+	for (; action; action = action->vct_next)
+	{
+		if (action->vct_relation == rpb->rpb_relation) 
+		{
+			const SINT64 recno = rpb->rpb_number.getValue();
+			if (!RecordBitmap::test(action->vct_records, recno))
+				return udNone;
+
+			if (!action->vct_undo || !action->vct_undo->locate(recno))
+			{
+				if (rpb->rpb_flags & rpb_deleted || rpb->rpb_b_page)
+					return udForceBack;
+				else
+				{
+					rpb->rpb_stream_flags |= RPB_s_undo_data;
+					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+					return udNotExists;
+				}
+			}
+
+			rpb->rpb_stream_flags |= RPB_s_undo_data;
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+
+			if (action->vct_undo->current().getFlags() & REC_new_version)
+				return udNotExists;
+
+			Record* record = action->vct_undo->current().setupRecord(transaction);
+
+			memcpy(&rpb->rpb_record->rec_format, &record->rec_format,
+					sizeof(Record) - ((UCHAR*)&rpb->rpb_record->rec_format - (UCHAR*)rpb->rpb_record) + record->rec_length);
+
+			rpb->rpb_flags &= ~rpb_deleted;
+			return udExists;
+		}
+	}
+
+	return udNone;
+}
 
 
 static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& staying)

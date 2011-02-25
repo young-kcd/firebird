@@ -554,6 +554,9 @@ public:
 		}
 	}
 
+	const UCHAR getFlags() const
+	{ return flags; }
+
 private:
 	SINT64 number;
 	UCHAR flags;
