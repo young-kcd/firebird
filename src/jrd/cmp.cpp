@@ -3742,6 +3742,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_cast:
 		{
+			node->nod_arg[e_cast_source] = CMP_pass1(tdbb, csb, node->nod_arg[e_cast_source]);
+
 			dsc desc;
 			CMP_get_desc(tdbb, csb, node, &desc);
 
@@ -3754,7 +3756,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 								  Resource::rsc_collation, ttype);
 			}
 
-			break;
+			return node;
 		}
 
 	case nod_field:
