@@ -27,13 +27,14 @@
 namespace Jrd
 {
 	class CompoundStmtNode;
+	class DeclareCursorNode;
 	class ValueExprNode;
 }
 
 void PASS1_ambiguity_check(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, const Jrd::DsqlContextStack&);
 void PASS1_check_unique_fields_names(Jrd::StrArray& names, const Jrd::CompoundStmtNode* fields);
 Jrd::dsql_nod* PASS1_compose(Jrd::dsql_nod*, Jrd::dsql_nod*, UCHAR);
-Jrd::dsql_nod* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, USHORT, bool);
+Jrd::DeclareCursorNode* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, USHORT, bool);
 void PASS1_expand_select_node(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::DsqlNodStack&, bool);
 void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label(Jrd::DsqlCompilerScratch*, bool, Jrd::dsql_nod*);

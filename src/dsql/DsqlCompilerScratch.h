@@ -35,6 +35,7 @@ namespace Jrd
 {
 
 class CompoundStmtNode;
+class DeclareCursorNode;
 class TypeClause;
 class VariableNode;
 
@@ -239,7 +240,7 @@ public:
 	USHORT loopLevel;					// Loop level
 	DsqlStrStack labels;				// Loop labels
 	USHORT cursorNumber;				// Cursor number
-	DsqlNodStack cursors;				// Cursors
+	Firebird::Array<DeclareCursorNode*> cursors; // Cursors
 	USHORT inSelectList;				// now processing "select list"
 	USHORT inWhereClause;				// processing "where clause"
 	USHORT inGroupByClause;				// processing "group by clause"

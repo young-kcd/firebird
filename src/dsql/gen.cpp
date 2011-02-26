@@ -562,24 +562,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		gen_statement(dsqlScratch, node);
 		return;
 
-	case nod_cursor:
-		dsqlScratch->appendUChar(blr_dcl_cursor);
-		dsqlScratch->appendUShort((int)(IPTR) node->nod_arg[e_cur_number]);
-
-		if (node->nod_arg[e_cur_scroll])
-			dsqlScratch->appendUChar(blr_scrollable);
-
-		GEN_rse(dsqlScratch, node->nod_arg[e_cur_rse]);
-		temp = ExprNode::as<RseNode>(node->nod_arg[e_cur_rse])->dsqlSelectList;
-		dsqlScratch->appendUShort(temp->nod_count);
-		ptr = temp->nod_arg;
-		end = ptr + temp->nod_count;
-
-		while (ptr < end)
-			GEN_expr(dsqlScratch, *ptr++);
-
-		return;
-
 	case nod_src_info:
 		dsqlScratch->putDebugSrcInfo(node->nod_line, node->nod_column);
 		GEN_statement(dsqlScratch, node->nod_arg[e_src_info_stmt]);

@@ -259,8 +259,18 @@ public:
 class DeclareCursorNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_CURSOR>
 {
 public:
-	explicit DeclareCursorNode(MemoryPool& pool)
+	static const USHORT CUR_TYPE_NONE = 0;
+	static const USHORT CUR_TYPE_EXPLICIT = 1;
+	static const USHORT CUR_TYPE_FOR = 2;
+	static const USHORT CUR_TYPE_ALL = (CUR_TYPE_EXPLICIT | CUR_TYPE_FOR);
+
+	explicit DeclareCursorNode(MemoryPool& pool, const Firebird::MetaName& aDsqlName = NULL,
+				USHORT aDsqlCursorType = CUR_TYPE_NONE)
 		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_CURSOR>(pool),
+		  dsqlCursorType(aDsqlCursorType),
+		  dsqlScroll(false),
+		  dsqlName(aDsqlName),
+		  dsqlRse(NULL),
 		  rse(NULL),
 		  refs(NULL),
 		  cursorNumber(0),
@@ -279,6 +289,10 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	USHORT dsqlCursorType;
+	bool dsqlScroll;
+	Firebird::MetaName dsqlName;
+	dsql_nod* dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<ValueListNode> refs;
 	USHORT cursorNumber;

@@ -285,7 +285,7 @@ void DsqlCompilerScratch::putLocalVariables(const CompoundStmtNode* parameters, 
 
 			++locals;
 		}
-		else if (parameter->nod_type == Dsql::nod_cursor)
+		else if (StmtNode::is<DeclareCursorNode>(parameter))
 		{
 			PASS1_statement(this, parameter);
 			GEN_statement(this, parameter);

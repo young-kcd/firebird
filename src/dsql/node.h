@@ -99,7 +99,6 @@ enum nod_t
 	nod_assign,
 	nod_erase_current,
 	nod_modify_current,
-	nod_cursor,
 	nod_procedure_name,
 	nod_select_expr,
 	nod_order,
@@ -218,12 +217,6 @@ enum node_args {
 	e_rows_skip = 0,		// nod_rows
 	e_rows_length,
 	e_rows_count,
-
-	e_cur_name = 0,			// nod_cursor
-	e_cur_scroll,
-	e_cur_rse,
-	e_cur_number,
-	e_cur_count,
 
 	e_sel_query_spec = 0,	// nod_select_expr
 	e_sel_order,
@@ -585,11 +578,7 @@ enum nod_flags_vals {
 	NOD_SELECT_EXPR_VIEW_FIELDS				= 8,	// view's field list
 	NOD_SELECT_EXPR_DERIVED					= 16,
 	NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK	= 32,
-	NOD_SELECT_EXPR_DT_CTE_USED				= 64,
-
-	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
-	NOD_CURSOR_FOR			= 2,
-	NOD_CURSOR_ALL			= USHORT(~0)
+	NOD_SELECT_EXPR_DT_CTE_USED				= 64
 };
 
 } // namespace

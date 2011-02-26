@@ -1167,27 +1167,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node = pass1_savepoint(dsqlScratch, pass1_update(dsqlScratch, input, false));
 		break;
 
-	case nod_cursor:
-		{
-			fb_assert(input->nod_flags > 0);
-			// make sure the cursor doesn't exist
-			PASS1_cursor_name(dsqlScratch, ((dsql_str*) input->nod_arg[e_cur_name])->str_data,
-				NOD_CURSOR_ALL, false);
-			// temporarily hide unnecessary contexts and process our RSE
-			DsqlContextStack* const base_context = dsqlScratch->context;
-			DsqlContextStack temp;
-			dsqlScratch->context = &temp;
-			const dsql_nod* select = input->nod_arg[e_cur_rse];
-			input->nod_arg[e_cur_rse] =
-				PASS1_rse(dsqlScratch, select->nod_arg[e_select_expr], select->nod_arg[e_select_lock]);
-			dsqlScratch->context->clear();
-			dsqlScratch->context = base_context;
-			// assign number and store in the dsqlScratch stack
-			input->nod_arg[e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
-			dsqlScratch->cursors.push(input);
-		}
-		return input;
-
 	case nod_src_info:
 		{
 			input->nod_line = (USHORT) (IPTR) input->nod_arg[e_src_info_line];
@@ -1361,11 +1340,18 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 				name = field->fld_name.c_str();
 				break;
 
-			case nod_cursor:
-				str = (dsql_str*) (*ptr)->nod_arg[e_cur_name];
-				DEV_BLKCHK(str, dsql_type_str);
-				name = str->str_data;
-				break;
+			case nod_class_stmtnode:
+			{
+				const DeclareCursorNode* cursorNode;
+
+				if ((cursorNode = StmtNode::as<DeclareCursorNode>(*ptr)))
+				{
+					name = cursorNode->dsqlName.c_str();
+					break;
+				}
+
+				// fall into
+			}
 
 			default:
 				fb_assert(false);
@@ -2108,22 +2094,21 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	DEV_BLKCHK(relation_name, dsql_type_nod);
 
 	const MetaName& relName = ExprNode::as<RelationSourceNode>(relation_name)->dsqlName;
-
-	const dsql_str* string = (dsql_str*) cursor->nod_arg[e_cur_name];
-	DEV_BLKCHK(string, dsql_type_str);
+	const MetaName& cursorName = StmtNode::as<DeclareCursorNode>(cursor)->dsqlName;
 
 	// this function must throw an error if no cursor was found
-	const dsql_nod* node = PASS1_cursor_name(dsqlScratch, string->str_data, NOD_CURSOR_ALL, true);
+	const DeclareCursorNode* node = PASS1_cursor_name(dsqlScratch, cursorName,
+		DeclareCursorNode::CUR_TYPE_ALL, true);
 	fb_assert(node);
 
-	const RseNode* rse = ExprNode::as<RseNode>(node->nod_arg[e_cur_rse]);
+	const RseNode* rse = ExprNode::as<RseNode>(node->dsqlRse);
 	fb_assert(rse);
 
 	if (rse->dsqlDistinct)
 	{
 		// cursor with DISTINCT is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-				  Arg::Gds(isc_dsql_cursor_update_err) << Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
 	}
 
 	const dsql_nod* temp = rse->dsqlStreams;
@@ -2152,7 +2137,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 								  Arg::Gds(isc_dsql_cursor_err) <<
 								  Arg::Gds(isc_dsql_cursor_rel_ambiguous) << Arg::Str(relName) <<
-								  											 Arg::Str(string->str_data));
+																			 cursorName);
 					}
 					else
 						context = candidate;
@@ -2162,7 +2147,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 			{
 				// cursor with aggregation is not updatable
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-						  Arg::Gds(isc_dsql_cursor_update_err) << Arg::Str(string->str_data));
+						  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
 			}
 			// note that UnionSourceNode and joins will cause the error below,
 			// as well as derived tables. Some cases deserve fixing in the future
@@ -2173,8 +2158,7 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(relName) <<
-															 Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_rel_not_found) << Arg::Str(relName) << cursorName);
 	}
 
 	return context;
@@ -2189,18 +2173,17 @@ static dsql_ctx* pass1_cursor_context( DsqlCompilerScratch* dsqlScratch, const d
 
 
     @param dsqlScratch
-    @param string
+    @param name
 	@param mask
 	@param existence_flag
 
  **/
-dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const MetaName& string,
+DeclareCursorNode* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	USHORT mask, bool existence_flag)
 {
-	DEV_BLKCHK(string, dsql_type_str);
-	dsql_nod* cursor = NULL;
+	DeclareCursorNode* cursor = NULL;
 
-	if (string.isEmpty())
+	if (name.isEmpty())
 	{
 		if (existence_flag)
 		{
@@ -2216,11 +2199,12 @@ dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const MetaName& st
 		}
 	}
 
-	for (DsqlNodStack::iterator itr(dsqlScratch->cursors); itr.hasData(); ++itr)
+	for (Array<DeclareCursorNode*>::iterator itr = dsqlScratch->cursors.begin();
+		 itr != dsqlScratch->cursors.end();
+		 ++itr)
 	{
-		cursor = itr.object();
-		const dsql_str* cname = (dsql_str*) cursor->nod_arg[e_cur_name];
-		if (strcmp(string.c_str(), cname->str_data) == 0 && (cursor->nod_flags & mask))
+		cursor = *itr;
+		if (cursor->dsqlName == name && (cursor->dsqlCursorType & mask))
 			break;
 		cursor = NULL;
 	}
@@ -2229,13 +2213,13 @@ dsql_nod* PASS1_cursor_name(DsqlCompilerScratch* dsqlScratch, const MetaName& st
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_found) << Arg::Str(string.c_str()));
+				  Arg::Gds(isc_dsql_cursor_not_found) << name);
 	}
 	else if (cursor && !existence_flag)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_exists) << Arg::Str(string.c_str()));
+				  Arg::Gds(isc_dsql_cursor_exists) << name);
 	}
 
 	return cursor;
@@ -2266,18 +2250,17 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 
 	// Lookup parent dsqlScratch
 
-	const dsql_str* string = (dsql_str*) cursor->nod_arg[e_cur_name];
-	DEV_BLKCHK(string, dsql_type_str);
+	const MetaName& cursorName = StmtNode::as<DeclareCursorNode>(cursor)->dsqlName;
 
-	const dsql_sym* symbol = HSHD_lookup(dsqlScratch->getAttachment(), string->str_data,
-		static_cast<SSHORT>(string->str_length), SYM_cursor, 0);
+	const dsql_sym* symbol = HSHD_lookup(dsqlScratch->getAttachment(), cursorName.c_str(),
+		static_cast<SSHORT>(cursorName.length()), SYM_cursor, 0);
 
 	if (!symbol)
 	{
 		// cursor is not found
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_found) << Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_not_found) << cursorName);
 	}
 
 	dsql_req* parent = (dsql_req*) symbol->sym_object;
@@ -2292,7 +2275,7 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
-				  Arg::Gds(isc_dsql_cursor_update_err) << Arg::Str(string->str_data));
+				  Arg::Gds(isc_dsql_cursor_update_err) << cursorName);
 	}
 
 	dsqlScratch->getStatement()->setParentRequest(parent);
@@ -6995,9 +6978,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_collate:
 		verb = "collate";
-		break;
-	case nod_cursor:
-		verb = "cursor";
 		break;
 	case nod_def_database:
 		verb = "define database";

@@ -828,8 +828,8 @@ CursorStmtNode* CursorStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// Resolve the cursor.
-	cursorNumber = (USHORT)(IPTR) PASS1_cursor_name(dsqlScratch, dsqlName, NOD_CURSOR_EXPLICIT,
-		true)->nod_arg[Dsql::e_cur_number];
+	cursorNumber = PASS1_cursor_name(dsqlScratch, dsqlName,
+		DeclareCursorNode::CUR_TYPE_EXPLICIT, true)->cursorNumber;
 
 	// Process a scroll node, if exists.
 	if (dsqlScrollExpr)
@@ -863,12 +863,14 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->appendUChar(blr_null);
 	}
 
-	dsql_nod* cursor = NULL;
+	DeclareCursorNode* cursor = NULL;
 
-	for (DsqlNodStack::iterator itr(dsqlScratch->cursors); !cursor && itr.hasData(); ++itr)
+	for (Array<DeclareCursorNode*>::iterator itr = dsqlScratch->cursors.begin();
+		 itr != dsqlScratch->cursors.end();
+		 ++itr)
 	{
-		if ((USHORT)(IPTR) itr.object()->nod_arg[Dsql::e_cur_number] == cursorNumber)
-			cursor = itr.object();
+		if ((*itr)->cursorNumber == cursorNumber)
+			cursor = *itr;
 	}
 
 	fb_assert(cursor);
@@ -878,7 +880,7 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	if (listInto)
 	{
-		dsql_nod* list = ExprNode::as<RseNode>(cursor->nod_arg[Dsql::e_cur_rse])->dsqlSelectList;
+		dsql_nod* list = ExprNode::as<RseNode>(cursor->dsqlRse)->dsqlSelectList;
 		if (list->nod_count != listInto->nod_count)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
@@ -1022,6 +1024,24 @@ DmlNode* DeclareCursorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 
 DeclareCursorNode* DeclareCursorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	fb_assert(dsqlCursorType != CUR_TYPE_NONE);
+
+	// Make sure the cursor doesn't exist.
+	PASS1_cursor_name(dsqlScratch, dsqlName, CUR_TYPE_ALL, false);
+
+	// Temporarily hide unnecessary contexts and process our RSE.
+	DsqlContextStack* const baseContext = dsqlScratch->context;
+	DsqlContextStack temp;
+	dsqlScratch->context = &temp;
+	const dsql_nod* select = dsqlRse;
+	dsqlRse = PASS1_rse(dsqlScratch, select->nod_arg[Dsql::e_select_expr], select->nod_arg[Dsql::e_select_lock]);
+	dsqlScratch->context->clear();
+	dsqlScratch->context = baseContext;
+
+	// Assign number and store in the dsqlScratch stack.
+	cursorNumber = dsqlScratch->cursorNumber++;
+	dsqlScratch->cursors.push(this);
+
 	return this;
 }
 
@@ -1032,6 +1052,22 @@ void DeclareCursorNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 
 void DeclareCursorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
+	dsqlScratch->appendUChar(blr_dcl_cursor);
+	dsqlScratch->appendUShort(cursorNumber);
+
+	if (dsqlScroll)
+		dsqlScratch->appendUChar(blr_scrollable);
+
+	GEN_rse(dsqlScratch, dsqlRse);
+
+	dsql_nod* temp = ExprNode::as<RseNode>(dsqlRse)->dsqlSelectList;
+	dsql_nod** ptr = temp->nod_arg;
+	dsql_nod** end = ptr + temp->nod_count;
+
+	dsqlScratch->appendUShort(temp->nod_count);
+
+	while (ptr < end)
+		GEN_expr(dsqlScratch, *ptr++);
 }
 
 DeclareCursorNode* DeclareCursorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -3455,12 +3491,12 @@ StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlCursor)
 	{
-		fb_assert(dsqlCursor->nod_flags > 0);
-		PASS1_cursor_name(dsqlScratch, ((dsql_str*) dsqlCursor->nod_arg[Dsql::e_cur_name])->str_data,
-			NOD_CURSOR_ALL, false);
-		dsqlCursor->nod_arg[Dsql::e_cur_rse] = node->dsqlSelect;
-		dsqlCursor->nod_arg[Dsql::e_cur_number] = (dsql_nod*) (IPTR) dsqlScratch->cursorNumber++;
-		dsqlScratch->cursors.push(dsqlCursor);
+		DeclareCursorNode* cursor = StmtNode::as<DeclareCursorNode>(dsqlCursor);
+		fb_assert(cursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
+		PASS1_cursor_name(dsqlScratch, cursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
+		cursor->dsqlRse = node->dsqlSelect;
+		cursor->cursorNumber = dsqlScratch->cursorNumber++;
+		dsqlScratch->cursors.push(cursor);
 	}
 
 	if (dsqlInto)

@@ -2304,8 +2304,11 @@ var_decl_opt
 cursor_declaration_item
 	: symbol_cursor_name scroll_opt CURSOR FOR '(' select ')'
 		{
-			$$ = make_flag_node (nod_cursor, NOD_CURSOR_EXPLICIT,
-				(int) e_cur_count, $1, $2, $6, NULL, NULL);
+			DeclareCursorNode* node = newNode<DeclareCursorNode>(toName($1),
+				DeclareCursorNode::CUR_TYPE_EXPLICIT);
+			node->dsqlScroll = $2 != NULL;
+			node->dsqlRse = $6;
+			$$ = makeClassNode(node);
 		}
 	;
 
@@ -2657,8 +2660,11 @@ cursor_def
 	: // nothing
 		{ $$ = NULL; }
 	| AS CURSOR symbol_cursor_name
-		{ $$ = make_flag_node (nod_cursor, NOD_CURSOR_FOR,
-			(int) e_cur_count, $3, NULL, NULL, NULL, NULL); }
+		{
+			DeclareCursorNode* node = newNode<DeclareCursorNode>(toName($3),
+				DeclareCursorNode::CUR_TYPE_FOR);
+			$$ = makeClassNode(node);
+		}
 	;
 
 excp_hndl_statements
@@ -4911,7 +4917,7 @@ returning_clause
 
 cursor_clause
 	: WHERE CURRENT OF symbol_cursor_name
-		{ $$ = make_node(nod_cursor, (int) e_cur_count, $4, NULL, NULL, NULL, NULL); }
+		{ $$ = makeClassNode(newNode<DeclareCursorNode>(toName($4))); }
 	;
 
 
