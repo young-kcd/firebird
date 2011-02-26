@@ -6489,13 +6489,6 @@ namespace
 		{
 		}
 
-		KeywordVersion()
-			: keyword(-1),
-			  str(NULL),
-			  version(0)
-		{
-		}
-
 		int keyword;
 		dsql_str* str;
 		USHORT version;
@@ -7626,16 +7619,16 @@ int Parser::yylexAux()
 		*p = 0;
 
 		Firebird::string str(string, p - string);
-		KeywordVersion keyVer;
+		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keywordsMap->get(str, keyVer) && parser_version >= keyVer.version &&
-			(keyVer.keyword != COMMENT || lex.prev_keyword == -1))
+		if (keyVer && parser_version >= keyVer->version &&
+			(keyVer->keyword != COMMENT || lex.prev_keyword == -1))
 		{
-			yylval.legacyNode = (dsql_nod*) keyVer.str;
+			yylval.legacyNode = (dsql_nod*) keyVer->str;
 			lex.last_token_bk = lex.last_token;
 			lex.line_start_bk = lex.line_start;
 			lex.lines_bk = lex.lines;
-			return keyVer.keyword;
+			return keyVer->keyword;
 		}
 
 		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
@@ -7653,12 +7646,12 @@ int Parser::yylexAux()
 	if (lex.last_token + 1 < lex.end)
 	{
 		Firebird::string str(lex.last_token, 2);
-		KeywordVersion keyVer;
+		KeywordVersion* keyVer = keywordsMap->get(str);
 
-		if (keywordsMap->get(str, keyVer) && parser_version >= keyVer.version)
+		if (keyVer && parser_version >= keyVer->version)
 		{
 			++lex.ptr;
-			return keyVer.keyword;
+			return keyVer->keyword;
 		}
 	}
 
