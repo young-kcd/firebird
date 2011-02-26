@@ -3118,8 +3118,6 @@ void Transaction::putSlice(Status* status, ISC_QUAD* id,
 	{
 		reset(status);
 
-		reset(status);
-
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
