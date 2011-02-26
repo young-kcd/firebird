@@ -61,7 +61,8 @@ static const FPTR_BFILTER_CALLBACK filters[] =
 	filter_runtime,
 	filter_format,
 	filter_trans,
-	filter_trans				// should be filter_external_file
+	filter_trans,				// should be filter_external_file
+	filter_debug_info
 };
 
 

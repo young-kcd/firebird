@@ -23,6 +23,7 @@
 
 #include "firebird.h"
 #include "../common/common.h"
+#include "../common/classes/array.h"
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
@@ -39,7 +40,9 @@
 #include "../jrd/filte_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/DebugInterface.h"
 
+using namespace Firebird;
 using namespace Jrd;
 
 static ISC_STATUS caller(USHORT, BlobControl*, USHORT, UCHAR*, USHORT*);
@@ -1262,4 +1265,96 @@ static void string_put(BlobControl* control, const char* line)
 	++control->ctl_number_segments;
 	control->ctl_total_length += len;
 	control->ctl_max_segment = MAX(control->ctl_max_segment, len);
+}
+
+
+ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
+{
+/**************************************
+ *
+ *	f i l t e r _ d e b u g _ i n f o
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	if (action != isc_blob_filter_open)
+		return string_filter(action, control);
+
+	const SLONG l = control->ctl_handle->ctl_total_length;
+	HalfStaticArray<UCHAR, BUFFER_LARGE> buffer(*getDefaultMemoryPool());
+	UCHAR* const temp = buffer.getBuffer(l);
+	UCHAR* p = temp, *const end = buffer.end();
+
+	while (p < end)
+	{
+		USHORT length;
+		const USHORT max_len = MIN(end - p, MAX_USHORT);
+		const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, max_len, p, &length);
+
+		p += length;
+
+		if (status == isc_segstr_eof)
+			break;
+		if ((status && status != isc_segment))
+			return status;
+	}
+
+	if (p > end)
+		return isc_segstr_eof;
+
+	DbgInfo dbgInfo(*getDefaultMemoryPool());
+	DBG_parse_debug_info(p - temp, temp, dbgInfo);
+
+	string str;
+
+	MapArgumentInfoToName::ConstAccessor args(&dbgInfo.argInfoToName);
+	if (args.getFirst())
+	{
+		string_put(control, "Parameters:");
+		str.printf("%10s %-32s %-6s", "Number", "Name", "Type");
+		string_put(control, str.c_str());
+		str.replace(str.begin(), str.end(), str.length(), '-');
+		string_put(control, str.c_str());
+		do {
+			str.printf("%10d %-32s %-6s", 
+				args.current()->first.index, 
+				args.current()->second.c_str(), 
+				args.current()->first.type == fb_dbg_arg_input ? "INPUT" : "OUTPUT");
+			string_put(control, str.c_str());
+		}
+		while (args.getNext());
+		string_put(control, "");
+	}
+
+	MapVarIndexToName::ConstAccessor vars(&dbgInfo.varIndexToName);
+	if (vars.getFirst())
+	{
+		string_put(control, "Variables:");
+		str.printf("%10s %-32s", "Number", "Name");
+		string_put(control, str.c_str());
+		str.replace(str.begin(), str.end(), str.length(), '-');
+		string_put(control, str.c_str());
+		do {
+			str.printf("%10d %-32s", vars.current()->first, vars.current()->second.c_str());
+			string_put(control, str.c_str());
+		}
+		while (vars.getNext());
+		string_put(control, "");
+	}
+
+	string_put(control, "BLR to Source mapping:");
+	str.printf("%10s %6s %6s", "BLR offset", "Line", "Column");
+	string_put(control, str.c_str());
+	str.replace(str.begin(), str.end(), str.length(), '-');
+	string_put(control, str.c_str());
+	for (const MapBlrToSrcItem* i = dbgInfo.blrToSrc.begin(); i < dbgInfo.blrToSrc.end(); i++)
+	{
+		str.printf("%10d %6d %6d", i->mbs_offset, i->mbs_src_line, i->mbs_src_col);
+		string_put(control, str.c_str());
+	}
+
+	control->ctl_data[1] = control->ctl_data[0];
+	return FB_SUCCESS;
 }
