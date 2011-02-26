@@ -1635,6 +1635,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
  * Functional description
  *
  **************************************/
+	if (boolean->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
+		return false;
+
 	ComparativeBoolNode* cmpNode = boolean->as<ComparativeBoolNode>();
 	MissingBoolNode* missingNode = boolean->as<MissingBoolNode>();
 	NotBoolNode* notNode = boolean->as<NotBoolNode>();
