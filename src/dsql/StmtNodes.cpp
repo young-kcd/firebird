@@ -283,8 +283,17 @@ DmlNode* BlockNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return node;
 }
 
-BlockNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+StmtNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (!handlers && !dsqlScratch->errorHandlers)
+	{
+		CompoundStmtNode* node = FB_NEW(getPool()) CompoundStmtNode(getPool());
+		node->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
+		node->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(
+			action->dsqlPass(dsqlScratch));
+		return node;
+	}
+
 	BlockNode* node = FB_NEW(getPool()) BlockNode(getPool());
 
 	if (handlers)

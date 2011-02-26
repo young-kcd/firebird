@@ -135,7 +135,7 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual BlockNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual BlockNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual BlockNode* pass2(thread_db* tdbb, CompilerScratch* csb);
