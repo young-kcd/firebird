@@ -1,3 +1,31 @@
+ 2011-02-26 01:10  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+Replace some blr_block by blr_begin, as before.
+
+ 2011-02-25 15:28  asfernandes 
+   M src/jrd/vio.cpp
+The (bad) definition of fb_assert cause this code to not work in clang. It's a surprive if it works in MSVC.
+
+ 2011-02-25 13:06  dimitr 
+   M src/dsql/ExprNodes.cpp
+Let's process the sub-node before using it in CMP_get_desc. It helps to avoid a crash if the sub-node is a variable (its e_var_variable argument is not assigned yet).
+
+ 2011-02-25 12:26  hvlad 
+   M src/jrd/req.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Implement improvement CORE-3362 : Cursors should ignore changes made by the same statement
+
+ 2011-02-25 10:42  dimitr 
+   M src/dsql/BoolNodes.cpp
+Fixed the assertion reported by Vlad privately.
+
+ 2011-02-25 07:32  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+Front ported fix for CORE-3356.
+
  2011-02-25 02:52  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/StmtNodes.cpp
