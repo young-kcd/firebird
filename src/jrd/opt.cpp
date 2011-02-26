@@ -599,16 +599,6 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		opt->conjunctCount++;
 	}
 
-	// Deoptimize some conjuncts in advance
-	for (size_t iter = 0; iter < opt->opt_conjuncts.getCount(); iter++)
-	{
-		if (opt->opt_conjuncts[iter].opt_conjunct_node->nodFlags & ExprNode::FLAG_DEOPTIMIZE)
-		{
-			// Fake an index match for them
-			opt->opt_conjuncts[iter].opt_conjunct_flags |= opt_conjunct_matched;
-		}
-	}
-
 	// attempt to optimize aggregates via an index, if possible
 	if (aggregate && !sort)
 		sort = aggregate;
