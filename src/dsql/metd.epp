@@ -42,7 +42,6 @@
 #include "../jrd/tra.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
-#include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../jrd/blb_proto.h"

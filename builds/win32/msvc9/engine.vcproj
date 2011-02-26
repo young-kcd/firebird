@@ -1184,10 +1184,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\hsh_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\ibase.h"
 				>
 			</File>
@@ -1401,10 +1397,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\par_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\parse_proto.h"
 				>
 			</File>
 			<File
@@ -1737,10 +1729,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\gen.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\hsh.cpp"
 				>
 			</File>
 			<File

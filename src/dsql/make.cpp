@@ -45,7 +45,6 @@
 #include "../jrd/constants.h"
 #include "../jrd/align.h"
 #include "../dsql/errd_proto.h"
-#include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/utld_proto.h"
@@ -702,47 +701,6 @@ dsql_str* MAKE_string(const char* str, int length)
 {
 	fb_assert(length >= 0);
 	return MAKE_tagged_string(str, length, NULL);
-}
-
-
-/**
-
- 	MAKE_symbol
-
-    @brief	Make a symbol for an object and insert symbol into hash table.
-
-
-    @param database
-    @param name
-    @param length
-    @param type
-    @param object
-
- **/
-dsql_sym* MAKE_symbol(dsql_dbb* database,
-				const TEXT* name, USHORT length, SYM_TYPE type, dsql_req* object)
-{
-	DEV_BLKCHK(database, dsql_type_dbb);
-	DEV_BLKCHK(object, dsql_type_req);
-	fb_assert(name);
-	fb_assert(length > 0);
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	dsql_sym* symbol = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_sym;
-	symbol->sym_type = type;
-	symbol->sym_object = object;
-	symbol->sym_dbb = database;
-	symbol->sym_length = length;
-	TEXT* p = symbol->sym_name;
-	symbol->sym_string = p;
-
-	if (length)
-		memcpy(p, name, length);
-
-	HSHD_insert(symbol);
-
-	return symbol;
 }
 
 

@@ -63,7 +63,6 @@ Jrd::dsql_nod* MAKE_node(Dsql::nod_t, int);
 Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::dsql_nod*);
 void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::dsql_nod*);
 Jrd::dsql_str* MAKE_string(const char*, int);
-Jrd::dsql_sym* MAKE_symbol(Jrd::dsql_dbb*, const TEXT*, USHORT, Jrd::sym_type, Jrd::dsql_req*);
 Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 
 #endif // DSQL_MAKE_PROTO_H

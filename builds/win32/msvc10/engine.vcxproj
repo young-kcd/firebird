@@ -47,7 +47,6 @@
     <ClCompile Include="..\..\..\src\dsql\errd.cpp" />
     <ClCompile Include="..\..\..\src\dsql\ExprNodes.cpp" />
     <ClCompile Include="..\..\..\src\dsql\gen.cpp" />
-    <ClCompile Include="..\..\..\src\dsql\hsh.cpp" />
     <ClCompile Include="..\..\..\src\dsql\make.cpp" />
     <ClCompile Include="..\..\..\src\dsql\movd.cpp" />
     <ClCompile Include="..\..\..\src\dsql\parse.cpp" />
@@ -177,7 +176,6 @@
     <ClInclude Include="..\..\..\src\dsql\errd_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\ExprNodes.h" />
     <ClInclude Include="..\..\..\src\dsql\gen_proto.h" />
-    <ClInclude Include="..\..\..\src\dsql\hsh_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\make_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\metd_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\movd_proto.h" />
@@ -185,7 +183,6 @@
     <ClInclude Include="..\..\..\src\dsql\Nodes.h" />
     <ClInclude Include="..\..\..\src\dsql\PackageNodes.h" />
     <ClInclude Include="..\..\..\src\dsql\Parser.h" />
-    <ClInclude Include="..\..\..\src\dsql\parse_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\pass1_proto.h" />
     <ClInclude Include="..\..\..\src\dsql\sqlda.h" />
     <ClInclude Include="..\..\..\src\dsql\sqlda_pub.h" />

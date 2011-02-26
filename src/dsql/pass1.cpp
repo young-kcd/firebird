@@ -158,7 +158,6 @@
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
-#include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
@@ -2252,8 +2251,7 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 
 	const MetaName& cursorName = StmtNode::as<DeclareCursorNode>(cursor)->dsqlName;
 
-	const dsql_sym* symbol = HSHD_lookup(dsqlScratch->getAttachment(), cursorName.c_str(),
-		static_cast<SSHORT>(cursorName.length()), SYM_cursor, 0);
+	dsql_req* const* symbol = dsqlScratch->getAttachment()->dbb_cursors.get(cursorName.c_str());
 
 	if (!symbol)
 	{
@@ -2263,7 +2261,7 @@ static dsql_nod* pass1_cursor_reference( DsqlCompilerScratch* dsqlScratch, const
 				  Arg::Gds(isc_dsql_cursor_not_found) << cursorName);
 	}
 
-	dsql_req* parent = (dsql_req*) symbol->sym_object;
+	dsql_req* parent = *symbol;
 
 	// Verify that the cursor is appropriate and updatable
 
@@ -6944,10 +6942,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case dsql_type_fld:
 		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name.c_str());
-		return;
-
-	case dsql_type_sym:
-		trace_line("%sSYMBOL: %s\n", buffer, ((dsql_sym*) node)->sym_string);
 		return;
 
 	case dsql_type_nod:

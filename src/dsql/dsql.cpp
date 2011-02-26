@@ -49,10 +49,8 @@
 #include "../dsql/dsql_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/gen_proto.h"
-#include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/movd_proto.h"
-#include "../dsql/parse_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -143,7 +141,6 @@ IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL")
 
 dsql_dbb::~dsql_dbb()
 {
-	HSHD_finish(this);
 }
 
 
@@ -694,7 +691,7 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
-	Firebird::string cursor = input_cursor;
+	string cursor = input_cursor;
 
 	if (cursor[0] == '\"')
 	{
@@ -702,7 +699,7 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 		// Note that "" will be replaced with ".
 		// The code is very strange, because it doesn't check for "" really
 		// and thus deletes one isolated " in the middle of the cursor.
-		for (Firebird::string::iterator i = cursor.begin(); i < cursor.end(); ++i)
+		for (string::iterator i = cursor.begin(); i < cursor.end(); ++i)
 		{
 			if (*i == '\"')
 				cursor.erase(i);
@@ -710,8 +707,8 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 	}
 	else	// not quoted name
 	{
-		const Firebird::string::size_type i = cursor.find(' ');
-		if (i != Firebird::string::npos)
+		const string::size_type i = cursor.find(' ');
+		if (i != string::npos)
 			cursor.resize(i);
 
 		cursor.upper();
@@ -733,28 +730,31 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 
 	// If there already is a different cursor by the same name, bitch
 
-	const dsql_sym* symbol = HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
+	dsql_req* const* symbol = request->req_dbb->dbb_cursors.get(cursor);
 	if (symbol)
 	{
-		if (request->req_cursor == symbol)
+		if (request == *symbol)
 			return;
 
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_redefined) << Arg::Str(symbol->sym_string));
+				  Arg::Gds(isc_dsql_cursor_redefined) << cursor);
 	}
 
 	// If there already is a cursor and its name isn't the same, ditto.
 	// We already know there is no cursor by this name in the hash table
 
-	if (!request->req_cursor)
-		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(), length, SYM_cursor, request);
+	if (request->req_cursor.isEmpty())
+	{
+		request->req_cursor = cursor;
+		request->req_dbb->dbb_cursors.put(cursor, request);
+	}
 	else
 	{
-		fb_assert(request->req_cursor != symbol);
+		fb_assert(request != (*symbol));
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_redefined) << Arg::Str(request->req_cursor->sym_string));
+				  Arg::Gds(isc_dsql_cursor_redefined) << request->req_cursor);
 	}
 }
 
@@ -2287,10 +2287,10 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 	}
 	request->req_traced = false;
 
-	if (request->req_cursor)
+	if (request->req_cursor.hasData())
 	{
-		HSHD_remove(request->req_cursor);
-		request->req_cursor = NULL;
+		request->req_dbb->dbb_cursors.remove(request->req_cursor);
+		request->req_cursor = "";
 	}
 
 	// If a request has been compiled, release it now

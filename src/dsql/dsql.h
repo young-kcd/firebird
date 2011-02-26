@@ -140,6 +140,9 @@ public:
 		Firebird::MetaName, class dsql_intlsym*> > > dbb_collations;	// known collations in database
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<
 		SSHORT, dsql_intlsym*> > > dbb_charsets_by_id;	// charsets sorted by charset_id
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::string, class dsql_req*> > > dbb_cursors;			// known cursors in database
+
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
@@ -157,6 +160,7 @@ public:
 		  dbb_charsets(p),
 		  dbb_collations(p),
 		  dbb_charsets_by_id(p),
+		  dbb_cursors(p),
 		  dbb_pool(p)
 	{}
 
@@ -541,6 +545,7 @@ public:
 		  statement(aStatement),
 		  cursors(req_pool),
 		  req_msg_buffers(req_pool),
+		  req_cursor(req_pool),
 		  req_user_descs(req_pool)
 	{
 	}
@@ -577,7 +582,7 @@ public:
 	unsigned req_flags;			// flags
 
 	Firebird::Array<UCHAR*>	req_msg_buffers;
-	dsql_sym* req_cursor;	// Cursor symbol, if any
+	Firebird::string req_cursor;	// Cursor name, if any
 	blb* req_blb;			// JRD blob
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 

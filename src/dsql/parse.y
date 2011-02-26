@@ -89,7 +89,6 @@
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
-#include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../yvalve/keywords.h"
 #include "../yvalve/gds_proto.h"
@@ -6477,34 +6476,52 @@ non_reserved_word :
  */
 
 
-void LEX_dsql_init(MemoryPool& pool)
+namespace
 {
-/**************************************
- *
- *	L E X _ d s q l _ i n i t
- *
- **************************************
- *
- * Functional description
- *	Initialize LEX for processing.  This is called only once
- *	per session.
- *
- **************************************/
-	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
+	const int HASH_SIZE = 1021;
+
+	struct KeywordVersion
 	{
-		dsql_sym* symbol = FB_NEW_RPT(pool, 0) dsql_sym;
-		symbol->sym_string = token->tok_string;
-		symbol->sym_length = strlen(token->tok_string);
-		symbol->sym_type = SYM_keyword;
-		symbol->sym_keyword = token->tok_ident;
-		symbol->sym_version = token->tok_version;
-		dsql_str* str = FB_NEW_RPT(pool, symbol->sym_length) dsql_str;
-		str->str_length = symbol->sym_length;
-		strncpy(str->str_data, symbol->sym_string, symbol->sym_length);
-		//str->str_data[str->str_length] = 0; Is it necessary?
-		symbol->sym_object = (void *) str;
-		HSHD_insert(symbol);
-	}
+		KeywordVersion(int aKeyword, dsql_str* aStr, USHORT aVersion)
+			: keyword(aKeyword),
+			  str(aStr),
+			  version(aVersion)
+		{
+		}
+
+		KeywordVersion()
+			: keyword(-1),
+			  str(NULL),
+			  version(0)
+		{
+		}
+
+		int keyword;
+		dsql_str* str;
+		USHORT version;
+	};
+
+	class KeywordsMap : public GenericMap<Pair<Left<string, KeywordVersion> > >
+	{
+	public:
+		explicit KeywordsMap(MemoryPool& pool)
+			: GenericMap<Pair<Left<string, KeywordVersion> > >(pool)
+		{
+			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
+			{
+				size_t len = strlen(token->tok_string);
+				dsql_str* str = FB_NEW_RPT(pool, len) dsql_str;
+				str->str_length = len;
+				strncpy(str->str_data, token->tok_string, len);
+				//str->str_data[str->str_length] = 0; Is it necessary?
+
+				put(string(token->tok_string, len),
+					KeywordVersion(token->tok_ident, str, token->tok_version));
+			}
+		}
+	};
+
+	GlobalPtr<KeywordsMap> keywordsMap;
 }
 
 
@@ -7587,7 +7604,6 @@ int Parser::yylexAux()
 
 	// end of number-recognition code
 
-
 	if (tok_class & CHR_LETTER)
 	{
 		char* p = string;
@@ -7601,15 +7617,18 @@ int Parser::yylexAux()
 
 		check_bound(p, string);
 		*p = 0;
-		dsql_sym* sym =
-			HSHD_lookup (NULL, string, (SSHORT)(p - string), SYM_keyword, parser_version);
-		if (sym && (sym->sym_keyword != COMMENT || lex.prev_keyword == -1))
+
+		Firebird::string str(string, p - string);
+		KeywordVersion keyVer;
+
+		if (keywordsMap->get(str, keyVer) && parser_version >= keyVer.version &&
+			(keyVer.keyword != COMMENT || lex.prev_keyword == -1))
 		{
-			yylval.legacyNode = (dsql_nod*) sym->sym_object;
+			yylval.legacyNode = (dsql_nod*) keyVer.str;
 			lex.last_token_bk = lex.last_token;
 			lex.line_start_bk = lex.line_start;
 			lex.lines_bk = lex.lines;
-			return sym->sym_keyword;
+			return keyVer.keyword;
 		}
 
 		if (p > &string[MAX_SQL_IDENTIFIER_LEN])
@@ -7626,12 +7645,13 @@ int Parser::yylexAux()
 
 	if (lex.last_token + 1 < lex.end)
 	{
-		dsql_sym* sym =
-			HSHD_lookup (NULL, lex.last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
-		if (sym)
+		Firebird::string str(lex.last_token, 2);
+		KeywordVersion keyVer;
+
+		if (keywordsMap->get(str, keyVer) && parser_version >= keyVer.version)
 		{
 			++lex.ptr;
-			return sym->sym_keyword;
+			return keyVer.keyword;
 		}
 	}
 

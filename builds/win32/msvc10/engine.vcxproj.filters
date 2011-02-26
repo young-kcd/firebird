@@ -144,9 +144,6 @@
     <ClCompile Include="..\..\..\src\dsql\gen.cpp">
       <Filter>DSQL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\dsql\hsh.cpp">
-      <Filter>DSQL</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\dsql\make.cpp">
       <Filter>DSQL</Filter>
     </ClCompile>
@@ -518,9 +515,6 @@
     <ClInclude Include="..\..\..\src\dsql\gen_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\hsh_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\make_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -537,9 +531,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\PackageNodes.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\dsql\parse_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\Parser.h">

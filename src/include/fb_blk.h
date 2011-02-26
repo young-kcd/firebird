@@ -64,7 +64,6 @@ enum BlockType
 	dsql_type_fil,
 	dsql_type_nod,
 	dsql_type_str,
-	dsql_type_sym,
 	dsql_type_tra,
 	dsql_type_udf,
 	dsql_type_blb,
