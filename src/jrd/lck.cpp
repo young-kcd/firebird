@@ -1286,7 +1286,7 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
 
 	Arg::StatusVector statusVector;
 	internal_downgrade(tdbb, statusVector, match);
-	fb_assert(statusVector.isEmpty())
+	fb_assert(statusVector.isEmpty());
 }
 
 

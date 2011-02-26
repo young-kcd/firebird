@@ -2047,7 +2047,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  *	extend file(s)
  *
  **************************************/
-	fb_assert(dbb == tdbb->getDatabase())
+	fb_assert(dbb == tdbb->getDatabase());
 
 	const int MAX_EXTEND_BYTES = dbb->dbb_config->getDatabaseGrowthIncrement();
 

@@ -38,10 +38,30 @@
 #define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %"LINEFORMAT"\n"
 
 #if !defined(fb_assert)
-#define fb_assert_continue(ex)	{if (!(ex)) {if (isatty(2)) fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);\
-											 else gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
-#define fb_assert(ex)	{if (!(ex)) {if (isatty(2)) fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);\
-									 else gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	\
+	do	\
+	{	\
+		if (!(ex))	\
+		{	\
+			if (isatty(2))	\
+				fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
+			else	\
+				gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
+		}	\
+	} while (false)
+
+#define fb_assert(ex)	\
+	do	\
+	{	\
+		if (!(ex))	\
+		{	\
+			if (isatty(2))	\
+				fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
+			else	\
+				gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);	\
+			abort();	\
+		}	\
+	} while (false)
 #endif
 
 #else	// DEV_BUILD

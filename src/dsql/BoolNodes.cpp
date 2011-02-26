@@ -171,7 +171,7 @@ bool BinaryBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const BinaryBoolNode* o = other->as<BinaryBoolNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrOp == o->blrOp;
 }
@@ -563,7 +563,7 @@ bool ComparativeBoolNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) c
 		return false;
 
 	const ComparativeBoolNode* o = other->as<ComparativeBoolNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return dsqlFlag == o->dsqlFlag && blrOp == o->blrOp;
 }

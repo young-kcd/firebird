@@ -1548,7 +1548,7 @@ void BTR_make_null_key(thread_db* tdbb, index_desc* idx, temporary_key* key)
 
 	fb_assert(idx != NULL);
 	fb_assert(key != NULL);
-	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION12)
+	fb_assert(tdbb->getDatabase()->dbb_ods_version >= ODS_VERSION12);
 
 	key->key_flags = key_all_nulls;
 

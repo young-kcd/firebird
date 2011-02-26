@@ -180,7 +180,7 @@ public:
 	static inline AliceGlobals* getSpecific()
 	{
 		ThreadData* tData = ThreadData::getSpecific();
-		fb_assert (tData->getType() == ThreadData::tddALICE)
+		fb_assert(tData->getType() == ThreadData::tddALICE);
 		return (AliceGlobals*) tData;
 	}
 	static inline void putSpecific(AliceGlobals* tdgbl)

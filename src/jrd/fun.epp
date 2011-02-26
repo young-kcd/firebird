@@ -841,7 +841,7 @@ static SLONG get_scalar_array(const Function::Argument* arg,
 	blb* blob = BLB_get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
 							  array_desc);
 
-	fb_assert (array_desc->iad_total_length >= 0) // check before upcasting to size_t
+	fb_assert(array_desc->iad_total_length >= 0); // check before upcasting to size_t
 	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(array_desc->iad_total_length)];
 	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
 	const USHORT dimensions = array_desc->iad_dimensions;

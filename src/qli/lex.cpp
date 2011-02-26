@@ -1138,7 +1138,7 @@ static void retchar()
  **************************************/
 
 	// CVC: Too naive implementation: what if the pointer is at the beginning?
-	fb_assert(QLI_line)
+	fb_assert(QLI_line);
 	--QLI_line->line_ptr;
 }
 

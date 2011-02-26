@@ -1429,7 +1429,7 @@ bool ArithmeticNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const ArithmeticNode* o = other->as<ArithmeticNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return dialect1 == o->dialect1 && blrOp == o->blrOp;
 }
@@ -2724,7 +2724,7 @@ bool CastNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const CastNode* o = other->as<CastNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return dsqlField == o->dsqlField;
 }
@@ -4355,7 +4355,7 @@ bool ExtractNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const ExtractNode* o = other->as<ExtractNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrSubOp == o->blrSubOp;
 }
@@ -4919,7 +4919,7 @@ bool FieldNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const FieldNode* o = other->as<FieldNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	if (dsqlField != o->dsqlField || dsqlContext != o->dsqlContext)
 		return false;
@@ -5387,7 +5387,7 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const GenIdNode* o = other->as<GenIdNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return dialect1 == o->dialect1 && name == o->name;
 }
@@ -6007,7 +6007,7 @@ bool LiteralNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const LiteralNode* o = other->as<LiteralNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	if (litDesc.dsc_dtype != o->litDesc.dsc_dtype || litDesc.dsc_length != o->litDesc.dsc_length ||
 		litDesc.dsc_scale != o->litDesc.dsc_scale)
@@ -7594,7 +7594,7 @@ bool RecordKeyNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const RecordKeyNode* o = other->as<RecordKeyNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrOp == o->blrOp;
 }
@@ -8089,7 +8089,7 @@ bool StrCaseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const StrCaseNode* o = other->as<StrCaseNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrOp == o->blrOp;
 }
@@ -8292,7 +8292,7 @@ bool StrLenNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const StrLenNode* o = other->as<StrLenNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return blrSubOp == o->blrSubOp;
 }
@@ -9807,7 +9807,7 @@ bool TrimNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 		return false;
 
 	const TrimNode* o = other->as<TrimNode>();
-	fb_assert(o)
+	fb_assert(o);
 
 	return where == o->where;
 }
