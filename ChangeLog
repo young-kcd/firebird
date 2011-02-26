@@ -1,3 +1,11 @@
+ 2011-02-25 12:48  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the regression I introduced recently. This is the simplest version of the fix.
+
+ 2011-02-25 09:42  dimitr 
+   M src/jrd/cmp.cpp
+Let's process the sub-node before using it in CMP_get_desc. It helps to avoid a crash if the sub-node is a variable (its e_var_variable argument is not assigned yet).
+
  2011-02-23 14:08  dimitr 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
