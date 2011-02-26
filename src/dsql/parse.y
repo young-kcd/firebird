@@ -6519,6 +6519,13 @@ namespace
 					KeywordVersion(token->tok_ident, str, token->tok_version));
 			}
 		}
+
+		~KeywordsMap()
+		{
+			Accessor accessor(this);
+			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
+				delete accessor.current()->second.str;
+		}
 	};
 
 	GlobalPtr<KeywordsMap> keywordsMap;
