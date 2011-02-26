@@ -85,7 +85,7 @@ namespace
 bool BoolExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
-	if (nodFlags & FLAG_DEOPTIMIZE)
+	if (nodFlags & (FLAG_DEOPTIMIZE | FLAG_RESIDUAL))
 		return false;
 
 	return ExprNode::computable(csb, stream, allowOnlyCurrentStream);
@@ -1758,24 +1758,33 @@ BoolExprNode* RseBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// fall into
 
 		case blr_ansi_any:
+		{
+			bool deoptimize = false;
+
 			if (nodFlags & FLAG_DEOPTIMIZE)
 			{
-				// Deoptimize the conjunct
-				BoolExprNode* boolean = rse->rse_boolean;
-
-				if (boolean)
-				{
-					BinaryBoolNode* binaryNode = boolean->as<BinaryBoolNode>();
-					if (binaryNode && binaryNode->blrOp == blr_and)
-						boolean = binaryNode->arg2;
-
-					// Deoptimize the injected boolean of a quantified predicate
-					// when it's necessary. ALL predicate does not require an index scan.
-					// This fixes bug SF #543106.
-					boolean->nodFlags |= FLAG_DEOPTIMIZE;
-				}
+				nodFlags &= ~FLAG_DEOPTIMIZE;
+				deoptimize = true;
 			}
-			// fall into
+
+			// Mark the injected boolean as residual, this is required
+			// to process quantified predicates correctly in some cases.
+			//
+			// If necessary, also deoptimize the injected boolean.
+			// ALL predicate should not be evaluated using an index scan.
+			// This fixes bug SF #543106.
+
+			BoolExprNode* boolean = rse->rse_boolean;
+			if (boolean)
+			{
+				BinaryBoolNode* const binaryNode = boolean->as<BinaryBoolNode>();
+				if (binaryNode && binaryNode->blrOp == blr_and)
+					boolean = binaryNode->arg2;
+
+				boolean->nodFlags |= FLAG_RESIDUAL | (deoptimize ? FLAG_DEOPTIMIZE : 0);
+			}
+		}
+		// fall into
 
 		case blr_any:
 		case blr_exists:
@@ -1809,7 +1818,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	// the unoptimized boolean expression must be used, since the
 	// processing of these clauses is order dependant (see FilteredStream.cpp)
 
-	if ((blrOp == blr_ansi_any || blrOp == blr_ansi_all) && (nodFlags & FLAG_DEOPTIMIZE))
+	if (blrOp == blr_ansi_any || blrOp == blr_ansi_all)
 	{
 		const bool ansiAny = blrOp == blr_ansi_any;
 		const bool ansiNot = nodFlags & FLAG_ANSI_NOT;
