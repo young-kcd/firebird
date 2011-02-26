@@ -72,6 +72,11 @@ namespace Jrd
 		virtual void saveRecords(thread_db* tdbb) const = 0;
 		virtual void restoreRecords(thread_db* tdbb) const = 0;
 
+		virtual void setAnyBoolean(BoolExprNode* /*anyBoolean*/, bool /*ansiAny*/, bool /*ansiNot*/)
+		{
+			fb_assert(false);
+		}
+
 		virtual ~RecordSource();
 
 		static bool rejectDuplicate(const UCHAR* /*data1*/, const UCHAR* /*data2*/, void* /*userArg*/)

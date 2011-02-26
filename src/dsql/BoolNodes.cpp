@@ -1813,8 +1813,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	{
 		const bool ansiAny = blrOp == blr_ansi_any;
 		const bool ansiNot = nodFlags & FLAG_ANSI_NOT;
-		FilteredStream* const filter = static_cast<FilteredStream*>(rsb.getObject());
-		filter->setAnyBoolean(rse->rse_boolean, ansiAny, ansiNot);
+		rsb->setAnyBoolean(rse->rse_boolean, ansiAny, ansiNot);
 	}
 
 	csb->csb_fors.add(rsb);
