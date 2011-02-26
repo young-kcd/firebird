@@ -1317,14 +1317,16 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 		string_put(control, str.c_str());
 		str.replace(str.begin(), str.end(), str.length(), '-');
 		string_put(control, str.c_str());
-		do {
-			str.printf("%10d %-32s %-6s", 
-				args.current()->first.index, 
-				args.current()->second.c_str(), 
-				args.current()->first.type == fb_dbg_arg_input ? "INPUT" : "OUTPUT");
+
+		do
+		{
+			str.printf("%10d %-32s %-6s",
+				args.current()->first.index,
+				args.current()->second.c_str(),
+				(args.current()->first.type == fb_dbg_arg_input ? "INPUT" : "OUTPUT"));
 			string_put(control, str.c_str());
-		}
-		while (args.getNext());
+		} while (args.getNext());
+
 		string_put(control, "");
 	}
 
@@ -1336,11 +1338,13 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 		string_put(control, str.c_str());
 		str.replace(str.begin(), str.end(), str.length(), '-');
 		string_put(control, str.c_str());
-		do {
+
+		do
+		{
 			str.printf("%10d %-32s", vars.current()->first, vars.current()->second.c_str());
 			string_put(control, str.c_str());
-		}
-		while (vars.getNext());
+		} while (vars.getNext());
+
 		string_put(control, "");
 	}
 
@@ -1349,6 +1353,7 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 	string_put(control, str.c_str());
 	str.replace(str.begin(), str.end(), str.length(), '-');
 	string_put(control, str.c_str());
+
 	for (const MapBlrToSrcItem* i = dbgInfo.blrToSrc.begin(); i < dbgInfo.blrToSrc.end(); i++)
 	{
 		str.printf("%10d %6d %6d", i->mbs_offset, i->mbs_src_line, i->mbs_src_col);
@@ -1356,5 +1361,6 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 	}
 
 	control->ctl_data[1] = control->ctl_data[0];
+
 	return FB_SUCCESS;
 }

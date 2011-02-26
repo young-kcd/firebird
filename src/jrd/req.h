@@ -119,9 +119,9 @@ const USHORT rpb_uk_modified= 512;		// record key field values are changed
 
 // Stream flags
 
-const USHORT RPB_s_refetch	= 0x1;		// re-fetch required due to sort
-const USHORT RPB_s_update	= 0x2;		// input stream fetched for update
-const USHORT RPB_s_no_data	= 0x4;		// nobody is going to access the data
+const USHORT RPB_s_refetch		= 0x1;	// re-fetch required due to sort
+const USHORT RPB_s_update		= 0x2;	// input stream fetched for update
+const USHORT RPB_s_no_data		= 0x4;	// nobody is going to access the data
 const USHORT RPB_s_undo_data	= 0x8;	// data got from undo log
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
