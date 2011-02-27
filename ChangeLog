@@ -1,3 +1,93 @@
+ 2011-02-26 22:03  asfernandes 
+   M src/dsql/parse.y
+Misc
+
+ 2011-02-26 21:58  asfernandes 
+   M src/dsql/parse.y
+Explicitelly delete the strings created.
+
+ 2011-02-26 21:52  asfernandes 
+   M builds/make.new/config/install-sh
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   D src/dsql/hsh.cpp
+   D src/dsql/hsh_proto.h
+   M src/dsql/make.cpp
+   M src/dsql/make_proto.h
+   M src/dsql/metd.epp
+   M src/dsql/parse.y
+   D src/dsql/parse_proto.h
+   M src/dsql/pass1.cpp
+   M src/dsql/sym.h
+   M src/include/fb_blk.h
+Removed the legacy DSQL hash table module (HSHD).
+
+ 2011-02-26 21:51  asfernandes 
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactor nod_cursor.
+
+ 2011-02-26 19:05  asfernandes 
+   M src/jrd/filters.cpp
+   M src/jrd/req.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Misc
+
+ 2011-02-26 16:03  asfernandes 
+   M src/alice/alice.h
+   M src/common/cvt.cpp
+   M src/common/gdsassert.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/fun.epp
+   M src/jrd/lck.cpp
+   M src/jrd/pag.cpp
+   M src/qli/eval.cpp
+   M src/qli/lex.cpp
+Fix definition and usages of fb_assert.
+
+ 2011-02-26 16:02  asfernandes 
+   M src/remote/client/interface.cpp
+Misc
+
+ 2011-02-26 15:21  hvlad 
+   M src/jrd/blob_filter.cpp
+   M src/jrd/filte_proto.h
+   M src/jrd/filters.cpp
+New feature CORE-3364 : Blob filter to translate internal debug info into text representation
+
+ 2011-02-26 09:38  dimitr 
+   M src/jrd/opt.cpp
+Cleanup up the code no longer needed.
+
+ 2011-02-26 09:31  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/Nodes.h
+Reworked my yesterday's change. Hopefully, it should resolve the found regressions.
+
+ 2011-02-26 09:02  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the regression I introduced recently. Temporary solution, to be reworked soon.
+
+ 2011-02-26 07:25  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/jrd/recsrc/RecordSource.h
+Better protection from wrong casts.
+
  2011-02-26 01:10  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
