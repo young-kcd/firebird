@@ -677,6 +677,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
 
+	Attachment* attachment = tdbb->getAttachment();
 	jrd_req* request;
 	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
 		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
@@ -684,6 +685,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	{
 		if (request) {
 			request->req_flags |= req_reserved;
+			request->req_attachment = attachment;
 		}
 		return request;
 	}
@@ -700,6 +702,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
 		if (!(clone->req_flags & (req_active | req_reserved))) {
 			clone->req_flags |= req_reserved;
+			clone->req_attachment = attachment;
 			return clone;
 		}
 	}
