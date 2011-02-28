@@ -143,6 +143,8 @@ namespace Jrd
 			if (!(clone->req_flags & (req_active | req_reserved)))
 			{
 				clone->req_flags |= req_reserved;
+				clone->setAttachment(tdbb->getAttachment());
+				fb_assert(clone->req_attachment);
 				return clone;
 			}
 		}
