@@ -3615,14 +3615,25 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
 		(rse->flags & RseNode::FLAG_SCROLLABLE));
 
+	impureOffset = CMP_impure(csb, sizeof(SLONG));
+
 	return this;
 }
 
 const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*exeState*/) const
 {
+	jrd_tra* transaction = request->req_transaction;
+	jrd_tra* sysTransaction = request->req_attachment->getSysTransaction();
+
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
+			if (transaction != sysTransaction)
+			{
+				VIO_start_save_point(tdbb, transaction);
+				const Savepoint* save_point = transaction->tra_save_point;
+				*request->getImpure<SLONG>(impureOffset) = save_point->sav_number;
+			}
 			cursor->open(tdbb);
 			request->req_records_affected.clear();
 			// fall into
@@ -3657,6 +3668,16 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 		}
 
 		default:
+			if (transaction != sysTransaction)
+			{
+				const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+				for (const Savepoint* save_point = transaction->tra_save_point;
+					 save_point && sav_number <= save_point->sav_number;
+					 save_point = transaction->tra_save_point)
+				{
+					EXE_verb_cleanup(tdbb, transaction);
+				}
+			}
 			cursor->close(tdbb);
 			return parentStmt;
 	}
