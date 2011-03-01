@@ -751,7 +751,7 @@ void DSQL_set_cursor(thread_db* tdbb, dsql_req* request, const TEXT* input_curso
 	}
 	else
 	{
-		fb_assert(request != (*symbol));
+		fb_assert(request != *symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
 				  Arg::Gds(isc_dsql_cursor_redefined) << request->req_cursor);
