@@ -1,3 +1,7 @@
+ 2011-02-28 16:03  hvlad 
+   M src/jrd/cmp.cpp
+System requests should run with valid attachment assigned
+
  2011-02-25 12:48  dimitr 
    M src/jrd/Optimizer.cpp
 Fixed the regression I introduced recently. This is the simplest version of the fix.
