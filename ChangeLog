@@ -1,3 +1,15 @@
+ 2011-03-01 01:07  asfernandes 
+   M src/dsql/dsql.cpp
+Misc
+
+ 2011-02-28 15:29  hvlad 
+   M src/jrd/Database.cpp
+System requests should run with valid attachment assigned
+
+ 2011-02-28 10:11  hvlad 
+   M src/dsql/StmtNodes.cpp
+Additional patch for CORE-3362 : Cursors should ignore changes made by the same statement
+
  2011-02-26 22:03  asfernandes 
    M src/dsql/parse.y
 Misc
