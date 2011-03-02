@@ -694,6 +694,7 @@ public:
 		  dsqlAction(NULL),
 		  dsqlLabel(NULL),
 		  dsqlForceSingular(false),
+		  needSavePoint(false),
 		  stall(NULL),
 		  rse(NULL),
 		  statement(NULL),
@@ -718,6 +719,7 @@ public:
 	dsql_nod* dsqlAction;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
+	bool needSavePoint;
 	NestConst<StmtNode> stall;
 	NestConst<RseNode> rse;
 	NestConst<StmtNode> statement;

@@ -426,6 +426,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_map_field_info(p),
 		csb_map_item_info(p),
 		csb_domain_validation(domain_validation),
+		csb_for_nodes(0),
 		csb_rpt(p, len)
 	{}
 
@@ -511,6 +512,7 @@ public:
 	USHORT		csb_view_stream;
 	bool		csb_validate_expr;
 	USHORT		csb_remap_variable;
+	int			csb_for_nodes;
 
 	struct csb_repeat
 	{
