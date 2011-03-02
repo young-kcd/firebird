@@ -741,6 +741,7 @@ void CMP_fini(thread_db* tdbb)
 	{
 		if (*itr)
 		{
+			(*itr)->req_attachment = NULL;
 			CMP_release(tdbb, *itr);
 		}
 	}
@@ -749,6 +750,7 @@ void CMP_fini(thread_db* tdbb)
 	{
 		if (*itr)
 		{
+			(*itr)->req_attachment = NULL;
 			CMP_release(tdbb, *itr);
 		}
 	}
