@@ -69,8 +69,9 @@
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../common/classes/GetPlugins.h"
 #include "../common/os/fbsyslog.h"
+#include "../common/db_alias.h"
 
 using namespace Firebird;
 
@@ -225,16 +226,16 @@ private:
 public:
 	ServerAuth(rem_port* port, const char* fName, int fLen, const UCHAR *pb, int pbLen,
 			   Part2* p2, P_OP op)
-		: fileName(getPool()),
+		: fileName(getPool(), fName, fLen),
+		  config(getConfig(fileName)),
 		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
 		  	  MAX_DPB_SIZE, pb, pbLen),
 		  authBlockInterface(op == op_service_attach),
-		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION),
+		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, config),
 		  remoteId(getPool()), userName(getPool()), authServer(NULL),
 		  part2(p2), operation(op)
 	{
 		// Do not store port here - it will be passed to authenticate() explicitly
-		fileName.assign(fName, fLen);
 
 		if (port->port_protocol_str)
 		{
@@ -377,13 +378,22 @@ public:
 
 private:
 	PathName fileName;
+	RefPtr<Config> config;
 	ClumpletWriter wrt;
 	Auth::WriterImplementation authBlockInterface;
-	PluginsSet<Auth::Server> authItr;
+	GetPlugins<Auth::Server> authItr;
 	string remoteId, userName;
 	Auth::Server* authServer;
 	Part2* part2;
 	P_OP operation;
+
+	RefPtr<Config> getConfig(const PathName& dbName)
+	{
+		RefPtr<Config> config;
+		PathName dummy;
+		ResolveDatabaseAlias(dbName, dummy, &config);
+		return config;
+	}
 };
 
 // this sets of parameters help use same functions

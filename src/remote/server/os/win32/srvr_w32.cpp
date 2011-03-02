@@ -112,7 +112,6 @@
 
 #include "FirebirdPluginApi.h"
 #include "../common/classes/ImplementHelper.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../auth/trusted/AuthSspi.h"
 
 

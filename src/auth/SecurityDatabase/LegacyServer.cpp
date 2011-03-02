@@ -30,7 +30,7 @@
 #include "../common/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../auth/SecurityDatabase/LegacyServer.h"
 #include "../common/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -194,13 +194,11 @@ const UCHAR TPB[4] =
 	isc_tpb_wait
 };
 
+int timer = 0;
+
 } // anonymous
 
 namespace Auth {
-
-// Static instance of the database
-
-SecurityDatabase SecurityDatabase::instance;
 
 /******************************************************************************
  *
@@ -236,7 +234,6 @@ void SecurityDatabase::init()
 	if (! timer)
 	{
 		timer = fb_alloc_timer();
-		getPath(user_info_name);
 	}
 }
 
@@ -290,8 +287,6 @@ bool SecurityDatabase::lookup_user(const char* user_name, char* pwd)
 	isc_rollback_transaction(status, &lookup_trans);
 	checkStatus("isc_rollback_transaction");
 
-	fb_thread_timer(timer, 10000, shutdown, 0);
-
 	return found;
 }
 
@@ -316,7 +311,7 @@ void SecurityDatabase::prepare()
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 
 	isc_db_handle tempHandle = 0;
-	isc_attach_database(status, 0, user_info_name, &tempHandle,
+	isc_attach_database(status, 0, secureDbName, &tempHandle,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
 	checkStatus("isc_attach_database", isc_psw_attach);
 	lookup_db = tempHandle;
@@ -383,7 +378,7 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 		// that means the current context must be saved and restored.
 
 		char pw1[MAX_PASSWORD_LENGTH + 1];
-		if (!instance.lookup_user(login.c_str(), pw1))
+		if (!lookup_user(login.c_str(), pw1))
 		{
 			return AUTH_FAILED;
 		}
@@ -417,7 +412,7 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 			}
 		}
 
-		authBlock->add(login.c_str(), "SecDB", instance.user_info_name);
+		authBlock->add(login.c_str(), "SecDB", secureDbName);
 		return AUTH_SUCCESS;
 	}
 
@@ -445,11 +440,29 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 #endif
 }
 
+// TODO - avoid races between timer thread and auth thread
+// TODO - account for too old instances and cleanup them
+// WHEN - when timer interface is ready
+typedef HalfStaticArray<SecurityDatabase*, 4> InstancesArray;
+GlobalPtr<InstancesArray> instances;
+GlobalPtr<Mutex> instancesMutex;
+
 void SecurityDatabase::shutdown(void*)
 {
 	try
 	{
-		instance.fini();
+		MutexLockGuard g(instancesMutex);
+		InstancesArray& curInstances(instances);
+		for (unsigned int i = 0; i < curInstances.getCount(); ++i)
+		{
+			if (curInstances[i])
+			{
+				curInstances[i]->fini();
+				delete curInstances[i];
+				curInstances[i] = NULL;
+			}
+		}
+		curInstances.clear();
 	}
 	catch (Exception &ex)
 	{
@@ -462,15 +475,63 @@ void SecurityDatabase::shutdown(void*)
 	}
 }
 
+const static unsigned int INIT_KEY = ((~0) - 1);
+static unsigned int secDbKey = INIT_KEY;
+
 Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 											  bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
 											  WriterInterface* writerInterface)
 {
+	status->init();
+
 	try
 	{
+		PathName secDbName;
+		{ // config scope
+			RefPtr<IFirebirdConf> config(iParameter->getFirebirdConf());
+			config->release();
+
+			if (secDbKey == INIT_KEY)
+			{
+				secDbKey = config->getKey("SecurityDatabase");
+			}
+			const char* tmp = config->asString(secDbKey);
+			if (!tmp)
+			{
+				(Arg::Gds(isc_random) << "Error getting security database name").raise();
+			}
+
+			secDbName = tmp;
+		}
+
+		SecurityDatabase* instance = 0;
+
+		fb_thread_timer(timer, 10000, SecurityDatabase::shutdown, 0);
+		{ // guard scope
+			MutexLockGuard g(instancesMutex);
+			InstancesArray& curInstances(instances);
+			for (unsigned int i = 0; i < curInstances.getCount(); ++i)
+			{
+				if (secDbName == curInstances[i]->secureDbName)
+				{
+					instance = curInstances[i];
+					break;
+				}
+			}
+
+			if (!instance)
+			{
+				instance = new SecurityDatabase;
+				secDbName.copyTo(instance->secureDbName, sizeof(instance->secureDbName));
+				curInstances.add(instance);
+			}
+		}
+
+		fb_assert(instance);
+
 		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
-		return SecurityDatabase::verify(writerInterface, rdr);
+		return instance->verify(writerInterface, rdr);
 	}
 	catch (const Firebird::Exception& ex)
 	{

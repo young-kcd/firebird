@@ -77,7 +77,6 @@
 #include "../jrd/sort.h"
 #include "../jrd/PreparedStatement.h"
 #include "../dsql/StmtNodes.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -280,11 +279,32 @@ int Provider::release()
 	return 1;
 }
 
+static int flag = 0;
+
+class UnloadDetector
+{
+public:
+	UnloadDetector(Firebird::MemoryPool&)
+	{
+		flag = 1;
+	}
+	UnloadDetector()
+	{
+		flag = 0;
+	}
+};
+
+static GlobalPtr<UnloadDetector> unloadDetector;
+
 class EngineFactory : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
 	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
 	{
+		if (!flag)
+		{
+			return NULL;
+		}
 		++shutdownCounter;
 		return new Provider(factoryParameter);
 	}
@@ -6334,14 +6354,14 @@ static jrd_req* verify_request_synchronization(JrdStatement* statement, USHORT l
 static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bool is_alias)
 {
 	// Check for security2.fdb
-	static TEXT securityNameBuffer[MAXPATHLEN] = "";
-	static GlobalPtr<PathName> expandedSecurityNameBuffer;
+	static GlobalPtr<PathName> securityNameBuffer, expandedSecurityNameBuffer;
 	static GlobalPtr<Mutex> mutex;
 
 	MutexLockGuard guard(mutex);
 
-	if (! securityNameBuffer[0]) {
-		Auth::SecurityDatabase::getPath(securityNameBuffer);
+	if (!securityNameBuffer->hasData()) {
+		const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+		securityNameBuffer->assign(defConf->getSecurityDatabase());
 		expandedSecurityNameBuffer->assign(securityNameBuffer);
 		ISC_expand_filename(expandedSecurityNameBuffer, false);
 	}

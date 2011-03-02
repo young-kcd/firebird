@@ -110,6 +110,9 @@ size_t delayedExtentsPos = 0;
 
 namespace Firebird {
 
+// This is required for modules that do not define any GlobalPtr themself
+GlobalPtr<Mutex> forceCreationOfDefaultMemoryPool;
+
 MemoryPool*		MemoryPool::defaultMemoryManager = NULL;
 MemoryStats*	MemoryPool::default_stats_group = NULL;
 Mutex*			cache_mutex = NULL;

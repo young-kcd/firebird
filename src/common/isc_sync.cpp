@@ -63,7 +63,6 @@
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusArg.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 
 #ifdef UNIX
 #include <setjmp.h>

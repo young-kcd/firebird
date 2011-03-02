@@ -57,13 +57,12 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/sdl_proto.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../common/classes/GetPlugins.h"
 #include "ProviderInterface.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"
@@ -5550,7 +5549,7 @@ static void init(Status* status,
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
 	Auth::DpbImplementation di(dpb);
 	LocalStatus s;
-	PluginsSet<Auth::Client> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
+	GetPlugins<Auth::Client> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
 
 	for (bool working = true; working && authItr.hasData(); authItr.next())
 	{

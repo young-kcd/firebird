@@ -312,7 +312,23 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
 	}
 
 	// Now expand macros in value
+	if (!macroParse(value))
+	{
+		return LINE_BAD;
+	}
+
+	return hasSub ? LINE_START_SUB : LINE_REGULAR;
+}
+
+/******************************************************************************
+ *
+ *	Substitute macro values in a string
+ */
+
+bool ConfigFile::macroParse(String& value) const
+{
 	String::size_type subFrom;
+
 	while ((subFrom = value.find("$(")) != String::npos)
 	{
 		String::size_type subTo = value.find(")", subFrom);
@@ -322,17 +338,17 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
 			String m = value.substr(subFrom + 2, subTo - (subFrom + 2));
 			if (! translate(m, macro))
 			{
-				return LINE_BAD;
+				return false;
 			}
 			value.replace(subFrom, subTo + 1 - subFrom, macro);
 		}
 		else
 		{
-			return LINE_BAD;
+			return false;
 		}
 	}
 
-	return hasSub ? LINE_START_SUB : LINE_REGULAR;
+	return true;
 }
 
 /******************************************************************************
@@ -340,7 +356,7 @@ ConfigFile::LineType ConfigFile::parseLine(const String& input, KeyType& key, St
  *	Find macro value
  */
 
-bool ConfigFile::translate(const String& from, String& to)
+bool ConfigFile::translate(const String& from, String& to) const
 {
 	if (from == "root")
 	{

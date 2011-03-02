@@ -77,6 +77,12 @@ namespace Firebird {
 class Plugin : public Interface
 {
 public:
+	// Additional (compared with Interface) function owner() is needed to release()
+	// owner of the plugin. This is done in releasePlugin() function in IPlugin.
+	// Such method is needed to make sure that owner is released after plugin itself,
+	// and therefore module is unloaded after release of last plugin from it.
+	// Releasing owner from release() of plugin will unload module and after returning control
+	// to missing code segfault is unavoidable.
 	virtual Interface* FB_CARG owner(Interface*) = 0;
 };
 #define FB_PLUGIN_VERSION (FB_INTERFACE_VERSION + 1)
@@ -105,6 +111,21 @@ public:
 };
 #define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 
+// Used to access config values from firebird.conf (may be DB specific)
+class IFirebirdConf : public Interface
+{
+public:
+	// Get integer key by it's name
+	// Value <0 means name is invalid
+	// Keys are stable: one can use once obtained key in other instances of this interface
+	virtual unsigned int FB_CARG getKey(const char* name) = 0;
+	// Use to access integer and boolean values
+	virtual int FB_CARG asInteger(unsigned int key) = 0;
+	// Use to access string values
+	virtual const char* FB_CARG asString(unsigned int key) = 0;
+};
+#define FB_I_FIREBIRD_CONF_VERSION (FB_INTERFACE_VERSION + 3)
+
 class IConfig : public Interface
 {
 public:
@@ -120,29 +141,55 @@ class IFactoryParameter : public Interface
 public:
 	virtual const char* FB_CARG getConfigFileName() = 0;
 	virtual IConfig* FB_CARG getDefaultConfig() = 0;
+	virtual IFirebirdConf* FB_CARG getFirebirdConf() = 0;
 };
-#define FB_FACTORY_PARAMETER_VERSION (FB_INTERFACE_VERSION + 2)
+#define FB_FACTORY_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 
 // Required to creat instances of given plugin
 class PluginsFactory : public Interface
 {
 public:
-	virtual Plugin* FB_CARG createPlugin(IFactoryParameter* fp) = 0;
+	virtual Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter) = 0;
 };
 #define FB_PLUGINS_FACTORY_VERSION (FB_INTERFACE_VERSION + 1)
+
+// Required to let plugins manager invoke module's cleanup routine before unloading it
+// For some OS/compiler this may be done in dtor of global variable in module itself
+// Others (Windows/VC) fail to create some very useful resources (threads) when module is unloading
+class IModuleCleanup : public Interface
+{
+public:
+	virtual void FB_CARG doClean() = 0;
+};
+#define FB_MODULE_CLEANUP_VERSION (FB_INTERFACE_VERSION + 1)
 
 // Interface to deal with plugins here and there, returned by master interface
 class IPlugin : public Interface
 {
 public:
+	// Main function called by plugin modules in firebird_plugin()
 	virtual void FB_CARG registerPlugin(unsigned int interfaceType, const char* defaultName,
 										PluginsFactory* factory) = 0;
+	// Sets cleanup for plugin module
+	virtual void FB_CARG setModuleCleanup(IModuleCleanup* cleanup) = 0;
+	// Main function called to access plugins registered in plugins manager
+	// Has front-end in ImplementHelper.h - template GetPlugins
+	// In namesList parameter comma or space separated list of names of configured plugins is passed
+	// missingFunctionClass is used to add functions "notImplemented" to the end of vtable
+	// in case when plugin's version is less than desired
+	// If caller has ready interface for firebird.conf, it may be passed here
+	// Or database name to obtain that interface may be given
+	// If both parameters are missing, plugins will get access to default (non database specific) config
 	virtual IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
-										   int desiredVersion, void* missingFunctionClass) = 0;
+										   int desiredVersion, void* missingFunctionClass,
+										   IFirebirdConf* firebirdConf) = 0;
+	// Get generic config interface for given file
 	virtual IConfig* FB_CARG getConfig(const char* filename) = 0;
+	// Plugins must be released using this function - use of plugin's release()
+	// will cause resources leak
 	virtual void FB_CARG releasePlugin(Plugin* plugin) = 0;
 };
-#define FB_I_PLUGIN_VERSION (FB_INTERFACE_VERSION + 4)
+#define FB_I_PLUGIN_VERSION (FB_INTERFACE_VERSION + 5)
 
 typedef void StartLoadedModule(IMaster* masterInterface);
 

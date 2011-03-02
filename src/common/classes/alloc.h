@@ -378,8 +378,9 @@ public:
 
 } // namespace Firebird
 
-static inline Firebird::MemoryPool* getDefaultMemoryPool() throw ()
+static inline Firebird::MemoryPool* getDefaultMemoryPool() throw()
 {
+	fb_assert(Firebird::MemoryPool::defaultMemoryManager);
 	return Firebird::MemoryPool::defaultMemoryManager;
 }
 

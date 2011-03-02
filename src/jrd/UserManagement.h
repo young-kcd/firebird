@@ -29,8 +29,8 @@
 #include "../jrd/ibase.h"
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/recsrc/RecordSource.h"
-
-struct internal_user_data;
+#include "../auth/AuthInterface.h"
+#include "../common/security.h"
 
 namespace Jrd {
 
@@ -54,28 +54,41 @@ protected:
 class UserManagement : public DataDump
 {
 public:
+	class Display : public Firebird::StackIface<Auth::ListUsers, FB_AUTH_LIST_USERS_VERSION>
+	{
+	public:
+		Display(UserManagement* um)
+			: userManagement(um)
+		{ }
+
+		void FB_CARG list(Auth::User* user);
+
+	private:
+		UserManagement* userManagement;
+	};
+
 	explicit UserManagement(jrd_tra* tra);
 	~UserManagement();
 
 	// store userData for DFW-time processing
-	USHORT put(internal_user_data* userData);
+	USHORT put(Auth::UserData* userData);
 	// execute command with ID
 	void execute(USHORT id);
 	// commit transaction in security database
 	void commit();
 	// return users list for SEC$USERS
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
+	// callback for users display
+	void list(Auth::User* u);
 
 private:
-	FB_API_HANDLE database, transaction;
 	RecordBuffer* buffer;
 	thread_db* threadDbb;
-	const char* realUser;
-	Firebird::HalfStaticArray<internal_user_data*, 8> commands;
+	Firebird::HalfStaticArray<Auth::UserData*, 8> commands;
+	Display display;
+	Auth::Management* manager;
 
-	static void display(void* arg, const internal_user_data* u, bool firstTime);
-	void display(const internal_user_data* u);
-	static void checkSecurityResult(int errcode, ISC_STATUS* status, const char* userName);
+	static void checkSecurityResult(int errcode, Firebird::Status* status, const char* userName);
 };
 
 }	// namespace

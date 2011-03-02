@@ -1970,7 +1970,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try
 	{
-		internal_user_data* userData = FB_NEW(*tra->tra_pool) internal_user_data;
+		Auth::UserData* userData = new((void*)(FB_NEW(*tra->tra_pool) char[sizeof(Auth::UserData)])) Auth::UserData;
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_user_end)
 		{
@@ -1981,23 +1981,23 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			{
 			case isc_dyn_user_add:
 				text.upper();
-				userData->operation = ADD_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
+				userData->op = ADD_OPER;
+				userData->user.set(text.c_str());
+				userData->user.setEntered(1);
 				break;
 
 			case isc_dyn_user_mod:
 				text.upper();
-				userData->operation = MOD_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
+				userData->op = MOD_OPER;
+				userData->user.set(text.c_str());
+				userData->user.setEntered(1);
 				break;
 
 			case isc_dyn_user_del:
 				text.upper();
-				userData->operation = DEL_OPER;
-				text.copyTo(userData->user_name, sizeof(userData->user_name));
-				userData->user_name_entered = true;
+				userData->op = DEL_OPER;
+				userData->user.set(text.c_str());
+				userData->user.setEntered(1);
 				break;
 
 			case isc_dyn_user_passwd:
@@ -2006,60 +2006,60 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 					// 250: Password should not be empty string
 					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(250, DYN_MSG_FAC)));
 				}
-				text.copyTo(userData->password, sizeof(userData->password));
-				userData->password_entered = true;
+				userData->pass.set(text.c_str());
+				userData->pass.setEntered(1);
 				break;
 
 			case isc_dyn_user_first:
 				if (text.hasData())
 				{
-					text.copyTo(userData->first_name, sizeof(userData->first_name));
-					userData->first_name_entered = true;
+					userData->first.set(text.c_str());
+					userData->first.setEntered(1);
 				}
 				else
 				{
-					userData->first_name_entered = false;
-					userData->first_name_specified = true;
+					userData->first.setEntered(0);
+					userData->first.setSpecified(1);
 				}
 				break;
 
 			case isc_dyn_user_middle:
 				if (text.hasData())
 				{
-					text.copyTo(userData->middle_name, sizeof(userData->middle_name));
-					userData->middle_name_entered = true;
+					userData->middle.set(text.c_str());
+					userData->middle.setEntered(1);
 				}
 				else
 				{
-					userData->middle_name_entered = false;
-					userData->middle_name_specified = true;
+					userData->middle.setEntered(0);
+					userData->middle.setSpecified(1);
 				}
 				break;
 
 			case isc_dyn_user_last:
 				if (text.hasData())
 				{
-					text.copyTo(userData->last_name, sizeof(userData->last_name));
-					userData->last_name_entered = true;
+					userData->last.set(text.c_str());
+					userData->last.setEntered(1);
 				}
 				else
 				{
-					userData->last_name_entered = false;
-					userData->last_name_specified = true;
+					userData->last.setEntered(0);
+					userData->last.setSpecified(1);
 				}
 				break;
 
 			case isc_dyn_user_admin:
 				fb_assert(text.hasData());
-				userData->admin = text[0] - '0';
-				userData->admin_entered = true;
+				userData->adm.set(text[0] - '0');
+				userData->adm.setEntered(1);
 				break;
 			}
 		}
 
 		int ddlAction = 0;
 
-		switch (userData->operation)
+		switch (userData->op)
 		{
 			case ADD_OPER:
 				ddlAction = DDL_TRIGGER_CREATE_USER;
@@ -2077,7 +2077,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		if (ddlAction != 0)
 		{
 			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_BEFORE,
-				ddlAction, userData->user_name, gbl->sqlText);
+				ddlAction, userData->user.get(), gbl->sqlText);
 		}
 
 		USHORT id = tra->getUserManagement()->put(userData);
@@ -2086,7 +2086,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		if (ddlAction != 0)
 		{
 			DdlNode::executeDdlTrigger(tdbb, gbl->gbl_transaction, DdlNode::DTW_AFTER,
-				ddlAction, userData->user_name, gbl->sqlText);
+				ddlAction, userData->user.get(), gbl->sqlText);
 		}
 	}
 	catch (const Exception& e)

@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+#include "../common/utils_proto.h"
 
 using namespace Firebird;
 
@@ -94,8 +95,7 @@ static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
 }
 
 
-static int typeBuffer(ISC_STATUS*, char*, int, internal_user_data&,
-					  FPTR_SECURITY_CALLBACK, void*, Firebird::string&);
+static int typeBuffer(ISC_STATUS*, char*, int, Auth::UserData&, Auth::ListUsers*, Firebird::string&);
 
 
 // all this spb-writing functions should be gone
@@ -264,50 +264,50 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	@param userInfo
 
  **/
-static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
+static void userInfoToSpb(char*& spb, Auth::UserData& userData)
 {
-	stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
-	if (userInfo.uid_entered)
+	stuffSpb2(spb, isc_spb_sec_username, userData.user.get());
+	if (userData.u.entered())
 	{
 		stuffSpbByte(spb, isc_spb_sec_userid);
-		stuffSpbLong(spb, userInfo.uid);
+		stuffSpbLong(spb, userData.u.get());
 	}
-	if (userInfo.gid_entered)
+	if (userData.g.entered())
 	{
 		stuffSpbByte(spb, isc_spb_sec_groupid);
-		stuffSpbLong(spb, userInfo.gid);
+		stuffSpbLong(spb, userData.g.get());
 	}
-	if (userInfo.sql_role_name_entered) {
-		stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
+	if (userData.role.entered()) {
+		stuffSpb2(spb, isc_spb_sql_role_name, userData.role.get());
 	}
-	if (userInfo.group_name_entered) {
-		stuffSpb2(spb, isc_spb_sec_groupname, userInfo.group_name);
+	if (userData.group.entered()) {
+		stuffSpb2(spb, isc_spb_sec_groupname, userData.group.get());
 	}
-	if (userInfo.password_entered) {
-		stuffSpb2(spb, isc_spb_sec_password, userInfo.password);
+	if (userData.pass.entered()) {
+		stuffSpb2(spb, isc_spb_sec_password, userData.pass.get());
 	}
-	if (userInfo.first_name_entered) {
-		stuffSpb2(spb, isc_spb_sec_firstname, userInfo.first_name);
+	if (userData.first.entered()) {
+		stuffSpb2(spb, isc_spb_sec_firstname, userData.first.get());
 	}
-	else if (userInfo.first_name_specified) {
+	else if (userData.first.specified()) {
 		stuffSpb2(spb, isc_spb_sec_firstname, "");
 	}
-	if (userInfo.middle_name_entered) {
-		stuffSpb2(spb, isc_spb_sec_middlename, userInfo.middle_name);
+	if (userData.middle.entered()) {
+		stuffSpb2(spb, isc_spb_sec_middlename, userData.middle.get());
 	}
-	else if (userInfo.middle_name_specified) {
+	else if (userData.middle.specified()) {
 		stuffSpb2(spb, isc_spb_sec_middlename, "");
 	}
-	if (userInfo.last_name_entered) {
-		stuffSpb2(spb, isc_spb_sec_lastname, userInfo.last_name);
+	if (userData.last.entered()) {
+		stuffSpb2(spb, isc_spb_sec_lastname, userData.last.get());
 	}
-	else if (userInfo.last_name_specified) {
+	else if (userData.last.specified()) {
 		stuffSpb2(spb, isc_spb_sec_lastname, "");
 	}
-	if (userInfo.admin_entered)
+	if (userData.adm.entered())
 	{
 		stuffSpbByte(spb, isc_spb_sec_admin);
-		stuffSpbLong(spb, userInfo.admin);
+		stuffSpbLong(spb, userData.adm.get());
 	}
 }
 
@@ -329,17 +329,17 @@ static void userInfoToSpb(char*& spb, const internal_user_data& userInfo)
  **/
 void callRemoteServiceManager(ISC_STATUS* status,
 							  isc_svc_handle handle,
-							  const internal_user_data& userInfo,
-							  FPTR_SECURITY_CALLBACK outputFunction,
-							  void* functionArg)
+							  Auth::UserData& userData,
+							  Auth::ListUsers* callback)
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	if (userInfo.operation != DIS_OPER &&
-		userInfo.operation != OLD_DIS_OPER &&
-		userInfo.operation != MAP_SET_OPER &&
-		userInfo.operation != MAP_DROP_OPER &&
-		!userInfo.user_name_entered)
+	int op = userData.op;
+	if (op != DIS_OPER &&
+		op != OLD_DIS_OPER &&
+		op != MAP_SET_OPER &&
+		op != MAP_DROP_OPER &&
+		!userData.user.entered())
 	{
 	    status[0] = isc_arg_gds;
 	    status[1] = isc_gsec_switches_error;
@@ -347,24 +347,24 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		return;
 	}
 
-	switch (userInfo.operation)
+	switch (op)
 	{
 	case ADD_OPER:
 		stuffSpbByte(spb, isc_action_svc_add_user);
-		userInfoToSpb(spb, userInfo);
+		userInfoToSpb(spb, userData);
 		break;
 
 	case MOD_OPER:
 		stuffSpbByte(spb, isc_action_svc_modify_user);
-		userInfoToSpb(spb, userInfo);
+		userInfoToSpb(spb, userData);
 		break;
 
 	case DEL_OPER:
 		stuffSpbByte(spb, isc_action_svc_delete_user);
-		stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
-		if (userInfo.sql_role_name_entered)
+		stuffSpb2(spb, isc_spb_sec_username, userData.user.get());
+		if (userData.role.entered())
 		{
-			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
+			stuffSpb2(spb, isc_spb_sql_role_name, userData.role.get());
 		}
 		break;
 
@@ -375,13 +375,13 @@ void callRemoteServiceManager(ISC_STATUS* status,
 			checkServerUsersVersion(handle, usersDisplayTag);
 			stuffSpbByte(spb, usersDisplayTag);
 		}
-		if (userInfo.user_name_entered)
+		if (userData.user.entered())
 		{
-			stuffSpb2(spb, isc_spb_sec_username, userInfo.user_name);
+			stuffSpb2(spb, isc_spb_sec_username, userData.user.get());
 		}
-		if (userInfo.sql_role_name_entered)
+		if (userData.role.entered())
 		{
-			stuffSpb2(spb, isc_spb_sql_role_name, userInfo.sql_role_name);
+			stuffSpb2(spb, isc_spb_sql_role_name, userData.role.get());
 		}
 		break;
 
@@ -400,8 +400,8 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		return;
 	}
 
-	if (userInfo.database_name_entered) {
-		stuffSpb2(spb, isc_spb_dbname, userInfo.database_name);
+	if (userData.database.entered()) {
+		stuffSpb2(spb, isc_spb_dbname, userData.database.get());
 	}
 
 	fb_assert((size_t)(spb - spb_buffer) <= sizeof(spb_buffer));
@@ -421,12 +421,11 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	ISC_STATUS* local_status = status[1] ? temp_status : status;
 	fb_utils::init_status(local_status);
 
-	if (userInfo.operation == DIS_OPER || userInfo.operation == OLD_DIS_OPER)
+	if (op == DIS_OPER || op == OLD_DIS_OPER)
 	{
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;
-		internal_user_data uData;
-		uData.user_name_entered = false;
+		Auth::UserData uData;
 
 		for (;;)
 		{
@@ -437,17 +436,16 @@ void callRemoteServiceManager(ISC_STATUS* status,
 			{
 				return;
 			}
-			startQuery = typeBuffer(local_status, resultBuffer, startQuery, uData,
-				outputFunction, functionArg, text);
+			startQuery = typeBuffer(local_status, resultBuffer, startQuery, uData, callback, text);
 			if (startQuery < 0)
 			{
 				break;
 			}
 		}
 
-		if (uData.user_name[0] && outputFunction)
+		if (uData.user.get()[0] && callback)
 		{
-			outputFunction(functionArg, &uData, !uData.user_name_entered);
+			callback->list(&uData);
 		}
 	}
 	else
@@ -515,7 +513,7 @@ void detachRemoteServiceManager(ISC_STATUS* status, isc_svc_handle handle)
 // all this spb-parsing functions should be gone
 // as soon as we create SvcClumpletReader
 
-static void parseString2(const char*& p, char* buffer, size_t bufSize, size_t& loop)
+static void parseString2(const char*& p, Auth::CharField& f, size_t& loop)
 {
 	const size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
 
@@ -526,17 +524,14 @@ static void parseString2(const char*& p, char* buffer, size_t bufSize, size_t& l
 	}
 	loop -= len2;
 
-	bufSize--;
-	len2 = len < bufSize ? len : bufSize;
 	p += sizeof(USHORT);
-	memcpy (buffer, p, len2);
-	buffer[len2] = 0;
+	f.set(p, len);
 	p += len;
 }
 
-static void parseLong(const char*& p, int& ul, size_t& loop)
+static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
 {
-	ul = isc_vax_integer(p, sizeof(ULONG));
+	f.set(isc_vax_integer(p, sizeof(ULONG)));
 
 	const size_t len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
@@ -566,9 +561,8 @@ static void parseLong(const char*& p, int& ul, size_t& loop)
 
  **/
 static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
-					   internal_user_data& uData,
-					   FPTR_SECURITY_CALLBACK outputFunction,
-					   void* functionArg, Firebird::string& text)
+					   Auth::UserData& uData, Auth::ListUsers* callback,
+					   Firebird::string& text)
 {
 	const char* p = &buf[offset];
 
@@ -613,34 +607,33 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 			switch (*p++)
 			{
 			case isc_spb_sec_username:
-				if (uData.user_name[0])
+				if (uData.user.get()[0])
 				{
-					if (outputFunction)
+					if (callback)
 					{
-						outputFunction(functionArg, &uData, !uData.user_name_entered);
+						callback->list(&uData);
 					}
-					memset(&uData, 0, sizeof uData);
-					uData.user_name_entered = true;
+					uData.clear();
 				}
-				parseString2(p, uData.user_name, sizeof(uData.user_name), loop);
+				parseString2(p, uData.user, loop);
 				break;
 			case isc_spb_sec_firstname:
-				parseString2(p, uData.first_name, sizeof(uData.first_name), loop);
+				parseString2(p, uData.first, loop);
 				break;
 			case isc_spb_sec_middlename:
-				parseString2(p, uData.middle_name, sizeof(uData.middle_name), loop);
+				parseString2(p, uData.middle, loop);
 				break;
 			case isc_spb_sec_lastname:
-				parseString2(p, uData.last_name, sizeof(uData.last_name), loop);
+				parseString2(p, uData.last, loop);
 				break;
 			case isc_spb_sec_groupid:
-				parseLong(p, uData.gid, loop);
+				parseLong(p, uData.g, loop);
 				break;
 			case isc_spb_sec_userid:
-				parseLong(p, uData.uid, loop);
+				parseLong(p, uData.u, loop);
 				break;
 			case isc_spb_sec_admin:
-				parseLong(p, uData.admin, loop);
+				parseLong(p, uData.adm, loop);
 				break;
 			default:	// give up - treat it as gsec error
 				text = Firebird::string(p - 1, loop + 1);

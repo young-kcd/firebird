@@ -97,7 +97,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../jrd/constants.h"
 #include "../common/ThreadStart.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../common/classes/GetPlugins.h"
 #include "../remote/client/interface.h"
 #include "../yvalve/PluginManager.h"
 
@@ -1376,7 +1376,11 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
 			newDpb.insertPath(isc_dpb_org_filename, org_filename);
 		}
 
-		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+		Firebird::PathName dummy;
+		RefPtr<Config> config;
+		ResolveDatabaseAlias(expanded_filename, dummy, &config);
+		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider,
+																  FB_P_PROVIDER_VERSION, config);
 			 providerIterator.hasData(); providerIterator.next())
 		{
 			PProvider* p = providerIterator.plugin();
@@ -1965,7 +1969,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 			newDpb.insertPath(isc_dpb_org_filename, org_filename);
 		}
 
-		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
 			 providerIterator.hasData(); providerIterator.next())
 		{
 			PProvider* p = providerIterator.plugin();
@@ -4347,7 +4351,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 		svcname.rtrim();
 
 		StatusVector* ptr = &status;
-		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
 			 providerIterator.hasData(); providerIterator.next())
 		{
 			PProvider* p = providerIterator.plugin();
@@ -5587,7 +5591,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
 
 		// Shutdown providers
-		for (PluginsSet<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
+		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
 			 providerIterator.hasData(); providerIterator.next())
 		{
 			PProvider* p = providerIterator.plugin();

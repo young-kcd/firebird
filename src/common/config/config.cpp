@@ -166,17 +166,12 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"AuditTraceConfigFile",		(ConfigValue) ""},		// location of audit trace configuration file
 	{TYPE_INTEGER,		"MaxUserTraceLogSize",		(ConfigValue) 10},		// maximum size of user session trace log
 	{TYPE_INTEGER,		"FileSystemCacheSize",		(ConfigValue) 30},		// percent
-	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote,Engine12,Loopback"},
-#ifdef WIN_NT
-#define FB_AUTHS "Legacy_Auth, Win_Sspi"
-#else
-#define FB_AUTHS "Legacy_Auth"
-#endif
-	{TYPE_STRING,		"AuthServer",				(ConfigValue) FB_AUTHS},
-	{TYPE_STRING,		"AuthClient",				(ConfigValue) FB_AUTHS},
-#undef FB_AUTHS
+	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, Engine12, Loopback"},
+	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Legacy_Auth, Win_Sspi"},
+	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Legacy_Auth, Win_Sspi"},
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Legacy_Auth"},
-	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"}
+	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
+	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"}	// security database name
 };
 
 /******************************************************************************
@@ -186,11 +181,24 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 
 Config::Config(const ConfigFile& file)
 {
-	// Iterate through the known configuration entries
+	// Array to save string temporarily
+	// Will be finally save by loadValues() in the end of ctor
+	Firebird::ObjectsArray<ConfigFile::String> tempStrings(getPool());
 
+	// Iterate through the known configuration entries
 	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
 	{
 		values[i] = entries[i].default_value;
+		if (entries[i].data_type == TYPE_STRING && values[i])
+		{
+			ConfigFile::String expand((const char*)values[i]);
+			if (file.macroParse(expand) && expand != (const char*)values[i])
+			{
+				ConfigFile::String& saved(tempStrings.add());
+				saved = expand;
+				values[i] = (ConfigValue) saved.c_str();
+			}
+		}
 	}
 
 	loadValues(file);
@@ -235,14 +243,14 @@ void Config::loadValues(const ConfigFile& file)
 			//case TYPE_STRING_VECTOR:
 			//	break;
 			}
+		}
 
-			if (entry.data_type == TYPE_STRING && values[i] != entry.default_value)
-			{
-				const char* src = (const char*) values[i];
-				char* dst = FB_NEW(getPool()) char[strlen(src) + 1];
-				strcpy(dst, src);
-				values[i] = (ConfigValue) dst;
-			}
+		if (entry.data_type == TYPE_STRING && values[i] != entry.default_value)
+		{
+			const char* src = (const char*) values[i];
+			char* dst = FB_NEW(getPool()) char[strlen(src) + 1];
+			strcpy(dst, src);
+			values[i] = (ConfigValue) dst;
 		}
 	}
 }
@@ -331,6 +339,34 @@ const char* Config::getRootDirectory()
 	}
 
 	return rootDetector().getRootDirectory();;
+}
+
+unsigned int Config::getKeyByName(ConfigName nm)
+{
+	ConfigFile::KeyType name(nm);
+	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
+	{
+		if (name == entries[i].key)
+		{
+			return i;
+		}
+	}
+
+	return ~0;
+}
+
+int Config::getInt(unsigned int key) const
+{
+	if (key >= MAX_CONFIG_KEY)
+		return 0;
+	return get<int>(static_cast<ConfigKey>(key));
+}
+
+const char* Config::getString(unsigned int key) const
+{
+	if (key >= MAX_CONFIG_KEY)
+		return 0;
+	return get<const char*>(static_cast<ConfigKey>(key));
 }
 
 int Config::getTempBlockSize()
@@ -674,4 +710,35 @@ const char* Config::getPlugins(unsigned int type)
 
 	(Firebird::Arg::Gds(isc_random) << "Internal error in getPlugins()").raise();
 	return NULL;		// compiler warning silencer
+}
+
+unsigned int FB_CARG FirebirdConf::getKey(const char* name)
+{
+	return Config::getKeyByName(name);
+}
+
+int FB_CARG FirebirdConf::asInteger(unsigned int key)
+{
+	return config->getInt(key);
+}
+
+const char* FB_CARG FirebirdConf::asString(unsigned int key)
+{
+	return config->getString(key);
+}
+
+int FB_CARG FirebirdConf::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
+}
+
+const char *Config::getSecurityDatabase() const
+{
+	return get<const char*>(KEY_SECURITY_DATABASE);
 }

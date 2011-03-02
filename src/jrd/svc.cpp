@@ -40,7 +40,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/svc.h"
 #include "../jrd/constants.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/ibase.h"
 #include "gen/iberror.h"
 #include "../jrd/license.h"
@@ -1308,7 +1307,8 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			{
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				Auth::SecurityDatabase::getPath(pb);
+				const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
 				{
@@ -1733,7 +1733,8 @@ void Service::query(USHORT			send_item_length,
             {
 				// The path to the user security database (security2.fdb)
 				char* pb = reinterpret_cast<char*>(buffer);
-				Auth::SecurityDatabase::getPath(pb);
+				const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+				strcpy(pb, defConf->getSecurityDatabase());
 
 				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
 				{
@@ -1951,9 +1952,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_trace_stop ||
 		svc_id == isc_action_svc_trace_suspend ||
 		svc_id == isc_action_svc_trace_resume ||
-		svc_id == isc_action_svc_trace_list;
-
-	const bool flGsecUser =
+		svc_id == isc_action_svc_trace_list ||
 		svc_id == isc_action_svc_add_user ||
 		svc_id == isc_action_svc_delete_user ||
 		svc_id == isc_action_svc_modify_user ||
@@ -1962,7 +1961,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_set_mapping ||
 		svc_id == isc_action_svc_drop_mapping;
 
-	if (flNeedUser || flGsecUser)
+	if (flNeedUser)
 	{
 		// add the username to the end of svc_switches if needed
 		if (svc_switches.hasData())
@@ -1972,15 +1971,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 				string auth = "-";
 				auth += TRUSTED_USER_SWITCH;
 				auth += ' ';
-				if (flGsecUser && svc_username != SYSDBA_USER_NAME)
-				{
-					// gsec service - gsec will take care itself about security
-					auth += SYSDBA_USER_NAME;
-					auth += " -REAL_USER ";
-				}
 				auth += svc_username;
 				auth += ' ';
-				if (svc_trusted_role && (!flGsecUser))
+				if (svc_trusted_role)
 				{
 					auth += "-";
 					auth += TRUSTED_ROLE_SWITCH;

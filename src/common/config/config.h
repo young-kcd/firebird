@@ -27,6 +27,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/config/config_file.h"
+#include "../common/classes/ImplementHelper.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -133,6 +134,7 @@ public:
 		KEY_PLUG_AUTH_CLIENT,
 		KEY_PLUG_AUTH_MANAGE,
 		KEY_PLUG_TRACE,
+		KEY_SECURITY_DATABASE,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -191,6 +193,12 @@ public:
 
 	// Master config - needed to provide per-database config
 	static const Firebird::RefPtr<Config> getDefaultConfig();
+
+	// reports key to be used by the following functions
+	static unsigned int getKeyByName(ConfigName name);
+	// helpers to build interface for firebird.conf file
+	int getInt(unsigned int key) const;
+	const char* getString(unsigned int key) const;
 
 	// Static functions apply to instance-wide values,
 	// non-static may be specified per database.
@@ -336,6 +344,26 @@ public:
 	static bool getMultiClientServer();
 
 	static const char* getPlugins(unsigned int type);
+
+	const char* getSecurityDatabase() const;
+};
+
+// Implementation of interface to access master configuration file
+class FirebirdConf : public Firebird::StdIface<Firebird::IFirebirdConf, FB_I_FIREBIRD_CONF_VERSION>
+{
+public:
+	FirebirdConf(Config* existingConfig)
+		: config(existingConfig)
+	{ }
+
+	unsigned int FB_CARG getKey(const char* name);
+	int FB_CARG asInteger(unsigned int key);
+	const char* FB_CARG asString(unsigned int key);
+
+	int FB_CARG release();
+
+private:
+	Firebird::RefPtr<Config> config;
 };
 
 #endif // COMMON_CONFIG_H

@@ -42,14 +42,14 @@
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
+#include "../common/security.h"
 #include "../common/call_service.h"
 
 #include "../jrd/event.h"
 #include "../yvalve/alt_proto.h"
 #include "../jrd/constants.h"
 
-static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, internal_user_data&);
+static ISC_STATUS executeSecurityCommand(ISC_STATUS*, const USER_SEC_DATA*, Auth::UserData&);
 
 SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 										 UCHAR** result_buffer,
@@ -823,6 +823,24 @@ namespace {
 	}
 }
 
+namespace {
+
+template <typename T1, typename T2>
+void copyField(T1& f, T2 from, short flag)
+{
+	if (flag && from)
+	{
+		f.set(from);
+		f.setEntered(1);
+	}
+	else
+	{
+		f.setEntered(0);
+	}
+}
+
+} // anonymous namespace
+
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
 // only few lines below? Same for the other two isc_*_user functions.
@@ -842,24 +860,24 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-	internal_user_data userInfo;
-	userInfo.operation = ADD_OPER;
+	Auth::UserData userInfo;
+	userInfo.op = ADD_OPER;
+	Firebird::string work;
 
 	if (input_user_data->user_name)
 	{
-		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
+		work = input_user_data->user_name;
+		if (work.length() > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
-		size_t l;
-		for (l = 0;
-			 input_user_data->user_name[l] != ' ' && l < strlen(input_user_data->user_name);
-			 l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+
+		size_t l = work.find(' ');
+		if (l != Firebird::string::npos) {
+			work.resize(l);
 		}
 
-		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
+		userInfo.user.set(work.c_str());
+		userInfo.user.setEntered(1);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
@@ -867,106 +885,30 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 
 	if (input_user_data->password)
 	{
+		/*
 		if (strlen(input_user_data->password) > 8) {
 			return user_error(status, isc_password_too_long);
 		}
-		size_t l;
-		for (l = 0;
-			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
-			 l++)
-		{
-			userInfo.password[l] = input_user_data->password[l];
+		*/
+
+		size_t l = work.find(' ');
+		if (l != Firebird::string::npos) {
+			work.resize(l);
 		}
 
-		userInfo.password[l] = '\0';
-		userInfo.password_entered = true;
-		userInfo.password_specified = true;
+		userInfo.pass.set(work.c_str());
+		userInfo.pass.setEntered(1);
 	}
 	else {
 		return user_error(status, isc_password_required);
 	}
 
-
-	if ((input_user_data->sec_flags & sec_uid_spec) &&
-		(userInfo.uid_entered = (input_user_data->uid)))
-	{
-		userInfo.uid = input_user_data->uid;
-		userInfo.uid_specified = true;
-	}
-	else
-	{
-		userInfo.uid_specified = false;
-		userInfo.uid_entered = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_gid_spec) &&
-		(userInfo.gid_entered = (input_user_data->gid)))
-	{
-		userInfo.gid = input_user_data->gid;
-		userInfo.gid_specified = true;
-	}
-	else
-	{
-		userInfo.gid_specified = false;
-		userInfo.gid_entered = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_group_name_spec) && input_user_data->group_name)
-	{
-		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
-		strncpy(userInfo.group_name, input_user_data->group_name, l);
-		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = true;
-		userInfo.group_name_specified = true;
-	}
-	else
-	{
-		userInfo.group_name_entered = false;
-		userInfo.group_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_first_name_spec) && input_user_data->first_name)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
-		strncpy(userInfo.first_name, input_user_data->first_name, l);
-		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = true;
-		userInfo.first_name_specified = true;
-	}
-	else
-	{
-		userInfo.first_name_entered = false;
-		userInfo.first_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_middle_name_spec) &&
-		input_user_data->middle_name)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
-		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
-		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = true;
-		userInfo.middle_name_specified = true;
-	}
-	else
-	{
-		userInfo.middle_name_entered = false;
-		userInfo.middle_name_specified = false;
-	}
-
-	if ((input_user_data->sec_flags & sec_last_name_spec) && input_user_data->last_name)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
-		strncpy(userInfo.last_name, input_user_data->last_name, l);
-		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = true;
-		userInfo.last_name_specified = true;
-	}
-	else
-	{
-		userInfo.last_name_entered = false;
-		userInfo.last_name_specified = false;
-	}
+	copyField(userInfo.u, input_user_data->uid, input_user_data->sec_flags & sec_uid_spec);
+	copyField(userInfo.g, input_user_data->gid, input_user_data->sec_flags & sec_gid_spec);
+	copyField(userInfo.group, input_user_data->group_name, input_user_data->sec_flags & sec_group_name_spec);
+	copyField(userInfo.first, input_user_data->first_name, input_user_data->sec_flags & sec_first_name_spec);
+	copyField(userInfo.middle, input_user_data->middle_name, input_user_data->sec_flags & sec_middle_name_spec);
+	copyField(userInfo.last, input_user_data->last_name, input_user_data->sec_flags & sec_last_name_spec);
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
 }
@@ -987,24 +929,24 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-	internal_user_data userInfo;
-	userInfo.operation = DEL_OPER;
+	Auth::UserData userInfo;
+	userInfo.op = DEL_OPER;
+	Firebird::string work;
 
 	if (input_user_data->user_name)
 	{
-		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
+		work = input_user_data->user_name;
+		if (work.length() > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
-		size_t l;
-		for (l = 0;
-			 input_user_data->user_name[l] != ' ' && l < strlen(input_user_data->user_name);
-			 l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+
+		size_t l = work.find(' ');
+		if (l != Firebird::string::npos) {
+			work.resize(l);
 		}
 
-		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
+		userInfo.user.set(work.c_str());
+		userInfo.user.setEntered(1);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
@@ -1029,132 +971,55 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
  *	    Return > 0 if any error occurs.
  *
  **************************************/
-	internal_user_data userInfo;
-	userInfo.operation = MOD_OPER;
+	Auth::UserData userInfo;
+	userInfo.op = MOD_OPER;
+	Firebird::string work;
 
 	if (input_user_data->user_name)
 	{
-		if (strlen(input_user_data->user_name) > USERNAME_LENGTH) {
+		work = input_user_data->user_name;
+		if (work.length() > USERNAME_LENGTH) {
 			return user_error(status, isc_usrname_too_long);
 		}
-		size_t l;
-		for (l = 0;
-			 input_user_data->user_name[l] != ' ' && l < strlen(input_user_data->user_name);
-			 l++)
-		{
-			userInfo.user_name[l] = UPPER(input_user_data->user_name[l]);
+
+		size_t l = work.find(' ');
+		if (l != Firebird::string::npos) {
+			work.resize(l);
 		}
 
-		userInfo.user_name[l] = '\0';
-		userInfo.user_name_entered = true;
+		userInfo.user.set(work.c_str());
+		userInfo.user.setEntered(1);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
 	}
 
-	if (input_user_data->sec_flags & sec_password_spec)
+	if (input_user_data->password)
 	{
+		/*
 		if (strlen(input_user_data->password) > 8) {
 			return user_error(status, isc_password_too_long);
 		}
-		size_t l;
-		for (l = 0;
-			 l < strlen(input_user_data->password) && input_user_data->password[l] != ' ';
-			 l++)
-		{
-			userInfo.password[l] = input_user_data->password[l];
+		*/
+
+		size_t l = work.find(' ');
+		if (l != Firebird::string::npos) {
+			work.resize(l);
 		}
 
-		userInfo.password[l] = '\0';
-		userInfo.password_entered = true;
-		userInfo.password_specified = true;
+		userInfo.pass.set(work.c_str());
+		userInfo.pass.setEntered(1);
 	}
-	else
-	{
-		userInfo.password_specified = false;
-		userInfo.password_entered = false;
+	else {
+		return user_error(status, isc_password_required);
 	}
 
-
-	if (input_user_data->sec_flags & sec_uid_spec)
-	{
-		userInfo.uid = input_user_data->uid;
-		userInfo.uid_specified = true;
-		userInfo.uid_entered = true;
-	}
-	else
-	{
-		userInfo.uid_specified = false;
-		userInfo.uid_entered = false;
-	}
-
-	if (input_user_data->sec_flags & sec_gid_spec)
-	{
-		userInfo.gid = input_user_data->gid;
-		userInfo.gid_specified = true;
-		userInfo.gid_entered = true;
-	}
-	else
-	{
-		userInfo.gid_specified = false;
-		userInfo.gid_entered = false;
-	}
-
-	if (input_user_data->sec_flags & sec_group_name_spec)
-	{
-		int l = MIN(ALT_NAME_LEN - 1, strlen(input_user_data->group_name));
-		strncpy(userInfo.group_name, input_user_data->group_name, l);
-		userInfo.group_name[l] = '\0';
-		userInfo.group_name_entered = true;
-		userInfo.group_name_specified = true;
-	}
-	else
-	{
-		userInfo.group_name_entered = false;
-		userInfo.group_name_specified = false;
-	}
-
-	if (input_user_data->sec_flags & sec_first_name_spec)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->first_name));
-		strncpy(userInfo.first_name, input_user_data->first_name, l);
-		userInfo.first_name[l] = '\0';
-		userInfo.first_name_entered = true;
-		userInfo.first_name_specified = true;
-	}
-	else
-	{
-		userInfo.first_name_entered = false;
-		userInfo.first_name_specified = false;
-	}
-
-	if (input_user_data->sec_flags & sec_middle_name_spec)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->middle_name));
-		strncpy(userInfo.middle_name, input_user_data->middle_name, l);
-		userInfo.middle_name[l] = '\0';
-		userInfo.middle_name_entered = true;
-		userInfo.middle_name_specified = true;
-	}
-	else
-	{
-		userInfo.middle_name_entered = false;
-		userInfo.middle_name_specified = false;
-	}
-
-	if (input_user_data->sec_flags & sec_last_name_spec)
-	{
-		int l = MIN(NAME_LEN - 1, strlen(input_user_data->last_name));
-		strncpy(userInfo.last_name, input_user_data->last_name, l);
-		userInfo.last_name[l] = '\0';
-		userInfo.last_name_entered = true;
-		userInfo.last_name_specified = true;
-	}
-	else
-	{
-		userInfo.last_name_entered = false;
-		userInfo.last_name_specified = false;
-	}
+	copyField(userInfo.u, input_user_data->uid, input_user_data->sec_flags & sec_uid_spec);
+	copyField(userInfo.g, input_user_data->gid, input_user_data->sec_flags & sec_gid_spec);
+	copyField(userInfo.group, input_user_data->group_name, input_user_data->sec_flags & sec_group_name_spec);
+	copyField(userInfo.first, input_user_data->first_name, input_user_data->sec_flags & sec_first_name_spec);
+	copyField(userInfo.middle, input_user_data->middle_name, input_user_data->sec_flags & sec_middle_name_spec);
+	copyField(userInfo.last, input_user_data->last_name, input_user_data->sec_flags & sec_last_name_spec);
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
 }
@@ -1162,7 +1027,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 
 static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 										const USER_SEC_DATA* input_user_data,
-										internal_user_data& userInfo
+										Auth::UserData& userInfo
 )
 {
 /**************************************
@@ -1185,7 +1050,7 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 													   input_user_data->server);
 	if (handle)
 	{
-		callRemoteServiceManager(status, handle, userInfo, 0, 0);
+		callRemoteServiceManager(status, handle, userInfo, NULL);
 		Firebird::makePermanentVector(status);
 
 		ISC_STATUS_ARRAY user_status;

@@ -36,7 +36,8 @@ AllObjects += $(Common_Objects)
 GPRE_Common_Objects:= $(call dirObjects,gpre) $(call makeObjects,gpre/languages,@GPRE_LANGUAGE_MODULES@)
 GPRE_std:= $(call dirObjects,gpre/std)
 GPRE_Objects:= $(GPRE_Common_Objects) $(GPRE_std)
-GPRE_boot:= $(call dirObjects,gpre/boot) $(call makeObjects,yvalve,gds.cpp)
+GPRE_boot:= $(call dirObjects,gpre/boot) $(call makeObjects,yvalve,gds.cpp) \
+			$(call makeObjects,yvalve,MasterImplementation.cpp) $(call makeObjects,yvalve,PluginManager.cpp)
 GPRE_Boot_Objects:= $(GPRE_Common_Objects) $(GPRE_boot)
 
 AllObjects += $(GPRE_Common_Objects) $(GPRE_std) $(GPRE_boot)
@@ -50,8 +51,8 @@ AllObjects += $(YValve_Objects)
 
 # Remote
 Remote_Common:= $(call dirObjects,remote)
-Remote_Server:= $(call dirObjects,remote/server) $(call makeObjects,auth/SecurityDatabase,pwd.cpp)
-												 # legacy security database pwd.cpp should become SA plugin
+Remote_Server:= $(call dirObjects,remote/server) $(call makeObjects,auth/SecurityDatabase,LegacyServer.cpp)
+												 # legacy security database LegacyServer.cpp should become SA plugin
 Remote_Client:= $(call dirObjects,remote/client) $(call makeObjects,auth/SecurityDatabase,LegacyClient.cpp)
 Remote_Server_Objects:= $(Remote_Common) $(Remote_Server)
 Remote_Client_Objects:= $(Remote_Common) $(Remote_Client)

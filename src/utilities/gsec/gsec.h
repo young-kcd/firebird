@@ -25,7 +25,6 @@
 #define UTILITIES_GSEC_H
 
 #include "../common/ThreadData.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/constants.h"
 
 const USHORT GSEC_MSG_FAC	= 18;
@@ -50,69 +49,17 @@ const int OLD_DIS_OPER	= 10;
 const int USER_NAME_LEN	= 133;
 const int ALT_NAME_LEN	= 129;
 const int NAME_LEN		= 33;
-//const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
-
-struct internal_user_data
-{
-	int		operation;						// what's to be done
-	TEXT	user_name [USER_NAME_LEN];		// the user's name
-	bool	user_name_entered;				// user name entered flag
-	int		uid;							// the user's id
-	bool	uid_entered;					// UID entered flag
-	bool	uid_specified;					// UID specified flag
-	int		gid;							// the user's group id
-	bool	gid_entered;					// GID entered flag
-	bool	gid_specified;					// GID specified flag
-	TEXT	group_name [ALT_NAME_LEN];		// the group name
-	bool	group_name_entered;				// group_name entered flag
-	bool	group_name_specified;			// group_name specified flag
-	TEXT	password [NAME_LEN];			// the user's password
-	bool	password_entered;				// password entered flag
-	bool	password_specified;				// password specified flag
-	TEXT	first_name [NAME_LEN];			// the user's first name
-	bool	first_name_entered;				// first name entered flag
-	bool	first_name_specified;			// first name specified flag
-	TEXT	middle_name [NAME_LEN];			// the user's middle name
-	bool	middle_name_entered;			// middle name entered flag
-	bool	middle_name_specified;			// middle name specified flag
-	TEXT	last_name [NAME_LEN];			// the user's last name
-	bool	last_name_entered;				// last name entered flag
-	bool	last_name_specified;			// last name specified flag
-	TEXT	dba_user_name [USER_NAME_LEN];	// the dba user's name
-	bool	dba_user_name_entered;			// dba user name entered flag
-	bool	dba_user_name_specified;		// dba user name specified flag
-	TEXT	dba_trust_user_name [USER_NAME_LEN];	// the trusted dba user's name
-	bool	dba_trust_user_name_entered;	// trusted dba user name entered flag
-	bool	dba_trust_user_name_specified;	// trusted dba user name specified flag
-	bool	trusted_role;					// use trusted role to authenticate
-	TEXT	dba_password [NAME_LEN];		// the dba user's password
-	bool	dba_password_entered;			// dba password entered flag
-	bool	dba_password_specified;			// dba password specified flag
-	TEXT	sql_role_name [NAME_LEN];		// the user's role
-	bool	sql_role_name_entered;			// role entered flag
-	bool	sql_role_name_specified;		// role specified flag
-	TEXT	database_name [DATABASE_LEN];	// database to manage name
-	bool	database_name_entered;			// database entered flag
-	bool	database_name_specified;		// database specified flag
-#ifdef TRUSTED_AUTH
-	bool	trusted_auth;					// use trusted authentication
-#endif
-	int		admin;							// the user is admin of security DB
-	bool	admin_entered;					// admin entered flag
-	bool	admin_specified;				// admin specified flag
-
-	// force NULLs in this ugly structure to avoid foolish bugs
-	internal_user_data()
-	{
-		memset(this, 0, sizeof *this);
-	}
-};
 
 namespace Firebird
 {
 	class UtilSvc;
+}
+
+namespace Auth
+{
+	class UserData;
 }
 
 class tsec : public ThreadData
@@ -120,15 +67,14 @@ class tsec : public ThreadData
 public:
 	explicit tsec(Firebird::UtilSvc* uf)
 		: ThreadData(ThreadData::tddSEC), utilSvc(uf),
-		tsec_user_data(0), tsec_real_user(NULL),
+		tsec_user_data(0),
 		tsec_exit_code(0), tsec_throw(false),
 		tsec_interactive(false), tsec_sw_version(false)
 	{
 	}
 
 	Firebird::UtilSvc*	utilSvc;
-	internal_user_data*	tsec_user_data;
-	const char*			tsec_real_user;
+	Auth::UserData*		tsec_user_data;
 	int					tsec_exit_code;
 	bool				tsec_throw;
 	bool				tsec_interactive;

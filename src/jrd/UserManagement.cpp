@@ -25,11 +25,10 @@
 #include "../jrd/UserManagement.h"
 #include "../common/common.h"
 #include "../jrd/jrd.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
 #include "../jrd/tra.h"
 #include "../jrd/msg_encode.h"
 #include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
+#include "../common/security.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/ini.h"
 #include "gen/ids.h"
@@ -54,36 +53,65 @@ bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 
 UserManagement::UserManagement(jrd_tra* tra)
-	: DataDump(*tra->tra_pool), database(0), transaction(0), buffer(0),
-	  threadDbb(NULL), realUser(NULL), commands(*tra->tra_pool)
+	: DataDump(*tra->tra_pool), buffer(0),
+	  threadDbb(NULL), commands(*tra->tra_pool), display(this), manager(NULL)
 {
 	Attachment* att = tra->tra_attachment;
 	if (!att || !att->att_user)
 	{
 		(Arg::Gds(isc_random) << "Unknown user name for given transaction").raise();
 	}
-	if (!att->att_user->locksmith())
+
+	fb_assert(att->att_database && att->att_database->dbb_config.hasData());
+	Auth::Get getPlugin(att->att_database->dbb_config);
+	manager = getPlugin.plugin();
+	fb_assert(manager);
+	manager->addRef();
+
+	class UserIdInfo : public StackIface<Auth::LogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 	{
-		realUser = att->att_user->usr_user_name.c_str();
-	}
+	public:
+		UserIdInfo(const Attachment* pAtt)
+			: att(pAtt)
+		{ }
 
-	char securityDatabaseName[MAXPATHLEN];
-	Auth::SecurityDatabase::getPath(securityDatabaseName);
+		const char* FB_CARG name()
+		{
+			return att->att_user->usr_user_name.c_str();
+		}
 
-	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
-	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
-	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME);
+		const char* FB_CARG role()
+		{
+			return att->att_user->usr_sql_role_name.c_str();
+		}
 
-	ISC_STATUS_ARRAY status;
-	if (isc_attach_database(status, 0, securityDatabaseName, &database,
-							dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
+		int FB_CARG forceAdmin()
+		{
+			return (att->att_user->usr_flags & USR_trole &&
+					att->att_user->usr_sql_role_name == ADMIN_ROLE) ? 1 : 0;
+		}
+
+		const char* FB_CARG networkProtocol()
+		{
+			return att->att_network_protocol.c_str();
+		}
+
+		const char* FB_CARG remoteAddress()
+		{
+			return att->att_remote_address.c_str();
+		}
+
+	private:
+		const Attachment* att;
+	};
+
+	LocalStatus status;
+	UserIdInfo idInfo(att);
+	manager->start(&status, &idInfo);
+
+	if (!status.isSuccess())
 	{
-		status_exception::raise(status);
-	}
-
-	if (isc_start_transaction(status, &transaction, 1, &database, 0, NULL))
-	{
-		status_exception::raise(status);
+		status_exception::raise(status.get());
 	}
 }
 
@@ -95,42 +123,40 @@ UserManagement::~UserManagement()
 	}
 	commands.clear();
 
-	ISC_STATUS_ARRAY status;
-	if (transaction)
-	{
-		// Rollback transaction in security database ...
-		if (isc_rollback_transaction(status, &transaction))
-		{
-			status_exception::raise(status);
-		}
-	}
-
-	if (database)
-	{
-		if (isc_detach_database(status, &database))
-		{
-			status_exception::raise(status);
-		}
-	}
-
 	delete buffer;
+
+	if (manager)
+	{
+		LocalStatus status;
+		manager->rollback(&status);
+		PluginInterface()->releasePlugin(manager);
+		manager = NULL;
+
+		if (!status.isSuccess())
+		{
+			status_exception::raise(status.get());
+		}
+	}
 }
 
 void UserManagement::commit()
 {
-	ISC_STATUS_ARRAY status;
-	if (transaction)
+	if (manager)
 	{
-		// Commit transaction in security database
-		if (isc_commit_transaction(status, &transaction))
+		LocalStatus status;
+		manager->commit(&status);
+
+		if (!status.isSuccess())
 		{
-			status_exception::raise(status);
+			status_exception::raise(status.get());
 		}
-		transaction = 0;
+
+		PluginInterface()->releasePlugin(manager);
+		manager = NULL;
 	}
 }
 
-USHORT UserManagement::put(internal_user_data* userData)
+USHORT UserManagement::put(Auth::UserData* userData)
 {
 	const size_t ret = commands.getCount();
 	if (ret > MAX_USHORT)
@@ -141,7 +167,7 @@ USHORT UserManagement::put(internal_user_data* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, ISC_STATUS* status, const char* userName)
+void UserManagement::checkSecurityResult(int errcode, Firebird::Status* status, const char* userName)
 {
 	if (!errcode)
 	{
@@ -154,14 +180,14 @@ void UserManagement::checkSecurityResult(int errcode, ISC_STATUS* status, const 
 	{
 		tmp << userName;
 	}
-	tmp.append(Arg::StatusVector(&status[0]));
+	tmp.append(Arg::StatusVector(status->get()));
 
 	tmp.raise();
 }
 
 void UserManagement::execute(USHORT id)
 {
-	if (!transaction || !commands[id])
+	if (!(manager && commands[id]))
 	{
 		// Already executed
 		return;
@@ -172,82 +198,74 @@ void UserManagement::execute(USHORT id)
 		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
 	}
 
-#ifdef EMBEDDED
-	// this restriction for embedded is temporarty and will gone when new build system will be introduced
-	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
-#else
-	ISC_STATUS_ARRAY status;
-	int errcode = (!commands[id]->user_name_entered) ? GsecMsg18 :
-		SECURITY_exec_line(status, realUser, database, transaction, commands[id], NULL, NULL);
-
-	checkSecurityResult(errcode, status, commands[id]->user_name);
+	LocalStatus status;
+	int errcode = manager->execute(&status, commands[id], NULL);
+	checkSecurityResult(errcode, &status, commands[id]->userName()->get());
 
 	delete commands[id];
 	commands[id] = NULL;
-#endif
 }
 
-void UserManagement::display(void* arg, const internal_user_data* u, bool/*firstTime*/)
+void UserManagement::Display::list(Auth::User* u)
 {
-	UserManagement* instance = static_cast<UserManagement*>(arg);
-	fb_assert(instance && instance->buffer);
-
-	instance->display(u);
+	userManagement->list(u);
 }
 
-void UserManagement::display(const internal_user_data* u)
+void UserManagement::list(Auth::User* u)
 {
 	Record* record = buffer->getTempRecord();
 	clearRecord(record);
 
 	int attachment_charset = ttype_none;
 
-	if (u->user_name_entered)
+	if (u->userName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->user_name), u->user_name),
+				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
 				 attachment_charset);
 	}
 
-	if (u->group_name_entered)
+	if (u->groupName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->group_name), u->group_name),
+				 DumpField(f_sec_group_name, VALUE_STRING, strlen(u->groupName()->get()), u->groupName()->get()),
 				 attachment_charset);
 	}
 
-	if (u->uid_entered)
+	if (u->uid()->entered())
 	{
+		int tmp = u->uid()->get();
 		putField(threadDbb, record,
-				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &u->uid),
+				 DumpField(f_sec_uid, VALUE_INTEGER, sizeof(int), &tmp),
 				 attachment_charset);
 	}
 
-	if (u->gid_entered)
+	if (u->gid()->entered())
 	{
+		int tmp = u->gid()->get();
 		putField(threadDbb, record,
-				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &u->gid),
+				 DumpField(f_sec_gid, VALUE_INTEGER, sizeof(int), &tmp),
 				 attachment_charset);
 	}
 
-	if (u->first_name_entered)
+	if (u->firstName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->first_name), u->first_name),
+				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->firstName()->get()), u->firstName()->get()),
 				 attachment_charset);
 	}
 
-	if (u->middle_name_entered)
+	if (u->middleName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middle_name), u->middle_name),
+				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middleName()->get()), u->middleName()->get()),
 				 attachment_charset);
 	}
 
-	if (u->last_name_entered)
+	if (u->lastName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->last_name), u->last_name),
+				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->lastName()->get()), u->lastName()->get()),
 				 attachment_charset);
 	}
 
@@ -256,11 +274,6 @@ void UserManagement::display(const internal_user_data* u)
 
 RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 {
-#ifdef EMBEDDED
-	// this restriction for embedded is temporarty and will gone when new build system will be introduced
-	status_exception::raise(Arg::Gds(isc_random) << "User management not supported in embedded library");
-	return 0; // keep the compiler happy
-#else
 	if (!buffer)
 	{
 		try
@@ -280,11 +293,11 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 			buffer = FB_NEW(*pool) RecordBuffer(*pool, format);
 			fb_assert(buffer);
 
-			ISC_STATUS_ARRAY status;
-			internal_user_data u;
-			u.operation = DIS_OPER;
-			int errcode = SECURITY_exec_line(status, realUser, database, transaction, &u, display, this);
-			checkSecurityResult(errcode, status, u.user_name);
+			LocalStatus status;
+			Auth::UserData u;
+			u.op = DIS_OPER;
+			int errcode = manager->execute(&status, &u, &display);
+			checkSecurityResult(errcode, &status, "Unknown");
 		}
 		catch (const Exception&)
 		{
@@ -295,5 +308,4 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 	}
 
 	return buffer;
-#endif
 }

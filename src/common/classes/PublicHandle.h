@@ -39,8 +39,9 @@ namespace Firebird
 		bool isKnownHandle() const;
 
 	private:
+		typedef GlobalPtr<RWLock, InstanceControl::PRIORITY_TLS_KEY> SyncType;
 		static GlobalPtr<Array<const void*> > handles;
-		static GlobalPtr<RWLock> sync;
+		static SyncType sync;
 	};
 
 } // namespace

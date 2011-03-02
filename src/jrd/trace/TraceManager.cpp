@@ -34,6 +34,7 @@
 #include "../../common/os/path_utils.h"
 #include "../../common/ScanDir.h"
 #include "../../common/isc_proto.h"
+#include "../../common/classes/GetPlugins.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -154,7 +155,7 @@ void TraceManager::load_plugins()
 
 	init_factories = true;
 
-	for (PluginsSet<TraceFactory, IgnoreMissing> traceItr(PluginType::Trace, FB_TRACE_PLUGIN_VERSION);
+	for (GetPlugins<TraceFactory, IgnoreMissing> traceItr(PluginType::Trace, FB_TRACE_PLUGIN_VERSION);
 		 traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;

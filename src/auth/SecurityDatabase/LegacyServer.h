@@ -24,8 +24,8 @@
  * 2003.02.02 Dmitry Yemanov: Implemented cached security database connection
  */
 
-#ifndef JRD_PWD_H
-#define JRD_PWD_H
+#ifndef AUTH_LEGACY_SERVER_H
+#define AUTH_LEGACY_SERVER_H
 
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
@@ -43,23 +43,15 @@
 
 namespace Auth {
 
-const size_t MAX_PASSWORD_ENC_LENGTH = 12;		// passed by remote protocol
 const size_t MAX_PASSWORD_LENGTH = 64;			// used to store passwords internally
 static const char* const PASSWORD_SALT = "9z";	// for old ENC_crypt()
 const size_t SALT_LENGTH = 12;					// measured after base64 coding
 
-class SecurityDatabase
+class SecurityDatabase : public Firebird::GlobalStorage
 {
 public:
-	static void getPath(char* path_buffer)
-	{
-		static const char* USER_INFO_NAME = "security3.fdb";
-		Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_SECDB, USER_INFO_NAME);
-		name.copyTo(path_buffer, MAXPATHLEN);
-	}
-
-	static Result verify(WriterInterface* authBlock,
-						 Firebird::ClumpletReader& originalDpb);
+	Result verify(WriterInterface* authBlock,
+				  Firebird::ClumpletReader& originalDpb);
 
 	static void shutdown(void*);
 
@@ -84,6 +76,13 @@ public:
 		h = salt + h;
 	}
 
+	char secureDbName[MAXPATHLEN];
+
+	SecurityDatabase()
+		: lookup_db(0), lookup_req(0)
+	{
+	}
+
 private:
 	Firebird::Mutex mutex;
 
@@ -92,21 +91,11 @@ private:
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
-	int timer;
-	char user_info_name[MAXPATHLEN];
-
 	void init();
 	void fini();
 	bool lookup_user(const char*, char*);
 	void prepare();
 	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
-
-	static SecurityDatabase instance;
-
-	SecurityDatabase()
-		: lookup_db(0), lookup_req(0), timer(0)
-	{
-	}
 };
 
 class SecurityDatabaseServerFactory : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
@@ -118,21 +107,24 @@ public:
 class SecurityDatabaseServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
-	explicit SecurityDatabaseServer(Firebird::IFactoryParameter*)
-	{
-	}
+	explicit SecurityDatabaseServer(Firebird::IFactoryParameter* p)
+		: iParameter(p)
+	{ }
 
 	Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
-							   const unsigned char* dpb, unsigned int dpbSize,
-							   WriterInterface* writerInterface);
+									   const unsigned char* dpb, unsigned int dpbSize,
+									   WriterInterface* writerInterface);
 	Result FB_CARG contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
-							  const unsigned char* data, unsigned int size);
+									  const unsigned char* data, unsigned int size);
 	void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
 	int FB_CARG release();
+
+private:
+	Firebird::RefPtr<Firebird::IFactoryParameter> iParameter;
 };
 
 void registerLegacyServer(Firebird::IPlugin* iPlugin);
 
 } // namespace Auth
 
-#endif // JRD_PWD_H
+#endif // AUTH_LEGACY_SERVER_H

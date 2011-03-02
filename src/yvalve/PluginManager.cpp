@@ -35,6 +35,7 @@
 #include "../common/utils_proto.h"
 #include "../common/ScanDir.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/db_alias.h"
 
 //#define DEBUG_PLUGINS
 
@@ -289,6 +290,11 @@ namespace
 			return name.nullStr();
 		}
 
+		void setCleanup(IModuleCleanup* c)
+		{
+			cleanup = c;
+		}
+
 	private:
 		~PluginModule()
 		{
@@ -302,20 +308,27 @@ namespace
 			{
 				regPlugins[i].factory->release();
 			}
+
+			if (cleanup.hasData())
+			{
+				cleanup->doClean();
+			}
 		}
 
 		Firebird::AutoPtr<ModuleLoader::Module> module;
+		Firebird::RefPtr<Firebird::IModuleCleanup> cleanup;
 		HalfStaticArray<RegisteredPlugin, 2> regPlugins;
 		PluginModule* next;
 		PluginModule** prev;
 		PathName name;
 	};
 
-	class ConfiguredPlugin : public StdIface<IFactoryParameter, FB_FACTORY_PARAMETER_VERSION>
+	class ConfiguredPlugin : public RefCounted, public GlobalStorage
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
-						 RefPtr<ConfigFile> pconfig, const PathName& pconfName, const PathName& pplugName)
+						 RefPtr<ConfigFile> pconfig, const PathName& pconfName,
+						 const PathName& pplugName)
 			: module(pmodule), regPlugin(preg), defaultConfig(pconfig),
 			  confName(getPool(), pconfName), plugName(getPool(), pplugName)
 		{
@@ -334,17 +347,12 @@ namespace
 #endif
 		}
 
-		Plugin* FB_CARG factory()
-		{
-			return module->getPlugin(regPlugin).factory->createPlugin(this);
-		}
-
-		const char* FB_CARG getConfigFileName()
+		const char* getConfigFileName()
 		{
 			return confName.c_str();
 		}
 
-		IConfig* FB_CARG getDefaultConfig()
+		IConfig* getDefaultConfig()
 		{
 			if (defaultConfig.hasData())
 			{
@@ -363,6 +371,47 @@ namespace
 			return module;
 		}
 
+		Plugin* factory(IFirebirdConf *iFirebirdConf);
+
+		~ConfiguredPlugin();
+
+	private:
+		RefPtr<PluginModule> module;
+		unsigned int regPlugin;
+		RefPtr<ConfigFile> defaultConfig;
+		PathName confName;
+		PathName plugName;
+	};
+
+	class FactoryParameter : public StdIface<IFactoryParameter, FB_FACTORY_PARAMETER_VERSION>
+	{
+	public:
+		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
+			: configuredPlugin(cp), firebirdConf(fc)
+		{ }
+
+		const char* FB_CARG getConfigFileName()
+		{
+			return configuredPlugin->getConfigFileName();
+		}
+
+		IConfig* FB_CARG getDefaultConfig()
+		{
+			return configuredPlugin->getDefaultConfig();
+		}
+
+		IFirebirdConf* FB_CARG getFirebirdConf()
+		{
+			if (!firebirdConf.hasData())
+			{
+				RefPtr<Config> specificConf(Config::getDefaultConfig());
+				firebirdConf = new FirebirdConf(specificConf);
+			}
+
+			firebirdConf->addRef();
+			return firebirdConf;
+		}
+
 		int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -374,15 +423,22 @@ namespace
 			return 1;
 		}
 
-		~ConfiguredPlugin();
-
 	private:
-		RefPtr<PluginModule> module;
-		unsigned int regPlugin;
-		RefPtr<ConfigFile> defaultConfig;
-		PathName confName;
-		PathName plugName;
+		RefPtr<ConfiguredPlugin> configuredPlugin;
+		RefPtr<IFirebirdConf> firebirdConf;
 	};
+
+	Plugin* ConfiguredPlugin::factory(IFirebirdConf *firebirdConf)
+	{
+		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
+		Plugin* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
+		if (plugin)
+		{
+			plugin->owner(par);
+		}
+		return plugin;
+	}
+
 
 	class MapKey : public AutoStorage
 	{
@@ -430,7 +486,6 @@ namespace
 		Mutex mutex;
 	};
 
-	//GlobalPtr<Mutex> mutex;
 	GlobalPtr<PluginsMap> plugins;
 
 	ConfiguredPlugin::~ConfiguredPlugin()
@@ -450,8 +505,8 @@ namespace
 	PluginModule* current = NULL;
 
 	PluginModule::PluginModule(ModuleLoader::Module* pmodule, const PathName& pname)
-			: module(pmodule), regPlugins(getPool()), next(modules), prev(&modules),
-			  name(getPool(), pname)
+			: module(pmodule), regPlugins(getPool()), next(modules),
+			  prev(&modules), name(getPool(), pname)
 	{
 		if (next)
 		{
@@ -484,11 +539,12 @@ namespace
 		void FB_CARG next();
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
-				  int pdesiredVersion, void* pmissingFunctionClass)
+				  int pdesiredVersion, void* pmissingFunctionClass,
+				  IFirebirdConf* fbConf)
 			: interfaceType(pinterfaceType), namesList(getPool()),
 			  desiredVersion(pdesiredVersion), missingFunctionClass(pmissingFunctionClass),
 			  currentName(getPool()), currentPlugin(NULL),
-			  masterInterface(fb_get_master_interface())
+			  firebirdConf(fbConf), masterInterface(fb_get_master_interface())
 		{
 			namesList.assign(pnamesList);
 			namesList.alltrim(" \t");
@@ -514,6 +570,8 @@ namespace
 
 		PathName currentName;
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
+
+		IFirebirdConf* firebirdConf;
 		AutoPtr<IMaster, AutoInterface> masterInterface;
 
 		RefPtr<PluginModule> loadModule(const PathName& modName);
@@ -594,8 +652,6 @@ namespace
 			extension(plugConfigFile, "conf");
 
 			currentPlugin = new ConfiguredPlugin(m, r, conf, plugConfigFile, currentName);
-			currentPlugin->release();	// std interface is created with refCounter == 1
-										// cause currentPlugin holds reference itself, that 1 should be released() here
 
 			plugins->put(MapKey(interfaceType, currentName), currentPlugin);
 			return;
@@ -640,21 +696,24 @@ namespace
 
 	Plugin* FB_CARG PluginSet::plugin()
 	{
-		if (!currentPlugin.hasData())
+		while (currentPlugin.hasData())
 		{
-			return NULL;
+			Plugin* p = currentPlugin->factory(firebirdConf);
+			if (p)
+			{
+				if (masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass) >= 0)
+				{
+					return p;
+				}
+
+				PluginInterface pi;
+				pi->releasePlugin(p);
+			}
+			next();
 		}
+		//currentPlugin->addRef();
 
-		Plugin* p = currentPlugin->factory();
-		p->owner(currentPlugin);
-		currentPlugin->addRef();
-
-		if (masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass) < 0)
-		{
-			return NULL;
-		}
-
-		return p;
+		return NULL;
 	}
 }
 
@@ -698,13 +757,31 @@ void FB_CARG PluginManager::registerPlugin(unsigned int interfaceType, const cha
 }
 
 
-IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
-											  int desiredVersion, void* missingFunctionClass)
+void FB_CARG PluginManager::setModuleCleanup(IModuleCleanup* cleanup)
 {
 	MutexLockGuard g(plugins->mutex);
 
-	return new PluginSet(interfaceType, namesList, desiredVersion, missingFunctionClass);
+	if (!current)
+	{
+		// not good time to call this function - ignore request
+		gds__log("Unexpected call to set module cleanup - ignored\n");
+		return;
+	}
+
+	current->setCleanup(cleanup);
 }
+
+
+IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
+											  int desiredVersion, void* missingFunctionClass,
+											  IFirebirdConf* firebirdConf)
+{
+	MutexLockGuard g(plugins->mutex);
+
+	return new PluginSet(interfaceType, namesList, desiredVersion, 
+						 missingFunctionClass, firebirdConf);
+}
+
 
 void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 {
@@ -725,10 +802,12 @@ void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 	}
 }
 
+
 IConfig* FB_CARG PluginManager::getConfig(const char* filename)
 {
 	return new ConfigAccess(RefPtr<ConfigFile>(FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
 }
+
 
 void PluginManager::shutdown()
 {

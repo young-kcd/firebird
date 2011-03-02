@@ -52,6 +52,7 @@
 #include "../common/config/config.h"
 #include "../common/ScanDir.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/GetPlugins.h"
 
 using namespace Firebird;
 
@@ -851,7 +852,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 		if (!engines.get(name, engine))
 		{
-			PluginsSet<ExternalEngine> engineControl(PluginType::ExternalEngine, FB_EXTERNAL_ENGINE_VERSION, name.c_str());
+			GetPlugins<ExternalEngine> engineControl(PluginType::ExternalEngine, FB_EXTERNAL_ENGINE_VERSION, name.c_str());
 
 			if (engineControl.hasData())
 			{

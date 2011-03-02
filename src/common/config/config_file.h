@@ -114,6 +114,9 @@ public:
 	// was there some error parsing config file?
 	const char* getMessage() const;
 
+	// Substitute macro values in a string
+	bool macroParse(String& value) const;
+
 private:
 	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB};
 
@@ -126,7 +129,7 @@ private:
 	// utilities
 	void parse(Stream* stream);
 	LineType parseLine(const String& input, KeyType& key, String& value);
-	bool translate(const String& from, String& to);
+	bool translate(const String& from, String& to) const;
 	void badLine(const String& line);
 };
 

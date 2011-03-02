@@ -34,6 +34,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/locks.h"
 #include "../common/config/config_file.h"
+#include "../common/config/config.h"
 
 namespace Firebird {
 
@@ -41,11 +42,13 @@ class PluginManager : public StackIface<IPlugin, FB_I_PLUGIN_VERSION>
 {
 public:
 	IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
-								   int desiredVersion, void* missingFunctionClass);
+								   int desiredVersion, void* missingFunctionClass,
+								   IFirebirdConf* firebirdConf);
 	void FB_CARG registerPlugin(unsigned int interfaceType, const char* defaultName,
 								PluginsFactory* factory);
 	IConfig* FB_CARG getConfig(const char* filename);
 	void FB_CARG releasePlugin(Plugin* plugin);
+	void FB_CARG setModuleCleanup(IModuleCleanup* cleanup);
 
 	PluginManager();
 

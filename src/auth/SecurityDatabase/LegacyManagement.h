@@ -36,17 +36,19 @@ namespace Auth {
 class SecurityDatabaseManagement : public Firebird::StdPlugin<Management, FB_AUTH_MANAGE_VERSION>
 {
 public:
-	explicit SecurityDatabaseManagement(Firebird::IFactoryParameter*)
-	{
-	}
+	explicit SecurityDatabaseManagement(Firebird::IFactoryParameter* par);
 
-	// work in progress - we must avoid both internal_user_data and callback function
-	int FB_CARG execLine(ISC_STATUS* isc_status, const char* realUser,
-				 FB_API_HANDLE db, FB_API_HANDLE trans,
-				 internal_user_data* io_user_data,
-				 FPTR_SECURITY_CALLBACK display_func, void* callback_arg);
+	void FB_CARG start(Firebird::Status* status, LogonInfo* logonInfo);
+	int FB_CARG execute(Firebird::Status* status, User* user, ListUsers* callback);
+	void FB_CARG commit(Firebird::Status* status);
+	void FB_CARG rollback(Firebird::Status* status);
 
 	int FB_CARG release();
+
+private:
+	Firebird::RefPtr<Firebird::IFirebirdConf> config;
+	FB_API_HANDLE database, transaction;
+	Firebird::string userName;
 };
 
 } // namespace Auth

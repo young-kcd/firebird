@@ -89,7 +89,7 @@
 
 #include "FirebirdPluginApi.h"
 #include "../common/classes/ImplementHelper.h"
-#include "../auth/SecurityDatabase/jrd_pwd.h"
+#include "../auth/SecurityDatabase/LegacyServer.h"
 #include "../auth/trusted/AuthSspi.h"
 
 #ifdef UNIX
@@ -381,17 +381,19 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		// now on the server exits if it cannot attach to the database
 		// (wrong or no license, not enough memory, etc.
 
-		TEXT path[MAXPATHLEN];
 		ISC_STATUS_ARRAY status;
 		isc_db_handle db_handle = 0L;
 
-		Auth::SecurityDatabase::getPath(path);
+		const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+		const char* path = defConf->getSecurityDatabase();
 		const char dpb[] = {isc_dpb_version1, isc_dpb_gsec_attach, 1, 1, isc_dpb_address_path, 0};
+
 		isc_attach_database(status, strlen(path), path, &db_handle, sizeof dpb, dpb);
 		if (status[0] == 1 && status[1] > 0)
 		{
 			logSecurityDatabaseError(path, status);
 		}
+
 		isc_detach_database(status, &db_handle);
 		if (status[0] == 1 && status[1] > 0)
 		{

@@ -31,10 +31,6 @@
 
 #include "FirebirdPluginApi.h"
 
-// This is temporal measure - see later
-struct internal_user_data;
-#include "../utilities/gsec/secur_proto.h"
-
 namespace Firebird {
 class Status;
 }
@@ -81,16 +77,79 @@ public:
 };
 #define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 3)
 
+class UserField : public Firebird::Interface
+{
+public:
+	virtual int FB_CARG entered() = 0;
+	virtual int FB_CARG specified() = 0;
+	virtual void FB_CARG setEntered(int newValue) = 0;
+};
+#define FB_USER_FIELD_VERSION (FB_INTERFACE_VERSION + 3)
+
+class CharUserField : public UserField
+{
+public:
+	virtual const char* FB_CARG get() = 0;
+	virtual void FB_CARG set(const char* newValue) = 0;
+};
+#define FB_AUTH_CHAR_USER_VERSION (FB_USER_FIELD_VERSION + 2)
+
+class IntUserField : public UserField
+{
+public:
+	virtual int FB_CARG get() = 0;
+	virtual void FB_CARG set(int newValue) = 0;
+};
+#define FB_AUTH_INT_USER_VERSION (FB_USER_FIELD_VERSION + 2)
+
+class User : public Firebird::Interface
+{
+public:
+	virtual int FB_CARG operation() = 0;
+
+	virtual CharUserField* FB_CARG userName() = 0;
+	virtual CharUserField* FB_CARG password() = 0;
+
+	virtual CharUserField* FB_CARG firstName() = 0;
+	virtual CharUserField* FB_CARG lastName() = 0;
+	virtual CharUserField* FB_CARG middleName() = 0;
+	virtual CharUserField* FB_CARG groupName() = 0;
+
+	virtual IntUserField* FB_CARG uid() = 0;
+	virtual IntUserField* FB_CARG gid() = 0;
+	virtual IntUserField* FB_CARG admin() = 0;
+
+	virtual void FB_CARG clear() = 0;
+};
+#define FB_AUTH_USER_VERSION (FB_INTERFACE_VERSION + 11)
+
+class ListUsers : public Firebird::Interface
+{
+public:
+	virtual void FB_CARG list(User* user) = 0;
+};
+#define FB_AUTH_LIST_USERS_VERSION (FB_INTERFACE_VERSION + 1)
+
+class LogonInfo : public Firebird::Interface
+{
+public:
+	virtual const char* FB_CARG name() = 0;
+	virtual const char* FB_CARG role() = 0;
+	virtual int FB_CARG forceAdmin() = 0;
+	virtual const char* FB_CARG networkProtocol() = 0;
+	virtual const char* FB_CARG remoteAddress() = 0;
+};
+#define FB_AUTH_LOGON_INFO_VERSION (FB_INTERFACE_VERSION + 5)
+
 class Management : public Firebird::Plugin
 {
 public:
-	// work in progress - we must avoid both internal_user_data and callback function
-	virtual int FB_CARG execLine(ISC_STATUS* isc_status, const char *realUser,
-						 FB_API_HANDLE db, FB_API_HANDLE trans,
-						 internal_user_data* io_user_data,
-						 FPTR_SECURITY_CALLBACK display_func, void* callback_arg) = 0;
+	virtual void FB_CARG start(Firebird::Status* status, LogonInfo* logonInfo) = 0;
+	virtual int FB_CARG execute(Firebird::Status* status, User* user, ListUsers* callback) = 0;
+	virtual void FB_CARG commit(Firebird::Status* status) = 0;
+	virtual void FB_CARG rollback(Firebird::Status* status) = 0;
 };
-#define FB_AUTH_MANAGE_VERSION (FB_PLUGIN_VERSION + 1)
+#define FB_AUTH_MANAGE_VERSION (FB_PLUGIN_VERSION + 4)
 
 } // namespace Auth
 

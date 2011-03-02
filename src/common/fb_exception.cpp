@@ -13,168 +13,6 @@
 #include "../common/utils_proto.h"
 #include "../common/StatusHolder.h"
 
-#ifdef WIN_NT
-#include <windows.h>
-#else
-#ifndef USE_THREAD_DESTRUCTOR
-#include <pthread.h>
-#include <signal.h>
-#endif
-#endif
-
-namespace {
-
-class StringsBuffer
-{
-private:
-	class ThreadBuffer : public Firebird::GlobalStorage
-	{
-	private:
-		const static size_t BUFFER_SIZE = 4096;
-		char buffer[BUFFER_SIZE];
-		char* buffer_ptr;
-		FB_THREAD_ID thread;
-
-	public:
-		explicit ThreadBuffer(FB_THREAD_ID thr) : buffer_ptr(buffer), thread(thr) { }
-
-		const char* alloc(const char* string, size_t length)
-		{
-			// if string is already in our buffer - return it
-			// it was already saved in our buffer once
-			if (string >= buffer && string < &buffer[BUFFER_SIZE])
-				return string;
-
-			// if string too long, truncate it
-			if (length > BUFFER_SIZE / 4)
-				length = BUFFER_SIZE / 4;
-
-			// If there isn't any more room in the buffer, start at the beginning again
-			if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
-				buffer_ptr = buffer;
-
-			char* new_string = buffer_ptr;
-			memcpy(new_string, string, length);
-			new_string[length] = 0;
-			buffer_ptr += length + 1;
-
-			return new_string;
-		}
-
-		bool thisThread(FB_THREAD_ID currTID)
-		{
-#ifdef WIN_NT
-			if (thread != currTID)
-			{
-				HANDLE hThread = OpenThread(THREAD_QUERY_INFORMATION, false, thread);
-				// commented exit code check - looks like OS does not return handle
-				// for already exited thread
-				//DWORD exitCode = STILL_ACTIVE;
-				if (hThread)
-				{
-					//GetExitCodeThread(hThread, &exitCode);
-					CloseHandle(hThread);
-				}
-
-				//if ((!hThread) || (exitCode != STILL_ACTIVE))
-				if (!hThread)
-				{
-					// Thread does not exist any more
-					thread = currTID;
-				}
-			}
-#else
-#ifndef USE_THREAD_DESTRUCTOR
-			if (thread != currTID)
-			{
-				if (pthread_kill(thread, 0) == ESRCH)
-				{
-					// Thread does not exist any more
-					thread = currTID;
-				}
-			}
-#endif // USE_THREAD_DESTRUCTOR
-#endif // WIN_NT
-
-			return thread == currTID;
-		}
-	};
-
-	typedef Firebird::Array<ThreadBuffer*> ProcessBuffer;
-
-	ProcessBuffer processBuffer;
-	Firebird::Mutex mutex;
-
-public:
-	explicit StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
-
-	~StringsBuffer()
-	{
-		ThreadCleanup::remove(cleanupAllStrings, this);
-	}
-
-private:
-	size_t position(FB_THREAD_ID thr)
-	{
-		// mutex should be locked when this function is called
-
-		for (size_t i = 0; i < processBuffer.getCount(); ++i)
-		{
-			if (processBuffer[i]->thisThread(thr))
-			{
-				return i;
-			}
-		}
-
-		return processBuffer.getCount();
-	}
-
-	ThreadBuffer* getThreadBuffer(FB_THREAD_ID thr)
-	{
-		Firebird::MutexLockGuard guard(mutex);
-
-		size_t p = position(thr);
-		if (p < processBuffer.getCount())
-		{
-			return processBuffer[p];
-		}
-
-		ThreadBuffer* b = new ThreadBuffer(thr);
-		processBuffer.add(b);
-		return b;
-	}
-
-	void cleanup()
-	{
-		Firebird::MutexLockGuard guard(mutex);
-
-		size_t p = position(getThreadId());
-		if (p >= processBuffer.getCount())
-		{
-			return;
-		}
-
-		delete processBuffer[p];
-		processBuffer.remove(p);
-	}
-
-	static void cleanupAllStrings(void* toClean)
-	{
-		static_cast<StringsBuffer*>(toClean)->cleanup();
-	}
-
-public:
-	const char* alloc(const char* s, size_t len, FB_THREAD_ID thr = getThreadId())
-	{
-		ThreadCleanup::add(cleanupAllStrings, this);
-		return getThreadBuffer(thr)->alloc(s, len);
-	}
-};
-
-Firebird::GlobalPtr<StringsBuffer> allStrings;
-
-} // namespace
-
 namespace Firebird {
 
 // Before using thr parameter, make sure that thread is not going to work with
@@ -198,7 +36,9 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 					perm [-1] = isc_arg_string;
 					const size_t len = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
+					IMaster* im = fb_get_master_interface();
+					*perm++ = (ISC_STATUS)(IPTR) (im->circularAlloc(temp, len, thr));
+					im->release();
 				}
 				break;
 			case isc_arg_string:
@@ -207,7 +47,9 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					const size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (allStrings->alloc(temp, len, thr));
+					IMaster* im = fb_get_master_interface();
+					*perm++ = (ISC_STATUS)(IPTR) (im->circularAlloc(temp, len, thr));
+					im->release();
 				}
 				break;
 			default:
