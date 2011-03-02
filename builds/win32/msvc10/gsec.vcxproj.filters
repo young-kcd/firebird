@@ -17,9 +17,6 @@
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp">
-      <Filter>UTILITIES files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gsec\main\gsecMain.cpp">
       <Filter>UTILITIES files</Filter>
     </ClCompile>

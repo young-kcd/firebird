@@ -979,7 +979,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				break;
 #ifdef TRUSTED_AUTH
 			case IN_SW_GSEC_TRUSTED_AUTH:
-				user_data->trusted_auth = true;
+				user_data->trustedAuth = true;
 				break;
 #endif
 			case IN_SW_GSEC_0:

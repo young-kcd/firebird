@@ -178,7 +178,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\main\gsecMain.cpp" />
-    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\utilities\gsec\gsec.h" />

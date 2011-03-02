@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -64,6 +64,7 @@
     <ClCompile Include="..\..\..\src\common\quad.cpp" />
     <ClCompile Include="..\..\..\src\common\ScanDir.cpp" />
     <ClCompile Include="..\..\..\src\common\sdl.cpp" />
+    <ClCompile Include="..\..\..\src\common\security.cpp" />
     <ClCompile Include="..\..\..\src\common\sha.cpp" />
     <ClCompile Include="..\..\..\src\common\StatusArg.cpp" />
     <ClCompile Include="..\..\..\src\common\StatusHolder.cpp" />

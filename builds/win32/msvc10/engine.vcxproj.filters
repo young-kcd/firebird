@@ -402,9 +402,6 @@
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp">
       <Filter>Services</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\utilities\gsec\security.cpp">
-      <Filter>Services</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp">
       <Filter>Services</Filter>
     </ClCompile>
@@ -464,6 +461,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\gen\utilities\gstat\dba.cpp">
       <Filter>Services</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\recsrc\ConditionalStream.cpp">
+      <Filter>JRD files\Data Access</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

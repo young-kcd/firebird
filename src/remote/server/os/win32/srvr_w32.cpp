@@ -113,6 +113,7 @@
 #include "FirebirdPluginApi.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../auth/trusted/AuthSspi.h"
+#include "../auth/SecurityDatabase/LegacyServer.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
