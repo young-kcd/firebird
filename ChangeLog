@@ -1,3 +1,77 @@
+ 2011-03-02 23:42  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj.filters
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj.filters
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/utilities/gsec/gsec.cpp
+Follow Alex changes
+
+ 2011-03-02 13:42  alexpeshkoff 
+   M builds/posix/make.shared.variables
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   A src/auth/SecurityDatabase/LegacyServer.cpp (from /firebird/trunk/src/auth/SecurityDatabase/pwd.cpp:52312)
+   A src/auth/SecurityDatabase/LegacyServer.h (from /firebird/trunk/src/auth/SecurityDatabase/jrd_pwd.h:52312)
+   D src/auth/SecurityDatabase/jrd_pwd.h
+   D src/auth/SecurityDatabase/pwd.cpp
+   M src/common/call_service.cpp
+   M src/common/call_service.h
+   A src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/PublicHandle.cpp
+   M src/common/classes/PublicHandle.h
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/init.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/common/fb_exception.cpp
+   M src/common/isc_sync.cpp
+   A src/common/security.cpp (from /firebird/trunk/src/utilities/gsec/security.cpp:52312)
+   A src/common/security.h (from /firebird/trunk/src/utilities/gsec/secur_proto.h:52312)
+   M src/dbs/security.sql
+   M src/include/FirebirdPluginApi.h
+   M src/include/Interface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/dyn.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec.h
+   M src/utilities/gsec/gsecswi.h
+   D src/utilities/gsec/secur_proto.h
+   D src/utilities/gsec/security.cpp
+   M src/utilities/gstat/dba.epp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/alt.cpp
+   M src/yvalve/why.cpp
+Fixed CORE-3369: first step to make it possible to specify non-default security database for specific database
+
+ 2011-03-02 09:43  hvlad 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/exe.h
+Additional patch for CORE-3362 : Cursors should ignore changes made by the same statement
+Statements with more that one cursors should not create savepoint for the first cursor
+
  2011-03-01 01:07  asfernandes 
    M src/dsql/dsql.cpp
 Misc
