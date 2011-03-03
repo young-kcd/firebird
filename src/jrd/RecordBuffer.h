@@ -50,9 +50,7 @@ public:
 	bool fetch(offset_t, Record*);
 
 private:
-	size_t length;
 	offset_t count;
-	bool filled;
 	Record* record;
 	TempSpace* space;
 };

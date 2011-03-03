@@ -32,14 +32,16 @@ const char* const SCRATCH = "fb_recbuf_";
 using namespace Jrd;
 
 RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
-	: length(format->fmt_length), count(0), filled(false)
+	: count(0)
 {
+	fb_assert(format->fmt_length <= MAX_RECORD_SIZE);
+	const USHORT length = (USHORT) format->fmt_length;
+
 	space = FB_NEW(pool) TempSpace(pool, SCRATCH);
 
 	record = FB_NEW_RPT(pool, length) Record(pool);
 	record->rec_format = format;
-	fb_assert(length <= MAX_RECORD_SIZE);
-	record->rec_length = (USHORT) length;
+	record->rec_length = length;
 }
 
 RecordBuffer::~RecordBuffer()
@@ -50,9 +52,8 @@ RecordBuffer::~RecordBuffer()
 
 offset_t RecordBuffer::store(const Record* new_record)
 {
+	const USHORT length = record->rec_length;
 	fb_assert(new_record->rec_length == length);
-
-	fb_assert(!filled);
 
 	space->write(count * length, new_record->rec_data, length);
 
@@ -61,9 +62,8 @@ offset_t RecordBuffer::store(const Record* new_record)
 
 bool RecordBuffer::fetch(offset_t position, Record* to_record)
 {
+	const USHORT length = record->rec_length;
 	fb_assert(to_record->rec_length == length);
-
-	filled = true;
 
 	if (position >= count)
 	{
