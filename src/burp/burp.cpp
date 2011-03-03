@@ -1589,13 +1589,13 @@ void BURP_print_warning(const ISC_STATUS* status_vector)
 
 		if (fb_interpret(s, sizeof(s), &vector))
 		{
-			BURP_msg_partial(true, 255); // msg 255: gbak: WARNING:
-			burp_output(true, "%s\n", s);
+			BURP_msg_partial(false, 255); // msg 255: gbak: WARNING:
+			burp_output(false, "%s\n", s);
 
 			while (fb_interpret(s, sizeof(s), &vector))
 			{
-				BURP_msg_partial(true, 255); // msg 255: gbak: WARNING:
-				burp_output(true, "    %s\n", s);
+				BURP_msg_partial(false, 255); // msg 255: gbak: WARNING:
+				burp_output(false, "    %s\n", s);
 			}
 		}
 	}
