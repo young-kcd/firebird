@@ -1,3 +1,7 @@
+ 2011-03-02 12:25  hvlad 
+   M src/jrd/cmp.cpp
+When system requests are released there is no more attachments in database.
+
  2011-02-28 16:03  hvlad 
    M src/jrd/cmp.cpp
 System requests should run with valid attachment assigned
