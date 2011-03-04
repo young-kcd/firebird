@@ -34,6 +34,9 @@
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/classes/init.h"
+#include "consts_pub.h"
+
+extern "C" int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason);
 
 namespace Firebird {
 
@@ -178,6 +181,60 @@ public:
 		mi->release();
 	}
 };
+
+
+// When process exits, dynamically loaded modules (for us plugin modules)
+// are unloaded first. As the result all global variables in plugin are already destroyed
+// when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
+// To avoid it this class is added - it detects spontaneous (not by PluginManager)
+// module unload and invokes shutdown in order to stop all plugins before they
+// are destroyed by OS.
+class DummyStorage
+{
+};
+
+class UnloadDetectorHelper : public StdIface<IModuleCleanup, FB_MODULE_CLEANUP_VERSION, DummyStorage>
+{
+public:
+	UnloadDetectorHelper(MemoryPool&)
+		: flagOsUnload(true)
+	{ }
+
+	~UnloadDetectorHelper()
+	{
+		if (flagOsUnload)
+		{
+			fb_shutdown(5000, fb_shutrsn_exit_called);
+		}
+		flagOsUnload = false;
+	}
+
+	void FB_CARG doClean()
+	{
+		flagOsUnload = false;
+	}
+
+	int FB_CARG release()
+	{
+		if (--refCounter == 0)
+		{
+			//delete this;
+			fb_assert(false);
+			return 0;
+		}
+		return 1;
+	}
+
+	bool unloadStarted()
+	{
+		return !flagOsUnload;
+	}
+
+protected:
+	bool flagOsUnload;
+};
+
+typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD> UnloadDetector;
 
 } // namespace Firebird
 

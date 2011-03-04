@@ -69,7 +69,7 @@ namespace
 namespace Jrd {
 
 StorageInstance TraceManager::storageInstance;
-GlobalPtr<TraceManager::Factories> TraceManager::factories;
+TraceManager::Factories* TraceManager::factories = NULL;
 GlobalPtr<Mutex> TraceManager::init_factories_mtx;
 volatile bool TraceManager::init_factories;
 
@@ -155,6 +155,7 @@ void TraceManager::load_plugins()
 
 	init_factories = true;
 
+	factories = FB_NEW(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
 	for (GetPlugins<TraceFactory, IgnoreMissing> traceItr(PluginType::Trace, FB_TRACE_PLUGIN_VERSION);
 		 traceItr.hasData(); traceItr.next())
 	{
@@ -164,6 +165,22 @@ void TraceManager::load_plugins()
 		string name(traceItr.name());
 		name.copyTo(info.name, sizeof(info.name));
 		factories->add(info);
+	}
+}
+
+
+void TraceManager::shutdown()
+{
+	if (init_factories)
+	{
+		MutexLockGuard guard(init_factories_mtx);
+
+		if (init_factories)
+		{
+			delete factories;
+			factories = NULL;
+			init_factories = false;
+		}
 	}
 }
 

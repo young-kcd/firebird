@@ -47,6 +47,8 @@ class InstanceControl
 public:
 	enum DtorPriority
 	{
+		STARTING_PRIORITY,
+		PRIORITY_DETECT_UNLOAD,
 		PRIORITY_REGULAR,
 		PRIORITY_TLS_KEY
 	};

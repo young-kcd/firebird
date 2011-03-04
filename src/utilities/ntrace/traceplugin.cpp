@@ -92,11 +92,13 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, Tr
 
 
 static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
+static Firebird::UnloadDetector unloadDetector;
 
 void registerTrace(Firebird::IPlugin* iPlugin)
 {
 	traceFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
+	iPlugin->setModuleCleanup(&unloadDetector);
 }
 
 

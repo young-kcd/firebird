@@ -279,29 +279,14 @@ int Provider::release()
 	return 1;
 }
 
-static int flag = 0;
-
-class UnloadDetector
-{
-public:
-	UnloadDetector(Firebird::MemoryPool&)
-	{
-		flag = 1;
-	}
-	UnloadDetector()
-	{
-		flag = 0;
-	}
-};
-
-static GlobalPtr<UnloadDetector> unloadDetector;
+static Firebird::UnloadDetector unloadDetector;
 
 class EngineFactory : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
 	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
 	{
-		if (!flag)
+		if (unloadDetector->unloadStarted())
 		{
 			return NULL;
 		}
@@ -316,6 +301,7 @@ void registerEngine(IPlugin* iPlugin)
 {
 	engineFactory->addRef();
 	iPlugin->registerPlugin(PluginType::Provider, "Engine12", &engineFactory);
+	iPlugin->setModuleCleanup(&unloadDetector);
 }
 
 } // namespace Jrd
@@ -3741,27 +3727,11 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
  *	database.
  *
  **************************************/
-	static volatile bool unloading = false;
 	static AtomicCounter shutCounter;
 
 	try
 	{
 		CounterGuard guard(shutCounter);
-
-		/***
-		if (unloading)
-		{
-			return;
-		}
-
-		static GlobalPtr<Mutex> jrdShutdownMutex;
-		MutexLockGuard guard(jrdShutdownMutex);
-
-		if (unloading)
-		{
-			return;
-		}
-		***/
 
 		ThreadContextHolder tdbb;
 
@@ -3796,12 +3766,13 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 		{
 			shutdown_thread(NULL);
 		}
-		unloading = true;
+
+		// Do not put it into separate shutdown thread - during shutdown of TraceManager
+		// PluginManager wants ot lock a mutex, which is sometimes already locked in current thread
+		TraceManager::shutdown();
 	}
 	catch (const Exception& ex)
 	{
-		// repeat it here too - FixMe to special class setting flag in dtor
-		unloading = true;
 		ex.stuffException(status);
 		gds__log_status(NULL, status->get());
 	}

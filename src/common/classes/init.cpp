@@ -182,7 +182,7 @@ namespace Firebird
 	void InstanceControl::InstanceList::destructors()
 	{
 		// Destroy global objects
-		DtorPriority currentPriority = PRIORITY_REGULAR, nextPriority = currentPriority;
+		DtorPriority currentPriority = STARTING_PRIORITY, nextPriority = currentPriority;
 
 		do
 		{

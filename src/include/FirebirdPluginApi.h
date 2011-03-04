@@ -173,13 +173,12 @@ public:
 	// Sets cleanup for plugin module
 	virtual void FB_CARG setModuleCleanup(IModuleCleanup* cleanup) = 0;
 	// Main function called to access plugins registered in plugins manager
-	// Has front-end in ImplementHelper.h - template GetPlugins
+	// Has front-end in GetPlugins.h - template GetPlugins
 	// In namesList parameter comma or space separated list of names of configured plugins is passed
 	// missingFunctionClass is used to add functions "notImplemented" to the end of vtable
 	// in case when plugin's version is less than desired
-	// If caller has ready interface for firebird.conf, it may be passed here
-	// Or database name to obtain that interface may be given
-	// If both parameters are missing, plugins will get access to default (non database specific) config
+	// If caller already has an interface for firebird.conf, it may be passed here
+	// If parameter is missing, plugins will get access to default (non database specific) config
 	virtual IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
 										   int desiredVersion, void* missingFunctionClass,
 										   IFirebirdConf* firebirdConf) = 0;

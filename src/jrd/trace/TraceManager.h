@@ -133,6 +133,8 @@ public:
 	static void event_dsql_execute(Attachment* att, jrd_tra* transaction, TraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result);
 
+	static void shutdown();
+
 private:
 	Attachment*	attachment;
 	Service* service;
@@ -167,7 +169,7 @@ private:
 		}
 	};
 
-	static Firebird::GlobalPtr<Factories> factories;
+	static Factories* factories;
 	static Firebird::GlobalPtr<Firebird::Mutex> init_factories_mtx;
 	static volatile bool init_factories;
 
