@@ -165,12 +165,14 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			return false;
 		}
 
-		// Assign the non-null fields
+		// Assign the fields to the record to be stored
 		for (size_t i = 0; i < m_map.getCount(); i++)
 		{
 			const FieldMap& map = m_map[i];
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
+
+			CLEAR_NULL(buffer_record, i);
 
 			dsc to;
 			if (!EVL_field(NULL, buffer_record, (USHORT) i, &to))
@@ -188,7 +190,6 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 					if (EVL_field(NULL, record, map.map_id, &from))
 					{
 						MOV_move(tdbb, &from, &to);
-						CLEAR_NULL(buffer_record, i);
 					}
 					else
 					{
@@ -252,6 +253,8 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 						record->rec_format = record->rec_fmt_bk;
 					}
 
+					CLEAR_NULL(record, map.map_id);
+
 					dsc to;
 					if (!EVL_field(NULL, record, map.map_id, &to))
 					{
@@ -259,7 +262,6 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 					}
 
 					MOV_move(tdbb, &from, &to);
-					CLEAR_NULL(record, map.map_id);
 				}
 				break;
 
