@@ -38,6 +38,7 @@ Jrd::DeclareCursorNode* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Fireb
 void PASS1_expand_select_node(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::DsqlNodStack&, bool);
 void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_label(Jrd::DsqlCompilerScratch*, bool, Jrd::dsql_nod*);
+void PASS1_limit(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*, Jrd::RseNode*);
 Jrd::dsql_nod* PASS1_lookup_alias(Jrd::DsqlCompilerScratch*, const Jrd::dsql_str*, Jrd::dsql_nod*, bool);
 Jrd::dsql_ctx* PASS1_make_context(Jrd::DsqlCompilerScratch* statement, const Jrd::dsql_nod* relation_node);
 Jrd::dsql_nod* PASS1_node(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
@@ -48,8 +49,10 @@ Jrd::dsql_nod* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jr
 Jrd::dsql_nod* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_ctx*,
 	Jrd::dsql_nod*, Jrd::dsql_nod*);
 void PASS1_put_args_on_stack(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::DsqlNodStack&);
+Jrd::dsql_nod* PASS1_relation(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
 bool PASS1_set_parameter_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*, bool);
+Jrd::dsql_nod* PASS1_sort(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*, Jrd::dsql_nod*);
 Jrd::dsql_nod* PASS1_statement(Jrd::DsqlCompilerScratch*, Jrd::dsql_nod*);
 
 #endif // DSQL_PASS1_PROTO_H

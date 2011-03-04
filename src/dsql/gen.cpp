@@ -66,7 +66,6 @@ using namespace Firebird;
 
 static void gen_plan(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_select(DsqlCompilerScratch*, dsql_nod*);
-static void gen_statement(DsqlCompilerScratch*, const dsql_nod*);
 static void gen_table_lock(DsqlCompilerScratch*, const dsql_nod*, USHORT);
 static void gen_union(DsqlCompilerScratch*, const dsql_nod*);
 
@@ -534,12 +533,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 
 	switch (node->nod_type)
 	{
-	case nod_assign:
-		dsqlScratch->appendUChar(blr_assignment);
-		GEN_expr(dsqlScratch, node->nod_arg[0]);
-		GEN_expr(dsqlScratch, node->nod_arg[1]);
-		return;
-
 	case nod_class_stmtnode:
 		{
 			DmlNode* dmlNode = reinterpret_cast<DmlNode*>(node->nod_arg[0]);
@@ -552,14 +545,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end; ptr++)
 			GEN_statement(dsqlScratch, *ptr);
 		dsqlScratch->appendUChar(blr_end);
-		return;
-
-	case nod_erase:
-	case nod_erase_current:
-	case nod_modify:
-	case nod_modify_current:
-	case nod_store:
-		gen_statement(dsqlScratch, node);
 		return;
 
 	case nod_src_info:
@@ -1097,152 +1082,6 @@ void GEN_sort(DsqlCompilerScratch* dsqlScratch, dsql_nod* list)
 
 		GEN_expr(dsqlScratch, (*ptr)->nod_arg[e_order_field]);
 	}
-}
-
-
-/**
-
- 	gen_statement
-
-    @brief	Generate BLR for DML statements.
-
-
-    @param dsqlScratch
-    @param node
-
- **/
-static void gen_statement(DsqlCompilerScratch* dsqlScratch, const dsql_nod* node)
-{
-	dsql_nod* rse = NULL;
-	const dsql_msg* message = NULL;
-	bool innerSend = dsqlScratch->flags & DsqlCompilerScratch::FLAG_UPDATE_OR_INSERT;
-	const bool merge = dsqlScratch->flags & DsqlCompilerScratch::FLAG_MERGE;
-
-	switch (node->nod_type)
-	{
-	case nod_store:
-		rse = node->nod_arg[e_sto_rse];
-		break;
-	case nod_modify:
-		rse = node->nod_arg[e_mod_rse];
-		break;
-	case nod_erase:
-		rse = node->nod_arg[e_era_rse];
-		break;
-	default:
-		innerSend = true;
-		break;
-	}
-
-	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE &&
-		!innerSend && !merge)
-	{
-		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
-		{
-			dsqlScratch->appendUChar(blr_send);
-			dsqlScratch->appendUChar(message->msg_number);
-		}
-	}
-
-	if (rse)
-	{
-		dsqlScratch->appendUChar(blr_for);
-		GEN_expr(dsqlScratch, rse);
-	}
-
-	if (dsqlScratch->getStatement()->getType() == DsqlCompiledStatement::TYPE_EXEC_PROCEDURE)
-	{
-		if ((message = dsqlScratch->getStatement()->getReceiveMsg()))
-		{
-			dsqlScratch->appendUChar(blr_begin);
-
-			if (innerSend && !merge)
-			{
-				dsqlScratch->appendUChar(blr_send);
-				dsqlScratch->appendUChar(message->msg_number);
-			}
-		}
-	}
-
-	dsql_nod* temp;
-	const dsql_ctx* context;
-
-	switch (node->nod_type)
-	{
-	case nod_store:
-		dsqlScratch->appendUChar(node->nod_arg[e_sto_return] ? blr_store2 : blr_store);
-		GEN_expr(dsqlScratch, node->nod_arg[e_sto_relation]);
-		GEN_statement(dsqlScratch, node->nod_arg[e_sto_statement]);
-		if (node->nod_arg[e_sto_return])
-			GEN_statement(dsqlScratch, node->nod_arg[e_sto_return]);
-		break;
-
-	case nod_modify:
-		dsqlScratch->appendUChar(node->nod_arg[e_mod_return] ? blr_modify2 : blr_modify);
-		temp = node->nod_arg[e_mod_source];
-		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
-		GEN_stuff_context(dsqlScratch, context);
-		temp = node->nod_arg[e_mod_update];
-		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
-		GEN_stuff_context(dsqlScratch, context);
-		GEN_statement(dsqlScratch, node->nod_arg[e_mod_statement]);
-		if (node->nod_arg[e_mod_return])
-			GEN_statement(dsqlScratch, node->nod_arg[e_mod_return]);
-		break;
-
-	case nod_modify_current:
-		dsqlScratch->appendUChar(node->nod_arg[e_mdc_return] ? blr_modify2 : blr_modify);
-		context = (dsql_ctx*) node->nod_arg[e_mdc_context];
-		GEN_stuff_context(dsqlScratch, context);
-		temp = node->nod_arg[e_mdc_update];
-		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
-		GEN_stuff_context(dsqlScratch, context);
-		GEN_statement(dsqlScratch, node->nod_arg[e_mdc_statement]);
-		if (node->nod_arg[e_mdc_return])
-			GEN_statement(dsqlScratch, node->nod_arg[e_mdc_return]);
-		break;
-
-	case nod_erase:
-		temp = node->nod_arg[e_era_relation];
-		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
-		if (node->nod_arg[e_era_return])
-		{
-			dsqlScratch->appendUChar(blr_begin);
-			GEN_statement(dsqlScratch, node->nod_arg[e_era_return]);
-			dsqlScratch->appendUChar(blr_erase);
-			GEN_stuff_context(dsqlScratch, context);
-			dsqlScratch->appendUChar(blr_end);
-		}
-		else
-		{
-			dsqlScratch->appendUChar(blr_erase);
-			GEN_stuff_context(dsqlScratch, context);
-		}
-		break;
-
-	case nod_erase_current:
-		context = (dsql_ctx*) node->nod_arg[e_erc_context];
-		if (node->nod_arg[e_erc_return])
-		{
-			dsqlScratch->appendUChar(blr_begin);
-			GEN_statement(dsqlScratch, node->nod_arg[e_erc_return]);
-			dsqlScratch->appendUChar(blr_erase);
-			GEN_stuff_context(dsqlScratch, context);
-			dsqlScratch->appendUChar(blr_end);
-		}
-		else
-		{
-			dsqlScratch->appendUChar(blr_erase);
-			GEN_stuff_context(dsqlScratch, context);
-		}
-		break;
-
-	default:
-		fb_assert(false);
-	}
-
-	if (message)
-		dsqlScratch->appendUChar(blr_end);
 }
 
 

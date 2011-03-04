@@ -93,12 +93,6 @@ enum nod_t
 	nod_update,
 	nod_all,	// ALL privileges
 	nod_execute,	// EXECUTE privilege
-	nod_store,
-	nod_modify,
-	nod_erase,
-	nod_assign,
-	nod_erase_current,
-	nod_modify_current,
 	nod_procedure_name,
 	nod_select_expr,
 	nod_order,
@@ -163,12 +157,6 @@ enum nod_t
 	nod_lock_timeout,
 	nod_src_info,
 	nod_with,
-	nod_update_or_insert,
-	nod_merge,
-	nod_merge_when,
-	nod_merge_update,
-	nod_merge_delete,
-	nod_merge_insert,
 	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
@@ -225,95 +213,6 @@ enum node_args {
 	e_sel_alias,			// Alias name for derived table
 	e_sel_columns,			// List with alias names from derived table columns
 	e_sel_count,
-
-	e_ins_relation = 0,		// nod_insert
-	e_ins_fields,
-	e_ins_values,
-	e_ins_select,
-	e_ins_return,
-	e_ins_count,
-
-	e_mrg_relation = 0,		// nod_merge
-	e_mrg_using,
-	e_mrg_condition,
-	e_mrg_when,
-	e_mrg_return,
-	e_mrg_count,
-
-	e_mrg_when_matched = 0,	// nod_merge_when
-	e_mrg_when_not_matched,
-	e_mrg_when_count,
-
-	e_mrg_update_condition = 0,	// nod_merge_update
-	e_mrg_update_statement,
-	e_mrg_update_count,
-
-	e_mrg_delete_condition = 0,	// nod_merge_delete
-	e_mrg_delete_count,
-
-	e_mrg_insert_condition = 0,	// nod_merge_insert
-	e_mrg_insert_fields,
-	e_mrg_insert_values,
-	e_mrg_insert_count,
-
-	e_sto_relation = 0,		// nod_store
-	e_sto_statement,
-	e_sto_rse,
-	e_sto_return,
-	e_sto_count,
-
-	e_upi_relation = 0,		// nod_update_or_insert
-	e_upi_fields,
-	e_upi_values,
-	e_upi_matching,
-	e_upi_return,
-	e_upi_count,
-
-	e_del_relation = 0,		// nod_delete
-	e_del_boolean,
-	e_del_plan,
-	e_del_sort,
-	e_del_rows,
-	e_del_cursor,
-	e_del_return,
-	e_del_count,
-
-	e_era_relation = 0,		// nod_erase
-	e_era_rse,
-	e_era_return,
-	e_era_count,
-
-	e_asgn_value = 0,       // nod_assign
-	e_asgn_field,
-	e_asgn_count,
-
-	e_erc_context = 0,		// nod_erase_current
-	e_erc_return,
-	e_erc_count,
-
-	e_mod_source = 0,		// nod_modify
-	e_mod_update,
-	e_mod_statement,
-	e_mod_rse,
-	e_mod_return,
-	e_mod_count,
-
-	e_mdc_context = 0,		// nod_modify_current
-	e_mdc_update,
-	e_mdc_statement,
-	e_mdc_return,
-	e_mdc_count,
-
-	e_upd_relation = 0,		// nod_update
-	e_upd_statement,
-	e_upd_boolean,
-	e_upd_plan,
-	e_upd_sort,
-	e_upd_rows,
-	e_upd_cursor,
-	e_upd_return,
-	e_upd_rse_flags,
-	e_upd_count,
 
 	e_blb_field = 0,		// nod_get_segment & nod_put_segment
 	e_blb_relation,

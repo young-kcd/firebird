@@ -848,6 +848,7 @@ public:
 		TYPE_LABEL,
 		TYPE_LOOP,
 		TYPE_MERGE,
+		TYPE_MERGE_SEND,
 		TYPE_MESSAGE,
 		TYPE_MODIFY,
 		TYPE_POST_EVENT,
@@ -860,6 +861,7 @@ public:
 		TYPE_STALL,
 		TYPE_STORE,
 		TYPE_SUSPEND,
+		TYPE_UPDATE_OR_INSERT,
 		TYPE_USER_SAVEPOINT
 	};
 
@@ -1038,7 +1040,7 @@ public:
 };
 
 
-// This class (via the make method) does the job that pass1_savepoint does for the legacy nodes.
+// Add savepoint pair of nodes to statement having error handlers.
 class SavepointEncloseNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_SAVEPOINT_ENCLOSE>
 {
 public:

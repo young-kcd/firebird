@@ -654,6 +654,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::CursorStmtNode* cursorStmtNode;
 	Jrd::ErrorHandlerNode* errorHandlerNode;
 	Jrd::ExecStatementNode* execStatementNode;
+	Jrd::MergeNode* mergeNode;
 }
 
 %type <legacyNode> access_mode access_type alias_list
@@ -749,8 +750,11 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyStr>  lastname_opt
 %type <int32Val>   long_integer
 
-%type <legacyNode> manual_auto merge merge_insert_specification merge_update_specification
-%type <legacyNode> merge_when_clause merge_when_matched_clause merge_when_not_matched_clause
+%type <legacyNode> manual_auto
+%type <mergeNode>  merge
+%type merge_insert_specification(<mergeNode>) merge_update_specification(<mergeNode>)
+%type merge_when_clause(<mergeNode>) merge_when_matched_clause(<mergeNode>)
+%type merge_when_not_matched_clause(<mergeNode>)
 %type <legacyStr>  middlename_opt module_op
 
 %type <legacyNode> named_columns_join national_character_keyword
@@ -935,6 +939,7 @@ statement
 	| grant
 	| insert
 	| merge
+		{ $$ = makeClassNode($1); }
 	| exec_procedure
 	| exec_block
 		{ $$ = makeClassNode($1); }
@@ -2380,7 +2385,7 @@ stmt_start_column
 simple_proc_statement
 	: assignment
 	| insert
-	| merge
+	| merge				{ $$ = makeClassNode($1); }
 	| update
 	| update_or_insert
 	| delete
@@ -4788,60 +4793,94 @@ rows_clause
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
 insert
 	: INSERT INTO simple_table_name ins_column_parens_opt VALUES '(' value_list ')' returning_clause
-		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, make_list ($7), NULL, $9); }
+		{
+			StoreNode* node = newNode<StoreNode>();
+			node->dsqlRelation = $3;
+			node->dsqlFields = $4;
+			node->dsqlValues = make_list($7);
+			node->dsqlReturning = $9;
+			$$ = makeClassNode(node);
+		}
 	| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
-		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, $4, NULL, $5, $6); }
+		{
+			StoreNode* node = newNode<StoreNode>();
+			node->dsqlRelation = $3;
+			node->dsqlFields = $4;
+			node->dsqlRse = $5;
+			node->dsqlReturning = $6;
+			$$ = makeClassNode(node);
+		}
 	| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
-		{ $$ = make_node (nod_insert, (int) e_ins_count, $3, NULL, NULL, NULL, $6); }
+		{
+			StoreNode* node = newNode<StoreNode>();
+			node->dsqlRelation = $3;
+			node->dsqlReturning = $6;
+			$$ = makeClassNode(node);
+		}
 	;
 
 
 // MERGE statement
 merge
 	: MERGE INTO table_name USING table_reference ON search_condition
-			merge_when_clause returning_clause
-		{
-			$$ = make_node(nod_merge, e_mrg_count, $3, $5, $7, $8, $9);
-		}
+			{
+				MergeNode* node = newNode<MergeNode>();
+				node->dsqlRelation = $3;
+				node->dsqlUsing = $5;
+				node->dsqlCondition = $7;
+				$<mergeNode>$ = node;
+			}
+		merge_when_clause($8) returning_clause
+			{
+				MergeNode* node = $8;
+				node->dsqlReturning = $10;
+				$$ = node;
+			}
 	;
 
-merge_when_clause
-	: merge_when_matched_clause merge_when_not_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, $2); }
-	| merge_when_not_matched_clause merge_when_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $2, $1); }
-	| merge_when_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, $1, NULL); }
-	| merge_when_not_matched_clause
-		{ $$ = make_node(nod_merge_when, e_mrg_when_count, NULL, $1); }
+merge_when_clause($mergeNode)
+	: merge_when_matched_clause($mergeNode) merge_when_not_matched_clause($mergeNode)
+	| merge_when_not_matched_clause($mergeNode) merge_when_matched_clause($mergeNode)
+	| merge_when_matched_clause($mergeNode)
+	| merge_when_not_matched_clause($mergeNode)
 	;
 
-merge_when_matched_clause
-	: WHEN MATCHED merge_update_specification
-		{ $$ = $3; }
+merge_when_matched_clause($mergeNode)
+	: WHEN MATCHED merge_update_specification($mergeNode)
+		{ $mergeNode->dsqlWhenMatchedPresent = true; }
 	;
 
-merge_when_not_matched_clause
-	: WHEN NOT MATCHED merge_insert_specification
-		{ $$ = $4; }
+merge_when_not_matched_clause($mergeNode)
+	: WHEN NOT MATCHED merge_insert_specification($mergeNode)
+		{ $mergeNode->dsqlWhenNotMatchedPresent = true; }
 	;
 
-merge_update_specification
+merge_update_specification($mergeNode)
 	: THEN UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, NULL, makeClassNode($4)); }
+		{ $mergeNode->dsqlWhenMatchedAssignments = $4; }
 	| AND search_condition THEN UPDATE SET assignments
-		{ $$ = make_node(nod_merge_update, e_mrg_update_count, $2, makeClassNode($6)); }
+		{
+			$mergeNode->dsqlWhenMatchedAssignments = $6;
+			$mergeNode->dsqlWhenMatchedCondition = $2;
+		}
 	| THEN KW_DELETE
-		{ $$ = make_node(nod_merge_delete, e_mrg_delete_count, NULL); }
+		// Nothing to do here.
 	| AND search_condition THEN KW_DELETE
-		{ $$ = make_node(nod_merge_delete, e_mrg_delete_count, $2); }
+		{ $mergeNode->dsqlWhenMatchedCondition = $2; }
 	;
 
-merge_insert_specification
+merge_insert_specification($mergeNode)
 	: THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
-		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, NULL, make_list($3), make_list($6)); }
+		{
+			$mergeNode->dsqlWhenNotMatchedFields = make_list($3);
+			$mergeNode->dsqlWhenNotMatchedValues = make_list($6);
+		}
 	| AND search_condition THEN INSERT ins_column_parens_opt VALUES '(' value_list ')'
-		{ $$ = make_node(nod_merge_insert, e_mrg_insert_count, $2, make_list($5), make_list($8)); }
+		{
+			$mergeNode->dsqlWhenNotMatchedFields = make_list($5);
+			$mergeNode->dsqlWhenNotMatchedValues = make_list($8);
+			$mergeNode->dsqlWhenNotMatchedCondition = $2;
+		}
 	;
 
 
@@ -4854,12 +4893,26 @@ delete
 
 delete_searched
 	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause returning_clause
-		{ $$ = make_node(nod_delete, (int) e_del_count, $3, $4, $5, $6, $7, NULL, $8); }
+		{
+			EraseNode* node = newNode<EraseNode>();
+			node->dsqlRelation = $3;
+			node->dsqlBoolean = $4;
+			node->dsqlPlan = $5;
+			node->dsqlSort = $6;
+			node->dsqlRows = $7;
+			node->dsqlReturning = $8;
+			$$ = makeClassNode(node);
+		}
 	;
 
 delete_positioned
 	: KW_DELETE FROM table_name cursor_clause
-		{ $$ = make_node(nod_delete, (int) e_del_count, $3, NULL, NULL, NULL, NULL, $4, NULL); }
+		{
+			EraseNode* node = newNode<EraseNode>();
+			node->dsqlRelation = $3;
+			node->dsqlCursor = $4;
+			$$ = makeClassNode(node);
+		}
 	;
 
 
@@ -4874,16 +4927,26 @@ update_searched
 	: UPDATE table_name SET assignments where_clause plan_clause
 			order_clause rows_clause returning_clause
 		{
-			$$ = make_node(nod_update, (int) e_upd_count, $2, makeClassNode($4),
-				$5, $6, $7, $8, NULL, $9, NULL);
+			ModifyNode* node = newNode<ModifyNode>();
+			node->dsqlRelation = $2;
+			node->dsqlStatement = $4;
+			node->dsqlBoolean = $5;
+			node->dsqlPlan = $6;
+			node->dsqlSort = $7;
+			node->dsqlRows = $8;
+			node->dsqlReturning = $9;
+			$$ = makeClassNode(node);
 		}
 	;
 
 update_positioned
 	: UPDATE table_name SET assignments cursor_clause
 		{
-			$$ = make_node(nod_update, (int) e_upd_count,
-				$2, makeClassNode($4), NULL, NULL, NULL, NULL, $5, NULL, NULL);
+			ModifyNode* node = newNode<ModifyNode>();
+			node->dsqlRelation = $2;
+			node->dsqlStatement = $4;
+			node->dsqlCursor = $5;
+			$$ = makeClassNode(node);
 		}
 	;
 
@@ -4894,8 +4957,13 @@ update_or_insert
 	: UPDATE OR INSERT INTO simple_table_name ins_column_parens_opt
 			VALUES '(' value_list ')' update_or_insert_matching_opt returning_clause
 		{
-			$$ = make_node(nod_update_or_insert, (int) e_upi_count,
-				$5, make_list($6), make_list($9), $11, $12);
+			UpdateOrInsertNode* node = newNode<UpdateOrInsertNode>();
+			node->dsqlRelation = $5;
+			node->dsqlFields = make_list($6);
+			node->dsqlValues = make_list($9);
+			node->dsqlMatching = $11;
+			node->dsqlReturning = $12;
+			$$ = makeClassNode(node);
 		}
 	;
 
@@ -4936,19 +5004,29 @@ assignments
 	;
 
 assignment
-	: update_column_name '=' value	{ $$ = make_node(nod_assign, e_asgn_count, $3, $1); }
+	: update_column_name '=' value
+		{
+			AssignmentNode* node = newNode<AssignmentNode>();
+			node->dsqlAsgnTo = $1;
+			node->dsqlAsgnFrom = $3;
+			$$ = makeClassNode(node);
+		}
 	;
 
 exec_function
 	: udf
 		{
-			$$ = make_node (nod_assign, e_asgn_count, makeClassNode($1),
-				makeClassNode(newNode<NullNode>()));
+			AssignmentNode* node = newNode<AssignmentNode>();
+			node->dsqlAsgnTo = makeClassNode(newNode<NullNode>());
+			node->dsqlAsgnFrom = makeClassNode($1);
+			$$ = makeClassNode(node);
 		}
 	| non_aggregate_function
 		{
-			$$ = make_node (nod_assign, e_asgn_count, makeClassNode($1),
-				makeClassNode(newNode<NullNode>()));
+			AssignmentNode* node = newNode<AssignmentNode>();
+			node->dsqlAsgnTo = makeClassNode(newNode<NullNode>());
+			node->dsqlAsgnFrom = makeClassNode($1);
+			$$ = makeClassNode(node);
 		}
 	;
 

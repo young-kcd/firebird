@@ -95,6 +95,8 @@ class AssignmentNode : public TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>
 public:
 	explicit AssignmentNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ASSIGNMENT>(pool),
+		  dsqlAsgnFrom(NULL),
+		  dsqlAsgnTo(NULL),
 		  asgnFrom(NULL),
 		  asgnTo(NULL),
 		  missing(NULL),
@@ -114,6 +116,8 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	dsql_nod* dsqlAsgnFrom;
+	dsql_nod* dsqlAsgnTo;
 	NestConst<ValueExprNode> asgnFrom;
 	NestConst<ValueExprNode> asgnTo;
 	NestConst<ValueExprNode> missing;
@@ -332,6 +336,16 @@ class EraseNode : public TypedNode<StmtNode, StmtNode::TYPE_ERASE>
 public:
 	explicit EraseNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ERASE>(pool),
+		  dsqlRelation(NULL),
+		  dsqlStatement(NULL),
+		  dsqlBoolean(NULL),
+		  dsqlPlan(NULL),
+		  dsqlSort(NULL),
+		  dsqlRows(NULL),
+		  dsqlCursor(NULL),
+		  dsqlReturning(NULL),
+		  dsqlRse(NULL),
+		  dsqlContext(NULL),
 		  statement(NULL),
 		  subStatement(NULL),
 		  stream(0)
@@ -342,7 +356,7 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual EraseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual EraseNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual EraseNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -353,6 +367,16 @@ private:
 	const StmtNode* erase(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
+	dsql_nod* dsqlRelation;
+	dsql_nod* dsqlStatement;
+	dsql_nod* dsqlBoolean;
+	dsql_nod* dsqlPlan;
+	dsql_nod* dsqlSort;
+	dsql_nod* dsqlRows;
+	dsql_nod* dsqlCursor;
+	dsql_nod* dsqlReturning;
+	dsql_nod* dsqlRse;
+	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> subStatement;
 	USHORT stream;
@@ -807,6 +831,44 @@ public:
 };
 
 
+class MergeNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>
+{
+public:
+	explicit MergeNode(MemoryPool& pool, dsql_nod* val = NULL)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE>(pool),
+		  dsqlRelation(NULL),
+		  dsqlUsing(NULL),
+		  dsqlCondition(NULL),
+		  dsqlWhenMatchedPresent(false),
+		  dsqlWhenMatchedAssignments(NULL),
+		  dsqlWhenMatchedCondition(NULL),
+		  dsqlWhenNotMatchedPresent(false),
+		  dsqlWhenNotMatchedFields(NULL),
+		  dsqlWhenNotMatchedValues(NULL),
+		  dsqlWhenNotMatchedCondition(NULL),
+		  dsqlReturning(NULL)
+	{
+	}
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+public:
+	dsql_nod* dsqlRelation;
+	dsql_nod* dsqlUsing;
+	dsql_nod* dsqlCondition;
+	bool dsqlWhenMatchedPresent;
+	CompoundStmtNode* dsqlWhenMatchedAssignments;
+	dsql_nod* dsqlWhenMatchedCondition;
+	bool dsqlWhenNotMatchedPresent;
+	dsql_nod* dsqlWhenNotMatchedFields;
+	dsql_nod* dsqlWhenNotMatchedValues;
+	dsql_nod* dsqlWhenNotMatchedCondition;
+	dsql_nod* dsqlReturning;
+};
+
+
 class MessageNode : public TypedNode<StmtNode, StmtNode::TYPE_MESSAGE>
 {
 public:
@@ -841,6 +903,18 @@ class ModifyNode : public TypedNode<StmtNode, StmtNode::TYPE_MODIFY>
 public:
 	explicit ModifyNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_MODIFY>(pool),
+		  dsqlRelation(NULL),
+		  dsqlStatement(NULL),
+		  dsqlStatement2(NULL),
+		  dsqlBoolean(NULL),
+		  dsqlPlan(NULL),
+		  dsqlSort(NULL),
+		  dsqlRows(NULL),
+		  dsqlCursor(NULL),
+		  dsqlReturning(NULL),
+		  dsqlRseFlags(0),
+		  dsqlRse(NULL),
+		  dsqlContext(NULL),
 		  statement(NULL),
 		  statement2(NULL),
 		  subMod(NULL),
@@ -855,7 +929,8 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual ModifyNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	StmtNode* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert);
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ModifyNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual ModifyNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -866,6 +941,18 @@ private:
 	const StmtNode* modify(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
+	dsql_nod* dsqlRelation;
+	CompoundStmtNode* dsqlStatement;
+	dsql_nod* dsqlStatement2;
+	dsql_nod* dsqlBoolean;
+	dsql_nod* dsqlPlan;
+	dsql_nod* dsqlSort;
+	dsql_nod* dsqlRows;
+	dsql_nod* dsqlCursor;
+	dsql_nod* dsqlReturning;
+	USHORT dsqlRseFlags;
+	dsql_nod* dsqlRse;
+	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> statement2;
 	NestConst<StmtNode> subMod;
@@ -937,6 +1024,13 @@ class StoreNode : public TypedNode<StmtNode, StmtNode::TYPE_STORE>
 public:
 	explicit StoreNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_STORE>(pool),
+		  dsqlRelation(NULL),
+		  dsqlFields(NULL),
+		  dsqlValues(NULL),
+		  dsqlStatement(NULL),
+		  dsqlStatement2(NULL),
+		  dsqlReturning(NULL),
+		  dsqlRse(NULL),
 		  statement(NULL),
 		  statement2(NULL),
 		  subStore(NULL),
@@ -949,7 +1043,8 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual StoreNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	StmtNode* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert);
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StoreNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StoreNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -961,6 +1056,13 @@ private:
 	const StmtNode* store(thread_db* tdbb, jrd_req* request, WhichTrigger whichTrig) const;
 
 public:
+	dsql_nod* dsqlRelation;
+	dsql_nod* dsqlFields;
+	dsql_nod* dsqlValues;
+	CompoundStmtNode* dsqlStatement;
+	dsql_nod* dsqlStatement2;
+	dsql_nod* dsqlReturning;
+	dsql_nod* dsqlRse;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> statement2;
 	NestConst<StmtNode> subStore;
@@ -1154,6 +1256,32 @@ public:
 
 public:
 	UCHAR blrOp;
+};
+
+
+class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
+{
+public:
+	explicit UpdateOrInsertNode(MemoryPool& pool, dsql_nod* val = NULL)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>(pool),
+		  dsqlRelation(NULL),
+		  dsqlFields(NULL),
+		  dsqlValues(NULL),
+		  dsqlMatching(NULL),
+		  dsqlReturning(NULL)
+	{
+	}
+
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+public:
+	dsql_nod* dsqlRelation;
+	dsql_nod* dsqlFields;
+	dsql_nod* dsqlValues;
+	dsql_nod* dsqlMatching;
+	dsql_nod* dsqlReturning;
 };
 
 
