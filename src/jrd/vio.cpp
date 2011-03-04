@@ -3297,9 +3297,6 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 				return false;
 		}
 
-		// jrd_rel* relation = org_rpb->rpb_relation;
-
-
 		if (org_rpb->rpb_transaction_nr == transaction->tra_number) {
 			// We already own this record. No writelock required
 			return true;
@@ -3319,6 +3316,10 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, RecordSource* rsb,
 			case PREPARE_DELETE:
 				return false;
 		}
+
+		// The record could be reallocated in the meantime. Reassign the pointer.
+
+		org_record = org_rpb->rpb_record;
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
 
