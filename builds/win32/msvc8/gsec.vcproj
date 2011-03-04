@@ -323,10 +323,6 @@
 				RelativePath="..\..\..\src\utilities\gsec\main\gsecMain.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\security.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
