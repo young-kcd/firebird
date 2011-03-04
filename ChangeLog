@@ -1,3 +1,31 @@
+ 2011-03-04 01:47  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+   M src/dsql/pass1_proto.h
+Refactor DSQL INSERT, UPDATE, DELETE, MERGE, UPDATE OR INSERT and assignment statements.
+
+ 2011-03-03 14:13  dimitr 
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/RecordBuffer.h
+Misc.
+
+ 2011-03-03 14:12  dimitr 
+   M src/jrd/recsrc/BufferedStream.cpp
+Misc.
+
+ 2011-03-03 14:12  dimitr 
+   M src/burp/burp.cpp
+Fixed assertion during restore.
+
+ 2011-03-03 08:36  alexpeshkoff 
+   M builds/posix/make.shared.variables
+Follow Vlad's changes in posix build
+
  2011-03-02 23:42  hvlad 
    M builds/win32/msvc10/common.vcxproj
    M builds/win32/msvc10/common.vcxproj.filters
