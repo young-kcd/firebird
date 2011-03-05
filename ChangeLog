@@ -1,3 +1,43 @@
+ 2011-03-05 02:47  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/gen.cpp
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Refactored nod_src_info.
+
+ 2011-03-05 02:24  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed assertion in StmtExprNode::copy reported privately by Dmitry.
+
+ 2011-03-04 15:49  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/include/FirebirdPluginApi.h
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/utilities/ntrace/traceplugin.cpp
+Detect forced unload of plugin by OS when process is exited
+
+ 2011-03-04 15:48  alexpeshkoff 
+   M src/yvalve/user__proto.h
+cleanup
+
+ 2011-03-04 09:16  hvlad 
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/gsec.vcproj
+Update MSVC8 build
+
+ 2011-03-04 07:52  dimitr 
+   M src/jrd/recsrc/BufferedStream.cpp
+Corrections to make new assertions working properly.
+
  2011-03-04 01:47  asfernandes 
    M src/dsql/Nodes.h
    M src/dsql/StmtNodes.cpp
