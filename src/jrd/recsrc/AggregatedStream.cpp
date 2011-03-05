@@ -449,11 +449,12 @@ AggregatedStream::State AggregatedStream::evaluateGroup(thread_db* tdbb, Aggrega
 
 				if (aggNode)
 				{
-					aggNode->aggPass(tdbb, request);
-
-					// If a max or min has been mapped to an index, then the first record is the EOF.
-					if (aggNode->indexed)
-						state = STATE_EOF_FOUND;
+					if (aggNode->aggPass(tdbb, request))
+					{
+						// If a max or min has been mapped to an index, then the first record is the EOF.
+						if (aggNode->indexed)
+							state = STATE_EOF_FOUND;
+					}
 				}
 				else
 					EXE_assignment(tdbb, *source, *target);

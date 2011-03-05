@@ -746,7 +746,7 @@ public:
 
 	virtual void aggInit(thread_db* tdbb, jrd_req* request) const = 0;	// pure, but defined
 	virtual void aggFinish(thread_db* tdbb, jrd_req* request) const;
-	virtual void aggPass(thread_db* tdbb, jrd_req* request) const;
+	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
 	virtual dsc* execute(thread_db* tdbb, jrd_req* request) const;
 
 	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const = 0;

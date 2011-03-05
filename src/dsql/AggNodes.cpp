@@ -328,7 +328,7 @@ void AggNode::aggInit(thread_db* /*tdbb*/, jrd_req* request) const
 	}
 }
 
-void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
+bool AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* desc = NULL;
 
@@ -336,7 +336,7 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 	{
 		desc = EVL_expr(tdbb, request, arg);
 		if (request->req_flags & req_null)
-			return;
+			return false;
 
 		if (distinct)
 		{
@@ -369,11 +369,12 @@ void AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 				(asb->intl ? asb->keyItems[1].skd_offset : 0);
 			MOV_move(tdbb, desc, &toDesc);
 
-			return;
+			return true;
 		}
 	}
 
 	aggPass(tdbb, request, desc);
+	return true;
 }
 
 void AggNode::aggFinish(thread_db* /*tdbb*/, jrd_req* request) const
