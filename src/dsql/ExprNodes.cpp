@@ -7939,6 +7939,10 @@ DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	node->stmt = PAR_parse_stmt(tdbb, csb);
 	node->expr = PAR_parse_value(tdbb, csb);
 
+	// Avoid blr_stmt_expr in a BLR expression header.
+	if (!node->stmt->is<AssignmentNode>())
+		return node->expr;
+
 	return node;
 }
 
