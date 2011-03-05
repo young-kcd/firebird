@@ -1065,6 +1065,60 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 }
 
 
+void VIO_copy_record(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
+{
+/**************************************
+ *
+ *	V I O _ c o p y _ r e c o r d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy the given record to a new destination,
+ *	taking care about possible format differences.
+ **************************************/
+	fb_assert(org_rpb && new_rpb);
+	Record* const org_record = org_rpb->rpb_record;
+	Record* const new_record = new_rpb->rpb_record;
+	fb_assert(org_record && new_record);
+
+	// Copy the original record to the new record. If the format hasn't changed,
+	// this is a simple move. If the format has changed, each field must be
+	// fetched and moved separately, remembering to set the missing flag.
+
+	if (new_rpb->rpb_format_number == org_rpb->rpb_format_number)
+	{
+		memcpy(new_rpb->rpb_address, org_record->rec_data, new_rpb->rpb_length);
+	}
+	else
+	{
+		DSC org_desc, new_desc;
+
+		for (USHORT i = 0; i < new_record->rec_format->fmt_count; i++)
+		{
+			CLEAR_NULL(new_record, i);
+
+			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc))
+			{
+				if (EVL_field(org_rpb->rpb_relation, org_record, i, &org_desc))
+				{
+					MOV_move(tdbb, &org_desc, &new_desc);
+				}
+				else
+				{
+					SET_NULL(new_record, i);
+
+					if (new_desc.dsc_dtype)
+					{
+						memset(new_desc.dsc_address, 0, new_desc.dsc_length);
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 {
 /**************************************
@@ -3495,16 +3549,13 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	transaction->tra_flags |= TRA_write;
 
-	Record* org_record = org_rpb->rpb_record;
-	if (!org_record)
+	if (!org_rpb->rpb_record)
 	{
-		org_record = VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
+		Record* const org_record = VIO_record(tdbb, org_rpb, NULL, tdbb->getDefaultPool());
 		org_rpb->rpb_address = org_record->rec_data;
 		org_rpb->rpb_length = org_record->rec_format->fmt_length;
 		org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
 	}
-
-	record_param temp;
 
 	if (org_rpb->rpb_transaction_nr == transaction->tra_number)
 	{
@@ -3512,8 +3563,31 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		return true;
 	}
 
+	// Set up the descriptor for the new record version. Initially,
+	// it points to the same record data as the original one.
+	record_param new_rpb = *org_rpb;
+	new_rpb.rpb_transaction_nr = transaction->tra_number;
+
+	AutoPtr<Record> new_record;
+	const Format* const new_format = MET_current(tdbb, new_rpb.rpb_relation);
+
+	// If the fetched record is not in the latest format, upgrade it.
+	// To do that, allocate new record buffer and make the new record
+	// descriptor to point there, then copy the record data.
+	if (new_format->fmt_version != new_rpb.rpb_format_number)
+	{
+		new_rpb.rpb_record = NULL;
+		new_record = VIO_record(tdbb, &new_rpb, new_format, tdbb->getDefaultPool());
+		new_rpb.rpb_address = new_record->rec_data;
+		new_rpb.rpb_length = new_format->fmt_length;
+		new_rpb.rpb_format_number = new_format->fmt_version;
+
+		VIO_copy_record(tdbb, org_rpb, &new_rpb);
+	}
+
+	record_param temp;
 	PageStack stack;
-	switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, 0,
+	switch (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb, &temp, &new_rpb,
 						   stack, true))
 	{
 		case PREPARE_CONFLICT:
@@ -3529,12 +3603,12 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 	// Old record was restored and re-fetched for write.  Now replace it.
 
-	org_rpb->rpb_transaction_nr = transaction->tra_number;
-	org_rpb->rpb_format_number = org_record->rec_format->fmt_version;
+	org_rpb->rpb_transaction_nr = new_rpb.rpb_transaction_nr;
+	org_rpb->rpb_format_number = new_rpb.rpb_format_number;
 	org_rpb->rpb_b_page = temp.rpb_page;
 	org_rpb->rpb_b_line = temp.rpb_line;
-	org_rpb->rpb_address = org_record->rec_data;
-	org_rpb->rpb_length = org_record->rec_format->fmt_length;
+	org_rpb->rpb_address = new_rpb.rpb_address;
+	org_rpb->rpb_length = new_rpb.rpb_length;
 	org_rpb->rpb_flags |= rpb_delta;
 
 	replace_record(tdbb, org_rpb, &stack, transaction);
@@ -4776,22 +4850,28 @@ static int prepare_update(	thread_db*		tdbb,
 	UCHAR differences[MAX_DIFFERENCES];
 	if (new_rpb)
 	{
-		const size_t l =
-			Compressor::makeDiff(new_rpb->rpb_length, new_rpb->rpb_address,
-								 temp->rpb_length, temp->rpb_address,
-								 sizeof(differences), differences);
-		if ((l < sizeof(differences)) && (l < temp->rpb_length))
+		// If both descriptors share the same record, there cannot be any difference.
+		// This trick is used by VIO_writelock(), but can be a regular practice as well.
+		if (new_rpb->rpb_address == temp->rpb_address)
 		{
+			fb_assert(new_rpb->rpb_length == temp->rpb_length);
 			temp->rpb_address = differences;
-			temp->rpb_length = (USHORT) l;
+			temp->rpb_length = (USHORT) Compressor::makeNoDiff(temp->rpb_length, differences);
 			new_rpb->rpb_flags |= rpb_delta;
 		}
-	}
-
-	if (writelock)
-	{
-	  temp->rpb_address = differences;
-	  temp->rpb_length = (USHORT) Compressor::makeNoDiff(temp->rpb_length, differences);
+		else
+		{
+			const size_t l =
+				Compressor::makeDiff(new_rpb->rpb_length, new_rpb->rpb_address,
+									 temp->rpb_length, temp->rpb_address,
+									 sizeof(differences), differences);
+			if ((l < sizeof(differences)) && (l < temp->rpb_length))
+			{
+				temp->rpb_address = differences;
+				temp->rpb_length = (USHORT) l;
+				new_rpb->rpb_flags |= rpb_delta;
+			}
+		}
 	}
 
 #ifdef VIO_DEBUG

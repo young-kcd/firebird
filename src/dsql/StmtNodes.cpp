@@ -5323,41 +5323,9 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	else
 		orgFormat = orgRecord->rec_format;
 
-	// Copy the original record to the new record.  If the format hasn't changed,
-	// this is a simple move.  If the format has changed, each field must be
-	// fetched and moved separately, remembering to set the missing flag.
+	// Copy the original record to the new record.
 
-	if (newFormat->fmt_version == orgFormat->fmt_version)
-		memcpy(newRpb->rpb_address, orgRecord->rec_data, newRpb->rpb_length);
-	else
-	{
-		DSC orgDesc, newDesc;
-
-		for (SSHORT i = 0; i < newFormat->fmt_count; i++)
-		{
-			// In order to "map a null to a default" value (in EVL_field()),
-			// the relation block is referenced.
-			// Reference: Bug 10116, 10424
-			CLEAR_NULL(newRecord, i);
-
-			if (EVL_field(newRpb->rpb_relation, newRecord, i, &newDesc))
-			{
-				if (EVL_field(orgRpb->rpb_relation, orgRecord, i, &orgDesc))
-					MOV_move(tdbb, &orgDesc, &newDesc);
-				else
-				{
-					SET_NULL(newRecord, i);
-
-					if (newDesc.dsc_dtype)
-					{
-						UCHAR* p = newDesc.dsc_address;
-						USHORT n = newDesc.dsc_length;
-						memset(p, 0, n);
-					}
-				}	// if (orgRecord)
-			}		// if (newRecord)
-		}			// for (fmt_count)
-	}
+	VIO_copy_record(tdbb, orgRpb, newRpb);
 
 	newRpb->rpb_number = orgRpb->rpb_number;
 	newRpb->rpb_number.setValid(true);
