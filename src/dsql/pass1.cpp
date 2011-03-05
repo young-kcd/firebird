@@ -1147,7 +1147,6 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 	const dsql_nod* const* ptr = fields->dsqlStatements.begin();
 	const dsql_nod* const* const end = fields->dsqlStatements.end();
 	const dsql_fld* field;
-	const dsql_str* str;
 	const char* name = NULL;
 
 	for (; ptr < end; ptr++)
