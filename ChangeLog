@@ -1,3 +1,7 @@
+ 2011-03-04 17:59  dimitr 
+   M src/jrd/vio.cpp
+The simplest possible fix for CORE-3374: Server may crash or corrupt data if SELECT WITH LOCK is issued against records not in the latest format. Thanks to Vlad.
+
  2011-03-02 12:25  hvlad 
    M src/jrd/cmp.cpp
 When system requests are released there is no more attachments in database.
