@@ -92,12 +92,10 @@ bool FilteredStream::getRecord(thread_db* tdbb) const
 
 bool FilteredStream::refetchRecord(thread_db* tdbb) const
 {
-	if (m_next->refetchRecord(tdbb))
-	{
-		return evaluateBoolean(tdbb);
-	}
+	jrd_req* const request = tdbb->getRequest();
 
-	return false;
+	return m_next->refetchRecord(tdbb) &&
+		m_boolean->execute(tdbb, request);
 }
 
 bool FilteredStream::lockRecord(thread_db* tdbb) const
