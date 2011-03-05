@@ -547,11 +547,6 @@ void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 		dsqlScratch->appendUChar(blr_end);
 		return;
 
-	case nod_src_info:
-		dsqlScratch->putDebugSrcInfo(node->nod_line, node->nod_column);
-		GEN_statement(dsqlScratch, node->nod_arg[e_src_info_stmt]);
-		return;
-
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<

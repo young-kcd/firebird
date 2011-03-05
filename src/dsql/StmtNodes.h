@@ -801,6 +801,27 @@ public:
 };
 
 
+class LineColumnNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>
+{
+public:
+	explicit LineColumnNode(MemoryPool& pool, USHORT aLine, USHORT aColumn, dsql_nod* aStatement)
+		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>(pool),
+		  statement(aStatement)
+	{
+		line = aLine;
+		column = aColumn;
+	}
+
+public:
+	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual LineColumnNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
+
+private:
+	dsql_nod* statement;
+};
+
+
 class LoopNode : public TypedNode<StmtNode, StmtNode::TYPE_LOOP>
 {
 public:

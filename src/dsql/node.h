@@ -155,7 +155,6 @@ enum nod_t
 	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,
-	nod_src_info,
 	nod_with,
 	nod_mod_role,
 	nod_add_user,
@@ -383,11 +382,6 @@ enum node_args {
 	e_ret_source = 0,				// nod_returning
 	e_ret_target,
 	e_ret_count,
-
-	e_src_info_line = 0,			// nod_src_info
-	e_src_info_column,
-	e_src_info_stmt,
-	e_src_info_count,
 
 	e_mod_role_os_name = 0,			// nod_mod_role
 	e_mod_role_db_name,

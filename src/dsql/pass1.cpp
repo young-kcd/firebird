@@ -999,14 +999,6 @@ dsql_nod* PASS1_statement(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_START_TRANS);
 		return input;
 
-	case nod_src_info:
-		{
-			input->nod_line = (USHORT) (IPTR) input->nod_arg[e_src_info_line];
-			input->nod_column = (USHORT) (IPTR) input->nod_arg[e_src_info_column];
-			input->nod_arg[e_src_info_stmt] = PASS1_statement(dsqlScratch, input->nod_arg[e_src_info_stmt]);
-			return input;
-		}
-
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_command_err) <<
@@ -5217,15 +5209,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_lock_timeout:
 		verb = "lock_timeout"; // maybe show the timeout value?
-		break;
-
-	case nod_src_info:
-		{
-			const int line = (int) (IPTR) (*ptr++);
-			const int col = (int) (IPTR) (*ptr++);
-			sprintf(s, "src_info: line %d, col %d", line, col);
-		}
-		verb = s;
 		break;
 
 	case nod_with:

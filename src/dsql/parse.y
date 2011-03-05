@@ -2329,7 +2329,7 @@ proc_block
 
 full_proc_block
 	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $4); }
+		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $4)); }
 	;
 
 full_proc_block_body
@@ -2365,9 +2365,9 @@ proc_statements
 
 proc_statement
 	: stmt_start_line stmt_start_column simple_proc_statement ';'
-		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3); }
+		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3)); }
 	| stmt_start_line stmt_start_column complex_proc_statement
-		{ $$ = make_node (nod_src_info, e_src_info_count, $1, $2, $3); }
+		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3)); }
 	;
 
 stmt_start_line

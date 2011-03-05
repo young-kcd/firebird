@@ -4044,6 +4044,28 @@ const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 //--------------------
 
 
+void LineColumnNode::print(string& text, Array<dsql_nod*>& nodes) const
+{
+	text.printf("LineColumnNode: line %d, col %d", line, column);
+	nodes.add(statement);
+}
+
+LineColumnNode* LineColumnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	statement = PASS1_statement(dsqlScratch, statement);
+	return this;
+}
+
+void LineColumnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->putDebugSrcInfo(line, column);
+	GEN_statement(dsqlScratch, statement);
+}
+
+
+//--------------------
+
+
 static RegisterNode<LoopNode> regLoopNode(blr_loop);
 
 DmlNode* LoopNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
