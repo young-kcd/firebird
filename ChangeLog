@@ -1,3 +1,53 @@
+ 2011-03-06 02:48  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/ddl.cpp
+   M src/dsql/ddl_proto.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Reference DML statements in DSQL with StmtNode instead of dsql_nod.
+
+ 2011-03-06 01:06  asfernandes 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/config/config.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/FirebirdPluginApi.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/alt.cpp
+Misc
+
+ 2011-03-05 17:33  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+More complex fix for CORE-3374: Server may crash or corrupt data if SELECT WITH LOCK is issued against records not in the latest format. It involves upgrading the record to the current format, like UPDATE does.
+
+ 2011-03-05 17:29  dimitr 
+   M src/dsql/pass1.cpp
+Cleanup.
+
+ 2011-03-05 17:28  dimitr 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/Nodes.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+Fixed the NULL handling for MIN/MAX mapped to an index.
+Adriano, please review and rework, if necessary.
+
+ 2011-03-05 17:25  dimitr 
+   M src/jrd/recsrc/FilteredStream.cpp
+Fixed incorrect WITH LOCK handling (refactoring error).
+
  2011-03-05 02:47  asfernandes 
    M src/dsql/Nodes.h
    M src/dsql/StmtNodes.cpp
