@@ -153,9 +153,9 @@ public:
 };
 #define FB_PLUGINS_FACTORY_VERSION (FB_INTERFACE_VERSION + 1)
 
-// Required to let plugins manager invoke module's cleanup routine before unloading it
-// For some OS/compiler this may be done in dtor of global variable in module itself
-// Others (Windows/VC) fail to create some very useful resources (threads) when module is unloading
+// Required to let plugins manager invoke module's cleanup routine before unloading it.
+// For some OS/compiler this may be done in dtor of global variable in module itself.
+// Others (Windows/VC) fail to create some very useful resources (threads) when module is unloading.
 class IModuleCleanup : public Interface
 {
 public:

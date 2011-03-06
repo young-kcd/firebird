@@ -53,8 +53,11 @@ bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 
 UserManagement::UserManagement(jrd_tra* tra)
-	: DataDump(*tra->tra_pool), buffer(0),
-	  threadDbb(NULL), commands(*tra->tra_pool), display(this), manager(NULL)
+	: DataDump(*tra->tra_pool),
+	  buffer(0),
+	  threadDbb(NULL), commands(*tra->tra_pool),
+	  display(this),
+	  manager(NULL)
 {
 	Attachment* att = tra->tra_attachment;
 	if (!att || !att->att_user)
@@ -87,7 +90,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 
 		int FB_CARG forceAdmin()
 		{
-			return (att->att_user->usr_flags & USR_trole &&
+			return ((att->att_user->usr_flags & USR_trole) &&
 					att->att_user->usr_sql_role_name == ADMIN_ROLE) ? 1 : 0;
 		}
 

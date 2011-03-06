@@ -67,7 +67,7 @@ class tsec : public ThreadData
 public:
 	explicit tsec(Firebird::UtilSvc* uf)
 		: ThreadData(ThreadData::tddSEC), utilSvc(uf),
-		tsec_user_data(0),
+		tsec_user_data(NULL),
 		tsec_exit_code(0), tsec_throw(false),
 		tsec_interactive(false), tsec_sw_version(false)
 	{

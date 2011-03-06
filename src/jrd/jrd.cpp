@@ -290,6 +290,7 @@ public:
 		{
 			return NULL;
 		}
+
 		++shutdownCounter;
 		return new Provider(factoryParameter);
 	}
@@ -3768,7 +3769,7 @@ void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason
 		}
 
 		// Do not put it into separate shutdown thread - during shutdown of TraceManager
-		// PluginManager wants ot lock a mutex, which is sometimes already locked in current thread
+		// PluginManager wants to lock a mutex, which is sometimes already locked in current thread
 		TraceManager::shutdown();
 	}
 	catch (const Exception& ex)
@@ -6330,12 +6331,14 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 
 	MutexLockGuard guard(mutex);
 
-	if (!securityNameBuffer->hasData()) {
-		const Firebird::RefPtr<Config> defConf(Config::getDefaultConfig());
+	if (!securityNameBuffer->hasData())
+	{
+		const RefPtr<Config> defConf(Config::getDefaultConfig());
 		securityNameBuffer->assign(defConf->getSecurityDatabase());
 		expandedSecurityNameBuffer->assign(securityNameBuffer);
 		ISC_expand_filename(expandedSecurityNameBuffer, false);
 	}
+
 	if (name == securityNameBuffer || name == expandedSecurityNameBuffer)
 		return VDN_SECURITY;
 

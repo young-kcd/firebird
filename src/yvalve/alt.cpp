@@ -841,9 +841,6 @@ void copyField(T1& f, T2 from, short flag)
 
 } // anonymous namespace
 
-// CVC: Who was the genius that named the input param "user_data" when the
-// function uses "struct user_data userInfo" to define a different variable type
-// only few lines below? Same for the other two isc_*_user functions.
 ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* input_user_data)
 {
 /**************************************

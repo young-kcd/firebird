@@ -428,7 +428,7 @@ namespace
 		RefPtr<IFirebirdConf> firebirdConf;
 	};
 
-	Plugin* ConfiguredPlugin::factory(IFirebirdConf *firebirdConf)
+	Plugin* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
 	{
 		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
 		Plugin* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
@@ -709,8 +709,10 @@ namespace
 				PluginInterface pi;
 				pi->releasePlugin(p);
 			}
+
 			next();
 		}
+
 		//currentPlugin->addRef();
 
 		return NULL;
@@ -778,7 +780,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const 
 {
 	MutexLockGuard g(plugins->mutex);
 
-	return new PluginSet(interfaceType, namesList, desiredVersion, 
+	return new PluginSet(interfaceType, namesList, desiredVersion,
 						 missingFunctionClass, firebirdConf);
 }
 

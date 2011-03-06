@@ -186,7 +186,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 	user_data->database.set(databaseName.c_str());
 
-	Auth::Management* manager = 0;
+	Auth::Management* manager = NULL;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
@@ -195,10 +195,12 @@ int gsec(Firebird::UtilSvc* uSvc)
 		Firebird::string network_protocol, remote_address;
 		Firebird::ClumpletWriter tmp(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		uSvc->getAddressPath(tmp);
+
 		if (tmp.find(isc_dpb_address_path))
 		{
 			Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged,
 												   tmp.getBytes(), tmp.getClumpLength());
+
 			while (!address_stack.isEof())
 			{
 				if (address_stack.getClumpTag() != isc_dpb_address)
@@ -206,8 +208,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 					address_stack.moveNext();
 					continue;
 				}
+
 				Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged,
 												 address_stack.getBytes(), address_stack.getClumpLength());
+
 				while (!address.isEof())
 				{
 					switch (address.getClumpTag())
@@ -221,8 +225,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 						default:
 							break;
 					}
+
 					address.moveNext();
 				}
+
 				break;
 			}
 		}
@@ -249,7 +255,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 			class GsecInfo : public Firebird::StackIface<Auth::LogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 			{
 			public:
-				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole, 
+				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
 						 const char* pProtocol, const char* pAddress)
 					: trustedUser(pTrustedUser), sqlRole(pRole), trustedRole(pTrustedRole),
 					  protocol(pProtocol), address(pAddress)

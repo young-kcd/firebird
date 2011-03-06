@@ -87,7 +87,8 @@ IPlugin* FB_CARG MasterImplementation::getPluginInterface()
 // upgradeInterface()
 //
 
-namespace {
+namespace
+{
 	typedef void function();
 	typedef function* FunctionPtr;
 
@@ -253,7 +254,10 @@ private:
 	Firebird::Mutex mutex;
 
 public:
-	explicit StringsBuffer(Firebird::MemoryPool& p) : processBuffer(p) { }
+	explicit StringsBuffer(Firebird::MemoryPool& p)
+		: processBuffer(p)
+	{
+	}
 
 	~StringsBuffer()
 	{

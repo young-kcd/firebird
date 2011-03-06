@@ -677,39 +677,46 @@ using namespace Firebird;
 class DummyMasterImpl : public IMaster
 {
 public:
-	virtual void FB_CARG addRef() 
+	virtual void FB_CARG addRef()
 	{
-	};
-	virtual int FB_CARG release() 
-	{ 
-		return 1; 
-	};
-	virtual int FB_CARG version() 
-	{ 
-		return IMaster::VERSION; 
-	};
+	}
 
-	virtual Status* FB_CARG getStatusInstance() 
-	{ 
+	virtual int FB_CARG release()
+	{
+		return 1;
+	}
+
+	virtual int FB_CARG version()
+	{
+		return IMaster::VERSION;
+	}
+
+	virtual Status* FB_CARG getStatusInstance()
+	{
 		fb_assert(false);
-		return NULL; 
-	};
-	virtual IPlugin* FB_CARG getPluginInterface()	{ 
+		return NULL;
+	}
+
+	virtual IPlugin* FB_CARG getPluginInterface()
+	{
 		fb_assert(false);
-		return NULL; 
-	};
-	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass)	
-	{ 
+		return NULL;
+	}
+
+	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion,
+		void* missingFunctionClass)
+	{
 		fb_assert(false);
-		return 0; 
-	};
+		return 0;
+	}
+
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr)
-	{ 
-		char* buf = (char*) malloc(len+1);
+	{
+		char* buf = (char*) malloc(len + 1);
 		memcpy(buf, s, len);
 		buf[len] = 0;
 		return buf;
-	};
+	}
 };
 
 
@@ -728,4 +735,5 @@ Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
 	static DummyMasterImpl dummyMaster;
 	return &dummyMaster;
 }
+
 } // extern "C"

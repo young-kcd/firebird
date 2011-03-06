@@ -852,7 +852,8 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 		if (!engines.get(name, engine))
 		{
-			GetPlugins<ExternalEngine> engineControl(PluginType::ExternalEngine, FB_EXTERNAL_ENGINE_VERSION, name.c_str());
+			GetPlugins<ExternalEngine> engineControl(PluginType::ExternalEngine,
+				FB_EXTERNAL_ENGINE_VERSION, name.c_str());
 
 			if (engineControl.hasData())
 			{

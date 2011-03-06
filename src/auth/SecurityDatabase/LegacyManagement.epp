@@ -322,7 +322,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 		// check for non-printable characters in user name
 		for (const TEXT* p = user->userName()->get(); *p; p++)
 		{
-			if (!isprint(*p)) 
+			if (!isprint(*p))
 			{
 				return GsecMsg75;  // Add special error message for this case ?
 			}
@@ -422,6 +422,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 			found = false;
 			FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 					WITH U.PLG$USER_NAME EQ user->userName()->get()
+			{
 				found = true;
 				MODIFY U USING
 					if (user->uid()->entered())
@@ -431,6 +432,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->uid()->specified())
 						U.PLG$UID.NULL = ISC_TRUE;
+
 					if (user->gid()->entered())
 					{
 						U.PLG$GID = user->gid()->get();
@@ -438,6 +440,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->gid()->specified())
 						U.PLG$GID.NULL = ISC_TRUE;
+
 					if (user->groupName()->entered())
 					{
 						STR_STORE(U.PLG$GROUP_NAME, user->groupName()->get());
@@ -445,6 +448,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->groupName()->specified())
 						U.PLG$GROUP_NAME.NULL = ISC_TRUE;
+
 					if (user->password()->entered())
 					{
 						ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), PASSWORD_SALT);
@@ -454,6 +458,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->password()->specified())
 						U.PLG$PASSWD.NULL = ISC_TRUE;
+
 					if (user->firstName()->entered())
 					{
 						STR_STORE(U.PLG$FIRST_NAME, user->firstName()->get());
@@ -461,6 +466,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->firstName()->specified())
 						U.PLG$FIRST_NAME.NULL = ISC_TRUE;
+
 					if (user->middleName()->entered())
 					{
 						STR_STORE(U.PLG$MIDDLE_NAME, user->middleName()->get());
@@ -468,6 +474,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					}
 					else if (user->middleName()->specified())
 						U.PLG$MIDDLE_NAME.NULL = ISC_TRUE;
+
 					if (user->lastName()->entered())
 					{
 						STR_STORE(U.PLG$LAST_NAME, user->lastName()->get());
@@ -479,12 +486,15 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 				ON_ERROR
 					ret = GsecMsg20;
 				END_ERROR;
+			}
 			END_FOR
 			ON_ERROR
 				ret = GsecMsg21;
 			END_ERROR;
+
 			if (!ret && !found)
 				ret = GsecMsg22;
+
 			if (ret == 0 && !grantRevokeAdmin(isc_status, database, transaction, user))
 			{
 				ret = GsecMsg21;
@@ -502,11 +512,13 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 			{
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 						WITH U.PLG$USER_NAME EQ user->userName()->get()
+				{
 					found = true;
 					ERASE U
 					ON_ERROR
 						ret = GsecMsg23;	// gsec - delete record error
 					END_ERROR;
+				}
 				END_FOR
 				ON_ERROR
 					ret = GsecMsg24;	// gsec - find/delete record error
@@ -550,11 +562,15 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					user->lastName()->setEntered(U.PLG$LAST_NAME.NULL ? 0 : 1);
 
 					user->admin()->set(0);
-					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-							WITH P.RDB$USER EQ U.PLG$USER_NAME
-							 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
-							 AND P.RDB$PRIVILEGE EQ 'M'
+
+					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
+						 P IN RDB$USER_PRIVILEGES
+						 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
+							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
+							  P.RDB$PRIVILEGE EQ 'M'
+					{
 						user->admin()->set(1);
+					}
 					END_FOR
 
 					callback->list(user);
@@ -587,11 +603,15 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					user->lastName()->setEntered(U.PLG$LAST_NAME.NULL ? 0 : 1);
 
 					user->admin()->set(0);
-					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2) P IN RDB$USER_PRIVILEGES
-							WITH P.RDB$USER EQ U.PLG$USER_NAME
-							 AND P.RDB$RELATION_NAME EQ 'RDB$ADMIN'
-							 AND P.RDB$PRIVILEGE EQ 'M'
+
+					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
+						 P IN RDB$USER_PRIVILEGES
+						 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
+							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
+							  P.RDB$PRIVILEGE EQ 'M'
+					{
 						user->admin()->set(1);
+					}
 					END_FOR
 
 					callback->list(user);

@@ -192,7 +192,7 @@ Config::Config(const ConfigFile& file)
 		if (entries[i].data_type == TYPE_STRING && values[i])
 		{
 			ConfigFile::String expand((const char*)values[i]);
-			if (file.macroParse(expand) && expand != (const char*)values[i])
+			if (file.macroParse(expand) && expand != (const char*) values[i])
 			{
 				ConfigFile::String& saved(tempStrings.add());
 				saved = expand;
@@ -365,7 +365,7 @@ int Config::getInt(unsigned int key) const
 const char* Config::getString(unsigned int key) const
 {
 	if (key >= MAX_CONFIG_KEY)
-		return 0;
+		return NULL;
 	return get<const char*>(static_cast<ConfigKey>(key));
 }
 
@@ -738,7 +738,7 @@ int FB_CARG FirebirdConf::release()
 	return 1;
 }
 
-const char *Config::getSecurityDatabase() const
+const char* Config::getSecurityDatabase() const
 {
 	return get<const char*>(KEY_SECURITY_DATABASE);
 }
