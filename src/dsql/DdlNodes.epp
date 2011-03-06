@@ -732,7 +732,7 @@ TypeClause::TypeClause(MemoryPool& pool, dsql_fld* aLegacyField, const MetaName&
 void TypeClause::resolve(DsqlCompilerScratch* dsqlScratch, bool modifying)
 {
 	DDL_resolve_intl_type2(dsqlScratch, legacyField,
-		(collate.isEmpty() ? NULL : MAKE_cstring(collate.c_str())), modifying);
+		(collate.isEmpty() ? NULL : collate), modifying);
 
 	setup(dsqlScratch);
 }
@@ -1079,12 +1079,14 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			names.add(parameter.name);
 		}
 
-		const dsql_nod* const* ptr = variables->dsqlStatements.begin();
-		for (const dsql_nod* const* const end = variables->dsqlStatements.end(); ptr != end; ++ptr)
+		const NestConst<StmtNode>* ptr = variables->statements.begin();
+		for (const NestConst<StmtNode>* const end = variables->statements.end(); ptr != end; ++ptr)
 		{
-			if ((*ptr)->nod_type == nod_def_field)
+			const DeclareVariableNode* varNode = (*ptr)->as<DeclareVariableNode>();
+
+			if (varNode)
 			{
-				const dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+				const dsql_fld* field = varNode->dsqlDef->legacyField;
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				if (names.exist(field->fld_name))
@@ -1614,7 +1616,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
 
-		dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
 		GEN_hidden_variables(dsqlScratch);
 
 		dsqlScratch->appendUChar(blr_stall);
@@ -1623,7 +1625,7 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar(0);
 
-		GEN_statement(dsqlScratch, stmtNode);
+		stmtNode->genBlr(dsqlScratch);
 
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 		dsqlScratch->appendUChar(blr_end);
@@ -1834,19 +1836,22 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			names.add(parameter.name);
 		}
 
-		const dsql_nod* const* ptr = variables->dsqlStatements.begin();
-		for (const dsql_nod* const* const end = variables->dsqlStatements.end(); ptr != end; ++ptr)
+		const NestConst<StmtNode>* ptr = variables->statements.begin();
+		for (const NestConst<StmtNode>* const end = variables->statements.end(); ptr != end; ++ptr)
 		{
-			if ((*ptr)->nod_type == nod_def_field)
+			const DeclareVariableNode* varNode = (*ptr)->as<DeclareVariableNode>();
+
+			if (varNode)
 			{
-				const dsql_fld* field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
+				const dsql_fld* field = varNode->dsqlDef->legacyField;
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				if (names.exist(field->fld_name))
 				{
 					status_exception::raise(
 						Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-						Arg::Gds(isc_dsql_var_conflict) << Arg::Str(field->fld_name));
+						Arg::Gds(isc_dsql_var_conflict) <<
+						Arg::Str(field->fld_name));
 				}
 			}
 		}
@@ -2400,7 +2405,7 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	dsqlScratch->loopLevel = 0;
 	dsqlScratch->cursorNumber = 0;
 
-	dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -2409,7 +2414,7 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	dsqlScratch->appendUChar(blr_label);
 	dsqlScratch->appendUChar(0);
 
-	GEN_statement(dsqlScratch, stmtNode);
+	stmtNode->genBlr(dsqlScratch);
 
 	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_DDL);
 	dsqlScratch->appendUChar(blr_end);
@@ -2887,7 +2892,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		dsqlScratch->appendUChar(0);
 		dsqlScratch->loopLevel = 0;
 		dsqlScratch->cursorNumber = 0;
-		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, body));
+		body->dsqlPass(dsqlScratch)->genBlr(dsqlScratch);
 		dsqlScratch->scopeLevel--;
 		dsqlScratch->appendUChar(blr_end);
 		dsqlScratch->appendUChar(blr_eoc);
@@ -5022,7 +5027,10 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		}
 
 		if (element->nod_arg[Dsql::e_dfl_collate])
-			DDL_resolve_intl_type(dsqlScratch, field, (dsql_str*) element->nod_arg[Dsql::e_dfl_collate]);
+		{
+			DDL_resolve_intl_type(dsqlScratch, field,
+				((dsql_str*) element->nod_arg[Dsql::e_dfl_collate])->str_data);
+		}
 
 		if (element->nod_arg[Dsql::e_dfl_identity])
 		{
@@ -5682,8 +5690,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
 
-	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-	actionNode->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(exceptionNode);
+	actionNode->statements.add(exceptionNode);
 
 	dsql_nod* actionNod = MAKE_node(Dsql::nod_class_stmtnode, 1);
 	actionNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(actionNode);
@@ -7725,8 +7732,7 @@ void CreateAlterViewNode::createCheckTriggers(thread_db* tdbb, DsqlCompilerScrat
 	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
 
-	actionNode->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-	actionNode->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(exceptionNode);
+	actionNode->statements.add(exceptionNode);
 
 	// Create the UPDATE trigger.
 
@@ -7843,10 +7849,10 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 	// Generate the action statements for the trigger.
 
-	dsql_nod** ptr = actions->dsqlStatements.begin();
+	NestConst<StmtNode>* ptr = actions->statements.begin();
 
-	for (const dsql_nod* const* const end = actions->dsqlStatements.end(); ptr != end; ++ptr)
-		GEN_statement(dsqlScratch, PASS1_statement(dsqlScratch, *ptr));
+	for (const NestConst<StmtNode>* const end = actions->statements.end(); ptr != end; ++ptr)
+		(*ptr)->dsqlPass(dsqlScratch)->genBlr(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_end);	// of begin
 	dsqlScratch->appendUChar(blr_eoc);

@@ -36,6 +36,7 @@ namespace Jrd
 
 class CompoundStmtNode;
 class DeclareCursorNode;
+class DeclareVariableNode;
 class TypeClause;
 class VariableNode;
 
@@ -156,8 +157,9 @@ public:
 
 	void putDtype(const dsql_fld* field, bool useSubType);
 	void putType(const TypeClause& type, bool useSubType);
-	void putLocalVariables(const CompoundStmtNode* parameters, USHORT locals);
-	void putLocalVariable(dsql_var* variable, dsql_nod* hostParam, const dsql_str* collationName);
+	void putLocalVariables(CompoundStmtNode* parameters, USHORT locals);
+	void putLocalVariable(dsql_var* variable, const DeclareVariableNode* hostParam,
+		const Firebird::MetaName& collationName);
 	dsql_var* makeVariable(dsql_fld*, const char*, const dsql_var::Type type, USHORT, USHORT, USHORT);
 	dsql_var* resolveVariable(const dsql_str* varName);
 	void genReturn(bool eosFlag = false);

@@ -1144,37 +1144,22 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 	if (!fields)
 		return;
 
-	const dsql_nod* const* ptr = fields->dsqlStatements.begin();
-	const dsql_nod* const* const end = fields->dsqlStatements.end();
-	const dsql_fld* field;
-	const char* name = NULL;
+	const NestConst<StmtNode>* ptr = fields->statements.begin();
+	const NestConst<StmtNode>* const end = fields->statements.end();
 
-	for (; ptr < end; ptr++)
+	for (; ptr != end; ++ptr)
 	{
-		switch ((*ptr)->nod_type)
-		{
-			case nod_def_field:
-				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
-				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name.c_str();
-				break;
+		const char* name = NULL;
 
-			case nod_class_stmtnode:
-			{
-				const DeclareCursorNode* cursorNode;
+		const DeclareVariableNode* varNode;
+		const DeclareCursorNode* cursorNode;
 
-				if ((cursorNode = StmtNode::as<DeclareCursorNode>(*ptr)))
-				{
-					name = cursorNode->dsqlName.c_str();
-					break;
-				}
+		if ((varNode = (*ptr)->as<DeclareVariableNode>()))
+			name = varNode->dsqlDef->name.c_str();
+		else if ((cursorNode = (*ptr)->as<DeclareCursorNode>()))
+			name = cursorNode->dsqlName.c_str();
 
-				// fall into
-			}
-
-			default:
-				fb_assert(false);
-		}
+		fb_assert(name);
 
 		size_t pos;
 		if (!names.find(name, pos))
@@ -1556,7 +1541,7 @@ static dsql_nod* pass1_collate( DsqlCompilerScratch* dsqlScratch, dsql_nod* sub1
 				  Arg::Gds(isc_collation_requires_text));
 	}
 
-	DDL_resolve_intl_type(dsqlScratch, field, collation);
+	DDL_resolve_intl_type(dsqlScratch, field, collation->str_data);
 	MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;
@@ -2375,6 +2360,9 @@ static dsql_nod* pass1_field(DsqlCompilerScratch* dsqlScratch, dsql_nod* input,
 							node = MAKE_field(context, field, indices);
 						else
 							node = list ? using_field : PASS1_node_psql(dsqlScratch, using_field, false);
+
+						node->nod_line = input->nod_line;
+						node->nod_column = input->nod_column;
 					}
 				}
 				else if (is_derived_table)
@@ -3244,8 +3232,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 			temp->dsqlAsgnFrom = *src;
 			temp->dsqlAsgnTo = *dst;
 
-			node->dsqlStatements.add(MAKE_node(nod_class_stmtnode, 1));
-			node->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
+			node->statements.add(temp);
 		}
 	}
 	else
@@ -3276,8 +3263,7 @@ static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_no
 			temp->dsqlAsgnFrom = *src;
 			temp->dsqlAsgnTo = p_node;
 
-			node->dsqlStatements.add(MAKE_node(nod_class_stmtnode, 1));
-			node->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
+			node->statements.add(temp);
 		}
 	}
 

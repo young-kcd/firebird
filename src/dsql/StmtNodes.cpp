@@ -69,13 +69,11 @@ static const dsql_msg* dsqlGenDmlHeader(DsqlCompilerScratch*, dsql_nod*);
 static dsql_ctx* dsqlGetContext(const dsql_nod* node);
 static void dsqlGetContexts(DsqlContextStack& contexts, const dsql_nod* node);
 static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch*, StmtNode* input, bool returnList);
-static void dsqlFieldAppearsOnce(const dsql_nod* const*, size_t, const dsql_nod* const*,
-	const bool, const char*);
-static void dsqlFieldDuplication(const TEXT*, const TEXT*, const dsql_nod*, const char*);
+static void dsqlFieldAppearsOnce(const Array<dsql_nod*>&, const char*);
 static dsql_ctx* dsqlPassCursorContext(DsqlCompilerScratch*, const dsql_nod*, const dsql_nod*);
 static dsql_nod* dsqlPassCursorReference(DsqlCompilerScratch*, const dsql_nod*, dsql_nod*);
 static dsql_nod* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, dsql_nod* expr);
-static dsql_nod* dsqlProcessReturning(DsqlCompilerScratch*, dsql_nod*);
+static StmtNode* dsqlProcessReturning(DsqlCompilerScratch*, dsql_nod*);
 static void dsqlSetParameterName(dsql_nod*, const dsql_nod*, const dsql_rel*);
 static void dsqlSetParametersName(CompoundStmtNode*, const dsql_nod*);
 
@@ -171,19 +169,19 @@ namespace
 		}
 
 		// Process the RETURNING clause.
-		dsql_nod* process(dsql_nod* node)
+		StmtNode* process(dsql_nod* node)
 		{
 			return dsqlProcessReturning(scratch, node);
 		}
 
 		// Clone a RETURNING node without create duplicate parameters.
-		static dsql_nod* clone(DsqlCompilerScratch* scratch, dsql_nod* unprocessed, dsql_nod* processed)
+		static dsql_nod* clone(DsqlCompilerScratch* scratch, dsql_nod* unprocessed, StmtNode* processed)
 		{
 			if (!processed)
 				return unprocessed;
 
 			// nod_returning was already processed
-			CompoundStmtNode* processedStmt = StmtNode::as<CompoundStmtNode>(processed);
+			CompoundStmtNode* processedStmt = processed->as<CompoundStmtNode>();
 			fb_assert(processed);
 
 			// And we create a RETURNING node where the targets are already processed.
@@ -191,7 +189,7 @@ namespace
 				FB_NEW(scratch->getPool()) CompoundStmtNode(scratch->getPool());
 
 			dsql_nod** srcPtr = unprocessed->nod_arg[Dsql::e_ret_source]->nod_arg;
-			dsql_nod** dstPtr = processedStmt->dsqlStatements.begin();
+			NestConst<StmtNode>* dstPtr = processedStmt->statements.begin();
 
 			for (const dsql_nod* const* const end = srcPtr + unprocessed->nod_arg[Dsql::e_ret_source]->nod_count;
 				 srcPtr != end;
@@ -199,10 +197,8 @@ namespace
 			{
 				AssignmentNode* temp = FB_NEW(scratch->getPool()) AssignmentNode(scratch->getPool());
 				temp->dsqlAsgnFrom = *srcPtr;
-				temp->dsqlAsgnTo = StmtNode::as<AssignmentNode>(*dstPtr)->dsqlAsgnTo;
-
-				newNode->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-				newNode->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
+				temp->dsqlAsgnTo = (*dstPtr)->as<AssignmentNode>()->dsqlAsgnTo;
+				newNode->statements.add(temp);
 			}
 
 			dsql_nod* newNod = MAKE_node(Dsql::nod_class_stmtnode, 1);
@@ -422,9 +418,7 @@ StmtNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (!handlers && !dsqlScratch->errorHandlers)
 	{
 		CompoundStmtNode* node = FB_NEW(getPool()) CompoundStmtNode(getPool());
-		node->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-		node->dsqlStatements.front()->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-			action->dsqlPass(dsqlScratch));
+		node->statements.add(action->dsqlPass(dsqlScratch));
 		return node;
 	}
 
@@ -456,10 +450,10 @@ void BlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	if (handlers)
 	{
-		const dsql_nod* const* end = handlers->dsqlStatements.end();
+		const NestConst<StmtNode>* const end = handlers->statements.end();
 
-		for (dsql_nod** ptr = handlers->dsqlStatements.begin(); ptr != end; ++ptr)
-			GEN_statement(dsqlScratch, *ptr);
+		for (NestConst<StmtNode>* ptr = handlers->statements.begin(); ptr != end; ++ptr)
+			(*ptr)->genBlr(dsqlScratch);
 	}
 
 	dsqlScratch->appendUChar(blr_end);
@@ -731,11 +725,11 @@ CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	CompoundStmtNode* node = FB_NEW(getPool()) CompoundStmtNode(getPool());
 
-	for (dsql_nod** i = dsqlStatements.begin(); i != dsqlStatements.end(); ++i)
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 	{
-		dsql_nod* ptr = *i;
-		ptr = PASS1_statement(dsqlScratch, ptr);
-		node->dsqlStatements.add(ptr);
+		StmtNode* ptr = *i;
+		ptr = ptr->dsqlPass(dsqlScratch);
+		node->statements.add(ptr);
 	}
 
 	return node;
@@ -750,8 +744,8 @@ void CompoundStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_begin);
 
-	for (dsql_nod** i = dsqlStatements.begin(); i != dsqlStatements.end(); ++i)
-		GEN_statement(dsqlScratch, *i);
+	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
+		(*i)->genBlr(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_end);
 }
@@ -1372,7 +1366,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	if (cursor && dsqlScratch->isPsql())
 	{
 		node->dsqlContext = dsqlPassCursorContext(dsqlScratch, cursor, relation);
-		node->dsqlStatement = dsqlProcessReturning(dsqlScratch, dsqlReturning);
+		node->statement = dsqlProcessReturning(dsqlScratch, dsqlReturning);
 		return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 	}
 
@@ -1416,7 +1410,7 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->dsqlRse = rseNod;
 	node->dsqlRelation = ExprNode::as<RseNode>(rseNod)->dsqlStreams->nod_arg[0];
 
-	node->dsqlStatement = dsqlProcessReturning(dsqlScratch, dsqlReturning);
+	node->statement = dsqlProcessReturning(dsqlScratch, dsqlReturning);
 
 	StmtNode* ret = dsqlNullifyReturning(dsqlScratch, node, true);
 
@@ -1439,10 +1433,10 @@ void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	{
 		context = dsqlContext;
 
-		if (dsqlStatement)
+		if (statement)
 		{
 			dsqlScratch->appendUChar(blr_begin);
-			GEN_statement(dsqlScratch, dsqlStatement);
+			statement->genBlr(dsqlScratch);
 			dsqlScratch->appendUChar(blr_erase);
 			GEN_stuff_context(dsqlScratch, context);
 			dsqlScratch->appendUChar(blr_end);
@@ -1458,10 +1452,10 @@ void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsql_nod* temp = dsqlRelation;
 		context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 
-		if (dsqlStatement)
+		if (statement)
 		{
 			dsqlScratch->appendUChar(blr_begin);
-			GEN_statement(dsqlScratch, dsqlStatement);
+			statement->genBlr(dsqlScratch);
 			dsqlScratch->appendUChar(blr_erase);
 			GEN_stuff_context(dsqlScratch, context);
 			dsqlScratch->appendUChar(blr_end);
@@ -1819,7 +1813,7 @@ ErrorHandlerNode* ErrorHandlerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ErrorHandlerNode* node = FB_NEW(getPool()) ErrorHandlerNode(getPool());
 	node->conditions = conditions;
-	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
+	node->action = action->dsqlPass(dsqlScratch);
 	return node;
 }
 
@@ -1862,7 +1856,7 @@ void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	GEN_statement(dsqlScratch, dsqlAction);
+	action->genBlr(dsqlScratch);
 }
 
 ErrorHandlerNode* ErrorHandlerNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -2445,11 +2439,11 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	node->dsqlOutputs = PASS1_node(dsqlScratch, dsqlOutputs);
 
-	if (dsqlInnerStmt)
+	if (innerStmt)
 	{
 		++dsqlScratch->loopLevel;
 		node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
-		node->dsqlInnerStmt = PASS1_statement(dsqlScratch, dsqlInnerStmt);
+		node->innerStmt = innerStmt->dsqlPass(dsqlScratch);
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
 	}
@@ -2473,7 +2467,7 @@ void ExecStatementNode::print(string& text, Array<dsql_nod*>& nodes) const
 
 void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	if (dsqlInnerStmt)
+	if (innerStmt)
 	{
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
@@ -2490,10 +2484,10 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 			GEN_expr(dsqlScratch, dsqlSql);
 
-			if (dsqlInnerStmt)
+			if (innerStmt)
 			{
 				dsqlScratch->appendUChar(0); // Non-singleton.
-				GEN_statement(dsqlScratch, dsqlInnerStmt);
+				innerStmt->genBlr(dsqlScratch);
 			}
 			else
 				dsqlScratch->appendUChar(1); // Singleton.
@@ -2529,10 +2523,10 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		GEN_expr(dsqlScratch, dsqlSql);
 
 		// Proc block body.
-		if (dsqlInnerStmt)
+		if (innerStmt)
 		{
 			dsqlScratch->appendUChar(blr_exec_stmt_proc_block);
-			GEN_statement(dsqlScratch, dsqlInnerStmt);
+			innerStmt->genBlr(dsqlScratch);
 		}
 
 		// External data source, user, password and role.
@@ -2748,8 +2742,9 @@ IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	IfNode* node = FB_NEW(getPool()) IfNode(getPool());
 	node->dsqlCondition = PASS1_node(dsqlScratch, dsqlCondition);
-	node->dsqlTrueAction = PASS1_statement(dsqlScratch, dsqlTrueAction);
-	node->dsqlFalseAction = PASS1_statement(dsqlScratch, dsqlFalseAction);
+	node->trueAction = trueAction->dsqlPass(dsqlScratch);
+	if (falseAction)
+		node->falseAction = falseAction->dsqlPass(dsqlScratch);
 	return node;
 }
 
@@ -2757,18 +2752,16 @@ void IfNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "IfNode";
 	nodes.add(dsqlCondition);
-	nodes.add(dsqlTrueAction);
-	if (dsqlFalseAction)
-		nodes.add(dsqlFalseAction);
 }
 
 void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, dsqlCondition);
-	GEN_statement(dsqlScratch, dsqlTrueAction);
-	if (dsqlFalseAction)
-		GEN_statement(dsqlScratch, dsqlFalseAction);
+	trueAction->genBlr(dsqlScratch);
+
+	if (falseAction)
+		falseAction->genBlr(dsqlScratch);
 	else
 		dsqlScratch->appendUChar(blr_end);
 }
@@ -2836,7 +2829,7 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
 
 	InAutonomousTransactionNode* node = FB_NEW(getPool()) InAutonomousTransactionNode(getPool());
-	node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
+	node->action = action->dsqlPass(dsqlScratch);
 
 	if (!autoTrans)
 		dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_IN_AUTO_TRANS_BLOCK;
@@ -2847,14 +2840,13 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 void InAutonomousTransactionNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text = "InAutonomousTransactionNode";
-	nodes.add(dsqlAction);
 }
 
 void InAutonomousTransactionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_auto_trans);
 	dsqlScratch->appendUChar(0);	// to extend syntax in the future
-	GEN_statement(dsqlScratch, dsqlAction);
+	action->genBlr(dsqlScratch);
 }
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -3216,8 +3208,6 @@ void ExecBlockNode::print(string& text, Array<dsql_nod*>& nodes) const
 		localDeclList->print(s, nodes);
 		text += s + "\n";
 	}
-
-	nodes.add(body);
 }
 
 void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3327,7 +3317,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->loopLevel = 0;
 
-	dsql_nod* stmtNode = PASS1_statement(dsqlScratch, body);
+	StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
 	GEN_hidden_variables(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_stall);
@@ -3336,7 +3326,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_label);
 	dsqlScratch->appendUChar(0);
 
-	GEN_statement(dsqlScratch, stmtNode);
+	stmtNode->genBlr(dsqlScratch);
 
 	if (returns.hasData())
 		statement->setType(DsqlCompiledStatement::TYPE_SELECT_BLOCK);
@@ -3716,7 +3706,7 @@ DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
 	return node;
 }
 
-StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	ForNode* node = FB_NEW(getPool()) ForNode(getPool());
 
@@ -3746,14 +3736,14 @@ StmtNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	if (dsqlAction)
+	if (statement)
 	{
 		// CVC: Let's add the ability to BREAK the for_select same as the while,
 		// but only if the command is FOR SELECT, otherwise we have singular SELECT
-		dsqlScratch->loopLevel++;
+		++dsqlScratch->loopLevel;
 		node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
-		node->dsqlAction = PASS1_statement(dsqlScratch, dsqlAction);
-		dsqlScratch->loopLevel--;
+		node->statement = statement->dsqlPass(dsqlScratch);
+		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
 	}
 
@@ -3772,7 +3762,6 @@ void ForNode::print(string& text, Array<dsql_nod*>& nodes) const
 	nodes.add(dsqlSelect);
 	nodes.add(dsqlInto);
 	nodes.add(dsqlCursor);
-	nodes.add(dsqlAction);
 	nodes.add(dsqlLabel);
 }
 
@@ -3780,7 +3769,7 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	// CVC: Only put a label if this is not singular; otherwise,
 	// what loop is the user trying to abandon?
-	if (dsqlAction)
+	if (statement)
 	{
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
@@ -3790,7 +3779,7 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->appendUChar(blr_for);
 
-	if (!dsqlAction || dsqlForceSingular)
+	if (!statement || dsqlForceSingular)
 		dsqlScratch->appendUChar(blr_singular);
 
 	GEN_rse(dsqlScratch, dsqlSelect);
@@ -3819,8 +3808,8 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		}
 	}
 
-	if (dsqlAction)
-		GEN_statement(dsqlScratch, dsqlAction);
+	if (statement)
+		statement->genBlr(dsqlScratch);
 
 	dsqlScratch->appendUChar(blr_end);
 }
@@ -4047,19 +4036,18 @@ const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 void LineColumnNode::print(string& text, Array<dsql_nod*>& nodes) const
 {
 	text.printf("LineColumnNode: line %d, col %d", line, column);
-	nodes.add(statement);
 }
 
 LineColumnNode* LineColumnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	statement = PASS1_statement(dsqlScratch, statement);
+	statement = statement->dsqlPass(dsqlScratch);
 	return this;
 }
 
 void LineColumnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->putDebugSrcInfo(line, column);
-	GEN_statement(dsqlScratch, statement);
+	statement->genBlr(dsqlScratch);
 }
 
 
@@ -4085,7 +4073,7 @@ LoopNode* LoopNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// to preserve nesting <==> increasing level number.
 	++dsqlScratch->loopLevel;
 	node->dsqlLabel = PASS1_label(dsqlScratch, false, dsqlLabel);
-	node->dsqlStatement = PASS1_statement(dsqlScratch, dsqlStatement);
+	node->statement = statement->dsqlPass(dsqlScratch);
 	--dsqlScratch->loopLevel;
 	dsqlScratch->labels.pop();
 
@@ -4105,7 +4093,7 @@ void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, dsqlExpr);
-	GEN_statement(dsqlScratch, dsqlStatement);
+	statement->genBlr(dsqlScratch);
 	dsqlScratch->appendUChar(blr_leave);
 	dsqlScratch->appendUChar((UCHAR)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
 	dsqlScratch->appendUChar(blr_end);
@@ -4161,7 +4149,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	class MergeSendNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE_SEND>
 	{
 	public:
-		MergeSendNode(MemoryPool& pool, dsql_nod* aStmt)
+		MergeSendNode(MemoryPool& pool, StmtNode* aStmt)
 			: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_MERGE_SEND>(pool),
 			  stmt(aStmt)
 		{
@@ -4171,7 +4159,6 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		virtual void print(string& text, Array<dsql_nod*>& nodes) const
 		{
 			text = "MergeSendNode";
-			nodes.add(stmt);
 		}
 
 		// Do not make dsqlPass to process 'stmt'. It's already processed.
@@ -4186,11 +4173,11 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				dsqlScratch->appendUChar(message->msg_number);
 			}
 
-			GEN_statement(dsqlScratch, stmt);
+			stmt->genBlr(dsqlScratch);
 		}
 
 	private:
-		dsql_nod* stmt;
+		StmtNode* stmt;
 	};
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -4275,14 +4262,9 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// build a FOR SELECT node
 	ForNode* forNode = FB_NEW(pool) ForNode(pool);
 	forNode->dsqlSelect = select;
-	forNode->dsqlAction = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	forNode->dsqlAction->nod_arg[0] = reinterpret_cast<dsql_nod*>(
-		FB_NEW(pool) CompoundStmtNode(pool));
+	forNode->statement = FB_NEW(pool) CompoundStmtNode(pool);
 
-	dsql_nod* for_select = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	for_select->nod_arg[0] = (dsql_nod*) forNode;
-	for_select = PASS1_statement(dsqlScratch, for_select);
-	forNode = (ForNode*) for_select->nod_arg[0];
+	forNode = forNode->dsqlPass(dsqlScratch);
 
 	if (dsqlReturning)
 		forNode->dsqlForceSingular = true;
@@ -4296,8 +4278,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	DsqlContextStack usingCtxs;
 	dsqlGetContexts(usingCtxs, source);
 
-	dsql_nod* update = NULL;
-	dsql_nod* matchedRet = NULL;
+	StmtNode* update = NULL;
+	StmtNode* matchedRet = NULL;
 	StmtNode* nullRet = NULL;
 
 	if (dsqlWhenMatchedPresent && dsqlWhenMatchedAssignments)
@@ -4307,9 +4289,9 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		Array<dsql_nod*> org_values, new_values;
 
 		// Separate the new and org values to process in correct contexts.
-		for (size_t i = 0; i < stmts->dsqlStatements.getCount(); ++i)
+		for (size_t i = 0; i < stmts->statements.getCount(); ++i)
 		{
-			const AssignmentNode* const assign = StmtNode::as<AssignmentNode>(stmts->dsqlStatements[i]);
+			const AssignmentNode* const assign = stmts->statements[i]->as<AssignmentNode>();
 			fb_assert(assign);
 			org_values.add(assign->dsqlAsgnFrom);
 			new_values.add(assign->dsqlAsgnTo);
@@ -4360,7 +4342,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			mod_context->ctx_scope_level = old_context->ctx_scope_level;
 
-			matchedRet = modify->dsqlStatement2 = ReturningProcessor(
+			matchedRet = modify->statement2 = ReturningProcessor(
 				dsqlScratch, old_context, mod_context).process(dsqlReturning);
 
 			nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
@@ -4372,10 +4354,13 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 
 		// Recreate the list of assignments.
-		modify->dsqlStatement = FB_NEW(pool) CompoundStmtNode(pool);
-		modify->dsqlStatement->dsqlStatements.resize(stmts->dsqlStatements.getCount());
 
-		for (int i = 0; i < modify->dsqlStatement->dsqlStatements.getCount(); ++i)
+		CompoundStmtNode* assignStatements = FB_NEW(pool) CompoundStmtNode(pool);
+		modify->statement = assignStatements;
+
+		assignStatements->statements.resize(stmts->statements.getCount());
+
+		for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
 		{
 			if (!PASS1_set_parameter_type(dsqlScratch, org_values[i], new_values[i], false))
 				PASS1_set_parameter_type(dsqlScratch, new_values[i], org_values[i], false);
@@ -4383,17 +4368,13 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 			assign->dsqlAsgnFrom = org_values[i];
 			assign->dsqlAsgnTo = new_values[i];
-			modify->dsqlStatement->dsqlStatements[i] = MAKE_node(Dsql::nod_class_stmtnode, 1);
-			modify->dsqlStatement->dsqlStatements[i]->nod_arg[0] = reinterpret_cast<dsql_nod*>(assign);
+			assignStatements->statements[i] = assign;
 		}
 
 		// We do not allow cases like UPDATE SET f1 = v1, f2 = v2, f1 = v3...
-		dsqlFieldAppearsOnce(modify->dsqlStatement->dsqlStatements.begin(),
-			modify->dsqlStatement->dsqlStatements.getCount(),
-			dsqlWhenMatchedAssignments->dsqlStatements.begin(), false, "MERGE");
+		dsqlFieldAppearsOnce(new_values, "MERGE");
 
-		update = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		update->nod_arg[0] = reinterpret_cast<dsql_nod*>(modify);
+		update = modify;
 	}
 	else if (dsqlWhenMatchedPresent && !dsqlWhenMatchedAssignments)
 	{
@@ -4411,7 +4392,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			dsqlScratch->context->push(context);	// process old context values
 
-			matchedRet = erase->dsqlStatement = ReturningProcessor(
+			matchedRet = erase->statement = ReturningProcessor(
 				dsqlScratch, context, NULL).process(dsqlReturning);
 
 			nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
@@ -4422,11 +4403,10 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			--dsqlScratch->scopeLevel;
 		}
 
-		update = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		update->nod_arg[0] = reinterpret_cast<dsql_nod*>(erase);
+		update = erase;
 	}
 
-	dsql_nod* insert = NULL;
+	StmtNode* insert = NULL;
 
 	if (dsqlWhenNotMatchedPresent)
 	{
@@ -4460,7 +4440,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			dsql_ctx* context = dsqlGetContext(store->dsqlRelation);
 			context->ctx_scope_level = old_context->ctx_scope_level;
 
-			store->dsqlStatement2 = ReturningProcessor(
+			store->statement2 = ReturningProcessor(
 				dsqlScratch, old_context, context).process(insRet);
 
 			if (!matchedRet)
@@ -4473,8 +4453,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->context->pop();
 		--dsqlScratch->scopeLevel;
 
-		insert = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		insert->nod_arg[0] = reinterpret_cast<dsql_nod*>(store);
+		insert = store;
 	}
 
 	MissingBoolNode* missingNode = FB_NEW(pool) MissingBoolNode(
@@ -4492,8 +4471,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (insert)
 	{
-		action->dsqlTrueAction = insert;	// then INSERT
-		action->dsqlFalseAction = update;	// else UPDATE/DELETE
+		action->trueAction = insert;	// then INSERT
+		action->falseAction = update;	// else UPDATE/DELETE
 	}
 	else
 	{
@@ -4504,7 +4483,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		action->dsqlCondition = MAKE_node(Dsql::nod_class_exprnode, 1);
 		action->dsqlCondition->nod_arg[0] = reinterpret_cast<dsql_nod*>(notNode);
 
-		action->dsqlTrueAction = update;	// then UPDATE/DELETE
+		action->trueAction = update;	// then UPDATE/DELETE
 	}
 
 	if (!dsqlScratch->isPsql())
@@ -4519,23 +4498,21 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	// Insert the IF inside the FOR SELECT.
-	forNode->dsqlAction = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	forNode->dsqlAction->nod_arg[0] = reinterpret_cast<dsql_nod*>(action);
+	forNode->statement = action;
+
+	StmtNode* mergeStmt = forNode;
 
 	// Setup the main node.
 
 	if (nullRet)
 	{
 		CompoundStmtNode* temp = FB_NEW(pool) CompoundStmtNode(pool);
-		temp->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-		temp->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(nullRet);
-		temp->dsqlStatements.add(for_select);
-
-		for_select = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		for_select->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
+		temp->statements.add(nullRet);
+		temp->statements.add(forNode);
+		mergeStmt = temp;
 	}
 
-	StmtNode* sendNode = (FB_NEW(pool) MergeSendNode(pool, for_select))->dsqlPass(dsqlScratch);
+	StmtNode* sendNode = (FB_NEW(pool) MergeSendNode(pool, mergeStmt))->dsqlPass(dsqlScratch);
 
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, sendNode);
 }
@@ -4719,11 +4696,12 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	Array<dsql_nod*> org_values, new_values;
 
-	CompoundStmtNode* assignments = dsqlStatement;
+	CompoundStmtNode* assignments = statement->as<CompoundStmtNode>();
+	fb_assert(assignments);
 
-	for (size_t i = 0; i < assignments->dsqlStatements.getCount(); ++i)
+	for (size_t i = 0; i < assignments->statements.getCount(); ++i)
 	{
-		const AssignmentNode* const assign = StmtNode::as<AssignmentNode>(assignments->dsqlStatements[i]);
+		const AssignmentNode* const assign = assignments->statements[i]->as<AssignmentNode>();
 		fb_assert(assign);
 		org_values.add(assign->dsqlAsgnFrom);
 		new_values.add(assign->dsqlAsgnTo);
@@ -4766,28 +4744,27 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		for (ptr = new_values.begin(); ptr != new_values.end(); ++ptr)
 			*ptr = PASS1_node_psql(dsqlScratch, *ptr, false);
 
-		node->dsqlStatement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning);
+		node->statement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning);
 
 		dsqlScratch->context->pop();
 
 		// Recreate list of assignments.
 
-		node->dsqlStatement = FB_NEW(pool) CompoundStmtNode(pool);
-		node->dsqlStatement->dsqlStatements.resize(assignments->dsqlStatements.getCount());
+		CompoundStmtNode* assignStatements = FB_NEW(pool) CompoundStmtNode(pool);
+		node->statement = assignStatements;
 
-		for (int i = 0; i < node->dsqlStatement->dsqlStatements.getCount(); ++i)
+		assignStatements->statements.resize(assignments->statements.getCount());
+
+		for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
 		{
 			AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 			assign->dsqlAsgnFrom = org_values[i];
 			assign->dsqlAsgnTo = new_values[i];
-			node->dsqlStatement->dsqlStatements[i] = MAKE_node(Dsql::nod_class_stmtnode, 1);
-			node->dsqlStatement->dsqlStatements[i]->nod_arg[0] = reinterpret_cast<dsql_nod*>(assign);
+			assignStatements->statements[i] = assign;
 		}
 
 		// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-		dsqlFieldAppearsOnce(node->dsqlStatement->dsqlStatements.begin(),
-			node->dsqlStatement->dsqlStatements.getCount(),
-			dsqlStatement->dsqlStatements.begin(), false, "UPDATE");
+		dsqlFieldAppearsOnce(new_values, "UPDATE");
 
 		return node;
 	}
@@ -4850,7 +4827,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 		if (dsqlReturning)
 		{
-			node->dsqlStatement2 = ReturningProcessor(
+			node->statement2 = ReturningProcessor(
 				dsqlScratch, old_context, mod_context).process(dsqlReturning);
 		}
 	}
@@ -4868,10 +4845,12 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	// Recreate list of assignments.
 
-	node->dsqlStatement = FB_NEW(pool) CompoundStmtNode(pool);
-	node->dsqlStatement->dsqlStatements.resize(assignments->dsqlStatements.getCount());
+	CompoundStmtNode* assignStatements = FB_NEW(pool) CompoundStmtNode(pool);
+	node->statement = assignStatements;
 
-	for (size_t j = 0; j < node->dsqlStatement->dsqlStatements.getCount(); ++j)
+	assignStatements->statements.resize(assignments->statements.getCount());
+
+	for (size_t j = 0; j < assignStatements->statements.getCount(); ++j)
 	{
 		dsql_nod* const sub1 = org_values[j];
 		dsql_nod* const sub2 = new_values[j];
@@ -4882,16 +4861,13 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 		AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 		assign->dsqlAsgnFrom = sub1;
 		assign->dsqlAsgnTo = sub2;
-		node->dsqlStatement->dsqlStatements[j] = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		node->dsqlStatement->dsqlStatements[j]->nod_arg[0] = reinterpret_cast<dsql_nod*>(assign);
+		assignStatements->statements[j] = assign;
 	}
 
 	// We do not allow cases like UPDATE T SET f1 = v1, f2 = v2, f1 = v3...
-	dsqlFieldAppearsOnce(node->dsqlStatement->dsqlStatements.begin(),
-		node->dsqlStatement->dsqlStatements.getCount(),
-		dsqlStatement->dsqlStatements.begin(), false, "UPDATE");
+	dsqlFieldAppearsOnce(new_values, "UPDATE");
 
-	dsqlSetParametersName(node->dsqlStatement, node->dsqlRelation);
+	dsqlSetParametersName(assignStatements, node->dsqlRelation);
 
 	StmtNode* ret = node;
 	if (!updateOrInsert)
@@ -4914,7 +4890,7 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	const dsql_msg* message = dsqlGenDmlHeader(dsqlScratch, dsqlRse);
 
-	dsqlScratch->appendUChar(dsqlStatement2 ? blr_modify2 : blr_modify);
+	dsqlScratch->appendUChar(statement2 ? blr_modify2 : blr_modify);
 
 	const dsql_ctx* context;
 	dsql_nod* temp;
@@ -4931,10 +4907,10 @@ void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	temp = dsqlRelation;
 	context = ExprNode::as<RelationSourceNode>(temp)->dsqlContext;
 	GEN_stuff_context(dsqlScratch, context);
-	dsqlStatement->genBlr(dsqlScratch);
+	statement->genBlr(dsqlScratch);
 
-	if (dsqlStatement2)
-		GEN_statement(dsqlScratch, dsqlStatement2);
+	if (statement2)
+		statement2->genBlr(dsqlScratch);
 
 	if (message)
 		dsqlScratch->appendUChar(blr_end);
@@ -5562,9 +5538,17 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 	{
 		const dsql_nod* old_fields = fields; // for error reporting.
 		fields = PASS1_node_psql(dsqlScratch, fields, false);
-		// We do not allow cases like INSERT INTO T(f1, f2, f1)...
-		dsqlFieldAppearsOnce(fields->nod_arg, fields->nod_count,
-			old_fields->nod_arg, true, "INSERT");
+
+		// We do not allow cases like INSERT INTO T (f1, f2, f1)...
+		{	// scope
+			Array<dsql_nod*> newValues;
+
+			// Separate the new and org values to process in correct contexts.
+			for (USHORT i = 0; i < fields->nod_count; ++i)
+				newValues.add(fields->nod_arg[i]);
+
+			dsqlFieldAppearsOnce(newValues, "INSERT");
+		}	// scope
 
 		// begin IBO hack
 		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to
@@ -5612,7 +5596,8 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 
 	// Match field fields and values
 
-	node->dsqlStatement = FB_NEW(getPool()) CompoundStmtNode(getPool());
+	CompoundStmtNode* assignStatements = FB_NEW(getPool()) CompoundStmtNode(getPool());
+	node->statement = assignStatements;
 
 	if (values)
 	{
@@ -5633,8 +5618,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 			AssignmentNode* temp = FB_NEW(getPool()) AssignmentNode(getPool());
 			temp->dsqlAsgnFrom = *ptr2;
 			temp->dsqlAsgnTo = *ptr;
-			node->dsqlStatement->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-			node->dsqlStatement->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(temp);
+			assignStatements->statements.add(temp);
 
 			PASS1_set_parameter_type(dsqlScratch, *ptr2, *ptr, false);
 		}
@@ -5659,7 +5643,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		dsqlScratch->context->push(new_context);
 	}
 
-	node->dsqlStatement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning);
+	node->statement2 = dsqlProcessReturning(dsqlScratch, dsqlReturning);
 
 	if (updateOrInsert)
 	{
@@ -5668,7 +5652,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		dsqlScratch->context->pop();
 	}
 
-	dsqlSetParametersName(node->dsqlStatement, node->dsqlRelation);
+	dsqlSetParametersName(assignStatements, node->dsqlRelation);
 
 	StmtNode* ret = node;
 	if (!updateOrInsert)
@@ -5693,12 +5677,12 @@ void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	const dsql_msg* message = dsqlGenDmlHeader(dsqlScratch, dsqlRse);
 
-	dsqlScratch->appendUChar(dsqlStatement2 ? blr_store2 : blr_store);
+	dsqlScratch->appendUChar(statement2 ? blr_store2 : blr_store);
 	GEN_expr(dsqlScratch, dsqlRelation);
-	dsqlStatement->genBlr(dsqlScratch);
+	statement->genBlr(dsqlScratch);
 
-	if (dsqlStatement2)
-		GEN_statement(dsqlScratch, dsqlStatement2);
+	if (statement2)
+		statement2->genBlr(dsqlScratch);
 
 	if (message)
 		dsqlScratch->appendUChar(blr_end);
@@ -6804,8 +6788,15 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		--dsqlScratch->scopeLevel;
 		dsqlScratch->context->pop();
 
-		dsqlFieldAppearsOnce(matching_fields->nod_arg, matching_fields->nod_count,
-			matching->nod_arg, true, "UPDATE OR INSERT");
+		{	// scope
+			Array<dsql_nod*> newValues;
+
+			// Separate the new and org values to process in correct contexts.
+			for (USHORT i = 0; i < matching_fields->nod_count; ++i)
+				newValues.add(matching_fields->nod_arg[i]);
+
+			dsqlFieldAppearsOnce(newValues, "UPDATE OR INSERT");
+		}	// scope
 	}
 	else
 	{
@@ -6821,11 +6812,14 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	dsql_nod* match = NULL;
 	USHORT match_count = 0;
 
-	DsqlNodStack varStack;
+	CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
 
 	CompoundStmtNode* assignments = FB_NEW(pool) CompoundStmtNode(pool);
 	dsql_nod** field_ptr = fields->nod_arg;
 	dsql_nod** value_ptr = values->nod_arg;
+
+	Array<NestConst<StmtNode> >& insertStatements =
+		insert->statement->as<CompoundStmtNode>()->statements;
 
 	for (const dsql_nod* const* const field_end = field_ptr + fields->nod_count;
 		 field_ptr < field_end; field_ptr++, value_ptr++)
@@ -6836,11 +6830,9 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 		assign->dsqlAsgnFrom = *value_ptr;
 		assign->dsqlAsgnTo = *field_ptr;
-		assignments->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-		assignments->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(assign);
+		assignments->statements.add(assign);
 
-		dsql_nod* temp = StmtNode::as<AssignmentNode>(
-			insert->dsqlStatement->dsqlStatements[field_ptr - fields->nod_arg])->dsqlAsgnTo;
+		dsql_nod* temp = insertStatements[field_ptr - fields->nod_arg]->as<AssignmentNode>()->dsqlAsgnTo;
 		PASS1_set_parameter_type(dsqlScratch, *value_ptr, temp, false);
 
 		fb_assert((*field_ptr)->nod_type == Dsql::nod_field_name);
@@ -6877,8 +6869,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 					++match_count;
 
 					const size_t fieldPos = field_ptr - fields->nod_arg;
-					dsql_nod*& expr = StmtNode::as<AssignmentNode>(
-						insert->dsqlStatement->dsqlStatements[fieldPos])->dsqlAsgnFrom;
+					dsql_nod*& expr = insertStatements[fieldPos]->as<AssignmentNode>()->dsqlAsgnFrom;
 					dsql_nod* var = dsqlPassHiddenVariable(dsqlScratch, expr);
 
 					if (var)
@@ -6887,10 +6878,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						varAssign->dsqlAsgnFrom = expr;
 						varAssign->dsqlAsgnTo = var;
 
-						dsql_nod* temp2 = MAKE_node(Dsql::nod_class_stmtnode, 1);
-						temp2->nod_arg[0] = reinterpret_cast<dsql_nod*>(varAssign);
-
-						varStack.push(temp2);
+						list->statements.add(varAssign);
 
 						assign->dsqlAsgnFrom = expr = var;
 					}
@@ -6921,14 +6909,14 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// build the UPDATE node
 	ModifyNode* update = FB_NEW(pool) ModifyNode(pool);
 	update->dsqlRelation = dsqlRelation;
-	update->dsqlStatement = assignments;
+	update->statement = assignments;
 	update->dsqlBoolean = match;
 
 	if (dsqlReturning)
 	{
 		update->dsqlRseFlags = NOD_SELECT_EXPR_SINGLETON;
-		update->dsqlReturning = ReturningProcessor::clone(dsqlScratch,
-			dsqlReturning, insert->dsqlStatement2);
+		update->dsqlReturning = ReturningProcessor::clone(
+			dsqlScratch, dsqlReturning, insert->statement2);
 	}
 
 	update = update->internalDsqlPass(dsqlScratch, true)->as<ModifyNode>();
@@ -6953,19 +6941,12 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// If (ROW_COUNT = 0) then INSERT.
 	IfNode* ifNode = FB_NEW(pool) IfNode(pool);
 	ifNode->dsqlCondition = eqlNod;
-	ifNode->dsqlTrueAction = MAKE_node(Dsql::nod_class_stmtnode, 1);
-	ifNode->dsqlTrueAction->nod_arg[0] = reinterpret_cast<dsql_nod*>(insert);
+	ifNode->trueAction = insert;
 
 	// Build the temporary vars / UPDATE / IF nodes.
-	CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
 
-	while (varStack.hasData())
-		list->dsqlStatements.add(varStack.pop());
-
-	list->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-	list->dsqlStatements.back()->nod_arg[0] = (dsql_nod*) update;
-	list->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-	list->dsqlStatements.back()->nod_arg[0] = (dsql_nod*) ifNode;
+	list->statements.add(update);
+	list->statements.add(ifNode);
 
 	// If RETURNING is present, type is already DsqlCompiledStatement::TYPE_EXEC_PROCEDURE.
 	if (!dsqlReturning)
@@ -7156,17 +7137,17 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	dsql_nod* returning = NULL;
+	StmtNode* returning = NULL;
 	EraseNode* eraseNode;
 	ModifyNode* modifyNode;
 	StoreNode* storeNode;
 
 	if (eraseNode = input->as<EraseNode>())
-		returning = eraseNode->dsqlStatement;
+		returning = eraseNode->statement;
 	else if (modifyNode = input->as<ModifyNode>())
-		returning = modifyNode->dsqlStatement2;
+		returning = modifyNode->statement2;
 	else if (storeNode = input->as<StoreNode>())
-		returning = storeNode->dsqlStatement2;
+		returning = storeNode->statement2;
 	else
 	{
 		fb_assert(false);
@@ -7182,26 +7163,23 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 	// completely removed.
 
 	// nod_returning was already processed
-	CompoundStmtNode* returningStmt = StmtNode::as<CompoundStmtNode>(returning);
+	CompoundStmtNode* returningStmt = returning->as<CompoundStmtNode>();
 	fb_assert(returningStmt);
 
 	CompoundStmtNode* nullAssign = FB_NEW(pool) CompoundStmtNode(pool);
 
-	dsql_nod** ret_ptr = returningStmt->dsqlStatements.begin();
-	dsql_nod** null_ptr = nullAssign->dsqlStatements.getBuffer(returningStmt->dsqlStatements.getCount());
-	dsql_nod* temp;
+	NestConst<StmtNode>* ret_ptr = returningStmt->statements.begin();
+	NestConst<StmtNode>* null_ptr = nullAssign->statements.getBuffer(returningStmt->statements.getCount());
 
-	for (const dsql_nod* const* const end = ret_ptr + returningStmt->dsqlStatements.getCount();
+	for (const NestConst<StmtNode>* const end = ret_ptr + returningStmt->statements.getCount();
 		 ret_ptr != end;
 		 ++ret_ptr, ++null_ptr)
 	{
 		AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 		assign->dsqlAsgnFrom = MAKE_node(Dsql::nod_class_exprnode, 1);
 		assign->dsqlAsgnFrom->nod_arg[0] = reinterpret_cast<dsql_nod*>(FB_NEW(pool) NullNode(pool));
-		assign->dsqlAsgnTo = StmtNode::as<AssignmentNode>(*ret_ptr)->dsqlAsgnTo;
-
-		*null_ptr = MAKE_node(Dsql::nod_class_stmtnode, 1);
-		(*null_ptr)->nod_arg[0] = reinterpret_cast<dsql_nod*>(assign);
+		assign->dsqlAsgnTo = (*ret_ptr)->as<AssignmentNode>()->dsqlAsgnTo;
+		*null_ptr = assign;
 	}
 
 	// If asked for, return a compound statement with the initialization and the
@@ -7209,10 +7187,8 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 	if (returnList)
 	{
 		CompoundStmtNode* list = FB_NEW(pool) CompoundStmtNode(pool);
-		list->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-		list->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(nullAssign);
-		list->dsqlStatements.add(MAKE_node(Dsql::nod_class_stmtnode, 1));
-		list->dsqlStatements.back()->nod_arg[0] = reinterpret_cast<dsql_nod*>(input);
+		list->statements.add(nullAssign);
+		list->statements.add(input);
 		return list;
 	}
 	else
@@ -7220,69 +7196,37 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 }
 
 // Check that a field is named only once in INSERT or UPDATE statements.
-static void dsqlFieldAppearsOnce(const dsql_nod* const* fieldsArgs, size_t count,
-	const dsql_nod* const* oldFieldsArgs, const bool is_insert, const char* dsqlScratch)
+static void dsqlFieldAppearsOnce(const Array<dsql_nod*>& values, const char* command)
 {
-	for (size_t i = 0; i < count; ++i)
+	for (size_t i = 0; i < values.getCount(); ++i)
 	{
-		const dsql_nod* elem1 = fieldsArgs[i];
-		const AssignmentNode* assign1 = StmtNode::as<AssignmentNode>(elem1);
+		const FieldNode* field1 = ExprNode::as<FieldNode>(values[i]);
+		fb_assert(field1);
 
-		if (assign1 && !is_insert)
-			elem1 = assign1->dsqlAsgnTo;
+		const MetaName& name1 = field1->dsqlField->fld_name;
 
-		const FieldNode* fieldNode1 = ExprNode::as<FieldNode>(elem1);
-
-		if (fieldNode1)
+		for (size_t j = i + 1; j < values.getCount(); ++j)
 		{
-			const MetaName& n1 = fieldNode1->dsqlField->fld_name;
+			const FieldNode* field2 = ExprNode::as<FieldNode>(values[j]);
+			fb_assert(field2);
 
-			for (int j = i + 1; j < count; ++j)
+			const MetaName& name2 = field2->dsqlField->fld_name;
+
+			if (name1 == name2)
 			{
-				const dsql_nod* elem2 = fieldsArgs[j];
-				const AssignmentNode* assign2 = StmtNode::as<AssignmentNode>(elem2);
+				string str = field1->dsqlContext->ctx_relation->rel_name.c_str();
+				str += ".";
+				str += name1.c_str();
 
-				if (assign2 && !is_insert)
-					elem2 = assign2->dsqlAsgnTo;
-
-				const FieldNode* fieldNode2 = ExprNode::as<FieldNode>(elem2);
-
-				if (fieldNode2)
-				{
-					const MetaName& n2 = fieldNode2->dsqlField->fld_name;
-
-					if (n1 == n2)
-					{
-						const dsql_ctx* tmp_ctx = fieldNode2->dsqlContext;
-						const dsql_rel* bad_rel = tmp_ctx ? tmp_ctx->ctx_relation : NULL;
-						dsqlFieldDuplication((bad_rel ? bad_rel->rel_name.c_str() : NULL),
-							n2.c_str(),
-							(is_insert ? oldFieldsArgs[j] : oldFieldsArgs[j]->nod_arg[1]),
-							dsqlScratch);
-					}
-				}
+				//// FIXME: line/column is not very accurate for MERGE ... INSERT.
+				ERRD_post(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
+					Arg::Gds(isc_dsql_no_dup_name) << str << command <<
+					Arg::Gds(isc_dsql_line_col_error) <<
+						Arg::Num(values[j]->nod_line) << Arg::Num(values[j]->nod_column));
 			}
 		}
 	}
-}
-
-// Report a field duplication error in INSERT or UPDATE statements.
-static void dsqlFieldDuplication(const TEXT* qualifier_name, const TEXT* field_name,
-	const dsql_nod* flawed_node, const char* dsqlScratch)
-{
-	TEXT field_buffer[MAX_SQL_IDENTIFIER_SIZE * 2];
-
-	if (qualifier_name)
-	{
-		sprintf(field_buffer, "%.*s.%.*s", (int) MAX_SQL_IDENTIFIER_LEN, qualifier_name,
-				(int) MAX_SQL_IDENTIFIER_LEN, field_name);
-		field_name = field_buffer;
-	}
-
-	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
-			  Arg::Gds(isc_dsql_no_dup_name) << Arg::Str(field_name) << Arg::Str(dsqlScratch) <<
-			  Arg::Gds(isc_dsql_line_col_error) << Arg::Num(flawed_node->nod_line) <<
-												   Arg::Num(flawed_node->nod_column));
 }
 
 // Turn a cursor reference into a record selection expression.
@@ -7516,14 +7460,17 @@ static dsql_nod* dsqlPassHiddenVariable(DsqlCompilerScratch* dsqlScratch, dsql_n
 }
 
 // Compile a RETURNING clause (nod_returning or not).
-static dsql_nod* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
+static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
+	if (!input)
+		return NULL;
+
 	dsql_nod* node;
 
-	if (!input || input->nod_type == Dsql::nod_returning)
+	if (input->nod_type == Dsql::nod_returning)
 		node = PASS1_node(dsqlScratch, input);
 	else
 	{
@@ -7534,7 +7481,8 @@ static dsql_nod* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, dsql_nod
 	if (input && !dsqlScratch->isPsql())
 		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
 
-	return node;
+	fb_assert(node->nod_type == Dsql::nod_class_stmtnode);
+	return reinterpret_cast<StmtNode*>(node->nod_arg[0]);
 }
 
 // Setup parameter parameter name.
@@ -7608,19 +7556,19 @@ static void dsqlSetParametersName(CompoundStmtNode* statements, const dsql_nod* 
 	DEV_BLKCHK(context, dsql_type_ctx);
 	const dsql_rel* relation = context->ctx_relation;
 
-	size_t count = statements->dsqlStatements.getCount();
-	dsql_nod** ptr = statements->dsqlStatements.begin();
+	size_t count = statements->statements.getCount();
+	NestConst<StmtNode>* ptr = statements->statements.begin();
 
-	for (const dsql_nod* const* const end = ptr + count; ptr != end; ++ptr)
+	for (const NestConst<StmtNode>* const end = ptr + count; ptr != end; ++ptr)
 	{
-		DEV_BLKCHK(*ptr, dsql_type_nod);
-
-		AssignmentNode* assign = StmtNode::as<AssignmentNode>(*ptr);
+		const AssignmentNode* assign = (*ptr)->as<AssignmentNode>();
 
 		if (assign)
 			dsqlSetParameterName(assign->dsqlAsgnFrom, assign->dsqlAsgnTo, relation);
 		else
-			fb_assert(FALSE);
+		{
+			fb_assert(false);
+		}
 	}
 }
 

@@ -159,7 +159,6 @@ class CompoundStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT
 public:
 	explicit CompoundStmtNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_COMPOUND_STMT>(pool),
-		  dsqlStatements(pool),
 		  statements(pool),
 		  onlyAssignments(false)
 	{
@@ -177,7 +176,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	Firebird::Array<dsql_nod*> dsqlStatements;
 	Firebird::Array<NestConst<StmtNode> > statements;
 	bool onlyAssignments;
 };
@@ -309,6 +307,7 @@ class DeclareVariableNode : public TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VA
 public:
 	explicit DeclareVariableNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_DECLARE_VARIABLE>(pool),
+		  dsqlDef(NULL),
 		  varId(0)
 	{
 		varDesc.clear();
@@ -326,6 +325,7 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
+	NestConst<ParameterClause> dsqlDef;
 	USHORT varId;
 	dsc varDesc;
 };
@@ -337,7 +337,6 @@ public:
 	explicit EraseNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ERASE>(pool),
 		  dsqlRelation(NULL),
-		  dsqlStatement(NULL),
 		  dsqlBoolean(NULL),
 		  dsqlPlan(NULL),
 		  dsqlSort(NULL),
@@ -368,7 +367,6 @@ private:
 
 public:
 	dsql_nod* dsqlRelation;
-	dsql_nod* dsqlStatement;
 	dsql_nod* dsqlBoolean;
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
@@ -388,7 +386,6 @@ class ErrorHandlerNode : public TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER
 public:
 	explicit ErrorHandlerNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_ERROR_HANDLER>(pool),
-		  dsqlAction(NULL),
 		  action(NULL),
 		  conditions(pool)
 	{
@@ -405,7 +402,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	dsql_nod* dsqlAction;
 	NestConst<StmtNode> action;
 	ExceptionArray conditions;
 };
@@ -469,7 +465,6 @@ public:
 		  dsqlUserName(NULL),
 		  dsqlPassword(NULL),
 		  dsqlRole(NULL),
-		  dsqlInnerStmt(NULL),
 		  dsqlInputs(NULL),
 		  dsqlOutputs(NULL),
 		  dsqlLabel(NULL),
@@ -509,7 +504,6 @@ public:
 	dsql_nod* dsqlUserName;
 	dsql_nod* dsqlPassword;
 	dsql_nod* dsqlRole;
-	dsql_nod* dsqlInnerStmt;
 	dsql_nod* dsqlInputs;
 	dsql_nod* dsqlOutputs;
 	dsql_nod* dsqlLabel;
@@ -533,8 +527,6 @@ public:
 	explicit IfNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IF>(pool),
 		  dsqlCondition(NULL),
-		  dsqlTrueAction(NULL),
-		  dsqlFalseAction(NULL),
 		  condition(NULL),
 		  trueAction(NULL),
 		  falseAction(NULL)
@@ -553,8 +545,6 @@ public:
 
 public:
 	dsql_nod* dsqlCondition;
-	dsql_nod* dsqlTrueAction;
-	dsql_nod* dsqlFalseAction;
 	NestConst<BoolExprNode> condition;
 	NestConst<StmtNode> trueAction;
 	NestConst<StmtNode> falseAction;
@@ -566,7 +556,6 @@ class InAutonomousTransactionNode : public TypedNode<StmtNode, StmtNode::TYPE_IN
 public:
 	explicit InAutonomousTransactionNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_IN_AUTO_TRANS>(pool),
-		  dsqlAction(NULL),
 		  action(NULL),
 		  savNumberOffset(0)
 	{
@@ -583,7 +572,6 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 public:
-	dsql_nod* dsqlAction;
 	NestConst<StmtNode> action;
 	SLONG savNumberOffset;
 };
@@ -641,7 +629,7 @@ public:
 	Firebird::Array<ParameterClause> parameters;
 	Firebird::Array<ParameterClause> returns;
 	NestConst<CompoundStmtNode> localDeclList;
-	dsql_nod* body;
+	NestConst<StmtNode> body;
 };
 
 
@@ -715,7 +703,6 @@ public:
 		  dsqlSelect(NULL),
 		  dsqlInto(NULL),
 		  dsqlCursor(NULL),
-		  dsqlAction(NULL),
 		  dsqlLabel(NULL),
 		  dsqlForceSingular(false),
 		  needSavePoint(false),
@@ -730,7 +717,7 @@ public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
-	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual ForNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	virtual StmtNode* pass2(thread_db* tdbb, CompilerScratch* csb);
@@ -740,7 +727,6 @@ public:
 	dsql_nod* dsqlSelect;
 	dsql_nod* dsqlInto;
 	dsql_nod* dsqlCursor;
-	dsql_nod* dsqlAction;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
 	bool needSavePoint;
@@ -804,7 +790,7 @@ public:
 class LineColumnNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>
 {
 public:
-	explicit LineColumnNode(MemoryPool& pool, USHORT aLine, USHORT aColumn, dsql_nod* aStatement)
+	explicit LineColumnNode(MemoryPool& pool, USHORT aLine, USHORT aColumn, StmtNode* aStatement)
 		: TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_LINE_COLUMN>(pool),
 		  statement(aStatement)
 	{
@@ -818,7 +804,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 private:
-	dsql_nod* statement;
+	NestConst<StmtNode> statement;
 };
 
 
@@ -829,7 +815,6 @@ public:
 		: TypedNode<StmtNode, StmtNode::TYPE_LOOP>(pool),
 		  dsqlLabel(NULL),
 		  dsqlExpr(NULL),
-		  dsqlStatement(NULL),
 		  statement(NULL)
 	{
 	}
@@ -847,7 +832,6 @@ public:
 public:
 	dsql_nod* dsqlLabel;
 	dsql_nod* dsqlExpr;
-	dsql_nod* dsqlStatement;
 	NestConst<StmtNode> statement;
 };
 
@@ -925,8 +909,6 @@ public:
 	explicit ModifyNode(MemoryPool& pool)
 		: TypedNode<StmtNode, StmtNode::TYPE_MODIFY>(pool),
 		  dsqlRelation(NULL),
-		  dsqlStatement(NULL),
-		  dsqlStatement2(NULL),
 		  dsqlBoolean(NULL),
 		  dsqlPlan(NULL),
 		  dsqlSort(NULL),
@@ -963,8 +945,6 @@ private:
 
 public:
 	dsql_nod* dsqlRelation;
-	CompoundStmtNode* dsqlStatement;
-	dsql_nod* dsqlStatement2;
 	dsql_nod* dsqlBoolean;
 	dsql_nod* dsqlPlan;
 	dsql_nod* dsqlSort;
@@ -1048,8 +1028,6 @@ public:
 		  dsqlRelation(NULL),
 		  dsqlFields(NULL),
 		  dsqlValues(NULL),
-		  dsqlStatement(NULL),
-		  dsqlStatement2(NULL),
 		  dsqlReturning(NULL),
 		  dsqlRse(NULL),
 		  statement(NULL),
@@ -1080,8 +1058,6 @@ public:
 	dsql_nod* dsqlRelation;
 	dsql_nod* dsqlFields;
 	dsql_nod* dsqlValues;
-	CompoundStmtNode* dsqlStatement;
-	dsql_nod* dsqlStatement2;
 	dsql_nod* dsqlReturning;
 	dsql_nod* dsqlRse;
 	NestConst<StmtNode> statement;

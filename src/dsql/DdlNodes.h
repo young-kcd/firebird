@@ -288,7 +288,7 @@ public:
 	TypeClause returnType;
 	NestConst<CompoundStmtNode> localDeclList;
 	Firebird::string source;
-	dsql_nod* body;
+	NestConst<StmtNode> body;
 	bool compiled;
 	bool invalid;
 	Firebird::MetaName package;
@@ -392,7 +392,7 @@ public:
 	Firebird::Array<ParameterClause> returns;
 	Firebird::string source;
 	NestConst<CompoundStmtNode> localDeclList;
-	dsql_nod* body;
+	NestConst<StmtNode> body;
 	bool compiled;
 	bool invalid;
 	Firebird::MetaName package;
@@ -553,7 +553,7 @@ public:
 	bool create;
 	bool alter;
 	NestConst<CompoundStmtNode> localDeclList;
-	dsql_nod* body;
+	NestConst<StmtNode> body;
 	bool compiled;
 	bool invalid;
 };

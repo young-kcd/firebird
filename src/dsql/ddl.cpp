@@ -273,16 +273,15 @@ bool DDL_ids(const DsqlCompilerScratch* scratch)
 // wrapper that sets the last parameter to false to indicate
 // we are creating a field, not modifying one.
 //
-void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field, const dsql_str* collation_name)
+void DDL_resolve_intl_type(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
+	const MetaName& collation_name)
 {
 	DDL_resolve_intl_type2(dsqlScratch, field, collation_name, false);
 }
 
 
-void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
-							dsql_fld* field,
-							const dsql_str* collation_name,
-							bool modifying)
+void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
+	const MetaName& collation_name, bool modifying)
 {
 /**************************************
  *
@@ -368,7 +367,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 
 	if ((field->fld_dtype > dtype_any_text) && field->fld_dtype != dtype_blob)
 	{
-		if (field->fld_character_set || collation_name || field->fld_flags & FLD_national)
+		if (field->fld_character_set || collation_name.hasData() || field->fld_flags & FLD_national)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
@@ -410,7 +409,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
                       Arg::Gds(isc_collation_requires_text));
 		}
 
-		if (collation_name && (field->fld_sub_type != isc_blob_text))
+		if (collation_name.hasData() && (field->fld_sub_type != isc_blob_text))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
@@ -421,7 +420,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			return;
 	}
 
-	if (field->fld_character_set_id != 0 && !collation_name)
+	if (field->fld_character_set_id != 0 && collation_name.isEmpty())
 	{
 		// This field has already been resolved once, and the collation
 		// hasn't changed.  Therefore, no need to do it again.
@@ -499,7 +498,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			assign_field_length(field, 1);
 			field->fld_ttype = 0;
 
-			if (!collation_name)
+			if (collation_name.isEmpty())
 				return;
 		}
 	}
@@ -532,10 +531,10 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 		resolved_type = resolved_charset;
 	}
 
-	if (collation_name)
+	if (collation_name.hasData())
 	{
 		const dsql_intlsym* resolved_collation = METD_get_collation(dsqlScratch->getTransaction(),
-			collation_name->str_data, field->fld_character_set_id);
+			collation_name, field->fld_character_set_id);
 
 		if (!resolved_collation)
 		{
@@ -552,8 +551,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 			// Specified collation not found
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
-                      Arg::Gds(isc_collation_not_found) << Arg::Str(collation_name->str_data) <<
-                      									   Arg::Str(charSetName));
+                      Arg::Gds(isc_collation_not_found) << collation_name << charSetName);
 		}
 
 		// If both specified, must be for same character set
@@ -566,7 +564,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch,
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
-                      Arg::Gds(isc_collation_not_for_charset) << Arg::Str(collation_name->str_data));
+                      Arg::Gds(isc_collation_not_for_charset) << collation_name);
 		}
 
 		field->fld_explicit_collation = true;

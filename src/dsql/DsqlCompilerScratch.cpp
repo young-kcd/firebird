@@ -243,29 +243,34 @@ void DsqlCompilerScratch::putType(const TypeClause& type, bool useSubType)
 }
 
 // Emit dyn for the local variables declared in a procedure or trigger.
-void DsqlCompilerScratch::putLocalVariables(const CompoundStmtNode* parameters, USHORT locals)
+void DsqlCompilerScratch::putLocalVariables(CompoundStmtNode* parameters, USHORT locals)
 {
 	if (!parameters)
 		return;
 
-	dsql_nod* const* ptr = parameters->dsqlStatements.begin();
+	NestConst<StmtNode>* ptr = parameters->statements.begin();
 
-	for (const dsql_nod* const* const end = parameters->dsqlStatements.end(); ptr != end; ++ptr)
+	for (const NestConst<StmtNode>* const end = parameters->statements.end(); ptr != end; ++ptr)
 	{
-		dsql_nod* parameter = *ptr;
+		StmtNode* parameter = *ptr;
 
-		putDebugSrcInfo(parameter->nod_line, parameter->nod_column);
+		putDebugSrcInfo(parameter->line, parameter->column);
 
-		if (parameter->nod_type == Dsql::nod_def_field)
+		const DeclareVariableNode* varNode;
+
+		if ((varNode = parameter->as<DeclareVariableNode>()))
 		{
-			dsql_fld* field = (dsql_fld*) parameter->nod_arg[Dsql::e_dfl_field];
-			const dsql_nod* const* rest = ptr;
+			dsql_fld* field = varNode->dsqlDef->legacyField;
+			const NestConst<StmtNode>* rest = ptr;
 
 			while (++rest != end)
 			{
-				if ((*rest)->nod_type == Dsql::nod_def_field)
+				const DeclareVariableNode* varNode2;
+
+				if ((varNode2 = (*rest)->as<DeclareVariableNode>()))
 				{
-					const dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[Dsql::e_dfl_field];
+					dsql_fld* rest_field = varNode2->dsqlDef->legacyField;
+
 					if (field->fld_name == rest_field->fld_name)
 					{
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
@@ -274,10 +279,10 @@ void DsqlCompilerScratch::putLocalVariables(const CompoundStmtNode* parameters, 
 				}
 			}
 
-			dsql_var* variable = makeVariable(field, field->fld_name.c_str(), dsql_var::TYPE_LOCAL, 0, 0, locals);
+			dsql_var* variable = makeVariable(field, field->fld_name.c_str(), dsql_var::TYPE_LOCAL,
+				0, 0, locals);
 
-			putLocalVariable(variable, parameter,
-				reinterpret_cast<const dsql_str*>(parameter->nod_arg[Dsql::e_dfl_collate]));
+			putLocalVariable(variable, varNode, varNode->dsqlDef->collate);
 
 			// Some field attributes are calculated inside putLocalVariable(), so we reinitialize
 			// the descriptor.
@@ -287,15 +292,15 @@ void DsqlCompilerScratch::putLocalVariables(const CompoundStmtNode* parameters, 
 		}
 		else if (StmtNode::is<DeclareCursorNode>(parameter))
 		{
-			PASS1_statement(this, parameter);
-			GEN_statement(this, parameter);
+			parameter->dsqlPass(this);
+			parameter->genBlr(this);
 		}
 	}
 }
 
 // Write out local variable field data type.
-void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostParam,
-	const dsql_str* collationName)
+void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, const DeclareVariableNode* hostParam,
+	const MetaName& collationName)
 {
 	dsql_fld* field = variable->field;
 
@@ -309,7 +314,7 @@ void DsqlCompilerScratch::putLocalVariable(dsql_var* variable, dsql_nod* hostPar
 	//field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
-	dsql_nod* node = hostParam ? hostParam->nod_arg[Dsql::e_dfl_default] : NULL;
+	dsql_nod* node = hostParam ? hostParam->dsqlDef->legacyDefault : NULL;
 
 	if (node || (!field->fld_full_domain && !field->fld_not_nullable))
 	{

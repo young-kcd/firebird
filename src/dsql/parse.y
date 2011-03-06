@@ -664,38 +664,43 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
 %type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
-%type <legacyNode> array_spec array_type as_opt assignment
+%type <legacyNode> array_spec array_type as_opt
+%type <stmtNode>   assignment
 %type <compoundStmtNode> assignments
 %type <legacyStr>  admin_opt
 
 %type <legacyNode> begin_string begin_trigger
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
-%type <legacyNode> blob_subtype_value_io blob_type breakleave
+%type <legacyNode> blob_subtype_value_io blob_type
+%type <stmtNode>   breakleave
 
 %type block_input_params(<parametersClause>) block_parameter(<parametersClause>)
 %type block_parameters(<parametersClause>)
 
 %type <legacyNode> case_abbreviation case_expression case_operand case_result case_specification
 %type <legacyNode> cast_specification character_keyword character_type
-%type <legacyNode> charset_clause check_constraint close_cursor col_opt collate_clause
+%type <legacyNode> charset_clause check_constraint col_opt collate_clause
+%type <stmtNode>   close_cursor
 %type <legacyNode> column_constraint column_constraint_clause
 %type <legacyNode> column_constraint_def column_constraint_list column_def
 %type <boolVal>	   check_opt
 
 %type <legacyNode> column_list column_name column_parens column_parens_opt column_select
-%type <legacyNode> column_singleton commit complex_proc_statement
-%type <legacyNode> computed_by computed_clause conditional constant continue constraint_index_opt
+%type <legacyNode> column_singleton commit
+%type <stmtNode>   complex_proc_statement
+%type <legacyNode> computed_by computed_clause conditional constant constraint_index_opt
 %type <legacyNode> constraint_name_opt correlation_name create
 %type <legacyNode> create_clause create_or_alter create_user_clause cross_join
-%type <legacyNode> cursor_clause cursor_declaration_item cursor_def
-%type <legacyNode> cursor_statement
+%type <legacyNode> cursor_clause cursor_def
+%type <stmtNode>   cursor_declaration_item continue cursor_statement
 
 %type <legacyNode> data_type data_type_or_domain
 %type <legacyNode> db_alter_clause db_clause db_file db_file_list db_initial_desc db_initial_desc1
 %type <legacyNode> db_initial_option db_rem_desc db_rem_desc1 db_rem_option ddl_subname
 %type <legacyNode> decimal_keyword declare declare_clause
-%type <legacyNode> decode_pairs def_computed default_par_opt default_value delete delete_positioned
-%type <legacyNode> delete_rule delete_searched delimiter_opt derived_column_list derived_table
+%type <legacyNode> decode_pairs def_computed default_par_opt default_value
+%type <stmtNode>   delete delete_positioned delete_searched
+%type <legacyNode> delete_rule delimiter_opt derived_column_list derived_table
 %type <legacyNode> deterministic_opt distinct_clause
 %type <legacyNode> domain_default domain_default_opt domain_or_non_array_type
 %type <legacyNode> domain_or_non_array_type_name domain_type drop drop_behaviour
@@ -704,9 +709,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> end_default event_argument_opt exception_clause
 %type err(<exceptionArray>) errors(<exceptionArray>)
-%type <legacyNode> excp_hndl_statement
+%type <stmtNode> excp_hndl_statement exec_procedure exec_function
 %type <compoundStmtNode> excp_hndl_statements
-%type <legacyNode> exec_function exec_procedure
 %type <legacyNode> extra_indices_opt
 %type <legacyNode> execute_privilege
 %type <legacyStr>  end_trigger entry_op
@@ -715,10 +719,12 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type exec_stmt_option(<execStatementNode>) exec_stmt_options(<execStatementNode>)
 %type exec_stmt_options_list(<execStatementNode>) exec_stmt_inputs(<execStatementNode>)
 
-%type <legacyNode> fetch_cursor file1 file_clause file_desc file_desc1
+%type <stmtNode>   fetch_cursor
+%type <legacyNode> file1 file_clause file_desc file_desc1
 %type <legacyNode> filter_clause_io filter_decl_clause first_clause
-%type <legacyNode> float_type for_select for_update_clause for_update_list from_clause
-%type <legacyNode> from_list full_proc_block full_proc_block_body
+%type <legacyNode> float_type for_update_clause for_update_list from_clause
+%type <legacyNode> from_list
+%type <stmtNode>   for_select full_proc_block full_proc_block_body
 %type <legacyStr>  firstname_opt
 %type fetch_scroll(<cursorStmtNode>)
 %type <int32Val>   first_file_length
@@ -733,7 +739,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> identity_clause in_predicate_value
 %type <legacyNode> index_definition index_list
 %type <legacyNode> ins_column_list ins_column_parens
-%type <legacyNode> ins_column_parens_opt insert integer_keyword
+%type <legacyNode> ins_column_parens_opt integer_keyword
+%type <stmtNode>   insert
 %type <legacyNode> iso_mode isolation_mode
 %type input_parameters(<parametersClause>) input_proc_parameter(<parametersClause>)
 %type input_proc_parameters(<parametersClause>)
@@ -744,7 +751,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> keyword_or_column
 
 %type <legacyNode> label_opt limit_clause
-%type <legacyNode> local_declaration local_declaration_item
+%type <stmtNode>   local_declaration local_declaration_item
 %type <compoundStmtNode> local_declaration_list local_declarations
 %type <legacyNode> lock_clause lock_mode lock_type lock_wait
 %type <legacyStr>  lastname_opt
@@ -767,7 +774,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type named_param(<execStatementNode>) named_params_list(<execStatementNode>)
 %type not_named_param(<execStatementNode>) not_named_params_list(<execStatementNode>)
 
-%type <legacyNode> open_cursor optional_retain
+%type <stmtNode>   open_cursor
+%type <legacyNode> optional_retain
 %type optional_savepoint opt_snapshot optional_work
 %type <legacyNode> order_clause order_direction order_item order_list
 %type output_parameters(<parametersClause>) output_proc_parameter(<parametersClause>)
@@ -775,9 +783,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> param_mechanism parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
-%type <legacyNode> post_event prec_scale primary_constraint privilege
-%type <legacyNode> privilege_list privileges proc_block proc_inputs proc_outputs_opt
-%type <legacyNode> proc_statement
+%type <legacyNode> prec_scale primary_constraint privilege
+%type <legacyNode> privilege_list privileges proc_inputs proc_outputs_opt
+%type <stmtNode>   post_event proc_block proc_statement
 %type <compoundStmtNode> proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
 %type <int32Val>   pos_short_integer precision_opt
@@ -800,8 +808,9 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> select_expr_body select_item select_items select_list set set_generator
 %type <legacyNode> set_savepoint set_statistics set_transaction shadow_clause
 %type <legacyNode> simple_case simple_UDF_name
-%type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_proc_statement simple_table_name
-%type <legacyNode> simple_type simple_when_clause singleton_select skip_clause
+%type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_table_name
+%type <stmtNode>   simple_proc_statement singleton_select
+%type <legacyNode> simple_type simple_when_clause skip_clause
 %type <legacyNode> snap_shot statement stmt_start_column
 %type <legacyNode> stmt_start_line string_length_opt
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
@@ -828,16 +837,19 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <uintVal>	   time_precision_opt timestamp_precision_opt
 
 %type <legacyNode> u_constant u_numeric_constant udf_data_type udf_decl_clause undo_savepoint
-%type <legacyNode> unique_constraint unique_opt update update_column_name
-%type <legacyNode> update_or_insert update_or_insert_matching_opt update_positioned update_rule
-%type <legacyNode> update_searched user_grantee user_grantee_list
+%type <legacyNode> unique_constraint unique_opt update_column_name
+%type <stmtNode>   update update_or_insert update_positioned update_searched
+%type <legacyNode> update_or_insert_matching_opt update_rule
+%type <legacyNode> user_grantee user_grantee_list
 %type <int32Val>   unsigned_short_integer
 
-%type <legacyNode> valid_symbol_name value common_value common_value_list common_value_list_opt value_list value_list_opt var_decl_opt var_declaration_item
+%type <legacyNode> valid_symbol_name value common_value common_value_list common_value_list_opt value_list value_list_opt var_decl_opt
+%type <stmtNode>   var_declaration_item
 %type <legacyNode> variable variable_list varying_keyword version_mode
 %type <createAlterViewNode> view_clause
 
-%type <legacyNode> when_operand where_clause while window_partition_opt
+%type <legacyNode> when_operand where_clause window_partition_opt
+%type <stmtNode>   while
 %type <legacyNode> with_clause with_item with_list
 
 %type <legacyStr> external_body_clause_opt
@@ -935,12 +947,15 @@ statement
 	| create_or_alter
 	| declare
 	| delete
+		{ $$ = makeClassNode($1); }
 	| drop
 	| grant
 	| insert
+		{ $$ = makeClassNode($1); }
 	| merge
 		{ $$ = makeClassNode($1); }
 	| exec_procedure
+		{ $$ = makeClassNode($1); }
 	| exec_block
 		{ $$ = makeClassNode($1); }
 	| recreate
@@ -950,7 +965,9 @@ statement
 	| select
 	| set
 	| update
+		{ $$ = makeClassNode($1); }
 	| update_or_insert
+		{ $$ = makeClassNode($1); }
 	;
 
 
@@ -2272,11 +2289,11 @@ local_declarations
 	: local_declaration
 		{
 			$$ = newNode<CompoundStmtNode>();
-			$$->dsqlStatements.add($1);
+			$$->statements.add($1);
 		}
 	| local_declarations local_declaration
 		{
-			$1->dsqlStatements.add($2);
+			$1->statements.add($2);
 			$$ = $1;
 		}
 	;
@@ -2285,8 +2302,8 @@ local_declaration
 	: stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
 		{
 			$$ = $5;
-			$$->nod_line = (IPTR) $1;
-			$$->nod_column = (IPTR) $2;
+			$$->line = (USHORT)(IPTR) $1;
+			$$->column = (USHORT)(IPTR) $2;
 		}
 	;
 
@@ -2297,7 +2314,11 @@ local_declaration_item
 
 var_declaration_item
 	: column_def_name domain_or_non_array_type collate_clause default_par_opt
-		{ $$ = make_node (nod_def_field, (int) e_dfl_count, $1, $4, NULL, $3, NULL, NULL, NULL); }
+		{
+			DeclareVariableNode* node = newNode<DeclareVariableNode>();
+			node->dsqlDef = FB_NEW(getPool()) ParameterClause(getPool(), $1, toName($3), NULL, $4);
+			$$ = node;
+		}
 	;
 
 var_decl_opt
@@ -2312,7 +2333,7 @@ cursor_declaration_item
 				DeclareCursorNode::CUR_TYPE_EXPLICIT);
 			node->dsqlScroll = $2 != NULL;
 			node->dsqlRse = $6;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2329,24 +2350,24 @@ proc_block
 
 full_proc_block
 	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $4)); }
+		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $4); }
 	;
 
 full_proc_block_body
 	: // nothing
-		{ $$ = makeClassNode(newNode<CompoundStmtNode>()); }
+		{ $$ = newNode<CompoundStmtNode>(); }
 	| proc_statements
 		{
 			BlockNode* node = newNode<BlockNode>();
 			node->action = $1;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	| proc_statements excp_hndl_statements
 		{
 			BlockNode* node = newNode<BlockNode>();
 			node->action = $1;
 			node->handlers = $2;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2354,20 +2375,20 @@ proc_statements
 	: proc_block
 		{
 			$$ = newNode<CompoundStmtNode>();
-			$$->dsqlStatements.add($1);
+			$$->statements.add($1);
 		}
 	| proc_statements proc_block
 		{
-			$1->dsqlStatements.add($2);
+			$1->statements.add($2);
 			$$ = $1;
 		}
 	;
 
 proc_statement
 	: stmt_start_line stmt_start_column simple_proc_statement ';'
-		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3)); }
+		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3); }
 	| stmt_start_line stmt_start_column complex_proc_statement
-		{ $$ = makeClassNode(newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3)); }
+		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3); }
 	;
 
 stmt_start_line
@@ -2385,39 +2406,39 @@ stmt_start_column
 simple_proc_statement
 	: assignment
 	| insert
-	| merge				{ $$ = makeClassNode($1); }
+	| merge				{ $$ = $1; }
 	| update
 	| update_or_insert
 	| delete
 	| singleton_select
 	| exec_procedure
-	| exec_sql			{ $$ = makeClassNode($1); }
-	| exec_into			{ $$ = makeClassNode($1); }
+	| exec_sql			{ $$ = $1; }
+	| exec_into			{ $$ = $1; }
 	| exec_function
-	| excp_statement	{ $$ = makeClassNode($1); }
-	| raise_statement	{ $$ = makeClassNode($1); }
+	| excp_statement	{ $$ = $1; }
+	| raise_statement
 	| post_event
 	| cursor_statement
 	| breakleave
 	| continue
-	| SUSPEND			{ $$ = makeClassNode(newNode<SuspendNode>()); }
-	| EXIT				{ $$ = makeClassNode(newNode<ExitNode>()); }
-	| RETURN value		{ $$ = makeClassNode(newNode<ReturnNode>($2)); }
+	| SUSPEND			{ $$ = newNode<SuspendNode>(); }
+	| EXIT				{ $$ = newNode<ExitNode>(); }
+	| RETURN value		{ $$ = newNode<ReturnNode>($2); }
 	;
 
 complex_proc_statement
-	: in_autonomous_transaction		{ $$ = makeClassNode($1); }
-	| if_then_else					{ $$ = makeClassNode($1); }
+	: in_autonomous_transaction
+	| if_then_else
 	| while
 	| for_select
-	| for_exec_into					{ $$ = makeClassNode($1); }
+	| for_exec_into					{ $$ = $1; }
 	;
 
 in_autonomous_transaction
 	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
 		{
 			InAutonomousTransactionNode* node = newNode<InAutonomousTransactionNode>();
-			node->dsqlAction = $5;
+			node->action = $5;
 			$$ = node;
 		}
 	;
@@ -2443,8 +2464,8 @@ for_select
 			node->dsqlSelect = $3;
 			node->dsqlInto = make_list($5);
 			node->dsqlCursor = $6;
-			node->dsqlAction = $8;
-			$$ = makeClassNode(node);
+			node->statement = $8;
+			$$ = node;
 		}
 	;
 
@@ -2470,7 +2491,7 @@ for_exec_into
 		{
 			$$ = $<execStatementNode>3;
 			$$->dsqlLabel = $1;
-			$$->dsqlInnerStmt = $5;
+			$$->innerStmt = $5;
 		}
 	;
 
@@ -2569,15 +2590,15 @@ if_then_else
 		{
 			IfNode* node = newNode<IfNode>();
 			node->dsqlCondition = $3;
-			node->dsqlTrueAction = $6;
-			node->dsqlFalseAction = $8;
+			node->trueAction = $6;
+			node->falseAction = $8;
 			$$ = node;
 		}
 	| IF '(' search_condition ')' THEN proc_block
 		{
 			IfNode* node = newNode<IfNode>();
 			node->dsqlCondition = $3;
-			node->dsqlTrueAction = $6;
+			node->trueAction = $6;
 			$$ = node;
 		}
 	;
@@ -2588,7 +2609,7 @@ post_event
 			PostEventNode* node = newNode<PostEventNode>();
 			node->dsqlEvent = $2;
 			node->dsqlArgument = $3;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2605,7 +2626,7 @@ singleton_select
 			ForNode* node = newNode<ForNode>();
 			node->dsqlSelect = $1;
 			node->dsqlInto = make_list($3);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2626,8 +2647,8 @@ while
 			LoopNode* node = newNode<LoopNode>();
 			node->dsqlLabel = $1;
 			node->dsqlExpr = $4;
-			node->dsqlStatement = $7;
-			$$ = makeClassNode(node);
+			node->statement = $7;
+			$$ = node;
 		}
 	;
 
@@ -2638,25 +2659,25 @@ label_opt
 
 breakleave
 	: KW_BREAK
-		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_leave)); }
+		{ $$ = newNode<ContinueLeaveNode>(blr_leave); }
 	| LEAVE
-		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_leave)); }
+		{ $$ = newNode<ContinueLeaveNode>(blr_leave); }
 	| LEAVE symbol_label_name
 		{
 			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_leave);
 			node->dsqlLabel = make_node(nod_label, (int) e_label_count, $2, NULL);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
 continue
 	: CONTINUE
-		{ $$ = makeClassNode(newNode<ContinueLeaveNode>(blr_continue_loop)); }
+		{ $$ = newNode<ContinueLeaveNode>(blr_continue_loop); }
 	| CONTINUE symbol_label_name
 		{
 			ContinueLeaveNode* node = newNode<ContinueLeaveNode>(blr_continue_loop);
 			node->dsqlLabel = make_node(nod_label, (int) e_label_count, $2, NULL);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -2675,11 +2696,11 @@ excp_hndl_statements
 	: excp_hndl_statement
 		{
 			$$ = newNode<CompoundStmtNode>();
-			$$->dsqlStatements.add($1);
+			$$->statements.add($1);
 		}
 	| excp_hndl_statements excp_hndl_statement
 		{
-			$1->dsqlStatements.add($2);
+			$1->statements.add($2);
 			$$ = $1;
 		}
 	;
@@ -2690,8 +2711,8 @@ excp_hndl_statement
 		errors(&$<errorHandlerNode>2->conditions) DO proc_block
 			{
 				ErrorHandlerNode* node = $<errorHandlerNode>2;
-				node->dsqlAction = $5;
-				$$ = makeClassNode(node);
+				node->action = $5;
+				$$ = node;
 			}
 	;
 
@@ -2734,12 +2755,12 @@ cursor_statement
 
 open_cursor
 	: OPEN symbol_cursor_name
-		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_open, toName($2))); }
+		{ $$ = newNode<CursorStmtNode>(blr_cursor_open, toName($2)); }
 	;
 
 close_cursor
 	: CLOSE symbol_cursor_name
-		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_close, toName($2))); }
+		{ $$ = newNode<CursorStmtNode>(blr_cursor_close, toName($2)); }
 	;
 
 fetch_cursor
@@ -2750,10 +2771,10 @@ fetch_cursor
 			CursorStmtNode* cursorStmt = $<cursorStmtNode>2;
 			cursorStmt->dsqlName = toName($5);
 			cursorStmt->dsqlIntoStmt = make_list($7);
-			$$ = makeClassNode(cursorStmt);
+			$$ = cursorStmt;
 		}
 	| FETCH symbol_cursor_name INTO variable_list
-		{ $$ = makeClassNode(newNode<CursorStmtNode>(blr_cursor_fetch, toName($2), make_list($4))); }
+		{ $$ = newNode<CursorStmtNode>(blr_cursor_fetch, toName($2), make_list($4)); }
 	;
 
 fetch_scroll($cursorStmtNode)
@@ -2782,9 +2803,9 @@ fetch_scroll($cursorStmtNode)
 
 exec_procedure
 	: EXECUTE PROCEDURE symbol_procedure_name proc_inputs proc_outputs_opt
-		{ $$ = makeClassNode(newNode<ExecProcedureNode>(QualifiedName(toName($3)), $4, $5)); }
+		{ $$ = newNode<ExecProcedureNode>(QualifiedName(toName($3)), $4, $5); }
 	| EXECUTE PROCEDURE symbol_package_name '.' symbol_procedure_name proc_inputs proc_outputs_opt
-		{ $$ = makeClassNode(newNode<ExecProcedureNode>(QualifiedName(toName($5), toName($3)), $6, $7)); }
+		{ $$ = newNode<ExecProcedureNode>(QualifiedName(toName($5), toName($3)), $6, $7); }
 	;
 
 proc_inputs
@@ -4799,7 +4820,7 @@ insert
 			node->dsqlFields = $4;
 			node->dsqlValues = make_list($7);
 			node->dsqlReturning = $9;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	| INSERT INTO simple_table_name ins_column_parens_opt select_expr returning_clause
 		{
@@ -4808,14 +4829,14 @@ insert
 			node->dsqlFields = $4;
 			node->dsqlRse = $5;
 			node->dsqlReturning = $6;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	| INSERT INTO simple_table_name DEFAULT VALUES returning_clause
 		{
 			StoreNode* node = newNode<StoreNode>();
 			node->dsqlRelation = $3;
 			node->dsqlReturning = $6;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4901,7 +4922,7 @@ delete_searched
 			node->dsqlSort = $6;
 			node->dsqlRows = $7;
 			node->dsqlReturning = $8;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4911,7 +4932,7 @@ delete_positioned
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
 			node->dsqlCursor = $4;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4929,13 +4950,13 @@ update_searched
 		{
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
-			node->dsqlStatement = $4;
+			node->statement = $4;
 			node->dsqlBoolean = $5;
 			node->dsqlPlan = $6;
 			node->dsqlSort = $7;
 			node->dsqlRows = $8;
 			node->dsqlReturning = $9;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4944,9 +4965,9 @@ update_positioned
 		{
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
-			node->dsqlStatement = $4;
+			node->statement = $4;
 			node->dsqlCursor = $5;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4963,7 +4984,7 @@ update_or_insert
 			node->dsqlValues = make_list($9);
 			node->dsqlMatching = $11;
 			node->dsqlReturning = $12;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -4994,11 +5015,11 @@ assignments
 	: assignment
 		{
 			$$ = newNode<CompoundStmtNode>();
-			$$->dsqlStatements.add($1);
+			$$->statements.add($1);
 		}
 	| assignments ',' assignment
 		{
-			$1->dsqlStatements.add($3);
+			$1->statements.add($3);
 			$$ = $1;
 		}
 	;
@@ -5009,7 +5030,7 @@ assignment
 			AssignmentNode* node = newNode<AssignmentNode>();
 			node->dsqlAsgnTo = $1;
 			node->dsqlAsgnFrom = $3;
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
@@ -5019,14 +5040,14 @@ exec_function
 			AssignmentNode* node = newNode<AssignmentNode>();
 			node->dsqlAsgnTo = makeClassNode(newNode<NullNode>());
 			node->dsqlAsgnFrom = makeClassNode($1);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	| non_aggregate_function
 		{
 			AssignmentNode* node = newNode<AssignmentNode>();
 			node->dsqlAsgnTo = makeClassNode(newNode<NullNode>());
 			node->dsqlAsgnFrom = makeClassNode($1);
-			$$ = makeClassNode(node);
+			$$ = node;
 		}
 	;
 
