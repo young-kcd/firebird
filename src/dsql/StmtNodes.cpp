@@ -5543,7 +5543,6 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		{	// scope
 			Array<dsql_nod*> newValues;
 
-			// Separate the new and org values to process in correct contexts.
 			for (USHORT i = 0; i < fields->nod_count; ++i)
 				newValues.add(fields->nod_arg[i]);
 
@@ -6791,7 +6790,6 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		{	// scope
 			Array<dsql_nod*> newValues;
 
-			// Separate the new and org values to process in correct contexts.
 			for (USHORT i = 0; i < matching_fields->nod_count; ++i)
 				newValues.add(matching_fields->nod_arg[i]);
 
