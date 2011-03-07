@@ -1307,7 +1307,10 @@ void Attachment::detach(Status* status)
 
 		try
 		{
-			release_object(status, rdb, op_detach, rdb->rdb_id);
+			if (!(port->port_flags & PORT_rdb_shutdown))
+			{
+				release_object(status, rdb, op_detach, rdb->rdb_id);
+			}
 		}
 		catch (const status_exception& ex)
 		{
@@ -5121,6 +5124,12 @@ static void check_response(Status* warning, Rdb* rdb, PACKET* packet)
 			vector++;
 			break;
 		}
+	}
+
+	const ISC_STATUS pktErr = packet->p_resp.p_resp_status_vector[1];
+	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
+	{
+		port->port_flags |= PORT_rdb_shutdown;
 	}
 
 	vector = packet->p_resp.p_resp_status_vector;

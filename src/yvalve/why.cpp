@@ -1125,8 +1125,19 @@ namespace
 	class YEntry : public FpeControl
 	{
 	public:
-		explicit YEntry(BaseHandle* primary = 0)
-			: att(0)
+		explicit YEntry(StatusVector& _status, BaseHandle* primary)
+			: att(primary->parent), status(&_status)
+		{
+			init();
+		}
+
+		explicit YEntry()
+			: att(0), status(0)
+		{
+			init();
+		}
+
+		void init()
 		{
 #ifdef UNIX
 			static GlobalPtr<CtrlCHandler> ctrlCHandler;
@@ -1135,9 +1146,8 @@ namespace
 			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
 			registerBuiltinPlugins.init();
 
-			if (primary && primary->parent)
+			if (att)
 			{
-				att = primary->parent;
 				MutexLockGuard guard(att->enterMutex);
 				att->enterCount++;
 			}
@@ -1149,12 +1159,26 @@ namespace
 			{
 				MutexLockGuard guard(att->enterMutex);
 				att->enterCount--;
+
+				if (!att->status.getError())
+				{
+					const ISC_STATUS err = (*status)[1];
+					if (err == isc_shutdown || err == isc_att_shutdown)
+					{
+						// Save exact error to report it at all following calls
+						// of this attachment (except of detach). This is correct
+						// as server already closed its connection with client at
+						// this time.
+						att->status.save(*status);
+					}
+				}
 			}
 		}
 
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
 		Attachment att;
+		StatusVector*	status;
 	};
 
 } // anonymous namespace
@@ -1466,7 +1490,7 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS*	user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 		blob->handle->getInfo(&status, item_length, reinterpret_cast<const unsigned char*>(items),
 							  buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
@@ -1506,7 +1530,7 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS * user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 
 		blob->handle->cancel(&status);
 		if (status.isSuccess())
@@ -1549,7 +1573,7 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* user_status,
 		{
 			Arg::Gds(isc_bad_events_handle).raise();
 		}
-		YEntry entryGuard(events->parent);
+		YEntry entryGuard(status, events->parent);
 		events->handle->cancel(&status);
 		if (status.isSuccess())
 		{
@@ -1624,7 +1648,7 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS * user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 
 		blob->handle->close(&status);
 		if (status.isSuccess())
@@ -1660,7 +1684,7 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* user_status, FB_API_HA
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
 		Transaction sub;
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		if (transaction->handle)
 		{
@@ -1730,7 +1754,7 @@ ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* user_status, FB_API_HAND
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -1777,7 +1801,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
 	try
 	{
 		attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		nullCheck(req_handle, isc_bad_req_handle);
 
 		rq = attachment->handle->compileRequest(&status, blr_length,
@@ -2056,7 +2080,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		attachment->cleanup.add(routine, arg);
 	}
@@ -2091,7 +2115,7 @@ ISC_STATUS API_ROUTINE isc_database_info(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		attachment->handle->getInfo(&status,
 									item_length, reinterpret_cast<const unsigned char*>(items),
 									buffer_length, reinterpret_cast<unsigned char*>(buffer));
@@ -2126,7 +2150,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		transaction->handle->ddl(&status, length, ddl);
@@ -2305,7 +2329,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
 	try
 	{
 		attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		// check the statement handle to make sure it's NULL and then initialize it.
 		nullCheck(public_stmt_handle, isc_bad_stmt_handle);
 
@@ -2612,7 +2636,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		Transaction transaction(NULL);
 		ITransaction* tra = NULL;
@@ -2970,7 +2994,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 		}
 
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		Transaction transaction(NULL);
 		ITransaction* tra = NULL;
@@ -3096,7 +3120,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		int s = statement->handle->fetchMessage(&status,
 												blr_length, reinterpret_cast<const unsigned char*>(blr),
@@ -3135,7 +3159,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		statement->handle->free(&status, option);
 		if (!status.isSuccess())
@@ -3227,7 +3251,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		statement->checkPrepared();
 		//sqlda_sup& dasup = statement->das;
@@ -3409,7 +3433,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
 		}
 
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		ITransaction* tra = NULL;
 
@@ -3462,7 +3486,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		statement->handle->setCursor(&status, cursorName, cursorType);
 	}
@@ -3497,7 +3521,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* user_status,
 	try
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
-		YEntry entryGuard(statement);
+		YEntry entryGuard(status, statement);
 
 		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
 				(item_length == 2) && (items[0] == isc_info_sql_stmt_type) &&
@@ -3573,7 +3597,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		evnt = new WaitEvents(attachment, event_ast, buffer);
 		evnt->handle = attachment->handle->queEvents(&status, evnt, length, events);
@@ -3624,7 +3648,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 
 		unsigned int length = blob->handle->getSegment(&status, buffer_length, buffer);
 		if ((status.isSuccess() || status[1] == isc_segment || status[1] == isc_segstr_eof) && return_length)
@@ -3668,7 +3692,7 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		int length = transaction->handle->getSlice(&status, array_id, sdl_length, sdl, param_length, param, slice_length, slice);
@@ -3804,7 +3828,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS* user_status,
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -3849,7 +3873,7 @@ ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS* user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 
 		blob->handle->putSegment(&status, buffer_length, buffer);
 	}
@@ -3888,7 +3912,7 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		transaction->handle->putSlice(&status, array_id, sdl_length, sdl,
@@ -3928,7 +3952,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		// This cast appears awful, but as long as handles are 32-bit entities it's OK
 		evnt = new CEvents((FB_API_HANDLE*)id, attachment, ast, arg);
@@ -3975,7 +3999,7 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 
 		request->handle->receive(&status, level, msg_type, msg_length,
 								 reinterpret_cast<unsigned char*>(msg));
@@ -4012,7 +4036,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
 	{
 		nullCheck(tra_handle, isc_bad_trans_handle);
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		handle = attachment->handle->reconnectTransaction(&status, length, id);
 		if (!status.isSuccess())
@@ -4054,7 +4078,7 @@ ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 
 		request->handle->free(&status);
 		if (status.isSuccess())
@@ -4095,7 +4119,7 @@ ISC_STATUS API_ROUTINE isc_request_info(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 
 		request->handle->getInfo(&status, level,
 								 item_length, reinterpret_cast<const unsigned char*>(items),
@@ -4152,7 +4176,7 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* user_status,
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -4195,7 +4219,7 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* user_status,
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
@@ -4250,7 +4274,7 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS* user_status,
 	try
 	{
 		Blob blob = translate<CBlob>(blob_handle);
-		YEntry entryGuard(blob);
+		YEntry entryGuard(status, blob);
 
 		unsigned int pos = blob->handle->seek(&status, mode, offset);
 		if (status.isSuccess() && result)
@@ -4289,7 +4313,7 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 
 		request->handle->send(&status, level, msg_type, msg_length,
 							  reinterpret_cast<const unsigned char*>(msg));
@@ -4542,7 +4566,7 @@ ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		request->handle->startAndSend(&status, transaction->handle, level, msg_type, msg_length,
@@ -4577,7 +4601,7 @@ ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
 		request->handle->start(&status, transaction->handle, level);
@@ -4630,6 +4654,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 
 			attachment = translate<CAttachment>(vector->teb_database);
+			YEntry attGuard(status, attachment);
 
 			*ptr = new CTransaction(0, 0, attachment);
 
@@ -4747,7 +4772,7 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* user_status,
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		transaction->handle->transactRequest(&status, blr_length, reinterpret_cast<unsigned char*>(blr),
@@ -4818,7 +4843,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* user_status,
 	try
 	{
 		Transaction transaction = translate<CTransaction>(tra_handle);
-		YEntry entryGuard(transaction);
+		YEntry entryGuard(status, transaction);
 
 		if (transaction->handle)
 		{
@@ -4882,7 +4907,7 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* user_status,
 	try
 	{
 		Request request = translate<CRequest>(req_handle);
-		YEntry entryGuard(request);
+		YEntry entryGuard(status, request);
 
 		request->handle->unwind(&status, level);
 	}
@@ -5283,7 +5308,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		nullCheck(public_blob_handle, isc_bad_segstr_handle);
 
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		IBlob* blob_handle = createFlag ?
@@ -5679,12 +5704,14 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 	try
 	{
 		Attachment attachment = translate<CAttachment>(db_handle);
-		YEntry entryGuard(attachment);
+		YEntry entryGuard(status, attachment);
 
 		attachment->handle->ping(&status);
 		if (!status.isSuccess())
 		{
-			attachment->status.save(status);
+			if (!attachment->status.getError()) {
+				attachment->status.save(status);
+			}
 			attachment->handle->detach(&status);
 			status_exception::raise(attachment->status.value());
 		}
