@@ -526,10 +526,8 @@ void GEN_start_transaction( DsqlCompilerScratch* dsqlScratch, const dsql_nod* tr
  **/
 void GEN_statement( DsqlCompilerScratch* dsqlScratch, dsql_nod* node)
 {
-	dsql_nod* temp;
 	dsql_nod** ptr;
 	const dsql_nod* const* end;
-	dsql_str* string;
 
 	switch (node->nod_type)
 	{
