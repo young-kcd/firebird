@@ -116,6 +116,9 @@ const int UNSIGNED	= 2;
 #define YYDEBUG		1
 #endif
 
+#define YYREDUCEPOSNFUNC yyReducePosn
+#define YYREDUCEPOSNFUNCARG NULL
+
 static const char INTERNAL_FIELD_NAME[] = "DSQL internal"; // NTX: placeholder
 
 inline unsigned trigger_type_suffix(const unsigned slot1, const unsigned slot2, const unsigned slot3)
@@ -671,7 +674,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <compoundStmtNode> assignments
 %type <legacyStr>  admin_opt
 
-%type <legacyNode> begin_string begin_trigger
 %type <legacyNode> blob_filter_subtype blob_io blob_segsize blob_subtype blob_subtype_io
 %type <legacyNode> blob_subtype_value_io blob_type
 %type <stmtNode>   breakleave
@@ -709,13 +711,13 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> drop_clause drop_user_clause
 %type <legacyStr>  db_name ddl_desc
 
-%type <legacyNode> end_default event_argument_opt exception_clause
+%type <legacyNode> event_argument_opt exception_clause
 %type err(<exceptionArray>) errors(<exceptionArray>)
 %type <stmtNode> excp_hndl_statement exec_procedure exec_function
 %type <compoundStmtNode> excp_hndl_statements
 %type <legacyNode> extra_indices_opt
 %type <legacyNode> execute_privilege
-%type <legacyStr>  end_trigger entry_op
+%type <legacyStr>  entry_op
 %type <pathNamePtr> external_file
 %type <execStatementNode> exec_into exec_sql
 %type exec_stmt_option(<execStatementNode>) exec_stmt_options(<execStatementNode>)
@@ -815,8 +817,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> simple_column_name simple_package_name simple_proc_name simple_table_name
 %type <stmtNode>   simple_proc_statement singleton_select
 %type <legacyNode> simple_type simple_when_clause skip_clause
-%type <legacyNode> snap_shot statement stmt_start_column
-%type <legacyNode> stmt_start_line string_length_opt
+%type <legacyNode> snap_shot statement
+%type <legacyNode> string_length_opt
 %type <legacyNode> symbol_UDF_call_name symbol_UDF_name symbol_blob_subtype_name symbol_character_set_name
 %type <legacyNode> symbol_collation_name symbol_column_name symbol_constraint_name symbol_cursor_name
 %type <legacyNode> symbol_ddl_name symbol_domain_name symbol_exception_name symbol_filter_name
@@ -1385,8 +1387,8 @@ index_definition
 	: column_list
 		{ $$ = make_list ($1); }
 	| column_parens
-	| computed_by '(' begin_trigger value end_trigger ')'
-		{ $$ = make_node (nod_def_computed, 2, $4, $5); }
+	| computed_by '(' value ')'
+		{ $$ = make_node(nod_def_computed, 2, $3, makeParseStr(YYPOSNARG(2), YYPOSNARG(4))); }
 	;
 
 
@@ -1464,8 +1466,11 @@ as_opt
 	;
 
 domain_default
-	: DEFAULT begin_trigger default_value end_default
-		{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
+	: DEFAULT default_value
+		{
+			$$ = make_node(nod_def_default, (int) e_dft_count,
+				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+		}
 	;
 
 domain_default_opt	
@@ -1478,8 +1483,11 @@ null_constraint
 	;
 
 check_constraint
-	: CHECK begin_trigger '(' search_condition ')' end_trigger
-		{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, NULL, NULL, $4, NULL, $6); }
+	: CHECK '(' search_condition ')'
+		{
+			$$ = make_node(nod_def_constraint, (int) e_cnstr_count,
+				NULL, NULL, $3, NULL, makeParseStr(YYPOSNARG(1), YYPOSNARG(4)));
+		}
 	;
 
 
@@ -1757,12 +1765,13 @@ identity_clause
 
 // value does allow parens around it, but there is a problem getting the source text.
 
-def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
-			{
-				lex.g_field->fld_flags |= FLD_computed;
-				$$ = make_node (nod_def_computed, 2, $4, $5);
-			}
-		;
+def_computed
+	: computed_clause '(' value ')'
+		{
+			lex.g_field->fld_flags |= FLD_computed;
+			$$ = make_node(nod_def_computed, 2, $3, makeParseStr(YYPOSNARG(2), YYPOSNARG(4)));
+		}
+	;
 
 computed_clause
 	: computed_by
@@ -1958,12 +1967,12 @@ referential_action: CASCADE
 
 
 procedure_clause
-	: procedure_clause_start AS begin_string local_declaration_list full_proc_block end_trigger
+	: procedure_clause_start AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
-			$$->source = toString($6);
-			$$->localDeclList = $4;
-			$$->body = $5;
+			$$->source = toString(makeParseStr(YYPOSNARG(3), YYPOSNARG(4)));
+			$$->localDeclList = $3;
+			$$->body = $4;
 		}
 	| procedure_clause_start external_clause external_body_clause_opt
 		{
@@ -2029,24 +2038,31 @@ output_proc_parameter($parameters)
 		{ $parameters->add(ParameterClause(getPool(), $1, toName($3), NULL, NULL)); }
 	;
 
-default_par_opt	: DEFAULT begin_trigger default_value end_default
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		| '=' begin_trigger default_value end_default
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		|
-			{ $$ = NULL; }
-		;
+default_par_opt
+	: /* nothing */
+		{ $$ = NULL; }
+	| DEFAULT default_value
+		{
+			$$ = make_node(nod_def_default, (int) e_dft_count,
+				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+		}
+	| '=' default_value
+		{
+			$$ = make_node(nod_def_default, (int) e_dft_count,
+				$2, makeParseStr(YYPOSNARG(1), YYPOSNARG(2)));
+		}
+	;
 
 
 // FUNCTION
 
 function_clause
-	: function_clause_start AS begin_string local_declaration_list full_proc_block end_trigger
+	: function_clause_start AS local_declaration_list full_proc_block
 		{
 			$$ = $1;
-			$$->source = toString($6);
-			$$->localDeclList = $4;
-			$$->body = $5;
+			$$->source = toString(makeParseStr(YYPOSNARG(3), YYPOSNARG(4)));
+			$$->localDeclList = $3;
+			$$->body = $4;
 		}
 	| function_clause_start external_clause external_body_clause_opt
 		{
@@ -2121,13 +2137,11 @@ replace_function_clause
 // PACKAGE
 
 package_clause
-	: symbol_package_name AS begin_string stmt_start_line stmt_start_column
-			BEGIN package_items_opt END end_trigger
+	: symbol_package_name AS BEGIN package_items_opt END
 		{
 			CreateAlterPackageNode* node = newNode<CreateAlterPackageNode>(toName($1));
-			node->source = toString($9);
-			node->items = $7;
-
+			node->source = toString(makeParseStr(YYPOSNARG(3), YYPOSNARG(5)));
+			node->items = $4;
 			$$ = node;
 		}
 	;
@@ -2183,23 +2197,19 @@ replace_package_clause
 // PACKAGE BODY
 
 package_body_clause
-	: symbol_package_name AS begin_string stmt_start_line stmt_start_column
-			BEGIN package_items package_body_items_opt END end_trigger
+	: symbol_package_name AS BEGIN package_items package_body_items_opt END
 		{
 			CreatePackageBodyNode* node = newNode<CreatePackageBodyNode>(toName($1));
-			node->source = toString($10);
-			node->declaredItems = $7;
-			node->items = $8;
-
+			node->source = toString(makeParseStr(YYPOSNARG(3), YYPOSNARG(6)));
+			node->declaredItems = $4;
+			node->items = $5;
 			$$ = node;
 		}
-	| symbol_package_name AS begin_string stmt_start_line stmt_start_column
-			BEGIN package_body_items_opt END end_trigger
+	| symbol_package_name AS BEGIN package_body_items_opt END
 		{
 			CreatePackageBodyNode* node = newNode<CreatePackageBodyNode>(toName($1));
-			node->source = toString($9);
-			node->items = $7;
-
+			node->source = toString(makeParseStr(YYPOSNARG(3), YYPOSNARG(5)));
+			node->items = $4;
 			$$ = node;
 		}
 	;
@@ -2254,11 +2264,11 @@ local_declarations
 	;
 
 local_declaration
-	: stmt_start_line stmt_start_column DECLARE var_decl_opt local_declaration_item ';'
+	: DECLARE var_decl_opt local_declaration_item ';'
 		{
-			$$ = $5;
-			$$->line = (USHORT)(IPTR) $1;
-			$$->column = (USHORT)(IPTR) $2;
+			$$ = $3;
+			$$->line = YYPOSNARG(1).firstLine;
+			$$->column = YYPOSNARG(1).firstColumn;
 		}
 	;
 
@@ -2304,8 +2314,8 @@ proc_block
 	;
 
 full_proc_block
-	: stmt_start_line stmt_start_column BEGIN full_proc_block_body END
-		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $4); }
+	: BEGIN full_proc_block_body END
+		{ $$ = newNode<LineColumnNode>(YYPOSNARG(1).firstLine, YYPOSNARG(1).firstColumn, $2); }
 	;
 
 full_proc_block_body
@@ -2340,22 +2350,10 @@ proc_statements
 	;
 
 proc_statement
-	: stmt_start_line stmt_start_column simple_proc_statement ';'
-		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3); }
-	| stmt_start_line stmt_start_column complex_proc_statement
-		{ $$ = newNode<LineColumnNode>((USHORT)(IPTR) $1, (USHORT)(IPTR) $2, $3); }
-	;
-
-stmt_start_line
-	: /* nothing */	{ $$ = (dsql_nod*) (IPTR) lex.lines_bk; }
-	;
-
-stmt_start_column
-	: // nothing
-		{
-			const USHORT column = (lex.last_token_bk - lex.line_start_bk + 1);
-			$$ = (dsql_nod*) (IPTR) column;
-		}
+	: simple_proc_statement ';'
+		{ $$ = newNode<LineColumnNode>(YYPOSNARG(1).firstLine, YYPOSNARG(1).firstColumn, $1); }
+	| complex_proc_statement
+		{ $$ = newNode<LineColumnNode>(YYPOSNARG(1).firstLine, YYPOSNARG(1).firstColumn, $1); }
 	;
 
 simple_proc_statement
@@ -2826,11 +2824,11 @@ block_parameter($parameters)
 // CREATE VIEW
 
 view_clause
-	: simple_table_name column_parens_opt AS begin_string select_expr check_opt end_trigger
+	: simple_table_name column_parens_opt AS select_expr check_opt
 		{
-			CreateAlterViewNode* node = newNode<CreateAlterViewNode>($1, $2, $5);
-			node->source = toString($7);
-			node->withCheckOption = $6;
+			CreateAlterViewNode* node = newNode<CreateAlterViewNode>($1, $2, $4);
+			node->source = toString(makeParseStr(YYPOSNARG(4), YYPOSNARG(5)));
+			node->withCheckOption = $5;
 			$$ = node;
 		}
 	;
@@ -2858,46 +2856,6 @@ alter_view_clause
 	;
 
 
-// these rules will capture the input string for storage in metadata
-
-begin_string
-	: /* nothing */		{ lex.beginnings.push(lex_position()); }
-	;
-
-/*
-end_string
-	:
-		{
-			const TEXT* start = lex.beginnings.pop();
-			$$ = (dsql_nod*) MAKE_string(start,
-				(lex_position() == lex.end) ? lex_position() - start : lex.last_token - start);
-		}
-	;
-*/
-
-begin_trigger
-	: /* nothing */		{ lex.beginnings.push(lex.last_token); }
-	;
-
-end_trigger
-	: // nothing
-		{
-			const TEXT* start = lex.beginnings.pop();
-			string str;
-			transformString(start, lex_position() - start, str);
-			$$ = MAKE_string(str.c_str(), str.length());
-		}
-	;
-
-end_default
-	: // nothing
-		{
-			const TEXT* start = lex.beginnings.pop();
-			$$ = (dsql_nod*) MAKE_string(start,
-				(yychar <= 0 ? lex_position() : lex.last_token) - start);
-		}
-	;
-
 check_opt
 	: /* nothing */			{ $$ = false; }
 	| WITH CHECK OPTION		{ $$ = true; }
@@ -2907,28 +2865,19 @@ check_opt
 // CREATE TRIGGER
 
 trigger_clause
-	: symbol_trigger_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  AS begin_trigger
-	  local_declaration_list
-	  full_proc_block
-	  end_trigger
+	: symbol_trigger_name trigger_active trigger_type trigger_position
+			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
-			$$->source = toString($9);
-			$$->localDeclList = $7;
-			$$->body = $8;
+			$$->source = toString(makeParseStr(YYPOSNARG(5), YYPOSNARG(7)));
+			$$->localDeclList = $6;
+			$$->body = $7;
 		}
-	| symbol_trigger_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  external_clause external_body_clause_opt
+	| symbol_trigger_name trigger_active trigger_type trigger_position
+			external_clause external_body_clause_opt
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
@@ -2938,31 +2887,20 @@ trigger_clause
 			if ($6)
 				$$->source = toString($6);
 		}
-	| symbol_trigger_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  ON symbol_table_name
-	  AS begin_trigger
-	  local_declaration_list
-	  full_proc_block
-	  end_trigger
+	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
+			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
 			$$->relationName = toName($6);
-			$$->source = toString($11);
-			$$->localDeclList = $9;
-			$$->body = $10;
+			$$->source = toString(makeParseStr(YYPOSNARG(7), YYPOSNARG(9)));
+			$$->localDeclList = $8;
+			$$->body = $9;
 		}
-	| symbol_trigger_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  ON symbol_table_name
-	  external_clause external_body_clause_opt
+	| symbol_trigger_name trigger_active trigger_type trigger_position ON symbol_table_name
+			external_clause external_body_clause_opt
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $2;
@@ -2973,31 +2911,20 @@ trigger_clause
 			if ($8)
 				$$->source = toString($8);
 		}
-	| symbol_trigger_name
-	  FOR symbol_table_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  AS begin_trigger
-	  local_declaration_list
-	  full_proc_block
-	  end_trigger
+	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
+			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $4;
 			$$->type = $5;
 			$$->position = $6;
 			$$->relationName = toName($3);
-			$$->source = toString($11);
-			$$->localDeclList = $9;
-			$$->body = $10;
+			$$->source = toString(makeParseStr(YYPOSNARG(7), YYPOSNARG(9)));
+			$$->localDeclList = $8;
+			$$->body = $9;
 		}
-	| symbol_trigger_name
-	  FOR symbol_table_name
-	  trigger_active
-	  trigger_type
-	  trigger_position
-	  external_clause external_body_clause_opt
+	| symbol_trigger_name FOR symbol_table_name trigger_active trigger_type trigger_position
+			external_clause external_body_clause_opt
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->active = $4;
@@ -3283,9 +3210,10 @@ alter_op	: DROP simple_column_name drop_behaviour
 					make_node(nod_del_default, (int) 0, NULL), NULL); }
 		;
 
-alter_column_name  : keyword_or_column
-		   { $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
-	   ;
+alter_column_name
+	: keyword_or_column
+		{ $$ = make_node (nod_field_name, (int) e_fln_count, NULL, $1); }
+	;
 
 // below are reserved words that could be used as column identifiers
 // in the previous versions
@@ -3467,14 +3395,8 @@ db_alter_clause
 // ALTER TRIGGER
 
 alter_trigger_clause
-	: symbol_trigger_name
-	  trigger_active
-	  trigger_type_opt
-	  trigger_position
-	  AS begin_trigger
-	  local_declaration_list
-	  full_proc_block
-	  end_trigger
+	: symbol_trigger_name trigger_active trigger_type_opt trigger_position
+			AS local_declaration_list full_proc_block
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
@@ -3482,15 +3404,12 @@ alter_trigger_clause
 			$$->active = $2;
 			$$->type = $3;
 			$$->position = $4;
-			$$->source = toString($9);
-			$$->localDeclList = $7;
-			$$->body = $8;
+			$$->source = toString(makeParseStr(YYPOSNARG(5), YYPOSNARG(7)));
+			$$->localDeclList = $6;
+			$$->body = $7;
 		}
-	| symbol_trigger_name
-	  trigger_active
-	  trigger_type_opt
-	  trigger_position
-	  external_clause external_body_clause_opt
+	| symbol_trigger_name trigger_active trigger_type_opt trigger_position
+			external_clause external_body_clause_opt
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
@@ -3502,10 +3421,7 @@ alter_trigger_clause
 			if ($6)
 				$$->source = toString($6);
 		}
-	| symbol_trigger_name
-	  trigger_active
-	  trigger_type_opt
-	  trigger_position
+	| symbol_trigger_name trigger_active trigger_type_opt trigger_position
 		{
 			$$ = newNode<CreateAlterTriggerNode>(toName($1));
 			$$->alter = true;
@@ -6598,21 +6514,16 @@ namespace
 }
 
 
-const TEXT* Parser::lex_position()
+// Make a substring from the command text being parsed.
+dsql_str* Parser::makeParseStr(const Position& p1, const Position& p2)
 {
-/**************************************
- *
- *	l e x _ p o s i t i o n
- *
- **************************************
- *
- * Functional description
- *	Return the current position of LEX
- *	in the input string.
- *
- **************************************/
+	const char* start = p1.firstPos;
+	const char* end = p2.lastPos;
 
-	return lex.ptr;
+	string str;
+	transformString(start, end - start, str);
+
+	return MAKE_string(str.c_str(), str.length());
 }
 
 
@@ -6980,25 +6891,32 @@ static string toString(dsql_str* node)
 	return string(node->str_data);
 }
 
-int Parser::yylex()
+// Set the position of a left-hand non-terminal based on its right-hand rules.
+void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/, int termNo,
+	int /*stkPos*/, int /*yychar*/, YYPOSN& yyposn, void*)
 {
-	lex.prev_keyword = yylexAux();
-	return lex.prev_keyword;
+	if (termNo == 0)
+		ret = yyposn;
+	else
+	{
+		ret.firstLine = termPosns[0].firstLine;
+		ret.firstColumn = termPosns[0].firstColumn;
+		ret.firstPos = termPosns[0].firstPos;
+		ret.lastLine = termPosns[termNo - 1].lastLine;
+		ret.lastColumn = termPosns[termNo - 1].lastColumn;
+		ret.lastPos = termPosns[termNo - 1].lastPos;
+	}
+
+	/*** This allows us to see colored output representing the position reductions.
+	printf("%.*s", ret.firstPos - lex.start, lex.start);
+	printf("\033[1;31m%.*s\033[1;37m", ret.lastPos - ret.firstPos, ret.firstPos);
+	printf("%s\n", ret.lastPos);
+	***/
 }
 
-int Parser::yylexAux()
+int Parser::yylex()
 {
-/**************************************
- *
- *	y y l e x A u x
- *
- **************************************
- *
- * Functional description: lexer.
- *
- **************************************/
 	UCHAR tok_class;
-	char string[MAX_TOKEN_LEN];
 	SSHORT c;
 
 	// Find end of white space and skip comments
@@ -7075,6 +6993,25 @@ int Parser::yylexAux()
 		if (!(tok_class & CHR_WHITE))
 			break;
 	}
+
+	yyposn.firstLine = lex.lines;
+	yyposn.firstColumn = lex.ptr - lex.line_start;
+	yyposn.firstPos = lex.ptr - 1;
+
+	lex.prev_keyword = yylexAux();
+
+	yyposn.lastLine = lex.lines;
+	yyposn.lastColumn = lex.ptr - lex.line_start;
+	yyposn.lastPos = lex.ptr;
+
+	return lex.prev_keyword;
+}
+
+int Parser::yylexAux()
+{
+	SSHORT c = lex.ptr[-1];
+	UCHAR tok_class = classes(c);
+	char string[MAX_TOKEN_LEN];
 
 	// Depending on tok_class of token, parse token
 
@@ -7778,7 +7715,7 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
 void Parser::yyerror(const TEXT* error_string)
 {
 	YYSTYPE errt_value;
-	YYPOSN errt_posn = -1;
+	YYPOSN errt_posn;
 	yyerror_detailed(error_string, -1, errt_value, errt_posn);
 }
 

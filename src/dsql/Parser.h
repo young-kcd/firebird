@@ -47,8 +47,19 @@ class dsql_nod;
 class Parser : public Firebird::PermanentStorage
 {
 private:
+	// User-defined text position type.
+	struct Position
+	{
+		USHORT firstLine;
+		USHORT firstColumn;
+		USHORT lastLine;
+		USHORT lastColumn;
+		const char* firstPos;
+		const char* lastPos;
+	};
+
+	typedef Position YYPOSN;
 	typedef int Yshort;
-	typedef int YYPOSN;	// user-defined text position type
 
 	struct yyparsestate
 	{
@@ -78,11 +89,6 @@ private:
 
 		// Actual lexer state begins from here
 
-		// hvlad: if at some day 16 levels of nesting would be not enough
-		// then someone must add LexerState constructor and pass memory
-		// pool into Stack's constructor or change Capacity value in template
-		// instantiation below
-		Firebird::Stack<const TEXT*> beginnings;
 		const TEXT* ptr;
 		const TEXT* end;
 		const TEXT* last_token;
@@ -252,13 +258,16 @@ private:
 
 // start - defined in parse.y
 private:
+	void yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* termVals,
+		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
+
 	int yylex();
 	int yylexAux();
 
 	void yyerror(const TEXT* error_string);
 	void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&);
 
-	const TEXT* lex_position();
+	dsql_str* makeParseStr(const Position& p1, const Position& p2);
 	dsql_nod* make_list (dsql_nod* node);
 	ParameterNode* make_parameter();
 	dsql_nod* make_node(Dsql::nod_t type, int count, ...);
@@ -285,7 +294,7 @@ private:
 
 	// These value/posn of the root non-terminal are returned to the caller
 	YYSTYPE yyretlval;
-	int yyretposn;
+	Position yyretposn;
 
 	int yynerrs;
 
@@ -302,13 +311,13 @@ private:
 	// The last allocated position at the lexical value queue
 	YYSTYPE* yylvlim;
 	// Base of the lexical position queue
-	int* yylpsns;
+	Position* yylpsns;
 	// Current posistion at lexical position queue
-	int* yylpp;
+	Position* yylpp;
 	// End position of lexical position queue
-	int* yylpe;
+	Position* yylpe;
 	// The last allocated position at the lexical position queue
-	int* yylplim;
+	Position* yylplim;
 	// Current position at lexical token queue
 	Yshort* yylexp;
 	Yshort* yylexemes;
