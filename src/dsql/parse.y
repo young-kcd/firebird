@@ -666,7 +666,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> alter_role_clause alter_role_enable alter_sequence_clause
 %type <legacyNode> alter_udf_clause alter_user_clause alter_view_clause
 %type <legacyNode> arg_desc arg_desc_list arg_desc_list1 array_element array_range
-%type <legacyNode> array_spec array_type as_opt
+%type <legacyNode> array_spec array_type
 %type <stmtNode>   assignment
 %type <compoundStmtNode> assignments
 %type <legacyStr>  admin_opt
@@ -978,151 +978,139 @@ statement
 
 // GRANT statement
 
-grant	: GRANT privileges ON table_noise simple_table_name
-			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count,
-					$2, $5, make_list($7), $8, $9); }
-		| GRANT execute_privilege ON PROCEDURE simple_proc_name
-			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count,
-					$2, $5, make_list($7), $8, $9); }
-		| GRANT execute_privilege ON FUNCTION simple_UDF_name
-			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count,
-					$2, $5, make_list($7), $8, $9); }
-		| GRANT execute_privilege ON PACKAGE simple_package_name
-			TO non_role_grantee_list grant_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
-		| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
-			{ $$ = make_node (nod_grant, (int) e_grant_count,
-					make_list($2), make_list($4), NULL, $5, $6); }
-		;
+grant
+	: GRANT privileges ON table_noise simple_table_name
+		TO non_role_grantee_list grant_option granted_by
+		{ $$ = make_node (nod_grant, (int) e_grant_count,
+				$2, $5, make_list($7), $8, $9); }
+	| GRANT execute_privilege ON PROCEDURE simple_proc_name
+		TO non_role_grantee_list grant_option granted_by
+		{ $$ = make_node (nod_grant, (int) e_grant_count,
+				$2, $5, make_list($7), $8, $9); }
+	| GRANT execute_privilege ON FUNCTION simple_UDF_name
+		TO non_role_grantee_list grant_option granted_by
+		{ $$ = make_node (nod_grant, (int) e_grant_count,
+				$2, $5, make_list($7), $8, $9); }
+	| GRANT execute_privilege ON PACKAGE simple_package_name
+		TO non_role_grantee_list grant_option granted_by
+		{ $$ = make_node (nod_grant, (int) e_grant_count, $2, $5, make_list($7), $8, $9); }
+	| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
+		{ $$ = make_node (nod_grant, (int) e_grant_count,
+				make_list($2), make_list($4), NULL, $5, $6); }
+	;
 
 table_noise
-	:
+	: // nothing
 	| TABLE
 	;
 
-privileges	: ALL
-			{ $$ = make_node (nod_all, (int) 0, NULL); }
-		| ALL PRIVILEGES
-			{ $$ = make_node (nod_all, (int) 0, NULL); }
-		| privilege_list
-			{ $$ = make_list ($1); }
-		;
+privileges
+	: ALL				{ $$ = make_node (nod_all, (int) 0, NULL); }
+	| ALL PRIVILEGES	{ $$ = make_node (nod_all, (int) 0, NULL); }
+	| privilege_list	{ $$ = make_list ($1); }
+	;
 
-privilege_list	: privilege
-		| privilege_list ',' privilege
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+privilege_list
+	: privilege
+	| privilege_list ',' privilege	{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
-execute_privilege	: EXECUTE
-			{ $$ = make_list (make_node (nod_execute, (int) 0, NULL)); }
-		;
+execute_privilege
+	: EXECUTE	{ $$ = make_list (make_node (nod_execute, (int) 0, NULL)); }
+	;
 
-privilege	: SELECT
-			{ $$ = make_node (nod_select, (int) 0, NULL); }
-		| INSERT
-			{ $$ = make_node (nod_insert, (int) 0, NULL); }
-		| KW_DELETE
-			{ $$ = make_node (nod_delete, (int) 0, NULL); }
-		| UPDATE column_parens_opt
-			{ $$ = make_node (nod_update, (int) 1, $2); }
-		| REFERENCES column_parens_opt
-			{ $$ = make_node (nod_references, (int) 1, $2); }
-		;
+privilege
+	: SELECT						{ $$ = make_node (nod_select, (int) 0, NULL); }
+	| INSERT						{ $$ = make_node (nod_insert, (int) 0, NULL); }
+	| KW_DELETE						{ $$ = make_node (nod_delete, (int) 0, NULL); }
+	| UPDATE column_parens_opt		{ $$ = make_node (nod_update, (int) 1, $2); }
+	| REFERENCES column_parens_opt	{ $$ = make_node (nod_references, (int) 1, $2); }
+	;
 
-grant_option	: WITH GRANT OPTION
-			{ $$ = make_node (nod_grant, (int) 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+grant_option
+	: /* nothing */			{ $$ = NULL; }
+	| WITH GRANT OPTION		{ $$ = make_node (nod_grant, (int) 0, NULL); }
+	;
 
-role_admin_option   : WITH ADMIN OPTION
-			{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+role_admin_option
+	: /* nothing */			{ $$ = NULL; }
+	| WITH ADMIN OPTION		{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
+	;
 
-granted_by	: granted_by_text grantor
-			{ $$ = $2; }
-		|
-			{ $$ = NULL; }
-		;
+granted_by
+	: /* nothing */				{ $$ = NULL; }
+	| granted_by_text grantor	{ $$ = $2; }
+	;
 
-granted_by_text	: GRANTED BY
-		|  AS
-		;
+granted_by_text
+	: GRANTED BY
+	| AS
+	;
 
-grantor		: role_grantee
-			{ $$ = $1; }
-		;
+grantor
+	: role_grantee		{ $$ = $1; }
+	;
 
 simple_package_name
-	: symbol_package_name
-		{ $$ = make_node(nod_package_name, (int) 1, $1); }
+	: symbol_package_name	{ $$ = make_node(nod_package_name, (int) 1, $1); }
 	;
 
 simple_proc_name
-	: symbol_procedure_name
-		{ $$ = make_node(nod_procedure_name, (int) 1, $1); }
+	: symbol_procedure_name	{ $$ = make_node(nod_procedure_name, (int) 1, $1); }
 	;
 
 simple_UDF_name
-	: symbol_UDF_name
-		{ $$ = make_node(nod_function_name, (int) 1, $1); }
+	: symbol_UDF_name		{ $$ = make_node(nod_function_name, (int) 1, $1); }
 	;
 
 
 // REVOKE statement
 
-revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
-			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					$3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_grant_option execute_privilege ON PROCEDURE simple_proc_name
-			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					$3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_grant_option execute_privilege ON FUNCTION simple_UDF_name
-			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					$3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_grant_option execute_privilege ON PACKAGE simple_package_name
-			FROM non_role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
-		| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
-			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					make_list($3), make_list($5), NULL, $2, $6); }
-		| REVOKE ALL ON ALL FROM non_role_grantee_list
-			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					NULL, NULL, make_list($6), NULL, NULL); }
-		;
+revoke
+	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
+		FROM non_role_grantee_list granted_by
+		{ $$ = make_node (nod_revoke, (int) e_grant_count,
+				$3, $6, make_list($8), $2, $9); }
+	| REVOKE rev_grant_option execute_privilege ON PROCEDURE simple_proc_name
+		FROM non_role_grantee_list granted_by
+		{ $$ = make_node (nod_revoke, (int) e_grant_count,
+				$3, $6, make_list($8), $2, $9); }
+	| REVOKE rev_grant_option execute_privilege ON FUNCTION simple_UDF_name
+		FROM non_role_grantee_list granted_by
+		{ $$ = make_node (nod_revoke, (int) e_grant_count,
+				$3, $6, make_list($8), $2, $9); }
+	| REVOKE rev_grant_option execute_privilege ON PACKAGE simple_package_name
+		FROM non_role_grantee_list granted_by
+		{ $$ = make_node (nod_revoke, (int) e_grant_count, $3, $6, make_list($8), $2, $9); }
+	| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
+		{ $$ = make_node (nod_revoke, (int) e_grant_count,
+				make_list($3), make_list($5), NULL, $2, $6); }
+	| REVOKE ALL ON ALL FROM non_role_grantee_list
+		{ $$ = make_node (nod_revoke, (int) e_grant_count,
+				NULL, NULL, make_list($6), NULL, NULL); }
+	;
 
-rev_grant_option : GRANT OPTION FOR
-			{ $$ = make_node (nod_grant, (int) 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+rev_grant_option
+	: /* nothing */			{ $$ = NULL; }
+	| GRANT OPTION FOR		{ $$ = make_node (nod_grant, (int) 0, NULL); }
+	;
 
-rev_admin_option : ADMIN OPTION FOR
-			{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+rev_admin_option
+	: /* nothing */			{ $$ = NULL; }
+	| ADMIN OPTION FOR		{ $$ = make_node (nod_grant_admin, (int) 0, NULL); }
+	;
 
-non_role_grantee_list	: grantee_list
-		| user_grantee_list
-		;
+non_role_grantee_list
+	: grantee_list
+	| user_grantee_list
+	;
 
-grantee_list	: grantee
-		| grantee_list ',' grantee
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		| grantee_list ',' user_grantee
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		| user_grantee_list ',' grantee
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+grantee_list
+	: grantee
+	| grantee_list ',' grantee			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	| grantee_list ',' user_grantee		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	| user_grantee_list ',' grantee		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
 grantee
 	: PROCEDURE symbol_procedure_name
@@ -1136,57 +1124,52 @@ grantee
 	| VIEW symbol_view_name
 		{ $$ = make_node (nod_view_obj, (int) 1, $2); }
 	| ROLE symbol_role_name
-			{ $$ = make_node (nod_role_name, (int) 1, $2); }
+		{ $$ = make_node (nod_role_name, (int) 1, $2); }
 	;
 
-user_grantee_list : user_grantee
-		| user_grantee_list ',' user_grantee
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+user_grantee_list
+	: user_grantee
+	| user_grantee_list ',' user_grantee	{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
 // CVC: In the future we can deprecate the first implicit form since we'll support
 // explicit grant/revoke for both USER and ROLE keywords & object types.
 
-user_grantee	: symbol_user_name
-		{ $$ = make_node (nod_user_name, (int) 1, $1); }
-	| USER symbol_user_name
-		{ $$ = make_node (nod_user_name, (int) 2, $2, NULL); }
-	| GROUP symbol_user_name
-		{ $$ = make_node (nod_user_group, (int) 1, $2); }
+user_grantee
+	: symbol_user_name			{ $$ = make_node (nod_user_name, (int) 1, $1); }
+	| USER symbol_user_name		{ $$ = make_node (nod_user_name, (int) 2, $2, NULL); }
+	| GROUP symbol_user_name	{ $$ = make_node (nod_user_group, (int) 1, $2); }
 	;
 
-role_name_list  : role_name
-		| role_name_list ',' role_name
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+role_name_list
+	: role_name
+	| role_name_list ',' role_name		{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
-role_name   : symbol_role_name
-		{ $$ = make_node (nod_role_name, (int) 1, $1); }
-		;
+role_name
+	: symbol_role_name		{ $$ = make_node (nod_role_name, (int) 1, $1); }
+	;
 
-role_grantee_list  : role_grantee
-		| role_grantee_list ',' role_grantee
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+role_grantee_list
+	: role_grantee
+	| role_grantee_list ',' role_grantee	{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
-role_grantee   : symbol_user_name
-		{ $$ = make_node (nod_user_name, (int) 1, $1); }
-	| USER symbol_user_name
-		{ $$ = make_node (nod_user_name, (int) 1, $2); }
-		;
+role_grantee
+	: symbol_user_name			{ $$ = make_node (nod_user_name, (int) 1, $1); }
+	| USER symbol_user_name		{ $$ = make_node (nod_user_name, (int) 1, $2); }
+	;
 
 
 // DECLARE operations
 
-declare		: DECLARE declare_clause
-			{ $$ = $2;}
-		;
+declare
+	: DECLARE declare_clause	{ $$ = $2;}
+	;
 
 declare_clause
-	: FILTER filter_decl_clause
-		{ $$ = $2; }
-	| EXTERNAL FUNCTION udf_decl_clause
-		{ $$ = $3; }
+	: FILTER filter_decl_clause				{ $$ = $2; }
+	| EXTERNAL FUNCTION udf_decl_clause		{ $$ = $3; }
 	;
 
 udf_decl_clause
@@ -1208,38 +1191,33 @@ udf_data_type
 		}
 	;
 
-arg_desc_list1	:
-		 	{ $$ = NULL; }
-		| arg_desc_list
-		| '(' arg_desc_list ')'
-		 	{ $$ = $2; }
-		;
+arg_desc_list1
+	: /* nothing */			 	{ $$ = NULL; }
+	| arg_desc_list
+	| '(' arg_desc_list ')'	 	{ $$ = $2; }
+	;
 
-arg_desc_list	: arg_desc
-		| arg_desc_list ',' arg_desc
-			{ $$ = make_node (nod_list, (int) 2, $1, $3); }
-		;
+arg_desc_list
+	: arg_desc
+	| arg_desc_list ',' arg_desc	{ $$ = make_node (nod_list, (int) 2, $1, $3); }
+	;
 
-/*arg_desc	: init_data_type udf_data_type
-  { $$ = $1; } */
-arg_desc	: init_data_type udf_data_type param_mechanism
-			{ $$ = make_node (nod_udf_param, (int) e_udf_param_count, $1, $3); }
-		;
+arg_desc
+	: init_data_type udf_data_type param_mechanism
+		{ $$ = make_node (nod_udf_param, (int) e_udf_param_count, $1, $3); }
+	;
 
-param_mechanism :
-			{ $$ = NULL; } // Beware: ddl.cpp converts this to mean FUN_reference.
-		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (FUN_descriptor); }
-		| BY SCALAR_ARRAY
-			{ $$ = MAKE_const_slong (FUN_scalar_array); }
-		| KW_NULL
-			{ $$ = MAKE_const_slong (FUN_ref_with_null); }
-		;
+param_mechanism
+	: /* nothing */			{ $$ = NULL; } // Beware: ddl.cpp converts this to mean FUN_reference.
+	| BY KW_DESCRIPTOR		{ $$ = MAKE_const_slong (FUN_descriptor); }
+	| BY SCALAR_ARRAY		{ $$ = MAKE_const_slong (FUN_scalar_array); }
+	| KW_NULL				{ $$ = MAKE_const_slong (FUN_ref_with_null); }
+	;
 
-return_value1	: return_value
-		| '(' return_value ')'
-			{ $$ = $2; }
-		;
+return_value1
+	: return_value
+	| '(' return_value ')'	{ $$ = $2; }
+	;
 
 return_value
 	: init_data_type udf_data_type return_mechanism
@@ -1250,24 +1228,21 @@ return_value
 		}
 	;
 
-return_mechanism :
-			{ $$ = MAKE_const_slong (FUN_reference); }
-		| BY KW_VALUE
-			{ $$ = MAKE_const_slong (FUN_value); }
-		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (FUN_descriptor); }
-		| FREE_IT
-			{ $$ = MAKE_const_slong (-1 * FUN_reference); }
-										 // FUN_refrence with FREE_IT is -ve
-		| BY KW_DESCRIPTOR FREE_IT
-			{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
-		;
+return_mechanism
+	: /* nothing */				{ $$ = MAKE_const_slong (FUN_reference); }
+	| BY KW_VALUE				{ $$ = MAKE_const_slong (FUN_value); }
+	| BY KW_DESCRIPTOR			{ $$ = MAKE_const_slong (FUN_descriptor); }
+	// FUN_refrence with FREE_IT is -ve
+	| FREE_IT					{ $$ = MAKE_const_slong (-1 * FUN_reference); }
+	| BY KW_DESCRIPTOR FREE_IT	{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
+	;
 
 
-filter_decl_clause : symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TYPE blob_filter_subtype
+filter_decl_clause
+	: symbol_filter_name INPUT_TYPE blob_filter_subtype OUTPUT_TYPE blob_filter_subtype
 			ENTRY_POINT sql_string MODULE_NAME sql_string
-				{ $$ = make_node (nod_def_filter, (int) e_filter_count, $1, $3, $5, $7, $9); }
-		;
+		{ $$ = make_node (nod_def_filter, (int) e_filter_count, $1, $3, $5, $7, $9); }
+	;
 
 blob_filter_subtype
 	: symbol_blob_subtype_name
@@ -1278,52 +1253,53 @@ blob_filter_subtype
 
 // CREATE metadata operations
 
-create	 	: CREATE create_clause
-			{ $$ = $2; }
-		;
+create
+	: CREATE create_clause		{ $$ = $2; }
+	;
 
-create_clause	: EXCEPTION exception_clause
-			{ $$ = $2; }
-		| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
-			{ $$ = make_node (nod_def_index, (int) e_idx_count, $1, $2, $4, $6, $7); }
-		| FUNCTION function_clause
-			{ $$ = makeClassNode($2); }
-		| PROCEDURE procedure_clause
-			{ $$ = makeClassNode($2); }
-		| TABLE table_clause
-			{ $$ = makeClassNode($2); }
-		| GLOBAL TEMPORARY TABLE gtt_table_clause
-			{ $$ = makeClassNode($4); }
-		| TRIGGER trigger_clause
-			{ $$ = makeClassNode($2); }
-		| VIEW view_clause
-			{ $$ = makeClassNode($2); }
-		| GENERATOR generator_clause
-			{ $$ = makeClassNode($2); }
-		| SEQUENCE generator_clause
-			{ $$ = makeClassNode($2); }
-		| DATABASE db_clause
-			{ $$ = $2; }
-		| DOMAIN domain_clause
-			{ $$ = makeClassNode($2); }
-		| SHADOW shadow_clause
-			{ $$ = $2; }
-		| ROLE role_clause
-			{ $$ = $2; }
-		| COLLATION collation_clause
-			{ $$ = makeClassNode($2); }
-		| USER create_user_clause
-			{ $$ = $2; }
-		| PACKAGE package_clause
-			{ $$ = makeClassNode($2); }
-		| PACKAGE BODY package_body_clause
-			{ $$ = makeClassNode($3); }
-		;
+create_clause
+	: EXCEPTION exception_clause
+		{ $$ = $2; }
+	| unique_opt order_direction INDEX symbol_index_name ON simple_table_name index_definition
+		{ $$ = make_node (nod_def_index, (int) e_idx_count, $1, $2, $4, $6, $7); }
+	| FUNCTION function_clause
+		{ $$ = makeClassNode($2); }
+	| PROCEDURE procedure_clause
+		{ $$ = makeClassNode($2); }
+	| TABLE table_clause
+		{ $$ = makeClassNode($2); }
+	| GLOBAL TEMPORARY TABLE gtt_table_clause
+		{ $$ = makeClassNode($4); }
+	| TRIGGER trigger_clause
+		{ $$ = makeClassNode($2); }
+	| VIEW view_clause
+		{ $$ = makeClassNode($2); }
+	| GENERATOR generator_clause
+		{ $$ = makeClassNode($2); }
+	| SEQUENCE generator_clause
+		{ $$ = makeClassNode($2); }
+	| DATABASE db_clause
+		{ $$ = $2; }
+	| DOMAIN domain_clause
+		{ $$ = makeClassNode($2); }
+	| SHADOW shadow_clause
+		{ $$ = $2; }
+	| ROLE role_clause
+		{ $$ = $2; }
+	| COLLATION collation_clause
+		{ $$ = makeClassNode($2); }
+	| USER create_user_clause
+		{ $$ = $2; }
+	| PACKAGE package_clause
+		{ $$ = makeClassNode($2); }
+	| PACKAGE BODY package_body_clause
+		{ $$ = makeClassNode($3); }
+	;
 
 
-recreate 	: RECREATE recreate_clause
-			{ $$ = $2; }
-		;
+recreate
+	: RECREATE recreate_clause		{ $$ = $2; }
+	;
 
 recreate_clause
 	: PROCEDURE procedure_clause
@@ -1346,23 +1322,17 @@ recreate_clause
 		{ $$ = $2; }
 	;
 
-create_or_alter	: CREATE OR ALTER replace_clause
-			{ $$ = $4; }
-		;
+create_or_alter
+	: CREATE OR ALTER replace_clause	{ $$ = $4; }
+	;
 
 replace_clause
-	: PROCEDURE replace_procedure_clause
-		{ $$ = makeClassNode($2); }
-	| FUNCTION replace_function_clause
-		{ $$ = makeClassNode($2); }
-	| TRIGGER replace_trigger_clause
-		{ $$ = makeClassNode($2); }
-	| PACKAGE replace_package_clause
-		{ $$ = makeClassNode($2); }
-	| VIEW replace_view_clause
-		{ $$ = $2; }
-	| EXCEPTION replace_exception_clause
-		{ $$ = $2; }
+	: PROCEDURE replace_procedure_clause	{ $$ = makeClassNode($2); }
+	| FUNCTION replace_function_clause		{ $$ = makeClassNode($2); }
+	| TRIGGER replace_trigger_clause		{ $$ = makeClassNode($2); }
+	| PACKAGE replace_package_clause		{ $$ = makeClassNode($2); }
+	| VIEW replace_view_clause				{ $$ = $2; }
+	| EXCEPTION replace_exception_clause	{ $$ = $2; }
 	;
 
 
@@ -1406,18 +1376,18 @@ alter_exception_clause
 
 // CREATE INDEX
 
-unique_opt	: UNIQUE
-			{ $$ = make_node (nod_unique, 0, NULL); }
-		|
-			{ $$ = NULL; }
-		;
+unique_opt
+	: /* nothing */		{ $$ = NULL; }
+	| UNIQUE			{ $$ = make_node (nod_unique, 0, NULL); }
+	;
 
-index_definition : column_list
-			{ $$ = make_list ($1); }
-		| column_parens
-		| computed_by '(' begin_trigger value end_trigger ')'
-			{ $$ = make_node (nod_def_computed, 2, $4, $5); }
-		;
+index_definition
+	: column_list
+		{ $$ = make_list ($1); }
+	| column_parens
+	| computed_by '(' begin_trigger value end_trigger ')'
+		{ $$ = make_node (nod_def_computed, 2, $4, $5); }
+	;
 
 
 // CREATE SHADOW
@@ -1429,36 +1399,31 @@ shadow_clause
 	 	}
 	;
 
-manual_auto	: MANUAL
-			{ $$ = MAKE_const_slong (1); }
-		| AUTO
-			{ $$ = MAKE_const_slong (0); }
-		|
-			{ $$ = MAKE_const_slong (0); }
-		;
-
-conditional	:
-			{ $$ = MAKE_const_slong (0); }
-		| CONDITIONAL
-			{ $$ = MAKE_const_slong (1); }
-		;
-
-first_file_length
-	:
-		{ $$ = 0;}
-	| LENGTH equals long_integer page_noise
-		{ $$ = $3; }
+manual_auto
+	: /* nothing */		{ $$ = MAKE_const_slong (0); }
+	| MANUAL			{ $$ = MAKE_const_slong (1); }
+	| AUTO				{ $$ = MAKE_const_slong (0); }
 	;
 
-sec_shadow_files :
-		 	{ $$ = NULL; }
-		| db_file_list
-		;
+conditional
+	: /* nothing */		{ $$ = MAKE_const_slong (0); }
+	| CONDITIONAL		{ $$ = MAKE_const_slong (1); }
+	;
 
-db_file_list	: db_file
-		| db_file_list db_file
-			{ $$ = make_node (nod_list, (int) 2, $1, $2); }
-		;
+first_file_length
+	: /* nothing */								{ $$ = NULL; }
+	| LENGTH equals long_integer page_noise		{ $$ = $3; }
+	;
+
+sec_shadow_files
+	: /* nothing */		{ $$ = NULL; }
+	| db_file_list
+	;
+
+db_file_list
+	: db_file
+	| db_file_list db_file	{ $$ = make_node (nod_list, (int) 2, $1, $2); }
+	;
 
 
 // CREATE DOMAIN
@@ -1494,10 +1459,8 @@ domain_constraint($createDomainNode)
 	;
 
 as_opt
-	:
-		{ $$ = NULL; }
+	: // nothing
 	| AS
-		{ $$ = NULL; }
 	;
 
 domain_default
@@ -1506,14 +1469,12 @@ domain_default
 	;
 
 domain_default_opt	
-	:
-		{ $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
 	| domain_default
 	;
 
 null_constraint
-	: NOT KW_NULL
-		{ $$ = make_node (nod_not_null, (int) 0, NULL); }
+	: NOT KW_NULL		{ $$ = make_node (nod_not_null, (int) 0, NULL); }
 	;
 
 check_constraint
@@ -1525,16 +1486,15 @@ check_constraint
 // CREATE SEQUENCE/GENERATOR
 
 generator_clause
-	: symbol_generator_name
-		{ $$ = newNode<CreateSequenceNode>(toName($1)); }
+	: symbol_generator_name		{ $$ = newNode<CreateSequenceNode>(toName($1)); }
 	;
 
 
 // CREATE ROLE
 
-role_clause : symbol_role_name
-			{ $$ = make_node (nod_def_role, (int) 1, $1); }
-		;
+role_clause
+	: symbol_role_name		{ $$ = make_node (nod_def_role, (int) 1, $1); }
+	;
 
 
 // CREATE COLLATION
@@ -1548,7 +1508,7 @@ collation_clause
 	;
 
 collation_sequence_definition($createCollation)
-	:
+	: // nothing
 	| FROM symbol_collation_name
 		{ $createCollation->fromName = toName($2); }
 	| FROM EXTERNAL '(' sql_string ')'
@@ -1556,7 +1516,7 @@ collation_sequence_definition($createCollation)
 	;
 
 collation_attribute_list_opt($createCollation)
-	:
+	: // nothing
 	| collation_attribute_list($createCollation)
 	;
 
@@ -1572,28 +1532,22 @@ collation_attribute($createCollation)
 	;
 
 collation_pad_attribute($createCollation)
-	: NO PAD
-		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
-	| PAD SPACE
-		{ $createCollation->setAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
+	: NO PAD		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
+	| PAD SPACE		{ $createCollation->setAttribute(TEXTTYPE_ATTR_PAD_SPACE); }
 	;
 
 collation_case_attribute($createCollation)
-	: CASE SENSITIVE
-		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
-	| CASE INSENSITIVE
-		{ $createCollation->setAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+	: CASE SENSITIVE		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
+	| CASE INSENSITIVE		{ $createCollation->setAttribute(TEXTTYPE_ATTR_CASE_INSENSITIVE); }
 	;
 
 collation_accent_attribute($createCollation)
-	: ACCENT SENSITIVE
-		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
-	| ACCENT INSENSITIVE
-		{ $createCollation->setAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+	: ACCENT SENSITIVE		{ $createCollation->unsetAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
+	| ACCENT INSENSITIVE	{ $createCollation->setAttribute(TEXTTYPE_ATTR_ACCENT_INSENSITIVE); }
 	;
 
 collation_specific_attribute_opt($createCollation)
-	:
+	: // nothing
 	| sql_string
 		{
 			string s(toString($1));
@@ -1625,7 +1579,7 @@ db_clause
 	;
 
 equals
-	:
+	: // nothing
 	| '='
 	;
 
@@ -1634,15 +1588,13 @@ db_name
 	;
 
 db_initial_desc1
-	:
-		{ $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
 	| db_initial_desc
 	;
 
 db_initial_desc
 	: db_initial_option
-	| db_initial_desc db_initial_option
-		{ $$ = make_node(nod_list, 2, $1, $2); }
+	| db_initial_desc db_initial_option		{ $$ = make_node(nod_list, 2, $1, $2); }
 	;
 
 db_initial_option
@@ -1659,15 +1611,13 @@ db_initial_option
 	;
 
 db_rem_desc1
-	:
-		{ $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
 	| db_rem_desc
 	;
 
 db_rem_desc
 	: db_rem_option
-	| db_rem_desc db_rem_option
-		{ $$ = make_node(nod_list, 2, $1, $2); }
+	| db_rem_desc db_rem_option		{ $$ = make_node(nod_list, 2, $1, $2); }
 	;
 
 db_rem_option
@@ -1698,7 +1648,7 @@ file1
 	;
 
 file_desc1
-	: { $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
 	| file_desc
 	;
 
@@ -1715,13 +1665,13 @@ file_clause
 	;
 
 file_clause_noise
-	:
+	: // nothing
 	| AT
 	| AT PAGE
 	;
 
 page_noise
-	:
+	: // nothing
 	| PAGE
 	| PAGES
 	;
@@ -5352,82 +5302,74 @@ null_predicate
 
 // set values
 
-in_predicate_value	: table_subquery
-	| '(' value_list ')'
-		{ $$ = make_list ($2); }
+in_predicate_value
+	: table_subquery
+	| '(' value_list ')'	{ $$ = make_list ($2); }
 	;
 
-table_subquery	: '(' column_select ')'
-			{ $$ = $2; }
-		;
+table_subquery
+	: '(' column_select ')'		{ $$ = $2; }
+	;
 
 // USER control SQL interface
 
-create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
+create_user_clause
+	: symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt grant_admin_opt
 		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
 	;
 
-alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
+alter_user_clause
+	: symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
 		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5, $6); }
 	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt admin_opt
 		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6, $7); }
 	;
 
-drop_user_clause : symbol_user_name
-		{ $$ = make_node(nod_del_user, (int) e_del_user_count, $1); }
-
-passwd_clause : PASSWORD sql_string
-		{ $$ = $2; }
+drop_user_clause
+	: symbol_user_name		{ $$ = make_node(nod_del_user, (int) e_del_user_count, $1); }
 	;
 
-passwd_opt : passwd_clause
-		{ $$ = $1; }
-	|
-		{ $$ = NULL; }
+passwd_clause
+	: PASSWORD sql_string	{ $$ = $2; }
 	;
 
-firstname_opt : FIRSTNAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
+passwd_opt
+	: /* nothing */		{ $$ = NULL; }
+	| passwd_clause		{ $$ = $1; }
 	;
 
-middlename_opt : MIDDLENAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
+firstname_opt
+	: /* nothing */				{ $$ = NULL; }
+	| FIRSTNAME sql_string		{ $$ = $2; }
 	;
 
-lastname_opt : LASTNAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
+middlename_opt
+	: /* nothing */				{ $$ = NULL; }
+	| MIDDLENAME sql_string		{ $$ = $2; }
+	;
+
+lastname_opt
+	: /* nothing */				{ $$ = NULL; }
+	| LASTNAME sql_string		{ $$ = $2; }
 	;
 
 admin_opt
-	: revoke_admin
-		{ $$ = $1; }
+	: /* nothing */		{ $$ = NULL; }
+	| revoke_admin
 	| grant_admin
-		{ $$ = $1; }
-	|
-		{ $$ = NULL; }
 	;
 
 grant_admin_opt
-	: grant_admin
-		{ $$ = $1; }
-	|
-		{ $$ = NULL; }
+	: /* nothing */		{ $$ = NULL; }
+	| grant_admin		{ $$ = $1; }
 	;
 
 revoke_admin
-	: REVOKE ADMIN ROLE
-		{ $$ = MAKE_cstring("0"); }
+	: REVOKE ADMIN ROLE		{ $$ = MAKE_cstring("0"); }
 	;
 
 grant_admin
-	: GRANT ADMIN ROLE
-		{ $$ = MAKE_cstring("1"); }
+	: GRANT ADMIN ROLE		{ $$ = MAKE_cstring("1"); }
 	;
 
 // value types
@@ -5439,71 +5381,72 @@ value
 	;
 
 common_value
-		: column_name
-		| array_element
-		| function
-			{ $$ = makeClassNode($1); }
-		| u_constant
-		| boolean_literal
-		| parameter
-		| variable
-		| cast_specification
-		| case_expression
-		| next_value_expression
-			{ $$ = makeClassNode($1); }
-		| udf
-			{ $$ = makeClassNode($1); }
-		| '-' common_value %prec UMINUS
-			{ $$ = makeClassNode(newNode<NegateNode>($2)); }
-		| '+' common_value %prec UPLUS
-			{ $$ = $2; }
-		| common_value '+' common_value
-			{
-				$$ = makeClassNode(newNode<ArithmeticNode>(blr_add,
-					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
-			}
-		| common_value CONCATENATE common_value
-			{ $$ = makeClassNode(newNode<ConcatenateNode>($1, $3)); }
-		| common_value COLLATE symbol_collation_name
-			{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
-		| common_value '-' common_value
-			{
-				$$ = makeClassNode(newNode<ArithmeticNode>(blr_subtract,
-					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
-			}
-		| common_value '*' common_value
-			{
-				$$ = makeClassNode(newNode<ArithmeticNode>(blr_multiply,
-					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
-			}
-		| common_value '/' common_value
-			{
-				$$ = makeClassNode(newNode<ArithmeticNode>(blr_divide,
-					(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
-			}
-		| '(' common_value ')'
-			{ $$ = $2; }
-		| '(' column_singleton ')'
-			{ $$ = $2; }
-		| current_user
-			{ $$ = makeClassNode($1); }
-		| current_role
-			{ $$ = makeClassNode($1); }
-		| internal_info
-			{ $$ = makeClassNode($1); }
-		| DB_KEY
-			{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey)); }
-		| symbol_table_alias_name '.' DB_KEY
-			{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey, toName($1))); }
-		| KW_VALUE
-			{ $$ = makeClassNode(newNode<DomainValidationNode>()); }
-		| datetime_value_expression
-			{ $$ = makeClassNode($1); }
-		| null_value
-			{ $$ = makeClassNode($1); }
-		;
+	: column_name
+	| array_element
+	| function
+		{ $$ = makeClassNode($1); }
+	| u_constant
+	| boolean_literal
+	| parameter
+	| variable
+	| cast_specification
+	| case_expression
+	| next_value_expression
+		{ $$ = makeClassNode($1); }
+	| udf
+		{ $$ = makeClassNode($1); }
+	| '-' common_value %prec UMINUS
+		{ $$ = makeClassNode(newNode<NegateNode>($2)); }
+	| '+' common_value %prec UPLUS
+		{ $$ = $2; }
+	| common_value '+' common_value
+		{
+			$$ = makeClassNode(newNode<ArithmeticNode>(blr_add,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+		}
+	| common_value CONCATENATE common_value
+		{ $$ = makeClassNode(newNode<ConcatenateNode>($1, $3)); }
+	| common_value COLLATE symbol_collation_name
+		{ $$ = make_node (nod_collate, (int) e_coll_count, (dsql_nod*) $3, $1); }
+	| common_value '-' common_value
+		{
+			$$ = makeClassNode(newNode<ArithmeticNode>(blr_subtract,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+		}
+	| common_value '*' common_value
+		{
+			$$ = makeClassNode(newNode<ArithmeticNode>(blr_multiply,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+		}
+	| common_value '/' common_value
+		{
+			$$ = makeClassNode(newNode<ArithmeticNode>(blr_divide,
+				(client_dialect < SQL_DIALECT_V6_TRANSITION), $1, $3));
+		}
+	| '(' common_value ')'
+		{ $$ = $2; }
+	| '(' column_singleton ')'
+		{ $$ = $2; }
+	| current_user
+		{ $$ = makeClassNode($1); }
+	| current_role
+		{ $$ = makeClassNode($1); }
+	| internal_info
+		{ $$ = makeClassNode($1); }
+	| DB_KEY
+		{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey)); }
+	| symbol_table_alias_name '.' DB_KEY
+		{ $$ = makeClassNode(newNode<RecordKeyNode>(blr_dbkey, toName($1))); }
+	| KW_VALUE
+		{ $$ = makeClassNode(newNode<DomainValidationNode>()); }
+	| datetime_value_expression
+		{ $$ = makeClassNode($1); }
+	| null_value
+		{ $$ = makeClassNode($1); }
+	;
 
-datetime_value_expression : CURRENT_DATE
+datetime_value_expression
+	: CURRENT_DATE
 		{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
@@ -5544,69 +5487,56 @@ datetime_value_expression : CURRENT_DATE
 	;
 
 time_precision_opt
-	:
-		{ $$ = DEFAULT_TIME_PRECISION; }
-	| '(' nonneg_short_integer ')'
-		{ $$ = $2; }
+	: /* nothing */						{ $$ = DEFAULT_TIME_PRECISION; }
+	| '(' nonneg_short_integer ')'		{ $$ = $2; }
 	;
 
 timestamp_precision_opt
-	:
-		{ $$ = DEFAULT_TIMESTAMP_PRECISION; }
-	| '(' nonneg_short_integer ')'
-		{ $$ = $2; }
+	: /* nothing */					{ $$ = DEFAULT_TIMESTAMP_PRECISION; }
+	| '(' nonneg_short_integer ')'	{ $$ = $2; }
 	;
 
-array_element   : column_name '[' value_list ']'
-			{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
-		;
+array_element
+	: column_name '[' value_list ']'
+		{ $$ = make_node (nod_array, (int) e_ary_count, $1, make_list ($3)); }
+	;
 
 common_value_list_opt
-	:
-		{ $$ = make_node(nod_list, 0, NULL); }
-	| common_value_list
-		{ $$ = make_list($1); }
+	: /* nothing */			{ $$ = make_node(nod_list, 0, NULL); }
+	| common_value_list		{ $$ = make_list($1); }
 	;
 
 common_value_list
 	: common_value
-	| common_value_list ',' common_value
-		{ $$ = make_node(nod_list, 2, $1, $3); }
+	| common_value_list ',' common_value	{ $$ = make_node(nod_list, 2, $1, $3); }
 	;
 
 value_list_opt
-	:
-		{ $$ = make_node(nod_list, 0, NULL); }
-	| value_list
-		{ $$ = make_list($1); }
+	: /* nothing */		{ $$ = make_node(nod_list, 0, NULL); }
+	| value_list		{ $$ = make_list($1); }
 	;
 
 value_list
 	: value
-	| value_list ',' value
-		{ $$ = make_node(nod_list, 2, $1, $3); }
+	| value_list ',' value		{ $$ = make_node(nod_list, 2, $1, $3); }
 	;
 
 constant
 	: u_constant
-	| '-' u_numeric_constant
-		{ $$ = makeClassNode(newNode<NegateNode>($2)); }
+	| '-' u_numeric_constant	{ $$ = makeClassNode(newNode<NegateNode>($2)); }
 	| boolean_literal
 	;
 
-u_numeric_constant : NUMERIC
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
-		| NUMBER
-			{ $$ = MAKE_const_slong($1); }
-		| FLOAT_NUMBER
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
-		| NUMBER64BIT
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
-		| SCALEDINT
-			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
-		;
+u_numeric_constant
+	: NUMERIC			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_STRING); }
+	| NUMBER			{ $$ = MAKE_const_slong($1); }
+	| FLOAT_NUMBER		{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_DOUBLE); }
+	| NUMBER64BIT		{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
+	| SCALEDINT			{ $$ = MAKE_constant ((dsql_str*) $1, CONSTANT_SINT64); }
+	;
 
-u_constant	: u_numeric_constant
+u_constant
+	: u_numeric_constant
 	| sql_string
 		{ $$ = MAKE_str_constant ($1, lex.att_charset); }
 	| DATE STRING
@@ -5762,13 +5692,11 @@ unsigned_short_integer
 
 signed_long_integer
 	: long_integer
-	| '-' long_integer
-		{ $$ = -$2; }
+	| '-' long_integer		{ $$ = -$2; }
 	;
 
 long_integer
-	: NUMBER
-		{ $$ = $1;}
+	: NUMBER	{ $$ = $1;}
 	;
 
 
@@ -5871,17 +5799,13 @@ over_clause
 	;
 
 window_partition_opt
-	:
-		{ $$ = NULL; }
-	| PARTITION BY value_list
-		{ $$ = $3; }
+	: /* nothing */				{ $$ = NULL; }
+	| PARTITION BY value_list	{ $$ = $3; }
 	;
 
 delimiter_opt
-	: ',' value
-		{ $$ = $2; }
-	|
-		{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
+	: /* nothing */		{ $$ = MAKE_str_constant(MAKE_cstring(","), lex.att_charset); }
+	| ',' value			{ $$ = $2; }
 	;
 
 numeric_value_function
@@ -5890,8 +5814,7 @@ numeric_value_function
 	;
 
 extract_expression
-	: EXTRACT '(' timestamp_part FROM value ')'
-		{ $$ = newNode<ExtractNode>($3, $5); }
+	: EXTRACT '(' timestamp_part FROM value ')'		{ $$ = newNode<ExtractNode>($3, $5); }
 	;
 
 length_expression
@@ -5901,20 +5824,16 @@ length_expression
 	;
 
 bit_length_expression
-	: BIT_LENGTH '(' value ')'
-		{ $$ = newNode<StrLenNode>(blr_strlen_bit, $3); }
+	: BIT_LENGTH '(' value ')'			{ $$ = newNode<StrLenNode>(blr_strlen_bit, $3); }
 	;
 
 char_length_expression
-	: CHAR_LENGTH '(' value ')'
-		{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
-	| CHARACTER_LENGTH '(' value ')'
-		{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
+	: CHAR_LENGTH '(' value ')'			{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
+	| CHARACTER_LENGTH '(' value ')'	{ $$ = newNode<StrLenNode>(blr_strlen_char, $3); }
 	;
 
 octet_length_expression
-	: OCTET_LENGTH '(' value ')'
-		{ $$ = newNode<StrLenNode>(blr_strlen_octet, $3); }
+	: OCTET_LENGTH '(' value ')'		{ $$ = newNode<StrLenNode>(blr_strlen_octet, $3); }
 	;
 
 system_function_expression
@@ -6295,82 +6214,108 @@ null_value
 
 // Performs special mapping of keywords into symbols
 
-symbol_UDF_call_name	: SYMBOL
+symbol_UDF_call_name
+	: SYMBOL
 	;
 
-symbol_UDF_name	: valid_symbol_name
+symbol_UDF_name
+	: valid_symbol_name
 	;
 
-symbol_blob_subtype_name	: valid_symbol_name
+symbol_blob_subtype_name
+	: valid_symbol_name
 	;
 
-symbol_character_set_name	: valid_symbol_name
+symbol_character_set_name
+	: valid_symbol_name
 	;
 
-symbol_collation_name	: valid_symbol_name
+symbol_collation_name
+	: valid_symbol_name
 	;
 
-symbol_column_name	: valid_symbol_name
+symbol_column_name
+	: valid_symbol_name
 	;
 
-symbol_constraint_name	: valid_symbol_name
+symbol_constraint_name
+	: valid_symbol_name
 	;
 
-symbol_cursor_name	: valid_symbol_name
+symbol_cursor_name
+	: valid_symbol_name
 	;
 
-symbol_domain_name	: valid_symbol_name
+symbol_domain_name
+	: valid_symbol_name
 	;
 
-symbol_exception_name	: valid_symbol_name
+symbol_exception_name
+	: valid_symbol_name
 	;
 
-symbol_filter_name	: valid_symbol_name
+symbol_filter_name
+	: valid_symbol_name
 	;
 
-symbol_gdscode_name	: valid_symbol_name
+symbol_gdscode_name
+	: valid_symbol_name
 	;
 
-symbol_generator_name	: valid_symbol_name
+symbol_generator_name
+	: valid_symbol_name
 	;
 
-symbol_index_name	: valid_symbol_name
+symbol_index_name
+	: valid_symbol_name
 	;
 
-symbol_item_alias_name	: valid_symbol_name
+symbol_item_alias_name
+	: valid_symbol_name
 	;
 
-symbol_label_name	: valid_symbol_name
+symbol_label_name
+	: valid_symbol_name
 	;
 
-symbol_ddl_name	: valid_symbol_name
+symbol_ddl_name
+	: valid_symbol_name
 	;
 
-symbol_procedure_name	: valid_symbol_name
+symbol_procedure_name
+	: valid_symbol_name
 	;
 
-symbol_role_name	: valid_symbol_name
+symbol_role_name
+	: valid_symbol_name
 	;
 
-symbol_table_alias_name	: valid_symbol_name
+symbol_table_alias_name
+	: valid_symbol_name
 	;
 
-symbol_table_name	: valid_symbol_name
+symbol_table_name
+	: valid_symbol_name
 	;
 
-symbol_trigger_name	: valid_symbol_name
+symbol_trigger_name
+	: valid_symbol_name
 	;
 
-symbol_user_name	: valid_symbol_name
+symbol_user_name
+	: valid_symbol_name
 	;
 
-symbol_variable_name	: valid_symbol_name
+symbol_variable_name
+	: valid_symbol_name
 	;
 
-symbol_view_name	: valid_symbol_name
+symbol_view_name
+	: valid_symbol_name
 	;
 
-symbol_savepoint_name	: valid_symbol_name
+symbol_savepoint_name
+	: valid_symbol_name
 	;
 
 symbol_package_name
@@ -6379,14 +6324,15 @@ symbol_package_name
 
 // symbols
 
-valid_symbol_name	: SYMBOL
+valid_symbol_name
+	: SYMBOL
 	| non_reserved_word
 	;
 
 // list of non-reserved words
 
-non_reserved_word :
-	ACTION					// added in IB 5.0/
+non_reserved_word
+	: ACTION				// added in IB 5.0/
 	| CASCADE
 	| FREE_IT
 	| RESTRICT
