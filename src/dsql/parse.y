@@ -2281,7 +2281,7 @@ var_declaration_item
 	: column_def_name domain_or_non_array_type collate_clause default_par_opt
 		{
 			DeclareVariableNode* node = newNode<DeclareVariableNode>();
-			node->dsqlDef = FB_NEW(getPool()) ParameterClause(getPool(), $1, toName($3), NULL, $4);
+			node->dsqlDef = FB_NEW(getPool()) ParameterClause(getPool(), $1, toName($3), $4, NULL);
 			$$ = node;
 		}
 	;
