@@ -4612,7 +4612,9 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	response->p_resp_status_vector = new_vector;
 	response->p_resp_data.cstr_length = length;
 
-	if ((this->port_flags & PORT_lazy) && defer_flag) {
+	const bool defer = (this->port_flags & PORT_lazy) && defer_flag;
+
+	if (defer) {
 		this->send_partial(sendL);
 	}
 	else {
@@ -4621,7 +4623,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	// If database or attachment has been shut down,
 	// there's no point in keeping the connection open
-	if (exit_code == isc_shutdown || exit_code == isc_att_shutdown)
+	if (!defer && (exit_code == isc_shutdown || exit_code == isc_att_shutdown))
 	{
 		this->port_state = rem_port::BROKEN;
 		this->port_flags |= PORT_rdb_shutdown;

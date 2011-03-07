@@ -1002,7 +1002,10 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Rdb** handle)
 
 	try
 	{
-		release_object(rdb, op_detach, rdb->rdb_id);
+		if (!(port->port_flags & PORT_rdb_shutdown))
+		{
+			release_object(rdb, op_detach, rdb->rdb_id);
+		}
 
 		// If something other than a network error occurred, just return.  Otherwise
 		// we need to free up the associated structures, close the socket and
@@ -5236,6 +5239,12 @@ static bool check_response(Rdb* rdb, PACKET * packet)
 			vector++;
 			break;
 		}
+	}
+
+	const ISC_STATUS pktErr = packet->p_resp.p_resp_status_vector[1];
+	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
+	{
+		port->port_flags |= PORT_rdb_shutdown;
 	}
 
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
