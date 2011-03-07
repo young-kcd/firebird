@@ -152,7 +152,6 @@ enum nod_t
 	nod_end_backup,
 	nod_rows,	// ROWS support
 	nod_mod_udf,
-	nod_returning,
 	nod_tra_misc,
 	nod_lock_timeout,
 	nod_with,
@@ -378,10 +377,6 @@ enum node_args {
 	e_mod_udf_entry_pt,
 	e_mod_udf_module,
 	e_mod_udf_count,
-
-	e_ret_source = 0,				// nod_returning
-	e_ret_target,
-	e_ret_count,
 
 	e_mod_role_os_name = 0,			// nod_mod_role
 	e_mod_role_db_name,

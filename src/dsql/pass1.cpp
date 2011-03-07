@@ -197,7 +197,6 @@ static dsql_nod* pass1_expand_select_list(DsqlCompilerScratch*, dsql_nod*, dsql_
 static dsql_nod* pass1_field(DsqlCompilerScratch*, dsql_nod*, const bool, dsql_nod*);
 static dsql_nod* pass1_group_by_list(DsqlCompilerScratch*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_make_derived_field(DsqlCompilerScratch*, thread_db*, dsql_nod*);
-static dsql_nod* pass1_returning(DsqlCompilerScratch*, const dsql_nod*);
 static dsql_nod* pass1_rse(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_rse_impl(DsqlCompilerScratch*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_sel_list(DsqlCompilerScratch*, dsql_nod*, bool);
@@ -799,9 +798,6 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 		node->nod_arg[0] = input->nod_arg[0];
 		node->nod_arg[1] = input->nod_arg[1];
 		return node;
-
-	case nod_returning:
-		return pass1_returning(dsqlScratch, input);
 
 	default:
 		fb_assert(input->nod_type != nod_class_stmtnode);
@@ -3164,121 +3160,6 @@ static dsql_rel* pass1_base_table( DsqlCompilerScratch* dsqlScratch, const dsql_
 
 /**
 
- 	pass1_returning
-
-    @brief	Compile a RETURNING clause.
-
-
-    @param dsqlScratch
-    @param input
-
- **/
-static dsql_nod* pass1_returning(DsqlCompilerScratch* dsqlScratch, const dsql_nod* input)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-	MemoryPool& pool = *tdbb->getDefaultPool();
-
-	DEV_BLKCHK(dsqlScratch, dsql_type_req);
-	DEV_BLKCHK(input, dsql_type_nod);
-
-	dsql_nod* const source = PASS1_node_psql(dsqlScratch, input->nod_arg[e_ret_source], false);
-
-	dsqlScratch->flags |= DsqlCompilerScratch::FLAG_RETURNING_INTO;
-	dsql_nod* const target = PASS1_node(dsqlScratch, input->nod_arg[e_ret_target]);
-	dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_RETURNING_INTO;
-
-	if (!dsqlScratch->isPsql() && target)
-	{
-		// RETURNING INTO is not allowed syntax for DSQL
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Token unknown
-				  Arg::Gds(isc_token_err) <<
-				  Arg::Gds(isc_random) << Arg::Str("INTO"));
-	}
-	else if (dsqlScratch->isPsql() && !target)
-	{
-		// This trick because we don't copy lexer positions when copying lists.
-		const dsql_nod* errSrc = input->nod_arg[e_ret_source];
-		fb_assert(errSrc->nod_type == nod_list);
-		// RETURNING without INTO is not allowed for PSQL
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(errSrc->nod_line) <<
-													Arg::Num(errSrc->nod_column));
-	}
-
-	const int count = source->nod_count;
-	fb_assert(count);
-
-	CompoundStmtNode* node = FB_NEW(pool) CompoundStmtNode(pool);
-
-	if (target)
-	{
-		// PSQL case
-		fb_assert(dsqlScratch->isPsql());
-		if (count != target->nod_count)
-		{
-			// count of column list and value list don't match
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_var_count_err));
-		}
-
-		dsql_nod** src = source->nod_arg;
-		dsql_nod** dst = target->nod_arg;
-
-		for (const dsql_nod* const* const end = src + source->nod_count; src != end; ++src, ++dst)
-		{
-			AssignmentNode* temp = FB_NEW(pool) AssignmentNode(pool);
-			temp->dsqlAsgnFrom = *src;
-			temp->dsqlAsgnTo = *dst;
-
-			node->statements.add(temp);
-		}
-	}
-	else
-	{
-		// DSQL case
-		fb_assert(!dsqlScratch->isPsql());
-
-		dsql_nod** src = source->nod_arg;
-
-		for (const dsql_nod* const* const end = src + source->nod_count; src != end; ++src)
-		{
-			dsql_par* parameter = MAKE_parameter(dsqlScratch->getStatement()->getReceiveMsg(),
-				true, true, 0, *src);
-			parameter->par_node = *src;
-			MAKE_desc(dsqlScratch, &parameter->par_desc, *src);
-			parameter->par_desc.dsc_flags |= DSC_nullable;
-
-			ParameterNode* paramNode = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(
-				*tdbb->getDefaultPool());
-			paramNode->dsqlParameterIndex = parameter->par_index;
-			paramNode->dsqlParameter = parameter;
-
-			dsql_nod* p_node = MAKE_node(nod_class_exprnode, 1);
-			p_node->nod_count = 0;
-			p_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(paramNode);
-
-			AssignmentNode* temp = FB_NEW(pool) AssignmentNode(pool);
-			temp->dsqlAsgnFrom = *src;
-			temp->dsqlAsgnTo = p_node;
-
-			node->statements.add(temp);
-		}
-	}
-
-	if (!dsqlScratch->isPsql())
-		dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_EXEC_PROCEDURE);
-
-	dsql_nod* nod = MAKE_node(nod_class_stmtnode, 1);
-	nod->nod_arg[0] = reinterpret_cast<dsql_nod*>(node);
-
-	return nod;
-}
-
-
-/**
-
  	pass1_rse
 
     @brief	wrapper for pass1_rse_impl
@@ -5182,10 +5063,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_mod_udf:
 		verb = "mod_udf";
-		break;
-
-	case nod_returning:
-		verb = "returning";
 		break;
 
 	case nod_tra_misc:

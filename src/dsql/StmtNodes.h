@@ -35,6 +35,8 @@ namespace Jrd {
 class CompoundStmtNode;
 class RelationSourceNode;
 
+typedef Firebird::Pair<Firebird::NonPooled<dsql_nod*, Firebird::Array<dsql_nod*>*> > ReturningClause;
+
 
 class ExceptionItem : public Firebird::PermanentStorage
 {
@@ -223,7 +225,7 @@ class CursorStmtNode : public TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>
 {
 public:
 	explicit CursorStmtNode(MemoryPool& pool, UCHAR aCursorOp, const Firebird::MetaName& aDsqlName = "",
-				dsql_nod* aDsqlIntoStmt = NULL)
+				Firebird::Array<dsql_nod*>* aDsqlIntoStmt = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_CURSOR_STMT>(pool),
 		  dsqlName(pool, aDsqlName),
 		  dsqlIntoStmt(aDsqlIntoStmt),
@@ -248,7 +250,7 @@ public:
 
 public:
 	Firebird::MetaName dsqlName;
-	dsql_nod* dsqlIntoStmt;
+	Firebird::Array<dsql_nod*>* dsqlIntoStmt;
 	dsql_nod* dsqlScrollExpr;
 	UCHAR cursorOp;
 	USHORT cursorNumber;
@@ -372,7 +374,7 @@ public:
 	dsql_nod* dsqlSort;
 	dsql_nod* dsqlRows;
 	dsql_nod* dsqlCursor;
-	dsql_nod* dsqlReturning;
+	ReturningClause* dsqlReturning;
 	dsql_nod* dsqlRse;
 	dsql_ctx* dsqlContext;
 	NestConst<StmtNode> statement;
@@ -412,7 +414,7 @@ class ExecProcedureNode : public TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDU
 public:
 	explicit ExecProcedureNode(MemoryPool& pool,
 				const Firebird::QualifiedName& aDsqlName = Firebird::QualifiedName(),
-				dsql_nod* aDsqlInputs = NULL, dsql_nod* aDsqlOutputs = NULL)
+				dsql_nod* aDsqlInputs = NULL, Firebird::Array<dsql_nod*>* aDsqlOutputs = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_EXEC_PROCEDURE>(pool),
 		  dsqlName(pool, aDsqlName),
 		  dsqlInputs(aDsqlInputs),
@@ -438,13 +440,13 @@ public:
 	virtual const StmtNode* execute(thread_db* tdbb, jrd_req* request, ExeState* exeState) const;
 
 private:
-	dsql_nod* explodeOutputs(DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure);
+	Firebird::Array<dsql_nod*>* explodeOutputs(DsqlCompilerScratch* dsqlScratch, const dsql_prc* procedure);
 	void executeProcedure(thread_db* tdbb, jrd_req* request) const;
 
 public:
 	Firebird::QualifiedName dsqlName;
 	dsql_nod* dsqlInputs;
-	dsql_nod* dsqlOutputs;
+	Firebird::Array<dsql_nod*>* dsqlOutputs;
 	NestConst<ValueListNode> inputSources;
 	NestConst<ValueListNode> inputTargets;
 	NestConst<MessageNode> inputMessage;
@@ -505,7 +507,7 @@ public:
 	dsql_nod* dsqlPassword;
 	dsql_nod* dsqlRole;
 	dsql_nod* dsqlInputs;
-	dsql_nod* dsqlOutputs;
+	Firebird::Array<dsql_nod*>* dsqlOutputs;
 	dsql_nod* dsqlLabel;
 	NestConst<ValueExprNode> sql;
 	NestConst<ValueExprNode> dataSource;
@@ -725,7 +727,7 @@ public:
 
 public:
 	dsql_nod* dsqlSelect;
-	dsql_nod* dsqlInto;
+	Firebird::Array<dsql_nod*>* dsqlInto;
 	dsql_nod* dsqlCursor;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
@@ -870,7 +872,7 @@ public:
 	dsql_nod* dsqlWhenNotMatchedFields;
 	dsql_nod* dsqlWhenNotMatchedValues;
 	dsql_nod* dsqlWhenNotMatchedCondition;
-	dsql_nod* dsqlReturning;
+	ReturningClause* dsqlReturning;
 };
 
 
@@ -950,7 +952,7 @@ public:
 	dsql_nod* dsqlSort;
 	dsql_nod* dsqlRows;
 	dsql_nod* dsqlCursor;
-	dsql_nod* dsqlReturning;
+	ReturningClause* dsqlReturning;
 	USHORT dsqlRseFlags;
 	dsql_nod* dsqlRse;
 	dsql_ctx* dsqlContext;
@@ -1058,7 +1060,7 @@ public:
 	dsql_nod* dsqlRelation;
 	dsql_nod* dsqlFields;
 	dsql_nod* dsqlValues;
-	dsql_nod* dsqlReturning;
+	ReturningClause* dsqlReturning;
 	dsql_nod* dsqlRse;
 	NestConst<StmtNode> statement;
 	NestConst<StmtNode> statement2;
@@ -1278,7 +1280,7 @@ public:
 	dsql_nod* dsqlFields;
 	dsql_nod* dsqlValues;
 	dsql_nod* dsqlMatching;
-	dsql_nod* dsqlReturning;
+	ReturningClause* dsqlReturning;
 };
 
 

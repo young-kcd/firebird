@@ -625,6 +625,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	Jrd::dsql_nod* legacyNode;
 	Jrd::dsql_str* legacyStr;
 	Jrd::dsql_fld* legacyField;
+	Firebird::Array<Jrd::dsql_nod*>* legacyArray;
+	Jrd::ReturningClause* returningClause;
 	Firebird::PathName* pathNamePtr;
 	TEXT* textPtr;
 	Jrd::ExternalClause* externalClause;
@@ -784,7 +786,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> param_mechanism parameter plan_clause
 %type <legacyNode> plan_expression plan_item plan_item_list plan_type
 %type <legacyNode> prec_scale primary_constraint privilege
-%type <legacyNode> privilege_list privileges proc_inputs proc_outputs_opt
+%type <legacyNode> privilege_list privileges proc_inputs
+%type <legacyArray> proc_outputs_opt
 %type <stmtNode>   post_event proc_block proc_statement
 %type <compoundStmtNode> proc_statements
 %type <legacyStr>  passwd_clause passwd_opt
@@ -796,7 +799,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %type <legacyNode> referential_trigger_action release_savepoint replace_clause
 %type <legacyNode> replace_exception_clause
 %type <legacyNode> replace_view_clause restr_list restr_option return_mechanism return_value
-%type <legacyNode> return_value1 returning_clause rev_admin_option rev_grant_option revoke
+%type <legacyNode> return_value1 rev_admin_option rev_grant_option revoke
+%type <returningClause> returning_clause
 %type <legacyNode> rexception_clause role_admin_option role_clause role_grantee role_grantee_list
 %type <legacyNode> role_name role_name_list rollback rows_clause rtable_clause
 %type <legacyNode> rview_clause
@@ -845,7 +849,8 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 
 %type <legacyNode> valid_symbol_name value common_value common_value_list common_value_list_opt value_list value_list_opt var_decl_opt
 %type <stmtNode>   var_declaration_item
-%type <legacyNode> variable variable_list varying_keyword version_mode
+%type <legacyNode> variable varying_keyword version_mode
+%type <legacyArray> variable_list
 %type <createAlterViewNode> view_clause
 
 %type <legacyNode> when_operand where_clause window_partition_opt
@@ -2462,7 +2467,7 @@ for_select
 			ForNode* node = newNode<ForNode>();
 			node->dsqlLabel = $1;
 			node->dsqlSelect = $3;
-			node->dsqlInto = make_list($5);
+			node->dsqlInto = $5;
 			node->dsqlCursor = $6;
 			node->statement = $8;
 			$$ = node;
@@ -2482,7 +2487,7 @@ exec_into
 	: exec_sql INTO variable_list
 		{
 			$$ = $<execStatementNode>1;
-			$$->dsqlOutputs = make_list($3);
+			$$->dsqlOutputs = $3;
 		}
 	;
 
@@ -2625,7 +2630,7 @@ singleton_select
 		{
 			ForNode* node = newNode<ForNode>();
 			node->dsqlSelect = $1;
-			node->dsqlInto = make_list($3);
+			node->dsqlInto = $3;
 			$$ = node;
 		}
 	;
@@ -2636,9 +2641,25 @@ variable
 
 variable_list
 	: variable
+		{
+			$$ = FB_NEW(getPool()) Array<dsql_nod*>(getPool());
+			$$->add($1);
+		}
 	| column_name
-	| variable_list ',' column_name		{ $$ = make_node (nod_list, 2, $1, $3); }
-	| variable_list ',' variable		{ $$ = make_node (nod_list, 2, $1, $3); }
+		{
+			$$ = FB_NEW(getPool()) Array<dsql_nod*>(getPool());
+			$$->add($1);
+		}
+	| variable_list ',' column_name
+		{
+			$$ = $1;
+			$$->add($3);
+		}
+	| variable_list ',' variable
+		{
+			$$ = $1;
+			$$->add($3);
+		}
 	;
 
 while
@@ -2770,11 +2791,11 @@ fetch_cursor
 		{
 			CursorStmtNode* cursorStmt = $<cursorStmtNode>2;
 			cursorStmt->dsqlName = toName($5);
-			cursorStmt->dsqlIntoStmt = make_list($7);
+			cursorStmt->dsqlIntoStmt = $7;
 			$$ = cursorStmt;
 		}
 	| FETCH symbol_cursor_name INTO variable_list
-		{ $$ = newNode<CursorStmtNode>(blr_cursor_fetch, toName($2), make_list($4)); }
+		{ $$ = newNode<CursorStmtNode>(blr_cursor_fetch, toName($2), $4); }
 	;
 
 fetch_scroll($cursorStmtNode)
@@ -2816,8 +2837,8 @@ proc_inputs
 
 proc_outputs_opt
 	: /* nothing */								{ $$ = NULL; }
-	| RETURNING_VALUES variable_list			{ $$ = make_list ($2); }
-	| RETURNING_VALUES '(' variable_list ')'	{ $$ = make_list ($3); }
+	| RETURNING_VALUES variable_list			{ $$ = $2; }
+	| RETURNING_VALUES '(' variable_list ')'	{ $$ = $3; }
 	;
 
 // EXECUTE BLOCK
@@ -4998,9 +5019,16 @@ returning_clause
 	: /* nothing */
 		{ $$ = NULL; }
 	| RETURNING value_list
-		{ $$ = make_node(nod_returning, (int) e_ret_count, make_list($2), NULL); }
+		{
+			$$ = FB_NEW(getPool()) ReturningClause(getPool());
+			$$->first = make_list($2);
+		}
 	| RETURNING value_list INTO variable_list
-		{ $$ = make_node(nod_returning, (int) e_ret_count, make_list($2), make_list($4)); }
+		{
+			$$ = FB_NEW(getPool()) ReturningClause(getPool());
+			$$->first = make_list($2);
+			$$->second = $4;
+		}
 	;
 
 cursor_clause
