@@ -1,3 +1,9 @@
+ 2011-03-07 14:30  hvlad 
+   M src/jrd/why.cpp
+   M src/remote/interface.cpp
+   M src/remote/server.cpp
+Fixed bug CORE-3328 : Client writes error messages into firebird.log when database is shutted down
+
  2011-03-04 17:59  dimitr 
    M src/jrd/vio.cpp
 The simplest possible fix for CORE-3374: Server may crash or corrupt data if SELECT WITH LOCK is issued against records not in the latest format. Thanks to Vlad.
