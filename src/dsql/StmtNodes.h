@@ -707,7 +707,6 @@ public:
 		  dsqlCursor(NULL),
 		  dsqlLabel(NULL),
 		  dsqlForceSingular(false),
-		  needSavePoint(false),
 		  stall(NULL),
 		  rse(NULL),
 		  statement(NULL),
@@ -731,7 +730,6 @@ public:
 	dsql_nod* dsqlCursor;
 	dsql_nod* dsqlLabel;
 	bool dsqlForceSingular;
-	bool needSavePoint;
 	NestConst<StmtNode> stall;
 	NestConst<RseNode> rse;
 	NestConst<StmtNode> statement;

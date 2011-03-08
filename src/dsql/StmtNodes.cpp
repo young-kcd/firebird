@@ -3681,8 +3681,6 @@ static RegisterNode<ForNode> regForNode(blr_for);
 DmlNode* ForNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
 {
 	ForNode* node = FB_NEW(pool) ForNode(pool);
-	csb->csb_for_nodes++;
-	node->needSavePoint = (csb->csb_for_nodes > 1);
 
 	if (csb->csb_blr_reader.peekByte() == (UCHAR) blr_stall)
 		node->stall = PAR_parse_stmt(tdbb, csb);
@@ -3834,7 +3832,9 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
-			if (needSavePoint && (transaction != sysTransaction))
+			*request->getImpure<SLONG>(impureOffset) = 0;
+			if (transaction != sysTransaction && 
+				transaction->tra_save_point && transaction->tra_save_point->sav_verb_actions)
 			{
 				VIO_start_save_point(tdbb, transaction);
 				const Savepoint* save_point = transaction->tra_save_point;
@@ -3874,9 +3874,10 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 		}
 
 		default:
-			if (needSavePoint && (transaction != sysTransaction))
+		{
+			const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+			if (sav_number)
 			{
-				const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
 				for (const Savepoint* save_point = transaction->tra_save_point;
 					 save_point && sav_number <= save_point->sav_number;
 					 save_point = transaction->tra_save_point)
@@ -3886,6 +3887,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 			}
 			cursor->close(tdbb);
 			return parentStmt;
+		}
 	}
 
 	fb_assert(false); // unreachable code
