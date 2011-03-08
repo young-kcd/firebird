@@ -1,3 +1,37 @@
+ 2011-03-07 20:56  asfernandes 
+   M src/dsql/parse.y
+Fixed problem reported by Dmitry about values in DECLARE not being assigned to variables.
+
+ 2011-03-07 19:41  dimitr 
+   M src/dsql/gen.cpp
+Cleanup.
+
+ 2011-03-07 18:40  asfernandes 
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+Replace parser hacks by correct btyacc's token position handling.
+This fixes some problems introduced in 3.0 related to backtrackings.
+It also fixes some non-precise line/column information in some commands (FOR ... DO <command>) and
+stored SQL text prefixed with spaces (in views, for example).
+
+ 2011-03-07 15:48  hvlad 
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Front ported fix for bug CORE-3328 : Client writes error messages into firebird.log when database is shutted down
+
+ 2011-03-07 03:15  asfernandes 
+   M src/dsql/parse.y
+Misc
+
+ 2011-03-07 03:15  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/node.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Replace some nod_list by array of nodes and change implementation of nod_returning to ReturningClause.
+
  2011-03-06 17:18  asfernandes 
    M src/dsql/StmtNodes.cpp
 Misc
