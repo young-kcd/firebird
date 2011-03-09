@@ -1,3 +1,10 @@
+ 2011-03-08 09:05  hvlad 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/jrd/exe.h
+Additional patch for CORE-3362 : Cursors should ignore changes made by the same statement
+Better (i hope) fix for implicit cursors stability in PSQL
+
  2011-03-07 20:56  asfernandes 
    M src/dsql/parse.y
 Fixed problem reported by Dmitry about values in DECLARE not being assigned to variables.
