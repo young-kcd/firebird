@@ -29,7 +29,8 @@
 #
 #
 ROOT=..
-ObjModuleType=std
+ObjModuleType=boot
+CXXFLAGS+= -DBOOT_BUILD
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -53,8 +54,8 @@ MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 
 .PHONY: empty_db refDatabases
 
-# This is where you are going to have trouble if there is one, at creating 
-# the first empty database.  Things to watch out for, $INTERBASE variable 
+# This is where you are going to have trouble if there is one, at creating
+# the first empty database.  Things to watch out for, $INTERBASE variable
 # pointing in the wrong place, shared library path LD_LIBRARY_PATH
 # not pointing to new stuff (mind you this point it should be creating
 # using create_db statically linked).
@@ -62,7 +63,7 @@ MSG_FILES = $(addprefix $(SRC_ROOT)/msgs/, $(MSG_SCRIPTS))
 empty_db : empty.fdb yachts.lnk
 
 empty.fdb : $(CREATE_DB)
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(BIN)/create_db
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.createdb
 	-$(RM) $@
 	$(BIN)/create_db $@
 	$(TOUCH) $@

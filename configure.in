@@ -1388,6 +1388,7 @@ gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic
 gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre
 gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
 gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
+gen/Makefile.static.createdb:${MAKE_SRC_DIR}/Makefile.in.static.createdb
 gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
 gen/Makefile.smp_server:${MAKE_SRC_DIR}/Makefile.in.smp_server

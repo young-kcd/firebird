@@ -56,11 +56,6 @@ NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sour
 $(FBCONFIG_Objects)
 
 
-CREATEDB_Files= create_db.cpp
-CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
-CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
-
-
 DROP_Other_Sources += common/utils.cpp jrd/isc_sync.cpp jrd/isc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
@@ -128,28 +123,17 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
-AllObjects = $(CREATEDB_Object) $(DROP_Object) $(FBSVCMGR_Objects) \
+AllObjects = $(DROP_Object) $(FBSVCMGR_Objects) \
 			 $(GSEC_Objects) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(CLUMPLETS_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec fbguard ibmgr_bin nbackup fb_lock_print \
+.PHONY: gstat gds_drop gds_relay gsec fbguard ibmgr_bin nbackup fb_lock_print \
 	fbsvcmgr fbtracemgr
 
 all: $(EMBED_UTIL_TARGETS)
-
-
-# it's important to note here that create_db is linked against the static
-# 'boot' libraries rather than the later embedded shared library.  The
-# other utilities are released but create_db is used in construction.
-# MOD 29-July-2002
-
-create_db: $(CREATE_DB)
-
-$(CREATE_DB):	$(CREATEDB_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
 
 
 nbackup: $(LIBFBEMBED_SO) $(NBACKUP)

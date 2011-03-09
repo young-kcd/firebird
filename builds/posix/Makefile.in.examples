@@ -29,7 +29,8 @@
 #
 #
 ROOT=../..
-ObjModuleType=std
+ObjModuleType=boot
+CXXFLAGS+= -DBOOT_BUILD
 
 # Add the install include directory to the search path since the
 # examples need to build using those headers values.

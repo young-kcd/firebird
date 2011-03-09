@@ -53,11 +53,6 @@ NBACKUP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_Sour
 $(CLUMPLETS_Objects) $(FBCONFIG_Objects)
 
 
-CREATEDB_Files= create_db.cpp
-CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
-CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
-
-
 DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
@@ -133,7 +128,7 @@ RELAY_Files =  relay.cpp
 RELAY_Sources = $(addprefix utilities/, $(RELAY_Files))
 RELAY_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(RELAY_Sources))))
 
-AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
+AllObjects = $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects) \
 			 $(FBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(FBSVCMGR_Objects) \
 			  $(FBTRACEMGR_Objects)
 
@@ -141,16 +136,10 @@ AllObjects = $(CREATEDB_Object) $(DROP_Object) $(GSTAT_Object) $(FBGUARD_Objects
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay create_db fb_lock_print \
+.PHONY: all gstat gsec fbguard fbmgr_bin nbackup gds_drop gds_relay fb_lock_print \
 	fbsvcmgr fbtracemgr
 
 all: $(CLIENT_UTIL_TARGETS)
-
-create_db: $(CREATE_DB)
-
-$(CREATE_DB):	$(CREATEDB_Objects) 
-	$(STATICEXE_LINK) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
-
 
 nbackup: $(LIBFBCLIENT_SO) $(NBACKUP)
 

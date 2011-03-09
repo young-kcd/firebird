@@ -263,7 +263,7 @@ boot_phase2 : libfbstatic $(ISC_GDB)
 $(ISC_GDB): create_db empty_db gbak_static isql_static ref_databases
 
 create_db:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.util $(CREATE_DB)
+	$(MAKE) -f $(GEN_ROOT)/Makefile.static.createdb
 
 gbak_static:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.static.gbak
@@ -286,8 +286,7 @@ security2.fdb: gdef isql 		# build the security database
 
 #--------------------------------------------------------------------------
 #Phase3: Now we start building the tools we are actually going to use
-#  against the shared library.
-#  an empty database (lock manager and create_db).  Then we rebuild all the
+#  against the shared library. Then we rebuild all the
 #  items we have built in the static library into a dynamic library.
 #  (It's probably possible to directly build the dynamic library - but thats
 #  for another day). We still don't have the security database stuff.
