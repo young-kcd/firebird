@@ -522,12 +522,12 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR findStream)
+	virtual bool jrdStreamFinder(USHORT findStream)
 	{
 		return fieldStream == findStream;
 	}
 
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList)
+	virtual void jrdStreamsCollector(SortedStreamList& streamList)
 	{
 		if (!streamList.exist(fieldStream))
 			streamList.add(fieldStream);
@@ -962,8 +962,8 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream);
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
+	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
 	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
@@ -1175,8 +1175,8 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream);
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
+	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
 	virtual bool computable(CompilerScratch* csb, SSHORT stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);

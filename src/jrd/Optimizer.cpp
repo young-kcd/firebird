@@ -69,7 +69,7 @@ bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_des
 
 	if (idx && idx->idx_expression_statement && idx->idx_expression)
 	{
-		SortedArray<int> streams;
+		SortedStreamList streams;
 		node->jrdStreamsCollector(streams);
 
 		if (streams.getCount() != 1 || streams[0] != stream)

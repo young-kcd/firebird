@@ -939,14 +939,14 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 		targetList->findDependentFromStreams(optRet, streamList);
 }
 
-bool ProcedureSourceNode::jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR /*findStream*/)
+bool ProcedureSourceNode::jrdStreamFinder(USHORT /*findStream*/)
 {
 	// ASF: We used to visit nodes that were not handled appropriate. This is
 	// equivalent with the legacy code.
 	return sourceList && targetList;
 }
 
-void ProcedureSourceNode::jrdStreamsCollector(SortedArray<int>& streamList)
+void ProcedureSourceNode::jrdStreamsCollector(SortedStreamList& streamList)
 {
 	if (sourceList)
 		sourceList->jrdStreamsCollector(streamList);
@@ -2743,25 +2743,25 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 		(*ptr)->findDependentFromStreams(optRet, streamList);
 }
 
-bool RseNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
+bool RseNode::jrdStreamFinder(USHORT findStream)
 {
-	if (rse_first && rse_first->jrdStreamFinder(csb, findStream))
+	if (rse_first && rse_first->jrdStreamFinder(findStream))
 		return true;
 
-	if (rse_skip && rse_skip->jrdStreamFinder(csb, findStream))
+	if (rse_skip && rse_skip->jrdStreamFinder(findStream))
 		return true;
 
-	if (rse_boolean && rse_boolean->jrdStreamFinder(csb, findStream))
+	if (rse_boolean && rse_boolean->jrdStreamFinder(findStream))
 		return true;
 
 	// ASF: The legacy code used to visit rse_sorted and rse_projection. But note that
 	// visiting them, the visitor always returns true, because nod_sort is not handled
 	// there. So I replaced these lines by the if/return below.
 	//
-	// if (rse_sorted && rse_sorted->jrdStreamFinder(csb, findStream))
+	// if (rse_sorted && rse_sorted->jrdStreamFinder(findStream))
 	//     return true;
 	//
-	// if (rse_projection && rse_projection->jrdStreamFinder(csb, findStream))
+	// if (rse_projection && rse_projection->jrdStreamFinder(findStream))
 	//     return true;
 
 	if (rse_sorted || rse_projection)
@@ -2772,14 +2772,14 @@ bool RseNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
 
 	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
 	{
-		if ((*ptr)->jrdStreamFinder(csb, findStream))
+		if ((*ptr)->jrdStreamFinder(findStream))
 			return true;
 	}
 
 	return false;
 }
 
-void RseNode::jrdStreamsCollector(SortedArray<int>& streamList)
+void RseNode::jrdStreamsCollector(SortedStreamList& streamList)
 {
 	if (rse_first)
 		rse_first->jrdStreamsCollector(streamList);

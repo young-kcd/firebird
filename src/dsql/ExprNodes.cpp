@@ -240,11 +240,11 @@ bool ExprNode::jrdPossibleUnknownFinder()
 }
 
 // Search if somewhere in the expression the given stream is used.
-bool ExprNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
+bool ExprNode::jrdStreamFinder(USHORT findStream)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
-		if (**i && (*i)->getExpr()->jrdStreamFinder(csb, findStream))
+		if (**i && (*i)->getExpr()->jrdStreamFinder(findStream))
 			return true;
 	}
 
@@ -252,7 +252,7 @@ bool ExprNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
 }
 
 // Return all streams referenced by the expression.
-void ExprNode::jrdStreamsCollector(SortedArray<int>& streamList)
+void ExprNode::jrdStreamsCollector(SortedStreamList& streamList)
 {
 	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
@@ -3996,7 +3996,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, SSHORT stream,
 	if (!arg->computable(csb, stream, allowOnlyCurrentStream))
 		return false;
 
-	SortedArray<int> argStreams;
+	SortedStreamList argStreams;
 	arg->jrdStreamsCollector(argStreams);
 
 	for (USHORT* i = streamList.begin(); i != streamList.end(); ++i)
@@ -7515,12 +7515,12 @@ void RecordKeyNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	}
 }
 
-bool RecordKeyNode::jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR findStream)
+bool RecordKeyNode::jrdStreamFinder(USHORT findStream)
 {
 	return recStream == findStream;
 }
 
-void RecordKeyNode::jrdStreamsCollector(SortedArray<int>& streamList)
+void RecordKeyNode::jrdStreamsCollector(SortedStreamList& streamList)
 {
 	if (!streamList.exist(recStream))
 		streamList.add(recStream);
@@ -8541,18 +8541,18 @@ bool SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return false;
 }
 
-bool SubQueryNode::jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
+bool SubQueryNode::jrdStreamFinder(USHORT findStream)
 {
-	if (rse && rse->jrdStreamFinder(csb, findStream))
+	if (rse && rse->jrdStreamFinder(findStream))
 		return true;
 
-	if (value1 && value1->jrdStreamFinder(csb, findStream))
+	if (value1 && value1->jrdStreamFinder(findStream))
 		return true;
 
 	return false;
 }
 
-void SubQueryNode::jrdStreamsCollector(SortedArray<int>& streamList)
+void SubQueryNode::jrdStreamsCollector(SortedStreamList& streamList)
 {
 	if (rse)
 		rse->jrdStreamsCollector(streamList);

@@ -1089,7 +1089,7 @@ static void check_sorts(RseNode* rse)
 
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
-				SortedArray<int> streams;
+				SortedStreamList streams;
 				(*sort_ptr)->jrdStreamsCollector(streams);
 
 				// We can use this sort only if there's a single stream
@@ -2272,7 +2272,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		{
 			// If no index is used then leave other nodes alone, because they
 			// could be used for building a SORT/MERGE.
-			if ((inversion && node->jrdStreamFinder(csb, stream)) ||
+			if ((inversion && node->jrdStreamFinder(stream)) ||
 				(!inversion && node->computable(csb, stream, true)))
 			{
 				compose(tdbb, &boolean, node);
@@ -2292,7 +2292,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 			if (condition &&
 				condition->computable(csb, -1, false) &&
-				!condition->jrdStreamFinder(csb, stream))
+				!condition->jrdStreamFinder(stream))
 			{
 				RecordSource* const other_rsb =
 					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);

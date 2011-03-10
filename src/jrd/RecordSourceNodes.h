@@ -241,7 +241,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR /*findStream*/)
+	virtual bool jrdStreamFinder(USHORT /*findStream*/)
 	{
 		return true;
 	}
@@ -399,8 +399,8 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual bool jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR findStream);
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
+	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
@@ -700,8 +700,8 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual bool jrdStreamFinder(CompilerScratch* /*csb*/, UCHAR findStream);
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
+	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 

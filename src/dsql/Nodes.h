@@ -491,8 +491,8 @@ public:
 	}
 
 	virtual bool jrdPossibleUnknownFinder();
-	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream);
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& streamList);
+	virtual bool jrdStreamFinder(USHORT findStream);
+	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 	virtual bool jrdUnmappableNode(const MapNode* mapNode, UCHAR shellStream);
 
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
@@ -704,14 +704,14 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(CompilerScratch* csb, UCHAR findStream)
+	virtual bool jrdStreamFinder(USHORT findStream)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
 		return false;
 	}
 
-	virtual void jrdStreamsCollector(Firebird::SortedArray<int>& /*streamList*/)
+	virtual void jrdStreamsCollector(SortedStreamList& /*streamList*/)
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
