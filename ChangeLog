@@ -1,3 +1,15 @@
+ 2011-03-09 11:59  alexpeshkoff 
+   M builds/posix/Makefile.in.client.util
+   M builds/posix/Makefile.in.codes
+   M builds/posix/Makefile.in.embed.util
+   M builds/posix/Makefile.in.examples
+   M builds/posix/Makefile.in.firebird
+   M builds/posix/Makefile.in.msgs
+   M builds/posix/Makefile.in.refDatabases
+   A builds/posix/Makefile.in.static.createdb
+   M configure.in
+Fixed CORE-3377: During firebird build records about missing fbintl.conf are attempted to be placed in firebird.log in destination (not build) directory
+
  2011-03-07 14:30  hvlad 
    M src/jrd/why.cpp
    M src/remote/interface.cpp
