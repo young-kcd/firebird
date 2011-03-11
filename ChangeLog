@@ -1,3 +1,23 @@
+ 2011-03-11 00:58  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Misc
+
+ 2011-03-10 15:54  asfernandes 
+   M src/include/ProviderInterface.h
+Misc
+
+ 2011-03-10 08:13  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/opt.cpp
+Misc adjustments.
+
  2011-03-08 09:05  hvlad 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
