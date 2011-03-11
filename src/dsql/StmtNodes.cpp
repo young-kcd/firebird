@@ -3833,7 +3833,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 	{
 		case jrd_req::req_evaluate:
 			*request->getImpure<SLONG>(impureOffset) = 0;
-			if (transaction != sysTransaction && 
+			if (transaction != sysTransaction &&
 				transaction->tra_save_point && transaction->tra_save_point->sav_verb_actions)
 			{
 				VIO_start_save_point(tdbb, transaction);

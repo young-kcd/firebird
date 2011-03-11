@@ -1177,8 +1177,9 @@ namespace
 
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
+
 		Attachment att;
-		StatusVector*	status;
+		StatusVector* status;
 	};
 
 } // anonymous namespace
@@ -5709,9 +5710,9 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 		attachment->handle->ping(&status);
 		if (!status.isSuccess())
 		{
-			if (!attachment->status.getError()) {
+			if (!attachment->status.getError())
 				attachment->status.save(status);
-			}
+
 			attachment->handle->detach(&status);
 			status_exception::raise(attachment->status.value());
 		}

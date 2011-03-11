@@ -4562,19 +4562,19 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	const bool defer = (this->port_flags & PORT_lazy) && defer_flag;
 
-	if (defer) {
+	if (defer)
 		this->send_partial(sendL);
-	}
-	else {
-		this->send(sendL);
-	}
-
-	// If database or attachment has been shut down,
-	// there's no point in keeping the connection open
-	if (!defer && (exit_code == isc_shutdown || exit_code == isc_att_shutdown))
+	else
 	{
-		this->port_state = rem_port::BROKEN;
-		this->port_flags |= PORT_rdb_shutdown;
+		this->send(sendL);
+
+		// If database or attachment has been shut down,
+		// there's no point in keeping the connection open
+		if (exit_code == isc_shutdown || exit_code == isc_att_shutdown)
+		{
+			this->port_state = rem_port::BROKEN;
+			this->port_flags |= PORT_rdb_shutdown;
+		}
 	}
 
 	return exit_code;
