@@ -1141,6 +1141,14 @@ static void execute_immediate(thread_db* tdbb,
 
 		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version);
 
+		// Only allow NULL trans_handle if we're starting a transaction
+
+		if (!*tra_handle && request->req_type != REQ_START_TRANS)
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+					  Arg::Gds(isc_bad_trans_handle));
+		}
+
 		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 		// A select with a non zero output length is a singleton select
