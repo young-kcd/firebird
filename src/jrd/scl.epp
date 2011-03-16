@@ -141,7 +141,7 @@ void SCL_check_access(thread_db* tdbb,
 	{
 		ERR_post(isc_no_priv, isc_arg_string, "(ACL unrecognized)",
 				 isc_arg_string, "security_class",
-				 isc_arg_string, s_class->scl_name,
+				 isc_arg_string, s_class->scl_name.c_str(),
 				 isc_arg_end);
 	}
 
