@@ -69,11 +69,9 @@ public:
 
 	// Notify providers when some jrd attachment is about to be released
 	static void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
+	static int shutdown();
 
 private:
-	static void init();
-	static int shutdown(const int reason, const int mask, void* arg);
-
 	static Firebird::GlobalPtr<Manager> manager;
 	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;

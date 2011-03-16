@@ -49,10 +49,12 @@ public:
 	IConfig* FB_CARG getConfig(const char* filename);
 	void FB_CARG releasePlugin(Plugin* plugin);
 	void FB_CARG setModuleCleanup(IModuleCleanup* cleanup);
+	void FB_CARG resetModuleCleanup(IModuleCleanup* cleanup);
 
 	PluginManager();
 
 	static void shutdown();
+	static void waitForType(unsigned int typeThatMustGoAway);
 };
 
 }	// namespace Firebird

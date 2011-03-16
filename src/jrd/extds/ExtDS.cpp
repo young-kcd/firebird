@@ -72,11 +72,6 @@ Manager::~Manager()
 	}
 }
 
-void Manager::init()
-{
-	fb_shutdown_callback(0, shutdown, fb_shut_preproviders, 0);
-}
-
 void Manager::addProvider(Provider* provider)
 {
 	for (const Provider* prv = m_providers; prv; prv = prv->m_next)
@@ -113,7 +108,6 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 		if (!m_initialized)
 		{
-			init();
 			m_initialized = true;
 		}
 	}
@@ -157,7 +151,7 @@ void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 	}
 }
 
-int Manager::shutdown(const int /*reason*/, const int /*mask*/, void* /*arg*/)
+int Manager::shutdown()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {

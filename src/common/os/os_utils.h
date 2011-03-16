@@ -43,6 +43,7 @@ namespace os_utils
 
 	void createLockDirectory(const char* pathname);
 	int openCreateSharedFile(const char* pathname, int flags);
+	bool touchFile(const char* pathname);
 
 } // namespace os_utils
 

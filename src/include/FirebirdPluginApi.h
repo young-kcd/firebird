@@ -62,10 +62,6 @@
 #ifndef FIREBIRD_PLUGIN_API_H
 #define FIREBIRD_PLUGIN_API_H
 
-#ifdef __GNUC__
-#	pragma GCC system_header	// disable warning about non-existent virtual destructor
-#endif
-
 #include "Interface.h"
 
 #define FB_PLUGIN_ENTRY_POINT		firebird_plugin
@@ -116,7 +112,7 @@ class IFirebirdConf : public Interface
 {
 public:
 	// Get integer key by it's name
-	// Value <0 means name is invalid
+	// Value ~0 means name is invalid
 	// Keys are stable: one can use once obtained key in other instances of this interface
 	virtual unsigned int FB_CARG getKey(const char* name) = 0;
 	// Use to access integer and boolean values
@@ -171,7 +167,11 @@ public:
 	virtual void FB_CARG registerPlugin(unsigned int interfaceType, const char* defaultName,
 										PluginsFactory* factory) = 0;
 	// Sets cleanup for plugin module
+	// Pay attention - this should be called at plugin-regsiter time!
+	// Only at this moment manager knows, which module sets his cleanup
 	virtual void FB_CARG setModuleCleanup(IModuleCleanup* cleanup) = 0;
+	// Remove registered before cleanup routine
+	virtual void FB_CARG resetModuleCleanup(IModuleCleanup* cleanup) = 0;
 	// Main function called to access plugins registered in plugins manager
 	// Has front-end in GetPlugins.h - template GetPlugins
 	// In namesList parameter comma or space separated list of names of configured plugins is passed
@@ -202,6 +202,8 @@ namespace PluginType {
 	static const unsigned int AuthUserManagement = 13;
 	static const unsigned int ExternalEngine = 14;
 	static const unsigned int Trace = 15;
+
+	static const unsigned int MaxType = 16;	// keep in sync please
 };
 
 }	// namespace Firebird

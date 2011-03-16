@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include "../common/common.h"
 #include "../jrd/ibase.h"
-#include "../auth/SecurityDatabase/LegacyServer.h"
+#include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
@@ -39,6 +39,7 @@
 #include "../common/classes/UserBlob.h"
 #include "../auth/SecurityDatabase/LegacyManagement.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/classes/ClumpletWriter.h"
 #include "FirebirdPluginApi.h"
 
 // Here we use version-independent symbolic link (or copy) of actual database
@@ -377,7 +378,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 				if (user->password()->entered())
 				{
 					ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), PASSWORD_SALT);
-					SecurityDatabase::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
+					LegacyHash::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
 					STR_STORE(U.PLG$PASSWD, encrypted2.c_str());
 					U.PLG$PASSWD.NULL = ISC_FALSE;
 				}
@@ -452,7 +453,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 					if (user->password()->entered())
 					{
 						ENC_crypt(encrypted1, sizeof encrypted1, user->password()->get(), PASSWORD_SALT);
-						SecurityDatabase::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
+						LegacyHash::hash(encrypted2, user->userName()->get(), &encrypted1[2]);
 						STR_STORE(U.PLG$PASSWD, encrypted2.c_str());
 						U.PLG$PASSWD.NULL = ISC_FALSE;
 					}
@@ -667,6 +668,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user
 
 // register plugin
 static Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> factory;
+static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
@@ -674,6 +676,7 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 
 	factory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
+	iPlugin->setModuleCleanup(&unloadDetector);
 
 	iPlugin->release();
 }

@@ -6514,6 +6514,9 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	{
 		ThreadContextHolder tdbb;
 
+		// Shutdown external datasets manager
+		EDS::Manager::shutdown();
+
 		MutexLockGuard guard(databases_mutex);
 
 		cancel_attachments(tdbb);

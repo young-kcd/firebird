@@ -67,6 +67,18 @@ private:
 	bool initialize(bool);
 
 	void checkFile();
+	void touchFile();
+
+	class TouchFile : public Firebird::StackIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+	{
+	public:
+		void FB_CARG handler();
+		void start(const char* fName);
+		void stop();
+	private:
+		const char* fileName;
+	};
+	TouchFile timer;
 
 	void checkDirty()
 	{

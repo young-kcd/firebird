@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		jrd_pwd.h
+ *	MODULE:		LegacyServer.h
  *	DESCRIPTION:	User information database name
  *
  * The contents of this file are subject to the Interbase Public
@@ -42,61 +42,6 @@
 #include <time.h>
 
 namespace Auth {
-
-const size_t MAX_PASSWORD_LENGTH = 64;			// used to store passwords internally
-static const char* const PASSWORD_SALT = "9z";	// for old ENC_crypt()
-const size_t SALT_LENGTH = 12;					// measured after base64 coding
-
-class SecurityDatabase : public Firebird::GlobalStorage
-{
-public:
-	Result verify(WriterInterface* authBlock,
-				  Firebird::ClumpletReader& originalDpb);
-
-	static void shutdown(void*);
-
-	static void hash(Firebird::string& h, const Firebird::string& userName, const TEXT* passwd)
-	{
-		Firebird::string salt;
-		Jrd::CryptSupport::random(salt, SALT_LENGTH);
-		hash(h, userName, passwd, salt);
-	}
-
-	static void hash(Firebird::string& h,
-					 const Firebird::string& userName,
-					 const Firebird::string& passwd,
-					 const Firebird::string& oldHash)
-	{
-		Firebird::string salt(oldHash);
-		salt.resize(SALT_LENGTH, '=');
-		Firebird::string allData(salt);
-		allData += userName;
-		allData += passwd;
-		Jrd::CryptSupport::hash(h, allData);
-		h = salt + h;
-	}
-
-	char secureDbName[MAXPATHLEN];
-
-	SecurityDatabase()
-		: lookup_db(0), lookup_req(0)
-	{
-	}
-
-private:
-	Firebird::Mutex mutex;
-
-	ISC_STATUS_ARRAY status;
-
-	isc_db_handle lookup_db;
-	isc_req_handle lookup_req;
-
-	void init();
-	void fini();
-	bool lookup_user(const char*, char*);
-	void prepare();
-	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
-};
 
 class SecurityDatabaseServerFactory : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
 {

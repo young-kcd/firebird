@@ -167,6 +167,7 @@ private:
 	static pthread_mutexattr_t attr;
 #ifdef DEV_BUILD
 	const char* reason;
+	int lockCount;
 #endif
 
 private:
@@ -174,6 +175,7 @@ private:
 	{
 #ifdef DEV_BUILD
 		reason = NULL;
+		lockCount = 0;
 #endif
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc)
@@ -186,6 +188,7 @@ public:
 
 	~Mutex()
 	{
+		fb_assert(lockCount == 0);
 		int rc = pthread_mutex_destroy(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_destroy", rc);
@@ -198,6 +201,7 @@ public:
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
 		reason = aReason;
+		++lockCount;
 	}
 #endif
 
@@ -208,6 +212,7 @@ public:
 			system_call_failed::raise("pthread_mutex_lock", rc);
 #ifdef DEV_BUILD
 		reason = "<..unspecified..>";
+		++lockCount;
 #endif
 	}
 
@@ -218,14 +223,43 @@ public:
 			return false;
 		if (rc)
 			system_call_failed::raise("pthread_mutex_trylock", rc);
+#ifdef DEV_BUILD
+		reason = "<..unspecified..>";
+		++lockCount;
+#endif
 		return true;
 	}
 
 	void leave()
 	{
+		fb_assert(lockCount > 0);
+#ifdef DEV_BUILD
+		--lockCount;
+#endif
 		int rc = pthread_mutex_unlock(&mlock);
 		if (rc)
+		{
+#ifdef DEV_BUILD
+			++lockCount;
+#endif
 			system_call_failed::raise("pthread_mutex_unlock", rc);
+		}
+	}
+
+	void assertLocked()
+	{
+#ifdef DEV_BUILD
+		// first of all try to enter the mutex
+		// this will help to make sure it's not locked by other thread
+		if (!tryEnter())
+		{
+			fb_assert(false);
+		}
+		// make sure mutex was already locked prior assertLocked
+		fb_assert(lockCount > 1);
+		// leave to release lock, done by us in tryEnter
+		leave();
+#endif
 	}
 
 public:

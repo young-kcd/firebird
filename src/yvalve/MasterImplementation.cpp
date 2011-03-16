@@ -28,6 +28,11 @@
 
 #include "firebird.h"
 #include "Interface.h"
+#include "Timer.h"
+
+#include <sys/time.h>
+
+#include "../yvalve/MasterImplementation.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/init.h"
 #include "../common/StatusHolder.h"
@@ -35,7 +40,10 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/semaphore.h"
 #include "../common/isc_proto.h"
+#include "../common/ThreadStart.h"
+#include "../jrd/ibase.h"
 
 namespace Firebird {
 
@@ -46,6 +54,7 @@ public:
 	IPlugin* FB_CARG getPluginInterface();
 	int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass);
 	const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
+	ITimerControl* FB_CARG getTimerControl();
 };
 
 //
@@ -334,6 +343,191 @@ const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t le
 }
 
 } // namespace Firebird
+
+
+//
+// timer
+//
+
+namespace Firebird {
+
+namespace {
+
+GlobalPtr<Mutex> timerAccess;
+GlobalPtr<Semaphore> timerWakeup;
+
+bool stopThread = false;
+Thread::Handle timerThreadHandle = 0;
+
+struct TimerEntry
+{
+	TimerDelay fireTime;
+	ITimer* timer;
+
+	static const TimerDelay generate(const void* /*sender*/, const TimerEntry& item) { return item.fireTime; }
+	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
+
+	static void init()
+	{
+		Thread::start(timeThread, 0, 0, &timerThreadHandle);
+	}
+
+	static void cleanup(void);
+};
+
+typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, TimerDelay, TimerEntry> TimerQueue;
+GlobalPtr<TimerQueue> timerQueue;
+
+InitMutex<TimerEntry> timerHolder;
+
+void TimerEntry::cleanup(void)
+{
+	MutexLockGuard guard(timerAccess);
+
+	stopThread = true;
+	timerWakeup->release();
+	Thread::waitForCompletion(timerThreadHandle);
+
+	while (timerQueue->hasData())
+	{
+		TimerEntry& e(timerQueue->operator[](timerQueue->getCount() - 1));
+		e.timer->release();
+		timerQueue->remove(&e);
+	}
+}
+
+TimerDelay curTime()
+{
+	struct timeval cur_time;
+	struct timezone tzUnused;
+
+	if (gettimeofday(&cur_time, &tzUnused) != 0)
+	{
+		system_call_failed::raise("gettimeofday");
+	}
+
+	TimerDelay microSeconds = ((TimerDelay) cur_time.tv_sec) * 1000000 + cur_time.tv_usec;
+	return microSeconds;
+}
+
+TimerEntry* getTimer(ITimer* timer)
+{
+	timerAccess->assertLocked();
+
+	for (unsigned int i = 0; i < timerQueue->getCount(); ++i)
+	{
+		TimerEntry& e(timerQueue->operator[](i));
+		if (e.timer == timer)
+		{
+			return &e;
+		}
+	}
+
+	return NULL;
+}
+
+THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
+{
+	while (!stopThread)
+	{
+		TimerDelay microSeconds = 0;
+		{
+			MutexLockGuard guard(timerAccess);
+
+			const TimerDelay cur = curTime();
+			while (timerQueue->getCount() > 0)
+			{
+				TimerEntry e(timerQueue->operator[](0));
+				if (e.fireTime <= cur)
+				{
+					timerQueue->remove((size_t)0);
+					e.timer->handler();
+					e.timer->release();
+				}
+				else
+				{
+					microSeconds = e.fireTime - cur;
+					break;
+				}
+			}
+		}
+
+		if (microSeconds)
+		{
+			timerWakeup->tryEnter(0, microSeconds / 1000);
+		}
+		else
+		{
+			timerWakeup->enter();
+		}
+	}
+
+	return 0;
+}
+
+} // namespace
+
+class TimerImplementation : public StackIface<ITimerControl, FB_I_TIMER_CONTROL_VERSION>
+{
+public:
+	void FB_CARG start(ITimer* timer, TimerDelay microSeconds)
+	{
+		MutexLockGuard guard(timerAccess);
+
+		timerHolder.init();
+
+		if (stopThread)
+		{
+			// ignore an attempt to start timer - anyway thread to make it fire is down
+			return;
+		}
+
+		TimerEntry* curTimer = getTimer(timer);
+		if (!curTimer)
+		{
+			TimerEntry newTimer;
+
+			newTimer.timer = timer;
+			newTimer.fireTime = curTime() + microSeconds;
+			timerQueue->add(newTimer);
+			timer->addRef();
+		}
+		else
+		{
+			curTimer->fireTime = curTime() + microSeconds;
+		}
+
+		timerWakeup->release();
+	}
+
+	void FB_CARG stop(ITimer* timer)
+	{
+		MutexLockGuard guard(timerAccess);
+
+		TimerEntry* curTimer = getTimer(timer);
+		if (curTimer)
+		{
+			curTimer->timer->release();
+			timerQueue->remove(curTimer);
+		}
+	}
+};
+
+ITimerControl* FB_CARG MasterImplementation::getTimerControl()
+{
+	static Static<TimerImplementation> timer;
+
+	timer->addRef();
+	return &timer;
+}
+
+void shutdownTimers()
+{
+	timerHolder.cleanup();
+}
+
+} // namespace Firebird
+
 
 //
 // get master

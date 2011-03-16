@@ -100,6 +100,7 @@
 #include "../common/classes/GetPlugins.h"
 #include "../remote/client/interface.h"
 #include "../yvalve/PluginManager.h"
+#include "../yvalve/MasterImplementation.h"
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -170,7 +171,7 @@ static SCHAR *alloc_debug(SLONG, const char*, int);
 #else
 static SCHAR *alloc(SLONG);
 #endif
-static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
+static ISC_STATUS detach_or_drop_database(ISC_STATUS* user_status, FB_API_HANDLE* handle,
 										  bool drop, const ISC_STATUS specCode = 0);
 static void release_dsql_support(sqlda_sup&);
 
@@ -202,6 +203,9 @@ namespace Why
 
 	// force use of default memory pool for Y-Valve objects
 	typedef GlobalStorage DefaultMemory;
+
+	// This mutex is used to work with attachless handles, first of all with services
+	static GlobalPtr<Mutex> servicesMutex;
 
 	template <typename CleanupRoutine, typename CleanupArg>
 	class Clean : public DefaultMemory
@@ -274,6 +278,9 @@ namespace Why
 			}
 		}
 
+		void releaseAll();
+		Mutex* getProviderInterfaceCleanupMutex();
+
 		// required to put pointers to it into the tree
 		static const FB_API_HANDLE& generate(const void* /*sender*/, const BaseHandle* value)
 		{
@@ -283,7 +290,8 @@ namespace Why
 		static void drop(BaseHandle*);
 
 	protected:
-		~BaseHandle();
+		virtual void releaseProviderInterface() = 0;
+		virtual ~BaseHandle();
 	};
 
 	template <typename T>
@@ -347,7 +355,9 @@ namespace Why
 		Mutex enterMutex;
 
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		IAttachment* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IAttachment> providerInterface;
+		IAttachment* providerInterface;
 		StatusHolder status;		// Do not use raise() method of this class in yValve
 		PathName db_path;
 
@@ -374,6 +384,11 @@ namespace Why
 	private:
 		~CAttachment() { }
 
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
+
 		bool flagDestroying;
 	};
 
@@ -382,7 +397,9 @@ namespace Why
 	public:
 		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
 		Transaction next;
-		ITransaction* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<ITransaction> providerInterface;
+		ITransaction* providerInterface;
 		HandleArray<CBlob> blobs;
 
 		static ISC_STATUS hError()
@@ -397,14 +414,14 @@ namespace Why
 
 	public:
 		CTransaction(ITransaction* h, FB_API_HANDLE* pub, Attachment par)
-			: BaseHandle(hType(), pub, par), next(0), handle(h),
+			: BaseHandle(hType(), pub, par), next(0), providerInterface(h),
 			blobs(getPool())
 		{
 			parent->transactions.toParent(this);
 		}
 
 		CTransaction(FB_API_HANDLE* pub)
-			: BaseHandle(hType(), pub, Attachment(0)), next(0), handle(0),
+			: BaseHandle(hType(), pub, Attachment(0)), next(0), providerInterface(0),
 			blobs(getPool())
 		{
 		}
@@ -413,12 +430,19 @@ namespace Why
 
 	private:
 		~CTransaction() { }
+
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
 	};
 
 	class CRequest : public BaseHandle
 	{
 	public:
-		IRequest* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IRequest> providerInterface;
+		IRequest* providerInterface;
 
 		static ISC_STATUS hError()
 		{
@@ -432,7 +456,7 @@ namespace Why
 
 	public:
 		CRequest(IRequest* h, FB_API_HANDLE* pub, Attachment par)
-			: BaseHandle(hType(), pub, par), handle(h)
+			: BaseHandle(hType(), pub, par), providerInterface(h)
 		{
 			parent->requests.toParent(this);
 		}
@@ -446,12 +470,19 @@ namespace Why
 
 	private:
 		~CRequest() { }
+
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
 	};
 
 	class CBlob : public BaseHandle
 	{
 	public:
-		IBlob* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IBlob> providerInterface;
+		IBlob* providerInterface;
 		Transaction tra;
 
 		static ISC_STATUS hError()
@@ -466,7 +497,7 @@ namespace Why
 
 	public:
 		CBlob(IBlob* h, FB_API_HANDLE* pub, Attachment par, Transaction t)
-			: BaseHandle(hType(), pub, par), handle(h), tra(t)
+			: BaseHandle(hType(), pub, par), providerInterface(h), tra(t)
 		{
 			parent->blobs.toParent(this);
 			tra->blobs.toParent(this);
@@ -481,12 +512,19 @@ namespace Why
 
 	private:
 		~CBlob() { }
+
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
 	};
 
 	class CStatement : public BaseHandle
 	{
 	public:
-		IStatement* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IStatement> providerInterface;
+		IStatement* providerInterface;
 		struct sqlda_sup das;
 
 		static ISC_STATUS hError()
@@ -501,7 +539,7 @@ namespace Why
 
 	public:
 		CStatement(IStatement* h, FB_API_HANDLE* pub, Attachment par)
-			: BaseHandle(hType(), pub, par), handle(h)
+			: BaseHandle(hType(), pub, par), providerInterface(h)
 		{
 			parent->statements.toParent(this);
 			memset(&das, 0, sizeof das);
@@ -530,13 +568,20 @@ namespace Why
 				release_dsql_support(das);
 			}
 		}
+
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
 	};
 
 	class CService : public BaseHandle
 	{
 	public:
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
-		IService* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IService> providerInterface;
+		IService* providerInterface;
 
 		static ISC_STATUS hError()
 		{
@@ -550,7 +595,7 @@ namespace Why
 
 	public:
 		CService(IService* h, FB_API_HANDLE* pub, Plugin* prov)
-			: BaseHandle(hType(), pub, Attachment(0), prov), handle(h)
+			: BaseHandle(hType(), pub, Attachment(0), prov), providerInterface(h)
 		{
 		}
 
@@ -561,13 +606,20 @@ namespace Why
 		}
 
 	private:
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
+
 		~CService() { }
 	};
 
 	class CEvents : public BaseHandle, public EventCallback
 	{
 	public:
-		IEvents* handle;
+		// TODO: After fixing handles in engine they should become RefCounted here.
+		//RefCounted<IEvents> providerInterface;
+		IEvents* providerInterface;
 		EventCallback* callBack;
 
 		static ISC_STATUS hError()
@@ -582,7 +634,7 @@ namespace Why
 
 	public:
 		CEvents(FB_API_HANDLE* pub, Attachment par, FPTR_EVENT_CALLBACK f, void* a)
-			: BaseHandle(hType(), pub, par), handle(NULL), func(f), arg(a)
+			: BaseHandle(hType(), pub, par), providerInterface(NULL), func(f), arg(a)
 		{
 			parent->events.toParent(this);
 		}
@@ -603,6 +655,11 @@ namespace Why
 		{ }
 
 	private:
+		void releaseProviderInterface()
+		{
+			providerInterface = NULL;
+		}
+
 		FPTR_EVENT_CALLBACK func;
 		void* arg;
 	};
@@ -659,10 +716,18 @@ namespace Why
 		{
 			MutexLockGuard guard(shutdownCallbackMutex);
 
-			for (const ShutChain* chain = list; chain; chain = chain->next)
+			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
-				if (chain->callBack == cb && chain->mask == m && chain->arg == a)
+				if (chain->callBack == cb && chain->arg == a)
 				{
+					if (m)
+					{
+						chain->mask |= m;
+					}
+					else
+					{
+						chain->mask = 0;
+					}
 					return;
 				}
 			}
@@ -733,6 +798,25 @@ namespace Why
 		return 0;
 	}
 
+	Mutex* BaseHandle::getProviderInterfaceCleanupMutex()
+	{
+		return parent.hasData() ? &(parent->enterMutex) : &servicesMutex;
+	}
+
+	void BaseHandle::releaseAll()
+	{
+		{ // providerInterface cleanup mutex scope
+			MutexLockGuard guard(*getProviderInterfaceCleanupMutex());
+			releaseProviderInterface();
+		}
+
+		if (provider)
+		{
+			PluginInterface()->releasePlugin(provider);
+			provider = NULL;
+		}
+	}
+
 	template <typename ToHandle> RefPtr<ToHandle> translate(FB_API_HANDLE* handle, bool checkAttachment = true)
 	{
 		if (shutdownStarted)
@@ -799,8 +883,9 @@ namespace Why
 		  requests(getPool()),
 		  blobs(getPool()),
 		  statements(getPool()),
+		  events(getPool()),
 		  enterCount(0),
-		  handle(h),
+		  providerInterface(h),
 		  db_path(getPool()),
 		  flagDestroying(false)
 	{
@@ -820,6 +905,7 @@ namespace Why
 			h->requests.destroy();
 			h->statements.destroy();
 			h->blobs.destroy();
+			h->events.destroy();
 			// There should not be transactions at this point,
 			// but it's no danger in cleaning empty array
 			h->transactions.destroy();
@@ -1413,7 +1499,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
 			attachment = new CAttachment(NULL, public_handle, p);
 			attachment->db_path = expanded_filename;
 
-			p->attachDatabase(ptr, &attachment->handle, *public_handle, expanded_filename.c_str(),
+			p->attachDatabase(ptr, &attachment->providerInterface, *public_handle, expanded_filename.c_str(),
 							  newDpb.getBufferLength(), newDpb.getBuffer());
 			if (ptr->isSuccess())
 			{
@@ -1455,9 +1541,14 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* user_status,
 	{
 		if (attachment)
 		{
-			if (attachment->handle)
 			{
-				attachment->handle->detach(&temp);
+				MutexLockGuard guard(*attachment->getProviderInterfaceCleanupMutex());
+
+				if (attachment->providerInterface)
+				{
+					attachment->providerInterface->detach(&temp);
+					attachment->providerInterface = NULL;
+				}
 			}
 			destroyNoThrow(attachment);
 		}
@@ -1492,7 +1583,7 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS*	user_status,
 	{
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
-		blob->handle->getInfo(&status, item_length, reinterpret_cast<const unsigned char*>(items),
+		blob->providerInterface->getInfo(&status, item_length, reinterpret_cast<const unsigned char*>(items),
 							  buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
 	catch (const Exception& e)
@@ -1504,8 +1595,8 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS * user_status,
-									   FB_API_HANDLE * blob_handle)
+ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS* user_status,
+									   FB_API_HANDLE* blob_handle)
 {
 /**************************************
  *
@@ -1533,7 +1624,19 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS * user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
 
-		blob->handle->cancel(&status);
+		{
+			MutexLockGuard guard(*blob->getProviderInterfaceCleanupMutex());
+
+			if (blob->providerInterface)
+			{
+				blob->providerInterface->cancel(&status);
+				if (status.isSuccess())
+				{
+					blob->providerInterface = NULL;
+				}
+			}
+		}
+
 		if (status.isSuccess())
 		{
 			destroy(blob);
@@ -1575,7 +1678,19 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* user_status,
 			Arg::Gds(isc_bad_events_handle).raise();
 		}
 		YEntry entryGuard(status, events->parent);
-		events->handle->cancel(&status);
+
+		{
+			MutexLockGuard guard(*events->getProviderInterfaceCleanupMutex());
+			if (events->providerInterface)
+			{
+				events->providerInterface->cancel(&status);
+				if (status.isSuccess())
+				{
+					events->providerInterface = NULL;
+				}
+			}
+		}
+
 		if (status.isSuccess())
 		{
 			destroy(events);
@@ -1591,8 +1706,8 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS * user_status,
-											FB_API_HANDLE * handle,
+ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS* user_status,
+											FB_API_HANDLE* handle,
 											USHORT option)
 {
 /**************************************
@@ -1615,7 +1730,7 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS * user_status,
 		MutexLockGuard guard(attachment->enterMutex);
 		if (attachment->enterCount || option != fb_cancel_raise)
 		{
-			attachment->handle->cancelOperation(&status, option);
+			attachment->providerInterface->cancelOperation(&status, option);
 		}
 		else
 		{
@@ -1631,8 +1746,8 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS * user_status,
-									  FB_API_HANDLE * blob_handle)
+ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS* user_status,
+									  FB_API_HANDLE* blob_handle)
 {
 /**************************************
  *
@@ -1651,7 +1766,19 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS * user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
 
-		blob->handle->close(&status);
+		{
+			MutexLockGuard guard(*blob->getProviderInterfaceCleanupMutex());
+
+			if (blob->providerInterface)
+			{
+				blob->providerInterface->close(&status);
+				if (status.isSuccess())
+				{
+					blob->providerInterface = NULL;
+				}
+			}
+		}
+
 		if (status.isSuccess())
 		{
 			destroy(blob);
@@ -1687,36 +1814,39 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* user_status, FB_API_HA
 		Transaction sub;
 		YEntry entryGuard(status, transaction);
 
-		if (transaction->handle)
 		{
-			// Handle single transaction case
-			transaction->handle->commit(&status);
-			if (!status.isSuccess())
+			MutexLockGuard guard(*transaction->getProviderInterfaceCleanupMutex());
+
+			if (transaction->providerInterface)
 			{
-				return status[1];
-			}
-		}
-		else
-		{
-			// Handle two phase commit.  Start by putting everybody into
-			// limbo.  If anybody fails, punt
-			if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
-			{
-				if (prepare(status, transaction))
+				// Handle single transaction case
+				transaction->providerInterface->commit(&status);
+				if (!status.isSuccess())
 				{
 					return status[1];
 				}
 			}
-
-			// Everybody is in limbo, now commit everybody.
-			// In theory, this can't fail
-
-			for (sub = transaction->next; sub; sub = sub->next)
+			else
 			{
-				sub->handle->commit(&status);
-				if (!status.isSuccess())
+				// Handle two phase commit.  Start by putting everybody into
+				// limbo.  If anybody fails, punt
+				if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
 				{
-					return status[1];
+					if (prepare(status, transaction))
+					{
+						return status[1];
+					}
+				}
+
+				// Everybody is in limbo, now commit everybody.
+				// In theory, this can't fail
+				for (sub = transaction->next; sub; sub = sub->next)
+				{
+					sub->providerInterface->commit(&status);
+					if (!status.isSuccess())
+					{
+						return status[1];
+					}
 				}
 			}
 		}
@@ -1759,9 +1889,9 @@ ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* user_status, FB_API_HAND
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
-			if (sub->handle)
+			if (sub->providerInterface)
 			{
-				sub->handle->commitRetaining(&status);
+				sub->providerInterface->commitRetaining(&status);
 				if (!status.isSuccess())
 				{
 					return status[1];
@@ -1805,7 +1935,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		nullCheck(req_handle, isc_bad_req_handle);
 
-		rq = attachment->handle->compileRequest(&status, blr_length,
+		rq = attachment->providerInterface->compileRequest(&status, blr_length,
 												reinterpret_cast<const unsigned char*>(blr));
 		if (!status.isSuccess())
 		{
@@ -2005,7 +2135,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 			attachment->db_path = org_filename;
 #endif
 
-			p->createDatabase(ptr, &attachment->handle, *public_handle, expanded_filename.c_str(),
+			p->createDatabase(ptr, &attachment->providerInterface, *public_handle, expanded_filename.c_str(),
 							  newDpb.getBufferLength(), newDpb.getBuffer());
 			if (ptr->isSuccess())
 			{
@@ -2047,9 +2177,9 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 	{
 		if (attachment)
 		{
-			if (attachment->handle)
+			if (attachment->providerInterface)
 			{
-				attachment->handle->drop(&temp);
+				attachment->providerInterface->drop(&temp);
 			}
 
 			destroyNoThrow(attachment);
@@ -2061,8 +2191,8 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
-											 FB_API_HANDLE * handle,
+ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS* user_status,
+											 FB_API_HANDLE* handle,
 											 AttachmentCleanupRoutine * routine,
 											 void* arg)
 {
@@ -2117,7 +2247,7 @@ ISC_STATUS API_ROUTINE isc_database_info(ISC_STATUS* user_status,
 	{
 		Attachment attachment = translate<CAttachment>(handle);
 		YEntry entryGuard(status, attachment);
-		attachment->handle->getInfo(&status,
+		attachment->providerInterface->getInfo(&status,
 									item_length, reinterpret_cast<const unsigned char*>(items),
 									buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
@@ -2154,7 +2284,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->handle->ddl(&status, length, ddl);
+		transaction->providerInterface->ddl(&status, length, ddl);
 	}
 	catch (const Exception& e)
 	{
@@ -2165,8 +2295,8 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS * user_status,
-								  FB_API_HANDLE * handle)
+ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS* user_status,
+										   FB_API_HANDLE* handle)
 {
 /**************************************
  *
@@ -2182,7 +2312,7 @@ ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS * user_status,
 }
 
 
-static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
+static ISC_STATUS detach_or_drop_database(ISC_STATUS* user_status, FB_API_HANDLE* handle,
 										  bool dropping, const ISC_STATUS specCode)
 {
 /**************************************
@@ -2200,18 +2330,22 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 	try
 	{
 		YEntry entryGuard;
-
 		Attachment attachment = translate<CAttachment>(handle, dropping);
 
-		if (attachment->handle)
 		{
-			if (dropping)
-				attachment->handle->drop(&status);
-			else
-				attachment->handle->detach(&status);
-			if ((!status.isSuccess()) && status[1] != specCode)
+			MutexLockGuard guard(*attachment->getProviderInterfaceCleanupMutex());
+
+			if (attachment->providerInterface)
 			{
-				return status[1];
+				if (dropping)
+					attachment->providerInterface->drop(&status);
+				else
+					attachment->providerInterface->detach(&status);
+				if ((!status.isSuccess()) && status[1] != specCode)
+				{
+					return status[1];
+				}
+				attachment->providerInterface = NULL;
 			}
 		}
 
@@ -2243,8 +2377,8 @@ int API_ROUTINE gds__disable_subsystem(TEXT* subsystem)
 }
 
 
-ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS * user_status,
-										 FB_API_HANDLE * handle)
+ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS* user_status,
+										 FB_API_HANDLE* handle)
 {
 /**************************************
  *
@@ -2260,9 +2394,9 @@ ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_dsql_alloc_statement(ISC_STATUS * user_status,
-									  FB_API_HANDLE * db_handle,
-									  FB_API_HANDLE * stmt_handle)
+ISC_STATUS API_ROUTINE isc_dsql_alloc_statement(ISC_STATUS* user_status,
+									  FB_API_HANDLE* db_handle,
+									  FB_API_HANDLE* stmt_handle)
 {
 /**************************************
  *
@@ -2274,9 +2408,9 @@ ISC_STATUS API_ROUTINE isc_dsql_alloc_statement(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS * user_status,
-									   FB_API_HANDLE * db_handle,
-									   FB_API_HANDLE * stmt_handle)
+ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS* user_status,
+									   FB_API_HANDLE* db_handle,
+									   FB_API_HANDLE* stmt_handle)
 {
 /**************************************
  *
@@ -2309,9 +2443,9 @@ ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
-										 FB_API_HANDLE * db_handle,
-										 FB_API_HANDLE * public_stmt_handle)
+ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS* user_status,
+										 FB_API_HANDLE* db_handle,
+										 FB_API_HANDLE* public_stmt_handle)
 {
 /**************************************
  *
@@ -2334,7 +2468,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
 		// check the statement handle to make sure it's NULL and then initialize it.
 		nullCheck(public_stmt_handle, isc_bad_stmt_handle);
 
-		stmt_handle = attachment->handle->allocateStatement(&status);
+		stmt_handle = attachment->providerInterface->allocateStatement(&status);
 		if (!status.isSuccess())
 		{
 			return status[1];
@@ -2357,10 +2491,10 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
-										 FB_API_HANDLE * stmt_handle,
+ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* user_status,
+										 FB_API_HANDLE* stmt_handle,
 										 USHORT dialect,
-										 XSQLDA * sqlda)
+										 XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2425,10 +2559,10 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
-											  FB_API_HANDLE * stmt_handle,
+ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* user_status,
+											  FB_API_HANDLE* stmt_handle,
 											  USHORT dialect,
-											  XSQLDA * sqlda)
+											  XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2650,10 +2784,10 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 			{
 				bad_handle(isc_bad_trans_handle);
 			}
-			tra = t->handle;
+			tra = t->providerInterface;
 		}
 
-		tra = statement->handle->executeMessage(&status, tra,
+		tra = statement->providerInterface->executeMessage(&status, tra,
 										 in_blr_length, reinterpret_cast<const unsigned char*>(in_blr),
 										 in_msg_type, in_msg_length, reinterpret_cast<const unsigned char*>(in_msg),
 										 out_blr_length, reinterpret_cast<unsigned char*>(out_blr),
@@ -3008,10 +3142,10 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 			{
 				bad_handle(isc_bad_trans_handle);
 			}
-			tra = t->handle;
+			tra = t->providerInterface;
 		}
 
-		tra = attachment->handle->execute(&status, tra, length, string, dialect,
+		tra = attachment->providerInterface->execute(&status, tra, length, string, dialect,
 										 in_blr_length, reinterpret_cast<const unsigned char*>(in_blr),
 										 in_msg_type, in_msg_length, reinterpret_cast<const unsigned char*>(in_msg),
 										 out_blr_length, reinterpret_cast<unsigned char*>(out_blr),
@@ -3123,7 +3257,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(status, statement);
 
-		int s = statement->handle->fetchMessage(&status,
+		int s = statement->providerInterface->fetchMessage(&status,
 												blr_length, reinterpret_cast<const unsigned char*>(blr),
 												msg_type, msg_length, reinterpret_cast<unsigned char*>(msg));
 
@@ -3162,10 +3296,21 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* user_status,
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(status, statement);
 
-		statement->handle->free(&status, option);
-		if (!status.isSuccess())
 		{
-			return status[1];
+			MutexLockGuard guard(*statement->getProviderInterfaceCleanupMutex());
+
+			if (statement->providerInterface)
+			{
+				statement->providerInterface->free(&status, option);
+				if (!status.isSuccess())
+				{
+					return status[1];
+				}
+				if (option & DSQL_drop)
+				{
+					statement->providerInterface = NULL;
+				}
+			}
 		}
 
 		if (option & DSQL_drop)
@@ -3257,7 +3402,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 		statement->checkPrepared();
 		//sqlda_sup& dasup = statement->das;
 
-		statement->handle->insertMessage(&status, blr_length, reinterpret_cast<const unsigned char*>(blr),
+		statement->providerInterface->insertMessage(&status, blr_length, reinterpret_cast<const unsigned char*>(blr),
 										 msg_type, msg_length, reinterpret_cast<const unsigned char*>(msg));
 	}
 	catch (const Exception& e)
@@ -3446,16 +3591,16 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* user_status,
 			{
 				bad_handle(isc_bad_trans_handle);
 			}
-			tra = transaction->handle;
+			tra = transaction->providerInterface;
 		}
 
-		IStatement* newStatement = statement->handle->prepare(&status, tra, length, string,
+		IStatement* newStatement = statement->providerInterface->prepare(&status, tra, length, string,
 			dialect, item_length, reinterpret_cast<const unsigned char*>(items),
 			buffer_length, reinterpret_cast<unsigned char*>(buffer));
 
 		if (status.isSuccess())
 		{
-			statement->handle = newStatement;
+			statement->providerInterface = newStatement;
 		}
 	}
 	catch (const Exception& e)
@@ -3489,7 +3634,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* user_status,
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(status, statement);
 
-		statement->handle->setCursor(&status, cursorName, cursorType);
+		statement->providerInterface->setCursor(&status, cursorName, cursorType);
 	}
 	catch (const Exception& e)
 	{
@@ -3545,7 +3690,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* user_status,
 		}
 		else
 		{
-			statement->handle->getInfo(&status,
+			statement->providerInterface->getInfo(&status,
 									   item_length, reinterpret_cast<const unsigned char*>(items),
 									   buffer_length, reinterpret_cast<unsigned char*>(buffer));
 		}
@@ -3601,7 +3746,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 
 		evnt = new WaitEvents(attachment, event_ast, buffer);
-		evnt->handle = attachment->handle->queEvents(&status, evnt, length, events);
+		evnt->providerInterface = attachment->providerInterface->queEvents(&status, evnt, length, events);
 
 		if (status[1])
 		{
@@ -3617,9 +3762,14 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* user_status,
 
 	if (evnt)
 	{
-		if (evnt->handle)
 		{
-			evnt->handle->release();
+			MutexLockGuard guard(*evnt->getProviderInterfaceCleanupMutex());
+
+			if (evnt->providerInterface)
+			{
+				evnt->providerInterface->release();
+				evnt->providerInterface = NULL;
+			}
 		}
 		destroyNoThrow(evnt);
 	}
@@ -3651,7 +3801,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
 
-		unsigned int length = blob->handle->getSegment(&status, buffer_length, buffer);
+		unsigned int length = blob->providerInterface->getSegment(&status, buffer_length, buffer);
 		if ((status.isSuccess() || status[1] == isc_segment || status[1] == isc_segstr_eof) && return_length)
 		{
 			*return_length = length;
@@ -3696,7 +3846,7 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		int length = transaction->handle->getSlice(&status, array_id, sdl_length, sdl, param_length, param, slice_length, slice);
+		int length = transaction->providerInterface->getSlice(&status, array_id, sdl_length, sdl, param_length, param, slice_length, slice);
 		if (status.isSuccess() && return_length)
 		{
 			*return_length = length;
@@ -3833,9 +3983,9 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS* user_status,
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
-			if (sub->handle)
+			if (sub->providerInterface)
 			{
-				sub->handle->prepare(&status, msg_length, msg);
+				sub->providerInterface->prepare(&status, msg_length, msg);
 				if (!status.isSuccess())
 				{
 					return status[1];
@@ -3876,7 +4026,7 @@ ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS* user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
 
-		blob->handle->putSegment(&status, buffer_length, buffer);
+		blob->providerInterface->putSegment(&status, buffer_length, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3916,7 +4066,7 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->handle->putSlice(&status, array_id, sdl_length, sdl,
+		transaction->providerInterface->putSlice(&status, array_id, sdl_length, sdl,
 									  param_length, reinterpret_cast<const unsigned char*>(param),
 									  slice_length, slice);
 	}
@@ -3957,7 +4107,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* user_status,
 
 		// This cast appears awful, but as long as handles are 32-bit entities it's OK
 		evnt = new CEvents((FB_API_HANDLE*)id, attachment, ast, arg);
-		evnt->handle = attachment->handle->queEvents(&status, evnt, length, events);
+		evnt->providerInterface = attachment->providerInterface->queEvents(&status, evnt, length, events);
 
 		if (status[1])
 		{
@@ -4002,7 +4152,7 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(status, request);
 
-		request->handle->receive(&status, level, msg_type, msg_length,
+		request->providerInterface->receive(&status, level, msg_type, msg_length,
 								 reinterpret_cast<unsigned char*>(msg));
 	}
 	catch (const Exception& e)
@@ -4031,7 +4181,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
  *
  **************************************/
 	StatusVector status(user_status);
-	ITransaction* handle = 0;
+	ITransaction* tra = 0;
 
 	try
 	{
@@ -4039,19 +4189,19 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
 		Attachment attachment = translate<CAttachment>(db_handle);
 		YEntry entryGuard(status, attachment);
 
-		handle = attachment->handle->reconnectTransaction(&status, length, id);
+		tra = attachment->providerInterface->reconnectTransaction(&status, length, id);
 		if (!status.isSuccess())
 		{
 			return status[1];
 		}
 
-		Transaction transaction(new CTransaction(handle, tra_handle, attachment));
+		Transaction transaction(new CTransaction(tra, tra_handle, attachment));
 		transaction->flags |= HANDLE_TRANSACTION_limbo;
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(&status);
-		if (handle)
+		if (tra)
 		{
 			*tra_handle = 0;
 		}
@@ -4081,12 +4231,19 @@ ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(status, request);
 
-		request->handle->free(&status);
-		if (status.isSuccess())
 		{
-			destroy(request);
-			*req_handle = 0;
+			MutexLockGuard guard(*request->getProviderInterfaceCleanupMutex());
+
+			request->providerInterface->free(&status);
+			if (!status.isSuccess())
+			{
+				return status[1];
+			}
+			request->providerInterface = NULL;
 		}
+
+		destroy(request);
+		*req_handle = 0;
 	}
 	catch (const Exception& e)
 	{
@@ -4122,7 +4279,7 @@ ISC_STATUS API_ROUTINE isc_request_info(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(status, request);
 
-		request->handle->getInfo(&status, level,
+		request->providerInterface->getInfo(&status, level,
 								 item_length, reinterpret_cast<const unsigned char*>(items),
 								 buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
@@ -4181,9 +4338,9 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* user_status,
 
 		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
-			if (sub->handle)
+			if (sub->providerInterface)
 			{
-				sub->handle->rollbackRetaining(&status);
+				sub->providerInterface->rollbackRetaining(&status);
 				if (!status.isSuccess())
 				{
 					return status[1];
@@ -4222,16 +4379,21 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* user_status,
 		Transaction transaction = translate<CTransaction>(tra_handle);
 		YEntry entryGuard(status, transaction);
 
-		for (Transaction sub = transaction; sub; sub = sub->next)
 		{
-			if (sub->handle)
+			MutexLockGuard guard(*transaction->getProviderInterfaceCleanupMutex());
+
+			for (Transaction sub = transaction; sub; sub = sub->next)
 			{
-				sub->handle->rollback(&status);
-				if ((!status.isSuccess()) &&
-				    ( !is_network_error(status) ||
-					 (transaction->flags & HANDLE_TRANSACTION_limbo) ) )
+				if (sub->providerInterface)
 				{
-					return status[1];
+					sub->providerInterface->rollback(&status);
+					if ((!status.isSuccess()) &&
+					    ( !is_network_error(status) ||
+						 (transaction->flags & HANDLE_TRANSACTION_limbo) ) )
+					{
+						return status[1];
+					}
+					sub->providerInterface = NULL;
 				}
 			}
 		}
@@ -4277,7 +4439,7 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS* user_status,
 		Blob blob = translate<CBlob>(blob_handle);
 		YEntry entryGuard(status, blob);
 
-		unsigned int pos = blob->handle->seek(&status, mode, offset);
+		unsigned int pos = blob->providerInterface->seek(&status, mode, offset);
 		if (status.isSuccess() && result)
 		{
 			*result = pos;
@@ -4316,7 +4478,7 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(status, request);
 
-		request->handle->send(&status, level, msg_type, msg_length,
+		request->providerInterface->send(&status, level, msg_type, msg_length,
 							  reinterpret_cast<const unsigned char*>(msg));
 	}
 	catch (const Exception& e)
@@ -4349,7 +4511,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 	Service service(0);
 	StatusVector temp(NULL);
 	StatusVector status(user_status);
-	IService* handle = NULL;
+	IService* svc = NULL;
 
 	try
 	{
@@ -4380,11 +4542,11 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 			 providerIterator.hasData(); providerIterator.next())
 		{
 			PProvider* p = providerIterator.plugin();
-			handle = p->attachServiceManager(ptr, svcname.c_str(),
-											 spb_length, reinterpret_cast<const unsigned char*>(spb));
+			svc = p->attachServiceManager(ptr, svcname.c_str(),
+										  spb_length, reinterpret_cast<const unsigned char*>(spb));
 			if (ptr->isSuccess())
 			{
-				service = new CService(handle, public_handle, p);
+				service = new CService(svc, public_handle, p);
 				status[0] = isc_arg_gds;
 				status[1] = 0;
 				if (status[2] != isc_arg_warning)
@@ -4407,9 +4569,9 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* user_status,
 	catch (const Exception& e)
 	{
 		e.stuffException(&status);
-		if (handle)
+		if (svc)
 		{
-			handle->detach(&temp);
+			svc->detach(&temp);
 			destroyNoThrow(service);
 			*public_handle = 0;
 		}
@@ -4442,10 +4604,15 @@ ISC_STATUS API_ROUTINE isc_service_detach(ISC_STATUS* user_status, FB_API_HANDLE
 		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
-		service->handle->detach(&status);
-		if (!status.isSuccess())
 		{
-			return status[1];
+			MutexLockGuard guard(*service->getProviderInterfaceCleanupMutex());
+
+			service->providerInterface->detach(&status);
+			if (!status.isSuccess())
+			{
+				return status[1];
+			}
+			service->providerInterface = NULL;
 		}
 
 		destroy(service);
@@ -4492,7 +4659,7 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS* user_status,
 		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
-		service->handle->query(&status, send_item_length, reinterpret_cast<const unsigned char*>(send_items),
+		service->providerInterface->query(&status, send_item_length, reinterpret_cast<const unsigned char*>(send_items),
 							   recv_item_length, reinterpret_cast<const unsigned char*>(recv_items),
 							   buffer_length, reinterpret_cast<unsigned char*>(buffer));
 	}
@@ -4533,7 +4700,7 @@ ISC_STATUS API_ROUTINE isc_service_start(ISC_STATUS* user_status,
 		YEntry entryGuard;
 		Service service = translate<CService>(handle);
 
-		service->handle->start(&status, spb_length, reinterpret_cast<const unsigned char*>(spb));
+		service->providerInterface->start(&status, spb_length, reinterpret_cast<const unsigned char*>(spb));
 	}
 	catch (const Exception& e)
 	{
@@ -4570,7 +4737,7 @@ ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS* user_status,
 		YEntry entryGuard(status, request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
-		request->handle->startAndSend(&status, transaction->handle, level, msg_type, msg_length,
+		request->providerInterface->startAndSend(&status, transaction->providerInterface, level, msg_type, msg_length,
 									  reinterpret_cast<const unsigned char*>(msg));
 	}
 	catch (const Exception& e)
@@ -4605,7 +4772,7 @@ ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS* user_status,
 		YEntry entryGuard(status, request);
 		Transaction transaction = findTransaction(tra_handle, request->parent);
 
-		request->handle->start(&status, transaction->handle, level);
+		request->providerInterface->start(&status, transaction->providerInterface, level);
 	}
 	catch (const Exception& e)
 	{
@@ -4659,7 +4826,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 
 			*ptr = new CTransaction(0, 0, attachment);
 
-			(*ptr)->handle = attachment->handle->startTransaction(&status,
+			(*ptr)->providerInterface = attachment->providerInterface->startTransaction(&status,
 																  vector->teb_tpb_length, vector->teb_tpb,
 																  (*ptr)->public_handle);
 			if (!status.isSuccess())
@@ -4685,16 +4852,19 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
 		if (transaction)
 		{
 			*tra_handle = 0;
-		}
 
-		while (transaction)
-		{
-			StatusVector temp(NULL);
-			Transaction sub = transaction;
-			transaction = sub->next;
-			if (sub->handle)
+			MutexLockGuard guard(*transaction->getProviderInterfaceCleanupMutex());
+
+			while (transaction)
 			{
-				sub->handle->rollback(&temp);
+				StatusVector temp(NULL);
+				Transaction sub = transaction;
+				transaction = sub->next;
+				if (sub->providerInterface)
+				{
+					sub->providerInterface->rollback(&temp);
+				}
+				sub->providerInterface = NULL;
 			}
 		}
 
@@ -4776,10 +4946,10 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->handle->transactRequest(&status, blr_length, reinterpret_cast<unsigned char*>(blr),
+		transaction->providerInterface->transactRequest(&status, blr_length, reinterpret_cast<unsigned char*>(blr),
 											 in_msg_length, reinterpret_cast<unsigned char*>(in_msg),
 											 out_msg_length, reinterpret_cast<unsigned char*>(out_msg),
-											 attachment->handle);
+											 attachment->providerInterface);
 	}
 	catch (const Exception& e)
 	{
@@ -4846,9 +5016,9 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* user_status,
 		Transaction transaction = translate<CTransaction>(tra_handle);
 		YEntry entryGuard(status, transaction);
 
-		if (transaction->handle)
+		if (transaction->providerInterface)
 		{
-			transaction->handle->getInfo(&status, item_length, items, buffer_length, buffer);
+			transaction->providerInterface->getInfo(&status, item_length, items, buffer_length, buffer);
 		}
 		else
 		{
@@ -4856,7 +5026,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* user_status,
 			SSHORT buffer_len = buffer_length;
 			for (Transaction sub = transaction->next; sub; sub = sub->next)
 			{
-				sub->handle->getInfo(&status, item_length, items, buffer_length, buffer);
+				sub->providerInterface->getInfo(&status, item_length, items, buffer_length, buffer);
 				if (!status.isSuccess())
 				{
 					return status[1];
@@ -4910,7 +5080,7 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* user_status,
 		Request request = translate<CRequest>(req_handle);
 		YEntry entryGuard(status, request);
 
-		request->handle->unwind(&status, level);
+		request->providerInterface->unwind(&status, level);
 	}
 	catch (const Exception& e)
 	{
@@ -5211,7 +5381,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 		unsigned char buffer[16];
 		unsigned char* p = *ptr;
 
-		transaction->handle->getInfo(&status, sizeof(prepare_tr_info), prepare_tr_info,
+		transaction->providerInterface->getInfo(&status, sizeof(prepare_tr_info), prepare_tr_info,
 									 sizeof(buffer), buffer);
 		if (!status.isSuccess())
 		{
@@ -5313,8 +5483,8 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		IBlob* blob_handle = createFlag ?
-			transaction->handle->createBlob(&status, blob_id, bpb_length, bpb, attachment->handle) :
-			transaction->handle->openBlob(&status, blob_id, bpb_length, bpb, attachment->handle);
+			transaction->providerInterface->createBlob(&status, blob_id, bpb_length, bpb, attachment->providerInterface) :
+			transaction->providerInterface->openBlob(&status, blob_id, bpb_length, bpb, attachment->providerInterface);
 
 		if (!status.isSuccess())
 		{
@@ -5396,7 +5566,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 
 	for (sub = transaction->next; sub; sub = sub->next)
 	{
-		sub->handle->prepare(&status, length, description);
+		sub->providerInterface->prepare(&status, length, description);
 		if (!status.isSuccess())
 		{
 			return status[1];
@@ -5605,7 +5775,10 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		{
 			return FB_FAILURE;	// Do not perform former shutdown
 		}
+
+		// Shut known components, internal in yValve
 		PluginManager::shutdown();
+		shutdownTimers();
 
 		// Shutdown clients before providers
 		if (ShutChain::run(fb_shut_preproviders, reason) != FB_SUCCESS)
@@ -5615,8 +5788,9 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 
 		// shutdown yValve
 		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
+								// unfortunately existing threads continue to run inside it
 
-		// Shutdown providers
+		// Shutdown providers (if any present)
 		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider, FB_P_PROVIDER_VERSION);
 			 providerIterator.hasData(); providerIterator.next())
 		{
@@ -5628,6 +5802,19 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 				rc = FB_FAILURE;
 			}
 		}
+
+		// Close all known interfaces from providers ...
+		{ // guard scope
+			WriteLockGuard sync(handleMappingLock);
+			HandleMapping::Accessor a(&handleMapping);
+			if (a.getFirst()) do
+			{
+				BaseHandle* handle = a.current();
+				handle->releaseAll();
+			} while (a.getNext());
+		}
+		// ... and wait for all providers to go away
+		PluginManager::waitForType(PluginType::Provider);
 
 		// Shutdown clients after providers
 		if (ShutChain::run(fb_shut_postproviders, reason) != FB_SUCCESS)
@@ -5707,13 +5894,21 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 		Attachment attachment = translate<CAttachment>(db_handle);
 		YEntry entryGuard(status, attachment);
 
-		attachment->handle->ping(&status);
+		attachment->providerInterface->ping(&status);
 		if (!status.isSuccess())
 		{
-			if (!attachment->status.getError())
+			if (!attachment->status.getError()) 
+			{
 				attachment->status.save(status);
-
-			attachment->handle->detach(&status);
+			}
+			{
+				MutexLockGuard guard(*attachment->getProviderInterfaceCleanupMutex());
+				if (attachment->providerInterface)
+				{
+					attachment->providerInterface->detach(&status);
+					attachment->providerInterface = NULL;
+				}
+			}
 			status_exception::raise(attachment->status.value());
 		}
 	}

@@ -59,6 +59,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
+static const TimerDelay TOUCH_INTERVAL = 60 * 60;      // in seconds, one hour should be enough
 
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
@@ -120,11 +121,15 @@ ConfigStorage::ConfigStorage()
 
 	StorageGuard guard(this);
 	checkFile();
+	timer.start(sh_mem_header->cfg_file_name);
+
 	++sh_mem_header->cnt_uses;
 }
 
 ConfigStorage::~ConfigStorage()
 {
+	timer.stop();
+
 	::close(m_cfg_file);
 	m_cfg_file = -1;
 
@@ -543,6 +548,23 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 	}
 
 	return true;
+}
+
+void FB_CARG ConfigStorage::TouchFile::handler()
+{
+	os_utils::touchFile(fileName);
+	TimerInterface()->start(this, TOUCH_INTERVAL * 1000 * 1000);
+}
+
+void ConfigStorage::TouchFile::start(const char* fName)
+{
+	fileName = fName;
+	TimerInterface()->start(this, TOUCH_INTERVAL * 1000 * 1000);
+}
+
+void ConfigStorage::TouchFile::stop()
+{
+	TimerInterface()->stop(this);
 }
 
 } // namespace Jrd

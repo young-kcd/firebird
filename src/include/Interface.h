@@ -29,6 +29,8 @@
 #ifndef FB_INCLUDE_INTERFACE
 #define FB_INCLUDE_INTERFACE
 
+#include "types_pub.h"
+
 #ifdef __GNUC__
 #	pragma GCC system_header	// disable warning about non-existent virtual destructor
 #endif
@@ -65,6 +67,7 @@ public:
 #define FB_STATUS_VERSION (FB_INTERFACE_VERSION + 5)
 
 class IPlugin;
+class ITimerControl;
 
 class IMaster : public Interface
 {
@@ -76,6 +79,7 @@ public:
 	virtual IPlugin* FB_CARG getPluginInterface() = 0;
 	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
+	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 };
 
 } // namespace Firebird

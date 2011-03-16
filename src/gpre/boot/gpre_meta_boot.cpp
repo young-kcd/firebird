@@ -704,7 +704,7 @@ public:
 	}
 
 	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion,
-		void* missingFunctionClass)
+										 void* missingFunctionClass)
 	{
 		fb_assert(false);
 		return 0;
@@ -716,6 +716,12 @@ public:
 		memcpy(buf, s, len);
 		buf[len] = 0;
 		return buf;
+	}
+
+	virtual ITimerControl* getTimerControl()
+	{
+		fb_assert(false);
+		return NULL;
 	}
 };
 

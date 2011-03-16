@@ -30,6 +30,7 @@
 #define FB_COMMON_CLASSES_IMPLEMENT_HELPER
 
 #include "FirebirdPluginApi.h"
+#include "Timer.h"
 #include "../common/classes/alloc.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
@@ -170,6 +171,15 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 };
 
 
+// Master interface
+class MasterInterface : public AutoPtr<IMaster, AutoInterface>
+{
+public:
+	MasterInterface() : AutoPtr<IMaster, AutoInterface>(fb_get_master_interface())
+	{ }
+};
+
+
 // Generic plugins interface
 class PluginInterface : public AutoPtr<IPlugin, AutoInterface>
 {
@@ -178,6 +188,19 @@ public:
 	{
 		IMaster* mi = fb_get_master_interface();
 		reset(mi->getPluginInterface());
+		mi->release();
+	}
+};
+
+
+// Control timer interface
+class TimerInterface : public AutoPtr<ITimerControl, AutoInterface>
+{
+public:
+	TimerInterface() : AutoPtr<ITimerControl, AutoInterface>(NULL)
+	{
+		IMaster* mi = fb_get_master_interface();
+		reset(mi->getTimerControl());
 		mi->release();
 	}
 };
@@ -197,21 +220,18 @@ class UnloadDetectorHelper : public StdIface<IModuleCleanup, FB_MODULE_CLEANUP_V
 {
 public:
 	UnloadDetectorHelper(MemoryPool&)
-		: flagOsUnload(true)
+		: flagOsUnload(true), cleanup(NULL)
 	{ }
 
 	~UnloadDetectorHelper()
 	{
 		if (flagOsUnload)
 		{
-			fb_shutdown(5000, fb_shutrsn_exit_called);
-		}
-		flagOsUnload = false;
-	}
+			PluginInterface()->resetModuleCleanup(this);
 
-	void FB_CARG doClean()
-	{
-		flagOsUnload = false;
+			fb_shutdown(5000, fb_shutrsn_exit_called);
+			doClean();
+		}
 	}
 
 	int FB_CARG release()
@@ -230,8 +250,24 @@ public:
 		return !flagOsUnload;
 	}
 
-protected:
+	void setCleanup(FPTR_VOID c)
+	{
+		cleanup = c;
+	}
+
+private:
 	bool flagOsUnload;
+	FPTR_VOID cleanup;
+
+	void FB_CARG doClean()
+	{
+		flagOsUnload = false;
+		if (cleanup)
+		{
+			cleanup();
+			cleanup = NULL;
+		}
+	}
 };
 
 typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD> UnloadDetector;

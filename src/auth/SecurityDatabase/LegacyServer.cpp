@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		pwd.cpp
+ *	MODULE:		LegacyServer.cpp
  *	DESCRIPTION:	User information database access
  *
  * The contents of this file are subject to the Interbase Public
@@ -31,6 +31,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
+#include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
@@ -42,88 +43,11 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ImplementHelper.h"
+#include "Timer.h"
 
 using namespace Firebird;
 
 namespace {
-
-// temporal implementation of timer
-
-GlobalPtr<Mutex> timerMutex;
-FPTR_VOID_PTR toRun = 0;
-unsigned int cnt = 0;
-
-int active = 0;
-
-int stopTimer(const int, const int mask, void*)
-{
-	switch(mask)
-	{
-	case fb_shut_preproviders:
-		active = 2;
-		break;
-	case fb_shut_finish:
-		while (active == 2)
-		{
-			THREAD_SLEEP(10);
-		}
-		break;
-	}
-
-	return 0;
-}
-
-THREAD_ENTRY_DECLARE threadTimer(THREAD_ENTRY_PARAM)
-{
-	while (active == 1)
-	{
-		{	// scope
-			MutexLockGuard g(timerMutex);
-			if (cnt == 0)
-			{
-				if (toRun)
-				{
-					toRun(0);
-					toRun = 0;
-				}
-			}
-			else
-			{
-				--cnt;
-			}
-		}
-
-		THREAD_SLEEP(100);
-	}
-
-	active = 3;
-	return 0;
-}
-
-int fb_alloc_timer()
-{
-	if (! active)
-	{
-		active = 1;
-		Thread::start(threadTimer, 0, 0);
-		fb_shutdown_callback(0, stopTimer, fb_shut_preproviders | fb_shut_finish, 0);
-	}
-
-	return 1;
-}
-
-void fb_thread_timer(int, int delay, FPTR_VOID_PTR function, void*)
-{
-	MutexLockGuard g(timerMutex);
-
-	cnt = delay / 100;
-	if (! cnt)
-	{
-		cnt = 1;
-	}
-
-	toRun = function;
-}
 
 // BLR to search database for user name record
 
@@ -194,11 +118,51 @@ const UCHAR TPB[4] =
 	isc_tpb_wait
 };
 
-int timer = 0;
-
-} // anonymous
+} // anonymous namespace
 
 namespace Auth {
+
+class SecurityDatabase : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+{
+public:
+	Result verify(WriterInterface* authBlock,
+				  Firebird::ClumpletReader& originalDpb);
+
+	static int shutdown(const int, const int, void*);
+
+	char secureDbName[MAXPATHLEN];
+
+	SecurityDatabase()
+		: lookup_db(0), lookup_req(0)
+	{
+	}
+
+private:
+	void FB_CARG handler();
+
+	int FB_CARG release()
+	{
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+
+		return 1;
+	}
+
+	Firebird::Mutex mutex;
+
+	ISC_STATUS_ARRAY status;
+
+	isc_db_handle lookup_db;
+	isc_req_handle lookup_req;
+
+	void fini();
+	bool lookup_user(const char*, char*);
+	void prepare();
+	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
+};
 
 /******************************************************************************
  *
@@ -226,14 +190,6 @@ void SecurityDatabase::fini()
 	{
 		isc_detach_database(status, &tmp);
 		checkStatus("isc_detach_database");
-	}
-}
-
-void SecurityDatabase::init()
-{
-	if (! timer)
-	{
-		timer = fb_alloc_timer();
 	}
 }
 
@@ -297,7 +253,7 @@ void SecurityDatabase::prepare()
 		return;
 	}
 
-	init();
+	fb_shutdown_callback(status, shutdown, fb_shut_preproviders, 0);
 
 	lookup_db = lookup_req = 0;
 
@@ -394,7 +350,7 @@ Result SecurityDatabase::verify(WriterInterface* authBlock,
 		}
 
 		string newHash;
-		hash(newHash, login, passwordEnc, storedHash);
+		LegacyHash::hash(newHash, login, passwordEnc, storedHash);
 		if (newHash != storedHash)
 		{
 			bool legacyHash = Config::getLegacyHash();
@@ -440,14 +396,40 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 #endif
 }
 
-// TODO - avoid races between timer thread and auth thread
-// TODO - account for too old instances and cleanup them
-// WHEN - when timer interface is ready
 typedef HalfStaticArray<SecurityDatabase*, 4> InstancesArray;
 GlobalPtr<InstancesArray> instances;
 GlobalPtr<Mutex> instancesMutex;
 
-void SecurityDatabase::shutdown(void*)
+void FB_CARG SecurityDatabase::handler()
+{
+	try
+	{
+		MutexLockGuard g(instancesMutex);
+
+		fini();
+		InstancesArray& curInstances(instances);
+		for (unsigned int i = 0; i < curInstances.getCount(); ++i)
+		{
+			if (curInstances[i] == this)
+			{
+				curInstances.remove(i);
+				break;
+			}
+		}
+		release();
+	}
+	catch (Exception &ex)
+	{
+		ISC_STATUS_ARRAY status;
+		ex.stuff_exception(status);
+		if (status[0] == 1 && status[1] != isc_att_shutdown)
+		{
+			iscLogStatus("Legacy security database shutdown", status);
+		}
+	}
+}
+
+int SecurityDatabase::shutdown(const int, const int, void*)
 {
 	try
 	{
@@ -458,7 +440,7 @@ void SecurityDatabase::shutdown(void*)
 			if (curInstances[i])
 			{
 				curInstances[i]->fini();
-				delete curInstances[i];
+				curInstances[i]->release();
 				curInstances[i] = NULL;
 			}
 		}
@@ -472,7 +454,11 @@ void SecurityDatabase::shutdown(void*)
 		{
 			iscLogStatus("Legacy security database shutdown", status);
 		}
+
+		return FB_FAILURE;
 	}
+
+	return FB_SUCCESS;
 }
 
 const static unsigned int INIT_KEY = ((~0) - 1);
@@ -507,7 +493,6 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 
 		SecurityDatabase* instance = 0;
 
-		fb_thread_timer(timer, 10000, SecurityDatabase::shutdown, 0);
 		{ // guard scope
 			MutexLockGuard g(instancesMutex);
 			InstancesArray& curInstances(instances);
@@ -531,7 +516,8 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 		fb_assert(instance);
 
 		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
-		return instance->verify(writerInterface, rdr);
+		Result rc = instance->verify(writerInterface, rdr);
+		Firebird::TimerInterface()->start(instance, 10 * 1000 * 1000);
 	}
 	catch (const Firebird::Exception& ex)
 	{

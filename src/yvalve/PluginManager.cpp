@@ -30,6 +30,7 @@
 #include "../common/isc_proto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
+#include "../common/classes/semaphore.h"
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
 #include "../common/utils_proto.h"
@@ -295,6 +296,22 @@ namespace
 			cleanup = c;
 		}
 
+		void resetCleanup(IModuleCleanup* c)
+		{
+			if (cleanup == c)
+			{
+				cleanup = 0;
+			}
+			else if (next)
+			{
+				next->resetCleanup(c);
+			}
+			else
+			{
+				gds__log("Failed to reset cleanup %p\n", c);
+			}
+		}
+
 	private:
 		~PluginModule()
 		{
@@ -323,6 +340,33 @@ namespace
 		PathName name;
 	};
 
+	struct CountByType
+	{
+		int counter;
+		Semaphore* waitsOn;
+
+		CountByType()
+			: counter(0), waitsOn(NULL)
+		{ }
+	};
+	struct CountByTypeArray
+	{
+		CountByTypeArray(MemoryPool&)
+		{}
+
+		CountByType values[PluginType::MaxType];
+
+		CountByType& get(unsigned int t)
+		{
+			fb_assert(t < PluginType::MaxType);
+			return values[t];
+		}
+	};
+
+	GlobalPtr<CountByTypeArray> byTypeCounters;
+
+	PluginModule* builtin = NULL;
+
 	class ConfiguredPlugin : public RefCounted, public GlobalStorage
 	{
 	public:
@@ -339,6 +383,10 @@ namespace
 				{
 					confName = p->value.ToPathName();
 				}
+			}
+			if (module != builtin)
+			{
+				byTypeCounters->get(module->getPlugin(regPlugin).type).counter++;
 			}
 #ifdef DEBUG_PLUGINS
 			RegisteredPlugin& r(module->getPlugin(regPlugin));
@@ -465,7 +513,7 @@ namespace
 	{
 	public:
 		explicit PluginsMap(MemoryPool& p)
-			: GenericMap<Pair<Left<MapKey, ConfiguredPlugin*> > >(p)
+			: GenericMap<Pair<Left<MapKey, ConfiguredPlugin*> > >(p), wakeIt(NULL)
 		{
 		}
 
@@ -484,6 +532,7 @@ namespace
 		}
 
 		Mutex mutex;
+		Semaphore* wakeIt;
 	};
 
 	GlobalPtr<PluginsMap> plugins;
@@ -494,6 +543,16 @@ namespace
 		{
 			plugins->remove(MapKey(module->getPlugin(regPlugin).type, plugName));
 		}
+
+		fb_assert(!plugins->wakeIt);
+		if (module != builtin)
+		{
+			unsigned int type = module->getPlugin(regPlugin).type;
+			if (--(byTypeCounters->get(type).counter) == 0)
+			{
+				plugins->wakeIt = byTypeCounters->get(type).waitsOn;
+			}
+		}
 #ifdef DEBUG_PLUGINS
 		fprintf(stderr, "~ConfiguredPlugin %s type %d\n", plugName.c_str(), module->getPlugin(regPlugin).type);
 #endif
@@ -501,7 +560,6 @@ namespace
 
 	PluginModule* modules = NULL;
 
-	PluginModule* builtin = NULL;
 	PluginModule* current = NULL;
 
 	PluginModule::PluginModule(ModuleLoader::Module* pmodule, const PathName& pname)
@@ -773,6 +831,12 @@ void FB_CARG PluginManager::setModuleCleanup(IModuleCleanup* cleanup)
 	current->setCleanup(cleanup);
 }
 
+void FB_CARG PluginManager::resetModuleCleanup(IModuleCleanup* cleanup)
+{
+	MutexLockGuard g(plugins->mutex);
+
+	modules->resetCleanup(cleanup);
+}
 
 IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
 											  int desiredVersion, void* missingFunctionClass,
@@ -797,9 +861,15 @@ void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 		if (parent)
 		{
 			parent->release();
+			if (plugins->wakeIt)
+			{
+				plugins->wakeIt->release();
+				plugins->wakeIt = NULL;
+			}
 		}
 	}
-	else {
+	else
+	{
 		plugin->owner(parent);
 	}
 }
@@ -814,6 +884,37 @@ IConfig* FB_CARG PluginManager::getConfig(const char* filename)
 void PluginManager::shutdown()
 {
 	flShutdown = true;
+}
+
+void PluginManager::waitForType(unsigned int typeThatMustGoAway)
+{
+	fb_assert(typeThatMustGoAway < PluginType::MaxType);
+
+	Semaphore sem;
+	Semaphore* semPtr = NULL;
+	{ // guard scope
+		MutexLockGuard g(plugins->mutex);
+
+		if (byTypeCounters->get(typeThatMustGoAway).counter > 0)
+		{
+			fb_assert(!byTypeCounters->get(typeThatMustGoAway).waitsOn);
+			byTypeCounters->get(typeThatMustGoAway).waitsOn = semPtr = &sem;
+#ifdef DEBUG_PLUGINS
+			fprintf(stderr, "PluginManager::waitForType %d\n", typeThatMustGoAway);
+#endif
+		}
+#ifdef DEBUG_PLUGINS
+		else
+		{
+			fprintf(stderr, "PluginManager: type %d is already gone\n", typeThatMustGoAway);
+		}
+#endif
+	}
+
+	if (semPtr)
+	{
+		semPtr->enter();
+	}
 }
 
 }	// namespace Firebird
