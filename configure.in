@@ -209,6 +209,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
