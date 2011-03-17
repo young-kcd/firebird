@@ -1010,7 +1010,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
-	ThreadStatusGuard local_status(tdbb);
+	fb_assert(tdbb->tdbb_status_vector[1] == 0);
 
 	if (accessor.getFirst())
 	do {
@@ -1043,6 +1043,11 @@ static idx_e check_duplicates(thread_db* tdbb,
 				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
 				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
 			// the above errors are not thrown but returned silently
+
+			if (lock_error) 
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+			}
 
 			if (rpb.rpb_flags & rpb_deleted || lock_error)
 			{
@@ -1176,10 +1181,6 @@ static idx_e check_duplicates(thread_db* tdbb,
 
 	delete rpb.rpb_record;
 	delete old_rpb.rpb_record;
-
-	if (local_status[1]) {
-		local_status.copyToOriginal();
-	}
 
 	return result;
 }
