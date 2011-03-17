@@ -1067,6 +1067,11 @@ static idx_e check_duplicates(thread_db* tdbb,
 				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
 			// the above errors are not thrown but returned silently
 
+			if (lock_error)
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+			}
+
 			if (rpb.rpb_flags & rpb_deleted || lock_error)
 			{
 				result = idx_e_duplicate;
