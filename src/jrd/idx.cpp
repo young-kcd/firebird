@@ -66,6 +66,7 @@
 #include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../common/utils_proto.h"
 
 
 using namespace Jrd;
@@ -1078,6 +1079,11 @@ static IDX_E check_duplicates(
 				tdbb->tdbb_status_vector[1] == isc_lock_conflict ||
 				tdbb->tdbb_status_vector[1] == isc_lock_timeout);
 			// the above errors are not thrown but returned silently
+
+			if (lock_error)
+			{
+				fb_utils::init_status(tdbb->tdbb_status_vector);
+			}
 
 			if (rpb.rpb_flags & rpb_deleted || lock_error) {
 				result = idx_e_duplicate;
