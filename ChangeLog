@@ -1,3 +1,12 @@
+ 2011-03-16 13:06  paulbeach 
+   M builds/posix/prefix.darwin_powerpc
+   M builds/posix/prefix.darwin_ppc64
+Minor mod to allow 2.1.4 to build successfully
+
+ 2011-03-16 08:04  alexpeshkoff 
+   M src/jrd/scl.epp
+Fixed CORE-3388: Does not build on fedore core
+
  2011-03-04 17:59  dimitr 
    M src/jrd/vio.cpp
 The simplest possible fix for CORE-3374: Server may crash or corrupt data if SELECT WITH LOCK is issued against records not in the latest format. Thanks to Vlad.
