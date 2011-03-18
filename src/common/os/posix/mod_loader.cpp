@@ -81,9 +81,15 @@ void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 	}
 }
 
+#ifdef DEV_BUILD
+#define FB_RTLD_MODE RTLD_NOW	// make sure nothing left unresolved
+#else
+#define FB_RTLD_MODE RTLD_LAZY	// save time when loading library
+#endif
+
 ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	void* module = dlopen(modPath.nullStr(), RTLD_LAZY);
+	void* module = dlopen(modPath.nullStr(), FB_RTLD_MODE);
 	if (module == NULL)
 	{
 #ifdef DEV_BUILD
