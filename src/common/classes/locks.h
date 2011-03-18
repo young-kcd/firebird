@@ -76,6 +76,7 @@ protected:
 	CRITICAL_SECTION spinlock;
 #ifdef DEV_BUILD
 	const char* reason;
+	int lockCount;
 #endif
 
 public:
@@ -88,7 +89,7 @@ public:
 	}
 	explicit Mutex(MemoryPool&)
 #ifdef DEV_BUILD
-		: reason(NULL)
+		: reason(NULL), lockCount(0)
 #endif
 	{
 		InitializeCriticalSection(&spinlock);
@@ -99,6 +100,7 @@ public:
 #if defined DEV_BUILD && !defined WIN9X_SUPPORT
 		if (spinlock.OwningThread != 0)
 			DebugBreak();
+		fb_assert(lockCount == 0);
 #endif
 		DeleteCriticalSection(&spinlock);
 	}
@@ -108,6 +110,7 @@ public:
 	{
 		EnterCriticalSection(&spinlock);
 		reason = aReason;
+		lockCount++;
 	}
 #endif
 
@@ -116,12 +119,21 @@ public:
 		EnterCriticalSection(&spinlock);
 #ifdef DEV_BUILD
 		reason = "<..unspecified..>";
+		lockCount++;
 #endif
 	}
 
 	bool tryEnter()
 	{
-		return TryEnterCS::tryEnter(&spinlock);
+		const bool ret = TryEnterCS::tryEnter(&spinlock);
+#ifdef DEV_BUILD
+		if (ret)
+		{
+			reason = "<..unspecified..>";
+			lockCount++;
+		}
+#endif
+		return ret;
 	}
 
 	void leave()
@@ -131,8 +143,26 @@ public:
 		// On 9X it works differently, and future OS versions may break this check as well
 		if ((U_IPTR) spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
+		
+		lockCount--;
 #endif
 		LeaveCriticalSection(&spinlock);
+	}
+
+	void assertLocked()
+	{
+#ifdef DEV_BUILD
+		// first of all try to enter the mutex
+		// this will help to make sure it's not locked by other thread
+		if (!tryEnter())
+		{
+			fb_assert(false);
+		}
+		// make sure mutex was already locked prior assertLocked
+		fb_assert(lockCount > 1);
+		// leave to release lock, done by us in tryEnter
+		leave();
+#endif
 	}
 
 public:
