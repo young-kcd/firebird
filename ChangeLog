@@ -1,3 +1,12 @@
+ 2011-03-17 14:02  alexpeshkoff 
+   M configure.in
+Fixed s390 linux port error
+
+ 2011-03-17 11:23  hvlad 
+   M src/jrd/idx.cpp
+Fixed bug CORE-3394 : Failed attempt to violate unique constraint could leave unneeded "lock conflict" error in status-vector.
+Backported more conservative version of patch
+
  2011-03-16 13:06  paulbeach 
    M builds/posix/prefix.darwin_powerpc
    M builds/posix/prefix.darwin_ppc64
