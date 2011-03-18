@@ -718,7 +718,7 @@ public:
 		return buf;
 	}
 
-	virtual ITimerControl* getTimerControl()
+	virtual ITimerControl* FB_CARG getTimerControl()
 	{
 		fb_assert(false);
 		return NULL;
