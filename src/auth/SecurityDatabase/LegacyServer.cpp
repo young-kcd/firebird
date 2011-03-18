@@ -518,6 +518,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
 		Result rc = instance->verify(writerInterface, rdr);
 		Firebird::TimerInterface()->start(instance, 10 * 1000 * 1000);
+		return rc;
 	}
 	catch (const Firebird::Exception& ex)
 	{
