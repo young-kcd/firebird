@@ -1,3 +1,8 @@
+ 2011-03-17 11:17  hvlad 
+   M src/jrd/idx.cpp
+Fixed bug CORE-3394 : Failed attempt to violate unique constraint could leave unneeded "lock conflict" error in status-vector.
+Backported more conservative version of patch
+
  2011-03-16 20:44  hvlad 
    M src/dsql/dsql.cpp
 Fixed bug CORE-3389 : isc_dsql_exec_immed2 with zero transaction handle could lead to a BUGCHECK(147)
