@@ -378,9 +378,11 @@ int system_error::getSystemError()
 system_call_failed::system_call_failed(const char* syscall, int error_code) :
 	system_error(syscall, error_code)
 {
+#ifndef SUPERCLIENT
 	// NS: something unexpected has happened. Log the error to log file
 	// In the future we may consider terminating the process even in PROD_BUILD
 	gds__log("Operating system call %s failed. Error code %d", syscall, error_code);
+#endif
 #ifdef DEV_BUILD
 	// raised failed system call exception in DEV_BUILD in 99.99% means
 	// problems with the code - let's create memory dump now

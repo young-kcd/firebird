@@ -71,6 +71,12 @@ all : fbtrace
 
 fbtrace: $(FBTRACE)
 
+ifeq (@FIREBIRD_ARCH_TYPE@,classic)
+  LINK_TRACE_LIBS += -lfbembed
+else
+  FBTRACE_Objects += $(addprefix $(OBJ)/, $(addsuffix .o, $(basename jrd/gds.cpp)))
+endif
+
 $(FBTRACE):	$(FBTRACE_Objects)
 	$(LINK_TRACE) -o $@ $^ $(LINK_TRACE_LIBS)
 
