@@ -1024,7 +1024,7 @@ USHORT INF_request_info(const jrd_req* request, const ULONG item_length, const U
 		info = INF_put_item(item, length, buffer_ptr, info, end);
 
 		if (!info)
-			return;
+			return 0;
 	}
 
 	*info++ = isc_info_end;
