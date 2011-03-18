@@ -349,6 +349,7 @@ namespace
 			: counter(0), waitsOn(NULL)
 		{ }
 	};
+
 	struct CountByTypeArray
 	{
 		CountByTypeArray(MemoryPool&)
@@ -892,6 +893,7 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 
 	Semaphore sem;
 	Semaphore* semPtr = NULL;
+
 	{ // guard scope
 		MutexLockGuard g(plugins->mutex);
 

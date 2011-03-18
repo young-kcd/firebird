@@ -247,12 +247,12 @@ bool touchFile(const char* pathname)
     FILETIME ft;
     SYSTEMTIME st;
 
-	HANDLE hFile = CreateFile(pathname, 
-		GENERIC_READ | FILE_WRITE_ATTRIBUTES, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE, 
-		ISC_get_security_desc(), 
-		OPEN_EXISTING, 
-		FILE_ATTRIBUTE_NORMAL, 
+	HANDLE hFile = CreateFile(pathname,
+		GENERIC_READ | FILE_WRITE_ATTRIBUTES,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		ISC_get_security_desc(),
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
 		0);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return false;

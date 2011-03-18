@@ -372,7 +372,7 @@ struct TimerEntry
 		Thread::start(timeThread, 0, 0, &timerThreadHandle);
 	}
 
-	static void cleanup(void);
+	static void cleanup();
 };
 
 typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, TimerDelay, TimerEntry> TimerQueue;
@@ -380,7 +380,7 @@ GlobalPtr<TimerQueue> timerQueue;
 
 InitMutex<TimerEntry> timerHolder;
 
-void TimerEntry::cleanup(void)
+void TimerEntry::cleanup()
 {
 	MutexLockGuard guard(timerAccess);
 
@@ -431,16 +431,19 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 	while (!stopThread)
 	{
 		TimerDelay microSeconds = 0;
+
 		{
 			MutexLockGuard guard(timerAccess);
 
 			const TimerDelay cur = curTime();
+
 			while (timerQueue->getCount() > 0)
 			{
 				TimerEntry e(timerQueue->operator[](0));
+
 				if (e.fireTime <= cur)
 				{
-					timerQueue->remove((size_t)0);
+					timerQueue->remove((size_t) 0);
 					e.timer->handler();
 					e.timer->release();
 				}

@@ -703,8 +703,8 @@ public:
 		return NULL;
 	}
 
-	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion,
-										 void* missingFunctionClass)
+	virtual int FB_CARG upgradeInterface(Interface* /*toUpgrade*/, int /*desiredVersion*/,
+										 void* /*missingFunctionClass*/)
 	{
 		fb_assert(false);
 		return 0;

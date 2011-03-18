@@ -4181,7 +4181,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* user_status,
  *
  **************************************/
 	StatusVector status(user_status);
-	ITransaction* tra = 0;
+	ITransaction* tra = NULL;
 
 	try
 	{
@@ -4387,9 +4387,9 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* user_status,
 				if (sub->providerInterface)
 				{
 					sub->providerInterface->rollback(&status);
-					if ((!status.isSuccess()) &&
-					    ( !is_network_error(status) ||
-						 (transaction->flags & HANDLE_TRANSACTION_limbo) ) )
+					if (!status.isSuccess() &&
+					    (!is_network_error(status) ||
+						 (transaction->flags & HANDLE_TRANSACTION_limbo)))
 					{
 						return status[1];
 					}
@@ -5804,15 +5804,21 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		}
 
 		// Close all known interfaces from providers ...
+
 		{ // guard scope
 			WriteLockGuard sync(handleMappingLock);
 			HandleMapping::Accessor a(&handleMapping);
-			if (a.getFirst()) do
+
+			if (a.getFirst())
 			{
-				BaseHandle* handle = a.current();
-				handle->releaseAll();
-			} while (a.getNext());
+				do
+				{
+					BaseHandle* handle = a.current();
+					handle->releaseAll();
+				} while (a.getNext());
+			}
 		}
+
 		// ... and wait for all providers to go away
 		PluginManager::waitForType(PluginType::Provider);
 
@@ -5897,10 +5903,11 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* user_status, FB_API_HANDLE* db_handle
 		attachment->providerInterface->ping(&status);
 		if (!status.isSuccess())
 		{
-			if (!attachment->status.getError()) 
+			if (!attachment->status.getError())
 			{
 				attachment->status.save(status);
 			}
+
 			{
 				MutexLockGuard guard(*attachment->getProviderInterfaceCleanupMutex());
 				if (attachment->providerInterface)
