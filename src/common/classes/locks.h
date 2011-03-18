@@ -82,7 +82,7 @@ protected:
 public:
 	Mutex()
 #ifdef DEV_BUILD
-		: reason(NULL)
+		: reason(NULL), lockCount(0)
 #endif
 	{
 		InitializeCriticalSection(&spinlock);
