@@ -1,3 +1,16 @@
+ 2011-03-18 02:00  asfernandes 
+   M src/common/os/win32/os_utils.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/jrd/idx.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+Misc
+
+ 2011-03-17 11:13  hvlad 
+   M src/jrd/idx.cpp
+Fixed bug CORE-3394 : Failed attempt to violate unique constraint could leave unneeded "lock conflict" error in status-vector
+
  2011-03-16 21:08  hvlad 
    M src/dsql/dsql.cpp
 Fixed bug CORE-3389 : isc_dsql_exec_immed2 with zero transaction handle could lead to a BUGCHECK(147).
