@@ -30,8 +30,6 @@
 #include "Interface.h"
 #include "Timer.h"
 
-#include <sys/time.h>
-
 #include "../yvalve/MasterImplementation.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/init.h"
@@ -43,6 +41,7 @@
 #include "../common/classes/semaphore.h"
 #include "../common/isc_proto.h"
 #include "../common/ThreadStart.h"
+#include "../common/utils_proto.h"
 #include "../jrd/ibase.h"
 
 namespace Firebird {
@@ -398,16 +397,7 @@ void TimerEntry::cleanup()
 
 TimerDelay curTime()
 {
-	struct timeval cur_time;
-	struct timezone tzUnused;
-
-	if (gettimeofday(&cur_time, &tzUnused) != 0)
-	{
-		system_call_failed::raise("gettimeofday");
-	}
-
-	TimerDelay microSeconds = ((TimerDelay) cur_time.tv_sec) * 1000000 + cur_time.tv_usec;
-	return microSeconds;
+	return fb_utils::query_performance_counter() / fb_utils::query_performance_frequency();
 }
 
 TimerEntry* getTimer(ITimer* timer)
