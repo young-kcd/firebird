@@ -889,11 +889,8 @@ UCHAR* INF_put_item(UCHAR item,
 }
 
 
-void INF_request_info(const jrd_req* request,
-					  const ULONG item_length,
-					  const UCHAR* items,
-					  const ULONG output_length,
-					  UCHAR* info)
+USHORT INF_request_info(const jrd_req* request, const ULONG item_length, const UCHAR* items,
+	const ULONG output_length, UCHAR* info)
 {
 /**************************************
  *
@@ -911,15 +908,11 @@ void INF_request_info(const jrd_req* request,
 
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end = info + output_length;
-	UCHAR* start_info;
+	UCHAR* start_info = info;
+	bool infoLengthPresent = items[0] == isc_info_length;
 
-	if (items[0] == isc_info_length)
-	{
-		start_info = info;
-		items++;
-	}
-	else
-		start_info = 0;
+	if (infoLengthPresent)
+		++items;
 
 	HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 	UCHAR* buffer_ptr = buffer.getBuffer(BUFFER_TINY);
@@ -1036,7 +1029,7 @@ void INF_request_info(const jrd_req* request,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
+	if (infoLengthPresent && (end - info >= 7))
 	{
 		const SLONG number = info - start_info;
 		fb_assert(number > 0);
@@ -1045,6 +1038,8 @@ void INF_request_info(const jrd_req* request,
 		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length, buffer.begin(), start_info, end, true);
 	}
+
+	return info - start_info;
 }
 
 

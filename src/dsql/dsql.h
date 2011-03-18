@@ -586,11 +586,6 @@ public:
 	blb* req_blb;			// JRD blob
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
-	ULONG req_inserts;		// records processed in request
-	ULONG req_deletes;
-	ULONG req_updates;
-	ULONG req_selects;
-
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;		// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;		// Total number of rows returned by this request

@@ -126,12 +126,6 @@ namespace
 		isc_info_req_update_count, isc_info_req_delete_count,
 		isc_info_req_select_count, isc_info_req_insert_count
 	};
-
-	const UCHAR sql_records_info[] =
-	{
-		isc_info_sql_records
-	};
-
 }	// namespace
 
 
@@ -1280,9 +1274,7 @@ static void execute_request(thread_db* tdbb,
 
 	if (statement->getType() == DsqlCompiledStatement::TYPE_UPDATE_CURSOR)
 	{
-		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
-
-		if (!request->req_updates)
+		if (!request->req_request->req_records_updated)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
 					  Arg::Gds(isc_deadlock) <<
@@ -1291,9 +1283,7 @@ static void execute_request(thread_db* tdbb,
 	}
 	else if (statement->getType() == DsqlCompiledStatement::TYPE_DELETE_CURSOR)
 	{
-		sql_info(tdbb, request, sizeof(sql_records_info), sql_records_info, sizeof(buffer), buffer);
-
-		if (!request->req_deletes)
+		if (!request->req_request->req_records_deleted)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
 					  Arg::Gds(isc_deadlock) <<
@@ -1365,52 +1355,13 @@ static USHORT get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_
 
 	try
 	{
-		INF_request_info(request->req_request,
-						 sizeof(record_info), record_info,
-						 buffer_length, buffer);
+		return INF_request_info(request->req_request, sizeof(record_info), record_info,
+			buffer_length, buffer);
 	}
 	catch (Firebird::Exception&)
 	{
 		return 0;
 	}
-
-	const UCHAR* data = buffer;
-
-	request->req_updates = request->req_deletes = 0;
-	request->req_selects = request->req_inserts = 0;
-
-	UCHAR p;
-	while ((p = *data++) != isc_info_end)
-	{
-		const USHORT data_length = static_cast<USHORT>(gds__vax_integer(data, 2));
-		data += 2;
-
-		switch (p)
-		{
-		case isc_info_req_update_count:
-			request->req_updates = gds__vax_integer(data, data_length);
-			break;
-
-		case isc_info_req_delete_count:
-			request->req_deletes = gds__vax_integer(data, data_length);
-			break;
-
-		case isc_info_req_select_count:
-			request->req_selects = gds__vax_integer(data, data_length);
-			break;
-
-		case isc_info_req_insert_count:
-			request->req_inserts = gds__vax_integer(data, data_length);
-			break;
-
-		default:
-			break;
-		}
-
-		data += data_length;
-	}
-
-	return data - buffer;
 }
 
 
