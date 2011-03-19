@@ -70,7 +70,7 @@ static rem_port* receive(rem_port*, PACKET*);
 static int send_full(rem_port*, PACKET*);
 static int send_partial(rem_port*, PACKET*);
 
-static void peer_shutdown(rem_port* port);
+static void server_shutdown(rem_port* port);
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG);
 static void make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
@@ -1204,7 +1204,7 @@ static rem_port* connect_client(PACKET* packet)
 			{
 				if (xpm->xpm_number == map_num &&
 					xpm->xpm_timestamp == timestamp &&
-					!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN))
+					!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 				{
 					break;
 				}
@@ -1558,8 +1558,15 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
 	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
 #endif
 
-	if (!xdr_protocol(&main_port->port_receive, packet))
+	try 
+	{
+		if (!xdr_protocol(&main_port->port_receive, packet))
+			packet->p_operation = op_exit;
+	}
+	catch(const Exception&)
+	{
 		packet->p_operation = op_exit;
+	}
 
 	return main_port;
 }
@@ -1614,7 +1621,7 @@ static int send_partial( rem_port* port, PACKET* packet)
 	return xdr_protocol(&port->port_send, packet);
 }
 
-static void peer_shutdown(rem_port* port)
+static void server_shutdown(rem_port* port)
 {
 /**************************************
  *
@@ -1623,19 +1630,20 @@ static void peer_shutdown(rem_port* port)
  **************************************
  *
  * Functional description
- *   Peer shutdown handler.
+ *   Server shutdown handler (client side only).
  *
  **************************************/
-	xnet_log_error("Peer shutdown detected");
+	fb_assert(!(port->port_flags & PORT_server));
+
+	xnet_log_error("Server shutdown detected");
 
 	XCC xcc = port->port_xcc;
-	xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+	xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 
 	XPM xpm = xcc->xcc_xpm;
-	if (!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN))
+	if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 	{
-		const ULONG dead_proc_id = (port->port_flags & PORT_server) ?
-			XPS(xpm->xpm_address)->xps_client_proc_id : XPS(xpm->xpm_address)->xps_server_proc_id;
+		const ULONG dead_proc_id = XPS(xpm->xpm_address)->xps_server_proc_id;
 
 		// mark all mapped areas connected to the process with pid == dead_proc_id
 
@@ -1643,11 +1651,10 @@ static void peer_shutdown(rem_port* port)
 
 		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
 		{
-			if (!(xpm->xpm_flags & XPMF_PEER_SHUTDOWN) &&
-				(XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id ||
-				XPS(xpm->xpm_address)->xps_client_proc_id == dead_proc_id))
+			if (!(xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) &&
+				(XPS(xpm->xpm_address)->xps_server_proc_id == dead_proc_id))
 			{
-				xpm->xpm_flags |= XPMF_PEER_SHUTDOWN;
+				xpm->xpm_flags |= XPMF_SERVER_SHUTDOWN;
 				xpm->xpm_handle = 0;
 				xpm->xpm_address = NULL;
 			}
@@ -1762,16 +1769,17 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, u_int count)
 	SLONG bytecount = count;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
+	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XPM xpm = xcc->xcc_xpm;
 
 	while (bytecount && !xnet_shutdown)
 	{
-		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
+		if (!portServer && (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 		{
-			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
@@ -1879,6 +1887,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	SLONG bytecount = count;
 
 	rem_port* port = (rem_port*)xdrs->x_public;
+	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_send_channel;
 	XPM xpm = xcc->xcc_xpm;
@@ -1886,11 +1895,11 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 	while (bytecount && !xnet_shutdown)
 	{
-		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
+		if (!portServer && (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 		{
-			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
@@ -1909,11 +1918,11 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 			{
 				while (!xnet_shutdown)
 				{
-					if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
+					if (!portServer && (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 					{
-						if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
+						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 						{
-							xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 							xnet_error(port, isc_conn_lost, 0);
 						}
 						return FALSE;
@@ -1937,9 +1946,9 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						}
 
 						// Another side is dead or something bad has happened
-						if (!(xps->xps_flags & XPS_DISCONNECTED))
+						if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 						{
-							peer_shutdown(port);
+							server_shutdown(port);
 						}
 
 						xnet_error(port, isc_conn_lost, 0);
@@ -2009,6 +2018,7 @@ static bool_t xnet_read(XDR* xdrs)
  *
  **************************************/
 	rem_port* port = (rem_port*)xdrs->x_public;
+	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
@@ -2025,11 +2035,11 @@ static bool_t xnet_read(XDR* xdrs)
 
 	while (!xnet_shutdown)
 	{
-		if (xpm->xpm_flags & XPMF_PEER_SHUTDOWN)
+		if (!portServer && (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN))
 		{
-			if (!(xcc->xcc_flags & XCCF_PEER_SHUTDOWN))
+			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
-				xcc->xcc_flags |= XCCF_PEER_SHUTDOWN;
+				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
 				xnet_error(port, isc_conn_lost, 0);
 			}
 			return FALSE;
@@ -2056,9 +2066,9 @@ static bool_t xnet_read(XDR* xdrs)
 			}
 
 			// Another side is dead or something bad has happened
-			if (!(xps->xps_flags & XPS_DISCONNECTED))
+			if (!(xps->xps_flags & XPS_DISCONNECTED) && !portServer)
 			{
-				peer_shutdown(port);
+				server_shutdown(port);
 			}
 
 			xnet_error(port, isc_conn_lost, 0);

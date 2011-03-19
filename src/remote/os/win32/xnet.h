@@ -77,7 +77,7 @@ typedef struct xpm
 
 // Mapped structure flags
 
-const USHORT XPMF_PEER_SHUTDOWN	= 1;		// peer has shut down
+const USHORT XPMF_SERVER_SHUTDOWN	= 1;		// server has shut down
 
 // Mapped structure ids
 
@@ -127,8 +127,8 @@ typedef struct xcc
 
 // XCC structure flags
 
-const ULONG XCCF_PEER_SHUTDOWN	= 1;		// unexpected shutdown has been detected on the other side
-const ULONG XCCF_ASYNC			= 2;		// secondary XCC for events processing
+const ULONG XCCF_SERVER_SHUTDOWN	= 1;		// server shutdown has been detected by client
+const ULONG XCCF_ASYNC				= 2;		// secondary XCC for events processing
 
 
 // This structure (xps) is mapped to the start of the allocated
