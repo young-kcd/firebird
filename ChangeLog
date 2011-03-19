@@ -1,3 +1,7 @@
+ 2011-03-18 17:48  alexpeshkoff 
+   M src/jrd/os/posix/mod_loader.cpp
+Fixed CORE-3397: Unresolved symbols in intl and trace libraries
+
  2011-03-17 14:02  alexpeshkoff 
    M configure.in
 Fixed s390 linux port error
