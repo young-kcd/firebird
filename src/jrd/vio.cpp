@@ -95,6 +95,7 @@ using namespace Firebird;
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static void check_control(thread_db*);
 static bool check_user(thread_db*, const dsc*);
+static int check_precommitted(const jrd_tra*, const record_param*);
 static void check_rel_field_class(thread_db*, record_param*, SecurityClass::flags_t, jrd_tra*);
 static void delete_record(thread_db*, record_param*, ULONG, MemoryPool*);
 static UCHAR* delete_tail(thread_db*, record_param*, ULONG, UCHAR*, const UCHAR*);
@@ -658,6 +659,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (state == tra_active)
 				state = tra_limbo;
 		}
+		if (state == tra_precommitted)
+			state = check_precommitted(transaction, rpb);
+
 		// If the transaction is a read committed and chooses the no version
 		// option, wait for reads also!
 
@@ -700,6 +704,9 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+
+				if (state == tra_precommitted)
+					state = check_precommitted(transaction, rpb);
 
 				if (state == tra_active)
 				{
@@ -1799,6 +1806,9 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 			}
 		}
 
+		if (state == tra_precommitted)
+			state = check_precommitted(transaction, rpb);
+
 		if (state == tra_dead)
 		{
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
@@ -2073,6 +2083,9 @@ bool VIO_get_current(thread_db* tdbb,
 			}
 		}
 
+		if (state == tra_precommitted)
+			state = check_precommitted(transaction, rpb);
+
 		switch (state)
 		{
 		case tra_committed:
@@ -2100,6 +2113,8 @@ bool VIO_get_current(thread_db* tdbb,
 		if (!(rpb->rpb_flags & rpb_gc_active))
 		{
 			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+			if (state == tra_precommitted)
+				state = check_precommitted(transaction, rpb);
 		}
 		else
 		{
@@ -3628,6 +3643,40 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 }
 
 
+static int check_precommitted(const jrd_tra* transaction, const record_param* rpb)
+{
+/*********************************************
+ *
+ *	c h e c k _ p r e c o m m i t t e d
+ *
+ *********************************************
+ *
+ * Functional description
+ *	Check if precommitted transaction which created given record version is
+ *  current transaction or it is a still active and belongs to the current 
+ *	attachment. This is needed to detect visibility of records modified by
+ *	temporary tables in read-only transactions.
+ *
+ **************************************/
+	if (!(rpb->rpb_flags & rpb_gc_active) && rpb->rpb_relation->isTemporary())
+	{
+		if (transaction->tra_number == rpb->rpb_transaction_nr) {
+			return tra_us;
+		}
+		else
+		{
+			const jrd_tra* tx = transaction->tra_attachment->att_transactions;
+			for (; tx; tx = tx->tra_next)
+				if (tx->tra_number == rpb->rpb_transaction_nr)
+				{
+					return tra_active;
+				}
+		}
+	}
+	return tra_precommitted;
+}
+
+
 static void check_rel_field_class(thread_db* tdbb,
 								  record_param* rpb,
 								  SecurityClass::flags_t flags,
@@ -4945,6 +4994,9 @@ static int prepare_update(	thread_db*		tdbb,
 				break;
 			}
 		}
+
+		if (state == tra_precommitted)
+			state = check_precommitted(transaction, rpb);
 
 		switch (state)
 		{
