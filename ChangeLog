@@ -1,3 +1,42 @@
+ 2011-03-18 17:48  alexpeshkoff 
+   M src/common/os/posix/mod_loader.cpp
+Fixed CORE-3397: Unresolved symbols in intl and trace libraries
+
+ 2011-03-18 15:36  asfernandes 
+   M src/jrd/inf.cpp
+Correction.
+
+ 2011-03-18 15:24  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_proto.h
+Simplification
+
+ 2011-03-18 14:45  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Missed return value - thanks to Vlad
+
+ 2011-03-18 13:11  hvlad 
+   M src/common/classes/locks.h
+Missed initialization
+
+ 2011-03-18 12:30  hvlad 
+   M src/yvalve/MasterImplementation.cpp
+Make it OS-independent
+
+ 2011-03-18 12:28  hvlad 
+   M src/common/classes/locks.h
+Missed code
+
+ 2011-03-18 11:38  alexpeshkoff 
+   A src/yvalve/MasterImplementation.h
+Forgotten added file
+
+ 2011-03-18 10:41  hvlad 
+   M src/gpre/boot/gpre_meta_boot.cpp
+Fixed boot build
+
  2011-03-18 02:00  asfernandes 
    M src/common/os/win32/os_utils.cpp
    M src/gpre/boot/gpre_meta_boot.cpp
