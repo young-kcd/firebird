@@ -1,3 +1,9 @@
+ 2011-03-18 17:48  alexpeshkoff 
+   M builds/posix/Makefile.in.fbtrace
+   M src/common/fb_exception.cpp
+   M src/jrd/os/posix/mod_loader.cpp
+Fixed CORE-3397: Unresolved symbols in intl and trace libraries
+
  2011-03-17 11:17  hvlad 
    M src/jrd/idx.cpp
 Fixed bug CORE-3394 : Failed attempt to violate unique constraint could leave unneeded "lock conflict" error in status-vector.
