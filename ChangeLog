@@ -1,3 +1,15 @@
+ 2011-03-19 13:10  hvlad 
+   M src/jrd/met.epp
+   M src/jrd/rlck.cpp
+   M src/jrd/vio.cpp
+Improvement CORE-3399 : Allow write operations to temporary tables in read only transactions
+
+ 2011-03-19 11:39  hvlad 
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/os/win32/xnet.h
+XNET was broken. Abnormal client disconnection was not released port and resources. Whole XPM map was corrupted and new connections was not possible.
+Renamed back peer_shutdown -> server_shutdown, XPMF_PEER_SHUTDOWN -> XPMF_SERVER_SHUTDOWN and XCCF_PEER_SHUTDOWN -> XCCF_SERVER_SHUTDOWN because this is pure client things and should not be used by server side.
+
  2011-03-18 17:48  alexpeshkoff 
    M src/common/os/posix/mod_loader.cpp
 Fixed CORE-3397: Unresolved symbols in intl and trace libraries
