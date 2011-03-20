@@ -1270,8 +1270,6 @@ static void execute_request(thread_db* tdbb,
 		}
 	}
 
-	UCHAR buffer[20]; // Not used after retrieved
-
 	if (statement->getType() == DsqlCompiledStatement::TYPE_UPDATE_CURSOR)
 	{
 		if (!request->req_request->req_records_updated)

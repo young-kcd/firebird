@@ -1558,12 +1558,12 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
 	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
 #endif
 
-	try 
+	try
 	{
 		if (!xdr_protocol(&main_port->port_receive, packet))
 			packet->p_operation = op_exit;
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		packet->p_operation = op_exit;
 	}

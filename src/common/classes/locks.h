@@ -143,7 +143,7 @@ public:
 		// On 9X it works differently, and future OS versions may break this check as well
 		if ((U_IPTR) spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
-		
+
 		lockCount--;
 #endif
 		LeaveCriticalSection(&spinlock);
