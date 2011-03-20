@@ -2752,7 +2752,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 										   const SCHAR* in_msg,
 										   USHORT out_blr_length,
 										   SCHAR* out_blr,
-										   USHORT out_msg_type,
+										   USHORT /*out_msg_type*/,
 										   USHORT out_msg_length,
 										   SCHAR* out_msg)
 {
@@ -2793,7 +2793,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 		MessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(out_msg));
 
 		tra = statement->providerInterface->executeMessage(&status, tra, in_msg_type, &inMsgBuffer,
-			out_msg_type, &outMsgBuffer);
+			&outMsgBuffer);
 
 		if (status.isSuccess())
 		{
@@ -3107,7 +3107,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 											const SCHAR* in_msg,
 											USHORT out_blr_length,
 											SCHAR* out_blr,
-											USHORT out_msg_type,
+											USHORT /*out_msg_type*/,
 											USHORT out_msg_length,
 											SCHAR* out_msg)
 {
@@ -3153,7 +3153,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 		MessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(out_msg));
 
 		tra = attachment->providerInterface->execute(&status, tra, length, string, dialect,
-										 in_msg_type, &inMsgBuffer, out_msg_type, &outMsgBuffer);
+										 in_msg_type, &inMsgBuffer, &outMsgBuffer);
 
 		if (status.isSuccess())
 		{
@@ -3240,7 +3240,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 										FB_API_HANDLE* stmt_handle,
 										USHORT blr_length,
 										SCHAR* blr,
-										USHORT msg_type,
+										USHORT /*msg_type*/,
 										USHORT msg_length,
 										SCHAR* msg)
 {
@@ -3263,7 +3263,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 		Message message(blr_length, reinterpret_cast<unsigned char*>(blr), msg_length);
 		MessageBuffer msgBuffer(&message, reinterpret_cast<unsigned char*>(msg));
 
-		int s = statement->providerInterface->fetchMessage(&status, msg_type, &msgBuffer);
+		int s = statement->providerInterface->fetchMessage(&status, &msgBuffer);
 
 		if (s == 100 || s == 101)
 		{
@@ -3382,7 +3382,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 										 FB_API_HANDLE* stmt_handle,
 										 USHORT blr_length,
 										 const SCHAR* blr,
-										 USHORT msg_type,
+										 USHORT /*msg_type*/,
 										 USHORT msg_length,
 										 const SCHAR* msg)
 {
@@ -3409,7 +3409,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 		Message message(blr_length, reinterpret_cast<const unsigned char*>(blr), msg_length);
 		MessageBuffer msgBuffer(&message, reinterpret_cast<const unsigned char*>(msg));
 
-		statement->providerInterface->insertMessage(&status, msg_type, &msgBuffer);
+		statement->providerInterface->insertMessage(&status, &msgBuffer);
 	}
 	catch (const Exception& e)
 	{

@@ -170,13 +170,11 @@ public:
 //	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* tra, Sqlda* in, Sqlda* out) = 0;
 	virtual ITransaction* FB_CARG executeMessage(Status* status, ITransaction* tra,
 										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
-										unsigned int outMsgType, const MessageBuffer* outMsgBuffer) = 0;
+										const MessageBuffer* outMsgBuffer) = 0;
 //	virtual int FB_CARG fetch(Status* status, Sqlda* out) = 0;								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status, unsigned int msgType,
-							const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
+	virtual int FB_CARG fetchMessage(Status* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
 //	virtual void FB_CARG insert(Status* status, Sqlda* in) = 0;
-	virtual void FB_CARG insertMessage(Status* status, unsigned int msgType,
-							   const MessageBuffer* msgBuffer) = 0;
+	virtual void FB_CARG insertMessage(Status* status, const MessageBuffer* msgBuffer) = 0;
 	virtual void FB_CARG free(Status* status, unsigned int option) = 0;
 };
 #define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)
@@ -222,7 +220,7 @@ public:
 	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
-								 unsigned int outMsgType, const MessageBuffer* outMsgBuffer) = 0;
+								 const MessageBuffer* outMsgBuffer) = 0;
 	virtual IEvents* FB_CARG queEvents(Status* status, EventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(Status* status, int option) = 0;

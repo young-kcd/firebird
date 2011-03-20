@@ -256,13 +256,11 @@ public:
 //	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* tra, Sqlda* in, Sqlda* out);
 	virtual Firebird::ITransaction* FB_CARG executeMessage(Status* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-										unsigned int out_msg_type, const MessageBuffer* outMsgBuffer);
+										const MessageBuffer* outMsgBuffer);
 //	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status, unsigned int msg_type,
-							 const MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
+	virtual int FB_CARG fetchMessage(Status* status, const MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void FB_CARG insertMessage(Status* status, unsigned int msg_type,
-							   const MessageBuffer* msgBuffer);
+	virtual void FB_CARG insertMessage(Status* status, const MessageBuffer* msgBuffer);
 	virtual void FB_CARG free(Status* status, unsigned int option);
 
 public:
@@ -374,7 +372,7 @@ public:
 	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-								 unsigned int out_msg_type, const MessageBuffer* outMsgBuffer);
+								 const MessageBuffer* outMsgBuffer);
 	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(Status* status, int option);
@@ -547,7 +545,7 @@ static void disconnect(rem_port*);
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
-static int fetch_blob(Status*, Rsr*, USHORT, const UCHAR*, USHORT, USHORT, UCHAR*);
+static int fetch_blob(Status*, Rsr*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
@@ -1484,7 +1482,7 @@ Firebird::IStatement* Attachment::allocateStatement(Status* status)
 
 Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITransaction* apiTra,
 						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-						unsigned int out_msg_type, const MessageBuffer* outMsgBuffer)
+						const MessageBuffer* outMsgBuffer)
 {
 /**************************************
  *
@@ -1619,7 +1617,7 @@ Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITra
 		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
 		sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
 		sqldata->p_sqldata_out_blr.cstr_address = const_cast<UCHAR*>(out_blr);
-		sqldata->p_sqldata_out_message_number = out_msg_type;
+		sqldata->p_sqldata_out_message_number = 0;	// out_msg_type
 
 		if (out_msg_length || !statement->rsr_flags.test(Rsr::DEFER_EXECUTE))
 		{
@@ -1678,7 +1676,7 @@ Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITra
 Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransaction* apiTra,
 						unsigned int length, const char* string, unsigned int dialect,
 						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-						unsigned int out_msg_type, const MessageBuffer* outMsgBuffer)
+						const MessageBuffer* outMsgBuffer)
 {
 /**************************************
  *
@@ -1815,7 +1813,7 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		ex_now->p_sqlst_messages = (in_msg_length && statement->rsr_bind_format) ? 1 : 0;
 		ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
 		ex_now->p_sqlst_out_blr.cstr_address = const_cast<unsigned char*>(out_blr);
-		ex_now->p_sqlst_out_message_number = out_msg_type;
+		ex_now->p_sqlst_out_message_number = 0;	// out_msg_type
 
 		send_packet(port, packet);
 
@@ -1861,7 +1859,7 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 }
 
 
-int Statement::fetchMessage(Status* status, unsigned int msg_type, const MessageBuffer* msgBuffer)
+int Statement::fetchMessage(Status* status, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -1956,7 +1954,7 @@ int Statement::fetchMessage(Status* status, unsigned int msg_type, const Message
 		}
 
 		if (statement->rsr_flags.test(Rsr::BLOB)) {
-			return fetch_blob(status, statement, blr_length, blr, msg_type, msg_length, msg);
+			return fetch_blob(status, statement, blr_length, blr, msg_length, msg);
 		}
 
 
@@ -2004,7 +2002,7 @@ int Statement::fetchMessage(Status* status, unsigned int msg_type, const Message
 			sqldata->p_sqldata_statement = statement->rsr_id;
 			sqldata->p_sqldata_blr.cstr_length = blr_length;
 			sqldata->p_sqldata_blr.cstr_address = const_cast<unsigned char*>(blr);
-			sqldata->p_sqldata_message_number = msg_type;
+			sqldata->p_sqldata_message_number = 0;	// msg_type
 			if (sqldata->p_sqldata_messages = statement->rsr_select_format ? 1 : 0)
 			{
 				if (!(port->port_flags &PORT_rpc))
@@ -2210,7 +2208,7 @@ void Statement::free(Status* status, unsigned int option)
 }
 
 
-void Statement::insertMessage(Status* status, unsigned int msg_type, const MessageBuffer* msgBuffer)
+void Statement::insertMessage(Status* status, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -5346,7 +5344,6 @@ static int fetch_blob(Status* status,
 					   Rsr* statement,
 					   USHORT blr_length,
 					   const UCHAR* blr,
-					   USHORT msg_type,
 					   USHORT /*msg_length*/,
 					   UCHAR* msg)
 {
@@ -5369,7 +5366,7 @@ static int fetch_blob(Status* status,
 	sqldata->p_sqldata_statement = statement->rsr_id;
 	sqldata->p_sqldata_blr.cstr_length = blr_length;
 	sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr);
-	sqldata->p_sqldata_message_number = msg_type;
+	sqldata->p_sqldata_message_number = 0;	// msg_type
 	sqldata->p_sqldata_messages = (statement->rsr_select_format) ? 1 : 0;
 
 	send_packet(port, packet);

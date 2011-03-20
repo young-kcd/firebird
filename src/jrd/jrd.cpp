@@ -4140,8 +4140,7 @@ Firebird::IStatement* Attachment::allocateStatement(Status* user_status)
 
 
 Firebird::ITransaction* dsql_req::executeMessage(Status* user_status, Firebird::ITransaction* apiTra,
-	unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-	unsigned int /*out_msg_type*/, const MessageBuffer* outMsgBuffer)
+	unsigned int in_msg_type, const MessageBuffer* inMsgBuffer, const MessageBuffer* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
 
@@ -4173,7 +4172,7 @@ Firebird::ITransaction* dsql_req::executeMessage(Status* user_status, Firebird::
 			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 			DSQL_execute(tdbb, &tra, this, in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
-						 out_blr_length, out_blr, /*out_msg_type,*/ out_msg_length, out_msg);
+						 out_blr_length, out_blr, out_msg_length, out_msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -4196,7 +4195,7 @@ Firebird::ITransaction* dsql_req::executeMessage(Status* user_status, Firebird::
 Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	unsigned int /*in_msg_type*/, const MessageBuffer* inMsgBuffer,
-	unsigned int /*out_msg_type*/, const MessageBuffer* outMsgBuffer)
+	const MessageBuffer* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
 
@@ -4251,8 +4250,7 @@ Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITran
 }
 
 
-int dsql_req::fetchMessage(Status* user_status, unsigned int /*msg_type*/,
-	const MessageBuffer* msgBuffer)
+int dsql_req::fetchMessage(Status* user_status, const MessageBuffer* msgBuffer)
 {
 	int return_code = 0;
 
@@ -4323,8 +4321,7 @@ void dsql_req::free(Status* user_status, unsigned int option)
 }
 
 
-void dsql_req::insertMessage(Status* user_status, unsigned int /*msg_type*/,
-	const MessageBuffer* msgBuffer)
+void dsql_req::insertMessage(Status* user_status, const MessageBuffer* msgBuffer)
 {
 	try
 	{
@@ -4342,7 +4339,7 @@ void dsql_req::insertMessage(Status* user_status, unsigned int /*msg_type*/,
 			unsigned msg_length = bufMessage ? bufMessage->bufferLength : 0;
 			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
-			DSQL_insert(tdbb, this, blr_length, blr, /*msg_type,*/ msg_length, msg);
+			DSQL_insert(tdbb, this, blr_length, blr, msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{

@@ -616,14 +616,11 @@ public:
 	virtual Firebird::ITransaction* FB_CARG executeMessage(Status* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type,
 										const Firebird::MessageBuffer* inMsgBuffer,
-										unsigned int out_msg_type,
 										const Firebird::MessageBuffer* outMsgBuffer);
 //	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status, unsigned int msg_type,
-							 const Firebird::MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
+	virtual int FB_CARG fetchMessage(Status* status, const Firebird::MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void FB_CARG insertMessage(Status* status, unsigned int msg_type,
-							   const Firebird::MessageBuffer* msgBuffer);
+	virtual void FB_CARG insertMessage(Status* status, const Firebird::MessageBuffer* msgBuffer);
 	virtual void FB_CARG free(Status* status, unsigned int option);
 };
 
