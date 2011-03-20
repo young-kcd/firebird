@@ -4139,7 +4139,7 @@ Firebird::IStatement* Attachment::allocateStatement(Status* user_status)
 }
 
 
-Firebird::ITransaction* dsql_req::executeMessage(Status* user_status, Firebird::ITransaction* apiTra,
+Firebird::ITransaction* dsql_req::execute(Status* user_status, Firebird::ITransaction* apiTra,
 	unsigned int in_msg_type, const MessageBuffer* inMsgBuffer, const MessageBuffer* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
@@ -4250,7 +4250,7 @@ Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITran
 }
 
 
-int dsql_req::fetchMessage(Status* user_status, const MessageBuffer* msgBuffer)
+int dsql_req::fetch(Status* user_status, const MessageBuffer* msgBuffer)
 {
 	int return_code = 0;
 
@@ -4321,7 +4321,7 @@ void dsql_req::free(Status* user_status, unsigned int option)
 }
 
 
-void dsql_req::insertMessage(Status* user_status, const MessageBuffer* msgBuffer)
+void dsql_req::insert(Status* user_status, const MessageBuffer* msgBuffer)
 {
 	try
 	{

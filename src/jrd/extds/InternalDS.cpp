@@ -500,7 +500,7 @@ void InternalStatement::doExecute(thread_db* tdbb)
 		Message outMessage(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
 		MessageBuffer outMsgBuffer(&outMessage, m_out_buffer.begin());
 
-		m_request->executeMessage(&status, transaction, 0, &inMsgBuffer, &outMsgBuffer);
+		m_request->execute(&status, transaction, 0, &inMsgBuffer, &outMsgBuffer);
 	}
 
 	if (!status.isSuccess())
@@ -519,7 +519,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 		Message inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
 		MessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
 
-		m_request->executeMessage(&status, transaction, 0, &inMsgBuffer, NULL);
+		m_request->execute(&status, transaction, 0, &inMsgBuffer, NULL);
 	}
 
 	if (!status.isSuccess())
@@ -536,7 +536,7 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 		Message message(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
 		MessageBuffer msgBuffer(&message, m_out_buffer.begin());
 
-		res = m_request->fetchMessage(&status, &msgBuffer);
+		res = m_request->fetch(&status, &msgBuffer);
 	}
 
 	if (!status.isSuccess())

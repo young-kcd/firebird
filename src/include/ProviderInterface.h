@@ -95,8 +95,6 @@ public:
 };
 */
 
-//class Sqlda;	// from Vulcan mainly
-
 class IBlob : public Interface
 {
 public:
@@ -154,9 +152,6 @@ public:
 class IStatement : public Interface
 {
 public:
-	//virtual Sqlda* FB_CARG describeInput(Status* status) = 0;
-	//virtual Sqlda* FB_CARG describeOutput(Status* status) = 0;
-
 	// FixMe - prepare must return void, not new statement handle
 	virtual IStatement* FB_CARG prepare(Status* status, ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
@@ -167,14 +162,11 @@ public:
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type) = 0;
-//	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* tra, Sqlda* in, Sqlda* out) = 0;
-	virtual ITransaction* FB_CARG executeMessage(Status* status, ITransaction* tra,
+	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* tra,
 										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 										const MessageBuffer* outMsgBuffer) = 0;
-//	virtual int FB_CARG fetch(Status* status, Sqlda* out) = 0;								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-//	virtual void FB_CARG insert(Status* status, Sqlda* in) = 0;
-	virtual void FB_CARG insertMessage(Status* status, const MessageBuffer* msgBuffer) = 0;
+	virtual int FB_CARG fetch(Status* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(Status* status, const MessageBuffer* msgBuffer) = 0;
 	virtual void FB_CARG free(Status* status, unsigned int option) = 0;
 };
 #define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)

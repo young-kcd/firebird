@@ -2792,8 +2792,8 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 		Message outMessage(out_blr_length, reinterpret_cast<unsigned char*>(out_blr), out_msg_length);
 		MessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(out_msg));
 
-		tra = statement->providerInterface->executeMessage(&status, tra, in_msg_type, &inMsgBuffer,
-			&outMsgBuffer);
+		tra = statement->providerInterface->execute(&status, tra, in_msg_type,
+			&inMsgBuffer, &outMsgBuffer);
 
 		if (status.isSuccess())
 		{
@@ -3263,12 +3263,10 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 		Message message(blr_length, reinterpret_cast<unsigned char*>(blr), msg_length);
 		MessageBuffer msgBuffer(&message, reinterpret_cast<unsigned char*>(msg));
 
-		int s = statement->providerInterface->fetchMessage(&status, &msgBuffer);
+		int s = statement->providerInterface->fetch(&status, &msgBuffer);
 
 		if (s == 100 || s == 101)
-		{
 			return s;
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -3409,7 +3407,7 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 		Message message(blr_length, reinterpret_cast<const unsigned char*>(blr), msg_length);
 		MessageBuffer msgBuffer(&message, reinterpret_cast<const unsigned char*>(msg));
 
-		statement->providerInterface->insertMessage(&status, &msgBuffer);
+		statement->providerInterface->insert(&status, &msgBuffer);
 	}
 	catch (const Exception& e)
 	{
