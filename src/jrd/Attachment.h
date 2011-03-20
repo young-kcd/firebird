@@ -236,10 +236,8 @@ public:
 	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
 	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_blr_length, const unsigned char* in_blr,
-								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_blr_length, unsigned char* out_blr,
-								 unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg);
+								 unsigned int in_msg_type, const Firebird::MessageBuffer* inMsgBuffer,
+								 unsigned int out_msg_type, const Firebird::MessageBuffer* outMsgBuffer);
 	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
 										 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(Status* status, int option);

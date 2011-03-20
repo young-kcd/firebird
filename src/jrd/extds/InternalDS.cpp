@@ -494,11 +494,13 @@ void InternalStatement::doExecute(thread_db* tdbb)
 	LocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		m_request->executeMessage(&status, transaction,
-			m_inBlr.getCount(), m_inBlr.begin(),
-			0, m_in_buffer.getCount(), m_in_buffer.begin(),
-			m_outBlr.getCount(), m_outBlr.begin(),
-			0, m_out_buffer.getCount(), m_out_buffer.begin());
+
+		Message inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
+		MessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
+		Message outMessage(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
+		MessageBuffer outMsgBuffer(&outMessage, m_out_buffer.begin());
+
+		m_request->executeMessage(&status, transaction, 0, &inMsgBuffer, 0, &outMsgBuffer);
 	}
 
 	if (!status.isSuccess())
@@ -513,10 +515,11 @@ void InternalStatement::doOpen(thread_db* tdbb)
 	LocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		m_request->executeMessage(&status, transaction,
-			m_inBlr.getCount(), m_inBlr.begin(),
-			0, m_in_buffer.getCount(), m_in_buffer.begin(),
-			0, NULL, 0, 0, NULL);
+
+		Message inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
+		MessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
+
+		m_request->executeMessage(&status, transaction, 0, &inMsgBuffer, 0, NULL);
 	}
 
 	if (!status.isSuccess())
@@ -530,9 +533,10 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 	int res = 0;
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		res = m_request->fetchMessage(&status,
-			m_outBlr.getCount(), m_outBlr.begin(), 0,
-			m_out_buffer.getCount(), m_out_buffer.begin());
+		Message message(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
+		MessageBuffer msgBuffer(&message, m_out_buffer.begin());
+
+		res = m_request->fetchMessage(&status, 0, &msgBuffer);
 	}
 
 	if (!status.isSuccess())

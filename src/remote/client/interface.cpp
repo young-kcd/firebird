@@ -255,22 +255,14 @@ public:
 	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
 //	virtual Firebird::ITransaction* execute(Status* status, Firebird::ITransaction* tra, Sqlda* in, Sqlda* out);
 	virtual Firebird::ITransaction* FB_CARG executeMessage(Status* status, Firebird::ITransaction* tra,
-										unsigned int in_blr_length, const unsigned char* in_blr,
-										unsigned int in_msg_type,
-										unsigned int in_msg_length, const unsigned char* in_message,
-										unsigned int out_blr_length, const unsigned char* out_blr,
-										unsigned int out_msg_type,
-										unsigned int out_msg_length, unsigned char* out_message);
+										unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
+										unsigned int out_msg_type, const MessageBuffer* outMsgBuffer);
 //	virtual int fetch(Status* status, Sqlda* out);								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status,
-							 unsigned int blr_length, const unsigned char* blr,
-							 unsigned int msg_type,
-							 unsigned int msg_length, unsigned char* message);	// returns 100 if EOF, 101 if fragmented
+	virtual int FB_CARG fetchMessage(Status* status, unsigned int msg_type,
+							 const MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
 //	virtual void insert(Status* status, Sqlda* in);
-	virtual void FB_CARG insertMessage(Status* status,
-							   unsigned int blr_length, const unsigned char* blr,
-							   unsigned int msg_type,
-							   unsigned int msg_length, const unsigned char* message);
+	virtual void FB_CARG insertMessage(Status* status, unsigned int msg_type,
+							   const MessageBuffer* msgBuffer);
 	virtual void FB_CARG free(Status* status, unsigned int option);
 
 public:
@@ -381,10 +373,8 @@ public:
 	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
 	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_blr_length, const unsigned char* in_blr,
-								 unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_blr_length, unsigned char* out_blr,
-								 unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg);
+								 unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
+								 unsigned int out_msg_type, const MessageBuffer* outMsgBuffer);
 	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(Status* status, int option);
@@ -1493,10 +1483,8 @@ Firebird::IStatement* Attachment::allocateStatement(Status* status)
 
 
 Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITransaction* apiTra,
-						unsigned int in_blr_length, const unsigned char* in_blr,
-						unsigned int in_msg_type, unsigned int /*in_msg_length*/, const unsigned char* in_msg,
-						unsigned int out_blr_length, const unsigned char* out_blr,
-						unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg)
+						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
+						unsigned int out_msg_type, const MessageBuffer* outMsgBuffer)
 {
 /**************************************
  *
@@ -1519,6 +1507,19 @@ Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITra
 
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+		const Message* inMessage = inMsgBuffer ? inMsgBuffer->message : NULL;
+		unsigned in_blr_length = inMessage ? inMessage->blrLength : 0;
+		const unsigned char* in_blr = inMessage ? inMessage->blr : NULL;
+		unsigned in_msg_length = inMessage ? inMessage->bufferLength : 0;
+		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+
+		const Message* outMessage = outMsgBuffer ? outMsgBuffer->message : NULL;
+		unsigned out_blr_length = outMessage ? outMessage->blrLength : 0;
+		const unsigned char* out_blr = outMessage ? outMessage->blr : NULL;
+		unsigned out_msg_length = outMessage ? outMessage->bufferLength : 0;
+		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
+
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
@@ -1676,10 +1677,8 @@ Firebird::ITransaction* Statement::executeMessage(Status* status, Firebird::ITra
 
 Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransaction* apiTra,
 						unsigned int length, const char* string, unsigned int dialect,
-						unsigned int in_blr_length, const unsigned char* in_blr,
-						unsigned int in_msg_type, unsigned int in_msg_length, const unsigned char* in_msg,
-						unsigned int out_blr_length, unsigned char* out_blr,
-						unsigned int out_msg_type, unsigned int out_msg_length, unsigned char* out_msg)
+						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
+						unsigned int out_msg_type, const MessageBuffer* outMsgBuffer)
 {
 /**************************************
  *
@@ -1699,6 +1698,18 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
+
+		const Message* inMessage = inMsgBuffer ? inMsgBuffer->message : NULL;
+		unsigned in_blr_length = inMessage ? inMessage->blrLength : 0;
+		const unsigned char* in_blr = inMessage ? inMessage->blr : NULL;
+		unsigned in_msg_length = inMessage ? inMessage->bufferLength : 0;
+		unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+
+		const Message* outMessage = outMsgBuffer ? outMsgBuffer->message : NULL;
+		unsigned out_blr_length = outMessage ? outMessage->blrLength : 0;
+		const unsigned char* out_blr = outMessage ? outMessage->blr : NULL;
+		unsigned out_msg_length = outMessage ? outMessage->bufferLength : 0;
+		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		Rtr* transaction = 0;
 		if (apiTra) {
@@ -1803,7 +1814,7 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		ex_now->p_sqlst_message_number = in_msg_type;
 		ex_now->p_sqlst_messages = (in_msg_length && statement->rsr_bind_format) ? 1 : 0;
 		ex_now->p_sqlst_out_blr.cstr_length = out_blr_length;
-		ex_now->p_sqlst_out_blr.cstr_address = out_blr;
+		ex_now->p_sqlst_out_blr.cstr_address = const_cast<unsigned char*>(out_blr);
 		ex_now->p_sqlst_out_message_number = out_msg_type;
 
 		send_packet(port, packet);
@@ -1850,10 +1861,7 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 }
 
 
-int Statement::fetchMessage(Status* status,
-							unsigned int blr_length, const unsigned char* blr,
-							unsigned int msg_type,
-							unsigned int msg_length, unsigned char* msg)
+int Statement::fetchMessage(Status* status, unsigned int msg_type, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -1877,6 +1885,13 @@ int Statement::fetchMessage(Status* status,
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
+
+		const Message* bufMessage = msgBuffer ? msgBuffer->message : NULL;
+		unsigned blr_length = bufMessage ? bufMessage->blrLength : 0;
+		const unsigned char* blr = bufMessage ? bufMessage->blr : NULL;
+		unsigned msg_length = bufMessage ? bufMessage->bufferLength : 0;
+		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
+
 		RefMutexGuard portGuard(*port->port_sync);
 
 		// make sure the protocol supports it
@@ -2195,10 +2210,7 @@ void Statement::free(Status* status, unsigned int option)
 }
 
 
-void Statement::insertMessage(Status* status,
-							  unsigned int blr_length, const unsigned char* blr,
-							  unsigned int msg_type,
-							  unsigned int /*msg_length*/, const unsigned char* msg)
+void Statement::insertMessage(Status* status, unsigned int msg_type, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -2222,6 +2234,13 @@ void Statement::insertMessage(Status* status,
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
+
+		const Message* bufMessage = msgBuffer ? msgBuffer->message : NULL;
+		unsigned blr_length = bufMessage ? bufMessage->blrLength : 0;
+		const unsigned char* blr = bufMessage ? bufMessage->blr : NULL;
+		unsigned msg_length = bufMessage ? bufMessage->bufferLength : 0;
+		unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
+
 		RefMutexGuard portGuard(*port->port_sync);
 
 		// make sure the protocol supports it
@@ -2279,7 +2298,7 @@ void Statement::insertMessage(Status* status,
 		sqldata->p_sqldata_statement = statement->rsr_id;
 		sqldata->p_sqldata_blr.cstr_length = blr_length;
 		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(blr); // safe, see protocol.cpp and server.cpp
-		sqldata->p_sqldata_message_number = msg_type;
+		sqldata->p_sqldata_message_number = 0;	// msg_type
 		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
 
 		send_packet(port, packet);

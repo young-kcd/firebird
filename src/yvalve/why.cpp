@@ -2787,11 +2787,13 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* user_status,
 			tra = t->providerInterface;
 		}
 
-		tra = statement->providerInterface->executeMessage(&status, tra,
-										 in_blr_length, reinterpret_cast<const unsigned char*>(in_blr),
-										 in_msg_type, in_msg_length, reinterpret_cast<const unsigned char*>(in_msg),
-										 out_blr_length, reinterpret_cast<unsigned char*>(out_blr),
-										 out_msg_type, out_msg_length, reinterpret_cast<unsigned char*>(out_msg));
+		Message inMessage(in_blr_length, reinterpret_cast<const unsigned char*>(in_blr), in_msg_length);
+		MessageBuffer inMsgBuffer(&inMessage, reinterpret_cast<const unsigned char*>(in_msg));
+		Message outMessage(out_blr_length, reinterpret_cast<unsigned char*>(out_blr), out_msg_length);
+		MessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(out_msg));
+
+		tra = statement->providerInterface->executeMessage(&status, tra, in_msg_type, &inMsgBuffer,
+			out_msg_type, &outMsgBuffer);
 
 		if (status.isSuccess())
 		{
@@ -3145,11 +3147,13 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* user_status,
 			tra = t->providerInterface;
 		}
 
+		Message inMessage(in_blr_length, reinterpret_cast<const unsigned char*>(in_blr), in_msg_length);
+		MessageBuffer inMsgBuffer(&inMessage, reinterpret_cast<const unsigned char*>(in_msg));
+		Message outMessage(out_blr_length, reinterpret_cast<unsigned char*>(out_blr), out_msg_length);
+		MessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(out_msg));
+
 		tra = attachment->providerInterface->execute(&status, tra, length, string, dialect,
-										 in_blr_length, reinterpret_cast<const unsigned char*>(in_blr),
-										 in_msg_type, in_msg_length, reinterpret_cast<const unsigned char*>(in_msg),
-										 out_blr_length, reinterpret_cast<unsigned char*>(out_blr),
-										 out_msg_type, out_msg_length, reinterpret_cast<unsigned char*>(out_msg));
+										 in_msg_type, &inMsgBuffer, out_msg_type, &outMsgBuffer);
 
 		if (status.isSuccess())
 		{
@@ -3256,10 +3260,10 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* user_status,
 	{
 		Statement statement = translate<CStatement>(stmt_handle);
 		YEntry entryGuard(status, statement);
+		Message message(blr_length, reinterpret_cast<unsigned char*>(blr), msg_length);
+		MessageBuffer msgBuffer(&message, reinterpret_cast<unsigned char*>(msg));
 
-		int s = statement->providerInterface->fetchMessage(&status,
-												blr_length, reinterpret_cast<const unsigned char*>(blr),
-												msg_type, msg_length, reinterpret_cast<unsigned char*>(msg));
+		int s = statement->providerInterface->fetchMessage(&status, msg_type, &msgBuffer);
 
 		if (s == 100 || s == 101)
 		{
@@ -3402,8 +3406,10 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* user_status,
 		statement->checkPrepared();
 		//sqlda_sup& dasup = statement->das;
 
-		statement->providerInterface->insertMessage(&status, blr_length, reinterpret_cast<const unsigned char*>(blr),
-										 msg_type, msg_length, reinterpret_cast<const unsigned char*>(msg));
+		Message message(blr_length, reinterpret_cast<const unsigned char*>(blr), msg_length);
+		MessageBuffer msgBuffer(&message, reinterpret_cast<const unsigned char*>(msg));
+
+		statement->providerInterface->insertMessage(&status, msg_type, &msgBuffer);
 	}
 	catch (const Exception& e)
 	{
