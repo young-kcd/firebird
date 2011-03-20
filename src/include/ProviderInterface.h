@@ -126,22 +126,22 @@ public:
 						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
 						   IAttachment* att = 0) = 0;
 	virtual int FB_CARG getSlice(Status* status, ISC_QUAD* id,
-						 unsigned int sdl_length, const unsigned char* sdl,
-						 unsigned int param_length, const unsigned char* param,
+						 unsigned int sdlLength, const unsigned char* sdl,
+						 unsigned int paramLength, const unsigned char* param,
 						 int sliceLength, unsigned char* slice,
 						 IAttachment* att = 0) = 0;
 	virtual void FB_CARG putSlice(Status* status, ISC_QUAD* id,
-						  unsigned int sdl_length, const unsigned char* sdl,
-						  unsigned int param_length, const unsigned char* param,
+						  unsigned int sdlLength, const unsigned char* sdl,
+						  unsigned int paramLength, const unsigned char* param,
 						  int sliceLength, unsigned char* slice,
 						  IAttachment* att = 0) = 0;
 	virtual void FB_CARG transactRequest(Status* status,
-								 unsigned int blr_length, const unsigned char* blr,
-								 unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_msg_length, unsigned char* out_msg,
+								 unsigned int blrLength, const unsigned char* blr,
+								 unsigned int inMsgLength, const unsigned char* inMsg,
+								 unsigned int outMsgLength, unsigned char* outMsg,
 								 IAttachment* att = 0) = 0;
 	virtual void FB_CARG prepare(Status* status,
-						 unsigned int msg_length = 0, const unsigned char* message = 0) = 0;
+						 unsigned int msgLength = 0, const unsigned char* message = 0) = 0;
 	virtual void FB_CARG ddl(Status* status, unsigned int length, const unsigned char* ddlCommand) = 0;
 	virtual void FB_CARG commit(Status* status) = 0;
 	virtual void FB_CARG commitRetaining(Status* status) = 0;
@@ -160,8 +160,8 @@ public:
 	// FixMe - prepare must return void, not new statement handle
 	virtual IStatement* FB_CARG prepare(Status* status, ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							   unsigned int item_length, const unsigned char* items,
-							   unsigned int buffer_length, unsigned char* buffer) = 0;
+							   unsigned int itemLength, const unsigned char* items,
+							   unsigned int bufferLength, unsigned char* buffer) = 0;
 
 	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
@@ -169,13 +169,13 @@ public:
 	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type) = 0;
 //	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* tra, Sqlda* in, Sqlda* out) = 0;
 	virtual ITransaction* FB_CARG executeMessage(Status* status, ITransaction* tra,
-										unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-										unsigned int out_msg_type, const MessageBuffer* outMsgBuffer) = 0;
+										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
+										unsigned int outMsgType, const MessageBuffer* outMsgBuffer) = 0;
 //	virtual int FB_CARG fetch(Status* status, Sqlda* out) = 0;								// returns 100 if EOF, 101 if fragmented
-	virtual int FB_CARG fetchMessage(Status* status, unsigned int msg_type,
+	virtual int FB_CARG fetchMessage(Status* status, unsigned int msgType,
 							const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
 //	virtual void FB_CARG insert(Status* status, Sqlda* in) = 0;
-	virtual void FB_CARG insertMessage(Status* status, unsigned int msg_type,
+	virtual void FB_CARG insertMessage(Status* status, unsigned int msgType,
 							   const MessageBuffer* msgBuffer) = 0;
 	virtual void FB_CARG free(Status* status, unsigned int option) = 0;
 };
@@ -184,15 +184,15 @@ public:
 class IRequest : public Interface
 {
 public:
-	virtual void FB_CARG receive(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG receive(Status* status, int level, unsigned int msgType,
 						 unsigned int length, unsigned char* message) = 0;
-	virtual void FB_CARG send(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG send(Status* status, int level, unsigned int msgType,
 					  unsigned int length, const unsigned char* message) = 0;
 	virtual void FB_CARG getInfo(Status* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual void FB_CARG start(Status* status, ITransaction* tra, int level) = 0;
-	virtual void FB_CARG startAndSend(Status* status, ITransaction* tra, int level, unsigned int msg_type,
+	virtual void FB_CARG startAndSend(Status* status, ITransaction* tra, int level, unsigned int msgType,
 							  unsigned int length, const unsigned char* message) = 0;
 	virtual void FB_CARG unwind(Status* status, int level) = 0;
 	virtual void FB_CARG free(Status* status) = 0;
@@ -218,11 +218,11 @@ public:
 										  FB_API_HANDLE api) = 0;
 	virtual ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id) = 0;
 	virtual IStatement* FB_CARG allocateStatement(Status* status) = 0;
-	virtual IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr) = 0;
+	virtual IRequest* FB_CARG compileRequest(Status* status, unsigned int blrLength, const unsigned char* blr) = 0;
 	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
-								 unsigned int out_msg_type, const MessageBuffer* outMsgBuffer) = 0;
+								 unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
+								 unsigned int outMsgType, const MessageBuffer* outMsgBuffer) = 0;
 	virtual IEvents* FB_CARG queEvents(Status* status, EventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(Status* status, int option) = 0;
