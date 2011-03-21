@@ -50,9 +50,13 @@ UserManagement::UserManagement(jrd_tra* tra)
 	{
 		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
-	else if (!att->att_user->usr_sql_role_name.empty())
+	else if (att->att_user->usr_sql_role_name.hasData() && att->att_user->usr_sql_role_name != NULL_ROLE)
 	{
-		dpb.insertString(isc_dpb_trusted_role, att->att_user->usr_sql_role_name);
+		dpb.insertString(isc_dpb_sql_role_name, att->att_user->usr_sql_role_name);
+	}
+	else if (att->att_requested_role.hasData())
+    {
+    	dpb.insertString(isc_dpb_sql_role_name, att->att_requested_role);
 	}
 
 	if (isc_attach_database(status, 0, securityDatabaseName, &database,

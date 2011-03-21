@@ -337,6 +337,7 @@ public:
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
 	bool att_fini_sec_db;
+	Firebird::string att_requested_role;	// Role requested by user
 
 	bool locksmith() const;
 

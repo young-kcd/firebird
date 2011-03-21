@@ -1080,6 +1080,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (userId.usr_sql_role_name.hasData())
 	{
+		attachment->att_requested_role = userId.usr_sql_role_name;
+
 		switch (options.dpb_sql_dialect)
 		{
 		case 0:
@@ -2051,6 +2053,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	PAG_init(tdbb);
 	initing_security = true;
 
+	attachment->att_requested_role = userId.usr_sql_role_name;
 	SCL_init(tdbb, true, userId);
 
 	if (options.dpb_set_page_buffers)
@@ -5192,7 +5195,8 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_udf_pointers(*pool),
 	att_ext_connection(NULL),
 	att_ext_call_depth(0),
-	att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
+	att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	att_requested_role(*pool)
 {
 	att_mutex.enter();
 }
