@@ -1,3 +1,44 @@
+ 2011-03-20 19:15  asfernandes 
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Removed commented out Sqlda support and rename methods removing the word 'messsage'.
+
+ 2011-03-20 19:15  asfernandes 
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Remove unused message types.
+
+ 2011-03-20 19:14  asfernandes 
+   M src/include/ProviderInterface.h
+Names
+
+ 2011-03-20 19:14  asfernandes 
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Use MessageBuffer in executeMessage and fetchMessage.
+
+ 2011-03-20 16:24  asfernandes 
+   M src/common/classes/locks.h
+   M src/dsql/dsql.cpp
+   M src/jrd/rlck.cpp
+   M src/jrd/vio.cpp
+   M src/remote/os/win32/xnet.cpp
+Misc
+
  2011-03-19 13:10  hvlad 
    M src/jrd/met.epp
    M src/jrd/rlck.cpp
