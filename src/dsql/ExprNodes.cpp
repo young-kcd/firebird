@@ -3837,10 +3837,9 @@ bool DecodeNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 		}
 	}
 
-	// Build list for making describe information for the test and conditions.
-
 	if (setParameters)
 	{
+		// Build list to make describe information for the test and conditions expressions.
 		AutoPtr<dsql_nod> node1(MAKE_node(Dsql::nod_list, dsqlConditions->nod_count + 1));
 		unsigned i = 0;
 
