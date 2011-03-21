@@ -79,6 +79,14 @@ ISC_STATUS API_ROUTINE isc_execute_immediate(ISC_STATUS*, FB_API_HANDLE*, FB_API
 ISC_STATUS API_ROUTINE isc_fetch_a(ISC_STATUS*, int*, const SCHAR*, SQLDA*);
 int    API_ROUTINE isc_to_sqlda(SQLDA*, int, SCHAR*, int, SCHAR*);
 
+ISC_STATUS API_ROUTINE isc_describe(ISC_STATUS*, const SCHAR*, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_describe_bind(ISC_STATUS*, const SCHAR*, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_execute(ISC_STATUS*, FB_API_HANDLE*, const SCHAR*, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_fetch(ISC_STATUS*, const SCHAR*, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_open(ISC_STATUS*, FB_API_HANDLE*, const SCHAR*, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_prepare(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, const SCHAR*,
+								   const SSHORT*, const SCHAR*, XSQLDA*);
+
 #ifdef __cplusplus
 }	// extern "C"
 #endif
