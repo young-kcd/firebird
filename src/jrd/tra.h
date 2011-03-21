@@ -319,30 +319,8 @@ public:
 	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, ISC_QUAD* id,
-							 unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-							 Firebird::IAttachment* att = 0);
-	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, ISC_QUAD* id,
-						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-						   Firebird::IAttachment* att = 0);
-	virtual int FB_CARG getSlice(Status* status, ISC_QUAD* id,
-						 unsigned int sdl_length, const unsigned char* sdl,
-						 unsigned int param_length, const unsigned char* param,
-						 int sliceLength, unsigned char* slice,
-						 Firebird::IAttachment* att = 0);
-	virtual void FB_CARG putSlice(Status* status, ISC_QUAD* id,
-						  unsigned int sdl_length, const unsigned char* sdl,
-						  unsigned int param_length, const unsigned char* param,
-						  int sliceLength, unsigned char* slice,
-						  Firebird::IAttachment* att = 0);
-	virtual void FB_CARG transactRequest(Status* status,
-								 unsigned int blr_length, const unsigned char* blr,
-								 unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_msg_length, unsigned char* out_msg,
-								 Firebird::IAttachment* att = 0);
 	virtual void FB_CARG prepare(Status* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void FB_CARG ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
 	virtual void FB_CARG commit(Status* status);
 	virtual void FB_CARG commitRetaining(Status* status);
 	virtual void FB_CARG rollback(Status* status);

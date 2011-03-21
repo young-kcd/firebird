@@ -117,30 +117,8 @@ public:
 	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual IBlob* FB_CARG createBlob(Status* status, ISC_QUAD* id,
-							 unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-							 IAttachment* att = 0) = 0;
-	virtual IBlob* FB_CARG openBlob(Status* status, ISC_QUAD* id,
-						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-						   IAttachment* att = 0) = 0;
-	virtual int FB_CARG getSlice(Status* status, ISC_QUAD* id,
-						 unsigned int sdlLength, const unsigned char* sdl,
-						 unsigned int paramLength, const unsigned char* param,
-						 int sliceLength, unsigned char* slice,
-						 IAttachment* att = 0) = 0;
-	virtual void FB_CARG putSlice(Status* status, ISC_QUAD* id,
-						  unsigned int sdlLength, const unsigned char* sdl,
-						  unsigned int paramLength, const unsigned char* param,
-						  int sliceLength, unsigned char* slice,
-						  IAttachment* att = 0) = 0;
-	virtual void FB_CARG transactRequest(Status* status,
-								 unsigned int blrLength, const unsigned char* blr,
-								 unsigned int inMsgLength, const unsigned char* inMsg,
-								 unsigned int outMsgLength, unsigned char* outMsg,
-								 IAttachment* att = 0) = 0;
 	virtual void FB_CARG prepare(Status* status,
 						 unsigned int msgLength = 0, const unsigned char* message = 0) = 0;
-	virtual void FB_CARG ddl(Status* status, unsigned int length, const unsigned char* ddlCommand) = 0;
 	virtual void FB_CARG commit(Status* status) = 0;
 	virtual void FB_CARG commitRetaining(Status* status) = 0;
 	virtual void FB_CARG rollback(Status* status) = 0;
@@ -209,6 +187,24 @@ public:
 	virtual ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id) = 0;
 	virtual IStatement* FB_CARG allocateStatement(Status* status) = 0;
 	virtual IRequest* FB_CARG compileRequest(Status* status, unsigned int blrLength, const unsigned char* blr) = 0;
+	virtual void FB_CARG transactRequest(Status* status, ITransaction* transaction,
+								 unsigned int blrLength, const unsigned char* blr,
+								 unsigned int inMsgLength, const unsigned char* inMsg,
+								 unsigned int outMsgLength, unsigned char* outMsg) = 0;
+	virtual IBlob* FB_CARG createBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+							 unsigned int bpbLength = 0, const unsigned char* bpb = 0) = 0;
+	virtual IBlob* FB_CARG openBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+						   unsigned int bpbLength = 0, const unsigned char* bpb = 0) = 0;
+	virtual int FB_CARG getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+						 unsigned int sdlLength, const unsigned char* sdl,
+						 unsigned int paramLength, const unsigned char* param,
+						 int sliceLength, unsigned char* slice) = 0;
+	virtual void FB_CARG putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+						  unsigned int sdlLength, const unsigned char* sdl,
+						  unsigned int paramLength, const unsigned char* param,
+						  int sliceLength, unsigned char* slice) = 0;
+	virtual void FB_CARG ddl(Status* status, ITransaction* transaction, unsigned int length,
+		const unsigned char* dyn) = 0;
 	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int inMsgType, const MessageBuffer* inMsgBuffer,

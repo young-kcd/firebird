@@ -234,6 +234,24 @@ public:
 	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
 	virtual Firebird::IStatement* FB_CARG allocateStatement(Status* status);
 	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
+	virtual void FB_CARG transactRequest(Status* status, Firebird::ITransaction* transaction,
+								 unsigned int blr_length, const unsigned char* blr,
+								 unsigned int in_msg_length, const unsigned char* in_msg,
+								 unsigned int out_msg_length, unsigned char* out_msg);
+	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, Firebird::ITransaction* transaction,
+		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
+	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, Firebird::ITransaction* transaction,
+		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
+	virtual int FB_CARG getSlice(Status* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
+						 unsigned int sdl_length, const unsigned char* sdl,
+						 unsigned int param_length, const unsigned char* param,
+						 int sliceLength, unsigned char* slice);
+	virtual void FB_CARG putSlice(Status* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
+						  unsigned int sdl_length, const unsigned char* sdl,
+						  unsigned int param_length, const unsigned char* param,
+						  int sliceLength, unsigned char* slice);
+	virtual void FB_CARG ddl(Status* status, Firebird::ITransaction* transaction,
+		unsigned int length, const unsigned char* dyn);
 	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_msg_type, const Firebird::MessageBuffer* inMsgBuffer,

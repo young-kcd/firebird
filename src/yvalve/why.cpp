@@ -2264,7 +2264,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
 							   FB_API_HANDLE* db_handle,
 							   FB_API_HANDLE* tra_handle,
 							   SSHORT length,
-							   const UCHAR* ddl)
+							   const UCHAR* dyn)
 {
 /**************************************
  *
@@ -2284,7 +2284,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->providerInterface->ddl(&status, length, ddl);
+		attachment->providerInterface->ddl(&status, transaction->providerInterface, length, dyn);
 	}
 	catch (const Exception& e)
 	{
@@ -3850,11 +3850,12 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		int length = transaction->providerInterface->getSlice(&status, array_id, sdl_length, sdl, param_length, param, slice_length, slice);
+		int length = attachment->providerInterface->getSlice(&status,
+			transaction->providerInterface, array_id, sdl_length, sdl,
+			param_length, param, slice_length, slice);
+
 		if (status.isSuccess() && return_length)
-		{
 			*return_length = length;
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -4070,9 +4071,9 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->providerInterface->putSlice(&status, array_id, sdl_length, sdl,
-									  param_length, reinterpret_cast<const unsigned char*>(param),
-									  slice_length, slice);
+		attachment->providerInterface->putSlice(&status, transaction->providerInterface, array_id,
+			sdl_length, sdl, param_length, reinterpret_cast<const unsigned char*>(param),
+			slice_length, slice);
 	}
 	catch (const Exception& e)
 	{
@@ -4950,10 +4951,10 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* user_status,
 		YEntry entryGuard(status, attachment);
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
-		transaction->providerInterface->transactRequest(&status, blr_length, reinterpret_cast<unsigned char*>(blr),
-											 in_msg_length, reinterpret_cast<unsigned char*>(in_msg),
-											 out_msg_length, reinterpret_cast<unsigned char*>(out_msg),
-											 attachment->providerInterface);
+		attachment->providerInterface->transactRequest(&status, transaction->providerInterface,
+			blr_length, reinterpret_cast<unsigned char*>(blr),
+			in_msg_length, reinterpret_cast<unsigned char*>(in_msg),
+			out_msg_length, reinterpret_cast<unsigned char*>(out_msg));
 	}
 	catch (const Exception& e)
 	{
@@ -5487,8 +5488,10 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		Transaction transaction = findTransaction(tra_handle, attachment);
 
 		IBlob* blob_handle = createFlag ?
-			transaction->providerInterface->createBlob(&status, blob_id, bpb_length, bpb, attachment->providerInterface) :
-			transaction->providerInterface->openBlob(&status, blob_id, bpb_length, bpb, attachment->providerInterface);
+			attachment->providerInterface->createBlob(&status, transaction->providerInterface,
+				blob_id, bpb_length, bpb) :
+			attachment->providerInterface->openBlob(&status, transaction->providerInterface,
+				blob_id, bpb_length, bpb);
 
 		if (!status.isSuccess())
 		{

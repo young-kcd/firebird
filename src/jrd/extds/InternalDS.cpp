@@ -623,7 +623,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		m_blob = reinterpret_cast<Jrd::blb*>(
-			transaction->openBlob(&status, &m_blob_id, bpb_len, bpb_buff, att));
+			att->openBlob(&status, transaction, &m_blob_id, bpb_len, bpb_buff));
 	}
 
 	if (!status.isSuccess())
@@ -648,8 +648,8 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 		const USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = reinterpret_cast<Jrd::blb*>(transaction->createBlob(&status, &m_blob_id,
-			bpb_len, bpb_buff, att));
+		m_blob = reinterpret_cast<Jrd::blb*>(att->createBlob(&status, transaction, &m_blob_id,
+			bpb_len, bpb_buff));
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 

@@ -176,30 +176,8 @@ public:
 	virtual void FB_CARG getInfo(Status* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, ISC_QUAD* id,
-							 unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-							 Firebird::IAttachment* att = 0);
-	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, ISC_QUAD* id,
-						   unsigned int bpbLength = 0, const unsigned char* bpb = 0,
-						   Firebird::IAttachment* att = 0);
-	virtual int FB_CARG getSlice(Status* status, ISC_QUAD* id,
-						 unsigned int sdl_length, const unsigned char* sdl,
-						 unsigned int param_length, const unsigned char* param,
-						 int sliceLength, unsigned char* slice,
-						 Firebird::IAttachment* att = 0);
-	virtual void FB_CARG putSlice(Status* status, ISC_QUAD* id,
-						  unsigned int sdl_length, const unsigned char* sdl,
-						  unsigned int param_length, const unsigned char* param,
-						  int sliceLength, unsigned char* slice,
-						  Firebird::IAttachment* att = 0);
-	virtual void FB_CARG transactRequest(Status* status,
-								 unsigned int blr_length, const unsigned char* blr,
-								 unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_msg_length, unsigned char* out_msg,
-								 Firebird::IAttachment* att = 0);
 	virtual void FB_CARG prepare(Status* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void FB_CARG ddl(Status* status, unsigned int length, const unsigned char* ddlCommand);
 	virtual void FB_CARG commit(Status* status);
 	virtual void FB_CARG commitRetaining(Status* status);
 	virtual void FB_CARG rollback(Status* status);
@@ -364,6 +342,24 @@ public:
 	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
 	virtual Firebird::IStatement* FB_CARG allocateStatement(Status* status);
 	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
+	virtual void FB_CARG transactRequest(Status* status, ITransaction* transaction,
+								 unsigned int blr_length, const unsigned char* blr,
+								 unsigned int in_msg_length, const unsigned char* in_msg,
+								 unsigned int out_msg_length, unsigned char* out_msg);
+	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, ITransaction* transaction,
+		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
+	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, ITransaction* transaction,
+		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
+	virtual int FB_CARG getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+						 unsigned int sdl_length, const unsigned char* sdl,
+						 unsigned int param_length, const unsigned char* param,
+						 int sliceLength, unsigned char* slice);
+	virtual void FB_CARG putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+						  unsigned int sdl_length, const unsigned char* sdl,
+						  unsigned int param_length, const unsigned char* param,
+						  int sliceLength, unsigned char* slice);
+	virtual void FB_CARG ddl(Status* status, ITransaction* transaction, unsigned int length,
+		const unsigned char* dyn);
 	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
@@ -1008,9 +1004,8 @@ Firebird::IRequest* Attachment::compileRequest(Status* status,
 }
 
 
-Firebird::IBlob* Transaction::createBlob(Status* status, ISC_QUAD* blob_id,
-									 unsigned int bpb_length, const unsigned char* bpb,
-									 Firebird::IAttachment* apiAtt)
+IBlob* Attachment::createBlob(Status* status, ITransaction* apiTra, ISC_QUAD* blob_id,
+									 unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
  *
@@ -1026,20 +1021,12 @@ Firebird::IBlob* Transaction::createBlob(Status* status, ISC_QUAD* blob_id,
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (apiAtt)
-		{
-			Attachment* att = reinterpret_cast<Attachment*>(apiAtt);
-			if (att->getRdb() != rdb)
-			{
-				Arg::Gds(isc_trareqmis).raise();
-			}
-		}
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_create_blob;
@@ -1222,7 +1209,8 @@ void Attachment::getInfo(Status* status,
 }
 
 
-void Transaction::ddl(Status* status, unsigned int length, const unsigned char* ddlCommand)
+void Attachment::ddl(Status* status, ITransaction* apiTra, unsigned int length,
+	const unsigned char* dyn)
 {
 /**************************************
  *
@@ -1237,11 +1225,12 @@ void Transaction::ddl(Status* status, unsigned int length, const unsigned char* 
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
+
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 			unsupported();
@@ -1255,7 +1244,7 @@ void Transaction::ddl(Status* status, unsigned int length, const unsigned char* 
 		ddl->p_ddl_database = rdb->rdb_id;
 		ddl->p_ddl_transaction = transaction->rtr_id;
 		ddl->p_ddl_blr.cstr_length = length;
-		ddl->p_ddl_blr.cstr_address = ddlCommand;
+		ddl->p_ddl_blr.cstr_address = dyn;
 
 		send_and_receive(status, rdb, packet);
 	}
@@ -2814,10 +2803,10 @@ unsigned int Blob::getSegment(Status* status, unsigned int buffer_length, unsign
 }
 
 
-int Transaction::getSlice(Status* status, ISC_QUAD* array_id,
+int Attachment::getSlice(Status* status, ITransaction* apiTra, ISC_QUAD* array_id,
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
-						  int slice_length, unsigned char* slice, Firebird::IAttachment* apiAtt)
+						  int slice_length, unsigned char* slice)
 {
 /**************************************
  *
@@ -2833,20 +2822,12 @@ int Transaction::getSlice(Status* status, ISC_QUAD* array_id,
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (apiAtt)
-		{
-			Attachment* att = reinterpret_cast<Attachment*>(apiAtt);
-			if (att->getRdb() != rdb)
-			{
-				Arg::Gds(isc_trareqmis).raise();
-			}
-		}
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 			unsupported();
@@ -2906,9 +2887,8 @@ int Transaction::getSlice(Status* status, ISC_QUAD* array_id,
 }
 
 
-Firebird::IBlob* Transaction::openBlob(Status* status, ISC_QUAD* id,
-								   unsigned int bpb_length, const unsigned char* bpb,
-								   Firebird::IAttachment* apiAtt)
+IBlob* Attachment::openBlob(Status* status, ITransaction* apiTra, ISC_QUAD* id,
+	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
  *
@@ -2924,20 +2904,12 @@ Firebird::IBlob* Transaction::openBlob(Status* status, ISC_QUAD* id,
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (apiAtt)
-		{
-			Attachment* att = reinterpret_cast<Attachment*>(apiAtt);
-			if (att->getRdb() != rdb)
-			{
-				Arg::Gds(isc_trareqmis).raise();
-			}
-		}
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_open_blob;
@@ -3112,11 +3084,10 @@ void Blob::putSegment(Status* status, unsigned int segment_length, const unsigne
 }
 
 
-void Transaction::putSlice(Status* status, ISC_QUAD* id,
+void Attachment::putSlice(Status* status, ITransaction* apiTra, ISC_QUAD* id,
 						   unsigned int sdl_length, const unsigned char* sdl,
 						   unsigned int param_length, const unsigned char* param,
-						   int sliceLength, unsigned char* slice,
-						   Firebird::IAttachment* apiAtt)
+						   int sliceLength, unsigned char* slice)
 {
 /**************************************
  *
@@ -3132,20 +3103,12 @@ void Transaction::putSlice(Status* status, ISC_QUAD* id,
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (apiAtt)
-		{
-			Attachment* att = reinterpret_cast<Attachment*>(apiAtt);
-			if (att->getRdb() != rdb)
-			{
-				Arg::Gds(isc_trareqmis).raise();
-			}
-		}
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
 			unsupported();
@@ -4225,11 +4188,10 @@ Firebird::ITransaction* Attachment::startTransaction(Status* status,
 }
 
 
-void Transaction::transactRequest(Status* status,
+void Attachment::transactRequest(Status* status, ITransaction* apiTra,
 								  unsigned int blr_length, const unsigned char* blr,
 								  unsigned int in_msg_length, const unsigned char* in_msg,
-								  unsigned int out_msg_length, unsigned char* out_msg,
-								  Firebird::IAttachment* apiAtt)
+								  unsigned int out_msg_length, unsigned char* out_msg)
 {
 /**************************************
  *
@@ -4245,20 +4207,12 @@ void Transaction::transactRequest(Status* status,
 	{
 		reset(status);
 
-		CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		Rdb* rdb = transaction->rtr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		if (apiAtt)
-		{
-			Attachment* att = reinterpret_cast<Attachment*>(apiAtt);
-			if (att->getRdb() != rdb)
-			{
-				Arg::Gds(isc_trareqmis).raise();
-			}
-		}
+		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		// bag it if the protocol doesn't support it...
 

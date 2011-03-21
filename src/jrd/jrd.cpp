@@ -2030,8 +2030,8 @@ Firebird::IRequest* Attachment::compileRequest(Status* user_status,
 }
 
 
-Firebird::IBlob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
-	unsigned int bpb_length, const unsigned char* bpb, Firebird::IAttachment* apiAtt)
+IBlob* Attachment::createBlob(Status* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
  *
@@ -2049,12 +2049,12 @@ Firebird::IBlob* jrd_tra::createBlob(Status* user_status, ISC_QUAD* blob_id,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		if (apiAtt)
-		{
-			validateHandle(tdbb, reinterpret_cast<Attachment*>(apiAtt));
-		}
-
 		validateHandle(tdbb, this);
+
+		if (!tra)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -2488,7 +2488,8 @@ void Attachment::getInfo(Status* user_status, unsigned int item_length, const un
 }
 
 
-void jrd_tra::ddl(Status* status, unsigned int /*length*/, const unsigned char* /*ddlCommand*/)
+void Attachment::ddl(Status* status, ITransaction* /*tra*/, unsigned int /*length*/,
+	const unsigned char* /*dyn*/)
 {
 /**************************************
  *
@@ -2753,9 +2754,9 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
 }
 
 
-int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdl_length*/,
-	const unsigned char* sdl, unsigned int param_length, const unsigned char* param,
-	int slice_length, unsigned char* slice, Firebird::IAttachment* apiAtt)
+int Attachment::getSlice(Status* user_status, ITransaction* tra, ISC_QUAD* array_id,
+	unsigned int /*sdl_length*/, const unsigned char* sdl, unsigned int param_length,
+	const unsigned char* param, int slice_length, unsigned char* slice)
 {
 /**************************************
  *
@@ -2773,12 +2774,12 @@ int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sd
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		if (apiAtt)
-		{
-			validateHandle(tdbb, reinterpret_cast<Attachment*>(apiAtt));
-		}
-
 		validateHandle(tdbb, this);
+
+		if (!tra)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -2812,8 +2813,8 @@ int jrd_tra::getSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sd
 }
 
 
-Firebird::IBlob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsigned int bpb_length,
-	const unsigned char* bpb, Firebird::IAttachment* apiAtt)
+IBlob* Attachment::openBlob(Status* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
  *
@@ -2831,12 +2832,12 @@ Firebird::IBlob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsig
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		if (apiAtt)
-		{
-			validateHandle(tdbb, reinterpret_cast<Attachment*>(apiAtt));
-		}
-
 		validateHandle(tdbb, this);
+
+		if (!tra)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -2844,7 +2845,7 @@ Firebird::IBlob* jrd_tra::openBlob(Status* user_status, ISC_QUAD* blob_id, unsig
 		{
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 			blob = BLB_open2(tdbb, transaction, reinterpret_cast<bid*>(blob_id),
-							 bpb_length, bpb, true);
+				bpb_length, bpb, true);
 		}
 		catch (const Exception& ex)
 		{
@@ -2945,9 +2946,9 @@ void blb::putSegment(Status* user_status, unsigned int buffer_length, const unsi
 }
 
 
-void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*sdlLength*/,
-	const unsigned char* sdl, unsigned int paramLength, const unsigned char* param,
-	int sliceLength, unsigned char* slice, Firebird::IAttachment* apiAtt)
+void Attachment::putSlice(Status* user_status, ITransaction* tra, ISC_QUAD* array_id,
+	unsigned int /*sdlLength*/, const unsigned char* sdl, unsigned int paramLength,
+	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
 /**************************************
  *
@@ -2963,21 +2964,20 @@ void jrd_tra::putSlice(Status* user_status, ISC_QUAD* array_id, unsigned int /*s
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		if (apiAtt)
-		{
-			validateHandle(tdbb, reinterpret_cast<Attachment*>(apiAtt));
-		}
-
 		validateHandle(tdbb, this);
+
+		if (!tra)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
 		{
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
 			BLB_put_slice(tdbb, transaction, reinterpret_cast<bid*>(array_id),
-						  sdl, paramLength, param, sliceLength, slice);
+				sdl, paramLength, param, sliceLength, slice);
 		}
 		catch (const Exception& ex)
 		{
@@ -3895,11 +3895,10 @@ Firebird::ITransaction* Attachment::startTransaction(Status* user_status,
 }
 
 
-void jrd_tra::transactRequest(Status* user_status,
+void Attachment::transactRequest(Status* user_status, ITransaction* tra,
 	unsigned int blr_length, const unsigned char* blr,
 	unsigned int in_msg_length, const unsigned char* in_msg,
-	unsigned int out_msg_length, unsigned char* out_msg,
-	Firebird::IAttachment* apiAtt)
+	unsigned int out_msg_length, unsigned char* out_msg)
 {
 /**************************************
  *
@@ -3915,19 +3914,18 @@ void jrd_tra::transactRequest(Status* user_status,
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		if (apiAtt)
-		{
-			validateHandle(tdbb, reinterpret_cast<Attachment*>(apiAtt));
-		}
-
 		validateHandle(tdbb, this);
+
+		if (!tra)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
 		{
 			Database* const dbb = tdbb->getDatabase();
-
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
 
 			const MessageNode* inMessage = NULL;
