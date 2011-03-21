@@ -53,6 +53,10 @@ FIREBIRD_LOCK=$(FIREBIRD)
 export FIREBIRD
 export FIREBIRD_LOCK
 
+# Set firebird to boot build mode
+FIREBIRD_BOOT_BUILD=1
+export FIREBIRD_BOOT_BUILD
+
 LIB=$(FIREBIRD)/lib
 BIN=$(FIREBIRD)/bin
 PLUGINS=$(FIREBIRD)/plugins
