@@ -247,7 +247,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			offset = FB_ALIGN(offset, align);
 		parameter->par_desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += parameter->par_desc.dsc_length;
-		GEN_descriptor(dsqlScratch, &parameter->par_desc, false);
+		GEN_descriptor(dsqlScratch, &parameter->par_desc, true);
 	}
 
 	if (offset > MAX_MESSAGE_SIZE)

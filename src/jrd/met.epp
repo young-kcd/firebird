@@ -298,7 +298,7 @@ MetaName MET_get_relation_field(thread_db* tdbb,
 								FLD.RDB$FIELD_LENGTH,
 								FLD.RDB$FIELD_SUB_TYPE,
 								FLD.RDB$CHARACTER_SET_ID,
-								FLD.RDB$COLLATION_ID))
+								(RFL.RDB$COLLATION_ID.NULL ? FLD.RDB$COLLATION_ID : RFL.RDB$COLLATION_ID)))
 		{
 			found = true;
 			sourceName = RFL.RDB$FIELD_SOURCE;

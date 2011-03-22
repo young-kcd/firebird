@@ -4973,6 +4973,11 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (position >= 0)
 			fieldDefinition.position = position;
 
+		MetaName collationName;
+
+		if (element->nod_arg[Dsql::e_dfl_collate])
+			collationName = ((dsql_str*) element->nod_arg[Dsql::e_dfl_collate])->str_data;
+
 		const dsql_nod* domainNode = element->nod_arg[Dsql::e_dfl_domain];
 
 		if (domainNode)
@@ -5005,8 +5010,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 					computedSource, computedValue);
 			}
 
-			// Don't use the collate in the generated domain.
-			TypeClause fieldType(*tdbb->getDefaultPool(), field, NULL);
+			TypeClause fieldType(*tdbb->getDefaultPool(), field, collationName);
 			fieldType.resolve(dsqlScratch);
 
 			// Generate a domain.
@@ -5026,11 +5030,8 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				Arg::Gds(isc_dsql_type_not_supp_ext_tab) << typeName << name << field->fld_name);
 		}
 
-		if (element->nod_arg[Dsql::e_dfl_collate])
-		{
-			DDL_resolve_intl_type(dsqlScratch, field,
-				((dsql_str*) element->nod_arg[Dsql::e_dfl_collate])->str_data);
-		}
+		if (collationName.hasData())
+			DDL_resolve_intl_type(dsqlScratch, field, collationName);
 
 		if (element->nod_arg[Dsql::e_dfl_identity])
 		{
