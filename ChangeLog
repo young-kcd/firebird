@@ -1,3 +1,28 @@
+ 2011-03-21 22:51  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Misc
+
+ 2011-03-21 21:56  asfernandes 
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Move transactRequest, createBlob, openBlob, getSlice, putSlice and ddl from ITransaction to IAttachment.
+It's better to have one standard than two, and "ddl" was broken from API POV.
+So make the IAttachment always the caller, explicit or implicit (via IStatement or IRequest), and pass the ITransaction as parameter.
+
+ 2011-03-21 18:15  alexpeshkoff 
+   M src/yvalve/user__proto.h
+   M src/yvalve/user_dsql.cpp
+Fixed issue, reported by Damyan in devel - missing symbols in libfbclient. Make prototypes match with ibase.h.
+
+ 2011-03-21 13:43  alexpeshkoff 
+   M builds/posix/make.defaults
+Fix boot build
+
  2011-03-20 19:15  asfernandes 
    M src/dsql/dsql.h
    M src/include/ProviderInterface.h
