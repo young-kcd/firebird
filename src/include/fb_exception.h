@@ -32,6 +32,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <new>
 #include "fb_types.h"
 
 namespace Firebird {
@@ -93,7 +94,7 @@ public:
 };
 
 // Used in MemoryPool
-class BadAlloc : public Exception
+class BadAlloc : public std::bad_alloc, public Exception
 {
 public:
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, StringsBuffer* sb = NULL) const throw();

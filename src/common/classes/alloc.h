@@ -448,15 +448,6 @@ inline void* operator new[](size_t s) THROW_BAD_ALLOC
 	);
 }
 
-inline void* operator new(size_t, void* ptr) throw() 
-{
-	return ptr;
-}
-inline void* operator new[](size_t, void* ptr) throw() 
-{
-	return ptr;
-}
-
 inline void operator delete(void* mem) throw()
 {
 	Firebird::MemoryPool::globalFree(mem);
