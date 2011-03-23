@@ -1,3 +1,10 @@
+ 2011-03-22 18:59  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/gen.cpp
+   M src/jrd/met.epp
+   M src/yvalve/gds.cpp
+Fixed CORE-3401 - Collation errors with [type of] <domain>, type of column.
+
  2011-03-21 22:51  asfernandes 
    M src/dsql/ExprNodes.cpp
 Misc
