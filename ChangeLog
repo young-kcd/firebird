@@ -1,3 +1,9 @@
+ 2011-03-22 10:32  hvlad 
+   M src/jrd/met.epp
+   M src/jrd/rlck.cpp
+   M src/jrd/vio.cpp
+Improvement CORE-3399 : Allow write operations to temporary tables in read only transactions
+
  2011-03-21 15:09  alexpeshkoff 
    M src/jrd/UserManagement.cpp
    M src/jrd/jrd.cpp
