@@ -45,7 +45,8 @@ else
 endif
 
 WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS)
-WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS)
+# Firebird needs no RTTI
+WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) -fno-rtti $(CXXFLAGS)
 
 # Here we have definitions for using the preprocessor.
 

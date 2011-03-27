@@ -459,6 +459,7 @@ fi
 
 dnl Find out how to use threads on this platform
 pre_acx_pthread_cflags=$CFLAGS
+pre_acx_pthread_cxxflags=$CXXFLAGS
 pre_acx_pthread_libs=$LIBS
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
@@ -468,10 +469,6 @@ LIBS=$pre_acx_pthread_libs
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
-dnl Later we always build threaded binaries
-CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
-LIBS="$LIBS $PTHREAD_LIBS"
 
 AC_ARG_ENABLE(raw-devices,
   [  --enable-raw-devices    enable databases on raw devices (default on POSIX)],
