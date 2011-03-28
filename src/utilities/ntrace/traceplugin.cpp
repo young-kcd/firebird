@@ -57,9 +57,10 @@ ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
 
 TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, TraceInitInfo* initInfo)
 {
+	const char* dbname = NULL;
 	try
 	{
-		const char* dbname = initInfo->getDatabaseName();
+		dbname = initInfo->getDatabaseName();
 		if (!dbname)
 			dbname = "";
 
@@ -84,7 +85,24 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, Tr
 	}
 	catch(Firebird::Exception& ex)
 	{
-		ex.stuffException(status);
+		// put error into trace log
+		TraceLogWriter* logWriter = initInfo->getLogWriter();
+		if (logWriter)
+		{
+			const char *strEx = TracePluginImpl::marshal_exception(ex);
+			Firebird::string err;
+			if (dbname)
+				err.printf("Error creating trace session for database \"%s\":\n%s\n", dbname, strEx);
+			else
+				err.printf("Error creating trace session for service manager attachment:\n%s\n", strEx);
+			
+			logWriter->write(err.c_str(), err.length());
+			logWriter->release();
+		}
+		else
+		{
+			ex.stuffException(status);
+		}
 	}
 
 	return NULL;

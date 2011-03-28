@@ -87,13 +87,14 @@ namespace
 	};
 }
 
+#define ERROR_PREFIX "error while parsing trace configuration\n\t"
 
 void TraceCfgReader::readConfig()
 {
 	ConfigFile cfgFile(ConfigFile::USE_TEXT, m_text, ConfigFile::HAS_SUB_CONF);
 	if (cfgFile.getMessage())
 	{
-		fatal_exception::raise(cfgFile.getMessage());
+		fatal_exception::raiseFmt(ERROR_PREFIX"%s", cfgFile.getMessage());
 	}
 
 	m_subpatterns[0].start = 0;
@@ -122,7 +123,8 @@ void TraceCfgReader::readConfig()
 			{
 				if (defDB)
 				{
-					fatal_exception::raiseFmt("line %d: second default database section is not allowed",
+					fatal_exception::raiseFmt(ERROR_PREFIX
+						"line %d: second default database section is not allowed",
 						section->line);
 				}
 
@@ -134,7 +136,8 @@ void TraceCfgReader::readConfig()
 			{
 				if (defSvc)
 				{
-					fatal_exception::raiseFmt("line %d: second default service section is not allowed",
+					fatal_exception::raiseFmt(ERROR_PREFIX
+						"line %d: second default service section is not allowed",
 						section->line);
 				}
 				match = m_databaseName.empty();
@@ -185,13 +188,13 @@ void TraceCfgReader::readConfig()
 				{
 					if (regExpOk)
 					{
-						fatal_exception::raiseFmt(
+						fatal_exception::raiseFmt(ERROR_PREFIX
 							"line %d: error while processing string \"%s\" against regular expression \"%s\"",
 							section->line, m_databaseName.c_str(), pattern.c_str());
 					}
 					else
 					{
-						fatal_exception::raiseFmt(
+						fatal_exception::raiseFmt(ERROR_PREFIX
 							"line %d: error while compiling regular expression \"%s\"",
 							section->line, pattern.c_str());
 					}
@@ -209,7 +212,8 @@ void TraceCfgReader::readConfig()
 
 			if (!el->value.hasData())
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d: element \"%s\" have no attribute value set",
 					el->line, el->name.c_str());
 			}
 
@@ -229,7 +233,8 @@ void TraceCfgReader::readConfig()
 
 			if (!found)
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d: element \"%s\" is unknown",
 					el->line, el->name.c_str());
 			}
 		}
@@ -251,7 +256,8 @@ bool TraceCfgReader::parseBoolean(const ConfigFile::Parameter* el) const
 	if (tempValue == "0" || tempValue == "OFF" || tempValue == "NO" || tempValue == "FALSE")
 		return false;
 
-	fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid boolean value",
+	fatal_exception::raiseFmt(ERROR_PREFIX
+		"line %d, element \"%s\": \"%s\" is not a valid boolean value",
 		el->line, el->name.c_str(), el->value.c_str());
 	return false; // Silence the compiler
 }
@@ -262,7 +268,8 @@ ULONG TraceCfgReader::parseUInteger(const ConfigFile::Parameter* el) const
 	ULONG result = 0;
 	if (!sscanf(value, "%"ULONGFORMAT, &result))
 	{
-		fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid integer value",
+		fatal_exception::raiseFmt(ERROR_PREFIX
+			"line %d, element \"%s\": \"%s\" is not a valid integer value",
 			el->line, el->name.c_str(), value);
 	}
 	return result;
@@ -279,7 +286,8 @@ void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, PathName& va
 		{
 			if (pos + 1 >= valueToExpand.length())
 			{
-				fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d, element \"%s\": pattern is invalid\n\t %s",
 					el->line, el->name.c_str(), el->value.c_str());
 			}
 
@@ -308,7 +316,8 @@ void TraceCfgReader::expandPattern(const ConfigFile::Parameter* el, PathName& va
 				continue;
 			}
 
-			fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+			fatal_exception::raiseFmt(ERROR_PREFIX
+				"line %d, element \"%s\": pattern is invalid\n\t %s",
 				el->line, el->name.c_str(), el->value.c_str());
 		}
 

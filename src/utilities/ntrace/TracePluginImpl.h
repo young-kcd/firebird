@@ -48,7 +48,7 @@ class TracePluginImpl : public Firebird::StdIface<TracePlugin, FB_TRACE_PLUGIN_V
 {
 public:
 	// Serialize exception to TLS buffer to return it to user
-	static void marshal_exception(const Firebird::Exception& ex);
+	static const char* marshal_exception(const Firebird::Exception& ex);
 
 	// Data for tracked (active) connections
 	struct ConnectionData
