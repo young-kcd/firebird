@@ -101,9 +101,25 @@ TracePlugin* TracePluginImpl::createFullPlugin(const TracePluginConfig& configur
 	return plugin_ptr;
 }
 
-void TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
+const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
-	set_error_string(ex.what());
+	ISC_STATUS_ARRAY status = {0};
+	ex.stuff_exception(&status[0]);
+	
+	char buff[1024];
+	char *p = buff, *const end = buff + sizeof(buff);
+
+	const ISC_STATUS *s = status;
+	while ((end > p) && fb_interpret(p, end - p, &s))
+	{
+		p += strlen(p);
+		if (p < end)
+			*p++ = '\n';
+	}
+	*p = 0;
+
+	set_error_string(buff);
+	return get_error_string();
 }
 
 TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceInitInfo* initInfo) :
@@ -143,10 +159,12 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	Jrd::TextType *textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
-	if (config.include_filter.hasData())
+	const char* str = NULL;
+	try
 	{
-		try
+		if (config.include_filter.hasData())
 		{
+			str = config.include_filter.c_str();
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
@@ -154,18 +172,10 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
-		catch (const Exception&)
-		{
-			fatal_exception::raiseFmt(
-				"error while compiling regular expression \"%s\" for database \"%s\"",
-				config.include_filter.c_str(), config.db_filename.c_str());
-		}
-	}
 
-	if (config.exclude_filter.hasData())
-	{
-		try
+		if (config.exclude_filter.hasData())
 		{
+			str = config.exclude_filter.c_str();
 			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
@@ -173,11 +183,19 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
-		catch (const Exception&)
+	}
+	catch (const Exception&)
+	{
+		if (config.db_filename.empty())
+		{
+			fatal_exception::raiseFmt(
+				"error while compiling regular expression \"%s\"", str);
+		}
+		else
 		{
 			fatal_exception::raiseFmt(
 				"error while compiling regular expression \"%s\" for database \"%s\"",
-				config.exclude_filter.c_str(), config.db_filename.c_str());
+				str, config.db_filename.c_str());
 		}
 	}
 

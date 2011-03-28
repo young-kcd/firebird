@@ -87,6 +87,7 @@ namespace
 	};
 }
 
+#define ERROR_PREFIX "error while parsing trace configuration\n\t"
 
 void TraceCfgReader::readConfig()
 {
@@ -98,7 +99,7 @@ void TraceCfgReader::readConfig()
 	}
 	catch (const AdminException& ex)
 	{
-		fatal_exception::raiseFmt("error while parsing trace configuration\n\t%s",
+		fatal_exception::raiseFmt(ERROR_PREFIX"%s",
 			ex.getText());
 	}
 	catch (...)
@@ -130,7 +131,8 @@ void TraceCfgReader::readConfig()
 			{
 				if (defDB)
 				{
-					fatal_exception::raiseFmt("line %d: second default database section is not allowed",
+					fatal_exception::raiseFmt(ERROR_PREFIX
+						"line %d: second default database section is not allowed",
 						section->lineNumber + 1);
 				}
 
@@ -141,7 +143,8 @@ void TraceCfgReader::readConfig()
 			{
 				if (defSvc)
 				{
-					fatal_exception::raiseFmt("line %d: second default service section is not allowed",
+					fatal_exception::raiseFmt(ERROR_PREFIX
+						"line %d: second default service section is not allowed",
 						section->lineNumber + 1);
 				}
 				match = m_databaseName.empty();
@@ -192,12 +195,12 @@ void TraceCfgReader::readConfig()
 				catch (const Exception&)
 				{
 					if (regExpOk) {
-						fatal_exception::raiseFmt(
+						fatal_exception::raiseFmt(ERROR_PREFIX
 							"line %d: error while processing string \"%s\" against regular expression \"%s\"",
 							section->lineNumber + 1, m_databaseName.c_str(), pattern.c_str());
 					}
 					else {
-						fatal_exception::raiseFmt(
+						fatal_exception::raiseFmt(ERROR_PREFIX
 							"line %d: error while compiling regular expression \"%s\"",
 							section->lineNumber + 1, pattern.c_str());
 					}
@@ -212,7 +215,8 @@ void TraceCfgReader::readConfig()
 		{
 			if (!el->getAttributes())
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" have no attribute value set",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d: element \"%s\" have no attribute value set",
 					el->lineNumber + 1, el->name.c_str());
 			}
 
@@ -232,7 +236,8 @@ void TraceCfgReader::readConfig()
 
 			if (!found)
 			{
-				fatal_exception::raiseFmt("line %d: element \"%s\" is unknown",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d: element \"%s\" is unknown",
 					el->lineNumber + 1, el->name.c_str());
 			}
 		}
@@ -255,7 +260,8 @@ bool TraceCfgReader::parseBoolean(const Element* el) const
 	if (tempValue == "0" || tempValue == "OFF" || tempValue == "NO" || tempValue == "FALSE")
 		return false;
 
-	fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid boolean value",
+	fatal_exception::raiseFmt(ERROR_PREFIX
+		"line %d, element \"%s\": \"%s\" is not a valid boolean value",
 		el->lineNumber + 1, el->name.c_str(), value);
 	return false; // Silence the compiler
 }
@@ -265,7 +271,8 @@ ULONG TraceCfgReader::parseUInteger(const Element* el) const
 	const char *value = el->getAttributeName(0);
 	ULONG result = 0;
 	if (!sscanf(value, "%"ULONGFORMAT, &result)) {
-		fatal_exception::raiseFmt("line %d, element \"%s\": \"%s\" is not a valid integer value",
+		fatal_exception::raiseFmt(ERROR_PREFIX
+			"line %d, element \"%s\": \"%s\" is not a valid integer value",
 			el->lineNumber + 1, el->name.c_str(), value);
 	}
 	return result;
@@ -281,7 +288,8 @@ void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
 		if (c == '\\')
 		{
 			if (pos + 1 >= valueToExpand.length())
-				fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+				fatal_exception::raiseFmt(ERROR_PREFIX
+					"line %d, element \"%s\": pattern is invalid\n\t %s",
 					el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
 
 			c = valueToExpand[pos + 1];
@@ -309,7 +317,8 @@ void TraceCfgReader::expandPattern(const Element* el, string& valueToExpand)
 				continue;
 			}
 
-			fatal_exception::raiseFmt("line %d, element \"%s\": pattern is invalid\n\t %s",
+			fatal_exception::raiseFmt(ERROR_PREFIX
+				"line %d, element \"%s\": pattern is invalid\n\t %s",
 				el->lineNumber + 1, el->name.c_str(), el->getAttributeName(0));
 		}
 

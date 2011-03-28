@@ -78,6 +78,7 @@ bool TraceManager::check_result(const TracePlugin* plugin, const char* module, c
 
 	gds__log("Trace plugin %s returned error on call %s.\n\tError details: %s",
 		module, function, errorStr);
+
 	return false;
 }
 
@@ -251,9 +252,15 @@ void TraceManager::update_session(const TraceSession& session)
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
 
 		const TracePlugin* plugin = NULL;
-		if (!check_result(plugin, info->module, NTRACE_ATTACH,
-				info->ntrace_attach(&attachInfo, &plugin)))
+		const bool attached = info->ntrace_attach(&attachInfo, &plugin);
+		if (!attached || !plugin)
 		{
+			// Put error into firebird.log only if no plugin was created or this
+			// is a system audit session, else assume plugin already put error 
+			// into trace log
+			if (!plugin || (session.ses_flags & trs_system))
+				check_result(plugin, info->module, NTRACE_ATTACH, attached);
+
 			// This was a skeletal plugin to return an error
 			if (plugin && plugin->tpl_shutdown)
 				plugin->tpl_shutdown(plugin);

@@ -34,9 +34,10 @@ extern "C" {
 
 FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const TracePlugin** plugin)
 {
+	const char* dbname = NULL;
 	try
 	{
-		const char* dbname = initInfo->getDatabaseName();
+		dbname = initInfo->getDatabaseName();
 
 		TracePluginConfig config;
 		TraceCfgReader::readTraceConfiguration(
@@ -70,8 +71,21 @@ FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const Trace
 			*plugin = TracePluginImpl::createSkeletalPlugin();
 
 			// Stuff exception to error buffer now
-			TracePluginImpl::marshal_exception(ex);
+			const char *strEx = TracePluginImpl::marshal_exception(ex);
 
+			// put error into trace log
+			TraceLogWriter* logWriter = initInfo->getLogWriter();
+			if (logWriter)
+			{	
+				Firebird::string err;
+				if (dbname)
+					err.printf("Error creating trace session for database \"%s\":\n%s\n", dbname, strEx);
+				else
+					err.printf("Error creating trace session for service manager attachment:\n%s\n", strEx);
+				
+				logWriter->write(err.c_str(), err.length());
+				logWriter->release();
+			}
 		}
 		catch (Firebird::Exception&)
 		{

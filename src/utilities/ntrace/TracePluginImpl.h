@@ -54,7 +54,7 @@ public:
 	static TracePlugin* createFullPlugin(const TracePluginConfig& configuration, TraceInitInfo* initInfo);
 
 	// Serialize exception to TLS buffer to return it to user
-	static void marshal_exception(const Firebird::Exception& ex);
+	static const char* marshal_exception(const Firebird::Exception& ex);
 
 	// Data for tracked (active) connections
 	struct ConnectionData
