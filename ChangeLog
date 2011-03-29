@@ -1,3 +1,15 @@
+ 2011-03-29 00:58  asfernandes 
+   M extern/btyacc/main.c
+Fixed memory corruption in btyacc code.
+
+ 2011-03-28 13:48  hvlad 
+   M src/jrd/trace/TraceManager.cpp
+   M src/utilities/ntrace/TraceConfiguration.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+Improvement CORE-3413 : Improve diagnostics of internal trace errors
+
  2011-03-22 10:32  hvlad 
    M src/jrd/met.epp
    M src/jrd/rlck.cpp
