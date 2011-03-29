@@ -307,7 +307,7 @@ void create_file_names()
 		tmpdir = DEFAULT_TMPDIR;
 
 	len = strlen(tmpdir);
-	i = len + 13;
+	i = len + strlen(temp_form) + 1;
 	if (len && tmpdir[len-1] != DIR_CHAR)
 		++i;
 
