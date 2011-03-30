@@ -941,6 +941,11 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		desc->dsc_length = sizeof(ULONG);
 		break;
 
+	case blr_bool:
+		desc->dsc_dtype = dtype_boolean;
+		desc->dsc_length = sizeof(UCHAR);
+		break;
+
 	default:
 		fb_assert_continue(FALSE);
 		return NULL;
