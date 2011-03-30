@@ -1698,7 +1698,8 @@ void MET_load_trigger(thread_db* tdbb,
 
 	FOR(REQUEST_HANDLE request)
 		TRG IN RDB$TRIGGERS
-		WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str()
+		WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
+			 TRG.RDB$TRIGGER_INACTIVE EQ 0
 	{
 		// check if the trigger is to be fired without any permissions
 		// checks. Verify such a claim
