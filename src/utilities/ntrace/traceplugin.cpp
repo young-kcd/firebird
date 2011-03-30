@@ -89,13 +89,13 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, Tr
 		TraceLogWriter* logWriter = initInfo->getLogWriter();
 		if (logWriter)
 		{
-			const char *strEx = TracePluginImpl::marshal_exception(ex);
+			const char* strEx = TracePluginImpl::marshal_exception(ex);
 			Firebird::string err;
 			if (dbname)
 				err.printf("Error creating trace session for database \"%s\":\n%s\n", dbname, strEx);
 			else
 				err.printf("Error creating trace session for service manager attachment:\n%s\n", strEx);
-			
+
 			logWriter->write(err.c_str(), err.length());
 			logWriter->release();
 		}

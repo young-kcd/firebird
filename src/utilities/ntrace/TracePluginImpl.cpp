@@ -57,13 +57,14 @@ static const char* const DEFAULT_LOG_NAME = "default_trace.log";
 const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
 	ISC_STATUS_ARRAY status = {0};
-	ex.stuff_exception(&status[0]);
-	
-	char buff[1024];
-	char *p = buff, *const end = buff + sizeof(buff);
+	ex.stuff_exception(status);
 
-	const ISC_STATUS *s = status;
-	while ((end > p) && fb_interpret(p, end - p, &s))
+	char buff[1024];
+	char* p = buff;
+	char* const end = buff + sizeof(buff);
+
+	const ISC_STATUS* s = status;
+	while (end > p && fb_interpret(p, end - p, &s))
 	{
 		p += strlen(p);
 		if (p < end)
@@ -111,7 +112,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	Jrd::TextType* textType = unicodeCollation.getTextType();
 
 	// Compile filtering regular expressions
-	const char* str = NULL;	
+	const char* str = NULL;
 	try
 	{
 		if (config.include_filter.hasData())
