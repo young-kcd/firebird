@@ -40,6 +40,7 @@ TYPE("BLOB_ID", blr_blob_id, nam_f_type)
 TYPE("DATE", blr_sql_date, nam_f_type)
 TYPE("TIME", blr_sql_time, nam_f_type)
 TYPE ("INT64", blr_int64, nam_f_type)
+TYPE ("BOOLEAN", blr_bool, nam_f_type)
 
 TYPE("BINARY", 0, nam_f_sub_type)
 TYPE("TEXT", 1, nam_f_sub_type)
