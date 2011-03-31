@@ -469,13 +469,11 @@ int WinSspiClient::release()
 
 void registerTrustedClient(Firebird::IPlugin* iPlugin)
 {
-	clientFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, plugName, &clientFactory);
 }
 
 void registerTrustedServer(Firebird::IPlugin* iPlugin)
 {
-	serverFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, plugName, &serverFactory);
 }
 
