@@ -6972,6 +6972,10 @@ static void start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_ha
 
 			try
 			{
+				validateHandle(tdbb, prior->tra_attachment);
+				DatabaseContextHolder dbbHolder(tdbb);
+				check_database(tdbb);
+
 				rollback(tdbb, prior, false);
 			}
 			catch (const Exception&)
