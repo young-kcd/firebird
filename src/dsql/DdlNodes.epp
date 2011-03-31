@@ -2218,8 +2218,8 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 		PRM.RDB$PARAMETER_TYPE = type;
 
 		PRM.RDB$PARAMETER_MECHANISM.NULL = FALSE;
-		PRM.RDB$PARAMETER_MECHANISM =
-			(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
+		PRM.RDB$PARAMETER_MECHANISM = (USHORT) (parameter.fullDomain || parameter.typeOfName.isEmpty() ?
+			prm_mech_normal : prm_mech_type_of);
 
 		PRM.RDB$NULL_FLAG.NULL = !parameter.notNull;
 		PRM.RDB$NULL_FLAG = parameter.notNull;
