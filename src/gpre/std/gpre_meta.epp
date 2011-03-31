@@ -612,7 +612,7 @@ gpre_lls* MET_get_primary_key(gpre_dbb* database, const TEXT* relation_name)
 		// CVC: This code stops at the first space, even in the middle.
 		TEXT* tmp = (TEXT*) field_name;
 		while (*tmp && *tmp != ' ')
-			*tmp++;
+			++tmp;
 		*tmp = '\0';
 
 		MSC_push((gpre_nod*) field_name, ptr_fields);
