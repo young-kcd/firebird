@@ -1,3 +1,16 @@
+ 2011-03-30 22:51  hvlad 
+   M src/jrd/met.epp
+Fixed bug CORE-3418 : Inactive DB-trigger after Create/Alter Is Active
+
+ 2011-03-30 20:35  asfernandes 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+Misc
+
+ 2011-03-30 08:14  dimitr 
+   M src/common/sdl.cpp
+Applied patch for CORE-3412: Array with BOOLEAN. Bug in sdl_desc [sdl.cpp]. Thanks to Dmitry Kovalenko.
+
  2011-03-29 00:54  asfernandes 
    M extern/btyacc/main.c
 Fixed memory corruption in btyacc code.
