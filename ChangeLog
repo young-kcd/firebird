@@ -1,3 +1,7 @@
+ 2011-03-30 23:06  hvlad 
+   M src/jrd/met.epp
+Fixed bug CORE-3418 : Inactive DB-trigger after Create/Alter Is Active
+
  2011-03-29 00:57  asfernandes 
    M extern/btyacc/main.c
 Fixed memory corruption in btyacc code.
