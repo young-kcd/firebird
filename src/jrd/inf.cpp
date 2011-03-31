@@ -889,7 +889,7 @@ UCHAR* INF_put_item(UCHAR item,
 }
 
 
-USHORT INF_request_info(const jrd_req* request, const ULONG item_length, const UCHAR* items,
+ULONG INF_request_info(const jrd_req* request, const ULONG item_length, const UCHAR* items,
 	const ULONG output_length, UCHAR* info)
 {
 /**************************************
@@ -1034,6 +1034,7 @@ USHORT INF_request_info(const jrd_req* request, const ULONG item_length, const U
 		const SLONG number = info - start_info;
 		fb_assert(number > 0);
 		memmove(start_info + 7, start_info, number);
+		info += 7;
 		length = INF_convert(number, buffer.begin());
 		fb_assert(length == 4); // We only accept SLONG
 		INF_put_item(isc_info_length, length, buffer.begin(), start_info, end, true);

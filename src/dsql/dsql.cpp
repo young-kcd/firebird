@@ -87,7 +87,7 @@ static void		execute_immediate(thread_db*, Jrd::Attachment*, jrd_tra**,
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, ULONG, const UCHAR*,
 	ULONG, const UCHAR*, ULONG, const UCHAR*, ULONG, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
-static USHORT	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
+static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, ULONG, const UCHAR*, ULONG, UCHAR*,
 	const UCHAR* = 0);
@@ -1344,7 +1344,7 @@ static SSHORT filter_sub_type(dsql_req* request, const dsql_nod* node)
     @param buffer
 
  **/
-static USHORT get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_length, UCHAR* buffer)
+static ULONG get_request_info(thread_db* tdbb, dsql_req* request, ULONG buffer_length, UCHAR* buffer)
 {
 	if (!request->req_request)	// DDL
 		return 0;
