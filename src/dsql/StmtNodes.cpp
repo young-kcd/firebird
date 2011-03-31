@@ -6815,9 +6815,6 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		assign->dsqlAsgnTo = *field_ptr;
 		assignments->statements.add(assign);
 
-		dsql_nod* temp = insertStatements[field_ptr - fields->nod_arg]->as<AssignmentNode>()->dsqlAsgnTo;
-		PASS1_set_parameter_type(dsqlScratch, *value_ptr, temp, false);
-
 		fb_assert((*field_ptr)->nod_type == Dsql::nod_field_name);
 
 		// When relation is a view and MATCHING was not specified, field_name
