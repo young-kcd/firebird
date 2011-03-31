@@ -73,7 +73,7 @@ private:
 	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
 };
 
-class LocalStatus : public StackIface<BaseStatus, FB_STATUS_VERSION>
+class LocalStatus : public StackIface<BaseStatus>
 {
 };
 

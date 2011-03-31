@@ -672,11 +672,8 @@ static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::IPlugin* iPlugin = master->getPluginInterface();
+	Firebird::PluginInterface pi(master);
 
-	factory->addRef();
-	iPlugin->registerPlugin(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
-	iPlugin->setModuleCleanup(&unloadDetector);
-
-	iPlugin->release();
+	pi->registerPlugin(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
+	pi->setModuleCleanup(&unloadDetector);
 }

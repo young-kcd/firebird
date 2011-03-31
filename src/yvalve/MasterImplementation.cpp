@@ -46,7 +46,7 @@
 
 namespace Firebird {
 
-class MasterImplementation : public StackIface<IMaster, IMaster::VERSION>
+class MasterImplementation : public StackIface<IMaster>
 {
 public:
 	Status* FB_CARG getStatusInstance();
@@ -60,17 +60,12 @@ public:
 // getStatusInstance()
 //
 
-class UserStatus : public Firebird::StdIface<Firebird::BaseStatus, FB_STATUS_VERSION>
+class UserStatus : public Firebird::DisposeIface<Firebird::BaseStatus>
 {
 private:
-	int FB_CARG release()
+	void FB_CARG dispose()
 	{
-		if (--refCounter == 0)
-		{
-			delete this;
-			return 0;
-		}
-		return 1;
+		delete this;
 	}
 };
 
@@ -87,7 +82,6 @@ IPlugin* FB_CARG MasterImplementation::getPluginInterface()
 {
 	static Static<PluginManager> manager;
 
-	manager->addRef();
 	return &manager;
 }
 
@@ -460,7 +454,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public StackIface<ITimerControl, FB_I_TIMER_CONTROL_VERSION>
+class TimerImplementation : public StackIface<ITimerControl>
 {
 public:
 	void FB_CARG start(ITimer* timer, TimerDelay microSeconds)
@@ -510,7 +504,6 @@ ITimerControl* FB_CARG MasterImplementation::getTimerControl()
 {
 	static Static<TimerImplementation> timer;
 
-	timer->addRef();
 	return &timer;
 }
 
@@ -530,6 +523,5 @@ Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
 {
 	static Firebird::Static<Firebird::MasterImplementation> master;
 
-	master->addRef();
 	return &master;
 }

@@ -508,6 +508,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 			if (!instance)
 			{
 				instance = new SecurityDatabase;
+				instance->addRef();
 				secDbName.copyTo(instance->secureDbName, sizeof(instance->secureDbName));
 				curInstances.add(instance);
 			}
@@ -557,7 +558,6 @@ namespace {
 
 void registerLegacyServer(Firebird::IPlugin* iPlugin)
 {
-	factory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, "Legacy_Auth", &factory);
 }
 

@@ -35,6 +35,8 @@
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/classes/init.h"
+#include "../common/classes/auto.h"
+#include "../common/classes/RefCounted.h"
 #include "consts_pub.h"
 
 extern "C" int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason);
@@ -46,61 +48,34 @@ namespace Firebird {
 class AutoInterface
 {
 public:
-	static void clear(Interface* ptr)
+	static void clear(IDisposable* ptr)
 	{
 		if (ptr)
 		{
-			ptr->release();
+			ptr->dispose();
 		}
 	}
 };
 
 
 // Implement standard interface and plugin functions
-template <class C, int V, typename S>
-class Versioned : public C, public S
+template <class C, typename S = GlobalStorage>
+class DisposeIface : public C, public S
 {
 public:
-	int FB_CARG version()
-	{
-		return V;
-	}
+	DisposeIface() { }
+
+private:
+	DisposeIface(const DisposeIface&);
+	DisposeIface& operator=(const DisposeIface&);
 };
 
-template <class C, int V, typename S = GlobalStorage>
-class StackIface : public Versioned<C, V, S>
+template <class C, typename S = GlobalStorage>
+class StackIface : public DisposeIface <C, S>
 {
-#ifdef DEV_BUILD
-private:
-	int counter;
-
 public:
-	// StackIface is destroyed in same frame where created,
-	// therefore final release() call is not expected,
-	// therefore initialize check counter with 0, not 1.
-	StackIface() : counter(0) { }
-
-	~StackIface()
-	{
-		fb_assert(counter == 0);
-	}
-#endif
-
-public:
-	void FB_CARG addRef()
-	{
-#ifdef DEV_BUILD
-		++counter;
-#endif
-	}
-
-	int FB_CARG release()
-	{
-#ifdef DEV_BUILD
-		--counter;
-#endif
-		return 1;
-	}
+	void FB_CARG dispose()
+	{ }
 
 	void* operator new(size_t, void* memory) throw()
 	{
@@ -109,15 +84,20 @@ public:
 };
 
 template <class C, int V, typename S = GlobalStorage>
-class StdIface : public Versioned<C, V, S>
+class StdIface : public C, public S
 {
 public:
-	StdIface() : refCounter(1) { }
+	StdIface() : refCounter(0) { }
+
+	int FB_CARG version()
+	{
+		return V;
+	}
 
 #ifdef DEV_BUILD
 	~StdIface()
 	{
-//		fb_assert(refCounter.value() == 0);
+		fb_assert(refCounter.value() == 0);
 	}
 #endif
 
@@ -156,12 +136,14 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class SimpleFactoryBase : public StackIface<PluginsFactory>
 {
 public:
 	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
 	{
-		return new P(factoryParameter);
+		P* p = new P(factoryParameter);
+		p->addRef();
+		return p;
 	}
 };
 
@@ -184,12 +166,10 @@ public:
 class PluginInterface : public AutoPtr<IPlugin, AutoInterface>
 {
 public:
-	PluginInterface() : AutoPtr<IPlugin, AutoInterface>(NULL)
-	{
-		IMaster* mi = fb_get_master_interface();
-		reset(mi->getPluginInterface());
-		mi->release();
-	}
+	PluginInterface() : AutoPtr<IPlugin, AutoInterface>(fb_get_master_interface()->getPluginInterface())
+	{ }
+	PluginInterface(IMaster* master) : AutoPtr<IPlugin, AutoInterface>(master->getPluginInterface())
+	{ }
 };
 
 
@@ -197,12 +177,8 @@ public:
 class TimerInterface : public AutoPtr<ITimerControl, AutoInterface>
 {
 public:
-	TimerInterface() : AutoPtr<ITimerControl, AutoInterface>(NULL)
-	{
-		IMaster* mi = fb_get_master_interface();
-		reset(mi->getTimerControl());
-		mi->release();
-	}
+	TimerInterface() : AutoPtr<ITimerControl, AutoInterface>(fb_get_master_interface()->getTimerControl())
+	{ }
 };
 
 
@@ -216,7 +192,7 @@ class DummyStorage
 {
 };
 
-class UnloadDetectorHelper : public StdIface<IModuleCleanup, FB_MODULE_CLEANUP_VERSION, DummyStorage>
+class UnloadDetectorHelper : public DisposeIface<IModuleCleanup, DummyStorage>
 {
 public:
 	UnloadDetectorHelper(MemoryPool&)
@@ -234,17 +210,6 @@ public:
 		}
 	}
 
-	int FB_CARG release()
-	{
-		if (--refCounter == 0)
-		{
-			//delete this;
-			fb_assert(false);
-			return 0;
-		}
-		return 1;
-	}
-
 	bool unloadStarted()
 	{
 		return !flagOsUnload;
@@ -253,6 +218,11 @@ public:
 	void setCleanup(FPTR_VOID c)
 	{
 		cleanup = c;
+	}
+
+	void FB_CARG dispose()
+	{
+		// delete this;	-don't do that!
 	}
 
 private:

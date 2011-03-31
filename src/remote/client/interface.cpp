@@ -497,10 +497,7 @@ namespace {
 
 void registerRedirector(Firebird::IPlugin* iPlugin)
 {
-	remoteFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Remote", &remoteFactory);
-
-	loopbackFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Loopback", &loopbackFactory);
 
 	Auth::registerLegacyClient(iPlugin);
@@ -640,7 +637,9 @@ Firebird::IAttachment* Provider::attach(Status* status, const char* filename,
 
 		init(status, port, op_attach, expanded_name, newDpb);
 
-		return new Attachment(port->port_context);
+		Firebird::IAttachment* a = new Attachment(port->port_context);
+		a->addRef();
+		return a;
 	}
 	catch (const Exception& ex)
 	{
@@ -993,7 +992,9 @@ Firebird::IRequest* Attachment::compileRequest(Status* status,
 			message->msg_address = NULL;
 		}
 
-		return new Request(request);
+		Firebird::IRequest* r = new Request(request);
+		r->addRef();
+		return r;
 	}
 	catch (const Exception& ex)
 	{
@@ -1071,7 +1072,9 @@ IBlob* Attachment::createBlob(Status* status, ITransaction* apiTra, ISC_QUAD* bl
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 
-		return new Blob(blob);
+		Firebird::IBlob* b = new Blob(blob);
+		b->addRef();
+		return b;
 	}
 	catch (const Exception& ex)
 	{
@@ -1119,7 +1122,9 @@ Firebird::IAttachment* Provider::create(Status* status, const char* filename,
 
 		init(status, port, op_create, expanded_name, newDpb);
 
-		return new Attachment(rdb);
+		Firebird::IAttachment* a = new Attachment(rdb);
+		a->addRef();
+		return a;
 	}
 	catch (const Exception& ex)
 	{
@@ -1454,7 +1459,9 @@ Firebird::IStatement* Attachment::allocateStatement(Status* status)
 		statement->rsr_next = rdb->rdb_sql_requests;
 		rdb->rdb_sql_requests = statement;
 
-		return new Statement(statement);
+		Firebird::IStatement* s = new Statement(statement);
+		s->addRef();
+		return s;
 	}
 	catch (const Exception& ex)
 	{
@@ -1646,7 +1653,9 @@ Firebird::ITransaction* Statement::execute(Status* status, Firebird::ITransactio
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
 			statement->rsr_rtr = transaction;
-			return new Transaction(transaction);
+			Firebird::ITransaction* t = new Transaction(transaction);
+			t->addRef();
+			return t;
 		}
 	}
 	catch (const Exception& ex)
@@ -1832,7 +1841,9 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		else if (!transaction && packet->p_resp.p_resp_object)
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
-			return new Transaction(transaction);
+			Firebird::ITransaction* t = new Transaction(transaction);
+			t->addRef();
+			return t;
 		}
 	}
 	catch (const Exception& ex)
@@ -2946,7 +2957,9 @@ IBlob* Attachment::openBlob(Status* status, ITransaction* apiTra, ISC_QUAD* id,
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 
-		return new Blob(blob);
+		Firebird::IBlob* b = new Blob(blob);
+		b->addRef();
+		return b;
 	}
 	catch (const Exception& ex)
 	{
@@ -3247,7 +3260,9 @@ Firebird::IEvents* Attachment::queEvents(Status* status, Firebird::EventCallback
 		send_packet(port, packet);
 		receive_response(status, rdb, packet);
 
-		return new Events(rem_event);
+		Firebird::IEvents* rc = new Events(rem_event);
+		rc->addRef();
+		return rc;
 	}
 	catch (const Exception& ex)
 	{
@@ -3453,7 +3468,9 @@ Firebird::ITransaction* Attachment::reconnectTransaction(Status* status,
 
 		send_and_receive(status, rdb, packet);
 
-		return new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		t->addRef();
+		return t;
 	}
 	catch (const Exception& ex)
 	{
@@ -3824,7 +3841,9 @@ Firebird::IService* Provider::attachSvc(Status* status, const char* service,
 
 		init(status, port, op_service_attach, expanded_name, newSpb);
 
-		return new Service(rdb);
+		Firebird::IService* s = new Service(rdb);
+		s->addRef();
+		return s;
 	}
 	catch (const Exception& ex)
 	{
@@ -4178,7 +4197,9 @@ Firebird::ITransaction* Attachment::startTransaction(Status* status,
 
 		send_and_receive(status, rdb, packet);
 
-		return new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		t->addRef();
+		return t;
 	}
 	catch (const Exception& ex)
 	{

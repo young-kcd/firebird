@@ -1970,7 +1970,16 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try
 	{
-		Auth::UserData* userData = new((void*)(FB_NEW(*tra->tra_pool) char[sizeof(Auth::UserData)])) Auth::UserData;
+		class DisposeableUserData : public Firebird::DisposeIface<Auth::UserData, pool_alloc<type_user_data> >
+		{
+		public:
+			void FB_CARG dispose()
+			{
+				delete this;
+			}
+		};
+
+		DisposeableUserData* userData = FB_NEW(*tra->tra_pool) DisposeableUserData;
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_user_end)
 		{

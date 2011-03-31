@@ -677,18 +677,8 @@ using namespace Firebird;
 class DummyMasterImpl : public IMaster
 {
 public:
-	virtual void FB_CARG addRef()
+	virtual void FB_CARG dispose()
 	{
-	}
-
-	virtual int FB_CARG release()
-	{
-		return 1;
-	}
-
-	virtual int FB_CARG version()
-	{
-		return IMaster::VERSION;
 	}
 
 	virtual Status* FB_CARG getStatusInstance()

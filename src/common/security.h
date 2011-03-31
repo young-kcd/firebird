@@ -30,7 +30,7 @@
 
 namespace Auth {
 
-class CharField : public Firebird::StackIface<CharUserField, FB_AUTH_CHAR_USER_VERSION>
+class CharField : public Firebird::StackIface<CharUserField>
 {
 public:
 	CharField()
@@ -87,7 +87,7 @@ private:
 	Firebird::string value;
 };
 
-class IntField : public Firebird::StackIface<IntUserField, FB_AUTH_INT_USER_VERSION>
+class IntField : public Firebird::StackIface<IntUserField>
 {
 public:
 	IntField()
@@ -139,7 +139,7 @@ private:
 	int value;
 };
 
-class UserData : public Firebird::StackIface<User, FB_AUTH_USER_VERSION>
+class UserData : public User
 {
 public:
 	UserData()
@@ -202,6 +202,10 @@ public:
 	CharField user, pass, first, last, middle, group;
 	IntField u, g, adm;
 	CharField database, dba, dbaPassword, role, trustedUser;
+};
+
+class StackUserData : public Firebird::StackIface<UserData>
+{
 };
 
 class Get : public Firebird::GetPlugins<Auth::Management>

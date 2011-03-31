@@ -39,22 +39,20 @@ namespace Auth {
 
 enum Result {AUTH_SUCCESS, AUTH_CONTINUE, AUTH_FAILED, AUTH_MORE_DATA};
 
-class WriterInterface : public Firebird::Interface
+class WriterInterface : public Firebird::IDisposable
 {
 public:
 	virtual void FB_CARG reset() = 0;
 	virtual void FB_CARG add(const char* user, const char* method, const char* details) = 0;
 };
-#define FB_AUTH_WRITER_VERSION (FB_INTERFACE_VERSION + 2)
 
-class DpbInterface : public Firebird::Interface
+class DpbInterface : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG find(UCHAR tag) = 0;
 	virtual void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count) = 0;
 	virtual void FB_CARG drop() = 0;
 };
-#define FB_AUTH_DBP_VERSION (FB_INTERFACE_VERSION + 3)
 
 class Server : public Firebird::Plugin
 {
@@ -77,14 +75,13 @@ public:
 };
 #define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 3)
 
-class UserField : public Firebird::Interface
+class UserField : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG entered() = 0;
 	virtual int FB_CARG specified() = 0;
 	virtual void FB_CARG setEntered(int newValue) = 0;
 };
-#define FB_USER_FIELD_VERSION (FB_INTERFACE_VERSION + 3)
 
 class CharUserField : public UserField
 {
@@ -92,7 +89,6 @@ public:
 	virtual const char* FB_CARG get() = 0;
 	virtual void FB_CARG set(const char* newValue) = 0;
 };
-#define FB_AUTH_CHAR_USER_VERSION (FB_USER_FIELD_VERSION + 2)
 
 class IntUserField : public UserField
 {
@@ -100,9 +96,8 @@ public:
 	virtual int FB_CARG get() = 0;
 	virtual void FB_CARG set(int newValue) = 0;
 };
-#define FB_AUTH_INT_USER_VERSION (FB_USER_FIELD_VERSION + 2)
 
-class User : public Firebird::Interface
+class User : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG operation() = 0;
@@ -121,16 +116,14 @@ public:
 
 	virtual void FB_CARG clear() = 0;
 };
-#define FB_AUTH_USER_VERSION (FB_INTERFACE_VERSION + 11)
 
-class ListUsers : public Firebird::Interface
+class ListUsers : public Firebird::IDisposable
 {
 public:
 	virtual void FB_CARG list(User* user) = 0;
 };
-#define FB_AUTH_LIST_USERS_VERSION (FB_INTERFACE_VERSION + 1)
 
-class LogonInfo : public Firebird::Interface
+class LogonInfo : public Firebird::IDisposable
 {
 public:
 	virtual const char* FB_CARG name() = 0;
@@ -139,7 +132,6 @@ public:
 	virtual const char* FB_CARG networkProtocol() = 0;
 	virtual const char* FB_CARG remoteAddress() = 0;
 };
-#define FB_AUTH_LOGON_INFO_VERSION (FB_INTERFACE_VERSION + 5)
 
 class Management : public Firebird::Plugin
 {

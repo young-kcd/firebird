@@ -55,6 +55,7 @@ public:
 		  										desiredVersion, &missing, NULL)),
 		  currentPlugin(NULL)
 	{
+		pluginSet->release();
 		getPlugin();
 	}
 
@@ -65,6 +66,7 @@ public:
 		  										desiredVersion, &missing, new FirebirdConf(knownConfig))),
 		  currentPlugin(NULL)
 	{
+		pluginSet->release();
 		getPlugin();
 	}
 
@@ -117,16 +119,13 @@ public:
 			pluginInterface->releasePlugin(currentPlugin);
 			currentPlugin = NULL;
 		}
-		if (pluginSet)
-			pluginSet->release();
 	}
 
 private:
 	AutoPtr<IMaster, AutoInterface> masterInterface;
 	AutoPtr<IPlugin, AutoInterface> pluginInterface;
 	M missing;
-//	AutoPtr<IPluginSet, AutoInterface> pluginSet;
-	IPluginSet *pluginSet;
+	RefPtr<IPluginSet> pluginSet;
 	P* currentPlugin;
 
 	void getPlugin()

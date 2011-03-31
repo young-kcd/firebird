@@ -230,6 +230,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		MemoryPool* const pool = tdbb->getDefaultPool();
 
 		statement = FB_NEW(*pool) JrdStatement(tdbb, pool, csb);
+		statement->addRef();
 
 		tdbb->setRequest(old_request);
 	} // try

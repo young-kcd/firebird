@@ -136,7 +136,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tsec* tdsec = &tsecInstance;
 	tsec::putSpecific(tdsec);
 
-	Auth::UserData u;
+	Auth::StackUserData u;
 	tdsec->tsec_user_data = &u;
 
 	try {
@@ -252,7 +252,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		fb_assert(user_data->trustedUser.entered());
 		if (user_data->trustedUser.entered())
 		{
-			class GsecInfo : public Firebird::StackIface<Auth::LogonInfo, FB_AUTH_LOGON_INFO_VERSION>
+			class GsecInfo : public Firebird::StackIface<Auth::LogonInfo>
 			{
 			public:
 				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
@@ -334,7 +334,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	class Display : public Firebird::StackIface<Auth::ListUsers, FB_AUTH_LIST_USERS_VERSION>
+	class Display : public Firebird::StackIface<Auth::ListUsers>
 	{
 	public:
 		Display(tsec* t)

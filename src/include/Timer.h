@@ -45,7 +45,7 @@ public:
 typedef ISC_INT64 TimerDelay;
 
 // Interface to set timer for particular time
-class ITimerControl : public Interface
+class ITimerControl : public IDisposable
 {
 public:
 	// Set timer
@@ -53,7 +53,6 @@ public:
 	// Stop timer
 	virtual void FB_CARG stop(ITimer* timer) = 0;
 };
-#define FB_I_TIMER_CONTROL_VERSION (FB_INTERFACE_VERSION + 2)
 
 }	// namespace Firebird
 

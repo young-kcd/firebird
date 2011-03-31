@@ -66,7 +66,6 @@ namespace {
 
 void registerLegacyClient(Firebird::IPlugin* iPlugin)
 {
-	factory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, "Legacy_Auth", &factory);
 }
 

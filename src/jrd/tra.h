@@ -187,6 +187,7 @@ public:
 			pool->setStatsGroup(transaction->tra_memory_stats);
 		}
 
+		transaction->addRef();
 		return transaction;
 	}
 

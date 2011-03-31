@@ -41,14 +41,10 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	const char* name = "Auth_Debug";
 
-	Firebird::IPlugin* iPlugin = master->getPluginInterface();
+	Firebird::PluginInterface iPlugin(master);
 
-	clientFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, name, &clientFactory);
-	serverFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, name, &serverFactory);
-
-	iPlugin->release();
 }
 
 

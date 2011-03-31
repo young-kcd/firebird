@@ -38,7 +38,7 @@
 
 namespace Firebird {
 
-class PluginManager : public StackIface<IPlugin, FB_I_PLUGIN_VERSION>
+class PluginManager : public StackIface<IPlugin>
 {
 public:
 	IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,

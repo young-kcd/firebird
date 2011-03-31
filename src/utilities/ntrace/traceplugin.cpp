@@ -114,7 +114,6 @@ static Firebird::UnloadDetector unloadDetector;
 
 void registerTrace(Firebird::IPlugin* iPlugin)
 {
-	traceFactory->addRef();
 	iPlugin->registerPlugin(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
 	iPlugin->setModuleCleanup(&unloadDetector);
 }
@@ -122,7 +121,6 @@ void registerTrace(Firebird::IPlugin* iPlugin)
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::IPlugin* pi = master->getPluginInterface();
+	Firebird::PluginInterface pi(master);
 	registerTrace(pi);
-	pi->release();
 }

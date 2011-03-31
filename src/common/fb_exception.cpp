@@ -36,9 +36,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 					perm [-1] = isc_arg_string;
 					const size_t len = *trans++;
 					const char* temp = reinterpret_cast<char*>(*trans++);
-					IMaster* im = fb_get_master_interface();
-					*perm++ = (ISC_STATUS)(IPTR) (im->circularAlloc(temp, len, thr));
-					im->release();
+					*perm++ = (ISC_STATUS)(IPTR) (MasterInterface()->circularAlloc(temp, len, thr));
 				}
 				break;
 			case isc_arg_string:
@@ -47,9 +45,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, FB_THREAD_ID
 				{
 					const char* temp = reinterpret_cast<char*>(*trans++);
 					const size_t len = strlen(temp);
-					IMaster* im = fb_get_master_interface();
-					*perm++ = (ISC_STATUS)(IPTR) (im->circularAlloc(temp, len, thr));
-					im->release();
+					*perm++ = (ISC_STATUS)(IPTR) (MasterInterface()->circularAlloc(temp, len, thr));
 				}
 				break;
 			default:

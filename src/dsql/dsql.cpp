@@ -161,6 +161,7 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Jrd::Attachment* attachment)
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
 	dsql_req* const request = FB_NEW(pool) dsql_req(statement);
+	request->addRef();
 	request->req_dbb = database;
 
 	return request;
@@ -1873,6 +1874,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	scratch->clientDialect = client_dialect;
 
 	dsql_req* request = FB_NEW(statement->getPool()) dsql_req(statement);
+	request->addRef();
 	request->req_dbb = database;
 	request->req_transaction = transaction;
 

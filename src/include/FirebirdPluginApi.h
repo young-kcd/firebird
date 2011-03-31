@@ -142,25 +142,23 @@ public:
 #define FB_FACTORY_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 
 // Required to creat instances of given plugin
-class PluginsFactory : public Interface
+class PluginsFactory : public IDisposable
 {
 public:
 	virtual Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter) = 0;
 };
-#define FB_PLUGINS_FACTORY_VERSION (FB_INTERFACE_VERSION + 1)
 
 // Required to let plugins manager invoke module's cleanup routine before unloading it.
 // For some OS/compiler this may be done in dtor of global variable in module itself.
 // Others (Windows/VC) fail to create some very useful resources (threads) when module is unloading.
-class IModuleCleanup : public Interface
+class IModuleCleanup : public IDisposable
 {
 public:
 	virtual void FB_CARG doClean() = 0;
 };
-#define FB_MODULE_CLEANUP_VERSION (FB_INTERFACE_VERSION + 1)
 
 // Interface to deal with plugins here and there, returned by master interface
-class IPlugin : public Interface
+class IPlugin : public IDisposable
 {
 public:
 	// Main function called by plugin modules in firebird_plugin()
@@ -188,7 +186,6 @@ public:
 	// will cause resources leak
 	virtual void FB_CARG releasePlugin(Plugin* plugin) = 0;
 };
-#define FB_I_PLUGIN_VERSION (FB_INTERFACE_VERSION + 5)
 
 typedef void StartLoadedModule(IMaster* masterInterface);
 

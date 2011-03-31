@@ -43,12 +43,6 @@
 
 namespace Auth {
 
-class SecurityDatabaseServerFactory : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
-{
-public:
-	Firebird::Plugin* FB_CARG createPlugin(const char* name, const char* configFile);
-};
-
 class SecurityDatabaseServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:

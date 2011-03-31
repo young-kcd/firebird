@@ -80,6 +80,7 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 }
 
 ConfigStorage::ConfigStorage()
+	: timer(new TouchFile)
 {
 	m_cfg_file = -1;
 	m_dirty = false;
@@ -121,14 +122,14 @@ ConfigStorage::ConfigStorage()
 
 	StorageGuard guard(this);
 	checkFile();
-	timer.start(sh_mem_header->cfg_file_name);
+	timer->start(sh_mem_header->cfg_file_name);
 
 	++sh_mem_header->cnt_uses;
 }
 
 ConfigStorage::~ConfigStorage()
 {
-	timer.stop();
+	timer->stop();
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
@@ -565,6 +566,17 @@ void ConfigStorage::TouchFile::start(const char* fName)
 void ConfigStorage::TouchFile::stop()
 {
 	TimerInterface()->stop(this);
+}
+
+int FB_CARG ConfigStorage::TouchFile::release()
+{
+	if (--refCounter == 0)
+	{
+		delete this;
+		return 0;
+	}
+
+	return 1;
 }
 
 } // namespace Jrd

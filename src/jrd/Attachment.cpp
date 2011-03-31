@@ -56,6 +56,7 @@ Jrd::Attachment* Jrd::Attachment::create(Database* dbb, FB_API_HANDLE publicHand
 	{
 		Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb, publicHandle);
 		pool->setStatsGroup(attachment->att_memory_stats);
+		attachment->addRef();
 		return attachment;
 	}
 	catch (const Firebird::Exception&)

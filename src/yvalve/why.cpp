@@ -1024,7 +1024,7 @@ const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_de
 namespace
 {
 	// Status:	Provides correct status vector for operation and init() it.
-	class StatusVector : public StackIface<Status, FB_STATUS_VERSION>
+	class StatusVector : public StackIface<Status>
 	{
 	public:
 		explicit StatusVector(ISC_STATUS* v) throw()

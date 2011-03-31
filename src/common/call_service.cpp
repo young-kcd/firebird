@@ -425,7 +425,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 	{
 		const char request[] = {isc_info_svc_get_users};
 		int startQuery = 0;
-		Auth::UserData uData;
+		Auth::StackUserData uData;
 
 		for (;;)
 		{

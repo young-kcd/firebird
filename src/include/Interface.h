@@ -43,7 +43,7 @@
 
 namespace Firebird {
 
-// Regular interface - base for all FB interfaces
+// Regular interface - base for refCounted FB interfaces
 class Interface
 {
 public:
@@ -53,8 +53,15 @@ public:
 };
 #define FB_INTERFACE_VERSION 3		// If this is changed, types of all interfaces must be changed
 
+// Disposable interface - base for static and onStack interfaces, may be used in regular case too
+class IDisposable
+{
+public:
+	virtual void FB_CARG dispose() = 0;
+};
+
 // Interface to work with status vector
-class Status : public Interface
+class Status : public IDisposable
 {
 public:
 	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value) = 0;
@@ -64,12 +71,11 @@ public:
 	virtual const ISC_STATUS* FB_CARG get() const = 0;
 	virtual int FB_CARG isSuccess() const = 0;
 };
-#define FB_STATUS_VERSION (FB_INTERFACE_VERSION + 5)
 
 class IPlugin;
 class ITimerControl;
 
-class IMaster : public Interface
+class IMaster : public IDisposable
 {
 public:
 	// This interface can't be upgraded - therefore another form of version is used

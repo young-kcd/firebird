@@ -210,7 +210,9 @@ namespace
 		{
 			if (p)
 			{
-				return new ConfigParameterAccess(this, p);
+				IConfigParameter* rc = new ConfigParameterAccess(this, p);
+				rc->addRef();
+				return rc;
 			}
 
 			return NULL;
@@ -221,7 +223,9 @@ namespace
 	{
 		if (par && par->sub.hasData())
 		{
-			return new ConfigAccess(par->sub);
+			IConfig* rc = new ConfigAccess(par->sub);
+			rc->addRef();
+			return rc;
 		}
 
 		return NULL;
@@ -323,17 +327,17 @@ namespace
 
 			for (unsigned int i = 0; i < regPlugins.getCount(); ++i)
 			{
-				regPlugins[i].factory->release();
+				regPlugins[i].factory->dispose();
 			}
 
-			if (cleanup.hasData())
+			if (cleanup)
 			{
 				cleanup->doClean();
 			}
 		}
 
 		Firebird::AutoPtr<ModuleLoader::Module> module;
-		Firebird::RefPtr<Firebird::IModuleCleanup> cleanup;
+		Firebird::IModuleCleanup* cleanup;
 		HalfStaticArray<RegisteredPlugin, 2> regPlugins;
 		PluginModule* next;
 		PluginModule** prev;
@@ -406,7 +410,9 @@ namespace
 			if (defaultConfig.hasData())
 			{
 				const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
-				return new ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
+				IConfig* rc = new ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
+				rc->addRef();
+				return rc;
 			}
 
 			PluginInterface pi;
@@ -479,10 +485,11 @@ namespace
 
 	Plugin* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
 	{
-		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
+		RefPtr<FactoryParameter> par(new FactoryParameter(this, firebirdConf));
 		Plugin* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
 		if (plugin)
 		{
+			par->addRef();
 			plugin->owner(par);
 		}
 		return plugin;
@@ -630,7 +637,7 @@ namespace
 		PathName currentName;
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
 
-		IFirebirdConf* firebirdConf;
+		RefPtr<IFirebirdConf> firebirdConf;
 		AutoPtr<IMaster, AutoInterface> masterInterface;
 
 		RefPtr<PluginModule> loadModule(const PathName& modName);
@@ -845,8 +852,10 @@ IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const 
 {
 	MutexLockGuard g(plugins->mutex);
 
-	return new PluginSet(interfaceType, namesList, desiredVersion,
+	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion,
 						 missingFunctionClass, firebirdConf);
+	rc->addRef();
+	return rc;
 }
 
 
@@ -878,7 +887,9 @@ void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 
 IConfig* FB_CARG PluginManager::getConfig(const char* filename)
 {
-	return new ConfigAccess(RefPtr<ConfigFile>(FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
+	IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
+	rc->addRef();
+	return rc;
 }
 
 

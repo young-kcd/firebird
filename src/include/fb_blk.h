@@ -51,6 +51,7 @@ enum BlockType
 	type_prf,
 	type_ctl,
 	type_Events,
+	type_user_data,
 
 	type_PageSpace,
 	type_PageManager,

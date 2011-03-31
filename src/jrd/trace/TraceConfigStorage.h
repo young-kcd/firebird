@@ -33,6 +33,7 @@
 #include "../../common/classes/init.h"
 #include "../../common/isc_s_proto.h"
 #include "../../jrd/trace/TraceSession.h"
+#include "../../common/classes/RefCounted.h"
 
 namespace Jrd {
 
@@ -69,16 +70,17 @@ private:
 	void checkFile();
 	void touchFile();
 
-	class TouchFile : public Firebird::StackIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+	class TouchFile : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
 	{
 	public:
 		void FB_CARG handler();
 		void start(const char* fName);
 		void stop();
+		int FB_CARG release();
 	private:
 		const char* fileName;
 	};
-	TouchFile timer;
+	Firebird::RefPtr<TouchFile> timer;
 
 	void checkDirty()
 	{

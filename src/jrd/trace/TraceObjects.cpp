@@ -427,7 +427,7 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl : public StdIface<TraceLogWriter, FB_TRACE_INIT_INFO_VERSION>
+class TraceLogWriterImpl : public StdIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
 {
 public:
 	TraceLogWriterImpl(const TraceSession& session) :
@@ -502,6 +502,7 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 	{
 		m_logWriter = new TraceLogWriterImpl(m_session);
 	}
+	m_logWriter->addRef();
 	return m_logWriter;
 }
 

@@ -71,7 +71,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 	fb_assert(manager);
 	manager->addRef();
 
-	class UserIdInfo : public StackIface<Auth::LogonInfo, FB_AUTH_LOGON_INFO_VERSION>
+	class UserIdInfo : public StackIface<Auth::LogonInfo>
 	{
 	public:
 		UserIdInfo(const Attachment* pAtt)
@@ -297,7 +297,7 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 			fb_assert(buffer);
 
 			LocalStatus status;
-			Auth::UserData u;
+			Auth::StackUserData u;
 			u.op = DIS_OPER;
 			int errcode = manager->execute(&status, &u, &display);
 			checkSecurityResult(errcode, &status, "Unknown");

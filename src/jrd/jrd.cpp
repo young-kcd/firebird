@@ -281,7 +281,7 @@ int Provider::release()
 
 static Firebird::UnloadDetector unloadDetector;
 
-class EngineFactory : public StackIface<PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class EngineFactory : public StackIface<PluginsFactory>
 {
 public:
 	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
@@ -292,7 +292,9 @@ public:
 		}
 
 		++shutdownCounter;
-		return new Provider(factoryParameter);
+		Plugin* p = new Provider(factoryParameter);
+		p->addRef();
+		return p;
 	}
 };
 
@@ -300,7 +302,6 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPlugin* iPlugin)
 {
-	engineFactory->addRef();
 	iPlugin->registerPlugin(PluginType::Provider, "Engine12", &engineFactory);
 	iPlugin->setModuleCleanup(&unloadDetector);
 }
@@ -309,9 +310,8 @@ void registerEngine(IPlugin* iPlugin)
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	IPlugin* pi = master->getPluginInterface();
+	PluginInterface pi;
 	registerEngine(pi);
-	pi->release();
 }
 
 namespace
@@ -691,7 +691,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public StackIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceFailedConnection : public StackIface<TraceConnection>
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
@@ -976,7 +976,9 @@ const char SINGLE_QUOTE			= '\'';
 
 PProvider* currentProvider()
 {
-	return new Provider(NULL);
+	PProvider* p = new Provider(NULL);
+	p->addRef();
+	return p;
 }
 
 // External hook definitions
@@ -3029,6 +3031,7 @@ Firebird::IEvents* Attachment::queEvents(Status* user_status, Firebird::EventCal
 												   lock->lck_length, (const TEXT*) &lock->lck_key,
 												   length, events, callback);
 			ev = FB_NEW(*getDefaultMemoryPool()) Events(id, this);
+			ev->addRef();
 		}
 		catch (const Exception& ex)
 		{
@@ -3407,6 +3410,7 @@ Firebird::IService* Provider::attachServiceManager(Status* user_status, const ch
 		ThreadContextHolder tdbb(user_status);
 
 		svc = new Svc(new Service(service_name, spbLength, spb));
+		svc->addRef();
 	}
 	catch (const Exception& ex)
 	{
