@@ -6584,6 +6584,10 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 
 			try
 			{
+				validateHandle(tdbb, prior->tra_attachment);
+				DatabaseContextHolder dbbHolder(tdbb);
+				check_database(tdbb);
+
 				rollback(tdbb, prior, false);
 			}
 			catch (const Exception&)
