@@ -1446,8 +1446,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		ARG.RDB$COLLATION_ID.NULL = TRUE;
 
 		ARG.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
-		ARG.RDB$ARGUMENT_MECHANISM =
-			(USHORT) (parameter.fullDomain ? prm_mech_normal : prm_mech_type_of);
+		ARG.RDB$ARGUMENT_MECHANISM = (USHORT) (parameter.fullDomain || parameter.typeOfName.isEmpty() ?
+			prm_mech_normal : prm_mech_type_of);
 
 		if (parameter.notNull)
 		{
