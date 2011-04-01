@@ -3368,15 +3368,14 @@ static int check_precommitted(const jrd_tra* transaction, const record_param* rp
 		if (transaction->tra_number == rpb->rpb_transaction_nr) {
 			return tra_us;
 		}
-		else
-		{
-			const jrd_tra* tx = transaction->tra_attachment->att_transactions;
-			for (; tx; tx = tx->tra_next)
-				if (tx->tra_number == rpb->rpb_transaction_nr)
-				{
-					return tra_active;
-				}
-		}
+
+
+		const jrd_tra* tx = transaction->tra_attachment->att_transactions;
+		for (; tx; tx = tx->tra_next)
+			if (tx->tra_number == rpb->rpb_transaction_nr)
+			{
+				return tra_active;
+			}
 	}
 	return tra_precommitted;
 }
