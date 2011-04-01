@@ -491,7 +491,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 			secDbName = tmp;
 		}
 
-		SecurityDatabase* instance = 0;
+		SecurityDatabase* instance = NULL;
 
 		{ // guard scope
 			MutexLockGuard g(instancesMutex);

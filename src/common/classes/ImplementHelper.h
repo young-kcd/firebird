@@ -71,7 +71,7 @@ private:
 };
 
 template <class C, typename S = GlobalStorage>
-class StackIface : public DisposeIface <C, S>
+class StackIface : public DisposeIface<C, S>
 {
 public:
 	void FB_CARG dispose()

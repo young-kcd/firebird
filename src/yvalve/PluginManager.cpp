@@ -853,7 +853,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const 
 	MutexLockGuard g(plugins->mutex);
 
 	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion,
-						 missingFunctionClass, firebirdConf);
+		missingFunctionClass, firebirdConf);
 	rc->addRef();
 	return rc;
 }
@@ -887,7 +887,8 @@ void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
 
 IConfig* FB_CARG PluginManager::getConfig(const char* filename)
 {
-	IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
+	IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(
+		FB_NEW(*getDefaultMemoryPool()) ConfigFile(filename, 0)));
 	rc->addRef();
 	return rc;
 }
