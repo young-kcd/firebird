@@ -257,6 +257,8 @@ void CMP_fini(thread_db* tdbb)
 
 	// And release the system requests.
 
+	fb_assert(tdbb->getAttachment() == NULL);
+
 	for (JrdStatement** itr = dbb->dbb_internal.begin(); itr != dbb->dbb_internal.end(); ++itr)
 	{
 		if (*itr)

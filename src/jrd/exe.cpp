@@ -730,7 +730,12 @@ void EXE_release(thread_db* tdbb, jrd_req* request)
 	delete request->outputParams;
 	request->outputParams = NULL;
 
-	if (request->req_attachment)
+	// system requests are released after all attachments gone and with
+	// req_attachment not cleared
+
+	const Jrd::Attachment* attachment = tdbb->getAttachment();
+
+	if (request->req_attachment && request->req_attachment == attachment)
 	{
 		size_t pos;
 		if (request->req_attachment->att_requests.find(request, pos))
