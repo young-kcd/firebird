@@ -1617,7 +1617,7 @@ void MET_load_trigger(thread_db* tdbb,
 		FOR(REQUEST_HANDLE debug_info_req)
 			TRG IN RDB$TRIGGERS
 			WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
-				 TRG.RDB$TRIGGER_INACTIVE EQ 0
+				 (TRG.RDB$TRIGGER_INACTIVE MISSING OR TRG.RDB$TRIGGER_INACTIVE EQ 0)
 
 			if (!REQUEST(irq_l_trg_dbg))
 				REQUEST(irq_l_trg_dbg) = debug_info_req;
@@ -1637,7 +1637,7 @@ void MET_load_trigger(thread_db* tdbb,
 	FOR(REQUEST_HANDLE trigger_request)
 		TRG IN RDB$TRIGGERS
 		WITH TRG.RDB$TRIGGER_NAME EQ trigger_name.c_str() AND
-			 TRG.RDB$TRIGGER_INACTIVE EQ 0
+			 (TRG.RDB$TRIGGER_INACTIVE MISSING OR TRG.RDB$TRIGGER_INACTIVE EQ 0)
 		if (!REQUEST(irq_s_triggers))
 			REQUEST(irq_s_triggers) = trigger_request;
 
