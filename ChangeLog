@@ -1,3 +1,85 @@
+ 2011-04-01 02:05  asfernandes 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/yvalve/PluginManager.cpp
+Misc
+
+ 2011-03-31 17:41  asfernandes 
+   M src/gpre/std/gpre_meta.epp
+Warning.
+
+ 2011-03-31 15:22  alexpeshkoff 
+   M src/auth/trusted/AuthSspi.cpp
+Try to fix windows build
+
+ 2011-03-31 14:26  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-3421 - AV with "UPDATE OR INSERT".
+
+ 2011-03-31 14:26  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-3423 - Wrong RDB$PARAMETER_MECHANISM.
+
+ 2011-03-31 13:44  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.h
+   M src/common/Auth.h
+   M src/common/StatusHolder.h
+   M src/common/call_service.cpp
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/fb_exception.cpp
+   M src/common/security.h
+   M src/dsql/dsql.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/FirebirdPluginApi.h
+   M src/include/Interface.h
+   M src/include/Timer.h
+   M src/include/fb_blk.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/blb.cpp
+   M src/jrd/dyn.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/alt.cpp
+   M src/yvalve/why.cpp
+Remove reference counting where not appropriate
+
+ 2011-03-31 10:28  hvlad 
+   M src/dsql/dsql.cpp
+   M src/jrd/inf.cpp
+   M src/jrd/inf_proto.h
+Fixed issue reported by Claudio privately
+
+ 2011-03-31 09:41  hvlad 
+   M src/jrd/jrd.cpp
+Fixed bug CORE-3419 : Recurse leads to hangs/crash server
+The rollback() and a friends should be reconsidered when (if) multy-db transactions will be possible to start at engine (i.e. not at y-valve) level.
+
+ 2011-03-31 05:45  dimitr 
+   M src/jrd/types.h
+Fixed CORE-3420: BOOLEAN not present in system table RDB$TYPES.
+
  2011-03-30 22:51  hvlad 
    M src/jrd/met.epp
 Fixed bug CORE-3418 : Inactive DB-trigger after Create/Alter Is Active
