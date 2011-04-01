@@ -111,8 +111,8 @@ DDL_TRIGGER context namespace:
 
 	The context elements are:
 	- EVENT_TYPE: event type (CREATE, ALTER, DROP)
-	- OBJECT_TYPE: object type (TABLE, VIEW etc)
-	- DDL_EVENT: event name (<ddl event item>, which is EVENT_TYPE || ' ' || OBJECT_TYPE)
+	- OBJECT_TYPE: object type (TABLE, VIEW, etc)
+	- DDL_EVENT: event name (<ddl event item>), where <ddl_event_item> is EVENT_TYPE || ' ' || OBJECT_TYPE
 	- OBJECT_NAME: metadata object name
 	- SQL_TEXT: sql statement text
 

@@ -60,7 +60,7 @@ Zero return value of callback function means it performed it's job OK, non-zero 
 depending upon call mask. For fb_shut_confirmation non-zero means that shutdown will not be
 performed. It's bad idea to return non-zero if shutdown is due to exit() called. In all other cases
 it means some errors took place, and non-zero value will be returned from fb_shutdown(). It's 
-callback function's responsibility to notify world about exact reasons of error return.
+callback function's responsibility to notify the world about exact reasons of error return.
 
 fb_shutdown_callback() almost always returns successfully, though in some cases (out of memory
 for example) it can return error.
