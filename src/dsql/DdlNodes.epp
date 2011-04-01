@@ -7146,6 +7146,12 @@ void CreateAlterViewNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 		name.c_str());
 }
 
+DdlNode* CreateAlterViewNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	source.ltrim("\n\r\t ");
+	return DdlNode::dsqlPass(dsqlScratch);
+}
+
 void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {

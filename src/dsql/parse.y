@@ -6896,7 +6896,12 @@ void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/,
 	int /*stkPos*/, int /*yychar*/, YYPOSN& yyposn, void*)
 {
 	if (termNo == 0)
-		ret = yyposn;
+	{
+		// Accessing termPosns[-1] seems to be the only way to get correct positions in this case.
+		ret.firstLine = ret.lastLine = termPosns[termNo - 1].lastLine;
+		ret.firstColumn = ret.lastColumn = termPosns[termNo - 1].lastColumn;
+		ret.firstPos = ret.lastPos = termPosns[termNo - 1].lastPos;
+	}
 	else
 	{
 		ret.firstLine = termPosns[0].firstLine;
@@ -6908,8 +6913,10 @@ void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/,
 	}
 
 	/*** This allows us to see colored output representing the position reductions.
-	printf("%.*s", ret.firstPos - lex.start, lex.start);
-	printf("\033[1;31m%.*s\033[1;37m", ret.lastPos - ret.firstPos, ret.firstPos);
+	printf("%.*s", int(ret.firstPos - lex.start), lex.start);
+	printf("<<<<<");
+	printf("\033[1;31m%.*s\033[1;37m", int(ret.lastPos - ret.firstPos), ret.firstPos);
+	printf(">>>>>");
 	printf("%s\n", ret.lastPos);
 	***/
 }

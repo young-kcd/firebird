@@ -1137,6 +1137,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
+	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
