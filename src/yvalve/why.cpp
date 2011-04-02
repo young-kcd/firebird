@@ -650,6 +650,12 @@ namespace
 		FB_API_HANDLE handle;
 	};
 
+	class CleanupCallback
+	{
+	public:
+		virtual void FB_CARG cleanupCallbackFunction() = 0;
+	};
+
 	template <typename T, typename CleanupRoutine>	// T = YAttachment or YTransaction
 	class CleanupCallbackImpl : public CleanupCallback
 	{

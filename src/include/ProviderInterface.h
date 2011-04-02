@@ -66,12 +66,6 @@ public:
 	unsigned char* const buffer;
 };
 
-class CleanupCallback
-{
-public:
-	virtual void FB_CARG cleanupCallbackFunction() = 0;
-};
-
 class EventCallback
 {
 public:
