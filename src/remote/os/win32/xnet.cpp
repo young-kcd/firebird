@@ -143,7 +143,7 @@ namespace
 	class ExitHandler
 	{
 	public:
-		ExitHandler(MemoryPool&) {};
+		explicit ExitHandler(MemoryPool&) {};
 
 		~ExitHandler()
 		{
@@ -1406,8 +1406,7 @@ static rem_port* connect_server(USHORT flag)
 				presponse->slot_num = slot_num;
 				presponse->timestamp = timestamp;
 
-				rem_port* port = get_server_port(client_pid, xpm, map_num, slot_num,
-					timestamp);
+				rem_port* port = get_server_port(client_pid, xpm, map_num, slot_num, timestamp);
 
 				SetEvent(xnet_response_event);
 

@@ -1513,7 +1513,8 @@ Firebird::ITransaction* Statement::execute(Status* status, Firebird::ITransactio
 		RefMutexGuard portGuard(*port->port_sync);
 
 		Rtr* transaction = 0;
-		if (apiTra) {
+		if (apiTra)
+		{
 			transaction = ((Transaction*)apiTra)->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
@@ -1703,7 +1704,8 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		Rtr* transaction = 0;
-		if (apiTra) {
+		if (apiTra)
+		{
 			transaction = ((Transaction*)apiTra)->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
@@ -2347,7 +2349,8 @@ Statement* Statement::prepare(Status* status, Firebird::ITransaction* apiTra,
 		RefMutexGuard portGuard(*port->port_sync);
 
 		Rtr* transaction = 0;
-		if (apiTra) {
+		if (apiTra)
+		{
 			transaction = reinterpret_cast<Transaction*>(apiTra)->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
@@ -3620,7 +3623,7 @@ void Transaction::rollbackRetaining(Status* status)
  *	Abort a transaction but keep its environment valid
  *
  **************************************/
-		reset(status);
+	reset(status);
 
 	CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
@@ -4390,7 +4393,7 @@ void Attachment::ping(Status* status)
 {
 /**************************************
  *
- *	f b _ p i n g
+ *	p i n g
  *
  **************************************
  *

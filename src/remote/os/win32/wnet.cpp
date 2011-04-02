@@ -462,7 +462,7 @@ rem_port* WNET_reconnect(HANDLE handle)
  *
  * Functional description
  *	A communications link has been established by another
- *	process.  We have inheritted the handle.  Set up
+ *	process.  We have inherited the handle.  Set up
  *	a port block.
  *
  **************************************/

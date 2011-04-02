@@ -540,7 +540,8 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  **************************************/
 	ThreadCounter counter;
 
-	if (server_flag & SRVR_inet) {
+	if (server_flag & SRVR_inet)
+	{
 		try {
 			Thread::start(inet_connect_wait_thread, 0, THREAD_medium);
 		}
@@ -548,7 +549,8 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 			iscLogException("INET: can't start listener thread", ex);
 		}
 	}
-	if (server_flag & SRVR_wnet) {
+	if (server_flag & SRVR_wnet)
+	{
 		try {
 			Thread::start(wnet_connect_wait_thread, 0, THREAD_medium);
 		}
@@ -556,7 +558,8 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 			iscLogException("WNET: can't start listener thread", ex);
 		}
 	}
-	if (server_flag & SRVR_xnet) {
+	if (server_flag & SRVR_xnet)
+	{
 		try {
 			Thread::start(xnet_connect_wait_thread, 0, THREAD_medium);
 		}
