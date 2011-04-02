@@ -27,10 +27,10 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-struct sqlda_sup;
+struct SqldaSupport;
 
-ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*);
-ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, sqlda_sup* const, USHORT*, USHORT*,
+ISC_STATUS	UTLD_parse_sql_info(ISC_STATUS*, USHORT, const SCHAR*, XSQLDA*, USHORT*, unsigned*);
+ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS*, SqldaSupport* const, USHORT*, USHORT*,
 							 USHORT*, USHORT, const XSQLDA*, const USHORT);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
 

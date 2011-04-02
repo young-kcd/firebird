@@ -24,6 +24,8 @@
 #ifndef DSQL_SQLDA_H
 #define DSQL_SQLDA_H
 
+#include "../common/classes/array.h"
+
 // SQLDA dialects
 
 const USHORT DIALECT_sqlda	= 0;
@@ -52,28 +54,44 @@ struct SQLDA
 
 // Structure to support conversion of SQLDA's to messages
 
-struct sqlda_sup
+struct SqldaSupport
 {
-	struct dasup_clause
+	static const unsigned SELECT_CLAUSE = 0;
+	static const unsigned BIND_CLAUSE = 1;
+
+	SqldaSupport()
 	{
-		SCHAR*	dasup_blr;
-		SCHAR*	dasup_msg;
-		USHORT	dasup_blr_length;
-		USHORT	dasup_blr_buf_len;
-		USHORT	dasup_msg_buf_len;
+		clear();
+	}
 
-		SCHAR*	dasup_info_buf;
-		USHORT	dasup_info_len;
-	} dasup_clauses[2];
+	void clear()
+	{
+		stmtType = 0;
 
-	USHORT	dasup_dialect;		// Dialect associated with statement
-	USHORT	dasup_stmt_type;	// Type of statement
+		for (unsigned i = 0; i < 2; ++i)
+		{
+			clauses[i].blrBuffer.clear();
+			clauses[i].msgBuffer.clear();
+			clauses[i].infoBuffer.clear();
+		}
+	}
 
+	struct Clause
+	{
+		Clause()
+			: blrBuffer(*getDefaultMemoryPool()),
+			  msgBuffer(*getDefaultMemoryPool()),
+			  infoBuffer(*getDefaultMemoryPool())
+		{
+		}
+
+		Firebird::Array<SCHAR> blrBuffer;
+		Firebird::Array<SCHAR> msgBuffer;
+		Firebird::Array<SCHAR> infoBuffer;
+	} clauses[2];
+
+	USHORT stmtType;	// Type of statement
 };
-
-// enum would be troblesome here
-const USHORT DASUP_CLAUSE_select	= 0;
-const USHORT DASUP_CLAUSE_bind		= 1;
 
 #include "../dsql/sqlda_pub.h"
 

@@ -90,10 +90,9 @@ static bool isNetworkError(const Status* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 static void saveErrorString(ISC_STATUS* status);
 static bool setPath(const PathName& filename, PathName& expandedName);
-static void releaseDsqlSupport(sqlda_sup& dasup);
 static USHORT sqldaBufferSize(USHORT min_buffer_size, const XSQLDA* sqlda, USHORT dialect);
 static void iterativeSqlInfo(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle, USHORT itemLength,
-	const SCHAR* items, SSHORT bufferLength, SCHAR* buffer, USHORT dialect, XSQLDA* sqlda);
+	const SCHAR* items, Array<SCHAR>& buffer, USHORT dialect, XSQLDA* sqlda);
 static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	FB_API_HANDLE* traHandle, FB_API_HANDLE* blobHandle, ISC_QUAD* blobId,
 	USHORT bpbLength, const UCHAR* bpb, bool createFlag);
@@ -984,7 +983,7 @@ namespace
 		IStatement* next;
 		FB_API_HANDLE* userHandle;
 		bool prepared;
-		sqlda_sup das;
+		SqldaSupport dasup;
 	};
 
 	class YAttachment : public YHelper<IAttachment, FB_I_ATTACHMENT_VERSION>
@@ -1350,19 +1349,6 @@ static bool setPath(const PathName& filename, PathName& expandedName)
 	return true;
 }
 
-// Release some memory.
-static void releaseDsqlSupport(sqlda_sup& dasup)
-{
-	sqlda_sup::dasup_clause* pClauses = dasup.dasup_clauses;
-
-	gds__free(pClauses[DASUP_CLAUSE_bind].dasup_blr);
-	gds__free(pClauses[DASUP_CLAUSE_select].dasup_blr);
-	gds__free(pClauses[DASUP_CLAUSE_bind].dasup_msg);
-	gds__free(pClauses[DASUP_CLAUSE_select].dasup_msg);
-	gds__free(pClauses[DASUP_CLAUSE_bind].dasup_info_buf);
-	gds__free(pClauses[DASUP_CLAUSE_select].dasup_info_buf);
-}
-
 // Calculate size of a buffer that is large enough to store the info items relating to an SQLDA.
 static USHORT sqldaBufferSize(USHORT minBufferSize, const XSQLDA* sqlda, USHORT dialect)
 {
@@ -1393,12 +1379,19 @@ static USHORT sqldaBufferSize(USHORT minBufferSize, const XSQLDA* sqlda, USHORT 
 // Turn an sql info buffer into an SQLDA. If the info buffer was incomplete, make another request,
 // beginning where the previous info call left off.
 static void iterativeSqlInfo(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle, USHORT itemLength,
-	const SCHAR* items, SSHORT bufferLength, SCHAR* buffer, USHORT dialect, XSQLDA* sqlda)
+	const SCHAR* items, Array<SCHAR>& buffer, USHORT dialect, XSQLDA* sqlda)
 {
+	SCHAR* bufferPtr = buffer.begin();
 	USHORT lastIndex;
 	SCHAR newItems[32];
+	unsigned bufferLen = 0;
 
-	while (UTLD_parse_sql_info(userStatus, dialect, buffer, sqlda, &lastIndex) && lastIndex)
+	// The first byte of the returned buffer is assumed to be either a isc_info_sql_select or
+	// isc_info_sql_bind item. The second byte is assumed to be isc_info_sql_describe_vars.
+	unsigned bufferOffset = 2;
+	bufferPtr += bufferOffset;
+
+	while (UTLD_parse_sql_info(userStatus, dialect, bufferPtr, sqlda, &lastIndex, &bufferLen) && lastIndex)
 	{
 		char* p = newItems;
 		*p++ = isc_info_sql_sqlda_start;
@@ -1409,11 +1402,23 @@ static void iterativeSqlInfo(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle, 
 		memcpy(p, items, itemLength);
 		p += itemLength;
 
+		bufferOffset += bufferLen;
+
+		size_t len = buffer.getCount();
+		bufferPtr = buffer.getBuffer(len * 2) + bufferOffset;
+
 		if (isc_dsql_sql_info(userStatus, stmtHandle, (SSHORT) (p - newItems), newItems,
-				bufferLength, buffer))
+				len, bufferPtr))
 		{
+			buffer.shrink(len);
 			break;
 		}
+
+		// Skip isc_info_sql_select/isc_info_sql_bind, isc_info_sql_describe_vars and a counter.
+		unsigned removeCount = 2 + 2 +
+			static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(bufferPtr + 2), 2));
+
+		bufferPtr = buffer.remove(bufferPtr, bufferPtr + removeCount);
 	}
 }
 
@@ -1972,16 +1977,16 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
 		statement->checkPrepared();
-		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_select];
+		SqldaSupport::Clause& clause = statement->dasup.clauses[SqldaSupport::SELECT_CLAUSE];
 
-		if (clause.dasup_info_len && clause.dasup_info_buf)
+		if (clause.infoBuffer.hasData())
 		{
 			iterativeSqlInfo(status, stmtHandle, sizeof(DESCRIBE_SELECT_INFO), DESCRIBE_SELECT_INFO,
-				clause.dasup_info_len, clause.dasup_info_buf, dialect, sqlda);
+				clause.infoBuffer, dialect, sqlda);
 		}
 		else
 		{
-			HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> localBuffer;
+			Array<SCHAR> localBuffer;
 			const USHORT bufferLen = sqldaBufferSize(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR* buffer = localBuffer.getBuffer(bufferLen);
 
@@ -1989,7 +1994,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 					DESCRIBE_SELECT_INFO, bufferLen, buffer))
 			{
 				iterativeSqlInfo(status, stmtHandle, sizeof(DESCRIBE_SELECT_INFO),
-					DESCRIBE_SELECT_INFO, bufferLen, buffer, dialect, sqlda);
+					DESCRIBE_SELECT_INFO, localBuffer, dialect, sqlda);
 			}
 		}
 	}
@@ -2012,16 +2017,16 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
-		sqlda_sup::dasup_clause& clause = statement->das.dasup_clauses[DASUP_CLAUSE_bind];
+		SqldaSupport::Clause& clause = statement->dasup.clauses[SqldaSupport::BIND_CLAUSE];
 
-		if (clause.dasup_info_len && clause.dasup_info_buf)
+		if (clause.infoBuffer.hasData())
 		{
 			iterativeSqlInfo(status, stmtHandle, sizeof(DESCRIBE_BIND_INFO), DESCRIBE_BIND_INFO,
-				clause.dasup_info_len, clause.dasup_info_buf, dialect, sqlda);
+				clause.infoBuffer, dialect, sqlda);
 		}
 		else
 		{
-			HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> localBuffer;
+			Array<SCHAR> localBuffer;
 			const USHORT bufferLen = sqldaBufferSize(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR* buffer = localBuffer.getBuffer(bufferLen);
 
@@ -2029,7 +2034,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 					bufferLen, buffer))
 			{
 				iterativeSqlInfo(status, stmtHandle, sizeof(DESCRIBE_BIND_INFO), DESCRIBE_BIND_INFO,
-					bufferLen, buffer, dialect, sqlda);
+					localBuffer, dialect, sqlda);
 			}
 		}
 	}
@@ -2062,31 +2067,31 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
-		sqlda_sup* dasup = &statement->das;
+		SqldaSupport* dasup = &statement->dasup;
 		statement->checkPrepared();
 
 		if (UTLD_parse_sqlda(status, dasup, &inBlrLength, &inMsgType, &inMsgLength,
-				dialect, inSqlda, DASUP_CLAUSE_bind))
+				dialect, inSqlda, SqldaSupport::BIND_CLAUSE))
 		{
 			return status[1];
 		}
 
 		if (UTLD_parse_sqlda(status, dasup, &outBlrLength, &outMsgType, &outMsgLength,
-				dialect, outSqlda, DASUP_CLAUSE_select))
+				dialect, outSqlda, SqldaSupport::SELECT_CLAUSE))
 		{
 			return status[1];
 		}
 
 		if (isc_dsql_execute2_m(status, traHandle, stmtHandle,
-				inBlrLength, dasup->dasup_clauses[DASUP_CLAUSE_bind].dasup_blr,
-				inMsgType, inMsgLength, dasup->dasup_clauses[DASUP_CLAUSE_bind].dasup_msg,
-				outBlrLength, dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-				outMsgType, outMsgLength, dasup->dasup_clauses[DASUP_CLAUSE_select].dasup_msg))
+				inBlrLength, dasup->clauses[SqldaSupport::BIND_CLAUSE].blrBuffer.begin(),
+				inMsgType, inMsgLength, dasup->clauses[SqldaSupport::BIND_CLAUSE].msgBuffer.begin(),
+				outBlrLength, dasup->clauses[SqldaSupport::SELECT_CLAUSE].blrBuffer.begin(),
+				outMsgType, outMsgLength, dasup->clauses[SqldaSupport::SELECT_CLAUSE].msgBuffer.begin()))
 		{
 			return status[1];
 		}
 
-		if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL, dialect, outSqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, dasup, NULL, NULL, NULL, dialect, outSqlda, SqldaSupport::SELECT_CLAUSE))
 			return status[1];
 	}
 	catch (const Exception& e)
@@ -2182,8 +2187,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 {
 	StatusVector status(userStatus);
 	ISC_STATUS s = 0;
-	sqlda_sup dasup;
-	memset(&dasup, 0, sizeof(sqlda_sup));
+	SqldaSupport dasup;
 
 	try
 	{
@@ -2193,27 +2197,27 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 		USHORT inBlrLength, inMsgType, inMsgLength, outBlrLength, outMsgType, outMsgLength;
 
 		if (UTLD_parse_sqlda(status, &dasup, &inBlrLength, &inMsgType, &inMsgLength,
-				dialect, inSqlda, DASUP_CLAUSE_bind))
+				dialect, inSqlda, SqldaSupport::BIND_CLAUSE))
 		{
 			return status[1];
 		}
 
 		if (UTLD_parse_sqlda(status, &dasup, &outBlrLength, &outMsgType, &outMsgLength,
-				dialect, outSqlda, DASUP_CLAUSE_select))
+				dialect, outSqlda, SqldaSupport::SELECT_CLAUSE))
 		{
 			return status[1];
 		}
 
 		s = isc_dsql_exec_immed2_m(status, dbHandle, traHandle, stmtLength, sqlStmt, dialect,
-				inBlrLength, dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_blr,
-				inMsgType, inMsgLength, dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_msg,
-				outBlrLength, dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-				outMsgType, outMsgLength, dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
+				inBlrLength, dasup.clauses[SqldaSupport::BIND_CLAUSE].blrBuffer.begin(),
+				inMsgType, inMsgLength, dasup.clauses[SqldaSupport::BIND_CLAUSE].msgBuffer.begin(),
+				outBlrLength, dasup.clauses[SqldaSupport::SELECT_CLAUSE].blrBuffer.begin(),
+				outMsgType, outMsgLength, dasup.clauses[SqldaSupport::SELECT_CLAUSE].msgBuffer.begin());
 
 		if (!s)
 		{
 			s =	UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect,
-					outSqlda, DASUP_CLAUSE_select);
+					outSqlda, SqldaSupport::SELECT_CLAUSE);
 		}
 	}
 	catch (const Exception& e)
@@ -2222,7 +2226,6 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 		s = status[1];
 	}
 
-	releaseDsqlSupport(dasup);
 	return s;
 }
 
@@ -2389,24 +2392,24 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
 		statement->checkPrepared();
-		sqlda_sup& dasup = statement->das;
+		SqldaSupport& dasup = statement->dasup;
 
 		USHORT blrLength, msgType, msgLength;
 
 		if (UTLD_parse_sqlda(status, &dasup, &blrLength, &msgType, &msgLength,
-				dialect, sqlda, DASUP_CLAUSE_select))
+				dialect, sqlda, SqldaSupport::SELECT_CLAUSE))
 		{
 			return status[1];
 		}
 
 		ISC_STATUS s = isc_dsql_fetch_m(status, stmtHandle,
-			blrLength, dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_blr,
-			0, msgLength, dasup.dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
+			blrLength, dasup.clauses[SqldaSupport::SELECT_CLAUSE].blrBuffer.begin(),
+			0, msgLength, dasup.clauses[SqldaSupport::SELECT_CLAUSE].msgBuffer.begin());
 
 		if (s && s != 101)
 			return s;
 
-		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect, sqlda, DASUP_CLAUSE_select))
+		if (UTLD_parse_sqlda(status, &dasup, NULL, NULL, NULL, dialect, sqlda, SqldaSupport::SELECT_CLAUSE))
 			return status[1];
 	}
 	catch (const Exception& e)
@@ -2480,18 +2483,18 @@ ISC_STATUS API_ROUTINE isc_dsql_insert(ISC_STATUS* userStatus, FB_API_HANDLE* st
 
 		statement->checkPrepared();
 
-		sqlda_sup& dasup = statement->das;
+		SqldaSupport& dasup = statement->dasup;
 		USHORT blrLength, msgType, msgLength;
 
 		if (UTLD_parse_sqlda(status, &dasup, &blrLength, &msgType, &msgLength,
-				dialect, sqlda, DASUP_CLAUSE_bind))
+				dialect, sqlda, SqldaSupport::BIND_CLAUSE))
 		{
 			return status[1];
 		}
 
 		return isc_dsql_insert_m(status, stmtHandle, blrLength,
-			dasup.dasup_clauses[DASUP_CLAUSE_bind].dasup_blr, 0, msgLength,
-			dasup.dasup_clauses[DASUP_CLAUSE_bind]. dasup_msg);
+			dasup.clauses[SqldaSupport::BIND_CLAUSE].blrBuffer.begin(), 0, msgLength,
+			dasup.clauses[SqldaSupport::BIND_CLAUSE].msgBuffer.begin());
 	}
 	catch (const Exception& e)
 	{
@@ -2536,7 +2539,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 	try
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
-		sqlda_sup& dasup = statement->das;
+		SqldaSupport& dasup = statement->dasup;
 
 		const USHORT bufferLen = sqldaBufferSize(PREPARE_BUFFER_SIZE, sqlda, dialect);
 		Array<SCHAR> dbPrepareBuffer;
@@ -2546,65 +2549,52 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 				sizeof(SQL_PREPARE_INFO2), SQL_PREPARE_INFO2, bufferLen, buffer))
 		{
 			statement->prepared = false;
-			releaseDsqlSupport(dasup);
-			memset(&dasup, 0, sizeof(dasup));
-
-			dasup.dasup_dialect = dialect;
+			dasup.clear();
 
 			SCHAR* p = buffer;
 
-			dasup.dasup_stmt_type = 0;
+			dasup.stmtType = 0;
 
 			if (*p == isc_info_sql_stmt_type)
 			{
 				const USHORT len = gds__vax_integer((UCHAR*) p + 1, 2);
-				dasup.dasup_stmt_type = gds__vax_integer((UCHAR*) p + 3, len);
+				dasup.stmtType = gds__vax_integer((UCHAR*) p + 3, len);
 				p += 3 + len;
 			}
 
-			sqlda_sup::dasup_clause &das_select = dasup.dasup_clauses[DASUP_CLAUSE_select];
-			sqlda_sup::dasup_clause &das_bind = dasup.dasup_clauses[DASUP_CLAUSE_bind];
-			das_select.dasup_info_buf = das_bind.dasup_info_buf = NULL;
-			das_select.dasup_info_len = das_bind.dasup_info_len = NULL;
+			SqldaSupport::Clause& selectClause = dasup.clauses[SqldaSupport::SELECT_CLAUSE];
+			SqldaSupport::Clause& bindClause = dasup.clauses[SqldaSupport::BIND_CLAUSE];
+			selectClause.infoBuffer.clear();
+			bindClause.infoBuffer.clear();
 
-			SCHAR* bufSelect = NULL;	// pointer in the buffer where isc_info_sql_select starts
-			USHORT lenSelect = 0;	// length of isc_info_sql_select part
+			SCHAR* x1 = NULL;
 
 			if (*p == isc_info_sql_select)
-			{
-				das_select.dasup_info_buf = p;
-				bufSelect = p;
-				lenSelect = bufferLen - (bufSelect - buffer);
-			}
+				x1 = p;
 
-			das_bind.dasup_info_buf = UTLD_skip_sql_info(p);
+			SCHAR* x2 = UTLD_skip_sql_info(p);
 
-			p = das_select.dasup_info_buf;
+			p = x1;
 
 			if (p)
 			{
-				SCHAR* p2 = das_bind.dasup_info_buf;
+				SCHAR* p2 = x2;
 				if (p2)
 				{
 					const SLONG len = p2 - p;
 
-					p2 = new SCHAR[len + 1];
+					p2 = selectClause.infoBuffer.getBuffer(len + 1);
 					memmove(p2, p, len);
 					p2[len] = isc_info_end;
-					das_select.dasup_info_buf = p2;
-					das_select.dasup_info_len = len + 1;
-
-					bufSelect = das_select.dasup_info_buf;
-					lenSelect = das_select.dasup_info_len;
 				}
 				else
 				{
-					das_select.dasup_info_buf = NULL;
-					das_select.dasup_info_len = 0;
+					p2 = selectClause.infoBuffer.getBuffer(bufferLen - (x1 - buffer));
+					memmove(p2, x1, selectClause.infoBuffer.getCount());
 				}
 			}
 
-			p = das_bind.dasup_info_buf;
+			p = x2;
 
 			if (p)
 			{
@@ -2613,21 +2603,14 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 				{
 					const SLONG len = p2 - p;
 
-					p2 = new SCHAR[len + 1];
+					p2 = bindClause.infoBuffer.getBuffer(len + 1);
 					memmove(p2, p, len);
 					p2[len] = isc_info_end;
-					das_bind.dasup_info_buf = p2;
-					das_bind.dasup_info_len = len + 1;
-				}
-				else
-				{
-					das_bind.dasup_info_buf = NULL;
-					das_bind.dasup_info_len = 0;
 				}
 			}
 
 			iterativeSqlInfo(status, stmtHandle, sizeof(SQL_PREPARE_INFO),
-				SQL_PREPARE_INFO, lenSelect, bufSelect, dialect, sqlda);
+				SQL_PREPARE_INFO, selectClause.infoBuffer, dialect, sqlda);
 
 			// Statement prepared OK.
 			statement->prepared = true;
@@ -3888,8 +3871,6 @@ YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 {
 	attachment->childStatements.add(this);
 	handle = makeHandle(&statements, this);
-
-	memset(&das, 0, sizeof das);
 }
 
 void YStatement::destroy()
@@ -3903,8 +3884,6 @@ void YStatement::destroy()
 	attachment->childStatements.remove(this);
 
 	removeHandle(&statements, handle);
-
-	releaseDsqlSupport(das);
 
 	next = NULL;
 	release();
@@ -3948,14 +3927,14 @@ void YStatement::getInfo(Status* status, unsigned int itemsLength,
 		if (((itemsLength == 1 && items[0] == isc_info_sql_stmt_type) ||
 				(itemsLength == 2 && items[0] == isc_info_sql_stmt_type &&
 					(items[1] == isc_info_end || items[1] == 0))) &&
-			prepared && das.dasup_stmt_type)
+			prepared && dasup.stmtType)
 		{
 			if (bufferLength >= 8)
 			{
 				*buffer++ = isc_info_sql_stmt_type;
 				put_vax_short((UCHAR*) buffer, 4);
 				buffer += 2;
-				put_vax_long((UCHAR*) buffer, das.dasup_stmt_type);
+				put_vax_long((UCHAR*) buffer, dasup.stmtType);
 				buffer += 4;
 				*buffer = isc_info_end;
 			}
