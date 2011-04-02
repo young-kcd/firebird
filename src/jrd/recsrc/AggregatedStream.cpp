@@ -81,9 +81,8 @@ void AggregatedStream::open(thread_db* tdbb) const
 
 	unsigned impureCount = m_group ? m_group->getCount() : 0;
 	impureCount += m_order ? m_order->getCount() : 0;
-	fb_assert(impureCount > 0);
-	
-	if (!impure->impureValues)
+
+	if (!impure->impureValues && impureCount > 0)
 	{
 		impure->impureValues = FB_NEW(*tdbb->getDefaultPool()) impure_value[impureCount];
 		memset(impure->impureValues, 0, sizeof(impure_value) * impureCount);
