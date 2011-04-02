@@ -179,7 +179,7 @@ void LongJump::raise()
 
 ISC_STATUS LongJump::stuffException(Status* status) const throw()
 {
-	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR)"Unexpected Firebird::LongJump"};
+	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump"};
 
 	if (status)
 	{

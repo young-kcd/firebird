@@ -161,7 +161,7 @@ namespace Firebird
 
 		AbstractString(const size_type limit, const AbstractString& v);
 
-		AbstractString(const size_type limit) :
+		explicit AbstractString(const size_type limit) :
 			max_length(static_cast<internal_size_type>(limit)),
 			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
@@ -211,7 +211,7 @@ namespace Firebird
 
 		void baseTrim(const TrimType whereTrim, const_pointer toTrim);
 
-		size_type getMaxLength()
+		size_type getMaxLength() const
 		{
 			return max_length;
 		}

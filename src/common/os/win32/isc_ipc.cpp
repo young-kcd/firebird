@@ -73,7 +73,7 @@ const int MAX_OPN_EVENTS	= 40;
 class OpenEvents
 {
 public:
-	OpenEvents(Firebird::MemoryPool&)
+	explicit OpenEvents(Firebird::MemoryPool&)
 	{
 		memset(&m_events, 0, sizeof(m_events));
 		m_count = 0;

@@ -195,7 +195,7 @@ class DummyStorage
 class UnloadDetectorHelper : public DisposeIface<IModuleCleanup, DummyStorage>
 {
 public:
-	UnloadDetectorHelper(MemoryPool&)
+	explicit UnloadDetectorHelper(MemoryPool&)
 		: flagOsUnload(true), cleanup(NULL)
 	{ }
 

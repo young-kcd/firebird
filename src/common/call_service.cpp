@@ -334,7 +334,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
-	int op = userData.op;
+	const int op = userData.op;
 	if (op != DIS_OPER &&
 		op != OLD_DIS_OPER &&
 		op != MAP_SET_OPER &&

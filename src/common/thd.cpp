@@ -197,7 +197,7 @@ public:
 	{
 		pthread_key_delete(key);
 	}
-	RemoveUnneededKey(Firebird::MemoryPool&)
+	explicit RemoveUnneededKey(Firebird::MemoryPool&)
 	{ }
 };
 Firebird::GlobalPtr<RemoveUnneededKey> removeUnneededKey;

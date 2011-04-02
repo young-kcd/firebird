@@ -262,8 +262,8 @@ public:
 
 	void leave()
 	{
-		fb_assert(lockCount > 0);
 #ifdef DEV_BUILD
+		fb_assert(lockCount > 0);
 		--lockCount;
 #endif
 		int rc = pthread_mutex_unlock(&mlock);

@@ -236,7 +236,7 @@ private:
 	MemoryPool(MemoryPool& parent, MemoryStats& stats,
 			   bool shared = true, int rounding = DEFAULT_ROUNDING,
 			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
-	MemoryPool(bool shared = true, int rounding = DEFAULT_ROUNDING,
+	explicit MemoryPool(bool shared = true, int rounding = DEFAULT_ROUNDING,
 			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
 	void init(void* memory, size_t length);
 	virtual ~MemoryPool(void);
