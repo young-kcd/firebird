@@ -687,6 +687,12 @@ public:
 		return NULL;
 	}
 
+	virtual PProvider* FB_CARG getDispatcher()
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
 	virtual IPlugin* FB_CARG getPluginInterface()
 	{
 		fb_assert(false);

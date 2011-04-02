@@ -182,6 +182,7 @@ public:
 	virtual void FB_CARG commitRetaining(Status* status);
 	virtual void FB_CARG rollback(Status* status);
 	virtual void FB_CARG rollbackRetaining(Status* status);
+	virtual void FB_CARG disconnect(Status* status);
 
 public:
 	Transaction(Rtr* handle) : transaction(handle) { }
@@ -209,7 +210,7 @@ int Transaction::release()
 	if (transaction)
 	{
 		LocalStatus status;
-		rollback(&status);
+		rollback(&status);	// ASF: Is this correct for reconnected transactions?
 	}
 	else
 		delete this;
@@ -3679,6 +3680,26 @@ void Transaction::rollback(Status* status)
 		release_transaction(transaction);
 		transaction = NULL;
 		release();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
+void Transaction::disconnect(Status* status)
+{
+	try
+	{
+		reset(status);
+
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		Rdb* rdb = transaction->rtr_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+
+		// ASF: Looks wrong that this method is ignored in the engine and remote providers.
 	}
 	catch (const Exception& ex)
 	{

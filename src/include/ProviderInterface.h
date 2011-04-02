@@ -61,15 +61,15 @@ public:
 	{
 	}
 
-	MessageBuffer(const Message* aMessage, const unsigned char* aBuffer)
-		: message(aMessage),
-		  buffer(const_cast<unsigned char*>(aBuffer))
-	{
-	}
-
 public:
 	const Message* const message;
 	unsigned char* const buffer;
+};
+
+class CleanupCallback
+{
+public:
+	virtual void FB_CARG cleanupCallbackFunction() = 0;
 };
 
 class EventCallback
@@ -123,7 +123,7 @@ public:
 	virtual void FB_CARG commitRetaining(Status* status) = 0;
 	virtual void FB_CARG rollback(Status* status) = 0;
 	virtual void FB_CARG rollbackRetaining(Status* status) = 0;
-	// virtual void FB_CARG disconnect(Status* status) = 0;		// Y-valve only object
+	virtual void FB_CARG disconnect(Status* status) = 0;
 };
 #define FB_I_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 12)
 

@@ -3302,6 +3302,28 @@ void jrd_tra::rollback(Status* user_status)
 }
 
 
+void jrd_tra::disconnect(Status* user_status)
+{
+	try
+	{
+		ThreadContextHolder tdbb(user_status);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		// ASF: Looks wrong that this method is ignored in the engine and remote providers.
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
+
 int blb::seek(Status* user_status, int mode, int offset)
 {
 /**************************************

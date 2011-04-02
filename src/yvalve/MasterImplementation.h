@@ -29,10 +29,14 @@
 #ifndef YVALVE_MASTER_IMPLEMENTATION_H
 #define YVALVE_MASTER_IMPLEMENTATION_H
 
-namespace Firebird {
+#include "firebird.h"
+#include "Interface.h"
 
-void shutdownTimers();
+namespace Why
+{
+	extern Firebird::PProvider* dispatcherPtr;
 
-} // namespace Firebird
+	void shutdownTimers();
+} // namespace Why
 
 #endif // YVALVE_MASTER_IMPLEMENTATION_H

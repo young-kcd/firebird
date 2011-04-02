@@ -326,6 +326,7 @@ public:
 	virtual void FB_CARG commitRetaining(Status* status);
 	virtual void FB_CARG rollback(Status* status);
 	virtual void FB_CARG rollbackRetaining(Status* status);
+	virtual void FB_CARG disconnect(Status* status);
 };
 
 // System transaction is always transaction 0.

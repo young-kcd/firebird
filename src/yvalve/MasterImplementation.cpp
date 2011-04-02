@@ -44,12 +44,15 @@
 #include "../common/utils_proto.h"
 #include "../jrd/ibase.h"
 
-namespace Firebird {
+using namespace Firebird;
+
+namespace Why {
 
 class MasterImplementation : public StackIface<IMaster>
 {
 public:
 	Status* FB_CARG getStatusInstance();
+	PProvider* FB_CARG getDispatcher();
 	IPlugin* FB_CARG getPluginInterface();
 	int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass);
 	const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
@@ -69,9 +72,19 @@ private:
 	}
 };
 
-Firebird::Status* FB_CARG Firebird::MasterImplementation::getStatusInstance()
+Firebird::Status* FB_CARG MasterImplementation::getStatusInstance()
 {
 	return new UserStatus;
+}
+
+//
+// getDispatcher()
+//
+
+PProvider* FB_CARG MasterImplementation::getDispatcher()
+{
+	dispatcherPtr->addRef();
+	return dispatcherPtr;
 }
 
 //
@@ -157,7 +170,7 @@ int FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
 	return 0;
 }
 
-} // namespace Firebird
+} // namespace Why
 
 //
 // circularAlloc()
@@ -328,7 +341,7 @@ Firebird::GlobalPtr<StringsBuffer> allStrings;
 
 } // anonymous namespace
 
-namespace Firebird {
+namespace Why {
 
 const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t len, intptr_t thr)
 {
@@ -342,7 +355,7 @@ const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t le
 // timer
 //
 
-namespace Firebird {
+namespace Why {
 
 namespace {
 
@@ -512,7 +525,7 @@ void shutdownTimers()
 	timerHolder.cleanup();
 }
 
-} // namespace Firebird
+} // namespace Why
 
 
 //
@@ -521,7 +534,7 @@ void shutdownTimers()
 
 Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
 {
-	static Firebird::Static<Firebird::MasterImplementation> master;
+	static Firebird::Static<Why::MasterImplementation> master;
 
 	return &master;
 }

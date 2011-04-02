@@ -72,6 +72,7 @@ public:
 	virtual int FB_CARG isSuccess() const = 0;
 };
 
+class PProvider;
 class IPlugin;
 class ITimerControl;
 
@@ -82,6 +83,7 @@ public:
 	const static unsigned int VERSION = 1;	// To be changed each time any interface is changed
 
 	virtual Status* FB_CARG getStatusInstance() = 0;
+	virtual PProvider* FB_CARG getDispatcher() = 0;
 	virtual IPlugin* FB_CARG getPluginInterface() = 0;
 	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
