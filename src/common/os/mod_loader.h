@@ -98,7 +98,7 @@ public:
 	static void doctorModuleExtension(Firebird::PathName&);
 
 	/** Almost like loadModule(), but in case of failure invokes doctorModuleExtension()
-		adn retries.
+		and retries.
 	**/
 	static Module* fixAndLoadModule(const Firebird::PathName& modName)
 	{
