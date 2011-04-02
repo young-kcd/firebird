@@ -2716,7 +2716,7 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
  **************************************
  *
  * Functional description
- *	Abort a partially completed blob.
+ *	Get a segment from a blob.
  *
  **************************************/
 	unsigned int len = 0;
@@ -3948,11 +3948,11 @@ void Attachment::transactRequest(Status* user_status, ITransaction* tra,
 				request = JrdStatement::makeRequest(tdbb, csb, false);
 				request->getStatement()->verifyAccess(tdbb);
 
-				const MessageNode* node;
-
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-					if ((node = csb->csb_rpt[i].csb_message))
+	
+					const MessageNode* node = csb->csb_rpt[i].csb_message;
+					if (node)
 					{
 						if (node->messageNumber == 0)
 							inMessage = node;
