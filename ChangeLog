@@ -1,3 +1,27 @@
+ 2011-04-01 19:39  asfernandes 
+   M src/jrd/met.epp
+Fix related to change done for CORE-3418. It brokes insertion of permission in just created database.
+
+ 2011-04-01 18:39  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+Fixed problem with position handling (see CORE-2797).
+
+ 2011-04-01 15:28  hvlad 
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.cpp
+Avoid AV when system requests are released at database shutdown
+
+ 2011-04-01 05:26  dimitr 
+   M src/dsql/DdlNodes.epp
+Apply Adriano's yesterday fix to functions as well.
+
+ 2011-04-01 04:03  robocop 
+   M doc/README.fb_shutdown
+   M doc/sql.extensions/README.ddl_triggers.txt
+Misc.
+
  2011-04-01 02:05  asfernandes 
    M src/auth/SecurityDatabase/LegacyServer.cpp
    M src/common/classes/ImplementHelper.h
