@@ -395,12 +395,10 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, const dsql_nod* r
 			relation_name = ((dsql_str*) relation_node->nod_arg[e_sel_alias])->str_data;
 		break;
 	default:
-		{
-			if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
-				relation_name = procNode->dsqlName.identifier;
-			else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
-				relation_name = relNode->dsqlName;
-		}
+		if ((procNode = ExprNode::as<ProcedureSourceNode>(relation_node)))
+			relation_name = procNode->dsqlName.identifier;
+		else if ((relNode = ExprNode::as<RelationSourceNode>(relation_node)))
+			relation_name = relNode->dsqlName;
 		break;
 	}
 
@@ -676,7 +674,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 				const bool isRecursive =
 					(query->nod_type == nod_list) && (query->nod_flags & NOD_UNION_RECURSIVE);
 
-				dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_sel_alias];
+				dsql_str* const save_cte_name = (dsql_str*) cte->nod_arg[e_sel_alias];
 				if (!isRecursive)
 					cte->nod_arg[e_sel_alias] = (dsql_nod*) MAKE_cstring(rel_alias.c_str());
 
@@ -686,7 +684,7 @@ dsql_nod* PASS1_node(DsqlCompilerScratch* dsqlScratch, dsql_nod* input)
 					cte, (isRecursive ? rel_alias.c_str() : NULL));
 
 				if (!isRecursive)
-					cte->nod_arg[e_sel_alias] = (dsql_nod*) cte_name;
+					cte->nod_arg[e_sel_alias] = (dsql_nod*) save_cte_name;
 
 				dsqlScratch->currCtes.pop();
 
@@ -3057,6 +3055,7 @@ static dsql_ctx* pass1_alias(DsqlCompilerScratch* dsqlScratch, DsqlContextStack&
 		{
 			if (context->ctx_internal_alias == alias->str_data)
 				return context;
+
 			continue;
 		}
 
@@ -4607,8 +4606,8 @@ bool PASS1_set_parameter_type(DsqlCompilerScratch* dsqlScratch, dsql_nod* in_nod
 	ValueExprNode* exprNode = reinterpret_cast<ValueExprNode*>(in_node->nod_arg[0]);
 	if (exprNode->kind == DmlNode::KIND_VALUE)
 		return exprNode->setParameterType(dsqlScratch, node, force_varchar);
-	else
-		return false;
+
+	return false;
 }
 
 

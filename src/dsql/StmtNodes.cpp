@@ -439,6 +439,7 @@ StmtNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 void BlockNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 {
 	text = "BlockNode";
+	// print handlers, too?
 }
 
 void BlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -765,6 +766,7 @@ CompoundStmtNode* CompoundStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
 		doPass1(tdbb, csb, i->getAddress());
+
 	return this;
 }
 
@@ -1184,6 +1186,7 @@ void DeclareCursorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	dsql_nod** ptr = temp->nod_arg;
 	dsql_nod** end = ptr + temp->nod_count;
 
+	fb_assert(temp->nod_count < MAX_USHORT);
 	dsqlScratch->appendUShort(temp->nod_count);
 
 	while (ptr < end)
@@ -1340,7 +1343,7 @@ static RegisterNode<EraseNode> regEraseNode(blr_erase);
 
 DmlNode* EraseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 {
-	USHORT n = csb->csb_blr_reader.getByte();
+	const USHORT n = csb->csb_blr_reader.getByte();
 
 	if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
 		PAR_error(csb, Arg::Gds(isc_ctxnotdef));
@@ -1822,6 +1825,7 @@ void ErrorHandlerNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_error_handler);
+	fb_assert(conditions.getCount() < MAX_USHORT);
 	dsqlScratch->appendUShort(USHORT(conditions.getCount()));
 
 	for (ExceptionArray::iterator i = conditions.begin(); i != conditions.end(); ++i)
@@ -2018,7 +2022,7 @@ Array<dsql_nod*>* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScr
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 	DEV_BLKCHK(procedure, dsql_type_prc);
 
-	const SSHORT count = procedure->prc_out_count;
+	const USHORT count = procedure->prc_out_count;
 	Array<dsql_nod*>* output = FB_NEW(getPool()) Array<dsql_nod*>(getPool(), count);
 
 	for (const dsql_fld* field = procedure->prc_outputs; field; field = field->fld_next)
@@ -2468,7 +2472,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		dsqlScratch->appendUChar((int)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
 	}
 
-	// If no new features of EXECUTE STATEMENT is used, lets generate old BLR.
+	// If no new features of EXECUTE STATEMENT are used, lets generate old BLR.
 	if (!dsqlDataSource && !dsqlUserName && !dsqlPassword && !dsqlRole && !useCallerPrivs &&
 		!dsqlInputs && !traScope)
 	{
@@ -4073,14 +4077,16 @@ void LoopNode::print(string& text, Array<dsql_nod*>& /*nodes*/) const
 void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar(blr_label);
-	dsqlScratch->appendUChar((UCHAR)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	const IPTR lblNum = (IPTR) dsqlLabel->nod_arg[Dsql::e_label_number];
+	fb_assert(lblNum < MAX_UCHAR);
+	dsqlScratch->appendUChar((UCHAR) lblNum);
 	dsqlScratch->appendUChar(blr_loop);
 	dsqlScratch->appendUChar(blr_begin);
 	dsqlScratch->appendUChar(blr_if);
 	GEN_expr(dsqlScratch, dsqlExpr);
 	statement->genBlr(dsqlScratch);
 	dsqlScratch->appendUChar(blr_leave);
-	dsqlScratch->appendUChar((UCHAR)(IPTR) dsqlLabel->nod_arg[Dsql::e_label_number]);
+	dsqlScratch->appendUChar((UCHAR) lblNum);
 	dsqlScratch->appendUChar(blr_end);
 }
 
@@ -4285,7 +4291,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		// Build the MODIFY node.
 		ModifyNode* modify = FB_NEW(pool) ModifyNode(pool);
 
-		dsql_ctx* old_context = dsqlGetContext(target);
+		dsql_ctx* const old_context = dsqlGetContext(target);
 		dsql_nod** ptr;
 
 		modify->dsqlContext = old_context;
@@ -4419,7 +4425,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		if (dsqlReturning)
 		{
-			dsql_ctx* old_context = dsqlGetContext(target);
+			dsql_ctx* const old_context = dsqlGetContext(target);
 			dsqlScratch->context->push(old_context);
 
 			dsql_ctx* context = dsqlGetContext(store->dsqlRelation);
@@ -5073,7 +5079,8 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 
 	if (request->req_operation == jrd_req::req_unwind)
 		return parentStmt;
-	else if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
+	
+	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
 	{
 		if (!exeState->topNode)
 		{
@@ -5521,7 +5528,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 
 	if (fields)
 	{
-		const dsql_nod* old_fields = fields; // for error reporting.
+		const dsql_nod* const old_fields = fields; // for error reporting.
 		fields = PASS1_node_psql(dsqlScratch, fields, false);
 
 		// We do not allow cases like INSERT INTO T (f1, f2, f1)...
@@ -5783,10 +5790,10 @@ bool StoreNode::pass1Store(thread_db* tdbb, CompilerScratch* csb, StoreNode* nod
 	}
 }
 
-// Build an default value assignments.
+// Build a default value assignments.
 void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 {
-	USHORT stream = relationSource->getStream();
+	const USHORT stream = relationSource->getStream();
 	jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
 
 	vec<jrd_fld*>* vector = relation->rel_fields;
@@ -5888,7 +5895,7 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// AB: Mark the streams involved with INSERT statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
 
-	USHORT stream = relationSource->getStream();
+	const USHORT stream = relationSource->getStream();
 	csb->csb_rpt[stream].csb_flags |= csb_active;
 
 	doPass2(tdbb, csb, statement.getAddress(), this);
@@ -7069,9 +7076,11 @@ static dsql_ctx* dsqlGetContext(const dsql_nod* node)
 
 	if ((procNode = ExprNode::as<ProcedureSourceNode>(node)))
 		return procNode->dsqlContext;
-	else if ((relNode = ExprNode::as<RelationSourceNode>(node)))
+	
+	if ((relNode = ExprNode::as<RelationSourceNode>(node)))
 		return relNode->dsqlContext;
-	else if ((rseNode = ExprNode::as<RseNode>(node)))
+	
+	if ((rseNode = ExprNode::as<RseNode>(node)))
 		return rseNode->dsqlContext;
 
 	fb_assert(false);
@@ -7171,8 +7180,8 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 		list->statements.add(input);
 		return list;
 	}
-	else
-		return nullAssign;	// return the initialization statement.
+	
+	return nullAssign;	// return the initialization statement.
 }
 
 // Check that a field is named only once in INSERT or UPDATE statements.
@@ -7336,7 +7345,7 @@ static dsql_nod* dsqlPassCursorReference( DsqlCompilerScratch* dsqlScratch, cons
 
 	dsql_par* source;
 	if (parent->getStatement()->getType() != DsqlCompiledStatement::TYPE_SELECT_UPD ||
-		!(source = dsqlFindDbKey(parent, relation_name)) || !rv_source)
+		!rv_source || !(source = dsqlFindDbKey(parent, relation_name)))
 	{
 		// cursor is not updatable
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-510) <<
@@ -7462,7 +7471,7 @@ static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, Returnin
 
 	if (stmt)
 	{
-		bool isPsql = dsqlScratch->isPsql();
+		const bool isPsql = dsqlScratch->isPsql();
 
 		PsqlChanger changer(dsqlScratch, false);
 		stmt = stmt->dsqlPass(dsqlScratch);
@@ -7571,9 +7580,9 @@ static StmtNode* dsqlProcessReturning(DsqlCompilerScratch* dsqlScratch, Returnin
 	return node;
 }
 
-// Setup parameter parameter name.
+// Setup parameter name.
 // This function was added as a part of array data type support for InterClient. It is called when
-// either "insert" or "update" statements are parsed. If the statements have input parameters, than
+// either "insert" or "update" statements are parsed. If the statements have input parameters, then
 // the parameter is assigned the name of the field it is being inserted (or updated). The same goes
 // to the name of a relation.
 // The names are assigned to the parameter only if the field is of array data type.
@@ -7935,6 +7944,7 @@ static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<Valida
 // an "accessor" name, then something accessed by this trigger
 // must require the access.
 //
+// CVC: The code no longer matches this comment.
 // CVC: The third parameter is the owner of the triggers vector
 // and was added to avoid triggers posting access checks to
 // their base tables, since it's nonsense and causes weird
