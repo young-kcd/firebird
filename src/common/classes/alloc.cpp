@@ -996,7 +996,7 @@ void MemoryPool::validate(void) throw ()
 
 	for (const MemBlock *block = freeObjects [slot]; block; block = (MemBlock*) block->pool)
 	{
-		if (slot != (-block->length) / roundingSize)
+		if (slot != block->length / roundingSize)
 			corrupt ("length trashed for block in slot");
 	}
 }
