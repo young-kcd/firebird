@@ -156,7 +156,7 @@ private:
 	class Factories : public Firebird::Array<FactoryInfo>
 	{
 	public:
-		Factories(Firebird::MemoryPool& p)
+		explicit Factories(Firebird::MemoryPool& p)
 			: Firebird::Array<FactoryInfo>(p)
 		{ }
 
@@ -185,7 +185,7 @@ private:
 	class Sessions : public Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, ULONG, SessionInfo>
 	{
 	public:
-		Sessions(MemoryPool& p)
+		explicit Sessions(MemoryPool& p)
 			: Firebird::SortedArray<SessionInfo, Firebird::EmptyStorage<SessionInfo>, ULONG, SessionInfo>(p)
 		{ }
 

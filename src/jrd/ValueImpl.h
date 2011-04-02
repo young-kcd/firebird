@@ -62,7 +62,7 @@ public:
 		const Firebird::MetaName& aName, bool aNullable);
 	ValueImpl(Firebird::MemoryPool& p, const Format* format, unsigned index, UCHAR* msg,
 		const Firebird::MetaName& aName, bool aNullable);
-	ValueImpl(Firebird::MemoryPool& p);
+	explicit ValueImpl(Firebird::MemoryPool& p);
 
 	virtual ~ValueImpl()
 	{

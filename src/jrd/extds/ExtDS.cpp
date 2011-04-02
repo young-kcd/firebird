@@ -1219,7 +1219,7 @@ void Statement::preprocess(const string& sql, string& ret)
 void Statement::setInParams(thread_db* tdbb, const string* const* names,
 	const ValueListNode* params)
 {
-	size_t count = params ? params->args.getCount() : 0;
+	const size_t count = params ? params->args.getCount() : 0;
 
 	m_error = (names && (m_sqlParamNames.getCount() != count || count == 0)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1338,7 +1338,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const string*
 // m_outDescs -> ValueExprNode
 void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 {
-	size_t count = params ? params->args.getCount() : 0;
+	const size_t count = params ? params->args.getCount() : 0;
 
 	if (count != getOutputs())
 	{

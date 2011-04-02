@@ -57,7 +57,7 @@ public:
 	class Display : public Firebird::StackIface<Auth::ListUsers>
 	{
 	public:
-		Display(UserManagement* um)
+		explicit Display(UserManagement* um)
 			: userManagement(um)
 		{ }
 

@@ -3662,15 +3662,13 @@ static int check_precommitted(const jrd_tra* transaction, const record_param* rp
 	{
 		if (transaction->tra_number == rpb->rpb_transaction_nr)
 			return tra_us;
-		else
+
+		const jrd_tra* tx = transaction->tra_attachment->att_transactions;
+		for (; tx; tx = tx->tra_next)
 		{
-			const jrd_tra* tx = transaction->tra_attachment->att_transactions;
-			for (; tx; tx = tx->tra_next)
+			if (tx->tra_number == rpb->rpb_transaction_nr)
 			{
-				if (tx->tra_number == rpb->rpb_transaction_nr)
-				{
-					return tra_active;
-				}
+				return tra_active;
 			}
 		}
 	}
@@ -4567,12 +4565,10 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_p
 			{
 				if ((rpb->rpb_flags & rpb_deleted) || rpb->rpb_b_page)
 					return udForceBack;
-				else
-				{
-					rpb->rpb_stream_flags |= RPB_s_undo_data;
-					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-					return udNotExists;
-				}
+
+				rpb->rpb_stream_flags |= RPB_s_undo_data;
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+				return udNotExists;
 			}
 
 			rpb->rpb_stream_flags |= RPB_s_undo_data;

@@ -116,7 +116,7 @@ InternalConnection::~InternalConnection()
 class IntStatus : public LocalStatus
 {
 public:
-	IntStatus(ISC_STATUS *p)
+	explicit IntStatus(ISC_STATUS *p)
 		: LocalStatus(), v(p)
 	{}
 

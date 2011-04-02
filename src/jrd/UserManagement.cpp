@@ -74,7 +74,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 	class UserIdInfo : public StackIface<Auth::LogonInfo>
 	{
 	public:
-		UserIdInfo(const Attachment* pAtt)
+		explicit UserIdInfo(const Attachment* pAtt)
 			: att(pAtt)
 		{ }
 

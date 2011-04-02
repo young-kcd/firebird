@@ -1002,9 +1002,9 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, USHORT stream
  *
  **************************************/
 
-	RecordKeyNode* keyNode;
+	const RecordKeyNode* keyNode = dbkey->as<RecordKeyNode>();
 
-	if ((keyNode = dbkey->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey)
+	if (keyNode && keyNode->blrOp == blr_dbkey)
 	{
 		if (keyNode->recStream == stream)
 			return dbkey;
@@ -1013,9 +1013,9 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, USHORT stream
 		return NULL;
 	}
 
-	ConcatenateNode* concatNode;
+	ConcatenateNode* concatNode = dbkey->as<ConcatenateNode>();
 
-	if ((concatNode = dbkey->as<ConcatenateNode>()))
+	if (concatNode)
 	{
 		ValueExprNode* dbkey_temp = findDbKey(concatNode->arg1, stream, position);
 
@@ -1382,7 +1382,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						restartLoop = true;
 						break;
 					}
-					else if (bestCandidate->condition)
+					
+					if (bestCandidate->condition)
 					{
 						bestCandidate = currentInv;
 						restartLoop = true;
@@ -1752,9 +1753,9 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 				value2 = cast;
 			}
 		}
-		// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
 		else if (desc1.dsc_dtype == dtype_sql_date && desc2.dsc_dtype == dtype_timestamp)
 		{
+			// for "DATE <op> TIMESTAMP" we need <op> to include the boundary value
 			excludeBound = false;
 		}
 	}
@@ -1996,7 +1997,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	ValueExprNode* dbkey = cmpNode->arg1;
 	ValueExprNode* value = cmpNode->arg2;
-	RecordKeyNode* keyNode;
+	const RecordKeyNode* keyNode;
 
 	if (!((keyNode = dbkey->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey) &&
 		!dbkey->is<ConcatenateNode>())
@@ -2028,7 +2029,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	// Make sure we have the correct stream
 	keyNode = dbkey->as<RecordKeyNode>();
-	fb_assert(keyNode);
+	fb_assert(keyNode && keyNode->blrOp == blr_dbkey);
 
 	if (keyNode->recStream != stream)
 		return NULL;
@@ -2184,12 +2185,14 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 			return invCandidate;
 		}
-		else if (invCandidate1)
+		
+		if (invCandidate1)
 		{
 			invCandidate1->condition = binaryNode->arg2;
 			return invCandidate1;
 		}
-		else if (invCandidate2)
+		
+		if (invCandidate2)
 		{
 			invCandidate2->condition = binaryNode->arg1;
 			return invCandidate2;
@@ -2385,9 +2388,9 @@ bool OptimizerRetrieval::validateStarts(IndexScratch* indexScratch, ComparativeB
 		}
 
 		// Every string starts with an empty string so don't bother using an index in that case.
-		LiteralNode* literal;
+		LiteralNode* literal = value->as<LiteralNode>();
 
-		if ((literal = value->as<LiteralNode>()))
+		if (literal)
 		{
 			if ((literal->litDesc.dsc_dtype == dtype_text && literal->litDesc.dsc_length == 0) ||
 				(literal->litDesc.dsc_dtype == dtype_varying &&

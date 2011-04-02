@@ -698,7 +698,7 @@ bool ProcedureSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
 	// Check if relation is a procedure.
 	if (dsqlContext->ctx_procedure)
 	{
-		// Check if a aggregate is buried inside the input parameters.
+		// Check if an aggregate is buried inside the input parameters.
 		return visitor.visit(&dsqlContext->ctx_proc_inputs);
 	}
 
@@ -941,7 +941,7 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 
 bool ProcedureSourceNode::jrdStreamFinder(USHORT /*findStream*/)
 {
-	// ASF: We used to visit nodes that were not handled appropriate. This is
+	// ASF: We used to visit nodes that were not handled appropriately. This is
 	// equivalent with the legacy code.
 	return sourceList && targetList;
 }
