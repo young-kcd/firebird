@@ -1,3 +1,7 @@
+ 2011-04-01 21:07  asfernandes 
+   M src/jrd/met.epp
+Fixed CORE-3426 - Inactive system triggers after fix for CORE-3418.
+
  2011-03-30 23:06  hvlad 
    M src/jrd/met.epp
 Fixed bug CORE-3418 : Inactive DB-trigger after Create/Alter Is Active
