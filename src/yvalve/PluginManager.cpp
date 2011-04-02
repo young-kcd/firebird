@@ -66,7 +66,7 @@ namespace
 		list.ltrim(" \t,;");
 	}
 
-	void extension(PathName& file, const char* newExt)
+	void changeExtension(PathName& file, const char* newExt)
 	{
 		PathName::size_type p = file.rfind(PathUtils::dir_sep);
 		if (p == PathName::npos)
@@ -89,7 +89,7 @@ namespace
 	class StaticConfHolder
 	{
 	public:
-		StaticConfHolder(MemoryPool&)
+		explicit StaticConfHolder(MemoryPool&)
 			: confFile(FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(),
 				fb_utils::getPrefix(fb_utils::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
@@ -356,7 +356,7 @@ namespace
 
 	struct CountByTypeArray
 	{
-		CountByTypeArray(MemoryPool&)
+		explicit CountByTypeArray(MemoryPool&)
 		{}
 
 		CountByType values[PluginType::MaxType];
@@ -539,7 +539,7 @@ namespace
 			}
 		}
 
-		Mutex mutex;
+		Mutex mutex; // locked by this class' destructor and by objects that use the plugins var below.
 		Semaphore* wakeIt;
 	};
 
@@ -715,7 +715,7 @@ namespace
 			}
 
 			PathName plugConfigFile = curModule;
-			extension(plugConfigFile, "conf");
+			changeExtension(plugConfigFile, "conf");
 
 			currentPlugin = new ConfiguredPlugin(m, r, conf, plugConfigFile, currentName);
 
@@ -815,7 +815,7 @@ void FB_CARG PluginManager::registerPlugin(unsigned int interfaceType, const cha
 	if (current == builtin)
 	{
 		PathName plugConfigFile = fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, defaultName);
-		extension(plugConfigFile, "conf");
+		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
 									findConfig("Plugin", defaultName), plugConfigFile, defaultName);

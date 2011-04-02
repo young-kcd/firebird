@@ -2828,7 +2828,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immediate(ISC_STATUS* user_status,
 {
 /**************************************
  *
- *	i s c _ d s q l _ e x e c _ i m m e d
+ *	i s c _ d s q l _ e x e c _ i m m e d i a t e
  *
  **************************************
  *
@@ -3044,7 +3044,8 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* user_status,
 		}
 
 		bool ret_v3_error = false;
-		if (!stmt_eaten) {
+		if (!stmt_eaten)
+		{
 			// Check if against < 4.0 database
 
 			const SCHAR ch = isc_info_base_level;
@@ -3064,7 +3065,8 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* user_status,
 			}
 		}
 
-		if (status[1]) {
+		if (status[1])
+		{
 			isc_rollback_transaction(temp_status, &crdb_trans_handle);
 			save_error_string(status);
 			isc_drop_database(temp_status, db_handle);
@@ -3072,7 +3074,8 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		if (isc_commit_transaction(status, &crdb_trans_handle)) {
+		if (isc_commit_transaction(status, &crdb_trans_handle))
+		{
 			isc_rollback_transaction(temp_status, &crdb_trans_handle);
 			save_error_string(status);
 			isc_drop_database(temp_status, db_handle);
@@ -4805,7 +4808,6 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* user_status,
  *
  **************************************/
 	TEB* vector = (TEB*) vec;
-	ISC_STATUS_ARRAY temp;
 	Transaction transaction(NULL);
 	Attachment attachment(NULL);
 
