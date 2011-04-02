@@ -337,7 +337,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	class Display : public Firebird::StackIface<Auth::ListUsers>
 	{
 	public:
-		Display(tsec* t)
+		explicit Display(tsec* t)
 			: tdsec(t), first(true)
 		{ }
 
@@ -1443,11 +1443,12 @@ void GSEC_print(USHORT number, const char* str)
 	util_output(true, "%s\n", buffer);
 }
 
+
 void GSEC_message(USHORT number, const char* str)
 {
 /**************************************
  *
- *	G S E C _ p r i n t
+ *	G S E C _ m e s s a g e
  *
  **************************************
  *
@@ -1464,6 +1465,7 @@ void GSEC_message(USHORT number, const char* str)
 	fb_msg_format(0, GSEC_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	util_output(false, "%s\n", buffer);
 }
+
 
 void GSEC_print_partial(USHORT number)
 {

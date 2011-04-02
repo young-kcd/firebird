@@ -841,7 +841,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (!tddba->uSvc->isService())
 	{
-		// Now it's time to take care ourself about shutdown handling
+		// Now it's time to take care ourselves about shutdown handling
 		if (fb_shutdown_callback(status_vector, gstatShutdown, fb_shut_confirmation, NULL))
 		{
 			dba_exit(FINI_ERROR, tddba);
