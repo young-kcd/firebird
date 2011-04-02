@@ -118,7 +118,7 @@ namespace Jrd
 
 		Module() : interMod(0) { }
 
-		Module(MemoryPool&) : interMod(0) { }
+		explicit Module(MemoryPool&) : interMod(0) { }
 
 		Module(MemoryPool&, const Module& m) : interMod(m.interMod)
 		{

@@ -909,7 +909,7 @@ ULONG INF_request_info(const jrd_req* request, const ULONG item_length, const UC
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end = info + output_length;
 	UCHAR* start_info = info;
-	bool infoLengthPresent = items[0] == isc_info_length;
+	const bool infoLengthPresent = items[0] == isc_info_length;
 
 	if (infoLengthPresent)
 		++items;

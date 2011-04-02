@@ -45,7 +45,7 @@ namespace Jrd
 		{
 		}
 
-		EngineCallbacks(Firebird::MemoryPool&)
+		explicit EngineCallbacks(Firebird::MemoryPool&)
 			: Callbacks(ERR_post)
 		{
 		}

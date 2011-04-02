@@ -142,7 +142,7 @@ namespace {
 
 		~UdfDirectoryList()
 		{
-			printf("Destroyed directory list\n");
+			//printf("Destroyed directory list\n");
 		}
 	};
 	Firebird::InitInstance<UdfDirectoryList> iUdfDirectoryList;

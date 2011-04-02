@@ -86,7 +86,7 @@ class BlobFilter : public pool_alloc<type_blf>
 	FPTR_BFILTER_CALLBACK	blf_filter;	// Entrypoint of filter
 	Firebird::string	blf_exception_message;	// message to be used in case of filter exception
     public:
-	BlobFilter(MemoryPool& p)
+	explicit BlobFilter(MemoryPool& p)
 		: blf_exception_message(p)
 	{ }
 };

@@ -278,7 +278,6 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 	USHORT* impure_flags = NULL;
 	const ParameterNode* toParam;
 	const VariableNode* toVar;
-	const FieldNode* toField;
 
 	if ((toParam = ExprNode::as<ParameterNode>(to)))
 	{
@@ -424,7 +423,9 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 
 	// Handle the null flag as appropriate for fields and message arguments.
 
-	if ((toField = ExprNode::as<FieldNode>(to)))
+
+	const FieldNode* toField = ExprNode::as<FieldNode>(to);
+	if (toField)
 	{
 		Record* record = request->req_rpb[toField->fieldStream].rpb_record;
 
