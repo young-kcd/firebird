@@ -1744,6 +1744,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\parse.y"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\Parser.cpp"
 				>
 			</File>
@@ -1825,10 +1829,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\security.cpp"
 				>
 			</File>
 		</Filter>

@@ -388,6 +388,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\security.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\sha.cpp"
 				>
 			</File>
@@ -802,6 +806,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\sdltable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\security.h"
 				>
 			</File>
 			<File

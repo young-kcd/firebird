@@ -345,7 +345,7 @@
 			Name="AUTH files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\SecurityDatabase\pwd.cpp"
+				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp"
 				>
 			</File>
 		</Filter>
