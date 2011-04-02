@@ -792,8 +792,8 @@ dsql_nod* DsqlCompilerScratch::pass1RseIsRecursive(dsql_nod* inputNod)
 		resultNod->nod_arg[0] = reinterpret_cast<dsql_nod*>(result);
 		return resultNod;
 	}
-	else
-		return NULL;
+
+	return NULL;
 }
 
 // Check if table reference is recursive i.e. its name is equal to the name of current processing CTE.

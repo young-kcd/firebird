@@ -57,7 +57,7 @@ public:
 	{
 	}
 
-	ExceptionItem(MemoryPool& pool)
+	explicit ExceptionItem(MemoryPool& pool)
 		: PermanentStorage(pool),
 		  type(Type(0)),
 		  code(0),
@@ -75,7 +75,7 @@ public:
 
 	Type type;
 	SLONG code;
-	// ASF: There is some inconsistencies in the type of 'name'. Metanames has maximum of 31 chars,
+	// ASF: There are some inconsistencies in the type of 'name'. Metanames have maximum of 31 chars,
 	// while there are system exceptions with 32 chars. The parser always expects metanames, but
 	// I'm following the legacy code and making this a string.
 	Firebird::string name;

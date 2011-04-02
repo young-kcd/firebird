@@ -73,6 +73,7 @@ typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
 
 
+
 template <typename T>
 class RegisterNode
 {
@@ -258,7 +259,7 @@ public:
 
 
 // Stores a reference to a specialized ExprNode.
-// This class and NodeRefImpl exists to nodes replace themselfs (eg. pass1) in a type-safe way.
+// This class and NodeRefImpl exists for nodes to replace themselves (eg. pass1) in a type-safe way.
 class NodeRef
 {
 public:
@@ -289,7 +290,7 @@ protected:
 template <typename T> class NodeRefImpl : public NodeRef
 {
 public:
-	NodeRefImpl(T** aPtr)
+	explicit NodeRefImpl(T** aPtr)
 		: ptr(aPtr)
 	{
 		fb_assert(aPtr);
@@ -875,7 +876,7 @@ public:
 
 	struct ExeState
 	{
-		ExeState(thread_db* tdbb)
+		explicit ExeState(thread_db* tdbb)
 			: oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
 			  oldTransaction(tdbb->getTransaction()),

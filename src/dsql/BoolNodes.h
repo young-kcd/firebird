@@ -119,7 +119,7 @@ public:
 class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BOOL>
 {
 public:
-	MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL, bool aDsqlUnknown = false);
+	explicit MissingBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL, bool aDsqlUnknown = false);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -147,7 +147,7 @@ public:
 class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 {
 public:
-	NotBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
+	explicit NotBoolNode(MemoryPool& pool, dsql_nod* aArg = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 

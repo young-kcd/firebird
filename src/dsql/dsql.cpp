@@ -1396,7 +1396,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 	database->dbb_ods_version = dbb->dbb_ods_version;
 	database->dbb_minor_version = dbb->dbb_minor_version;
 
-	database->dbb_read_only = (dbb->dbb_flags & DBB_read_only) ? 1 : 0;
+	database->dbb_read_only = (dbb->dbb_flags & DBB_read_only) ? true : false;
 
 #ifdef DSQL_DEBUG
 	DSQL_debug = Config::getTraceDSQL();

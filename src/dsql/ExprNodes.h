@@ -122,7 +122,7 @@ public:
 class CastNode : public TypedNode<ValueExprNode, ExprNode::TYPE_CAST>
 {
 public:
-	CastNode(MemoryPool& pool, dsql_nod* aDsqlSource = NULL, dsql_fld* aDsqlField = NULL);
+	explicit CastNode(MemoryPool& pool, dsql_nod* aDsqlSource = NULL, dsql_fld* aDsqlField = NULL);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
 
@@ -385,7 +385,7 @@ public:
 class DerivedExprNode : public TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>
 {
 public:
-	DerivedExprNode(MemoryPool& pool)
+	explicit DerivedExprNode(MemoryPool& pool)
 		: TypedNode<ValueExprNode, ExprNode::TYPE_DERIVED_EXPR>(pool),
 		  arg(NULL),
 		  streamList(pool)

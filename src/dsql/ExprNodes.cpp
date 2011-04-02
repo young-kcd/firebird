@@ -2645,7 +2645,7 @@ void CastNode::setParameterName(dsql_par* parameter) const
 bool CastNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	dsql_nod* /*node*/, bool /*forceVarChar*/)
 {
-	// ASF: Attention: CastNode::dsqlPass call us with NULL node.
+	// ASF: Attention: CastNode::dsqlPass calls us with NULL node.
 
 	ParameterNode* paramNode = ExprNode::as<ParameterNode>(dsqlSource);
 
@@ -2685,7 +2685,7 @@ void CastNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	// views.
 
 	dsc desc1;
-	////source->getDesc(tdbb, csb, source, &desc1);
+	////source->getDesc(tdbb, csb, &desc1);
 
 	*desc = format->fmt_desc[0];
 
@@ -3943,7 +3943,7 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* testDesc = EVL_expr(tdbb, request, test);
 
-	// The comparations are done with "equal" operator semantics, so if the test value is
+	// The comparisons are done with "equal" operator semantics, so if the test value is
 	// NULL we have nothing to compare.
 	if (testDesc && !(request->req_flags & req_null))
 	{
@@ -3962,8 +3962,8 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (values->args.getCount() > conditions->args.getCount())
 		return EVL_expr(tdbb, request, values->args.back());
-	else
-		return NULL;
+	
+	return NULL;
 }
 
 
@@ -5235,7 +5235,7 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (!EVL_field(relation, record, fieldId, &impure->vlu_desc))
 		return NULL;
 
-	// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
+	// ASF: CORE-1432 - If the record is not on the latest format, upgrade it.
 	// AP: for fields that are missing in original format use record's one.
 	if (format &&
 		record->rec_format->fmt_version != format->fmt_version &&
@@ -5439,7 +5439,8 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 static RegisterNode<InternalInfoNode> regInternalInfoNode(blr_internal_info);
 
 // CVC: If this list changes, gpre will need to be updated
-const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO_TYPE] = {
+const InternalInfoNode::InfoAttr InternalInfoNode::INFO_TYPE_ATTRIBUTES[MAX_INFO_TYPE] =
+{
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},
 	{"CURRENT_TRANSACTION", 0},
@@ -6317,7 +6318,9 @@ bool DerivedFieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visito
 {
 	if (scope == visitor.context->ctx_scope_level)
 		return true;
-	else if (visitor.context->ctx_scope_level < scope)
+
+	if (visitor.context->ctx_scope_level < scope)
+
 		return visitor.visit(&dsqlValue);
 
 	return false;
@@ -7046,7 +7049,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsc oldDesc = dsqlParameter->par_desc;
+	const dsc oldDesc = dsqlParameter->par_desc;
 
 	if (!node)
 		dsqlParameter->par_desc.makeNullString();
@@ -7110,7 +7113,7 @@ bool ParameterNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 	// In case of RETURNING in MERGE and UPDATE OR INSERT, a single parameter is used in
 	// more than one place. So we save it to use below.
-	bool hasOldDesc = dsqlParameter->par_node != NULL;
+	const bool hasOldDesc = dsqlParameter->par_node != NULL;
 
 	dsqlParameter->par_node = MAKE_node(Dsql::nod_class_exprnode, 1);
 	dsqlParameter->par_node->nod_arg[0] = reinterpret_cast<dsql_nod*>(this);
@@ -7212,7 +7215,7 @@ ValueExprNode* ParameterNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	// cloned outside nod_procedure (e.g. in the optimizer)
 	// and we must keep the input message.
 	// ASF: We should only use "message" if its number matches the number
-	// in nod_argument. If it don't, it may be an input parameter cloned
+	// in nod_argument. If it doesn't, it may be an input parameter cloned
 	// in RseBoolNode::convertNeqAllToNotAny - see CORE-3094.
 
 	if (copier.message && copier.message->messageNumber == message->messageNumber)
@@ -8604,9 +8607,9 @@ void SubQueryNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	}
 	else if (blrOp == blr_total)
 	{
-		USHORT dtype;
+		const USHORT dtype = desc->dsc_dtype;
 
-		switch ((dtype = desc->dsc_dtype))
+		switch (dtype)
 		{
 			case dtype_short:
 				desc->dsc_dtype = dtype_long;
@@ -8756,7 +8759,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	dsc* desc = &impure->vlu_desc;
-	USHORT* invariant_flags;
+	USHORT* invariant_flags = 0;
 
 	if (nodFlags & FLAG_INVARIANT)
 	{
@@ -9122,8 +9125,8 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 		HalfStaticArray<UCHAR, BUFFER_LARGE> buffer;
 		CharSet* charSet = INTL_charset_lookup(tdbb, valueDsc->getCharSet());
 
-		const FB_UINT64 byte_offset = start * charSet->maxBytesPerChar();
-		const FB_UINT64 byte_length = length * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_offset = FB_UINT64(start) * charSet->maxBytesPerChar();
+		const FB_UINT64 byte_length = FB_UINT64(length) * charSet->maxBytesPerChar();
 
 		if (charSet->isMultiByte())
 		{

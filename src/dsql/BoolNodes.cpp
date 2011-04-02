@@ -1332,7 +1332,7 @@ BoolExprNode* ComparativeBoolNode::createRseNode(DsqlCompilerScratch* dsqlScratc
 
 	// Create a derived table representing our subquery.
 	dsql_nod* dt = MAKE_node(Dsql::nod_select_expr, Dsql::e_sel_count);
-	// Ignore validation for colum names that must exist for "user" derived tables.
+	// Ignore validation for column names that must exist for "user" derived tables.
 	dt->nod_flags |= NOD_SELECT_EXPR_DT_IGNORE_COLUMN_CHECK | NOD_SELECT_EXPR_DERIVED;
 	dt->nod_arg[Dsql::e_sel_query_spec] = dsqlArg2;
 	dsql_nod* from = MAKE_node(Dsql::nod_list, 1);
@@ -1442,9 +1442,9 @@ BoolExprNode* MissingBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 void MissingBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 {
-	RecordKeyNode* keyNode;
+	RecordKeyNode* keyNode = arg->as<RecordKeyNode>();
 
-	if ((keyNode = arg->as<RecordKeyNode>()) && keyNode->aggregate)
+	if (keyNode && keyNode->aggregate)
 		ERR_post(Arg::Gds(isc_bad_dbkey));
 
 	// check for syntax errors in the calculation
