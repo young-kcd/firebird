@@ -211,6 +211,16 @@ static bool shutdownStarted = false;
 //-------------------------------------
 
 
+		// CVC: I'm following types_pub.h here. If there's a better solution, commit it, please.
+#if defined(_LP64) || defined(__LP64__) || defined(__arch64__) || defined(_WIN64)
+inline FB_API_HANDLE ULONG_TO_FB_API_HANDLE(ULONG h) { return static_cast<FB_API_HANDLE>(h); }
+inline ULONG FB_API_HANDLE_TO_ULONG(FB_API_HANDLE h) { return h; }
+#else
+inline FB_API_HANDLE ULONG_TO_FB_API_HANDLE(ULONG h) { return reinterpret_cast<FB_API_HANDLE>(h); }
+inline ULONG FB_API_HANDLE_TO_ULONG(FB_API_HANDLE h) { return reinterpret_cast<ULONG>(h); }
+#endif
+
+
 template <typename T>
 static FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, T* obj)
 {
@@ -230,9 +240,9 @@ static FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >
 		// Avoid generating NULL handle when sequence number wraps
 		if (!handle)
 			handle = ++sequenceNumber;
-	} while (map->put(static_cast<FB_API_HANDLE>(handle), obj));
+	} while (map->put(ULONG_TO_FB_API_HANDLE(handle), obj));
 
-	return static_cast<FB_API_HANDLE>(handle);
+	return ULONG_TO_FB_API_HANDLE(handle);
 }
 
 template <typename T>
@@ -694,7 +704,7 @@ namespace
 	class HandleArray
 	{
 	public:
-		HandleArray(MemoryPool& pool)
+		explicit HandleArray(MemoryPool& pool)
 			: array(pool)
 		{
 		}
@@ -2713,7 +2723,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	class Callback : public EventCallback
 	{
 	public:
-		Callback(UCHAR* aBuffer)
+		explicit Callback(UCHAR* aBuffer)
 			: buffer(aBuffer)
 		{
 		}
@@ -2962,7 +2972,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 			return status[1];
 		}
 
-		*id = events->handle;
+		*id = FB_API_HANDLE_TO_ULONG(events->handle);
 	}
 	catch (const Exception& e)
 	{
@@ -5198,7 +5208,7 @@ YService* Dispatcher::attachServiceManager(Status* status, const char* serviceNa
 			if (status->get()[1] == 0)
 				Arg::Gds(isc_service_att_err).raise();
 		}
-		catch (const Exception& e)
+		catch (const Exception&)
 		{
 			if (service)
 			{
