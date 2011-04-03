@@ -3977,7 +3977,7 @@ YTransaction* YStatement::execute(Status* status, ITransaction* transaction,
 
 		if (newTrans)
 		{
-			if (newTrans == transaction)
+			if (newTrans == trans)
 				newTrans = transaction;
 			else
 				newTrans = new YTransaction(attachment, newTrans);
@@ -4124,9 +4124,7 @@ void YTransaction::getInfo(Status* status, unsigned int itemsLength,
 
 		for (YTransaction* i = sub; i; i = i->sub)
 		{
-			ITransaction* next = i->next;
-
-			next->getInfo(status, itemsLength, items, bufferLength, buffer);
+			i->next->getInfo(status, itemsLength, items, bufferLength, buffer);
 			if (!status->isSuccess())
 				return;
 
