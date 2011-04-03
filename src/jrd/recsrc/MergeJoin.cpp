@@ -366,7 +366,7 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 	if (detailed)
 	{
 		plan += printIndent(++level) + "Merge Join (inner)";
-		for (int i = 0; i < m_args.getCount(); i++)
+		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			m_args[i]->print(tdbb, plan, true, level);
 		}
@@ -375,7 +375,7 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 	{
 		level++;
 		plan += "MERGE (";
-		for (int i = 0; i < m_args.getCount(); i++)
+		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 			{

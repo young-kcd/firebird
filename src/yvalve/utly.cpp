@@ -54,7 +54,8 @@ static inline void ch_stuff(BLOB_PTR*& p, const UCHAR value, bool& same_flag)
 {
 	if (*p == value)
 		p++;
-	else {
+	else
+	{
 		*p++ = value;
 		same_flag = false;
 	}
@@ -654,7 +655,7 @@ ISC_STATUS	UTLD_parse_sqlda(ISC_STATUS* status,
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			// Copy data - unless known to be NULL
-			if ((offset + len) > pClause->msgBuffer.getCount())
+			if (size_t(offset) + len > pClause->msgBuffer.getCount())
 				return error_dsql_804(status, isc_dsql_sqlda_value_err);
 
 			if (!*null_ind)

@@ -225,7 +225,7 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 	{
 		plan += printIndent(++level) + " Nested Loop Join ";
 		plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
-		for (int i = 0; i < m_args.getCount(); i++)
+		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			m_args[i]->print(tdbb, plan, true, level);
 		}
@@ -234,7 +234,7 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 	{
 		level++;
 		plan += "JOIN (";
-		for (int i = 0; i < m_args.getCount(); i++)
+		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 			{
