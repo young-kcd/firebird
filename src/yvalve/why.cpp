@@ -1655,9 +1655,6 @@ ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* userStatus, FB_API_HANDL
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 		transaction->commitRetaining(&status);
-
-		if (status.isSuccess())
-			*traHandle = 0;
 	}
 	catch (const Exception& e)
 	{
@@ -3103,9 +3100,6 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* userStatus, FB_API_HAN
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 		transaction->rollbackRetaining(&status);
-
-		if (status.isSuccess())
-			*traHandle = 0;
 	}
 	catch (const Exception& e)
 	{
