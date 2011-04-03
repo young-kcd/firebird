@@ -1,3 +1,135 @@
+ 2011-04-03 01:58  asfernandes 
+   M src/yvalve/why.cpp
+Fix problems with commit/rollback-retaining seen by Claudio.
+
+ 2011-04-02 21:41  asfernandes 
+   M src/include/ProviderInterface.h
+   M src/yvalve/why.cpp
+Remove CleanupCallback from the public header.
+
+ 2011-04-02 19:39  asfernandes 
+   M src/dsql/sqlda.h
+   M src/yvalve/utly.cpp
+   M src/yvalve/utly_proto.h
+   M src/yvalve/why.cpp
+Rework on the SQLDA support.
+
+ 2011-04-02 19:38  asfernandes 
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/Interface.h
+   M src/include/ProviderInterface.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/why.cpp
+New YValve implementation.
+
+ 2011-04-02 17:57  asfernandes 
+   M src/jrd/recsrc/AggregatedStream.cpp
+Correction.
+
+ 2011-04-02 04:57  robocop 
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:55  robocop 
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+Misc, style, etc.
+
+ 2011-04-02 04:53  robocop 
+   M src/remote/client/interface.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remot_proto.h
+   M src/remote/server/os/win32/srvr_w32.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:51  robocop 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/pass1.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:50  robocop 
+   M src/common/isc_sync.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:47  robocop 
+   M src/jrd/jrd.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:45  robocop 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/ValueImpl.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/pag.h
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/vio.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:27  robocop 
+   M src/jrd/blob_filter.h
+   M src/jrd/cvt_proto.h
+   M src/jrd/dpm.epp
+   M src/jrd/exe.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/flu.h
+   M src/jrd/inf.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:24  robocop 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+Misc, style, etc.
+
+ 2011-04-02 04:16  robocop 
+   M src/common/call_service.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/alloc.h
+   M src/common/classes/fb_string.h
+   M src/common/classes/locks.h
+   M src/common/fb_exception.cpp
+   M src/common/os/win32/isc_ipc.cpp
+   M src/common/thd.cpp
+Explicit and others.
+
+ 2011-04-02 04:13  robocop 
+   M src/common/classes/alloc.cpp
+Fix legacy code.
+
+ 2011-04-02 04:11  robocop 
+   M src/common/os/mod_loader.h
+Misc.
+
+ 2011-04-02 04:09  robocop 
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/gsec.vcproj
+Update project files as seen on VC8.
+
+ 2011-04-02 03:31  robocop 
+   M builds/win32/msvc9/burp.vcproj
+   M builds/win32/msvc9/fbsvcmgr.vcproj
+Crap cleaning.
+
  2011-04-01 19:39  asfernandes 
    M src/jrd/met.epp
 Fix related to change done for CORE-3418. It brokes insertion of permission in just created database.
