@@ -1152,6 +1152,11 @@ namespace
 	class Dispatcher : public StdPlugin<PProvider, FB_P_PROVIDER_VERSION>
 	{
 	public:
+		void* operator new(size_t, void* memory) throw()
+		{
+			return memory;
+		}
+
 		virtual void FB_CARG attachDatabase(Status* status, IAttachment** attachment,
 			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
 		virtual void FB_CARG createDatabase(Status* status, IAttachment** ptr,
@@ -1172,7 +1177,7 @@ namespace
 		}
 	};
 
-	Dispatcher dispatcher;
+	Static<Dispatcher> dispatcher;
 
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
@@ -1490,7 +1495,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
 		IAttachment* attachment = NULL;
-		dispatcher.attachDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
+		dispatcher->attachDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
 			reinterpret_cast<const UCHAR*>(dpb));
 
 		if (!status.isSuccess())
@@ -1771,7 +1776,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
 		IAttachment* attachment = NULL;
-		dispatcher.createDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
+		dispatcher->createDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
 			reinterpret_cast<const UCHAR*>(dpb));
 
 		if (!status.isSuccess())
@@ -3204,7 +3209,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 
 		string svcName(serviceName, serviceLength ? serviceLength : strlen(serviceName));
 
-		service = dispatcher.attachServiceManager(&status, svcName.c_str(), spbLength,
+		service = dispatcher->attachServiceManager(&status, svcName.c_str(), spbLength,
 			reinterpret_cast<const UCHAR*>(spb));
 
 		if (!status.isSuccess())
@@ -3541,7 +3546,7 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
 	StatusVector status(NULL);
-	dispatcher.shutdown(&status, timeout, reason);
+	dispatcher->shutdown(&status, timeout, reason);
 	return status.isSuccess() ? FB_SUCCESS : FB_FAILURE;
 }
 
