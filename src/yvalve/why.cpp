@@ -2647,8 +2647,11 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 	try
 	{
-		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
+		RefPtr<YTransaction> transaction;
+
+		if (traHandle && *traHandle)
+			transaction = translateHandle(transactions, traHandle);
 
 		statement->prepare(&status, transaction, stmtLength, sqlStmt, dialect,
 			itemLength, reinterpret_cast<const UCHAR*>(items),
@@ -3911,7 +3914,7 @@ YStatement* YStatement::prepare(Status* status, ITransaction* transaction,
 		if (!sqlStmt)
 			Arg::Gds(isc_command_end_err).raise();
 
-		ITransaction* trans = YTransaction::getNext(transaction, attachment);
+		ITransaction* trans = transaction ? YTransaction::getNext(transaction, attachment) : NULL;
 
 		IStatement* newStmt = next->prepare(status, trans, stmtLength, sqlStmt, dialect,
 			itemLength, items, bufferLength, buffer);
