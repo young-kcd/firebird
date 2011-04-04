@@ -994,10 +994,10 @@ void MemoryPool::validate(void) throw ()
 {
 	unsigned int slot = 3;
 
-	for (const MemBlock *block = freeObjects [slot]; block; block = (MemBlock*) block->pool)
+	for (const MemBlock* block = freeObjects [slot]; block; block = (MemBlock*) block->pool)
 	{
 		if (slot != block->length / roundingSize)
-			corrupt ("length trashed for block in slot");
+			corrupt("length trashed for block in slot");
 	}
 }
 

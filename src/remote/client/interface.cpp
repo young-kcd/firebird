@@ -1513,10 +1513,10 @@ Firebird::ITransaction* Statement::execute(Status* status, Firebird::ITransactio
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = 0;
+		Rtr* transaction = NULL;
 		if (apiTra)
 		{
-			transaction = ((Transaction*)apiTra)->getTransaction();
+			transaction = ((Transaction*) apiTra)->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
@@ -1704,10 +1704,10 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 		unsigned out_msg_length = outMessage ? outMessage->bufferLength : 0;
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
-		Rtr* transaction = 0;
+		Rtr* transaction = NULL;
 		if (apiTra)
 		{
-			transaction = ((Transaction*)apiTra)->getTransaction();
+			transaction = ((Transaction*) apiTra)->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
@@ -2349,7 +2349,7 @@ Statement* Statement::prepare(Status* status, Firebird::ITransaction* apiTra,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = 0;
+		Rtr* transaction = NULL;
 		if (apiTra)
 		{
 			transaction = reinterpret_cast<Transaction*>(apiTra)->getTransaction();

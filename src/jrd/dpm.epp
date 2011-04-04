@@ -65,7 +65,6 @@
 #include "../jrd/pag_proto.h"
 #include "../common/StatusArg.h"
 
-
 DATABASE DB = FILENAME "ODS.RDB";
 
 #define DECOMPOSE(n, divisor, q, r) {r = n % divisor; q = n / divisor;}

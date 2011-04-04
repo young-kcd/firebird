@@ -2131,10 +2131,12 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR entrypoint,
  **************************************/
 
 	int rc = 0;
-	try {
+	try
+	{
 		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
 	}
-	catch (const Firebird::status_exception& status) {
+	catch (const Firebird::status_exception& status)
+	{
 		rc = status.value()[1];
 	}
 	return rc;

@@ -73,7 +73,6 @@ typedef UCHAR stream_array_t[MAX_STREAMS + 1];
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
 
 
-
 template <typename T>
 class RegisterNode
 {

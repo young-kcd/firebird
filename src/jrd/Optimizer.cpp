@@ -1382,7 +1382,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 						restartLoop = true;
 						break;
 					}
-					
+
 					if (bestCandidate->condition)
 					{
 						bestCandidate = currentInv;
@@ -2185,13 +2185,13 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 			return invCandidate;
 		}
-		
+
 		if (invCandidate1)
 		{
 			invCandidate1->condition = binaryNode->arg2;
 			return invCandidate1;
 		}
-		
+
 		if (invCandidate2)
 		{
 			invCandidate2->condition = binaryNode->arg1;

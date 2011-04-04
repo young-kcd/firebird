@@ -3962,7 +3962,7 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (values->args.getCount() > conditions->args.getCount())
 		return EVL_expr(tdbb, request, values->args.back());
-	
+
 	return NULL;
 }
 
@@ -6320,7 +6320,6 @@ bool DerivedFieldNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visito
 		return true;
 
 	if (visitor.context->ctx_scope_level < scope)
-
 		return visitor.visit(&dsqlValue);
 
 	return false;
@@ -8759,7 +8758,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	dsc* desc = &impure->vlu_desc;
-	USHORT* invariant_flags = 0;
+	USHORT* invariant_flags = NULL;
 
 	if (nodFlags & FLAG_INVARIANT)
 	{

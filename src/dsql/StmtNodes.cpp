@@ -5079,7 +5079,7 @@ const StmtNode* ModifyNode::execute(thread_db* tdbb, jrd_req* request, ExeState*
 
 	if (request->req_operation == jrd_req::req_unwind)
 		return parentStmt;
-	
+
 	if (request->req_operation == jrd_req::req_return && !impure->sta_state && subMod)
 	{
 		if (!exeState->topNode)
@@ -7076,10 +7076,10 @@ static dsql_ctx* dsqlGetContext(const dsql_nod* node)
 
 	if ((procNode = ExprNode::as<ProcedureSourceNode>(node)))
 		return procNode->dsqlContext;
-	
+
 	if ((relNode = ExprNode::as<RelationSourceNode>(node)))
 		return relNode->dsqlContext;
-	
+
 	if ((rseNode = ExprNode::as<RseNode>(node)))
 		return rseNode->dsqlContext;
 
@@ -7180,7 +7180,7 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 		list->statements.add(input);
 		return list;
 	}
-	
+
 	return nullAssign;	// return the initialization statement.
 }
 

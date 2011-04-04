@@ -3972,7 +3972,7 @@ void Attachment::transactRequest(Status* user_status, ITransaction* tra,
 
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
-	
+
 					const MessageNode* node = csb->csb_rpt[i].csb_message;
 					if (node)
 					{
