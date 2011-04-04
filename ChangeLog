@@ -1,3 +1,18 @@
+ 2011-04-03 04:05  robocop 
+   M src/yvalve/why.cpp
+Solve compilation problem in Win32. Maybe better solution exists.
+
+ 2011-04-03 03:43  asfernandes 
+   M src/yvalve/why.cpp
+Fix things seen by Claudio.
+
+ 2011-04-03 03:03  robocop 
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/NestedLoopJoin.cpp
+   M src/yvalve/utly.cpp
+Warnings.
+
  2011-04-03 01:58  asfernandes 
    M src/yvalve/why.cpp
 Fix problems with commit/rollback-retaining seen by Claudio.
