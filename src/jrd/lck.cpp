@@ -989,13 +989,13 @@ static void hash_allocate(Lock* lock)
  **************************************/
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database* dbb = lock->lck_dbb;
+	Database* const dbb = lock->lck_dbb;
+	Jrd::Attachment* const attachment = lock->lck_attachment;
 
-	Jrd::Attachment* attachment = lock->lck_attachment;
 	if (attachment)
 	{
 		attachment->att_compatibility_table =
-			vec<Lock*>::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
+			vec<Lock*>::newVector(*attachment->att_pool, LOCK_HASH_SIZE);
 	}
 }
 

@@ -494,7 +494,8 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
@@ -516,9 +517,9 @@ void VIO_bump_count(thread_db* tdbb, USHORT count_id, jrd_rel* relation)
 #endif
 
 	const USHORT relation_id = relation->rel_id;
-	vcl** ptr = tdbb->getAttachment()->att_counts + count_id;
+	vcl** ptr = attachment->att_counts + count_id;
 
-	vcl* vector = *ptr = vcl::newVector(*dbb->dbb_permanent, *ptr, relation_id + 1);
+	vcl* vector = *ptr = vcl::newVector(*attachment->att_pool, *ptr, relation_id + 1);
 	((*vector)[relation_id])++;
 
 	tdbb->bumpStats((RuntimeStatistics::StatType) count_id, relation_id);
