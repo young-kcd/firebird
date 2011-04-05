@@ -1013,7 +1013,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Take out lock on attachment id
 
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock();
 	attachment->att_id_lock = lock;
 	lock->lck_type = LCK_attachment;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -2473,7 +2473,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 	Attachment* att = tdbb->getAttachment();
 	if (!att->att_temp_pg_lock)
 	{
-		Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+		Lock* lock = FB_NEW_RPT(*att->att_pool, sizeof(SLONG)) Lock();
 		lock->lck_type = LCK_page_space;
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;

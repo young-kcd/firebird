@@ -999,7 +999,7 @@ static void hash_allocate(Lock* lock)
 	if (attachment)
 	{
 		attachment->att_compatibility_table =
-			vec<Lock*>::newVector(*dbb->dbb_permanent, LOCK_HASH_SIZE);
+			vec<Lock*>::newVector(*attachment->att_pool, LOCK_HASH_SIZE);
 	}
 }
 
