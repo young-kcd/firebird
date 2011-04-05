@@ -2409,6 +2409,8 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									request->req_flags &= ~req_error_handler;
 									request->req_flags |= prev_req_error_handler;
 
+									transaction = request->req_transaction;
+
 									/* Note: Previously the above call
 									   "node = looper (tdbb, request, node);"
 									   never returned back till the node tree
