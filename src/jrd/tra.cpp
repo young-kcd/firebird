@@ -1609,7 +1609,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	try
 	{
 		transaction = transaction_start(tdbb, temp);
-		delete temp;
+		jrd_tra::destroy(NULL, temp);
 	}
 	catch (const Exception&)
 	{
