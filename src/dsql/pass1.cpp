@@ -4212,10 +4212,12 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 						{
 							aliasNode->value = cast_node;
 							aliasNode->value->nod_desc = desc;
+							select_item->nod_desc = desc;
 						}
 						else if ((derivedField = ExprNode::as<DerivedFieldNode>(select_item)))
 						{
 							derivedField->dsqlValue = cast_node;
+							derivedField->dsqlValue->nod_desc = desc;
 							select_item->nod_desc = desc;
 						}
 						else
