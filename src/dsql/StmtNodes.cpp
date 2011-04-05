@@ -576,6 +576,10 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 							request->req_flags &= ~req_error_handler;
 							request->req_flags |= prev_req_error_handler;
 
+							// Re-assign the transaction pointer, as the active transaction
+							// could change in the meantime (inside the looper)
+							transaction = request->req_transaction;
+
 							// Note: Previously the above call "temp = looper (tdbb, request, temp);"
 							// never returned back till the tree was executed completely. Now that
 							// the looper has changed its behaviour such that it returns back after
