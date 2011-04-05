@@ -242,6 +242,16 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			}
 		}
 
+		if (parameter->par_desc.dsc_dtype == dtype_text)
+		{
+			// We should convert par_desc from text to varying so the user can receive it with
+			// correct length when requesting it as varying. See CORE-2606.
+			// But we flag it to describe as text.
+			parameter->par_is_text = true;
+			parameter->par_desc.dsc_dtype = dtype_varying;
+			parameter->par_desc.dsc_length += sizeof(USHORT);
+		}
+
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
 			offset = FB_ALIGN(offset, align);

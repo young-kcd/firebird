@@ -2638,7 +2638,7 @@ static UCHAR* var_info(const dsql_msg* message,
 				break;
 
 			case dtype_varying:
-				sql_type = SQL_VARYING;
+				sql_type = param->par_is_text ? SQL_TEXT : SQL_VARYING;
 				sql_len -= sizeof(USHORT);
 				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;

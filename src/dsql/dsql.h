@@ -777,7 +777,8 @@ public:
 		  par_rel_alias(p),
 		  par_alias(p),
 		  par_parameter(0),
-		  par_index(0)
+		  par_index(0),
+		  par_is_text(false)
 	{
 		par_desc.clear();
 	}
@@ -795,6 +796,7 @@ public:
 	dsc			par_desc;			// Field data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate
+	bool		par_is_text;		// Parameter should be dtype_text (SQL_TEXT) externaly
 };
 
 // CVC: Enumeration used for the COMMENT command.
