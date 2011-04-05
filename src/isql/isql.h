@@ -368,6 +368,7 @@ public:
 	// from isql.epp
 	USHORT major_ods;
 	USHORT minor_ods;
+	USHORT att_charset;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
 };

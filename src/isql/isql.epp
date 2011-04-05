@@ -130,6 +130,9 @@ using MsgFormat::SafeArg;
 #include "../common/classes/Switches.h"
 #include "../isql/isqlswi.h"
 
+#include "../intl/charsets.h"
+#include <unicode/utf8.h>
+
 
 DATABASE DB = COMPILETIME "yachts.lnk";
 
@@ -155,6 +158,98 @@ const int BOOLEAN_LEN		= 7;	// <false>
 const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
+
+
+namespace IcuUtil
+{
+	// Duplicate from ICU to not need to link ISQL with it. It's used by U8_NEXT_UNSAFE.
+	static const uint8_t utf8_countTrailBytes[256] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+		1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+		3, 3, 3, 3, 3,
+		3, 3, 3,    /* illegal in Unicode */
+		4, 4, 4, 4, /* illegal in Unicode */
+		5, 5,       /* illegal in Unicode */
+		0, 0        /* illegal bytes 0xfe and 0xff */
+	};
+
+	// Return the number of characters of a string.
+	static unsigned charLength(SSHORT sqlsubtype, unsigned len, const char* str)
+	{
+		if (sqlsubtype != CS_UNICODE_FSS && sqlsubtype != CS_UTF8)
+			return len;
+
+		unsigned charLen = 0;
+		unsigned i = 0;
+
+		while (i < len)
+		{
+			UChar32 c;
+			U8_NEXT_UNSAFE(str, i, c);
+			++charLen;
+		}
+
+		return charLen;
+	}
+
+	// Pads a string to a specified column width.
+	static void pad(char* buffer, SSHORT sqlsubtype, unsigned len, const char* str, unsigned width,
+		bool right)
+	{
+		if (sqlsubtype != CS_UNICODE_FSS && sqlsubtype != CS_UTF8)
+		{
+			// Truncate if necessary.
+			if (len > width)
+				len = width;
+
+			sprintf(buffer, (right ? "%*.*s" : "%-*.*s"), width, len, str);
+			return;
+		}
+
+		unsigned i = 0;
+
+		while (i < len && width > 0)
+		{
+			UChar32 c;
+			U8_NEXT_UNSAFE(str, i, c);
+			--width;
+		}
+
+		if (right)
+		{
+			while (width-- > 0)
+				*buffer++ = ' ';
+		}
+
+		memcpy(buffer, str, i);
+		buffer += i;
+
+		if (!right)
+		{
+			while (width-- > 0)
+				*buffer++ = ' ';
+		}
+
+		*buffer = '\0';
+	}
+}
 
 
 static inline bool commit_trans(isc_tr_handle* x)
@@ -359,23 +454,6 @@ static const SCHAR* alpha_months[] =
 	"DEC"
 };
 
-#ifdef NOT_USED_OR_REPLACED
-// There's a local version of this, more complete, in ISQL_get_version()
-static const UCHAR db_version_info[] =
-{
-	isc_info_ods_version,
-	isc_info_ods_minor_version,
-	isc_info_db_sql_dialect
-};
-#endif
-#ifdef NOT_USED_OR_REPLACED
-static const UCHAR text_bpb[] =
-{
-	isc_bpb_version1,
-	isc_bpb_source_type, 1, isc_blob_text,
-	isc_bpb_target_type, 1, isc_blob_text
-};
-#endif
 static UCHAR predefined_blob_subtype_bpb[] =
 {
 	isc_bpb_version1,
@@ -485,6 +563,7 @@ int ISQL_main(int argc, char* argv[])
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
 	isqlGlob.db_SQL_dialect = 0;
+	isqlGlob.att_charset = 0;
 
 	// Output goes to stdout by default
 	isqlGlob.Out = stdout;
@@ -5714,6 +5793,7 @@ void ISQL_get_version(bool call_by_create_db)
 		isc_info_ods_version,
 		isc_info_ods_minor_version,
 		isc_info_db_sql_dialect,
+		frb_info_att_charset,
 		Version_info ? isc_info_firebird_version: isc_info_end,
 		isc_info_end
 	};
@@ -5869,6 +5949,10 @@ void ISQL_get_version(bool call_by_create_db)
 					q += l;
 				}
 			}
+			break;
+
+		case frb_info_att_charset:
+			isqlGlob.att_charset = gds__vax_integer(p, length);
 			break;
 
 		default:
@@ -7443,15 +7527,12 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 					sprintf(p, "%-*s ", length, buff2);
 				ISQL_FREE(buff2);
 			}
-			else if (List) {
+			else if (List)
 				isqlGlob.printf("%s%s", string, NEWLINE);
-			}
 			else
 			{
-				// Truncate if necessary
-				if (length < var->sqllen)
-					string[length] = '\0';
-				sprintf(p, "%-*s ", length, var->sqldata);
+				IcuUtil::pad(p, var->sqlsubtype, strlen(var->sqldata), var->sqldata, length, false);
+				strcat(p, " ");
 			}
 			break;
 
@@ -7539,15 +7620,12 @@ static SSHORT print_item(TEXT** s, XSQLVAR* var, const int length)
 					}
 					ISQL_FREE(buff2);
 				}
-				else if (List) {
+				else if (List)
 					isqlGlob.printf("%s%s", avary->vary_string, NEWLINE);
-				}
 				else
 				{
-					// Truncate if necessary
-					if (length < avary->vary_length)
-						avary->vary_length = length;
-					sprintf(p, "%-*.*s ", length, (int) avary->vary_length, avary->vary_string);
+					IcuUtil::pad(p, var->sqlsubtype, avary->vary_length, avary->vary_string, length, false);
+					strcat(p, " ");
 				}
 				break;
 			}
@@ -7986,16 +8064,20 @@ static void process_header(const XSQLDA* sqlda, const int pad[], TEXT header[], 
 	for (const XSQLVAR* const end = var + sqlda->sqld; var < end; var++, i++)
 	{
 		const SSHORT type = var->sqltype & ~1;
-		if (type == SQL_TEXT || type == SQL_VARYING)
-			sprintf(p, "%-*.*s ", pad[i], pad[i], var->aliasname);
-		else
-			sprintf(p, "%*s ", pad[i], var->aliasname);
+
+		IcuUtil::pad(p, isqlGlob.att_charset, var->aliasname_length, var->aliasname, pad[i],
+			(type != SQL_TEXT && type != SQL_VARYING));
+		strcat(p, " ");
+
+		p += strlen(p);
+
 		// Separators need not go on forever no more than a line
-		size_t limit = strlen(p);
-		for (size_t j = 1; j < limit && j < 80; j++)
+		unsigned limit = IcuUtil::charLength(isqlGlob.att_charset, var->aliasname_length, var->aliasname);
+		limit = MAX(limit, pad[i]) + 1;
+
+		for (unsigned j = 1; j < limit && j < 80; j++)
 			*p2++ = '=';
 		*p2++ = BLANK;
-		p += limit;
 	}
 	*p2 = '\0';
 }
@@ -8234,7 +8316,7 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 
 		USHORT data_length, disp_length, alignment;
 		data_length = disp_length = alignment = var->sqllen;
-		SSHORT namelength = var->aliasname_length;
+		SSHORT namelength = IcuUtil::charLength(isqlGlob.att_charset, var->aliasname_length, var->aliasname);
 
 		// Minimum display length should not be less than that needed
 		// for displaying null
@@ -8276,6 +8358,8 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 			// OCTETS data is displayed in hex
 			if (var->sqlsubtype == 1)
 				disp_length = 2 * var->sqllen;
+			else if (var->sqlsubtype == 4)
+				disp_length /= 4;
 			break;
 		case SQL_VARYING:
 			data_length += sizeof(USHORT) + 1;
@@ -8283,6 +8367,8 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 			// OCTETS data is displayed in hex
 			if (var->sqlsubtype == 1)
 				disp_length = 2 * var->sqllen;
+			else if (var->sqlsubtype == 4)
+				disp_length /= 4;
 			break;
 		case SQL_SHORT:
 			disp_length = SHORT_LEN;
@@ -8316,7 +8402,10 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 
 		// This is the print width of each column
 
-		pad[i] = (disp_length > namelength ? disp_length : namelength);
+		if (disp_length < namelength)
+			disp_length = namelength;
+
+		pad[i] = disp_length;
 
 		// Is there a collist entry, then use that width, but only for text
 		if (type == SQL_TEXT || type == SQL_VARYING)
@@ -8325,8 +8414,11 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 				pad[i] = global_Col_default;
 		}
 
+		if ((type == SQL_TEXT || type == SQL_VARYING) && var->sqlsubtype == 4)
+			disp_length *= 4;
+
 		// The total line length
-		linelength += pad[i] + 1;
+		linelength += disp_length + 1;
 
 		// Allocate space in buffer for data
 
@@ -8334,6 +8426,7 @@ static SLONG process_sqlda_display(XSQLDA* const sqlda, SLONG buffer[], int pad[
 		var->sqldata = (SCHAR*) buffer + offset;
 		offset += data_length;
 	}
+
 	return linelength;
 }
 
