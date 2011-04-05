@@ -1,3 +1,29 @@
+ 2011-04-05 00:31  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+Fixed CORE-2606 - Multibyte CHAR value requested as VARCHAR is returned with padded spaces.
+
+ 2011-04-04 14:55  asfernandes 
+   M src/yvalve/why.cpp
+Hope this avoid some crashs in exit.
+
+ 2011-04-04 13:37  asfernandes 
+   M src/common/classes/alloc.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/utl.cpp
+Misc
+
+ 2011-04-04 12:40  asfernandes 
+   M src/yvalve/why.cpp
+Fix the problem reported by Dmitry Kovalenko.
+
  2011-04-03 04:05  robocop 
    M src/yvalve/why.cpp
 Solve compilation problem in Win32. Maybe better solution exists.
