@@ -1250,7 +1250,7 @@ ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, UL
 
 		if (errorCode <= 0)
 		{
-			const int32_t capacity = dstLen;
+			const int32_t capacity = upperStr.getCount();
 			int32_t len = srcLen / sizeof(USHORT);
 			int32_t limit = len;
 
