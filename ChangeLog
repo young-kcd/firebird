@@ -1,3 +1,34 @@
+ 2011-04-05 21:30  asfernandes 
+   M src/isql/isql.epp
+   M src/isql/isql.h
+Fixed CORE-3431 - ISQL pads UTF-8 data incorrectly.
+
+ 2011-04-05 18:02  asfernandes 
+   M src/common/unicode_util.cpp
+Fixed CORE-3427 - Server crashing with UTF8 blobs.
+
+ 2011-04-05 14:23  dimitr 
+   M src/dsql/pass1.cpp
+Fixed incorrect type evaluation for unions.
+Example:
+SELECT NULL AS PRICE FROM rdb$database
+union all
+SELECT 1.0 AS PRICE FROM rdb$database
+
+ 2011-04-05 05:49  dimitr 
+   M src/dsql/StmtNodes.cpp
+One more part of the fix for CORE-3340.
+
+ 2011-04-05 05:47  dimitr 
+   M src/jrd/tra.cpp
+Fixed the assertion caused by refcnt != 0.
+
+ 2011-04-05 05:36  dimitr 
+   M src/jrd/lck.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/vio.cpp
+Better locality of allocations. This also fixes a tiny memory leak in SuperServer.
+
  2011-04-05 00:31  asfernandes 
    M src/dsql/dsql.cpp
    M src/dsql/dsql.h
