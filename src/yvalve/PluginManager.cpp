@@ -571,7 +571,7 @@ namespace
 	PluginModule* current = NULL;
 
 	PluginModule::PluginModule(ModuleLoader::Module* pmodule, const PathName& pname)
-			: module(pmodule), regPlugins(getPool()), next(modules),
+			: module(pmodule), cleanup(NULL), regPlugins(getPool()), next(modules),
 			  prev(&modules), name(getPool(), pname)
 	{
 		if (next)
