@@ -61,7 +61,7 @@ const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 
 	char buff[1024];
 	char* p = buff;
-	char* const end = buff + sizeof(buff);
+	char* const end = buff + sizeof(buff) - 1;
 
 	const ISC_STATUS* s = status;
 	while (end > p && fb_interpret(p, end - p, &s))
