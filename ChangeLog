@@ -1,3 +1,7 @@
+ 2011-04-06 17:50  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Backport fix for potential buffer overflow. Thanks to Claudio.
+
  2011-04-05 18:01  asfernandes 
    M src/jrd/unicode_util.cpp
 Fixed CORE-3427 - Server crashing with UTF8 blobs.
