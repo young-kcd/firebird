@@ -1581,7 +1581,6 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
  *
  **************************************/
 	int id = -1;
-	Firebird::MetaName role_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -1597,18 +1596,18 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 
 	jrd_req* request = NULL;
 	bool found = false;
+	bool del_role_ok = true;
+
+	Firebird::MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
+	user.upper7();
+	Firebird::MetaName role_name, role_owner;
 
 	try {
-
-		Firebird::MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
-		user.upper7();
 
 		GET_STRING(ptr, role_name);
 
 		request = CMP_find_request(tdbb, drq_drop_role, DYN_REQUESTS);
 		id = drq_drop_role;
-
-		bool del_role_ok = true;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 			XX IN RDB$ROLES WITH
@@ -1618,7 +1617,9 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 				DYN_REQUEST(drq_drop_role) = request;
 
 			found = true;
-			const Firebird::MetaName role_owner(XX.RDB$OWNER_NAME);
+			role_owner = XX.RDB$OWNER_NAME;
+
+			// only owner of SQL role or USR_locksmith could drop SQL role
 
 			if (tdbb->getAttachment()->locksmith() || role_owner == user)
 			{
@@ -1640,9 +1641,9 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			request = CMP_find_request(tdbb, drq_del_role_1, DYN_REQUESTS);
 			id = drq_del_role_1;
 
-
 			/* The first OR clause Finds all members of the role
 			   The 2nd OR clause  Finds all privileges granted to the role */
+
 			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PRIV IN RDB$USER_PRIVILEGES WITH
 					(PRIV.RDB$RELATION_NAME EQ role_name.c_str() AND
@@ -1661,23 +1662,22 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 			if (!DYN_REQUEST(drq_del_role_1)) {
 				DYN_REQUEST(drq_del_role_1) = request;
 			}
-
-		}
-		else
-		{
-			DYN_error(false, 191, SafeArg() << user.c_str() << role_name.c_str());
-			// only owner of SQL role or USR_locksmith could drop SQL role
-			goto do_punt;
 		}
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		const USHORT number = (id == drq_drop_role ? 191 : 62);
-		// msg 191: "ERASE RDB$ROLES failed"
-		// msg  62: "ERASE RDB$USER_PRIVILEGES failed"
-		DYN_error_punt(true, number);
+		if (id == drq_drop_role)
+		{
+			DYN_error_punt(true, 5, "ERASE RDB$ROLES failed");
+			// hardcoded (non-translatable) msg: "ERASE RDB$ROLES failed"
+		}
+		else
+		{
+			DYN_error_punt(true, 62);
+			// msg 62: "ERASE RDB$USER_PRIVILEGES failed"
+		}
 	}
 
 	if (!found)
@@ -1686,10 +1686,11 @@ void DYN_delete_role( Global* gbl, const UCHAR** ptr)
 		// msg 155: "Role %s not found"
 	}
 
-	return;
-
-do_punt:	// ugly, rethink logic of this function
-	ERR_punt();
+	if (!del_role_ok)
+	{
+		DYN_error_punt(false, 191, SafeArg() << user.c_str() << role_name.c_str());
+		// msg 191: @1 is not the owner of SQL role @2
+	}
 }
 
 
