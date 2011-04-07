@@ -1,3 +1,15 @@
+ 2011-04-06 17:44  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed potential buffer overflow. Thanks to Claudio.
+
+ 2011-04-06 12:07  hvlad 
+   M builds/win32/msvc10/isql.vcxproj
+Add ICU's include folder to isql 
+
+ 2011-04-06 12:06  hvlad 
+   M src/yvalve/PluginManager.cpp
+Fix by Alex to prevent crash at exit time
+
  2011-04-05 21:30  asfernandes 
    M src/isql/isql.epp
    M src/isql/isql.h
