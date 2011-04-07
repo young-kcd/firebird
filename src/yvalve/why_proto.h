@@ -24,12 +24,15 @@
 #ifndef JRD_WHY_PROTO_H
 #define JRD_WHY_PROTO_H
 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
 #ifndef JRD_IBASE_H
+
 ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
 ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
 ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS *, FB_API_HANDLE*, USHORT, XSQLDA*);

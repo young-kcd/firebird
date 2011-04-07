@@ -82,7 +82,7 @@ namespace Firebird {
 	class Exception;
 }
 namespace Firebird {
-	class EventCallback;
+	class IEventCallback;
 }
 struct rem_port;
 
@@ -214,7 +214,7 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
 // if client
-	Firebird::EventCallback* rvnt_callback;
+	Firebird::IEventCallback* rvnt_callback;
 // else if server
 	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;
@@ -347,7 +347,7 @@ public:
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
 
 	void saveStatus(const Firebird::Exception& ex) throw();
-	void saveStatus(const Firebird::Status* ex) throw();
+	void saveStatus(const Firebird::IStatus* ex) throw();
 };
 
 

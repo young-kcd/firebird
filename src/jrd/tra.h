@@ -317,16 +317,16 @@ public:
 
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG prepare(Status* status,
+	virtual void FB_CARG prepare(IStatus* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void FB_CARG commit(Status* status);
-	virtual void FB_CARG commitRetaining(Status* status);
-	virtual void FB_CARG rollback(Status* status);
-	virtual void FB_CARG rollbackRetaining(Status* status);
-	virtual void FB_CARG disconnect(Status* status);
+	virtual void FB_CARG commit(IStatus* status);
+	virtual void FB_CARG commitRetaining(IStatus* status);
+	virtual void FB_CARG rollback(IStatus* status);
+	virtual void FB_CARG rollbackRetaining(IStatus* status);
+	virtual void FB_CARG disconnect(IStatus* status);
 };
 
 // System transaction is always transaction 0.

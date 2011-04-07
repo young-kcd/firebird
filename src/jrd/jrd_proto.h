@@ -45,9 +45,9 @@ void jrd_vtof(const char*, char*, SSHORT);
 
 namespace Firebird
 {
-	class PProvider;
+	class IProvider;
 }
-Firebird::PProvider* currentProvider();
+Firebird::IProvider* currentProvider();
 
 // Defines for parameter 3 of JRD_num_attachments
 enum JRD_info_tag

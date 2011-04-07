@@ -32,11 +32,11 @@
 class TraceFactoryImpl : public Firebird::StdPlugin<TraceFactory, FB_TRACE_FACTORY_VERSION>
 {
 public:
-	explicit TraceFactoryImpl(Firebird::IFactoryParameter*)
+	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
 	{ }
 
 	ntrace_mask_t FB_CARG trace_needs();
-	TracePlugin* FB_CARG trace_create(Firebird::Status* status, TraceInitInfo* init_info);
+	TracePlugin* FB_CARG trace_create(Firebird::IStatus* status, TraceInitInfo* init_info);
 	int FB_CARG release();
 };
 
@@ -55,7 +55,7 @@ ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
 	return (1 << TRACE_EVENT_MAX) - 1;
 }
 
-TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, TraceInitInfo* initInfo)
+TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, TraceInitInfo* initInfo)
 {
 	const char* dbname = NULL;
 	try
@@ -112,15 +112,15 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::Status* status, Tr
 static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
 static Firebird::UnloadDetector unloadDetector;
 
-void registerTrace(Firebird::IPlugin* iPlugin)
+void registerTrace(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
 	iPlugin->setModuleCleanup(&unloadDetector);
 }
 
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginInterface pi(master);
+	Firebird::PluginManagerInterface pi(master);
 	registerTrace(pi);
 }

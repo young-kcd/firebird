@@ -832,7 +832,7 @@ void Rrq::saveStatus(const Firebird::Exception& ex) throw()
 	}
 }
 
-void Rrq::saveStatus(const Firebird::Status* v) throw()
+void Rrq::saveStatus(const Firebird::IStatus* v) throw()
 {
 	if (rrqStatus.isSuccess())
 	{

@@ -99,15 +99,15 @@ public:
 class WinSspiServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
-    Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+    Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
                                WriterInterface* writerInterface);
-    Result FB_CARG contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+    Result FB_CARG contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
 
-	WinSspiServer(Firebird::IFactoryParameter*);
+	WinSspiServer(Firebird::IPluginConfig*);
 
 private:
 	AuthSspi::DataHolder sspiData;
@@ -117,22 +117,22 @@ private:
 class WinSspiClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	Result FB_CARG startAuthentication(Firebird::Status* status, bool isService,
+	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService,
 							   const char* dbName, DpbInterface* dpb);
-	Result FB_CARG contAuthentication(Firebird::Status* status,
+	Result FB_CARG contAuthentication(Firebird::IStatus* status,
 							  const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
 
-	WinSspiClient(Firebird::IFactoryParameter*);
+	WinSspiClient(Firebird::IPluginConfig*);
 
 private:
 	AuthSspi::DataHolder sspiData;
 	AuthSspi sspi;
 };
 
-void registerTrustedClient(Firebird::IPlugin* iPlugin);
-void registerTrustedServer(Firebird::IPlugin* iPlugin);
+void registerTrustedClient(Firebird::IPluginManager* iPlugin);
+void registerTrustedServer(Firebird::IPluginManager* iPlugin);
 
 } // namespace Auth
 

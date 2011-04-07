@@ -38,18 +38,20 @@
 
 namespace Firebird {
 
-class PluginManager : public StackIface<IPlugin>
+class PluginManager : public StackIface<IPluginManager>
 {
 public:
+	// IPluginManager implementation
 	IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
 								   int desiredVersion, void* missingFunctionClass,
 								   IFirebirdConf* firebirdConf);
-	void FB_CARG registerPlugin(unsigned int interfaceType, const char* defaultName,
-								PluginsFactory* factory);
+	void FB_CARG registerPluginFactory(unsigned int interfaceType, const char* defaultName,
+								IPluginFactory* factory);
 	IConfig* FB_CARG getConfig(const char* filename);
-	void FB_CARG releasePlugin(Plugin* plugin);
-	void FB_CARG setModuleCleanup(IModuleCleanup* cleanup);
-	void FB_CARG resetModuleCleanup(IModuleCleanup* cleanup);
+	void FB_CARG releasePlugin(IPluginBase* plugin);
+	void FB_CARG setModuleCleanup(IPluginModule* cleanup);
+	void FB_CARG resetModuleCleanup(IPluginModule* cleanup);
+	void FB_CARG moduleUnloaded();
 
 	PluginManager();
 

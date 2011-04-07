@@ -31,7 +31,7 @@
 
 namespace Remote
 {
-	void registerRedirector(Firebird::IPlugin* iPlugin);
+	void registerRedirector(Firebird::IPluginManager* iPlugin);
 }
 
 #endif // REMOTE_CLIENT_INTERFACE_H

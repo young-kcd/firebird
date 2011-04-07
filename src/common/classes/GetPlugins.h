@@ -50,7 +50,7 @@ class GetPlugins
 {
 public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, const char* namesList = NULL)
-		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginInterface()), missing(),
+		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginManager()), missing(),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
 		  										desiredVersion, &missing, NULL)),
 		  currentPlugin(NULL)
@@ -61,7 +61,7 @@ public:
 
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
 			   Config* knownConfig, const char* namesList = NULL)
-		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginInterface()), missing(),
+		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginManager()), missing(),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
 		  										desiredVersion, &missing, new FirebirdConf(knownConfig))),
 		  currentPlugin(NULL)
@@ -122,8 +122,8 @@ public:
 	}
 
 private:
-	AutoPtr<IMaster, AutoInterface> masterInterface;
-	AutoPtr<IPlugin, AutoInterface> pluginInterface;
+	AutoPtr<IMaster, AutoDisposable> masterInterface;
+	AutoPtr<IPluginManager, AutoDisposable> pluginInterface;
 	M missing;
 	RefPtr<IPluginSet> pluginSet;
 	P* currentPlugin;

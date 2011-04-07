@@ -34,7 +34,7 @@
 
 namespace Why
 {
-	extern Firebird::PProvider* dispatcherPtr;
+	extern Firebird::IProvider* dispatcherPtr;
 
 	void shutdownTimers();
 } // namespace Why

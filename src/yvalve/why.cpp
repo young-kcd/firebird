@@ -86,7 +86,7 @@ namespace
 
 
 static void badHandle(ISC_STATUS code);
-static bool isNetworkError(const Status* status);
+static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 static void saveErrorString(ISC_STATUS* status);
 static bool setPath(const PathName& filename, PathName& expandedName);
@@ -275,8 +275,8 @@ static RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HAND
 
 namespace
 {
-	// Status:	Provides correct status vector for operation and init() it.
-	class StatusVector : public StackIface<Status>
+	// StatusVector:	Provides correct status vector for operation and init() it.
+	class StatusVector : public StackIface<IStatus>
 	{
 	public:
 		explicit StatusVector(ISC_STATUS* v) throw()
@@ -630,7 +630,7 @@ namespace
 	public:
 		static void init()
 		{
-			PluginInterface pi;
+			PluginManagerInterface pi;
 			Remote::registerRedirector(pi);
 		}
 
@@ -642,7 +642,7 @@ namespace
 	class NoEntrypoint
 	{
 	public:
-		virtual void FB_CARG noEntrypoint(Status* s)
+		virtual void FB_CARG noEntrypoint(IStatus* s)
 		{
 			s->set(Arg::Gds(isc_unavailable).value());
 		}
@@ -754,7 +754,7 @@ namespace
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
 
-		YEvents(YAttachment* aAttachment, IEvents* aNext, EventCallback* aCallback);
+		YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback);
 
 		virtual ~YEvents()
 		{
@@ -781,12 +781,12 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG cancel(Status* status);
+		virtual void FB_CARG cancel(IStatus* status);
 
 	public:
 		YAttachment* attachment;
 		IEvents* next;
-		EventCallback* callback;
+		IEventCallback* callback;
 		bool deleteCallback;
 	};
 
@@ -816,17 +816,17 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG receive(Status* status, int level, unsigned int msgType,
+		virtual void FB_CARG receive(IStatus* status, int level, unsigned int msgType,
 			unsigned int length, unsigned char* message);
-		virtual void FB_CARG send(Status* status, int level, unsigned int msgType,
+		virtual void FB_CARG send(IStatus* status, int level, unsigned int msgType,
 			unsigned int length, const unsigned char* message);
-		virtual void FB_CARG getInfo(Status* status, int level, unsigned int itemsLength,
+		virtual void FB_CARG getInfo(IStatus* status, int level, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG start(Status* status, ITransaction* transaction, int level);
-		virtual void FB_CARG startAndSend(Status* status, ITransaction* transaction, int level,
+		virtual void FB_CARG start(IStatus* status, ITransaction* transaction, int level);
+		virtual void FB_CARG startAndSend(IStatus* status, ITransaction* transaction, int level,
 			unsigned int msgType, unsigned int length, const unsigned char* message);
-		virtual void FB_CARG unwind(Status* status, int level);
-		virtual void FB_CARG free(Status* status);
+		virtual void FB_CARG unwind(IStatus* status, int level);
+		virtual void FB_CARG free(IStatus* status);
 
 	public:
 		YAttachment* attachment;
@@ -881,21 +881,21 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG getInfo(Status* status, unsigned int itemsLength,
+		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG prepare(Status* status, unsigned int msgLength,
+		virtual void FB_CARG prepare(IStatus* status, unsigned int msgLength,
 			const unsigned char* message);
-		virtual void FB_CARG commit(Status* status);
-		virtual void FB_CARG commitRetaining(Status* status);
-		virtual void FB_CARG rollback(Status* status);
-		virtual void FB_CARG rollbackRetaining(Status* status);
-		virtual void FB_CARG disconnect(Status* status);
+		virtual void FB_CARG commit(IStatus* status);
+		virtual void FB_CARG commitRetaining(IStatus* status);
+		virtual void FB_CARG rollback(IStatus* status);
+		virtual void FB_CARG rollbackRetaining(IStatus* status);
+		virtual void FB_CARG disconnect(IStatus* status);
 
-		void addCleanupHandler(Status* status, CleanupCallback* callback);
+		void addCleanupHandler(IStatus* status, CleanupCallback* callback);
 
 	private:
-		bool prepareCommit(Status* status);
-		void buildPrepareInfo(Status* status, UCHAR** ptr);
+		bool prepareCommit(IStatus* status);
+		void buildPrepareInfo(IStatus* status, UCHAR** ptr);
 
 	public:
 		YAttachment* attachment;
@@ -932,15 +932,15 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG getInfo(Status* status, unsigned int itemsLength,
+		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length,
+		virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length,
 			unsigned char* buffer);
-		virtual void FB_CARG putSegment(Status* status, unsigned int length,
+		virtual void FB_CARG putSegment(IStatus* status, unsigned int length,
 			const unsigned char* buffer);
-		virtual void FB_CARG cancel(Status* status);
-		virtual void FB_CARG close(Status* status);
-		virtual int FB_CARG seek(Status* status, int mode, int offset);
+		virtual void FB_CARG cancel(IStatus* status);
+		virtual void FB_CARG close(IStatus* status);
+		virtual int FB_CARG seek(IStatus* status, int mode, int offset);
 
 	public:
 		YAttachment* attachment;
@@ -980,19 +980,19 @@ namespace
 				status_exception::raise(Arg::Gds(isc_unprepared_stmt));
 		}
 
-		virtual YStatement* FB_CARG prepare(Status* status, ITransaction* transaction,
+		virtual YStatement* FB_CARG prepare(IStatus* status, ITransaction* transaction,
 			unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 			unsigned int itemLength, const unsigned char* items,
 			unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG getInfo(Status* status, unsigned int itemsLength,
+		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
-		virtual YTransaction* FB_CARG execute(Status* status, ITransaction* transaction,
+		virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type);
+		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 			unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 			const MessageBuffer* outMsgBuffer);
-		virtual int FB_CARG fetch(Status* status, const MessageBuffer* msgBuffer);
-		virtual void FB_CARG insert(Status* status, const MessageBuffer* msgBuffer);
-		virtual void FB_CARG free(Status* status, unsigned int option);
+		virtual int FB_CARG fetch(IStatus* status, const MessageBuffer* msgBuffer);
+		virtual void FB_CARG insert(IStatus* status, const MessageBuffer* msgBuffer);
+		virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 	public:
 		YAttachment* attachment;
@@ -1007,7 +1007,7 @@ namespace
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
-		explicit YAttachment(PProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
+		explicit YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
 			: provider(aProvider),
 			  next(aNext),
 			  dbPath(getPool(), aDbPath),
@@ -1025,7 +1025,7 @@ namespace
 
 		virtual ~YAttachment()
 		{
-			PluginInterface()->releasePlugin(provider);
+			PluginManagerInterface()->releasePlugin(provider);
 		}
 
 		void destroy();
@@ -1048,44 +1048,44 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG getInfo(Status* status, unsigned int itemsLength,
+		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual YTransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength,
+		virtual YTransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength,
 			const unsigned char* tpb, FB_API_HANDLE api);
-		virtual YTransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length,
+		virtual YTransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length,
 			const unsigned char* id);
-		virtual YStatement* FB_CARG allocateStatement(Status* status);
-		virtual YRequest* FB_CARG compileRequest(Status* status, unsigned int blrLength,
+		virtual YStatement* FB_CARG allocateStatement(IStatus* status);
+		virtual YRequest* FB_CARG compileRequest(IStatus* status, unsigned int blrLength,
 			const unsigned char* blr);
-		virtual void FB_CARG transactRequest(Status* status, ITransaction* transaction,
+		virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 			unsigned int blrLength, const unsigned char* blr, unsigned int inMsgLength,
 			const unsigned char* inMsg, unsigned int outMsgLength, unsigned char* outMsg);
-		virtual YBlob* FB_CARG createBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+		virtual YBlob* FB_CARG createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 			unsigned int bpbLength, const unsigned char* bpb);
-		virtual YBlob* FB_CARG openBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+		virtual YBlob* FB_CARG openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 			unsigned int bpbLength, const unsigned char* bpb);
-		virtual int FB_CARG getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+		virtual int FB_CARG getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 			unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 			const unsigned char* param, int sliceLength, unsigned char* slice);
-		virtual void FB_CARG putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+		virtual void FB_CARG putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 			unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 			const unsigned char* param, int sliceLength, unsigned char* slice);
-		virtual void FB_CARG ddl(Status* status, ITransaction* transaction, unsigned int length,
+		virtual void FB_CARG ddl(IStatus* status, ITransaction* transaction, unsigned int length,
 			const unsigned char* dyn);
-		virtual YTransaction* FB_CARG execute(Status* status, ITransaction* transaction,
+		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 			unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
 			const MessageBuffer* inMsgBuffer, const MessageBuffer* outMsgBuffer);
-		virtual YEvents* FB_CARG queEvents(Status* status, EventCallback* callback,
+		virtual YEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 			unsigned int length, const unsigned char* eventsData);
-		virtual void FB_CARG cancelOperation(Status* status, int option);
-		virtual void FB_CARG ping(Status* status);
-		virtual void FB_CARG detach(Status* status);
-		virtual void FB_CARG drop(Status* status);
+		virtual void FB_CARG cancelOperation(IStatus* status, int option);
+		virtual void FB_CARG ping(IStatus* status);
+		virtual void FB_CARG detach(IStatus* status);
+		virtual void FB_CARG drop(IStatus* status);
 
-		void addCleanupHandler(Status* status, CleanupCallback* callback);
+		void addCleanupHandler(IStatus* status, CleanupCallback* callback);
 
 	public:
-		PProvider* provider;
+		IProvider* provider;
 		IAttachment* next;
 		PathName dbPath;
 		HandleArray<YBlob> childBlobs;
@@ -1104,7 +1104,7 @@ namespace
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
-		explicit YService(PProvider* aProvider, IService* aNext)
+		explicit YService(IProvider* aProvider, IService* aNext)
 			: provider(aProvider),
 			  next(aNext)
 		{
@@ -1114,7 +1114,7 @@ namespace
 
 		virtual ~YService()
 		{
-			PluginInterface()->releasePlugin(provider);
+			PluginManagerInterface()->releasePlugin(provider);
 		}
 
 		void destroy();
@@ -1136,20 +1136,20 @@ namespace
 			return 1;
 		}
 
-		virtual void FB_CARG detach(Status* status);
-		virtual void FB_CARG query(Status* status,
+		virtual void FB_CARG detach(IStatus* status);
+		virtual void FB_CARG query(IStatus* status,
 			unsigned int sendLength, const unsigned char* sendItems,
 			unsigned int receiveLength, const unsigned char* receiveItems,
 			unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG start(Status* status,
+		virtual void FB_CARG start(IStatus* status,
 			unsigned int spbLength, const unsigned char* spb);
 
 	public:
-		PProvider* provider;
+		IProvider* provider;
 		IService* next;
 	};
 
-	class Dispatcher : public StdPlugin<PProvider, FB_P_PROVIDER_VERSION>
+	class Dispatcher : public StdPlugin<IProvider, FB_P_PROVIDER_VERSION>
 	{
 	public:
 		void* operator new(size_t, void* memory) throw()
@@ -1157,13 +1157,13 @@ namespace
 			return memory;
 		}
 
-		virtual void FB_CARG attachDatabase(Status* status, IAttachment** attachment,
+		virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** attachment,
 			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
-		virtual void FB_CARG createDatabase(Status* status, IAttachment** ptr,
+		virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr,
 			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
-		virtual YService* FB_CARG attachServiceManager(Status* status, const char* serviceName,
+		virtual YService* FB_CARG attachServiceManager(IStatus* status, const char* serviceName,
 			unsigned int spbLength, const unsigned char* spb);
-		virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
+		virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
 
 		virtual int FB_CARG release()
 		{
@@ -1182,7 +1182,7 @@ namespace
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		YEntry(Status* aStatus, YAttachment* aAttachment, bool checkAttachment = true)
+		YEntry(IStatus* aStatus, YAttachment* aAttachment, bool checkAttachment = true)
 			: attachment(aAttachment)
 		{
 			aStatus->init();
@@ -1193,14 +1193,14 @@ namespace
 			init();
 		}
 
-		YEntry(Status* aStatus, YService* aService)
+		YEntry(IStatus* aStatus, YService* aService)
 			: attachment(NULL)
 		{
 			aStatus->init();
 			init();
 		}
 
-		explicit YEntry(Status* aStatus)
+		explicit YEntry(IStatus* aStatus)
 			: attachment(NULL)
 		{
 			aStatus->init();
@@ -1240,7 +1240,7 @@ namespace
 	};
 }	// namespace
 
-PProvider* Why::dispatcherPtr = &dispatcher;
+IProvider* Why::dispatcherPtr = &dispatcher;
 
 
 struct TEB
@@ -1259,7 +1259,7 @@ static void badHandle(ISC_STATUS code)
 	status_exception::raise(Arg::Gds(code));
 }
 
-static bool isNetworkError(const Status* status)
+static bool isNetworkError(const IStatus* status)
 {
 	ISC_STATUS code = status->get()[1];
 	return code == isc_network_error || code == isc_net_write_err || code == isc_net_read_err;
@@ -2728,7 +2728,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	StatusVector status(userStatus);
 	YEvents* events = NULL;
 
-	class Callback : public EventCallback
+	class Callback : public IEventCallback
 	{
 	public:
 		explicit Callback(UCHAR* aBuffer)
@@ -2951,7 +2951,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 
 		///nullCheck(id, isc_bad_events_handle);
 
-		class Callback : public EventCallback
+		class Callback : public IEventCallback
 		{
 		public:
 			Callback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -3592,7 +3592,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 //-------------------------------------
 
 
-YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, EventCallback* aCallback)
+YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
 	: attachment(aAttachment),
 	  next(aNext),
 	  callback(aCallback),
@@ -3612,7 +3612,7 @@ void YEvents::destroy()
 	release();
 }
 
-void YEvents::cancel(Status* status)
+void YEvents::cancel(IStatus* status)
 {
 	try
 	{
@@ -3658,7 +3658,7 @@ void YRequest::destroy()
 	release();
 }
 
-void YRequest::receive(Status* status, int level, unsigned int msgType,
+void YRequest::receive(IStatus* status, int level, unsigned int msgType,
 	unsigned int length, unsigned char* message)
 {
 	try
@@ -3672,7 +3672,7 @@ void YRequest::receive(Status* status, int level, unsigned int msgType,
 	}
 }
 
-void YRequest::send(Status* status, int level, unsigned int msgType,
+void YRequest::send(IStatus* status, int level, unsigned int msgType,
 	unsigned int length, const unsigned char* message)
 {
 	try
@@ -3686,7 +3686,7 @@ void YRequest::send(Status* status, int level, unsigned int msgType,
 	}
 }
 
-void YRequest::getInfo(Status* status, int level, unsigned int itemsLength,
+void YRequest::getInfo(IStatus* status, int level, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -3700,7 +3700,7 @@ void YRequest::getInfo(Status* status, int level, unsigned int itemsLength,
 	}
 }
 
-void YRequest::start(Status* status, ITransaction* transaction, int level)
+void YRequest::start(IStatus* status, ITransaction* transaction, int level)
 {
 	try
 	{
@@ -3715,7 +3715,7 @@ void YRequest::start(Status* status, ITransaction* transaction, int level)
 	}
 }
 
-void YRequest::startAndSend(Status* status, ITransaction* transaction, int level,
+void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int level,
 	unsigned int msgType, unsigned int length, const unsigned char* message)
 {
 	try
@@ -3731,7 +3731,7 @@ void YRequest::startAndSend(Status* status, ITransaction* transaction, int level
 	}
 }
 
-void YRequest::unwind(Status* status, int level)
+void YRequest::unwind(IStatus* status, int level)
 {
 	try
 	{
@@ -3744,7 +3744,7 @@ void YRequest::unwind(Status* status, int level)
 	}
 }
 
-void YRequest::free(Status* status)
+void YRequest::free(IStatus* status)
 {
 	try
 	{
@@ -3786,7 +3786,7 @@ void YBlob::destroy()
 	release();
 }
 
-void YBlob::getInfo(Status* status, unsigned int itemsLength,
+void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -3800,7 +3800,7 @@ void YBlob::getInfo(Status* status, unsigned int itemsLength,
 	}
 }
 
-unsigned int YBlob::getSegment(Status* status, unsigned int length, unsigned char* buffer)
+unsigned int YBlob::getSegment(IStatus* status, unsigned int length, unsigned char* buffer)
 {
 	try
 	{
@@ -3815,7 +3815,7 @@ unsigned int YBlob::getSegment(Status* status, unsigned int length, unsigned cha
 	return 0;
 }
 
-void YBlob::putSegment(Status* status, unsigned int length, const unsigned char* buffer)
+void YBlob::putSegment(IStatus* status, unsigned int length, const unsigned char* buffer)
 {
 	try
 	{
@@ -3828,7 +3828,7 @@ void YBlob::putSegment(Status* status, unsigned int length, const unsigned char*
 	}
 }
 
-void YBlob::cancel(Status* status)
+void YBlob::cancel(IStatus* status)
 {
 	try
 	{
@@ -3845,7 +3845,7 @@ void YBlob::cancel(Status* status)
 	}
 }
 
-void YBlob::close(Status* status)
+void YBlob::close(IStatus* status)
 {
 	try
 	{
@@ -3862,7 +3862,7 @@ void YBlob::close(Status* status)
 	}
 }
 
-int YBlob::seek(Status* status, int mode, int offset)
+int YBlob::seek(IStatus* status, int mode, int offset)
 {
 	try
 	{
@@ -3907,7 +3907,7 @@ void YStatement::destroy()
 	release();
 }
 
-YStatement* YStatement::prepare(Status* status, ITransaction* transaction,
+YStatement* YStatement::prepare(IStatus* status, ITransaction* transaction,
 	unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 	unsigned int itemLength, const unsigned char* items,
 	unsigned int bufferLength, unsigned char* buffer)
@@ -3935,7 +3935,7 @@ YStatement* YStatement::prepare(Status* status, ITransaction* transaction,
 	return this;
 }
 
-void YStatement::getInfo(Status* status, unsigned int itemsLength,
+void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -3968,7 +3968,7 @@ void YStatement::getInfo(Status* status, unsigned int itemsLength,
 	}
 }
 
-void YStatement::setCursor(Status* status, const char* name, unsigned int type)
+void YStatement::setCursor(IStatus* status, const char* name, unsigned int type)
 {
 	try
 	{
@@ -3982,7 +3982,7 @@ void YStatement::setCursor(Status* status, const char* name, unsigned int type)
 	}
 }
 
-YTransaction* YStatement::execute(Status* status, ITransaction* transaction,
+YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 	const MessageBuffer* outMsgBuffer)
 {
@@ -4011,7 +4011,7 @@ YTransaction* YStatement::execute(Status* status, ITransaction* transaction,
 	return NULL;
 }
 
-int YStatement::fetch(Status* status, const MessageBuffer* msgBuffer)
+int YStatement::fetch(IStatus* status, const MessageBuffer* msgBuffer)
 {
 	try
 	{
@@ -4026,7 +4026,7 @@ int YStatement::fetch(Status* status, const MessageBuffer* msgBuffer)
 	return status->get()[1];
 }
 
-void YStatement::insert(Status* status, const MessageBuffer* msgBuffer)
+void YStatement::insert(IStatus* status, const MessageBuffer* msgBuffer)
 {
 	try
 	{
@@ -4041,7 +4041,7 @@ void YStatement::insert(Status* status, const MessageBuffer* msgBuffer)
 	}
 }
 
-void YStatement::free(Status* status, unsigned int option)
+void YStatement::free(IStatus* status, unsigned int option)
 {
 	try
 	{
@@ -4127,7 +4127,7 @@ void YTransaction::destroy()
 	release();
 }
 
-void YTransaction::getInfo(Status* status, unsigned int itemsLength,
+void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -4165,7 +4165,7 @@ void YTransaction::getInfo(Status* status, unsigned int itemsLength,
 	}
 }
 
-void YTransaction::prepare(Status* status, unsigned int msgLength, const unsigned char* message)
+void YTransaction::prepare(IStatus* status, unsigned int msgLength, const unsigned char* message)
 {
 	try
 	{
@@ -4190,7 +4190,7 @@ void YTransaction::prepare(Status* status, unsigned int msgLength, const unsigne
 	}
 }
 
-void YTransaction::commit(Status* status)
+void YTransaction::commit(IStatus* status)
 {
 	try
 	{
@@ -4227,7 +4227,7 @@ void YTransaction::commit(Status* status)
 	}
 }
 
-void YTransaction::commitRetaining(Status* status)
+void YTransaction::commitRetaining(IStatus* status)
 {
 	try
 	{
@@ -4252,7 +4252,7 @@ void YTransaction::commitRetaining(Status* status)
 	}
 }
 
-void YTransaction::rollback(Status* status)
+void YTransaction::rollback(IStatus* status)
 {
 	try
 	{
@@ -4282,7 +4282,7 @@ void YTransaction::rollback(Status* status)
 	}
 }
 
-void YTransaction::rollbackRetaining(Status* status)
+void YTransaction::rollbackRetaining(IStatus* status)
 {
 	try
 	{
@@ -4307,7 +4307,7 @@ void YTransaction::rollbackRetaining(Status* status)
 	}
 }
 
-void YTransaction::disconnect(Status* status)
+void YTransaction::disconnect(IStatus* status)
 {
 	try
 	{
@@ -4339,7 +4339,7 @@ void YTransaction::disconnect(Status* status)
 	}
 }
 
-void YTransaction::addCleanupHandler(Status* status, CleanupCallback* callback)
+void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 {
 	try
 	{
@@ -4354,7 +4354,7 @@ void YTransaction::addCleanupHandler(Status* status, CleanupCallback* callback)
 }
 
 // Perform the first phase of a two-phase commit for a multi-database transaction.
-bool YTransaction::prepareCommit(Status* status)
+bool YTransaction::prepareCommit(IStatus* status)
 {
 	YTransaction* i;
 	HalfStaticArray<UCHAR, 1024> tdrBuffer;
@@ -4410,7 +4410,7 @@ bool YTransaction::prepareCommit(Status* status)
 }
 
 // Put a transaction's id into the transaction description record.
-void YTransaction::buildPrepareInfo(Status* status, UCHAR** ptr)
+void YTransaction::buildPrepareInfo(IStatus* status, UCHAR** ptr)
 {
 	try
 	{
@@ -4489,7 +4489,7 @@ void YAttachment::buildPrepareInfo(UCHAR** ptr)
 	*ptr = p + len;
 }
 
-void YAttachment::getInfo(Status* status, unsigned int itemsLength,
+void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -4503,7 +4503,7 @@ void YAttachment::getInfo(Status* status, unsigned int itemsLength,
 	}
 }
 
-YTransaction* YAttachment::startTransaction(Status* status, unsigned int tpbLength,
+YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLength,
 	const unsigned char* tpb, FB_API_HANDLE api)
 {
 	try
@@ -4524,7 +4524,7 @@ YTransaction* YAttachment::startTransaction(Status* status, unsigned int tpbLeng
 	return NULL;
 }
 
-YTransaction* YAttachment::reconnectTransaction(Status* status, unsigned int length,
+YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int length,
 	const unsigned char* id)
 {
 	try
@@ -4549,7 +4549,7 @@ YTransaction* YAttachment::reconnectTransaction(Status* status, unsigned int len
 	return NULL;
 }
 
-YStatement* YAttachment::allocateStatement(Status* status)
+YStatement* YAttachment::allocateStatement(IStatus* status)
 {
 	try
 	{
@@ -4567,7 +4567,7 @@ YStatement* YAttachment::allocateStatement(Status* status)
 	return NULL;
 }
 
-YRequest* YAttachment::compileRequest(Status* status, unsigned int blrLength,
+YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
 	const unsigned char* blr)
 {
 	try
@@ -4586,7 +4586,7 @@ YRequest* YAttachment::compileRequest(Status* status, unsigned int blrLength,
 	return NULL;
 }
 
-void YAttachment::transactRequest(Status* status, ITransaction* transaction,
+void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
 	unsigned int blrLength, const unsigned char* blr, unsigned int inMsgLength,
 	const unsigned char* inMsg, unsigned int outMsgLength, unsigned char* outMsg)
 {
@@ -4605,7 +4605,7 @@ void YAttachment::transactRequest(Status* status, ITransaction* transaction,
 	}
 }
 
-YBlob* YAttachment::createBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int bpbLength, const unsigned char* bpb)
 {
 	try
@@ -4626,7 +4626,7 @@ YBlob* YAttachment::createBlob(Status* status, ITransaction* transaction, ISC_QU
 	return NULL;
 }
 
-YBlob* YAttachment::openBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int bpbLength, const unsigned char* bpb)
 {
 	try
@@ -4647,7 +4647,7 @@ YBlob* YAttachment::openBlob(Status* status, ITransaction* transaction, ISC_QUAD
 	return NULL;
 }
 
-int YAttachment::getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -4668,7 +4668,7 @@ int YAttachment::getSlice(Status* status, ITransaction* transaction, ISC_QUAD* i
 	return 0;
 }
 
-void YAttachment::putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -4685,7 +4685,7 @@ void YAttachment::putSlice(Status* status, ITransaction* transaction, ISC_QUAD* 
 	}
 }
 
-void YAttachment::ddl(Status* status, ITransaction* transaction, unsigned int length,
+void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int length,
 	const unsigned char* dyn)
 {
 	try
@@ -4701,7 +4701,7 @@ void YAttachment::ddl(Status* status, ITransaction* transaction, unsigned int le
 	}
 }
 
-YTransaction* YAttachment::execute(Status* status, ITransaction* transaction,
+YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
 	const MessageBuffer* inMsgBuffer, const MessageBuffer* outMsgBuffer)
 {
@@ -4731,7 +4731,7 @@ YTransaction* YAttachment::execute(Status* status, ITransaction* transaction,
 	return NULL;
 }
 
-YEvents* YAttachment::queEvents(Status* status, EventCallback* callback,
+YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
 	unsigned int length, const unsigned char* eventsData)
 {
 	try
@@ -4750,7 +4750,7 @@ YEvents* YAttachment::queEvents(Status* status, EventCallback* callback,
 	return NULL;
 }
 
-void YAttachment::cancelOperation(Status* status, int option)
+void YAttachment::cancelOperation(IStatus* status, int option)
 {
 	try
 	{
@@ -4770,7 +4770,7 @@ void YAttachment::cancelOperation(Status* status, int option)
 	}
 }
 
-void YAttachment::ping(Status* status)
+void YAttachment::ping(IStatus* status)
 {
 	try
 	{
@@ -4796,7 +4796,7 @@ void YAttachment::ping(Status* status)
 	}
 }
 
-void YAttachment::detach(Status* status)
+void YAttachment::detach(IStatus* status)
 {
 	try
 	{
@@ -4814,7 +4814,7 @@ void YAttachment::detach(Status* status)
 	}
 }
 
-void YAttachment::drop(Status* status)
+void YAttachment::drop(IStatus* status)
 {
 	try
 	{
@@ -4831,7 +4831,7 @@ void YAttachment::drop(Status* status)
 	}
 }
 
-void YAttachment::addCleanupHandler(Status* status, CleanupCallback* callback)
+void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 {
 	try
 	{
@@ -4857,7 +4857,7 @@ void YService::destroy()
 	release();
 }
 
-void YService::detach(Status* status)
+void YService::detach(IStatus* status)
 {
 	try
 	{
@@ -4874,7 +4874,7 @@ void YService::detach(Status* status)
 	}
 }
 
-void YService::query(Status* status, unsigned int sendLength, const unsigned char* sendItems,
+void YService::query(IStatus* status, unsigned int sendLength, const unsigned char* sendItems,
 	unsigned int receiveLength, const unsigned char* receiveItems,
 	unsigned int bufferLength, unsigned char* buffer)
 {
@@ -4889,7 +4889,7 @@ void YService::query(Status* status, unsigned int sendLength, const unsigned cha
 	}
 }
 
-void YService::start(Status* status, unsigned int spbLength, const unsigned char* spb)
+void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spb)
 {
 	try
 	{
@@ -4907,7 +4907,7 @@ void YService::start(Status* status, unsigned int spbLength, const unsigned char
 
 
 // Attach a database through the first subsystem that recognizes it.
-void Dispatcher::attachDatabase(Status* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
+void Dispatcher::attachDatabase(IStatus* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
 	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
 	try
@@ -4989,18 +4989,18 @@ void Dispatcher::attachDatabase(Status* status, IAttachment** attachment, FB_API
 			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
 
 		StatusVector temp(NULL);
-		Status* currentStatus = status;
+		IStatus* currentStatus = status;
 
 		PathName dummy;
 		RefPtr<Config> config;
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 
-		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider,
+		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
 				FB_P_PROVIDER_VERSION, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
-			PProvider* provider = providerIterator.plugin();
+			IProvider* provider = providerIterator.plugin();
 
 			provider->attachDatabase(currentStatus, attachment, 0, expandedFilename.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer());
@@ -5032,7 +5032,7 @@ void Dispatcher::attachDatabase(Status* status, IAttachment** attachment, FB_API
 	}
 }
 
-void Dispatcher::createDatabase(Status* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
+void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
 	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
 	try
@@ -5116,7 +5116,7 @@ void Dispatcher::createDatabase(Status* status, IAttachment** attachment, FB_API
 			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
 
 		StatusVector temp(NULL);
-		Status* currentStatus = status;
+		IStatus* currentStatus = status;
 
 		/***
 		PathName dummy;
@@ -5124,12 +5124,12 @@ void Dispatcher::createDatabase(Status* status, IAttachment** attachment, FB_API
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 		***/
 
-		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider,
+		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
 				FB_P_PROVIDER_VERSION/***, config***/);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
-			PProvider* provider = providerIterator.plugin();
+			IProvider* provider = providerIterator.plugin();
 
 			provider->createDatabase(currentStatus, attachment, 0, expandedFilename.c_str(),
 				newDpb.getBufferLength(), newDpb.getBuffer());
@@ -5172,7 +5172,7 @@ void Dispatcher::createDatabase(Status* status, IAttachment** attachment, FB_API
 }
 
 // Attach a service through the first subsystem that recognizes it.
-YService* Dispatcher::attachServiceManager(Status* status, const char* serviceName,
+YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
 {
 	try
@@ -5195,12 +5195,12 @@ YService* Dispatcher::attachServiceManager(Status* status, const char* serviceNa
 
 		try
 		{
-			for (GetPlugins<PProvider, NoEntrypoint> providerIterator(PluginType::Provider,
+			for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
 					FB_P_PROVIDER_VERSION);
 				 providerIterator.hasData();
 				 providerIterator.next())
 			{
-				PProvider* provider = providerIterator.plugin();
+				IProvider* provider = providerIterator.plugin();
 
 				service = provider->attachServiceManager(status, svcName.c_str(), spbLength, spb);
 
@@ -5235,7 +5235,7 @@ YService* Dispatcher::attachServiceManager(Status* status, const char* serviceNa
 	return NULL;
 }
 
-void Dispatcher::shutdown(Status* userStatus, unsigned int timeout, const int reason)
+void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int reason)
 {
 	try
 	{
@@ -5284,12 +5284,12 @@ void Dispatcher::shutdown(Status* userStatus, unsigned int timeout, const int re
 		shutdownStarted = true;
 
 		// Shutdown providers (if any present).
-		for (GetPlugins<PProvider, NoEntrypoint> providerIterator(
+		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(
 				PluginType::Provider, FB_P_PROVIDER_VERSION);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
-			PProvider* provider = providerIterator.plugin();
+			IProvider* provider = providerIterator.plugin();
 
 			StatusVector status2(NULL);
 			provider->shutdown(&status2, timeout, reason);
@@ -5309,7 +5309,7 @@ void Dispatcher::shutdown(Status* userStatus, unsigned int timeout, const int re
 				{
 					do
 					{
-						PluginInterface()->releasePlugin(accessor.current()->second->provider);
+						PluginManagerInterface()->releasePlugin(accessor.current()->second->provider);
 					} while (accessor.getNext());
 				}
 			}
@@ -5321,7 +5321,7 @@ void Dispatcher::shutdown(Status* userStatus, unsigned int timeout, const int re
 				{
 					do
 					{
-						PluginInterface()->releasePlugin(accessor.current()->second->provider);
+						PluginManagerInterface()->releasePlugin(accessor.current()->second->provider);
 					} while (accessor.getNext());
 				}
 			}

@@ -49,12 +49,12 @@ namespace Auth {
 class DebugServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
-	DebugServer(Firebird::IFactoryParameter*);
+	DebugServer(Firebird::IPluginConfig*);
 
-    Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+    Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
                                WriterInterface* writerInterface);
-    Result contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+    Result contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();
@@ -66,10 +66,10 @@ private:
 class DebugClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	DebugClient(Firebird::IFactoryParameter*);
+	DebugClient(Firebird::IPluginConfig*);
 
-	Result startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
+	Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();
 

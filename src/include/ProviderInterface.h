@@ -66,7 +66,7 @@ public:
 	unsigned char* const buffer;
 };
 
-class EventCallback
+class IEventCallback
 {
 public:
 	virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events) = 0;
@@ -89,155 +89,155 @@ public:
 };
 */
 
-class IBlob : public Interface
+class IBlob : public IInterface
 {
 public:
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length,
+	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length,
 											unsigned char* buffer) = 0;	// returns real length
-	virtual void FB_CARG putSegment(Status* status, unsigned int length,
+	virtual void FB_CARG putSegment(IStatus* status, unsigned int length,
 									const unsigned char* buffer) = 0;
-	virtual void FB_CARG cancel(Status* status) = 0;
-	virtual void FB_CARG close(Status* status) = 0;
-	virtual int FB_CARG seek(Status* status, int mode, int offset) = 0;			// returns position
+	virtual void FB_CARG cancel(IStatus* status) = 0;
+	virtual void FB_CARG close(IStatus* status) = 0;
+	virtual int FB_CARG seek(IStatus* status, int mode, int offset) = 0;			// returns position
 };
 #define FB_I_BLOB_VERSION (FB_INTERFACE_VERSION + 6)
 
-class ITransaction : public Interface
+class ITransaction : public IInterface
 {
 public:
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG prepare(Status* status,
+	virtual void FB_CARG prepare(IStatus* status,
 						 unsigned int msgLength = 0, const unsigned char* message = 0) = 0;
-	virtual void FB_CARG commit(Status* status) = 0;
-	virtual void FB_CARG commitRetaining(Status* status) = 0;
-	virtual void FB_CARG rollback(Status* status) = 0;
-	virtual void FB_CARG rollbackRetaining(Status* status) = 0;
-	virtual void FB_CARG disconnect(Status* status) = 0;
+	virtual void FB_CARG commit(IStatus* status) = 0;
+	virtual void FB_CARG commitRetaining(IStatus* status) = 0;
+	virtual void FB_CARG rollback(IStatus* status) = 0;
+	virtual void FB_CARG rollbackRetaining(IStatus* status) = 0;
+	virtual void FB_CARG disconnect(IStatus* status) = 0;
 };
 #define FB_I_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 12)
 
-class IStatement : public Interface
+class IStatement : public IInterface
 {
 public:
 	// FixMe - prepare must return void, not new statement handle
-	virtual IStatement* FB_CARG prepare(Status* status, ITransaction* tra,
+	virtual IStatement* FB_CARG prepare(IStatus* status, ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 							   unsigned int itemLength, const unsigned char* items,
 							   unsigned int bufferLength, unsigned char* buffer) = 0;
 
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type) = 0;
-	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* tra,
+	virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type) = 0;
+	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
 										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 										const MessageBuffer* outMsgBuffer) = 0;
-	virtual int FB_CARG fetch(Status* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(Status* status, const MessageBuffer* msgBuffer) = 0;
-	virtual void FB_CARG free(Status* status, unsigned int option) = 0;
+	virtual int FB_CARG fetch(IStatus* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const MessageBuffer* msgBuffer) = 0;
+	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
 };
 #define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)
 
-class IRequest : public Interface
+class IRequest : public IInterface
 {
 public:
-	virtual void FB_CARG receive(Status* status, int level, unsigned int msgType,
+	virtual void FB_CARG receive(IStatus* status, int level, unsigned int msgType,
 						 unsigned int length, unsigned char* message) = 0;
-	virtual void FB_CARG send(Status* status, int level, unsigned int msgType,
+	virtual void FB_CARG send(IStatus* status, int level, unsigned int msgType,
 					  unsigned int length, const unsigned char* message) = 0;
-	virtual void FB_CARG getInfo(Status* status, int level,
+	virtual void FB_CARG getInfo(IStatus* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG start(Status* status, ITransaction* tra, int level) = 0;
-	virtual void FB_CARG startAndSend(Status* status, ITransaction* tra, int level, unsigned int msgType,
+	virtual void FB_CARG start(IStatus* status, ITransaction* tra, int level) = 0;
+	virtual void FB_CARG startAndSend(IStatus* status, ITransaction* tra, int level, unsigned int msgType,
 							  unsigned int length, const unsigned char* message) = 0;
-	virtual void FB_CARG unwind(Status* status, int level) = 0;
-	virtual void FB_CARG free(Status* status) = 0;
+	virtual void FB_CARG unwind(IStatus* status, int level) = 0;
+	virtual void FB_CARG free(IStatus* status) = 0;
 };
 #define FB_I_REQUEST_VERSION (FB_INTERFACE_VERSION + 7)
 
-class IEvents : public Interface
+class IEvents : public IInterface
 {
 public:
-	virtual void FB_CARG cancel(Status* status) = 0;
+	virtual void FB_CARG cancel(IStatus* status) = 0;
 };
 #define FB_I_EVENTS_VERSION (FB_INTERFACE_VERSION + 1)
 
-class IAttachment : public Interface
+class IAttachment : public IInterface
 {
 public:
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-//	virtual ITransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
+//	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 // second form is tmp - not to rewrite external engines right now
-	virtual ITransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
+	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api) = 0;
-	virtual ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id) = 0;
-	virtual IStatement* FB_CARG allocateStatement(Status* status) = 0;
-	virtual IRequest* FB_CARG compileRequest(Status* status, unsigned int blrLength, const unsigned char* blr) = 0;
-	virtual void FB_CARG transactRequest(Status* status, ITransaction* transaction,
+	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id) = 0;
+	virtual IStatement* FB_CARG allocateStatement(IStatus* status) = 0;
+	virtual IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blrLength, const unsigned char* blr) = 0;
+	virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 								 unsigned int blrLength, const unsigned char* blr,
 								 unsigned int inMsgLength, const unsigned char* inMsg,
 								 unsigned int outMsgLength, unsigned char* outMsg) = 0;
-	virtual IBlob* FB_CARG createBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual IBlob* FB_CARG createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 							 unsigned int bpbLength = 0, const unsigned char* bpb = 0) = 0;
-	virtual IBlob* FB_CARG openBlob(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual IBlob* FB_CARG openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 						   unsigned int bpbLength = 0, const unsigned char* bpb = 0) = 0;
-	virtual int FB_CARG getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual int FB_CARG getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 						 unsigned int sdlLength, const unsigned char* sdl,
 						 unsigned int paramLength, const unsigned char* param,
 						 int sliceLength, unsigned char* slice) = 0;
-	virtual void FB_CARG putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual void FB_CARG putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 						  unsigned int sdlLength, const unsigned char* sdl,
 						  unsigned int paramLength, const unsigned char* param,
 						  int sliceLength, unsigned char* slice) = 0;
-	virtual void FB_CARG ddl(Status* status, ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG ddl(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn) = 0;
-	virtual ITransaction* FB_CARG execute(Status* status, ITransaction* transaction,
+	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 								 const MessageBuffer* outMsgBuffer) = 0;
-	virtual IEvents* FB_CARG queEvents(Status* status, EventCallback* callback,
+	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
-	virtual void FB_CARG cancelOperation(Status* status, int option) = 0;
-	virtual void FB_CARG ping(Status* status) = 0;
-	virtual void FB_CARG detach(Status* status) = 0;
-	virtual void FB_CARG drop(Status* status) = 0;
+	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;
+	virtual void FB_CARG ping(IStatus* status) = 0;
+	virtual void FB_CARG detach(IStatus* status) = 0;
+	virtual void FB_CARG drop(IStatus* status) = 0;
 };
 #define FB_I_ATTACHMENT_VERSION (FB_INTERFACE_VERSION + 11)
 
-class IService : public Interface
+class IService : public IInterface
 {
 public:
-	virtual void FB_CARG detach(Status* status) = 0;
-	virtual void FB_CARG query(Status* status,
+	virtual void FB_CARG detach(IStatus* status) = 0;
+	virtual void FB_CARG query(IStatus* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG start(Status* status,
+	virtual void FB_CARG start(IStatus* status,
 					   unsigned int spbLength, const unsigned char* spb) = 0;
 };
 #define FB_I_SERVICE_VERSION (FB_INTERFACE_VERSION + 3)
 
-class PProvider : public Plugin
+class IProvider : public IPluginBase
 {
 public:
-	virtual void FB_CARG attachDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb) = 0;
-	virtual void FB_CARG createDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb) = 0;
-	virtual IService* FB_CARG attachServiceManager(Status* status, const char* service,
+	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb) = 0;
-	//virtual ITransaction* FB_CARG startTransaction(Status* status, unsigned int count, ...) = 0;
-	//virtual ITransaction* FB_CARG startMultiple(Status* status, MultipleTransaction* multi) = 0;
-	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason) = 0;
-	//virtual void FB_CARG fb_shutdown_callback(Status* status, const int mask, ShutdownCallback* callback) = 0;
+	//virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int count, ...) = 0;
+	//virtual ITransaction* FB_CARG startMultiple(IStatus* status, MultipleTransaction* multi) = 0;
+	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason) = 0;
+	//virtual void FB_CARG fb_shutdown_callback(IStatus* status, const int mask, ShutdownCallback* callback) = 0;
 };
 #define FB_P_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
 

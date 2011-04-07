@@ -39,13 +39,11 @@
 #include "../common/classes/RefCounted.h"
 #include "consts_pub.h"
 
-extern "C" int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason);
-
 namespace Firebird {
 
-// If you need interface on stack, use template AutoPtr<YourInterface, AutoInterface>
+// If you need interface on stack, use template AutoPtr<YourInterface, AutoDisposable>
 // as second parameter to store it.
-class AutoInterface
+class AutoDisposable
 {
 public:
 	static void clear(IDisposable* ptr)
@@ -119,15 +117,15 @@ template <class C, int V, typename S = GlobalStorage>
 class StdPlugin : public StdIface<C, V, S>
 {
 private:
-	Interface* own;
+	IInterface* own;
 
 public:
 	StdPlugin() : own(NULL)
 	{ }
 
-	Interface* FB_CARG owner(Interface* iface)
+	IInterface* FB_CARG owner(IInterface* iface)
 	{
-		Interface* rc = own;
+		IInterface* rc = own;
 		own = iface;
 		return rc;
 	}
@@ -136,10 +134,10 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public StackIface<PluginsFactory>
+class SimpleFactoryBase : public StackIface<IPluginFactory>
 {
 public:
-	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
 	{
 		P* p = new P(factoryParameter);
 		p->addRef();
@@ -154,30 +152,30 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 
 
 // Master interface
-class MasterInterface : public AutoPtr<IMaster, AutoInterface>
+class MasterInterface : public AutoPtr<IMaster, AutoDisposable>
 {
 public:
-	MasterInterface() : AutoPtr<IMaster, AutoInterface>(fb_get_master_interface())
+	MasterInterface() : AutoPtr<IMaster, AutoDisposable>(fb_get_master_interface())
 	{ }
 };
 
 
 // Generic plugins interface
-class PluginInterface : public AutoPtr<IPlugin, AutoInterface>
+class PluginManagerInterface : public AutoPtr<IPluginManager, AutoDisposable>
 {
 public:
-	PluginInterface() : AutoPtr<IPlugin, AutoInterface>(fb_get_master_interface()->getPluginInterface())
+	PluginManagerInterface() : AutoPtr<IPluginManager, AutoDisposable>(fb_get_master_interface()->getPluginManager())
 	{ }
-	PluginInterface(IMaster* master) : AutoPtr<IPlugin, AutoInterface>(master->getPluginInterface())
+	PluginManagerInterface(IMaster* master) : AutoPtr<IPluginManager, AutoDisposable>(master->getPluginManager())
 	{ }
 };
 
 
 // Control timer interface
-class TimerInterface : public AutoPtr<ITimerControl, AutoInterface>
+class TimerInterface : public AutoPtr<ITimerControl, AutoDisposable>
 {
 public:
-	TimerInterface() : AutoPtr<ITimerControl, AutoInterface>(fb_get_master_interface()->getTimerControl())
+	TimerInterface() : AutoPtr<ITimerControl, AutoDisposable>(fb_get_master_interface()->getTimerControl())
 	{ }
 };
 
@@ -186,38 +184,33 @@ public:
 // are unloaded first. As the result all global variables in plugin are already destroyed
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
-// module unload and invokes shutdown in order to stop all plugins before they
-// are destroyed by OS.
+// module unload and notifies PluginManager about this said fact.
 class DummyStorage
 {
 };
 
-class UnloadDetectorHelper : public DisposeIface<IModuleCleanup, DummyStorage>
+class UnloadDetectorHelper : public DisposeIface<IPluginModule, DummyStorage>
 {
 public:
 	explicit UnloadDetectorHelper(MemoryPool&)
-		: flagOsUnload(true), cleanup(NULL)
+		: flagOsUnload(true)
 	{ }
 
 	~UnloadDetectorHelper()
 	{
 		if (flagOsUnload)
 		{
-			PluginInterface()->resetModuleCleanup(this);
+			PluginManagerInterface pi;
+			pi->resetModuleCleanup(this);
+			pi->moduleUnloaded();
 
-			fb_shutdown(5000, fb_shutrsn_exit_called);
-			doClean();
+			flagOsUnload = false;
 		}
 	}
 
 	bool unloadStarted()
 	{
 		return !flagOsUnload;
-	}
-
-	void setCleanup(FPTR_VOID c)
-	{
-		cleanup = c;
 	}
 
 	void FB_CARG dispose()
@@ -227,16 +220,10 @@ public:
 
 private:
 	bool flagOsUnload;
-	FPTR_VOID cleanup;
 
 	void FB_CARG doClean()
 	{
 		flagOsUnload = false;
-		if (cleanup)
-		{
-			cleanup();
-			cleanup = NULL;
-		}
 	}
 };
 

@@ -35,7 +35,7 @@ namespace Firebird {
 
 // Identifies particular timer.
 // Callback function is invoked when timer fires.
-class ITimer : public Interface
+class ITimer : public IInterface
 {
 public:
 	virtual void FB_CARG handler() = 0;

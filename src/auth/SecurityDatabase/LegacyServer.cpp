@@ -464,7 +464,7 @@ int SecurityDatabase::shutdown(const int, const int, void*)
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
-Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
+Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 											  bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
 											  WriterInterface* writerInterface)
@@ -528,7 +528,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::Status* status,
 	}
 }
 
-Result SecurityDatabaseServer::contAuthentication(Firebird::Status*,
+Result SecurityDatabaseServer::contAuthentication(Firebird::IStatus*,
 											  WriterInterface* /*writerInterface*/,
 											  const unsigned char* /*data*/, unsigned int /*size*/)
 {
@@ -556,9 +556,9 @@ namespace {
 	Firebird::SimpleFactory<SecurityDatabaseServer> factory;
 }
 
-void registerLegacyServer(Firebird::IPlugin* iPlugin)
+void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

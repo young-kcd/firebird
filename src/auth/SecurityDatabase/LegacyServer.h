@@ -46,23 +46,23 @@ namespace Auth {
 class SecurityDatabaseServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
 {
 public:
-	explicit SecurityDatabaseServer(Firebird::IFactoryParameter* p)
+	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
 		: iParameter(p)
 	{ }
 
-	Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
 									   const unsigned char* dpb, unsigned int dpbSize,
 									   WriterInterface* writerInterface);
-	Result FB_CARG contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+	Result FB_CARG contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
 									  const unsigned char* data, unsigned int size);
 	void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
 	int FB_CARG release();
 
 private:
-	Firebird::RefPtr<Firebird::IFactoryParameter> iParameter;
+	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;
 };
 
-void registerLegacyServer(Firebird::IPlugin* iPlugin);
+void registerLegacyServer(Firebird::IPluginManager* iPlugin);
 
 } // namespace Auth
 

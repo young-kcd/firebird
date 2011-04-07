@@ -132,7 +132,7 @@ UserManagement::~UserManagement()
 	{
 		LocalStatus status;
 		manager->rollback(&status);
-		PluginInterface()->releasePlugin(manager);
+		PluginManagerInterface()->releasePlugin(manager);
 		manager = NULL;
 
 		if (!status.isSuccess())
@@ -154,7 +154,7 @@ void UserManagement::commit()
 			status_exception::raise(status.get());
 		}
 
-		PluginInterface()->releasePlugin(manager);
+		PluginManagerInterface()->releasePlugin(manager);
 		manager = NULL;
 	}
 }
@@ -170,7 +170,7 @@ USHORT UserManagement::put(Auth::UserData* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, Firebird::Status* status, const char* userName)
+void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName)
 {
 	if (!errcode)
 	{

@@ -264,7 +264,7 @@ void EventManager::deleteSession(SLONG session_id)
 SLONG EventManager::queEvents(SLONG session_id,
 							  USHORT string_length, const TEXT* string,
 							  USHORT events_length, const UCHAR* events,
-							  Firebird::EventCallback* ast)
+							  Firebird::IEventCallback* ast)
 {
 /**************************************
  *
@@ -929,7 +929,7 @@ void EventManager::deliver_request(evt_req* request)
 	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 	UCHAR* p = buffer.getBuffer(1);
 
-	Firebird::EventCallback* ast = request->req_ast;
+	Firebird::IEventCallback* ast = request->req_ast;
 
 	*p++ = EPB_version1;
 

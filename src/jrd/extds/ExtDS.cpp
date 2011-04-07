@@ -537,7 +537,7 @@ void Connection::raise(const ISC_STATUS* status, thread_db* /*tdbb*/, const char
 }
 
 
-void Connection::raise(const Firebird::Status& status, thread_db* tdbb, const char* sWhere)
+void Connection::raise(const Firebird::IStatus& status, thread_db* tdbb, const char* sWhere)
 {
 	raise(status.get(), tdbb, sWhere);
 }
@@ -1514,7 +1514,7 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
-void Statement::raise(const Firebird::Status& status, thread_db* tdbb, const char* sWhere,
+void Statement::raise(const Firebird::IStatus& status, thread_db* tdbb, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;

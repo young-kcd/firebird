@@ -35,7 +35,7 @@
 
 namespace Firebird {
 
-class BaseStatus : public Status
+class BaseStatus : public IStatus
 {
 public:
 	virtual void FB_CARG set(const ISC_STATUS* value)

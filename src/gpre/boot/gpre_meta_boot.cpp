@@ -681,25 +681,25 @@ public:
 	{
 	}
 
-	virtual Status* FB_CARG getStatusInstance()
+	virtual IStatus* FB_CARG getStatusInstance()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual PProvider* FB_CARG getDispatcher()
+	virtual IProvider* FB_CARG getDispatcher()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IPlugin* FB_CARG getPluginInterface()
+	virtual IPluginManager* FB_CARG getPluginManager()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual int FB_CARG upgradeInterface(Interface* /*toUpgrade*/, int /*desiredVersion*/,
+	virtual int FB_CARG upgradeInterface(IInterface* /*toUpgrade*/, int /*desiredVersion*/,
 										 void* /*missingFunctionClass*/)
 	{
 		fb_assert(false);

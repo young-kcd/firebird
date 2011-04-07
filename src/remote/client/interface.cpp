@@ -129,20 +129,20 @@ namespace {
 
 namespace Remote {
 
-typedef Firebird::Status Status;
+typedef Firebird::IStatus IStatus;
 
 class Blob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void FB_CARG putSegment(Status* status, unsigned int length, const unsigned char* buffer);
-	virtual void FB_CARG cancel(Status* status);
-	virtual void FB_CARG close(Status* status);
-	virtual int FB_CARG seek(Status* status, int mode, int offset);			// returns position
+	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, unsigned char* buffer);	// returns real length
+	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const unsigned char* buffer);
+	virtual void FB_CARG cancel(IStatus* status);
+	virtual void FB_CARG close(IStatus* status);
+	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
 
 public:
 	Blob(Rbl* handle) : blob(handle) { }
@@ -173,16 +173,16 @@ class Transaction : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANS
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG prepare(Status* status,
+	virtual void FB_CARG prepare(IStatus* status,
 						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void FB_CARG commit(Status* status);
-	virtual void FB_CARG commitRetaining(Status* status);
-	virtual void FB_CARG rollback(Status* status);
-	virtual void FB_CARG rollbackRetaining(Status* status);
-	virtual void FB_CARG disconnect(Status* status);
+	virtual void FB_CARG commit(IStatus* status);
+	virtual void FB_CARG commitRetaining(IStatus* status);
+	virtual void FB_CARG rollback(IStatus* status);
+	virtual void FB_CARG rollbackRetaining(IStatus* status);
+	virtual void FB_CARG disconnect(IStatus* status);
 
 public:
 	Transaction(Rtr* handle) : transaction(handle) { }
@@ -222,20 +222,20 @@ class Statement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT
 {
 public:
 	virtual int FB_CARG release();
-	virtual Statement* FB_CARG prepare(Status* status, Firebird::ITransaction* tra,
+	virtual Statement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 							   unsigned int item_length, const unsigned char* items,
 							   unsigned int buffer_length, unsigned char* buffer);
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
-	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* tra,
+	virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type);
+	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
 										const MessageBuffer* outMsgBuffer);
-	virtual int FB_CARG fetch(Status* status, const MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(Status* status, const MessageBuffer* msgBuffer);
-	virtual void FB_CARG free(Status* status, unsigned int option);
+	virtual int FB_CARG fetch(IStatus* status, const MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const MessageBuffer* msgBuffer);
+	virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 public:
 	Statement(Rsr* handle) : statement(handle) { }
@@ -264,18 +264,18 @@ class Request : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSI
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG receive(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG receive(IStatus* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
-	virtual void FB_CARG send(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG send(IStatus* status, int level, unsigned int msg_type,
 					  unsigned int length, const unsigned char* message);
-	virtual void FB_CARG getInfo(Status* status, int level,
+	virtual void FB_CARG getInfo(IStatus* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG start(Status* status, Firebird::ITransaction* tra, int level);
-	virtual void FB_CARG startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
+	virtual void FB_CARG start(IStatus* status, Firebird::ITransaction* tra, int level);
+	virtual void FB_CARG startAndSend(IStatus* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
 							  unsigned int length, const unsigned char* message);
-	virtual void FB_CARG unwind(Status* status, int level);
-	virtual void FB_CARG free(Status* status);
+	virtual void FB_CARG unwind(IStatus* status, int level);
+	virtual void FB_CARG free(IStatus* status);
 
 public:
 	Request(Rrq* handle) : rq(handle) { }
@@ -304,7 +304,7 @@ class Events : public Firebird::StdIface<Firebird::IEvents, FB_I_EVENTS_VERSION>
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG cancel(Status* status);
+	virtual void FB_CARG cancel(IStatus* status);
 
 public:
 	Events(Rvnt* handle) : rvnt(handle) { }
@@ -333,44 +333,44 @@ class Attachment : public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHM
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-//	virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb);
+//	virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual Firebird::ITransaction* FB_CARG startTransaction(Status* status, unsigned int tpbLength, const unsigned char* tpb,
+	virtual Firebird::ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb,
 										  FB_API_HANDLE api);
-	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(Status* status, unsigned int length, const unsigned char* id);
-	virtual Firebird::IStatement* FB_CARG allocateStatement(Status* status);
-	virtual Firebird::IRequest* FB_CARG compileRequest(Status* status, unsigned int blr_length, const unsigned char* blr);
-	virtual void FB_CARG transactRequest(Status* status, ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id);
+	virtual Firebird::IStatement* FB_CARG allocateStatement(IStatus* status);
+	virtual Firebird::IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blr_length, const unsigned char* blr);
+	virtual void FB_CARG transactRequest(IStatus* status, ITransaction* transaction,
 								 unsigned int blr_length, const unsigned char* blr,
 								 unsigned int in_msg_length, const unsigned char* in_msg,
 								 unsigned int out_msg_length, unsigned char* out_msg);
-	virtual Firebird::IBlob* FB_CARG createBlob(Status* status, ITransaction* transaction,
+	virtual Firebird::IBlob* FB_CARG createBlob(IStatus* status, ITransaction* transaction,
 		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	virtual Firebird::IBlob* FB_CARG openBlob(Status* status, ITransaction* transaction,
+	virtual Firebird::IBlob* FB_CARG openBlob(IStatus* status, ITransaction* transaction,
 		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	virtual int FB_CARG getSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual int FB_CARG getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 						 unsigned int sdl_length, const unsigned char* sdl,
 						 unsigned int param_length, const unsigned char* param,
 						 int sliceLength, unsigned char* slice);
-	virtual void FB_CARG putSlice(Status* status, ITransaction* transaction, ISC_QUAD* id,
+	virtual void FB_CARG putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
 						  int sliceLength, unsigned char* slice);
-	virtual void FB_CARG ddl(Status* status, ITransaction* transaction, unsigned int length,
+	virtual void FB_CARG ddl(IStatus* status, ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
-	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
 								 unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
 								 const MessageBuffer* outMsgBuffer);
-	virtual Firebird::IEvents* FB_CARG queEvents(Status* status, Firebird::EventCallback* callback,
+	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
-	virtual void FB_CARG cancelOperation(Status* status, int option);
-	virtual void FB_CARG ping(Status* status);
-	virtual void FB_CARG detach(Status* status);
-	virtual void FB_CARG drop(Status* status);
+	virtual void FB_CARG cancelOperation(IStatus* status, int option);
+	virtual void FB_CARG ping(IStatus* status);
+	virtual void FB_CARG detach(IStatus* status);
+	virtual void FB_CARG drop(IStatus* status);
 
 public:
 	Attachment(Rdb* handle) : rdb(handle) { }
@@ -404,12 +404,12 @@ class Service : public Firebird::StdIface<Firebird::IService, FB_I_SERVICE_VERSI
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG detach(Status* status);
-	virtual void FB_CARG query(Status* status,
+	virtual void FB_CARG detach(IStatus* status);
+	virtual void FB_CARG query(IStatus* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG start(Status* status,
+	virtual void FB_CARG start(IStatus* status,
 					   unsigned int spbLength, const unsigned char* spb);
 
 public:
@@ -435,22 +435,22 @@ int Service::release()
 	return 0;
 }
 
-class Provider : public Firebird::StdPlugin<Firebird::PProvider, FB_P_PROVIDER_VERSION>
+class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_P_PROVIDER_VERSION>
 {
 public:
-	explicit Provider(IFactoryParameter*)
+	explicit Provider(IPluginConfig*)
 	{
 	}
 
-	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
-	//virtual Firebird::ITransaction* startTransaction(Status* status, unsigned int count, ...);
-	//virtual Firebird::ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
-	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
+	//virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int count, ...);
+	//virtual Firebird::ITransaction* startMultiple(IStatus* status, MultipleTransaction* multi);
+	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
 
 	virtual int FB_CARG release()
 	{
@@ -464,30 +464,30 @@ public:
 	}
 
 protected:
-	Firebird::IAttachment* attach(Status* status, const char* filename,
+	Firebird::IAttachment* attach(IStatus* status, const char* filename,
 							  unsigned int dpb_length, const unsigned char* dpb, bool loopback);
-	Firebird::IAttachment* create(Status* status, const char* filename,
+	Firebird::IAttachment* create(IStatus* status, const char* filename,
 							  unsigned int dpb_length, const unsigned char* dpb, bool loopback);
-	Firebird::IService* attachSvc(Status* status, const char* service,
+	Firebird::IService* attachSvc(IStatus* status, const char* service,
 							  unsigned int spbLength, const unsigned char* spb, bool loopback);
 };
 
-void Provider::shutdown(Status* /*status*/, unsigned int /*timeout*/, const int /*reason*/)
+void Provider::shutdown(IStatus* /*status*/, unsigned int /*timeout*/, const int /*reason*/)
 { }
 
 class Loopback : public Provider
 {
 public:
-	explicit Loopback(IFactoryParameter* param)
+	explicit Loopback(IPluginConfig* param)
 		: Provider(param)
 	{
 	}
 
-	virtual void FB_CARG attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual Firebird::IService* FB_CARG attachServiceManager(Status* status, const char* service,
+	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
 };
 
@@ -496,10 +496,10 @@ namespace {
 	Firebird::SimpleFactory<Loopback> loopbackFactory;
 }
 
-void registerRedirector(Firebird::IPlugin* iPlugin)
+void registerRedirector(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Remote", &remoteFactory);
-	iPlugin->registerPlugin(Firebird::PluginType::Provider, "Loopback", &loopbackFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::Provider, "Remote", &remoteFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::Provider, "Loopback", &loopbackFactory);
 
 	Auth::registerLegacyClient(iPlugin);
 #ifdef TRUSTED_AUTH
@@ -512,7 +512,7 @@ void registerRedirector(Firebird::IPlugin* iPlugin)
 /*
 extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	IPlugin* pi = master->getPluginInterface();
+	IPluginManager* pi = master->getPluginManager();
 	registerRedirector(pi);
 	pi->release();
 }
@@ -527,20 +527,20 @@ static rem_port* analyze(PathName&, bool, ClumpletReader&, PathName&, bool);
 static rem_port* analyze_service(PathName&, bool, ClumpletReader&, bool);
 static void batch_gds_receive(rem_port*, struct rmtque *, USHORT);
 static void batch_dsql_fetch(rem_port*, struct rmtque *, USHORT);
-static void check_response(Status*, Rdb*, PACKET *);
+static void check_response(IStatus*, Rdb*, PACKET *);
 static void clear_queue(rem_port*);
 static void clear_stmt_que(rem_port*, Rsr*);
 static void disconnect(rem_port*);
 static void enqueue_receive(rem_port*, t_rmtque_fn, Rdb*, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
-static int fetch_blob(Status*, Rsr*, USHORT, const UCHAR*, USHORT, UCHAR*);
+static int fetch_blob(IStatus*, Rsr*, USHORT, const UCHAR*, USHORT, UCHAR*);
 static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
-static void info(Status*, Rdb*, P_OP, USHORT, USHORT, USHORT,
+static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
 				 const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
-static void init(Status*, rem_port*, P_OP, PathName&, ClumpletWriter&);
+static void init(IStatus*, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
 static void move_error(const Arg::StatusVector& v);
@@ -548,21 +548,21 @@ static void receive_after_start(Rrq*, USHORT);
 static void receive_packet(rem_port*, PACKET *);
 static void receive_packet_noqueue(rem_port*, PACKET *);
 static void receive_queued_packet(rem_port*, USHORT);
-static void receive_response(Status*, Rdb*, PACKET *);
+static void receive_response(IStatus*, Rdb*, PACKET *);
 static void release_blob(Rbl*);
 static void release_event(Rvnt*);
-static void release_object(Status*, Rdb*, P_OP, USHORT);
+static void release_object(IStatus*, Rdb*, P_OP, USHORT);
 static void release_request(Rrq*);
 static void release_statement(Rsr**);
 static void release_sql_request(Rsr*);
 static void release_transaction(Rtr*);
-static void send_and_receive(Status*, Rdb*, PACKET *);
-static void send_blob(Status*, Rbl*, USHORT, const UCHAR*);
+static void send_and_receive(IStatus*, Rdb*, PACKET *);
+static void send_blob(IStatus*, Rbl*, USHORT, const UCHAR*);
 static void send_cancel_event(Rvnt*);
 static void send_packet(rem_port*, PACKET *);
 static void send_partial_packet(rem_port*, PACKET *);
 static void server_death(rem_port*);
-static void svcstart(Status*, Rdb*, P_OP, USHORT, USHORT, USHORT, const UCHAR*);
+static void svcstart(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT, const UCHAR*);
 static void unsupported();
 static void zap_packet(PACKET *);
 
@@ -577,7 +577,7 @@ inline static void CHECK_HANDLE(T* blk, ISC_STATUS error)
 	}
 }
 
-inline static void reset(Status* status) throw()
+inline static void reset(IStatus* status) throw()
 {
 	status->init();
 }
@@ -602,7 +602,7 @@ inline static void defer_packet(rem_port* port, PACKET* packet, bool sent = fals
 	port->port_deferred_packets->add(p);
 }
 
-Firebird::IAttachment* Provider::attach(Status* status, const char* filename,
+Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 									unsigned int dpb_length, const unsigned char* dpb, bool loopback)
 {
 /**************************************
@@ -650,7 +650,7 @@ Firebird::IAttachment* Provider::attach(Status* status, const char* filename,
 }
 
 
-void Provider::attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
+void Provider::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
 							  const char* filename, unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -668,7 +668,7 @@ void Provider::attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_AP
 }
 
 
-void Loopback::attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
+void Loopback::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
 							  const char* filename, unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -686,7 +686,7 @@ void Loopback::attachDatabase(Status* status, Firebird::IAttachment** ptr, FB_AP
 }
 
 
-void Blob::getInfo(Status* status,
+void Blob::getInfo(IStatus* status,
 				   unsigned int itemsLength, const unsigned char* items,
 				   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -721,7 +721,7 @@ void Blob::getInfo(Status* status,
 }
 
 
-void Blob::cancel(Status* status)
+void Blob::cancel(IStatus* status)
 {
 /**************************************
  *
@@ -762,7 +762,7 @@ void Blob::cancel(Status* status)
 }
 
 
-void Events::cancel(Status* status)
+void Events::cancel(IStatus* status)
 {
 /**************************************
  *
@@ -800,7 +800,7 @@ void Events::cancel(Status* status)
 }
 
 
-void Blob::close(Status* status)
+void Blob::close(IStatus* status)
 {
 /**************************************
  *
@@ -841,7 +841,7 @@ void Blob::close(Status* status)
 }
 
 
-void Transaction::commit(Status* status)
+void Transaction::commit(IStatus* status)
 {
 /**************************************
  *
@@ -877,7 +877,7 @@ void Transaction::commit(Status* status)
 }
 
 
-void Transaction::commitRetaining(Status* status)
+void Transaction::commitRetaining(IStatus* status)
 {
 /**************************************
  *
@@ -914,7 +914,7 @@ void Transaction::commitRetaining(Status* status)
 }
 
 
-Firebird::IRequest* Attachment::compileRequest(Status* status,
+Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 										   unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
@@ -1006,7 +1006,7 @@ Firebird::IRequest* Attachment::compileRequest(Status* status,
 }
 
 
-IBlob* Attachment::createBlob(Status* status, ITransaction* apiTra, ISC_QUAD* blob_id,
+IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* blob_id,
 									 unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -1085,7 +1085,7 @@ IBlob* Attachment::createBlob(Status* status, ITransaction* apiTra, ISC_QUAD* bl
 }
 
 
-Firebird::IAttachment* Provider::create(Status* status, const char* filename,
+Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 									unsigned int dpb_length, const unsigned char* dpb, bool loopback)
 {
 /**************************************
@@ -1135,7 +1135,7 @@ Firebird::IAttachment* Provider::create(Status* status, const char* filename,
 }
 
 
-void Provider::createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
+void Provider::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
 							  const char* fileName, unsigned int dpbLength, const unsigned char* dpb)
 {
 /**************************************
@@ -1153,7 +1153,7 @@ void Provider::createDatabase(Status* status, Firebird::IAttachment** ptr, FB_AP
 }
 
 
-void Loopback::createDatabase(Status* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
+void Loopback::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
 							  const char* fileName, unsigned int dpbLength, const unsigned char* dpb)
 {
 /**************************************
@@ -1171,7 +1171,7 @@ void Loopback::createDatabase(Status* status, Firebird::IAttachment** ptr, FB_AP
 }
 
 
-void Attachment::getInfo(Status* status,
+void Attachment::getInfo(IStatus* status,
 						 unsigned int item_length, const unsigned char* items,
 						 unsigned int buffer_length, unsigned char* buffer)
 {
@@ -1215,7 +1215,7 @@ void Attachment::getInfo(Status* status,
 }
 
 
-void Attachment::ddl(Status* status, ITransaction* apiTra, unsigned int length,
+void Attachment::ddl(IStatus* status, ITransaction* apiTra, unsigned int length,
 	const unsigned char* dyn)
 {
 /**************************************
@@ -1261,7 +1261,7 @@ void Attachment::ddl(Status* status, ITransaction* apiTra, unsigned int length,
 }
 
 
-void Attachment::detach(Status* status)
+void Attachment::detach(IStatus* status)
 {
 /**************************************
  *
@@ -1341,7 +1341,7 @@ void Attachment::detach(Status* status)
 }
 
 
-void Attachment::drop(Status* status)
+void Attachment::drop(IStatus* status)
 {
 /**************************************
  *
@@ -1405,7 +1405,7 @@ void Attachment::drop(Status* status)
 }
 
 
-Firebird::IStatement* Attachment::allocateStatement(Status* status)
+Firebird::IStatement* Attachment::allocateStatement(IStatus* status)
 {
 /**************************************
  *
@@ -1472,7 +1472,7 @@ Firebird::IStatement* Attachment::allocateStatement(Status* status)
 }
 
 
-Firebird::ITransaction* Statement::execute(Status* status, Firebird::ITransaction* apiTra,
+Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransaction* apiTra,
 						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
 						const MessageBuffer* outMsgBuffer)
 {
@@ -1668,7 +1668,7 @@ Firebird::ITransaction* Statement::execute(Status* status, Firebird::ITransactio
 }
 
 
-Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransaction* apiTra,
+Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransaction* apiTra,
 						unsigned int length, const char* string, unsigned int dialect,
 						unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
 						const MessageBuffer* outMsgBuffer)
@@ -1857,7 +1857,7 @@ Firebird::ITransaction* Attachment::execute(Status* status, Firebird::ITransacti
 }
 
 
-int Statement::fetch(Status* status, const MessageBuffer* msgBuffer)
+int Statement::fetch(IStatus* status, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -2112,7 +2112,7 @@ int Statement::fetch(Status* status, const MessageBuffer* msgBuffer)
 }
 
 
-void Statement::free(Status* status, unsigned int option)
+void Statement::free(IStatus* status, unsigned int option)
 {
 /**************************************
  *
@@ -2206,7 +2206,7 @@ void Statement::free(Status* status, unsigned int option)
 }
 
 
-void Statement::insert(Status* status, const MessageBuffer* msgBuffer)
+void Statement::insert(IStatus* status, const MessageBuffer* msgBuffer)
 {
 /**************************************
  *
@@ -2320,7 +2320,7 @@ void Statement::insert(Status* status, const MessageBuffer* msgBuffer)
 }
 
 
-Statement* Statement::prepare(Status* status, Firebird::ITransaction* apiTra,
+Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 							  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 							  unsigned int item_length, const unsigned char* items,
 							  unsigned int buffer_length, unsigned char* buffer)
@@ -2455,7 +2455,7 @@ Statement* Statement::prepare(Status* status, Firebird::ITransaction* apiTra,
 }
 
 
-void Statement::setCursor(Status* status, const char* cursor, unsigned int type)
+void Statement::setCursor(IStatus* status, const char* cursor, unsigned int type)
 {
 /*****************************************
  *
@@ -2549,7 +2549,7 @@ void Statement::setCursor(Status* status, const char* cursor, unsigned int type)
 }
 
 
-void Statement::getInfo(Status* status,
+void Statement::getInfo(IStatus* status,
 						unsigned int item_length, const unsigned char* items,
 						unsigned int buffer_length, unsigned char* buffer)
 {
@@ -2595,7 +2595,7 @@ void Statement::getInfo(Status* status,
 }
 
 
-unsigned int Blob::getSegment(Status* status, unsigned int buffer_length, unsigned char* buffer)
+unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
  *
@@ -2818,7 +2818,7 @@ unsigned int Blob::getSegment(Status* status, unsigned int buffer_length, unsign
 }
 
 
-int Attachment::getSlice(Status* status, ITransaction* apiTra, ISC_QUAD* array_id,
+int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_id,
 						  unsigned int sdl_length, const unsigned char* sdl,
 						  unsigned int param_length, const unsigned char* param,
 						  int slice_length, unsigned char* slice)
@@ -2902,7 +2902,7 @@ int Attachment::getSlice(Status* status, ITransaction* apiTra, ISC_QUAD* array_i
 }
 
 
-IBlob* Attachment::openBlob(Status* status, ITransaction* apiTra, ISC_QUAD* id,
+IBlob* Attachment::openBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2973,7 +2973,7 @@ IBlob* Attachment::openBlob(Status* status, ITransaction* apiTra, ISC_QUAD* id,
 }
 
 
-void Transaction::prepare(Status* status, unsigned int msg_length, const unsigned char* msg)
+void Transaction::prepare(IStatus* status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -3024,7 +3024,7 @@ void Transaction::prepare(Status* status, unsigned int msg_length, const unsigne
 }
 
 
-void Blob::putSegment(Status* status, unsigned int segment_length, const unsigned char* segment)
+void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsigned char* segment)
 {
 /**************************************
  *
@@ -3101,7 +3101,7 @@ void Blob::putSegment(Status* status, unsigned int segment_length, const unsigne
 }
 
 
-void Attachment::putSlice(Status* status, ITransaction* apiTra, ISC_QUAD* id,
+void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 						   unsigned int sdl_length, const unsigned char* sdl,
 						   unsigned int param_length, const unsigned char* param,
 						   int sliceLength, unsigned char* slice)
@@ -3187,7 +3187,7 @@ namespace {
 }
 
 
-Firebird::IEvents* Attachment::queEvents(Status* status, Firebird::EventCallback* callback,
+Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3276,7 +3276,7 @@ Firebird::IEvents* Attachment::queEvents(Status* status, Firebird::EventCallback
 }
 
 
-void Request::receive(Status* status, int level, unsigned int msg_type,
+void Request::receive(IStatus* status, int level, unsigned int msg_type,
 					  unsigned int msg_length, unsigned char* msg)
 {
 /**************************************
@@ -3443,7 +3443,7 @@ void Request::receive(Status* status, int level, unsigned int msg_type,
 }
 
 
-Firebird::ITransaction* Attachment::reconnectTransaction(Status* status,
+Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* status,
 	unsigned int length, const unsigned char* id)
 {
 /**************************************
@@ -3484,7 +3484,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(Status* status,
 }
 
 
-void Request::free(Status* status)
+void Request::free(IStatus* status)
 {
 /**************************************
  *
@@ -3519,7 +3519,7 @@ void Request::free(Status* status)
 }
 
 
-void Request::getInfo(Status* status, int level,
+void Request::getInfo(IStatus* status, int level,
 					  unsigned int itemsLength, const unsigned char* items,
 					  unsigned int bufferLength, unsigned char* buffer)
 {
@@ -3612,7 +3612,7 @@ punt:
 }
 
 
-void Transaction::rollbackRetaining(Status* status)
+void Transaction::rollbackRetaining(IStatus* status)
 {
 /**************************************
  *
@@ -3651,7 +3651,7 @@ void Transaction::rollbackRetaining(Status* status)
 }
 
 
-void Transaction::rollback(Status* status)
+void Transaction::rollback(IStatus* status)
 {
 /**************************************
  *
@@ -3688,7 +3688,7 @@ void Transaction::rollback(Status* status)
 }
 
 
-void Transaction::disconnect(Status* status)
+void Transaction::disconnect(IStatus* status)
 {
 	try
 	{
@@ -3708,7 +3708,7 @@ void Transaction::disconnect(Status* status)
 }
 
 
-int Blob::seek(Status* status, int mode, int offset)
+int Blob::seek(IStatus* status, int mode, int offset)
 {
 /**************************************
  *
@@ -3765,7 +3765,7 @@ int Blob::seek(Status* status, int mode, int offset)
 }
 
 
-void Request::send(Status* status, int level, unsigned int msg_type,
+void Request::send(IStatus* status, int level, unsigned int msg_type,
 				   unsigned int /*length*/, const unsigned char* msg)
 {
 /**************************************
@@ -3823,7 +3823,7 @@ void Request::send(Status* status, int level, unsigned int msg_type,
 }
 
 
-Firebird::IService* Provider::attachSvc(Status* status, const char* service,
+Firebird::IService* Provider::attachSvc(IStatus* status, const char* service,
 									unsigned int spbLength, const unsigned char* spb, bool loopback)
 {
 /**************************************
@@ -3877,7 +3877,7 @@ Firebird::IService* Provider::attachSvc(Status* status, const char* service,
 }
 
 
-Firebird::IService* Provider::attachServiceManager(Status* status, const char* service,
+Firebird::IService* Provider::attachServiceManager(IStatus* status, const char* service,
 											   unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -3895,7 +3895,7 @@ Firebird::IService* Provider::attachServiceManager(Status* status, const char* s
 }
 
 
-Firebird::IService* Loopback::attachServiceManager(Status* status, const char* service,
+Firebird::IService* Loopback::attachServiceManager(IStatus* status, const char* service,
 												   unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -3913,7 +3913,7 @@ Firebird::IService* Loopback::attachServiceManager(Status* status, const char* s
 }
 
 
-void Service::detach(Status* status)
+void Service::detach(IStatus* status)
 {
 /**************************************
  *
@@ -3953,7 +3953,7 @@ void Service::detach(Status* status)
 }
 
 
-void Service::query(Status* status,
+void Service::query(IStatus* status,
 					unsigned int sendLength, const unsigned char* sendItems,
 					unsigned int receiveLength, const unsigned char* receiveItems,
 					unsigned int bufferLength, unsigned char* buffer)
@@ -4000,7 +4000,7 @@ void Service::query(Status* status,
 }
 
 
-void Service::start(Status* status,
+void Service::start(IStatus* status,
 					unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -4040,7 +4040,7 @@ void Service::start(Status* status,
 }
 
 
-void Request::startAndSend(Status* status, Firebird::ITransaction* tra, int level,
+void Request::startAndSend(IStatus* status, Firebird::ITransaction* tra, int level,
 						   unsigned int msg_type, unsigned int /*length*/, const unsigned char* msg)
 {
 /**************************************
@@ -4121,7 +4121,7 @@ void Request::startAndSend(Status* status, Firebird::ITransaction* tra, int leve
 }
 
 
-void Request::start(Status* status, Firebird::ITransaction* tra, int level)
+void Request::start(IStatus* status, Firebird::ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -4185,7 +4185,7 @@ void Request::start(Status* status, Firebird::ITransaction* tra, int level)
 }
 
 
-Firebird::ITransaction* Attachment::startTransaction(Status* status,
+Firebird::ITransaction* Attachment::startTransaction(IStatus* status,
 												 unsigned int tpbLength, const unsigned char* tpb,
 												 FB_API_HANDLE /*api*/)
 {
@@ -4233,7 +4233,7 @@ Firebird::ITransaction* Attachment::startTransaction(Status* status,
 }
 
 
-void Attachment::transactRequest(Status* status, ITransaction* apiTra,
+void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 								  unsigned int blr_length, const unsigned char* blr,
 								  unsigned int in_msg_length, const unsigned char* in_msg,
 								  unsigned int out_msg_length, unsigned char* out_msg)
@@ -4345,7 +4345,7 @@ void Attachment::transactRequest(Status* status, ITransaction* apiTra,
 }
 
 
-void Transaction::getInfo(Status* status,
+void Transaction::getInfo(IStatus* status,
 						  unsigned int itemsLength, const unsigned char* items,
 						  unsigned int bufferLength, unsigned char* buffer)
 {
@@ -4379,7 +4379,7 @@ void Transaction::getInfo(Status* status,
 }
 
 
-void Request::unwind(Status* status, int level)
+void Request::unwind(IStatus* status, int level)
 {
 /**************************************
  *
@@ -4410,7 +4410,7 @@ void Request::unwind(Status* status, int level)
 }
 
 
-void Attachment::ping(Status* status)
+void Attachment::ping(IStatus* status)
 {
 /**************************************
  *
@@ -5093,7 +5093,7 @@ static void batch_gds_receive(rem_port*		port,
 }
 
 
-static void check_response(Status* warning, Rdb* rdb, PACKET* packet)
+static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
 {
 /**************************************
  *
@@ -5334,7 +5334,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int fetch_blob(Status* status,
+static int fetch_blob(IStatus* status,
 					   Rsr* statement,
 					   USHORT blr_length,
 					   const UCHAR* blr,
@@ -5478,7 +5478,7 @@ static void handle_error(ISC_STATUS code)
 }
 
 
-static void info(Status* status,
+static void info(IStatus* status,
 				 Rdb* rdb,
 				 P_OP operation,
 				 USHORT object,
@@ -5540,7 +5540,7 @@ static void info(Status* status,
 }
 
 
-static void init(Status* status,
+static void init(IStatus* status,
 				 rem_port* port,
 				 P_OP op,
 				 PathName& file_name,
@@ -6133,7 +6133,7 @@ static void dequeue_receive( rem_port* port)
 }
 
 
-static void receive_response(Status* status, Rdb* rdb, PACKET* packet)
+static void receive_response(IStatus* status, Rdb* rdb, PACKET* packet)
 {
 /**************************************
  *
@@ -6207,7 +6207,7 @@ static void release_event( Rvnt* event)
 }
 
 
-static void release_object(Status* status, Rdb* rdb, P_OP op, USHORT id)
+static void release_object(IStatus* status, Rdb* rdb, P_OP op, USHORT id)
 {
 /**************************************
  *
@@ -6348,7 +6348,7 @@ static void release_transaction( Rtr* transaction)
 }
 
 
-static void send_and_receive(Status* status, Rdb* rdb, PACKET* packet)
+static void send_and_receive(IStatus* status, Rdb* rdb, PACKET* packet)
 {
 /**************************************
  *
@@ -6366,7 +6366,7 @@ static void send_and_receive(Status* status, Rdb* rdb, PACKET* packet)
 }
 
 
-static void send_blob(Status*		status,
+static void send_blob(IStatus*		status,
 					  Rbl*			blob,
 					  USHORT		buffer_length,
 					  const UCHAR*	buffer)
@@ -6586,7 +6586,7 @@ static void server_death(rem_port* port)
 }
 
 
-static void svcstart(Status*	status,
+static void svcstart(IStatus*	status,
 					 Rdb*		rdb,
 					 P_OP		operation,
 					 USHORT		object,
@@ -6671,7 +6671,7 @@ static void zap_packet(PACKET* packet)
 }
 
 
-void Attachment::cancelOperation(Status* status, int kind)
+void Attachment::cancelOperation(IStatus* status, int kind)
 {
 /*************************************
  *

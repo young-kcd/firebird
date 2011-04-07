@@ -709,7 +709,7 @@ Data source : @4"},		/* eds_statement */
 	{335545002, "Attachment is in use"},		/* attachment_in_use */
 	{335545003, "Transaction is in use"},		/* transaction_in_use */
 	{335545004, "Plugin @1 not found"},		/* pman_plugin_notfound */
-	{335545005, "Cannot load plugin @1"},		/* pman_cannot_load_plugin */
+	{335545005, "Module @1 exists, but can not be loaded"},		/* pman_cannot_load_plugin */
 	{335545006, "Entrypoint of plugin @1 does not exist"},		/* pman_entrypoint_notfound */
 	{335545007, "Invalid value @1 for parameter index at PluginImpl::getConfigInfo: out of bounds"},		/* pman_bad_conf_index */
 	{335545008, "Plugin @1 does not create @2 instances"},		/* pman_unknown_instance */

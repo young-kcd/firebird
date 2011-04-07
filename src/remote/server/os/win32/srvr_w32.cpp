@@ -250,7 +250,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	fb_utils::init_status(status_vector);
 
 	{ // scope for interface ptr
-		Firebird::PluginInterface pi;
+		Firebird::PluginManagerInterface pi;
 		Auth::registerLegacyServer(pi);
 #ifdef TRUSTED_AUTH
 		Auth::registerTrustedServer(pi);

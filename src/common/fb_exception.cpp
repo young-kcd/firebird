@@ -136,7 +136,7 @@ void status_exception::raise(const Arg::StatusVector& statusVector)
 	throw status_exception(statusVector.value());
 }
 
-ISC_STATUS status_exception::stuffException(Status* status) const throw()
+ISC_STATUS status_exception::stuffException(IStatus* status) const throw()
 {
 	if (status)
 	{
@@ -153,7 +153,7 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-ISC_STATUS BadAlloc::stuffException(Status* status) const throw()
+ISC_STATUS BadAlloc::stuffException(IStatus* status) const throw()
 {
 	const ISC_STATUS sv[] = {isc_arg_gds, isc_virmemexh};
 
@@ -177,7 +177,7 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-ISC_STATUS LongJump::stuffException(Status* status) const throw()
+ISC_STATUS LongJump::stuffException(IStatus* status) const throw()
 {
 	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump"};
 
@@ -297,7 +297,7 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception&
 	return ex.stuff_exception(status_vector);
 }
 
-ISC_STATUS stuff_exception(Status* status, const Firebird::Exception& ex) throw()
+ISC_STATUS stuff_exception(IStatus* status, const Firebird::Exception& ex) throw()
 {
 	return ex.stuffException(status);
 }

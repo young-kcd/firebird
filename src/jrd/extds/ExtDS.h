@@ -187,7 +187,7 @@ public:
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
 	void raise(const ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
-	void raise(const Firebird::Status& status, Jrd::thread_db* tdbb, const char* sWhere);
+	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
 	bool getWrapErrors() const	{ return m_wrapErrors; }
@@ -340,7 +340,7 @@ public:
 	// info into locally raised exception
 	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
-	void raise(const Firebird::Status& status, Jrd::thread_db* tdbb, const char* sWhere,
+	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request

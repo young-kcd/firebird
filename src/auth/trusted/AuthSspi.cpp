@@ -332,15 +332,15 @@ bool AuthSspi::getLogin(string& login, bool& wh)
 }
 
 
-WinSspiServer::WinSspiServer(Firebird::IFactoryParameter*)
+WinSspiServer::WinSspiServer(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-WinSspiClient::WinSspiClient(Firebird::IFactoryParameter*)
+WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-Result WinSspiServer::startAuthentication(Firebird::Status* status,
+Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 										  bool isService,
 										  const char* /*dbName*/,
 										  const unsigned char* dpb, unsigned int dpbSize,
@@ -363,7 +363,7 @@ Result WinSspiServer::startAuthentication(Firebird::Status* status,
 	return AUTH_MORE_DATA;
 }
 
-Result WinSspiServer::contAuthentication(Firebird::Status* status,
+Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
 										 WriterInterface* writerInterface,
 									     const unsigned char* data, unsigned int size)
 {
@@ -408,7 +408,7 @@ int WinSspiServer::release()
 	return 1;
 }
 
-Result WinSspiClient::startAuthentication(Firebird::Status* status,
+Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 										  bool isService,
 										  const char* /*dbName*/,
 										  DpbInterface* dpb)
@@ -437,7 +437,7 @@ Result WinSspiClient::startAuthentication(Firebird::Status* status,
 	return sspi.isActive() ? AUTH_SUCCESS : AUTH_CONTINUE;
 }
 
-Result WinSspiClient::contAuthentication(Firebird::Status* status,
+Result WinSspiClient::contAuthentication(Firebird::IStatus* status,
 										 const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
@@ -467,14 +467,14 @@ int WinSspiClient::release()
 	return 1;
 }
 
-void registerTrustedClient(Firebird::IPlugin* iPlugin)
+void registerTrustedClient(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, plugName, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, plugName, &clientFactory);
 }
 
-void registerTrustedServer(Firebird::IPlugin* iPlugin)
+void registerTrustedServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, plugName, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, plugName, &serverFactory);
 }
 
 } // namespace Auth

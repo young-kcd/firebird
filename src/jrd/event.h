@@ -122,7 +122,7 @@ struct evt_req
 	SRQ_PTR req_process;			// Parent process block
 	SRQ_PTR req_session;			// Parent session block
 	SRQ_PTR req_interests;			// First interest in request
-	Firebird::EventCallback* req_ast; // Asynchronous callback
+	Firebird::IEventCallback* req_ast; // Asynchronous callback
 	SLONG req_request_id;			// Request id, dummy
 };
 

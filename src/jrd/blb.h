@@ -35,7 +35,7 @@
 #include "../common/classes/ImplementHelper.h"
 namespace Jrd
 {
-	typedef Firebird::Status Status;
+	typedef Firebird::IStatus IStatus;
 }
 
 namespace Jrd {
@@ -210,14 +210,14 @@ public:
 
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(Status* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void FB_CARG putSegment(Status* status, unsigned int length, const unsigned char* buffer);
-	virtual void FB_CARG cancel(Status* status);
-	virtual void FB_CARG close(Status* status);
-	virtual int FB_CARG seek(Status* status, int mode, int offset);			// returns position
+	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, unsigned char* buffer);	// returns real length
+	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const unsigned char* buffer);
+	virtual void FB_CARG cancel(IStatus* status);
+	virtual void FB_CARG close(IStatus* status);
+	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
 };
 
 const int BLB_temporary		= 1;		// Newly created blob

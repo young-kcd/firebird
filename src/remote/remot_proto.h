@@ -29,11 +29,6 @@ namespace Firebird
 	class ClumpletReader;
 }
 
-namespace Firebird
-{
-	class Status;
-}
-
 void		REMOTE_cleanup_transaction (struct Rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
 void		REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb);

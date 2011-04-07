@@ -602,21 +602,21 @@ protected:
 
 public:
 	virtual int FB_CARG release();
-	virtual Firebird::IStatement* FB_CARG prepare(Status* status, Firebird::ITransaction* tra,
+	virtual Firebird::IStatement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
 									  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 									  unsigned int item_length, const unsigned char* items,
 	    		                      unsigned int buffer_length, unsigned char* buffer);
-	virtual void FB_CARG getInfo(Status* status,
+	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursor(Status* status, const char* name, unsigned int type);
-	virtual Firebird::ITransaction* FB_CARG execute(Status* status, Firebird::ITransaction* tra,
+	virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type);
+	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type,
 										const Firebird::MessageBuffer* inMsgBuffer,
 										const Firebird::MessageBuffer* outMsgBuffer);
-	virtual int FB_CARG fetch(Status* status, const Firebird::MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(Status* status, const Firebird::MessageBuffer* msgBuffer);
-	virtual void FB_CARG free(Status* status, unsigned int option);
+	virtual int FB_CARG fetch(IStatus* status, const Firebird::MessageBuffer* msgBuffer);	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const Firebird::MessageBuffer* msgBuffer);
+	virtual void FB_CARG free(IStatus* status, unsigned int option);
 };
 
 // Blob

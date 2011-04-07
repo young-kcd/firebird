@@ -79,7 +79,7 @@ static GlobalPtr<ObjectsArray<PathName> > paths;
 class Engine : public StdPlugin<ExternalEngine, FB_EXTERNAL_ENGINE_VERSION>
 {
 public:
-	explicit Engine(IFactoryParameter* par)
+	explicit Engine(IPluginConfig* par)
 		: functions(getPool()),
 		  procedures(getPool()),
 		  triggers(getPool())
@@ -91,7 +91,7 @@ public:
 			// this plugin is not ready to support different configurations
 			// therefore keep legacy approach
 
-			IConfigParameter* icp = NULL;
+			IConfigEntry* icp = NULL;
 
 			for (int n = 0; (icp = defaultConfig->findPos("path", n)); ++n)
 			{
@@ -808,8 +808,8 @@ static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	PluginInterface pi;
-	pi->registerPlugin(PluginType::ExternalEngine, "UDR", &factory);
+	PluginManagerInterface pi;
+	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
 	pi->setModuleCleanup(&unloadDetector);
 
 	libraryName->assign("fbclient");

@@ -32,7 +32,7 @@
 #include "FirebirdPluginApi.h"
 
 namespace Firebird {
-class Status;
+class IStatus;
 }
 
 namespace Auth {
@@ -54,23 +54,23 @@ public:
 	virtual void FB_CARG drop() = 0;
 };
 
-class Server : public Firebird::Plugin
+class Server : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
 									   const unsigned char* dpb, unsigned int dpbSize,
 									   WriterInterface* writerInterface) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
 									  const unsigned char* data, unsigned int size) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 #define FB_AUTH_SERVER_VERSION (FB_PLUGIN_VERSION + 3)
 
-class Client : public Firebird::Plugin
+class Client : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size) = 0;
+	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb) = 0;
+	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 #define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 3)
@@ -133,13 +133,13 @@ public:
 	virtual const char* FB_CARG remoteAddress() = 0;
 };
 
-class Management : public Firebird::Plugin
+class Management : public Firebird::IPluginBase
 {
 public:
-	virtual void FB_CARG start(Firebird::Status* status, LogonInfo* logonInfo) = 0;
-	virtual int FB_CARG execute(Firebird::Status* status, User* user, ListUsers* callback) = 0;
-	virtual void FB_CARG commit(Firebird::Status* status) = 0;
-	virtual void FB_CARG rollback(Firebird::Status* status) = 0;
+	virtual void FB_CARG start(Firebird::IStatus* status, LogonInfo* logonInfo) = 0;
+	virtual int FB_CARG execute(Firebird::IStatus* status, User* user, ListUsers* callback) = 0;
+	virtual void FB_CARG commit(Firebird::IStatus* status) = 0;
+	virtual void FB_CARG rollback(Firebird::IStatus* status) = 0;
 };
 #define FB_AUTH_MANAGE_VERSION (FB_PLUGIN_VERSION + 4)
 

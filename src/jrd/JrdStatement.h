@@ -84,18 +84,18 @@ public:
 
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG receive(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG receive(IStatus* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
-	virtual void FB_CARG send(Status* status, int level, unsigned int msg_type,
+	virtual void FB_CARG send(IStatus* status, int level, unsigned int msg_type,
 					  unsigned int length, const unsigned char* message);
-	virtual void FB_CARG getInfo(Status* status, int level,
+	virtual void FB_CARG getInfo(IStatus* status, int level,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG start(Status* status, Firebird::ITransaction* tra, int level);
-	virtual void FB_CARG startAndSend(Status* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
+	virtual void FB_CARG start(IStatus* status, Firebird::ITransaction* tra, int level);
+	virtual void FB_CARG startAndSend(IStatus* status, Firebird::ITransaction* tra, int level, unsigned int msg_type,
 							  unsigned int length, const unsigned char* message);
-	virtual void FB_CARG unwind(Status* status, int level);
-	virtual void FB_CARG free(Status* status);
+	virtual void FB_CARG unwind(IStatus* status, int level);
+	virtual void FB_CARG free(IStatus* status);
 };
 
 

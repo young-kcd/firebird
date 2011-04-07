@@ -41,20 +41,20 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	const char* name = "Auth_Debug";
 
-	Firebird::PluginInterface iPlugin(master);
+	Firebird::PluginManagerInterface iPlugin(master);
 
-	iPlugin->registerPlugin(Firebird::PluginType::AuthClient, name, &clientFactory);
-	iPlugin->registerPlugin(Firebird::PluginType::AuthServer, name, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, name, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, name, &serverFactory);
 }
 
 
 namespace Auth {
 
-DebugServer::DebugServer(Firebird::IFactoryParameter*)
+DebugServer::DebugServer(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugServer::startAuthentication(Firebird::Status* status, bool isService, const char* dbName,
+Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
 										const unsigned char* dpb, unsigned int dpbSize,
 										WriterInterface* writerInterface)
 {
@@ -80,7 +80,7 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::Status* status, bool i
 	}
 }
 
-Result FB_CARG DebugServer::contAuthentication(Firebird::Status* status, WriterInterface* writerInterface,
+Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
 									   const unsigned char* data, unsigned int size)
 {
 	try
@@ -118,11 +118,11 @@ int FB_CARG DebugServer::release()
 	return 1;
 }
 
-DebugClient::DebugClient(Firebird::IFactoryParameter*)
+DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugClient::startAuthentication(Firebird::Status* status, bool isService, const char*, DpbInterface* dpb)
+Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool isService, const char*, DpbInterface* dpb)
 {
 	try
 	{
@@ -142,7 +142,7 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::Status* status, bool i
 	}
 }
 
-Result FB_CARG DebugClient::contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size)
+Result FB_CARG DebugClient::contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size)
 {
 	try
 	{

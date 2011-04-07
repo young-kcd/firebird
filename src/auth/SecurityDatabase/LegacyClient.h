@@ -38,17 +38,17 @@ namespace Auth {
 class SecurityDatabaseClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
 {
 public:
-	explicit SecurityDatabaseClient(Firebird::IFactoryParameter*)
+	explicit SecurityDatabaseClient(Firebird::IPluginConfig*)
 	{
 	}
 
-	Result FB_CARG startAuthentication(Firebird::Status* status, bool isService, const char* dbName, DpbInterface* dpb);
-	Result FB_CARG contAuthentication(Firebird::Status* status, const unsigned char* data, unsigned int size);
+	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
 };
 
-void registerLegacyClient(Firebird::IPlugin* iPlugin);
+void registerLegacyClient(Firebird::IPluginManager* iPlugin);
 
 } // namespace Auth
 

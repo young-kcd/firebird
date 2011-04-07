@@ -114,13 +114,13 @@ static unsigned int secDbKey = INIT_KEY;
 
 namespace Auth {
 
-SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IFactoryParameter* par)
+SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* par)
 	: config(par->getFirebirdConf()), database(0), transaction(0), userName(getPool())
 {
 	config->release();
 }
 
-void FB_CARG SecurityDatabaseManagement::start(Firebird::Status* st, LogonInfo* logonInfo)
+void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, LogonInfo* logonInfo)
 {
 	try
 	{
@@ -177,7 +177,7 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::Status* st, LogonInfo* 
 	}
 }
 
-void FB_CARG SecurityDatabaseManagement::commit(Firebird::Status* st)
+void FB_CARG SecurityDatabaseManagement::commit(Firebird::IStatus* st)
 {
 	try
 	{
@@ -198,7 +198,7 @@ void FB_CARG SecurityDatabaseManagement::commit(Firebird::Status* st)
 	}
 }
 
-void FB_CARG SecurityDatabaseManagement::rollback(Firebird::Status* st)
+void FB_CARG SecurityDatabaseManagement::rollback(Firebird::IStatus* st)
 {
 	try
 	{
@@ -244,7 +244,7 @@ static inline void strStore(char* to, const char* from, size_t len)
 	strncpy(to, from, len);
 }
 
-int FB_CARG SecurityDatabaseManagement::execute(Firebird::Status* st, User* user, ListUsers* callback)
+int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, User* user, ListUsers* callback)
 {
 /*************************************
  *
@@ -672,8 +672,8 @@ static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginInterface pi(master);
+	Firebird::PluginManagerInterface pi(master);
 
-	pi->registerPlugin(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
+	pi->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
 	pi->setModuleCleanup(&unloadDetector);
 }

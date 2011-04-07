@@ -51,10 +51,10 @@ namespace Why {
 class MasterImplementation : public StackIface<IMaster>
 {
 public:
-	Status* FB_CARG getStatusInstance();
-	PProvider* FB_CARG getDispatcher();
-	IPlugin* FB_CARG getPluginInterface();
-	int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass);
+	IStatus* FB_CARG getStatusInstance();
+	IProvider* FB_CARG getDispatcher();
+	IPluginManager* FB_CARG getPluginManager();
+	int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass);
 	const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
 	ITimerControl* FB_CARG getTimerControl();
 };
@@ -72,7 +72,7 @@ private:
 	}
 };
 
-Firebird::Status* FB_CARG MasterImplementation::getStatusInstance()
+Firebird::IStatus* FB_CARG MasterImplementation::getStatusInstance()
 {
 	return new UserStatus;
 }
@@ -81,17 +81,17 @@ Firebird::Status* FB_CARG MasterImplementation::getStatusInstance()
 // getDispatcher()
 //
 
-PProvider* FB_CARG MasterImplementation::getDispatcher()
+IProvider* FB_CARG MasterImplementation::getDispatcher()
 {
 	dispatcherPtr->addRef();
 	return dispatcherPtr;
 }
 
 //
-// getPluginInterface()
+// getPluginManager()
 //
 
-IPlugin* FB_CARG MasterImplementation::getPluginInterface()
+IPluginManager* FB_CARG MasterImplementation::getPluginManager()
 {
 	static Static<PluginManager> manager;
 
@@ -117,7 +117,7 @@ namespace
 	GlobalPtr<RWLock> mapLock;
 }
 
-int FB_CARG MasterImplementation::upgradeInterface(Interface* toUpgrade,
+int FB_CARG MasterImplementation::upgradeInterface(IInterface* toUpgrade,
 												   int desiredVersion,
 												   void* missingFunctionClass)
 {

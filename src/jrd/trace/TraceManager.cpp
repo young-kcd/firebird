@@ -210,7 +210,6 @@ void TraceManager::update_sessions()
 
 	// remove sessions not present in storage
 	size_t i = 0;
-	PluginInterface pi;
 	while (i < trace_sessions.getCount())
 	{
 		size_t pos;

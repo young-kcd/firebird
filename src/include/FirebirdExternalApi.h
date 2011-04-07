@@ -154,7 +154,7 @@ public:
 
 // In SuperServer, shared by all attachments to one database and disposed when last (non-external)
 // user attachment to the database is closed.
-class ExternalEngine : public Plugin
+class ExternalEngine : public IPluginBase
 {
 public:
 	virtual int FB_CALL getVersion(Error* error) = 0;

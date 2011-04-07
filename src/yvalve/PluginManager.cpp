@@ -24,6 +24,10 @@
 #include "consts_pub.h"
 #include "iberror.h"
 #include "../yvalve/PluginManager.h"
+
+#include "../dsql/sqlda_pub.h"
+#include "../yvalve/why_proto.h"
+
 #include "../jrd/ErrorImpl.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/err_proto.h"
@@ -40,8 +44,7 @@
 
 //#define DEBUG_PLUGINS
 
-namespace Firebird {
-
+using namespace Firebird;
 
 namespace
 {
@@ -122,10 +125,10 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess : public StdIface<IConfigParameter, FB_I_CONFIG_PARAMETER_VERSION>
+	class ConfigParameterAccess : public StdIface<IConfigEntry, FB_I_CONFIG_PARAMETER_VERSION>
 	{
 	public:
-		ConfigParameterAccess(Interface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
+		ConfigParameterAccess(IInterface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
 		const char* FB_CARG name()
 		{
@@ -151,7 +154,7 @@ namespace
 		}
 
 	private:
-		RefPtr<Interface> cf;
+		RefPtr<IInterface> cf;
 		const ConfigFile::Parameter* par;
 	};
 
@@ -160,17 +163,17 @@ namespace
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
 
-		IConfigParameter* FB_CARG find(const char* name)
+		IConfigEntry* FB_CARG find(const char* name)
 		{
 			return confFile.hasData() ? newParam(confFile->findParameter(name)) : NULL;
 		}
 
-		IConfigParameter* FB_CARG findValue(const char* name, const char* value)
+		IConfigEntry* FB_CARG findValue(const char* name, const char* value)
 		{
 			return confFile.hasData() ? newParam(confFile->findParameter(name, value)) : NULL;
 		}
 
-		IConfigParameter* FB_CARG findPos(const char* name, unsigned int n)
+		IConfigEntry* FB_CARG findPos(const char* name, unsigned int n)
 		{
 			if (!confFile.hasData())
 			{
@@ -206,11 +209,11 @@ namespace
 	private:
 		RefPtr<ConfigFile> confFile;
 
-		IConfigParameter* newParam(const ConfigFile::Parameter* p)
+		IConfigEntry* newParam(const ConfigFile::Parameter* p)
 		{
 			if (p)
 			{
-				IConfigParameter* rc = new ConfigParameterAccess(this, p);
+				IConfigEntry* rc = new ConfigParameterAccess(this, p);
 				rc->addRef();
 				return rc;
 			}
@@ -233,7 +236,7 @@ namespace
 
 	struct RegisteredPlugin		// This is POD object
 	{
-		RegisteredPlugin(PluginsFactory* f, const char* nm, unsigned int t)
+		RegisteredPlugin(IPluginFactory* f, const char* nm, unsigned int t)
 			: factory(f), name(nm), type(t)
 		{ }
 
@@ -241,7 +244,7 @@ namespace
 			: factory(NULL), name(NULL), type(0)
 		{ }
 
-		PluginsFactory* factory;
+		IPluginFactory* factory;
 		const char* name;
 		unsigned int type;
 	};
@@ -295,12 +298,12 @@ namespace
 			return name.nullStr();
 		}
 
-		void setCleanup(IModuleCleanup* c)
+		void setCleanup(IPluginModule* c)
 		{
 			cleanup = c;
 		}
 
-		void resetCleanup(IModuleCleanup* c)
+		void resetCleanup(IPluginModule* c)
 		{
 			if (cleanup == c)
 			{
@@ -337,7 +340,7 @@ namespace
 		}
 
 		Firebird::AutoPtr<ModuleLoader::Module> module;
-		Firebird::IModuleCleanup* cleanup;
+		Firebird::IPluginModule* cleanup;
 		HalfStaticArray<RegisteredPlugin, 2> regPlugins;
 		PluginModule* next;
 		PluginModule** prev;
@@ -415,8 +418,7 @@ namespace
 				return rc;
 			}
 
-			PluginInterface pi;
-			IConfig* iconf = pi->getConfig(confName.nullStr());
+			IConfig* iconf = PluginManagerInterface()->getConfig(confName.nullStr());
 
 			return iconf;
 		}
@@ -426,7 +428,7 @@ namespace
 			return module;
 		}
 
-		Plugin* factory(IFirebirdConf *iFirebirdConf);
+		IPluginBase* factory(IFirebirdConf *iFirebirdConf);
 
 		~ConfiguredPlugin();
 
@@ -438,7 +440,7 @@ namespace
 		PathName plugName;
 	};
 
-	class FactoryParameter : public StdIface<IFactoryParameter, FB_FACTORY_PARAMETER_VERSION>
+	class FactoryParameter : public StdIface<IPluginConfig, FB_FACTORY_PARAMETER_VERSION>
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -483,10 +485,10 @@ namespace
 		RefPtr<IFirebirdConf> firebirdConf;
 	};
 
-	Plugin* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
+	IPluginBase* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
 	{
 		RefPtr<FactoryParameter> par(new FactoryParameter(this, firebirdConf));
-		Plugin* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
+		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
 		if (plugin)
 		{
 			par->addRef();
@@ -601,7 +603,7 @@ namespace
 			next();
 		}
 
-		Plugin* FB_CARG plugin();
+		IPluginBase* FB_CARG plugin();
 		void FB_CARG next();
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
@@ -638,7 +640,7 @@ namespace
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
 
 		RefPtr<IFirebirdConf> firebirdConf;
-		AutoPtr<IMaster, AutoInterface> masterInterface;
+		AutoPtr<IMaster, AutoDisposable> masterInterface;
 
 		RefPtr<PluginModule> loadModule(const PathName& modName);
 
@@ -760,11 +762,11 @@ namespace
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
-	Plugin* FB_CARG PluginSet::plugin()
+	IPluginBase* FB_CARG PluginSet::plugin()
 	{
 		while (currentPlugin.hasData())
 		{
-			Plugin* p = currentPlugin->factory(firebirdConf);
+			IPluginBase* p = currentPlugin->factory(firebirdConf);
 			if (p)
 			{
 				if (masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass) >= 0)
@@ -772,8 +774,7 @@ namespace
 					return p;
 				}
 
-				PluginInterface pi;
-				pi->releasePlugin(p);
+				PluginManagerInterface()->releasePlugin(p);
 			}
 
 			next();
@@ -783,8 +784,10 @@ namespace
 
 		return NULL;
 	}
-}
+} // anonymous namespace
 
+
+namespace Firebird {
 
 PluginManager::PluginManager()
 {
@@ -799,7 +802,7 @@ PluginManager::PluginManager()
 }
 
 
-void FB_CARG PluginManager::registerPlugin(unsigned int interfaceType, const char* defaultName, PluginsFactory* factory)
+void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, const char* defaultName, IPluginFactory* factory)
 {
 	MutexLockGuard g(plugins->mutex);
 
@@ -825,7 +828,7 @@ void FB_CARG PluginManager::registerPlugin(unsigned int interfaceType, const cha
 }
 
 
-void FB_CARG PluginManager::setModuleCleanup(IModuleCleanup* cleanup)
+void FB_CARG PluginManager::setModuleCleanup(IPluginModule* cleanup)
 {
 	MutexLockGuard g(plugins->mutex);
 
@@ -839,7 +842,7 @@ void FB_CARG PluginManager::setModuleCleanup(IModuleCleanup* cleanup)
 	current->setCleanup(cleanup);
 }
 
-void FB_CARG PluginManager::resetModuleCleanup(IModuleCleanup* cleanup)
+void FB_CARG PluginManager::resetModuleCleanup(IPluginModule* cleanup)
 {
 	MutexLockGuard g(plugins->mutex);
 
@@ -859,11 +862,11 @@ IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const 
 }
 
 
-void FB_CARG PluginManager::releasePlugin(Plugin* plugin)
+void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 {
 	MutexLockGuard g(plugins->mutex);
 
-	Interface* parent = plugin->owner(NULL);
+	IInterface* parent = plugin->owner(NULL);
 
 	if (plugin->release() == 0)
 	{
@@ -929,6 +932,11 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 	{
 		semPtr->enter();
 	}
+}
+
+void FB_CARG PluginManager::moduleUnloaded()
+{
+	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
 }	// namespace Firebird

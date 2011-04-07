@@ -664,7 +664,7 @@ which is not called as long as plugin module is not unloaded. As the result all 
 unloaded only on program exit, causing at that moment AV if this code is active: it happens that
 ~ModuleMap dlcloses itself.
 
-	PluginInterface pi;
+	PluginManagerInterface pi;
 
 	EnginesMap::Accessor accessor(&engines);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
@@ -892,8 +892,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 				{
 					if (engine)
 					{
-						PluginInterface pi;
-						pi->releasePlugin(engine);
+						PluginManagerInterface()->releasePlugin(engine);
 					}
 
 					throw;

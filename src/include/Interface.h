@@ -44,7 +44,7 @@
 namespace Firebird {
 
 // Regular interface - base for refCounted FB interfaces
-class Interface
+class IInterface
 {
 public:
 	virtual void FB_CARG addRef() = 0;
@@ -61,7 +61,7 @@ public:
 };
 
 // Interface to work with status vector
-class Status : public IDisposable
+class IStatus : public IDisposable
 {
 public:
 	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value) = 0;
@@ -72,8 +72,8 @@ public:
 	virtual int FB_CARG isSuccess() const = 0;
 };
 
-class PProvider;
-class IPlugin;
+class IProvider;
+class IPluginManager;
 class ITimerControl;
 
 class IMaster : public IDisposable
@@ -82,10 +82,10 @@ public:
 	// This interface can't be upgraded - therefore another form of version is used
 	const static unsigned int VERSION = 1;	// To be changed each time any interface is changed
 
-	virtual Status* FB_CARG getStatusInstance() = 0;
-	virtual PProvider* FB_CARG getDispatcher() = 0;
-	virtual IPlugin* FB_CARG getPluginInterface() = 0;
-	virtual int FB_CARG upgradeInterface(Interface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
+	virtual IStatus* FB_CARG getStatusInstance() = 0;
+	virtual IProvider* FB_CARG getDispatcher() = 0;
+	virtual IPluginManager* FB_CARG getPluginManager() = 0;
+	virtual int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 };

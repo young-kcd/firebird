@@ -56,7 +56,7 @@ public:
 
 	void deleteSession(SLONG);
 
-	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*, Firebird::EventCallback*);
+	SLONG queEvents(SLONG, USHORT, const TEXT*, USHORT, const UCHAR*, Firebird::IEventCallback*);
 	void cancelEvents(SLONG);
 	void postEvent(USHORT, const TEXT*, USHORT, const TEXT*, USHORT);
 	void deliverEvents();

@@ -77,17 +77,17 @@ private:
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer : Firebird::StdIface<public Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class DebugServer : Firebird::StdIface<public Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	Firebird::Interface* FB_CARG createPlugin(const char* name, const char* configFile);
+	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
     int FB_CARG release();
 };
 
-class DebugClient : public Firebird::StdIface<Firebird::PluginsFactory, FB_PLUGINS_FACTORY_VERSION>
+class DebugClient : public Firebird::StdIface<Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
-	Firebird::Interface* FB_CARG createPlugin(const char* name, const char* configFile);
+	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
     int FB_CARG release();
 };
 

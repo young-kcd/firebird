@@ -150,7 +150,7 @@ class Events : public StdIface<IEvents, FB_I_EVENTS_VERSION, pool_alloc<type_Eve
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG cancel(Status* status);
+	virtual void FB_CARG cancel(IStatus* status);
 
 public:
 	Events(int h, Attachment* att) : id(h), attachment(att) { }
@@ -219,12 +219,12 @@ class Svc : public StdIface<IService, FB_I_SERVICE_VERSION>
 {
 public:
 	virtual int FB_CARG release();
-	virtual void FB_CARG detach(Status* status);
-	virtual void FB_CARG query(Status* status,
+	virtual void FB_CARG detach(IStatus* status);
+	virtual void FB_CARG query(IStatus* status,
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG start(Status* status,
+	virtual void FB_CARG start(IStatus* status,
 					   unsigned int spbLength, const unsigned char* spb);
 
 public:
@@ -242,21 +242,21 @@ int Svc::release()
 	return 0;
 }
 
-class Provider : public StdPlugin<PProvider, FB_P_PROVIDER_VERSION>
+class Provider : public StdPlugin<IProvider, FB_P_PROVIDER_VERSION>
 {
 public:
-	explicit Provider(IFactoryParameter*)
+	explicit Provider(IPluginConfig*)
 	{ }
 
-	virtual void FB_CARG attachDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(Status* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
+	virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
-	virtual IService* FB_CARG attachServiceManager(Status* status, const char* service,
+	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 												 unsigned int spbLength, const unsigned char* spb);
-	//virtual ITransaction* startTransaction(Status* status, unsigned int count, ...);
-	//virtual ITransaction* startMultiple(Status* status, MultipleTransaction* multi);
-	virtual void FB_CARG shutdown(Status* status, unsigned int timeout, const int reason);
+	//virtual ITransaction* startTransaction(IStatus* status, unsigned int count, ...);
+	//virtual ITransaction* startMultiple(IStatus* status, MultipleTransaction* multi);
+	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
 	virtual int FB_CARG release();
 };
 
@@ -281,10 +281,10 @@ int Provider::release()
 
 static Firebird::UnloadDetector unloadDetector;
 
-class EngineFactory : public StackIface<PluginsFactory>
+class EngineFactory : public StackIface<IPluginFactory>
 {
 public:
-	Plugin* FB_CARG createPlugin(IFactoryParameter* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
 	{
 		if (unloadDetector->unloadStarted())
 		{
@@ -292,7 +292,7 @@ public:
 		}
 
 		++shutdownCounter;
-		Plugin* p = new Provider(factoryParameter);
+		IPluginBase* p = new Provider(factoryParameter);
 		p->addRef();
 		return p;
 	}
@@ -300,9 +300,9 @@ public:
 
 static Static<EngineFactory> engineFactory;
 
-void registerEngine(IPlugin* iPlugin)
+void registerEngine(IPluginManager* iPlugin)
 {
-	iPlugin->registerPlugin(PluginType::Provider, "Engine12", &engineFactory);
+	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
 	iPlugin->setModuleCleanup(&unloadDetector);
 }
 
@@ -310,7 +310,7 @@ void registerEngine(IPlugin* iPlugin)
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	PluginInterface pi;
+	PluginManagerInterface pi;
 	registerEngine(pi);
 }
 
@@ -725,14 +725,14 @@ static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static unsigned int purge_transactions(thread_db*, Jrd::Attachment*, const bool, const ULONG);
 
-static void 		handle_error(Firebird::Status*, ISC_STATUS);
+static void 		handle_error(Firebird::IStatus*, ISC_STATUS);
 
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK, VDN_SECURITY};
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
-static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::Status* userStatus,
+static ISC_STATUS	unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
 #ifdef WIN_NT
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
@@ -844,7 +844,7 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static ISC_STATUS successful_completion(Firebird::Status* s, ISC_STATUS return_code = FB_SUCCESS)
+static ISC_STATUS successful_completion(Firebird::IStatus* s, ISC_STATUS return_code = FB_SUCCESS)
 {
 	fb_assert(s);
 
@@ -871,7 +871,7 @@ static ISC_STATUS successful_completion(Firebird::Status* s, ISC_STATUS return_c
 
 
 // Stuff exception transliterated to the client charset.
-ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::Status* vector) throw()
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, Firebird::IStatus* vector) throw()
 {
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	USHORT charSet;
@@ -974,9 +974,9 @@ const int SWEEP_INTERVAL		= 20000;
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
-PProvider* currentProvider()
+IProvider* currentProvider()
 {
-	PProvider* p = new Provider(NULL);
+	IProvider* p = new Provider(NULL);
 	p->addRef();
 	return p;
 }
@@ -1026,7 +1026,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
-void Provider::attachDatabase(Status* user_status,
+void Provider::attachDatabase(IStatus* user_status,
 							  Firebird::IAttachment** handle,
 							  FB_API_HANDLE public_handle,
 							  const char* filename,
@@ -1683,7 +1683,7 @@ void Provider::attachDatabase(Status* user_status,
 }
 
 
-void blb::getInfo(Status* user_status,
+void blb::getInfo(IStatus* user_status,
 				   unsigned int itemsLength, const unsigned char* items,
 				   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -1725,7 +1725,7 @@ void blb::getInfo(Status* user_status,
 }
 
 
-void blb::cancel(Status* user_status)
+void blb::cancel(IStatus* user_status)
 {
 /**************************************
  *
@@ -1765,7 +1765,7 @@ void blb::cancel(Status* user_status)
 }
 
 
-void Events::cancel(Status* user_status)
+void Events::cancel(IStatus* user_status)
 {
 /**************************************
  *
@@ -1813,7 +1813,7 @@ void Events::cancel(Status* user_status)
 }
 
 
-void Attachment::cancelOperation(Status* user_status, int option)
+void Attachment::cancelOperation(IStatus* user_status, int option)
 {
 /**************************************
  *
@@ -1852,7 +1852,7 @@ void Attachment::cancelOperation(Status* user_status, int option)
 }
 
 
-void blb::close(Status* user_status)
+void blb::close(IStatus* user_status)
 {
 /**************************************
  *
@@ -1892,7 +1892,7 @@ void blb::close(Status* user_status)
 }
 
 
-void jrd_tra::commit(Status* user_status)
+void jrd_tra::commit(IStatus* user_status)
 {
 /**************************************
  *
@@ -1932,7 +1932,7 @@ void jrd_tra::commit(Status* user_status)
 }
 
 
-void jrd_tra::commitRetaining(Status* user_status)
+void jrd_tra::commitRetaining(IStatus* user_status)
 {
 /**************************************
  *
@@ -1972,7 +1972,7 @@ void jrd_tra::commitRetaining(Status* user_status)
 }
 
 
-Firebird::IRequest* Attachment::compileRequest(Status* user_status,
+Firebird::IRequest* Attachment::compileRequest(IStatus* user_status,
 	unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
@@ -2032,7 +2032,7 @@ Firebird::IRequest* Attachment::compileRequest(Status* user_status,
 }
 
 
-IBlob* Attachment::createBlob(Status* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+IBlob* Attachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2083,7 +2083,7 @@ IBlob* Attachment::createBlob(Status* user_status, ITransaction* tra, ISC_QUAD* 
 }
 
 
-void Provider::createDatabase(Status* user_status, Firebird::IAttachment** handle,
+void Provider::createDatabase(IStatus* user_status, Firebird::IAttachment** handle,
 	FB_API_HANDLE public_handle, const char* filename, unsigned int dpb_length,
 	const unsigned char* dpb)
 {
@@ -2449,7 +2449,7 @@ void Provider::createDatabase(Status* user_status, Firebird::IAttachment** handl
 }
 
 
-void Attachment::getInfo(Status* user_status, unsigned int item_length, const unsigned char* items,
+void Attachment::getInfo(IStatus* user_status, unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
@@ -2490,7 +2490,7 @@ void Attachment::getInfo(Status* user_status, unsigned int item_length, const un
 }
 
 
-void Attachment::ddl(Status* status, ITransaction* /*tra*/, unsigned int /*length*/,
+void Attachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
 	const unsigned char* /*dyn*/)
 {
 /**************************************
@@ -2506,7 +2506,7 @@ void Attachment::ddl(Status* status, ITransaction* /*tra*/, unsigned int /*lengt
 }
 
 
-void Attachment::detach(Status* user_status)
+void Attachment::detach(IStatus* user_status)
 {
 /**************************************
  *
@@ -2574,7 +2574,7 @@ void Attachment::detach(Status* user_status)
 }
 
 
-void Attachment::drop(Status* user_status)
+void Attachment::drop(IStatus* user_status)
 {
 /**************************************
  *
@@ -2707,7 +2707,7 @@ void Attachment::drop(Status* user_status)
 }
 
 
-unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, unsigned char* buffer)
+unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
  *
@@ -2756,7 +2756,7 @@ unsigned int blb::getSegment(Status* user_status, unsigned int buffer_length, un
 }
 
 
-int Attachment::getSlice(Status* user_status, ITransaction* tra, ISC_QUAD* array_id,
+int Attachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdl_length*/, const unsigned char* sdl, unsigned int param_length,
 	const unsigned char* param, int slice_length, unsigned char* slice)
 {
@@ -2815,7 +2815,7 @@ int Attachment::getSlice(Status* user_status, ITransaction* tra, ISC_QUAD* array
 }
 
 
-IBlob* Attachment::openBlob(Status* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+IBlob* Attachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2867,7 +2867,7 @@ IBlob* Attachment::openBlob(Status* user_status, ITransaction* tra, ISC_QUAD* bl
 }
 
 
-void jrd_tra::prepare(Status* user_status, unsigned int msg_length, const unsigned char* msg)
+void jrd_tra::prepare(IStatus* user_status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -2908,7 +2908,7 @@ void jrd_tra::prepare(Status* user_status, unsigned int msg_length, const unsign
 }
 
 
-void blb::putSegment(Status* user_status, unsigned int buffer_length, const unsigned char* buffer)
+void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const unsigned char* buffer)
 {
 /**************************************
  *
@@ -2948,7 +2948,7 @@ void blb::putSegment(Status* user_status, unsigned int buffer_length, const unsi
 }
 
 
-void Attachment::putSlice(Status* user_status, ITransaction* tra, ISC_QUAD* array_id,
+void Attachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdlLength*/, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -2997,7 +2997,7 @@ void Attachment::putSlice(Status* user_status, ITransaction* tra, ISC_QUAD* arra
 }
 
 
-Firebird::IEvents* Attachment::queEvents(Status* user_status, Firebird::EventCallback* callback,
+Firebird::IEvents* Attachment::queEvents(IStatus* user_status, Firebird::IEventCallback* callback,
 	unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3051,7 +3051,7 @@ Firebird::IEvents* Attachment::queEvents(Status* user_status, Firebird::EventCal
 }
 
 
-void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type,
+void JrdStatement::receive(IStatus* user_status, int level, unsigned int msg_type,
 						   unsigned int msg_length, unsigned char* msg)
 {
 /**************************************
@@ -3094,7 +3094,7 @@ void JrdStatement::receive(Status* user_status, int level, unsigned int msg_type
 }
 
 
-Firebird::ITransaction* Attachment::reconnectTransaction(Status* user_status, unsigned int length,
+Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* user_status, unsigned int length,
 	const unsigned char* id)
 {
 /**************************************
@@ -3139,7 +3139,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(Status* user_status, un
 }
 
 
-void JrdStatement::free(Status* user_status)
+void JrdStatement::free(IStatus* user_status)
 {
 /**************************************
  *
@@ -3179,7 +3179,7 @@ void JrdStatement::free(Status* user_status)
 }
 
 
-void JrdStatement::getInfo(Status* user_status, int level, unsigned int itemsLength,
+void JrdStatement::getInfo(IStatus* user_status, int level, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
@@ -3222,7 +3222,7 @@ void JrdStatement::getInfo(Status* user_status, int level, unsigned int itemsLen
 }
 
 
-void jrd_tra::rollbackRetaining(Status* user_status)
+void jrd_tra::rollbackRetaining(IStatus* user_status)
 {
 /**************************************
  *
@@ -3262,7 +3262,7 @@ void jrd_tra::rollbackRetaining(Status* user_status)
 }
 
 
-void jrd_tra::rollback(Status* user_status)
+void jrd_tra::rollback(IStatus* user_status)
 {
 /**************************************
  *
@@ -3302,7 +3302,7 @@ void jrd_tra::rollback(Status* user_status)
 }
 
 
-void jrd_tra::disconnect(Status* user_status)
+void jrd_tra::disconnect(IStatus* user_status)
 {
 	try
 	{
@@ -3324,7 +3324,7 @@ void jrd_tra::disconnect(Status* user_status)
 }
 
 
-int blb::seek(Status* user_status, int mode, int offset)
+int blb::seek(IStatus* user_status, int mode, int offset)
 {
 /**************************************
  *
@@ -3368,7 +3368,7 @@ int blb::seek(Status* user_status, int mode, int offset)
 }
 
 
-void JrdStatement::send(Status* user_status, int level, unsigned int msg_type,
+void JrdStatement::send(IStatus* user_status, int level, unsigned int msg_type,
 	unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3412,7 +3412,7 @@ void JrdStatement::send(Status* user_status, int level, unsigned int msg_type,
 }
 
 
-Firebird::IService* Provider::attachServiceManager(Status* user_status, const char* service_name,
+Firebird::IService* Provider::attachServiceManager(IStatus* user_status, const char* service_name,
 											   unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -3446,7 +3446,7 @@ Firebird::IService* Provider::attachServiceManager(Status* user_status, const ch
 }
 
 
-void Svc::detach(Status* user_status)
+void Svc::detach(IStatus* user_status)
 {
 /**************************************
  *
@@ -3477,7 +3477,7 @@ void Svc::detach(Status* user_status)
 }
 
 
-void Svc::query(Status* user_status,
+void Svc::query(IStatus* user_status,
 				unsigned int sendLength, const unsigned char* sendItems,
 				unsigned int receiveLength, const unsigned char* receiveItems,
 				unsigned int bufferLength, unsigned char* buffer)
@@ -3541,7 +3541,7 @@ void Svc::query(Status* user_status,
 }
 
 
-void Svc::start(Status* user_status, unsigned int spbLength, const unsigned char* spb)
+void Svc::start(IStatus* user_status, unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3582,7 +3582,7 @@ void Svc::start(Status* user_status, unsigned int spbLength, const unsigned char
 }
 
 
-void JrdStatement::startAndSend(Status* user_status, Firebird::ITransaction* tra, int level,
+void JrdStatement::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, int level,
 	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3649,7 +3649,7 @@ void JrdStatement::startAndSend(Status* user_status, Firebird::ITransaction* tra
 }
 
 
-void JrdStatement::start(Status* user_status, Firebird::ITransaction* tra, int level)
+void JrdStatement::start(IStatus* user_status, Firebird::ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -3740,7 +3740,7 @@ private:
 };
 
 
-void Provider::shutdown(Status* status, unsigned int timeout, const int /*reason*/)
+void Provider::shutdown(IStatus* status, unsigned int timeout, const int /*reason*/)
 {
 /**************************************
  *
@@ -3883,7 +3883,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_h
 }
 */
 
-Firebird::ITransaction* Attachment::startTransaction(Status* user_status,
+Firebird::ITransaction* Attachment::startTransaction(IStatus* user_status,
 	unsigned int tpbLength, const unsigned char* tpb, FB_API_HANDLE public_handle)
 {
 /**************************************
@@ -3921,7 +3921,7 @@ Firebird::ITransaction* Attachment::startTransaction(Status* user_status,
 }
 
 
-void Attachment::transactRequest(Status* user_status, ITransaction* tra,
+void Attachment::transactRequest(IStatus* user_status, ITransaction* tra,
 	unsigned int blr_length, const unsigned char* blr,
 	unsigned int in_msg_length, const unsigned char* in_msg,
 	unsigned int out_msg_length, unsigned char* out_msg)
@@ -4044,7 +4044,7 @@ void Attachment::transactRequest(Status* user_status, ITransaction* tra,
 }
 
 
-void jrd_tra::getInfo(Status* user_status,
+void jrd_tra::getInfo(IStatus* user_status,
 	unsigned int itemsLength, const unsigned char* items,
 	unsigned int bufferLength, unsigned char* buffer)
 {
@@ -4086,7 +4086,7 @@ void jrd_tra::getInfo(Status* user_status,
 }
 
 
-void JrdStatement::unwind(Status* user_status, int level)
+void JrdStatement::unwind(IStatus* user_status, int level)
 {
 /**************************************
  *
@@ -4129,7 +4129,7 @@ void JrdStatement::unwind(Status* user_status, int level)
 }
 
 
-Firebird::IStatement* Attachment::allocateStatement(Status* user_status)
+Firebird::IStatement* Attachment::allocateStatement(IStatus* user_status)
 {
 	dsql_req* stmt = NULL;
 
@@ -4163,7 +4163,7 @@ Firebird::IStatement* Attachment::allocateStatement(Status* user_status)
 }
 
 
-Firebird::ITransaction* dsql_req::execute(Status* user_status, Firebird::ITransaction* apiTra,
+Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int in_msg_type, const MessageBuffer* inMsgBuffer, const MessageBuffer* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
@@ -4216,7 +4216,7 @@ Firebird::ITransaction* dsql_req::execute(Status* user_status, Firebird::ITransa
 }
 
 
-Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITransaction* apiTra,
+Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	unsigned int /*in_msg_type*/, const MessageBuffer* inMsgBuffer,
 	const MessageBuffer* outMsgBuffer)
@@ -4274,7 +4274,7 @@ Firebird::ITransaction* Attachment::execute(Status* user_status, Firebird::ITran
 }
 
 
-int dsql_req::fetch(Status* user_status, const MessageBuffer* msgBuffer)
+int dsql_req::fetch(IStatus* user_status, const MessageBuffer* msgBuffer)
 {
 	int return_code = 0;
 
@@ -4315,7 +4315,7 @@ int dsql_req::fetch(Status* user_status, const MessageBuffer* msgBuffer)
 }
 
 
-void dsql_req::free(Status* user_status, unsigned int option)
+void dsql_req::free(IStatus* user_status, unsigned int option)
 {
 	try
 	{
@@ -4345,7 +4345,7 @@ void dsql_req::free(Status* user_status, unsigned int option)
 }
 
 
-void dsql_req::insert(Status* user_status, const MessageBuffer* msgBuffer)
+void dsql_req::insert(IStatus* user_status, const MessageBuffer* msgBuffer)
 {
 	try
 	{
@@ -4381,7 +4381,7 @@ void dsql_req::insert(Status* user_status, const MessageBuffer* msgBuffer)
 }
 
 
-Firebird::IStatement* dsql_req::prepare(Status* user_status, Firebird::ITransaction* apiTra,
+Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 									unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 									unsigned int item_length, const unsigned char* items,
 									unsigned int buffer_length, unsigned char* buffer)
@@ -4423,7 +4423,7 @@ Firebird::IStatement* dsql_req::prepare(Status* user_status, Firebird::ITransact
 }
 
 
-void dsql_req::setCursor(Status* user_status, const char* cursor, unsigned int /*type*/)
+void dsql_req::setCursor(IStatus* user_status, const char* cursor, unsigned int /*type*/)
 {
 	try
 	{
@@ -4453,7 +4453,7 @@ void dsql_req::setCursor(Status* user_status, const char* cursor, unsigned int /
 }
 
 
-void dsql_req::getInfo(Status* user_status,
+void dsql_req::getInfo(IStatus* user_status,
 	unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
@@ -4484,7 +4484,7 @@ void dsql_req::getInfo(Status* user_status,
 	successful_completion(user_status);
 }
 
-void Attachment::ping(Status* user_status)
+void Attachment::ping(IStatus* user_status)
 {
 /**************************************
  *
@@ -5264,7 +5264,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 }
 
 
-static void handle_error(Firebird::Status* user_status, ISC_STATUS code)
+static void handle_error(Firebird::IStatus* user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -6501,7 +6501,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 }
 
-static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::Status* userStatus,
+static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb)
 {
 	transliterateException(tdbb, ex, userStatus);

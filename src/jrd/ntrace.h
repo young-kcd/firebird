@@ -221,7 +221,7 @@ struct PerformanceInfo
 	ntrace_counter_t pin_records_fetched;	// records fetched from statement/procedure
 };
 
-class TraceLogWriter : public Firebird::Interface
+class TraceLogWriter : public Firebird::IInterface
 {
 public:
 	virtual size_t FB_CARG write(const void* buf, size_t size) = 0;
@@ -242,7 +242,7 @@ public:
 
 
 // API of trace plugin. Used to deliver notifications for each database
-class TracePlugin : public Firebird::Interface
+class TracePlugin : public Firebird::IInterface
 {
 public:
 	// Function to return error string for hook failure
@@ -298,14 +298,14 @@ public:
 #define FB_TRACE_PLUGIN_VERSION (FB_INTERFACE_VERSION + 18)
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
-class TraceFactory : public Firebird::Plugin
+class TraceFactory : public Firebird::IPluginBase
 {
 public:
 	// What notifications does plugin need
 	virtual ntrace_mask_t FB_CARG trace_needs() = 0;
 
 	// Create plugin
-	virtual TracePlugin* FB_CARG trace_create(Firebird::Status* status, TraceInitInfo* init_info) = 0;
+	virtual TracePlugin* FB_CARG trace_create(Firebird::IStatus* status, TraceInitInfo* init_info) = 0;
 };
 #define FB_TRACE_FACTORY_VERSION (FB_PLUGIN_VERSION + 2)
 

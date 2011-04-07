@@ -88,7 +88,7 @@ private:
 	Display display;
 	Auth::Management* manager;
 
-	static void checkSecurityResult(int errcode, Firebird::Status* status, const char* userName);
+	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName);
 };
 
 }	// namespace
