@@ -1,3 +1,66 @@
+ 2011-04-07 17:16  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.h
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/Auth.h
+   M src/common/StatusHolder.h
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/fb_exception.cpp
+   M src/common/utils_proto.h
+   M src/dsql/dsql.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdPluginApi.h
+   M src/include/Interface.h
+   M src/include/ProviderInterface.h
+   M src/include/Timer.h
+   M src/include/fb_exception.h
+   M src/include/gen/msgs.h
+   M src/jrd/Attachment.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/blb.h
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/event_proto.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/jrd_proto.h
+   M src/jrd/ntrace.h
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/msgs/messages2.sql
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/client/interface.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/why.cpp
+   M src/yvalve/why_proto.h
+Use better names for a number of objects according to Vlad's suggestion
+
  2011-04-06 17:44  hvlad 
    M src/utilities/ntrace/TracePluginImpl.cpp
 Fixed potential buffer overflow. Thanks to Claudio.
