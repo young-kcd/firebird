@@ -1,3 +1,8 @@
+ 2011-04-07 09:08  dimitr 
+   M src/jrd/dyn_del.epp
+A quick fix for the incorrect error reported while dropping a role. The better one would need a new record in msgs, but this may conflict with new messages in FB3.
+By the way removed the goto ugliness.
+
  2011-04-06 17:50  hvlad 
    M src/utilities/ntrace/TracePluginImpl.cpp
 Backport fix for potential buffer overflow. Thanks to Claudio.
