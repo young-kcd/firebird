@@ -495,10 +495,10 @@ void InternalStatement::doExecute(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		Message inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
-		MessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
-		Message outMessage(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
-		MessageBuffer outMsgBuffer(&outMessage, m_out_buffer.begin());
+		BlrMessage inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
+		BlrMessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
+		BlrMessage outMessage(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
+		BlrMessageBuffer outMsgBuffer(&outMessage, m_out_buffer.begin());
 
 		m_request->execute(&status, transaction, 0, &inMsgBuffer, &outMsgBuffer);
 	}
@@ -516,8 +516,8 @@ void InternalStatement::doOpen(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		Message inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
-		MessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
+		BlrMessage inMessage(m_inBlr.getCount(), m_inBlr.begin(), m_in_buffer.getCount());
+		BlrMessageBuffer inMsgBuffer(&inMessage, m_in_buffer.begin());
 
 		m_request->execute(&status, transaction, 0, &inMsgBuffer, NULL);
 	}
@@ -533,8 +533,8 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 	int res = 0;
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		Message message(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
-		MessageBuffer msgBuffer(&message, m_out_buffer.begin());
+		BlrMessage message(m_outBlr.getCount(), m_outBlr.begin(), m_out_buffer.getCount());
+		BlrMessageBuffer msgBuffer(&message, m_out_buffer.begin());
 
 		res = m_request->fetch(&status, &msgBuffer);
 	}

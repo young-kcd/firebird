@@ -38,34 +38,13 @@ namespace Firebird {
 
 class IAttachment;	// Forward
 
-class Message
+class IBlrMessage
 {
 public:
-	Message(unsigned aBlrLength, const unsigned char* aBlr, unsigned aBufferLength)
-		: blrLength(aBlrLength),
-		  blr(aBlr),
-		  bufferLength(aBufferLength)
-	{
-	}
-
-public:
-	unsigned blrLength;
-	const unsigned char* blr;
-	unsigned bufferLength;
-};
-
-class MessageBuffer
-{
-public:
-	MessageBuffer(const Message* aMessage, unsigned char* aBuffer)
-		: message(aMessage),
-		  buffer(aBuffer)
-	{
-	}
-
-public:
-	const Message* const message;
-	unsigned char* const buffer;
+	virtual unsigned int FB_CARG getBlrLength() const = 0;
+	virtual const unsigned char* FB_CARG getBlr() const = 0;
+	virtual unsigned int FB_CARG getBufferLength() const = 0;
+	virtual unsigned char* FB_CARG getBuffer() const = 0;
 };
 
 class IEventCallback
@@ -137,10 +116,10 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
-										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
-										const MessageBuffer* outMsgBuffer) = 0;
-	virtual int FB_CARG fetch(IStatus* status, const MessageBuffer* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const MessageBuffer* msgBuffer) = 0;
+										unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
+										const IBlrMessage* outMsgBuffer) = 0;
+	virtual int FB_CARG fetch(IStatus* status, const IBlrMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const IBlrMessage* msgBuffer) = 0;
 	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
 };
 #define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)
@@ -203,8 +182,8 @@ public:
 		const unsigned char* dyn) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
-								 const MessageBuffer* outMsgBuffer) = 0;
+								 unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
+								 const IBlrMessage* outMsgBuffer) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;

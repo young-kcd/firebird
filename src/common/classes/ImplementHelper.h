@@ -31,6 +31,7 @@
 
 #include "FirebirdPluginApi.h"
 #include "Timer.h"
+#include "ProviderInterface.h"
 #include "../common/classes/alloc.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
@@ -233,6 +234,56 @@ private:
 };
 
 typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD> UnloadDetector;
+
+
+class BlrMessage
+{
+public:
+	BlrMessage(unsigned aBlrLength, const unsigned char* aBlr, unsigned aBufferLength)
+		: blrLength(aBlrLength),
+		  blr(aBlr),
+		  bufferLength(aBufferLength)
+	{
+	}
+
+public:
+	unsigned blrLength;
+	const unsigned char* blr;
+	unsigned bufferLength;
+};
+
+class BlrMessageBuffer : public IBlrMessage
+{
+public:
+	BlrMessageBuffer(const  BlrMessage* aMessage, unsigned char* aBuffer)
+		: message(aMessage),
+		  buffer(aBuffer)
+	{
+	}
+
+private:
+	const BlrMessage* const message;
+	unsigned char* const buffer;
+
+public:
+	unsigned int FB_CARG getBlrLength() const
+	{
+		return message ? message->blrLength : 0;
+	}
+	const unsigned char* FB_CARG getBlr() const
+	{
+		return message ? message->blr : NULL;
+	}
+	unsigned int FB_CARG getBufferLength() const
+	{
+		return message ? message->bufferLength : 0;
+	}
+	unsigned char* FB_CARG getBuffer() const
+	{
+		return buffer;
+	}
+};
+
 
 } // namespace Firebird
 
