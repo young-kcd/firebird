@@ -125,7 +125,7 @@ namespace Auth {
 class SecurityDatabase : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
 {
 public:
-	Result verify(WriterInterface* authBlock,
+	Result verify(IWriter* authBlock,
 				  Firebird::ClumpletReader& originalDpb);
 
 	static int shutdown(const int, const int, void*);
@@ -138,6 +138,7 @@ public:
 	}
 
 private:
+	// ITimer implementation
 	void FB_CARG handler();
 
 	int FB_CARG release()
@@ -289,7 +290,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(WriterInterface* authBlock,
+Result SecurityDatabase::verify(IWriter* authBlock,
 								ClumpletReader& originalDpb)
 {
 	static AmCache useNative = AM_UNKNOWN;
@@ -467,7 +468,7 @@ static unsigned int secDbKey = INIT_KEY;
 Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 											  bool isService, const char*,
 											  const unsigned char* dpb, unsigned int dpbSize,
-											  WriterInterface* writerInterface)
+											  IWriter* writerInterface)
 {
 	status->init();
 
@@ -518,7 +519,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 
 		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
 		Result rc = instance->verify(writerInterface, rdr);
-		Firebird::TimerInterface()->start(instance, 10 * 1000 * 1000);
+		Firebird::TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)
@@ -529,7 +530,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 }
 
 Result SecurityDatabaseServer::contAuthentication(Firebird::IStatus*,
-											  WriterInterface* /*writerInterface*/,
+											  IWriter* /*writerInterface*/,
 											  const unsigned char* /*data*/, unsigned int /*size*/)
 {
 	return AUTH_FAILED;

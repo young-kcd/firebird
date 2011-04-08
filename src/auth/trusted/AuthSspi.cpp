@@ -344,7 +344,7 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 										  bool isService,
 										  const char* /*dbName*/,
 										  const unsigned char* dpb, unsigned int dpbSize,
-										  WriterInterface* /*writerInterface*/)
+										  IWriter* /*writerInterface*/)
 {
 	const UCHAR tag = isService ? isc_spb_trusted_auth : isc_dpb_trusted_auth;
 	ClumpletReader rdr((isService ? ClumpletReader::spbList : ClumpletReader::dpbList),
@@ -364,7 +364,7 @@ Result WinSspiServer::startAuthentication(Firebird::IStatus* status,
 }
 
 Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
-										 WriterInterface* writerInterface,
+										 IWriter* writerInterface,
 									     const unsigned char* data, unsigned int size)
 {
 	sspiData.clear();
@@ -411,7 +411,7 @@ int WinSspiServer::release()
 Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 										  bool isService,
 										  const char* /*dbName*/,
-										  DpbInterface* dpb)
+										  IDpbReader* dpb)
 {
 	sspi.request(sspiData);
 

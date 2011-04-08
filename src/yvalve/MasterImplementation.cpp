@@ -51,7 +51,8 @@ namespace Why {
 class MasterImplementation : public StackIface<IMaster>
 {
 public:
-	IStatus* FB_CARG getStatusInstance();
+	// IMaster implementation
+	IStatus* FB_CARG getStatus();
 	IProvider* FB_CARG getDispatcher();
 	IPluginManager* FB_CARG getPluginManager();
 	int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass);
@@ -60,19 +61,20 @@ public:
 };
 
 //
-// getStatusInstance()
+// getStatus()
 //
 
 class UserStatus : public Firebird::DisposeIface<Firebird::BaseStatus>
 {
 private:
+	// IStatus implementation
 	void FB_CARG dispose()
 	{
 		delete this;
 	}
 };
 
-Firebird::IStatus* FB_CARG MasterImplementation::getStatusInstance()
+Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
 {
 	return new UserStatus;
 }
@@ -470,6 +472,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 class TimerImplementation : public StackIface<ITimerControl>
 {
 public:
+	// ITimerControl implementation
 	void FB_CARG start(ITimer* timer, TimerDelay microSeconds)
 	{
 		MutexLockGuard guard(timerAccess);

@@ -71,13 +71,14 @@ UserManagement::UserManagement(jrd_tra* tra)
 	fb_assert(manager);
 	manager->addRef();
 
-	class UserIdInfo : public StackIface<Auth::LogonInfo>
+	class UserIdInfo : public StackIface<Auth::ILogonInfo>
 	{
 	public:
 		explicit UserIdInfo(const Attachment* pAtt)
 			: att(pAtt)
 		{ }
 
+		// ILogonInfo implementation
 		const char* FB_CARG name()
 		{
 			return att->att_user->usr_user_name.c_str();
@@ -132,7 +133,7 @@ UserManagement::~UserManagement()
 	{
 		LocalStatus status;
 		manager->rollback(&status);
-		PluginManagerInterface()->releasePlugin(manager);
+		PluginManagerInterfacePtr()->releasePlugin(manager);
 		manager = NULL;
 
 		if (!status.isSuccess())
@@ -154,7 +155,7 @@ void UserManagement::commit()
 			status_exception::raise(status.get());
 		}
 
-		PluginManagerInterface()->releasePlugin(manager);
+		PluginManagerInterfacePtr()->releasePlugin(manager);
 		manager = NULL;
 	}
 }
@@ -209,12 +210,12 @@ void UserManagement::execute(USHORT id)
 	commands[id] = NULL;
 }
 
-void UserManagement::Display::list(Auth::User* u)
+void UserManagement::Display::list(Auth::IUser* u)
 {
 	userManagement->list(u);
 }
 
-void UserManagement::list(Auth::User* u)
+void UserManagement::list(Auth::IUser* u)
 {
 	Record* record = buffer->getTempRecord();
 	clearRecord(record);

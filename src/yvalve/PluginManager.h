@@ -49,8 +49,8 @@ public:
 								IPluginFactory* factory);
 	IConfig* FB_CARG getConfig(const char* filename);
 	void FB_CARG releasePlugin(IPluginBase* plugin);
-	void FB_CARG setModuleCleanup(IPluginModule* cleanup);
-	void FB_CARG resetModuleCleanup(IPluginModule* cleanup);
+	void FB_CARG registerModule(IPluginModule* cleanup);
+	void FB_CARG unregisterModule(IPluginModule* cleanup);
 	void FB_CARG moduleUnloaded();
 
 	PluginManager();

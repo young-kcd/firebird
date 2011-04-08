@@ -57,6 +57,8 @@ public:
 
 
 // Implement standard interface and plugin functions
+
+// Helps to implement disposable interfaces
 template <class C, typename S = GlobalStorage>
 class DisposeIface : public C, public S
 {
@@ -68,6 +70,7 @@ private:
 	DisposeIface& operator=(const DisposeIface&);
 };
 
+// Helps to implement disposable interfaces on stack or static
 template <class C, typename S = GlobalStorage>
 class StackIface : public DisposeIface<C, S>
 {
@@ -81,6 +84,7 @@ public:
 	}
 };
 
+// Helps to implement standard interfaces
 template <class C, int V, typename S = GlobalStorage>
 class StdIface : public C, public S
 {
@@ -113,6 +117,7 @@ private:
 };
 
 
+// Helps to implement plugins
 template <class C, int V, typename S = GlobalStorage>
 class StdPlugin : public StdIface<C, V, S>
 {
@@ -151,31 +156,31 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 };
 
 
-// Master interface
-class MasterInterface : public AutoPtr<IMaster, AutoDisposable>
+// Master interface access
+class MasterInterfacePtr : public AutoPtr<IMaster, AutoDisposable>
 {
 public:
-	MasterInterface() : AutoPtr<IMaster, AutoDisposable>(fb_get_master_interface())
+	MasterInterfacePtr() : AutoPtr<IMaster, AutoDisposable>(fb_get_master_interface())
 	{ }
 };
 
 
-// Generic plugins interface
-class PluginManagerInterface : public AutoPtr<IPluginManager, AutoDisposable>
+// Generic plugins interface access
+class PluginManagerInterfacePtr : public AutoPtr<IPluginManager, AutoDisposable>
 {
 public:
-	PluginManagerInterface() : AutoPtr<IPluginManager, AutoDisposable>(fb_get_master_interface()->getPluginManager())
+	PluginManagerInterfacePtr() : AutoPtr<IPluginManager, AutoDisposable>(fb_get_master_interface()->getPluginManager())
 	{ }
-	PluginManagerInterface(IMaster* master) : AutoPtr<IPluginManager, AutoDisposable>(master->getPluginManager())
+	PluginManagerInterfacePtr(IMaster* master) : AutoPtr<IPluginManager, AutoDisposable>(master->getPluginManager())
 	{ }
 };
 
 
-// Control timer interface
-class TimerInterface : public AutoPtr<ITimerControl, AutoDisposable>
+// Control timer interface access
+class TimerInterfacePtr : public AutoPtr<ITimerControl, AutoDisposable>
 {
 public:
-	TimerInterface() : AutoPtr<ITimerControl, AutoDisposable>(fb_get_master_interface()->getTimerControl())
+	TimerInterfacePtr() : AutoPtr<ITimerControl, AutoDisposable>(fb_get_master_interface()->getTimerControl())
 	{ }
 };
 
@@ -200,8 +205,8 @@ public:
 	{
 		if (flagOsUnload)
 		{
-			PluginManagerInterface pi;
-			pi->resetModuleCleanup(this);
+			PluginManagerInterfacePtr pi;
+			pi->unregisterModule(this);
 			pi->moduleUnloaded();
 
 			flagOsUnload = false;

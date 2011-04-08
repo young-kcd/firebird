@@ -437,6 +437,7 @@ public:
 		m_maxSize = Config::getMaxUserTraceLogSize();
 	}
 
+	// TraceLogWriter implementation
 	virtual size_t FB_CARG write(const void* buf, size_t size);
 
 	virtual int FB_CARG release()

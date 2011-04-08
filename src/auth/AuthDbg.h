@@ -46,15 +46,15 @@ namespace Auth {
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
+class DebugServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 {
 public:
 	DebugServer(Firebird::IPluginConfig*);
 
     Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
-                               WriterInterface* writerInterface);
-    Result contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
+                               IWriter* writerInterface);
+    Result contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
                               const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();
@@ -63,12 +63,12 @@ private:
 	Firebird::string str;
 };
 
-class DebugClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
+class DebugClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 {
 public:
 	DebugClient(Firebird::IPluginConfig*);
 
-	Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb);
+	Result startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, IDpbReader* dpb);
 	Result contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
     void getData(const unsigned char** data, unsigned short* dataSize);
     int release();

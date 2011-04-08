@@ -41,7 +41,7 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	const char* name = "Auth_Debug";
 
-	Firebird::PluginManagerInterface iPlugin(master);
+	Firebird::PluginManagerInterfacePtr iPlugin(master);
 
 	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, name, &clientFactory);
 	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, name, &serverFactory);
@@ -56,7 +56,7 @@ DebugServer::DebugServer(Firebird::IPluginConfig*)
 
 Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
 										const unsigned char* dpb, unsigned int dpbSize,
-										WriterInterface* writerInterface)
+										IWriter* writerInterface)
 {
 	try
 	{
@@ -80,7 +80,7 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool 
 	}
 }
 
-Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
+Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
 									   const unsigned char* data, unsigned int size)
 {
 	try
@@ -122,7 +122,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool isService, const char*, DpbInterface* dpb)
+Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool isService, const char*, IDpbReader* dpb)
 {
 	try
 	{

@@ -34,6 +34,8 @@
 
 namespace Firebird {
 
+// This interfaces are implemented by yvalve code and by each of providers.
+
 class IAttachment;	// Forward
 
 class Message
@@ -133,7 +135,7 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type) = 0;
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
 										unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 										const MessageBuffer* outMsgBuffer) = 0;

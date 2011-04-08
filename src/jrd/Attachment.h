@@ -223,6 +223,7 @@ public:
 	bool checkHandle() const;
 
 public:
+	// IAttachment imlementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,

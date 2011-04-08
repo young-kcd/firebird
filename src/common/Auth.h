@@ -41,13 +41,14 @@ namespace Auth {
 
 bool legacy(const char* nm);
 
-class WriterImplementation : public Firebird::StackIface<WriterInterface>
+class WriterImplementation : public Firebird::StackIface<IWriter>
 {
 public:
 	WriterImplementation(bool svcFlag);
 
-	void FB_CARG store(Firebird::ClumpletWriter& to);
+	void store(Firebird::ClumpletWriter& to);
 
+	// IWriter implementation
 	void FB_CARG reset();
 	void FB_CARG add(const char* name, const char* method, const char* details);
 
@@ -57,11 +58,12 @@ private:
 	unsigned char tag;
 };
 
-class DpbImplementation : public Firebird::StackIface<DpbInterface>
+class DpbImplementation : public Firebird::StackIface<IDpbReader>
 {
 public:
 	DpbImplementation(Firebird::ClumpletWriter& base);
 
+	// IDpbReader implementation
 	int FB_CARG find(UCHAR tag);
 	void FB_CARG add(UCHAR tag, const void* bytes, unsigned int count);
 	void FB_CARG drop();
@@ -80,6 +82,7 @@ private:
 class DebugServer : Firebird::StdIface<public Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
+	// IPluginFactory implementation
 	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
     int FB_CARG release();
 };
@@ -87,6 +90,7 @@ public:
 class DebugClient : public Firebird::StdIface<Firebird::IPluginFactory, FB_PLUGINS_FACTORY_VERSION>
 {
 public:
+	// IPluginFactory implementation
 	Firebird::IInterface* FB_CARG createPlugin(const char* name, const char* configFile);
     int FB_CARG release();
 };
@@ -96,12 +100,13 @@ class DebugServerInstance : public Firebird::StdPlugin<ServerInstance, FB_AUTH_S
 public:
 	DebugServerInstance();
 
-    Result startAuthentication(bool isService, const char* dbName,
-                               const unsigned char* dpb, unsigned int dpbSize,
-                               WriterInterface* writerInterface);
-    Result contAuthentication(WriterInterface* writerInterface,
-                              const unsigned char* data, unsigned int size);
-    void getData(const unsigned char** data, unsigned short* dataSize);
+	// ServerInstance implementation
+    Result FB_CARG startAuthentication(bool isService, const char* dbName,
+                                       const unsigned char* dpb, unsigned int dpbSize,
+                                       IWriter* writerInterface);
+    Result FB_CARG contAuthentication(IWriter* writerInterface,
+                                      const unsigned char* data, unsigned int size);
+    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
 
 private:
@@ -113,9 +118,10 @@ class DebugClientInstance : public Firebird::StdPlugin<ClientInstance, FB_AUTH_C
 public:
 	DebugClientInstance();
 
-	Result startAuthentication(bool isService, const char* dbName, DpbInterface* dpb);
-	Result contAuthentication(const unsigned char* data, unsigned int size);
-    void getData(const unsigned char** data, unsigned short* dataSize);
+	// ClientInstance implementation
+	Result FB_CARG startAuthentication(bool isService, const char* dbName, IDpbReader* dpb);
+	Result FB_CARG contAuthentication(const unsigned char* data, unsigned int size);
+    void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
 
 private:

@@ -95,7 +95,7 @@ static bool serverSizeValidate(ISC_STATUS* status, const TEXT* server)
 }
 
 
-static int typeBuffer(ISC_STATUS*, char*, int, Auth::UserData&, Auth::ListUsers*, Firebird::string&);
+static int typeBuffer(ISC_STATUS*, char*, int, Auth::UserData&, Auth::IListUsers*, Firebird::string&);
 
 
 // all this spb-writing functions should be gone
@@ -330,7 +330,7 @@ static void userInfoToSpb(char*& spb, Auth::UserData& userData)
 void callRemoteServiceManager(ISC_STATUS* status,
 							  isc_svc_handle handle,
 							  Auth::UserData& userData,
-							  Auth::ListUsers* callback)
+							  Auth::IListUsers* callback)
 {
 	char spb_buffer[1024];
 	char* spb = spb_buffer;
@@ -561,7 +561,7 @@ static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
 
  **/
 static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
-					   Auth::UserData& uData, Auth::ListUsers* callback,
+					   Auth::UserData& uData, Auth::IListUsers* callback,
 					   Firebird::string& text)
 {
 	const char* p = &buf[offset];

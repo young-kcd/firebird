@@ -54,14 +54,15 @@ protected:
 class UserManagement : public DataDump
 {
 public:
-	class Display : public Firebird::StackIface<Auth::ListUsers>
+	class Display : public Firebird::StackIface<Auth::IListUsers>
 	{
 	public:
 		explicit Display(UserManagement* um)
 			: userManagement(um)
 		{ }
 
-		void FB_CARG list(Auth::User* user);
+		// IListUsers implementation
+		void FB_CARG list(Auth::IUser* user);
 
 	private:
 		UserManagement* userManagement;
@@ -79,14 +80,14 @@ public:
 	// return users list for SEC$USERS
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 	// callback for users display
-	void list(Auth::User* u);
+	void list(Auth::IUser* u);
 
 private:
 	RecordBuffer* buffer;
 	thread_db* threadDbb;
 	Firebird::HalfStaticArray<Auth::UserData*, 8> commands;
 	Display display;
-	Auth::Management* manager;
+	Auth::IManagement* manager;
 
 	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName);
 };

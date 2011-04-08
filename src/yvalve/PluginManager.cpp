@@ -130,6 +130,7 @@ namespace
 	public:
 		ConfigParameterAccess(IInterface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
+		// IConfigEntry implementation
 		const char* FB_CARG name()
 		{
 			return par ? par->name.c_str() : NULL;
@@ -163,6 +164,7 @@ namespace
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
 
+		// IConfig implementation
 		IConfigEntry* FB_CARG find(const char* name)
 		{
 			return confFile.hasData() ? newParam(confFile->findParameter(name)) : NULL;
@@ -418,7 +420,7 @@ namespace
 				return rc;
 			}
 
-			IConfig* iconf = PluginManagerInterface()->getConfig(confName.nullStr());
+			IConfig* iconf = PluginManagerInterfacePtr()->getConfig(confName.nullStr());
 
 			return iconf;
 		}
@@ -447,6 +449,7 @@ namespace
 			: configuredPlugin(cp), firebirdConf(fc)
 		{ }
 
+		// IPluginConfig implementation
 		const char* FB_CARG getConfigFileName()
 		{
 			return configuredPlugin->getConfigFileName();
@@ -586,6 +589,7 @@ namespace
 	class PluginSet : public StdIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
 	public:
+		// IPluginSet implementation
 		const char* FB_CARG name() const
 		{
 			return currentPlugin.hasData() ? currentName.c_str() : NULL;
@@ -749,7 +753,7 @@ namespace
 		}
 
 		RefPtr<PluginModule> rc(new PluginModule(module, asIsModuleName));
-		StartLoadedModule* startModule;
+		PluginEntrypoint* startModule;
 		if (module->findSymbol(STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
 		{
 			current = rc;
@@ -774,7 +778,7 @@ namespace
 					return p;
 				}
 
-				PluginManagerInterface()->releasePlugin(p);
+				PluginManagerInterfacePtr()->releasePlugin(p);
 			}
 
 			next();
@@ -828,7 +832,7 @@ void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, co
 }
 
 
-void FB_CARG PluginManager::setModuleCleanup(IPluginModule* cleanup)
+void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
 {
 	MutexLockGuard g(plugins->mutex);
 
@@ -842,7 +846,7 @@ void FB_CARG PluginManager::setModuleCleanup(IPluginModule* cleanup)
 	current->setCleanup(cleanup);
 }
 
-void FB_CARG PluginManager::resetModuleCleanup(IPluginModule* cleanup)
+void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 {
 	MutexLockGuard g(plugins->mutex);
 

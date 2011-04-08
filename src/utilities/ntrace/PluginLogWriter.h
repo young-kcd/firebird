@@ -53,6 +53,7 @@ public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
 	~PluginLogWriter();
 
+	// TraceLogWriter implementation
 	virtual size_t FB_CARG write(const void* buf, size_t size);
 
 	virtual int FB_CARG release()

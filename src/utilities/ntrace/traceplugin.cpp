@@ -35,6 +35,7 @@ public:
 	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
 	{ }
 
+	// TraceFactory implementation
 	ntrace_mask_t FB_CARG trace_needs();
 	TracePlugin* FB_CARG trace_create(Firebird::IStatus* status, TraceInitInfo* init_info);
 	int FB_CARG release();
@@ -115,12 +116,12 @@ static Firebird::UnloadDetector unloadDetector;
 void registerTrace(Firebird::IPluginManager* iPlugin)
 {
 	iPlugin->registerPluginFactory(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
-	iPlugin->setModuleCleanup(&unloadDetector);
+	iPlugin->registerModule(&unloadDetector);
 }
 
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginManagerInterface pi(master);
+	Firebird::PluginManagerInterfacePtr pi(master);
 	registerTrace(pi);
 }

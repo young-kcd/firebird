@@ -48,7 +48,7 @@ DATABASE database = STATIC FILENAME "security.fdb";
 static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
 static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_API_HANDLE trans,
-							 Auth::User* user)
+							 Auth::IUser* user)
 {
 	if (!user->admin()->entered())
 	{
@@ -120,7 +120,7 @@ SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* 
 	config->release();
 }
 
-void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, LogonInfo* logonInfo)
+void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo* logonInfo)
 {
 	try
 	{
@@ -244,7 +244,7 @@ static inline void strStore(char* to, const char* from, size_t len)
 	strncpy(to, from, len);
 }
 
-int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, User* user, ListUsers* callback)
+int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* user, IListUsers* callback)
 {
 /*************************************
  *
@@ -672,8 +672,8 @@ static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	Firebird::PluginManagerInterface pi(master);
+	Firebird::PluginManagerInterfacePtr pi(master);
 
 	pi->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
-	pi->setModuleCleanup(&unloadDetector);
+	pi->registerModule(&unloadDetector);
 }

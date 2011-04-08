@@ -96,13 +96,14 @@ public:
 	bool getLogin(Firebird::string& login, bool& wh);
 };
 
-class WinSspiServer : public Firebird::StdPlugin<Server, FB_AUTH_SERVER_VERSION>
+class WinSspiServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 {
 public:
+	// IServer implementation
     Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
                                const unsigned char* dpb, unsigned int dpbSize,
-                               WriterInterface* writerInterface);
-    Result FB_CARG contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
+                               IWriter* writerInterface);
+    Result FB_CARG contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
                               const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();
@@ -114,11 +115,12 @@ private:
 	AuthSspi sspi;
 };
 
-class WinSspiClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
+class WinSspiClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 {
 public:
+	// IClient implementation
 	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService,
-							   const char* dbName, DpbInterface* dpb);
+							   const char* dbName, IDpbReader* dpb);
 	Result FB_CARG contAuthentication(Firebird::IStatus* status,
 							  const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);

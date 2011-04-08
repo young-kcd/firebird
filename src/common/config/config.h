@@ -356,6 +356,7 @@ public:
 		: config(existingConfig)
 	{ }
 
+	// IFirebirdConf implementation
 	unsigned int FB_CARG getKey(const char* name);
 	int FB_CARG asInteger(unsigned int key);
 	const char* FB_CARG asString(unsigned int key);

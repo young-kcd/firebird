@@ -41,7 +41,7 @@ void raise()
 namespace Auth {
 
 Get::Get(Config* firebirdConf)
-	: GetPlugins<Auth::Management>(PluginType::AuthUserManagement, FB_AUTH_MANAGE_VERSION, firebirdConf)
+	: GetPlugins<Auth::IManagement>(PluginType::AuthUserManagement, FB_AUTH_MANAGE_VERSION, firebirdConf)
 {
 	if (!hasData())
 	{

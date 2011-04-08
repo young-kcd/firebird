@@ -61,6 +61,8 @@ public:
 };
 
 // Interface to work with status vector
+// Created by master interface by request
+// Also may be implemented on stack by internal FB code
 class IStatus : public IDisposable
 {
 public:
@@ -76,13 +78,14 @@ class IProvider;
 class IPluginManager;
 class ITimerControl;
 
+// Master interface is used to access almost all other interfaces.
 class IMaster : public IDisposable
 {
 public:
 	// This interface can't be upgraded - therefore another form of version is used
-	const static unsigned int VERSION = 1;	// To be changed each time any interface is changed
-
-	virtual IStatus* FB_CARG getStatusInstance() = 0;
+	const static unsigned int VERSION = 1;	// To be changed each time any interface, passed
+											// by firebird to plugins is changed
+	virtual IStatus* FB_CARG getStatus() = 0;
 	virtual IProvider* FB_CARG getDispatcher() = 0;
 	virtual IPluginManager* FB_CARG getPluginManager() = 0;
 	virtual int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;

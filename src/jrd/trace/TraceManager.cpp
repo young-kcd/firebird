@@ -51,7 +51,7 @@ namespace
 	class IgnoreMissing
 	{
 	public:
-		virtual int FB_CARG noEvent()
+		virtual int noEvent()
 		{
 			static bool flagFirst = true;
 

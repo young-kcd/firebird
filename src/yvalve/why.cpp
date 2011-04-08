@@ -297,6 +297,7 @@ namespace
 #endif
 		}
 
+		// IStatus implementation
 		void FB_CARG set(unsigned int length, const ISC_STATUS* value)
 		{
 			fb_utils::copyStatus(localVector, FB_NELEM(localStatus), value, length);
@@ -630,7 +631,7 @@ namespace
 	public:
 		static void init()
 		{
-			PluginManagerInterface pi;
+			PluginManagerInterfacePtr pi;
 			Remote::registerRedirector(pi);
 		}
 
@@ -764,6 +765,7 @@ namespace
 
 		void destroy();
 
+		// IEvents implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -799,6 +801,7 @@ namespace
 
 		void destroy();
 
+		// IRequest implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -864,6 +867,7 @@ namespace
 
 		void destroy();
 
+		// ITransaction implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -915,6 +919,7 @@ namespace
 
 		void destroy();
 
+		// IBlob implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -957,6 +962,7 @@ namespace
 
 		void destroy();
 
+		// IStatement implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -986,7 +992,7 @@ namespace
 			unsigned int bufferLength, unsigned char* buffer);
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type);
+		virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type);
 		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 			unsigned int inMsgType, const MessageBuffer* inMsgBuffer,
 			const MessageBuffer* outMsgBuffer);
@@ -1025,12 +1031,13 @@ namespace
 
 		virtual ~YAttachment()
 		{
-			PluginManagerInterface()->releasePlugin(provider);
+			PluginManagerInterfacePtr()->releasePlugin(provider);
 		}
 
 		void destroy();
 		void buildPrepareInfo(UCHAR** ptr);
 
+		// IAttachment implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -1114,11 +1121,12 @@ namespace
 
 		virtual ~YService()
 		{
-			PluginManagerInterface()->releasePlugin(provider);
+			PluginManagerInterfacePtr()->releasePlugin(provider);
 		}
 
 		void destroy();
 
+		// IService implementation
 		virtual int FB_CARG release()
 		{
 			if (--refCounter == 0)
@@ -1157,6 +1165,7 @@ namespace
 			return memory;
 		}
 
+		// IProvider implementation
 		virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** attachment,
 			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
 		virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr,
@@ -2680,7 +2689,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 	try
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
-		statement->setCursor(&status, cursorName, cursorType);
+		statement->setCursorName(&status, cursorName, cursorType);
 	}
 	catch (const Exception& e)
 	{
@@ -2736,6 +2745,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 		{
 		}
 
+		// IEventCallback implementation
 		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
 			memcpy(buffer, events, length);
@@ -2960,6 +2970,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 			{
 			}
 
+			// IEventCallback implementation
 			virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 			{
 				ast(arg, length, events);
@@ -3968,13 +3979,13 @@ void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-void YStatement::setCursor(IStatus* status, const char* name, unsigned int type)
+void YStatement::setCursorName(IStatus* status, const char* name, unsigned int type)
 {
 	try
 	{
 		YEntry entry(status, attachment);
 
-		next->setCursor(status, name, type);
+		next->setCursorName(status, name, type);
 	}
 	catch (const Exception& e)
 	{
@@ -5309,7 +5320,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				{
 					do
 					{
-						PluginManagerInterface()->releasePlugin(accessor.current()->second->provider);
+						PluginManagerInterfacePtr()->releasePlugin(accessor.current()->second->provider);
 					} while (accessor.getNext());
 				}
 			}
@@ -5321,7 +5332,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				{
 					do
 					{
-						PluginManagerInterface()->releasePlugin(accessor.current()->second->provider);
+						PluginManagerInterfacePtr()->releasePlugin(accessor.current()->second->provider);
 					} while (accessor.getNext());
 				}
 			}

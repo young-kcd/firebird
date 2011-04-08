@@ -39,14 +39,14 @@ namespace Auth {
 
 enum Result {AUTH_SUCCESS, AUTH_CONTINUE, AUTH_FAILED, AUTH_MORE_DATA};
 
-class WriterInterface : public Firebird::IDisposable
+class IWriter : public Firebird::IDisposable
 {
 public:
 	virtual void FB_CARG reset() = 0;
 	virtual void FB_CARG add(const char* user, const char* method, const char* details) = 0;
 };
 
-class DpbInterface : public Firebird::IDisposable
+class IDpbReader : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG find(UCHAR tag) = 0;
@@ -54,28 +54,28 @@ public:
 	virtual void FB_CARG drop() = 0;
 };
 
-class Server : public Firebird::IPluginBase
+class IServer : public Firebird::IPluginBase
 {
 public:
 	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName,
 									   const unsigned char* dpb, unsigned int dpbSize,
-									   WriterInterface* writerInterface) = 0;
-	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, WriterInterface* writerInterface,
+									   IWriter* writerInterface) = 0;
+	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, IWriter* writerInterface,
 									  const unsigned char* data, unsigned int size) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 #define FB_AUTH_SERVER_VERSION (FB_PLUGIN_VERSION + 3)
 
-class Client : public Firebird::IPluginBase
+class IClient : public Firebird::IPluginBase
 {
 public:
-	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb) = 0;
+	virtual Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, IDpbReader* dpb) = 0;
 	virtual Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size) = 0;
 	virtual void FB_CARG getData(const unsigned char** data, unsigned short* dataSize) = 0;
 };
 #define FB_AUTH_CLIENT_VERSION (FB_PLUGIN_VERSION + 3)
 
-class UserField : public Firebird::IDisposable
+class IUserField : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG entered() = 0;
@@ -83,47 +83,47 @@ public:
 	virtual void FB_CARG setEntered(int newValue) = 0;
 };
 
-class CharUserField : public UserField
+class ICharUserField : public IUserField
 {
 public:
 	virtual const char* FB_CARG get() = 0;
 	virtual void FB_CARG set(const char* newValue) = 0;
 };
 
-class IntUserField : public UserField
+class IIntUserField : public IUserField
 {
 public:
 	virtual int FB_CARG get() = 0;
 	virtual void FB_CARG set(int newValue) = 0;
 };
 
-class User : public Firebird::IDisposable
+class IUser : public Firebird::IDisposable
 {
 public:
 	virtual int FB_CARG operation() = 0;
 
-	virtual CharUserField* FB_CARG userName() = 0;
-	virtual CharUserField* FB_CARG password() = 0;
+	virtual ICharUserField* FB_CARG userName() = 0;
+	virtual ICharUserField* FB_CARG password() = 0;
 
-	virtual CharUserField* FB_CARG firstName() = 0;
-	virtual CharUserField* FB_CARG lastName() = 0;
-	virtual CharUserField* FB_CARG middleName() = 0;
-	virtual CharUserField* FB_CARG groupName() = 0;
+	virtual ICharUserField* FB_CARG firstName() = 0;
+	virtual ICharUserField* FB_CARG lastName() = 0;
+	virtual ICharUserField* FB_CARG middleName() = 0;
+	virtual ICharUserField* FB_CARG groupName() = 0;
 
-	virtual IntUserField* FB_CARG uid() = 0;
-	virtual IntUserField* FB_CARG gid() = 0;
-	virtual IntUserField* FB_CARG admin() = 0;
+	virtual IIntUserField* FB_CARG uid() = 0;
+	virtual IIntUserField* FB_CARG gid() = 0;
+	virtual IIntUserField* FB_CARG admin() = 0;
 
 	virtual void FB_CARG clear() = 0;
 };
 
-class ListUsers : public Firebird::IDisposable
+class IListUsers : public Firebird::IDisposable
 {
 public:
-	virtual void FB_CARG list(User* user) = 0;
+	virtual void FB_CARG list(IUser* user) = 0;
 };
 
-class LogonInfo : public Firebird::IDisposable
+class ILogonInfo : public Firebird::IDisposable
 {
 public:
 	virtual const char* FB_CARG name() = 0;
@@ -133,11 +133,11 @@ public:
 	virtual const char* FB_CARG remoteAddress() = 0;
 };
 
-class Management : public Firebird::IPluginBase
+class IManagement : public Firebird::IPluginBase
 {
 public:
-	virtual void FB_CARG start(Firebird::IStatus* status, LogonInfo* logonInfo) = 0;
-	virtual int FB_CARG execute(Firebird::IStatus* status, User* user, ListUsers* callback) = 0;
+	virtual void FB_CARG start(Firebird::IStatus* status, ILogonInfo* logonInfo) = 0;
+	virtual int FB_CARG execute(Firebird::IStatus* status, IUser* user, IListUsers* callback) = 0;
 	virtual void FB_CARG commit(Firebird::IStatus* status) = 0;
 	virtual void FB_CARG rollback(Firebird::IStatus* status) = 0;
 };

@@ -134,6 +134,7 @@ typedef Firebird::IStatus IStatus;
 class Blob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
 {
 public:
+	// IBlob implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
@@ -172,6 +173,7 @@ int Blob::release()
 class Transaction : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANSACTION_VERSION>
 {
 public:
+	// ITransaction implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
@@ -221,6 +223,7 @@ int Transaction::release()
 class Statement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION>
 {
 public:
+	// IStatement implementation
 	virtual int FB_CARG release();
 	virtual Statement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
@@ -229,7 +232,7 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursor(IStatus* status, const char* name, unsigned int type);
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type, const MessageBuffer* inMsgBuffer,
 										const MessageBuffer* outMsgBuffer);
@@ -263,6 +266,7 @@ int Statement::release()
 class Request : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSION>
 {
 public:
+	// IRequest implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG receive(IStatus* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
@@ -303,6 +307,7 @@ int Request::release()
 class Events : public Firebird::StdIface<Firebird::IEvents, FB_I_EVENTS_VERSION>
 {
 public:
+	// IEvents implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG cancel(IStatus* status);
 
@@ -332,6 +337,7 @@ int Events::release()
 class Attachment : public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION>
 {
 public:
+	// IAttachment implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
@@ -403,6 +409,7 @@ int Attachment::release()
 class Service : public Firebird::StdIface<Firebird::IService, FB_I_SERVICE_VERSION>
 {
 public:
+	// IService implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG detach(IStatus* status);
 	virtual void FB_CARG query(IStatus* status,
@@ -442,6 +449,7 @@ public:
 	{
 	}
 
+	// IProvider implementation
 	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
 	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
@@ -483,6 +491,7 @@ public:
 	{
 	}
 
+	// IProvider implementation
 	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
 	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
@@ -2455,7 +2464,7 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 }
 
 
-void Statement::setCursor(IStatus* status, const char* cursor, unsigned int type)
+void Statement::setCursorName(IStatus* status, const char* cursor, unsigned int type)
 {
 /*****************************************
  *
@@ -5568,7 +5577,7 @@ static void init(IStatus* status,
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
 	Auth::DpbImplementation di(dpb);
 	LocalStatus s;
-	GetPlugins<Auth::Client> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
+	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
 
 	for (bool working = true; working && authItr.hasData(); authItr.next())
 	{

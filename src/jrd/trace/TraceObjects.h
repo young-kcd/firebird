@@ -56,6 +56,7 @@ public:
 		m_att(att)
 	{}
 
+	// TraceConnection implementation
 	virtual int FB_CARG getConnectionID();
 	virtual int FB_CARG getProcessID();
 	virtual const char* FB_CARG getDatabaseName();
@@ -80,6 +81,7 @@ public:
 		m_perf(perf)
 	{}
 
+	// TraceTransaction implementation
 	virtual int FB_CARG getTransactionID();
 	virtual bool FB_CARG getReadOnly();
 	virtual int FB_CARG getWait();
@@ -101,6 +103,7 @@ public:
 		m_text(*getDefaultMemoryPool())
 	{}
 
+	// TraceBLRStatement implementation
 	virtual const unsigned char* FB_CARG getData()	{ return m_blr; }
 	virtual size_t FB_CARG getDataLength()	{ return m_length; }
 	virtual const char* FB_CARG getText();
@@ -154,6 +157,7 @@ public:
 			&m_stmt->getStatement()->getSendMsg()->msg_parameters : NULL)
 	{}
 
+	// TraceSQLStatement implementation
 	virtual int FB_CARG getStmtID();
 	virtual PerformanceInfo* FB_CARG getPerf();
 	virtual TraceParams* FB_CARG getInputs();
@@ -195,6 +199,7 @@ public:
 		m_text(text)
 	{}
 
+	// TraceSQLStatement implementation
 	virtual int FB_CARG getStmtID()				{ return 0; }
 	virtual PerformanceInfo* FB_CARG getPerf()	{ return NULL; }
 	virtual TraceParams* FB_CARG getInputs()	{ return NULL; }
@@ -217,6 +222,7 @@ public:
 		m_value(value)
 	{}
 
+	// TraceContextVariable implementation
 	virtual const char* FB_CARG getNameSpace()	{ return m_namespace; }
 	virtual const char* FB_CARG getVarName()	{ return m_name; }
 	virtual const char* FB_CARG getVarValue()	{ return m_value; }
@@ -236,6 +242,7 @@ public:
 		m_inputs(*getDefaultMemoryPool(), request->req_proc_caller, request->req_proc_inputs)
 	{}
 
+	// TraceProcedure implementation
 	virtual const char* FB_CARG getProcName()
 	{
 		return m_request->getStatement()->procedure->getName().identifier.c_str();
@@ -280,6 +287,7 @@ public:
 	  m_perf(perf)
 	{}
 
+	// TraceTrigger implementation
 	virtual const char* FB_CARG getTriggerName();
 	virtual const char* FB_CARG getRelationName();
 	virtual int FB_CARG getAction()				{ return m_trig->req_trigger_action; }
@@ -300,6 +308,7 @@ public:
 		m_svc(svc)
 	{}
 
+	// TraceService implementation
 	virtual ntrace_service_t FB_CARG getServiceID();
 	virtual const char* FB_CARG getServiceMgr();
 	virtual const char* FB_CARG getServiceName();
@@ -322,7 +331,7 @@ public:
 	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 		SINT64 clock, SINT64 records_fetched);
 
-	PerformanceInfo* FB_CARG getPerf()	{ return &m_info; }
+	PerformanceInfo* getPerf()	{ return &m_info; }
 
 private:
 	PerformanceInfo m_info;
@@ -347,6 +356,7 @@ public:
 		m_logWriter = NULL;
 	}
 
+	// TraceInitInfo implementation
 	virtual const char* FB_CARG getConfigText()			{ return m_session.ses_config.c_str(); }
 	virtual int FB_CARG getTraceSessionID()				{ return m_session.ses_id; }
 	virtual const char* FB_CARG getTraceSessionName()	{ return m_session.ses_name.c_str(); }

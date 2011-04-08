@@ -808,9 +808,9 @@ static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
-	PluginManagerInterface pi;
+	PluginManagerInterfacePtr pi;
 	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
-	pi->setModuleCleanup(&unloadDetector);
+	pi->registerModule(&unloadDetector);
 
 	libraryName->assign("fbclient");
 	ModuleLoader::doctorModuleExtension(libraryName);

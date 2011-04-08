@@ -30,13 +30,14 @@
 
 namespace Auth {
 
-class CharField : public Firebird::StackIface<CharUserField>
+class CharField : public Firebird::StackIface<ICharUserField>
 {
 public:
 	CharField()
 		: e(0), s(0), value(*getDefaultMemoryPool())
 	{ }
 
+	// ICharUserField implementation
 	int FB_CARG entered()
 	{
 		return e;
@@ -87,13 +88,14 @@ private:
 	Firebird::string value;
 };
 
-class IntField : public Firebird::StackIface<IntUserField>
+class IntField : public Firebird::StackIface<IIntUserField>
 {
 public:
 	IntField()
 		: e(0), s(0), value(0)
 	{ }
 
+	// IIntUserField implementation
 	int FB_CARG entered()
 	{
 		return e;
@@ -139,59 +141,60 @@ private:
 	int value;
 };
 
-class UserData : public User
+class UserData : public IUser
 {
 public:
 	UserData()
 		: op(0), trustedRole(0), trustedAuth(0)
 	{ }
 
+	// IUser implementation
 	int FB_CARG operation()
 	{
 		return op;
 	}
 
-	CharUserField* FB_CARG userName()
+	ICharUserField* FB_CARG userName()
 	{
 		return &user;
 	}
 
-	CharUserField* FB_CARG password()
+	ICharUserField* FB_CARG password()
 	{
 		return &pass;
 	}
 
-	CharUserField* FB_CARG firstName()
+	ICharUserField* FB_CARG firstName()
 	{
 		return &first;
 	}
 
-	CharUserField* FB_CARG lastName()
+	ICharUserField* FB_CARG lastName()
 	{
 		return &last;
 	}
 
-	CharUserField* FB_CARG middleName()
+	ICharUserField* FB_CARG middleName()
 	{
 		return &middle;
 	}
 
-	CharUserField* FB_CARG groupName()
+	ICharUserField* FB_CARG groupName()
 	{
 		return &group;
 	}
 
-	IntUserField* FB_CARG uid()
+	IIntUserField* FB_CARG uid()
 	{
 		return &u;
 	}
 
-	IntUserField* FB_CARG gid()
+	IIntUserField* FB_CARG gid()
 	{
 		return &g;
 	}
 
-	IntUserField* FB_CARG admin()
+	IIntUserField* FB_CARG admin()
 	{
 		return &adm;
 	}
@@ -208,7 +211,7 @@ class StackUserData : public Firebird::StackIface<UserData>
 {
 };
 
-class Get : public Firebird::GetPlugins<Auth::Management>
+class Get : public Firebird::GetPlugins<Auth::IManagement>
 {
 public:
 	Get(Config* firebirdConf);

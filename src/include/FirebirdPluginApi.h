@@ -27,7 +27,7 @@
  *
  * When requested, the engine gets the attribute value of plugin_module/filename, load it as a
  * dynamic (shared) library and calls the exported function firebirdPlugin (FB_PLUGIN_ENTRY_POINT
- * definition, StartLoadedModule prototype) passing the Plugin object as parameter.
+ * definition, PluginEntrypoint prototype) passing the Plugin object as parameter.
  *
  * The plugin library may save the plugin object and call they methods later. The object and all
  * pointers returned by it are valid until the plugin is unloaded (done through OS unload of the
@@ -98,6 +98,7 @@ public:
 // Interfaces to work with configuration data
 class IConfig;
 
+// Entry in configuration file
 class IConfigEntry : public IInterface
 {
 public:
@@ -106,6 +107,16 @@ public:
 	virtual IConfig* FB_CARG sub() = 0;
 };
 #define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
+
+// Generic form of access to configuration file - find specific entry in it
+class IConfig : public IInterface
+{
+public:
+	virtual IConfigEntry* FB_CARG find(const char* name) = 0;
+	virtual IConfigEntry* FB_CARG findValue(const char* name, const char* value) = 0;
+	virtual IConfigEntry* FB_CARG findPos(const char* name, unsigned int pos) = 0;
+};
+#define FB_I_CONFIG_VERSION (FB_INTERFACE_VERSION + 3)
 
 // Used to access config values from firebird.conf (may be DB specific)
 class IFirebirdConf : public IInterface
@@ -122,16 +133,8 @@ public:
 };
 #define FB_I_FIREBIRD_CONF_VERSION (FB_INTERFACE_VERSION + 3)
 
-class IConfig : public IInterface
-{
-public:
-	virtual IConfigEntry* FB_CARG find(const char* name) = 0;
-	virtual IConfigEntry* FB_CARG findValue(const char* name, const char* value) = 0;
-	virtual IConfigEntry* FB_CARG findPos(const char* name, unsigned int pos) = 0;
-};
-#define FB_I_CONFIG_VERSION (FB_INTERFACE_VERSION + 3)
-
 // This interface is passed to plugin's factory as it's single parameter
+// and contains methods to access specific plugin's configuration data
 class IPluginConfig : public IInterface
 {
 public:
@@ -167,9 +170,9 @@ public:
 	// Sets cleanup for plugin module
 	// Pay attention - this should be called at plugin-regsiter time!
 	// Only at this moment manager knows, which module sets his cleanup
-	virtual void FB_CARG setModuleCleanup(IPluginModule* cleanup) = 0;
+	virtual void FB_CARG registerModule(IPluginModule* cleanup) = 0;
 	// Remove registered before cleanup routine
-	virtual void FB_CARG resetModuleCleanup(IPluginModule* cleanup) = 0;
+	virtual void FB_CARG unregisterModule(IPluginModule* cleanup) = 0;
 	// Main function called to access plugins registered in plugins manager
 	// Has front-end in GetPlugins.h - template GetPlugins
 	// In namesList parameter comma or space separated list of names of configured plugins is passed
@@ -190,7 +193,7 @@ public:
 	virtual void FB_CARG moduleUnloaded() = 0;
 };
 
-typedef void StartLoadedModule(IMaster* masterInterface);
+typedef void PluginEntrypoint(IMaster* masterInterface);
 
 namespace PluginType {
 	static const unsigned int YValve = 1;

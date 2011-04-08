@@ -149,6 +149,7 @@ namespace Jrd
 class Events : public StdIface<IEvents, FB_I_EVENTS_VERSION, pool_alloc<type_Events> >
 {
 public:
+	// IEvents implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG cancel(IStatus* status);
 
@@ -218,6 +219,7 @@ int Events::release()
 class Svc : public StdIface<IService, FB_I_SERVICE_VERSION>
 {
 public:
+	// IService implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG detach(IStatus* status);
 	virtual void FB_CARG query(IStatus* status,
@@ -248,6 +250,7 @@ public:
 	explicit Provider(IPluginConfig*)
 	{ }
 
+	// IProvider implementation
 	virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
 								unsigned int dpbLength, const unsigned char* dpb);
 	virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
@@ -284,6 +287,7 @@ static Firebird::UnloadDetector unloadDetector;
 class EngineFactory : public StackIface<IPluginFactory>
 {
 public:
+	// IPluginFactory implementation
 	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
 	{
 		if (unloadDetector->unloadStarted())
@@ -303,14 +307,14 @@ static Static<EngineFactory> engineFactory;
 void registerEngine(IPluginManager* iPlugin)
 {
 	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
-	iPlugin->setModuleCleanup(&unloadDetector);
+	iPlugin->registerModule(&unloadDetector);
 }
 
 } // namespace Jrd
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
-	PluginManagerInterface pi;
+	PluginManagerInterfacePtr pi;
 	registerEngine(pi);
 }
 
@@ -696,6 +700,7 @@ class TraceFailedConnection : public StackIface<TraceConnection>
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
+	// TraceConnection implementation
 	virtual int FB_CARG getConnectionID()				{ return 0; }
 	virtual int FB_CARG getProcessID()					{ return m_options->dpb_remote_pid; }
 	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
@@ -4423,7 +4428,7 @@ Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransac
 }
 
 
-void dsql_req::setCursor(IStatus* user_status, const char* cursor, unsigned int /*type*/)
+void dsql_req::setCursorName(IStatus* user_status, const char* cursor, unsigned int /*type*/)
 {
 	try
 	{

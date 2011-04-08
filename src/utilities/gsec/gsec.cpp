@@ -186,7 +186,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 	user_data->database.set(databaseName.c_str());
 
-	Auth::Management* manager = NULL;
+	Auth::IManagement* manager = NULL;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
@@ -252,7 +252,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		fb_assert(user_data->trustedUser.entered());
 		if (user_data->trustedUser.entered())
 		{
-			class GsecInfo : public Firebird::StackIface<Auth::LogonInfo>
+			class GsecInfo : public Firebird::StackIface<Auth::ILogonInfo>
 			{
 			public:
 				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
@@ -261,6 +261,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					  protocol(pProtocol), address(pAddress)
 				{ }
 
+				// ILogonInfo implementation
 				const char* FB_CARG name()
 				{
 					return trustedUser;
@@ -334,14 +335,15 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	class Display : public Firebird::StackIface<Auth::ListUsers>
+	class Display : public Firebird::StackIface<Auth::IListUsers>
 	{
 	public:
 		explicit Display(tsec* t)
 			: tdsec(t), first(true)
 		{ }
 
-		void FB_CARG list(Auth::User* data)
+		// IListUsers implementation
+		void FB_CARG list(Auth::IUser* data)
 		{
 			if (tdsec->utilSvc->isService())
 			{

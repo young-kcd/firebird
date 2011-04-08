@@ -677,11 +677,12 @@ using namespace Firebird;
 class DummyMasterImpl : public IMaster
 {
 public:
+	// IMaster implementation (almost dummy, for boot build)
 	virtual void FB_CARG dispose()
 	{
 	}
 
-	virtual IStatus* FB_CARG getStatusInstance()
+	virtual IStatus* FB_CARG getStatus()
 	{
 		fb_assert(false);
 		return NULL;

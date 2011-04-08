@@ -35,14 +35,15 @@ namespace Auth {
 // Required to stop analyzing rest of plugins before first roundtrip to server
 // if legacy login is present in DPB
 
-class SecurityDatabaseClient : public Firebird::StdPlugin<Client, FB_AUTH_CLIENT_VERSION>
+class SecurityDatabaseClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
 {
 public:
 	explicit SecurityDatabaseClient(Firebird::IPluginConfig*)
 	{
 	}
 
-	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, DpbInterface* dpb);
+	// IClient implementation
+	Result FB_CARG startAuthentication(Firebird::IStatus* status, bool isService, const char* dbName, IDpbReader* dpb);
 	Result FB_CARG contAuthentication(Firebird::IStatus* status, const unsigned char* data, unsigned int size);
     void FB_CARG getData(const unsigned char** data, unsigned short* dataSize);
     int FB_CARG release();

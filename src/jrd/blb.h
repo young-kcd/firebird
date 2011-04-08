@@ -209,6 +209,7 @@ public:
 	static void destroy(blb* blob, const bool purge_flag);
 
 public:
+	// IBlob implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,

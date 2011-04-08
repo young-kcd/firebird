@@ -367,7 +367,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	}
 
 	{ // scope for interface ptr
-		Firebird::PluginManagerInterface pi;
+		Firebird::PluginManagerInterfacePtr pi;
 		Auth::registerLegacyServer(pi);
 #ifdef TRUSTED_AUTH
 		Auth::registerTrustedServer(pi);

@@ -33,13 +33,14 @@
 
 namespace Auth {
 
-class SecurityDatabaseManagement : public Firebird::StdPlugin<Management, FB_AUTH_MANAGE_VERSION>
+class SecurityDatabaseManagement : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
 {
 public:
 	explicit SecurityDatabaseManagement(Firebird::IPluginConfig* par);
 
-	void FB_CARG start(Firebird::IStatus* status, LogonInfo* logonInfo);
-	int FB_CARG execute(Firebird::IStatus* status, User* user, ListUsers* callback);
+	// IManagement implementation
+	void FB_CARG start(Firebird::IStatus* status, ILogonInfo* logonInfo);
+	int FB_CARG execute(Firebird::IStatus* status, IUser* user, IListUsers* callback);
 	void FB_CARG commit(Firebird::IStatus* status);
 	void FB_CARG rollback(Firebird::IStatus* status);
 

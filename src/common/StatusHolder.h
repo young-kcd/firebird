@@ -38,6 +38,7 @@ namespace Firebird {
 class BaseStatus : public IStatus
 {
 public:
+	// IStatus implementation
 	virtual void FB_CARG set(const ISC_STATUS* value)
 	{
 		set(fb_utils::statusLength(value), value);

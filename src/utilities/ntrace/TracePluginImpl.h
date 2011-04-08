@@ -251,6 +251,7 @@ private:
 								 const ntrace_byte_t* recv_items, ntrace_result_t query_result);
 	void log_event_service_detach(TraceService* service, ntrace_result_t detach_result);
 
+	// TracePlugin implementation
 	int FB_CARG release();
 	const char* FB_CARG trace_get_error();
 

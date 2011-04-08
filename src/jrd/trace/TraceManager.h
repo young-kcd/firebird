@@ -162,7 +162,7 @@ private:
 
 		~Factories()
 		{
-			Firebird::PluginManagerInterface pi;
+			Firebird::PluginManagerInterfacePtr pi;
 
 			for (unsigned int i = 0; i < getCount(); ++i)
 				pi->releasePlugin(getElement(i).factory);

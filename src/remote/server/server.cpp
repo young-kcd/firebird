@@ -381,9 +381,9 @@ private:
 	RefPtr<Config> config;
 	ClumpletWriter wrt;
 	Auth::WriterImplementation authBlockInterface;
-	GetPlugins<Auth::Server> authItr;
+	GetPlugins<Auth::IServer> authItr;
 	string remoteId, userName;
-	Auth::Server* authServer;
+	Auth::IServer* authServer;
 	Part2* part2;
 	P_OP operation;
 

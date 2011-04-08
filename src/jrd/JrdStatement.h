@@ -83,6 +83,7 @@ public:
 	MapItemInfo mapItemInfo;			// Map item to item info
 
 public:
+	// IRequest implementation
 	virtual int FB_CARG release();
 	virtual void FB_CARG receive(IStatus* status, int level, unsigned int msg_type,
 						 unsigned int length, unsigned char* message);
