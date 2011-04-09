@@ -992,7 +992,7 @@ namespace
 			unsigned int bufferLength, unsigned char* buffer);
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-		virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type);
+		virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 			unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
 			const IBlrMessage* outMsgBuffer);
@@ -1157,7 +1157,7 @@ namespace
 		IService* next;
 	};
 
-	class Dispatcher : public StdPlugin<IProvider, FB_P_PROVIDER_VERSION>
+	class Dispatcher : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
 	{
 	public:
 		void* operator new(size_t, void* memory) throw()
@@ -2682,14 +2682,14 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 // Set a cursor name for a dynamic request.
 ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
-	const SCHAR* cursorName, USHORT cursorType)
+	const SCHAR* cursorName, USHORT /*cursorType*/)
 {
 	StatusVector status(userStatus);
 
 	try
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
-		statement->setCursorName(&status, cursorName, cursorType);
+		statement->setCursorName(&status, cursorName);
 	}
 	catch (const Exception& e)
 	{
@@ -3979,13 +3979,13 @@ void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-void YStatement::setCursorName(IStatus* status, const char* name, unsigned int type)
+void YStatement::setCursorName(IStatus* status, const char* name)
 {
 	try
 	{
 		YEntry entry(status, attachment);
 
-		next->setCursorName(status, name, type);
+		next->setCursorName(status, name);
 	}
 	catch (const Exception& e)
 	{
@@ -5007,7 +5007,7 @@ void Dispatcher::attachDatabase(IStatus* status, IAttachment** attachment, FB_AP
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_P_PROVIDER_VERSION, config);
+				FB_I_PROVIDER_VERSION, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5136,7 +5136,7 @@ void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_AP
 		***/
 
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_P_PROVIDER_VERSION/***, config***/);
+				FB_I_PROVIDER_VERSION/***, config***/);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5207,7 +5207,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		try
 		{
 			for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-					FB_P_PROVIDER_VERSION);
+					FB_I_PROVIDER_VERSION);
 				 providerIterator.hasData();
 				 providerIterator.next())
 			{
@@ -5296,7 +5296,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 		// Shutdown providers (if any present).
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(
-				PluginType::Provider, FB_P_PROVIDER_VERSION);
+				PluginType::Provider, FB_I_PROVIDER_VERSION);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{

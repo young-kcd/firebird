@@ -610,7 +610,7 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type);
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type,
 										const Firebird::IBlrMessage* inMsgBuffer,

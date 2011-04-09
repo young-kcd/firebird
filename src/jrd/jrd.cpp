@@ -244,7 +244,7 @@ int Svc::release()
 	return 0;
 }
 
-class Provider : public StdPlugin<IProvider, FB_P_PROVIDER_VERSION>
+class Provider : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
 {
 public:
 	explicit Provider(IPluginConfig*)
@@ -4422,7 +4422,7 @@ Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransac
 }
 
 
-void dsql_req::setCursorName(IStatus* user_status, const char* cursor, unsigned int /*type*/)
+void dsql_req::setCursorName(IStatus* user_status, const char* cursor)
 {
 	try
 	{
@@ -4434,7 +4434,7 @@ void dsql_req::setCursorName(IStatus* user_status, const char* cursor, unsigned 
 
 		try
 		{
-			DSQL_set_cursor(tdbb, this, cursor); //, type);
+			DSQL_set_cursor(tdbb, this, cursor);
 		}
 		catch (const Exception& ex)
 		{

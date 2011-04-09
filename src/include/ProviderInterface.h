@@ -114,7 +114,7 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type) = 0;
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
 										unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
 										const IBlrMessage* outMsgBuffer) = 0;
@@ -220,7 +220,7 @@ public:
 	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason) = 0;
 	//virtual void FB_CARG fb_shutdown_callback(IStatus* status, const int mask, ShutdownCallback* callback) = 0;
 };
-#define FB_P_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
+#define FB_I_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
 
 } // namespace Firebird
 

@@ -232,7 +232,7 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name, unsigned int type);
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type, const IBlrMessage* inMsgBuffer,
 										const IBlrMessage* outMsgBuffer);
@@ -442,7 +442,7 @@ int Service::release()
 	return 0;
 }
 
-class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_P_PROVIDER_VERSION>
+class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_I_PROVIDER_VERSION>
 {
 public:
 	explicit Provider(IPluginConfig*)
@@ -2458,7 +2458,7 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 }
 
 
-void Statement::setCursorName(IStatus* status, const char* cursor, unsigned int type)
+void Statement::setCursorName(IStatus* status, const char* cursor)
 {
 /*****************************************
  *
@@ -2527,7 +2527,7 @@ void Statement::setCursorName(IStatus* status, const char* cursor, unsigned int 
 		const USHORT name_l = strlen(cursor);
 		sqlcur->p_sqlcur_cursor_name.cstr_length = name_l + 1;
 		sqlcur->p_sqlcur_cursor_name.cstr_address = reinterpret_cast<const UCHAR*>(cursor);
-		sqlcur->p_sqlcur_type = type;
+		sqlcur->p_sqlcur_type = 0;	// type
 
 		send_packet(port, packet);
 
