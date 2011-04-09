@@ -125,8 +125,7 @@ namespace Auth {
 class SecurityDatabase : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
 {
 public:
-	Result verify(IWriter* authBlock,
-				  Firebird::ClumpletReader& originalDpb);
+	Result verify(IWriter* authBlock, Firebird::ClumpletReader& originalDpb);
 
 	static int shutdown(const int, const int, void*);
 
@@ -290,8 +289,7 @@ void SecurityDatabase::prepare()
  *	Public interface
  */
 
-Result SecurityDatabase::verify(IWriter* authBlock,
-								ClumpletReader& originalDpb)
+Result SecurityDatabase::verify(IWriter* authBlock, ClumpletReader& originalDpb)
 {
 	static AmCache useNative = AM_UNKNOWN;
 

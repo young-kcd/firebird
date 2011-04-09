@@ -25,11 +25,9 @@
 #define JRD_WHY_PROTO_H
 
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #ifndef JRD_IBASE_H
 

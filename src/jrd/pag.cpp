@@ -2182,6 +2182,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		SET_TDBB(tdbb);
 		Database* const dbb = tdbb->getDatabase();
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
+
 		if (!attachment->att_temp_pg_lock)
 		{
 			Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG)) Lock();
