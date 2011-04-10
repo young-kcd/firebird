@@ -1,3 +1,17 @@
+ 2011-04-09 20:00  asfernandes 
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Remove unused parameter and rename a constant.
+
+ 2011-04-09 19:27  asfernandes 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/jrd/pag.cpp
+   M src/yvalve/why_proto.h
+Misc
+
  2011-04-08 16:43  alexpeshkoff 
    M src/common/classes/ImplementHelper.h
    M src/dsql/dsql.h
