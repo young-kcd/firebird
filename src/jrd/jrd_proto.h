@@ -47,7 +47,7 @@ namespace Firebird
 {
 	class IProvider;
 }
-Firebird::IProvider* currentProvider();
+Firebird::RefPtr<Firebird::IProvider> currentProvider();
 
 // Defines for parameter 3 of JRD_num_attachments
 enum JRD_info_tag

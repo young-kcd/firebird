@@ -979,10 +979,9 @@ const int SWEEP_INTERVAL		= 20000;
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
-IProvider* currentProvider()
+RefPtr<IProvider> currentProvider()
 {
-	IProvider* p = new Provider(NULL);
-	p->addRef();
+	RefPtr<IProvider> p(new Provider(NULL));
 	return p;
 }
 
