@@ -73,23 +73,24 @@ namespace Firebird {
 class IPluginBase : public IInterface
 {
 public:
-	// Additional (compared with Interface) function owner() is needed to release()
-	// owner of the plugin. This is done in releasePlugin() function in IPluginManager.
-	// Such method is needed to make sure that owner is released after plugin itself,
-	// and therefore module is unloaded after release of last plugin from it.
+	// Additional (compared with Interface) functions getOwner() and setOwner()
+	// are needed to release() owner of the plugin. This is done in releasePlugin()
+	// function in IPluginManager. Such method is needed to make sure that owner is released
+	// after plugin itself, and therefore module is unloaded after release of last plugin from it.
 	// Releasing owner from release() of plugin will unload module and after returning control
 	// to missing code segfault is unavoidable.
-	virtual IInterface* FB_CARG owner(IInterface*) = 0;
+	virtual void FB_CARG setOwner(IInterface*) = 0;
+	virtual IInterface* FB_CARG getOwner() = 0;
 };
-#define FB_PLUGIN_VERSION (FB_INTERFACE_VERSION + 1)
+#define FB_PLUGIN_VERSION (FB_INTERFACE_VERSION + 2)
 
 // IPluginSet - low level tool to access plugins according to parameter from firebird.conf
 class IPluginSet : public IInterface
 {
 public:
-	virtual const char* FB_CARG name() const = 0;
-	virtual const char* FB_CARG module() const = 0;
-	virtual IPluginBase* FB_CARG plugin() = 0;
+	virtual const char* FB_CARG getName() const = 0;
+	virtual const char* FB_CARG getModule() const = 0;
+	virtual IPluginBase* FB_CARG getPlugin() = 0;
 	virtual void FB_CARG next() = 0;
 	virtual void FB_CARG set(const char*) = 0;
 };
@@ -102,9 +103,9 @@ class IConfig;
 class IConfigEntry : public IInterface
 {
 public:
-	virtual const char* FB_CARG name() = 0;
-	virtual const char* FB_CARG value() = 0;
-	virtual IConfig* FB_CARG sub() = 0;
+	virtual const char* FB_CARG getName() = 0;
+	virtual const char* FB_CARG getValue() = 0;
+	virtual IConfig* FB_CARG getSubConfig() = 0;
 };
 #define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
 

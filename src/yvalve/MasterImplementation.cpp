@@ -123,7 +123,9 @@ int FB_CARG MasterImplementation::upgradeInterface(IInterface* toUpgrade,
 												   int desiredVersion,
 												   void* missingFunctionClass)
 {
-	if (toUpgrade->version() >= desiredVersion)
+	int existingVersion = toUpgrade->getVersion();
+
+	if (existingVersion >= desiredVersion)
 		return 0;
 
 	FunctionPtr* newTab = NULL;
@@ -147,10 +149,10 @@ int FB_CARG MasterImplementation::upgradeInterface(IInterface* toUpgrade,
 			CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
 			newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
 
-			for (int i = 0; i < toUpgrade->version(); ++i)
-				newTab[i] = target->vTab[i];
-			for (int j = toUpgrade->version(); j < desiredVersion; ++j)
-				newTab[j] = miss->vTab[0];
+			for (int i = 0; i < desiredVersion; ++i)
+			{
+				newTab[i] = i < existingVersion ? target->vTab[i] : miss->vTab[0];
+			}
 
 			functionMap->put((U_IPTR) target->vTab, newTab);
 		}

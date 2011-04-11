@@ -95,7 +95,7 @@ public:
 
 			for (int n = 0; (icp = defaultConfig->findPos("path", n)); ++n)
 			{
-				PathName newPath(icp->value());
+				PathName newPath(icp->getValue());
 				icp->release();
 
 				bool found = false;

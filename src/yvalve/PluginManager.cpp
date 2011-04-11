@@ -131,17 +131,17 @@ namespace
 		ConfigParameterAccess(IInterface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
 		// IConfigEntry implementation
-		const char* FB_CARG name()
+		const char* FB_CARG getName()
 		{
 			return par ? par->name.c_str() : NULL;
 		}
 
-		const char* FB_CARG value()
+		const char* FB_CARG getValue()
 		{
 			return par ? par->value.nullStr() : NULL;
 		}
 
-		IConfig* FB_CARG sub();
+		IConfig* FB_CARG getSubConfig();
 
 		int FB_CARG release()
 		{
@@ -224,7 +224,7 @@ namespace
 		}
 	};
 
-	IConfig* ConfigParameterAccess::sub()
+	IConfig* ConfigParameterAccess::getSubConfig()
 	{
 		if (par && par->sub.hasData())
 		{
@@ -495,7 +495,7 @@ namespace
 		if (plugin)
 		{
 			par->addRef();
-			plugin->owner(par);
+			plugin->setOwner(par);
 		}
 		return plugin;
 	}
@@ -590,12 +590,12 @@ namespace
 	{
 	public:
 		// IPluginSet implementation
-		const char* FB_CARG name() const
+		const char* FB_CARG getName() const
 		{
 			return currentPlugin.hasData() ? currentName.c_str() : NULL;
 		}
 
-		const char* FB_CARG module() const
+		const char* FB_CARG getModule() const
 		{
 			return currentPlugin.hasData() ? currentPlugin->getModule()->getName() : NULL;
 		}
@@ -607,7 +607,7 @@ namespace
 			next();
 		}
 
-		IPluginBase* FB_CARG plugin();
+		IPluginBase* FB_CARG getPlugin();
 		void FB_CARG next();
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
@@ -766,7 +766,7 @@ namespace
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
-	IPluginBase* FB_CARG PluginSet::plugin()
+	IPluginBase* FB_CARG PluginSet::getPlugin()
 	{
 		while (currentPlugin.hasData())
 		{
@@ -870,7 +870,7 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 {
 	MutexLockGuard g(plugins->mutex);
 
-	IInterface* parent = plugin->owner(NULL);
+	IInterface* parent = plugin->getOwner();
 
 	if (plugin->release() == 0)
 	{
@@ -884,10 +884,6 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 				plugins->wakeIt = NULL;
 			}
 		}
-	}
-	else
-	{
-		plugin->owner(parent);
 	}
 }
 

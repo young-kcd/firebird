@@ -92,7 +92,7 @@ class StdIface : public C, public S
 public:
 	StdIface() : refCounter(0) { }
 
-	int FB_CARG version()
+	int FB_CARG getVersion()
 	{
 		return V;
 	}
@@ -123,17 +123,20 @@ template <class C, int V, typename S = GlobalStorage>
 class StdPlugin : public StdIface<C, V, S>
 {
 private:
-	IInterface* own;
+	IInterface* owner;
 
 public:
-	StdPlugin() : own(NULL)
+	StdPlugin() : owner(NULL)
 	{ }
 
-	IInterface* FB_CARG owner(IInterface* iface)
+	IInterface* FB_CARG getOwner()
 	{
-		IInterface* rc = own;
-		own = iface;
-		return rc;
+		return owner;
+	}
+
+	void FB_CARG setOwner(IInterface* iface)
+	{
+		owner = iface;
 	}
 };
 

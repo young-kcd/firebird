@@ -77,12 +77,12 @@ public:
 
 	const char* name()
 	{
-		return hasData() ? pluginSet->name() : NULL;
+		return hasData() ? pluginSet->getName() : NULL;
 	}
 
 	const char* module()
 	{
-		return hasData() ? pluginSet->module() : NULL;
+		return hasData() ? pluginSet->getModule() : NULL;
 	}
 
 	P* plugin()
@@ -130,7 +130,7 @@ private:
 
 	void getPlugin()
 	{
-		currentPlugin = (P*) pluginSet->plugin();
+		currentPlugin = (P*) pluginSet->getPlugin();
 	}
 };
 
