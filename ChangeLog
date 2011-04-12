@@ -1,3 +1,22 @@
+ 2011-04-11 11:22  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+Fixed memory leak - thanks to Adriano
+
+ 2011-04-11 11:14  alexpeshkoff 
+   M src/jrd/trace/TraceManager.cpp
+Fixed correct calling convention - thanks to Adriano
+
+ 2011-04-11 11:12  alexpeshkoff 
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.h
+   M src/include/FirebirdPluginApi.h
+   M src/include/Interface.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Renamed a number of functions to match Dmitry's requirement
+
  2011-04-09 20:00  asfernandes 
    M src/dsql/dsql.h
    M src/include/ProviderInterface.h
