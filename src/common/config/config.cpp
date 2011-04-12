@@ -288,7 +288,10 @@ int Config::asInteger(const ConfigFile::String &value)
 
 bool Config::asBoolean(const ConfigFile::String &value)
 {
-	return (atoi(value.data()) != 0);
+	return (atoi(value.data()) != 0) || 
+		value.equalsNoCase("true") || 
+		value.equalsNoCase("yes") || 
+		value.equalsNoCase("y");
 }
 
 const char* Config::asString(const ConfigFile::String &value)
