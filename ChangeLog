@@ -1,3 +1,7 @@
+ 2011-04-12 12:47  hvlad 
+   M src/common/config/config.cpp
+Let config file detects literals "true", "yes" and "y" as TRUE boolean values.
+
  2011-04-11 11:22  alexpeshkoff 
    M src/jrd/jrd.cpp
    M src/jrd/jrd_proto.h
