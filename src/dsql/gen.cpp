@@ -242,7 +242,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			}
 		}
 
-		if (parameter->par_desc.dsc_dtype == dtype_text)
+		if (parameter->par_desc.dsc_dtype == dtype_text && parameter->par_index != 0)
 		{
 			// We should convert par_desc from text to varying so the user can receive it with
 			// correct length when requesting it as varying. See CORE-2606.
