@@ -283,7 +283,7 @@ SLONG EventManager::queEvents(SLONG session_id,
 
 	// Sanity check
 
-	if (events[0] != EPB_version1)
+	if (events_length && (!events || events[0] != EPB_version1))
 	{
 		Firebird::Arg::Gds(isc_bad_epb_form).raise();
 	}
