@@ -933,7 +933,7 @@ static void gen_select(DsqlCompilerScratch* dsqlScratch, dsql_nod* rseNod)
 
 	GenericMap<NonPooled<dsql_par*, dsql_ctx*> > paramContexts(*getDefaultMemoryPool());
 
-	if (!rse->dsqlDistinct)
+	if (statement->getType() == DsqlCompiledStatement::TYPE_SELECT_UPD && !rse->dsqlDistinct)
 	{
 		list = rse->dsqlStreams;
 		dsql_nod* const* ptr2 = list->nod_arg;
