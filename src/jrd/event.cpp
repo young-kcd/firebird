@@ -390,7 +390,7 @@ SLONG EVENT_que(ISC_STATUS* status_vector,
  **************************************/
 // Sanity check
 
-	if (events[0] != EPB_version1) {
+	if (events_length && (!events || events[0] != EPB_version1)) {
 		ERR_post(isc_random, isc_arg_string, "Invalid EPB form", isc_arg_end);
 	}
 
