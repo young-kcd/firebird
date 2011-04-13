@@ -1518,7 +1518,11 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 	if (err || count)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err));
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << (err ? "Message buffer too short" : "Wrong number of message parameters")
+#endif
+				  );
 	}
 
 	const DsqlCompiledStatement* statement = request->getStatement();
@@ -1625,7 +1629,11 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	if (*blr != blr_version4 && *blr != blr_version5)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err));
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << "Wrong BLR version"
+#endif
+				  );
 	}
 
 	blr++;						// skip the blr_version
@@ -1633,7 +1641,11 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err));
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << "Missing blr_begin / blr_message"
+#endif
+				  );
 	}
 
 	++blr;						// skip the message number
@@ -1752,7 +1764,11 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 
 		default:
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_sqlda_err));
+					  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+					  << Arg::Gds(isc_random) << "Wrong BLR type"
+#endif
+					  );
 		}
 
 		USHORT align = type_alignments[desc.dsc_dtype];
@@ -1765,7 +1781,11 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 		if (*blr++ != blr_short || *blr++ != 0)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  Arg::Gds(isc_dsql_sqlda_err));
+					  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+					  << Arg::Gds(isc_random) << "Wrong BLR type for NULL indicator"
+#endif
+					  );
 		}
 
 		align = type_alignments[dtype_short];
@@ -1805,7 +1825,11 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				  Arg::Gds(isc_dsql_sqlda_err));
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << (offset != msg_length ? "Invalid message length" : "Missing blr_end")
+#endif
+				  );
 	}
 
 	return count;
