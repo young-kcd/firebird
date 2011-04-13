@@ -288,9 +288,9 @@ int Config::asInteger(const ConfigFile::String &value)
 
 bool Config::asBoolean(const ConfigFile::String &value)
 {
-	return (atoi(value.data()) != 0) || 
-		value.equalsNoCase("true") || 
-		value.equalsNoCase("yes") || 
+	return (atoi(value.data()) != 0) ||
+		value.equalsNoCase("true") ||
+		value.equalsNoCase("yes") ||
 		value.equalsNoCase("y");
 }
 

@@ -3994,8 +3994,7 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 }
 
 YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
-	unsigned int inMsgType, const FbMessage* inMsgBuffer,
-	const FbMessage* outMsgBuffer)
+	unsigned int inMsgType, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
 	try
 	{

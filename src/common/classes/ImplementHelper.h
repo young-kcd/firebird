@@ -242,7 +242,8 @@ typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD>
 class InternalMessageBuffer : public FbMessage
 {
 public:
-	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr, unsigned aBufferLength, unsigned char* aBuffer)
+	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
+		unsigned aBufferLength, unsigned char* aBuffer)
 	{
 		blrLength = aBlrLength;
 		blr = aBlr;
