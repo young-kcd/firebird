@@ -994,10 +994,10 @@ namespace
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 		virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
-			unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
-			const IBlrMessage* outMsgBuffer);
-		virtual int FB_CARG fetch(IStatus* status, const IBlrMessage* msgBuffer);
-		virtual void FB_CARG insert(IStatus* status, const IBlrMessage* msgBuffer);
+			unsigned int inMsgType, const FbMessage* inMsgBuffer,
+			const FbMessage* outMsgBuffer);
+		virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer);
+		virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer);
 		virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 	public:
@@ -1081,7 +1081,7 @@ namespace
 			const unsigned char* dyn);
 		virtual YTransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 			unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
-			const IBlrMessage* inMsgBuffer, const IBlrMessage* outMsgBuffer);
+			const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer);
 		virtual YEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 			unsigned int length, const unsigned char* eventsData);
 		virtual void FB_CARG cancelOperation(IStatus* status, int option);
@@ -2156,10 +2156,10 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
-		BlrMessage inMessage(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr), inMsgLength);
-		BlrMessageBuffer inMsgBuffer(&inMessage, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
-		BlrMessage outMessage(outBlrLength, reinterpret_cast<unsigned char*>(outBlr), outMsgLength);
-		BlrMessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(outMsg));
+		InternalMessageBuffer inMsgBuffer(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
+										  inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
+		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
+										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
 		YTransaction* newTrans = statement->execute(&status, transaction, inMsgType,
 			&inMsgBuffer, &outMsgBuffer);
@@ -2374,10 +2374,10 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
-		BlrMessage inMessage(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr), inMsgLength);
-		BlrMessageBuffer inMsgBuffer(&inMessage, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
-		BlrMessage outMessage(outBlrLength, reinterpret_cast<unsigned char*>(outBlr), outMsgLength);
-		BlrMessageBuffer outMsgBuffer(&outMessage, reinterpret_cast<unsigned char*>(outMsg));
+		InternalMessageBuffer inMsgBuffer(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
+										  inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
+		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
+										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
 		YTransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
 			dialect, inMsgType, &inMsgBuffer, &outMsgBuffer);
@@ -2458,8 +2458,8 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
-		BlrMessage message(blrLength, reinterpret_cast<UCHAR*>(blr), msgLength);
-		BlrMessageBuffer msgBuffer(&message, reinterpret_cast<UCHAR*>(msg));
+		InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(blr),
+										msgLength, reinterpret_cast<UCHAR*>(msg));
 
 		int s = statement->fetch(&status, &msgBuffer);
 
@@ -2542,8 +2542,8 @@ ISC_STATUS API_ROUTINE isc_dsql_insert_m(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	{
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
-		BlrMessage message(blrLength, reinterpret_cast<const unsigned char*>(blr), msgLength);
-		BlrMessageBuffer msgBuffer(&message, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(msg)));
+		InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(blr)),
+										msgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(msg)));
 
 		statement->insert(&status, &msgBuffer);
 	}
@@ -3994,8 +3994,8 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 }
 
 YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
-	unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
-	const IBlrMessage* outMsgBuffer)
+	unsigned int inMsgType, const FbMessage* inMsgBuffer,
+	const FbMessage* outMsgBuffer)
 {
 	try
 	{
@@ -4022,7 +4022,7 @@ YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	return NULL;
 }
 
-int YStatement::fetch(IStatus* status, const IBlrMessage* msgBuffer)
+int YStatement::fetch(IStatus* status, const FbMessage* msgBuffer)
 {
 	try
 	{
@@ -4037,7 +4037,7 @@ int YStatement::fetch(IStatus* status, const IBlrMessage* msgBuffer)
 	return status->get()[1];
 }
 
-void YStatement::insert(IStatus* status, const IBlrMessage* msgBuffer)
+void YStatement::insert(IStatus* status, const FbMessage* msgBuffer)
 {
 	try
 	{
@@ -4714,7 +4714,7 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 
 YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
-	const IBlrMessage* inMsgBuffer, const IBlrMessage* outMsgBuffer)
+	const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
 	try
 	{

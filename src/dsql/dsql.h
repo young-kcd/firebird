@@ -613,10 +613,10 @@ public:
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type,
-										const Firebird::IBlrMessage* inMsgBuffer,
-										const Firebird::IBlrMessage* outMsgBuffer);
-	virtual int FB_CARG fetch(IStatus* status, const Firebird::IBlrMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const Firebird::IBlrMessage* msgBuffer);
+										const Firebird::FbMessage* inMsgBuffer,
+										const Firebird::FbMessage* outMsgBuffer);
+	virtual int FB_CARG fetch(IStatus* status, const Firebird::FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const Firebird::FbMessage* msgBuffer);
 	virtual void FB_CARG free(IStatus* status, unsigned int option);
 };
 

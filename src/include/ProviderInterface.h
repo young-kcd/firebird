@@ -38,19 +38,18 @@ namespace Firebird {
 
 class IAttachment;	// Forward
 
-class IBlrMessage
+struct FbMessage
 {
-public:
-	virtual unsigned int FB_CARG getBlrLength() const = 0;
-	virtual const unsigned char* FB_CARG getBlr() const = 0;
-	virtual unsigned int FB_CARG getBufferLength() const = 0;
-	virtual unsigned char* FB_CARG getBuffer() const = 0;
+	const unsigned char* blr;
+	unsigned char* buffer;
+	unsigned int blrLength;
+	unsigned int bufferLength;
 };
 
 class IEventCallback
 {
 public:
-	virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events) = 0;
+	virtual void FB_CARG eventCallbackFunction(unsigned int length, const unsigned char* events) = 0;
 };
 
 /*
@@ -58,15 +57,6 @@ class ShutdownCallback
 {
 public:
 	virtual void FB_CARG shutdownCallbackFunction(int reason, int mask) = 0;
-};
-
-class MultipleTransaction
-{
-public:
-	virtual unsigned int FB_CARG count() = 0;
-	virtual Attachment* FB_CARG attachment(unsigned int n) = 0;
-	virtual unsigned char* FB_CARG tpb(unsigned int n) = 0;
-	virtual unsigned int FB_CARG tpbLength(unsigned int n) = 0;
 };
 */
 
@@ -116,10 +106,10 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
-										unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
-										const IBlrMessage* outMsgBuffer) = 0;
-	virtual int FB_CARG fetch(IStatus* status, const IBlrMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const IBlrMessage* msgBuffer) = 0;
+										unsigned int inMsgType, const FbMessage* inMsgBuffer,
+										const FbMessage* outMsgBuffer) = 0;
+	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
+	virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer) = 0;
 	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
 };
 #define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)
@@ -182,8 +172,8 @@ public:
 		const unsigned char* dyn) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* transaction,
 								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int inMsgType, const IBlrMessage* inMsgBuffer,
-								 const IBlrMessage* outMsgBuffer) = 0;
+								 unsigned int inMsgType, const FbMessage* inMsgBuffer,
+								 const FbMessage* outMsgBuffer) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;

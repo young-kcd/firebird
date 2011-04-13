@@ -4168,7 +4168,7 @@ Firebird::IStatement* Attachment::allocateStatement(IStatus* user_status)
 
 
 Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
-	unsigned int in_msg_type, const IBlrMessage* inMsgBuffer, const IBlrMessage* outMsgBuffer)
+	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
 
@@ -4187,15 +4187,15 @@ Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITrans
 
 		try
 		{
-			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->getBlrLength() : 0;
-			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->getBlr() : NULL;
-			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->getBufferLength() : 0;
-			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->getBuffer() : NULL;
+			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
+			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
+			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
 
-			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->getBlrLength() : 0;
-			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->getBlr() : NULL;
-			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->getBufferLength() : 0;
-			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->getBuffer() : NULL;
+			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
+			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
+			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
+			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 			DSQL_execute(tdbb, &tra, this, in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
 						 out_blr_length, out_blr, out_msg_length, out_msg);
@@ -4220,8 +4220,8 @@ Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITrans
 
 Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	unsigned int /*in_msg_type*/, const IBlrMessage* inMsgBuffer,
-	const IBlrMessage* outMsgBuffer)
+	unsigned int /*in_msg_type*/, const FbMessage* inMsgBuffer,
+	const FbMessage* outMsgBuffer)
 {
 	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
 
@@ -4240,15 +4240,15 @@ Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITra
 
 		try
 		{
-			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->getBlrLength() : 0;
-			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->getBlr() : NULL;
-			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->getBufferLength() : 0;
-			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->getBuffer() : NULL;
+			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
+			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
+			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
 
-			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->getBlrLength() : 0;
-			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->getBlr() : NULL;
-			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->getBufferLength() : 0;
-			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->getBuffer() : NULL;
+			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
+			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
+			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
+			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 			DSQL_execute_immediate(tdbb, this, &tra, length, string, dialect,
 				in_blr_length, in_blr,
@@ -4274,7 +4274,7 @@ Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITra
 }
 
 
-int dsql_req::fetch(IStatus* user_status, const IBlrMessage* msgBuffer)
+int dsql_req::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 {
 	int return_code = 0;
 
@@ -4288,10 +4288,10 @@ int dsql_req::fetch(IStatus* user_status, const IBlrMessage* msgBuffer)
 
 		try
 		{
-			unsigned blr_length = msgBuffer ? msgBuffer->getBlrLength() : 0;
-			const unsigned char* blr = msgBuffer ? msgBuffer->getBlr() : NULL;
-			unsigned msg_length = msgBuffer ? msgBuffer->getBufferLength() : 0;
-			unsigned char* msg = msgBuffer ? msgBuffer->getBuffer() : NULL;
+			unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
+			const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
+			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
+			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
 			return_code = DSQL_fetch(tdbb, this, blr_length, blr,
 				/*msg_type,*/ msg_length, msg);
@@ -4344,7 +4344,7 @@ void dsql_req::free(IStatus* user_status, unsigned int option)
 }
 
 
-void dsql_req::insert(IStatus* user_status, const IBlrMessage* msgBuffer)
+void dsql_req::insert(IStatus* user_status, const FbMessage* msgBuffer)
 {
 	try
 	{
@@ -4356,10 +4356,10 @@ void dsql_req::insert(IStatus* user_status, const IBlrMessage* msgBuffer)
 
 		try
 		{
-			unsigned blr_length = msgBuffer ? msgBuffer->getBlrLength() : 0;
-			const unsigned char* blr = msgBuffer ? msgBuffer->getBlr() : NULL;
-			unsigned msg_length = msgBuffer ? msgBuffer->getBufferLength() : 0;
-			unsigned char* msg = msgBuffer ? msgBuffer->getBuffer() : NULL;
+			unsigned blr_length = msgBuffer ? msgBuffer->blrLength : 0;
+			const unsigned char* blr = msgBuffer ? msgBuffer->blr : NULL;
+			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
+			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
 			DSQL_insert(tdbb, this, blr_length, blr, msg_length, msg);
 		}
