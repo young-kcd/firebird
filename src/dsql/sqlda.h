@@ -52,48 +52,6 @@ struct SQLDA
 
 #define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n - 1) * sizeof (SQLVAR))
 
-// Structure to support conversion of SQLDA's to messages
-
-struct SqldaSupport
-{
-	static const unsigned SELECT_CLAUSE = 0;
-	static const unsigned BIND_CLAUSE = 1;
-
-	SqldaSupport()
-	{
-		clear();
-	}
-
-	void clear()
-	{
-		stmtType = 0;
-
-		for (unsigned i = 0; i < 2; ++i)
-		{
-			clauses[i].blrBuffer.clear();
-			clauses[i].msgBuffer.clear();
-			clauses[i].infoBuffer.clear();
-		}
-	}
-
-	struct Clause
-	{
-		Clause()
-			: blrBuffer(*getDefaultMemoryPool()),
-			  msgBuffer(*getDefaultMemoryPool()),
-			  infoBuffer(*getDefaultMemoryPool())
-		{
-		}
-
-		Firebird::Array<SCHAR> blrBuffer;
-		Firebird::Array<SCHAR> msgBuffer;
-		Firebird::Array<SCHAR> infoBuffer;
-	} clauses[2];
-
-	USHORT stmtType;	// Type of statement
-};
-
 #include "../dsql/sqlda_pub.h"
 
 #endif // DSQL_SQLDA_H
-

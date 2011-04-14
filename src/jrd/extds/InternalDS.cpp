@@ -408,9 +408,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				tran->tra_caller_name = CallerName();
 		}
 
-		m_request = reinterpret_cast<Jrd::dsql_req*>(m_request->
-						prepare(&status, tran, sql.length(), sql.c_str(),
-								m_connection.getSqlDialect(), 0, NULL, 0, NULL));
+		m_request = reinterpret_cast<Jrd::dsql_req*>(m_request->prepare(
+			&status, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0));
 
 		tran->tra_caller_name = save_caller_name;
 	}

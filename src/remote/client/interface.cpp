@@ -64,6 +64,7 @@
 #include "../common/Auth.h"
 #include "../common/classes/GetPlugins.h"
 #include "ProviderInterface.h"
+#include "../common/StatementMetadata.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"
 #include "../auth/trusted/AuthSspi.h"
@@ -227,11 +228,15 @@ public:
 	virtual int FB_CARG release();
 	virtual Statement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							   unsigned int item_length, const unsigned char* items,
-							   unsigned int buffer_length, unsigned char* buffer);
+							   unsigned int flags);
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
+	virtual unsigned FB_CARG getType(IStatus* status);
+	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed);
+	virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(IStatus* status);
+	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(IStatus* status);
+	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type, const FbMessage* inMsgBuffer,
@@ -241,9 +246,14 @@ public:
 	virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 public:
-	Statement(Rsr* handle) : statement(handle) { }
+	Statement(Rsr* handle)
+		: metadata(getPool(), this),
+		  statement(handle)
+	{
+	}
 
 private:
+	StatementMetadata metadata;
 	Rsr* statement;
 };
 
@@ -2325,8 +2335,7 @@ void Statement::insert(IStatus* status, const FbMessage* msgBuffer)
 
 Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 							  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							  unsigned int item_length, const unsigned char* items,
-							  unsigned int buffer_length, unsigned char* buffer)
+							  unsigned int flags)
 {
 /**************************************
  *
@@ -2392,6 +2401,9 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 			send_partial_packet(rdb->rdb_port, packet);
 		}
 
+		Array<UCHAR> items, buffer;
+		buffer.resize(StatementMetadata::buildInfoItems(items, flags));
+
 		packet->p_operation = op_prepare_statement;
 		P_SQLST* prepare = &packet->p_sqlst;
 		prepare->p_sqlst_transaction = transaction ? transaction->rtr_id : 0;
@@ -2399,9 +2411,9 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 		prepare->p_sqlst_SQL_dialect = dialect;
 		prepare->p_sqlst_SQL_str.cstr_length = stmtLength ? stmtLength : strlen(sqlStmt);
 		prepare->p_sqlst_SQL_str.cstr_address = reinterpret_cast<const UCHAR*>(sqlStmt);
-		prepare->p_sqlst_items.cstr_length = item_length;
-		prepare->p_sqlst_items.cstr_address = items;
-		prepare->p_sqlst_buffer_length = buffer_length;
+		prepare->p_sqlst_items.cstr_length = items.getCount();
+		prepare->p_sqlst_items.cstr_address = items.begin();
+		prepare->p_sqlst_buffer_length = buffer.getCount();
 
 		send_packet(rdb->rdb_port, packet);
 
@@ -2421,12 +2433,14 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 
 		P_RESP* response = &packet->p_resp;
 		CSTRING temp = response->p_resp_data;
-		response->p_resp_data.cstr_allocated = buffer_length;
-		response->p_resp_data.cstr_address = buffer;
+		response->p_resp_data.cstr_allocated = buffer.getCount();
+		response->p_resp_data.cstr_address = buffer.begin();
 
 		try
 		{
 			receive_response(status, rdb, packet);
+			metadata.clear();
+			metadata.parse(buffer.getCount(), buffer.begin());
 		}
 		catch (const Exception& ex)
 		{
@@ -2553,8 +2567,8 @@ void Statement::setCursorName(IStatus* status, const char* cursor)
 
 
 void Statement::getInfo(IStatus* status,
-						unsigned int item_length, const unsigned char* items,
-						unsigned int buffer_length, unsigned char* buffer)
+						unsigned int itemsLength, const unsigned char* items,
+						unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
  *
@@ -2582,12 +2596,15 @@ void Statement::getInfo(IStatus* status,
 		// make sure the protocol supports it
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
-		{
 			unsupported();
-		}
 
-		info(status, rdb, op_info_sql, statement->rsr_id, 0,
-			 item_length, items, 0, 0, buffer_length, buffer);
+		if (!metadata.fillFromCache(itemsLength, items, bufferLength, buffer))
+		{
+			info(status, rdb, op_info_sql, statement->rsr_id, 0,
+				 itemsLength, items, 0, 0, bufferLength, buffer);
+
+			metadata.parse(bufferLength, buffer);
+		}
 
 		statement->raiseException();
 	}
@@ -2595,6 +2612,136 @@ void Statement::getInfo(IStatus* status,
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+unsigned Statement::getType(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		statement->raiseException();
+
+		return metadata.getType();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
+}
+
+
+const char* Statement::getPlan(IStatus* status, bool detailed)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		statement->raiseException();
+
+		return metadata.getPlan(detailed);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+const IParametersMetadata* Statement::getInputParameters(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		statement->raiseException();
+
+		return metadata.getInputParameters();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+const IParametersMetadata* Statement::getOutputParameters(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		statement->raiseException();
+
+		return metadata.getOutputParameters();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+
+ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+
+		CHECK_HANDLE(statement, isc_bad_req_handle);
+		Rdb* rdb = statement->rsr_rdb;
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync);
+
+		statement->raiseException();
+
+		return metadata.getAffectedRecords();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return 0;
 }
 
 

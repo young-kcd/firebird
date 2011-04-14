@@ -39,6 +39,7 @@
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Database.h"
 #include "../dsql/BlrWriter.h"
+#include "../common/StatementMetadata.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
@@ -543,6 +544,7 @@ public:
 	explicit dsql_req(DsqlCompiledStatement* aStatement)
 		: req_pool(aStatement->getPool()),
 		  statement(aStatement),
+		  metadata(aStatement->getPool(), this),
 		  cursors(req_pool),
 		  req_msg_buffers(req_pool),
 		  req_cursor(req_pool),
@@ -571,6 +573,7 @@ public:
 private:
 	MemoryPool&	req_pool;
 	const DsqlCompiledStatement* statement;
+	Firebird::StatementMetadata metadata;
 
 public:
 	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
@@ -604,12 +607,16 @@ public:
 	// IStatement implementation
 	virtual int FB_CARG release();
 	virtual Firebird::IStatement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
-									  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-									  unsigned int item_length, const unsigned char* items,
-	    		                      unsigned int buffer_length, unsigned char* buffer);
+									  unsigned int stmtLength, const char* sqlStmt,
+									  unsigned int dialect, unsigned int flags);
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
+	virtual unsigned FB_CARG getType(IStatus* status);
+	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed);
+	virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(IStatus* status);
+	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(IStatus* status);
+	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
 										unsigned int in_msg_type,

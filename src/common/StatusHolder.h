@@ -70,6 +70,12 @@ public:
 		init();
 	}
 
+	void check()
+	{
+		if (!isSuccess())
+			status_exception::raise(get());
+	}
+
 private:
 	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
 };

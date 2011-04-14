@@ -92,18 +92,50 @@ public:
 };
 #define FB_I_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 12)
 
+class IParametersMetadata	// : public IVersioned
+{
+public:
+	virtual unsigned FB_CARG getCount(IStatus* status) const = 0;
+	virtual const char* FB_CARG getField(IStatus* status, unsigned index) const = 0;
+	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) const = 0;
+	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const = 0;
+	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const = 0;
+	virtual bool FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const = 0;
+};
+// #define FB_I_PARAMETERS_METADATA_VERSION (FB_VERSIONED_VERSION + 10)
+
 class IStatement : public IInterface
 {
 public:
+	// Prepare flags.
+	static const unsigned PREPARE_PREFETCH_TYPE 				= 0x01;
+	static const unsigned PREPARE_PREFETCH_INPUT_PARAMETERS 	= 0x02;
+	static const unsigned PREPARE_PREFETCH_OUTPUT_PARAMETERS	= 0x04;
+	static const unsigned PREPARE_PREFETCH_LEGACY_PLAN			= 0x08;
+	static const unsigned PREPARE_PREFETCH_DETAILED_PLAN		= 0x10;
+	static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS		= 0x20;	// not used yet
+	static const unsigned PREPARE_PREFETCH_METADATA =
+		PREPARE_PREFETCH_TYPE | PREPARE_PREFETCH_INPUT_PARAMETERS | PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+	static const unsigned PREPARE_PREFETCH_ALL =
+		PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN |
+		PREPARE_PREFETCH_AFFECTED_RECORDS;
+
 	// FixMe - prepare must return void, not new statement handle
 	virtual IStatement* FB_CARG prepare(IStatus* status, ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							   unsigned int itemLength, const unsigned char* items,
-							   unsigned int bufferLength, unsigned char* buffer) = 0;
-
+							   unsigned int flags) = 0;
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
+	virtual unsigned FB_CARG getType(IStatus* status) = 0;
+	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed) = 0;
+	virtual const IParametersMetadata* FB_CARG getInputParameters(IStatus* status) = 0;
+	virtual const IParametersMetadata* FB_CARG getOutputParameters(IStatus* status) = 0;
+	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
 										unsigned int inMsgType, const FbMessage* inMsgBuffer,
@@ -112,7 +144,7 @@ public:
 	virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer) = 0;
 	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;
 };
-#define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 7)
+#define FB_I_STATEMENT_VERSION (FB_INTERFACE_VERSION + 12)
 
 class IRequest : public IInterface
 {

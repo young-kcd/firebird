@@ -719,7 +719,7 @@ Data source : @4"},		/* eds_statement */
 	{335545012, "Invalid date"},		/* invalid_date_val */
 	{335545013, "Invalid time"},		/* invalid_time_val */
 	{335545014, "Invalid timestamp"},		/* invalid_timestamp_val */
-	{335545015, "Invalid index @1"},		/* invalid_index_val */
+	{335545015, "Invalid index @1 in function @2"},		/* invalid_index_val */
 	{335545016, "@1"},		/* formatted_exception */
 	{335545017, "Asynchronous call is already running for this attachment"},		/* async_active */
 	{335545018, "Function @1 is private to package @2"},		/* private_function */

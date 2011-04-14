@@ -96,6 +96,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/os/pio_proto.h"
@@ -4380,9 +4381,8 @@ void dsql_req::insert(IStatus* user_status, const FbMessage* msgBuffer)
 
 
 Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
-									unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-									unsigned int item_length, const unsigned char* items,
-									unsigned int buffer_length, unsigned char* buffer)
+									unsigned int stmtLength, const char* sqlStmt,
+									unsigned int dialect, unsigned int flags)
 {
 	dsql_req* tmp = this;
 	try
@@ -4401,8 +4401,13 @@ Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransac
 
 		try
 		{
+			Array<UCHAR> items, buffer;
+			buffer.resize(StatementMetadata::buildInfoItems(items, flags));
+
 			DSQL_prepare(tdbb, tra, &tmp, stmtLength, sqlStmt, dialect,
-						 item_length, items, buffer_length, buffer, false);
+				items.getCount(), items.begin(), buffer.getCount(), buffer.begin(), false);
+
+			tmp->metadata.parse(buffer.getCount(), buffer.begin());
 		}
 		catch (const Exception& ex)
 		{
@@ -4418,6 +4423,176 @@ Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransac
 
 	successful_completion(user_status);
 	return tmp;
+}
+
+
+unsigned dsql_req::getType(IStatus* userStatus)
+{
+	unsigned ret = 0;
+
+	try
+	{
+		ThreadContextHolder tdbb(userStatus);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getType();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus);
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
+}
+
+
+const char* dsql_req::getPlan(IStatus* userStatus, bool detailed)
+{
+	const char* ret = NULL;
+
+	try
+	{
+		ThreadContextHolder tdbb(userStatus);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getPlan(detailed);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus);
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
+}
+
+
+const IParametersMetadata* dsql_req::getInputParameters(IStatus* userStatus)
+{
+	const IParametersMetadata* ret = NULL;
+
+	try
+	{
+		ThreadContextHolder tdbb(userStatus);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getInputParameters();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus);
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
+}
+
+
+const IParametersMetadata* dsql_req::getOutputParameters(IStatus* userStatus)
+{
+	const IParametersMetadata* ret = NULL;
+
+	try
+	{
+		ThreadContextHolder tdbb(userStatus);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getOutputParameters();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus);
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
+}
+
+
+ISC_UINT64 dsql_req::getAffectedRecords(IStatus* userStatus)
+{
+	ISC_UINT64 ret = 0;
+
+	try
+	{
+		ThreadContextHolder tdbb(userStatus);
+
+		validateHandle(tdbb, this);
+		DatabaseContextHolder dbbHolder(tdbb);
+		check_database(tdbb);
+
+		try
+		{
+			ret = metadata.getAffectedRecords();
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, userStatus);
+			return ret;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(userStatus);
+		return ret;
+	}
+
+	successful_completion(userStatus);
+
+	return ret;
 }
 
 
