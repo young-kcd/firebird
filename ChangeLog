@@ -1,3 +1,7 @@
+ 2011-04-13 10:30  hvlad 
+   M src/jrd/event.cpp
+Fixed bug CORE-3440 : AV in engine if isc_que_events queued 0 events
+
  2011-03-18 17:48  alexpeshkoff 
    M src/jrd/os/posix/mod_loader.cpp
 Fixed CORE-3397: Unresolved symbols in intl and trace libraries
