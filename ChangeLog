@@ -1,3 +1,53 @@
+ 2011-04-14 01:03  asfernandes 
+   A src/common/StatementMetadata.cpp
+   A src/common/StatementMetadata.h
+   M src/common/StatusHolder.h
+   M src/dsql/dsql.h
+   M src/dsql/sqlda.h
+   M src/include/ProviderInterface.h
+   M src/include/gen/msgs.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/msgs/messages2.sql
+   M src/remote/client/interface.cpp
+   D src/yvalve/utly.cpp
+   D src/yvalve/utly_proto.h
+   M src/yvalve/why.cpp
+Added metadata support to IStatement.
+
+ 2011-04-13 17:14  asfernandes 
+   M src/dsql/gen.cpp
+Generate DSQL internal dbkey/rec_version only for SELECT...FOR UPDATE. They do nothing for others commands.
+
+ 2011-04-13 16:57  asfernandes 
+   M src/dsql/gen.cpp
+Correction for cursor-based UPDATE/DELETE.
+
+ 2011-04-13 15:09  asfernandes 
+   M src/common/classes/ImplementHelper.h
+   M src/common/config/config.cpp
+   M src/yvalve/why.cpp
+Misc
+
+ 2011-04-13 12:41  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Rolled back my commit using IBlrMessage interface. Replaced with single plain structure FbMessage.
+
+ 2011-04-13 12:39  alexpeshkoff 
+   M src/dsql/dsql.cpp
+Added more diagnostics in DEV_BUILD. If you find it reasonable, can be internationalized and added to release too.
+
+ 2011-04-13 10:38  hvlad 
+   M src/jrd/event.cpp
+Fixed bug CORE-3440 : AV in engine if isc_que_events queued 0 events
+
  2011-04-12 12:47  hvlad 
    M src/common/config/config.cpp
 Let config file detects literals "true", "yes" and "y" as TRUE boolean values.
