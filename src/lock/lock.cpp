@@ -1128,12 +1128,15 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 
 	// Check for shared memory state consistency
 
-	while (SRQ_EMPTY(m_header->lhb_processes))
+	if (SRQ_EMPTY(m_header->lhb_processes))
 	{
 		fb_assert(owner_offset == CREATE_OWNER);
 		owner_offset = DUMMY_OWNER;
+	}
 
-		if (! m_sharedFileCreated)
+	while (SRQ_EMPTY(m_header->lhb_processes))
+	{
+		if (!m_sharedFileCreated)
 		{
 			ISC_STATUS_ARRAY local_status;
 
