@@ -1129,8 +1129,11 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	{
 		fb_assert(owner_offset == CREATE_OWNER);
 		owner_offset = DUMMY_OWNER;
+	}
 
-		if (! m_sharedFileCreated)
+	while (SRQ_EMPTY(sh_mem_header->lhb_processes))
+	{
+		if (!m_sharedFileCreated)
 		{
 			Arg::StatusVector localStatus;
 
