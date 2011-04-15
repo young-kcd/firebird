@@ -306,6 +306,7 @@ private:
 
 	void remove();
 	void insert(const bool active);
+	bool inList();
 	static void wakeUpAll();
 
 	static Worker* m_activeWorkers;
@@ -5514,8 +5515,11 @@ Worker::Worker()
 Worker::~Worker()
 {
 	Firebird::MutexLockGuard guard(m_mutex);
-	remove();
-	--m_cntAll;
+	if (inList())
+	{
+		remove();
+		--m_cntAll;
+	}
 }
 
 
@@ -5528,7 +5532,9 @@ bool Worker::wait(int timeout)
 	if (m_sem.tryEnter(0))
 		return true;
 
+	fb_assert( inList() );
 	remove();
+	--m_cntAll;
 	return false; 
 }
 
@@ -5622,6 +5628,11 @@ void Worker::insert(const bool active)
 	}
 	else
 		fb_assert(m_activeWorkers == this);
+}
+
+bool Worker::inList()
+{
+	return m_next || m_prev || (m_idleWorkers == this) || (m_activeWorkers == this);
 }
 
 void Worker::start(USHORT flags)
