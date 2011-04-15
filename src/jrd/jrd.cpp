@@ -6149,18 +6149,20 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	{
 		ThreadContextHolder tdbb;
 
-		MutexLockGuard guard(databases_mutex);
+		{ // scope
+			MutexLockGuard guard(databases_mutex);
 
-		cancel_attachments();
+			cancel_attachments();
 
-		Database* dbb_next;
-		for (Database* dbb = databases; dbb; dbb = dbb_next)
-		{
-			dbb_next = dbb->dbb_next;
-			if (!shutdown_dbb(tdbb, dbb))
+			Database* dbb_next;
+			for (Database* dbb = databases; dbb; dbb = dbb_next)
 			{
-				success = false;
-				break;
+				dbb_next = dbb->dbb_next;
+				if (!shutdown_dbb(tdbb, dbb))
+				{
+					success = false;
+					break;
+				}
 			}
 		}
 
