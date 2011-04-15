@@ -42,7 +42,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 void BLB_gen_bpb_from_descs(const dsc*, const dsc*, Firebird::UCharBuffer&);
 Jrd::blb*   BLB_get_array(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, Ods::InternalArrayDesc*);
 ULONG  BLB_get_data(Jrd::thread_db*, Jrd::blb*, UCHAR*, SLONG, bool = true);
-USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, UCHAR*, USHORT);
+USHORT BLB_get_segment(Jrd::thread_db*, Jrd::blb*, void*, USHORT);
 SLONG  BLB_get_slice(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, const UCHAR*, USHORT,
 	const UCHAR*, SLONG, UCHAR*);
 SLONG  BLB_lseek(Jrd::blb*, USHORT, SLONG);
@@ -51,7 +51,7 @@ void BLB_move(Jrd::thread_db*, dsc*, dsc*, const Jrd::ValueExprNode*);
 Jrd::blb* BLB_open(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*);
 Jrd::blb* BLB_open2(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const UCHAR*, bool = false);
 void BLB_put_data(Jrd::thread_db*, Jrd::blb*, const UCHAR*, SLONG);
-void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const UCHAR*, USHORT);
+void BLB_put_segment(Jrd::thread_db*, Jrd::blb*, const void*, USHORT);
 void BLB_put_slice(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::bid*, const UCHAR*, USHORT,
 	const UCHAR*, SLONG, UCHAR*);
 void BLB_release_array(Jrd::ArrayField*);

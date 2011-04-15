@@ -140,8 +140,8 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, unsigned char* buffer);	// returns real length
-	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const unsigned char* buffer);
+	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, void* buffer);	// returns real length
+	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const void* buffer);
 	virtual void FB_CARG cancel(IStatus* status);
 	virtual void FB_CARG close(IStatus* status);
 	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
@@ -2745,7 +2745,7 @@ ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
 }
 
 
-unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, unsigned char* buffer)
+unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void* buffer)
 {
 /**************************************
  *
@@ -2762,6 +2762,8 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, unsig
 	try
 	{
 		reset(status);
+
+		UCHAR* bufferPtr = static_cast<UCHAR*>(buffer);
 
 		// Sniff out handles, etc, and find the various blocks.
 
@@ -2790,7 +2792,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, unsig
 			segment->p_sgmt_segment.cstr_length = 0;
 			send_packet(port, packet);
 			response->p_resp_data.cstr_allocated = buffer_length;
-			response->p_resp_data.cstr_address = buffer;
+			response->p_resp_data.cstr_address = bufferPtr;
 
 			try
 			{
@@ -2875,10 +2877,10 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, unsig
 				buffer_length -= l;
 
 				if (l) {
-					memcpy(buffer, p, l);
+					memcpy(bufferPtr, p, l);
 				}
 
-				buffer += l;
+				bufferPtr += l;
 				p += l;
 				blob->rbl_ptr = p;
 
@@ -3174,7 +3176,7 @@ void Transaction::prepare(IStatus* status, unsigned int msg_length, const unsign
 }
 
 
-void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsigned char* segment)
+void Blob::putSegment(IStatus* status, unsigned int segment_length, const void* segment)
 {
 /**************************************
  *
@@ -3193,6 +3195,8 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsign
 	{
 		reset(status);
 
+		const UCHAR* segmentPtr = static_cast<const UCHAR*>(segment);
+
 		// Sniff out handles, etc, and find the various blocks.
 
 		CHECK_HANDLE(blob, isc_bad_segstr_handle);
@@ -3208,7 +3212,7 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsign
 
 		if ((port->port_flags & PORT_rpc) || !(blob->rbl_flags & Rbl::CREATE))
 		{
-			send_blob(status, blob, segment_length, segment);
+			send_blob(status, blob, segment_length, segmentPtr);
 			fb_assert(false);
 		}
 
@@ -3227,7 +3231,7 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsign
 			}
 			if ((ULONG) segment_length + 2 > blob->rbl_buffer_length)
 			{
-				send_blob(status, blob, segment_length, segment);
+				send_blob(status, blob, segment_length, segmentPtr);
 				return;
 			}
 			p = blob->rbl_buffer;
@@ -3239,7 +3243,7 @@ void Blob::putSegment(IStatus* status, unsigned int segment_length, const unsign
 		*p++ = segment_length >> 8;
 
 		if (segment_length) {
-			memcpy(p, segment, segment_length);
+			memcpy(p, segmentPtr, segment_length);
 		}
 
 		blob->rbl_ptr = p + segment_length;

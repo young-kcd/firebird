@@ -152,7 +152,7 @@ ISC_STATUS BLF_get_segment(thread_db* /*tdbb*/,
 						   BlobControl** filter_handle,
 						   USHORT* length,
 						   USHORT buffer_length,
-						   UCHAR* buffer)
+						   void* buffer)
 {
 /**************************************
  *
@@ -169,7 +169,7 @@ ISC_STATUS BLF_get_segment(thread_db* /*tdbb*/,
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
-	control->ctl_buffer = buffer;
+	control->ctl_buffer = static_cast<UCHAR*>(buffer);
 	control->ctl_buffer_length = buffer_length;
 
 	ISC_STATUS status;
@@ -262,7 +262,7 @@ void BLF_open_blob(thread_db* tdbb,
 void BLF_put_segment(thread_db* /*tdbb*/,
 					 BlobControl** filter_handle,
 					 USHORT length,
-					 const UCHAR* buffer)
+					 const void* buffer)
 {
 /**************************************
  *
@@ -283,7 +283,7 @@ void BLF_put_segment(thread_db* /*tdbb*/,
 	// If the filter is ill behaved, it won't respect the constness
 	// even though it's job is to process the buffer and write the
 	// result.
-	control->ctl_buffer = const_cast<UCHAR*>(buffer);
+	control->ctl_buffer = static_cast<UCHAR*>(const_cast<void*>(buffer));
 	control->ctl_buffer_length = length;
 
 	ISC_STATUS status;

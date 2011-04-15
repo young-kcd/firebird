@@ -595,7 +595,7 @@ ULONG BLB_get_data(thread_db* tdbb, blb* blob, UCHAR* buffer, SLONG length, bool
 }
 
 
-USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer_length)
+USHORT BLB_get_segment(thread_db* tdbb, blb* blob, void* segment, USHORT buffer_length)
 {
 /**************************************
  *
@@ -679,7 +679,7 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 	// advance to the next page.  The length is a function of segment
 	// size (or fragment size), buffer size, and amount of data left in the blob.
 
-	BLOB_PTR* to = segment;
+	UCHAR* to = static_cast<UCHAR*>(segment);
 	const BLOB_PTR* from = blob->blb_segment;
 	USHORT length = blob->blb_space_remaining;
 	bool active_page = false;
@@ -783,9 +783,9 @@ USHORT BLB_get_segment(thread_db* tdbb, blb* blob, UCHAR* segment, USHORT buffer
 			CCH_RELEASE(tdbb, &window);
 	}
 
-	blob->blb_segment = const_cast<BLOB_PTR*>(from); // safe cast
+	blob->blb_segment = const_cast<UCHAR*>(from); // safe cast
 	blob->blb_space_remaining = length;
-	length = to - segment;
+	length = to - static_cast<UCHAR*>(segment);
 	blob->blb_seek += length;
 
 	// If this is a stream blob, fake fragment unless we're at the end
@@ -1470,7 +1470,7 @@ void BLB_put_data(thread_db* tdbb, blb* blob, const UCHAR* buffer, SLONG length)
 }
 
 
-void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segment_length)
+void BLB_put_segment(thread_db* tdbb, blb* blob, const void* seg, USHORT segment_length)
 {
 /**************************************
  *
@@ -1484,7 +1484,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-	const BLOB_PTR* segment = seg;
+	const UCHAR* segment = static_cast<const UCHAR*>(seg);
 
 	// Make sure blob is a temporary blob.  If not, complain bitterly.
 

@@ -2712,7 +2712,7 @@ void Attachment::drop(IStatus* user_status)
 }
 
 
-unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, unsigned char* buffer)
+unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer)
 {
 /**************************************
  *
@@ -2913,7 +2913,7 @@ void jrd_tra::prepare(IStatus* user_status, unsigned int msg_length, const unsig
 }
 
 
-void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const unsigned char* buffer)
+void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const void* buffer)
 {
 /**************************************
  *

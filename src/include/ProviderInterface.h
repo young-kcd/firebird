@@ -67,9 +67,9 @@ public:
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length,
-											unsigned char* buffer) = 0;	// returns real length
+											void* buffer) = 0;	// returns real length
 	virtual void FB_CARG putSegment(IStatus* status, unsigned int length,
-									const unsigned char* buffer) = 0;
+									const void* buffer) = 0;
 	virtual void FB_CARG cancel(IStatus* status) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
 	virtual int FB_CARG seek(IStatus* status, int mode, int offset) = 0;			// returns position
