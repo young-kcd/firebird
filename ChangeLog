@@ -1,3 +1,15 @@
+ 2011-04-15 02:51  asfernandes 
+   M src/common/classes/condition.h
+Misc.
+
+ 2011-04-14 13:21  asfernandes 
+   M src/common/StatementMetadata.cpp
+License.
+
+ 2011-04-14 12:12  hvlad 
+   M src/lock/lock.cpp
+Moved assertion out of loop else it could wrongly fire at second execution
+
  2011-04-14 01:03  asfernandes 
    A src/common/StatementMetadata.cpp
    A src/common/StatementMetadata.h
