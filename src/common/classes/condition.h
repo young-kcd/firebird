@@ -183,4 +183,4 @@ public:
 
 #endif // WIN_NT
 
-#endif // CLASSES_SEMAPHORE_H
+#endif // CLASSES_CONDITION_H
