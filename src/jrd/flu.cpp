@@ -313,10 +313,9 @@ namespace Jrd
 	{
 		if (interMod)
 		{
-			interMod->release();
-			if (! interMod->inUse())
+			Firebird::MutexLockGuard lg(modulesMutex);
+			if (interMod->release() == 0)
 			{
-				Firebird::MutexLockGuard lg(modulesMutex);
 				for (size_t m = 0; m < loadedModules().getCount(); m++)
 				{
 					if (loadedModules()[m] == interMod)

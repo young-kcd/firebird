@@ -31,6 +31,7 @@
 
 #include "../common/classes/objects_array.h"
 #include "../jrd/os/mod_loader.h"
+#include "../common/classes/fb_atomic.h"
 
 namespace Jrd
 {
@@ -42,9 +43,9 @@ namespace Jrd
 		private:
 			InternalModule(const InternalModule &im);
 			void operator=(const InternalModule &im);
+			Firebird::AtomicCounter useCount;
 
 		public:
-			long useCount;
 			ModuleLoader::Module* handle;
 			Firebird::PathName originalName, loadName;
 
@@ -57,22 +58,16 @@ namespace Jrd
 				return handle->findSymbol(name);
 			}
 
-/*			explicit InternalModule(MemoryPool& p)
-				: useCount(0), handle(0),
-				originalName(p), loadName(p)
-			{ }
-*/
 			InternalModule(MemoryPool& p,
 						   ModuleLoader::Module* h,
 						   const Firebird::PathName& on,
 						   const Firebird::PathName& ln)
-				: useCount(0), handle(h),
-					originalName(p, on), loadName(p, ln)
+				: handle(h), originalName(p, on), loadName(p, ln)
 			{ }
 
 			~InternalModule()
 			{
-				fb_assert(useCount == 0);
+				fb_assert(useCount.value() == 0);
 				delete handle;
 			}
 
@@ -81,21 +76,16 @@ namespace Jrd
 				return originalName == pn || loadName == pn;
 			}
 
-			bool inUse() const
-			{
-				return useCount > 0;
-			}
-
 			void acquire()
 			{
 				fb_assert(handle);
 				++useCount;
 			}
 
-			void release()
+			int release()
 			{
-				fb_assert(useCount > 0);
-				--useCount;
+				fb_assert(useCount.value() > 0);
+				return --useCount;
 			}
 		};
 
