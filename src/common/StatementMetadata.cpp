@@ -185,10 +185,11 @@ ISC_UINT64 StatementMetadata::getAffectedRecords()
 
 		while (*p != isc_info_end)
 		{
-			++p;
+			UCHAR counter = *p++;
 			const SSHORT len = gds__vax_integer(p, 2);
 			p += 2;
-			count += gds__vax_integer(p, len);
+			if (counter != isc_info_req_select_count)
+				count += gds__vax_integer(p, len);
 			p += len;
 		}
 	}
