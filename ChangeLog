@@ -1,3 +1,16 @@
+ 2011-04-15 18:19  alexpeshkoff 
+   M src/jrd/flu.cpp
+   M src/jrd/flu.h
+Fixed CORE-3443: Races in UDF library lookup
+
+ 2011-04-15 16:35  dimitr 
+   M src/jrd/jrd.cpp
+Fixed possible deadlock between the shutting down engine and the running service. Reported by RedSoft.
+
+ 2011-04-15 12:02  hvlad 
+   M src/remote/server.cpp
+Attempt to fix bug CORE-3387 : Server and client are connected, but server not anwser to client and client is waiting indefinitively server answer !
+
  2011-04-14 12:07  hvlad 
    M src/lock/lock.cpp
 Moved assertion out of loop else it could wrongly fire at second execution
