@@ -1,3 +1,28 @@
+ 2011-04-15 18:54  asfernandes 
+   M src/include/ProviderInterface.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/blb_proto.h
+   M src/jrd/blf_proto.h
+   M src/jrd/blob_filter.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Make the new BLOB API use void* buffers, so applications can read/write char* strings or any other type without casts.
+
+ 2011-04-15 16:37  dimitr 
+   M src/jrd/jrd.cpp
+Fixed possible deadlock between the shutting down engine and the running service. Reported by RedSoft.
+
+ 2011-04-15 07:02  hvlad 
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/yvalve.vcproj
+Update MSVC8 build
+
+ 2011-04-15 06:19  hvlad 
+   M src/lock/lock.cpp
+Correction. Thanks to Claudio.
+
  2011-04-15 02:51  asfernandes 
    M src/common/classes/condition.h
 Misc.
