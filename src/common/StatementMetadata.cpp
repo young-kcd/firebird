@@ -333,6 +333,10 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 		}
 	}
 
+	// CVC: This routine assumes the input is well formed, hence at least check we didn't read
+	// beyond the buffer's end, although I would prefer to make the previous code more robust.
+	fb_assert(buffer <= bufferEnd);
+
 	for (ObjectsArray<Parameters::Item>::iterator i = inputParameters.items.begin();
 		 i != inputParameters.items.end() && inputParameters.fetched;
 		 ++i)

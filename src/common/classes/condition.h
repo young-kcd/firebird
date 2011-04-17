@@ -138,7 +138,8 @@ private:
 	void init()
 	{
 		int err = pthread_cond_init(&cv, NULL);
-		if (err != 0) {
+		if (err != 0)
+		{
 			//gds__log("Error on semaphore.h: constructor");
 			system_call_failed::raise("pthread_cond_init", err);
 		}
@@ -151,7 +152,8 @@ public:
 	~Condition()
 	{
 		int err = pthread_cond_destroy(&cv);
-		if (err != 0) {
+		if (err != 0)
+		{
 			//gds__log("Error on semaphore.h: destructor");
 			//system_call_failed::raise("pthread_cond_destroy", err);
 		}

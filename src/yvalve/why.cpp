@@ -1526,13 +1526,12 @@ static void sqldaParse(const XSQLDA* sqlda, Array<UCHAR>& blr, Array<UCHAR>& mes
 
 	if (!sqlda)
 		return;
-	else
-	{
-		if (sqlda->version != SQLDA_VERSION1)
-			error804(isc_dsql_sqlda_err);
-	}
 
-	USHORT count = sqlda->sqld;
+	if (sqlda->version != SQLDA_VERSION1)
+		error804(isc_dsql_sqlda_err);
+
+	const USHORT count = sqlda->sqld;
+	fb_assert(count < MAX_USHORT / 2); // Nobody does this, but...
 
 	if (count == 0)
 		return;	// If there isn't an SQLDA, don't bother with anything else.

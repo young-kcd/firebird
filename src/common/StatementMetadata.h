@@ -43,7 +43,7 @@ public:
 	public:
 		struct Item : public PermanentStorage
 		{
-			Item(MemoryPool& pool)
+			explicit Item(MemoryPool& pool)
 				: PermanentStorage(pool),
 				  field(pool),
 				  relation(pool),
@@ -71,7 +71,7 @@ public:
 		};
 
 	public:
-		Parameters(MemoryPool& pool)
+		explicit Parameters(MemoryPool& pool)
 			: PermanentStorage(pool),
 			  items(pool),
 			  fetched(false)
@@ -87,99 +87,81 @@ public:
 		{
 			if (index < items.getCount())
 				return items[index].field.c_str();
-			else
-			{
-				raiseIndexError(status, index, "getField");
-				return NULL;
-			}
+
+			raiseIndexError(status, index, "getField");
+			return NULL;
 		}
 
 		virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].relation.c_str();
-			else
-			{
-				raiseIndexError(status, index, "getRelation");
-				return NULL;
-			}
+
+			raiseIndexError(status, index, "getRelation");
+			return NULL;
 		}
 
 		virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].owner.c_str();
-			else
-			{
-				raiseIndexError(status, index, "getOwner");
-				return NULL;
-			}
+
+			raiseIndexError(status, index, "getOwner");
+			return NULL;
 		}
 
 		virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].alias.c_str();
-			else
-			{
-				raiseIndexError(status, index, "getAlias");
-				return NULL;
-			}
+
+			raiseIndexError(status, index, "getAlias");
+			return NULL;
 		}
 
 		virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].type;
-			else
-			{
-				raiseIndexError(status, index, "getType");
-				return 0;
-			}
+
+			raiseIndexError(status, index, "getType");
+			return 0;
 		}
 
 		virtual bool FB_CARG isNullable(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].nullable;
-			else
-			{
-				raiseIndexError(status, index, "isNullable");
-				return false;
-			}
+
+			raiseIndexError(status, index, "isNullable");
+			return false;
 		}
 
 		virtual unsigned FB_CARG getSubType(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].subType;
-			else
-			{
-				raiseIndexError(status, index, "getSubType");
-				return 0;
-			}
+
+			raiseIndexError(status, index, "getSubType");
+			return 0;
 		}
 
 		virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].length;
-			else
-			{
-				raiseIndexError(status, index, "getLength");
-				return 0;
-			}
+
+			raiseIndexError(status, index, "getLength");
+			return 0;
 		}
 
 		virtual unsigned FB_CARG getScale(IStatus* status, unsigned index) const
 		{
 			if (index < items.getCount())
 				return items[index].scale;
-			else
-			{
-				raiseIndexError(status, index, "getScale");
-				return 0;
-			}
+
+			raiseIndexError(status, index, "getScale");
+			return 0;
 		}
 
 	private:
