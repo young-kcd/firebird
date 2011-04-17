@@ -2290,8 +2290,6 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 	try
 	{
-		USHORT inBlrLength, inMsgType, inMsgLength, outBlrLength, outMsgType, outMsgLength;
-
 		RefPtr<YStatement> statement(translateHandle(statements, stmtHandle));
 
 		statement->checkPrepared();
