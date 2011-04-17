@@ -393,10 +393,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\yvalve\utly_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\yvalve\why_proto.h"
 				>
 			</File>
@@ -462,10 +458,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\yvalve\utl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\yvalve\utly.cpp"
 				>
 			</File>
 			<File

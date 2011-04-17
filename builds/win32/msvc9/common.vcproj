@@ -396,6 +396,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\StatementMetadata.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\StatusArg.cpp"
 				>
 			</File>
@@ -826,6 +830,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\stack.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatementMetadata.h"
 				>
 			</File>
 			<File
