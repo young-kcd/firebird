@@ -1,3 +1,7 @@
+ 2011-04-16 21:59  asfernandes 
+   M src/common/StatementMetadata.cpp
+Do not count selected records for IStatement::getAffectedRecords.
+
  2011-04-15 18:54  asfernandes 
    M src/include/ProviderInterface.h
    M src/jrd/blb.cpp
