@@ -306,7 +306,7 @@ private:
 
 	void remove();
 	void insert(const bool active);
-	bool inList();
+	bool inList() const;
 	static void wakeUpAll();
 
 	static Worker* m_activeWorkers;
@@ -5630,7 +5630,7 @@ void Worker::insert(const bool active)
 		fb_assert(m_activeWorkers == this);
 }
 
-bool Worker::inList()
+bool Worker::inList() const
 {
 	return m_next || m_prev || (m_idleWorkers == this) || (m_activeWorkers == this);
 }
