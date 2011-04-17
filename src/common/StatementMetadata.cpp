@@ -53,6 +53,7 @@ static void getStringInfo(const UCHAR** ptr, string* str);
 
 
 // Build a list of info codes based on a prepare flags bitmask.
+// Return "estimated" necessary size for the result buffer.
 unsigned StatementMetadata::buildInfoItems(Array<UCHAR>& items, unsigned flags)
 {
 	items.clear();
@@ -335,7 +336,11 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 
 	// CVC: This routine assumes the input is well formed, hence at least check we didn't read
 	// beyond the buffer's end, although I would prefer to make the previous code more robust.
-	fb_assert(buffer <= bufferEnd);
+	// fb_assert(buffer <= bufferEnd);
+	// ASF: User may pass any (including unknown from new version) info code and we can't
+	// understand them. In this case, we leave these code without parse (when they're in the end)
+	// or we'll need extra info calls (done by methods of this class) to parse only the info we
+	// can understand.
 
 	for (ObjectsArray<Parameters::Item>::iterator i = inputParameters.items.begin();
 		 i != inputParameters.items.end() && inputParameters.fetched;
