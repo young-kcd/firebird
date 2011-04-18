@@ -145,8 +145,6 @@ const char* StatementMetadata::getPlan(bool detailed)
 		UCHAR result[INFO_BUFFER_SIZE];
 
 		getAndParse(sizeof(info), info, sizeof(result), result);
-
-		fb_assert(plan->hasData());
 	}
 
 	return plan->nullStr();
