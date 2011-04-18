@@ -65,7 +65,7 @@ TempSpace::Block::Block(Block* tail, size_t length)
 TempSpace::MemoryBlock::MemoryBlock(MemoryPool& pool, Block* tail, size_t length)
 	: Block(tail, length)
 {
-	ptr = FB_NEW(pool) char[length];
+	ptr = FB_NEW(pool) UCHAR[length];
 }
 
 TempSpace::MemoryBlock::~MemoryBlock()
@@ -212,7 +212,7 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 		// search for the first needed block
 		Block* block = findBlock(offset);
 
-		char* p = static_cast<char*>(buffer);
+		UCHAR* p = static_cast<UCHAR*>(buffer);
 		size_t l = length;
 
 		// read data from the block chain
@@ -250,7 +250,7 @@ size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 		// search for the first needed block
 		Block* const block = findBlock(offset);
 
-		const char* p = static_cast<const char*>(buffer);
+		const UCHAR* p = static_cast<const UCHAR*>(buffer);
 		size_t l = length;
 
 		// write data to as many blocks as necessary
@@ -522,7 +522,7 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 // Return contiguous chunk of memory if present at given location
 //
 
-char* TempSpace::inMemory(offset_t begin, size_t size) const
+UCHAR* TempSpace::inMemory(offset_t begin, size_t size) const
 {
 	const Block* block = findBlock(begin);
 	return block ? block->inMemory(begin, size) : NULL;
@@ -535,7 +535,7 @@ char* TempSpace::inMemory(offset_t begin, size_t size) const
 // of search range if found
 //
 
-char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
+UCHAR* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 {
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
@@ -543,7 +543,7 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 
 	while (block && (begin + size <= end))
 	{
-		char* mem = block->inMemory(local_offset, size);
+		UCHAR* const mem = block->inMemory(local_offset, size);
 		if (mem)
 		{
 			return mem;
@@ -611,21 +611,21 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	offset_t freeEnd = freeSpace ? freeSpace->position + freeSpace->size : 0;
 	while (segments.getCount() < count && freeSpace)
 	{
-		char* mem = findMemory(freeSeek, freeEnd, freeMem);
+		UCHAR* const mem = findMemory(freeSeek, freeEnd, freeMem);
 
 		if (mem)
 		{
 			fb_assert(freeSeek + freeMem <= freeEnd);
 #ifdef DEV_BUILD
 			offset_t seek1 = freeSeek;
-			char* p = findMemory(seek1, freeEnd, freeMem);
+			UCHAR* const p = findMemory(seek1, freeEnd, freeMem);
 			fb_assert(p == mem);
 			fb_assert(seek1 == freeSeek);
 #endif
 			if (freeSeek != freeSpace->position)
 			{
 				const ULONG skip_size = freeSeek - freeSpace->position;
-				Segment* skip_space = getSegment(freeSpace->position, skip_size);
+				Segment* const skip_space = getSegment(freeSpace->position, skip_size);
 
 				(*prevSpace) = skip_space;
 				skip_space->next = freeSpace;

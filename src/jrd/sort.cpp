@@ -1924,10 +1924,10 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 	// if some run's already in memory cache - use this memory
 	for (run = scb->scb_runs, count = 0; count < n; run = run->run_next, count++)
 	{
-		run->run_buffer = 0;
+		run->run_buffer = NULL;
 
-		char* mem = 0;
-		if (mem = scb->scb_space->inMemory(run->run_seek, run->run_size))
+		UCHAR* mem = scb->scb_space->inMemory(run->run_seek, run->run_size);
+		if (mem)
 		{
 			run->run_buffer = reinterpret_cast<SORTP*>(mem);
 			run->run_record = reinterpret_cast<sort_record*>(mem);
@@ -1956,7 +1956,7 @@ static ULONG allocate_memory(sort_context* scb, ULONG n, ULONG chunkSize, bool u
 			if (!run->run_buffer)
 			{
 				const size_t runSize = MIN(seg->size / rec_size, run->run_records) * rec_size;
-				char* mem = seg->memory;
+				UCHAR* mem = seg->memory;
 
 				run->run_mem_seek = seg->position;
 				run->run_mem_size = seg->size;
@@ -2479,7 +2479,7 @@ static void order_and_save(sort_context* scb)
 	run->run_size = run->run_records * key_length;
 	run->run_seek = scb->scb_space->allocateSpace(run->run_size);
 
-	char* mem = scb->scb_space->inMemory(run->run_seek, run->run_size);
+	UCHAR* mem = scb->scb_space->inMemory(run->run_seek, run->run_size);
 
 	if (mem)
 	{
