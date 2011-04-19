@@ -2670,6 +2670,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 	// Build STORE statement
 
+	add_byte(blr, blr_loop);
 	add_byte(blr, blr_receive);
 	add_byte(blr, 0);
 	add_byte(blr, blr_store);
@@ -2833,8 +2834,14 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 			get_record(&record, tdgbl);
 		}
 
+		ISC_STATUS s;
 
-		if (isc_start_and_send (status_vector, &request, &gds_trans, 0, (USHORT) length, buffer, 0))
+		if (records == 1)
+			s = isc_start_and_send(status_vector, &request, &gds_trans, 0, (USHORT) length, buffer, 0);
+		else
+			s = isc_send(status_vector, &request, 0, (USHORT) length, buffer, 0);
+
+		if (s)
 		{
 			if (status_vector[1] == isc_not_valid)
 			{
