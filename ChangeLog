@@ -1,3 +1,9 @@
+ 2011-04-18 07:55  dimitr 
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/sort.cpp
+Better type clearness.
+
  2011-04-17 05:00  robocop 
    M src/remote/server.cpp
 Misc.
