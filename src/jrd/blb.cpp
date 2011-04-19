@@ -2020,8 +2020,9 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 	SET_TDBB(tdbb);
 
 	jrd_req* request = tdbb->getRequest();
-	blb* input = BLB_open2(tdbb, request->req_transaction, source, bpb_length, bpb);
-	blb* output = BLB_create(tdbb, request->req_transaction, destination);
+	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+	blb* input = BLB_open2(tdbb, transaction, source, bpb_length, bpb);
+	blb* output = BLB_create(tdbb, transaction, destination);
 	output->blb_sub_type = input->blb_sub_type;
 	if (destPageSpaceID) {
 		output->blb_pg_space_id = destPageSpaceID;
@@ -2469,12 +2470,15 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			status_exception::raise(Arg::Gds(isc_malformed_string));
 	}
 
+	jrd_req* request = tdbb->getRequest();
+	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 	bid temp_bid;
 	temp_bid.clear();
-	blb* blob = BLB_create2(tdbb, tdbb->getRequest()->req_transaction, &temp_bid, bpb.getCount(), bpb.begin());
+	blb* blob = BLB_create2(tdbb, transaction, &temp_bid, bpb.getCount(), bpb.begin());
 
 	DSC blob_desc;
 	blob_desc.clear();
@@ -2503,42 +2507,44 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	// ASF: Blob ID could now be stored in any descriptor of parameters or
 	// variables. - 2007-03-24
 
-	jrd_tra* transaction = tdbb->getRequest()->req_transaction;
-	if (transaction->tra_blobs->locate(blob_temp_id))
+	if (request)
 	{
-		BlobIndex* current = &transaction->tra_blobs->current();
-		if (current->bli_materialized)
+		if (transaction->tra_blobs->locate(blob_temp_id))
 		{
-			// Delete BLOB from request owned blob list
-			jrd_req* blob_request = current->bli_request;
-			if (blob_request)
+			BlobIndex* current = &transaction->tra_blobs->current();
+			if (current->bli_materialized)
 			{
-				if (blob_request->req_blobs.locate(blob_temp_id)) {
-					blob_request->req_blobs.fastRemove();
-				}
-				else
+				// Delete BLOB from request owned blob list
+				jrd_req* blob_request = current->bli_request;
+				if (blob_request)
 				{
-					// We should never get here because when bli_request is assigned
-					// item should be added to req_blobs array
-					fb_assert(false);
+					if (blob_request->req_blobs.locate(blob_temp_id)) {
+						blob_request->req_blobs.fastRemove();
+					}
+					else
+					{
+						// We should never get here because when bli_request is assigned
+						// item should be added to req_blobs array
+						fb_assert(false);
+					}
 				}
+
+				// Free materialized blob handle
+				transaction->tra_blobs->fastRemove();
 			}
-
-			// Free materialized blob handle
-			transaction->tra_blobs->fastRemove();
-		}
-		else
-		{
-			// But even in bad case when we cannot free blob immediately
-			// we may still bind lifetime of blob to current top level request.
-			if (!current->bli_request)
+			else
 			{
-				jrd_req* blob_request = tdbb->getRequest();
-				while (blob_request->req_caller)
-					blob_request = blob_request->req_caller;
+				// But even in bad case when we cannot free blob immediately
+				// we may still bind lifetime of blob to current top level request.
+				if (!current->bli_request)
+				{
+					jrd_req* blob_request = request;
+					while (blob_request->req_caller)
+						blob_request = blob_request->req_caller;
 
-				current->bli_request = blob_request;
-				current->bli_request->req_blobs.add(blob_temp_id);
+					current->bli_request = blob_request;
+					current->bli_request->req_blobs.add(blob_temp_id);
+				}
 			}
 		}
 	}
@@ -2570,10 +2576,13 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	else
 		blobAsText.dsc_ttype() = ttype_ascii;
 
+	jrd_req* request = tdbb->getRequest();
+	jrd_tra* transaction = request ? request->req_transaction : tdbb->getTransaction();
+
 	UCharBuffer bpb;
 	BLB_gen_bpb_from_descs(fromDesc, &blobAsText, bpb);
 
-	blb* blob = BLB_open2(tdbb, tdbb->getRequest()->req_transaction,
+	blb* blob = BLB_open2(tdbb, transaction,
 		(bid*) fromDesc->dsc_address, bpb.getCount(), bpb.begin());
 
 	const CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);

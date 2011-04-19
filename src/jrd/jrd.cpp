@@ -4284,6 +4284,7 @@ int dsql_req::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 		ThreadContextHolder tdbb(user_status);
 
 		validateHandle(tdbb, this);
+		validateHandle(tdbb, req_transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 

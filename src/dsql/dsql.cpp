@@ -1427,6 +1427,8 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 	ULONG blr_length, const UCHAR* blr, ULONG msg_length, UCHAR* dsql_msg_buf,
 	const UCHAR* in_dsql_msg_buf)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	USHORT count = parse_blr(request, blr_length, blr, msg_length, message->msg_parameters);
 
 	bool err = false;
@@ -1492,7 +1494,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 
 				if (!flag || *flag >= 0)
-					MOVD_move(&parDesc, &desc);
+					MOVD_move(tdbb, &parDesc, &desc);
 				else
 					memset(desc.dsc_address, 0, desc.dsc_length);
 			}
@@ -1502,7 +1504,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 				{
 					// Safe cast because desc is used as source only.
 					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(&desc, &parDesc);
+					MOVD_move(tdbb, &desc, &parDesc);
 				}
 			}
 			else
@@ -1544,7 +1546,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		dsc desc = parameter->par_desc;
 		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
-		MOVD_move(&parentDesc, &desc);
+		MOVD_move(tdbb, &parentDesc, &desc);
 
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
@@ -1574,7 +1576,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 		dsc desc = parameter->par_desc;
 		desc.dsc_address = msgBuffer + (IPTR) desc.dsc_address;
 
-		MOVD_move(&parentDesc, &desc);
+		MOVD_move(tdbb, &parentDesc, &desc);
 
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)

@@ -24,7 +24,6 @@
 #ifndef DSQL_MOVD_PROTO_H
 #define DSQL_MOVD_PROTO_H
 
-void MOVD_move(const dsc*, dsc*);
+void MOVD_move(Jrd::thread_db* tdbb, dsc*, dsc*);
 
 #endif //  DSQL_MOVD_PROTO_H
-
