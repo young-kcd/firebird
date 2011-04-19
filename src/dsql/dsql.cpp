@@ -445,7 +445,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 			dsql_par* offset_parameter = message->msg_parameters;
 			dsql_par* parameter = offset_parameter->par_next;
-			MOVD_move(&desc, &parameter->par_desc);
+			MOVD_move(tdbb, &desc, &parameter->par_desc);
 
 			desc.dsc_dtype = dtype_long;
 			desc.dsc_scale = 0;
@@ -453,7 +453,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 			desc.dsc_flags = 0;
 			desc.dsc_address = (UCHAR*) & offset;
 
-			MOVD_move(&desc, &offset_parameter->par_desc);
+			MOVD_move(tdbb, &desc, &offset_parameter->par_desc);
 
 			DsqlCheckout dcoHolder(request->req_dbb);
 
@@ -2192,6 +2192,8 @@ static void map_in_out(	dsql_req*		request,
 						UCHAR*	dsql_msg_buf,
 						const UCHAR* in_dsql_msg_buf)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
 	// When mapping data from the external world, request will be non-NULL.
@@ -2237,7 +2239,7 @@ static void map_in_out(	dsql_req*		request,
 
 				if (!flag || *flag >= 0)
 				{
-					MOVD_move(&parameter->par_desc, &desc);
+					MOVD_move(tdbb, &parameter->par_desc, &desc);
 				}
 				else
 				{
@@ -2250,7 +2252,7 @@ static void map_in_out(	dsql_req*		request,
 				{
 					// Safe cast because desc is used as source only.
 					desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
-					MOVD_move(&desc, &parameter->par_desc);
+					MOVD_move(tdbb, &desc, &parameter->par_desc);
 				}
 			}
 			else
@@ -2275,7 +2277,7 @@ static void map_in_out(	dsql_req*		request,
 	if (request && ((dbkey = request->req_parent_dbkey) != NULL) &&
 		((parameter = request->req_dbkey) != NULL))
 	{
-		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
+		MOVD_move(tdbb, &dbkey->par_desc, &parameter->par_desc);
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
 		{
@@ -2288,7 +2290,7 @@ static void map_in_out(	dsql_req*		request,
 	if (request && ((rec_version = request->req_parent_rec_version) != NULL) &&
 		((parameter = request->req_rec_version) != NULL))
 	{
-		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
+		MOVD_move(tdbb, &rec_version->par_desc, &parameter->par_desc);
 		dsql_par* null_ind = parameter->par_null;
 		if (null_ind != NULL)
 		{

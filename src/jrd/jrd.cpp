@@ -3801,6 +3801,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
+		validateHandle(tdbb, statement->req_transaction);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
