@@ -89,7 +89,7 @@ echo #pragma message("Non-production version of ibase.h.") > %FB_OUTPUT_DIR%\inc
 echo #pragma message("Using raw, unprocessed concatenation of header files.") >> %FB_OUTPUT_DIR%\include\ibase.tmp
 type %FB_ROOT_PATH%\src\misc\ibase_header.txt >> %FB_OUTPUT_DIR%\include\ibase.tmp
 type %FB_ROOT_PATH%\src\include\types_pub.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
-type %FB_ROOT_PATH%\src\jrd\dsc_pub.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
+type %FB_ROOT_PATH%\src\common\dsc_pub.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
 type %FB_ROOT_PATH%\src\dsql\sqlda_pub.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
 type %FB_ROOT_PATH%\src\jrd\ibase.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
 type %FB_ROOT_PATH%\src\jrd\inf_pub.h >> %FB_OUTPUT_DIR%\include\ibase.tmp
