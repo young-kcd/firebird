@@ -66,7 +66,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				SubSystem="2"
-				OptimizeForWindows98="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -143,7 +142,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				SubSystem="2"
-				OptimizeForWindows98="2"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -218,7 +216,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				SubSystem="2"
-				OptimizeForWindows98="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -293,7 +290,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				SubSystem="2"
-				OptimizeForWindows98="2"
 				TargetMachine="17"
 			/>
 			<Tool
