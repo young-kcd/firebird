@@ -1,3 +1,12 @@
+ 2011-04-20 07:03  robocop 
+   M builds/win32/make_all.bat
+It would be better to copy the file from the place where it exists.
+:-)
+
+ 2011-04-20 07:02  robocop 
+   M builds/win32/msvc9/fbguard.vcproj
+Delete obsolete option (not supported).
+
  2011-04-19 15:24  asfernandes 
    M src/burp/restore.epp
 Improvement CORE-3433 - Improve GBAK restore performance (records insertion).
