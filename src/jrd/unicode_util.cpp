@@ -57,8 +57,10 @@ private:
 	ICU& operator =(const ICU&);	// not implemented
 
 public:
-	ICU()
-		: inModule(NULL),
+	ICU(int aMajorVersion, int aMinorVersion)
+		: majorVersion(aMajorVersion),
+		  minorVersion(aMinorVersion),
+		  inModule(NULL),
 		  ucModule(NULL)
 	{
 	}
@@ -69,6 +71,21 @@ public:
 		delete inModule;
 	}
 
+	template <typename T> void getEntryPoint(const char* name, ModuleLoader::Module* module, T& ptr)
+	{
+		string symbol;
+
+		symbol.printf("%s_%d_%d", name, majorVersion, minorVersion);
+		module->findSymbol(symbol, ptr);
+		if (ptr)
+			return;
+
+		symbol.printf("%s_%d%d", name, majorVersion, minorVersion);
+		module->findSymbol(symbol, ptr);
+	}
+
+	int majorVersion;
+	int minorVersion;
 	ModuleLoader::Module* inModule;
 	ModuleLoader::Module* ucModule;
 	UVersionInfo collVersion;
@@ -714,17 +731,17 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 	const Firebird::string& configInfo)
 {
 #if defined(WIN_NT)
-	const char* const inTemplate = "icuin%s%s.dll";
-	const char* const ucTemplate = "icuuc%s%s.dll";
+	const char* const inTemplate = "icuin%d%d.dll";
+	const char* const ucTemplate = "icuuc%d%d.dll";
 #elif defined(DARWIN)
 	const char* const inTemplate = "/Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib";
 	const char* const ucTemplate = "/Library/Frameworks/Firebird.framework/versions/A/Libraries/libicuuc.dylib";
 #elif defined(HPUX)
-	const char* const inTemplate = "libicui18n.sl.%s%s";
-	const char* const ucTemplate = "libicuuc.sl.%s%s";
+	const char* const inTemplate = "libicui18n.sl.%d%d";
+	const char* const ucTemplate = "libicuuc.sl.%d%d";
 #else
-	const char* const inTemplate = "libicui18n.so.%s%s";
-	const char* const ucTemplate = "libicuuc.so.%s%s";
+	const char* const inTemplate = "libicui18n.so.%d%d";
+	const char* const ucTemplate = "libicuuc.so.%d%d";
 #endif
 
 	ObjectsArray<string> versions;
@@ -736,25 +753,20 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 	for (ObjectsArray<string>::const_iterator i(versions.begin()); i != versions.end(); ++i)
 	{
-		string majorVersion;
-		string minorVersion;
+		int majorVersion, minorVersion;
 
 		if (*i == "default")
 		{
-			majorVersion = STRINGIZE(U_ICU_VERSION_MAJOR_NUM);
-			minorVersion = STRINGIZE(U_ICU_VERSION_MINOR_NUM);
+			majorVersion = U_ICU_VERSION_MAJOR_NUM;
+			minorVersion = U_ICU_VERSION_MINOR_NUM;
 		}
-		else
-		{
-			size_t pos = i->find('.');
-			if (pos == i->npos)
-				continue;
+		else if (sscanf(i->c_str(), "%d.%d", &majorVersion, &minorVersion) != 2)
+			continue;
 
-			majorVersion = i->substr(0, pos);
-			minorVersion = i->substr(pos + 1);
-		}
+		string configVersion;
+		configVersion.printf("%d.%d", majorVersion, minorVersion);
 
-		if (version != majorVersion + "." + minorVersion)
+		if (version != configVersion)
 			continue;
 
 		ReadLockGuard readGuard(icuModules.lock);
@@ -764,9 +776,9 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			return icu;
 
 		PathName filename;
-		filename.printf(ucTemplate, majorVersion.c_str(), minorVersion.c_str());
+		filename.printf(ucTemplate, majorVersion, minorVersion);
 
-		icu = FB_NEW(*getDefaultMemoryPool()) ICU();
+		icu = FB_NEW(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
 		icu->ucModule = ModuleLoader::loadModule(filename);
 		if (!icu->ucModule)
@@ -781,7 +793,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			continue;
 		}
 
-		filename.printf(inTemplate, majorVersion.c_str(), minorVersion.c_str());
+		filename.printf(inTemplate, majorVersion, minorVersion);
 
 		icu->inModule = ModuleLoader::loadModule(filename);
 		if (!icu->inModule)
@@ -796,49 +808,21 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 			continue;
 		}
 
-		string symbol;
+		icu->getEntryPoint("u_versionToString", icu->ucModule, icu->uVersionToString);
+		icu->getEntryPoint("uloc_countAvailable", icu->ucModule, icu->ulocCountAvailable);
+		icu->getEntryPoint("uloc_getAvailable", icu->ucModule, icu->ulocGetAvailable);
+		icu->getEntryPoint("uset_close", icu->ucModule, icu->usetClose);
+		icu->getEntryPoint("uset_getItem", icu->ucModule, icu->usetGetItem);
+		icu->getEntryPoint("uset_getItemCount", icu->ucModule, icu->usetGetItemCount);
+		icu->getEntryPoint("uset_open", icu->ucModule, icu->usetOpen);
 
-		symbol.printf("u_versionToString_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->uVersionToString);
-
-		symbol.printf("uloc_countAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->ulocCountAvailable);
-
-		symbol.printf("uloc_getAvailable_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->ulocGetAvailable);
-
-		symbol.printf("uset_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetClose);
-
-		symbol.printf("uset_getItem_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetGetItem);
-
-		symbol.printf("uset_getItemCount_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetGetItemCount);
-
-		symbol.printf("uset_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->ucModule->findSymbol(symbol, icu->usetOpen);
-
-		symbol.printf("ucol_close_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolClose);
-
-		symbol.printf("ucol_getContractions_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetContractions);
-
-		symbol.printf("ucol_getSortKey_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetSortKey);
-
-		symbol.printf("ucol_open_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolOpen);
-
-		symbol.printf("ucol_setAttribute_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolSetAttribute);
-
-		symbol.printf("ucol_strcoll_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolStrColl);
-
-		symbol.printf("ucol_getVersion_%s_%s", majorVersion.c_str(), minorVersion.c_str());
-		icu->inModule->findSymbol(symbol, icu->ucolGetVersion);
+		icu->getEntryPoint("ucol_close", icu->inModule, icu->ucolClose);
+		icu->getEntryPoint("ucol_getContractions", icu->inModule, icu->ucolGetContractions);
+		icu->getEntryPoint("ucol_getSortKey", icu->inModule, icu->ucolGetSortKey);
+		icu->getEntryPoint("ucol_open", icu->inModule, icu->ucolOpen);
+		icu->getEntryPoint("ucol_setAttribute", icu->inModule, icu->ucolSetAttribute);
+		icu->getEntryPoint("ucol_strcoll", icu->inModule, icu->ucolStrColl);
+		icu->getEntryPoint("ucol_getVersion", icu->inModule, icu->ucolGetVersion);
 
 		if (!icu->uVersionToString || !icu->ulocCountAvailable || !icu->ulocGetAvailable ||
 			!icu->usetClose || !icu->usetGetItem || !icu->usetGetItemCount || !icu->usetOpen ||
