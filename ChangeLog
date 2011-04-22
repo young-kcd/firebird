@@ -1,3 +1,7 @@
+ 2011-04-21 20:25  asfernandes 
+   M src/jrd/unicode_util.cpp
+Fixed CORE-3447 - Collation is not installed with icu > 4.2.
+
  2011-04-13 10:28  hvlad 
    M src/jrd/event.cpp
 Fixed bug CORE-3440 : AV in engine if isc_que_events queued 0 events
