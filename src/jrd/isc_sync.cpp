@@ -2935,6 +2935,8 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 //		if (dwResult != WAIT_OBJECT_0)
 //			return dwResult;
 
+		if (dwResult == WAIT_OBJECT_0)
+			continue;
 		if (dwResult == WAIT_ABANDONED)
 			return dwResult;
 		if (dwResult == WAIT_TIMEOUT && !dwMilliseconds)
@@ -3018,6 +3020,11 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 		name = sz;
 	}
 
+#ifdef DONT_USE_FAST_MUTEX
+	lpMutex->lpSharedInfo = NULL;
+	lpMutex->hEvent = CreateMutex(lpAttributes, bInitialState, name);
+	return (lpMutex->hEvent != NULL);
+#else
 	lpMutex->hEvent = CreateEvent(lpAttributes, FALSE, FALSE, name);
 	DWORD dwLastError = GetLastError();
 
@@ -3067,6 +3074,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 	SetLastError(dwLastError);
 	return false;
+#endif // DONT_USE_FAST_MUTEX
 }
 
 #ifdef NOT_USED_OR_REPLACED
