@@ -711,7 +711,7 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		IEvents* next;
+		RefPtr<IEvents> next;
 		IEventCallback* callback;
 		bool deleteCallback;
 	};
@@ -757,7 +757,7 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		IRequest* next;
+		RefPtr<IRequest> next;
 		FB_API_HANDLE* userHandle;
 	};
 
@@ -827,7 +827,7 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		ITransaction* next;
+		RefPtr<ITransaction> next;
 		YTransaction* sub;
 		bool limbo;
 		HandleArray<YBlob> childBlobs;
@@ -872,7 +872,7 @@ namespace
 	public:
 		YAttachment* attachment;
 		YTransaction* transaction;
-		IBlob* next;
+		RefPtr<IBlob> next;
 	};
 
 	class YStatement : public YHelper<IStatement, FB_I_STATEMENT_VERSION>
@@ -908,7 +908,7 @@ namespace
 				status_exception::raise(Arg::Gds(isc_unprepared_stmt));
 		}
 
-		virtual YStatement* FB_CARG prepare(IStatus* status, ITransaction* transaction,
+		virtual void FB_CARG prepare(IStatus* status, ITransaction* transaction,
 			unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
@@ -927,12 +927,27 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		IStatement* next;
+		RefPtr<IStatement> next;
 		FB_API_HANDLE* userHandle;
 		bool prepared;
 	};
 
-	class YAttachment : public YHelper<IAttachment, FB_I_ATTACHMENT_VERSION>
+	class EnterCount
+	{
+	public:
+		EnterCount()
+			: enterCount(0)
+		{ }
+		~EnterCount()
+		{
+			fb_assert(enterCount == 0);
+		}
+
+		int enterCount;
+		Mutex enterMutex;
+	};
+
+	class YAttachment : public YHelper<IAttachment, FB_I_ATTACHMENT_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
@@ -946,8 +961,7 @@ namespace
 			  childRequests(getPool()),
 			  childStatements(getPool()),
 			  childTransactions(getPool()),
-			  cleanupHandlers(getPool()),
-			  enterCount(0)
+			  cleanupHandlers(getPool())
 		{
 			provider->addRef();
 			handle = makeHandle(&attachments, this);
@@ -955,7 +969,10 @@ namespace
 
 		virtual ~YAttachment()
 		{
-			PluginManagerInterfacePtr()->releasePlugin(provider);
+			if (provider)
+			{
+				PluginManagerInterfacePtr()->releasePlugin(provider);
+			}
 		}
 
 		void destroy();
@@ -1017,7 +1034,7 @@ namespace
 
 	public:
 		IProvider* provider;
-		IAttachment* next;
+		RefPtr<IAttachment> next;
 		PathName dbPath;
 		HandleArray<YBlob> childBlobs;
 		HandleArray<YEvents> childEvents;
@@ -1025,12 +1042,10 @@ namespace
 		HandleArray<YStatement> childStatements;
 		HandleArray<YTransaction> childTransactions;
 		Array<CleanupCallback*> cleanupHandlers;
-		int enterCount;
-		Mutex enterMutex;
 		StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 	};
 
-	class YService : public YHelper<IService, FB_I_SERVICE_VERSION>
+	class YService : public YHelper<IService, FB_I_SERVICE_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
@@ -1045,7 +1060,10 @@ namespace
 
 		virtual ~YService()
 		{
-			PluginManagerInterfacePtr()->releasePlugin(provider);
+			if (provider)
+			{
+				PluginManagerInterfacePtr()->releasePlugin(provider);
+			}
 		}
 
 		void destroy();
@@ -1078,7 +1096,7 @@ namespace
 
 	public:
 		IProvider* provider;
-		IService* next;
+		RefPtr<IService> next;
 	};
 
 	class Dispatcher : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
@@ -1116,25 +1134,25 @@ namespace
 	{
 	public:
 		YEntry(IStatus* aStatus, YAttachment* aAttachment, bool checkAttachment = true)
-			: attachment(aAttachment)
+			: ref(aAttachment), counter(aAttachment)
 		{
 			aStatus->init();
 
-			if (attachment && checkAttachment && attachment->savedStatus.getError())
-				status_exception::raise(attachment->savedStatus.value());
+			if (aAttachment && checkAttachment && aAttachment->savedStatus.getError())
+				status_exception::raise(aAttachment->savedStatus.value());
 
 			init();
 		}
 
 		YEntry(IStatus* aStatus, YService* aService)
-			: attachment(NULL)
+			: ref(aService), counter(aService)
 		{
 			aStatus->init();
 			init();
 		}
 
 		explicit YEntry(IStatus* aStatus)
-			: attachment(NULL)
+			: counter(NULL)
 		{
 			aStatus->init();
 			init();
@@ -1142,10 +1160,10 @@ namespace
 
 		~YEntry()
 		{
-			if (attachment)
+			if (counter)
 			{
-				MutexLockGuard guard(attachment->enterMutex);
-				--attachment->enterCount;
+				MutexLockGuard guard(counter->enterMutex);
+				--counter->enterCount;
 			}
 		}
 
@@ -1158,10 +1176,15 @@ namespace
 			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
 			registerBuiltinPlugins.init();
 
-			if (attachment)
+			if (shutdownStarted)
 			{
-				MutexLockGuard guard(attachment->enterMutex);
-				++attachment->enterCount;
+				Arg::Gds(isc_att_shutdown).raise();
+			}
+
+			if (counter)
+			{
+				MutexLockGuard guard(counter->enterMutex);
+				++counter->enterCount;
 			}
 		}
 
@@ -1169,7 +1192,8 @@ namespace
 		YEntry(const YEntry&);	// prohibit copy constructor
 
 	private:
-		RefPtr<YAttachment> attachment;
+		RefPtr<IInterface> ref;
+		EnterCount* counter;
 	};
 }	// namespace
 
@@ -4040,7 +4064,7 @@ void YStatement::destroy()
 	release();
 }
 
-YStatement* YStatement::prepare(IStatus* status, ITransaction* transaction,
+void YStatement::prepare(IStatus* status, ITransaction* transaction,
 	unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags)
 {
 	try
@@ -4052,17 +4076,12 @@ YStatement* YStatement::prepare(IStatus* status, ITransaction* transaction,
 
 		ITransaction* trans = transaction ? YTransaction::getNext(transaction, attachment) : NULL;
 
-		IStatement* newStmt = next->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
-
-		if (status->isSuccess())
-			next = newStmt;
+		next->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(status);
 	}
-
-	return this;
 }
 
 void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4945,12 +4964,12 @@ void YAttachment::cancelOperation(IStatus* status, int option)
 {
 	try
 	{
-		YEntry entry(status);
+		YEntry entry(status, this);
 
 		// Mutex will be locked here for a really long time.
 		MutexLockGuard guard(enterMutex);
 
-		if (enterCount != 0 || option != fb_cancel_raise)
+		if (enterCount > 1 || option != fb_cancel_raise)
 			next->cancelOperation(status, option);
 		else
 			status_exception::raise(Arg::Gds(isc_nothing_to_cancel));
@@ -5460,7 +5479,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 			return;	// Do not perform former shutdown
 		}
 
-		// Shut known components, internal in yValve
+		// Shut known components, internal for libfbclient
 		PluginManager::shutdown();
 		shutdownTimers();
 
@@ -5490,7 +5509,10 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		}
 
 		// Close all known interfaces from providers...
-		{	// guard scope
+		bool hasThreads = false;
+		do
+		{
+			THD_yield();
 			WriteLockGuard sync(handleMappingLock);
 
 			{
@@ -5500,7 +5522,18 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				{
 					do
 					{
-						PluginManagerInterfacePtr()->releasePlugin(accessor.current()->second->provider);
+						YService* service = accessor.current()->second;
+						if (service->enterCount)
+						{
+							hasThreads = true;
+							continue;
+						}
+
+						if (service->provider)
+						{
+							PluginManagerInterfacePtr()->releasePlugin(service->provider);
+							service->provider = NULL;
+						}
 					} while (accessor.getNext());
 				}
 			}
@@ -5512,11 +5545,23 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 				{
 					do
 					{
-						PluginManagerInterfacePtr()->releasePlugin(accessor.current()->second->provider);
+						YAttachment* attachment = accessor.current()->second;
+						if (attachment->enterCount)
+						{
+							hasThreads = true;
+							continue;
+						}
+
+						if (attachment->provider)
+						{
+							PluginManagerInterfacePtr()->releasePlugin(attachment->provider);
+							attachment->provider = NULL;
+						}
 					} while (accessor.getNext());
 				}
 			}
 		}
+		while (hasThreads);
 
 		// ... and wait for all providers to go away
 		PluginManager::waitForType(PluginType::Provider);

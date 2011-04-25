@@ -79,7 +79,8 @@ void JRD_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, ULON
 	const UCHAR* msg);
 void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
 	USHORT msg_type, ULONG msg_length, const UCHAR* msg);
-void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, USHORT count, ...);
+void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction,
+	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request);
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,

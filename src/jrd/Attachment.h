@@ -29,7 +29,6 @@
 #include "../common/common.h"
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
-#include "../jrd/blb.h"
 #include "../jrd/scl.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/RandomGenerator.h"
@@ -37,15 +36,10 @@
 
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/GenericMap.h"
-#include "../common/classes/PublicHandle.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
-#include "ProviderInterface.h"
-namespace Jrd
-{
-	typedef Firebird::IStatus IStatus;
-}
+#include "../jrd/EngineInterface.h"
 
 namespace EDS {
 	class Connection;
@@ -119,12 +113,12 @@ const int DBB_purge_count			= 6;
 const int DBB_expunge_count			= 7;
 const int DBB_max_count				= 8;
 
+struct bid;
 
 //
 // the attachment block; one is created for each attachment to a database
 //
-class Attachment : public Firebird::PublicHandle,
-				   public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION, pool_alloc<type_att> >
+class Attachment : public pool_alloc<type_att>
 {
 public:
 	static Attachment* create(Database* dbb, FB_API_HANDLE publicHandle);
@@ -176,12 +170,13 @@ public:
 	DSqlCache att_dsql_cache;	// DSQL cache locks
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
-	Firebird::Mutex att_mutex;				// attachment mutex
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
+
+	JAttachment* att_interface;
 
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();
@@ -219,50 +214,6 @@ public:
 	void backupStateWriteUnLock(thread_db* tdbb);
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
-
-	bool checkHandle() const;
-
-public:
-	// IAttachment imlementation
-	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(IStatus* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer);
-//	virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb);
-// second form is tmp - not to rewrite external engines right now
-	virtual Firebird::ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb,
-													 FB_API_HANDLE api);
-	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id);
-	virtual Firebird::IStatement* FB_CARG allocateStatement(IStatus* status);
-	virtual Firebird::IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blr_length, const unsigned char* blr);
-	virtual void FB_CARG transactRequest(IStatus* status, Firebird::ITransaction* transaction,
-								 unsigned int blr_length, const unsigned char* blr,
-								 unsigned int in_msg_length, const unsigned char* in_msg,
-								 unsigned int out_msg_length, unsigned char* out_msg);
-	virtual Firebird::IBlob* FB_CARG createBlob(IStatus* status, Firebird::ITransaction* transaction,
-		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	virtual Firebird::IBlob* FB_CARG openBlob(IStatus* status, Firebird::ITransaction* transaction,
-		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	virtual int FB_CARG getSlice(IStatus* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
-						 unsigned int sdl_length, const unsigned char* sdl,
-						 unsigned int param_length, const unsigned char* param,
-						 int sliceLength, unsigned char* slice);
-	virtual void FB_CARG putSlice(IStatus* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
-						  unsigned int sdl_length, const unsigned char* sdl,
-						  unsigned int param_length, const unsigned char* param,
-						  int sliceLength, unsigned char* slice);
-	virtual void FB_CARG ddl(IStatus* status, Firebird::ITransaction* transaction,
-		unsigned int length, const unsigned char* dyn);
-	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* transaction,
-								 unsigned int length, const char* string, unsigned int dialect,
-								 unsigned int in_msg_type, const Firebird::FbMessage* inMsgBuffer,
-								 const Firebird::FbMessage* outMsgBuffer);
-	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
-										 unsigned int length, const unsigned char* events);
-	virtual void FB_CARG cancelOperation(IStatus* status, int option);
-	virtual void FB_CARG ping(IStatus* status);
-	virtual void FB_CARG detach(IStatus* status);
-	virtual void FB_CARG drop(IStatus* status);
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);
@@ -313,17 +264,6 @@ inline void Attachment::setSysTransaction(jrd_tra* trans)
 {
 	att_sys_transaction = trans;
 }
-
-inline bool Attachment::checkHandle() const
-{
-	if (!isKnownHandle())
-	{
-		return false;
-	}
-
-	return TypedHandle<type_att>::checkHandle();
-}
-
 
 } // namespace Jrd
 

@@ -51,7 +51,6 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
-#include "../common/classes/PublicHandle.h"
 #include "../common/classes/semaphore.h"
 #include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
@@ -237,7 +236,7 @@ const ULONG DBB_shutdown_full		= 0x100L;	// Database fully shut down
 const ULONG DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
 const ULONG DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
 
-class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
+class Database : public pool_alloc<type_dbb>
 {
 	class Sync : public Firebird::RefCounted
 	{
@@ -292,20 +291,13 @@ public:
 		explicit SyncGuard(Database* dbb, bool ast = false)
 			: sync(*dbb->dbb_sync)
 		{
-			if (!dbb || !dbb->checkHandle())
+			if (!dbb)
 			{
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
 			}
 
 			sync.addRef();
 			sync.lock();
-
-			if (!dbb->checkHandle())
-			{
-				sync.unlock();
-				sync.release();
-				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
-			}
 
 			if (ast && dbb->dbb_flags & DBB_destroying)
 			{
@@ -458,16 +450,6 @@ public:
 	static ULONG getLockOwnerId()
 	{
 		return fb_utils::genUniqueId();
-	}
-
-	bool checkHandle() const
-	{
-		if (!isKnownHandle())
-		{
-			return false;
-		}
-
-		return TypedHandle<type_dbb>::checkHandle();
 	}
 
 	mutable Firebird::RefPtr<Sync> dbb_sync;	// Database sync primitive

@@ -56,7 +56,6 @@ Jrd::Attachment* Jrd::Attachment::create(Database* dbb, FB_API_HANDLE publicHand
 	{
 		Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb, publicHandle);
 		pool->setStatsGroup(attachment->att_memory_stats);
-		attachment->addRef();
 		return attachment;
 	}
 	catch (const Firebird::Exception&)
@@ -90,7 +89,6 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	Firebird::MemoryStats temp_stats;
 	pool->setStatsGroup(temp_stats);
 
-	--(attachment->refCounter);
 	delete attachment;
 
 	dbb->deletePool(pool);
@@ -158,10 +156,9 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publi
 	  att_udf_pointers(*pool),
 	  att_ext_connection(NULL),
 	  att_ext_call_depth(0),
-	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this))
-{
-	att_mutex.enter();
-}
+	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	  att_interface(NULL)
+{ }
 
 
 Jrd::Attachment::~Attachment()
@@ -175,7 +172,6 @@ Jrd::Attachment::~Attachment()
 	// once more here because it nulls att_long_locks.
 	//		AP 2007
 	detachLocksFromAttachment();
-	att_mutex.leave();
 }
 
 

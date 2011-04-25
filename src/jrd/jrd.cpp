@@ -126,7 +126,7 @@
 #include "../common/classes/RefMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../jrd/EngineInterface.h"
 
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
@@ -147,126 +147,144 @@ int debug;
 namespace Jrd
 {
 
-class Events : public StdIface<IEvents, FB_I_EVENTS_VERSION, pool_alloc<type_Events> >
+int JBlob::release()
 {
-public:
-	// IEvents implementation
-	virtual int FB_CARG release();
-	virtual void FB_CARG cancel(IStatus* status);
+	if (--refCounter != 0)
+		return 1;
 
-public:
-	Events(int h, Attachment* att) : id(h), attachment(att) { }
-	Attachment* getAttachment()
+	if (blob)
 	{
-		return attachment;
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!blob)
+	{
+		delete this;
 	}
 
-private:
-	int id;
-	Attachment* attachment;
-};
+	return 0;
+}
 
-// work in progress - reference counts are ignored now
-// to be fixed together with handle validation after getting appropriate locks
-
-int Jrd::Attachment::release()
+int JTransaction::release()
 {
-	LocalStatus status;
-	detach(&status);
+	if (--refCounter != 0)
+		return 1;
+
+	if (transaction)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!transaction)
+	{
+		delete this;
+	}
 
 	return 0;
 }
 
-int blb::release()
+
+int JStatement::release()
 {
-	LocalStatus status;
-	cancel(&status);
+	if (--refCounter != 0)
+		return 1;
+
+	if (statement)
+	{
+		LocalStatus status;
+		freeEngineData(&status, DSQL_drop);
+	}
+	if (!statement)
+	{
+		delete this;
+	}
 
 	return 0;
 }
 
-int jrd_tra::release()
+int JRequest::release()
 {
-	LocalStatus status;
-	rollback(&status);
+	if (--refCounter != 0)
+		return 1;
+
+	if (rq)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!rq)
+	{
+		delete this;
+	}
 
 	return 0;
 }
 
-int dsql_req::release()
+int JEvents::release()
 {
-	LocalStatus status;
-	free(&status, DSQL_drop);
+	if (--refCounter != 0)
+		return 1;
+
+	if (id >= 0)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (id < 0)
+	{
+		delete this;
+	}
 
 	return 0;
 }
 
-int JrdStatement::release()
+JAttachment::JAttachment(Attachment* handle)
+	: att(handle)
+{ }
+
+int JAttachment::release()
 {
-	LocalStatus status;
-	free(&status);
+	if (--refCounter != 0)
+		return 1;
+
+	if (att)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!att)
+	{
+		delete this;
+	}
 
 	return 0;
 }
 
-int Events::release()
+JService::JService(Service* handle)
+	: svc(handle)
+{ }
+
+int JService::release()
 {
-	LocalStatus status;
-	cancel(&status);
+	if (--refCounter != 0)
+		return 1;
+
+	if (svc)
+	{
+		LocalStatus status;
+		freeEngineData(&status);
+	}
+	if (!svc)
+	{
+		delete this;
+	}
 
 	return 0;
 }
-
-class Svc : public StdIface<IService, FB_I_SERVICE_VERSION>
-{
-public:
-	// IService implementation
-	virtual int FB_CARG release();
-	virtual void FB_CARG detach(IStatus* status);
-	virtual void FB_CARG query(IStatus* status,
-					   unsigned int sendLength, const unsigned char* sendItems,
-					   unsigned int receiveLength, const unsigned char* receiveItems,
-					   unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG start(IStatus* status,
-					   unsigned int spbLength, const unsigned char* spb);
-
-public:
-	Svc(Jrd::Service* handle) : svc(handle) { }
-
-private:
-	Jrd::Service* svc;
-};
-
-int Svc::release()
-{
-	LocalStatus status;
-	detach(&status);
-
-	return 0;
-}
-
-class Provider : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
-{
-public:
-	explicit Provider(IPluginConfig*)
-	{ }
-
-	// IProvider implementation
-	virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
-	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
-												 unsigned int spbLength, const unsigned char* spb);
-	//virtual ITransaction* startTransaction(IStatus* status, unsigned int count, ...);
-	//virtual ITransaction* startMultiple(IStatus* status, MultipleTransaction* multi);
-	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
-	virtual int FB_CARG release();
-};
 
 static AtomicCounter shutdownCounter;
 
-int Provider::release()
+int JProvider::release()
 {
 	if (--refCounter == 0)
 	{
@@ -297,7 +315,7 @@ public:
 		}
 
 		++shutdownCounter;
-		IPluginBase* p = new Provider(factoryParameter);
+		IPluginBase* p = new JProvider(factoryParameter);
 		p->addRef();
 		return p;
 	}
@@ -349,8 +367,7 @@ namespace
 		if (attachment && attachment == tdbb->getAttachment())
 			return;
 
-		if (!attachment || !attachment->checkHandle() ||
-			!attachment->att_database || !attachment->att_database->checkHandle())
+		if (!attachment || !attachment->att_database)
 		{
 			status_exception::raise(Arg::Gds(isc_bad_db_handle));
 		}
@@ -361,7 +378,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, jrd_tra* const transaction)
 	{
-		if (!transaction || !transaction->checkHandle())
+		if (!transaction)
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 
 		validateHandle(tdbb, transaction->tra_attachment);
@@ -371,7 +388,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, JrdStatement* const statement)
 	{
-		if (!statement || !statement->checkHandle())
+		if (!statement)
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
 		validateHandle(tdbb, statement->requests[0]->req_attachment);
@@ -379,7 +396,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
 	{
-		if (!statement || !statement->checkHandle())
+		if (!statement)
 			status_exception::raise(Arg::Gds(isc_bad_req_handle));
 
 		validateHandle(tdbb, statement->req_dbb->dbb_attachment);
@@ -387,7 +404,7 @@ namespace
 
 	inline void validateHandle(thread_db* tdbb, blb* blob)
 	{
-		if (!blob || !blob->checkHandle())
+		if (!blob)
 			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
 
 		validateHandle(tdbb, blob->blb_transaction);
@@ -396,47 +413,46 @@ namespace
 
 	inline void validateHandle(Service* service)
 	{
-		if (!service || !service->checkHandle())
+		if (!service)
 			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
 	}
 
-	inline void validateHandle(thread_db* tdbb, Events* const events)
+	inline void validateHandle(thread_db* tdbb, JEvents* const events)
 	{
-		if (!events || !events->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_events_handle));
-
-		validateHandle(tdbb, events->getAttachment());
+		validateHandle(tdbb, events->getAttachment()->getHandle());
 	}
 
 	class AttachmentHolder
 	{
 	public:
-		AttachmentHolder(thread_db* arg, bool lockAtt)
-			: tdbb(arg)
+		AttachmentHolder(thread_db* tdbb, JAttachment* ja, bool lockAsync)
+			: mutex(ja->getMutex(lockAsync))
 		{
-			Jrd::Attachment* attachment = tdbb->getAttachment();
-			if (lockAtt && attachment)
+			mutex->enter();
+			Jrd::Attachment* attachment = ja->getHandle();
+			try
 			{
-				if (engineShuttingDown)
+				if ((!attachment) || engineShuttingDown)
+				{
 					status_exception::raise(Arg::Gds(isc_att_shutdown));
-
-				attachment->att_mutex.enter();
-				attLocked = true;
+				}
+				tdbb->setAttachment(attachment);
+				tdbb->setDatabase(attachment->att_database);
 			}
-			else
-				attLocked = false;
+			catch(const Firebird::Exception&)
+			{
+				mutex->leave();
+				throw;
+			}
 		}
 
 		~AttachmentHolder()
 		{
-			Jrd::Attachment* attachment = tdbb->getAttachment();
-			if (attLocked && attachment)
-				attachment->att_mutex.leave();
+			mutex->leave();
 		}
 
 	private:
-		thread_db* tdbb;
-		bool attLocked;
+		Firebird::Mutex* mutex;
 
 	private:
 		// copying is prohibited
@@ -444,25 +460,26 @@ namespace
 		AttachmentHolder& operator =(const AttachmentHolder&);
 	};
 
-	class DatabaseContextHolder : public AttachmentHolder, Database::SyncGuard,
-		public Jrd::ContextPoolHolder
+	class DatabaseContextHolder : private Database::SyncGuard, public Jrd::ContextPoolHolder
 	{
 	public:
-		explicit DatabaseContextHolder(thread_db* arg, bool lockAtt = true)
-			: AttachmentHolder(arg, lockAtt),
-			  Database::SyncGuard(arg->getDatabase()),
-			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
-			  tdbb(arg)
+		DatabaseContextHolder(thread_db* tdbb)
+			: Database::SyncGuard(tdbb->getDatabase()),
+			  Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
+			  savedTdbb(tdbb)
 		{
 			Database* dbb = tdbb->getDatabase();
 			fb_assert(dbb);
-			++dbb->dbb_use_count;
+			if (dbb)
+			{
+				++dbb->dbb_use_count;
+			}
 		}
 
 		~DatabaseContextHolder()
 		{
-			Database* dbb = tdbb->getDatabase();
-			if (dbb && dbb->checkHandle())
+			Database* dbb = savedTdbb->getDatabase();
+			if (dbb)
 			{
 				--dbb->dbb_use_count;
 			}
@@ -473,7 +490,22 @@ namespace
 		DatabaseContextHolder(const DatabaseContextHolder&);
 		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
 
-		thread_db* tdbb;
+		thread_db* savedTdbb;
+	};
+
+	class EngineContextHolder : public ThreadContextHolder, private AttachmentHolder,
+		private DatabaseContextHolder
+	{
+	public:
+		template <class I>
+		EngineContextHolder(IStatus* status, I* interfacePtr, bool lockAsync = false)
+			: ThreadContextHolder(status),
+			  AttachmentHolder(*this, interfacePtr->getAttachment(), lockAsync),
+			  DatabaseContextHolder(operator thread_db*())
+		{
+			validateHandle(*this, interfacePtr->getHandle());
+		}
+
 	};
 
 	void validateAccess(const Jrd::Attachment* attachment)
@@ -746,8 +778,9 @@ static void		ExtractDriveLetter(const TEXT*, ULONG*);
 
 static Database*	init(thread_db*, const PathName&, RefPtr<Config>, bool);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
-static void		start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
-	USHORT count, TEB* vector, FB_API_HANDLE public_handle = 0);
+static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
+	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb,
+	FB_API_HANDLE public_handle = 0);
 static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
@@ -784,9 +817,11 @@ static void cancel_attachments(thread_db* tdbb)
 			{
 				// Try to cancel attachment and lock it. Handle case when attachment
 				// deleted while waiting for lock.
+				RefPtr<JAttachment> jAtt(att->att_interface);
+				MutexLockGuard asyncGuard(*(jAtt->getMutex(true)));
 				while (true)
 				{
-					if (att->att_mutex.tryEnter() || (att->att_flags & ATT_purge_error))
+					if (att->att_interface->getMutex()->tryEnter() || (att->att_flags & ATT_purge_error))
 					{
 						lockedAtt = att;
 						break;
@@ -813,6 +848,7 @@ static void cancel_attachments(thread_db* tdbb)
 						break;
 					}
 				}
+				jAtt->cancel();
 				att = lockedAtt ? lockedAtt->att_next : dbb->dbb_attachments;
 			}
 		}
@@ -982,7 +1018,7 @@ const char SINGLE_QUOTE			= '\'';
 
 RefPtr<IProvider> currentProvider()
 {
-	RefPtr<IProvider> p(new Provider(NULL));
+	RefPtr<IProvider> p(new JProvider(NULL));
 	return p;
 }
 
@@ -1031,12 +1067,12 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
-void Provider::attachDatabase(IStatus* user_status,
-							  Firebird::IAttachment** handle,
-							  FB_API_HANDLE public_handle,
-							  const char* filename,
-							  unsigned int dpb_length,
-							  const unsigned char* dpb)
+void JProvider::attachDatabase(IStatus* user_status,
+							   Firebird::IAttachment** handle,
+							   FB_API_HANDLE public_handle,
+							   const char* filename,
+							   unsigned int dpb_length,
+							   const unsigned char* dpb)
 {
 /**************************************
  *
@@ -1613,7 +1649,11 @@ void Provider::attachDatabase(IStatus* user_status,
 			// Recover database after crash during backup difference file merge
 			dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
 
-			*handle = attachment;
+			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
+			attachment->att_interface = jAtt;
+
+			MutexLockGuard guard(*(jAtt->getMutex()));
+			*handle = jAtt;
 
 			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
@@ -1667,7 +1707,7 @@ void Provider::attachDatabase(IStatus* user_status,
 
 			// guardDatabases.leave();
 
-			attachment->att_mutex.leave();
+			jAtt->addRef();
 			return;
 		}	// try
 		catch (const Exception& ex)
@@ -1688,7 +1728,7 @@ void Provider::attachDatabase(IStatus* user_status,
 }
 
 
-void blb::getInfo(IStatus* user_status,
+void JBlob::getInfo(IStatus* user_status,
 				   unsigned int itemsLength, const unsigned char* items,
 				   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -1704,15 +1744,12 @@ void blb::getInfo(IStatus* user_status,
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			INF_blob_info(this, itemsLength, items, bufferLength, buffer);
+			INF_blob_info(getHandle(), itemsLength, items, bufferLength, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -1730,7 +1767,27 @@ void blb::getInfo(IStatus* user_status,
 }
 
 
-void blb::cancel(IStatus* user_status)
+void JBlob::cancel(IStatus* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ c a n c e l _ b l o b
+ *
+ **************************************
+ *
+ * Functional description
+ *	Abort a partially completed blob.
+ *
+ **************************************/
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void JBlob::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -1744,15 +1801,13 @@ void blb::cancel(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			BLB_cancel(tdbb, this);
+			BLB_cancel(tdbb, getHandle());
+			blob = NULL;
 		}
 		catch (const Exception& ex)
 		{
@@ -1770,7 +1825,27 @@ void blb::cancel(IStatus* user_status)
 }
 
 
-void Events::cancel(IStatus* user_status)
+void JEvents::cancel(IStatus* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ c a n c e l _ e v e n t s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cancel an outstanding event.
+ *
+ **************************************/
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void JEvents::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -1784,10 +1859,7 @@ void Events::cancel(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -1799,8 +1871,7 @@ void Events::cancel(IStatus* user_status)
 				dbb->dbb_event_mgr->cancelEvents(id);
 			}
 
-			--refCounter;
-			delete this;
+			id = -1;
 		}
 		catch (const Exception& ex)
 		{
@@ -1818,7 +1889,7 @@ void Events::cancel(IStatus* user_status)
 }
 
 
-void Attachment::cancelOperation(IStatus* user_status, int option)
+void JAttachment::cancelOperation(IStatus* user_status, int option)
 {
 /**************************************
  *
@@ -1832,14 +1903,11 @@ void Attachment::cancelOperation(IStatus* user_status, int option)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb, false);
+		EngineContextHolder tdbb(user_status, this, true);
 
 		try
 		{
-			JRD_cancel_operation(tdbb, this, option);
+			JRD_cancel_operation(tdbb, getHandle(), option);
 		}
 		catch (const Exception& ex)
 		{
@@ -1857,7 +1925,7 @@ void Attachment::cancelOperation(IStatus* user_status, int option)
 }
 
 
-void blb::close(IStatus* user_status)
+void JBlob::close(IStatus* user_status)
 {
 /**************************************
  *
@@ -1871,15 +1939,14 @@ void blb::close(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			BLB_close(tdbb, this);
+			BLB_close(tdbb, getHandle());
+			blob = NULL;
+			release();
 		}
 		catch (const Exception& ex)
 		{
@@ -1897,7 +1964,7 @@ void blb::close(IStatus* user_status)
 }
 
 
-void jrd_tra::commit(IStatus* user_status)
+void JTransaction::commit(IStatus* user_status)
 {
 /**************************************
  *
@@ -1911,15 +1978,14 @@ void jrd_tra::commit(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			JRD_commit_transaction(tdbb, this);
+			JRD_commit_transaction(tdbb, getHandle());
+			transaction = NULL;
+			release();
 		}
 		catch (const Exception& ex)
 		{
@@ -1937,7 +2003,7 @@ void jrd_tra::commit(IStatus* user_status)
 }
 
 
-void jrd_tra::commitRetaining(IStatus* user_status)
+void JTransaction::commitRetaining(IStatus* user_status)
 {
 /**************************************
  *
@@ -1951,15 +2017,12 @@ void jrd_tra::commitRetaining(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			JRD_commit_retaining(tdbb, this);
+			JRD_commit_retaining(tdbb, getHandle());
 		}
 		catch (const Exception& ex)
 		{
@@ -1977,7 +2040,7 @@ void jrd_tra::commitRetaining(IStatus* user_status)
 }
 
 
-Firebird::IRequest* Attachment::compileRequest(IStatus* user_status,
+JRequest* JAttachment::compileRequest(IStatus* user_status,
 	unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
@@ -1993,10 +2056,7 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* user_status,
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -2005,7 +2065,7 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* user_status,
 			try
 			{
 				jrd_req* request = NULL;
-				JRD_compile(tdbb, this, &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
+				JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
 				stmt = request->getStatement();
 
 				trace.finish(request, res_successful);
@@ -2033,11 +2093,14 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* user_status,
 
 	successful_completion(user_status);
 
-	return stmt;
+	JRequest* jr = new JRequest(stmt, this);
+	stmt->interface = jr;
+	jr->addRef();
+	return jr;
 }
 
 
-IBlob* Attachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2054,16 +2117,13 @@ IBlob* Attachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD*
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
-
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
+
+		JTransaction* jt = reinterpret_cast<JTransaction*>(tra);
+		if (!jt)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+		validateHandle(tdbb, jt->getHandle());
 
 		try
 		{
@@ -2084,11 +2144,14 @@ IBlob* Attachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD*
 
 	successful_completion(user_status);
 
-	return blob;
+	JBlob* jb = new JBlob(blob, this);
+	jb->addRef();
+	blob->blb_interface = jb;
+	return jb;
 }
 
 
-void Provider::createDatabase(IStatus* user_status, Firebird::IAttachment** handle,
+void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** handle,
 	FB_API_HANDLE public_handle, const char* filename, unsigned int dpb_length,
 	const unsigned char* dpb)
 {
@@ -2430,8 +2493,10 @@ void Provider::createDatabase(IStatus* user_status, Firebird::IAttachment** hand
 
 			guardDatabases.leave();
 
-			*handle = attachment;
-			attachment->att_mutex.leave();
+			JAttachment* jAtt = new JAttachment(attachment);
+			jAtt->addRef();
+			attachment->att_interface = jAtt;
+			*handle = jAtt;
 
 			return;
 		}	// try
@@ -2454,7 +2519,7 @@ void Provider::createDatabase(IStatus* user_status, Firebird::IAttachment** hand
 }
 
 
-void Attachment::getInfo(IStatus* user_status, unsigned int item_length, const unsigned char* items,
+void JAttachment::getInfo(IStatus* user_status, unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
@@ -2469,10 +2534,7 @@ void Attachment::getInfo(IStatus* user_status, unsigned int item_length, const u
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -2495,7 +2557,7 @@ void Attachment::getInfo(IStatus* user_status, unsigned int item_length, const u
 }
 
 
-void Attachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
+void JAttachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
 	const unsigned char* /*dyn*/)
 {
 /**************************************
@@ -2511,7 +2573,27 @@ void Attachment::ddl(IStatus* status, ITransaction* /*tra*/, unsigned int /*leng
 }
 
 
-void Attachment::detach(IStatus* user_status)
+void JAttachment::detach(IStatus* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close down a database.
+ *
+ **************************************/
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void JAttachment::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -2525,25 +2607,25 @@ void Attachment::detach(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		{ // scope
+		{ // guard scope
 			MutexLockGuard guard(databases_mutex);
-
-			validateHandle(tdbb, this);
-
 			{ // holder scope
-				DatabaseContextHolder dbbHolder(tdbb);
+				EngineContextHolder tdbb(user_status, this, true);
 
 				try
 				{
-					if (att_in_use)
+					JRD_cancel_operation(tdbb, getHandle(), fb_cancel_raise);
+
+					MutexLockGuard guard(*getMutex());
+
+					if (getHandle()->att_in_use)
 						status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 					Database* dbb = tdbb->getDatabase();
 
 					// if this is the last attachment, mark dbb as not in use
-					if (dbb->dbb_attachments == this && !att_next &&
+
+					if (dbb->dbb_attachments == getHandle() && !getHandle()->att_next &&
 						!(dbb->dbb_flags & DBB_being_opened))
 					{
 						dbb->dbb_flags |= DBB_not_in_use;
@@ -2552,14 +2634,16 @@ void Attachment::detach(IStatus* user_status)
 					try
 					{
 						// Purge attachment, don't rollback open transactions
-						att_flags |= ATT_cancel_disable;
-						purge_attachment(tdbb, this, false);
+						getHandle()->att_flags |= ATT_cancel_disable;
+						purge_attachment(tdbb, getHandle(), false);
 					}
 					catch (const Exception&)
 					{
 						dbb->dbb_flags &= ~DBB_not_in_use;
 						throw;
 					}
+
+					att = NULL;
 				}
 				catch (const Exception& ex)
 				{
@@ -2579,7 +2663,7 @@ void Attachment::detach(IStatus* user_status)
 }
 
 
-void Attachment::drop(IStatus* user_status)
+void JAttachment::drop(IStatus* user_status)
 {
 /**************************************
  *
@@ -2593,30 +2677,30 @@ void Attachment::drop(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
 		MutexLockGuard guard(databases_mutex);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this, true);
 
 		try
 		{
-			if (att_in_use)
+			JRD_cancel_operation(tdbb, getHandle(), fb_cancel_raise);
+
+			MutexLockGuard guard(*getMutex());
+
+			if (getHandle()->att_in_use)
 				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 			Database* const dbb = tdbb->getDatabase();
 
-			const PathName& file_name = att_filename;
+			const PathName& file_name = getHandle()->att_filename;
 
-			if (!locksmith())
+			if (!getHandle()->locksmith())
 			{
 				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
 												  Arg::Str("database") <<
 												  Arg::Str(file_name));
 			}
 
-			if (att_flags & ATT_shutdown)
+			if (getHandle()->att_flags & ATT_shutdown)
 			{
 				if (dbb->dbb_ast_flags & DBB_shutdown)
 				{
@@ -2642,12 +2726,12 @@ void Attachment::drop(IStatus* user_status)
 						 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
 			}
 
-			dbb->dbb_extManager.closeAttachment(tdbb, this);
+			dbb->dbb_extManager.closeAttachment(tdbb, getHandle());
 
 			// Forced release of all transactions
-			purge_transactions(tdbb, this, true, att_flags);
+			purge_transactions(tdbb, getHandle(), true, getHandle()->att_flags);
 
-			att_flags |= ATT_cancel_disable;
+			getHandle()->att_flags |= ATT_cancel_disable;
 
 			// Here we have database locked in exclusive mode.
 			// Just mark the header page with an 0 ods version so that no other
@@ -2670,14 +2754,15 @@ void Attachment::drop(IStatus* user_status)
 			const Shadow* shadow = dbb->dbb_shadow;
 
 			// Notify Trace API manager about successful drop of database
-			if (att_trace_manager->needs(TRACE_EVENT_DETACH))
+			if (getHandle()->att_trace_manager->needs(TRACE_EVENT_DETACH))
 			{
-				TraceConnectionImpl conn(this);
-				att_trace_manager->event_detach(&conn, true);
+				TraceConnectionImpl conn(getHandle());
+				getHandle()->att_trace_manager->event_detach(&conn, true);
 			}
 
 			// Unlink attachment from database
-			release_attachment(tdbb, this);
+			release_attachment(tdbb, getHandle());
+			att = NULL;
 
 			shutdown_database(dbb, false);
 
@@ -2712,7 +2797,7 @@ void Attachment::drop(IStatus* user_status)
 }
 
 
-unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer)
+unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer)
 {
 /**************************************
  *
@@ -2728,19 +2813,16 @@ unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, v
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			len = BLB_get_segment(tdbb, this, buffer, buffer_length);
+			len = BLB_get_segment(tdbb, getHandle(), buffer, buffer_length);
 
-			if (blb_flags & BLB_eof)
+			if (getHandle()->blb_flags & BLB_eof)
 				status_exception::raise(Arg::Gds(isc_segstr_eof));
-			else if (blb_fragment_size)
+			else if (getHandle()->blb_fragment_size)
 				status_exception::raise(Arg::Gds(isc_segment));
 		}
 		catch (const Exception& ex)
@@ -2761,7 +2843,7 @@ unsigned int blb::getSegment(IStatus* user_status, unsigned int buffer_length, v
 }
 
 
-int Attachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
+int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdl_length*/, const unsigned char* sdl, unsigned int param_length,
 	const unsigned char* param, int slice_length, unsigned char* slice)
 {
@@ -2779,15 +2861,12 @@ int Attachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arra
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
+		EngineContextHolder tdbb(user_status, this);
 
 		if (!tra)
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -2820,7 +2899,7 @@ int Attachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arra
 }
 
 
-IBlob* Attachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2837,15 +2916,14 @@ IBlob* Attachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* b
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
+		EngineContextHolder tdbb(user_status, this);
 
 		if (!tra)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		}
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -2857,22 +2935,25 @@ IBlob* Attachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* b
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status);
-			return blob;
+			return NULL;
 		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return blob;
+		return NULL;
 	}
 
 	successful_completion(user_status);
 
-	return blob;
+	JBlob* jb = new JBlob(blob, this);
+	jb->addRef();
+	blob->blb_interface = jb;
+	return jb;
 }
 
 
-void jrd_tra::prepare(IStatus* user_status, unsigned int msg_length, const unsigned char* msg)
+void JTransaction::prepare(IStatus* user_status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -2887,15 +2968,12 @@ void jrd_tra::prepare(IStatus* user_status, unsigned int msg_length, const unsig
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			prepare_tra(tdbb, this, msg_length, msg);
+			prepare_tra(tdbb, getHandle(), msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -2913,7 +2991,7 @@ void jrd_tra::prepare(IStatus* user_status, unsigned int msg_length, const unsig
 }
 
 
-void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const void* buffer)
+void JBlob::putSegment(IStatus* user_status, unsigned int buffer_length, const void* buffer)
 {
 /**************************************
  *
@@ -2927,15 +3005,12 @@ void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const voi
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			BLB_put_segment(tdbb, this, buffer, buffer_length);
+			BLB_put_segment(tdbb, getHandle(), buffer, buffer_length);
 		}
 		catch (const Exception& ex)
 		{
@@ -2953,7 +3028,7 @@ void blb::putSegment(IStatus* user_status, unsigned int buffer_length, const voi
 }
 
 
-void Attachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
+void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdlLength*/, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -2969,15 +3044,14 @@ void Attachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
+		EngineContextHolder tdbb(user_status, this);
 
 		if (!tra)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		}
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -3002,7 +3076,7 @@ void Attachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 }
 
 
-Firebird::IEvents* Attachment::queEvents(IStatus* user_status, Firebird::IEventCallback* callback,
+JEvents* JAttachment::queEvents(IStatus* user_status, Firebird::IEventCallback* callback,
 	unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3015,14 +3089,11 @@ Firebird::IEvents* Attachment::queEvents(IStatus* user_status, Firebird::IEventC
  *	Que a request for event notification.
  *
  **************************************/
-	Events* ev = NULL;
+	JEvents* ev = NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -3030,12 +3101,12 @@ Firebird::IEvents* Attachment::queEvents(IStatus* user_status, Firebird::IEventC
 			Database* const dbb = tdbb->getDatabase();
 			Lock* const lock = dbb->dbb_lock;
 
-			EventManager::init(this);
+			EventManager::init(getHandle());
 
-			int id = dbb->dbb_event_mgr->queEvents(att_event_session,
+			int id = dbb->dbb_event_mgr->queEvents(getHandle()->att_event_session,
 												   lock->lck_length, (const TEXT*) &lock->lck_key,
 												   length, events, callback);
-			ev = FB_NEW(*getDefaultMemoryPool()) Events(id, this);
+			ev = new JEvents(id, this);
 			ev->addRef();
 		}
 		catch (const Exception& ex)
@@ -3056,8 +3127,8 @@ Firebird::IEvents* Attachment::queEvents(IStatus* user_status, Firebird::IEventC
 }
 
 
-void JrdStatement::receive(IStatus* user_status, int level, unsigned int msg_type,
-						   unsigned int msg_length, unsigned char* msg)
+void JRequest::receive(IStatus* user_status, int level, unsigned int msg_type,
+					   unsigned int msg_length, unsigned char* msg)
 {
 /**************************************
  *
@@ -3070,13 +3141,10 @@ void JrdStatement::receive(IStatus* user_status, int level, unsigned int msg_typ
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(this, level);
+		jrd_req* request = verify_request_synchronization(getHandle(), level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3099,7 +3167,7 @@ void JrdStatement::receive(IStatus* user_status, int level, unsigned int msg_typ
 }
 
 
-Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* user_status, unsigned int length,
+JTransaction* JAttachment::reconnectTransaction(IStatus* user_status, unsigned int length,
 	const unsigned char* id)
 {
 /**************************************
@@ -3116,10 +3184,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* user_status, u
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -3129,22 +3194,45 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* user_status, u
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status);
-			return tra;
+			return NULL;
 		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return tra;
+		return NULL;
 	}
 
 	successful_completion(user_status);
 
-	return tra;
+	JTransaction* jt = new JTransaction(tra, this);
+	tra->tra_interface = jt;
+	jt->addRef();
+	return jt;
 }
 
 
-void JrdStatement::free(IStatus* user_status)
+void JRequest::free(IStatus* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ r e l e a s e _ r e q u e s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release a request.
+ *
+ **************************************/
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void JRequest::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -3158,15 +3246,13 @@ void JrdStatement::free(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			release(tdbb);
+			getHandle()->release(tdbb);
+			rq = NULL;
 		}
 		catch (const Exception& ex)
 		{
@@ -3184,7 +3270,7 @@ void JrdStatement::free(IStatus* user_status)
 }
 
 
-void JrdStatement::getInfo(IStatus* user_status, int level, unsigned int itemsLength,
+void JRequest::getInfo(IStatus* user_status, int level, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
@@ -3199,13 +3285,10 @@ void JrdStatement::getInfo(IStatus* user_status, int level, unsigned int itemsLe
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(this, level);
+		jrd_req* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -3227,7 +3310,7 @@ void JrdStatement::getInfo(IStatus* user_status, int level, unsigned int itemsLe
 }
 
 
-void jrd_tra::rollbackRetaining(IStatus* user_status)
+void JTransaction::rollbackRetaining(IStatus* user_status)
 {
 /**************************************
  *
@@ -3241,15 +3324,12 @@ void jrd_tra::rollbackRetaining(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			JRD_rollback_retaining(tdbb, this);
+			JRD_rollback_retaining(tdbb, getHandle());
 		}
 		catch (const Exception& ex)
 		{
@@ -3267,7 +3347,7 @@ void jrd_tra::rollbackRetaining(IStatus* user_status)
 }
 
 
-void jrd_tra::rollback(IStatus* user_status)
+void JTransaction::rollback(IStatus* user_status)
 {
 /**************************************
  *
@@ -3281,15 +3361,14 @@ void jrd_tra::rollback(IStatus* user_status)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			JRD_rollback_transaction(tdbb, this);
+			JRD_rollback_transaction(tdbb, getHandle());
+			transaction = NULL;
+			release();
 		}
 		catch (const Exception& ex)
 		{
@@ -3307,14 +3386,11 @@ void jrd_tra::rollback(IStatus* user_status)
 }
 
 
-void jrd_tra::disconnect(IStatus* user_status)
+void JTransaction::disconnect(IStatus* user_status)
 {
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		// ASF: Looks wrong that this method is ignored in the engine and remote providers.
@@ -3329,7 +3405,7 @@ void jrd_tra::disconnect(IStatus* user_status)
 }
 
 
-int blb::seek(IStatus* user_status, int mode, int offset)
+int JBlob::seek(IStatus* user_status, int mode, int offset)
 {
 /**************************************
  *
@@ -3345,15 +3421,12 @@ int blb::seek(IStatus* user_status, int mode, int offset)
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			result = BLB_lseek(this, mode, offset);
+			result = BLB_lseek(getHandle(), mode, offset);
 		}
 		catch (const Exception& ex)
 		{
@@ -3373,7 +3446,7 @@ int blb::seek(IStatus* user_status, int mode, int offset)
 }
 
 
-void JrdStatement::send(IStatus* user_status, int level, unsigned int msg_type,
+void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
 	unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3388,13 +3461,10 @@ void JrdStatement::send(IStatus* user_status, int level, unsigned int msg_type,
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(this, level);
+		jrd_req* request = verify_request_synchronization(getHandle(), level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3417,8 +3487,8 @@ void JrdStatement::send(IStatus* user_status, int level, unsigned int msg_type,
 }
 
 
-Firebird::IService* Provider::attachServiceManager(IStatus* user_status, const char* service_name,
-											   unsigned int spbLength, const unsigned char* spb)
+JService* JProvider::attachServiceManager(IStatus* user_status, const char* service_name,
+										  unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3430,13 +3500,13 @@ Firebird::IService* Provider::attachServiceManager(IStatus* user_status, const c
  *	Connect to a Firebird service.
  *
  **************************************/
-	Svc* svc = NULL;
+	JService* svc = NULL;
 
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		svc = new Svc(new Service(service_name, spbLength, spb));
+		svc = new JService(new Service(service_name, spbLength, spb));
 		svc->addRef();
 	}
 	catch (const Exception& ex)
@@ -3451,7 +3521,27 @@ Firebird::IService* Provider::attachServiceManager(IStatus* user_status, const c
 }
 
 
-void Svc::detach(IStatus* user_status)
+void JService::detach(IStatus* user_status)
+{
+/**************************************
+ *
+ *	g d s _ $ s e r v i c e _ d e t a c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Close down a service.
+ *
+ **************************************/
+	freeEngineData(user_status);
+	if (user_status->isSuccess())
+	{
+		release();
+	}
+}
+
+
+void JService::freeEngineData(IStatus* user_status)
 {
 /**************************************
  *
@@ -3470,7 +3560,7 @@ void Svc::detach(IStatus* user_status)
 		validateHandle(svc);
 
 		svc->detach();
-		release();
+		svc = NULL;
 	}
 	catch (const Exception& ex)
 	{
@@ -3482,7 +3572,7 @@ void Svc::detach(IStatus* user_status)
 }
 
 
-void Svc::query(IStatus* user_status,
+void JService::query(IStatus* user_status,
 				unsigned int sendLength, const unsigned char* sendItems,
 				unsigned int receiveLength, const unsigned char* receiveItems,
 				unsigned int bufferLength, unsigned char* buffer)
@@ -3546,7 +3636,7 @@ void Svc::query(IStatus* user_status,
 }
 
 
-void Svc::start(IStatus* user_status, unsigned int spbLength, const unsigned char* spb)
+void JService::start(IStatus* user_status, unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3587,7 +3677,7 @@ void Svc::start(IStatus* user_status, unsigned int spbLength, const unsigned cha
 }
 
 
-void JrdStatement::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, int level,
+void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, int level,
 	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3602,19 +3692,17 @@ void JrdStatement::startAndSend(IStatus* user_status, Firebird::ITransaction* tr
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		EngineContextHolder tdbb(user_status, this);
 
-		validateHandle(tdbb, this);
 		if (!tra)
 		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 		}
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_req* request = getRequest(tdbb, level);
+		jrd_req* request = getHandle()->getRequest(tdbb, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3654,7 +3742,7 @@ void JrdStatement::startAndSend(IStatus* user_status, Firebird::ITransaction* tr
 }
 
 
-void JrdStatement::start(IStatus* user_status, Firebird::ITransaction* tra, int level)
+void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -3668,19 +3756,17 @@ void JrdStatement::start(IStatus* user_status, Firebird::ITransaction* tra, int 
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		EngineContextHolder tdbb(user_status, this);
 
-		validateHandle(tdbb, this);
 		if (!tra)
 		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 		}
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_req* request = getRequest(tdbb, level);
+		jrd_req* request = getHandle()->getRequest(tdbb, level);
 		check_transaction(tdbb, request->req_transaction);
 
 		try
@@ -3745,7 +3831,7 @@ private:
 };
 
 
-void Provider::shutdown(IStatus* status, unsigned int timeout, const int /*reason*/)
+void JProvider::shutdown(IStatus* status, unsigned int timeout, const int /*reason*/)
 {
 /**************************************
  *
@@ -3810,85 +3896,8 @@ void Provider::shutdown(IStatus* status, unsigned int timeout, const int /*reaso
 	}
 }
 
-/*
-ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	jrd_tra** tra_handle, USHORT count, TEB* vector)
-{
- **************************************
- *
- *	g d s _ $ s t a r t _ m u l t i p l e
- *
- **************************************
- *
- * Functional description
- *	Start a transaction.
- *
- **************************************
-	try
-	{
-		ThreadContextHolder tdbb(user_status);
 
-		start_multiple(tdbb, true, tra_handle, count, vector, public_handle);
-	}
-	catch (const Exception& ex)
-	{
-		return ex.stuff_exception(user_status);
-	}
-
-	return successful_completion(user_status);
-}
-
-
-ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status, FB_API_HANDLE public_handle,
-	jrd_tra** tra_handle, USHORT count, ...)
-{
- **************************************
- *
- *	g d s _ $ s t a r t _ t r a n s a c t i o n
- *
- **************************************
- *
- * Functional description
- *	Start a transaction.
- *
- **************************************
-	try
-	{
-		if (count == 0 || count > MAX_DB_PER_TRANS)
-		{
-			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) <<
-									Arg::Num(MAX_DB_PER_TRANS));
-		}
-
-		HalfStaticArray<TEB, 16> tebs;
-		tebs.grow(count);
-
-		va_list ptr;
-		va_start(ptr, count);
-
-		for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++)
-		{
-			teb_iter->teb_database = va_arg(ptr, Jrd::Attachment**);
-			teb_iter->teb_tpb_length = va_arg(ptr, int);
-			teb_iter->teb_tpb = va_arg(ptr, UCHAR*);
-		}
-
-		va_end(ptr);
-
-		ThreadContextHolder tdbb(user_status);
-
-		start_multiple(tdbb, true, tra_handle, count, tebs.begin(), public_handle);
-	}
-	catch (const Exception& ex)
-	{
-		return ex.stuff_exception(user_status);
-	}
-
-	return successful_completion(user_status);
-}
-*/
-
-Firebird::ITransaction* Attachment::startTransaction(IStatus* user_status,
+JTransaction* JAttachment::startTransaction(IStatus* user_status,
 	unsigned int tpbLength, const unsigned char* tpb, FB_API_HANDLE public_handle)
 {
 /**************************************
@@ -3905,28 +3914,27 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* user_status,
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		EngineContextHolder tdbb(user_status, this);
+		check_database(tdbb);
 
-		TEB teb;
-		teb.teb_database = this;
-		teb.teb_tpb_length = tpbLength;
-		teb.teb_tpb = tpb;
-
-		start_multiple(tdbb, true, &tra, 1, &teb, public_handle);
+		start_transaction(tdbb, true, &tra, getHandle(), tpbLength, tpb, public_handle);
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return tra;
+		return NULL;
 	}
 
 	successful_completion(user_status);
 
-	return tra;
+	JTransaction* jt = new JTransaction(tra, this);
+	tra->tra_interface = jt;
+	jt->addRef();
+	return jt;
 }
 
 
-void Attachment::transactRequest(IStatus* user_status, ITransaction* tra,
+void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 	unsigned int blr_length, const unsigned char* blr,
 	unsigned int in_msg_length, const unsigned char* in_msg,
 	unsigned int out_msg_length, unsigned char* out_msg)
@@ -3943,15 +3951,14 @@ void Attachment::transactRequest(IStatus* user_status, ITransaction* tra,
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
+		EngineContextHolder tdbb(user_status, this);
 
 		if (!tra)
+		{
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, reinterpret_cast<jrd_tra*>(tra));
+		}
+		validateHandle(tdbb, reinterpret_cast<JTransaction*>(tra)->getHandle());
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -4049,7 +4056,7 @@ void Attachment::transactRequest(IStatus* user_status, ITransaction* tra,
 }
 
 
-void jrd_tra::getInfo(IStatus* user_status,
+void JTransaction::getInfo(IStatus* user_status,
 	unsigned int itemsLength, const unsigned char* items,
 	unsigned int bufferLength, unsigned char* buffer)
 {
@@ -4065,15 +4072,12 @@ void jrd_tra::getInfo(IStatus* user_status,
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			INF_transaction_info(this, itemsLength, items, bufferLength, buffer);
+			INF_transaction_info(getHandle(), itemsLength, items, bufferLength, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -4091,7 +4095,7 @@ void jrd_tra::getInfo(IStatus* user_status,
 }
 
 
-void JrdStatement::unwind(IStatus* user_status, int level)
+void JRequest::unwind(IStatus* user_status, int level)
 {
 /**************************************
  *
@@ -4106,13 +4110,10 @@ void JrdStatement::unwind(IStatus* user_status, int level)
  **************************************/
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		jrd_req* request = verify_request_synchronization(this, level);
+		jrd_req* request = verify_request_synchronization(getHandle(), level);
 
 		try
 		{
@@ -4134,72 +4135,18 @@ void JrdStatement::unwind(IStatus* user_status, int level)
 }
 
 
-Firebird::IStatement* Attachment::allocateStatement(IStatus* user_status)
+JStatement* JAttachment::allocateStatement(IStatus* user_status)
 {
 	dsql_req* stmt = NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			stmt = DSQL_allocate_statement(tdbb, this);
-		}
-		catch (const Exception& ex)
-		{
-			transliterateException(tdbb, ex, user_status);
-			return stmt;
-		}
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return stmt;
-	}
-
-	successful_completion(user_status);
-
-	return stmt;
-}
-
-
-Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
-	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
-{
-	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
-
-	try
-	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		if (tra)
-		{
-			validateHandle(tdbb, tra);
-		}
-
-		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		try
-		{
-			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
-			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
-			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
-			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
-
-			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
-			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
-			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
-			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
-
-			DSQL_execute(tdbb, &tra, this, in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
-						 out_blr_length, out_blr, out_msg_length, out_msg);
+			stmt = DSQL_allocate_statement(tdbb, getHandle());
 		}
 		catch (const Exception& ex)
 		{
@@ -4215,28 +4162,98 @@ Firebird::ITransaction* dsql_req::execute(IStatus* user_status, Firebird::ITrans
 
 	successful_completion(user_status);
 
-	return tra;
+	JStatement* js = new JStatement(stmt, this);
+	stmt->req_interface = js;
+	js->addRef();
+	return js;
 }
 
 
-Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
+JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
+	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
+{
+	JTransaction* jt = reinterpret_cast<JTransaction*>(apiTra);
+	jrd_tra* tra = jt ? jt->getHandle() : NULL;
+
+	try
+	{
+		EngineContextHolder tdbb(user_status, this);
+
+		if (tra)
+		{
+			validateHandle(tdbb, tra);
+		}
+
+		check_database(tdbb);
+
+		try
+		{
+			unsigned in_blr_length = inMsgBuffer ? inMsgBuffer->blrLength : 0;
+			const unsigned char* in_blr = inMsgBuffer ? inMsgBuffer->blr : NULL;
+			unsigned in_msg_length = inMsgBuffer ? inMsgBuffer->bufferLength : 0;
+			unsigned char* in_msg = inMsgBuffer ? inMsgBuffer->buffer : NULL;
+
+			unsigned out_blr_length = outMsgBuffer ? outMsgBuffer->blrLength : 0;
+			const unsigned char* out_blr = outMsgBuffer ? outMsgBuffer->blr : NULL;
+			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
+			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
+
+			DSQL_execute(tdbb, &tra, getHandle(), in_blr_length, in_blr, in_msg_type, in_msg_length, in_msg,
+						 out_blr_length, out_blr, out_msg_length, out_msg);
+
+			if (jt && !tra)
+			{
+				jt->setHandle(NULL);
+				jt->release();
+				jt = NULL;
+			}
+			else if (tra && !jt)
+			{
+				jt = new JTransaction(tra, getAttachment());
+				tra->tra_interface = jt;
+				jt->addRef();
+			}
+			else if (tra && jt)
+			{
+				jt->setHandle(tra);
+				tra->tra_interface = jt;
+			}
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status);
+			return NULL;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return NULL;
+	}
+
+	successful_completion(user_status);
+
+	return jt;
+}
+
+
+JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	unsigned int /*in_msg_type*/, const FbMessage* inMsgBuffer,
 	const FbMessage* outMsgBuffer)
 {
-	jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
+	JTransaction* jt = reinterpret_cast<JTransaction*>(apiTra);
+	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
+		EngineContextHolder tdbb(user_status, this);
 
-		validateHandle(tdbb, this);
 		if (tra)
 		{
 			validateHandle(tdbb, tra);
 		}
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -4251,11 +4268,27 @@ Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITra
 			unsigned out_msg_length = outMsgBuffer ? outMsgBuffer->bufferLength : 0;
 			unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
-			DSQL_execute_immediate(tdbb, this, &tra, length, string, dialect,
-				in_blr_length, in_blr,
-				/*in_msg_type,*/ in_msg_length, in_msg,
-				out_blr_length, out_blr,
-				/*out_msg_type,*/ out_msg_length, out_msg, false);
+			DSQL_execute_immediate(tdbb, getHandle(), &tra, length, string, dialect,
+				in_blr_length, in_blr, in_msg_length, in_msg,
+				out_blr_length, out_blr, out_msg_length, out_msg, false);
+
+			if (jt && !tra)
+			{
+				jt->setHandle(NULL);
+				jt->release();
+				jt = NULL;
+			}
+			else if (tra && !jt)
+			{
+				jt = new JTransaction(tra, this);
+				jt->addRef();
+				tra->tra_interface = jt;
+			}
+			else if (tra && jt)
+			{
+				jt->setHandle(tra);
+				tra->tra_interface = jt;
+			}
 		}
 		catch (const Exception& ex)
 		{
@@ -4271,21 +4304,18 @@ Firebird::ITransaction* Attachment::execute(IStatus* user_status, Firebird::ITra
 
 	successful_completion(user_status);
 
-	return tra;
+	return jt;
 }
 
 
-int dsql_req::fetch(IStatus* user_status, const FbMessage* msgBuffer)
+int JStatement::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 {
 	int return_code = 0;
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		validateHandle(tdbb, req_transaction);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
+		validateHandle(tdbb, getHandle()->req_transaction);
 		check_database(tdbb);
 
 		try
@@ -4295,8 +4325,7 @@ int dsql_req::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
 			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
-			return_code = DSQL_fetch(tdbb, this, blr_length, blr,
-				/*msg_type,*/ msg_length, msg);
+			return_code = DSQL_fetch(tdbb, getHandle(), blr_length, blr, msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -4316,19 +4345,20 @@ int dsql_req::fetch(IStatus* user_status, const FbMessage* msgBuffer)
 }
 
 
-void dsql_req::free(IStatus* user_status, unsigned int option)
+void JStatement::freeEngineData(IStatus* user_status, unsigned int option)
 {
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			DSQL_free_statement(tdbb, this, option);
+			DSQL_free_statement(tdbb, getHandle(), option);
+			if (option == DSQL_drop)
+			{
+				statement = NULL;
+			}
 		}
 		catch (const Exception& ex)
 		{
@@ -4346,14 +4376,21 @@ void dsql_req::free(IStatus* user_status, unsigned int option)
 }
 
 
-void dsql_req::insert(IStatus* user_status, const FbMessage* msgBuffer)
+void JStatement::free(IStatus* user_status, unsigned int option)
+{
+	freeEngineData(user_status, option);
+	if (user_status->isSuccess() && option == DSQL_drop)
+	{
+		release();
+	}
+}
+
+
+void JStatement::insert(IStatus* user_status, const FbMessage* msgBuffer)
 {
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
@@ -4363,7 +4400,7 @@ void dsql_req::insert(IStatus* user_status, const FbMessage* msgBuffer)
 			unsigned msg_length = msgBuffer ? msgBuffer->bufferLength : 0;
 			unsigned char* msg = msgBuffer ? msgBuffer->buffer : NULL;
 
-			DSQL_insert(tdbb, this, blr_length, blr, msg_length, msg);
+			DSQL_insert(tdbb, getHandle(), blr_length, blr, msg_length, msg);
 		}
 		catch (const Exception& ex)
 		{
@@ -4381,23 +4418,20 @@ void dsql_req::insert(IStatus* user_status, const FbMessage* msgBuffer)
 }
 
 
-Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
-									unsigned int stmtLength, const char* sqlStmt,
-									unsigned int dialect, unsigned int flags)
+void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
+						 unsigned int stmtLength, const char* sqlStmt,
+						 unsigned int dialect, unsigned int flags)
 {
-	dsql_req* tmp = this;
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-		jrd_tra* tra = reinterpret_cast<jrd_tra*>(apiTra);
+		EngineContextHolder tdbb(user_status, this);
 
-		validateHandle(tdbb, this);
+		jrd_tra* tra = apiTra ? reinterpret_cast<JTransaction*>(apiTra)->getHandle() : NULL;
 		if (tra)
 		{
 			validateHandle(tdbb, tra);
 		}
 
-		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
 		try
@@ -4405,38 +4439,34 @@ Firebird::IStatement* dsql_req::prepare(IStatus* user_status, Firebird::ITransac
 			Array<UCHAR> items, buffer;
 			buffer.resize(StatementMetadata::buildInfoItems(items, flags));
 
-			DSQL_prepare(tdbb, tra, &tmp, stmtLength, sqlStmt, dialect,
+			DSQL_prepare(tdbb, tra, &statement, stmtLength, sqlStmt, dialect,
 				items.getCount(), items.begin(), buffer.getCount(), buffer.begin(), false);
 
-			tmp->metadata.parse(buffer.getCount(), buffer.begin());
+			metadata.parse(buffer.getCount(), buffer.begin());
 		}
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status);
-			return NULL;
+			return;
 		}
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return NULL;
+		return;
 	}
 
 	successful_completion(user_status);
-	return tmp;
 }
 
 
-unsigned dsql_req::getType(IStatus* userStatus)
+unsigned JStatement::getType(IStatus* userStatus)
 {
 	unsigned ret = 0;
 
 	try
 	{
-		ThreadContextHolder tdbb(userStatus);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(userStatus, this);
 		check_database(tdbb);
 
 		try
@@ -4461,16 +4491,13 @@ unsigned dsql_req::getType(IStatus* userStatus)
 }
 
 
-const char* dsql_req::getPlan(IStatus* userStatus, bool detailed)
+const char* JStatement::getPlan(IStatus* userStatus, bool detailed)
 {
 	const char* ret = NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(userStatus);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(userStatus, this);
 		check_database(tdbb);
 
 		try
@@ -4494,17 +4521,13 @@ const char* dsql_req::getPlan(IStatus* userStatus, bool detailed)
 	return ret;
 }
 
-
-const IParametersMetadata* dsql_req::getInputParameters(IStatus* userStatus)
+const IParametersMetadata* JStatement::getInputParameters(IStatus* userStatus)
 {
 	const IParametersMetadata* ret = NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(userStatus);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(userStatus, this);
 		check_database(tdbb);
 
 		try
@@ -4529,16 +4552,13 @@ const IParametersMetadata* dsql_req::getInputParameters(IStatus* userStatus)
 }
 
 
-const IParametersMetadata* dsql_req::getOutputParameters(IStatus* userStatus)
+const IParametersMetadata* JStatement::getOutputParameters(IStatus* userStatus)
 {
 	const IParametersMetadata* ret = NULL;
 
 	try
 	{
-		ThreadContextHolder tdbb(userStatus);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(userStatus, this);
 		check_database(tdbb);
 
 		try
@@ -4563,16 +4583,13 @@ const IParametersMetadata* dsql_req::getOutputParameters(IStatus* userStatus)
 }
 
 
-ISC_UINT64 dsql_req::getAffectedRecords(IStatus* userStatus)
+ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
 {
 	ISC_UINT64 ret = 0;
 
 	try
 	{
-		ThreadContextHolder tdbb(userStatus);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(userStatus, this);
 		check_database(tdbb);
 
 		try
@@ -4592,24 +4609,20 @@ ISC_UINT64 dsql_req::getAffectedRecords(IStatus* userStatus)
 	}
 
 	successful_completion(userStatus);
-
 	return ret;
 }
 
 
-void dsql_req::setCursorName(IStatus* user_status, const char* cursor)
+void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 {
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			DSQL_set_cursor(tdbb, this, cursor);
+			DSQL_set_cursor(tdbb, getHandle(), cursor);
 		}
 		catch (const Exception& ex)
 		{
@@ -4627,21 +4640,18 @@ void dsql_req::setCursorName(IStatus* user_status, const char* cursor)
 }
 
 
-void dsql_req::getInfo(IStatus* user_status,
+void JStatement::getInfo(IStatus* user_status,
 	unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
 		try
 		{
-			DSQL_sql_info(tdbb, this, item_length, items, buffer_length, buffer);
+			DSQL_sql_info(tdbb, getHandle(), item_length, items, buffer_length, buffer);
 		}
 		catch (const Exception& ex)
 		{
@@ -4658,7 +4668,7 @@ void dsql_req::getInfo(IStatus* user_status,
 	successful_completion(user_status);
 }
 
-void Attachment::ping(IStatus* user_status)
+void JAttachment::ping(IStatus* user_status)
 {
 /**************************************
  *
@@ -4673,10 +4683,7 @@ void Attachment::ping(IStatus* user_status)
 
 	try
 	{
-		ThreadContextHolder tdbb(user_status);
-
-		validateHandle(tdbb, this);
-		DatabaseContextHolder dbbHolder(tdbb, false);
+		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 	}
 	catch (const Exception& ex)
@@ -6284,6 +6291,55 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
+void JTransaction::freeEngineData(Firebird::IStatus* user_status)
+{
+/**************************************
+ *
+ *	f r e e E n g i n e D a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	release or rollback transaction
+ *	depending upon prepared it or not
+ *
+ **************************************/
+	try
+	{
+		EngineContextHolder tdbb(user_status, this);
+		check_database(tdbb);
+
+		try
+		{
+			if (transaction->tra_flags & TRA_prepared ||
+				tdbb->getDatabase()->dbb_ast_flags & DBB_shutdown ||
+				tdbb->getAttachment()->att_flags & ATT_shutdown)
+			{
+				EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, false, false);
+				TRA_release_transaction(tdbb, transaction);
+			}
+			else
+			{
+				TRA_rollback(tdbb, transaction, false, false);
+			}
+			transaction = NULL;
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status);
+			return;
+		}
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
+
 static unsigned int purge_transactions(thread_db*	tdbb,
 									   Jrd::Attachment*	attachment,
 									   const bool	force_flag,
@@ -6680,16 +6736,9 @@ static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::I
 {
 	transliterateException(tdbb, ex, userStatus);
 
-	if (engineShuttingDown)
+	try
 	{
-		// this attachment will be released as part of engine shutdown process
-		// see also cancel_attachments
-		if (attachment)
-			attachment->att_mutex.leave();
-	}
-	else
-	{
-		try
+		if (!engineShuttingDown)
 		{
 			ThreadStatusGuard temp_status(tdbb);
 
@@ -6708,10 +6757,10 @@ static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::I
 				}
 			}
 		}
-		catch (const Exception&)
-		{
-			// no-op
-		}
+	}
+	catch (const Exception&)
+	{
+		// no-op
 	}
 
 	return userStatus->get()[1];
@@ -7092,8 +7141,9 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 }
 
 
-static void start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
-	USHORT count, TEB* vector, FB_API_HANDLE public_handle)
+static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
+	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb,
+	FB_API_HANDLE public_handle)
 {
 /**************************************
  *
@@ -7105,92 +7155,47 @@ static void start_multiple(thread_db* tdbb, bool transliterate, jrd_tra** tra_ha
  *	Start a transaction.
  *
  **************************************/
-	jrd_tra* prior = NULL;
+	fb_assert(attachment == tdbb->getAttachment());
 
 	try
 	{
 		if (*tra_handle)
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 
-		if (count < 1 || count > MAX_DB_PER_TRANS)
+
+		try
 		{
-			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
+			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
+
+			transaction->tra_public_handle = public_handle;
+			transaction->tra_sibling = NULL;
+			*tra_handle = transaction;
+
+			// run ON TRANSACTION START triggers
+			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
 		}
-
-		if (vector == NULL)
+		catch (const Exception& ex)
 		{
-			status_exception::raise(Arg::Gds(isc_bad_teb_form));
-		}
-
-		for (TEB* v = vector; v < vector + count; v++)
-		{
-			Jrd::Attachment* attachment = v->teb_database;
-			AutoPtr<DatabaseContextHolder> dbbHolder;
-
-			if (attachment != tdbb->getAttachment())
+			if (transliterate)
 			{
-				validateHandle(tdbb, attachment);
-				dbbHolder = new DatabaseContextHolder(tdbb);
-				check_database(tdbb);
+				LocalStatus tempStatus;
+				transliterateException(tdbb, ex, &tempStatus);
+				status_exception::raise(tempStatus.get());
 			}
-
-			try
-			{
-				if (v->teb_tpb_length < 0 || (v->teb_tpb_length > 0 && v->teb_tpb == NULL))
-					status_exception::raise(Arg::Gds(isc_bad_tpb_form));
-
-				jrd_tra* transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
-				transaction->tra_public_handle = public_handle;
-
-				transaction->tra_sibling = prior;
-				prior = transaction;
-
-				// Will this work for multiple databases transaction? - I suppose it will.
-				*tra_handle = transaction;
-
-				// run ON TRANSACTION START triggers
-				EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
-			}
-			catch (const Exception& ex)
-			{
-				if (transliterate)
-				{
-					LocalStatus tempStatus;
-					transliterateException(tdbb, ex, &tempStatus);
-					status_exception::raise(tempStatus.get());
-				}
-				else
-					throw;
-			}
+			else
+				throw;
 		}
 	}
 	catch (const Exception&)
 	{
 		*tra_handle = NULL;
-
-		if (prior)
-		{
-			ThreadStatusGuard temp_status(tdbb);
-
-			try
-			{
-				validateHandle(tdbb, prior->tra_attachment);
-				DatabaseContextHolder dbbHolder(tdbb);
-				check_database(tdbb);
-
-				rollback(tdbb, prior, false);
-			}
-			catch (const Exception&)
-			{
-			}
-		}
-
 		throw;
 	}
 }
 
 
-void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, USHORT count, ...)
+void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction,
+   Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb)
 {
 /**************************************
  *
@@ -7202,25 +7207,7 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, USHORT count,
  *	Start a transaction.
  *
  **************************************/
-	if (count == 0 || count > MAX_DB_PER_TRANS)
-		status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
-
-	HalfStaticArray<TEB, 16> tebs;
-	tebs.grow(count);
-
-	va_list ptr;
-	va_start(ptr, count);
-
-	for (TEB* teb_iter = tebs.begin(); teb_iter < tebs.end(); teb_iter++)
-	{
-		teb_iter->teb_database = va_arg(ptr, Jrd::Attachment*);
-		teb_iter->teb_tpb_length = va_arg(ptr, int);
-		teb_iter->teb_tpb = va_arg(ptr, UCHAR*);
-	}
-
-	va_end(ptr);
-
-	start_multiple(tdbb, false, transaction, count, tebs.begin());
+	start_transaction(tdbb, false, transaction, attachment, tpb_length, tpb);
 }
 
 

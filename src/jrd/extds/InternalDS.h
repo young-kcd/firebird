@@ -79,7 +79,7 @@ public:
 
 	bool isCurrent() const { return m_isCurrent; }
 
-	Jrd::Attachment* getJrdAtt() { return m_attachment; }
+	Jrd::JAttachment* getJrdAtt() { return m_attachment; }
 
 	virtual Blob* createBlob();
 
@@ -88,7 +88,7 @@ protected:
 	virtual Statement* doCreateStatement();
 	virtual void doDetach(Jrd::thread_db* tdbb);
 
-	Jrd::Attachment* m_attachment;
+	Jrd::JAttachment* m_attachment;
 	bool m_isCurrent;
 };
 
@@ -107,7 +107,7 @@ protected:
 	virtual ~InternalTransaction() {}
 
 public:
-	Jrd::jrd_tra* getJrdTran() { return m_transaction; }
+	Jrd::JTransaction* getJrdTran() { return m_transaction; }
 
 protected:
 	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb);
@@ -116,7 +116,7 @@ protected:
 	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
 
 	InternalConnection& m_IntConnection;
-	Jrd::jrd_tra* m_transaction;
+	Jrd::JTransaction* m_transaction;
 };
 
 
@@ -146,7 +146,7 @@ protected:
 	InternalConnection& m_intConnection;
 	InternalTransaction* m_intTransaction;
 
-	Jrd::dsql_req* m_request;
+	Jrd::JStatement* m_request;
 	Firebird::UCharBuffer m_inBlr;
 	Firebird::UCharBuffer m_outBlr;
 };
@@ -171,7 +171,7 @@ public:
 
 private:
 	InternalConnection& m_connection;
-	Jrd::blb* m_blob;
+	Jrd::JBlob* m_blob;
 	ISC_QUAD m_blob_id;
 };
 

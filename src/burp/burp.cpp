@@ -1243,7 +1243,10 @@ int gbak(Firebird::UtilSvc* uSvc)
 		tdgbl->burp_throw = false;
 		e.stuff_exception(tdgbl->status_vector);
 		BURP_print_status(true, tdgbl->status_vector);
-		BURP_print(true, 83);	// msg 83 Exiting before completion due to errors
+		if (! tdgbl->uSvc->isService())
+		{
+			BURP_print(true, 83);	// msg 83 Exiting before completion due to errors
+		}
 		exit_code = FINI_ERROR;
 	}
 

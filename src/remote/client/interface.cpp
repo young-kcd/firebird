@@ -226,7 +226,7 @@ class Statement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT
 public:
 	// IStatement implementation
 	virtual int FB_CARG release();
-	virtual Statement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
+	virtual void FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
 							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 							   unsigned int flags);
 	virtual void FB_CARG getInfo(IStatus* status,
@@ -2333,9 +2333,9 @@ void Statement::insert(IStatus* status, const FbMessage* msgBuffer)
 }
 
 
-Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
-							  unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							  unsigned int flags)
+void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
+						unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+						unsigned int flags)
 {
 /**************************************
  *
@@ -2468,7 +2468,6 @@ Statement* Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 	{
 		ex.stuffException(status);
 	}
-	return this;
 }
 
 

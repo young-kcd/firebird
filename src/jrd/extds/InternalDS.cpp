@@ -75,7 +75,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 	for (ptr--; ptr >= begin; ptr--)
 	{
 		InternalConnection* conn = (InternalConnection*) *ptr;
-		if (conn->getJrdAtt() == att)
+		if (conn->getJrdAtt() == att->att_interface)
 			releaseConnection(tdbb, *conn, false);
 	}
 }
@@ -150,7 +150,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
 	{
 		m_isCurrent = true;
-		m_attachment = attachment;
+		m_attachment = attachment->att_interface;
 	}
 	else
 	{
@@ -170,10 +170,10 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		if (!status.isSuccess())
 			raise(status, tdbb, "attach");
 
-		m_attachment = reinterpret_cast<Jrd::Attachment*>(a);
+		m_attachment = reinterpret_cast<JAttachment*>(a);
 	}
 
-	m_sqlDialect = (m_attachment->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
+	m_sqlDialect = (m_attachment->getHandle()->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 }
 
@@ -188,7 +188,7 @@ void InternalConnection::doDetach(thread_db* tdbb)
 	else
 	{
 		LocalStatus status;
-		Jrd::Attachment* att = m_attachment;
+		JAttachment* att = m_attachment;
 		m_attachment = NULL;
 
 		{	// scope
@@ -228,7 +228,7 @@ bool InternalConnection::cancelExecution(thread_db* /*tdbb*/)
 bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) const
 {
 	return !m_isCurrent ||
-		(m_isCurrent && (tdbb->getAttachment() == m_attachment));
+		(m_isCurrent && (tdbb->getAttachment() == m_attachment->getHandle()));
 }
 
 bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string& dbName,
@@ -237,7 +237,7 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string&
 {
 	if (m_isCurrent)
 	{
-		const UserId* attUser = m_attachment->att_user;
+		const UserId* attUser = m_attachment->getHandle()->att_user;
 		return ((user.isEmpty() || user == attUser->usr_user_name) &&
 				pwd.isEmpty() &&
 				(role.isEmpty() || role == attUser->usr_sql_role_name));
@@ -269,16 +269,15 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 	fb_assert(!m_transaction);
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
-		m_transaction = tdbb->getTransaction();
+		m_transaction = tdbb->getTransaction()->tra_interface;
 	}
 	else
 	{
-		Jrd::Attachment* att = m_IntConnection.getJrdAtt();
+		JAttachment* att = m_IntConnection.getJrdAtt();
 
 		EngineCallbackGuard guard(tdbb, *this);
 		IntStatus s(status);
-		m_transaction = reinterpret_cast<jrd_tra*>
-				(att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer(), 0));
+		m_transaction = att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer(), 0);
 																	//// FIXME: public_handle
 	}
 }
@@ -360,8 +359,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	m_inBlr.clear();
 	m_outBlr.clear();
 
-	Jrd::Attachment* att = m_intConnection.getJrdAtt();
-	jrd_tra* tran = getIntTransaction()->getJrdTran();
+	JAttachment* att = m_intConnection.getJrdAtt();
+	JTransaction* tran = getIntTransaction()->getJrdTran();
 
 	LocalStatus status;
 
@@ -369,7 +368,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	{
 		fb_assert(!m_allocated);
 		EngineCallbackGuard guard(tdbb, *this);
-		m_request = reinterpret_cast<Jrd::dsql_req*>(att->allocateStatement(&status));
+		m_request = att->allocateStatement(&status);
 		m_allocated = (m_request != NULL);
 	}
 
@@ -379,7 +378,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		CallerName save_caller_name(tran->tra_caller_name);
+		CallerName save_caller_name(tran->getHandle()->tra_caller_name);
 
 		if (m_callerPrivileges)
 		{
@@ -389,35 +388,34 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 			const Routine* routine;
 
 			if (statement && statement->triggerName.hasData())
-				tran->tra_caller_name = CallerName(obj_trigger, statement->triggerName);
+				tran->getHandle()->tra_caller_name = CallerName(obj_trigger, statement->triggerName);
 			else if (statement && (routine = statement->getRoutine()) &&
 				routine->getName().identifier.hasData())
 			{
 				if (routine->getName().package.isEmpty())
 				{
-					tran->tra_caller_name = CallerName(routine->getObjectType(),
+					tran->getHandle()->tra_caller_name = CallerName(routine->getObjectType(),
 						routine->getName().identifier);
 				}
 				else
 				{
-					tran->tra_caller_name = CallerName(obj_package_header,
+					tran->getHandle()->tra_caller_name = CallerName(obj_package_header,
 						routine->getName().package);
 				}
 			}
 			else
-				tran->tra_caller_name = CallerName();
+				tran->getHandle()->tra_caller_name = CallerName();
 		}
 
-		m_request = reinterpret_cast<Jrd::dsql_req*>(m_request->prepare(
-			&status, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0));
+		m_request->prepare(&status, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0);
 
-		tran->tra_caller_name = save_caller_name;
+		tran->getHandle()->tra_caller_name = save_caller_name;
 	}
 
 	if (!status.isSuccess())
 		raise(status, tdbb, "jrd8_prepare", &sql);
 
-	const DsqlCompiledStatement* statement = m_request->getStatement();
+	const DsqlCompiledStatement* statement = m_request->getHandle()->getStatement();
 
 	if (statement->getSendMsg())
 	{
@@ -488,7 +486,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 void InternalStatement::doExecute(thread_db* tdbb)
 {
-	jrd_tra* transaction = getIntTransaction()->getJrdTran();
+	JTransaction* transaction = getIntTransaction()->getJrdTran();
 
 	LocalStatus status;
 	{
@@ -509,7 +507,7 @@ void InternalStatement::doExecute(thread_db* tdbb)
 
 void InternalStatement::doOpen(thread_db* tdbb)
 {
-	jrd_tra* transaction = getIntTransaction()->getJrdTran();
+	JTransaction* transaction = getIntTransaction()->getJrdTran();
 
 	LocalStatus status;
 	{
@@ -610,8 +608,8 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
-	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
+	JAttachment* att = m_connection.getJrdAtt();
+	JTransaction* transaction = ((InternalTransaction&) tran).getJrdTran();
 	memcpy(&m_blob_id, desc.dsc_address, sizeof(m_blob_id));
 
 	LocalStatus status;
@@ -621,8 +619,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = reinterpret_cast<Jrd::blb*>(
-			att->openBlob(&status, transaction, &m_blob_id, bpb_len, bpb_buff));
+		m_blob = att->openBlob(&status, transaction, &m_blob_id, bpb_len, bpb_buff);
 	}
 
 	if (!status.isSuccess())
@@ -636,8 +633,8 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
-	Jrd::Attachment* att = m_connection.getJrdAtt();
-	jrd_tra* transaction = ((InternalTransaction&) tran).getJrdTran();
+	JAttachment* att = m_connection.getJrdAtt();
+	JTransaction* transaction = ((InternalTransaction&) tran).getJrdTran();
 	memset(&m_blob_id, 0, sizeof(m_blob_id));
 
 	LocalStatus status;
@@ -647,8 +644,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 		const USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = reinterpret_cast<Jrd::blb*>(att->createBlob(&status, transaction, &m_blob_id,
-			bpb_len, bpb_buff));
+		m_blob = att->createBlob(&status, transaction, &m_blob_id, bpb_len, bpb_buff);
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 

@@ -39,7 +39,6 @@
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
 #include "../jrd/Database.h"
 #include "../dsql/BlrWriter.h"
-#include "../common/StatementMetadata.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
@@ -59,6 +58,8 @@ DEFINE_TRACE_ROUTINE(dsql_trace);
 #include "../include/fb_blk.h"
 
 #include "../dsql/sym.h"
+
+#include "../jrd/EngineInterface.h"
 
 // Context aliases used in triggers
 const char* const OLD_CONTEXT		= "OLD";
@@ -533,8 +534,7 @@ private:
 	DsqlCompilerScratch* ddlScratch;	// DSQL scratch for DDL statements
 };
 
-
-class dsql_req : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION, pool_alloc<dsql_type_req> >
+class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
 	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
@@ -544,11 +544,11 @@ public:
 	explicit dsql_req(DsqlCompiledStatement* aStatement)
 		: req_pool(aStatement->getPool()),
 		  statement(aStatement),
-		  metadata(aStatement->getPool(), this),
 		  cursors(req_pool),
 		  req_msg_buffers(req_pool),
 		  req_cursor(req_pool),
-		  req_user_descs(req_pool)
+		  req_user_descs(req_pool),
+		  req_interface(NULL)
 	{
 	}
 
@@ -573,7 +573,6 @@ public:
 private:
 	MemoryPool&	req_pool;
 	const DsqlCompiledStatement* statement;
-	Firebird::StatementMetadata metadata;
 
 public:
 	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
@@ -594,6 +593,8 @@ public:
 	SINT64 req_fetch_rowcount;		// Total number of rows returned by this request
 	bool req_traced;				// request is traced via TraceAPI
 
+	JStatement* req_interface;
+
 protected:
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
@@ -602,29 +603,6 @@ protected:
 	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
-
-public:
-	// IStatement implementation
-	virtual int FB_CARG release();
-	virtual Firebird::IStatement* FB_CARG prepare(IStatus* status, Firebird::ITransaction* tra,
-									  unsigned int stmtLength, const char* sqlStmt,
-									  unsigned int dialect, unsigned int flags);
-	virtual void FB_CARG getInfo(IStatus* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned FB_CARG getType(IStatus* status);
-	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed);
-	virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(IStatus* status);
-	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(IStatus* status);
-	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status);
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
-	virtual Firebird::ITransaction* FB_CARG execute(IStatus* status, Firebird::ITransaction* tra,
-										unsigned int in_msg_type,
-										const Firebird::FbMessage* inMsgBuffer,
-										const Firebird::FbMessage* outMsgBuffer);
-	virtual int FB_CARG fetch(IStatus* status, const Firebird::FbMessage* msgBuffer);	// returns 100 if EOF, 101 if fragmented
-	virtual void FB_CARG insert(IStatus* status, const Firebird::FbMessage* msgBuffer);
-	virtual void FB_CARG free(IStatus* status, unsigned int option);
 };
 
 // Blob

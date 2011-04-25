@@ -124,13 +124,12 @@ public:
 		PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN |
 		PREPARE_PREFETCH_AFFECTED_RECORDS;
 
-	// FixMe - prepare must return void, not new statement handle
-	virtual IStatement* FB_CARG prepare(IStatus* status, ITransaction* tra,
-							   unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-							   unsigned int flags) = 0;
+	virtual void FB_CARG prepare(IStatus* status, ITransaction* tra,
+								 unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+								 unsigned int flags) = 0;
 	virtual void FB_CARG getInfo(IStatus* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer) = 0;
+								 unsigned int itemsLength, const unsigned char* items,
+								 unsigned int bufferLength, unsigned char* buffer) = 0;
 	virtual unsigned FB_CARG getType(IStatus* status) = 0;
 	virtual const char* FB_CARG getPlan(IStatus* status, bool detailed) = 0;
 	virtual const IParametersMetadata* FB_CARG getInputParameters(IStatus* status) = 0;
@@ -138,8 +137,8 @@ public:
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(IStatus* status) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual ITransaction* FB_CARG execute(IStatus* status, ITransaction* tra,
-										unsigned int inMsgType, const FbMessage* inMsgBuffer,
-										const FbMessage* outMsgBuffer) = 0;
+										  unsigned int inMsgType, const FbMessage* inMsgBuffer,
+										  const FbMessage* outMsgBuffer) = 0;
 	virtual int FB_CARG fetch(IStatus* status, const FbMessage* msgBuffer) = 0;	// returns 100 if EOF, 101 if fragmented
 	virtual void FB_CARG insert(IStatus* status, const FbMessage* msgBuffer) = 0;
 	virtual void FB_CARG free(IStatus* status, unsigned int option) = 0;

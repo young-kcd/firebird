@@ -53,7 +53,8 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  invariants(*p),
 	  blr(*p),
 	  mapFieldInfo(*p),
-	  mapItemInfo(*p)
+	  mapItemInfo(*p),
+	  interface(NULL)
 {
 	topNode = csb->csb_node;
 	accessList = csb->csb_access;
@@ -230,7 +231,6 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		MemoryPool* const pool = tdbb->getDefaultPool();
 
 		statement = FB_NEW(*pool) JrdStatement(tdbb, pool, csb);
-		statement->addRef();
 
 		tdbb->setRequest(old_request);
 	} // try
@@ -538,8 +538,6 @@ void JrdStatement::release(thread_db* tdbb)
 		EXE_release(tdbb, *instance);
 
 	sqlText = NULL;
-
-	--refCounter;
 
 	dbb->deletePool(pool);
 }

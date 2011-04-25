@@ -1894,7 +1894,6 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 	// Create a blob large enough to hold a single data page.
 
 	blb* blob = FB_NEW(*transaction->tra_pool) blb(*transaction->tra_pool, dbb->dbb_page_size);
-	blob->addRef();
 	blob->blb_attachment = tdbb->getAttachment();
 	blob->blb_transaction = transaction;
 
@@ -2646,7 +2645,6 @@ void blb::destroy(blb* blob, const bool purge_flag)
 		blob->blb_transaction->getBlobSpace()->releaseSpace(blob->blb_temp_offset, blob->blb_temp_size);
 	}
 
-	--blob->refCounter;
 	delete blob;
 }
 

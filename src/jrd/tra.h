@@ -44,7 +44,7 @@
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
 #include "../jrd/obj.h"
-#include "../jrd/Attachment.h"
+#include "../jrd/EngineInterface.h"
 
 namespace EDS {
 class Transaction;
@@ -134,7 +134,7 @@ const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
 
-class jrd_tra : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANSACTION_VERSION, pool_alloc<type_tra> >
+class jrd_tra : public pool_alloc<type_tra>
 {
 public:
 	enum wait_t {
@@ -160,6 +160,7 @@ public:
 		tra_outer(outer),
 		tra_transactions(*p),
 		tra_sorts(*p),
+		tra_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
@@ -187,7 +188,6 @@ public:
 			pool->setStatsGroup(transaction->tra_memory_stats);
 		}
 
-		transaction->addRef();
 		return transaction;
 	}
 
@@ -195,8 +195,6 @@ public:
 	{
 		if (transaction)
 		{
-			--transaction->refCounter;
-
 			if (!dbb || transaction->tra_outer)
 				delete transaction;
 			else
@@ -263,6 +261,7 @@ public:
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
+	JTransaction* tra_interface;
 
 private:
 	TempSpace* tra_blob_space;	// temp blob storage
@@ -314,20 +313,6 @@ public:
 	}
 
 	UserManagement* getUserManagement();
-
-public:
-	// ITransaction implementation
-	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(IStatus* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG prepare(IStatus* status,
-						 unsigned int msg_length = 0, const unsigned char* message = 0);
-	virtual void FB_CARG commit(IStatus* status);
-	virtual void FB_CARG commitRetaining(IStatus* status);
-	virtual void FB_CARG rollback(IStatus* status);
-	virtual void FB_CARG rollbackRetaining(IStatus* status);
-	virtual void FB_CARG disconnect(IStatus* status);
 };
 
 // System transaction is always transaction 0.

@@ -28,16 +28,12 @@
 #define JRD_BLB_H
 
 #include "../jrd/RecordNumber.h"
+#include "../jrd/EngineInterface.h"
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
 #include "ProviderInterface.h"
 #include "../common/classes/ImplementHelper.h"
-namespace Jrd
-{
-	typedef Firebird::IStatus IStatus;
-}
-
 namespace Jrd {
 
 /* Blob id.  A blob has two states -- temporary and permanent.  In each
@@ -144,14 +140,15 @@ struct bid
 	}
 };
 
+
 // Your basic blob block.
 
-class blb : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION, pool_alloc<type_blb> >
+class blb : public pool_alloc<type_blb>
 {
 public:
 	blb(MemoryPool& pool, USHORT page_size)
 		: blb_buffer(pool, page_size / sizeof(SLONG)),
-		  blb_has_buffer(true)
+		  blb_has_buffer(true), blb_interface(NULL)
 	{
 	}
 
@@ -208,17 +205,7 @@ public:
 
 	static void destroy(blb* blob, const bool purge_flag);
 
-public:
-	// IBlob implementation
-	virtual int FB_CARG release();
-	virtual void FB_CARG getInfo(IStatus* status,
-						 unsigned int itemsLength, const unsigned char* items,
-						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, void* buffer);	// returns real length
-	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const void* buffer);
-	virtual void FB_CARG cancel(IStatus* status);
-	virtual void FB_CARG close(IStatus* status);
-	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
+	JBlob* blb_interface;
 };
 
 const int BLB_temporary		= 1;		// Newly created blob
