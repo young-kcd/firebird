@@ -57,7 +57,10 @@ public:
 	virtual int FB_CARG seek(Firebird::IStatus* status, int mode, int offset);			// returns position
 
 public:
-	JBlob(blb* handle, JAttachment* ja) : blob(handle), jAtt(ja) { }
+	JBlob(blb* handle, JAttachment* ja)
+		: blob(handle), jAtt(ja)
+	{
+	}
 
 	JAttachment* getAttachment()
 	{
@@ -93,7 +96,10 @@ public:
 	virtual void FB_CARG disconnect(Firebird::IStatus* status);
 
 public:
-	JTransaction(jrd_tra* handle, JAttachment* ja) : transaction(handle), jAtt(ja) { }
+	JTransaction(jrd_tra* handle, JAttachment* ja)
+		: transaction(handle), jAtt(ja)
+	{
+	}
 
 	jrd_tra* getHandle()
 	{
@@ -150,7 +156,8 @@ public:
 public:
 	JStatement(dsql_req* handle, JAttachment* ja)
 		: statement(handle), jAtt(ja), metadata(getPool(), this)
-	{ }
+	{
+	}
 
 	JAttachment* getAttachment()
 	{
@@ -189,7 +196,10 @@ public:
 	virtual void FB_CARG free(Firebird::IStatus* status);
 
 public:
-	JRequest(JrdStatement* handle, JAttachment* ja) : rq(handle), jAtt(ja) { }
+	JRequest(JrdStatement* handle, JAttachment* ja)
+		: rq(handle), jAtt(ja)
+	{
+	}
 
 	JAttachment* getAttachment()
 	{
@@ -216,7 +226,10 @@ public:
 	virtual void FB_CARG cancel(Firebird::IStatus* status);
 
 public:
-	JEvents(int aId, JAttachment* ja) : id(aId), jAtt(ja) { }
+	JEvents(int aId, JAttachment* ja)
+		: id(aId), jAtt(ja)
+	{
+	}
 
 	JEvents* getHandle()
 	{
@@ -336,15 +349,16 @@ class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_I_PROVIDER_
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig*)
-	{ }
+	{
+	}
 
 	// IProvider implementation
-	virtual void FB_CARG attachDatabase(Firebird::IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(Firebird::IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
+	virtual void FB_CARG attachDatabase(Firebird::IStatus* status, Firebird::IAttachment** ptr,
+		FB_API_HANDLE api, const char* fileName, unsigned int dpbLength, const unsigned char* dpb);
+	virtual void FB_CARG createDatabase(Firebird::IStatus* status, Firebird::IAttachment** ptr,
+		FB_API_HANDLE api, const char* fileName, unsigned int dpbLength, const unsigned char* dpb);
 	virtual JService* FB_CARG attachServiceManager(Firebird::IStatus* status, const char* service,
-												   unsigned int spbLength, const unsigned char* spb);
+		unsigned int spbLength, const unsigned char* spb);
 	//virtual ITransaction* startTransaction(Firebird::IStatus* status, unsigned int count, ...);
 	//virtual ITransaction* startMultiple(Firebird::IStatus* status, MultipleTransaction* multi);
 	virtual void FB_CARG shutdown(Firebird::IStatus* status, unsigned int timeout, const int reason);

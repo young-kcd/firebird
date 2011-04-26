@@ -170,7 +170,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		if (!status.isSuccess())
 			raise(status, tdbb, "attach");
 
-		m_attachment = reinterpret_cast<JAttachment*>(a);
+		m_attachment = static_cast<JAttachment*>(a);
 	}
 
 	m_sqlDialect = (m_attachment->getHandle()->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
@@ -419,33 +419,35 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	if (statement->getSendMsg())
 	{
-		try {
+		try
+		{
 			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
 				m_inBlr, m_in_buffer);
 			m_inputs = m_inDescs.getCount() / 2;
 		}
-		catch (const Exception&) {
+		catch (const Exception&)
+		{
 			raise(tdbb->tdbb_status_vector, tdbb, "parse input message", &sql);
 		}
 	}
-	else {
+	else
 		m_inputs = 0;
-	}
 
 	if (statement->getReceiveMsg())
 	{
-		try {
+		try
+		{
 			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
 				m_outBlr, m_out_buffer);
 			m_outputs = m_outDescs.getCount() / 2;
 		}
-		catch (const Exception&) {
+		catch (const Exception&)
+		{
 			raise(tdbb->tdbb_status_vector, tdbb, "parse output message", &sql);
 		}
 	}
-	else {
+	else
 		m_outputs = 0;
-	}
 
 	m_stmt_selectable = false;
 
@@ -609,7 +611,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
 
 	JAttachment* att = m_connection.getJrdAtt();
-	JTransaction* transaction = ((InternalTransaction&) tran).getJrdTran();
+	JTransaction* transaction = static_cast<InternalTransaction&>(tran).getJrdTran();
 	memcpy(&m_blob_id, desc.dsc_address, sizeof(m_blob_id));
 
 	LocalStatus status;

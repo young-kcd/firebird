@@ -716,7 +716,7 @@ namespace
 		bool deleteCallback;
 	};
 
-	class YRequest : public YHelper<IRequest, FB_I_STATEMENT_VERSION>
+	class YRequest : public YHelper<IRequest, FB_I_REQUEST_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -937,7 +937,8 @@ namespace
 	public:
 		EnterCount()
 			: enterCount(0)
-		{ }
+		{}
+
 		~EnterCount()
 		{
 			fb_assert(enterCount == 0);
@@ -5560,8 +5561,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 					} while (accessor.getNext());
 				}
 			}
-		}
-		while (hasThreads);
+		} while (hasThreads);
 
 		// ... and wait for all providers to go away
 		PluginManager::waitForType(PluginType::Provider);

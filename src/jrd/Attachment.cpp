@@ -158,7 +158,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publi
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
 	  att_interface(NULL)
-{ }
+{
+}
 
 
 Jrd::Attachment::~Attachment()

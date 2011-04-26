@@ -148,7 +148,8 @@ class blb : public pool_alloc<type_blb>
 public:
 	blb(MemoryPool& pool, USHORT page_size)
 		: blb_buffer(pool, page_size / sizeof(SLONG)),
-		  blb_has_buffer(true), blb_interface(NULL)
+		  blb_has_buffer(true),
+		  blb_interface(NULL)
 	{
 	}
 
