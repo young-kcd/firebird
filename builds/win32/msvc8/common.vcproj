@@ -484,10 +484,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\PublicHandle.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
 				>
 			</File>
@@ -762,10 +758,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\prett_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\PublicHandle.h"
 				>
 			</File>
 			<File
