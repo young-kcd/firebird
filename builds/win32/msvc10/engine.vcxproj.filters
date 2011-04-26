@@ -707,6 +707,9 @@
     <ClInclude Include="..\..\..\src\jrd\ErrorImpl.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\EngineInterface.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\event.h">
       <Filter>Header files</Filter>
     </ClInclude>

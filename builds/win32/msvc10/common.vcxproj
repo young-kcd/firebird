@@ -32,7 +32,6 @@
     <ClCompile Include="..\..\..\src\common\classes\locks.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\MetaName.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\MsgPrint.cpp" />
-    <ClCompile Include="..\..\..\src\common\classes\PublicHandle.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\SafeArg.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\semaphore.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\Switches.cpp" />
@@ -111,7 +110,6 @@
     <ClInclude Include="..\..\..\src\common\classes\NestConst.h" />
     <ClInclude Include="..\..\..\src\common\classes\Nullable.h" />
     <ClInclude Include="..\..\..\src\common\classes\objects_array.h" />
-    <ClInclude Include="..\..\..\src\common\classes\PublicHandle.h" />
     <ClInclude Include="..\..\..\src\common\classes\QualifiedName.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefCounted.h" />
     <ClInclude Include="..\..\..\src\common\classes\RefMutex.h" />

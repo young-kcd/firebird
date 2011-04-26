@@ -226,6 +226,7 @@
     <ClInclude Include="..\..\..\src\jrd\dyn_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\dyn_ut_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\ErrorImpl.h" />
+    <ClInclude Include="..\..\..\src\jrd\EngineInterface.h" />
     <ClInclude Include="..\..\..\src\jrd\err_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\event.h" />
     <ClInclude Include="..\..\..\src\jrd\event_proto.h" />

@@ -132,9 +132,6 @@
     <ClCompile Include="..\..\..\src\common\classes\MsgPrint.cpp">
       <Filter>classes</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\classes\PublicHandle.cpp">
-      <Filter>classes</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\common\classes\SafeArg.cpp">
       <Filter>classes</Filter>
     </ClCompile>
@@ -390,9 +387,6 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\objects_array.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\classes\PublicHandle.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\QualifiedName.h">
