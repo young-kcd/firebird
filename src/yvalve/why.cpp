@@ -5515,6 +5515,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		{
 			THD_yield();
 			WriteLockGuard sync(handleMappingLock);
+			hasThreads = false;
 
 			{
 				GenericMap<Pair<NonPooled<FB_API_HANDLE, YService*> > >::Accessor accessor(&services);
