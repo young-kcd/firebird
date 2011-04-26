@@ -1,3 +1,45 @@
+ 2011-04-26 01:00  asfernandes 
+   M src/jrd/Attachment.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/blb.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/yvalve/why.cpp
+Misc; reinterpret to static casts; correction in YRequest version.
+
+ 2011-04-25 17:47  alexpeshkoff 
+   M src/burp/burp.cpp
+   D src/common/classes/PublicHandle.cpp
+   D src/common/classes/PublicHandle.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   A src/jrd/EngineInterface.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+1. Use reference counted stable in global pool objects instead PublicHandle's validation.                                                      
+2. Avoid massive segfaults when closing heavily loaded server.                                                                                 
+3. Restored logic in YValve required for correct shutdown.                                                                                    
+4. Do not change externally visible request body when preparing it.
+
+ 2011-04-25 12:56  hvlad 
+   M src/common/isc_sync.cpp
+Frontported fix for regression introduced by me in patch for CORE-3326 - too many unnecessary calls of ISC_check_process_existence().
+Added defines to switch usage of fast mutex off if necessary.
+
  2011-04-20 07:03  robocop 
    M builds/win32/make_all.bat
 It would be better to copy the file from the place where it exists.
