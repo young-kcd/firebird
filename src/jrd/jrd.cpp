@@ -4430,6 +4430,7 @@ void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 			DSQL_prepare(tdbb, tra, &statement, stmtLength, sqlStmt, dialect,
 				items.getCount(), items.begin(), buffer.getCount(), buffer.begin(), false);
 
+			metadata.clear();
 			metadata.parse(buffer.getCount(), buffer.begin());
 		}
 		catch (const Exception& ex)
