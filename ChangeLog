@@ -1,3 +1,28 @@
+ 2011-04-26 15:23  asfernandes 
+   M src/jrd/jrd.cpp
+Correction for statement repreparation.
+
+ 2011-04-26 08:03  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed bug - thanks to Adriano
+
+ 2011-04-26 07:05  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+Update MSVC10 build
+
+ 2011-04-26 06:59  hvlad 
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/engine.vcproj
+Update MSVC9 build
+
+ 2011-04-26 06:57  hvlad 
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/engine.vcproj
+Update MSVC8 build
+
  2011-04-26 01:00  asfernandes 
    M src/jrd/Attachment.cpp
    M src/jrd/EngineInterface.h
