@@ -2613,12 +2613,12 @@ void JAttachment::freeEngineData(IStatus* user_status)
 
 		try
 		{
+			if (getHandle()->att_in_use)
+				status_exception::raise(Arg::Gds(isc_attachment_in_use));
+
 			JRD_cancel_operation(tdbb, getHandle(), fb_cancel_raise);
 
 			MutexLockGuard guard(*getMutex());
-
-			if (getHandle()->att_in_use)
-				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 			Database* dbb = tdbb->getDatabase();
 
@@ -2679,12 +2679,12 @@ void JAttachment::drop(IStatus* user_status)
 
 		try
 		{
+			if (getHandle()->att_in_use)
+				status_exception::raise(Arg::Gds(isc_attachment_in_use));
+
 			JRD_cancel_operation(tdbb, getHandle(), fb_cancel_raise);
 
 			MutexLockGuard guard(*getMutex());
-
-			if (getHandle()->att_in_use)
-				status_exception::raise(Arg::Gds(isc_attachment_in_use));
 
 			Database* const dbb = tdbb->getDatabase();
 
