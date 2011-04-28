@@ -110,9 +110,15 @@ static const TEXT preLock[] = "lock";
 #ifdef WIN_NT
 static struct mtx shmemMutex;
 #define MUTEX &shmemMutex
-#else
+#else //WIN_NT
+#ifdef HAVE_MMAP
+static struct mtx* m_mutex;
+#define MUTEX m_mutex
+#define PRINT_USE_MAP_OBJECT 1
+#else //HAVE_MAP_OBJECT
 #define MUTEX &LOCK_header->lhb_mutex
-#endif
+#endif //HAVE_MAP_OBJECT
+#endif //WIN_NT
 
 
 class HtmlLink
@@ -242,7 +248,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		SCHAR* p = *argv++;
 		if (*p++ != '-')
 		{
-			FPRINTF(outfile, valid_switches);
+			FPRINTF(outfile, "%s", valid_switches);
 			exit(FINI_OK);
 		}
 		SCHAR c;
@@ -369,7 +375,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			default:
-				FPRINTF(outfile, valid_switches);
+				FPRINTF(outfile, "%s", valid_switches);
 				exit(FINI_OK);
 				break;
 			}
@@ -482,7 +488,21 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 #ifdef WIN_NT
 			ISC_mutex_init(MUTEX, shmem_data.sh_mem_name);
 #endif
-			ISC_mutex_lock(MUTEX);
+#ifdef PRINT_USE_MAP_OBJECT
+			MUTEX = (mtx*) ISC_map_object(status_vector, &shmem_data, OFFSET(lhb*, lhb_mutex), sizeof(mtx));
+			if (!MUTEX)
+			{
+				FPRINTF(outfile, "Unable to unmap mutex.\n");
+				gds__print_status(status_vector);
+				exit(FINI_OK);
+			}
+#endif
+			int lockRc = ISC_mutex_lock(MUTEX);
+			if (lockRc)
+			{
+				FPRINTF(outfile, "Error %d (%s) locking shared mutex.\n", lockRc, strerror(lockRc));
+				exit(FINI_OK);
+			}
 		}
 
 #ifdef USE_SHMEM_EXT
@@ -550,7 +570,23 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header = (lhb*)(UCHAR*) buffer;
 #endif
 
-			ISC_mutex_unlock(MUTEX);
+			int lockRc = ISC_mutex_unlock(MUTEX);
+			if (lockRc)
+			{
+				FPRINTF(outfile, "Error %d (%s) unlocking shared mutex.\n", lockRc, strerror(lockRc));
+				exit(FINI_OK);
+			}
+
+#ifdef PRINT_USE_MAP_OBJECT
+			status_vector[1] = 0;
+			ISC_unmap_object(status_vector, (UCHAR**) &MUTEX, sizeof(mtx));
+			if (status_vector[1])
+			{
+				FPRINTF(outfile, "Unable to unmap mutex.\n");
+				gds__print_status(status_vector);
+				exit(FINI_OK);
+			}
+#endif
 
 #ifdef WIN_NT
 			ISC_mutex_fini(MUTEX);
@@ -1127,7 +1163,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, lbl* lock, USHORT 
 	else
 	{
 		UCHAR temp[512];
-		fb_assert(sizeof(temp) >= lock->lbl_length + 1); // Not enough, see <%d> below.
+		fb_assert(sizeof(temp) >= lock->lbl_length + 1u); // Not enough, see <%d> below.
 		UCHAR* p = temp;
 		const UCHAR* end_temp = p + sizeof(temp) - 1;
   		const UCHAR* q = lock->lbl_key;
