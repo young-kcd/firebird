@@ -35,6 +35,8 @@
     <ClCompile Include="..\..\..\src\common\classes\SafeArg.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\semaphore.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\Switches.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\Synchronize.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\SyncObject.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\TempFile.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\timestamp.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\UserBlob.cpp" />
@@ -102,7 +104,6 @@
     <ClInclude Include="..\..\..\src\common\classes\Hash.h" />
     <ClInclude Include="..\..\..\src\common\classes\ImplementHelper.h" />
     <ClInclude Include="..\..\..\src\common\classes\init.h" />
-    <ClInclude Include="..\..\..\src\common\classes\Interface.h" />
     <ClInclude Include="..\..\..\src\common\classes\Interlock.h" />
     <ClInclude Include="..\..\..\src\common\classes\locks.h" />
     <ClInclude Include="..\..\..\src\common\classes\MetaName.h" />
@@ -119,6 +120,8 @@
     <ClInclude Include="..\..\..\src\common\classes\sparse_bitmap.h" />
     <ClInclude Include="..\..\..\src\common\classes\stack.h" />
     <ClInclude Include="..\..\..\src\common\classes\Switches.h" />
+    <ClInclude Include="..\..\..\src\common\classes\Synchronize.h" />
+    <ClInclude Include="..\..\..\src\common\classes\SyncObject.h" />
     <ClInclude Include="..\..\..\src\common\classes\TempFile.h" />
     <ClInclude Include="..\..\..\src\common\classes\timestamp.h" />
     <ClInclude Include="..\..\..\src\common\classes\tree.h" />

@@ -186,6 +186,12 @@
     <ClCompile Include="..\..\..\src\common\StatementMetadata.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\Synchronize.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\SyncObject.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -365,9 +371,6 @@
     <ClInclude Include="..\..\..\src\common\classes\init.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\common\classes\Interface.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\Interlock.h">
       <Filter>headers</Filter>
     </ClInclude>
@@ -480,6 +483,12 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\StatementMetadata.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\SyncObject.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\classes\Synchronize.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

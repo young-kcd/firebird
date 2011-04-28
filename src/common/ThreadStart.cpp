@@ -48,6 +48,7 @@
 
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/Synchronize.h"
 
 
 namespace
@@ -57,6 +58,7 @@ namespace
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 {
 	fb_assert(arg);
+	Firebird::ThreadSync thread("threadStart");
 	MemoryPool::setContextPool(getDefaultMemoryPool());
 	{
 		ThreadPriorityScheduler* tps = static_cast<ThreadPriorityScheduler*>(arg);
@@ -107,6 +109,7 @@ extern "C"
 THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 {
 	fb_assert(arg);
+	Firebird::ThreadSync thread("threadStart");
 	MemoryPool::setContextPool(getDefaultMemoryPool());
 	ThreadArgs localArgs(*static_cast<ThreadArgs*>(arg));
 	delete static_cast<ThreadArgs*>(arg);

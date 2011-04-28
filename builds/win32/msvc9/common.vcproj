@@ -496,6 +496,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\Synchronize.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\SyncObject.cpp"
+				>
+			</File>			
+			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
 				>
 			</File>
@@ -689,10 +697,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\Interface.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\Interlock.h"
 				>
 			</File>
@@ -842,6 +846,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\Switches.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\Synchronize.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\SyncObject.h"
 				>
 			</File>
 			<File

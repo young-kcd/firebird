@@ -35,9 +35,23 @@ typedef SINT64 AtomicType;
 typedef SLONG AtomicType;
 #endif
 
+// IMPORTANT !
+// Most of the interlocked functions returns "old" value of operand (except of 
+// InterlockedIncrement and InterlockedDecrement on Windows) and this is correct 
+// as "old" value impossible to restore from "new" value and operation parameters 
+// and "new" value could be changed at time when code looks at it.
+//   This (returning of original value) is not how operators such as "=", "+=", 
+// "&=" etc, usually works. Therefore overloaded operators in AtomicCounter class
+// are void and all of them have corresponding equivalent functions returning
+// "old" value of operand. 
+//   The only exceptions from this rule is unary increment and decrement (for  
+// historical reasons). Use it with care ! If one need old value of just 
+// incremented atomic variable he should use exchangeAdd, not operator++.
+
 #if defined(WIN_NT)
 
 #include <windows.h>
+#include <intrin.h> 
 
 namespace Firebird {
 
@@ -55,60 +69,165 @@ public:
 	explicit AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
 
+	// returns old value
 	counter_type exchangeAdd(counter_type val)
 	{
 #ifdef _WIN64
-		return InterlockedExchangeAdd64(&counter, val);
+		return _InterlockedExchangeAdd64(&counter, val);
 #else
-		return InterlockedExchangeAdd(&counter, val);
+		return _InterlockedExchangeAdd(&counter, val);
 #endif
 	}
 
-	counter_type operator +=(counter_type val)
-	{
-		return exchangeAdd(val) + val;
-	}
-
-	counter_type operator -=(counter_type val)
-	{
-		return exchangeAdd(-val) - val;
-	}
-
-	counter_type operator ++()
+	bool compareExchange(counter_type oldVal, counter_type newVal)
 	{
 #ifdef _WIN64
-		return InterlockedIncrement64(&counter);
+		return (_InterlockedCompareExchange64(&counter, newVal, oldVal) == oldVal);
 #else
-		return InterlockedIncrement(&counter);
+		return (_InterlockedCompareExchange(&counter, newVal, oldVal) == oldVal);
 #endif
 	}
 
-	counter_type operator --()
+	void setValue(counter_type val)
 	{
 #ifdef _WIN64
-		return InterlockedDecrement64(&counter);
+		_InterlockedExchange64(&counter, val);
 #else
-		return InterlockedDecrement(&counter);
+		_InterlockedExchange(&counter, val);
 #endif
 	}
+
+// platform-independent code
 
 	counter_type value() const { return counter; }
 
-	counter_type setValue(counter_type val)
+	// returns old value
+	counter_type exchangeBitAnd(counter_type val)
 	{
-#ifdef _WIN64
-		return InterlockedExchange64(&counter, val);
-#else
-		return InterlockedExchange(&counter, val);
-#endif
+		while (true)
+		{
+			volatile counter_type oldVal = counter;
+
+			if (compareExchange(oldVal, oldVal & val))
+				return oldVal;
+		}
+	}
+
+	// returns old value
+	counter_type exchangeBitOr(counter_type val)
+	{
+		while (true)
+		{
+			volatile counter_type oldVal = counter;
+
+			if (compareExchange(oldVal, oldVal | val))
+				return oldVal;
+		}
+	}
+
+
+	// returns old value
+	counter_type exchangeGreater(counter_type val)
+	{
+		while (true)
+		{
+			volatile counter_type oldVal = counter;
+
+			if (oldVal >= val)
+				return oldVal;
+
+			if (compareExchange(oldVal, val))
+				return oldVal;
+		}
+	}
+
+	operator counter_type () const
+	{ 
+		return value(); 
+	}
+
+	void operator =(counter_type val)
+	{ 
+		setValue(val); 
+	}
+
+	// returns new value !
+	counter_type operator ++()
+	{
+		return exchangeAdd(1) + 1;
+	}
+
+	// returns new value !
+	counter_type operator --()
+	{
+		return exchangeAdd(-1) - 1;
+	}
+
+	void operator +=(counter_type val)
+	{
+		exchangeAdd(val);
+	}
+
+	void operator -=(counter_type val)
+	{
+		exchangeAdd(-val);
+	}
+
+	void operator &=(counter_type val)
+	{
+		exchangeBitAnd(val);
+	}
+
+	void operator |=(counter_type val)
+	{
+		exchangeBitOr(val);
 	}
 
 private:
-# if defined(MINGW)
+#if defined(MINGW)
 	counter_type counter;
-# else
+#else
 	volatile counter_type counter;
-# endif
+#endif
+};
+
+
+
+template <typename T>
+class AtomicPointer
+{
+public:
+	explicit AtomicPointer(T* val = NULL) : pointer(val) {}
+	~AtomicPointer() {}
+
+	T* value() const { return (T*)pointer; }
+
+	void setValue(T* val)
+	{
+#ifdef _WIN64
+		_InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+#else
+		//InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+	    _InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
+#endif
+	}
+
+	bool compareExchange(T* oldVal, T* newVal)
+	{
+#ifdef _WIN64
+		return (_InterlockedCompareExchangePointer((PVOID volatile*)&pointer, newVal, oldVal) == oldVal);
+#else
+		//return (InterlockedCompareExchangePointer((PVOID volatile*)&pointer, newVal, oldVal) == oldVal);
+		return ((PVOID)(LONG_PTR)_InterlockedCompareExchange((LONG volatile*)&pointer, (LONG)newVal, (LONG)oldVal)) == oldVal;
+#endif
+	}
+
+	operator T* () const	{ return value(); }
+	T* operator ->() const	{ return value(); }
+	void operator =(T* val)	{ setValue(val); }
+
+private:
+	volatile T* pointer;
 };
 
 } // namespace Firebird

@@ -130,7 +130,7 @@ private:
 	{
 		for (MemoryStats* statistics = this; statistics; statistics = statistics->mst_parent)
 		{
-			const size_t temp = statistics->mst_usage += size;
+			const size_t temp = statistics->mst_usage.exchangeAdd(size) + size;
 			if (temp > statistics->mst_max_usage)
 				statistics->mst_max_usage = temp;
 		}
@@ -148,7 +148,7 @@ private:
 	{
 		for (MemoryStats* statistics = this; statistics; statistics = statistics->mst_parent)
 		{
-			const size_t temp = statistics->mst_mapped += size;
+			const size_t temp = statistics->mst_mapped.exchangeAdd(size) + size;
 			if (temp > statistics->mst_max_mapped)
 				statistics->mst_max_mapped = temp;
 		}
