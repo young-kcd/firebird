@@ -1,3 +1,7 @@
+ 2011-04-27 06:31  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Check att_in_use before cancelling operation of attachment
+
  2011-04-26 15:23  asfernandes 
    M src/jrd/jrd.cpp
 Correction for statement repreparation.
