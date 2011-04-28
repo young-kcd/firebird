@@ -23,7 +23,7 @@
  *  Copyright (c) 1997 - 2000, 2001, 2003 Netfrastructure, Inc.
  *  All Rights Reserved.
  *
- *  The Ñode was ported into Firebird Open Source RDBMS project by
+ *  The Code was ported into Firebird Open Source RDBMS project by
  *  Vladyslav Khorsun at 2010
  *
  *  Contributor(s):
@@ -225,7 +225,7 @@ void SyncObject::unlock()
 	}
 }
 
-void SyncObject::downGrade(LockType type)
+void SyncObject::downgrade(LockType type)
 {
 	fb_assert(monitorCount == 0);
 	fb_assert(type == Shared);
@@ -389,7 +389,7 @@ ThreadSync* SyncObject::grantThread(ThreadSync *thread)
 	return next;
 }
 
-void SyncObject::grantLocks(void)
+void SyncObject::grantLocks()
 {
 	mutex.enter();
 	fb_assert((waiters && waitingThreads) || (!waiters && !waitingThreads));
@@ -459,7 +459,7 @@ void SyncObject::validate(LockType lockType)
 }
 
 
-bool SyncObject::ourExclusiveLock(void) const
+bool SyncObject::ourExclusiveLock() const
 {
 	if (lockState != -1)
 		return false;
@@ -477,7 +477,7 @@ void SyncObject::sysServiceFailed(const char* service, int code)
 		isc_arg_end);
 }
 
-void SyncObject::assertionFailed(void)
+void SyncObject::assertionFailed()
 {
 	throw OSRIException (isc_sys_request, 
 		isc_arg_string, "SyncObject assertion failed", 

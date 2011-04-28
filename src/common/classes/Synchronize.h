@@ -23,7 +23,7 @@
  *  Copyright (c) 1997 - 2000, 2001, 2003 Netfrastructure, Inc.
  *  All Rights Reserved.
  *
- *  The Ñode was ported into Firebird Open Source RDBMS project by
+ *  The Code was ported into Firebird Open Source RDBMS project by
  *  Vladyslav Khorsun at 2010
  *
  *  Contributor(s):
@@ -84,7 +84,7 @@ public:
 
 	static ThreadSync* findThread();
 	static ThreadSync* getThread(const char *desc);
-	static FB_THREAD_ID getCurrentThreadId(void);
+	static FB_THREAD_ID getCurrentThreadId();
 
 	const char* getWhere();
 

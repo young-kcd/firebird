@@ -23,7 +23,7 @@
 *  Copyright (c) 1997 - 2000, 2001, 2003 Netfrastructure, Inc.
 *  All Rights Reserved.
 *
-*  The Ñode was ported into Firebird Open Source RDBMS project by
+*  The Code was ported into Firebird Open Source RDBMS project by
 *  Vladyslav Khorsun at 2010
 *
 *  Contributor(s):
@@ -284,7 +284,7 @@ void ThreadSync::setThread(ThreadSync *thread)
 	TLS_SET(threadIndex, thread);
 }
 
-FB_THREAD_ID ThreadSync::getCurrentThreadId(void)
+FB_THREAD_ID ThreadSync::getCurrentThreadId()
 {
 	return getThreadId();
 }
@@ -315,8 +315,8 @@ void ThreadSync::validateLocks()
 
 void ThreadSync::grantLock(SyncObject *lock)
 {
-	ASSERT(!lockGranted);
-	ASSERT(!lockPending || lockPending->syncObject == lock);
+	fb_assert(!lockGranted);
+	fb_assert(!lockPending || lockPending->syncObject == lock);
 
 	lockGranted = true;
 	lockPending = NULL;

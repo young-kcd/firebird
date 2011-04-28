@@ -23,7 +23,7 @@
  *  Copyright (c) 1997 - 2000, 2001, 2003 Netfrastructure, Inc.
  *  All Rights Reserved.
  *
- *  The Ñode was ported into Firebird Open Source RDBMS project by
+ *  The Code was ported into Firebird Open Source RDBMS project by
  *  Vladyslav Khorsun at 2010
  *
  *  Contributor(s):
@@ -38,7 +38,6 @@
 namespace Firebird {
 
 #define LOG_DEBUG
-#define ASSERT fb_assert
 
 enum LockType {
 	None,
@@ -55,7 +54,7 @@ class SynchronizationObject
 public:
 	virtual void lock(Sync *sync, LockType type) = 0;
 	virtual void unlock(Sync *sync, LockType type) = 0;
-	virtual void downGrade(LockType type) = 0;
+	virtual void downgrade(LockType type) = 0;
 };
 
 class SyncObject : public SynchronizationObject
@@ -76,11 +75,11 @@ public:
 	bool lockConditional(LockType type);
 
 	virtual void unlock(Sync *sync, LockType type);
-	void unlock(void);
+	void unlock();
 
-	virtual void downGrade(LockType type);
+	virtual void downgrade(LockType type);
 
-	LockType getState(void) const
+	LockType getState() const
 	{
 		if (lockState.value() == 0)
 			return None;
@@ -101,15 +100,15 @@ public:
 		return (waiters.value() > 0);
 	}
 
-	bool ourExclusiveLock(void) const;
+	bool ourExclusiveLock() const;
 
 	void sysServiceFailed(const char* service, int code);
-	void assertionFailed(void);
+	void assertionFailed();
 
 protected:
 	void wait(LockType type, ThreadSync *thread, Sync *sync);
 	ThreadSync* grantThread(ThreadSync *thread);
-	void grantLocks(void);
+	void grantLocks();
 	void validate(LockType lockType);
 
 	AtomicCounter	lockState;
@@ -127,7 +126,7 @@ class Sync
 public:
 	Sync(SynchronizationObject *obj, const char *fromWhere)
 	{
-		ASSERT(obj);
+		fb_assert(obj);
 		syncObject = obj;
 		prior = NULL;
 		where = fromWhere;
@@ -136,7 +135,7 @@ public:
 
 	~Sync()
 	{
-		ASSERT(state != Invalid);
+		fb_assert(state != Invalid);
 
 		if (syncObject && state != None)
 		{
@@ -160,15 +159,15 @@ public:
 
 	void unlock()
 	{
-		ASSERT(state != None);
+		fb_assert(state != None);
 		syncObject->unlock(this, state);
 		state = None;
 	}
 
-	void downGrade(LockType type)
+	void downgrade(LockType type)
 	{
-		ASSERT(state == Exclusive);
-		syncObject->downGrade(type);
+		fb_assert(state == Exclusive);
+		syncObject->downgrade(type);
 		state = Shared;
 	}
 
@@ -204,7 +203,7 @@ public:
 
 	~SyncLockGuard()
 	{
-		//ASSERT(state != None);
+		//fb_assert(state != None);
 		if (state != None)
 			unlock();
 	}
@@ -218,7 +217,7 @@ public:
 	{
 		oldState = state;
 
-		ASSERT(oldState != None);
+		fb_assert(oldState != None);
 		if (oldState != None)
 			unlock();
 	}
