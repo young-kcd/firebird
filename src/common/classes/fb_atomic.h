@@ -106,27 +106,26 @@ protected:
 };
 
 
-template <typename T>
-class AtomicPointer
+class PlatformAtomicPointer
 {
 public:
-	explicit AtomicPointer(T* val = NULL) : pointer(val) {}
-	~AtomicPointer() {}
+	explicit PlatformAtomicPointer(void* val = NULL) : pointer(val) {}
+	~PlatformAtomicPointer() {}
 
-	T* value() const { return (T*)pointer; }
+	void* platformValue() const { return (void*)pointer; }
 
 	// returns old value
-	T* setValue(T* val)
+	void* platformSetValue(void* val)
 	{
 #ifdef _WIN64
-		return (T*)_InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+		return _InterlockedExchangePointer((volatile PVOID*)&pointer, val);
 #else
 		//InterlockedExchangePointer((volatile PVOID*)&pointer, val);
-	    return (T*)_InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
+	    return (void*)_InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
 #endif
 	}
 
-	bool compareExchange(T* oldVal, T* newVal)
+	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
 #ifdef _WIN64
 		return (_InterlockedCompareExchangePointer((PVOID volatile*)&pointer, newVal, oldVal) == oldVal);
@@ -136,12 +135,8 @@ public:
 #endif
 	}
 
-	operator T* () const	{ return value(); }
-	T* operator ->() const	{ return value(); }
-	void operator =(T* val)	{ setValue(val); }
-
 private:
-	volatile T* pointer;
+	volatile void* pointer;
 };
 
 } // namespace Firebird
