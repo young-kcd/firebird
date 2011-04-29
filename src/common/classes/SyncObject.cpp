@@ -46,7 +46,10 @@ void SyncObject::lock(Sync *sync, LockType type)
 
 	if (type == Shared)
 	{
-		//while (true)
+		// In Vulcan SyncObject locking is not fair. Shared locks have priority
+		// before Exclusive locks. If we'll need to restore this behavior we
+		// should replace loop condition below by :
+		// while (true)
 		while (waiters == 0)
 		{
 			const AtomicCounter::counter_type oldState = lockState;
@@ -249,21 +252,6 @@ void SyncObject::downgrade(LockType type)
 
 void SyncObject::wait(LockType type, ThreadSync *thread, Sync *sync)
 {
-/*
-	ThreadSync *volatile *ptr = &waitingThreads;
-
-	for (; *ptr; ptr = &(*ptr)->nextWaiting)
-	{
-		if (*ptr == thread)
-		{
-			LOG_DEBUG ("Apparent single thread deadlock for thread %d (%x)\n", thread->threadId, thread);
-			//for (ThreadSync *thread = que; thread; thread = thread->que)
-			//	thread->print();
-			mutex.leave();
-			fatal_exception::raise("single thread deadlock");
-		}
-	}
-*/
 	if (thread->nextWaiting)
 	{
 		mutex.leave();
@@ -284,9 +272,7 @@ void SyncObject::wait(LockType type, ThreadSync *thread, Sync *sync)
 		waitingThreads = thread;
 	}
 
-//	thread->nextWaiting = NULL;
 	thread->lockType = type;
-//	*ptr = thread;
 	thread->lockGranted = false;
 	thread->lockPending = sync;
 	mutex.leave();
@@ -307,62 +293,6 @@ void SyncObject::wait(LockType type, ThreadSync *thread, Sync *sync)
 	while (!thread->lockGranted)
 		thread->sleep();
 }
-
-
-/**
-void SyncObject::grantLocks(void)
-{
-	mutex.enter();
-	fb_assert((waiters && waitingThreads) || (!waiters && !waitingThreads));
-
-	ThreadSync *volatile *ptr = &waitingThreads;
-	ThreadSync *thread = *ptr;
-	while (thread = *ptr)
-	{
-		bool granted = false;
-
-		if (thread->lockType == Shared)
-		{
-			AtomicCounter::counter_type oldState = lockState;
-			while (oldState >= 0)
-			{
-				const AtomicCounter::counter_type newState = oldState + 1;
-				if (lockState.compareExchange(oldState, newState))
-				{
-					*ptr = thread->nextWaiting;
-					granted = true;
-					--waiters;
-					thread->grantLock(this);
-					break;
-				}
-				oldState = lockState;
-			}
-		}
-		else
-		{
-			while (lockState == 0)
-			{
-				if (lockState.compareExchange(0, -1))
-				{
-					*ptr = thread->nextWaiting;
-					granted = true;
-					exclusiveThread = thread;
-					--waiters;
-					thread->grantLock(this);
-					break;
-				}
-			}
-		}
-
-		if (!granted) {
-			break;
-			ptr = &thread->nextWaiting;
-		}
-	}
-
-	mutex.leave();
-}
-**/
 
 ThreadSync* SyncObject::grantThread(ThreadSync *thread)
 {
@@ -391,7 +321,7 @@ ThreadSync* SyncObject::grantThread(ThreadSync *thread)
 
 void SyncObject::grantLocks()
 {
-	mutex.enter();
+	MutexLockGuard guard(mutex);
 	fb_assert((waiters && waitingThreads) || (!waiters && !waitingThreads));
 
 	ThreadSync *thread = waitingThreads;
@@ -430,13 +360,8 @@ void SyncObject::grantLocks()
 
 		if (!granted) {
 			break;
-			//thread = thread->nextWaiting;
-			//if (thread == waitingThreads)
-			//	break;
 		}
 	}
-
-	mutex.leave();
 }
 
 
@@ -464,27 +389,7 @@ bool SyncObject::ourExclusiveLock() const
 	if (lockState != -1)
 		return false;
 
-//	fb_assert(exclusiveThread);
 	return (exclusiveThread == ThreadSync::findThread());
 }
-
-/**
-void SyncObject::sysServiceFailed(const char* service, int code)
-{
-	throw OSRIException (isc_sys_request, 
-		isc_arg_string, service, 
-		SYS_ARG, code, 
-		isc_arg_end);
-}
-
-void SyncObject::assertionFailed()
-{
-	throw OSRIException (isc_sys_request, 
-		isc_arg_string, "SyncObject assertion failed", 
-		SYS_ARG, lockState, 
-		isc_arg_end);
-}
-**/
-
 
 } // namespace Firebird
