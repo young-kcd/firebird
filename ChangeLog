@@ -1,3 +1,28 @@
+ 2011-04-28 16:59  dimitr 
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+Misc.
+
+ 2011-04-28 14:39  hvlad 
+   M src/common/classes/SyncObject.h
+correction
+
+ 2011-04-28 14:35  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M src/common/ThreadStart.cpp
+   A src/common/classes/SyncObject.cpp
+   A src/common/classes/SyncObject.h
+   A src/common/classes/Synchronize.cpp
+   A src/common/classes/Synchronize.h
+   M src/common/classes/alloc.h
+   M src/common/classes/fb_atomic.h
+Preparing for the shared page cache : new sync objects ported from Vulcan
+
  2011-04-27 06:31  alexpeshkoff 
    M src/jrd/jrd.cpp
 Check att_in_use before cancelling operation of attachment
