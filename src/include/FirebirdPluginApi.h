@@ -172,7 +172,9 @@ public:
 	// Pay attention - this should be called at plugin-regsiter time!
 	// Only at this moment manager knows, which module sets his cleanup
 	virtual void FB_CARG registerModule(IPluginModule* cleanup) = 0;
-	// Remove registered before cleanup routine
+	// Remove registered before cleanup routine.
+	// This method must be called by module which detects that it's unloaded,
+	// but not notified prior to it by PluginManager via IPluginModule.
 	virtual void FB_CARG unregisterModule(IPluginModule* cleanup) = 0;
 	// Main function called to access plugins registered in plugins manager
 	// Has front-end in GetPlugins.h - template GetPlugins
@@ -189,9 +191,6 @@ public:
 	// Plugins must be released using this function - use of plugin's release()
 	// will cause resources leak
 	virtual void FB_CARG releasePlugin(IPluginBase* plugin) = 0;
-	// This method must be called by module which detects that it's unloaded,
-	// but not notified prior to it by PluginManager via IPluginModule.
-	virtual void FB_CARG moduleUnloaded() = 0;
 };
 
 typedef void PluginEntrypoint(IMaster* masterInterface);

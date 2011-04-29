@@ -89,6 +89,7 @@ namespace
 		file += newExt;
 	}
 
+	// Holds a reference to plugins.conf file
 	class StaticConfHolder
 	{
 	public:
@@ -236,7 +237,9 @@ namespace
 		return NULL;
 	}
 
-	struct RegisteredPlugin		// This is POD object
+	// Plugins registered when loading pluign module
+	// This is POD object - no dtor, only simple data types inside
+	struct RegisteredPlugin
 	{
 		RegisteredPlugin(IPluginFactory* f, const char* nm, unsigned int t)
 			: factory(f), name(nm), type(t)
@@ -251,6 +254,7 @@ namespace
 		unsigned int type;
 	};
 
+	// Controls module, containing plugins
 	class PluginModule : public Firebird::RefCounted, public GlobalStorage
 	{
 	public:
@@ -310,6 +314,10 @@ namespace
 			if (cleanup == c)
 			{
 				cleanup = 0;
+				// This is called only by unregister module
+				// when current module is forced to go away by OS.
+				// Do not unload it ourself in this case.
+				addRef();
 			}
 			else if (next)
 			{
@@ -377,6 +385,8 @@ namespace
 
 	PluginModule* builtin = NULL;
 
+	// Provides most of configuration services for plugins,
+	// except per-database configuration in aliases.conf
 	class ConfiguredPlugin : public RefCounted, public GlobalStorage
 	{
 	public:
@@ -442,6 +452,34 @@ namespace
 		PathName plugName;
 	};
 
+	// Delays destruction of ConfiguredPlugin instance
+	class PluginDestroyTimer : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+	{
+	public:
+		PluginDestroyTimer(ConfiguredPlugin* cp)
+			: configuredPlugin(cp)
+		{ }
+
+		// ITimer implementation
+		void FB_CARG handler()
+		{ }
+
+		int FB_CARG release()
+		{
+			if (--refCounter == 0)
+			{
+				delete this;
+				return 0;
+			}
+
+			return 1;
+		}
+
+	private:
+		RefPtr<ConfiguredPlugin> configuredPlugin;
+	};
+
+	// Provides per-database configuration from aliases.conf
 	class FactoryParameter : public StdIface<IPluginConfig, FB_FACTORY_PARAMETER_VERSION>
 	{
 	public:
@@ -484,6 +522,12 @@ namespace
 		}
 
 	private:
+		~FactoryParameter()
+		{
+			PluginDestroyTimer* timer = new PluginDestroyTimer(configuredPlugin);
+			TimerInterfacePtr()->start(timer, 1000000);		// 1 sec
+		}
+
 		RefPtr<ConfiguredPlugin> configuredPlugin;
 		RefPtr<IFirebirdConf> firebirdConf;
 	};
@@ -586,6 +630,7 @@ namespace
 		*prev = this;
 	}
 
+	// Provides access to plugins of given type / name
 	class PluginSet : public StdIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
 	public:
@@ -848,9 +893,16 @@ void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
 
 void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 {
-	MutexLockGuard g(plugins->mutex);
+	{	// guard scope
+		MutexLockGuard g(plugins->mutex);
+		modules->resetCleanup(cleanup);
+	}
 
-	modules->resetCleanup(cleanup);
+	// Module cleanup should be unregistered only if it's unoaded
+	// and only if it's unoaded not by PluginManager, but by OS.
+	// That means that task is closing unexpectedly - sooner of all
+	// exit() is called by client of embedded server. Shutdown ourself.
+	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
 IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
@@ -932,11 +984,6 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 	{
 		semPtr->enter();
 	}
-}
-
-void FB_CARG PluginManager::moduleUnloaded()
-{
-	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
 }	// namespace Firebird

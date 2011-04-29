@@ -211,7 +211,6 @@ public:
 		{
 			PluginManagerInterfacePtr pi;
 			pi->unregisterModule(this);
-			pi->moduleUnloaded();
 
 			flagOsUnload = false;
 		}

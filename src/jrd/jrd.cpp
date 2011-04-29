@@ -283,18 +283,10 @@ int JService::release()
 	return 0;
 }
 
-static AtomicCounter shutdownCounter;
-
 int JProvider::release()
 {
 	if (--refCounter == 0)
 	{
-		if (--shutdownCounter == 0)
-		{
-			LocalStatus status;
-			shutdown(&status, 5000, fb_shutrsn_no_connection);
-		}
-
 		delete this;
 		return 0;
 	}
@@ -302,7 +294,23 @@ int JProvider::release()
 	return 1;
 }
 
-static Firebird::UnloadDetector unloadDetector;
+static UnloadDetector unloadDetector;
+
+
+class ShutdownBeforeUnload
+{
+public:
+	ShutdownBeforeUnload(Firebird::MemoryPool&)
+	{ }
+	~ShutdownBeforeUnload()
+	{
+		LocalStatus status;
+		currentProvider()->shutdown(&status, 0, fb_shutrsn_exit_called);
+	}
+};
+
+static GlobalPtr<ShutdownBeforeUnload, InstanceControl::PRIORITY_DETECT_UNLOAD> shutdownBeforeUnload;
+
 
 class EngineFactory : public StackIface<IPluginFactory>
 {
@@ -315,7 +323,7 @@ public:
 			return NULL;
 		}
 
-		++shutdownCounter;
+		//++shutdownCounter;
 		IPluginBase* p = new JProvider(factoryParameter);
 		p->addRef();
 		return p;
@@ -3825,7 +3833,7 @@ private:
 };
 
 
-void JProvider::shutdown(IStatus* status, unsigned int timeout, const int /*reason*/)
+void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason)
 {
 /**************************************
  *
@@ -3855,6 +3863,15 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int /*reas
 			gds__log("Shutting down the server with %d active connection(s) to %d database(s), "
 					 "%d active service(s)",
 				attach_count, database_count, svc_count);
+		}
+
+		if (reason == fb_shutrsn_exit_called)
+		{
+			// Starting threads may fail when task is going to close.
+			// This happens at least with some microsoft C runtimes.
+			// If people wish to have timeout, they should better call fb_shutdown() themselves.
+			// Therefore:
+			timeout = 0;
 		}
 
 		if (timeout)

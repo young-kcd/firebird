@@ -484,6 +484,8 @@ public:
 		if (stopThread)
 		{
 			// ignore an attempt to start timer - anyway thread to make it fire is down
+			timer->addRef();
+			timer->release();
 			return;
 		}
 
