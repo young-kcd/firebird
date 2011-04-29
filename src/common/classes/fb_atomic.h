@@ -119,10 +119,10 @@ public:
 	T* setValue(T* val)
 	{
 #ifdef _WIN64
-		return _InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+		return (T*)_InterlockedExchangePointer((volatile PVOID*)&pointer, val);
 #else
 		//InterlockedExchangePointer((volatile PVOID*)&pointer, val);
-	    retutn _InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
+	    return (T*)_InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
 #endif
 	}
 
