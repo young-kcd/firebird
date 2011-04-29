@@ -88,12 +88,13 @@ public:
 #endif
 	}
 
-	void setValue(counter_type val)
+	// returns old value
+	counter_type setValue(counter_type val)
 	{
 #ifdef _WIN64
-		_InterlockedExchange64(&counter, val);
+		return _InterlockedExchange64(&counter, val);
 #else
-		_InterlockedExchange(&counter, val);
+		return _InterlockedExchange(&counter, val);
 #endif
 	}
 
@@ -114,13 +115,14 @@ public:
 
 	T* value() const { return (T*)pointer; }
 
-	void setValue(T* val)
+	// returns old value
+	T* setValue(T* val)
 	{
 #ifdef _WIN64
-		_InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+		return _InterlockedExchangePointer((volatile PVOID*)&pointer, val);
 #else
 		//InterlockedExchangePointer((volatile PVOID*)&pointer, val);
-	    _InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
+	    retutn _InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
 #endif
 	}
 
