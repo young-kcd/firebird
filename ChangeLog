@@ -1,3 +1,7 @@
+ 2011-04-28 16:59  alexpeshkoff 
+   M src/lock/print.cpp
+Fixed CORE-3454: "fb_lock_print -c" hangs server
+
  2011-04-25 12:41  hvlad 
    M src/jrd/isc_sync.cpp
 Fixed regression introduced by me in patch for CORE-3326 - too many unnecessary calls of ISC_check_process_existence().
