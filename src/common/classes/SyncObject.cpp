@@ -35,7 +35,6 @@
 
 #include "SyncObject.h"
 #include "Synchronize.h"
-#include "Interlock.h"
 
 namespace Firebird {
 
@@ -59,7 +58,7 @@ void SyncObject::lock(Sync *sync, LockType type)
 			const AtomicCounter::counter_type newState = oldState + 1;
 			if (lockState.compareExchange(oldState, newState))
 			{
-				WAIT_FOR_FLUSH_CACHE
+				WaitForFlushCache();
 				return;
 			}
 		}
@@ -106,7 +105,7 @@ void SyncObject::lock(Sync *sync, LockType type)
 			if (lockState.compareExchange(oldState, -1))
 			{
 				exclusiveThread = thread;
-				WAIT_FOR_FLUSH_CACHE
+				WaitForFlushCache();
 				return; 
 			}
 		}
@@ -149,7 +148,7 @@ bool SyncObject::lockConditional(LockType type)
 			const AtomicCounter::counter_type newState = oldState + 1;
 			if (lockState.compareExchange(oldState, newState))
 			{
-				WAIT_FOR_FLUSH_CACHE
+				WaitForFlushCache();
 				return true;
 			}
 		}
@@ -175,7 +174,7 @@ bool SyncObject::lockConditional(LockType type)
 
 			if (lockState.compareExchange(oldState, -1))
 			{
-				WAIT_FOR_FLUSH_CACHE
+				WaitForFlushCache();
 				exclusiveThread = thread;
 				return true; 
 			}
@@ -203,7 +202,7 @@ void SyncObject::unlock(Sync *sync, LockType type)
 		const AtomicCounter::counter_type newState = (type == Shared) ? oldState - 1 : 0;
 		exclusiveThread = NULL;
 
-		FLUSH_CACHE
+		FlushCache();
 
 		if (lockState.compareExchange(oldState, newState))
 		{
@@ -236,7 +235,7 @@ void SyncObject::downgrade(LockType type)
 	fb_assert(exclusiveThread);
 	fb_assert(exclusiveThread == ThreadSync::findThread());
 
-	FLUSH_CACHE
+	FlushCache();
 
 	while (true) 
 	{

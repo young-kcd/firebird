@@ -167,10 +167,16 @@ private:
 
 typedef SLONG INT32;
 
+class MemBlock;
+
 class MemHeader
 {
 public:
-	MemoryPool	*pool;
+	union
+	{
+		MemoryPool*	pool;
+		MemBlock*	next;
+	};
 	size_t		length;
 #ifdef DEBUG_GDS_ALLOC
 	INT32		lineNumber;
@@ -247,7 +253,8 @@ public:
 private:
 	size_t			roundingSize, threshold, minAllocation;
 	//int			headerSize;
-	MemBlock		**freeObjects;
+	typedef			AtomicPointer<MemBlock>	FreeChainPtr;
+	FreeChainPtr	*freeObjects;
 	MemBigHunk		*bigHunks;
 	MemSmallHunk	*smallHunks;
 	MemFreeBlock	freeBlocks;

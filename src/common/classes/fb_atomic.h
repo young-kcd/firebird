@@ -140,7 +140,7 @@ public:
 	T* operator ->() const	{ return value(); }
 	void operator =(T* val)	{ setValue(val); }
 
-protected:
+private:
 	volatile T* pointer;
 };
 
@@ -191,6 +191,16 @@ protected:
 	counter_type counter;
 };
 
+#define FLUSH_CACHE 1
+inline void FlushCache()
+{
+	asm_sync();
+}
+inline void WaitForFlushCache()
+{
+	asm_isync();
+}
+
 } // namespace Firebird
 
 #elif defined(HPUX) && defined(HAVE_ATOMIC_H)
@@ -239,6 +249,12 @@ protected:
 
 #include <atomic.h>
 
+extern "C"
+{
+extern void membar_flush(void);
+extern void membar_wait(void);
+}
+
 namespace Firebird {
 
 // Solaris version - uses Solaris atomic_ops
@@ -269,6 +285,16 @@ public:
 protected:
 	volatile counter_type counter;
 };
+
+#define FLUSH_CACHE 1
+inline void FlushCache()
+{
+	membar_flush();
+}
+inline void WaitForFlushCache()
+{
+	membar_wait();
+}
 
 } // namespace Firebird
 
@@ -376,6 +402,42 @@ public:
 
 protected:
 	volatile counter_type counter;
+};
+
+class PlatformAtomicPointer
+{
+public:
+	explicit PlatformAtomicPointer(void* val = NULL) : pointer(val) {}
+	~PlatformAtomicPointer() {}
+
+	void* platformValue() const { return (void*)pointer; }
+
+	void* platformSetValue(void* val)
+	{
+		register void* result;
+
+		__asm __volatile ("lock; xchg %0, %1"
+			: "=r" (result), "=m" (pointer)
+			: "0" (val), "m" (pointer)
+			: "cc", "memory");
+
+		return result;
+	}
+
+	bool platformCompareExchange(void* oldVal, void* newVal)
+	{
+		register char ret;
+
+		__asm __volatile ("lock; cmpxchg %2, %1 ; sete %0"
+			: "=r" (ret), "+m" (pointer)
+			: "r" (newVal), "a" (oldVal)
+			: "cc", "memory");
+
+	    return ret;
+	}
+
+private:
+	volatile void* pointer;
 };
 
 } // namespace Firebird
@@ -545,6 +607,49 @@ public:
 	}
 
 };
+
+template <typename T>
+class AtomicPointer : public PlatformAtomicPointer
+{
+public:
+	explicit AtomicPointer(T* val = NULL) : PlatformAtomicPointer(val) {}
+	~AtomicPointer() {}
+
+	T* value() const
+	{
+		return (T*)platformValue();
+	}
+
+	void setValue(T* val)
+	{
+		platformSetValue(val);
+	}
+
+	bool compareExchange(T* oldVal, T* newVal)
+	{
+		return platformCompareExchange(oldVal, newVal);
+	}
+
+	operator T* () const
+	{
+		return value();
+	}
+
+	T* operator ->() const
+	{
+		return value();
+	}
+
+	void operator =(T* val)
+	{
+		setValue(val);
+	}
+};
+
+#ifndef FLUSH_CACHE
+inline void FlushCache() { }
+inline void WaitForFlushCache() { }
+#endif
 
 } // namespace Firebird
 

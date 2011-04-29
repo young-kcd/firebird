@@ -52,7 +52,6 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
-#include "../common/classes/Interlock.h"
 #include "../common/classes/vector.h"
 #include "gen/iberror.h"
 
@@ -171,8 +170,7 @@ MemoryPool::MemoryPool(bool shared, int rounding, int cutoff, int minAlloc)
 	threadShared(shared), pool_destroying(false), stats(default_stats_group), parent(NULL)
 {
 	size_t vecSize = (cutoff + rounding) / rounding;
-	size_t l = vecSize * sizeof(void*);
-	init(allocRaw(l), l);
+	init(allocRaw(vecSize * sizeof(void*)), vecSize);
 }
 
 MemoryPool::MemoryPool(MemoryPool& p, MemoryStats& s, bool shared, int rounding, int cutoff, int minAlloc)
@@ -180,14 +178,12 @@ MemoryPool::MemoryPool(MemoryPool& p, MemoryStats& s, bool shared, int rounding,
 	threadShared(shared), pool_destroying(false), stats(&s), parent(&p)
 {
 	size_t vecSize = (cutoff + rounding) / rounding;
-	size_t l = vecSize * sizeof(void*);
-	init(parent->allocate(l), l);
+	init(parent->allocate(vecSize * sizeof(void*)), vecSize);
 }
 
 void MemoryPool::init(void* memory, size_t length)
 {
-	freeObjects = (MemBlock**) memory;
-	memset(freeObjects, 0, length);
+	freeObjects = new(memory) FreeChainPtr[length];
 	bigHunks = NULL;
 	smallHunks = NULL;
 	freeBlocks.nextLarger = freeBlocks.priorSmaller = &freeBlocks;
@@ -289,7 +285,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (std::bad_alloc)
 		{
 			while (block = freeObjects[slot])
 			{
-				if (COMPARE_EXCHANGE_POINTER(freeObjects + slot, block, (void*) block->pool))
+				if (freeObjects[slot].compareExchange(block, block->next))
 				{
 #ifdef MEM_DEBUG
 					if (slot != block->length / roundingSize)
@@ -581,10 +577,9 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 		{
 			for (int slot = length / roundingSize;;)
 			{
-				void *next = freeObjects [slot];
-				block->pool = (MemoryPool*) next;
+				block->next = freeObjects[slot];
 
-				if (COMPARE_EXCHANGE_POINTER(freeObjects + slot, next, block))
+				if (freeObjects[slot].compareExchange(block->next, block))
 					return;
 			}
 		}
