@@ -1425,6 +1425,8 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			ARG.RDB$PACKAGE_NAME.NULL = FALSE;
 			strcpy(ARG.RDB$PACKAGE_NAME, package.c_str());
 		}
+		else
+			ARG.RDB$PACKAGE_NAME.NULL = TRUE;
 
 		ARG.RDB$ARGUMENT_POSITION.NULL = FALSE;
 		ARG.RDB$ARGUMENT_POSITION = pos;
