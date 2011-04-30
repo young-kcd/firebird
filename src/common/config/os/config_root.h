@@ -64,7 +64,7 @@ private:
 		if (clRoot)
 		{
 			root_dir = *clRoot;
-			addSlash();
+			fixPath();
 			return;
 		}
 #ifdef DEV_BUILD
@@ -105,12 +105,13 @@ public:
 private:
 	string root_dir, install_dir;
 
-	void addSlash()
+	// If the path ends with a separator, remove it.
+	void fixPath()
 	{
-		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
-		{
-			root_dir += PathUtils::dir_sep;
-		}
+		size_t pos = root_dir.rfind(PathUtils::dir_sep);
+
+		if (root_dir.hasData() && pos > 0 && pos == root_dir.length() - 1)
+			root_dir.erase(pos, 1);
 	}
 
 	bool getRootFromEnvironment(const char* envName)
@@ -120,7 +121,7 @@ private:
 			return false;
 
 		root_dir = envValue;
-		addSlash();
+		fixPath();
 		return true;
 	}
 
