@@ -76,11 +76,11 @@ class SyncObject;
 
 class ThreadSync : public Synchronize
 {
+friend class SyncObject;
+
 public:
 	ThreadSync(const char* desc);
 	virtual ~ThreadSync();
-
-	void init(const char* description);
 
 	static ThreadSync* findThread();
 	static ThreadSync* getThread(const char* desc);
@@ -89,19 +89,20 @@ public:
 	const char* getWhere();
 
 	static void validateLocks();
+
+private:
 	void grantLock(SyncObject* lock);
+	void init(const char* description);
+	static void setThread(ThreadSync* thread);
 
 	FB_THREAD_ID threadId;
 	ThreadSync* nextWaiting;	// next thread in sleep que (see SyncObject)
 	ThreadSync* prevWaiting;	// previous thread in sleep que (see SyncObject)
-	LockType lockType;			// requested lock type (see SyncObject)
+	SyncType lockType;			// requested lock type (see SyncObject)
 	volatile bool lockGranted;
 	Sync* lockPending;
 	Sync* locks;
 	const char* description;
-
-protected:
-	static void setThread(ThreadSync* thread);
 };
 
 

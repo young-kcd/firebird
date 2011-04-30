@@ -245,7 +245,7 @@ void ThreadSync::init(const char* desc)
 	description = desc;
 	threadId = getCurrentThreadId();
 	prevWaiting = nextWaiting = NULL;
-	lockType = LOCK_TYPE_NONE;
+	lockType = SYNC_NONE;
 	lockGranted = false;
 	lockPending = NULL;
 	locks = NULL;
@@ -300,7 +300,7 @@ void ThreadSync::validateLocks()
 {
 	ThreadSync* thread = getThread("ThreadSync::validateLocks");
 
-	// hvlad: not worked
+	// hvlad: not worked, probably we should implement it at some day
 	if (thread->locks)
 	{
 		SYNC_LOG_DEBUG("thread %d has active locks:\n", thread->threadId);

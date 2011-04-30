@@ -39,14 +39,14 @@
 namespace Firebird {
 
 
-void SyncObject::lock(Sync* sync, LockType type)
+void SyncObject::lock(Sync* sync, SyncType type)
 {
 	ThreadSync* thread = NULL;
 
-	if (type == LOCK_TYPE_SHARED)
+	if (type == SYNC_SHARED)
 	{
-		// In Vulcan SyncObject locking is not fair. LOCK_TYPE_SHARED locks have priority
-		// before LOCK_TYPE_EXCLUSIVE locks. If we'll need to restore this behavior we
+		// In Vulcan SyncObject locking is not fair. Shared locks have priority
+		// before Exclusive locks. If we'll need to restore this behavior we
 		// should replace loop condition below by:
 		// while (true)
 		while (waiters == 0)
@@ -132,12 +132,12 @@ void SyncObject::lock(Sync* sync, LockType type)
 	wait(type, thread, sync);
 }
 
-bool SyncObject::lockConditional(LockType type)
+bool SyncObject::lockConditional(SyncType type)
 {
 	if (waitingThreads)
 		return false;
 
-	if (type == LOCK_TYPE_SHARED)
+	if (type == SYNC_SHARED)
 	{
 		while (true)
 		{
@@ -184,10 +184,10 @@ bool SyncObject::lockConditional(LockType type)
 	}
 }
 
-void SyncObject::unlock(Sync* sync, LockType type)
+void SyncObject::unlock(Sync* sync, SyncType type)
 {
-	fb_assert((type == LOCK_TYPE_SHARED && lockState > 0) ||
-			  (type == LOCK_TYPE_EXCLUSIVE && lockState == -1));
+	fb_assert((type == SYNC_SHARED && lockState > 0) ||
+			  (type == SYNC_EXCLUSIVE && lockState == -1));
 
 	if (monitorCount)
 	{
@@ -199,7 +199,7 @@ void SyncObject::unlock(Sync* sync, LockType type)
 	while (true)
 	{
 		const AtomicCounter::counter_type oldState = lockState;
-		const AtomicCounter::counter_type newState = (type == LOCK_TYPE_SHARED) ? oldState - 1 : 0;
+		const AtomicCounter::counter_type newState = (type == SYNC_SHARED) ? oldState - 1 : 0;
 		exclusiveThread = NULL;
 
 		FlushCache();
@@ -217,19 +217,19 @@ void SyncObject::unlock(Sync* sync, LockType type)
 void SyncObject::unlock()
 {
 	if (lockState > 0)
-		unlock(NULL, LOCK_TYPE_SHARED);
+		unlock(NULL, SYNC_SHARED);
 	else if (lockState == -1)
-		unlock(NULL, LOCK_TYPE_EXCLUSIVE);
+		unlock(NULL, SYNC_EXCLUSIVE);
 	else
 	{
 		fb_assert(false);
 	}
 }
 
-void SyncObject::downgrade(LockType type)
+void SyncObject::downgrade(SyncType type)
 {
 	fb_assert(monitorCount == 0);
-	fb_assert(type == LOCK_TYPE_SHARED);
+	fb_assert(type == SYNC_SHARED);
 	fb_assert(lockState == -1);
 	fb_assert(exclusiveThread);
 	fb_assert(exclusiveThread == ThreadSync::findThread());
@@ -248,7 +248,7 @@ void SyncObject::downgrade(LockType type)
 	}
 }
 
-void SyncObject::wait(LockType type, ThreadSync* thread, Sync* sync)
+void SyncObject::wait(SyncType type, ThreadSync* thread, Sync* sync)
 {
 	if (thread->nextWaiting)
 	{
@@ -330,7 +330,7 @@ void SyncObject::grantLocks()
 	{
 		bool granted = false;
 
-		if (thread->lockType == LOCK_TYPE_SHARED)
+		if (thread->lockType == SYNC_SHARED)
 		{
 			AtomicCounter::counter_type oldState = lockState;
 
@@ -366,19 +366,19 @@ void SyncObject::grantLocks()
 	}
 }
 
-void SyncObject::validate(LockType lockType)
+void SyncObject::validate(SyncType lockType)
 {
 	switch (lockType)
 	{
-	case LOCK_TYPE_NONE:
+	case SYNC_NONE:
 		fb_assert(lockState == 0);
 		break;
 
-	case LOCK_TYPE_SHARED:
+	case SYNC_SHARED:
 		fb_assert(lockState > 0);
 		break;
 
-	case LOCK_TYPE_EXCLUSIVE:
+	case SYNC_EXCLUSIVE:
 		fb_assert(lockState == -1);
 		break;
 	}
