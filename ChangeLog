@@ -1,3 +1,55 @@
+ 2011-04-30 02:28  asfernandes 
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+   M src/common/classes/fb_atomic.h
+   M src/jrd/jrd.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-04-29 19:11  hvlad 
+   M src/common/classes/fb_atomic.h
+Windows version of PlatformAtomicPointer
+
+ 2011-04-29 16:24  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+   M src/include/FirebirdPluginApi.h
+   M src/jrd/jrd.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+Added delay before unloading plugin module after last reference to that module outside plugin manager is gone
+
+ 2011-04-29 15:50  alexpeshkoff 
+   D src/common/classes/Interlock.h
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/fb_atomic.h
+Cleanup: make fb_atomic be the single file working with atomic operations and membars
+
+ 2011-04-29 15:16  asfernandes 
+   M src/dsql/DdlNodes.epp
+Correction.
+
+ 2011-04-29 12:03  hvlad 
+   M src/common/classes/fb_atomic.h
+Typo and missed cast
+
+ 2011-04-29 11:34  hvlad 
+   M src/common/classes/SyncObject.cpp
+Cleanup and some comments
+
+ 2011-04-29 11:12  hvlad 
+   M src/common/classes/fb_atomic.h
+Let PlatformAtomicCounter::setValue() returns old value on Windows too
+
+ 2011-04-29 09:25  alexpeshkoff 
+   M src/common/classes/fb_atomic.h
+Fixed posix build
+
  2011-04-28 16:59  dimitr 
    M src/common/classes/SyncObject.cpp
    M src/common/classes/SyncObject.h
