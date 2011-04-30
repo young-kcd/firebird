@@ -1,19 +1,19 @@
 /*
-*  
-*     The contents of this file are subject to the Initial 
-*     Developer's Public License Version 1.0 (the "License"); 
-*     you may not use this file except in compliance with the 
-*     License. You may obtain a copy of the License at 
-*     http://www.ibphoenix.com/idpl.html. 
 *
-*     Software distributed under the License is distributed on 
-*     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
-*     express or implied.  See the License for the specific 
+*     The contents of this file are subject to the Initial
+*     Developer's Public License Version 1.0 (the "License");
+*     you may not use this file except in compliance with the
+*     License. You may obtain a copy of the License at
+*     http://www.ibphoenix.com/idpl.html.
+*
+*     Software distributed under the License is distributed on
+*     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+*     express or implied.  See the License for the specific
 *     language governing rights and limitations under the License.
 *
 *     The contents of this file or any work derived from this file
-*     may not be distributed under any other license whatsoever 
-*     without the express prior written permission of the original 
+*     may not be distributed under any other license whatsoever
+*     without the express prior written permission of the original
 *     author.
 *
 *
@@ -42,11 +42,10 @@
 namespace Firebird {
 
 Synchronize::Synchronize()
+	: shutdownInProgress(false),
+	  sleeping(false),
+	  wakeup(false)
 {
-	shutdownInProgress = false;
-	sleeping = false;
-	wakeup = false;
-
 #ifdef _WIN32
 	evnt = CreateEvent(NULL, false, false, NULL);
 #endif
@@ -77,7 +76,6 @@ Synchronize::~Synchronize()
 	int ret = mutex_destroy(&mutex);
 #endif
 }
-
 
 void Synchronize::sleep()
 {
@@ -159,7 +157,7 @@ bool Synchronize::sleep(int milliseconds)
 #endif
 		/***
 		if (!wakeup)
-		Log::debug ("Synchronize::sleep(milliseconds): unexpected wakeup, ret %d\n", ret);
+			Log::debug("Synchronize::sleep(milliseconds): unexpected wakeup, ret %d\n", ret);
 		***/
 	}
 
@@ -188,7 +186,7 @@ bool Synchronize::sleep(int milliseconds)
 			break;
 		/***
 		if (!wakeup)
-		Log::debug ("Synchronize::sleep(milliseconds): unexpected wakeup, ret %d\n", ret);
+			Log::debug("Synchronize::sleep(milliseconds): unexpected wakeup, ret %d\n", ret);
 		***/
 	}
 
@@ -203,7 +201,7 @@ bool Synchronize::sleep(int milliseconds)
 void Synchronize::wake()
 {
 #ifdef _WIN32
-	SetEvent (evnt);
+	SetEvent(evnt);
 #endif
 
 #ifdef _PTHREADS
@@ -232,23 +230,22 @@ void Synchronize::shutdown()
 }
 
 
-
 /// ThreadSync
 
-TLS_DECLARE (ThreadSync*, threadIndex);
+TLS_DECLARE(ThreadSync*, threadIndex);
 
-ThreadSync::ThreadSync(const char *desc)
+ThreadSync::ThreadSync(const char* desc)
 {
 	init(desc);
 	setThread(this);
 }
 
-void ThreadSync::init(const char *desc)
+void ThreadSync::init(const char* desc)
 {
 	description = desc;
 	threadId = getCurrentThreadId();
 	prevWaiting = nextWaiting = NULL;
-	lockType = None;
+	lockType = LOCK_TYPE_NONE;
 	lockGranted = false;
 	lockPending = NULL;
 	locks = NULL;
@@ -256,7 +253,7 @@ void ThreadSync::init(const char *desc)
 
 ThreadSync::~ThreadSync()
 {
-	setThread (NULL);
+	setThread(NULL);
 }
 
 
@@ -266,20 +263,20 @@ ThreadSync* ThreadSync::findThread()
 }
 
 
-ThreadSync* ThreadSync::getThread(const char *desc)
+ThreadSync* ThreadSync::getThread(const char* desc)
 {
-	ThreadSync *thread = findThread();
+	ThreadSync* thread = findThread();
 
 	if (!thread)
 	{
-		thread = new ThreadSync (desc);
+		thread = new ThreadSync(desc);
 		setThread(thread);
 	}
 
 	return thread;
 }
 
-void ThreadSync::setThread(ThreadSync *thread)
+void ThreadSync::setThread(ThreadSync* thread)
 {
 	TLS_SET(threadIndex, thread);
 }
@@ -301,19 +298,19 @@ const char* ThreadSync::getWhere()
 
 void ThreadSync::validateLocks()
 {
-	ThreadSync *thread = getThread("ThreadSync::validateLocks");
+	ThreadSync* thread = getThread("ThreadSync::validateLocks");
 
 	// hvlad: not worked
 	if (thread->locks)
 	{
-		LOG_DEBUG ("thread %d has active locks:\n", thread->threadId);
-		for (Sync *sync = thread->locks; sync; sync = sync->prior)
-			LOG_DEBUG ("   %s\n", sync->where);
+		SYNC_LOG_DEBUG("thread %d has active locks:\n", thread->threadId);
+		for (Sync* sync = thread->locks; sync; sync = sync->prior)
+			SYNC_LOG_DEBUG("   %s\n", sync->where);
 	}
 }
 
 
-void ThreadSync::grantLock(SyncObject *lock)
+void ThreadSync::grantLock(SyncObject* lock)
 {
 	fb_assert(!lockGranted);
 	fb_assert(!lockPending || lockPending->syncObject == lock);

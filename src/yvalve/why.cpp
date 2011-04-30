@@ -5510,7 +5510,8 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		}
 
 		// Close all known interfaces from providers...
-		bool hasThreads = false;
+		bool hasThreads;
+
 		do
 		{
 			THD_yield();

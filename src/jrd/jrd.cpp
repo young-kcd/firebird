@@ -301,7 +301,9 @@ class ShutdownBeforeUnload
 {
 public:
 	ShutdownBeforeUnload(Firebird::MemoryPool&)
-	{ }
+	{
+	}
+
 	~ShutdownBeforeUnload()
 	{
 		LocalStatus status;
@@ -323,7 +325,6 @@ public:
 			return NULL;
 		}
 
-		//++shutdownCounter;
 		IPluginBase* p = new JProvider(factoryParameter);
 		p->addRef();
 		return p;

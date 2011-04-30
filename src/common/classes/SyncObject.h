@@ -1,19 +1,19 @@
 /*
- *  
- *     The contents of this file are subject to the Initial 
- *     Developer's Public License Version 1.0 (the "License"); 
- *     you may not use this file except in compliance with the 
- *     License. You may obtain a copy of the License at 
- *     http://www.ibphoenix.com/idpl.html. 
  *
- *     Software distributed under the License is distributed on 
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
- *     express or implied.  See the License for the specific 
+ *     The contents of this file are subject to the Initial
+ *     Developer's Public License Version 1.0 (the "License");
+ *     you may not use this file except in compliance with the
+ *     License. You may obtain a copy of the License at
+ *     http://www.ibphoenix.com/idpl.html.
+ *
+ *     Software distributed under the License is distributed on
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+ *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever 
- *     without the express prior written permission of the original 
+ *     may not be distributed under any other license whatsoever
+ *     without the express prior written permission of the original
  *     author.
  *
  *
@@ -37,13 +37,13 @@
 
 namespace Firebird {
 
-#define LOG_DEBUG
+#define SYNC_LOG_DEBUG
 
 enum LockType {
-	None,
-	Exclusive,
-	Shared,
-	Invalid
+	LOCK_TYPE_NONE,
+	LOCK_TYPE_EXCLUSIVE,
+	LOCK_TYPE_SHARED,
+	LOCK_TYPE_INVALID
 };
 
 class Sync;
@@ -52,8 +52,8 @@ class ThreadSync;
 class SynchronizationObject
 {
 public:
-	virtual void lock(Sync *sync, LockType type) = 0;
-	virtual void unlock(Sync *sync, LockType type) = 0;
+	virtual void lock(Sync* sync, LockType type) = 0;
+	virtual void unlock(Sync* sync, LockType type) = 0;
 	virtual void downgrade(LockType type) = 0;
 };
 
@@ -61,20 +61,21 @@ class SyncObject : public SynchronizationObject
 {
 public:
 	SyncObject()
+		: waiters(0),
+		  monitorCount(0),
+		  exclusiveThread(NULL),
+		  waitingThreads(NULL)
 	{
-		waiters = 0;
-		monitorCount = 0;
-		exclusiveThread = NULL;
-		waitingThreads = NULL;
 	}
 
 	virtual ~SyncObject()
-	{}
+	{
+	}
 
-	virtual void lock(Sync *sync, LockType type);
+	virtual void lock(Sync* sync, LockType type);
 	bool lockConditional(LockType type);
 
-	virtual void unlock(Sync *sync, LockType type);
+	virtual void unlock(Sync* sync, LockType type);
 	void unlock();
 
 	virtual void downgrade(LockType type);
@@ -82,12 +83,12 @@ public:
 	LockType getState() const
 	{
 		if (lockState.value() == 0)
-			return None;
+			return LOCK_TYPE_NONE;
 
 		if (lockState.value() < 0)
-			return Exclusive;
+			return LOCK_TYPE_EXCLUSIVE;
 
-		return Shared;
+		return LOCK_TYPE_SHARED;
 	}
 
 	bool isLocked() const
@@ -106,41 +107,44 @@ public:
 	void assertionFailed();
 
 protected:
-	void wait(LockType type, ThreadSync *thread, Sync *sync);
-	ThreadSync* grantThread(ThreadSync *thread);
+	void wait(LockType type, ThreadSync* thread, Sync* sync);
+	ThreadSync* grantThread(ThreadSync* thread);
 	void grantLocks();
 	void validate(LockType lockType);
 
-	AtomicCounter	lockState;
-	AtomicCounter	waiters;
-	//int			waiters;
-	int				monitorCount;
-	Mutex			mutex;
-	ThreadSync		*volatile exclusiveThread;
-	ThreadSync		*volatile waitingThreads;
+	AtomicCounter lockState;
+	AtomicCounter waiters;
+	//int waiters;
+	int monitorCount;
+	Mutex mutex;
+	ThreadSync* volatile exclusiveThread;
+	ThreadSync* volatile waitingThreads;
 };
 
 
-class Sync  
+class Sync
 {
+friend class ThreadSync;
+
 public:
-	Sync(SynchronizationObject *obj, const char *fromWhere)
+	Sync(SynchronizationObject* obj, const char* fromWhere)
+		: state(LOCK_TYPE_NONE),
+		  request(LOCK_TYPE_NONE),
+		  syncObject(obj),
+		  prior(NULL),
+		  where(fromWhere)
 	{
 		fb_assert(obj);
-		syncObject = obj;
-		prior = NULL;
-		where = fromWhere;
-		state = request = None;
 	}
 
 	~Sync()
 	{
-		fb_assert(state != Invalid);
+		fb_assert(state != LOCK_TYPE_INVALID);
 
-		if (syncObject && state != None)
+		if (syncObject && state != LOCK_TYPE_NONE)
 		{
 			syncObject->unlock(this, state);
-			state = Invalid;
+			state = LOCK_TYPE_INVALID;
 		}
 	}
 
@@ -151,7 +155,7 @@ public:
 		state = type;
 	}
 
-	void lock(LockType type, const char *fromWhere)
+	void lock(LockType type, const char* fromWhere)
 	{
 		where = fromWhere;
 		lock(type);
@@ -159,52 +163,49 @@ public:
 
 	void unlock()
 	{
-		fb_assert(state != None);
+		fb_assert(state != LOCK_TYPE_NONE);
 		syncObject->unlock(this, state);
-		state = None;
+		state = LOCK_TYPE_NONE;
 	}
 
 	void downgrade(LockType type)
 	{
-		fb_assert(state == Exclusive);
+		fb_assert(state == LOCK_TYPE_EXCLUSIVE);
 		syncObject->downgrade(type);
-		state = Shared;
+		state = LOCK_TYPE_SHARED;
 	}
 
-	void setObject(SynchronizationObject *obj)
+	void setObject(SynchronizationObject* obj)
 	{
-		if (syncObject && state != None)
+		if (syncObject && state != LOCK_TYPE_NONE)
 			syncObject->unlock(this, state);
 
-		state = None;
+		state = LOCK_TYPE_NONE;
 		syncObject = obj;
 	}
 
-
 protected:
-	LockType	state;
-	LockType	request;
-	SynchronizationObject	*syncObject;
-	Sync		*prior;	// not used
-	const char	*where;
-
-friend class ThreadSync;
+	LockType state;
+	LockType request;
+	SynchronizationObject* syncObject;
+	Sync* prior;	// not used
+	const char* where;
 };
 
 
 class SyncLockGuard : public Sync
 {
 public:
-	SyncLockGuard(SynchronizationObject *obj, LockType type, const char *fromWhere) :
-	  Sync(obj, fromWhere)
+	SyncLockGuard(SynchronizationObject* obj, LockType type, const char* fromWhere)
+		: Sync(obj, fromWhere)
 	{
 		lock(type);
 	}
 
 	~SyncLockGuard()
 	{
-		//fb_assert(state != None);
-		if (state != None)
+		//fb_assert(state != LOCK_TYPE_NONE);
+		if (state != LOCK_TYPE_NONE)
 			unlock();
 	}
 };
@@ -212,19 +213,19 @@ public:
 class SyncUnlockGuard : public Sync
 {
 public:
-	SyncUnlockGuard(SynchronizationObject *obj, const char *fromWhere) :
-	  Sync(obj, fromWhere)
+	SyncUnlockGuard(SynchronizationObject* obj, const char* fromWhere)
+		: Sync(obj, fromWhere)
 	{
 		oldState = state;
 
-		fb_assert(oldState != None);
-		if (oldState != None)
+		fb_assert(oldState != LOCK_TYPE_NONE);
+		if (oldState != LOCK_TYPE_NONE)
 			unlock();
 	}
 
 	~SyncUnlockGuard()
 	{
-		if (oldState != None)
+		if (oldState != LOCK_TYPE_NONE)
 			lock(oldState);
 	}
 
@@ -235,4 +236,3 @@ private:
 } // namespace Firebird
 
 #endif // CLASSES_SYNCOBJECT_H
-

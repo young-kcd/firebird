@@ -36,16 +36,16 @@ typedef SLONG AtomicType;
 #endif
 
 // IMPORTANT !
-// Most of the interlocked functions returns "old" value of operand (except of 
-// InterlockedIncrement and InterlockedDecrement on Windows) and this is correct 
-// as "old" value impossible to restore from "new" value and operation parameters 
+// Most of the interlocked functions returns "old" value of operand (except of
+// InterlockedIncrement and InterlockedDecrement on Windows) and this is correct
+// as "old" value impossible to restore from "new" value and operation parameters
 // and "new" value could be changed at time when code looks at it.
-//   This (returning of original value) is not how operators such as "=", "+=", 
+//   This (returning of original value) is not how operators such as "=", "+=",
 // "&=" etc, usually works. Therefore overloaded operators in AtomicCounter class
 // are void and all of them have corresponding equivalent functions returning
-// "old" value of operand. 
-//   The only exceptions from this rule is unary increment and decrement (for  
-// historical reasons). Use it with care ! If one need old value of just 
+// "old" value of operand.
+//   The only exceptions from this rule is unary increment and decrement (for
+// historical reasons). Use it with care ! If one need old value of just
 // incremented atomic variable he should use exchangeAdd, not operator++.
 
 #if defined(WIN_NT)
@@ -112,26 +112,26 @@ public:
 	explicit PlatformAtomicPointer(void* val = NULL) : pointer(val) {}
 	~PlatformAtomicPointer() {}
 
-	void* platformValue() const { return (void*)pointer; }
+	void* platformValue() const { return (void*) pointer; }
 
 	// returns old value
 	void* platformSetValue(void* val)
 	{
 #ifdef _WIN64
-		return _InterlockedExchangePointer((volatile PVOID*)&pointer, val);
+		return _InterlockedExchangePointer((volatile PVOID*) &pointer, val);
 #else
 		//InterlockedExchangePointer((volatile PVOID*)&pointer, val);
-	    return (void*)_InterlockedExchange((LONG volatile*)&pointer, (LONG)val);
+	    return (void*) _InterlockedExchange((LONG volatile*) &pointer, (LONG) val);
 #endif
 	}
 
 	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
 #ifdef _WIN64
-		return (_InterlockedCompareExchangePointer((PVOID volatile*)&pointer, newVal, oldVal) == oldVal);
+		return (_InterlockedCompareExchangePointer((PVOID volatile*) &pointer, newVal, oldVal) == oldVal);
 #else
-		//return (InterlockedCompareExchangePointer((PVOID volatile*)&pointer, newVal, oldVal) == oldVal);
-		return ((PVOID)(LONG_PTR)_InterlockedCompareExchange((LONG volatile*)&pointer, (LONG)newVal, (LONG)oldVal)) == oldVal;
+		//return (InterlockedCompareExchangePointer((PVOID volatile*) &pointer, newVal, oldVal) == oldVal);
+		return ((PVOID)(LONG_PTR) _InterlockedCompareExchange((LONG volatile*) &pointer, (LONG) newVal, (LONG) oldVal)) == oldVal;
 #endif
 	}
 
@@ -186,7 +186,7 @@ protected:
 	counter_type counter;
 };
 
-#define FLUSH_CACHE 1
+#define ATOMIC_FLUSH_CACHE 1
 inline void FlushCache()
 {
 	asm_sync();
@@ -281,7 +281,7 @@ protected:
 	volatile counter_type counter;
 };
 
-#define FLUSH_CACHE 1
+#define ATOMIC_FLUSH_CACHE 1
 inline void FlushCache()
 {
 	membar_flush();
@@ -641,7 +641,7 @@ public:
 	}
 };
 
-#ifndef FLUSH_CACHE
+#ifndef ATOMIC_FLUSH_CACHE
 inline void FlushCache() { }
 inline void WaitForFlushCache() { }
 #endif

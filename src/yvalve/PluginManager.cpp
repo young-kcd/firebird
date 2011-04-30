@@ -237,8 +237,8 @@ namespace
 		return NULL;
 	}
 
-	// Plugins registered when loading pluign module
-	// This is POD object - no dtor, only simple data types inside
+	// Plugins registered when loading plugin module.
+	// This is POD object - no dtor, only simple data types inside.
 	struct RegisteredPlugin
 	{
 		RegisteredPlugin(IPluginFactory* f, const char* nm, unsigned int t)
@@ -254,7 +254,7 @@ namespace
 		unsigned int type;
 	};
 
-	// Controls module, containing plugins
+	// Controls module, containing plugins.
 	class PluginModule : public Firebird::RefCounted, public GlobalStorage
 	{
 	public:
@@ -479,7 +479,7 @@ namespace
 		RefPtr<ConfiguredPlugin> configuredPlugin;
 	};
 
-	// Provides per-database configuration from aliases.conf
+	// Provides per-database configuration from aliases.conf.
 	class FactoryParameter : public StdIface<IPluginConfig, FB_FACTORY_PARAMETER_VERSION>
 	{
 	public:
@@ -630,7 +630,7 @@ namespace
 		*prev = this;
 	}
 
-	// Provides access to plugins of given type / name
+	// Provides access to plugins of given type / name.
 	class PluginSet : public StdIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
 	public:
@@ -898,8 +898,8 @@ void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 		modules->resetCleanup(cleanup);
 	}
 
-	// Module cleanup should be unregistered only if it's unoaded
-	// and only if it's unoaded not by PluginManager, but by OS.
+	// Module cleanup should be unregistered only if it's unloaded
+	// and only if it's unloaded not by PluginManager, but by OS.
 	// That means that task is closing unexpectedly - sooner of all
 	// exit() is called by client of embedded server. Shutdown ourself.
 	fb_shutdown(5000, fb_shutrsn_exit_called);
