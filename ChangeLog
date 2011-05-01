@@ -1,3 +1,15 @@
+ 2011-04-30 18:23  asfernandes 
+   M src/common/config/os/config_root.h
+Invert the functionality of addSlash to fixPath. It was creating paths with double slashes in config files.
+The right way to create paths in others places is with PathUtils::concatPath, and it don't need what addSlash was doing.
+
+ 2011-04-30 11:38  hvlad 
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+Some refactoring and cleanup.
+
  2011-04-30 02:28  asfernandes 
    M src/common/classes/SyncObject.cpp
    M src/common/classes/SyncObject.h
