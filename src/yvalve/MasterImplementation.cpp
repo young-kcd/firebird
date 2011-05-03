@@ -392,17 +392,25 @@ InitMutex<TimerEntry> timerHolder;
 
 void TimerEntry::cleanup()
 {
-	MutexLockGuard guard(timerAccess);
+	{
+		MutexLockGuard guard(timerAccess);
 
-	stopThread = true;
-	timerWakeup->release();
+		stopThread = true;
+		timerWakeup->release();
+	}
 	Thread::waitForCompletion(timerThreadHandle);
 
 	while (timerQueue->hasData())
 	{
-		TimerEntry& e(timerQueue->operator[](timerQueue->getCount() - 1));
-		e.timer->release();
-		timerQueue->remove(&e);
+		ITimer* timer = NULL;
+		{
+			MutexLockGuard guard(timerAccess);
+
+			TimerEntry* e = timerQueue->end();
+			timer = (--e)->timer;
+			timerQueue->remove(e);
+		}
+		timer->release();
 	}
 }
 
