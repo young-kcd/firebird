@@ -183,7 +183,21 @@ MemoryPool::MemoryPool(MemoryPool& p, MemoryStats& s, bool shared, int rounding,
 
 void MemoryPool::init(void* memory, size_t length)
 {
-	freeObjects = new(memory) FreeChainPtr[length];
+	// hvlad: we not used placement new[] there as :
+	// a) by standard placement new[] could add some (unknown!) overhead and use
+	// part of allocated memory for own use. For example MSVC reserved first array 
+	// slot and stored items number in it returning advanced pointer. In our case 
+	// it results in that freeObjects != memory and AV when freeObjects's memory is 
+	// deallocated as freeObjects don't points to a parent pool anymore.
+	// b) constructor of AtomicPointer does nothing except of zero'ing memory, plain
+	// memset will do it much faster. destructor of AtomicPointer is empty and we 
+	// don't need to call it. This behavior is unlikely to be changed.
+	//   While we can workaround (a) storing memory to release it correctly later, 
+	// we can't predict in portable way how much overhead is necessary to allocate
+	// memory correctly.
+
+	freeObjects = (FreeChainPtr*) memory;
+	memset(freeObjects, 0, length * sizeof(void*));
 	bigHunks = NULL;
 	smallHunks = NULL;
 	freeBlocks.nextLarger = freeBlocks.priorSmaller = &freeBlocks;
