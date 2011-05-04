@@ -5945,7 +5945,6 @@ static SSHORT print_item(TEXT** s,
 		case SQL_LONG:
 		case SQL_INT64:
 			{
-				TEXT str_buf[30];
 				SINT64 value;
 
 				if (dtype == SQL_SHORT)
@@ -5955,22 +5954,13 @@ static SSHORT print_item(TEXT** s,
 				else if (dtype == SQL_INT64)
 					value = *(SINT64*) (var->sqldata);
 
-				print_item_numeric(value, length, dscale, str_buf);
-				sprintf(p, "%s ", str_buf);
-				if (List) {
-					// Added 1999-03-23 to left-justify in LIST ON mode 
-					{
-						TEXT* src = str_buf;
-						TEXT* dest = str_buf;
-						while (' ' == *src)
-							src++;
-						/* This is pretty much the same thing as a strcpy,
-						   but strcpy is not guaranteed to do the right thing
-						   when the source and destination overlap. :-( */
-						if (src != dest)
-							while (0 != (*dest++ = *src++));	// empty 
-					}
-					isqlGlob.printf("%s%s", str_buf, NEWLINE);
+				Firebird::string str_buf;
+				print_item_numeric(value, length, dscale, str_buf.getBuffer(length));
+				sprintf(p, "%s ", str_buf.c_str());
+				if (List)
+				{
+					str_buf.ltrim(); // Added 1999-03-23 to left-justify in LIST ON mode
+					isqlGlob.printf("%s%s", str_buf.c_str(), NEWLINE);
 				}
 				break;
 			}
