@@ -1,3 +1,11 @@
+ 2011-05-03 12:03  hvlad 
+   M src/common/classes/alloc.cpp
+Don't use placement new[] as its behavior is inconsistent between compilers
+
+ 2011-05-03 07:43  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+This should fix deadlock, noticed by Damyan
+
  2011-04-30 18:23  asfernandes 
    M src/common/config/os/config_root.h
 Invert the functionality of addSlash to fixPath. It was creating paths with double slashes in config files.
