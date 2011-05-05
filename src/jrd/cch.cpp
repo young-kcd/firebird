@@ -2757,6 +2757,11 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					release_bdb(tdbb, bdb, false, false, false);
 				}
+				else // re-post the lock if it was written
+				if ((bdb->bdb_ast_flags & BDB_blocking) && !(bdb->bdb_flags & BDB_dirty))
+				{
+					PAGE_LOCK_RE_POST(bdb->bdb_lock);
+				}
 				flush.remove(ptr);
 			}
 			else
@@ -4315,10 +4320,10 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 		// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 		// error, and log it to firebird.log.
 
-		fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
+		fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 		ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
-		ERR_log(JRD_BUGCHK, 215, errmsg);	// msg 215 page %ld, page type %ld lock conversion denied
+		ERR_log(JRD_BUGCHK, 216, errmsg);	// msg 216 page %ld, page type %ld lock denied
 
 		// CCH_unwind releases all the BufferDesc's and calls ERR_punt()
 		// ERR_punt will longjump.
@@ -4364,10 +4369,10 @@ static SSHORT lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, c
 	// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 	// error, and log it to firebird.log.
 
-	fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
+	fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
-	ERR_log(JRD_BUGCHK, 216, errmsg);	// msg 216 page %ld, page type %ld lock denied
+	ERR_log(JRD_BUGCHK, 215, errmsg);	// msg 215 page %ld, page type %ld lock conversion denied
 
 	CCH_unwind(tdbb, true);
 	return 0;					// Added to get rid of Compiler Warning
