@@ -1,3 +1,7 @@
+ 2011-05-04 23:00  asfernandes 
+   M src/isql/isql.epp
+Backported fix for CORE-1782 - ISQL crashes when fetching data for a column having alias longer than 30 characters.
+
  2011-04-21 20:25  asfernandes 
    M src/jrd/unicode_util.cpp
 Fixed CORE-3447 - Collation is not installed with icu > 4.2.
