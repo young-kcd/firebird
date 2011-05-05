@@ -35,9 +35,9 @@ bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
 void		CCH_expand(Jrd::thread_db*, ULONG);
 Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
-Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, const bool, const bool);
+Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, const bool);
 SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SCHAR);
-void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, const bool, const bool);
+void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, const bool);
 void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_fini(Jrd::thread_db*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
@@ -68,22 +68,17 @@ bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 
 inline Ods::pag* CCH_FETCH(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
-	return CCH_fetch (tdbb, window, lock_type, page_type, 1, true, false);
+	return CCH_fetch (tdbb, window, lock_type, page_type, 1, true);
 }
 
 inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
 {
-	return CCH_fetch (tdbb, window, lock_type, page_type, 1, false, false);
-}
-
-inline Ods::pag* CCH_FETCH_MERGE(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type)
-{
-	return CCH_fetch (tdbb, window, lock_type, page_type, 1, true, true);
+	return CCH_fetch (tdbb, window, lock_type, page_type, 1, false);
 }
 
 inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait)
 {
-	return CCH_fetch (tdbb, window, lock_type, page_type, latch_wait, true, false);
+	return CCH_fetch (tdbb, window, lock_type, page_type, latch_wait, true);
 }
 
 inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT wait, SCHAR page_type)
@@ -91,9 +86,9 @@ inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock
 	return CCH_fetch_lock(tdbb, window, lock_type, wait, page_type);
 }
 
-inline void CCH_FETCH_PAGE(Jrd::thread_db* tdbb, Jrd::win* window, bool read_shadow, bool merge_flag)
+inline void CCH_FETCH_PAGE(Jrd::thread_db* tdbb, Jrd::win* window, bool read_shadow)
 {
-	CCH_fetch_page(tdbb, window, read_shadow, merge_flag);
+	CCH_fetch_page(tdbb, window, read_shadow);
 }
 
 inline void CCH_RELEASE(Jrd::thread_db* tdbb, Jrd::win* window)

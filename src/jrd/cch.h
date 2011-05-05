@@ -155,10 +155,7 @@ const int BDB_writer			= 4;		// someone is updating the page
 const int BDB_marked			= 8;		// page has been updated
 const int BDB_must_write		= 16;		// forces a write as soon as the page is released
 const int BDB_faked				= 32;		// page was just allocated
-	// BDB_merge: Page marked for backup merge purposes to prevent redundant writing
-	// just read from delta page back into the delta while delta is merging.
-	// See cch.cpp: write_page
-const int BDB_merge				= 64;
+//const int BDB_merge				= 64;
 const int BDB_system_dirty 		= 128;		// system transaction has marked dirty
 const int BDB_io_error	 		= 256;		// page i/o error
 const int BDB_read_pending 		= 512;		// read is pending

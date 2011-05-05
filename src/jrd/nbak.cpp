@@ -435,7 +435,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 			do {
 				WIN window2(DB_PAGE_SPACE, all.current().db_page);
 				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
-				Ods::pag* page = CCH_FETCH_MERGE(tdbb, &window2, LCK_write, pag_undefined);
+				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
 				NBAK_TRACE(("Merge: page %d is fetched", all.current().db_page));
 				if (page->pag_scn != current_scn)
 				{
