@@ -1,3 +1,24 @@
+ 2011-05-05 22:05  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-3468 : Attempt to read after the end of file when nbackup state is stalled
+
+ 2011-05-05 18:11  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+   M src/jrd/cch_proto.h
+   M src/jrd/nbak.cpp
+Fixed bug CORE-3466 : Some changes could be lost during the merge of delta file into main database file.
+Removed BDB_merge flag and related code.
+
+ 2011-05-05 17:40  hvlad 
+   M src/jrd/cch.cpp
+FiFixed bug CORE-3465 : Nbackup state lock could be not released after cache error. It results in "Can't lock state for write" bugcheck when backup state is going to be changed.
+
+ 2011-05-05 14:33  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-3464.
+Correct error reporting - bugcheck's 215 and 216 was confused with each other.
+
  2011-05-03 12:03  hvlad 
    M src/common/classes/alloc.cpp
 Don't use placement new[] as its behavior is inconsistent between compilers
