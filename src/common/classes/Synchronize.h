@@ -93,6 +93,7 @@ public:
 private:
 	void grantLock(SyncObject* lock);
 	void init(const char* description);
+
 	static void setThread(ThreadSync* thread);
 
 	FB_THREAD_ID threadId;
@@ -109,4 +110,3 @@ private:
 } // namespace Firebird
 
 #endif // CLASSES_SYNCHRONIZE_H
-

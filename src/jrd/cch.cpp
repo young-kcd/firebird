@@ -5302,8 +5302,9 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 			fb_assert(pageSpace);
 			const bool isTempPage = pageSpace->isTemporary();
 
-			if (!isTempPage && (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
+			if (!isTempPage &&
+				(backup_state == nbak_state_stalled ||
+					(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,

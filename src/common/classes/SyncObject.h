@@ -49,7 +49,7 @@ enum SyncType {
 class Sync;
 class ThreadSync;
 
-class SyncObject 
+class SyncObject
 {
 public:
 	SyncObject()
