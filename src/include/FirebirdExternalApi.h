@@ -35,6 +35,7 @@
 
 #include "FirebirdApi.h"
 #include "FirebirdPluginApi.h"
+#include "ProviderInterface.h"
 
 
 namespace Firebird {
@@ -58,11 +59,14 @@ public:
 	virtual ExternalEngine* FB_CALL getEngine(Error* error) = 0;
 
 	// Gets the Attachment associated with this context.
-	virtual Attachment* FB_CALL getAttachment(Error* error) = 0;
+	virtual IAttachment* FB_CALL getAttachment(Error* error) = 0;
 
 	// Obtained transaction is valid only before control is returned to the engine
 	// or in ExternalResultSet::fetch calls of correspondent ExternalProcedure::open.
-	virtual Transaction* FB_CALL getTransaction(Error* error) = 0;
+	virtual ITransaction* FB_CALL getTransaction(Error* error) = 0;
+
+	virtual const char* FB_CALL getUserName() = 0;
+	virtual const char* FB_CALL getDatabaseName() = 0;
 
 	// Get user attachment character set.
 	virtual const Utf8* FB_CALL getClientCharSet() = 0;

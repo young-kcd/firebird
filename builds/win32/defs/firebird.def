@@ -352,6 +352,8 @@ EXPORTS
 
 	fb_ping
 	fb_get_master_interface
+	fb_get_database_handle
+	fb_get_transaction_handle
 
 	gds__trace                                                                                                                                     
 	gds__trace_raw                                                                                                                                 

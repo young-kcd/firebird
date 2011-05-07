@@ -720,6 +720,18 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	virtual IAttachment* registerAttachment(IProvider* /*provider*/, IAttachment* /*attachment*/)
+	{
+		fb_assert(false);
+		return NULL;
+	}
+
+	virtual ITransaction* registerTransaction(IAttachment* /*attachment*/, ITransaction* /*transaction*/)
+	{
+		fb_assert(false);
+		return NULL;
+	}
 };
 
 

@@ -48,13 +48,13 @@ using namespace Firebird;
 
 
 // static method
-Jrd::Attachment* Jrd::Attachment::create(Database* dbb, FB_API_HANDLE publicHandle)
+Jrd::Attachment* Jrd::Attachment::create(Database* dbb)
 {
 	MemoryPool* const pool = dbb->createPool();
 
 	try
 	{
-		Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb, publicHandle);
+		Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
 		pool->setStatsGroup(attachment->att_memory_stats);
 		return attachment;
 	}
@@ -135,11 +135,10 @@ void Jrd::Attachment::backupStateReadUnLock(thread_db* tdbb)
 }
 
 
-Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle)
+Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	: att_pool(pool),
 	  att_memory_stats(&dbb->dbb_memory_stats),
 	  att_database(dbb),
-	  att_public_handle(publicHandle),
 	  att_requests(*pool),
 	  att_lock_owner_id(Database::getLockOwnerId()),
 	  att_backup_state_counter(0),
@@ -157,7 +156,8 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publi
 	  att_ext_connection(NULL),
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
-	  att_interface(NULL)
+	  att_interface(NULL),
+	  att_public_interface(NULL)
 {
 }
 

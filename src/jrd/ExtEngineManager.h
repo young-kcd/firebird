@@ -41,6 +41,7 @@ namespace Jrd {
 
 class thread_db;
 class jrd_prc;
+class jrd_tra;
 class Attachment;
 class Database;
 class Format;
@@ -72,8 +73,10 @@ private:
 		void setTransaction(thread_db* tdbb);
 
 		virtual Firebird::ExternalEngine* FB_CALL getEngine(Firebird::Error* error);
-		virtual Firebird::Attachment* FB_CALL getAttachment(Firebird::Error* error);
-		virtual Firebird::Transaction* FB_CALL getTransaction(Firebird::Error* error);
+		virtual Firebird::IAttachment* FB_CALL getAttachment(Firebird::Error* error);
+		virtual Firebird::ITransaction* FB_CALL getTransaction(Firebird::Error* error);
+		virtual const char* FB_CALL getUserName();
+		virtual const char* FB_CALL getDatabaseName();
 		virtual const Firebird::Utf8* FB_CALL getClientCharSet();
 		virtual int FB_CALL obtainInfoCode();
 		virtual void* FB_CALL getInfo(int code);
@@ -82,12 +85,11 @@ private:
 	private:
 		Firebird::ExternalEngine* engine;
 		Attachment* internalAttachment;
+		jrd_tra* internalTransaction;
+		Firebird::IAttachment* externalAttachment;
+		Firebird::ITransaction* externalTransaction;
 		Firebird::GenericMap<Firebird::NonPooled<int, void*> > miscInfo;
-		FB_API_HANDLE traHandle;
-		FB_API_HANDLE attHandle;
 		Firebird::MetaName clientCharSet;
-		Firebird::AutoPtr<AttachmentImpl> attachment;
-		Firebird::AutoPtr<TransactionImpl> transaction;
 	};
 
 	struct EngineAttachment

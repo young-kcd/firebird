@@ -106,25 +106,6 @@ public:
 };
 
 
-class Attachment : public Disposable
-{
-public:
-	// Get an ISC compatible attachment handle.
-	virtual Handle FB_CALL getHandle(Error* error) const = 0;
-
-	virtual const char* FB_CALL getUserName() const = 0;
-	virtual const char* FB_CALL getDatabaseName() const = 0;
-};
-
-
-class Transaction
-{
-public:
-	// Get an ISC compatible transaction handle.
-	virtual Handle FB_CALL getHandle(Error* error) const = 0;
-};
-
-
 // Represents a parameter or column.
 class Value
 {

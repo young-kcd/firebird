@@ -926,7 +926,7 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 
 	if (plugin->release() == 0)
 	{
-		fb_assert(parent);
+		///fb_assert(parent);
 		if (parent)
 		{
 			parent->release();

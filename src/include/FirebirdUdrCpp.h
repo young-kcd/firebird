@@ -438,14 +438,20 @@ class Helper
 public:
 	static isc_db_handle getIscDbHandle(ExternalContext* context)
 	{
-		Attachment* att = context->getAttachment(ThrowError());
-		return att->getHandle(ThrowError());
+		ISC_STATUS_ARRAY status = {0};
+		isc_db_handle handle = 0;
+		fb_get_database_handle(status, &handle, context->getAttachment(ThrowError()));
+		ThrowError::check(status);
+		return handle;
 	}
 
 	static isc_tr_handle getIscTrHandle(ExternalContext* context)
 	{
-		Transaction* tra = context->getTransaction(ThrowError());
-		return tra->getHandle(ThrowError());
+		ISC_STATUS_ARRAY status = {0};
+		isc_tr_handle handle = 0;
+		fb_get_transaction_handle(status, &handle, context->getTransaction(ThrowError()));
+		ThrowError::check(status);
+		return handle;
 	}
 
 	static void* getEntryPoint(ExternalContext* /*context*/, const char* entryPoint)

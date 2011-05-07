@@ -577,12 +577,7 @@ void Engine::loadModule(const string& str, PathName* moduleName, string* entryPo
 		PathName path;
 		PathUtils::concatPath(path, *i, *moduleName);
 
-		ModuleLoader::Module* module = ModuleLoader::loadModule(path);
-		if (!module)
-		{
-			ModuleLoader::doctorModuleExtension(path);
-			module = ModuleLoader::loadModule(path);
-		}
+		ModuleLoader::Module* module = ModuleLoader::fixAndLoadModule(path);
 
 		if (module)
 		{

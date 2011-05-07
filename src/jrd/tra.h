@@ -161,6 +161,7 @@ public:
 		tra_transactions(*p),
 		tra_sorts(*p),
 		tra_interface(NULL),
+		tra_public_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
@@ -262,6 +263,7 @@ public:
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
 	JTransaction* tra_interface;
+	Firebird::ITransaction* tra_public_interface;
 
 private:
 	TempSpace* tra_blob_space;	// temp blob storage

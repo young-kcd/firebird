@@ -31,10 +31,27 @@
 
 #include "firebird.h"
 #include "Interface.h"
+#include "../common/classes/ImplementHelper.h"
 
 namespace Why
 {
 	extern Firebird::IProvider* dispatcherPtr;
+
+	class MasterImplementation : public Firebird::StackIface<Firebird::IMaster>
+	{
+	public:
+		// IMaster implementation
+		Firebird::IStatus* FB_CARG getStatus();
+		Firebird::IProvider* FB_CARG getDispatcher();
+		Firebird::IPluginManager* FB_CARG getPluginManager();
+		int FB_CARG upgradeInterface(Firebird::IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass);
+		const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
+		Firebird::ITimerControl* FB_CARG getTimerControl();
+		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
+			Firebird::IAttachment* attachment);
+		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
+			Firebird::ITransaction* transaction);
+	};
 
 	void shutdownTimers();
 } // namespace Why

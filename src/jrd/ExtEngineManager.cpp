@@ -60,40 +60,6 @@ using namespace Firebird;
 namespace Jrd {
 
 
-class ExtEngineManager::AttachmentImpl : public Firebird::Attachment
-{
-public:
-	AttachmentImpl(ExternalContextImpl* aContext, Handle aHandle, Jrd::Attachment* aAttachment);
-	virtual ~AttachmentImpl();
-
-public:
-	virtual void FB_CALL dispose(Error* error);
-
-	virtual Handle FB_CALL getHandle(Error* error) const;
-	virtual const char* FB_CALL getUserName() const;
-	virtual const char* FB_CALL getDatabaseName() const;
-
-private:
-	ExternalContextImpl* context;
-	FB_API_HANDLE handle;
-	Jrd::Attachment* attachment;
-};
-
-
-class ExtEngineManager::TransactionImpl : public Firebird::Transaction
-{
-public:
-	TransactionImpl(Handle aHandle);
-	virtual ~TransactionImpl();
-
-public:
-	virtual Handle FB_CALL getHandle(Error* error) const;
-
-private:
-	FB_API_HANDLE handle;
-};
-
-
 template <typename T> class ExtEngineManager::ContextManager
 {
 public:
@@ -200,89 +166,18 @@ private:
 //---------------------
 
 
-ExtEngineManager::AttachmentImpl::AttachmentImpl(ExternalContextImpl* aContext, Handle aHandle,
-		Jrd::Attachment* aAttachment)
-	: context(aContext),
-	  handle(aHandle),
-	  attachment(aAttachment)
-{
-}
-
-ExtEngineManager::AttachmentImpl::~AttachmentImpl()
-{
-	context->attachment.release();
-	handle = 0;
-	dispose(LogError());
-}
-
-void FB_CALL ExtEngineManager::AttachmentImpl::dispose(Error* error)
-{
-	ISC_STATUS_ARRAY statusVector;
-
-	if (handle)
-	{
-		if (isc_detach_database(statusVector, &handle) != 0)
-		{
-			ErrorImpl::statusVectorToError(statusVector, error);
-			return;
-		}
-	}
-
-	context->attachment = NULL;
-}
-
-Handle FB_CALL ExtEngineManager::AttachmentImpl::getHandle(Error* /*error*/) const
-{
-	return handle;
-}
-
-
-const char* FB_CALL ExtEngineManager::AttachmentImpl::getUserName() const
-{
-	return attachment->att_user->usr_user_name.c_str();
-}
-
-
-const char* FB_CALL ExtEngineManager::AttachmentImpl::getDatabaseName() const
-{
-	return attachment->att_database->dbb_database_name.c_str();
-}
-
-
-//---------------------
-
-
-ExtEngineManager::TransactionImpl::TransactionImpl(Handle aHandle)
-	: handle(aHandle)
-{
-}
-
-ExtEngineManager::TransactionImpl::~TransactionImpl()
-{
-}
-
-Handle FB_CALL ExtEngineManager::TransactionImpl::getHandle(Error* /*error*/) const
-{
-	return handle;
-}
-
-
-//---------------------
-
-
 ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 		ExternalEngine* aEngine)
 	: engine(aEngine),
 	  internalAttachment(tdbb->getAttachment()),
-	  miscInfo(*internalAttachment->att_pool),
-	  traHandle(0)
+	  internalTransaction(NULL),
+	  externalAttachment(NULL),
+	  externalTransaction(NULL),
+	  miscInfo(*internalAttachment->att_pool)
 {
 	//// TODO: admin rights
 
-	attHandle = internalAttachment->att_public_handle;
 	clientCharSet = INTL_charset_lookup(tdbb, internalAttachment->att_client_charset)->getName();
-
-	setTransaction(tdbb);
 }
 
 ExtEngineManager::ExternalContextImpl::~ExternalContextImpl()
@@ -292,21 +187,48 @@ ExtEngineManager::ExternalContextImpl::~ExternalContextImpl()
 
 void ExtEngineManager::ExternalContextImpl::releaseTransaction()
 {
-	if (traHandle)
+	if (externalTransaction)
 	{
-		traHandle = 0;
-		transaction = NULL;
+		externalTransaction->release();
+		externalTransaction = NULL;
 	}
+
+	if (externalAttachment)
+	{
+		externalAttachment->release();
+		externalAttachment = NULL;
+	}
+
+	internalTransaction = NULL;
 }
 
 void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 {
+	jrd_tra* newTransaction = tdbb->getTransaction();
+
+	if (newTransaction == internalTransaction)
+		return;
+
 	releaseTransaction();
+	fb_assert(!externalAttachment && !externalTransaction);
 
-	jrd_tra* tra = tdbb->getTransaction();
-	traHandle = tra ? tra->tra_public_handle : 0;
+	MasterInterfacePtr master;
 
-	transaction = FB_NEW(*internalAttachment->att_pool) TransactionImpl(traHandle);
+	if (internalAttachment)
+	{
+		internalAttachment->att_interface->addRef();
+
+		externalAttachment = master->registerAttachment(currentProvider(),
+			internalAttachment->att_interface);
+	}
+
+	if ((internalTransaction = newTransaction))
+	{
+		internalTransaction->tra_interface->addRef();
+
+		externalTransaction = master->registerTransaction(externalAttachment,
+			internalTransaction->tra_interface);
+	}
 }
 
 ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Error* /*error*/)
@@ -314,29 +236,30 @@ ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(Error* /*error*
 	return engine;
 }
 
-Firebird::Attachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(Error* /*error*/)
+Firebird::IAttachment* FB_CALL ExtEngineManager::ExternalContextImpl::getAttachment(Error* /*error*/)
 {
-	if (!this->attachment)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-		attachment = FB_NEW(*internalAttachment->att_pool) AttachmentImpl(this, attHandle,
-			tdbb->getAttachment());
-	}
-
-	return attachment;
+	return externalAttachment;
 }
 
-Firebird::Transaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(Error* /*error*/)
+Firebird::ITransaction* FB_CALL ExtEngineManager::ExternalContextImpl::getTransaction(Error* /*error*/)
 {
-	return transaction;
+	return externalTransaction;
 }
 
+const char* FB_CALL ExtEngineManager::ExternalContextImpl::getUserName()
+{
+	return internalAttachment->att_user->usr_user_name.c_str();
+}
+
+const char* FB_CALL ExtEngineManager::ExternalContextImpl::getDatabaseName()
+{
+	return internalAttachment->att_database->dbb_database_name.c_str();
+}
 
 const Utf8* FB_CALL ExtEngineManager::ExternalContextImpl::getClientCharSet()
 {
 	return clientCharSet.c_str();
 }
-
 
 int FB_CALL ExtEngineManager::ExternalContextImpl::obtainInfoCode()
 {
@@ -344,14 +267,12 @@ int FB_CALL ExtEngineManager::ExternalContextImpl::obtainInfoCode()
 	return ++counter;
 }
 
-
 void* FB_CALL ExtEngineManager::ExternalContextImpl::getInfo(int code)
 {
 	void* value = NULL;
 	miscInfo.get(code, value);
 	return value;
 }
-
 
 void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* value)
 {
@@ -705,8 +626,11 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment
 
 		if (attInfo)
 		{
-			ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-			engine->closeAttachment(LogError(), attInfo->context);
+			{	// scope
+				ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
+				engine->closeAttachment(LogError(), attInfo->context);
+			}
+
 			delete attInfo;
 		}
 	}

@@ -788,8 +788,7 @@ static void		ExtractDriveLetter(const TEXT*, ULONG*);
 static Database*	init(thread_db*, const PathName&, RefPtr<Config>, bool);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
-	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb,
-	FB_API_HANDLE public_handle = 0);
+	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
@@ -1076,12 +1075,8 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
-void JProvider::attachDatabase(IStatus* user_status,
-							   Firebird::IAttachment** handle,
-							   FB_API_HANDLE public_handle,
-							   const char* filename,
-							   unsigned int dpb_length,
-							   const unsigned char* dpb)
+JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char* filename,
+	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -1094,8 +1089,6 @@ void JProvider::attachDatabase(IStatus* user_status,
  *	sullied by user data.
  *
  **************************************/
-	*handle = NULL;
-
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -1223,7 +1216,7 @@ void JProvider::attachDatabase(IStatus* user_status,
 				}
 			}
 
-			attachment = Jrd::Attachment::create(dbb, public_handle);
+			attachment = Jrd::Attachment::create(dbb);
 			tdbb->setAttachment(attachment);
 			attachment->att_filename = is_alias ? file_name : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
@@ -1662,7 +1655,6 @@ void JProvider::attachDatabase(IStatus* user_status,
 			attachment->att_interface = jAtt;
 
 			MutexLockGuard guard(*(jAtt->getMutex()));
-			*handle = jAtt;
 
 			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
@@ -1706,7 +1698,6 @@ void JProvider::attachDatabase(IStatus* user_status,
 				}
 				catch (const Exception&)
 				{
-					*handle = NULL;
 					attachment->att_flags = save_flags;
 					if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
 						TRA_rollback(tdbb, transaction, false, false);
@@ -1717,7 +1708,7 @@ void JProvider::attachDatabase(IStatus* user_status,
 			// guardDatabases.leave();
 
 			jAtt->addRef();
-			return;
+			return jAtt;
 		}	// try
 		catch (const Exception& ex)
 		{
@@ -1733,7 +1724,8 @@ void JProvider::attachDatabase(IStatus* user_status,
 	{
 		ex.stuffException(user_status);
 	}
-	*handle = NULL;
+
+	return NULL;
 }
 
 
@@ -2161,9 +2153,8 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 }
 
 
-void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** handle,
-	FB_API_HANDLE public_handle, const char* filename, unsigned int dpb_length,
-	const unsigned char* dpb)
+JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char* filename,
+	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -2175,8 +2166,6 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	*handle = NULL;
-
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
@@ -2277,7 +2266,7 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
 				dbb->dbb_encrypt_key = options.dpb_key;
 			}
 
-			attachment = Jrd::Attachment::create(dbb, public_handle);
+			attachment = Jrd::Attachment::create(dbb);
 			tdbb->setAttachment(attachment);
 			attachment->att_filename = is_alias ? file_name : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
@@ -2348,7 +2337,7 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
 			{
 				if (options.dpb_overwrite)
 				{
-					attachDatabase(user_status, handle, public_handle, filename, dpb_length, dpb);
+					JAttachment* attachment2 = attachDatabase(user_status, filename, dpb_length, dpb);
 					if (user_status->get()[1] == isc_adm_task_denied)
 					{
 						throw;
@@ -2356,10 +2345,10 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
 
 					bool allow_overwrite = false;
 
-					if (*handle)
+					if (attachment2)
 					{
-						allow_overwrite = reinterpret_cast<Attachment*>(*handle)->att_user->locksmith();
-						(*handle)->detach(user_status);
+						allow_overwrite = attachment2->getHandle()->att_user->locksmith();
+						attachment2->detach(user_status);
 					}
 					else
 					{
@@ -2506,9 +2495,8 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
 			JAttachment* jAtt = new JAttachment(attachment);
 			jAtt->addRef();
 			attachment->att_interface = jAtt;
-			*handle = jAtt;
 
-			return;
+			return jAtt;
 		}	// try
 		catch (const Exception& ex)
 		{
@@ -2525,7 +2513,7 @@ void JProvider::createDatabase(IStatus* user_status, Firebird::IAttachment** han
 		ex.stuffException(user_status);
 	}
 
-	*handle = NULL;
+	return NULL;
 }
 
 
@@ -3910,7 +3898,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 
 
 JTransaction* JAttachment::startTransaction(IStatus* user_status,
-	unsigned int tpbLength, const unsigned char* tpb, FB_API_HANDLE public_handle)
+	unsigned int tpbLength, const unsigned char* tpb)
 {
 /**************************************
  *
@@ -3929,7 +3917,7 @@ JTransaction* JAttachment::startTransaction(IStatus* user_status,
 		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		start_transaction(tdbb, true, &tra, getHandle(), tpbLength, tpb, public_handle);
+		start_transaction(tdbb, true, &tra, getHandle(), tpbLength, tpb);
 	}
 	catch (const Exception& ex)
 	{
@@ -7147,8 +7135,7 @@ void JRD_start_and_send(thread_db* tdbb, jrd_req* request, jrd_tra* transaction,
 
 
 static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
-	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb,
-	FB_API_HANDLE public_handle)
+	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb)
 {
 /**************************************
  *
@@ -7172,7 +7159,6 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 		{
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
-			transaction->tra_public_handle = public_handle;
 			transaction->tra_sibling = NULL;
 			*tra_handle = transaction;
 
@@ -7318,6 +7304,7 @@ bool JRD_verify_database_access(const PathName& name)
 }
 
 
+#if 0
 namespace
 {
 	typedef Array<FB_API_HANDLE> PingQueue;
@@ -7336,6 +7323,7 @@ namespace
 		return 0;
 	}
 } // namespace
+#endif
 
 
 void JRD_shutdown_attachments(const Database* dbb)
@@ -7352,6 +7340,7 @@ void JRD_shutdown_attachments(const Database* dbb)
  **************************************/
 	fb_assert(dbb);
 
+#if 0	//// FIXME:
 	try
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
@@ -7370,6 +7359,7 @@ void JRD_shutdown_attachments(const Database* dbb)
 	}
 	catch (const Exception&)
 	{} // no-op
+#endif
 }
 
 

@@ -178,8 +178,7 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
 //	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 // second form is tmp - not to rewrite external engines right now
-	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb,
-										  FB_API_HANDLE api) = 0;
+	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id) = 0;
 	virtual IStatement* FB_CARG allocateStatement(IStatus* status) = 0;
 	virtual IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blrLength, const unsigned char* blr) = 0;
@@ -230,10 +229,10 @@ public:
 class IProvider : public IPluginBase
 {
 public:
-	virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb) = 0;
-	virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb) = 0;
+	virtual IAttachment* FB_CARG attachDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb) = 0;
+	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb) = 0;
 	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb) = 0;
 	//virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int count, ...) = 0;

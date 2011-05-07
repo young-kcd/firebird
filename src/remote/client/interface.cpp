@@ -354,8 +354,8 @@ public:
 						 unsigned int bufferLength, unsigned char* buffer);
 //	virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb);
 // second form is tmp - not to rewrite external engines right now
-	virtual Firebird::ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb,
-										  FB_API_HANDLE api);
+	virtual Firebird::ITransaction* FB_CARG startTransaction(IStatus* status,
+		unsigned int tpbLength, const unsigned char* tpb);
 	virtual Firebird::ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id);
 	virtual Firebird::IStatement* FB_CARG allocateStatement(IStatus* status);
 	virtual Firebird::IRequest* FB_CARG compileRequest(IStatus* status, unsigned int blr_length, const unsigned char* blr);
@@ -460,10 +460,10 @@ public:
 	}
 
 	// IProvider implementation
-	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
+	virtual IAttachment* FB_CARG attachDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb);
+	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb);
 	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
 	//virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int count, ...);
@@ -502,10 +502,10 @@ public:
 	}
 
 	// IProvider implementation
-	virtual void FB_CARG attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
-	virtual void FB_CARG createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE api, const char* fileName,
-								unsigned int dpbLength, const unsigned char* dpb);
+	virtual IAttachment* FB_CARG attachDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb);
+	virtual IAttachment* FB_CARG createDatabase(IStatus* status, const char* fileName,
+		unsigned int dpbLength, const unsigned char* dpb);
 	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
 };
@@ -669,8 +669,8 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 }
 
 
-void Provider::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
-							  const char* filename, unsigned int dpb_length, const unsigned char* dpb)
+IAttachment* Provider::attachDatabase(IStatus* status, const char* filename,
+	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -683,12 +683,12 @@ void Provider::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_A
  *
  **************************************/
 
-	*ptr = attach(status, filename, dpb_length, dpb, false);
+	return attach(status, filename, dpb_length, dpb, false);
 }
 
 
-void Loopback::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
-							  const char* filename, unsigned int dpb_length, const unsigned char* dpb)
+IAttachment* Loopback::attachDatabase(IStatus* status, const char* filename,
+	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -701,7 +701,7 @@ void Loopback::attachDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_A
  *
  **************************************/
 
-	*ptr = attach(status, filename, dpb_length, dpb, true);
+	return attach(status, filename, dpb_length, dpb, true);
 }
 
 
@@ -1154,8 +1154,8 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 }
 
 
-void Provider::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
-							  const char* fileName, unsigned int dpbLength, const unsigned char* dpb)
+IAttachment* Provider::createDatabase(IStatus* status, const char* fileName,
+	unsigned int dpbLength, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -1168,12 +1168,12 @@ void Provider::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_A
  *
  **************************************/
 
-	*ptr = create(status, fileName, dpbLength, dpb, false);
+	return create(status, fileName, dpbLength, dpb, false);
 }
 
 
-void Loopback::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_API_HANDLE /*public_handle*/,
-							  const char* fileName, unsigned int dpbLength, const unsigned char* dpb)
+IAttachment* Loopback::createDatabase(IStatus* status, const char* fileName,
+	unsigned int dpbLength, const unsigned char* dpb)
 {
 /**************************************
  *
@@ -1186,7 +1186,7 @@ void Loopback::createDatabase(IStatus* status, Firebird::IAttachment** ptr, FB_A
  *
  **************************************/
 
-	*ptr = create(status, fileName, dpbLength, dpb, true);
+	return create(status, fileName, dpbLength, dpb, true);
 }
 
 
@@ -4338,9 +4338,8 @@ void Request::start(IStatus* status, Firebird::ITransaction* tra, int level)
 }
 
 
-Firebird::ITransaction* Attachment::startTransaction(IStatus* status,
-												 unsigned int tpbLength, const unsigned char* tpb,
-												 FB_API_HANDLE /*api*/)
+Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned int tpbLength,
+	const unsigned char* tpb)
 {
 /**************************************
  *

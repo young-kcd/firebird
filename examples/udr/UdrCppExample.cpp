@@ -158,8 +158,6 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 
 	unsigned char* eveBuffer;
 	unsigned char* eveResult;
-	// NOTE: isc_event_block leaks the two memory buffers allocated.
-	// You should manually construct the EPB if you care.
 	int eveLen = funcEventBlock(&eveBuffer, &eveResult, 1, s);
 
 	ISC_STATUS_ARRAY statusVector = {0};
@@ -172,6 +170,9 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 	ThrowError::check(funcWaitForEvent(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
 		statusVector);
 	funcEventCounts(&counter, eveLen, eveBuffer, eveResult);
+
+	isc_free((char*) eveBuffer);
+	isc_free((char*) eveResult);
 
 	// returns the counter
 	result->setInt(ThrowError(), counter);

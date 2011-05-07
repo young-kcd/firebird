@@ -681,7 +681,7 @@ namespace
 
 		YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback);
 
-		virtual ~YEvents()
+		~YEvents()
 		{
 			if (deleteCallback)
 				delete callback;
@@ -696,7 +696,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -732,7 +732,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -798,7 +798,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -850,7 +850,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -891,7 +891,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -968,12 +968,10 @@ namespace
 			handle = makeHandle(&attachments, this);
 		}
 
-		virtual ~YAttachment()
+		~YAttachment()
 		{
 			if (provider)
-			{
 				PluginManagerInterfacePtr()->releasePlugin(provider);
-			}
 		}
 
 		void destroy();
@@ -986,7 +984,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -1000,7 +998,7 @@ namespace
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 		virtual YTransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength,
-			const unsigned char* tpb, FB_API_HANDLE api);
+			const unsigned char* tpb);
 		virtual YTransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length,
 			const unsigned char* id);
 		virtual YStatement* FB_CARG allocateStatement(IStatus* status);
@@ -1059,12 +1057,10 @@ namespace
 			handle = makeHandle(&services, this);
 		}
 
-		virtual ~YService()
+		~YService()
 		{
 			if (provider)
-			{
 				PluginManagerInterfacePtr()->releasePlugin(provider);
-			}
 		}
 
 		void destroy();
@@ -1076,7 +1072,7 @@ namespace
 			{
 				if (next)
 				{
-					next->release();
+					next = NULL;
 					destroy();
 				}
 
@@ -1109,10 +1105,10 @@ namespace
 		}
 
 		// IProvider implementation
-		virtual void FB_CARG attachDatabase(IStatus* status, IAttachment** attachment,
-			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
-		virtual void FB_CARG createDatabase(IStatus* status, IAttachment** ptr,
-			FB_API_HANDLE api, const char* filename, unsigned int dpbLength, const unsigned char* dpb);
+		virtual YAttachment* FB_CARG attachDatabase(IStatus* status, const char* filename,
+			unsigned int dpbLength, const unsigned char* dpb);
+		virtual YAttachment* FB_CARG createDatabase(IStatus* status, const char* filename,
+			unsigned int dpbLength, const unsigned char* dpb);
 		virtual YService* FB_CARG attachServiceManager(IStatus* status, const char* serviceName,
 			unsigned int spbLength, const unsigned char* spb);
 		virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
@@ -1763,15 +1759,13 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
-		IAttachment* attachment = NULL;
-		dispatcher->attachDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
+		YAttachment* attachment = dispatcher->attachDatabase(&status, pathName.c_str(), dpbLength,
 			reinterpret_cast<const UCHAR*>(dpb));
 
 		if (!status.isSuccess())
 			return status[1];
 
-		YAttachment* yAttach = static_cast<YAttachment*>(attachment);
-		*publicHandle = yAttach->handle;
+		*publicHandle = attachment->handle;
 	}
 	catch (const Exception& e)
 	{
@@ -2044,15 +2038,13 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
 
-		IAttachment* attachment = NULL;
-		dispatcher->createDatabase(&status, &attachment, 0, pathName.c_str(), dpbLength,
+		YAttachment* attachment = dispatcher->createDatabase(&status, pathName.c_str(), dpbLength,
 			reinterpret_cast<const UCHAR*>(dpb));
 
 		if (!status.isSuccess())
 			return status[1];
 
-		YAttachment* yAttach = static_cast<YAttachment*>(attachment);
-		*publicHandle = yAttach->handle;
+		*publicHandle = attachment->handle;
 	}
 	catch (const Exception& e)
 	{
@@ -3530,7 +3522,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
 			YTransaction* transaction = attachment->startTransaction(&status,
-				vector->teb_tpb_length, vector->teb_tpb, 0);
+				vector->teb_tpb_length, vector->teb_tpb);
 
 			if (!status.isSuccess())
 				status_exception::raise(status);
@@ -3747,6 +3739,59 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 }
 
 
+// Get the legacy handle of a database.
+ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
+{
+	StatusVector status(userStatus);
+
+	try
+	{
+		YAttachment* yObject = static_cast<YAttachment*>(obj);
+		*handle = yObject->handle;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&status);
+	}
+
+	return status[1];
+}
+
+
+// Get the legacy handle of a transaction.
+ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
+{
+	StatusVector status(userStatus);
+
+	try
+	{
+		YTransaction* yObject = static_cast<YTransaction*>(obj);
+		*handle = yObject->handle;
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(&status);
+	}
+
+	return status[1];
+}
+
+
+//-------------------------------------
+
+
+IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAttachment* attachment)
+{
+	return new YAttachment(provider, attachment, "");
+}
+
+ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
+	ITransaction* transaction)
+{
+	return new YTransaction(static_cast<YAttachment*>(attachment), transaction);
+}
+
+
 //-------------------------------------
 
 
@@ -3766,8 +3811,11 @@ void YEvents::destroy()
 
 	removeHandle(&events, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YEvents::cancel(IStatus* status)
@@ -3812,8 +3860,11 @@ void YRequest::destroy()
 
 	removeHandle(&requests, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YRequest::receive(IStatus* status, int level, unsigned int msgType,
@@ -3940,8 +3991,11 @@ void YBlob::destroy()
 
 	removeHandle(&blobs, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4061,8 +4115,11 @@ void YStatement::destroy()
 
 	removeHandle(&statements, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YStatement::prepare(IStatus* status, ITransaction* transaction,
@@ -4334,8 +4391,11 @@ void YTransaction::destroy()
 
 	removeHandle(&transactions, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4674,8 +4734,11 @@ void YAttachment::destroy()
 
 	removeHandle(&attachments, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 // Get the full database pathname and put it in the transaction description record.
@@ -4715,13 +4778,13 @@ void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
 }
 
 YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLength,
-	const unsigned char* tpb, FB_API_HANDLE api)
+	const unsigned char* tpb)
 {
 	try
 	{
 		YEntry entry(status, this);
 
-		ITransaction* transaction = next->startTransaction(status, tpbLength, tpb, api);
+		ITransaction* transaction = next->startTransaction(status, tpbLength, tpb);
 		if (transaction)
 			transaction = new YTransaction(this, transaction);
 
@@ -5064,8 +5127,11 @@ void YService::destroy()
 {
 	removeHandle(&services, handle);
 
-	next = NULL;
-	release();
+	if (next)
+	{
+		next = NULL;
+		release();
+	}
 }
 
 void YService::detach(IStatus* status)
@@ -5118,14 +5184,12 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 
 
 // Attach a database through the first subsystem that recognizes it.
-void Dispatcher::attachDatabase(IStatus* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
-	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
+YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
+	unsigned int dpbLength, const unsigned char* dpb)
 {
 	try
 	{
 		YEntry entry(status);
-
-		*attachment = NULL;
 
 		if (shutdownStarted)
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
@@ -5213,17 +5277,14 @@ void Dispatcher::attachDatabase(IStatus* status, IAttachment** attachment, FB_AP
 		{
 			IProvider* provider = providerIterator.plugin();
 
-			provider->attachDatabase(currentStatus, attachment, 0, expandedFilename.c_str(),
-				newDpb.getBufferLength(), newDpb.getBuffer());
+			IAttachment* attachment = provider->attachDatabase(currentStatus,
+				expandedFilename.c_str(), newDpb.getBufferLength(), newDpb.getBuffer());
 
 			if (currentStatus->isSuccess())
 			{
-				*attachment = new YAttachment(provider, *attachment, expandedFilename);
 				status->set(currentStatus->get());
-				return;
+				return new YAttachment(provider, attachment, expandedFilename);
 			}
-
-			*attachment = NULL;
 
 			if (currentStatus->get()[1] != isc_unavailable)
 				currentStatus = &temp;
@@ -5236,21 +5297,18 @@ void Dispatcher::attachDatabase(IStatus* status, IAttachment** attachment, FB_AP
 	}
 	catch (const Exception& e)
 	{
-		if (*attachment)
-			(*attachment)->release();
-
 		e.stuffException(status);
 	}
+
+	return NULL;
 }
 
-void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_API_HANDLE /*api*/,
-	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
+YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
+	unsigned int dpbLength, const unsigned char* dpb)
 {
 	try
 	{
 		YEntry entry(status);
-
-		*attachment = NULL;
 
 		if (shutdownStarted)
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
@@ -5342,8 +5400,8 @@ void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_AP
 		{
 			IProvider* provider = providerIterator.plugin();
 
-			provider->createDatabase(currentStatus, attachment, 0, expandedFilename.c_str(),
-				newDpb.getBufferLength(), newDpb.getBuffer());
+			IAttachment* attachment = provider->createDatabase(currentStatus,
+				expandedFilename.c_str(), newDpb.getBufferLength(), newDpb.getBuffer());
 
 			if (currentStatus->isSuccess())
 			{
@@ -5354,12 +5412,9 @@ void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_AP
 				PathName path(orgFilename);
 #endif
 
-				*attachment = new YAttachment(provider, *attachment, path);
 				status->set(currentStatus->get());
-				return;
+				return new YAttachment(provider, attachment, path);
 			}
-
-			*attachment = NULL;
 
 			if (currentStatus->get()[1] != isc_unavailable)
 				currentStatus = &temp;
@@ -5372,14 +5427,10 @@ void Dispatcher::createDatabase(IStatus* status, IAttachment** attachment, FB_AP
 	}
 	catch (const Exception& e)
 	{
-		if (*attachment)
-		{
-			StatusVector temp(NULL);
-			(*attachment)->drop(&temp);
-		}
-
 		e.stuffException(status);
 	}
+
+	return NULL;
 }
 
 // Attach a service through the first subsystem that recognizes it.

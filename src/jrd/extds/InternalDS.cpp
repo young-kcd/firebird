@@ -163,7 +163,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			currentProvider()->attachDatabase(&status, &a, 0, m_dbName.c_str(),
+			a = currentProvider()->attachDatabase(&status, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 
@@ -277,8 +277,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 
 		EngineCallbackGuard guard(tdbb, *this);
 		IntStatus s(status);
-		m_transaction = att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer(), 0);
-																	//// FIXME: public_handle
+		m_transaction = att->startTransaction(&s, tpb.getBufferLength(), tpb.getBuffer());
 	}
 }
 

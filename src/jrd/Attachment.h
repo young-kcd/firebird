@@ -121,14 +121,13 @@ struct bid;
 class Attachment : public pool_alloc<type_att>
 {
 public:
-	static Attachment* create(Database* dbb, FB_API_HANDLE publicHandle);
+	static Attachment* create(Database* dbb);
 	static void destroy(Attachment* const attachment);
 
 	MemoryPool* const att_pool;					// Memory pool
 	Firebird::MemoryStats att_memory_stats;
 
 	Database*	att_database;				// Parent database block
-	FB_API_HANDLE att_public_handle;		// Public handle
 	Attachment*	att_next;					// Next attachment to database
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
@@ -177,6 +176,7 @@ public:
 	TraceManager* att_trace_manager;		// Trace API manager
 
 	JAttachment* att_interface;
+	Firebird::IAttachment* att_public_interface;
 
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();
@@ -216,7 +216,7 @@ public:
 	void backupStateReadUnLock(thread_db* tdbb);
 
 private:
-	Attachment(MemoryPool* pool, Database* dbb, FB_API_HANDLE publicHandle);
+	Attachment(MemoryPool* pool, Database* dbb);
 	~Attachment();
 };
 

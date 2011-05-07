@@ -31,7 +31,6 @@
 #include "Timer.h"
 
 #include "../yvalve/MasterImplementation.h"
-#include "../common/classes/ImplementHelper.h"
 #include "../common/classes/init.h"
 #include "../common/StatusHolder.h"
 #include "../yvalve/PluginManager.h"
@@ -47,18 +46,6 @@
 using namespace Firebird;
 
 namespace Why {
-
-class MasterImplementation : public StackIface<IMaster>
-{
-public:
-	// IMaster implementation
-	IStatus* FB_CARG getStatus();
-	IProvider* FB_CARG getDispatcher();
-	IPluginManager* FB_CARG getPluginManager();
-	int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass);
-	const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
-	ITimerControl* FB_CARG getTimerControl();
-};
 
 //
 // getStatus()

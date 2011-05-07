@@ -77,6 +77,8 @@ public:
 class IProvider;
 class IPluginManager;
 class ITimerControl;
+class IAttachment;
+class ITransaction;
 
 // Master interface is used to access almost all other interfaces.
 class IMaster : public IDisposable
@@ -91,6 +93,8 @@ public:
 	virtual int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
+	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
+	virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 };
 
 } // namespace Firebird

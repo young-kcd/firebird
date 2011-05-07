@@ -244,6 +244,9 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN
 
 ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS*, FB_API_HANDLE*);
 
+ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS*, FB_API_HANDLE*, void*);
+ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS*, FB_API_HANDLE*, void*);
+
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
 
