@@ -1,3 +1,39 @@
+ 2011-05-07 19:52  asfernandes 
+   M builds/posix/firebird.vers
+   M builds/win32/defs/firebird.def
+   M examples/udr/UdrCppExample.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/FirebirdApi.h
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdUdrCpp.h
+   M src/include/Interface.h
+   M src/include/ProviderInterface.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/ibase.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+   M src/yvalve/why_proto.h
+Integrate IAttachment and ITransaction in the external engines API.
+
+ 2011-05-07 19:33  asfernandes 
+   M src/common/classes/SyncObject.h
+   M src/common/classes/Synchronize.h
+   M src/common/classes/alloc.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Misc.
+
  2011-05-05 22:05  hvlad 
    M src/jrd/dpm.epp
 Fixed bug CORE-3468 : Attempt to read after the end of file when nbackup state is stalled
