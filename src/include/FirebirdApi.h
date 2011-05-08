@@ -29,10 +29,6 @@
 #ifndef FIREBIRD_API_H
 #define FIREBIRD_API_H
 
-#ifdef __GNUC__
-#	pragma GCC system_header	// disable warning about non-existent virtual destructor
-#endif
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define FB_CALL __stdcall
 #else

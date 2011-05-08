@@ -31,10 +31,6 @@
 
 #include "types_pub.h"
 
-#ifdef __GNUC__
-#	pragma GCC system_header	// disable warning about non-existent virtual destructor
-#endif
-
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define FB_CARG __cdecl
 #else

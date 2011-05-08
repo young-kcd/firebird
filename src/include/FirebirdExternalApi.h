@@ -29,10 +29,6 @@
 #ifndef FIREBIRD_EXTERNAL_API_H
 #define FIREBIRD_EXTERNAL_API_H
 
-#ifdef __GNUC__
-#	pragma GCC system_header	// disable warning about non-existent virtual destructor
-#endif
-
 #include "FirebirdApi.h"
 #include "FirebirdPluginApi.h"
 #include "ProviderInterface.h"

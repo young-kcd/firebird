@@ -23,10 +23,6 @@
 #ifndef FIREBIRD_PLUGIN_UDR_CPP
 #define FIREBIRD_PLUGIN_UDR_CPP
 
-#ifdef __GNUC__
-#	pragma GCC system_header	// disable warning about non-existent virtual destructor
-#endif
-
 #include "FirebirdApi.h"
 #include "FirebirdExternalApi.h"
 #include "FirebirdUdr.h"
