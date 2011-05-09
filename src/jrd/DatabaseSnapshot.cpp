@@ -350,32 +350,33 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_monitor_lock;
 
-		Database::SyncGuard dsGuard(dbb, true);
-
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(lock->lck_dbb);
-		tdbb->setAttachment(lock->lck_attachment);
-
-		ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
-			// Write the data to the shared memory
-			if (!(dbb->dbb_flags & DBB_not_in_use))
-			{
-				try
-				{
-					dumpData(tdbb);
-				}
-				catch (const Exception& ex)
-				{
-					iscLogException("Cannot dump the monitoring data", ex);
-				}
-			}
+			SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::blockingAst");
 
-			// Release the lock and mark dbb as requesting a new one
-			LCK_release(tdbb, lock);
-			dbb->dbb_ast_flags |= DBB_monitor_off;
+			if (!(dbb->dbb_ast_flags & DBB_monitor_off))
+			{
+				// Write the data to the shared memory
+				if (!(dbb->dbb_flags & DBB_not_in_use))
+				{
+					ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+					try
+					{
+						dumpData(tdbb);
+					}
+					catch (const Exception& ex)
+					{
+						iscLogException("Cannot dump the monitoring data", ex);
+					}
+				}
+
+				// Release the lock and mark dbb as requesting a new one
+				LCK_release(tdbb, lock);
+				dbb->dbb_ast_flags |= DBB_monitor_off;
+			}
 		}
 	}
 	catch (const Exception&)
@@ -406,17 +407,21 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
 	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
 
-	// Release our own lock
-	LCK_release(tdbb, dbb->dbb_monitor_lock);
-	dbb->dbb_ast_flags &= ~DBB_monitor_off;
+	{
+		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::DatabaseSnapshot");
 
-	{ // scope for the RAII object
+		// Release our own lock
+		LCK_release(tdbb, dbb->dbb_monitor_lock);
+		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
-		// Ensure we'll be dealing with a valid backup state inside the call below
-		BackupManager::StateReadGuard holder(tdbb);
+		{ // scope for the RAII object
 
-		// Dump our own data
-		dumpData(tdbb);
+			// Ensure we'll be dealing with a valid backup state inside the call below
+			BackupManager::StateReadGuard holder(tdbb);
+
+			// Dump our own data
+			dumpData(tdbb);
+		}
 	}
 
 	// Signal other processes to dump their data
@@ -770,9 +775,15 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	putDatabase(dbb, writer, fb_utils::genUniqueId());
 
 	// Attachment information
+	
+	Attachment* old_attachment = tdbb->getAttachment();
+	Attachment::Checkout attCout(old_attachment, true);
 
 	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
+		Attachment::SyncGuard attGuard(attachment);
+		tdbb->setAttachment(attachment);
+
 		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
 			continue;
 
@@ -823,6 +834,8 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 			}
 		}
 	}
+
+	tdbb->setAttachment(old_attachment);
 }
 
 

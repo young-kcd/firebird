@@ -78,9 +78,9 @@ public:
 	USHORT fil_fudge;					// Fudge factor for page relocation
 	HANDLE fil_desc;					// File descriptor
 	//int *fil_trace;					// Trace file, if any
-	Firebird::Mutex fil_mutex;
 	Firebird::RWLock* fil_ext_lock;		// file extend lock
 #ifdef SUPERSERVER_V2
+	Firebird::Mutex fil_mutex;
 	void* fil_io_events[MAX_FILE_IO];	// Overlapped I/O events
 #endif
 	USHORT fil_flags;
@@ -93,6 +93,7 @@ public:
 const USHORT FIL_force_write		= 1;
 const USHORT FIL_no_fs_cache		= 2;	// not using file system cache
 const USHORT FIL_readonly			= 4;	// file opened in readonly mode
+const USHORT FIL_sh_write			= 8;	// file opened in shared write mode
 
 // Physical IO trace events
 

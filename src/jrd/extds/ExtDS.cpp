@@ -105,7 +105,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 {
 	if (!m_initialized)
 	{
-		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+		MutexLockGuard guard(m_mutex);
 		if (!m_initialized)
 		{
 			m_initialized = true;
@@ -186,7 +186,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 
 	{ // m_mutex scope
-		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+		MutexLockGuard guard(m_mutex);
 
 		Connection** conn_ptr = m_connections.begin();
 		Connection** end = m_connections.end();
@@ -216,7 +216,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	}
 
 	{ // m_mutex scope
-		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+		MutexLockGuard guard(m_mutex);
 		m_connections.add(conn);
 	}
 
@@ -228,7 +228,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPool*/)
 {
 	{ // m_mutex scope
-		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
+		MutexLockGuard guard(m_mutex);
 
 		conn.m_boundAtt = NULL;
 
@@ -1597,9 +1597,8 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 		{
 			m_saveConnection = attachment->att_ext_connection;
 			attachment->att_ext_connection = &conn;
+			attachment->att_interface->getMutex()->leave();
 		}
-
-		m_tdbb->getDatabase()->dbb_sync->unlock();
 	}
 
 	if (m_mutex) {
@@ -1615,16 +1614,16 @@ EngineCallbackGuard::~EngineCallbackGuard()
 
 	if (m_tdbb)
 	{
-		m_tdbb->getDatabase()->dbb_sync->lock();
+		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		if (attachment) 
+		{
+			attachment->att_interface->getMutex()->enter();
+			attachment->att_ext_connection = m_saveConnection;
+		}
 
 		jrd_tra* transaction = m_tdbb->getTransaction();
 		if (transaction) {
 			transaction->tra_callback_count--;
-		}
-
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
-		if (attachment) {
-			attachment->att_ext_connection = m_saveConnection;
 		}
 	}
 }

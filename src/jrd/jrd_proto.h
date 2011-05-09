@@ -86,6 +86,6 @@ void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req
 	ULONG blr_length, const UCHAR* blr, Firebird::RefStrPtr,
 	ULONG dbginfo_length, const UCHAR* dbginfo, bool isInternalRequest);
 bool JRD_verify_database_access(const Firebird::PathName&);
-void JRD_shutdown_attachments(const Jrd::Database* dbb);
+void JRD_shutdown_attachments(Jrd::Database* dbb);
 void JRD_cancel_operation(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, int option);
 #endif /* JRD_JRD_PROTO_H */

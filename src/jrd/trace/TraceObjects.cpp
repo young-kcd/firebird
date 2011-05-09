@@ -563,14 +563,14 @@ const char* TraceServiceImpl::getRemoteProcessName()
 
 /// TraceRuntimeStats
 
-TraceRuntimeStats::TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
+TraceRuntimeStats::TraceRuntimeStats(Attachment* att, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 	SINT64 clock, SINT64 records_fetched)
 {
 	m_info.pin_time = clock * 1000 / fb_utils::query_performance_frequency();
 	m_info.pin_records_fetched = records_fetched;
 
 	if (baseline)
-		baseline->computeDifference(dbb, *stats, m_info, m_counts);
+		baseline->computeDifference(att, *stats, m_info, m_counts);
 	else
 	{
 		// Report all zero counts for the moment.

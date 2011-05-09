@@ -25,6 +25,7 @@
 #include "firebird.h"
 #include "../jrd/Attachment.h"
 #include "../jrd/Database.h"
+#include "../jrd/Function.h"
 #include "../jrd/nbak.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/PreparedStatement.h"
@@ -95,6 +96,29 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 }
 
 
+MemoryPool* Jrd::Attachment::createPool()
+{
+	MemoryPool* const pool = MemoryPool::createPool(att_pool, att_memory_stats);
+	att_pools.add(pool);
+	return pool;
+}
+
+
+void Jrd::Attachment::deletePool(MemoryPool* pool)
+{
+	if (pool)
+	{
+		size_t pos;
+		if (att_pools.find(pool, pos))
+		{
+			att_pools.remove(pos);
+		}
+
+		MemoryPool::deletePool(pool);
+	}
+}
+
+
 bool Jrd::Attachment::backupStateWriteLock(thread_db* tdbb, SSHORT wait)
 {
 	if (att_backup_state_counter++)
@@ -157,14 +181,28 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
 	  att_interface(NULL),
-	  att_public_interface(NULL)
+	  att_public_interface(NULL),
+	  att_functions(*pool),
+	  att_internal(*pool),
+	  att_dyn_req(*pool),
+	  att_charsets(*pool),
+	  att_charset_ids(*pool),
+	  att_pools(*pool)
 {
+	att_internal.grow(irq_MAX);
+	att_dyn_req.grow(drq_MAX);
 }
 
 
 Jrd::Attachment::~Attachment()
 {
+	destroyIntlObjects();
 	delete att_trace_manager;
+
+	while (att_pools.getCount())
+	{
+		deletePool(att_pools.pop());
+	}
 
 	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -
@@ -326,6 +364,12 @@ void Jrd::Attachment::detachLocksFromAttachment()
  * block doesn't get dereferenced after it is released
  *
  **************************************/
+	if (!att_long_locks)
+		return;
+
+	Sync lckSync(&att_database->dbb_lck_sync, "Attachment::detachLocksFromAttachment");
+	lckSync.lock(SYNC_EXCLUSIVE);
+
 	Lock* long_lock = att_long_locks;
 	while (long_lock)
 	{
@@ -336,4 +380,135 @@ void Jrd::Attachment::detachLocksFromAttachment()
 		long_lock = next;
 	}
 	att_long_locks = NULL;
+}
+
+// Find an inactive incarnation of a system request. If necessary, clone it.
+jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
+{
+	static const int MAX_RECURSION = 100;
+
+	// If the request hasn't been compiled or isn't active, there're nothing to do.
+
+	//Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
+
+	fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
+
+	JrdStatement* statement = (which == IRQ_REQUESTS ? att_internal[id] : att_dyn_req[id]);
+
+	if (!statement)
+		return NULL;
+
+	// Look for requests until we find one that is available.
+
+	for (int n = 0;; ++n)
+	{
+		if (n > MAX_RECURSION)
+		{
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+						Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
+			// Msg363 "request depth exceeded. (Recursive definition?)"
+		}
+
+		jrd_req* clone = statement->getRequest(tdbb, n);
+
+		if (!(clone->req_flags & (req_active | req_reserved)))
+		{
+			clone->req_flags |= req_reserved;
+			return clone;
+		}
+	}
+}
+
+void Jrd::Attachment::shutdown(thread_db* tdbb)
+{
+	// go through relations and indices and release
+	// all existence locks that might have been taken
+
+	vec<jrd_rel*>* rvector = att_relations;
+	if (rvector)
+	{
+		vec<jrd_rel*>::iterator ptr, end;
+		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr)
+		{
+			jrd_rel* relation = *ptr;
+			if (relation)
+			{
+				if (relation->rel_existence_lock)
+				{
+					LCK_release(tdbb, relation->rel_existence_lock);
+					relation->rel_flags |= REL_check_existence;
+					relation->rel_use_count = 0;
+				}
+				if (relation->rel_partners_lock)
+				{
+					LCK_release(tdbb, relation->rel_partners_lock);
+					relation->rel_flags |= REL_check_partners;
+				}
+				if (relation->rel_rescan_lock)
+				{
+					LCK_release(tdbb, relation->rel_rescan_lock);
+					relation->rel_flags &= ~REL_scanned;
+				}
+				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
+				{
+					if (index->idl_lock)
+					{
+						index->idl_count = 0;
+						LCK_release(tdbb, index->idl_lock);
+					}
+				}
+			}
+		}
+	}
+
+	// release all procedure existence locks that might have been taken
+
+	vec<jrd_prc*>* pvector = att_procedures;
+	if (pvector)
+	{
+		vec<jrd_prc*>::iterator pptr, pend;
+		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr)
+		{
+			jrd_prc* procedure = *pptr;
+			if (procedure)
+			{
+				if (procedure->prc_existence_lock)
+				{
+					LCK_release(tdbb, procedure->prc_existence_lock);
+					procedure->prc_flags |= PRC_check_existence;
+					procedure->prc_use_count = 0;
+				}
+			}
+		}
+	}
+
+	// release all function existence locks that might have been taken
+
+	for (Function** iter = att_functions.begin(); iter < att_functions.end(); ++iter)
+	{
+		Function* const function = *iter;
+
+		if (function)
+		{
+			function->releaseLocks(tdbb);
+		}
+	}
+
+	// release collation existence locks
+
+	releaseIntlObjects();
+
+	// And release the system requests.
+
+	for (JrdStatement** itr = att_internal.begin(); itr != att_internal.end(); ++itr)
+	{
+		if (*itr)
+			(*itr)->release(tdbb);
+	}
+
+	for (JrdStatement** itr = att_dyn_req.begin(); itr != att_dyn_req.end(); ++itr)
+	{
+		if (*itr)
+			(*itr)->release(tdbb);
+	}
 }

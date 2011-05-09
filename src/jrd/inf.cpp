@@ -587,25 +587,31 @@ void INF_database_info(thread_db* tdbb,
 				continue;
 			}
 
-			for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 			{
-				if (att->att_flags & ATT_shutdown)
-					continue;
-
-                const UserId* user = att->att_user;
-				if (user)
+				SyncLockGuard sync(&dbb->dbb_sync, SYNC_SHARED, "INF_database_info");
+				for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 				{
-					const char* user_name = user->usr_user_name.hasData() ?
-						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
-					p = buffer;
-					const SSHORT len = strlen(user_name);
-					*p++ = len;
-					memcpy(p, user_name, len);
-					if (!(info = INF_put_item(item, len + 1, buffer, info, end)))
+					if (att->att_flags & ATT_shutdown)
+						continue;
+
+					const UserId* user = att->att_user;
+					if (user)
 					{
-						if (transaction)
-							TRA_commit(tdbb, transaction, false);
-						return;
+						const char* user_name = user->usr_user_name.hasData() ?
+							user->usr_user_name.c_str() : "(Firebird Worker Thread)";
+						p = buffer;
+						const SSHORT len = strlen(user_name);
+						*p++ = len;
+						memcpy(p, user_name, len);
+						if (!(info = INF_put_item(item, len + 1, buffer, info, end)))
+						{
+							if (transaction)
+							{
+								sync.unlock();
+								TRA_commit(tdbb, transaction, false);
+							}
+							return;
+						}
 					}
 				}
 			}

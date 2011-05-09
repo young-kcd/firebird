@@ -37,7 +37,6 @@
 #include "../remote/remote.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/license.h"
-#include "../common/file_params.h"
 #include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
@@ -51,9 +50,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
-#include "../common/isc_s_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/constants.h"
@@ -70,7 +67,6 @@
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
 #include "../common/classes/GetPlugins.h"
-#include "../common/os/fbsyslog.h"
 #include "../common/db_alias.h"
 
 using namespace Firebird;
@@ -866,14 +862,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *	Multi-threaded flavor of server.
  *
  **************************************/
-	// Check for errors/missing firebird.conf
-	const char* anyError = Config::getMessage();
-	if (anyError)
-	{
-		Syslog::Record(Syslog::Error, anyError);
-		return;
-	}
-
 	server_req_t* request = NULL;
 	RemPortPtr port;		// Was volatile PORT port = NULL;
 

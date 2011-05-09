@@ -104,6 +104,7 @@
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../jrd/thread_proto.h"
+#include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/vio_proto.h"
@@ -434,11 +435,11 @@ namespace
 	{
 	public:
 		AttachmentHolder(thread_db* tdbb, JAttachment* ja, bool lockAsync)
-			: mutex(ja->getMutex(lockAsync))
+		  : mutex(ja->getMutex(lockAsync)), 
+			attachment(ja->getHandle()),
+			async(lockAsync)
 		{
 			mutex->enter();
-
-			Jrd::Attachment* attachment = ja->getHandle();
 
 			try
 			{
@@ -447,6 +448,10 @@ namespace
 
 				tdbb->setAttachment(attachment);
 				tdbb->setDatabase(attachment->att_database);
+				if (!lockAsync)
+				{
+					attachment->att_use_count++;
+				}
 			}
 			catch (const Firebird::Exception&)
 			{
@@ -457,11 +462,17 @@ namespace
 
 		~AttachmentHolder()
 		{
+			if (!async)
+			{
+				attachment->att_use_count--;
+			}
 			mutex->leave();
 		}
 
 	private:
 		Firebird::Mutex* mutex;
+		bool async;
+		Jrd::Attachment* attachment;
 
 	private:
 		// copying is prohibited
@@ -469,12 +480,11 @@ namespace
 		AttachmentHolder& operator =(const AttachmentHolder&);
 	};
 
-	class DatabaseContextHolder : private Database::SyncGuard, public Jrd::ContextPoolHolder
+	class DatabaseContextHolder : public Jrd::ContextPoolHolder
 	{
 	public:
 		DatabaseContextHolder(thread_db* tdbb)
-			: Database::SyncGuard(tdbb->getDatabase()),
-			  Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
+			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
 			  savedTdbb(tdbb)
 		{
 			Database* dbb = tdbb->getDatabase();
@@ -539,19 +549,18 @@ void Trigger::compile(thread_db* tdbb)
 	SET_TDBB(tdbb);
 
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	if (engine.isEmpty() && !extTrigger)
 	{
 		if (!statement /*&& !compile_in_progress*/)
 		{
-			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
-
 			if (statement)
 				return;
 
 			compile_in_progress = true;
 			// Allocate statement memory pool
-			MemoryPool* new_pool = dbb->createPool();
+			MemoryPool* new_pool = att->createPool();
 			// Trigger request is not compiled yet. Lets do it now
 			USHORT par_flags = (USHORT) (flags & TRG_ignore_perm) ? csb_ignore_perm : 0;
 			if (type & 1)
@@ -586,7 +595,7 @@ void Trigger::compile(thread_db* tdbb)
 					statement = NULL;
 				}
 				else {
-					dbb->deletePool(new_pool);
+					att->deletePool(new_pool);
 				}
 
 				throw;
@@ -817,7 +826,7 @@ static void cancel_attachments(thread_db* tdbb)
 	{
 		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
 		{
-			Database::SyncGuard dsGuard(dbb);
+			SyncLockGuard guard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "cancel_attachments");
 			Jrd::Attachment* lockedAtt = NULL;
 			Jrd::Attachment* att = dbb->dbb_attachments;
 
@@ -827,36 +836,51 @@ static void cancel_attachments(thread_db* tdbb)
 				// deleted while waiting for lock.
 				RefPtr<JAttachment> jAtt(att->att_interface);
 				MutexLockGuard asyncGuard(*(jAtt->getMutex(true)));
+				att->att_flags |= ATT_shutdown;
 				while (true)
 				{
-					if (att->att_interface->getMutex()->tryEnter() || (att->att_flags & ATT_purge_error))
+					if (att->att_interface->getMutex()->tryEnter())
+					{
+						if (att->att_use_count)
+						{
+							att->att_interface->getMutex()->leave();
+						}
+						else
+						{
+							jAtt->cancel();
+							lockedAtt = att;
+							break;
+						}
+					}
+					if (att->att_flags & ATT_purge_error)
 					{
 						lockedAtt = att;
 						break;
 					}
 
-					{ // scope
-						const bool cancel_disable = (att->att_flags & ATT_cancel_disable);
-						Database::Checkout dcoHolder(dbb);
-						if (!cancel_disable)
-						{
-							ThreadStatusGuard temp_status(tdbb);
-							JRD_cancel_operation(tdbb, att, fb_cancel_enable);
-							JRD_cancel_operation(tdbb, att, fb_cancel_raise);
-						}
+					THREAD_YIELD();
 
-						THREAD_YIELD();
-					} // end scope
+					//{ // scope
+					//	const bool cancel_disable = (att->att_flags & ATT_cancel_disable);
+					//	SyncUnlockGuard cout(guard);
+					//	if (!cancel_disable)
+					//	{
+					//		ThreadStatusGuard temp_status(tdbb);
+					//		JRD_cancel_operation(tdbb, att, fb_cancel_enable);
+					//		JRD_cancel_operation(tdbb, att, fb_cancel_raise);
+					//	}
+
+					//	THREAD_YIELD();
+					//} // end scope
 
 					// check if attachment still exist
 					if (lockedAtt && lockedAtt->att_next != att) {
 						break;
 					}
-					if (dbb->dbb_attachments != att) {
+					if (!lockedAtt && dbb->dbb_attachments != att) {
 						break;
 					}
-				}
-				jAtt->cancel();
+				}				
 				att = lockedAtt ? lockedAtt->att_next : dbb->dbb_attachments;
 			}
 		}
@@ -1170,6 +1194,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		dbb = init(tdbb, expanded_name, config, true);
 
 		fb_assert(dbb);
+		Sync dbbGuard(&dbb->dbb_sync, "attachDatabase");
+		dbbGuard.lock(SYNC_EXCLUSIVE);
 
 		tdbb->setDatabase(dbb);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -1217,6 +1243,12 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			attachment = Jrd::Attachment::create(dbb);
+
+			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
+			jAtt->addRef();
+			attachment->att_interface = jAtt;
+			MutexLockGuard guard(*(jAtt->getMutex()));
+
 			tdbb->setAttachment(attachment);
 			attachment->att_filename = is_alias ? file_name : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
@@ -1255,13 +1287,16 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			if (dbb->dbb_filename.empty())
 			{
-#if defined(DEV_BUILD) && defined(SHARED_METADATA_CACHE)
+#if defined(DEV_BUILD)
 				// make sure we do not reopen same DB twice
-				for (Database* d = databases; d; d = d->dbb_next)
+				if (config->getSharedCache())
 				{
-					if (d->dbb_filename == expanded_name)
+					for (Database* d = databases; d; d = d->dbb_next)
 					{
-						fatal_exception::raise(("Attempt to reopen " + expanded_name).c_str());
+						if (d->dbb_filename == expanded_name)
+						{
+							fatal_exception::raise(("Attempt to reopen " + expanded_name).c_str());
+						}
 					}
 				}
 #endif
@@ -1313,7 +1348,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				}
 
 				options.setBuffers(dbb->dbb_config);
-				CCH_init(tdbb, options.dpb_buffers);
+				CCH_init(tdbb, options.dpb_buffers, config->getSharedCache() && !config->getSharedDatabase());
+
+				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
 
 				// Initialize backup difference subsystem. This must be done before WAL and shadowing
 				// is enabled because nbackup it is a lower level subsystem
@@ -1338,6 +1375,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 				LCK_init(tdbb, LCK_OWNER_attachment);
 				attachment->att_flags |= ATT_lck_init_done;
+
+				INI_init(tdbb);
+				INI_init2(tdbb);
+				PAG_header(tdbb, true);
 			}
 
 			// Attachments to a ReadOnly database need NOT do garbage collection
@@ -1471,6 +1512,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					attachment_succeeded = CCH_exclusive_attachment(tdbb, LCK_none, -1);
 				else
 					CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
+
 				if (attachment->att_flags & ATT_shutdown)
 				{
 					if (dbb->dbb_ast_flags & DBB_shutdown) {
@@ -1651,11 +1693,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// Recover database after crash during backup difference file merge
 			dbb->dbb_backup_manager->endBackup(tdbb, true); // true = do recovery
 
-			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
-			attachment->att_interface = jAtt;
-
-			MutexLockGuard guard(*(jAtt->getMutex()));
-
 			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
@@ -1679,7 +1716,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					// load DDL triggers
 					MET_load_ddl_triggers(tdbb);
 
-					const trig_vec* trig_connect = dbb->dbb_triggers[DB_TRIGGER_CONNECT];
+					const trig_vec* trig_connect = attachment->att_triggers[DB_TRIGGER_CONNECT];
 					if (trig_connect && !trig_connect->isEmpty())
 					{
 						// Start a transaction to execute ON CONNECT triggers.
@@ -1707,7 +1744,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			// guardDatabases.leave();
 
-			jAtt->addRef();
 			return jAtt;
 		}	// try
 		catch (const Exception& ex)
@@ -1717,6 +1753,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, false, no_priv);
 
+			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
+			dbbGuard.unlock();
+			attachment->att_interface = NULL;
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
 	}
@@ -2249,6 +2288,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 		dbb = init(tdbb, expanded_name, config, false);
 		fb_assert(dbb);
+		Sync dbbGuard(&dbb->dbb_sync, "createDatabase");
+		dbbGuard.lock(SYNC_EXCLUSIVE);
 
 		tdbb->setDatabase(dbb);
 		DatabaseContextHolder dbbHolder(tdbb);
@@ -2267,6 +2308,12 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			attachment = Jrd::Attachment::create(dbb);
+
+			RefPtr<JAttachment> jAtt(new JAttachment(attachment));
+			jAtt->addRef();
+			attachment->att_interface = jAtt;
+			MutexLockGuard guard(*(jAtt->getMutex()));
+
 			tdbb->setAttachment(attachment);
 			attachment->att_filename = is_alias ? file_name : expanded_name;
 			attachment->att_network_protocol = options.dpb_network_protocol;
@@ -2396,14 +2443,14 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			if (options.dpb_set_page_buffers)
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
 
+			options.setBuffers(dbb->dbb_config);
+			CCH_init(tdbb, options.dpb_buffers, config->getSharedCache() && !config->getSharedDatabase());
+
 #ifdef WIN_NT
 			dbb->dbb_filename.assign(first_dbb_file->fil_string);
 #else
 			dbb->dbb_filename = expanded_name;
 #endif
-
-			options.setBuffers(dbb->dbb_config);
-			CCH_init(tdbb, options.dpb_buffers);
 
 			// NS: Use alias as database ID only if accessing database using file name is not possible.
 			//
@@ -2415,6 +2462,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 				dbb->dbb_database_name = file_name;
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
+
+			dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
 
 			// Initialize backup difference subsystem. This must be done before WAL and shadowing
 			// is enabled because nbackup it is a lower level subsystem
@@ -2460,16 +2509,16 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			VIO_init(tdbb);
 #endif
 
-		    if (options.dpb_set_db_readonly)
-		    {
-        		if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
-		        {
-        		    ERR_post(Arg::Gds(isc_lock_timeout) <<
+			if (options.dpb_set_db_readonly)
+			{
+				if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
+				{
+					ERR_post(Arg::Gds(isc_lock_timeout) <<
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 				}
 
-		        PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
-    		}
+				PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
+			}
 
 			PAG_attachment_id(tdbb);
 
@@ -2492,10 +2541,6 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			guardDatabases.leave();
 
-			JAttachment* jAtt = new JAttachment(attachment);
-			jAtt->addRef();
-			attachment->att_interface = jAtt;
-
 			return jAtt;
 		}	// try
 		catch (const Exception& ex)
@@ -2505,6 +2550,10 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, true, no_priv);
 
+			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
+			dbbGuard.unlock();
+
+			attachment->att_interface = NULL;
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
 	}
@@ -2616,15 +2665,25 @@ void JAttachment::freeEngineData(IStatus* user_status)
 			JRD_cancel_operation(tdbb, getHandle(), fb_cancel_raise);
 
 			MutexLockGuard guard(*getMutex());
+			{
+				while (att->att_use_count)
+				{
+					MutexUnlockGuard cout(*getMutex());
+					THD_sleep(10);
+				}
+			}
 
 			Database* dbb = tdbb->getDatabase();
 
 			// if this is the last attachment, mark dbb as not in use
-
-			if (dbb->dbb_attachments == getHandle() && !getHandle()->att_next &&
-				!(dbb->dbb_flags & DBB_being_opened))
 			{
-				dbb->dbb_flags |= DBB_not_in_use;
+				SyncLockGuard sync(&dbb->dbb_sync, SYNC_SHARED, "JAttachment::freeEngineData");
+
+				if (dbb->dbb_attachments == getHandle() && !getHandle()->att_next &&
+					!(dbb->dbb_flags & DBB_being_opened))
+				{
+					dbb->dbb_flags |= DBB_not_in_use;
+				}
 			}
 
 			try
@@ -3964,12 +4023,13 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 		{
 			Database* const dbb = tdbb->getDatabase();
 			jrd_tra* const transaction = find_transaction(tdbb, isc_req_wrong_db);
+			Jrd::Attachment* const att = transaction->tra_attachment;
 
 			const MessageNode* inMessage = NULL;
 			const MessageNode* outMessage = NULL;
 
 			jrd_req* request = NULL;
-			MemoryPool* new_pool = dbb->createPool();
+			MemoryPool* new_pool = att->createPool();
 
 			try
 			{
@@ -3999,7 +4059,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 				if (request)
 					CMP_release(tdbb, request);
 				else
-					dbb->deletePool(new_pool);
+					att->deletePool(new_pool);
 
 				throw;
 			}
@@ -4759,10 +4819,11 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* att= tdbb->getAttachment();
 
-	if (dbb->dbb_sync->hasContention())
+	//if (dbb->dbb_sync->hasContention())
 	{
-		Database::Checkout dcoHolder(dbb);
+		Jrd::Attachment::Checkout cout(att);
 		THREAD_YIELD();
 	}
 
@@ -4789,19 +4850,22 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	// Enable signal handler for the monitoring stuff
-
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
-		// While waiting for return from LCK_lock call above, the blocking AST (see
-		// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
-		// again. But it do not released lock as lck_id was unknown at that moment.
-		// Do it now to not block another process waiting for a monitoring lock.
-
+		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "JRD_reschedule");
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
-			LCK_release(tdbb, dbb->dbb_monitor_lock);
+		{
+			dbb->dbb_ast_flags &= ~DBB_monitor_off;
+			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+			// While waiting for return from LCK_lock call above, the blocking AST (see
+			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
+			// again. But it do not released lock as lck_id was unknown at that moment.
+			// Do it now to not block another process waiting for a monitoring lock.
+
+			if (dbb->dbb_ast_flags & DBB_monitor_off)
+				LCK_release(tdbb, dbb->dbb_monitor_lock);
+		}
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
@@ -4863,12 +4927,21 @@ static void check_database(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	const Jrd::Attachment* attach = dbb->dbb_attachments;
-	while (attach && attach != attachment)
-		attach = attach->att_next;
-
-	if (!attach)
-		status_exception::raise(Arg::Gds(isc_bad_db_handle));
+	// hvlad: i think the check below is unnecessary as attachment pointer is 
+	// already validated at AttachmentHolder. If i'm wrong and check is must be
+	// then it should be moved into AttachmentHolder or even into 
+	// DatabaseContexHolder to not lock dbb_sync with attachment mutex locked.
+	//
+	//{
+	//	SyncLockGuard dbbGuard(&dbb->dbb_sync, SYNC_SHARED, "check_database");
+	//
+	//	const Jrd::Attachment* attach = dbb->dbb_attachments;
+	//	while (attach && attach != attachment)
+	//		attach = attach->att_next;
+	//
+	//	if (!attach)
+	//		status_exception::raise(Arg::Gds(isc_bad_db_handle));
+	//}
 
 	if (dbb->dbb_flags & DBB_bugcheck)
 	{
@@ -4902,11 +4975,15 @@ static void check_database(thread_db* tdbb)
 
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
+		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "check_database");
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
-			LCK_release(tdbb, dbb->dbb_monitor_lock);
+		{
+			dbb->dbb_ast_flags &= ~DBB_monitor_off;
+			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+
+			if (dbb->dbb_ast_flags & DBB_monitor_off)
+				LCK_release(tdbb, dbb->dbb_monitor_lock);
+		}
 	}
 }
 
@@ -5146,6 +5223,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 					ERR_post(Arg::Gds(isc_bad_dpb_content));
 				}
 			}
+			else
+				rdr.getInt();
 			break;
 
 		case isc_dpb_page_size:
@@ -5497,26 +5576,25 @@ static Database* init(thread_db* tdbb,
 
 	// Check to see if the database is already actively attached
 
-#ifdef SHARED_METADATA_CACHE
-	for (dbb = databases; dbb; dbb = dbb->dbb_next)
+	if (config->getSharedCache())
 	{
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-			(dbb->dbb_filename == expanded_filename))
+		for (dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
-			if (attach_flag)
-				return dbb;
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+				(dbb->dbb_filename == expanded_filename))
+			{
+				if (attach_flag)
+					return dbb;
 
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+			}
 		}
 	}
-#endif
 
 	dbb = Database::create();
 	dbb->dbb_config = config;
 	tdbb->setDatabase(dbb);
-
-	dbb->dbb_bufferpool = dbb->createPool();
 
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
@@ -5705,9 +5783,9 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
-	if (dbb->dbb_config->getSharedCache() && dbb->dbb_relations)
+	if (!dbb->dbb_config->getSharedDatabase() && attachment->att_relations)
 	{
-		vec<jrd_rel*>& rels = *dbb->dbb_relations;
+		vec<jrd_rel*>& rels = *attachment->att_relations;
 		for (size_t i = 1; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
@@ -5723,6 +5801,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	{
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
 	}
+
+	attachment->shutdown(tdbb);
 
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
@@ -5764,7 +5844,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	{
 		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
 		delete attachment->att_dsql_instance;
-		dbb->deletePool(pool);
+		attachment->deletePool(pool);
 	}
 
 	// remove the attachment block from the dbb linked list
@@ -5781,8 +5861,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
     // CMP_release() changes att_requests.
 	while (!attachment->att_requests.isEmpty())
 		CMP_release(tdbb, attachment->att_requests.back());
-
-	for (JrdStatement** i = dbb->dbb_internal.begin(); i != dbb->dbb_internal.end(); ++i)
+/**
+	for (JrdStatement** i = attachment->att_internal.begin(); i != attachment->att_internal.end(); ++i)
 	{
 		if (*i)
 		{
@@ -5790,13 +5870,16 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
 			{
-				if (*j && (*j)->req_attachment == attachment)
+				if (*j)
+				{
+					fb_assert(!(*j)->req_attachment || (*j)->req_attachment == attachment);
 					EXE_release(tdbb, *j);
+				}
 			}
 		}
 	}
 
-	for (JrdStatement** i = dbb->dbb_dyn_req.begin(); i != dbb->dbb_dyn_req.end(); ++i)
+	for (JrdStatement** i = attachment->att_dyn_req.begin(); i != attachment->att_dyn_req.end(); ++i)
 	{
 		if (*i)
 		{
@@ -5804,8 +5887,43 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
 			{
-				if (*j && (*j)->req_attachment == attachment)
+				if (*j)
+				{
+					fb_assert(!(*j)->req_attachment || (*j)->req_attachment == attachment);
 					EXE_release(tdbb, *j);
+				}
+			}
+		}
+	}
+**/
+
+	MET_clear_cache(tdbb);
+
+	// Shut down any extern relations
+
+	if (attachment->att_relations)
+	{
+		vec<jrd_rel*>* vector = attachment->att_relations;
+		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
+
+		while (ptr < end)
+		{
+			jrd_rel* relation = *ptr++;
+			if (relation)
+			{
+				if (relation->rel_file)
+				{
+					EXT_fini(relation, false);
+				}
+
+				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
+					index_block = index_block->idb_next)
+				{
+					if (index_block->idb_lock)
+						LCK_release(tdbb, index_block->idb_lock);
+				}
+
+				delete relation;
 			}
 		}
 	}
@@ -5917,8 +6035,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
 #endif
 
-	MET_clear_cache(tdbb);
-
 #ifdef GARBAGE_THREAD
 	VIO_fini(tdbb);
 #endif
@@ -5938,36 +6054,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
 
 	dbb->dbb_shared_counter.shutdown(tdbb);
-	dbb->destroyIntlObjects();
-
-	// Shut down any extern relations
-
-	if (dbb->dbb_relations)
-	{
-		vec<jrd_rel*>* vector = dbb->dbb_relations;
-		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
-
-		while (ptr < end)
-		{
-			jrd_rel* relation = *ptr++;
-			if (relation)
-			{
-				if (relation->rel_file)
-				{
-					EXT_fini(relation, false);
-				}
-
-				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
-					index_block = index_block->idb_next)
-				{
-					if (index_block->idb_lock)
-						LCK_release(tdbb, index_block->idb_lock);
-				}
-
-				delete relation;
-			}
-		}
-	}
 
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
@@ -6138,7 +6224,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 
 		for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
-			Database::SyncGuard dsGuard(dbb);
+			SyncLockGuard guard(&dbb->dbb_sync, SYNC_SHARED, "JRD_num_attachments");
 
 #ifdef WIN_NT
 			// Get drive letters for db files
@@ -6420,7 +6506,7 @@ static void purge_attachment(thread_db* tdbb, Jrd::Attachment* attachment, const
 	{
 		try
 		{
-			const trig_vec* trig_disconnect = dbb->dbb_triggers[DB_TRIGGER_DISCONNECT];
+			const trig_vec* trig_disconnect = attachment->att_triggers[DB_TRIGGER_DISCONNECT];
 			if (!(attachment->att_flags & ATT_no_db_triggers) &&
 				!(attachment->att_flags & ATT_shutdown) &&
 				trig_disconnect && !trig_disconnect->isEmpty())
@@ -7173,8 +7259,7 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 				transliterateException(tdbb, ex, &tempStatus);
 				status_exception::raise(tempStatus.get());
 			}
-			else
-				throw;
+			throw;
 		}
 	}
 	catch (const Exception&)
@@ -7326,7 +7411,7 @@ namespace
 #endif
 
 
-void JRD_shutdown_attachments(const Database* dbb)
+void JRD_shutdown_attachments(Database* dbb)
 {
 /**************************************
  *
@@ -7345,6 +7430,10 @@ void JRD_shutdown_attachments(const Database* dbb)
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
 		PingQueue* const queue = FB_NEW(pool) PingQueue(pool);
+
+		Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");
+		if (!dbb->dbb_sync.ourExclusiveLock())
+			guard.lock(SYNC_SHARED);
 
 		for (const Jrd::Attachment* attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)

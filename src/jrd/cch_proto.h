@@ -28,29 +28,37 @@ namespace Ods {
 	struct pag;
 }
 
+enum LockState {
+	lsLatchTimeout = -2,	// was -2		*** now unused ***
+	lsLockTimeout,			// was -1
+	lsLockedHavePage,		// was 0
+	lsLocked,				// was 1
+	lsError
+};
+
 void		CCH_shutdown_database(Jrd::Database*);
 
 int			CCH_down_grade_dbb(void*);
 bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
 void		CCH_expand(Jrd::thread_db*, ULONG);
-Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
-Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, const bool);
-SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SCHAR);
+Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, int);
+Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, int, SCHAR, int, const bool);
+LockState	CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, int, int, SCHAR);
 void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, const bool);
-void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_fini(Jrd::thread_db*);
+void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
 void		CCH_get_related(Jrd::thread_db*, Jrd::PageNumber, Jrd::PagesArray&);
-Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, ULONG, SSHORT, SCHAR, SSHORT, const bool);
-void		CCH_init(Jrd::thread_db*, ULONG);
-void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
-void		CCH_must_write(Jrd::win*);
+Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, ULONG, int, SCHAR, int, const bool);
+void		CCH_init(Jrd::thread_db*, ULONG, bool);
+void		CCH_mark(Jrd::thread_db*, Jrd::win*, bool, bool);
+void		CCH_must_write(Jrd::thread_db*, Jrd::win*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, ULONG);
-void		CCH_tra_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
+void		CCH_tra_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
 #ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);
@@ -79,16 +87,6 @@ inline Ods::pag* CCH_FETCH_NO_SHADOW(Jrd::thread_db* tdbb, Jrd::win* window, USH
 inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SCHAR page_type, SSHORT latch_wait)
 {
 	return CCH_fetch (tdbb, window, lock_type, page_type, latch_wait, true);
-}
-
-inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win* window, USHORT lock_type, SSHORT wait, SCHAR page_type)
-{
-	return CCH_fetch_lock(tdbb, window, lock_type, wait, page_type);
-}
-
-inline void CCH_FETCH_PAGE(Jrd::thread_db* tdbb, Jrd::win* window, bool read_shadow)
-{
-	CCH_fetch_page(tdbb, window, read_shadow);
 }
 
 inline void CCH_RELEASE(Jrd::thread_db* tdbb, Jrd::win* window)

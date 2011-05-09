@@ -1334,13 +1334,9 @@ int ISC_event_init(event_t* event)
  *
  **************************************/
 
-#ifdef SUPERSERVER
-	event->event_id = 0;
-#else
-	static int idCounter = 0;		// Should it be AtomicCounter? AP-2008
+	static AtomicCounter idCounter;
 
 	event->event_id = ++idCounter;
-#endif
 
 	event->event_pid = process_id = getpid();
 	event->event_count = 0;
@@ -2745,16 +2741,12 @@ static inline BOOL switchToThread()
 	BOOL res = FALSE;
 	if (fnSwitchToThread)
 	{
-#if !defined SUPERSERVER
 		const HANDLE hThread = GetCurrentThread();
 		SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
-#endif
 
 		res = (*fnSwitchToThread)();
 
-#if !defined SUPERSERVER
 		SetThreadPriority(hThread, THREAD_PRIORITY_NORMAL);
-#endif
 	}
 
 	return res;

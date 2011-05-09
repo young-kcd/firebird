@@ -2934,12 +2934,12 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 					if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 					{
 						MET_load_trigger(tdbb, NULL, work->dfw_name,
-							&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+							&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
 					}
 					else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
 					{
 						MET_load_trigger(tdbb, NULL, work->dfw_name,
-							&tdbb->getDatabase()->dbb_ddl_triggers);
+							&tdbb->getAttachment()->att_ddl_triggers);
 					}
 				}
 			}
@@ -3264,13 +3264,13 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = dbb->createPool();
+				MemoryPool* new_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
-				dbb->deletePool(new_pool);
+				attachment->deletePool(new_pool);
 			}
 		}
 		// fall through
@@ -3428,13 +3428,13 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			if (!validation.isEmpty())
 			{
-				MemoryPool* new_pool = dbb->createPool();
+				MemoryPool* new_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, NULL, NULL, 0, NULL, &validation,
 					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
-				dbb->deletePool(new_pool);
+				attachment->deletePool(new_pool);
 			}
 		}
 		// fall through
@@ -3510,8 +3510,8 @@ static void check_partners(thread_db* tdbb, const USHORT rel_id)
  * Used when FK index was dropped
  *
  **************************************/
-	const Database* dbb = tdbb->getDatabase();
-	vec<jrd_rel*>* relations = dbb->dbb_relations;
+	const Jrd::Attachment* att = tdbb->getAttachment();
+	vec<jrd_rel*>* relations = att->att_relations;
 
 	fb_assert(relations);
 	fb_assert(rel_id < relations->count());
@@ -3619,7 +3619,8 @@ static bool delete_function(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 					LCK_release(tdbb, function->fun_existence_lock);
 				}
 
-				dbb->dbb_functions[function->getId()] = NULL;
+				Jrd::Attachment* attachment = tdbb->getAttachment();
+				attachment->att_functions[function->getId()] = NULL;
 				return false;
 			}
 
@@ -3978,7 +3979,7 @@ static bool delete_procedure(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 				if (procedure->prc_existence_lock) {
 					LCK_release(tdbb, procedure->prc_existence_lock);
 				}
-				(*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] = NULL;
+				(*tdbb->getAttachment()->att_procedures)[procedure->getId()] = NULL;
 				return false;
 			}
 
@@ -4127,9 +4128,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		// garbage collector threads working on relation can skip over it
 
 		relation->rel_flags |= REL_deleting;
-
 		{ // scope
-			Database::Checkout dcoHolder(dbb);
+			Jrd::Attachment::Checkout attCout(attachment);
 			relation->rel_drop_mutex.enter();
 		}
 
@@ -4156,7 +4156,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 				break;
 			}
 
-			Database::Checkout dcoHolder(dbb);
+			Jrd::Attachment::Checkout attCout(attachment);
 			THREAD_SLEEP(1 * 1000);
 		}
 
@@ -4440,7 +4440,7 @@ static bool delete_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 				{
 					MET_release_trigger(tdbb,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
+						&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
 						work->dfw_name);
 				}
 			}
@@ -4689,7 +4689,7 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
 	{
 		JrdStatement* statement = NULL;
 
-		MemoryPool* const new_pool = dbb->createPool();
+		MemoryPool* const new_pool = attachment->createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 		const Firebird::MetaName depName(work->dfw_package.isEmpty() ?
@@ -4703,7 +4703,7 @@ static void get_function_dependencies(DeferredWork* work, bool compile, jrd_tra*
 		if (statement)
 			statement->release(tdbb);
 		else
-			dbb->deletePool(new_pool);
+			attachment->deletePool(new_pool);
 	}
 }
 
@@ -4756,7 +4756,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 	{
 		JrdStatement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
-		MemoryPool* new_pool = dbb->createPool();
+		MemoryPool* new_pool = attachment->createPool();
 		// block is used to ensure MET_verify_cache
 		// works in not deleted context
 		{
@@ -4772,7 +4772,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra
 			if (statement)
 				statement->release(tdbb);
 			else
-				dbb->deletePool(new_pool);
+				attachment->deletePool(new_pool);
 		}
 
 #ifdef DEV_BUILD
@@ -4827,7 +4827,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	{
 		JrdStatement* statement = NULL;
 		// Nickolay Samofatov: allocate statement memory pool...
-		MemoryPool* new_pool = dbb->createPool();
+		MemoryPool* new_pool = attachment->createPool();
 		const USHORT par_flags = (USHORT) (type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -4838,7 +4838,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 		if (statement)
 			statement->release(tdbb);
 		else
-			dbb->deletePool(new_pool);
+			attachment->deletePool(new_pool);
 	}
 }
 
@@ -4994,7 +4994,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 	// Link the format block into the world
 
 	vec<Format*>* vector = relation->rel_formats =
-		vec<Format*>::newVector(*dbb->dbb_permanent, relation->rel_formats, format->fmt_version + 1);
+		vec<Format*>::newVector(*relation->rel_pool, relation->rel_formats, format->fmt_version + 1);
 	(*vector)[format->fmt_version] = format;
 
 	// Store format in system relation
@@ -5282,7 +5282,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					if (notNull && !defaultValue->isEmpty())
 					{
-						Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
+						Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
 						JrdStatement* defaultStatement = NULL;
 						try
 						{
@@ -5502,6 +5502,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 	SET_TDBB(tdbb);
 
 	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	const QualifiedName name(work->dfw_name, work->dfw_package);
 
@@ -5561,7 +5562,6 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		{ // guard scope
-			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 			// Do not allow to modify function used by user requests
 			if (function->isUsed())
@@ -5580,7 +5580,8 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 					LCK_release(tdbb, function->fun_existence_lock);
 				}
 
-				dbb->dbb_functions[function->getId()] = NULL;
+				Jrd::Attachment* attachment = tdbb->getAttachment();
+				attachment->att_functions[function->getId()] = NULL;
 
 				if (!(function = Function::lookup(tdbb, work->dfw_id, false,
 												  true, FUN_being_altered)))
@@ -5650,7 +5651,7 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 			{
 				bool valid_blr = false;
 
-				MemoryPool* const csb_pool = dbb->createPool();
+				MemoryPool* const csb_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 				try
@@ -5669,11 +5670,11 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 				}
 				catch (const Firebird::Exception&)
 				{
-					dbb->deletePool(csb_pool);
+					attachment->deletePool(csb_pool);
 					throw;
 				}
 
-				dbb->deletePool(csb_pool);
+				attachment->deletePool(csb_pool);
 
 				MODIFY FUN USING
 					FUN.RDB$VALID_BLR = valid_blr ? TRUE : FALSE;
@@ -5705,6 +5706,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	const QualifiedName name(work->dfw_name, work->dfw_package);
 
 	switch (phase)
@@ -5758,7 +5760,6 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 		}
 
 		{ // guard scope
-			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 			// Do not allow to modify procedure used by user requests
 			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
@@ -5782,7 +5783,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 				if (procedure->prc_existence_lock) {
 					LCK_release(tdbb, procedure->prc_existence_lock);
 				}
-				(*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] = NULL;
+				(*tdbb->getAttachment()->att_procedures)[procedure->getId()] = NULL;
 
 				if (!(procedure = MET_lookup_procedure_id(tdbb, work->dfw_id, false,
 														  true, PRC_being_altered)))
@@ -5843,7 +5844,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 			{
 				SSHORT valid_blr = FALSE;
 
-				MemoryPool* new_pool = dbb->createPool();
+				MemoryPool* new_pool = attachment->createPool();
 				try
 				{
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -5857,7 +5858,7 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 					fb_utils::init_status(tdbb->tdbb_status_vector);
 				}
 
-				dbb->deletePool(new_pool);
+				attachment->deletePool(new_pool);
 
 				AutoCacheRequest request(tdbb, irq_prc_validate, IRQ_REQUESTS);
 
@@ -5895,6 +5896,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	switch (phase)
 	{
@@ -5924,11 +5926,11 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
 				{
 					MET_release_trigger(tdbb,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
+						&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
 						work->dfw_name);
 
 					MET_load_trigger(tdbb, NULL, work->dfw_name,
-						&tdbb->getDatabase()->dbb_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
+						&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB]);
 				}
 			}
 		}
@@ -5955,7 +5957,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						for (int i = 0; i < TRIGGER_MAX; ++i)
 							triggers[i] = NULL;
 
-						MemoryPool* new_pool = dbb->createPool();
+						MemoryPool* new_pool = attachment->createPool();
 						try
 						{
 							Jrd::ContextPoolHolder context(tdbb, new_pool);
@@ -5977,7 +5979,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 						}
 						catch (const Firebird::Exception&)
 						{
-							dbb->deletePool(new_pool);
+							attachment->deletePool(new_pool);
 							throw;
 						}
 

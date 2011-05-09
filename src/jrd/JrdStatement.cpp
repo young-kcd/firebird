@@ -288,8 +288,6 @@ jrd_req* JrdStatement::findRequest(thread_db* tdbb)
 	if (!this)
 		BUGCHECK(167);	/* msg 167 invalid SEND request */
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_exe_clone_mutex);
-
 	// Search clones for one request in use by this attachment.
 	// If not found, return first inactive request.
 
@@ -539,7 +537,8 @@ void JrdStatement::release(thread_db* tdbb)
 
 	sqlText = NULL;
 
-	dbb->deletePool(pool);
+	Jrd::Attachment* const att = tdbb->getAttachment();
+	att->deletePool(pool);
 }
 
 // Check that we have enough rights to access all resources this list of triggers touches.

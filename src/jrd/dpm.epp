@@ -1208,7 +1208,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 			generator_page* page = (generator_page*) DPM_allocate(tdbb, &window);
 			page->gpg_header.pag_type = pag_ids;
 			page->gpg_sequence = sequence;
-			CCH_must_write(&window);
+			CCH_must_write(tdbb, &window);
 			CCH_RELEASE(tdbb, &window);
 			DPM_pages(tdbb, 0, pag_ids, (ULONG) sequence, window.win_page.getPageNum());
 			vector = dbb->dbb_gen_id_pages =
@@ -2700,7 +2700,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, USH
 				ppage->ppg_relation = relation->rel_id;
 				ppage->ppg_sequence = ++pp_sequence;
 				slot = 0;
-				CCH_must_write(&new_pp_window);
+				CCH_must_write(tdbb, &new_pp_window);
 				CCH_RELEASE(tdbb, &new_pp_window);
 
 				vcl* vector = relPages->rel_pages =

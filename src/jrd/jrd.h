@@ -48,6 +48,7 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/classes/Synchronize.h"
 #include "../common/utils_proto.h"
 #include "../common/StatusHolder.h"
 #include "../jrd/RandomGenerator.h"
@@ -123,7 +124,7 @@ class JrdStatement;
 class Lock;
 class jrd_file;
 class Format;
-class BufferControl;
+class BufferDesc;
 class SparseBitmap;
 class jrd_rel;
 class ExternalFile;
@@ -177,7 +178,6 @@ public:
 		dbg_blob_id.clear();
 	}
 };
-
 
 
 //
@@ -407,7 +407,8 @@ private:
 
 public:
 	explicit thread_db(ISC_STATUS* status)
-		: ThreadData(ThreadData::tddDBB)
+		: ThreadData(ThreadData::tddDBB),
+		tdbb_bdbs(*getDefaultMemoryPool())
 	{
 		tdbb_default = NULL;
 		database = NULL;
@@ -417,19 +418,33 @@ public:
 		tdbb_quantum = QUANTUM;
 		tdbb_flags = 0;
 		tdbb_temp_traid = 0;
-		QUE_INIT(tdbb_latches);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 
 		tdbb_status_vector = status;
 		fb_utils::init_status(tdbb_status_vector);
+
+		tdbb_thread = Firebird::ThreadSync::getThread("thread_db");
 	}
+
+	~thread_db()
+	{
+#ifdef DEV_BUILD
+		for (size_t n = 0; n < tdbb_bdbs.getCount(); n++)
+		{
+			fb_assert(tdbb_bdbs[n] == NULL);
+		}
+#endif
+	}
+
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 
 	SLONG		tdbb_temp_traid;	// current temporary table scope
 
-	que			tdbb_latches;		// shared latches held by thread
+	// BDB's held by thread
+	Firebird::HalfStaticArray<BufferDesc*, 16> tdbb_bdbs;
+	Firebird::ThreadSync* tdbb_thread;
 
 	MemoryPool* getDefaultPool()
 	{
@@ -507,6 +522,44 @@ public:
 	}
 
 	bool checkCancelState(bool punt);
+
+	void registerBdb(BufferDesc* bdb)
+	{
+		size_t pos;
+		if (tdbb_bdbs.find(NULL, pos))
+			tdbb_bdbs[pos] = bdb;
+		else
+			tdbb_bdbs.add(bdb);
+	}
+
+	void clearBdb(BufferDesc* bdb)
+	{
+		size_t pos;
+		if (tdbb_bdbs.find(bdb, pos))
+		{
+			tdbb_bdbs[pos] = NULL;
+
+			if (pos == tdbb_bdbs.getCount() - 1)
+			{
+				while (true)
+				{
+					if (tdbb_bdbs[pos] != NULL)
+					{
+						tdbb_bdbs.shrink(pos + 1);
+						break;
+					}
+					if (pos == 0)
+					{
+						tdbb_bdbs.shrink(0);
+						break;
+					}
+					pos--;
+				}
+			}
+		}
+		else
+			fb_assert(false);
+	}
 };
 
 // tdbb_flags

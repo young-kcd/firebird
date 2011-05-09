@@ -99,6 +99,8 @@ void SDW_add(thread_db* tdbb, const TEXT* file_name, USHORT shadow_number, USHOR
 			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_add");
+
 	Shadow* shadow = allocate_shadow(shadow_file, shadow_number, file_flags);
 
 	// dump out the header page, even if it is a conditional
@@ -131,6 +133,8 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_add_file");
 
 	// Find the file to be extended
 
@@ -202,9 +206,8 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 		header->hdr_next_page = 0;
 
 		// fool PIO_write into writing the scratch page into the correct place
-		BufferDesc temp_bdb;
+		BufferDesc temp_bdb(dbb->dbb_bcb);
 		temp_bdb.bdb_page = next->fil_min_page;
-		temp_bdb.bdb_dbb = dbb;
 		temp_bdb.bdb_buffer = (PAG) header;
 		header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 		if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
@@ -296,6 +299,8 @@ void SDW_check(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_check");
+
 	// first get rid of any shadows that need to be
 	// deleted or shutdown; deleted shadows must also be shutdown
 
@@ -362,6 +367,8 @@ bool SDW_check_conditional(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_check_conditional");
+
 	// first get rid of any shadows that need to be
 	// deleted or shutdown; deleted shadows must also be shutdown
 
@@ -424,6 +431,7 @@ void SDW_close()
  *
  **************************************/
 	Database* dbb = GET_DBB();
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_SHARED, "SDW_close");
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 		PIO_close(shadow->sdw_file);
@@ -446,6 +454,8 @@ void SDW_dump_pages(thread_db* tdbb)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_dump_pages");
+
 	gds__log("conditional shadow dumped for database %s", dbb->dbb_filename.c_str());
 	const SLONG max = PAG_last_page(tdbb);
 
@@ -529,6 +539,8 @@ void SDW_get_shadows(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_get_shadows");
+
 	// unless we have one, get a shared lock to ensure that we don't miss any signals
 
 	dbb->dbb_ast_flags &= ~DBB_get_shadows;
@@ -573,6 +585,8 @@ void SDW_init(thread_db* tdbb, bool activate, bool delete_files)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_init");
 
 	// set up the lock block for synchronizing addition of new shadows
 
@@ -629,6 +643,9 @@ bool SDW_lck_update(thread_db* tdbb, SLONG sdw_update_flags)
  *
  **************************************/
 	Database* dbb = GET_DBB();
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_lck_update");
+
 	Lock* lock = dbb->dbb_shadow_lock;
 	if (!lock)
 		return false;
@@ -671,6 +688,8 @@ void SDW_notify(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_notify");
 
 	// get current shadow lock count from database header page --
 	// note that since other processes need the header page to issue locks
@@ -727,6 +746,8 @@ bool SDW_rollover_to_shadow(thread_db* tdbb, jrd_file* file, const bool inAst)
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	if (file != pageSpace->file)
 		return true;
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_rollover_to_shadow");
 
 	Lock temp_lock;
 	Lock* update_lock = &temp_lock;
@@ -913,6 +934,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+
+	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "SDW_start");
 
 	USHORT header_fetched = 0;
 
@@ -1165,22 +1188,22 @@ static int blocking_ast_shadowing(void* ast_object)
  *	new shadow files before doing the next physical write.
  *
  **************************************/
-	Database* new_dbb = static_cast<Database*>(ast_object);
+	Database* dbb = static_cast<Database*>(ast_object);
 
 	try
 	{
-		Database::SyncGuard dsGuard(new_dbb, true);
+		SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_EXCLUSIVE, "blocking_ast_shadowing");
 
-		Lock* lock = new_dbb->dbb_shadow_lock;
+		Lock* lock = dbb->dbb_shadow_lock;
 
 		// Since this routine will be called asynchronously,
 		// we must establish a thread context
 		ThreadContextHolder tdbb;
-		tdbb->setDatabase(new_dbb);
+		tdbb->setDatabase(dbb);
 
-		new_dbb->dbb_ast_flags |= DBB_get_shadows;
+		dbb->dbb_ast_flags |= DBB_get_shadows;
 		if (LCK_read_data(tdbb, lock) & SDW_rollover)
-			update_dbb_to_sdw(new_dbb);
+			update_dbb_to_sdw(dbb);
 
 		LCK_release(tdbb, lock);
 	}
@@ -1316,7 +1339,7 @@ static void update_dbb_to_sdw(Database* dbb)
 		return;					// should be a BUGCHECK
 
 	// close the main database file if possible and release all file blocks
-
+// hvlad: need sync for this code
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	PIO_close(pageSpace->file);
 

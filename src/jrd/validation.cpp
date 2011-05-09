@@ -617,7 +617,7 @@ enum RTN {
 
 #pragma FB_COMPILER_MESSAGE("This table goes to gds__log and it's not localized")
 
-static const TEXT msg_table[VAL_MAX_ERROR][66] =
+static const TEXT msg_table[VAL_MAX_ERROR][80] =
 {
 	"Page %ld wrong type (expected %d encountered %d)",	// 0
 	"Checksum error on page %ld",
@@ -630,7 +630,7 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Chain for record %ld is broken",
 	"Data page %ld (sequence %ld) is confused",
 	"Data page %ld (sequence %ld), line %ld is bad",	// 10
-	"Index %d is corrupt on page %ld level %d. File: %s, line: %d\n\t",
+	"Index %d is corrupt on page %ld level %d at offset %d. File: %s, line: %d\n\t",
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
 	"Record %ld is marked as damaged",
@@ -1174,7 +1174,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1199,7 +1199,7 @@ static void walk_database(thread_db* tdbb, vdr* control)
 	walk_generators(tdbb, control);
 
 	vec<jrd_rel*>* vector;
-	for (USHORT i = 0; (vector = dbb->dbb_relations) && i < vector->count(); i++)
+	for (USHORT i = 0; (vector = attachment->att_relations) && i < vector->count(); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
 		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
@@ -1487,7 +1487,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 			(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-					id + 1, next, page->btr_level, __FILE__, __LINE__);
+					id + 1, next, page->btr_level, 0, __FILE__, __LINE__);
 		}
 		flags = page->btr_header.pag_flags;
 		const bool leafPage = (page->btr_level == 0);
@@ -1496,7 +1496,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next, page->btr_level, __FILE__, __LINE__);
+					next, page->btr_level, 0, __FILE__, __LINE__);
 			CCH_RELEASE(tdbb, &window);
 			return rtn_corrupt;
 		}
@@ -1511,7 +1511,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				(jumpInfo.firstNodeOffset > page->btr_length))
 			{
 				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, __FILE__, __LINE__);
+						id + 1, next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
 			}
 
 			USHORT n = jumpInfo.jumpers;
@@ -1527,7 +1527,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(jumpNode.offset > page->btr_length))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
 				}
 				else
 				{
@@ -1535,7 +1535,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					BTreeNode::readNode(&checknode, (UCHAR*) page + jumpNode.offset, leafPage);
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
 					}
 				}
 				n--;
@@ -1573,7 +1573,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				{
 					duplicateNode = false;
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, q - (UCHAR*)page, __FILE__, __LINE__);
 				}
 				else if (*p < *q)
 				{
@@ -1598,7 +1598,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(node.recordNumber < lastNode.recordNumber))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
 					}
 				}
 
@@ -1658,7 +1658,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					if (*p < *q)
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
 					}
 					else if (*p > *q) {
 						break;
@@ -1679,7 +1679,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(downNode.recordNumber < down_record_number))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
 					}
 				}
 
@@ -1687,7 +1687,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				if (previous_number != down_page->btr_left_sibling)
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
 				}
 
 				BTreeNode::readNode(&downNode, pointer, leafPage);
@@ -1697,7 +1697,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(next_number != down_page->btr_sibling))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
@@ -1712,7 +1712,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size)
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next, page->btr_level, __FILE__, __LINE__);
+					next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
 		}
 
 		if (next == down)
@@ -1751,7 +1751,6 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	// have a corrupt index
 	if (control && (control->vdr_flags & vdr_records))
 	{
-		Database::Checkout dcoHolder(dbb);
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
 		if (accessor.getFirst())
 			do {

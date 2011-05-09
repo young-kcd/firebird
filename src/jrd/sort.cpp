@@ -158,7 +158,7 @@ namespace
 } // namespace
 
 
-Sort::Sort(Database* dbb,
+Sort::Sort(Jrd::Attachment* attachment,
 		   SortOwner* owner,
 		   USHORT record_length,
 		   size_t keys,
@@ -187,7 +187,7 @@ Sort::Sort(Database* dbb,
  *		  includes index key (which must be unique) and record numbers.
  *
  **************************************/
-	fb_assert(dbb && owner);
+	fb_assert(attachment && owner);
 	fb_assert(unique_keys <= keys);
 
 	try
@@ -198,7 +198,7 @@ Sort::Sort(Database* dbb,
 
 		MemoryPool& pool = owner->getPool();
 
-		m_dbb = dbb;
+		m_attachment = attachment;
 		m_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
 		m_dup_callback = call_back;
 		m_dup_callback_arg = user_arg;
@@ -1735,8 +1735,6 @@ void Sort::orderAndSave()
  * scratch file as one big chunk
  *
  **************************************/
-	Database::Checkout dcoHolder(m_dbb);
-
 	run_control* run = m_runs;
 	run->run_records = 0;
 
@@ -1831,7 +1829,6 @@ void Sort::sort()
  * been requested, detect and handle them.
  *
  **************************************/
-	Database::Checkout dcoHolder(m_dbb);
 
 	// First, insert a pointer to the high key
 

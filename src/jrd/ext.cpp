@@ -264,7 +264,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 		file_name = path.c_str();
 	}
 
-	ExternalFile* file = FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
+	ExternalFile* file = FB_NEW_RPT(*relation->rel_pool, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;
 	strcpy(file->ext_filename, file_name);
 	file->ext_flags = 0;

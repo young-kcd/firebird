@@ -213,7 +213,7 @@ typedef bool (*FPTR_REJECT_DUP_CALLBACK)(const UCHAR*, const UCHAR*, void*);
 class Sort
 {
 public:
-	Sort(Database*, SortOwner*,
+	Sort(Jrd::Attachment*, SortOwner*,
 		 USHORT, size_t, size_t, const sort_key_def*,
 		 FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64 = 0);
 	~Sort();
@@ -254,7 +254,7 @@ private:
 
 	static void quick(SLONG, SORTP**, ULONG);
 
-	Database* m_dbb;							// Database
+	Attachment* m_attachment;					// Attachment
 	SortOwner* m_owner;							// Sort owner
 	UCHAR* m_memory;							// ALLOC: Memory for sort
 	UCHAR* m_end_memory;						// End of memory

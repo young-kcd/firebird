@@ -84,31 +84,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+
 #include "fb_exception.h"
-#include "../remote/remote.h"
 #include "gen/iberror.h"
-#include "../jrd/license.h"
 #include "../common/ThreadStart.h"
-#include "../utilities/install/install_nt.h"
-#include "../../remote/server/os/win32/cntl_proto.h"
-#include "../remote/inet_proto.h"
-#include "../remote/server/serve_proto.h"
-#include "../../remote/server/os/win32/window_proto.h"
-#include "../../remote/os/win32/wnet_proto.h"
-#include "../../remote/server/os/win32/window.rh"
-#include "../../remote/os/win32/xnet_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../common/os/fbsyslog.h"
 #include "../common/isc_proto.h"
-#include "../jrd/jrd_proto.h"
 #include "../common/os/isc_i_proto.h"
-#include "../common/isc_s_proto.h"
-#include "../common/file_params.h"
-#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
-#include "../../../../common/classes/semaphore.h"
-#include "../../../../common/classes/FpeControl.h"
-#include "../jrd/ibase.h"
+#include "../common/classes/semaphore.h"
+#include "../common/classes/FpeControl.h"
+#include "../jrd/license.h"
+#include "../utilities/install/install_nt.h"
+#include "../remote/remote.h"
+#include "../remote/server/os/win32/cntl_proto.h"
+#include "../remote/inet_proto.h"
+#include "../remote/server/serve_proto.h"
+#include "../remote/server/os/win32/window_proto.h"
+#include "../remote/os/win32/wnet_proto.h"
+#include "../remote/server/os/win32/window.rh"
+#include "../remote/os/win32/xnet_proto.h"
+#include "../yvalve/gds_proto.h"
 
 #include "FirebirdPluginApi.h"
 #include "../common/classes/ImplementHelper.h"
@@ -132,6 +129,8 @@ static TEXT protocol_wnet[128];
 static TEXT instance[MAXPATHLEN];
 static USHORT server_flag;
 static bool server_shutdown = false;
+
+using namespace Firebird;
 
 class ThreadCounter
 {
@@ -159,12 +158,12 @@ public:
 	}
 
 private:
-	static Firebird::AtomicCounter m_count;
-	static Firebird::Semaphore m_semaphore;
+	static AtomicCounter m_count;
+	static Semaphore m_semaphore;
 };
 
-Firebird::AtomicCounter ThreadCounter::m_count;
-Firebird::Semaphore ThreadCounter::m_semaphore;
+AtomicCounter ThreadCounter::m_count;
+Semaphore ThreadCounter::m_semaphore;
 
 
 int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs, int nWndMode)
@@ -188,13 +187,13 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		if (!Config::getBugcheckAbort())
 			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 	}
-	catch (Firebird::fatal_exception& e)
+	catch (fatal_exception& e)
 	{
 		MessageBox(NULL, e.what(), "Firebird server failure",
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
 		return STARTUP_ERROR; // see /common/common.h
 	}
-	catch (Firebird::status_exception& e)
+	catch (status_exception& e)
 	{
 		TEXT buffer[BUFFER_LARGE];
 		const ISC_STATUS* vector = e.value();
@@ -208,9 +207,22 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR; // see /common/common.h
 	}
 
-	server_flag = Config::getMultiClientServer() ? SRVR_multi_client : 0;
+	// Check for errors/missing firebird.conf
+	const char* anyError = Config::getMessage();
+	if (anyError)
+	{
+		Syslog::Record(Syslog::Error, anyError);
+		MessageBox(NULL, anyError, "Firebird server failure",
+			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
+		return STARTUP_ERROR;
+	}
 
-	SetProcessAffinityMask(GetCurrentProcess(), static_cast<DWORD>(Config::getCpuAffinityMask()));
+	server_flag = 0;
+
+	const DWORD affinity = static_cast<DWORD>(Config::getCpuAffinityMask());
+	if (affinity) {
+		SetProcessAffinityMask(GetCurrentProcess(), affinity);
+	}
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
@@ -243,14 +255,14 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// Initialize the service
 
 	ISC_signal_init();
-	Firebird::FpeControl::maskAll();
+	FpeControl::maskAll();
 
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
 	fb_utils::init_status(status_vector);
 
 	{ // scope for interface ptr
-		Firebird::PluginManagerInterfacePtr pi;
+		PluginManagerInterfacePtr pi;
 		Auth::registerLegacyServer(pi);
 #ifdef TRUSTED_AUTH
 		Auth::registerTrustedServer(pi);
@@ -283,7 +295,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 			if (port)
 				service_connection(port);
 		}
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
 			iscLogException("Server error", ex);
 		}
@@ -292,7 +304,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{
-		Firebird::string service_name;
+		string service_name;
 		service_name.printf(REMOTE_SERVICE, instance);
 
 		CNTL_init(start_connections_thread, instance);
@@ -329,7 +341,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
+	PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
 	FILE* file = fopen(name.c_str(), "w+t");
 	if (file)
 	{
@@ -381,7 +393,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			port = INET_connect(protocol_inet, NULL, server_flag, 0);
 		}
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
 			iscLogException("INET_connect", ex);
 		}
@@ -399,7 +411,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			Thread::start(process_connection_thread, port, THREAD_medium);
 		}
-		catch (const Firebird::Exception& )
+		catch (const Exception& )
 		{
 			gds__log("INET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -431,7 +443,7 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			port = WNET_connect(protocol_wnet, NULL, server_flag);
 		}
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			ex.stuff_exception(status_vector);
@@ -448,7 +460,7 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			Thread::start(process_connection_thread, port, THREAD_medium);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			gds__log("WNET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -482,7 +494,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			port = XNET_connect(NULL, server_flag);
 		}
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
 			ISC_STATUS_ARRAY status_vector;
 
@@ -500,7 +512,7 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		{
 			Thread::start(process_connection_thread, port, THREAD_medium);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			gds__log("XNET: can't start worker thread, connection terminated");
 			port->disconnect(NULL, NULL);
@@ -545,7 +557,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 		try {
 			Thread::start(inet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Firebird::Exception& ex) {
+		catch (const Exception& ex) {
 			iscLogException("INET: can't start listener thread", ex);
 		}
 	}
@@ -554,7 +566,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 		try {
 			Thread::start(wnet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Firebird::Exception& ex) {
+		catch (const Exception& ex) {
 			iscLogException("WNET: can't start listener thread", ex);
 		}
 	}
@@ -563,7 +575,7 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 		try {
 			Thread::start(xnet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Firebird::Exception& ex) {
+		catch (const Exception& ex) {
 			iscLogException("XNET: can't start listener thread", ex);
 		}
 	}

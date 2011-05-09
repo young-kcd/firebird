@@ -63,7 +63,7 @@ namespace Jrd
 		AutoCacheRequest(thread_db* tdbb, USHORT aId, USHORT aWhich)
 			: id(aId),
 			  which(aWhich),
-			  request(tdbb->getDatabase()->findSystemRequest(tdbb, id, which))
+			  request(tdbb->getAttachment()->findSystemRequest(tdbb, id, which))
 		{
 		}
 
@@ -86,7 +86,7 @@ namespace Jrd
 
 			id = aId;
 			which = aWhich;
-			request = tdbb->getDatabase()->findSystemRequest(tdbb, id, which);
+			request = tdbb->getAttachment()->findSystemRequest(tdbb, id, which);
 		}
 
 		void compile(thread_db* tdbb, const UCHAR* blr, ULONG blrLength)
@@ -125,12 +125,12 @@ namespace Jrd
 
 		inline void cacheRequest()
 		{
-			Database* dbb = JRD_get_thread_data()->getDatabase();
+			Jrd::Attachment* att = JRD_get_thread_data()->getAttachment();
 
 			if (which == IRQ_REQUESTS)
-				dbb->dbb_internal[id] = request->getStatement();
+				att->att_internal[id] = request->getStatement();
 			else if (which == DYN_REQUESTS)
-				dbb->dbb_dyn_req[id] = request->getStatement();
+				att->att_dyn_req[id] = request->getStatement();
 			else
 			{
 				fb_assert(false);

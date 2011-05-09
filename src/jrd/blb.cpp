@@ -1350,7 +1350,7 @@ blb* BLB_open2(thread_db* tdbb,
 		// know about the relation, the blob id has got to be invalid
 		// anyway.
 
-		vec<jrd_rel*>* vector = dbb->dbb_relations;
+		vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
 
 		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
 			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )

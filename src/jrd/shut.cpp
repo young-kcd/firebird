@@ -567,7 +567,6 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 	for (int retry = 0; retry < 10 && dbb->dbb_use_count; retry++)
 	{
 		// Let active database threads rundown
-		Database::Checkout dcoHolder(dbb);
 		THREAD_SLEEP(1 * 100);
 	}
 

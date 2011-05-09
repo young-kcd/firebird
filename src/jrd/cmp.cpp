@@ -163,10 +163,11 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* const att = tdbb->getAttachment();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool
 	// and will be freed by CMP_release
-	MemoryPool* const new_pool = dbb->createPool();
+	MemoryPool* const new_pool = att->createPool();
 
 	try
 	{
@@ -208,7 +209,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			dbb->deletePool(new_pool);
+			att->deletePool(new_pool);
 		ERR_punt();
 	}
 
@@ -254,22 +255,6 @@ void CMP_fini(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 
 	CMP_shutdown_database(tdbb);	// Shutdown shared database locks.
-
-	// And release the system requests.
-
-	fb_assert(tdbb->getAttachment() == NULL);
-
-	for (JrdStatement** itr = dbb->dbb_internal.begin(); itr != dbb->dbb_internal.end(); ++itr)
-	{
-		if (*itr)
-			(*itr)->release(tdbb);
-	}
-
-	for (JrdStatement** itr = dbb->dbb_dyn_req.begin(); itr != dbb->dbb_dyn_req.end(); ++itr)
-	{
-		if (*itr)
-			(*itr)->release(tdbb);
-	}
 }
 
 
@@ -343,14 +328,14 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 		}
 	}
 
-	IndexLock* index = FB_NEW(*dbb->dbb_permanent) IndexLock();
+	IndexLock* index = FB_NEW(*relation->rel_pool) IndexLock();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
 	index->idl_id = id;
 	index->idl_count = 0;
 
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock;
 	index->idl_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
@@ -519,7 +504,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getDatabase()->dbb_procedures)[procedure->getId()] != procedure))
+		( (*tdbb->getAttachment()->att_procedures)[procedure->getId()] != procedure))
 	{
 		if (procedure->getStatement())
 		{
@@ -568,83 +553,6 @@ void CMP_shutdown_database(thread_db* tdbb)
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
-
-	// go through relations and indices and release
-	// all existence locks that might have been taken
-
-	vec<jrd_rel*>* rvector = dbb->dbb_relations;
-	if (rvector)
-	{
-		vec<jrd_rel*>::iterator ptr, end;
-		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr)
-		{
-			jrd_rel* relation = *ptr;
-			if (relation)
-			{
-				if (relation->rel_existence_lock)
-				{
-					LCK_release(tdbb, relation->rel_existence_lock);
-					relation->rel_flags |= REL_check_existence;
-					relation->rel_use_count = 0;
-				}
-				if (relation->rel_partners_lock)
-				{
-					LCK_release(tdbb, relation->rel_partners_lock);
-					relation->rel_flags |= REL_check_partners;
-				}
-				if (relation->rel_rescan_lock)
-				{
-					LCK_release(tdbb, relation->rel_rescan_lock);
-					relation->rel_flags &= ~REL_scanned;
-				}
-				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
-				{
-					if (index->idl_lock)
-					{
-						index->idl_count = 0;
-						LCK_release(tdbb, index->idl_lock);
-					}
-				}
-			}
-		}
-	}
-
-	// release all procedure existence locks that might have been taken
-
-	vec<jrd_prc*>* pvector = dbb->dbb_procedures;
-	if (pvector)
-	{
-		vec<jrd_prc*>::iterator pptr, pend;
-		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr)
-		{
-			jrd_prc* procedure = *pptr;
-			if (procedure)
-			{
-				if (procedure->prc_existence_lock)
-				{
-					LCK_release(tdbb, procedure->prc_existence_lock);
-					procedure->prc_flags |= PRC_check_existence;
-					procedure->prc_use_count = 0;
-				}
-			}
-		}
-	}
-
-	// release all function existence locks that might have been taken
-
-	for (Function** iter = dbb->dbb_functions.begin(); iter < dbb->dbb_functions.end(); ++iter)
-	{
-		Function* const function = *iter;
-
-		if (function)
-		{
-			function->releaseLocks(tdbb);
-		}
-	}
-
-	// release collation existence locks
-
-	dbb->releaseIntlObjects();
 }
 
 

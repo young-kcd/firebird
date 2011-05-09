@@ -25,8 +25,10 @@
 #define JRD_CCH_H
 
 #include "../include/fb_blk.h"
-#include "../jrd/os/pio.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/RefCounted.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/SyncObject.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
 #include "../jrd/pag.h"
@@ -78,27 +80,86 @@ struct bcb_repeat
 	que			bcb_page_mod;	// Que of buffers with page mod n
 };
 
-class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
+class BufferControl : public pool_alloc<type_bcb>
 {
+	explicit BufferControl(MemoryPool& p) : 
+		bcb_bufferpool(&p),
+		bcb_memory(p) 
+	{ 
+		bcb_database = NULL;
+		QUE_INIT(bcb_in_use);
+		QUE_INIT(bcb_pending);
+		QUE_INIT(bcb_empty);
+		QUE_INIT(bcb_dirty);
+		bcb_dirty_count = 0;
+		bcb_free = NULL;
+		bcb_flags = 0;
+		bcb_free_minimum = 0;
+		bcb_count = 0;
+		bcb_inuse = 0;
+		bcb_checkpoint = 0;
+		bcb_prec_walk_mark = 0;
+		bcb_page_size = 0;
+		bcb_page_incarnation = 0;
+#ifdef SUPERSERVER_V2
+		bcb_prefetch = NULL;
+#endif
+	}
+
 public:
-	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
+
+	static BufferControl* create();
+	static void destroy(BufferControl*);
+
+	Firebird::MemoryPool* bcb_bufferpool;
+	Firebird::MemoryStats bcb_memory_stats;
+
+	// To be deleted when PAG will be not coupled with Database.
+	// Used only in CS mode when each BufferControl have one Database .
+	Database*	bcb_database;
+
 	UCharStack	bcb_memory;			// Large block partitioned into buffers
-	que			bcb_in_use;			// Que of buffers in use
+	que			bcb_in_use;			// Que of buffers in use, main LRU que
+	que			bcb_pending;		// Que of buffers which are going to be freed and reassigned
 	que			bcb_empty;			// Que of empty buffers
+
+	// Recently used buffer put there without locking common LRU que (bcb_in_use). 
+	// When bcb_syncLRU is locked this chain is merged into bcb_in_use. See also
+	// requeueRecentlyUsed() and recentlyUsed()
+	Firebird::AtomicPointer<BufferDesc>	bcb_lru_chain;	
+
 	que			bcb_dirty;			// que of dirty buffers
 	SLONG		bcb_dirty_count;	// count of pages in dirty page btree
+
 	Precedence*	bcb_free;			// Free precedence blocks
-	que			bcb_free_lwt;		// Free latch wait blocks
-	que			bcb_free_slt;		// Free shared latch blocks
 	SSHORT		bcb_flags;			// see below
 	SSHORT		bcb_free_minimum;	// Threshold to activate cache writer
 	ULONG		bcb_count;			// Number of buffers allocated
+	ULONG		bcb_inuse;			// Number of buffers in use
 	ULONG		bcb_checkpoint;		// Count of buffers to checkpoint
 	ULONG		bcb_prec_walk_mark;	// mark value used in precedence graph walk
+	ULONG		bcb_page_size;		// Database page size in bytes
+	ULONG		bcb_page_incarnation;	// Cache page incarnation counter
+
+	Firebird::SyncObject	bcb_syncObject;
+	Firebird::SyncObject	bcb_syncDirtyBdbs;
+	Firebird::SyncObject	bcb_syncPrecedence;
+	Firebird::SyncObject	bcb_syncLRU;
+	//Firebird::SyncObject	bcb_syncPageWrite;
+
+	Firebird::Semaphore bcb_writer_sem;	// Wake up cache writer
+	Firebird::Semaphore bcb_writer_init;// Cache writer initialization
+	Firebird::Semaphore bcb_writer_fini;// Cache writer finalization
 #ifdef SUPERSERVER_V2
+	// the code in cch.cpp is not tested for semaphore instead event !!!
+	Firebird::Semaphore bcb_reader_sem;	// Wake up cache reader
+	Firebird::Semaphore bcb_reader_init;// Cache reader initialization
+	Firebird::Semaphore bcb_reader_fini;// Cache reader finalization
+
 	PageBitmap*	bcb_prefetch;		// Bitmap of pages to prefetch
 #endif
-	bcb_repeat	bcb_rpt[1];
+
+	bcb_repeat*	bcb_rpt;
 };
 
 const int BCB_keep_pages	= 1;	// set during btc_flush(), pages not removed from dirty binary tree
@@ -110,66 +171,115 @@ const int BCB_cache_reader	= 16;	// cache reader thread has been started
 const int BCB_reader_active	= 32;	// cache reader not blocked on event
 #endif
 const int BCB_free_pending	= 64;	// request cache writer to free pages
+const int BCB_exclusive		= 128;	// there is only BCB in whole system
 
 
 // BufferDesc -- Buffer descriptor block
 
-const int BDB_max_shared	= 20;	// maximum number of shared latch owners per BufferDesc
-
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc() : bdb_page(0, 0) {}
+	BufferDesc(BufferControl* bcb) : 
+	  bdb_bcb(bcb), 
+	  bdb_page(0, 0),
+	  bdb_pending_page(0, 0)
+	{
+		bdb_lock = NULL;
+		QUE_INIT(bdb_que);
+		QUE_INIT(bdb_in_use);
+		QUE_INIT(bdb_dirty);
+		bdb_buffer = NULL;
+		bdb_incarnation = 0;
+		bdb_transactions = 0;
+		bdb_mark_transaction = 0;
+		QUE_INIT(bdb_lower);
+		QUE_INIT(bdb_higher);
+		bdb_exclusive = NULL;
+		bdb_io = NULL;
+		bdb_writers = 0;
+		bdb_scan_count = 0;
+		bdb_difference_page = 0;
+		bdb_prec_walk_mark = 0;
+	}
 
-	Database*	bdb_dbb;				// Database block (for ASTs)
+	void addRef(thread_db* tdbb, Firebird::SyncType syncType);
+	bool addRefConditional(thread_db* tdbb, Firebird::SyncType syncType);
+	void downgrade(Firebird::SyncType syncType);
+	void release(thread_db* tdbb);
+
+	void lockIO(thread_db*);
+	void unLockIO(thread_db*);
+
+	bool isLocked() const
+	{
+		return bdb_syncPage.isLocked();
+	}
+
+	bool ourExclusiveLock() const
+	{
+		return bdb_syncPage.ourExclusiveLock();
+	}
+
+	bool ourIOLock() const
+	{
+		return bdb_syncIO.ourExclusiveLock();
+	}
+
+	BufferControl*	bdb_bcb;
+	Firebird::SyncObject	bdb_syncPage;
 	Lock*		bdb_lock;				// Lock block for buffer
-	que			bdb_que;				// Buffer que
+	que			bdb_que;				// Either mod que in hash table or bcb_pending que if BDB_free_pending flag is set
 	que			bdb_in_use;				// queue of buffers in use
 	que			bdb_dirty;				// dirty pages LRU queue
+	BufferDesc*	bdb_lru_chain;			// pending LRU chain
 	Ods::pag*	bdb_buffer;				// Actual buffer
 	PageNumber	bdb_page;				// Database page number in buffer
-	SLONG		bdb_incarnation;
+	PageNumber	bdb_pending_page;		// Database page number to be
+	ULONG		bdb_incarnation;
 	ULONG		bdb_transactions;		// vector of dirty flags to reduce commit overhead
 	SLONG		bdb_mark_transaction;	// hi-water mark transaction to defer header page I/O
 	que			bdb_lower;				// lower precedence que
 	que			bdb_higher;				// higher precedence que
-	que			bdb_waiters;			// latch wait que
 	thread_db*	bdb_exclusive;			// thread holding exclusive latch
-	thread_db*	bdb_io;					// thread holding io latch
-	ULONG		bdb_ast_flags;			// flags manipulated at AST level
-	USHORT		bdb_flags;
-	SSHORT		bdb_use_count;			// Number of active users
+private:
+	thread_db*				bdb_io;						// thread holding io latch
+	Firebird::SyncObject	bdb_syncIO;
+public:
+	Firebird::AtomicCounter	bdb_ast_flags;		// flags manipulated at AST level
+	Firebird::AtomicCounter	bdb_flags;
+	Firebird::AtomicCounter	bdb_use_count;		// Number of active users
+	SSHORT		bdb_writers;			// Number of recursively taken exclusive locks
+	SSHORT		bdb_io_locks;			// Number of recursively taken IO locks
 	SSHORT		bdb_scan_count;			// concurrent sequential scans
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
 	ULONG		bdb_prec_walk_mark;		// mark value used in precedence graph walk
-	que			bdb_shared;				// shared latches queue
 };
 
 // bdb_flags
 
 // to set/clear BDB_dirty use set_dirty_flag()/clear_dirty_flag()
 // These constants should really be of type USHORT.
-const int BDB_dirty				= 1;		// page has been updated but not written yet
-const int BDB_garbage_collect	= 2;		// left by scan for garbage collector
-const int BDB_writer			= 4;		// someone is updating the page
-const int BDB_marked			= 8;		// page has been updated
-const int BDB_must_write		= 16;		// forces a write as soon as the page is released
-const int BDB_faked				= 32;		// page was just allocated
-//const int BDB_merge			= 64;
-const int BDB_system_dirty 		= 128;		// system transaction has marked dirty
-const int BDB_io_error	 		= 256;		// page i/o error
-const int BDB_read_pending 		= 512;		// read is pending
-const int BDB_free_pending 		= 1024;		// buffer being freed for reuse
-const int BDB_not_valid			= 2048;		// i/o error invalidated buffer
-const int BDB_db_dirty 			= 4096;		// page must be written to database
-const int BDB_checkpoint		= 8192;		// page must be written by next checkpoint
-const int BDB_prefetch			= 16384;	// page has been prefetched but not yet referenced
-const int BDB_no_blocking_ast	= 32768;	// No blocking AST registered with page lock
-// CVC: There's no more room for flags unless you change bdb_flags from USHORT to ULONG.
+const int BDB_dirty				= 0x0001;	// page has been updated but not written yet
+const int BDB_garbage_collect	= 0x0002;	// left by scan for garbage collector
+const int BDB_writer			= 0x0004;	// someone is updating the page
+const int BDB_marked			= 0x0008;	// page has been updated
+const int BDB_must_write		= 0x0010;	// forces a write as soon as the page is released
+const int BDB_faked				= 0x0020;	// page was just allocated
+//const int BDB_merge				= 0x0040;
+const int BDB_system_dirty 		= 0x0080;	// system transaction has marked dirty
+const int BDB_io_error	 		= 0x0100;	// page i/o error
+const int BDB_read_pending 		= 0x0200;	// read is pending
+const int BDB_free_pending 		= 0x0400;	// buffer being freed for reuse
+const int BDB_not_valid			= 0x0800;	// i/o error invalidated buffer
+const int BDB_db_dirty 			= 0x1000;	// page must be written to database
+const int BDB_checkpoint		= 0x2000;	// page must be written by next checkpoint
+const int BDB_prefetch			= 0x4000;	// page has been prefetched but not yet referenced
+const int BDB_no_blocking_ast	= 0x8000;	// No blocking AST registered with page lock
+const int BDB_lru_chained		= 0x10000;	// buffer is in pending LRU chain
 
 // bdb_ast_flags
 
-const ULONG BDB_blocking 		= 1;	// a blocking ast was sent while page locked
+const int BDB_blocking 			= 0x01;		// a blocking ast was sent while page locked
 
 
 // PRE -- Precedence block
@@ -221,29 +331,6 @@ enum LATCH
 	LATCH_mark
 };
 
-// LWT -- Latch wait block
-
-class LatchWait : public pool_alloc<type_lwt>
-{
-public:
-	thread_db*			lwt_tdbb;
-	LATCH				lwt_latch;		// latch type requested
-	que					lwt_waiters;	// latch queue
-	Firebird::Semaphore	lwt_sem;		// grant event to wait on
-	USHORT				lwt_flags;
-};
-
-const int LWT_pending	= 1;			// latch request is pending
-
-// Shared Latch
-class SharedLatch
-{
-public:
-	thread_db*	slt_tdbb;		// thread holding latch
-	BufferDesc*	slt_bdb;		// buffer for which is this latch
-	que			slt_tdbb_que;	// thread's latches queue
-	que			slt_bdb_que;	// buffer's latches queue
-};
 
 
 #ifdef SUPERSERVER_V2
@@ -276,6 +363,7 @@ const int PRF_active	= 1;		// prefetch block currently in use
 #endif // SUPERSERVER_V2
 
 typedef Firebird::SortedArray<SLONG, Firebird::InlineStorage<SLONG, 256>, SLONG> PagesArray;
+
 
 } //namespace Jrd
 

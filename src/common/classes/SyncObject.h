@@ -173,6 +173,11 @@ public:
 		syncObject = obj;
 	}
 
+	SyncType getState() const
+	{
+		return state;
+	}
+
 protected:
 	SyncType state;
 	SyncType request;
@@ -199,27 +204,28 @@ public:
 	}
 };
 
-class SyncUnlockGuard : public Sync
+class SyncUnlockGuard 
 {
 public:
-	SyncUnlockGuard(SyncObject* obj, const char* fromWhere)
-		: Sync(obj, fromWhere)
+	SyncUnlockGuard(Sync& _sync) :
+	  sync(_sync)
 	{
-		oldState = state;
+		oldState = sync.getState();
 
 		fb_assert(oldState != SYNC_NONE);
 		if (oldState != SYNC_NONE)
-			unlock();
+			sync.unlock();
 	}
 
 	~SyncUnlockGuard()
 	{
 		if (oldState != SYNC_NONE)
-			lock(oldState);
+			sync.lock(oldState);
 	}
 
 private:
 	SyncType oldState;
+	Sync&	sync;
 };
 
 } // namespace Firebird

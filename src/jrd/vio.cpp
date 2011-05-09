@@ -1726,7 +1726,6 @@ void VIO_fini(thread_db* tdbb)
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		dbb->dbb_gc_sem.release(); // Wake up running thread
 		{ // scope
-			Database::Checkout dcoHolder(dbb);
 			dbb->dbb_gc_fini.enter();
 		}
 	}
@@ -1866,7 +1865,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	// Allocate a vector of garbage collect record blocks for relation.
 	vec<Record*>* vector = relation->rel_gc_rec;
 	if (!vector) {
-		vector = relation->rel_gc_rec = vec<Record*>::newVector(*dbb->dbb_permanent, 1);
+		vector = relation->rel_gc_rec = vec<Record*>::newVector(*relation->rel_pool, 1);
 	}
 
 	// Set the active flag on an inactive garbage collect record block and return it.
@@ -2098,7 +2097,6 @@ bool VIO_get_current(thread_db* tdbb,
 			VIO_backout(tdbb, rpb, transaction);
 			continue;
 		case tra_precommitted:
-			Database::Checkout dcoHolder(dbb);
 			THREAD_SLEEP(100);	// milliseconds
 			continue;
 		}
@@ -2122,7 +2120,6 @@ bool VIO_get_current(thread_db* tdbb,
 			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_probe);
 
 			if (state == tra_active) {
-				Database::Checkout dcoHolder(dbb);
 				THREAD_SLEEP(100);	// milliseconds
 				continue;
 			}
@@ -2235,7 +2232,6 @@ void VIO_init(thread_db* tdbb)
 		}
 
 		{ // scope
-			Database::Checkout dcoHolder(dbb);
 			dbb->dbb_gc_init.enter();
 		}
 	}
@@ -2312,7 +2308,7 @@ void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint*
 		sav_point_list = &sav_point->sav_next;
 	}
 
-	fb_assert(org_save_point == transaction->tra_save_point);
+	fb_assert(org_save_point == transaction->tra_save_point || !transaction->tra_save_point);
 }
 
 
@@ -3177,6 +3173,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE) {
@@ -3203,7 +3200,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 
 	try {
 
-		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
+		for (size_t i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
 		{
 			if ((relation = (*vector)[i]) && !(relation->rel_flags & (REL_deleted | REL_deleting)) &&
 				 relation->getPages(tdbb)->rel_pages)
@@ -4208,7 +4205,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  **************************************/
 	Database* dbb = (Database*)arg;
 	CHECK_DBB(dbb);
-	Database::SyncGuard dsGuard(dbb);
 
 	ISC_STATUS_ARRAY status_vector;
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
@@ -4233,7 +4229,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	try {
 		// Pseudo attachment needed for lock owner identification.
 
-		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, 0);
+		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
 		tdbb->setAttachment(attachment);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags = ATT_garbage_collector;
@@ -4288,7 +4284,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				while (dbb->dbb_flags & DBB_suspend_bgio)
 				{
 					{ // scope
-						Database::Checkout dcoHolder(dbb);
 						dbb->dbb_gc_sem.tryEnter(10);
 					}
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
@@ -4309,7 +4304,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			// Express interest in the relation to prevent it from being deleted
 			// out from under us while garbage collection is in-progress.
 
-			vec<jrd_rel*>* vector = dbb->dbb_relations;
+			vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
 			for (ULONG id = 0; vector && id < vector->count(); ++id)
 			{
 				relation = (*vector)[id];
@@ -4457,7 +4452,6 @@ rel_exit:
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
 					{ // scope
-						Database::Checkout dcoHolder(dbb);
 						dbb->dbb_gc_sem.tryEnter(10);
 					}
 					dbb->dbb_flags |= DBB_gc_active;
@@ -4760,7 +4754,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 	// A relation's garbage collect bitmap is allocated
 	// from the database permanent pool.
 
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	Jrd::ContextPoolHolder context(tdbb, relation->rel_pool);
 	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
 
 	if (!relation->rel_garbage)
@@ -5124,7 +5118,6 @@ static int prepare_update(	thread_db*		tdbb,
 
 				if (state == tra_active)
 				{
-					Database::Checkout dcoHolder(dbb);
 					THREAD_SLEEP(100);	// milliseconds
 					continue;
 				}
@@ -5184,7 +5177,6 @@ static int prepare_update(	thread_db*		tdbb,
 
 		if (state == tra_precommitted)
 		{
-			Database::Checkout dcoHolder(dbb);
 			THREAD_SLEEP(100);	// milliseconds
 		}
 		else {

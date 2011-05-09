@@ -45,7 +45,7 @@ USHORT ValueMover::getClientCharSet() const
 void ValueMover::getClientCharSetName(Firebird::MetaName& name) const
 {
 	thread_db* tdbb = getThreadData();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 	CharSet* cs = INTL_charset_lookup(tdbb, tdbb->getAttachment()->att_charset);
 	name = cs->getName();
@@ -55,7 +55,7 @@ void ValueMover::getClientCharSetName(Firebird::MetaName& name) const
 int ValueMover::getMaxBytesPerChar(USHORT charSet) const
 {
 	thread_db* tdbb = getThreadData();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 	return DataTypeUtil(tdbb).maxBytesPerChar(charSet);
 }
@@ -76,7 +76,7 @@ const char* ValueMover::getString(const ValueImpl* value, const dsc* desc, MoveB
 		*isNull = false;
 
 	thread_db* tdbb = getThreadData();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Attachment::SyncGuard attGuard(tdbb->getAttachment());
 	USHORT charSet = tdbb->getAttachment()->att_charset;
 
 	UCHAR* temp = NULL;
@@ -111,7 +111,7 @@ void ValueMover::getValue(const ValueImpl* value, const dsc* desc, dsc* target, 
 			*isNull = false;
 
 		thread_db* tdbb = getThreadData();
-		Database::SyncGuard dsGuard(tdbb->getDatabase());
+		Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 		MOV_move(tdbb, const_cast<dsc*>(desc), target);
 	}
@@ -121,7 +121,7 @@ void ValueMover::getValue(const ValueImpl* value, const dsc* desc, dsc* target, 
 void ValueMover::setValue(dsc* desc, USHORT* nullFlag, dsc* from) const
 {
 	thread_db* tdbb = getThreadData();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 	MOV_move(tdbb, from, desc);
 	*nullFlag &= ~DSC_null;

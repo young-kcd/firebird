@@ -37,7 +37,7 @@
 #include "../common/common.h"
 #include "../jrd/RuntimeStatistics.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
-#include "../jrd/Database.h"
+#include "../jrd/Attachment.h"
 #include "../dsql/BlrWriter.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
@@ -146,7 +146,6 @@ public:
 		Firebird::string, class dsql_req*> > > dbb_cursors;			// known cursors in database
 
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
-	Database*		dbb_database;
 	Attachment*		dbb_attachment;
 	dsql_str*		dbb_dfl_charset;
 	bool			dbb_no_charset;
@@ -170,12 +169,12 @@ public:
 
 	MemoryPool* createPool()
 	{
-		return dbb_database->createPool();
+		return dbb_attachment->createPool();
 	}
 
 	void deletePool(MemoryPool* pool)
 	{
-		dbb_database->deletePool(pool);
+		dbb_attachment->deletePool(pool);
 	}
 };
 

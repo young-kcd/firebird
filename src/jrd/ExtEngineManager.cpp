@@ -134,7 +134,7 @@ private:
 		Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE];
 
 		{	// scope
-			Database::Checkout dcoHolder(tdbb->getDatabase());
+			Attachment::Checkout attCout(attachment);
 
 			obj->getCharSet(RaiseError(), attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
 			charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
@@ -299,7 +299,7 @@ ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtMana
 
 ExtEngineManager::Function::~Function()
 {
-	Database::Checkout dcoHolder(database);
+	// Database::Checkout dcoHolder(database);
 	function->dispose(LogError());
 }
 
@@ -358,7 +358,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const NestValueArray& 
 		}
 
 		{	// scope
-			Database::Checkout dcoHolder(tdbb->getDatabase());
+			Attachment::Checkout attCout(tdbb->getAttachment());
 			function->execute(RaiseError(), attInfo->context, &params, &result);
 		}
 	}
@@ -397,7 +397,7 @@ ExtEngineManager::Procedure::Procedure(thread_db* tdbb, ExtEngineManager* aExtMa
 
 ExtEngineManager::Procedure::~Procedure()
 {
-	Database::Checkout dcoHolder(database);
+	//Database::Checkout dcoHolder(database);
 	procedure->dispose(LogError());
 }
 
@@ -415,7 +415,7 @@ ExtEngineManager::ResultSet* ExtEngineManager::Procedure::open(thread_db* tdbb,
 ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, ValuesImpl* inputParams,
 		ValuesImpl* outputParams, const ExtEngineManager::Procedure* aProcedure)
 	: procedure(aProcedure),
-	  database(tdbb->getDatabase()),
+	  attachment(tdbb->getAttachment()),
 	  firstFetch(true)
 {
 	attInfo = procedure->extManager->getEngineAttachment(tdbb, procedure->engine);
@@ -423,11 +423,10 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, ValuesImpl* inputParams,
 		(procedure->prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
 			CallerName(obj_package_header, procedure->prc->getName().package)));
-	Attachment* attachment = tdbb->getAttachment();
 
 	charSet = attachment->att_charset;
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
+	Attachment::Checkout attCout(attachment);
 
 	resultSet = procedure->procedure->open(RaiseError(), attInfo->context, inputParams,
 		outputParams);
@@ -438,7 +437,8 @@ ExtEngineManager::ResultSet::~ResultSet()
 {
 	if (resultSet)
 	{
-		Database::Checkout dcoHolder(database);
+		fb_assert(attachment == JRD_get_thread_data()->getAttachment());
+		Attachment::Checkout attCout(attachment);
 		resultSet->dispose(LogError());
 	}
 }
@@ -457,7 +457,8 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
 			CallerName(obj_package_header, procedure->prc->getName().package)));
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
+	fb_assert(attachment == tdbb->getAttachment());
+	Attachment::Checkout attCout(attachment);
 	return resultSet->fetch(RaiseError());
 }
 
@@ -479,6 +480,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, ExtEngineManager* aExtManage
 
 ExtEngineManager::Trigger::~Trigger()
 {
+	// hvlad: shouldn't we call trigger->dispose() here ?
 }
 
 
@@ -504,7 +506,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 			valueNewCount = setValues(tdbb, pool, newValues, descs, newRpb);
 
 		{	// scope
-			Database::Checkout dcoHolder(tdbb->getDatabase());
+			Attachment::Checkout attCout(tdbb->getAttachment());
 
 			trigger->execute(RaiseError(), attInfo->context, action, oldValues, newValues);
 
@@ -605,7 +607,7 @@ void ExtEngineManager::initialize()
 }
 
 
-void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment*/)
+void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 {
 	Array<ExternalEngine*> enginesCopy;
 
@@ -617,7 +619,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* /*attachment
 			enginesCopy.add(accessor.current()->second);
 	}
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
+	Attachment::Checkout attCout(attachment, true);
 
 	for (Array<ExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
 	{
@@ -652,7 +654,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	ExternalFunction* externalFunction;
 
 	{	// scope
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 
 		externalFunction = attInfo->engine->makeFunction(RaiseError(),
 			attInfo->context, udf->getName().package.nullStr(), udf->getName().identifier.c_str(),
@@ -672,7 +674,7 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	}
 	catch (...)
 	{
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 		externalFunction->dispose(LogError());
 		throw;
 	}
@@ -694,7 +696,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	ExternalProcedure* externalProcedure;
 
 	{	// scope
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 
 		externalProcedure = attInfo->engine->makeProcedure(RaiseError(),
 			attInfo->context, prc->getName().package.nullStr(), prc->getName().identifier.c_str(),
@@ -714,7 +716,7 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	}
 	catch (...)
 	{
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 		externalProcedure->dispose(LogError());
 		throw;
 	}
@@ -738,7 +740,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	ExternalTrigger* externalTrigger;
 
 	{	// scope
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 
 		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context,
 			trg->name.c_str(), entryPointTrimmed.nullStr(), body.nullStr(),
@@ -757,7 +759,7 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	}
 	catch (...)
 	{
-		Database::Checkout dcoHolder(tdbb->getDatabase());
+		Attachment::Checkout attCout(tdbb->getAttachment());
 		externalTrigger->dispose(LogError());
 		throw;
 	}
@@ -786,7 +788,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 				try
 				{
-					Database::Checkout dcoHolder(tdbb->getDatabase());
+					Attachment::Checkout attCout(tdbb->getAttachment());
 
 					engine = engineControl.plugin();
 					if (engine)
@@ -799,7 +801,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 									Arg::Num(version) << name);
 						}
 
-						Database::SyncGuard dsGuard(tdbb->getDatabase());
+						Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 						key = EngineAttachment(engine, tdbb->getAttachment());
 						attInfo = FB_NEW(getPool()) EngineAttachmentInfo();
@@ -874,7 +876,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 			enginesAttachments.put(key, attInfo);
 
 			ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-			Database::Checkout dcoHolder(tdbb->getDatabase());
+			Attachment::Checkout attCout(tdbb->getAttachment());
 			engine->openAttachment(LogError(), attInfo->context);
 		}
 

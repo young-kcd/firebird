@@ -660,11 +660,11 @@
 # The value is taken from a bit map in which each bit represents a CPU.
 # Thus, to use only the first processor, the value is 1. To use both
 # CPU 1 and CPU 2, the value is 3. To use CPU 2 and CPU 3, the value
-# is 6. The default value is 1.
+# is 6. The default value is 0 - no affinity will be set.
 #
 # Type: integer
 #
-#CpuAffinityMask = 1
+#CpuAffinityMask = 0
 
 
 # ----------------------------
@@ -838,3 +838,16 @@
 #    16    16777216       320    335544320       896    939524096
 #    32    33554432       384    402653184      1024    1073741824
 #
+
+# Type: boolean
+#SharedCache = true
+
+# Type: boolean
+#SharedDatabase = false
+
+
+# SharedCache	SharedDatabase	Mode
+# false			false			Classic with exlusive access	// single attachment only ?
+# false			true			Classic with shared access		// traditional CS\SC
+# true			false			Super with exlusive access		// traditional SS
+# true			true			Super with shared access		// 

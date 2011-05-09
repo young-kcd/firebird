@@ -551,7 +551,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 
 						const ULONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
 						window->win_page = pageNum;
-						new_page = CCH_fake(tdbb, window, 0);	// don't wait on latch
+						new_page = CCH_fake(tdbb, window, 1);	// don't wait on latch ?
 						if (new_page)
 						{
 							BackupManager::StateReadGuard stateGuard(tdbb);
@@ -605,7 +605,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 									// PIO_init_data returns zero - perhaps it is not supported,
 									// no space left on disk or IO error occurred. Try to write
 									// one page and handle IO errors if any.
-									CCH_must_write(window);
+									CCH_must_write(tdbb, window);
 									try
 									{
 										CCH_RELEASE(tdbb, window);
@@ -683,9 +683,9 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 			page->scn_header.pag_type = pag_scns;
 			page->scn_sequence = scn_page / pageMgr.pagesPerSCN;
 
-			CCH_must_write(window);
+			CCH_must_write(tdbb, window);
 			CCH_RELEASE(tdbb, window);
-			CCH_must_write(&pip_window);
+			CCH_must_write(tdbb, &pip_window);
 			CCH_RELEASE(tdbb, &pip_window);
 
 			return PAG_allocate(tdbb, window);
@@ -712,9 +712,9 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	const UCHAR* end = (UCHAR*) new_pip_page + dbb->dbb_page_size;
 	memset(new_pip_page->pip_bits, 0xff, end - new_pip_page->pip_bits);
 
-	CCH_must_write(window);
+	CCH_must_write(tdbb, window);
 	CCH_RELEASE(tdbb, window);
-	CCH_must_write(&pip_window);
+	CCH_must_write(tdbb, &pip_window);
 	CCH_RELEASE(tdbb, &pip_window);
 
 	return PAG_allocate(tdbb, window);
@@ -1298,7 +1298,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 		window.win_page = file->fil_min_page;
 		USHORT file_length = 0;
 		ULONG last_page = 0;
-		BufferDesc temp_bdb;
+		BufferDesc temp_bdb(dbb->dbb_bcb);
 		SLONG next_page = 0;
 		do {
 			// note that we do not have to get a read lock on
@@ -1315,7 +1315,6 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 			header_page* header = (header_page*) temp_page;
 			temp_bdb.bdb_buffer = (PAG) header;
 			temp_bdb.bdb_page = window.win_page;
-			temp_bdb.bdb_dbb = dbb;
 
 			// Read the required page into the local buffer
 			PIO_read(file, &temp_bdb, (PAG) header, status);
@@ -1717,13 +1716,13 @@ static int blocking_ast_attachment(void* ast_object)
 	try
 	{
 		Database* const dbb = attachment->att_database;
-		Database::SyncGuard dsGuard(dbb, true);
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 		tdbb->setAttachment(attachment);
 
 		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+		Jrd::Attachment::SyncGuard guard(attachment);
 
 		attachment->att_flags |= ATT_shutdown;
 		attachment->cancelExternalConnection(tdbb);
@@ -2175,12 +2174,12 @@ void PageManager::releaseLocks()
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	USHORT result;
 
-	if (Config::getSharedDatabase())
+	if (dbb->dbb_config->getSharedDatabase())
 	{
-		SET_TDBB(tdbb);
-		Database* const dbb = tdbb->getDatabase();
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 		if (!attachment->att_temp_pg_lock)

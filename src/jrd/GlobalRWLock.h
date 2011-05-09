@@ -87,8 +87,9 @@ protected:
 
 	virtual void blockingAstHandler(thread_db* tdbb);
 
-private:
 	Firebird::Mutex counterMutex;	// Protects counter and blocking flag
+
+private:
 	ULONG pendingLock;
 
 	ULONG	readers;

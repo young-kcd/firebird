@@ -65,7 +65,7 @@ Function* Function::lookup(thread_db* tdbb, USHORT id, bool return_deleted, bool
 	Database* const dbb = tdbb->getDatabase();
 	Function* check_function = NULL;
 
-	Function* function = (id < dbb->dbb_functions.getCount()) ? dbb->dbb_functions[id] : NULL;
+	Function* function = (id < attachment->att_functions.getCount()) ? attachment->att_functions[id] : NULL;
 
 	if (function && function->getId() == id &&
 		!(function->fun_flags & FUN_being_scanned) &&
@@ -117,7 +117,7 @@ Function* Function::lookup(thread_db* tdbb, const QualifiedName& name, bool nosc
 
 	// See if we already know the function by name
 
-	for (Function** iter = dbb->dbb_functions.begin(); iter < dbb->dbb_functions.end(); ++iter)
+	for (Function** iter = attachment->att_functions.begin(); iter < attachment->att_functions.end(); ++iter)
 	{
 		Function* const function = *iter;
 
@@ -174,14 +174,12 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	jrd_tra* sysTransaction = attachment->getSysTransaction();
 	Database* const dbb = tdbb->getDatabase();
 
-	if (id >= dbb->dbb_functions.getCount())
+	if (id >= attachment->att_functions.getCount())
 	{
-		dbb->dbb_functions.grow(id + 1);
+		attachment->att_functions.grow(id + 1);
 	}
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
-
-	Function* function = dbb->dbb_functions[id];
+	Function* function = attachment->att_functions[id];
 
 	if (function && !(function->fun_flags & FUN_obsolete))
 	{
@@ -196,7 +194,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	if (!function)
 	{
-		function = FB_NEW(*dbb->dbb_permanent) Function(*dbb->dbb_permanent);
+		function = FB_NEW(*attachment->att_pool) Function(*attachment->att_pool);
 	}
 
 	try
@@ -205,11 +203,11 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	function->fun_flags &= ~FUN_obsolete;
 
 	function->setId(id);
-	dbb->dbb_functions[id] = function;
+	attachment->att_functions[id] = function;
 
 	if (!function->fun_existence_lock)
 	{
-		Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+		Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock;
 		function->fun_existence_lock = lock;
 		lock->lck_parent = dbb->dbb_lock;
 		lock->lck_dbb = dbb;
@@ -328,7 +326,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				{
 					function->fun_defaults++;
 
-					MemoryPool* const csb_pool = dbb->createPool();
+					MemoryPool* const csb_pool = attachment->createPool();
 					Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 					try
@@ -338,7 +336,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					}
 					catch (const Exception&)
 					{
-						dbb->deletePool(csb_pool);
+						attachment->deletePool(csb_pool);
 						throw; // an explicit error message would be better
 					}
 				}
@@ -403,7 +401,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 			}
 			else if (!X.RDB$FUNCTION_BLR.NULL)
 			{
-				MemoryPool* const csb_pool = dbb->createPool();
+				MemoryPool* const csb_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
 
 				try
@@ -427,7 +425,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				}
 				catch (const Exception&)
 				{
-					dbb->deletePool(csb_pool);
+					attachment->deletePool(csb_pool);
 					throw;
 				}
 
@@ -513,8 +511,9 @@ int Function::blockingAst(void* ast_object)
 	try
 	{
 		Database* const dbb = function->fun_existence_lock->lck_dbb;
+		Jrd::Attachment* att = function->fun_existence_lock->lck_attachment;
 
-		Database::SyncGuard dsGuard(dbb, true);
+		Jrd::Attachment::SyncGuard guard(att);
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
@@ -624,8 +623,8 @@ void Function::release(thread_db* tdbb)
 	{
 		fun_use_count--;
 
-		Database* const dbb = tdbb->getDatabase();
-		if (fun_use_count == 0 && dbb->dbb_functions[getId()] != this)
+		Jrd::Attachment* attachment = tdbb->getAttachment();
+		if (fun_use_count == 0 && attachment->att_functions[getId()] != this)
 		{
 			if (getStatement())
 			{

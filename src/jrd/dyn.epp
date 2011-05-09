@@ -119,6 +119,7 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
 
 	thread_db* const tdbb = JRD_get_thread_data();
 	Database* const dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	const UCHAR* ptr = ddl;
 
@@ -132,12 +133,10 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	MemoryPool* const tempPool = dbb->createPool();
+	MemoryPool* const tempPool = attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
 	try {
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_dyn_mutex);
-
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
 
@@ -164,12 +163,12 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
 			}
 		}
 
-		dbb->deletePool(tempPool);
+		attachment->deletePool(tempPool);
 
 		ERR_punt();
 	}
 
-	dbb->deletePool(tempPool);
+	attachment->deletePool(tempPool);
 }
 
 

@@ -192,11 +192,11 @@ public:
 		return transaction;
 	}
 
-	static void destroy(Database* const dbb, jrd_tra* const transaction)
+	static void destroy(Attachment* const attachment, jrd_tra* const transaction)
 	{
 		if (transaction)
 		{
-			if (!dbb || transaction->tra_outer)
+			if (!attachment || transaction->tra_outer)
 				delete transaction;
 			else
 			{
@@ -204,7 +204,7 @@ public:
 				Firebird::MemoryStats temp_stats;
 				pool->setStatsGroup(temp_stats);
 				delete transaction;
-				dbb->deletePool(pool);
+				attachment->deletePool(pool);
 			}
 		}
 	}

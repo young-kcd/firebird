@@ -179,7 +179,7 @@ public:
 
 	private:
 		const Procedure* procedure;
-		Database* database;
+		Attachment* attachment;
 		bool firstFetch;
 		EngineAttachmentInfo* attInfo;
 		Firebird::ExternalResultSet* resultSet;

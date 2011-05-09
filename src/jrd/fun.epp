@@ -209,9 +209,9 @@ bool IbUtil::free(void* ptr)
 typedef void* UDF_ARG;
 
 template <typename T>
-T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
+T CALL_UDF(Jrd::Attachment* att, int (*entrypoint)(), UDF_ARG* args)
 {
-	Database::Checkout dcoHolder(dbb);
+	Jrd::Attachment::Checkout attCout(att);
 	return ((T (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(entrypoint)) (args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
 }
 
@@ -757,7 +757,7 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
 
 	return BLB_lseek(blob, mode, offset);
 }
@@ -777,7 +777,7 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
 
 	BLB_put_segment(tdbb, blob, buffer, length);
 }
@@ -801,7 +801,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
 	thread_db* tdbb = JRD_get_thread_data();
-	Database::SyncGuard dsGuard(tdbb->getDatabase());
+	Jrd::Attachment::SyncGuard guard(tdbb->getAttachment());
 
 	*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 
@@ -921,11 +921,12 @@ static void invoke(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* att = tdbb->getAttachment();
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
-		CALL_UDF<void>(dbb, function->fun_entrypoint, args);
+		CALL_UDF<void>(att, function->fun_entrypoint, args);
 		result_is_null = return_ptr->fun_mechanism == FUN_descriptor &&
 			(value->vlu_desc.dsc_flags & DSC_null) ||
 			return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
@@ -940,7 +941,7 @@ static void invoke(thread_db* tdbb,
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
 			break;
 
 		case dtype_short:
@@ -948,7 +949,7 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
 			break;
 
 		case dtype_real:
@@ -956,15 +957,15 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(att, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
-			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(att, function->fun_entrypoint, args);
 			break;
 
 		case dtype_double:
-			value->vlu_misc.vlu_double = CALL_UDF<double>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_double = CALL_UDF<double>(att, function->fun_entrypoint, args);
 			break;
 
 		case dtype_timestamp:
@@ -975,7 +976,7 @@ static void invoke(thread_db* tdbb,
 	}
 	else
 	{
-		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
+		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(att, function->fun_entrypoint, args);
 
 		if (temp_ptr != NULL)
 		{

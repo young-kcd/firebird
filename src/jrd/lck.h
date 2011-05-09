@@ -24,6 +24,12 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
+//#define DEBUG_LCK
+
+#ifdef DEBUG_LCK
+#include "../common/classes/SyncObject.h"
+#endif
+
 namespace Jrd {
 
 class Database;
@@ -92,6 +98,10 @@ public:
 		lck_key.lck_long = 0;
 		lck_tail[0] = 0;
 	}
+
+#ifdef DEBUG_LCK
+	Firebird::SyncObject	lck_sync;
+#endif
 
 	Lock* lck_parent;
 

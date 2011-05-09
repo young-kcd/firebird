@@ -521,7 +521,7 @@ void TRA_extend_tip(thread_db* tdbb, ULONG sequence) //, WIN* precedence_window)
 	tx_inv_page* tip = (tx_inv_page*) DPM_allocate(tdbb, &window);
 	tip->tip_header.pag_type = pag_transactions;
 
-	CCH_must_write(&window);
+	CCH_must_write(tdbb, &window);
 	CCH_RELEASE(tdbb, &window);
 
 	// Release prior page
@@ -778,9 +778,12 @@ void TRA_invalidate(Database* database, ULONG mask)
  *	modified a page that couldn't be written.
  *
  **************************************/
+	SyncLockGuard dbbGuard(&database->dbb_sync, SYNC_EXCLUSIVE, "TRA_invalidate");
+
 	for (Jrd::Attachment* attachment = database->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
+		Jrd::Attachment::SyncGuard attGuard(attachment);
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			transaction = transaction->tra_next)
 		{
@@ -1069,7 +1072,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 				 Arg::Gds(isc_tra_state) << Arg::Num(number) << Arg::Str(text));
 	}
 
-	MemoryPool* const pool = dbb->createPool();
+	MemoryPool* const pool = attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const trans = jrd_tra::create(pool, attachment, NULL);
 	trans->tra_number = number;
@@ -1160,7 +1163,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	}
 
 	{ // scope
-		vec<jrd_rel*>& rels = *dbb->dbb_relations;
+		vec<jrd_rel*>& rels = *attachment->att_relations;
 		for (size_t i = 0; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
@@ -1228,7 +1231,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Release the transaction and its pool
 
-	jrd_tra::destroy(dbb, transaction);
+	jrd_tra::destroy(attachment, transaction);
 }
 
 
@@ -1418,7 +1421,6 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 
 	const ULONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const SLONG sequence = number / trans_per_tip;
-	//trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
@@ -1427,7 +1429,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 
 #ifdef SUPERSERVER_V2
 	CCH_MARK(tdbb, &window);
-	const ULONG generation = tip->pag_generation;
+	const ULONG generation = tip->tip_header.pag_generation;
 #else
 	CCH_MARK_MUST_WRITE(tdbb, &window);
 #endif
@@ -1459,7 +1461,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, SLONG number, SSHORT s
 		THREAD_YIELD();
 	}
 	tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
-	if (generation == tip->pag_generation)
+	if (generation == tip->tip_header.pag_generation)
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 	CCH_RELEASE(tdbb, &window);
 #endif
@@ -1597,7 +1599,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	MemoryPool* const pool = outer ? outer->tra_pool : dbb->createPool();
+	MemoryPool* const pool = outer ? outer->tra_pool : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
@@ -1612,7 +1614,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	}
 	catch (const Exception&)
 	{
-		jrd_tra::destroy(dbb, temp);
+		jrd_tra::destroy(attachment, temp);
 		throw;
 	}
 
@@ -1652,7 +1654,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	MemoryPool* const pool = outer ? outer->tra_pool : dbb->createPool();
+	MemoryPool* const pool = outer ? outer->tra_pool : attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
@@ -1665,7 +1667,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	}
 	catch (const Exception&)
 	{
-		jrd_tra::destroy(dbb, temp);
+		jrd_tra::destroy(attachment, temp);
 		throw;
 	}
 
@@ -1967,15 +1969,14 @@ static int blocking_ast_transaction(void* ast_object)
 	try
 	{
 		Database* dbb = transaction->tra_cancel_lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
+		Jrd::Attachment* att = transaction->tra_cancel_lock->lck_attachment;
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		Jrd::Attachment* att = transaction->tra_cancel_lock->lck_attachment;
 		tdbb->setAttachment(att);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
+		Jrd::Attachment::SyncGuard guard(att);
 
 		if (transaction->tra_cancel_lock)
 			LCK_release(tdbb, transaction->tra_cancel_lock);
@@ -3335,7 +3336,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		if (!(dbb->dbb_flags & DBB_read_only))
 			CCH_RELEASE(tdbb, &window);
 #endif
-		jrd_tra::destroy(dbb, trans);
+		jrd_tra::destroy(attachment, trans);
 		ERR_post(Arg::Gds(isc_lock_conflict));
 	}
 

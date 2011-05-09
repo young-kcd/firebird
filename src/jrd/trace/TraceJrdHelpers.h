@@ -64,9 +64,9 @@ public:
 
 		m_need_trace = false;
 
-		const Attachment* attachment = m_transaction->tra_attachment;
+		Attachment* attachment = m_transaction->tra_attachment;
 
-		TraceRuntimeStats stats(attachment->att_database, m_baseline, &m_transaction->tra_stats,
+		TraceRuntimeStats stats(attachment, m_baseline, &m_transaction->tra_stats,
 			fb_utils::query_performance_counter() - m_start_clock, 0);
 
 		TraceConnectionImpl conn(attachment);
@@ -137,8 +137,7 @@ public:
 			return;
 		}
 
-		Database* dbb = m_tdbb->getDatabase();
-		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
+		TraceRuntimeStats stats(m_tdbb->getAttachment(), m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
 
@@ -197,8 +196,7 @@ public:
 			return;
 		}
 
-		Database* dbb = m_tdbb->getDatabase();
-		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
+		TraceRuntimeStats stats(m_tdbb->getAttachment(), m_request->req_fetch_baseline, &m_request->req_stats,
 			m_request->req_fetch_elapsed, m_request->req_fetch_rowcount);
 
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
@@ -260,8 +258,7 @@ public:
 
 		m_need_trace = false;
 
-		Database* dbb = m_tdbb->getDatabase();
-		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
+		TraceRuntimeStats stats(m_tdbb->getAttachment(), m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock, 0);
 
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
@@ -388,8 +385,7 @@ public:
 
 		m_need_trace = false;
 
-		Database* dbb = m_tdbb->getDatabase();
-		TraceRuntimeStats stats(dbb, m_request->req_fetch_baseline, &m_request->req_stats,
+		TraceRuntimeStats stats(m_tdbb->getAttachment(), m_request->req_fetch_baseline, &m_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
 

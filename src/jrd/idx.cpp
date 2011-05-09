@@ -232,6 +232,7 @@ void IDX_create_index(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (relation->rel_file)
 	{
@@ -308,7 +309,7 @@ void IDX_create_index(thread_db* tdbb,
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
 	AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
-		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
+		Sort(attachment, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg));
 
 	jrd_rel* partner_relation = NULL;
@@ -328,7 +329,6 @@ void IDX_create_index(thread_db* tdbb,
 
 	// Unless this is the only attachment or a database restore, worry about
 	// preserving the page working sets of other attachments.
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 	{
 		if (attachment->att_flags & ATT_gbak_attachment ||
@@ -539,7 +539,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	IndexBlock* index_block = FB_NEW(*dbb->dbb_permanent) IndexBlock();
+	IndexBlock* index_block = FB_NEW(*relation->rel_pool) IndexBlock();
 	index_block->idb_id = id;
 
 	// link the block in with the relation linked list
@@ -551,7 +551,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	// any modification to the index so that the cached information
 	// about the index will be discarded
 
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock;
+	Lock* lock = FB_NEW_RPT(*relation->rel_pool, 0) Lock;
 	index_block->idb_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
@@ -1491,11 +1491,11 @@ static int index_block_flush(void* ast_object)
 		Lock* lock = index_block->idb_lock;
 		Database* dbb = lock->lck_dbb;
 
-		Database::SyncGuard dsGuard(dbb, true);
-
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
 		tdbb->setAttachment(lock->lck_attachment);
+
+		Jrd::Attachment::SyncGuard guard(lock->lck_attachment);
 
 		release_index_block(tdbb, index_block);
 	}

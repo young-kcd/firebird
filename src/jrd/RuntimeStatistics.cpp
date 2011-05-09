@@ -226,7 +226,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	}
 }
 
-PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
+PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 													  const RuntimeStatistics& new_stat,
 													  PerformanceInfo& dest,
 													  TraceCountsArray& temp)
@@ -262,8 +262,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 			// Point TraceCounts to counts array from baseline object
 			if (!all_zeros)
 			{
-				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
-					(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
+				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
+					(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = new_cnts->rlc_relation_id;
 				traceCounts.trc_counters = base_cnts->rlc_counter;
@@ -276,8 +276,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 		}
 		else
 		{
-			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
-				(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
+			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
+				(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
 
 			// Point TraceCounts to counts array from object with updated counters
 			TraceCounts traceCounts;

@@ -490,8 +490,10 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req
  *	Execute database triggers
  *
  **************************************/
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
  	// do nothing if user doesn't want database triggers
-	if (tdbb->getAttachment()->att_flags & ATT_no_db_triggers)
+	if (attachment->att_flags & ATT_no_db_triggers)
 		return;
 
 	int type = 0;
@@ -523,14 +525,14 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req
 			return;
 	}
 
-	if (tdbb->getDatabase()->dbb_triggers[type])
+	if (attachment->att_triggers[type])
 	{
 		jrd_tra* old_transaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
 
 		try
 		{
-			EXE_execute_triggers(tdbb, &tdbb->getDatabase()->dbb_triggers[type],
+			EXE_execute_triggers(tdbb, &attachment->att_triggers[type],
 				NULL, NULL, trigger_action, StmtNode::ALL_TRIGS);
 			tdbb->setTransaction(old_transaction);
 		}
@@ -546,9 +548,11 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req
 // Execute DDL triggers.
 void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTriggers, int action)
 {
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+
 	// Our caller verifies (ATT_no_db_triggers) if DDL triggers should not run.
 
-	if (tdbb->getDatabase()->dbb_ddl_triggers)
+	if (attachment->att_ddl_triggers)
 	{
 		jrd_tra* const oldTransaction = tdbb->getTransaction();
 		tdbb->setTransaction(transaction);
@@ -558,8 +562,8 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 			trig_vec triggers;
 			trig_vec* triggersPtr = &triggers;
 
-			for (trig_vec::iterator i = tdbb->getDatabase()->dbb_ddl_triggers->begin();
-				 i != tdbb->getDatabase()->dbb_ddl_triggers->end();
+			for (trig_vec::iterator i = attachment->att_ddl_triggers->begin();
+				 i != attachment->att_ddl_triggers->end();
 				 ++i)
 			{
 				if ((i->type & (1LL << action)) &&

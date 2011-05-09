@@ -310,12 +310,18 @@ public:
 	// State Lock member functions
 	bool lockStateWrite(thread_db* tdbb, SSHORT wait)
 	{
+		fb_assert(!(tdbb->tdbb_flags & TDBB_backup_write_locked));
 		tdbb->tdbb_flags |= TDBB_backup_write_locked;
-		return stateLock->lockWrite(tdbb, wait);
+		if (stateLock->lockWrite(tdbb, wait))
+			return true;
+
+		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
+		return false;
 	}
 
 	void unlockStateWrite(thread_db* tdbb)
 	{
+		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
 		stateLock->unlockWrite(tdbb);
 	}

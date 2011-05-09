@@ -43,6 +43,7 @@
 #include "../lock/lock_proto.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/jrd.h"
+#include "../jrd/Attachment.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
@@ -98,7 +99,7 @@
 #endif
 
 #ifdef DEV_BUILD
-#define VALIDATE_LOCK_TABLE
+//#define VALIDATE_LOCK_TABLE
 #endif
 
 #ifdef DEV_BUILD
@@ -406,7 +407,7 @@ bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
 }
 
 
-void LockManager::shutdownOwner(Database* database, SRQ_PTR* owner_offset)
+void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_offset)
 {
 /**************************************
  *
@@ -438,7 +439,7 @@ void LockManager::shutdownOwner(Database* database, SRQ_PTR* owner_offset)
 	{
 		m_localMutex.leave();
 		{ // scope
-			Database::Checkout dco(database);
+			Jrd::Attachment::Checkout cout(attachment);
 			THREAD_SLEEP(10);
 		}
 		m_localMutex.enter();
@@ -456,7 +457,7 @@ void LockManager::shutdownOwner(Database* database, SRQ_PTR* owner_offset)
 }
 
 
-SRQ_PTR LockManager::enqueue(Database* database,
+SRQ_PTR LockManager::enqueue(Attachment* attachment,
 							 Arg::StatusVector& statusVector,
 							 SRQ_PTR prior_request,
 							 SRQ_PTR parent_request,
@@ -559,7 +560,7 @@ SRQ_PTR LockManager::enqueue(Database* database,
 
 		insert_tail(&lock->lbl_requests, &request->lrq_lbl_requests);
 		request->lrq_data = data;
-		const SRQ_PTR lock_id = grant_or_que(database, request, lock, lck_wait);
+		const SRQ_PTR lock_id = grant_or_que(attachment, request, lock, lck_wait);
 		if (!lock_id)
 		{
 			statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
@@ -621,7 +622,7 @@ SRQ_PTR LockManager::enqueue(Database* database,
 }
 
 
-bool LockManager::convert(Database* database,
+bool LockManager::convert(Attachment* attachment,
 						  Arg::StatusVector& statusVector,
 						  SRQ_PTR request_offset,
 						  UCHAR type,
@@ -657,12 +658,12 @@ bool LockManager::convert(Database* database,
 	else
 		++sh_mem_header->lhb_operations[0];
 
-	return internal_convert(database, statusVector, request_offset, type, lck_wait, ast_routine,
+	return internal_convert(attachment, statusVector, request_offset, type, lck_wait, ast_routine,
 		ast_argument);
 }
 
 
-UCHAR LockManager::downgrade(Database* database, Arg::StatusVector& statusVector,
+UCHAR LockManager::downgrade(Attachment* attachment, Arg::StatusVector& statusVector,
 	const SRQ_PTR request_offset)
 {
 /**************************************
@@ -720,7 +721,7 @@ UCHAR LockManager::downgrade(Database* database, Arg::StatusVector& statusVector
 	}
 	else
 	{
-		internal_convert(database, statusVector, request_offset, state, LCK_NO_WAIT,
+		internal_convert(attachment, statusVector, request_offset, state, LCK_NO_WAIT,
 						 request->lrq_ast_routine, request->lrq_ast_argument);
 	}
 
@@ -765,7 +766,7 @@ bool LockManager::dequeue(const SRQ_PTR request_offset)
 }
 
 
-void LockManager::repost(Database* database, lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
+void LockManager::repost(Attachment* attachment, lock_ast_t ast, void* arg, SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -819,7 +820,7 @@ void LockManager::repost(Database* database, lock_ast_t ast, void* arg, SRQ_PTR 
 
 	DEBUG_DELAY;
 
-	signal_owner(database, (own*) SRQ_ABS_PTR(owner_offset), (SRQ_PTR) NULL);
+	signal_owner(attachment, (own*) SRQ_ABS_PTR(owner_offset), (SRQ_PTR) NULL);
 
 	release_shmem(owner_offset);
 }
@@ -1392,7 +1393,7 @@ lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
 }
 
 
-void LockManager::blocking_action(Database* database,
+void LockManager::blocking_action(Attachment* attachment,
 								  SRQ_PTR blocking_owner_offset,
 								  SRQ_PTR blocked_owner_offset)
 {
@@ -1459,13 +1460,8 @@ void LockManager::blocking_action(Database* database,
 			owner->own_ast_count++;
 			release_shmem(blocked_owner_offset);
 			m_localMutex.leave();
-			if (database)
 			{
-				Database::Checkout dcoHolder(database);
-				(*routine)(arg);
-			}
-			else
-			{
+				Jrd::Attachment::Checkout cout(attachment, true);
 				(*routine)(arg);
 			}
 			m_localMutex.enter();
@@ -1492,7 +1488,7 @@ void LockManager::blocking_action_thread()
 
 /*
  * Main thread may be gone releasing our LockManager instance
- * when AST can't lock appropriate database mutex and therefore does not return.
+ * when AST can't lock appropriate attachment mutex and therefore does not return.
  *
  * This causes multiple errors when entering/releasing mutexes/semaphores.
  * Catch this errors and log them.
@@ -2235,7 +2231,7 @@ void LockManager::grant(lrq* request, lbl* lock)
 }
 
 
-SRQ_PTR LockManager::grant_or_que(Database* database, lrq* request, lbl* lock, SSHORT lck_wait)
+SRQ_PTR LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -2272,7 +2268,7 @@ SRQ_PTR LockManager::grant_or_que(Database* database, lrq* request, lbl* lock, S
 
 	if (lck_wait)
 	{
-		wait_for_request(database, request, lck_wait);
+		wait_for_request(attachment, request, lck_wait);
 
 		// For performance reasons, we're going to look at the
 		// request's status without re-acquiring the lock table.
@@ -2539,7 +2535,7 @@ void LockManager::insert_tail(SRQ lock_srq, SRQ node)
 }
 
 
-bool LockManager::internal_convert(Database* database,
+bool LockManager::internal_convert(Attachment* attachment,
 								   Arg::StatusVector& statusVector,
 								   SRQ_PTR request_offset,
 								   UCHAR type,
@@ -2602,7 +2598,7 @@ bool LockManager::internal_convert(Database* database,
 		else
 			new_ast = false;
 
-		if (wait_for_request(database, request, lck_wait))
+		if (wait_for_request(attachment, request, lck_wait))
 			return false;
 
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
@@ -2693,7 +2689,7 @@ USHORT LockManager::lock_state(const lbl* lock)
 }
 
 
-void LockManager::post_blockage(Database* database, lrq* request, lbl* lock)
+void LockManager::post_blockage(Attachment* attachment, lrq* request, lbl* lock)
 {
 /**************************************
  *
@@ -2760,7 +2756,7 @@ void LockManager::post_blockage(Database* database, lrq* request, lbl* lock)
 	while (blocking_owners.getCount())
 	{
 		own* const blocking_owner = (own*) SRQ_ABS_PTR(blocking_owners.pop());
-		if (blocking_owner->own_count && !signal_owner(database, blocking_owner, owner_offset))
+		if (blocking_owner->own_count && !signal_owner(attachment, blocking_owner, owner_offset))
 		{
 			dead_processes.add(blocking_owner->own_process);
 		}
@@ -3281,7 +3277,7 @@ void LockManager::release_request(lrq* request)
 }
 
 
-bool LockManager::signal_owner(Database* database, own* blocking_owner, SRQ_PTR blocked_owner_offset)
+bool LockManager::signal_owner(Attachment* attachment, own* blocking_owner, SRQ_PTR blocked_owner_offset)
 {
 /**************************************
  *
@@ -3323,7 +3319,7 @@ bool LockManager::signal_owner(Database* database, own* blocking_owner, SRQ_PTR 
 	if (process->prc_process_id == PID)
 	{
 		DEBUG_DELAY;
-		blocking_action(database, SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
+		blocking_action(attachment, SRQ_REL_PTR(blocking_owner), blocked_owner_offset);
 		DEBUG_DELAY;
 		return true;
 	}
@@ -3848,7 +3844,7 @@ void LockManager::validate_shb(const SRQ_PTR shb_ptr)
 }
 
 
-USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lck_wait)
+USHORT LockManager::wait_for_request(Attachment* attachment, lrq* request, SSHORT lck_wait)
 {
 /**************************************
  *
@@ -3908,7 +3904,7 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 	// Post blockage. If the blocking owner has disappeared, the blockage
 	// may clear spontaneously.
 
-	post_blockage(database, request, lock);
+	post_blockage(attachment, request, lock);
 	post_history(his_wait, owner_offset, lock_offset, SRQ_REL_PTR(request), true);
 	release_shmem(owner_offset);
 
@@ -3960,7 +3956,7 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 				++m_waitingOwners;
 			}
 			{ // scope
-				Database::Checkout dcoHolder(database);
+				Jrd::Attachment::Checkout cout(attachment);
 				ret = ISC_event_wait(&owner->own_wakeup, value, (timeout - current_time) * 1000000);
 				--m_waitingOwners;
 			}
@@ -4064,7 +4060,7 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 			// This could happen if the lock was granted to a different request,
 			// we have to tell the new owner of the lock that they are blocking us.
 
-			post_blockage(database, request, lock);
+			post_blockage(attachment, request, lock);
 			release_shmem(owner_offset);
 			continue;
 		}
@@ -4122,7 +4118,7 @@ USHORT LockManager::wait_for_request(Database* database, lrq* request, SSHORT lc
 			// We need to inform the new owner.
 
 			DEBUG_MSG(0, ("wait_for_request: forcing a resignal of blockers\n"));
-			post_blockage(database, request, lock);
+			post_blockage(attachment, request, lock);
 #ifdef DEV_BUILD
 			repost_counter++;
 			if (repost_counter % 50 == 0)

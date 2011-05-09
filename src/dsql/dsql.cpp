@@ -1381,10 +1381,9 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (attachment->att_dsql_instance)
 		return attachment->att_dsql_instance;
 
-	MemoryPool& pool = *attachment->att_database->createPool();
+	MemoryPool& pool = *attachment->createPool();
 	dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
 	database->dbb_attachment = attachment;
-	database->dbb_database = attachment->att_database;
 	attachment->att_dsql_instance = database;
 
 	INI_init_dsql(tdbb, database);

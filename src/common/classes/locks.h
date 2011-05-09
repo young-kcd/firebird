@@ -378,6 +378,49 @@ private:
 	Mutex* lock;
 };
 
+class MutexUnlockGuard
+{
+public:
+	explicit MutexUnlockGuard(Mutex &aLock)
+		: lock(&aLock)
+	{
+		try {
+			lock->leave();
+		}
+		catch (const Exception&)
+		{
+			DtorException::devHalt();
+		}
+	}
+
+	~MutexUnlockGuard()
+	{
+		lock->enter();
+	}
+
+private:
+	// Forbid copying
+	MutexUnlockGuard(const MutexUnlockGuard&);
+	MutexUnlockGuard& operator=(const MutexUnlockGuard&);
+
+	Mutex* lock;
+};
+
+
+class MutexCheckoutGuard
+{
+public:
+	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock) :
+		unlock(mtxCout),
+		lock(mtxLock)
+	{
+	}
+
+private:
+	MutexUnlockGuard unlock;
+	MutexLockGuard	lock;
+};
+
 } //namespace Firebird
 
 #endif // CLASSES_LOCKS_H

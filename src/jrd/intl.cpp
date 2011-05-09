@@ -207,16 +207,17 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	CharSetContainer* cs = NULL;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	fb_assert(attachment);
 
 	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
 		id = tdbb->getCharSet();
 
-	if (id >= dbb->dbb_charsets.getCount())
-		dbb->dbb_charsets.resize(id + 10);
+	if (id >= attachment->att_charsets.getCount())
+		attachment->att_charsets.resize(id + 10);
 	else
-		cs = dbb->dbb_charsets[id];
+		cs = attachment->att_charsets[id];
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs)
@@ -225,8 +226,8 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			dbb->dbb_charsets[id] = cs =
-				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
+			attachment->att_charsets[id] = cs =
+				FB_NEW(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
@@ -347,8 +348,8 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			return charset_collations[id];
 	}
 
-	Database* dbb = tdbb->getDatabase();
-	Database::CheckoutLockGuard guard(dbb, createCollationMtx);
+	Jrd::Attachment* att = tdbb->getAttachment();
+	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx); // are we need it ?
 
 	Collation* to_delete = NULL;
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
@@ -503,26 +504,26 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 }
 
 
-void Database::releaseIntlObjects()
+void Jrd::Attachment::releaseIntlObjects()
 {
-	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
+	for (size_t i = 0; i < att_charsets.getCount(); i++)
 	{
-		if (dbb_charsets[i])
+		if (att_charsets[i])
 		{
-			dbb_charsets[i]->release();
+			att_charsets[i]->release();
 		}
 	}
 }
 
 
-void Database::destroyIntlObjects()
+void Jrd::Attachment::destroyIntlObjects()
 {
-	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
+	for (size_t i = 0; i < att_charsets.getCount(); i++)
 	{
-		if (dbb_charsets[i])
+		if (att_charsets[i])
 		{
-			dbb_charsets[i]->destroy();
-			dbb_charsets[i] = NULL;
+			att_charsets[i]->destroy();
+			att_charsets[i] = NULL;
 		}
 	}
 }
@@ -1390,13 +1391,13 @@ static int blocking_ast_collation(void* ast_object)
 	try
 	{
 		Database* dbb = tt->existenceLock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
+		Jrd::Attachment* att = tt->existenceLock->lck_attachment;
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(tt->existenceLock->lck_attachment);
+		tdbb->setAttachment(att);
 
+		Jrd::Attachment::SyncGuard guard(att);
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		tt->obsolete = true;

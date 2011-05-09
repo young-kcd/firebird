@@ -328,7 +328,7 @@ private:
 class TraceRuntimeStats
 {
 public:
-	TraceRuntimeStats(Database* dbb, RuntimeStatistics* baseline, RuntimeStatistics* stats,
+	TraceRuntimeStats(Attachment* att, RuntimeStatistics* baseline, RuntimeStatistics* stats,
 		SINT64 clock, SINT64 records_fetched);
 
 	PerformanceInfo* getPerf()	{ return &m_info; }

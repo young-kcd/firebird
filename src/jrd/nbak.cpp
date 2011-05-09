@@ -107,6 +107,8 @@ void NBackupStateLock::blockingAstHandler(thread_db* tdbb)
 	{
 		backup_manager->beginFlush();
 		NBAK_TRACE_AST( ("backup_manager->beginFlush()") );
+
+		Firebird::MutexUnlockGuard counterGuard(counterMutex);
 		CCH_flush_ast(tdbb);
 		NBAK_TRACE_AST(("database FLUSHED"));
 	}
@@ -263,9 +265,8 @@ void BackupManager::beginBackup(thread_db* tdbb)
 #endif
 
 		// Zero out first page (empty allocation table)
-		BufferDesc temp_bdb;
+		BufferDesc temp_bdb(database->dbb_bcb);
 		temp_bdb.bdb_page = 0;
-		temp_bdb.bdb_dbb = database;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 		memset(alloc_buffer, 0, database->dbb_page_size);
 		if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, tdbb->tdbb_status_vector))
@@ -314,10 +315,9 @@ ULONG BackupManager::getPageCount()
 		PageSpace* pageSpace;
 
 	public:
-		explicit PioCount(Database* d)
+		explicit PioCount(Database* d) : temp_bdb(d->dbb_bcb)
 		{
 			fb_assert(d);
-			temp_bdb.bdb_dbb = d;
 			pageSpace = d->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			fb_assert(pageSpace);
 		}
@@ -515,14 +515,13 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
 		while (true)
 		{
-			BufferDesc temp_bdb;
+			BufferDesc temp_bdb(database->dbb_bcb);
 			// Difference file pointer pages have one ULONG as number of pages allocated on the page and
 			// then go physical numbers of pages from main database file. Offsets of numbers correspond
 			// to difference file pages.
 
 			// Get offset of pointer page. We can do so because page sizes are powers of 2
 			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
-			temp_bdb.bdb_dbb = database;
 			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
@@ -585,9 +584,8 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able
 	// to read next alloc page when previous one is full.
-	BufferDesc temp_bdb;
+	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = last_allocated_page + 1;
-	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
 	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector)) {
 		return 0;
@@ -598,7 +596,6 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	{
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
-		temp_bdb.bdb_dbb = database;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
 		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector)) {
 			return 0;
@@ -607,7 +604,6 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 
 	// Write new item to the allocation table
 	temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
-	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 	alloc_buffer[++alloc_buffer[0]] = db_page;
 	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
@@ -640,10 +636,9 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 
 bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page)
 {
-	NBAK_TRACE(("write_diff"));
-	BufferDesc temp_bdb;
+	NBAK_TRACE(("write_diff page=%d, diff=%d", page->pag_pageno, diff_page));
+	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
-	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
 	// Check that diff page is not allocation page
 	fb_assert(diff_page % (database->dbb_page_size / sizeof(ULONG)));
@@ -654,13 +649,12 @@ bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pa
 
 bool BackupManager::readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page)
 {
-	NBAK_TRACE(("read_diff"));
-	BufferDesc temp_bdb;
+	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;
-	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
 	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
 		return false;
+	NBAK_TRACE(("read_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	return true;
 }
 
@@ -737,9 +731,8 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;
 	Ods::header_page* header = reinterpret_cast<Ods::header_page*>(spare_buffer);
-	BufferDesc temp_bdb;
+	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = HEADER_PAGE_NUMBER;
-	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);

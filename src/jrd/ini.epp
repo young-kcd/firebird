@@ -518,6 +518,9 @@ void INI_init(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
+	MemoryPool* pool = attachment->att_pool;
+
 	const int* fld;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
@@ -541,12 +544,12 @@ void INI_init(thread_db* tdbb)
 			}
 		}
 
-		vec<jrd_fld*>* fields = vec<jrd_fld*>::newVector(*dbb->dbb_permanent, n);
+		vec<jrd_fld*>* fields = vec<jrd_fld*>::newVector(*pool, n);
 		relation->rel_fields = fields;
 		vec<jrd_fld*>::iterator itr = fields->begin();
-		Format* format = Format::newFormat(*dbb->dbb_permanent, n);
+		Format* format = Format::newFormat(*pool, n);
 		relation->rel_current_format = format;
-		vec<Format*>* formats = vec<Format*>::newVector(*dbb->dbb_permanent, 1);
+		vec<Format*>* formats = vec<Format*>::newVector(*pool, 1);
 		relation->rel_formats = formats;
 		(*formats)[0] = format;
 		Format::fmt_desc_iterator desc = format->fmt_desc.begin();
@@ -575,7 +578,7 @@ void INI_init(thread_db* tdbb)
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
 				desc->dsc_scale = CS_METADATA;	// blob charset
 
-			jrd_fld* field = FB_NEW(*dbb->dbb_permanent) jrd_fld(*dbb->dbb_permanent);
+			jrd_fld* field = FB_NEW(*pool) jrd_fld(*pool);
 			*itr = field;
 			field->fld_name = names[fld[RFLD_F_NAME]];
 		}
@@ -602,7 +605,7 @@ void INI_init2(thread_db* tdbb)
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_version = dbb->dbb_minor_version;
-	vec<jrd_rel*>* vector = dbb->dbb_relations;
+	vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
 
 	const int* fld;
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)

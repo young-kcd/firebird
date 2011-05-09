@@ -146,7 +146,7 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
+		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
 			&m_request->req_request->req_stats,
 			fb_utils::query_performance_counter() - m_start_clock,
 			m_request->req_fetch_rowcount);
@@ -210,7 +210,7 @@ public:
 			return;
 		}
 
-		TraceRuntimeStats stats(m_attachment->att_database, m_request->req_fetch_baseline,
+		TraceRuntimeStats stats(m_attachment, m_request->req_fetch_baseline,
 			&m_request->req_request->req_stats, m_request->req_fetch_elapsed,
 			m_request->req_fetch_rowcount);
 

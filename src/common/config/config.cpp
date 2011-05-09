@@ -115,7 +115,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) -1},			// bytes
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
-	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
+	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
 	{TYPE_BOOLEAN,		"TcpNoNagle",				(ConfigValue) true},
 	{TYPE_INTEGER,		"DefaultDbCachePages",		(ConfigValue) -1},			// pages
@@ -171,7 +171,9 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Legacy_Auth, Win_Sspi"},
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Legacy_Auth"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
-	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"}	// security database name
+	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"},	// security database name
+	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},
+	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -668,20 +670,12 @@ int Config::getMaxUserTraceLogSize()
 
 bool Config::getSharedCache()
 {
-#ifdef SUPERSERVER
-	return true;
-#else
-	return false;
-#endif
+	return (bool) getDefaultConfig()->values[KEY_SHARED_CACHE];
 }
 
 bool Config::getSharedDatabase()
 {
-#ifdef SUPERSERVER
-	return false;
-#else
-	return true;
-#endif
+	return (bool) getDefaultConfig()->values[KEY_SHARED_DATABASE];
 }
 
 bool Config::getMultiClientServer()

@@ -77,12 +77,14 @@ namespace Jrd
 
 	Database::~Database()
 	{
-		destroyIntlObjects();
-
-		fb_assert(dbb_pools[0] == dbb_permanent);
-		for (size_t i = 1; i < dbb_pools.getCount(); ++i)
 		{
-			MemoryPool::deletePool(dbb_pools[i]);
+			Firebird::SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::~Database");
+			
+			fb_assert(dbb_pools[0] == dbb_permanent);
+			for (size_t i = 1; i < dbb_pools.getCount(); ++i)
+			{
+				MemoryPool::deletePool(dbb_pools[i]);
+			}
 		}
 
 		delete dbb_monitoring_data;
@@ -90,7 +92,8 @@ namespace Jrd
 
 		dbb_flags |= DBB_destroying;
 
-		Checkout dcoHolder(this);
+//		Checkout dcoHolder(this);
+
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
 		LockManager::destroy(dbb_lock_mgr);
@@ -101,56 +104,18 @@ namespace Jrd
 	{
 		if (pool)
 		{
-			size_t pos;
-			if (dbb_pools.find(pool, pos))
 			{
-				dbb_pools.remove(pos);
+				Firebird::SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::deletePool");
+				size_t pos;
+				if (dbb_pools.find(pool, pos))
+				{
+					dbb_pools.remove(pos);
+				}
 			}
 
 			MemoryPool::deletePool(pool);
 		}
 	}
-
-	// Find an inactive incarnation of a system request. If necessary, clone it.
-	jrd_req* Database::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
-	{
-		static const int MAX_RECURSION = 100;
-
-		// If the request hasn't been compiled or isn't active, there're nothing to do.
-
-		Database::CheckoutLockGuard guard(this, dbb_cmp_clone_mutex);
-
-		fb_assert(which == IRQ_REQUESTS || which == DYN_REQUESTS);
-
-		JrdStatement* statement = (which == IRQ_REQUESTS ? dbb_internal[id] : dbb_dyn_req[id]);
-
-		if (!statement)
-			return NULL;
-
-		// Look for requests until we find one that is available.
-
-		for (int n = 0;; ++n)
-		{
-			if (n > MAX_RECURSION)
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
-				// Msg363 "request depth exceeded. (Recursive definition?)"
-			}
-
-			jrd_req* clone = statement->getRequest(tdbb, n);
-
-			if (!(clone->req_flags & (req_active | req_reserved)))
-			{
-				clone->req_flags |= req_reserved;
-				clone->setAttachment(tdbb->getAttachment());
-				fb_assert(clone->req_attachment);
-				return clone;
-			}
-		}
-	}
-
-	// Database::SharedCounter implementation
 
 	Database::SharedCounter::SharedCounter()
 	{
@@ -179,6 +144,8 @@ namespace Jrd
 		fb_assert(space < TOTAL_ITEMS);
 		ValueCache* const counter = &m_counters[space];
 		Database* const dbb = tdbb->getDatabase();
+
+		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
 
 		if (!counter->lock)
 		{
@@ -225,11 +192,13 @@ namespace Jrd
 
 		try
 		{
-			Database::SyncGuard dsGuard(dbb, true);
+			if (dbb->dbb_flags & DBB_not_in_use)
+				return 0;
+
+			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
 
 			ThreadContextHolder tdbb;
 			tdbb->setDatabase(dbb);
-			// tdbb->setAttachment(counter->lock->lck_attachment);
 
 			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 

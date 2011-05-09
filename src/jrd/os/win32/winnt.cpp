@@ -115,7 +115,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static bool	maybeCloseFile(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
-static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
+static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool, bool);
 static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* const);
 static void adjustFileSystemCacheSize();
 
@@ -126,9 +126,8 @@ struct AdjustFsCache
 
 static InitMutex<AdjustFsCache> adjustFsCacheOnce;
 
-inline static DWORD getShareFlags(bool temporary = false)
+inline static DWORD getShareFlags(const bool shared_access, bool temporary = false)
 {
-	static bool shared_access = Config::getSharedDatabase();
 	return FILE_SHARE_READ | ((!temporary && shared_access) ? FILE_SHARE_WRITE : 0);
 }
 
@@ -224,8 +223,9 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	adjustFsCacheOnce.init();
 
 	const TEXT* file_name = string.c_str();
+	const bool shareMode = dbb->dbb_config->getSharedDatabase();
 
-	DWORD dwShareMode = getShareFlags(temporary);
+	DWORD dwShareMode = getShareFlags(shareMode, temporary);
 	if (share_delete)
 		dwShareMode |= FILE_SHARE_DELETE;
 
@@ -253,7 +253,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
 
-	return setup_file(dbb, workspace, desc, false);
+	return setup_file(dbb, workspace, desc, false, shareMode);
 }
 
 
@@ -299,7 +299,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 	if (!main_file->fil_ext_lock)
 		return;
 
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, true);
 
 	ULONG leftPages = extPages;
@@ -343,7 +343,7 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		FlushFileBuffers(file->fil_desc);
@@ -372,12 +372,13 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 		const int force = forceWrite ? FILE_FLAG_WRITE_THROUGH : 0;
 		const int fsCache = notUseFSCache ? FILE_FLAG_NO_BUFFERING : 0;
 		const int writeMode = (file->fil_flags & FIL_readonly) ? 0 : GENERIC_WRITE;
+		const bool sharedMode = (file->fil_flags & FIL_sh_write);
 
         HANDLE& hFile = file->fil_desc;
 		maybeCloseFile(hFile);
 		hFile = CreateFile(file->fil_string,
 						  GENERIC_READ | writeMode,
-						  getShareFlags(),
+						  getShareFlags(sharedMode),
 						  NULL,
 						  OPEN_EXISTING,
 						  FILE_ATTRIBUTE_NORMAL | force | fsCache | g_dwExtraFlags,
@@ -494,13 +495,12 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 	const char* const zero_buff = zeros().getBuffer();
 	const size_t zero_buff_size = zeros().getSize();
 
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);
 
 	// Fake buffer, used in seek_file. Page space ID doesn't matter there
 	// as we already know file to work with
-	BufferDesc bdb;
-	bdb.bdb_dbb = dbb;
+	BufferDesc bdb(dbb->dbb_bcb);
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	OVERLAPPED overlapped;
@@ -525,7 +525,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		if (write_pages > leftPages)
 			write_pages = leftPages;
 
-		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
+		jrd_file* file1 = seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
+		fb_assert(file1 == file);
 
 		const DWORD to_write = (DWORD) write_pages * dbb->dbb_page_size;
 		DWORD written;
@@ -562,12 +563,13 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
+	const bool shareMode = dbb->dbb_config->getSharedDatabase();
 
 	adjustFsCacheOnce.init();
 
 	HANDLE desc = CreateFile(ptr,
 					  GENERIC_READ | GENERIC_WRITE,
-					  getShareFlags() | (share_delete ? FILE_SHARE_DELETE : 0),
+					  getShareFlags(shareMode) | (share_delete ? FILE_SHARE_DELETE : 0),
 					  NULL,
 					  OPEN_EXISTING,
 					  FILE_ATTRIBUTE_NORMAL |
@@ -604,7 +606,7 @@ jrd_file* PIO_open(Database* dbb,
 		}
 	}
 
-	return setup_file(dbb, string, desc, readOnly);
+	return setup_file(dbb, string, desc, readOnly, shareMode);
 }
 
 
@@ -620,10 +622,11 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
  *	Read a data page.
  *
  **************************************/
-	Database* const dbb = bdb->bdb_dbb;
-	const DWORD size = dbb->dbb_page_size;
+	BufferControl *bcb = bdb->bdb_bcb;
+	const DWORD size = bcb->bcb_page_size;
 
-	Database::Checkout dcoHolder(dbb);
+	Database* const dbb = bcb->bcb_database;
+//	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	OVERLAPPED overlapped, *overlapped_ptr;
@@ -694,7 +697,7 @@ bool PIO_read_ahead(Database*		dbb,
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 
 	// If an I/O status block was passed the caller wants to queue an asynchronous I/O.
 
@@ -782,7 +785,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
  *	Check the status of an asynchronous I/O.
  *
  **************************************/
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 
 	if (!(piob->piob_flags & PIOB_success))
 	{
@@ -822,10 +825,11 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
  **************************************/
 	OVERLAPPED overlapped, *overlapped_ptr;
 
-	Database* const dbb = bdb->bdb_dbb;
-	const DWORD size = dbb->dbb_page_size;
+	BufferControl *bcb = bdb->bdb_bcb;
+	const DWORD size = bcb->bcb_page_size;
 
-	Database::Checkout dcoHolder(dbb);
+	Database* const dbb = bcb->bcb_database;
+//	Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(file->fil_ext_lock, false);
 
 	file = seek_file(file, bdb, status_vector, &overlapped, &overlapped_ptr);
@@ -985,7 +989,7 @@ static jrd_file* seek_file(jrd_file*	file,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	Database* const dbb = bdb->bdb_dbb;
+	BufferControl *bcb = bdb->bdb_bcb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
@@ -1001,7 +1005,7 @@ static jrd_file* seek_file(jrd_file*	file,
 	page -= file->fil_min_page - file->fil_fudge;
 
     LARGE_INTEGER liOffset;
-	liOffset.QuadPart = UInt32x32To64((DWORD) page, (DWORD) dbb->dbb_page_size);
+	liOffset.QuadPart = UInt32x32To64((DWORD) page, (DWORD) bcb->bcb_page_size);
 
 	overlapped->Offset = liOffset.LowPart;
 	overlapped->OffsetHigh = liOffset.HighPart;
@@ -1010,8 +1014,6 @@ static jrd_file* seek_file(jrd_file*	file,
 	overlapped->hEvent = (HANDLE) 0;
 
 	*overlapped_ptr = overlapped;
-
-	fb_assert(dbb == bdb->bdb_dbb);
 
 #ifdef SUPERSERVER_V2
 	Firebird::MutexLockGuard guard(file->fil_mutex);
@@ -1027,7 +1029,7 @@ static jrd_file* seek_file(jrd_file*	file,
 
 	if (!overlapped->hEvent && !(overlapped->hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)))
 	{
-		nt_error("CreateEvent", file, isc_io_access_err, status_vector);
+		nt_error("CreateEvent", file, isc_io_access_err, NULL/*status_vector*/);
 		return 0;
 	}
 
@@ -1041,7 +1043,8 @@ static jrd_file* seek_file(jrd_file*	file,
 static jrd_file* setup_file(Database* dbb,
 							const Firebird::PathName& file_name,
 							HANDLE desc,
-							bool read_only)
+							bool read_only, 
+							bool shareMode)
 {
 /**************************************
  *
@@ -1067,6 +1070,8 @@ static jrd_file* setup_file(Database* dbb,
 
 		if (read_only)
 			file->fil_flags |= FIL_readonly;
+		if (shareMode)
+			file->fil_flags |= FIL_sh_write;
 
 		// If this isn't the primary file, we're done
 

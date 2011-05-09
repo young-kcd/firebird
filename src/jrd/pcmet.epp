@@ -126,7 +126,7 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 			CompilerScratch* csb = 0;
 			// allocate a new pool to contain the expression tree for the expression index
-			new_pool = dbb->createPool();
+			new_pool = attachment->createPool();
 			{ // scope
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 				MET_scan_relation(tdbb, relation);
@@ -181,7 +181,7 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	// Get rid of the pool containing the expression tree
 
-	dbb->deletePool(new_pool);
+	attachment->deletePool(new_pool);
 }
 
 
@@ -243,7 +243,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		// with the index block in the "permanent" metadata cache
 
 		{ // scope
-			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
+			Jrd::ContextPoolHolder context(tdbb, attachment->createPool());
 			idx->idx_expression = static_cast<ValueExprNode*>(MET_parse_blob(
 				tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 				&idx->idx_expression_statement, false, false));

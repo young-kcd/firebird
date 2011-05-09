@@ -25,6 +25,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
+#include "../jrd/Attachment.h"
 
 namespace Jrd
 {
@@ -179,6 +180,7 @@ struct frgn
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
+	MemoryPool*		rel_pool;
 	USHORT			rel_id;
 	USHORT			rel_current_fmt;	// Current format number
 	ULONG			rel_flags;
@@ -278,7 +280,7 @@ private:
 
 public:
 	explicit jrd_rel(MemoryPool& p)
-		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
+		: rel_pool(&p), rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
 	{ }
 
 	bool hasTriggers() const;

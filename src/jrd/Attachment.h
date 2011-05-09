@@ -45,6 +45,8 @@ namespace EDS {
 	class Connection;
 }
 
+class CharSetContainer;
+
 namespace Jrd
 {
 	class thread_db;
@@ -71,6 +73,12 @@ namespace Jrd
 	class PreparedStatement;
 	class TraceManager;
 	template <typename T> class vec;
+	class jrd_rel;
+	class jrd_prc;
+	class Trigger;
+	typedef Firebird::ObjectsArray<Trigger> trig_vec;
+	class Function;
+	class JrdStatement;
 
 struct DSqlCacheItem
 {
@@ -121,6 +129,95 @@ struct bid;
 class Attachment : public pool_alloc<type_att>
 {
 public:
+	class SyncGuard
+	{
+	public:
+		SyncGuard(Attachment* att, bool optional = false) : 
+		  m_mutex(NULL)
+		{
+			if (att && att->att_interface)
+				m_mutex = att->att_interface->getMutex();
+
+			fb_assert(optional || m_mutex);
+
+			if (m_mutex)
+				m_mutex->enter();
+		}
+
+		~SyncGuard()
+		{
+			if (m_mutex)
+				m_mutex->leave();
+		}
+
+	private:
+		// copying is prohibited
+		SyncGuard(const SyncGuard&);
+		SyncGuard& operator=(const SyncGuard&);
+
+		Firebird::Mutex* m_mutex;
+	};
+
+	class Checkout
+	{
+	public:
+		Checkout(Attachment* att, bool optional = false) : 
+		  m_mutex(NULL)
+		{
+			if (att && att->att_interface)
+			{
+				m_ref = att->att_interface;
+				m_mutex = att->att_interface->getMutex();
+			}
+
+			fb_assert(optional || m_mutex);
+
+			if (m_mutex)
+				m_mutex->leave();
+		}
+
+		~Checkout()
+		{
+			if (m_mutex)
+				m_mutex->enter();
+		}
+
+	private:
+		// copying is prohibited
+		Checkout(const Checkout&);
+		Checkout& operator=(const Checkout&);
+
+		Firebird::Mutex* m_mutex;
+		Firebird::RefPtr<JAttachment> m_ref;
+	};
+
+	class CheckoutLockGuard
+	{
+	public:
+		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, bool optional = false) :
+		  m_mutex(mutex)
+		{
+			if (!m_mutex.tryEnter())
+			{
+				Checkout attCout(att, optional);
+				m_mutex.enter();
+			}
+		}
+
+		~CheckoutLockGuard()
+		{
+			m_mutex.leave();
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutLockGuard(const CheckoutLockGuard&);
+		CheckoutLockGuard& operator=(const CheckoutLockGuard&);
+
+		Firebird::Mutex& m_mutex;
+	};
+
+public:
 	static Attachment* create(Database* dbb);
 	static void destroy(Attachment* const attachment);
 
@@ -170,6 +267,7 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
+	int		att_use_count;					// number of API calls running except of asyncronous ones
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
@@ -177,6 +275,35 @@ public:
 
 	JAttachment* att_interface;
 	Firebird::IAttachment* att_public_interface;
+
+/// former Database members
+	vec<jrd_rel*>*					att_relations;			// relation vector
+	vec<jrd_prc*>*					att_procedures;			// scanned procedures
+	trig_vec*						att_triggers[DB_TRIGGER_MAX];
+	trig_vec*						att_ddl_triggers;
+	Firebird::Array<Function*>		att_functions;			// User defined functions
+
+	Firebird::Array<JrdStatement*>	att_internal;			// internal statements
+	Firebird::Array<JrdStatement*>	att_dyn_req;			// internal dyn statements
+
+	jrd_req* findSystemRequest(thread_db* tdbb, USHORT id, USHORT which);
+
+	Firebird::Array<CharSetContainer*>	att_charsets;		// intl character set descriptions
+	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
+		Firebird::MetaName, USHORT> > > att_charset_ids;	// Character set ids
+
+	void releaseIntlObjects();			// defined in intl.cpp
+	void destroyIntlObjects();			// defined in intl.cpp
+	
+	// from CMP_shutdown_database and CMP_fini
+	void shutdown(thread_db* tdbb);
+
+	Firebird::Array<MemoryPool*>	att_pools;		// pools
+
+	MemoryPool* createPool();
+	void deletePool(MemoryPool* pool);
+
+/// former Database members
 
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();
