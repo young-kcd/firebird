@@ -1,3 +1,12 @@
+ 2011-05-08 17:53  asfernandes 
+   M src/include/FirebirdApi.h
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdUdr.h
+   M src/include/FirebirdUdrCpp.h
+   M src/include/Interface.h
+Remove "#pragma GCC system_header". Current build with GCC 4.5.2 and clang 2.8 shows no related warning.
+This pragma was interfering with -MMD dependency output, causing crashes after full build when the API is changed.
+
  2011-05-07 19:52  asfernandes 
    M builds/posix/firebird.vers
    M builds/win32/defs/firebird.def
