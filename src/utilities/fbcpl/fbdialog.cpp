@@ -66,9 +66,9 @@ CFBDialog::CFBDialog(CWnd* pParent /*=NULL*/)
 	initialised = false;
 
 	m_Guardian_Name		= ISCGUARD_EXECUTABLE;
-	m_SS_Server_Name	= REMOTE_SS_EXECUTABLE;
+	m_SS_Server_Name	= REMOTE_EXECUTABLE;
 #ifdef MANAGE_CLASSIC
-	m_CS_Server_Name	= REMOTE_CS_EXECUTABLE;
+	m_CS_Server_Name	= REMOTE_EXECUTABLE;
 #endif
 
 	fb_status.AutoStart = false;
