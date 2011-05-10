@@ -62,12 +62,19 @@ if [ "x$autopath" != "x" ]; then
 	export PATH
 fi
 
+# libtool before 2.2.6a needs some help
+CONFIG_AUX_DIR=builds/make.new/config
+mkdir -p $CONFIG_AUX_DIR
 echo "Running autoreconf ..."
 $AUTORECONF --install --force --verbose || exit 1
 
+# automake 1.10 may show '1.10.x' as version while the directory is still named
+# automake-1.10
+am_ver=`automake --version|sed 's/.\+ //; s/\.[^.]\+$//; q'`
+cp /usr/share/automake-$am_ver*/install-sh $CONFIG_AUX_DIR || exit 1
+
 # Hack to bypass bug in autoreconf - --install switch not passed to libtoolize,
 # therefore missing config.sub and confg.guess files
-CONFIG_AUX_DIR=builds/make.new/config
 if [ ! -f $CONFIG_AUX_DIR/config.sub -o ! -f $CONFIG_AUX_DIR/config.guess ]; then
 	# re-run libtoolize with --install switch, if it does not understand that switch
 	# and there are no config.sub/guess files in CONFIG_AUX_DIR, we will anyway fail
