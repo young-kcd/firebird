@@ -769,7 +769,7 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 
 
 pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, SSHORT checksum,
-	SSHORT latch_wait, const bool read_shadow, const bool merge_flag)
+	SSHORT latch_wait, const bool read_shadow)
 {
 /**************************************
  *
@@ -806,7 +806,7 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	{
 	case 1:
 		CCH_TRACE(("FE %d:%06d", window->win_page.getPageSpaceID(), window->win_page.getPageNum()));
-		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow, merge_flag);	// must read page from disk
+		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	// must read page from disk
 		break;
 	case -2:
 	case -1:
@@ -814,11 +814,6 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, USHORT lock_type, SCHAR page_type, 
 	}
 
 	BufferDesc* bdb = window->win_bdb;
-
-	// if merge_flag is not set the page will be changed before or after merge
-	// and should be written into delta again
-	if (!merge_flag)
-		bdb->bdb_flags &= ~BDB_merge;
 
 	// If a page was read or prefetched on behalf of a large scan
 	// then load the window scan count into the buffer descriptor.
@@ -948,7 +943,7 @@ SSHORT CCH_fetch_lock(thread_db* tdbb, WIN* window, USHORT lock_type, SSHORT wai
 	return lock_result;
 }
 
-void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow, const bool merge_flag)
+void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const bool read_shadow)
 {
 /**************************************
  *
@@ -1056,11 +1051,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 			CCH_unwind(tdbb, true);
 		}
 
-		// This is the first reading the page from delta and it must not be written into it again
-		if (merge_flag)
-			bdb->bdb_flags |= BDB_merge;
-
-		if ((page->pag_checksum == 0) && !merge_flag)
+		if (page->pag_checksum == 0)
 		{
 			// We encountered a page which was allocated, but never written to the
 			// difference file. In this case we try to read the page from database. With
@@ -1654,7 +1645,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, SLONG page, SSHORT lock, SCHAR pa
 		CCH_RELEASE(tdbb, &temp);
 
 	if (must_read) {
-		CCH_FETCH_PAGE(tdbb, window, 1, true, false);
+		CCH_FETCH_PAGE(tdbb, window, 1, true);
 	}
 
 	BufferDesc* bdb = window->win_bdb;
@@ -6562,8 +6553,7 @@ static bool write_page(thread_db* tdbb,
 			const bool isTempPage = pageSpace->isTemporary();
 
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge &&
-					bdb->bdb_difference_page && !(bdb->bdb_flags & BDB_merge))))
+				(backup_state == nbak_state_merge && bdb->bdb_difference_page) ))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,
@@ -6655,7 +6645,7 @@ static bool write_page(thread_db* tdbb,
 		}
 #endif
 
-		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty | BDB_merge);
+		bdb->bdb_flags &= ~(BDB_must_write | BDB_system_dirty);
 		clear_dirty_flag(tdbb, bdb);
 
 		if (bdb->bdb_flags & BDB_io_error)
