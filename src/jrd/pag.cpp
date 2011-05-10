@@ -309,7 +309,7 @@ const SSHORT CLASS		= CLASS_LINUX_ARM;
 const SSHORT CLASS		= CLASS_LINUX_PPC;
 #elif defined(MIPSEL)
 const SSHORT CLASS		= CLASS_LINUX_MIPSEL;
-#elif defined(MIPS)
+#elif defined(MIPSEB)
 const SSHORT CLASS		= CLASS_LINUX_MIPS;
 #elif defined(IA64)
 const SSHORT CLASS		= CLASS_LINUX_IA64;

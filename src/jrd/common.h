@@ -149,7 +149,7 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
 #endif /* mipsel */
 
-#ifdef MIPS
+#ifdef MIPSEB
 #define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
 #endif /* mips */
 
