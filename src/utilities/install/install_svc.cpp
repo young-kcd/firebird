@@ -33,8 +33,6 @@
 #include "../utilities/install/registry.h"
 #include "../common/config/config.h"
 
-#define REMOTE_EXECUTABLE ((sw_arch == ARCH_SS) ? REMOTE_SS_EXECUTABLE : REMOTE_CS_EXECUTABLE)
-
 static void svc_query(const char*, const char*, SC_HANDLE manager);
 static USHORT svc_query_ex(SC_HANDLE manager);
 static USHORT svc_error(SLONG, const TEXT*, SC_HANDLE);
@@ -101,18 +99,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		if ((*p) == '\\')
 			break;
 	}
-
-	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
-	// There is always an additional '\' OR a ':'.
-	while (p != directory)
-	{
-		--p;
-
-		if ((*p) == '\\' || (*p) == ':')
-			break;
-	}
-
-	// Truncate directory path
 	*p = '\0';
 
 	TEXT full_username[128];
@@ -177,10 +163,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 				case 'C':
 					sw_arch = ARCH_CS;
-					break;
-
-				case 'M':
-					sw_arch = ARCH_SCS;
 					break;
 
 				case 'L':
@@ -346,7 +328,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	else
 		switches.printf("-s %s", instance);
 
-    if (sw_arch == ARCH_SCS)
+	if (sw_arch == ARCH_SS)
 		switches += " -m";
 
 	switch (sw_command)
@@ -762,7 +744,7 @@ static void usage_exit()
  *
  **************************************/
 	printf("\nUsage:\n");
-	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] | -m[ultithreaded] ]\n");
+	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
@@ -773,7 +755,7 @@ static void usage_exit()
 	printf("          sto[p]    [ -n[ame] instance ]\n");
 	printf("          q[uery]\n");
 	printf("          r[emove]  [ -n[ame] instance ]\n\n");
-	printf("  This utility should be located and run from the 'bin' directory\n");
+	printf("  This utility should be located and run from the root directory\n");
 	printf("  of your Firebird installation.\n\n");
 	printf("  '*' denotes the default values\n");
 	printf("  '-z' can be used with any other option, prints version\n");
