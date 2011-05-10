@@ -2426,6 +2426,8 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			if (bdb->bdb_flags & BDB_marked) {
 				BUGCHECK(268);	// msg 268 buffer marked during cache unwind
 			}
+			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
 		}
@@ -2435,6 +2437,8 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 		SharedLatch* latch = findSharedLatch(tdbb, bdb);
 		while (latch)
 		{
+			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+
 			release_bdb(tdbb, bdb, true, false, false);
 			latch = findSharedLatch(tdbb, bdb);
 		}
