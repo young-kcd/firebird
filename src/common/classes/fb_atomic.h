@@ -437,7 +437,10 @@ private:
 // wbo 2009-10 - We tested libatomic_ops against Firebird 2.5/HPUX and the
 // atomic implementation was incomplete on IA-64/HPPA
 
+extern "C" {
+#define AO_REQUIRE_CAS
 #include <atomic_ops.h>
+};
 
 namespace Firebird {
 
