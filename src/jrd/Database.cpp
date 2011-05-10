@@ -57,14 +57,14 @@ namespace Jrd
 #endif
 	}
 
-	Firebird::string Database::getUniqueFileId() const
+	string Database::getUniqueFileId() const
 	{
 		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 
-		Firebird::UCharBuffer buffer;
+		UCharBuffer buffer;
 		PIO_get_unique_file_id(pageSpace->file, buffer);
 
-		Firebird::string file_id;
+		string file_id;
 		char* s = file_id.getBuffer(2 * buffer.getCount());
 		for (size_t i = 0; i < buffer.getCount(); i++)
 		{
@@ -78,13 +78,12 @@ namespace Jrd
 	Database::~Database()
 	{
 		{
-			Firebird::SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::~Database");
-			
+			SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::~Database");
+
 			fb_assert(dbb_pools[0] == dbb_permanent);
+
 			for (size_t i = 1; i < dbb_pools.getCount(); ++i)
-			{
 				MemoryPool::deletePool(dbb_pools[i]);
-			}
 		}
 
 		delete dbb_monitoring_data;
@@ -92,7 +91,7 @@ namespace Jrd
 
 		dbb_flags |= DBB_destroying;
 
-//		Checkout dcoHolder(this);
+		//Checkout dcoHolder(this);
 
 		// This line decrements the usage counter and may cause the destructor to be called.
 		// It should happen with the dbb_sync unlocked.
@@ -105,12 +104,11 @@ namespace Jrd
 		if (pool)
 		{
 			{
-				Firebird::SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::deletePool");
+				SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::deletePool");
 				size_t pos;
+
 				if (dbb_pools.find(pool, pos))
-				{
 					dbb_pools.remove(pos);
-				}
 			}
 
 			MemoryPool::deletePool(pool);
@@ -204,7 +202,7 @@ namespace Jrd
 
 			LCK_downgrade(tdbb, counter->lock);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{} // no-op
 
 		return 0;

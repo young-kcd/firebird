@@ -363,6 +363,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 				if (!(dbb->dbb_flags & DBB_not_in_use))
 				{
 					ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
 					try
 					{
 						dumpData(tdbb);
@@ -410,13 +411,13 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	{
 		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "DatabaseSnapshot::DatabaseSnapshot");
 
-		// Release our own lock
+		// Release our own lock.
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
 		{ // scope for the RAII object
 
-			// Ensure we'll be dealing with a valid backup state inside the call below
+			// Ensure we'll be dealing with a valid backup state inside the call below.
 			BackupManager::StateReadGuard holder(tdbb);
 
 			// Dump our own data
@@ -775,7 +776,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	putDatabase(dbb, writer, fb_utils::genUniqueId());
 
 	// Attachment information
-	
+
 	Attachment* old_attachment = tdbb->getAttachment();
 	Attachment::Checkout attCout(old_attachment, true);
 

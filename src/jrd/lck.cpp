@@ -75,23 +75,26 @@ static void set_lock_attachment(Lock*, Jrd::Attachment*);
 
 
 #ifdef DEBUG_LCK
-class LckSync
+namespace
 {
-public:
-	LckSync(Lock* lock, const char* sWhere) :
-		m_sync(&lock->lck_sync, sWhere)
+	class LckSync
 	{
-		ThreadSync *thd = ThreadSync::getThread(NULL);
-		m_sync.lock(SYNC_EXCLUSIVE);
-	}
+	public:
+		LckSync(Lock* lock, const char* sWhere)
+			: m_sync(&lock->lck_sync, sWhere)
+		{
+			/***ThreadSync* thd =***/ ThreadSync::getThread(NULL);
+			m_sync.lock(SYNC_EXCLUSIVE);
+		}
 
-	~LckSync()
-	{
-	}
+		~LckSync()
+		{
+		}
 
-private:
-	Sync m_sync;
-};
+	private:
+		Sync m_sync;
+	};
+}
 #endif
 
 // globals and macros
@@ -236,9 +239,9 @@ namespace {
 class WaitCancelGuard
 {
 public:
-	WaitCancelGuard(thread_db* tdbb, Lock* lock, int wait) :
-	  m_tdbb(tdbb),
-	  m_save_lock(NULL)
+	WaitCancelGuard(thread_db* tdbb, Lock* lock, int wait)
+		: m_tdbb(tdbb),
+		  m_save_lock(NULL)
 	{
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		m_save_lock = att ? att->att_wait_lock : NULL;
@@ -254,7 +257,7 @@ public:
 			fb_assert(att);
 
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
-			if (att) 
+			if (att)
 			{
 				att->att_wait_lock = lock;
 			}
@@ -1497,7 +1500,7 @@ static void set_lock_attachment(Lock* lock, Jrd::Attachment* attachment)
 	if (lock->lck_attachment == attachment)
 		return;
 
-	Database* dbb = attachment ? attachment->att_database : 
+	Database* dbb = attachment ? attachment->att_database :
 		(lock->lck_attachment ? lock->lck_attachment->att_database : NULL);
 
 	fb_assert(dbb);

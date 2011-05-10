@@ -52,10 +52,10 @@ private:
 	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
 	{
 	public:
-		SLONG	tpc_base;				// id of first transaction in this block 
-		UCHAR	tpc_transactions[1];	// two bits per transaction 
+		SLONG	tpc_base;				// id of first transaction in this block
+		UCHAR	tpc_transactions[1];	// two bits per transaction
 
-		static const SLONG generate(const void*, const TxPage* item) 
+		static const SLONG generate(const void*, const TxPage* item)
 		{ return item->tpc_base; }
 	};
 

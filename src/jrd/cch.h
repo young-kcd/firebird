@@ -82,10 +82,10 @@ struct bcb_repeat
 
 class BufferControl : public pool_alloc<type_bcb>
 {
-	explicit BufferControl(MemoryPool& p) : 
+	explicit BufferControl(MemoryPool& p) :
 		bcb_bufferpool(&p),
-		bcb_memory(p) 
-	{ 
+		bcb_memory(p)
+	{
 		bcb_database = NULL;
 		QUE_INIT(bcb_in_use);
 		QUE_INIT(bcb_pending);
@@ -123,10 +123,10 @@ public:
 	que			bcb_pending;		// Que of buffers which are going to be freed and reassigned
 	que			bcb_empty;			// Que of empty buffers
 
-	// Recently used buffer put there without locking common LRU que (bcb_in_use). 
+	// Recently used buffer put there without locking common LRU que (bcb_in_use).
 	// When bcb_syncLRU is locked this chain is merged into bcb_in_use. See also
 	// requeueRecentlyUsed() and recentlyUsed()
-	Firebird::AtomicPointer<BufferDesc>	bcb_lru_chain;	
+	Firebird::AtomicPointer<BufferDesc>	bcb_lru_chain;
 
 	que			bcb_dirty;			// que of dirty buffers
 	SLONG		bcb_dirty_count;	// count of pages in dirty page btree
@@ -179,8 +179,8 @@ const int BCB_exclusive		= 128;	// there is only BCB in whole system
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc(BufferControl* bcb) : 
-	  bdb_bcb(bcb), 
+	BufferDesc(BufferControl* bcb) :
+	  bdb_bcb(bcb),
 	  bdb_page(0, 0),
 	  bdb_pending_page(0, 0)
 	{

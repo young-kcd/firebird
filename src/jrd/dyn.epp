@@ -123,9 +123,8 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
 
 	const UCHAR* ptr = ddl;
 
-	if (*ptr++ != isc_dyn_version_1) {
+	if (*ptr++ != isc_dyn_version_1)
 		ERR_post(Arg::Gds(isc_wrodynver));
-	}
 
 	fb_utils::init_status(tdbb->tdbb_status_vector);
 
@@ -136,7 +135,8 @@ void DYN_ddl(jrd_tra* transaction, ULONG length, const UCHAR* ddl, const string&
 	MemoryPool* const tempPool = attachment->createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
-	try {
+	try
+	{
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
 

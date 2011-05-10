@@ -137,9 +137,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 	else
 		inst_id = PAG_attachment_id(tdbb);
 
-	if (!rel_pages_inst) {
+	if (!rel_pages_inst)
 		rel_pages_inst = FB_NEW(*rel_pool) RelationPagesInstances(*rel_pool);
-	}
 
 	size_t pos;
 	if (!rel_pages_inst->find(inst_id, pos))

@@ -435,7 +435,7 @@ namespace
 	{
 	public:
 		AttachmentHolder(thread_db* tdbb, JAttachment* ja, bool lockAsync)
-		  : mutex(ja->getMutex(lockAsync)), 
+		  : mutex(ja->getMutex(lockAsync)),
 			attachment(ja->getHandle()),
 			async(lockAsync)
 		{
@@ -880,7 +880,7 @@ static void cancel_attachments(thread_db* tdbb)
 					if (!lockedAtt && dbb->dbb_attachments != att) {
 						break;
 					}
-				}				
+				}
 				att = lockedAtt ? lockedAtt->att_next : dbb->dbb_attachments;
 			}
 		}
@@ -4927,9 +4927,9 @@ static void check_database(thread_db* tdbb)
 	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	// hvlad: i think the check below is unnecessary as attachment pointer is 
+	// hvlad: i think the check below is unnecessary as attachment pointer is
 	// already validated at AttachmentHolder. If i'm wrong and check is must be
-	// then it should be moved into AttachmentHolder or even into 
+	// then it should be moved into AttachmentHolder or even into
 	// DatabaseContexHolder to not lock dbb_sync with attachment mutex locked.
 	//
 	//{

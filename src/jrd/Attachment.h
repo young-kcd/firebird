@@ -132,8 +132,8 @@ public:
 	class SyncGuard
 	{
 	public:
-		SyncGuard(Attachment* att, bool optional = false) : 
-		  m_mutex(NULL)
+		SyncGuard(Attachment* att, bool optional = false)
+			: m_mutex(NULL)
 		{
 			if (att && att->att_interface)
 				m_mutex = att->att_interface->getMutex();
@@ -161,8 +161,8 @@ public:
 	class Checkout
 	{
 	public:
-		Checkout(Attachment* att, bool optional = false) : 
-		  m_mutex(NULL)
+		Checkout(Attachment* att, bool optional = false)
+			: m_mutex(NULL)
 		{
 			if (att && att->att_interface)
 			{
@@ -194,8 +194,8 @@ public:
 	class CheckoutLockGuard
 	{
 	public:
-		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, bool optional = false) :
-		  m_mutex(mutex)
+		CheckoutLockGuard(Attachment* att, Firebird::Mutex& mutex, bool optional = false)
+			: m_mutex(mutex)
 		{
 			if (!m_mutex.tryEnter())
 			{
@@ -267,7 +267,7 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	bool att_in_use;						// attachment in use (can't be detached or dropped)
-	int		att_use_count;					// number of API calls running except of asyncronous ones
+	int att_use_count;						// number of API calls running except of asyncronous ones
 
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
@@ -276,7 +276,8 @@ public:
 	JAttachment* att_interface;
 	Firebird::IAttachment* att_public_interface;
 
-/// former Database members
+	/// former Database members - start
+
 	vec<jrd_rel*>*					att_relations;			// relation vector
 	vec<jrd_prc*>*					att_procedures;			// scanned procedures
 	trig_vec*						att_triggers[DB_TRIGGER_MAX];
@@ -294,7 +295,7 @@ public:
 
 	void releaseIntlObjects();			// defined in intl.cpp
 	void destroyIntlObjects();			// defined in intl.cpp
-	
+
 	// from CMP_shutdown_database and CMP_fini
 	void shutdown(thread_db* tdbb);
 
@@ -303,7 +304,7 @@ public:
 	MemoryPool* createPool();
 	void deletePool(MemoryPool* pool);
 
-/// former Database members
+	/// former Database members - end
 
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();

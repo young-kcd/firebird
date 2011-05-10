@@ -2732,13 +2732,14 @@ static inline BOOL switchToThread()
 	if (!bInit)
 	{
 		HMODULE hLib = GetModuleHandle("kernel32.dll");
-		if (hLib) {
+		if (hLib)
 			fnSwitchToThread = (pfnSwitchToThread) GetProcAddress(hLib, "SwitchToThread");
-		}
+
 		bInit = true;
 	}
 
 	BOOL res = FALSE;
+
 	if (fnSwitchToThread)
 	{
 		const HANDLE hThread = GetCurrentThread();

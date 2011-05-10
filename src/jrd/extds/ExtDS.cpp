@@ -1615,16 +1615,17 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	if (m_tdbb)
 	{
 		Jrd::Attachment* attachment = m_tdbb->getAttachment();
-		if (attachment) 
+
+		if (attachment)
 		{
 			attachment->att_interface->getMutex()->enter();
 			attachment->att_ext_connection = m_saveConnection;
 		}
 
 		jrd_tra* transaction = m_tdbb->getTransaction();
-		if (transaction) {
+
+		if (transaction)
 			transaction->tra_callback_count--;
-		}
 	}
 }
 

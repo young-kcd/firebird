@@ -204,11 +204,11 @@ public:
 	}
 };
 
-class SyncUnlockGuard 
+class SyncUnlockGuard
 {
 public:
-	SyncUnlockGuard(Sync& _sync) :
-	  sync(_sync)
+	SyncUnlockGuard(Sync& aSync) :
+	  sync(aSync)
 	{
 		oldState = sync.getState();
 
@@ -225,7 +225,7 @@ public:
 
 private:
 	SyncType oldState;
-	Sync&	sync;
+	Sync& sync;
 };
 
 } // namespace Firebird

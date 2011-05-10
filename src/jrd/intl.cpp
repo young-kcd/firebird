@@ -352,6 +352,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx); // are we need it ?
 
 	Collation* to_delete = NULL;
+
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
 	{
 		if (charset_collations[id]->obsolete)
@@ -364,9 +365,8 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 				delete charset_collations[id];
 			}
 			else
-			{
 				to_delete = charset_collations[id];
-			}
+
 			charset_collations[id] = NULL;
 		}
 		else
@@ -509,9 +509,7 @@ void Jrd::Attachment::releaseIntlObjects()
 	for (size_t i = 0; i < att_charsets.getCount(); i++)
 	{
 		if (att_charsets[i])
-		{
 			att_charsets[i]->release();
-		}
 	}
 }
 

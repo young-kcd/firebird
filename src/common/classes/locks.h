@@ -361,7 +361,8 @@ public:
 
 	~MutexLockGuard()
 	{
-		try {
+		try
+		{
 			lock->leave();
 		}
 		catch (const Exception&)
@@ -384,7 +385,8 @@ public:
 	explicit MutexUnlockGuard(Mutex &aLock)
 		: lock(&aLock)
 	{
-		try {
+		try
+		{
 			lock->leave();
 		}
 		catch (const Exception&)

@@ -589,12 +589,14 @@ void INF_database_info(thread_db* tdbb,
 
 			{
 				SyncLockGuard sync(&dbb->dbb_sync, SYNC_SHARED, "INF_database_info");
+
 				for (const Jrd::Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 				{
 					if (att->att_flags & ATT_shutdown)
 						continue;
 
 					const UserId* user = att->att_user;
+
 					if (user)
 					{
 						const char* user_name = user->usr_user_name.hasData() ?
@@ -603,6 +605,7 @@ void INF_database_info(thread_db* tdbb,
 						const SSHORT len = strlen(user_name);
 						*p++ = len;
 						memcpy(p, user_name, len);
+
 						if (!(info = INF_put_item(item, len + 1, buffer, info, end)))
 						{
 							if (transaction)
@@ -610,6 +613,7 @@ void INF_database_info(thread_db* tdbb,
 								sync.unlock();
 								TRA_commit(tdbb, transaction, false);
 							}
+
 							return;
 						}
 					}

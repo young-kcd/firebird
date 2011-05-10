@@ -299,7 +299,7 @@ ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtMana
 
 ExtEngineManager::Function::~Function()
 {
-	// Database::Checkout dcoHolder(database);
+	//Database::Checkout dcoHolder(database);
 	function->dispose(LogError());
 }
 

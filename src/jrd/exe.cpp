@@ -492,7 +492,7 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req
  **************************************/
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
- 	// do nothing if user doesn't want database triggers
+ 	// Do nothing if user doesn't want database triggers.
 	if (attachment->att_flags & ATT_no_db_triggers)
 		return;
 

@@ -164,12 +164,15 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
 	{
 		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, true);
+
 		--pendingLock;
+
 	    if (--pendingWriters)
 	    {
 	        if (!currentWriter)
 	            writerFinished.notifyAll();
 	    }
+
 	    return false;
 	}
 

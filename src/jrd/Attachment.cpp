@@ -110,9 +110,7 @@ void Jrd::Attachment::deletePool(MemoryPool* pool)
 	{
 		size_t pos;
 		if (att_pools.find(pool, pos))
-		{
 			att_pools.remove(pos);
-		}
 
 		MemoryPool::deletePool(pool);
 	}
@@ -199,10 +197,8 @@ Jrd::Attachment::~Attachment()
 	destroyIntlObjects();
 	delete att_trace_manager;
 
-	while (att_pools.getCount())
-	{
+	while (att_pools.hasData())
 		deletePool(att_pools.pop());
-	}
 
 	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -
@@ -421,16 +417,19 @@ jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT w
 
 void Jrd::Attachment::shutdown(thread_db* tdbb)
 {
-	// go through relations and indices and release
-	// all existence locks that might have been taken
+	// Go through relations and indices and release
+	// all existence locks that might have been taken.
 
 	vec<jrd_rel*>* rvector = att_relations;
+
 	if (rvector)
 	{
 		vec<jrd_rel*>::iterator ptr, end;
+
 		for (ptr = rvector->begin(), end = rvector->end(); ptr < end; ++ptr)
 		{
 			jrd_rel* relation = *ptr;
+
 			if (relation)
 			{
 				if (relation->rel_existence_lock)
@@ -439,16 +438,19 @@ void Jrd::Attachment::shutdown(thread_db* tdbb)
 					relation->rel_flags |= REL_check_existence;
 					relation->rel_use_count = 0;
 				}
+
 				if (relation->rel_partners_lock)
 				{
 					LCK_release(tdbb, relation->rel_partners_lock);
 					relation->rel_flags |= REL_check_partners;
 				}
+
 				if (relation->rel_rescan_lock)
 				{
 					LCK_release(tdbb, relation->rel_rescan_lock);
 					relation->rel_flags &= ~REL_scanned;
 				}
+
 				for (IndexLock* index = relation->rel_index_locks; index; index = index->idl_next)
 				{
 					if (index->idl_lock)
@@ -461,15 +463,18 @@ void Jrd::Attachment::shutdown(thread_db* tdbb)
 		}
 	}
 
-	// release all procedure existence locks that might have been taken
+	// Release all procedure existence locks that might have been taken.
 
 	vec<jrd_prc*>* pvector = att_procedures;
+
 	if (pvector)
 	{
 		vec<jrd_prc*>::iterator pptr, pend;
+
 		for (pptr = pvector->begin(), pend = pvector->end(); pptr < pend; ++pptr)
 		{
 			jrd_prc* procedure = *pptr;
+
 			if (procedure)
 			{
 				if (procedure->prc_existence_lock)
@@ -482,20 +487,17 @@ void Jrd::Attachment::shutdown(thread_db* tdbb)
 		}
 	}
 
-	// release all function existence locks that might have been taken
+	// Release all function existence locks that might have been taken.
 
 	for (Function** iter = att_functions.begin(); iter < att_functions.end(); ++iter)
 	{
 		Function* const function = *iter;
 
 		if (function)
-		{
 			function->releaseLocks(tdbb);
-		}
 	}
 
-	// release collation existence locks
-
+	// Release collation existence locks.
 	releaseIntlObjects();
 
 	// And release the system requests.

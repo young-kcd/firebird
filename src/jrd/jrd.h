@@ -429,7 +429,7 @@ public:
 	~thread_db()
 	{
 #ifdef DEV_BUILD
-		for (size_t n = 0; n < tdbb_bdbs.getCount(); n++)
+		for (size_t n = 0; n < tdbb_bdbs.getCount(); ++n)
 		{
 			fb_assert(tdbb_bdbs[n] == NULL);
 		}
@@ -548,12 +548,14 @@ public:
 						tdbb_bdbs.shrink(pos + 1);
 						break;
 					}
+
 					if (pos == 0)
 					{
 						tdbb_bdbs.shrink(0);
 						break;
 					}
-					pos--;
+
+					--pos;
 				}
 			}
 		}

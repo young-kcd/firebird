@@ -1154,9 +1154,9 @@ ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
 
 ISC_STATUS ISC_EXPORT fb_ping(ISC_STATUS*, isc_db_handle*);
 
-/***********************/
+/********************/
 /* Object interface */
-/***********************/
+/********************/
 
 ISC_STATUS ISC_EXPORT fb_get_database_handle(ISC_STATUS*, isc_db_handle*, void*);
 ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, void*);

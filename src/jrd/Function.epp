@@ -175,9 +175,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	Database* const dbb = tdbb->getDatabase();
 
 	if (id >= attachment->att_functions.getCount())
-	{
 		attachment->att_functions.grow(id + 1);
-	}
 
 	Function* function = attachment->att_functions[id];
 
@@ -193,9 +191,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	}
 
 	if (!function)
-	{
 		function = FB_NEW(*attachment->att_pool) Function(*attachment->att_pool);
-	}
 
 	try
 	{

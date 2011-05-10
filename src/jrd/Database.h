@@ -317,9 +317,9 @@ public:
 	BufferControl*	dbb_bcb;			// Buffer control block
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
-	
+
 	Firebird::SyncObject	dbb_sh_counter_sync;
-	
+
 	Firebird::SyncObject	dbb_shadow_sync;
 	Shadow*		dbb_shadow;				// shadow control block
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows

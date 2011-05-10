@@ -71,7 +71,7 @@ int TipCache::CacheState(thread_db* tdbb, SLONG number)
 
 	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::CacheState");
 
-	if (!m_cache.getCount()) 
+	if (!m_cache.getCount())
 	{
 		SyncUnlockGuard unlock(sync);
 		InitializeTpc(tdbb, number);
@@ -217,7 +217,7 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 
 	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::SnapshotState");
 
-	if (!m_cache.getCount()) 
+	if (!m_cache.getCount())
 	{
 		sync.unlock();
 		cacheTransactions(tdbb, 0);
@@ -286,7 +286,7 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 		return TRA_fetch_state(tdbb, number);
 	}
 	// if the transaction has been started since we last looked, extend the cache upward
-	
+
 	sync.unlock();
 	return extendCache(tdbb, number);
 }
@@ -410,9 +410,9 @@ SLONG TipCache::cacheTransactions(thread_db* tdbb, SLONG oldest)
 
 	oldest = MAX(oldest, hdr_oldest);
 
-	// now get the inventory of all transactions, which will automatically 
+	// now get the inventory of all transactions, which will automatically
 	// fill in the tip cache pages
-	// hvlad: note, call below will call UpdateCache() which will acquire m_sync 
+	// hvlad: note, call below will call UpdateCache() which will acquire m_sync
 	// in exclusive mode. This is the reason why m_sync must be unlocked at the
 	// entry of this routine
 
@@ -515,4 +515,4 @@ int TipCache::extendCache(thread_db* tdbb, SLONG number)
 	return tra_active;
 }
 
-} // namespace Jrd 
+} // namespace Jrd
