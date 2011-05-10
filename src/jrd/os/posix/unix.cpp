@@ -315,7 +315,7 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 #ifndef SUPERSERVER_V2
 	MutexLockGuard guard(main_file->fil_mutex);
 
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (file->fil_desc != -1)
@@ -537,13 +537,12 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
-	BufferDesc bdb;
-	bdb.bdb_dbb = dbb;
+	BufferDesc bdb(dbb->dbb_bcb);
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	FB_UINT64 offset;
 
-	Database::Checkout dcoHolder(dbb);
+//	Database::Checkout dcoHolder(dbb);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -665,8 +664,9 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		return unix_error("read", file, isc_io_read_err, status_vector);
 	}
 
-	Database* dbb = bdb->bdb_dbb;
-	Database::Checkout dcoHolder(dbb);
+	BufferControl* bcb = bdb->bdb_bcb;
+	Database* dbb = bcb->bcb_database;
+//	Database::Checkout dcoHolder(dbb);
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
@@ -746,8 +746,9 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	Database* dbb = bdb->bdb_dbb;
-	Database::Checkout dcoHolder(dbb);
+	BufferControl* bcb = bdb->bdb_bcb;
+	Database* dbb = bcb->bcb_database;
+//	Database::Checkout dcoHolder(dbb);
 
 	const SLONG size = dbb->dbb_page_size;
 
@@ -802,7 +803,8 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	Database* const dbb = bdb->bdb_dbb;
+	BufferControl* bcb = bdb->bdb_bcb;
+	Database* dbb = bcb->bcb_database;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
