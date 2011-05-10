@@ -430,8 +430,8 @@ private:
 		dbb_pools(*p, 4),
 		dbb_stats(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
-		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_tip_cache(NULL),
+		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_external_file_directory_list(NULL)
 	{
 		dbb_pools.add(p);
