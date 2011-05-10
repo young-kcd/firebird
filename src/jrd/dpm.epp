@@ -2761,7 +2761,7 @@ static void extend_relation( thread_db* tdbb, jrd_rel* relation, WIN* window)
 		// To prevent possible deadlocks (since we own already an exlusive latch and we
 		// are asking for another exclusive latch), time out on the latch after 1 second.
 
-		dpage = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_undefined, -1);
+		dpage = (data_page*) CCH_fake(tdbb, window, -1);
 
 		// In the case of a timeout, retry the whole thing.
 
