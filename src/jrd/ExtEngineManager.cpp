@@ -218,7 +218,7 @@ void ExtEngineManager::ExternalContextImpl::setTransaction(thread_db* tdbb)
 	{
 		internalAttachment->att_interface->addRef();
 
-		externalAttachment = master->registerAttachment(currentProvider(),
+		externalAttachment = master->registerAttachment(EngineProvider(),
 			internalAttachment->att_interface);
 	}
 

@@ -308,7 +308,7 @@ public:
 	~ShutdownBeforeUnload()
 	{
 		LocalStatus status;
-		currentProvider()->shutdown(&status, 0, fb_shutrsn_exit_called);
+		EngineProvider()->shutdown(&status, 0, fb_shutrsn_exit_called);
 	}
 };
 
@@ -1048,9 +1048,9 @@ const int SWEEP_INTERVAL		= 20000;
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
-RefPtr<IProvider> currentProvider()
+RefPtr<JProvider> EngineProvider()
 {
-	RefPtr<IProvider> p(new JProvider(NULL));
+	RefPtr<JProvider> p(new JProvider(NULL));
 	return p;
 }
 

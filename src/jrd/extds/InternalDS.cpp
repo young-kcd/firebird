@@ -159,18 +159,14 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		generateDPB(tdbb, m_dpb, user, pwd, role);
 
 		LocalStatus status;
-		Firebird::IAttachment* a;
-
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			a = currentProvider()->attachDatabase(&status, m_dbName.c_str(),
+			m_attachment = EngineProvider()->attachDatabase(&status, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 
 		if (!status.isSuccess())
 			raise(status, tdbb, "attach");
-
-		m_attachment = static_cast<JAttachment*>(a);
 	}
 
 	m_sqlDialect = (m_attachment->getHandle()->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ?
