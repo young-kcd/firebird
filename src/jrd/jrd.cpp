@@ -308,7 +308,7 @@ public:
 	~ShutdownBeforeUnload()
 	{
 		LocalStatus status;
-		EngineProvider()->shutdown(&status, 0, fb_shutrsn_exit_called);
+		JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
 	}
 };
 
@@ -1047,12 +1047,6 @@ const int SWEEP_INTERVAL		= 20000;
 
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
-
-RefPtr<JProvider> EngineProvider()
-{
-	RefPtr<JProvider> p(new JProvider(NULL));
-	return p;
-}
 
 // External hook definitions
 

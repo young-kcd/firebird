@@ -161,7 +161,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		LocalStatus status;
 		{
 			EngineCallbackGuard guard(tdbb, *this);
-			m_attachment = EngineProvider()->attachDatabase(&status, m_dbName.c_str(),
+			m_attachment = JProvider::getInstance()->attachDatabase(&status, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 

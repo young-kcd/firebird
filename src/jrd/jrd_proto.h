@@ -39,12 +39,9 @@ namespace Jrd {
 	class thread_db;
 	struct teb;
 	class dsql_req;
-	class JProvider;
 }
 
 void jrd_vtof(const char*, char*, SSHORT);
-
-Firebird::RefPtr<Jrd::JProvider> EngineProvider();
 
 // Defines for parameter 3 of JRD_num_attachments
 enum JRD_info_tag

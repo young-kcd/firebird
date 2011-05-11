@@ -352,6 +352,12 @@ public:
 	{
 	}
 
+	static Firebird::RefPtr<JProvider> getInstance()
+	{
+		Firebird::RefPtr<JProvider> p(new JProvider(NULL));
+		return p;
+	}
+
 	// IProvider implementation
 	virtual JAttachment* FB_CARG attachDatabase(Firebird::IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
