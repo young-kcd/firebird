@@ -28,7 +28,7 @@ FONT 8, "MS Sans Serif"
  LTEXT "Version:", IDC_VERSION_TEXT, 14, 69, 40, 12
  LTEXT "Capabilities:", IDC_CAPABILITIES_TEXT, 14, 89, 40, 12
  LTEXT "", IDC_PATH, 60, 49, 130, 24
- LTEXT "", IDC_STAT1, 60, 69, 120, 12
+ LTEXT "", IDC_STAT1, 60, 69, 120, 24
  LTEXT "", IDC_PROTOCOLS, 60, 89, 120, 32
  LTEXT "Number of attachments:", IDC_NUM_ATTACH_TEXT, 14, 133, 100, 12
  LTEXT "Number of databases:", IDC_NUM_DB_TEXT, 14, 145, 160, 12
