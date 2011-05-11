@@ -2450,9 +2450,8 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
 
 		if (relation)
 		{
-			if (relation->rel_flags & REL_deleting) {
+			if (relation->rel_flags & REL_deleting)
 				Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex);
-			}
 
 			if (!(relation->rel_flags & REL_deleted))
 			{
@@ -2542,14 +2541,11 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 	vec<jrd_rel*>* vector = attachment->att_relations;
 	if (vector && (id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
-		if (relation->rel_flags & REL_deleting) {
+		if (relation->rel_flags & REL_deleting)
 			Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex);
-		}
 
 		if (relation->rel_flags & REL_deleted)
-		{
 			return return_deleted ? relation : NULL;
-		}
 
 		if (relation->rel_flags & REL_check_existence)
 		{
@@ -2557,9 +2553,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 			LCK_lock(tdbb, check_relation->rel_existence_lock, LCK_SR, LCK_WAIT);
 		}
 		else
-		{
 			return relation;
-		}
 	}
 
 	// We need to look up the relation id in RDB$RELATIONS
@@ -2830,14 +2824,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	Database* dbb = tdbb->getDatabase();
 
 	vec<jrd_prc*>* vector = attachment->att_procedures;
+
 	if (!vector)
-	{
 		vector = attachment->att_procedures = vec<jrd_prc*>::newVector(*attachment->att_pool, id + 10);
-	}
 	else if (id >= (int) vector->count())
-	{
 		vector->resize(id + 10);
-	}
 
 	jrd_prc* procedure = (*vector)[id];
 
@@ -3170,18 +3161,13 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	MemoryPool* pool = attachment->att_pool;
 
 	if (!vector)
-	{
 		vector = attachment->att_relations = vec<jrd_rel*>::newVector(*pool, id + 10);
-	}
 	else if (id >= vector->count())
-	{
 		vector->resize(id + 10);
-	}
 
 	jrd_rel* relation = (*vector)[id];
-	if (relation) {
+	if (relation)
 		return relation;
-	}
 
 	// From ODS 9 onwards, the first 128 relation IDS have been
 	// reserved for system relations
@@ -3290,9 +3276,8 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 	Jrd::Attachment* att = tdbb->getAttachment();
 
 	vec<jrd_prc*>* pvector = att->att_procedures;
-	if (!pvector) {
+	if (!pvector)
 		return;
-	}
 
 	if (!procedure)
 	{
@@ -3303,17 +3288,13 @@ void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 
 	// MET_procedure locks it. Lets unlock it now to avoid troubles later
 	if (procedure->prc_existence_lock)
-	{
 		LCK_release(tdbb, procedure->prc_existence_lock);
-	}
 
 	// Procedure that is being altered may have references
 	// to it by other procedures via pointer to current meta
 	// data structure, so don't loose the structure or the pointer.
 	if ((procedure == (*pvector)[id]) && !(procedure->prc_flags & PRC_being_altered))
-	{
 	    (*pvector)[id] = NULL;
-	}
 
 	// deallocate all structure which were allocated.  The procedure
 	// blr is originally read into a new pool from which all request
@@ -3482,18 +3463,15 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	try {
 
 	if (relation->rel_flags & REL_scanned || relation->rel_flags & REL_deleted)
-	{
 		return;
-	}
 
 	relation->rel_flags |= REL_being_scanned;
 	dependencies = (relation->rel_flags & REL_get_dependencies) ? true : false;
 	sys_triggers = (relation->rel_flags & REL_sys_triggers) ? true : false;
 	relation->rel_flags &= ~(REL_get_dependencies | REL_sys_triggers);
 
-	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr) {
+	for (USHORT itr = 0; itr < TRIGGER_MAX; ++itr)
 		triggers[itr] = NULL;
-	}
 
 	// Since this can be called recursively, find an inactive clone of the request
 
@@ -4018,9 +3996,9 @@ static int blocking_ast_procedure(void* ast_object)
 		Jrd::ContextPoolHolder context(tdbb, 0);
 		Jrd::Attachment::SyncGuard guard(att);
 
-		if (procedure->prc_existence_lock) {
+		if (procedure->prc_existence_lock)
 			LCK_release(tdbb, procedure->prc_existence_lock);
-		}
+
 		procedure->prc_flags |= PRC_obsolete;
 	}
 	catch (const Exception&)
@@ -4060,9 +4038,8 @@ static int blocking_ast_relation(void* ast_object)
 		Jrd::ContextPoolHolder context(tdbb, 0);
 		Jrd::Attachment::SyncGuard guard(att);
 
-		if (relation->rel_use_count) {
+		if (relation->rel_use_count)
 			relation->rel_flags |= REL_blocking;
-		}
 		else
 		{
 			relation->rel_flags &= ~REL_blocking;

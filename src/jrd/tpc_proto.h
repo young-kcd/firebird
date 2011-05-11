@@ -42,21 +42,23 @@ public:
 	TipCache(Database* dbb);
 	~TipCache();
 
-	int		CacheState(thread_db*, SLONG number);
-	void	InitializeTpc(thread_db*, SLONG number);
-	void	SetState(thread_db*, SLONG number, SSHORT state);
-	int		SnapshotState(thread_db*, SLONG number);
-	void	UpdateCache(thread_db*, const Ods::tx_inv_page* tip_page, SLONG sequence);
+	int		cacheState(thread_db*, SLONG number);
+	void	initializeTpc(thread_db*, SLONG number);
+	void	setState(thread_db*, SLONG number, SSHORT state);
+	int		snapshotState(thread_db*, SLONG number);
+	void	updateCache(thread_db*, const Ods::tx_inv_page* tip_page, SLONG sequence);
 
 private:
 	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
 	{
 	public:
-		SLONG	tpc_base;				// id of first transaction in this block
-		UCHAR	tpc_transactions[1];	// two bits per transaction
+		SLONG tpc_base;				// id of first transaction in this block
+		UCHAR tpc_transactions[1];	// two bits per transaction
 
 		static const SLONG generate(const void*, const TxPage* item)
-		{ return item->tpc_base; }
+		{
+			return item->tpc_base;
+		}
 	};
 
 	TxPage* allocTxPage(thread_db* tdbb, SLONG base);
@@ -64,37 +66,37 @@ private:
 	int extendCache(thread_db* tdbb, SLONG number);
 	void clearCache();
 
-	Database*	m_dbb;
-	Firebird::SyncObject	m_sync;
+	Database* m_dbb;
+	Firebird::SyncObject m_sync;
 	Firebird::SortedArray<TxPage*, Firebird::EmptyStorage<TxPage*>, SLONG, TxPage> m_cache;
 };
 
 
 inline int TPC_cache_state(thread_db* tdbb, SLONG number)
 {
-	 return tdbb->getDatabase()->dbb_tip_cache->CacheState(tdbb, number);
+	 return tdbb->getDatabase()->dbb_tip_cache->cacheState(tdbb, number);
 }
 
 inline void TPC_initialize_tpc(thread_db* tdbb, SLONG number)
 {
-	 tdbb->getDatabase()->dbb_tip_cache->InitializeTpc(tdbb, number);
+	 tdbb->getDatabase()->dbb_tip_cache->initializeTpc(tdbb, number);
 }
 
 inline void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 {
-	 tdbb->getDatabase()->dbb_tip_cache->SetState(tdbb, number, state);
+	 tdbb->getDatabase()->dbb_tip_cache->setState(tdbb, number, state);
 }
 
 inline int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 {
-	 return tdbb->getDatabase()->dbb_tip_cache->SnapshotState(tdbb, number);
+	 return tdbb->getDatabase()->dbb_tip_cache->snapshotState(tdbb, number);
 }
 
 inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
 {
-	 tdbb->getDatabase()->dbb_tip_cache->UpdateCache(tdbb, tip_page, sequence);
+	 tdbb->getDatabase()->dbb_tip_cache->updateCache(tdbb, tip_page, sequence);
 }
 
 } // namespace Jrd
-#endif // JRD_TPC_PROTO_H
 
+#endif // JRD_TPC_PROTO_H

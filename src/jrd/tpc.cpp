@@ -37,9 +37,9 @@ using namespace Firebird;
 
 namespace Jrd {
 
-TipCache::TipCache(Database* dbb) :
-	m_dbb(dbb),
-	m_cache(*m_dbb->dbb_permanent)
+TipCache::TipCache(Database* dbb)
+	: m_dbb(dbb),
+	  m_cache(*m_dbb->dbb_permanent)
 {
 }
 
@@ -50,7 +50,7 @@ TipCache::~TipCache()
 }
 
 
-int TipCache::CacheState(thread_db* tdbb, SLONG number)
+int TipCache::cacheState(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -69,12 +69,12 @@ int TipCache::CacheState(thread_db* tdbb, SLONG number)
 			return tra_precommitted;
 	}
 
-	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::CacheState");
+	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::cacheState");
 
 	if (!m_cache.getCount())
 	{
 		SyncUnlockGuard unlock(sync);
-		InitializeTpc(tdbb, number);
+		initializeTpc(tdbb, number);
 	}
 
 	// if the transaction is older than the oldest
@@ -107,7 +107,7 @@ int TipCache::CacheState(thread_db* tdbb, SLONG number)
 }
 
 
-void TipCache::InitializeTpc(thread_db* tdbb, SLONG number)
+void TipCache::initializeTpc(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -121,9 +121,9 @@ void TipCache::InitializeTpc(thread_db* tdbb, SLONG number)
  *
  **************************************/
 
-	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::InitializeTpc");
+	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::initializeTpc");
 
-	if (!m_cache.getCount())
+	if (m_cache.isEmpty())
 	{
 		sync.unlock();
 		cacheTransactions(tdbb, 0);
@@ -152,7 +152,7 @@ void TipCache::InitializeTpc(thread_db* tdbb, SLONG number)
 }
 
 
-void TipCache::SetState(thread_db* tdbb, SLONG number, SSHORT state)
+void TipCache::setState(thread_db* tdbb, SLONG number, SSHORT state)
 {
 /**************************************
  *
@@ -171,7 +171,7 @@ void TipCache::SetState(thread_db* tdbb, SLONG number, SSHORT state)
 	const SLONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const SSHORT shift = TRANS_SHIFT(number);
 
-	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::SetState");
+	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::setState");
 
 	size_t pos = 0;
 	if (m_cache.find(base, pos))
@@ -192,7 +192,7 @@ void TipCache::SetState(thread_db* tdbb, SLONG number, SSHORT state)
 }
 
 
-int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
+int TipCache::snapshotState(thread_db* tdbb, SLONG number)
 {
 /**************************************
  *
@@ -210,18 +210,17 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 
 	if (number && m_dbb->dbb_pc_transactions)
 	{
-		if (TRA_precommited(tdbb, number, number)) {
+		if (TRA_precommited(tdbb, number, number))
 			return tra_precommitted;
-		}
 	}
 
-	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::SnapshotState");
+	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::snapshotState");
 
-	if (!m_cache.getCount())
+	if (m_cache.isEmpty())
 	{
 		sync.unlock();
 		cacheTransactions(tdbb, 0);
-		sync.lock(SYNC_SHARED, "TipCache::SnapshotState");
+		sync.lock(SYNC_SHARED, "TipCache::snapshotState");
 	}
 
 	// if the transaction is older than the oldest
@@ -229,9 +228,8 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 	// hvlad: system transaction always committed too
 
 	TxPage* tip_cache = m_cache[0];
-	if (number < tip_cache->tpc_base || number == 0) {
+	if (number < tip_cache->tpc_base || number == 0)
 		return tra_committed;
-	}
 
 	// locate the specific TIP cache block for the transaction
 
@@ -253,9 +251,8 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 		// committed or dead transactions always stay that
 		// way, so no need to check their current state
 
-		if (state == tra_committed || state == tra_dead) {
+		if (state == tra_committed || state == tra_dead)
 			return state;
-		}
 
 		// see if we can get a lock on the transaction; if we can't
 		// then we know it is still active
@@ -288,11 +285,12 @@ int TipCache::SnapshotState(thread_db* tdbb, SLONG number)
 	// if the transaction has been started since we last looked, extend the cache upward
 
 	sync.unlock();
+
 	return extendCache(tdbb, number);
 }
 
 
-void TipCache::UpdateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
+void TipCache::updateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG sequence)
 {
 /**************************************
  *
@@ -315,15 +313,17 @@ void TipCache::UpdateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SL
 	// any tip cache pages we can release--this is cheaper and
 	// easier than finding out when a TIP page is dropped
 
-	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::UpdateCache");
+	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::updateCache");
 
 	TxPage* tip_cache = NULL;
-	while (m_cache.getCount())
+
+	while (m_cache.hasData())
 	{
 		tip_cache = m_cache[0];
+
 		if ((ULONG) m_dbb->dbb_oldest_transaction >= (ULONG) (tip_cache->tpc_base + trans_per_tip))
 		{
-			m_cache.remove((size_t)0);
+			m_cache.remove((size_t) 0);
 			delete tip_cache;
 		}
 		else
@@ -334,17 +334,18 @@ void TipCache::UpdateCache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SL
 	// bits -- it's not worth figuring out which ones are actually used
 
 	size_t pos;
-	if (m_cache.find(first_trans, pos)) {
+	if (m_cache.find(first_trans, pos))
 		tip_cache = m_cache[pos];
-	}
-	else {
+	else
+	{
 		tip_cache = allocTxPage(tdbb, first_trans);
 		m_cache.insert(pos, tip_cache);
 	}
+
 	fb_assert(first_trans == tip_cache->tpc_base);
 
-	const USHORT l = TRANS_OFFSET(trans_per_tip);
-	memcpy(tip_cache->tpc_transactions, tip_page->tip_transactions, l);
+	const USHORT len = TRANS_OFFSET(trans_per_tip);
+	memcpy(tip_cache->tpc_transactions, tip_page->tip_transactions, len);
 }
 
 
@@ -412,21 +413,23 @@ SLONG TipCache::cacheTransactions(thread_db* tdbb, SLONG oldest)
 
 	// now get the inventory of all transactions, which will automatically
 	// fill in the tip cache pages
-	// hvlad: note, call below will call UpdateCache() which will acquire m_sync
+	// hvlad: note, call below will call updateCache() which will acquire m_sync
 	// in exclusive mode. This is the reason why m_sync must be unlocked at the
 	// entry of this routine
 
 	TRA_get_inventory(tdbb, NULL, oldest, top);
 
-	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::UpdateCache");
+	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::updateCache");
 
 	const SLONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	while (m_cache.getCount())
+
+	while (m_cache.hasData())
 	{
 		TxPage* tip_cache = m_cache[0];
+
 		if ((ULONG) (tip_cache->tpc_base + trans_per_tip) < (ULONG) hdr_oldest)
 		{
-			m_cache.remove((size_t)0);
+			m_cache.remove((size_t) 0);
 			delete tip_cache;
 		}
 		else
@@ -441,7 +444,7 @@ void TipCache::clearCache()
 {
 	fb_assert(m_sync.ourExclusiveLock());
 
-	while (m_cache.getCount())
+	while (m_cache.hasData())
 	{
 		const size_t pos = m_cache.getCount() - 1;
 		TxPage* tip_page = m_cache[pos];
@@ -479,7 +482,7 @@ int TipCache::extendCache(thread_db* tdbb, SLONG number)
 	Sync sync(&m_sync, "extendCache");
 	sync.lock(SYNC_SHARED);
 
-	fb_assert(m_cache.getCount() > 0);
+	fb_assert(m_cache.hasData());
 	TxPage* tip_cache = m_cache[m_cache.getCount() - 1];
 
 	if (tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip)

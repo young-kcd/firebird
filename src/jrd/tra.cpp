@@ -784,8 +784,9 @@ void TRA_invalidate(Database* database, ULONG mask)
 		 attachment = attachment->att_next)
 	{
 		Jrd::Attachment::SyncGuard attGuard(attachment);
+
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
-			transaction = transaction->tra_next)
+			 transaction = transaction->tra_next)
 		{
 			const ULONG transaction_mask = 1L << (transaction->tra_number & (BITS_PER_LONG - 1));
 			if (transaction_mask & mask && transaction->tra_flags & TRA_write)
@@ -1164,13 +1165,13 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	{ // scope
 		vec<jrd_rel*>& rels = *attachment->att_relations;
+
 		for (size_t i = 0; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
+
 			if (relation && (relation->rel_flags & REL_temp_tran))
-			{
 				relation->delPages(tdbb, transaction->tra_number);
-			}
 		}
 
 	} // end scope

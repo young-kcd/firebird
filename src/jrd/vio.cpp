@@ -1725,9 +1725,7 @@ void VIO_fini(thread_db* tdbb)
 	{
 		dbb->dbb_flags &= ~DBB_garbage_collector;
 		dbb->dbb_gc_sem.release(); // Wake up running thread
-		{ // scope
-			dbb->dbb_gc_fini.enter();
-		}
+		dbb->dbb_gc_fini.enter();
 	}
 }
 #endif
@@ -1864,9 +1862,8 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 
 	// Allocate a vector of garbage collect record blocks for relation.
 	vec<Record*>* vector = relation->rel_gc_rec;
-	if (!vector) {
+	if (!vector)
 		vector = relation->rel_gc_rec = vec<Record*>::newVector(*relation->rel_pool, 1);
-	}
 
 	// Set the active flag on an inactive garbage collect record block and return it.
 	vec<Record*>::iterator rec_ptr = vector->begin();
@@ -2119,7 +2116,8 @@ bool VIO_get_current(thread_db* tdbb,
 		{
 			state = TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_probe);
 
-			if (state == tra_active) {
+			if (state == tra_active)
+			{
 				THREAD_SLEEP(100);	// milliseconds
 				continue;
 			}
@@ -2231,9 +2229,7 @@ void VIO_init(thread_db* tdbb)
 			ERR_bugcheck_msg("cannot start garbage collector thread");
 		}
 
-		{ // scope
-			dbb->dbb_gc_init.enter();
-		}
+		dbb->dbb_gc_init.enter();
 	}
 
 	// Database backups and sweeps perform their own garbage collection
@@ -3176,14 +3172,12 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 #ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_TRACE) {
+	if (debug_flag > DEBUG_TRACE)
 		printf("VIO_sweep (transaction %"SLONGFORMAT")\n", transaction ? transaction->tra_number : 0);
-	}
 #endif
 
-	if (transaction->tra_attachment->att_flags & ATT_NO_CLEANUP) {
+	if (transaction->tra_attachment->att_flags & ATT_NO_CLEANUP)
 		return false;
-	}
 
 	DPM_scan_pages(tdbb);
 
@@ -4283,12 +4277,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				while (dbb->dbb_flags & DBB_suspend_bgio)
 				{
-					{ // scope
-						dbb->dbb_gc_sem.tryEnter(10);
-					}
-					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
+					dbb->dbb_gc_sem.tryEnter(10);
+
+					if (!(dbb->dbb_flags & DBB_garbage_collector))
 						goto gc_exit;
-					}
 				}
 
 				for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
@@ -4305,6 +4297,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 			// out from under us while garbage collection is in-progress.
 
 			vec<jrd_rel*>* vector = tdbb->getAttachment()->att_relations;
+
 			for (ULONG id = 0; vector && id < vector->count(); ++id)
 			{
 				relation = (*vector)[id];
@@ -4451,9 +4444,7 @@ rel_exit:
 						continue;
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
-					{ // scope
-						dbb->dbb_gc_sem.tryEnter(10);
-					}
+					dbb->dbb_gc_sem.tryEnter(10);
 					dbb->dbb_flags |= DBB_gc_active;
 				}
 			}
@@ -5176,13 +5167,11 @@ static int prepare_update(	thread_db*		tdbb,
 		}
 
 		if (state == tra_precommitted)
-		{
 			THREAD_SLEEP(100);	// milliseconds
-		}
-		else {
+		else
 			VIO_backout(tdbb, rpb, transaction);
-		}
 	}
+
 	return PREPARE_OK;
 }
 

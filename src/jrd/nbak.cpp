@@ -315,12 +315,14 @@ ULONG BackupManager::getPageCount()
 		PageSpace* pageSpace;
 
 	public:
-		explicit PioCount(Database* d) : temp_bdb(d->dbb_bcb)
+		explicit PioCount(Database* d)
+			: temp_bdb(d->dbb_bcb)
 		{
 			fb_assert(d);
 			pageSpace = d->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			fb_assert(pageSpace);
 		}
+
 		virtual void newPage(const SLONG pageNum, Ods::pag* buf)
 		{
 			temp_bdb.bdb_buffer = buf;
@@ -587,9 +589,8 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = last_allocated_page + 1;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector)) {
+	if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
 		return 0;
-	}
 
 	const bool alloc_page_full = alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 2;
 	if (alloc_page_full)
@@ -597,21 +598,22 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		// Pointer page is full. Its time to create new one.
 		temp_bdb.bdb_page = last_allocated_page + 2;
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
-		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector)) {
+		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector))
 			return 0;
-		}
 	}
 
 	// Write new item to the allocation table
 	temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 	alloc_buffer[++alloc_buffer[0]] = db_page;
-	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
+	if (!PIO_write(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector))
 		return 0;
-	}
+
 	last_allocated_page++;
+
 	// Register new page in the alloc table
-	try {
+	try
+	{
 		alloc_table->add(AllocItem(db_page, last_allocated_page));
 	}
 	catch (const Firebird::Exception& ex)
@@ -623,6 +625,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 		Firebird::stuff_exception(status_vector, ex);
 		return 0;
 	}
+
 	// Adjust buffer and counters if we allocated new alloc page earlier
 	if (alloc_page_full)
 	{

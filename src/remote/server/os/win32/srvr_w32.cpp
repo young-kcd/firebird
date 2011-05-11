@@ -198,9 +198,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		TEXT buffer[BUFFER_LARGE];
 		const ISC_STATUS* vector = e.value();
 		if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
-		{
 			strcpy(buffer, "Unknown internal failure");
-		}
 
 		MessageBox(NULL, buffer, "Firebird server failure",
 			MB_OK | MB_ICONHAND | MB_SYSTEMMODAL  | MB_DEFAULT_DESKTOP_ONLY);
@@ -220,9 +218,8 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	server_flag = 0;
 
 	const DWORD affinity = static_cast<DWORD>(Config::getCpuAffinityMask());
-	if (affinity) {
+	if (affinity)
 		SetProcessAffinityMask(GetCurrentProcess(), affinity);
-	}
 
 	protocol_inet[0] = 0;
 	protocol_wnet[0] = 0;
@@ -554,28 +551,34 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
 
 	if (server_flag & SRVR_inet)
 	{
-		try {
+		try
+		{
 			Thread::start(inet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Exception& ex) {
+		catch (const Exception& ex)
+		{
 			iscLogException("INET: can't start listener thread", ex);
 		}
 	}
 	if (server_flag & SRVR_wnet)
 	{
-		try {
+		try
+		{
 			Thread::start(wnet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Exception& ex) {
+		catch (const Exception& ex)
+		{
 			iscLogException("WNET: can't start listener thread", ex);
 		}
 	}
 	if (server_flag & SRVR_xnet)
 	{
-		try {
+		try
+		{
 			Thread::start(xnet_connect_wait_thread, 0, THREAD_medium);
 		}
-		catch (const Exception& ex) {
+		catch (const Exception& ex)
+		{
 			iscLogException("XNET: can't start listener thread", ex);
 		}
 	}

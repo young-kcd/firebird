@@ -1339,7 +1339,7 @@ static void update_dbb_to_sdw(Database* dbb)
 		return;					// should be a BUGCHECK
 
 	// close the main database file if possible and release all file blocks
-// hvlad: need sync for this code
+	// hvlad: need sync for this code
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	PIO_close(pageSpace->file);
 

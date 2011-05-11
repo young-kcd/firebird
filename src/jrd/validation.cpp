@@ -1511,7 +1511,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				(jumpInfo.firstNodeOffset > page->btr_length))
 			{
 				corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-						id + 1, next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
+						id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
 			}
 
 			USHORT n = jumpInfo.jumpers;
@@ -1527,7 +1527,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(jumpNode.offset > page->btr_length))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
 				}
 				else
 				{
@@ -1573,7 +1573,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				{
 					duplicateNode = false;
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, q - (UCHAR*)page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, q - (UCHAR*) page, __FILE__, __LINE__);
 				}
 				else if (*p < *q)
 				{
@@ -1598,7 +1598,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(node.recordNumber < lastNode.recordNumber))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 					}
 				}
 
@@ -1658,7 +1658,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					if (*p < *q)
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 					}
 					else if (*p > *q) {
 						break;
@@ -1679,7 +1679,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 						(downNode.recordNumber < down_record_number))
 					{
 						corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
+								id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 					}
 				}
 
@@ -1687,7 +1687,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				if (previous_number != down_page->btr_left_sibling)
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 				}
 
 				BTreeNode::readNode(&downNode, pointer, leafPage);
@@ -1697,7 +1697,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 					(next_number != down_page->btr_sibling))
 				{
 					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*)page, __FILE__, __LINE__);
+							id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
@@ -1712,7 +1712,7 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 		if (pointer != endPointer || page->btr_length > dbb->dbb_page_size)
 		{
 			corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
-					next, page->btr_level, pointer - (UCHAR*)page, __FILE__, __LINE__);
+					next, page->btr_level, pointer - (UCHAR*) page, __FILE__, __LINE__);
 		}
 
 		if (next == down)
@@ -1752,13 +1752,17 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	if (control && (control->vdr_flags & vdr_records))
 	{
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
+
 		if (accessor.getFirst())
-			do {
+		{
+			do
+			{
 				SINT64 next_number = accessor.current();
-				if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
+
+				if (!RecordBitmap::test(control->vdr_idx_records, next_number))
 					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS, relation, id + 1);
-				}
 			} while (accessor.getNext());
+		}
 	}
 
 	return rtn_ok;

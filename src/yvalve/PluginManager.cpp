@@ -522,11 +522,13 @@ namespace
 		}
 
 	private:
-		//~FactoryParameter()
-		//{
-		//	PluginDestroyTimer* timer = new PluginDestroyTimer(configuredPlugin);
-		//	TimerInterfacePtr()->start(timer, 1000000);		// 1 sec
-		//}
+		/***
+		~FactoryParameter()
+		{
+			PluginDestroyTimer* timer = new PluginDestroyTimer(configuredPlugin);
+			TimerInterfacePtr()->start(timer, 1000000);		// 1 sec
+		}
+		***/
 
 		RefPtr<ConfiguredPlugin> configuredPlugin;
 		RefPtr<IFirebirdConf> firebirdConf;
