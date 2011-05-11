@@ -675,19 +675,19 @@ namespace Why
 	
 		int FB_CARG release()
 		{
-			if (--refCounter == 0)
+			if (--this->refCounter == 0)
 			{
-				Impl* impl = (Impl*) this;
+				Impl* impl = static_cast<Impl*>(this);
 
 				if (next)
 				{
 					// destroy() was not called - BUG in callers code !!!
 					fb_assert_continue(false);
 
-					++refCounter; // to be decremented in destroy()
-					++refCounter; // to avoid recursion
+					++this->refCounter; // to be decremented in destroy()
+					++this->refCounter; // to avoid recursion
 					impl->destroy(); // destroy() must call release()
-					--refCounter;
+					--this->refCounter;
 				}
 
 				delete impl; // call correct destructor !
