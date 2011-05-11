@@ -1,3 +1,50 @@
+ 2011-05-11 02:43  asfernandes 
+   M src/jrd/jrd.cpp
+   M src/remote/server/server.cpp
+Warning / error.
+
+ 2011-05-11 01:18  asfernandes 
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/yvalve/PluginManager.cpp
+Misc.
+
+ 2011-05-10 14:03  alexpeshkoff 
+   M src/jrd/os/posix/unix.cpp
+make it compile with shared cache
+
+ 2011-05-10 13:44  hvlad 
+   M src/yvalve/PluginManager.cpp
+Temporary solution to not crash utilities working with embedded engine on exit.
+
+ 2011-05-10 13:37  hvlad 
+   M builds/install/arch-specific/win32/install_super.bat
+Don't use Guardian with services
+
+ 2011-05-10 13:36  hvlad 
+   M src/utilities/fbcpl/fbdialog.cpp
+   M src/utilities/fbcpl/fbpanel.cpp
+Adjusted CPL applet with current binaries names and paths.
+Make it show error even when there is no registry information.
+
+ 2011-05-10 13:03  hvlad 
+   M src/iscguard/iscguard.h
+   M src/utilities/install/install_nt.h
+   M src/utilities/install/install_reg.cpp
+   M src/utilities/install/install_svc.cpp
+Adjusted instreg, instsvc and fbguard with current binaries names and paths
+
+ 2011-05-10 11:56  alexpeshkoff 
+   M src/jrd/Database.h
+fixed gcc warning
+
  2011-05-10 01:12  asfernandes 
    M builds/install/misc/firebird.conf.in
    M src/common/classes/SyncObject.h
