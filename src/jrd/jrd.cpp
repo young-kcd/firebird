@@ -471,8 +471,8 @@ namespace
 
 	private:
 		Firebird::Mutex* mutex;
-		bool async;
 		Jrd::Attachment* attachment;
+		bool async;
 
 	private:
 		// copying is prohibited

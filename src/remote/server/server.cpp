@@ -35,6 +35,7 @@
 #include "../jrd/ibase.h"
 #include "../common/gdsassert.h"
 #include "../remote/remote.h"
+#include "../common/file_params.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/license.h"
 #include "../common/classes/timestamp.h"
