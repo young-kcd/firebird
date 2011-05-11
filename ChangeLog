@@ -1,3 +1,62 @@
+ 2011-05-10 13:29  mapopa 
+   M src/jrd/common.h
+   M src/jrd/pag.cpp
+Description:fix big-endian mips detection It seems big-endian MIPS defines "MIPSEB" 
+Author: Damyan Ivanov <dmn@debian.org>
+Debian bug: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=474773
+
+ 2011-05-10 13:15  mapopa 
+   M src/common/classes/fb_atomic.h
+ Description: ensure atomic_ops.h defined AO_REQUIRE_CAS in order to ensure
+ that AO_compare_and_swap is available even if emulated.
+ This would give poor performance on platforms where no native implementation
+ is available, but at least it gives some chance of running Firebird
+ Author: Damyan Ivanov <dmn@debian.org>
+ Debian-Bug: 565861 http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=565861
+
+ 2011-05-10 11:53  mapopa 
+   M autogen.sh
+ From: Damyan Ivanov <dmn@debian.org>
+ Description: add workarounds for libtool before 2.2.6a
+ This makes it possible to build Firebird 2.5 on Debian Lenny and other
+ distributions that dont have libtool 2.2.6a available
+
+ 2011-05-10 10:00  mapopa 
+   M builds/posix/prefix.linux_powerpc
+remove -mcpu=powerpc from cflags on powerpc
+-mcpu=powerpc assumes certain powerpc and will create wrong code if the
+default cpu is not compatible with with -mcpu=powerpc. This is the case
+on softfloat toolchains for instance.
+This patch removes the -mcpu= state from cflags and the default cpu will
+be used.
+http://lists.alioth.debian.org/pipermail/pkg-firebird-general/2010q2/001932.html
+
+ 2011-05-10 09:49  mapopa 
+   M builds/posix/prefix.linux_sparc32
+Description: Drop -m32 flag
+This prefix file is used on all sparc variants and -m32 breaks the build on sparc64
+Author: Damyan Ivanov <dmn@debian.org>
+Forwarded: from debian/patches
+
+ 2011-05-10 09:29  hvlad 
+   M src/jrd/dpm.epp
+Backported fix for bug CORE-3468 : Attempt to read after the end of file when nbackup state is stalled
+
+ 2011-05-10 09:18  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+   M src/jrd/cch_proto.h
+   M src/jrd/nbak.cpp
+Backported fix for bug CORE-3466 : Some changes could be lost during the merge of delta file into main database file
+
+ 2011-05-10 09:02  hvlad 
+   M src/jrd/cch.cpp
+Backported fix for bug CORE-3465 : Nbackup state lock could be not released after cache error. It results in "Can't lock state for write" bugcheck when backup state is going to be changed.
+
+ 2011-05-10 08:57  hvlad 
+   M src/jrd/cch.cpp
+Backported fix for bug CORE-3464 : Dirty page could be written without releasing (or downgrading) page lock. It results in "lock denied" or "lock conversion denied" bugcheck
+
  2011-04-28 16:59  alexpeshkoff 
    M src/lock/print.cpp
 Fixed CORE-3454: "fb_lock_print -c" hangs server
