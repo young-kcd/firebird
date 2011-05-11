@@ -415,7 +415,7 @@ jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT w
 	}
 }
 
-void Jrd::Attachment::shutdown(thread_db* tdbb)
+void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 {
 	// Go through relations and indices and release
 	// all existence locks that might have been taken.

@@ -5802,7 +5802,42 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
 	}
 
-	attachment->shutdown(tdbb);
+    // CMP_release() changes att_requests.
+	while (!attachment->att_requests.isEmpty())
+		CMP_release(tdbb, attachment->att_requests.back());
+
+	MET_clear_cache(tdbb);
+
+	attachment->releaseLocks(tdbb);
+
+	// Shut down any extern relations
+
+	if (attachment->att_relations)
+	{
+		vec<jrd_rel*>* vector = attachment->att_relations;
+		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
+
+		while (ptr < end)
+		{
+			jrd_rel* relation = *ptr++;
+			if (relation)
+			{
+				if (relation->rel_file)
+				{
+					EXT_fini(relation, false);
+				}
+
+				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
+					index_block = index_block->idb_next)
+				{
+					if (index_block->idb_lock)
+						LCK_release(tdbb, index_block->idb_lock);
+				}
+
+				delete relation;
+			}
+		}
+	}
 
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
@@ -5810,13 +5845,11 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
 
-#ifndef SHARED_METADATA_CACHE
 	DSqlCache::Accessor accessor(&attachment->att_dsql_cache);
 	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
 	{
 		LCK_release(tdbb, accessor.current()->second.lock);
 	}
-#endif
 
 	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
 		++vector)
@@ -5855,76 +5888,6 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		{
 			*ptr = attachment->att_next;
 			break;
-		}
-	}
-
-    // CMP_release() changes att_requests.
-	while (!attachment->att_requests.isEmpty())
-		CMP_release(tdbb, attachment->att_requests.back());
-/**
-	for (JrdStatement** i = attachment->att_internal.begin(); i != attachment->att_internal.end(); ++i)
-	{
-		if (*i)
-		{
-			JrdStatement* stmt = *i;
-
-			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
-			{
-				if (*j)
-				{
-					fb_assert(!(*j)->req_attachment || (*j)->req_attachment == attachment);
-					EXE_release(tdbb, *j);
-				}
-			}
-		}
-	}
-
-	for (JrdStatement** i = attachment->att_dyn_req.begin(); i != attachment->att_dyn_req.end(); ++i)
-	{
-		if (*i)
-		{
-			JrdStatement* stmt = *i;
-
-			for (jrd_req** j = stmt->requests.begin(); j != stmt->requests.end(); ++j)
-			{
-				if (*j)
-				{
-					fb_assert(!(*j)->req_attachment || (*j)->req_attachment == attachment);
-					EXE_release(tdbb, *j);
-				}
-			}
-		}
-	}
-**/
-
-	MET_clear_cache(tdbb);
-
-	// Shut down any extern relations
-
-	if (attachment->att_relations)
-	{
-		vec<jrd_rel*>* vector = attachment->att_relations;
-		vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end();
-
-		while (ptr < end)
-		{
-			jrd_rel* relation = *ptr++;
-			if (relation)
-			{
-				if (relation->rel_file)
-				{
-					EXT_fini(relation, false);
-				}
-
-				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
-					index_block = index_block->idb_next)
-				{
-					if (index_block->idb_lock)
-						LCK_release(tdbb, index_block->idb_lock);
-				}
-
-				delete relation;
-			}
 		}
 	}
 

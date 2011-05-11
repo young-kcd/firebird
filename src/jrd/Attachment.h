@@ -297,7 +297,7 @@ public:
 	void destroyIntlObjects();			// defined in intl.cpp
 
 	// from CMP_shutdown_database and CMP_fini
-	void shutdown(thread_db* tdbb);
+	void releaseLocks(thread_db* tdbb);
 
 	Firebird::Array<MemoryPool*>	att_pools;		// pools
 
