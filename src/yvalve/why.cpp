@@ -75,7 +75,7 @@
 using namespace Firebird;
 using namespace Why;
 
-namespace
+namespace Why
 {
 	class YService;
 	class YAttachment;
@@ -191,7 +191,7 @@ static RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HAND
 //-------------------------------------
 
 
-namespace
+namespace Why
 {
 	// StatusVector:	Provides correct status vector for operation and init() it.
 	class StatusVector : public StackIface<IStatus>
@@ -664,17 +664,43 @@ namespace
 		SortedArray<T*> array;
 	};
 
-	template <typename C, int V>
-	class YHelper : public StdPlugin<C, V>, public YObject
+	template <typename Impl, typename Intf, int Vers>
+	class YHelper : public StdPlugin<Intf, Vers>, public YObject
 	{
 	public:
-		YHelper()
+		YHelper(Intf* aNext) : next(aNext)
 		{
 			this->addRef();
 		}
+	
+		int FB_CARG release()
+		{
+			if (--refCounter == 0)
+			{
+				Impl* impl = (Impl*) this;
+
+				if (next)
+				{
+					// destroy() was not called - BUG in callers code !!!
+					fb_assert_continue(false);
+
+					++refCounter; // to be decremented in destroy()
+					++refCounter; // to avoid recursion
+					impl->destroy(); // destroy() must call release()
+					--refCounter;
+				}
+
+				delete impl; // call correct destructor !
+				return 0;
+			}
+
+			return 1;
+		}
+		
+		RefPtr<Intf> next;
 	};
 
-	class YEvents : public YHelper<IEvents, FB_I_EVENTS_VERSION>
+	class YEvents : public YHelper<YEvents, IEvents, FB_I_EVENTS_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
@@ -690,33 +716,15 @@ namespace
 		void destroy();
 
 		// IEvents implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG cancel(IStatus* status);
 
 	public:
 		YAttachment* attachment;
-		RefPtr<IEvents> next;
 		IEventCallback* callback;
 		bool deleteCallback;
 	};
 
-	class YRequest : public YHelper<IRequest, FB_I_REQUEST_VERSION>
+	class YRequest : public YHelper<YRequest, IRequest, FB_I_REQUEST_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -726,23 +734,6 @@ namespace
 		void destroy();
 
 		// IRequest implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG receive(IStatus* status, int level, unsigned int msgType,
 			unsigned int length, unsigned char* message);
 		virtual void FB_CARG send(IStatus* status, int level, unsigned int msgType,
@@ -757,11 +748,10 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		RefPtr<IRequest> next;
 		FB_API_HANDLE* userHandle;
 	};
 
-	class YTransaction : public YHelper<ITransaction, FB_I_TRANSACTION_VERSION>
+	class YTransaction : public YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
@@ -792,23 +782,6 @@ namespace
 		void destroy();
 
 		// ITransaction implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 		virtual void FB_CARG prepare(IStatus* status, unsigned int msgLength,
@@ -827,14 +800,13 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		RefPtr<ITransaction> next;
 		YTransaction* sub;
 		bool limbo;
 		HandleArray<YBlob> childBlobs;
 		Array<CleanupCallback*> cleanupHandlers;
 	};
 
-	class YBlob : public YHelper<IBlob, FB_I_BLOB_VERSION>
+	class YBlob : public YHelper<YBlob, IBlob, FB_I_BLOB_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_segstr_handle;
@@ -844,23 +816,6 @@ namespace
 		void destroy();
 
 		// IBlob implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 		virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, void* buffer);
@@ -872,10 +827,9 @@ namespace
 	public:
 		YAttachment* attachment;
 		YTransaction* transaction;
-		RefPtr<IBlob> next;
 	};
 
-	class YStatement : public YHelper<IStatement, FB_I_STATEMENT_VERSION>
+	class YStatement : public YHelper<YStatement, IStatement, FB_I_STATEMENT_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
@@ -885,22 +839,6 @@ namespace
 		void destroy();
 
 		// IStatement implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
 
 		void checkPrepared() const
 		{
@@ -927,7 +865,6 @@ namespace
 
 	public:
 		YAttachment* attachment;
-		RefPtr<IStatement> next;
 		FB_API_HANDLE* userHandle;
 		bool prepared;
 	};
@@ -948,14 +885,14 @@ namespace
 		Mutex enterMutex;
 	};
 
-	class YAttachment : public YHelper<IAttachment, FB_I_ATTACHMENT_VERSION>, public EnterCount
+	class YAttachment : public YHelper<YAttachment, IAttachment, FB_I_ATTACHMENT_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
 		explicit YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
-			: provider(aProvider),
-			  next(aNext),
+			: YHelper(aNext),
+			  provider(aProvider),
 			  dbPath(getPool(), aDbPath),
 			  childBlobs(getPool()),
 			  childEvents(getPool()),
@@ -978,23 +915,6 @@ namespace
 		void buildPrepareInfo(UCHAR** ptr);
 
 		// IAttachment implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
 			const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
 		virtual YTransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength,
@@ -1033,7 +953,6 @@ namespace
 
 	public:
 		IProvider* provider;
-		RefPtr<IAttachment> next;
 		PathName dbPath;
 		HandleArray<YBlob> childBlobs;
 		HandleArray<YEvents> childEvents;
@@ -1044,14 +963,14 @@ namespace
 		StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 	};
 
-	class YService : public YHelper<IService, FB_I_SERVICE_VERSION>, public EnterCount
+	class YService : public YHelper<YService, IService, FB_I_SERVICE_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
 		explicit YService(IProvider* aProvider, IService* aNext)
-			: provider(aProvider),
-			  next(aNext)
+			: YHelper(aNext),
+			  provider(aProvider)
 		{
 			provider->addRef();
 			handle = makeHandle(&services, this);
@@ -1066,23 +985,6 @@ namespace
 		void destroy();
 
 		// IService implementation
-		virtual int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				if (next)
-				{
-					next = NULL;
-					destroy();
-				}
-
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
 		virtual void FB_CARG detach(IStatus* status);
 		virtual void FB_CARG query(IStatus* status,
 			unsigned int sendLength, const unsigned char* sendItems,
@@ -1093,7 +995,6 @@ namespace
 
 	public:
 		IProvider* provider;
-		RefPtr<IService> next;
 	};
 
 	class Dispatcher : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
@@ -1192,7 +1093,7 @@ namespace
 		RefPtr<IInterface> ref;
 		EnterCount* counter;
 	};
-}	// namespace
+}	// namespace Why
 
 IProvider* Why::dispatcherPtr = &dispatcher;
 
@@ -3779,6 +3680,7 @@ ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_
 
 //-------------------------------------
 
+namespace Why {
 
 IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAttachment* attachment)
 {
@@ -3796,8 +3698,8 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	: attachment(aAttachment),
-	  next(aNext),
+	: YHelper(aNext),
+	  attachment(aAttachment),
 	  callback(aCallback),
 	  deleteCallback(false)
 {
@@ -3811,11 +3713,8 @@ void YEvents::destroy()
 
 	removeHandle(&events, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YEvents::cancel(IStatus* status)
@@ -3840,8 +3739,8 @@ void YEvents::cancel(IStatus* status)
 
 
 YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
-	: attachment(aAttachment),
-	  next(aNext),
+	: YHelper(aNext),
+	  attachment(aAttachment),
 	  userHandle(NULL)
 {
 	attachment->childRequests.add(this);
@@ -3860,11 +3759,8 @@ void YRequest::destroy()
 
 	removeHandle(&requests, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YRequest::receive(IStatus* status, int level, unsigned int msgType,
@@ -3975,9 +3871,9 @@ void YRequest::free(IStatus* status)
 
 
 YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
-	: attachment(aAttachment),
-	  transaction(aTransaction),
-	  next(aNext)
+	: YHelper(aNext),
+	  attachment(aAttachment),
+	  transaction(aTransaction)
 {
 	attachment->childBlobs.add(this);
 	transaction->childBlobs.add(this);
@@ -3991,11 +3887,8 @@ void YBlob::destroy()
 
 	removeHandle(&blobs, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4094,8 +3987,8 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
-	: attachment(aAttachment),
-	  next(aNext),
+	: YHelper(aNext),
+	  attachment(aAttachment),
 	  userHandle(NULL),
 	  prepared(false)
 {
@@ -4115,11 +4008,8 @@ void YStatement::destroy()
 
 	removeHandle(&statements, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YStatement::prepare(IStatus* status, ITransaction* transaction,
@@ -4337,8 +4227,8 @@ void YStatement::free(IStatus* status, unsigned int option)
 
 
 YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
-	: attachment(aAttachment),
-	  next(aNext),
+	: YHelper(aNext),
+	  attachment(aAttachment),
 	  sub(NULL),
 	  limbo(false),
 	  childBlobs(getPool()),
@@ -4349,8 +4239,8 @@ YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
 }
 
 YTransaction::YTransaction(const Array<YTransaction*>& subTransactions)
-	: attachment(NULL),
-	  next(NULL),
+	: YHelper(NULL),
+	  attachment(NULL),
 	  sub(NULL),
 	  limbo(false),
 	  childBlobs(getPool()),
@@ -4391,11 +4281,8 @@ void YTransaction::destroy()
 
 	removeHandle(&transactions, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4734,11 +4621,8 @@ void YAttachment::destroy()
 
 	removeHandle(&attachments, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 // Get the full database pathname and put it in the transaction description record.
@@ -5127,11 +5011,8 @@ void YService::destroy()
 {
 	removeHandle(&services, handle);
 
-	if (next)
-	{
-		next = NULL;
-		release();
-	}
+	next = NULL;
+	release();
 }
 
 void YService::detach(IStatus* status)
@@ -5637,3 +5518,5 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		gds__log_status(0, userStatus->get());
 	}
 }
+
+} // namespace Why
