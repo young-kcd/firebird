@@ -1653,6 +1653,16 @@ static USHORT parse_blr(dsql_req* request, ULONG blr_length, const UCHAR* blr,
 	count += (*blr++) << 8;
 	count /= 2;
 
+	if (count != parameters.getCount())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << "Wrong number of message parameters"
+#endif
+				  );
+	}
+
 	ULONG offset = 0;
 
 	for (USHORT index = 1; index <= count; index++)
