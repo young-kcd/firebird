@@ -708,7 +708,6 @@ public:
 	USHORT				ctx_scope_level;	// Subquery level within this request
 	USHORT				ctx_flags;			// Various flag values
 	USHORT				ctx_in_outer_join;	// req_in_outer_join when context was created
-	USHORT				ctx_hidden;			// fields cannot be resolved against this context
 	DsqlContextStack	ctx_main_derived_contexts;	// contexts used for blr_derived_expr
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
@@ -729,7 +728,6 @@ public:
 		ctx_scope_level = v.ctx_scope_level;
 		ctx_flags = v.ctx_flags;
 		ctx_in_outer_join = v.ctx_in_outer_join;
-		ctx_hidden = v.ctx_hidden;
 		ctx_main_derived_contexts.assign(v.ctx_main_derived_contexts);
 		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
 		ctx_imp_join.assign(v.ctx_imp_join);
