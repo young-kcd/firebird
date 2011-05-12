@@ -1,3 +1,42 @@
+ 2011-05-12 00:42  asfernandes 
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+Misc.
+
+ 2011-05-11 17:42  asfernandes 
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+Lets try to avoid global functions using name with mixed new (functionName) and old SUBSYS_name name style.
+
+ 2011-05-11 15:57  asfernandes 
+   M src/yvalve/why.cpp
+Fix the build.
+
+ 2011-05-11 14:45  hvlad 
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+Renamed currentProvider to EngineProvider to better reflect its nature and corrected its declaration (with Alex permission ;). Removed unneeded cast.
+
+ 2011-05-11 14:24  hvlad 
+   M src/yvalve/why.cpp
+Avoid memory leaks due to wrong reference counting.
+
+ 2011-05-11 09:56  hvlad 
+   M src/remote/server/os/win32/property.rc
+Show long version string in "Firebird Server Properties" dialog properly
+
+ 2011-05-11 09:39  hvlad 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/jrd.cpp
+Adjust order of releasing metadata objects when attachment is released. 
+It also avoids assert in MET_verify_cache() pointed privately by Alex.
+
  2011-05-11 02:43  asfernandes 
    M src/jrd/jrd.cpp
    M src/remote/server/server.cpp
