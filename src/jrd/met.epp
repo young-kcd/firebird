@@ -615,14 +615,6 @@ void MET_clear_cache(thread_db* tdbb)
 				procedure->prc_int_use_count = 0;
 			}
 		}
-
-		// Remove deallocated procedures from cache
-		for (ptr = procedures->begin(), end = procedures->end(); ptr < end; ptr++)
-		{
-			if ( (procedure = *ptr) && (procedure->prc_flags & PRC_obsolete) )
-				MET_remove_procedure(tdbb, procedure->getId(), procedure);
-		}
-
 	}
 #ifdef DEV_BUILD
 	MET_verify_cache(tdbb);
