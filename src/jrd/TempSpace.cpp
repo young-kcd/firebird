@@ -45,33 +45,8 @@ size_t TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
 
 //
-// Generic space block class
-//
-
-TempSpace::Block::Block(Block* tail, size_t length)
-	: next(NULL), size(length)
-{
-	if (tail)
-	{
-		tail->next = this;
-	}
-	prev = tail;
-}
-
-//
 // In-memory block class
 //
-
-TempSpace::MemoryBlock::MemoryBlock(MemoryPool& pool, Block* tail, size_t length)
-	: Block(tail, length)
-{
-	ptr = FB_NEW(pool) UCHAR[length];
-}
-
-TempSpace::MemoryBlock::~MemoryBlock()
-{
-	delete[] ptr;
-}
 
 size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length)
 {
@@ -96,20 +71,6 @@ size_t TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, size_t
 //
 // On-disk block class
 //
-
-TempSpace::FileBlock::FileBlock(TempFile* f, Block* tail, size_t length)
-	: Block(tail, length), file(f)
-{
-	fb_assert(file);
-
-	// FileBlock is created after file was extended by length (look at
-	// TempSpace::extend) so this FileBlock is already inside the file
-	seek = file->getSize() - length;
-}
-
-TempSpace::FileBlock::~FileBlock()
-{
-}
 
 size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
 {
@@ -137,10 +98,11 @@ size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t l
 // Constructor
 //
 
-TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix)
+TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynamic)
 		: pool(p), filePrefix(p, prefix),
 		  logicalSize(0), physicalSize(0), localCacheUsage(0),
 		  head(NULL), tail(NULL), tempFiles(p),
+		  initialBuffer(p), initiallyDynamic(dynamic),
 		  freeSegments(NULL), notUsedSegments(NULL)
 {
 	if (!tempDirs)
@@ -279,8 +241,51 @@ void TempSpace::extend(size_t size)
 
 	if (logicalSize > physicalSize)
 	{
-		size = FB_ALIGN(logicalSize - physicalSize, minBlockSize);
-		physicalSize += size;
+		const size_t initialSize = initialBuffer.getCount();
+
+		// If the dynamic mode is specified, then we allocate new blocks
+		// by growing the same initial memory block in the specified chunks.
+		// Once the limit (64KB) is reached, we switch to the generic algorithm
+		// (1MB blocks), copy the existing data there and free the initial buffer.
+		//
+		// This mode should not be used if the caller never works with small blocks.
+		// Also, it MUST NOT be used if the caller deals with inMemory() or allocateBatch()
+		// routines and caches the pointers to use them later. These pointers may become
+		// invalid after resizing the initial block or after switching to large blocks.
+
+		if (initiallyDynamic && logicalSize < MIN_TEMP_BLOCK_SIZE)
+		{
+			// allocate or extend the initial dynamic block, it will grow up to 64KB
+			if (!initialSize)
+			{
+				fb_assert(!head && !tail);
+				head = tail = FB_NEW(pool) InitialBlock(initialBuffer.getBuffer(size), size);
+			}
+			else
+			{
+				fb_assert(head == tail);
+				size += initialSize;
+				initialBuffer.resize(size);
+				new (head) InitialBlock(initialBuffer.begin(), size);
+			}
+
+			physicalSize = size;
+			return;
+		}
+
+		if (initialSize)
+		{
+			fb_assert(head == tail);
+			delete head;
+			head = tail = NULL;
+			size = FB_ALIGN(logicalSize, minBlockSize);
+			physicalSize = size;
+		}
+		else
+		{
+			size = FB_ALIGN(logicalSize - physicalSize, minBlockSize);
+			physicalSize += size;
+		}
 
 		Block* block = NULL;
 
@@ -289,7 +294,7 @@ void TempSpace::extend(size_t size)
 			try
 			{
 				// allocate block in virtual memory
-				block = FB_NEW(pool) MemoryBlock(pool, tail, size);
+				block = FB_NEW(pool) MemoryBlock(FB_NEW(pool) UCHAR[size], tail, size);
 				localCacheUsage += size;
 				globalCacheUsage += size;
 			}
@@ -306,10 +311,18 @@ void TempSpace::extend(size_t size)
 			fb_assert(file);
 			if (tail && tail->sameFile(file))
 			{
+				fb_assert(!initialSize);
 				tail->size += size;
 				return;
 			}
 			block = FB_NEW(pool) FileBlock(file, tail, size);
+		}
+
+		// preserve the initial contents, if any
+		if (initialSize)
+		{
+			block->write(0, initialBuffer.begin(), initialSize);
+			initialBuffer.free();
 		}
 
 		// append new block to the chain
@@ -578,7 +591,7 @@ bool TempSpace::validate(offset_t& free) const
 	for (size_t i = 0; i < tempFiles.getCount(); i++)
 		disk += tempFiles[i]->getSize();
 
-	return ((localCacheUsage + disk) == physicalSize);
+	return ((initialBuffer.getCount() + localCacheUsage + disk) == physicalSize);
 }
 
 

@@ -33,7 +33,7 @@
 class TempSpace : public Firebird::File
 {
 public:
-	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix);
+	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix, bool dynamic = true);
 	virtual ~TempSpace();
 
 	size_t read(offset_t offset, void* buffer, size_t length);
@@ -71,7 +71,16 @@ private:
 	class Block
 	{
 	public:
-		Block(Block* tail, size_t length);
+		Block(Block* tail, size_t length)
+			: next(NULL), size(length)
+		{
+			if (tail)
+			{
+				tail->next = this;
+			}
+			prev = tail;
+		}
+
 		virtual ~Block() {}
 
 		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
@@ -88,8 +97,14 @@ private:
 	class MemoryBlock : public Block
 	{
 	public:
-		MemoryBlock(MemoryPool& pool, Block* tail, size_t length);
-		~MemoryBlock();
+		MemoryBlock(UCHAR* memory, Block* tail, size_t length)
+			: Block(tail, length), ptr(memory)
+		{}
+
+		~MemoryBlock()
+		{
+			delete[] ptr;
+		}
 
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, const void* buffer, size_t length);
@@ -107,15 +122,37 @@ private:
 			return false;
 		}
 
-	private:
+	protected:
 		UCHAR* ptr;
+	};
+
+	class InitialBlock : public MemoryBlock
+	{
+	public:
+		InitialBlock(UCHAR* memory, size_t length)
+			: MemoryBlock(memory, NULL, length)
+		{}
+
+		~InitialBlock()
+		{
+			ptr = NULL;
+		}
 	};
 
 	class FileBlock : public Block
 	{
 	public:
-		FileBlock(Firebird::TempFile* file, Block* tail, size_t length);
-		~FileBlock();
+		FileBlock(Firebird::TempFile* f, Block* tail, size_t length)
+			: Block(tail, length), file(f)
+		{
+			fb_assert(file);
+
+			// FileBlock is created after file was extended by length (look at
+			// TempSpace::extend) so this FileBlock is already inside the file
+			seek = file->getSize() - length;
+		}
+
+		~FileBlock() {}
 
 		size_t read(offset_t offset, void* buffer, size_t length);
 		size_t write(offset_t offset, const void* buffer, size_t length);
@@ -164,6 +201,8 @@ private:
 	Block* head;
 	Block* tail;
 	Firebird::Array<Firebird::TempFile*> tempFiles;
+	Firebird::Array<UCHAR> initialBuffer;
+	bool initiallyDynamic;
 
 	Segment* freeSegments;
 	Segment* notUsedSegments;
