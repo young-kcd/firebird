@@ -82,9 +82,9 @@ struct bcb_repeat
 
 class BufferControl : public pool_alloc<type_bcb>
 {
-	explicit BufferControl(MemoryPool& p) :
-		bcb_bufferpool(&p),
-		bcb_memory(p)
+	explicit BufferControl(MemoryPool& p)
+		: bcb_bufferpool(&p),
+		  bcb_memory(p)
 	{
 		bcb_database = NULL;
 		QUE_INIT(bcb_in_use);
@@ -115,7 +115,7 @@ public:
 	Firebird::MemoryStats bcb_memory_stats;
 
 	// To be deleted when PAG will be not coupled with Database.
-	// Used only in CS mode when each BufferControl have one Database .
+	// Used only in CS mode when each BufferControl have one Database.
 	Database*	bcb_database;
 
 	UCharStack	bcb_memory;			// Large block partitioned into buffers
@@ -147,14 +147,14 @@ public:
 	Firebird::SyncObject	bcb_syncLRU;
 	//Firebird::SyncObject	bcb_syncPageWrite;
 
-	Firebird::Semaphore bcb_writer_sem;	// Wake up cache writer
-	Firebird::Semaphore bcb_writer_init;// Cache writer initialization
-	Firebird::Semaphore bcb_writer_fini;// Cache writer finalization
+	Firebird::Semaphore bcb_writer_sem;		// Wake up cache writer
+	Firebird::Semaphore bcb_writer_init;	// Cache writer initialization
+	Firebird::Semaphore bcb_writer_fini;	// Cache writer finalization
 #ifdef SUPERSERVER_V2
 	// the code in cch.cpp is not tested for semaphore instead event !!!
-	Firebird::Semaphore bcb_reader_sem;	// Wake up cache reader
-	Firebird::Semaphore bcb_reader_init;// Cache reader initialization
-	Firebird::Semaphore bcb_reader_fini;// Cache reader finalization
+	Firebird::Semaphore bcb_reader_sem;		// Wake up cache reader
+	Firebird::Semaphore bcb_reader_init;	// Cache reader initialization
+	Firebird::Semaphore bcb_reader_fini;	// Cache reader finalization
 
 	PageBitmap*	bcb_prefetch;		// Bitmap of pages to prefetch
 #endif
@@ -179,10 +179,10 @@ const int BCB_exclusive		= 128;	// there is only BCB in whole system
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc(BufferControl* bcb) :
-	  bdb_bcb(bcb),
-	  bdb_page(0, 0),
-	  bdb_pending_page(0, 0)
+	BufferDesc(BufferControl* bcb)
+		: bdb_bcb(bcb),
+		  bdb_page(0, 0),
+		  bdb_pending_page(0, 0)
 	{
 		bdb_lock = NULL;
 		QUE_INIT(bdb_que);
@@ -241,9 +241,11 @@ public:
 	que			bdb_lower;				// lower precedence que
 	que			bdb_higher;				// higher precedence que
 	thread_db*	bdb_exclusive;			// thread holding exclusive latch
+
 private:
-	thread_db*				bdb_io;						// thread holding io latch
+	thread_db*				bdb_io;				// thread holding io latch
 	Firebird::SyncObject	bdb_syncIO;
+
 public:
 	Firebird::AtomicCounter	bdb_ast_flags;		// flags manipulated at AST level
 	Firebird::AtomicCounter	bdb_flags;
@@ -265,7 +267,7 @@ const int BDB_writer			= 0x0004;	// someone is updating the page
 const int BDB_marked			= 0x0008;	// page has been updated
 const int BDB_must_write		= 0x0010;	// forces a write as soon as the page is released
 const int BDB_faked				= 0x0020;	// page was just allocated
-//const int BDB_merge				= 0x0040;
+//const int BDB_merge			= 0x0040;
 const int BDB_system_dirty 		= 0x0080;	// system transaction has marked dirty
 const int BDB_io_error	 		= 0x0100;	// page i/o error
 const int BDB_read_pending 		= 0x0200;	// read is pending

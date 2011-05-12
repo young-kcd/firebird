@@ -330,15 +330,13 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	if (dbb->dbb_config->getSharedCache() && !dbb->dbb_config->getSharedDatabase())
 	{
-		if (!CCH_exclusive_attachment(tdbb, level, wait_flag)) {
+		if (!CCH_exclusive_attachment(tdbb, level, wait_flag))
 			return false;
-		}
 	}
 
 	Lock* lock = dbb->dbb_lock;
-	if (!lock) {
+	if (!lock)
 		return false;
-	}
 
 	dbb->dbb_flags |= DBB_exclusive;
 
@@ -346,16 +344,12 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	{
 	case LCK_PW:
 		if (lock->lck_physical >= LCK_PW || LCK_convert(tdbb, lock, LCK_PW, wait_flag))
-		{
 			return true;
-		}
 		break;
 
 	case LCK_EX:
 		if (lock->lck_physical == LCK_EX || LCK_convert(tdbb, lock, LCK_EX, wait_flag))
-		{
 			return true;
-		}
 		break;
 
 	default:
@@ -369,9 +363,8 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	// If we are supposed to wait (presumably patiently),
 	// but can't get the lock, generate an error
 
-	if (wait_flag == LCK_WAIT) {
+	if (wait_flag == LCK_WAIT)
 		ERR_post(Arg::Gds(isc_deadlock));
-	}
 
 	dbb->dbb_flags &= ~DBB_exclusive;
 
@@ -399,14 +392,12 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 	Database* dbb = tdbb->getDatabase();
 	Sync dsGuard(&dbb->dbb_sync, "CCH_exclusive_attachment");
 	const bool exLock = dbb->dbb_sync.ourExclusiveLock();
-	if (!exLock) {
+	if (!exLock)
 		dsGuard.lock(SYNC_SHARED);
-	}
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	if (attachment->att_flags & ATT_exclusive) {
+	if (attachment->att_flags & ATT_exclusive)
 		return true;
-	}
 
 	attachment->att_flags |= (level == LCK_none) ? ATT_attach_pending : ATT_exclusive_pending;
 
@@ -686,39 +677,32 @@ pag* CCH_fetch(thread_db* tdbb, WIN* window, int lock_type, SCHAR page_type, int
 	if (window->win_flags & WIN_large_scan)
 	{
 		if (lockState == lsLocked || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
-		{
 			bdb->bdb_scan_count = window->win_scans;
-		}
 	}
 	else if (window->win_flags & WIN_garbage_collector)
 	{
-		if (lockState == lsLocked) {
+		if (lockState == lsLocked)
 			bdb->bdb_scan_count = -1;
-		}
-		if (bdb->bdb_flags & BDB_garbage_collect) {
+
+		if (bdb->bdb_flags & BDB_garbage_collect)
 			window->win_flags |= WIN_garbage_collect;
-		}
 	}
 	else if (window->win_flags & WIN_secondary)
 	{
-		if (lockState == lsLocked) {
+		if (lockState == lsLocked)
 			bdb->bdb_scan_count = -1;
-		}
 	}
 	else
 	{
 		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect) {
+		if (bdb->bdb_flags & BDB_garbage_collect)
 			bdb->bdb_flags &= ~BDB_garbage_collect;
-		}
 	}
 
 	// Validate the fetched page matches the expected type
 
 	if (bdb->bdb_buffer->pag_type != page_type && page_type != pag_undefined)
-	{
 		page_validation_error(tdbb, window, page_type);
-	}
 
 	return window->win_buffer;
 }
@@ -760,9 +744,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 	// if there has been a shadow added recently, go out and
 	// find it before we grant any more write locks
 
-	if (dbb->dbb_ast_flags & DBB_get_shadows) {
+	if (dbb->dbb_ast_flags & DBB_get_shadows)
 		SDW_get_shadows(tdbb);
-	}
 
 	// Look for the page in the cache.
 	Jrd::Attachment* attachment = tdbb->getAttachment();
@@ -770,7 +753,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 	if (!attachment->backupStateReadLock(tdbb, wait))
 		return lsLockTimeout;
 
-	BufferDesc* bdb = get_buffer(tdbb, window->win_page, ((lock_type >= LCK_write) ? SYNC_EXCLUSIVE : SYNC_SHARED), wait);
+	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
+		((lock_type >= LCK_write) ? SYNC_EXCLUSIVE : SYNC_SHARED), wait);
 
 	if (wait != 1 && bdb == 0)
 	{
@@ -778,9 +762,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 		return lsLatchTimeout;		// latch timeout
 	}
 
-	if (lock_type >= LCK_write) {
+	if (lock_type >= LCK_write)
 		bdb->bdb_flags |= BDB_writer;
-	}
 
 	window->win_bdb = bdb;
 	window->win_buffer = bdb->bdb_buffer;
@@ -788,9 +771,8 @@ LockState CCH_fetch_lock(thread_db* tdbb, WIN* window, int lock_type, int wait, 
 	// lock_buffer returns 0 or 1 or -1.
 	const LockState lock_result = lock_buffer(tdbb, bdb, wait, page_type);
 
-	if (lock_result == lsLockTimeout) {
+	if (lock_result == lsLockTimeout)
 		attachment->backupStateReadUnLock(tdbb);
-	}
 
 	return lock_result;
 }
@@ -965,18 +947,13 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 	BufferDesc* bdb = window->win_bdb;
 	Database* dbb = tdbb->getDatabase();
 
-	if (window->win_page != bdb->bdb_page ||
-		bdb->bdb_buffer->pag_type != pag_undefined)
-	{
-		// buffer was reassigned or page was reused
-		return;
-	}
+	if (window->win_page != bdb->bdb_page || bdb->bdb_buffer->pag_type != pag_undefined)
+		return;	// buffer was reassigned or page was reused
 
 	window->win_bdb = NULL;
 
-	if (bdb->bdb_flags & BDB_io_error)  {
+	if (bdb->bdb_flags & BDB_io_error)
 		dbb->dbb_flags &= ~DBB_suspend_bgio;
-	}
 
 	clear_dirty_flag(tdbb, bdb);
 	bdb->bdb_flags = 0;
@@ -988,9 +965,8 @@ void CCH_forget_page(thread_db* tdbb, WIN* window)
 	QUE_DELETE(bdb->bdb_que);
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
 
-	if (tdbb->tdbb_flags & TDBB_no_cache_unwind) {
+	if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
 		bdb->release(tdbb);
-	}
 }
 
 
@@ -1099,26 +1075,20 @@ void CCH_fini(thread_db* tdbb)
 		}
 
 		while (bcb->bcb_memory.hasData())
-		{
 			bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());
-		}
 
 		}	// try
 		catch (const Firebird::Exception& ex)
 		{
 			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-			if (!flush_error) {
+			if (!flush_error)
 				flush_error = true;
-			}
-			else {
+			else
 				ERR_punt();
-			}
 		}
 
-		if (!flush_error) {
-			// wasn't set in the catch => no failure, just exit
-			break;
-		}
+		if (!flush_error)
+			break;	// wasn't set in the catch => no failure, just exit
 	} // for
 
 	BufferControl::destroy(bcb);
@@ -1168,13 +1138,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		}
 		else
 #endif
-
 			flushDirty(tdbb, transaction_mask, sys_only, status);
 	}
 	else
-	{
 		flushAll(tdbb, flush_flag);
-	}
 
 	//
 	// Check if flush needed
@@ -1253,9 +1220,7 @@ void CCH_flush_ast(thread_db* tdbb)
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	if (bcb->bcb_flags & BCB_exclusive)
-	{
 		CCH_flush(tdbb, FLUSH_ALL, 0);
-	}
 	else
 	{
 		// Do some fancy footwork to make sure that pages are
@@ -1271,9 +1236,8 @@ void CCH_flush_ast(thread_db* tdbb)
 				down_grade(tdbb, bdb);
 		}
 
-		if (!keep_pages) {
+		if (!keep_pages)
 			bcb->bcb_flags &= ~BCB_keep_pages;
-		}
 	}
 }
 
@@ -1302,12 +1266,13 @@ bool CCH_free_page(thread_db* tdbb)
 	}
 
 	BufferDesc* bdb;
-	if (bcb->bcb_flags & BCB_free_pending && (bdb = get_buffer(tdbb, FREE_PAGE, SYNC_SHARED /*LATCH_none*/, 1)))
+
+	if ((bcb->bcb_flags & BCB_free_pending) &&
+		(bdb = get_buffer(tdbb, FREE_PAGE, SYNC_SHARED /*LATCH_none*/, 1)))
 	{
 		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
-		{
 			CCH_unwind(tdbb, false);
-		}
+
 		return true;
 	}
 
