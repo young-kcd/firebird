@@ -2355,6 +2355,12 @@ static USHORT parse_blr(USHORT blr_length,
 	count += (*blr++) << 8;
 	count /= 2;
 
+	if (count != parameters.getCount())
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
+	}
+
 	USHORT offset = 0;
 	for (USHORT index = 1; index <= count; index++)
 	{
