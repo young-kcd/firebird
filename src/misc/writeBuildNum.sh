@@ -8,7 +8,7 @@ BuildVersion="$Id: writeBuildNum.sh,v 1.12740.2.40 2010-03-23 14:10:00 dimitr Ex
 BuildType=V
 MajorVer=2
 MinorVer=0
-RevNo=6
+RevNo=7
 BuildNum=13302
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
