@@ -1,3 +1,20 @@
+ 2011-05-12 14:51  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3477: Passing non-existing SQL parameters always crash server.
+
+ 2011-05-12 09:37  dimitr 
+   M src/jrd/TempSpace.cpp
+   M src/jrd/TempSpace.h
+   M src/jrd/rse.cpp
+   M src/jrd/sort.cpp
+Reduced memory usage for CORE-3457: Optimize the temporary space manager regarding small chunk allocations.
+
+ 2011-05-12 08:34  dimitr 
+   M src/dsql/dsql.h
+   M src/dsql/pass1.cpp
+Rolled back the patch for CORE-2812 (Prohibit any improper mixture of explicit and implicit joins) because of being too radical for the point release and because of the found issues that require further investigation. The proper solution will be developed for v3.0 only.
+This fixes the related regressions CORE-3395 and CORE-3474 reported against v2.5.1.
+
  2011-05-10 13:29  mapopa 
    M src/jrd/common.h
    M src/jrd/pag.cpp
