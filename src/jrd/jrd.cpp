@@ -435,9 +435,9 @@ namespace
 	{
 	public:
 		AttachmentHolder(thread_db* tdbb, JAttachment* ja, bool lockAsync)
-		  : mutex(ja->getMutex(lockAsync)),
-			attachment(ja->getHandle()),
-			async(lockAsync)
+			: mutex(ja->getMutex(lockAsync)),
+			  attachment(ja->getHandle()),
+			  async(lockAsync)
 		{
 			mutex->enter();
 
@@ -594,9 +594,8 @@ void Trigger::compile(thread_db* tdbb)
 					statement->release(tdbb);
 					statement = NULL;
 				}
-				else {
+				else
 					att->deletePool(new_pool);
-				}
 
 				throw;
 			}
@@ -1342,7 +1341,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				}
 
 				options.setBuffers(dbb->dbb_config);
-				CCH_init(tdbb, options.dpb_buffers, config->getSharedCache() && !config->getSharedDatabase());
+				CCH_init(tdbb, options.dpb_buffers,
+					config->getSharedCache() && !config->getSharedDatabase());
 
 				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
 
@@ -2438,7 +2438,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
 
 			options.setBuffers(dbb->dbb_config);
-			CCH_init(tdbb, options.dpb_buffers, config->getSharedCache() && !config->getSharedDatabase());
+			CCH_init(tdbb, options.dpb_buffers,
+				config->getSharedCache() && !config->getSharedDatabase());
 
 #ifdef WIN_NT
 			dbb->dbb_filename.assign(first_dbb_file->fil_string);
@@ -4815,7 +4816,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	Database* dbb = tdbb->getDatabase();
 	Jrd::Attachment* att= tdbb->getAttachment();
 
-	//if (dbb->dbb_sync->hasContention())
+	///if (dbb->dbb_sync->hasContention())
 	{
 		Jrd::Attachment::Checkout cout(att);
 		THREAD_YIELD();
@@ -4922,7 +4923,7 @@ static void check_database(thread_db* tdbb)
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	// hvlad: i think the check below is unnecessary as attachment pointer is
-	// already validated at AttachmentHolder. If i'm wrong and check is must be
+	// already validated at AttachmentHolder. If I'm wrong and check is must be
 	// then it should be moved into AttachmentHolder or even into
 	// DatabaseContexHolder to not lock dbb_sync with attachment mutex locked.
 	//
@@ -4970,6 +4971,7 @@ static void check_database(thread_db* tdbb)
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
 	{
 		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, "check_database");
+
 		if (dbb->dbb_ast_flags & DBB_monitor_off)
 		{
 			dbb->dbb_ast_flags &= ~DBB_monitor_off;
@@ -5821,8 +5823,9 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 					EXT_fini(relation, false);
 				}
 
-				for (IndexBlock* index_block = relation->rel_index_blocks; index_block;
-					index_block = index_block->idb_next)
+				for (IndexBlock* index_block = relation->rel_index_blocks;
+					 index_block;
+					 index_block = index_block->idb_next)
 				{
 					if (index_block->idb_lock)
 						LCK_release(tdbb, index_block->idb_lock);

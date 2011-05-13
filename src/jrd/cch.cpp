@@ -1371,7 +1371,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 	BufferDesc *bdb = window->win_bdb;
 
 	// unmark
-	if ((bdb->bdb_writers == 1) && (bdb->bdb_flags & BDB_marked))
+	if (bdb->bdb_writers == 1 && (bdb->bdb_flags & BDB_marked))
 	{
 		bdb->bdb_flags &= ~BDB_marked;
 		bdb->unLockIO(tdbb);
@@ -1382,9 +1382,9 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 
 	if ((window->win_page.getPageNum() == page) && (lock == LCK_read))
 	{
-		if (bdb->ourExclusiveLock()) {
+		if (bdb->ourExclusiveLock())
 			bdb->downgrade(SYNC_SHARED);
-		}
+
 		return window->win_buffer;
 	}
 
@@ -1419,17 +1419,15 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 	else
 		CCH_RELEASE(tdbb, &temp);
 
-	if (must_read != lsLockedHavePage) {
+	if (must_read != lsLockedHavePage)
 		CCH_fetch_page(tdbb, window, true);
-	}
 
 	bdb = window->win_bdb;
 
 	if (lock != LCK_write && must_read != lsLockedHavePage)
 	{
-		if (bdb->ourExclusiveLock()) {
+		if (bdb->ourExclusiveLock())
 			bdb->downgrade(SYNC_SHARED);
-		}
 	}
 
 	// If a page was read or prefetched on behalf of a large scan
@@ -1443,31 +1441,26 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 	if (window->win_flags & WIN_large_scan)
 	{
 		if (must_read == lsLocked || bdb->bdb_flags & BDB_prefetch || bdb->bdb_scan_count < 0)
-		{
 			bdb->bdb_scan_count = window->win_scans;
-		}
 	}
 	else if (window->win_flags & WIN_garbage_collector)
 	{
-		if (must_read == lsLocked) {
+		if (must_read == lsLocked)
 			bdb->bdb_scan_count = -1;
-		}
-		if (bdb->bdb_flags & BDB_garbage_collect) {
+
+		if (bdb->bdb_flags & BDB_garbage_collect)
 			window->win_flags |= WIN_garbage_collect;
-		}
 	}
 	else if (window->win_flags & WIN_secondary)
 	{
-		if (must_read == lsLocked) {
+		if (must_read == lsLocked)
 			bdb->bdb_scan_count = -1;
-		}
 	}
 	else
 	{
 		bdb->bdb_scan_count = 0;
-		if (bdb->bdb_flags & BDB_garbage_collect) {
+		if (bdb->bdb_flags & BDB_garbage_collect)
 			bdb->bdb_flags &= ~BDB_garbage_collect;
-		}
 	}
 
 	// Validate the fetched page matches the expected type
@@ -1520,7 +1513,8 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 	BufferControl* bcb = BufferControl::create();
 	while (true)
 	{
-		try {
+		try
+		{
 			bcb->bcb_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
 			break;
 		}
@@ -1682,10 +1676,8 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 	bdb->bdb_flags |= newFlags;
 	set_dirty_flag(tdbb, bdb);
 
-	if (!(tdbb->tdbb_flags & TDBB_sweeper) || bdb->bdb_flags & BDB_system_dirty)
-	{
+	if (!(tdbb->tdbb_flags & TDBB_sweeper) || (bdb->bdb_flags & BDB_system_dirty))
 		insertDirty(dbb, bcb, bdb);
-	}
 
 	set_diff_page(tdbb, bdb);
 	bdb->bdb_flags |= BDB_marked;
@@ -1729,12 +1721,12 @@ void CCH_precedence(thread_db* tdbb, WIN* window, ULONG pageNum)
 
 void CCH_tra_precedence(thread_db* tdbb, WIN* window, SLONG traNum)
 {
-/*
+	/*
 	if (traNum <= tdbb->getDatabase()->dbb_last_header_write)
 	{
 		return;
 	}
-*/
+	*/
 	check_precedence(tdbb, window, PageNumber(TRANS_PAGE_SPACE, traNum));
 }
 
@@ -1971,14 +1963,13 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 
 //	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1)
 	if (bdb->bdb_writers == 1 ||
-		bdb->bdb_writers == 0 && (bdb->bdb_flags & BDB_must_write))
+		(bdb->bdb_writers == 0 && (bdb->bdb_flags & BDB_must_write)))
 	{
 		const bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);
 
-		if (marked) {
+		if (marked)
 			bdb->unLockIO(tdbb);
-		}
 
 		if (bdb->bdb_flags & BDB_must_write)
 		{
@@ -1986,6 +1977,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 			// to page during I/O.
 
 			bdb->downgrade(SYNC_SHARED);
+
 			if (!write_buffer(tdbb, bdb, bdb->bdb_page, false, tdbb->tdbb_status_vector, true))
 			{
 				insertDirty(dbb, bcb, bdb);
@@ -2150,7 +2142,7 @@ void CCH_shutdown_database(Database* dbb)
 		}
 	}
 
-//	if (!(bcb->bcb_flags & BCB_exclusive))
+	///if (!(bcb->bcb_flags & BCB_exclusive))
 	{
 		PageSpace* pageSpaceID = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		PIO_close(pageSpaceID->file);
@@ -2212,7 +2204,8 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 				bdb->unLockIO(tdbb);
 		}
 	}
-/**
+
+	/***
 	bcb_repeat* tail = bcb->bcb_rpt;
 	for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; tail++)
 	{
@@ -2258,10 +2251,10 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 		}
 #endif
 	}
-**/
-	if (punt) {
+	***/
+
+	if (punt)
 		ERR_punt();
-	}
 }
 
 
@@ -2518,7 +2511,7 @@ static int blocking_ast_bdb(void* ast_object)
 
 	try
 	{
-		BufferControl *bcb = bdb->bdb_bcb;
+		BufferControl* bcb = bdb->bdb_bcb;
 		fb_assert(!(bcb->bcb_flags & BCB_exclusive));
 
 		Database* dbb = bcb->bcb_database;
@@ -2821,7 +2814,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	// LCK_init fails we won't be able to accomplish anything anyway, so
 	// return, unlike the other try blocks further down the page.
 
-	BufferControl* bcb = 0;
+	BufferControl* bcb = NULL;
 
 	try {
 
@@ -2964,7 +2957,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *	deems it necessary.
  *
  **************************************/
-/***
+
+	/***
 	Database* dbb = (Database*)arg;
 	Database::SyncGuard dsGuard(dbb);
 
@@ -3005,13 +2999,12 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
-***/
-
+	***/
 
 	ISC_STATUS_ARRAY status_vector = {0};
 	Jrd::Attachment* attachment= NULL;
-	{
 
+	{
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 		bcb->bcb_writer_init.release();
@@ -3049,7 +3042,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 	Semaphore& writer_sem = bcb->bcb_writer_sem;
 
-	try {
+	try
+	{
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
 			bcb->bcb_flags |= BCB_writer_active;
@@ -3131,23 +3125,24 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				writer_sem.tryEnter(10);
 			}
 		}
-/**
+
+		/***
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 		Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
-**/
+		***/
 		jrd8_detach_database(status_vector, &attachment);
 
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		// Notify the finalization caller that we're finishing.
 		bcb->bcb_writer_fini.release();
-
-	}	// try
+	}
 	catch (const Firebird::Exception& ex)
 	{
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 	}
+
 	return 0;
 }
 #endif
@@ -3395,7 +3390,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	bdb->bdb_ast_flags |= BDB_blocking;
 	Lock* lock = bdb->bdb_lock;
 	Database* dbb = tdbb->getDatabase();
-	BufferControl *bcb = bdb->bdb_bcb;
+	BufferControl* bcb = bdb->bdb_bcb;
 
 	if (dbb->dbb_flags & DBB_bugcheck)
 	{
@@ -3593,8 +3588,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 
 	const bcb_repeat* const old_end = bcb->bcb_rpt + bcb->bcb_count;
 
-	bcb_repeat *new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
-	bcb_repeat *old_rpt = bcb->bcb_rpt;
+	bcb_repeat* new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
+	bcb_repeat* old_rpt = bcb->bcb_rpt;
 	bcb->bcb_rpt = new_rpt;
 
 	bcb->bcb_count = number;
@@ -4114,7 +4109,7 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
  *  low pages numbers into array.
  *
  **************************************/
-	BufferControl *bcb = bdb->bdb_bcb;
+	BufferControl* bcb = bdb->bdb_bcb;
 	fb_assert(bcb->bcb_syncPrecedence.ourExclusiveLock());
 
 	const struct que* base = &bdb->bdb_lower;
@@ -4173,7 +4168,8 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
 }
 
 
-static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait, const SCHAR page_type)
+static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait,
+	const SCHAR page_type)
 {
 /**************************************
  *
@@ -4634,20 +4630,20 @@ static void prefetch_prologue(Prefetch* prefetch, SLONG* start_page)
 
 	BufferDesc** next_bdb = prefetch->prf_bdbs;
 	for (USHORT i = 0; i < prefetch->prf_max_prefetch; i++)
-			{
+	{
 		*next_bdb = 0;
 		if (SBM_clear(bcb->bcb_prefetch, *start_page) &&
 			(*next_bdb = get_buffer(tdbb, *start_page, LATCH_shared, 0)))
 		{
-			if ((*next_bdb)->bdb_flags & BDB_read_pending) {
+			if ((*next_bdb)->bdb_flags & BDB_read_pending)
 				prefetch->prf_page_count = i + 1;
-			}
 			else
 			{
 				release_bdb(tdbb, *next_bdb, true, false, false);
 				*next_bdb = 0;
+			}
 		}
-	}
+
 		next_bdb++;
 		(*start_page)++;
 	}
@@ -5198,7 +5194,7 @@ void recentlyUsed(BufferDesc* bdb)
 
 void requeueRecentlyUsed(BufferControl* bcb)
 {
-	volatile BufferDesc *chain = NULL;
+	volatile BufferDesc* chain = NULL;
 
 	// Let's pick up the LRU pending chain, if any
 
@@ -5214,8 +5210,8 @@ void requeueRecentlyUsed(BufferControl* bcb)
 
 	// Next, let's flip the order
 
-	BufferDesc *bdb;
-	BufferDesc *reversed = NULL;
+	BufferDesc* reversed = NULL;
+	BufferDesc* bdb;
 
 	while (bdb = (BufferDesc*) chain)
 	{
@@ -5319,15 +5315,13 @@ void BufferDesc::release(thread_db* tdbb)
 
 	if (bdb_writers)
 	{
-		if (--bdb_writers == 0) {
+		if (--bdb_writers == 0)
 			bdb_exclusive = NULL;
-		}
+
 		bdb_syncPage.unlock(NULL, SYNC_EXCLUSIVE);
 	}
 	else
-	{
 		bdb_syncPage.unlock(NULL, SYNC_SHARED);
-	}
 }
 
 
@@ -5351,9 +5345,8 @@ void BufferDesc::unLockIO(thread_db* tdbb)
 
 	--bdb_use_count;
 	bdb_io->clearBdb(this);
-	if (--bdb_io_locks == 0) {
+	if (--bdb_io_locks == 0)
 		bdb_io = NULL;
-	}
 
 	bdb_syncIO.unlock(NULL, SYNC_EXCLUSIVE);
 }
