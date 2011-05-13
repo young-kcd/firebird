@@ -128,7 +128,7 @@ public:
 	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
 #ifdef _WIN64
-		return (_InterlockedCompareExchangePointer((PVOID volatile*) &pointer, newVal, oldVal) == oldVal);
+		return (_InterlockedCompareExchangePointer(&pointer, newVal, oldVal) == oldVal);
 #else
 		//return (InterlockedCompareExchangePointer((PVOID volatile*) &pointer, newVal, oldVal) == oldVal);
 		return ((PVOID)(LONG_PTR) _InterlockedCompareExchange((LONG volatile*) &pointer, (LONG) newVal, (LONG) oldVal)) == oldVal;
@@ -136,7 +136,7 @@ public:
 	}
 
 private:
-	volatile void* pointer;
+	void* volatile pointer;
 };
 
 } // namespace Firebird
@@ -432,7 +432,7 @@ public:
 	}
 
 private:
-	volatile void* pointer;
+	void* volatile pointer;
 };
 
 } // namespace Firebird
