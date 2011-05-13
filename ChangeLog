@@ -1,3 +1,8 @@
+ 2011-05-12 09:01  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Updated the version string.
+
  2011-05-04 23:00  asfernandes 
    M src/isql/isql.epp
 Backported fix for CORE-1782 - ISQL crashes when fetching data for a column having alias longer than 30 characters.
