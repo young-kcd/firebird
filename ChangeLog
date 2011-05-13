@@ -1,3 +1,20 @@
+ 2011-05-13 01:23  asfernandes 
+   M src/common/classes/fb_atomic.h
+Correction.
+
+ 2011-05-13 01:15  asfernandes 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Misc.
+
+ 2011-05-12 14:56  dimitr 
+   M src/dsql/dsql.cpp
+Fixed CORE-3477: Passing non-existing SQL parameters always crash server.
+
+ 2011-05-12 08:45  dimitr 
+   M src/jrd/met.epp
+Front-ported CORE-3314: Dependencies are not removed after dropping the procedure and the table it depends on in the same transaction.
+
  2011-05-12 00:42  asfernandes 
    M src/jrd/cch.cpp
    M src/jrd/cch.h
