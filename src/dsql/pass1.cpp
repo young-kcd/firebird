@@ -4252,7 +4252,8 @@ static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, dsql_nod* in
 			RseNode* rseNode;
 			UnionSourceNode* unionNode;
 
-			if ((rseNode = ExprNode::as<RseNode>(input)) && !rseNode->dsqlExplicitJoin)
+			if ((rseNode = ExprNode::as<RseNode>(input)) && !rseNode->dsqlExplicitJoin &&
+				!rseNode->dsqlContext)	// not derived table
 			{
 				pass1_union_auto_cast(dsqlScratch, rseNode->dsqlStreams, desc, position);
 
