@@ -1,3 +1,15 @@
+ 2011-05-14 02:49  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed crash with nested unions, reported by Vlad.
+SELECT 'a' FROM RDB$DATABASE
+UNION ALL
+SELECT X FROM
+ (
+   SELECT 'b' AS X FROM RDB$DATABASE
+   UNION ALL
+   SELECT 'c' FROM RDB$DATABASE
+ ) AS T;
+
  2011-05-13 01:23  asfernandes 
    M src/common/classes/fb_atomic.h
 Correction.
