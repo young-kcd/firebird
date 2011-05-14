@@ -37,7 +37,7 @@
 
 namespace Firebird {
 
-#define SYNC_LOG_DEBUG
+inline void SYNC_LOG_DEBUG(...) {}
 
 enum SyncType {
 	SYNC_NONE,
