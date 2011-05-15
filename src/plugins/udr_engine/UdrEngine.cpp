@@ -36,6 +36,7 @@
 #include "../common/os/mod_loader.h"
 #include "../common/os/path_utils.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/StatusHolder.h"
 
 
 namespace Firebird
@@ -130,7 +131,7 @@ public:
 	}
 
 public:
-	void loadModule(const string& str, PathName* moduleName, string* entryPoint, string* info);
+	void loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
 		GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children, SharedObjType* sharedObj,
 		ExternalContext* context, NodeType* nodes, SortedArray<SharedObjType*>& sharedObjs,
@@ -138,12 +139,12 @@ public:
 	template <typename ObjType> void deleteChildren(
 		GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children);
 
-	template <typename T, typename T2> T* findNode(T* nodes, const PathName& moduleName,
-		T2* metaInfo);
+	template <typename T> T* findNode(T* nodes, const PathName& moduleName,
+		const string& entryPoint);
 
 private:
-	template <typename T, typename T2, typename T3> T2* getNode(T* nodes, const PathName& moduleName,
-		T3* metaInfo);
+	template <typename T, typename T2> T2* getNode(T* nodes, const PathName& moduleName,
+		const IRoutineMetadata* metadata, const string& entryPoint);
 
 public:
 	virtual int FB_CALL getVersion(Error* error);
@@ -151,12 +152,11 @@ public:
 	virtual void FB_CALL openAttachment(Error* error, ExternalContext* context);
 	virtual void FB_CALL closeAttachment(Error* error, ExternalContext* context);
 	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
-		const char* package, const char* name, const char* entryPoint, const char* body);
+		const IRoutineMetadata* metadata);
 	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
-		const char* package, const char* name, const char* entryPoint, const char* body);
+		const IRoutineMetadata* metadata);
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
-		const char* name, const char* entryPoint, const char* body, const char* table,
-		ExternalTrigger::Type type);
+		const IRoutineMetadata* metadata);
 
 public:
 	virtual void FB_CALL dispose(Error* error);
@@ -205,25 +205,16 @@ static TriggerNode* registeredTriggers = NULL;
 class SharedFunction : public ExternalFunction
 {
 public:
-	SharedFunction(Engine* aEngine, const string& aPackage, const string& aName,
-				const string& aEntryPoint, const string& aBody)
+	SharedFunction(Engine* aEngine, const IRoutineMetadata* aMetadata)
 		: engine(aEngine),
-		  package(*getDefaultMemoryPool(), aPackage),
-		  name(*getDefaultMemoryPool(), aName),
-		  entryPoint(*getDefaultMemoryPool()),
-		  body(*getDefaultMemoryPool(), aBody),
+		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
+		  entryPoint(*getDefaultMemoryPool()),
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(aEntryPoint, &moduleName, &entryPoint, &info);
-		metaInfo.package = package.nullStr();
-		metaInfo.name = name.c_str();
-		metaInfo.entryPoint = entryPoint.c_str();
-		metaInfo.body = body.c_str();
-		metaInfo.info = info.c_str();
-
-		engine->findNode<FunctionNode, MetaInfo>(registeredFunctions, moduleName, &metaInfo);
+		engine->loadModule(metadata, &moduleName, &entryPoint);
+		engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
 	}
 
 	virtual ~SharedFunction()
@@ -266,13 +257,10 @@ public:
 	}
 
 public:
-	MetaInfo metaInfo;
 	Engine* engine;
-	string package;
-	string name;
-	string entryPoint;
-	string body;
+	const IRoutineMetadata* metadata;
 	PathName moduleName;
+	string entryPoint;
 	string info;
 	GenericMap<Pair<NonPooled<ExternalContext*, ExternalFunction*> > > children;
 };
@@ -284,25 +272,15 @@ public:
 class SharedProcedure : public ExternalProcedure
 {
 public:
-	SharedProcedure(Engine* aEngine, const string& aPackage, const string& aName,
-				const string& aEntryPoint, const string& aBody)
+	SharedProcedure(Engine* aEngine, const IRoutineMetadata* aMetadata)
 		: engine(aEngine),
-		  package(*getDefaultMemoryPool(), aPackage),
-		  name(*getDefaultMemoryPool(), aName),
-		  entryPoint(*getDefaultMemoryPool(), aEntryPoint),
-		  body(*getDefaultMemoryPool(), aBody),
 		  moduleName(*getDefaultMemoryPool()),
+		  entryPoint(*getDefaultMemoryPool()),
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(aEntryPoint, &moduleName, &entryPoint, &info);
-		metaInfo.package = package.nullStr();
-		metaInfo.name = name.c_str();
-		metaInfo.entryPoint = entryPoint.c_str();
-		metaInfo.body = body.c_str();
-		metaInfo.info = info.c_str();
-
-		engine->findNode<ProcedureNode, MetaInfo>(registeredProcedures, moduleName, &metaInfo);
+		engine->loadModule(metadata, &moduleName, &entryPoint);
+		engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
 	}
 
 	virtual ~SharedProcedure()
@@ -352,13 +330,10 @@ public:
 	}
 
 public:
-	MetaInfo metaInfo;
 	Engine* engine;
-	string package;
-	string name;
-	string entryPoint;
-	string body;
+	const IRoutineMetadata* metadata;
 	PathName moduleName;
+	string entryPoint;
 	string info;
 	GenericMap<Pair<NonPooled<ExternalContext*, ExternalProcedure*> > > children;
 };
@@ -370,28 +345,16 @@ public:
 class SharedTrigger : public ExternalTrigger
 {
 public:
-	SharedTrigger(Engine* aEngine, const string& aName, const string& aEntryPoint,
-				const string& aBody, const string& aTable, ExternalTrigger::Type aType)
+	SharedTrigger(Engine* aEngine, const IRoutineMetadata* aMetadata)
 		: engine(aEngine),
-		  name(*getDefaultMemoryPool(), aName),
-		  entryPoint(*getDefaultMemoryPool(), aEntryPoint),
-		  body(*getDefaultMemoryPool(), aBody),
+		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
+		  entryPoint(*getDefaultMemoryPool()),
 		  info(*getDefaultMemoryPool()),
-		  table(*getDefaultMemoryPool(), aTable),
-		  type(aType),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(aEntryPoint, &moduleName, &entryPoint, &info);
-		metaInfo.package = NULL;
-		metaInfo.name = name.c_str();
-		metaInfo.entryPoint = entryPoint.c_str();
-		metaInfo.body = body.c_str();
-		metaInfo.info = info.c_str();
-		metaInfo.type = type;
-		metaInfo.table = table.nullStr();
-
-		engine->findNode<TriggerNode, TriggerMetaInfo>(registeredTriggers, moduleName, &metaInfo);
+		engine->loadModule(metadata, &moduleName, &entryPoint);
+		engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
 	}
 
 	virtual ~SharedTrigger()
@@ -434,15 +397,11 @@ public:
 	}
 
 public:
-	TriggerMetaInfo metaInfo;
 	Engine* engine;
-	string name;
-	string entryPoint;
-	string body;
+	const IRoutineMetadata* metadata;
 	PathName moduleName;
+	string entryPoint;
 	string info;
-	string table;
-	ExternalTrigger::Type type;
 	GenericMap<Pair<NonPooled<ExternalContext*, ExternalTrigger*> > > children;
 };
 
@@ -530,8 +489,12 @@ ModulesMap::~ModulesMap()
 //--------------------------------------
 
 
-void Engine::loadModule(const string& str, PathName* moduleName, string* entryPoint, string* info)
+void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint)
 {
+	LocalStatus status;
+	const string str(metadata->getEntryPoint(&status));
+	ThrowError::check(status.get());
+
 	const size_t pos = str.find('!');
 	if (pos == string::npos)
 	{
@@ -562,7 +525,6 @@ void Engine::loadModule(const string& str, PathName* moduleName, string* entryPo
 	*entryPoint = str.substr(pos + 1);
 
 	size_t n = entryPoint->find('!');
-	*info = (n == string::npos ? "" : entryPoint->substr(n + 1));
 	*entryPoint = (n == string::npos ? *entryPoint : entryPoint->substr(0, n));
 
 	MutexLockGuard guard(modulesMutex);
@@ -612,7 +574,7 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 	ObjType* obj;
 	if (!children.get(context, obj))
 	{
-		obj = getNode<NodeType, ObjType>(nodes, moduleName, &sharedObj->metaInfo);
+		obj = getNode<NodeType, ObjType>(nodes, moduleName, sharedObj->metadata, sharedObj->entryPoint);
 		if (obj)
 			children.put(context, obj);
 	}
@@ -634,11 +596,9 @@ template <typename ObjType> void Engine::deleteChildren(
 }
 
 
-template <typename T, typename T2> T* Engine::findNode(T* nodes,
-		const PathName& moduleName, T2* params)
+template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
+		const string& entryPoint)
 {
-	const string entryPoint(params->entryPoint);
-
 	for (T* node = nodes; node; node = node->next)
 	{
 		if (node->module == moduleName && entryPoint == node->factory->getName())
@@ -658,11 +618,11 @@ template <typename T, typename T2> T* Engine::findNode(T* nodes,
 }
 
 
-template <typename T, typename T2, typename T3> T2* Engine::getNode(T* nodes,
-		const PathName& moduleName, T3* params)
+template <typename T, typename T2> T2* Engine::getNode(T* nodes, const PathName& moduleName,
+		const IRoutineMetadata* metadata, const string& entryPoint)
 {
-	T* node = findNode<T, T3>(nodes, moduleName, params);
-	return node->factory->newItem(params);
+	T* node = findNode<T>(nodes, moduleName, entryPoint);
+	return node->factory->newItem(metadata);
 }
 
 
@@ -720,12 +680,11 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 
 
 ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*context*/,
-	const char* package, const char* name, const char* entryPoint, const char* body)
+	const IRoutineMetadata* metadata)
 {
 	try
 	{
-		return new SharedFunction(this, (package ? package : ""), name,
-			(entryPoint ? entryPoint : ""), (body ? body : ""));
+		return new SharedFunction(this, metadata);
 	}
 	catch (const ThrowError::Exception& e)
 	{
@@ -736,12 +695,11 @@ ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*
 
 
 ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* /*context*/,
-	const char* package, const char* name, const char* entryPoint, const char* body)
+	const IRoutineMetadata* metadata)
 {
 	try
 	{
-		return new SharedProcedure(this, (package ? package : ""), name,
-			(entryPoint ? entryPoint : ""), (body ? body : ""));
+		return new SharedProcedure(this, metadata);
 	}
 	catch (const ThrowError::Exception& e)
 	{
@@ -752,13 +710,11 @@ ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* 
 
 
 ExternalTrigger* FB_CALL Engine::makeTrigger(Error* error, ExternalContext* /*context*/,
-	const char* name, const char* entryPoint, const char* body, const char* table,
-	ExternalTrigger::Type type)
+	const IRoutineMetadata* metadata)
 {
 	try
 	{
-		return new SharedTrigger(this, name, (entryPoint ? entryPoint : ""), (body ? body : ""),
-			table, type);
+		return new SharedTrigger(this, metadata);
 	}
 	catch (const ThrowError::Exception& e)
 	{

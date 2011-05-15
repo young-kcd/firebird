@@ -503,7 +503,7 @@ public:
 	}
 
 public:
-	MetaInfo* metaInfo;
+	const IRoutineMetadata* metadata;
 };
 
 
@@ -525,7 +525,7 @@ public:
 	}
 
 public:
-	MetaInfo* metaInfo;
+	const IRoutineMetadata* metadata;
 };
 
 
@@ -547,7 +547,7 @@ public:
 	}
 
 public:
-	TriggerMetaInfo* metaInfo;
+	const IRoutineMetadata* metadata;
 };
 
 
@@ -566,10 +566,10 @@ public:
 		return name;
 	}
 
-	virtual ExternalFunction* FB_CALL newItem(MetaInfo* metaInfo)
+	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
 		Function* function = new T();
-		function->metaInfo = metaInfo;
+		function->metadata = metadata;
 		return function;
 	}
 
@@ -593,10 +593,10 @@ public:
 		return name;
 	}
 
-	virtual ExternalProcedure* FB_CALL newItem(MetaInfo* metaInfo)
+	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
 		Procedure* procedure = new T();
-		procedure->metaInfo = metaInfo;
+		procedure->metadata = metadata;
 		return procedure;
 	}
 
@@ -620,10 +620,10 @@ public:
 		return name;
 	}
 
-	virtual ExternalTrigger* FB_CALL newItem(TriggerMetaInfo* metaInfo)
+	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
 		Trigger* trigger = new T();
-		trigger->metaInfo = metaInfo;
+		trigger->metadata = metadata;
 		return trigger;
 	}
 

@@ -61,6 +61,59 @@ private:
 	template <typename T> class ContextManager;
 	class TransactionImpl;
 
+	class RoutineMetadata : public Firebird::IRoutineMetadata, public Firebird::PermanentStorage
+	{
+	public:
+		RoutineMetadata(MemoryPool& pool)
+			: PermanentStorage(pool),
+			  package(pool),
+			  name(pool),
+			  entryPoint(pool),
+			  body(pool),
+			  triggerTable(pool),
+			  triggerType(Firebird::ExternalTrigger::Type(0))
+		{
+		}
+
+		virtual const char* FB_CARG getPackage(Firebird::IStatus* /*status*/) const
+		{
+			return package.nullStr();
+		}
+
+		virtual const char* FB_CARG getName(Firebird::IStatus* /*status*/) const
+		{
+			return name.c_str();
+		}
+
+		virtual const char* FB_CARG getEntryPoint(Firebird::IStatus* /*status*/) const
+		{
+			return entryPoint.c_str();
+		}
+
+		virtual const char* FB_CARG getBody(Firebird::IStatus* /*status*/) const
+		{
+			return body.c_str();
+		}
+
+		virtual const char* FB_CARG getTriggerTable(Firebird::IStatus* /*status*/) const
+		{
+			return triggerTable.c_str();
+		}
+
+		virtual Firebird::ExternalTrigger::Type FB_CARG getTriggerType(Firebird::IStatus* /*status*/) const
+		{
+			return triggerType;
+		}
+
+	public:
+		Firebird::MetaName package;
+		Firebird::MetaName name;
+		Firebird::string entryPoint;
+		Firebird::string body;
+		Firebird::MetaName triggerTable;
+		Firebird::ExternalTrigger::Type triggerType;
+	};
+
 	class ExternalContextImpl : public Firebird::ExternalContext
 	{
 	friend class AttachmentImpl;
@@ -130,6 +183,7 @@ public:
 	public:
 		Function(thread_db* tdbb, ExtEngineManager* aExtManager,
 			Firebird::ExternalEngine* aEngine,
+			RoutineMetadata* aMetadata,
 			Firebird::ExternalFunction* aFunction,
 			const Jrd::Function* aUdf);
 		~Function();
@@ -140,6 +194,7 @@ public:
 	private:
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
+		Firebird::AutoPtr<RoutineMetadata> metadata;
 		Firebird::ExternalFunction* function;
 		const Jrd::Function* udf;
 		Database* database;
@@ -152,6 +207,7 @@ public:
 	public:
 		Procedure(thread_db* tdbb, ExtEngineManager* aExtManager,
 			Firebird::ExternalEngine* aEngine,
+			RoutineMetadata* aMetadata,
 			Firebird::ExternalProcedure* aProcedure,
 			const jrd_prc* aPrc);
 		~Procedure();
@@ -161,6 +217,7 @@ public:
 	private:
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
+		Firebird::AutoPtr<RoutineMetadata> metadata;
 		Firebird::ExternalProcedure* procedure;
 		const jrd_prc* prc;
 		Database* database;
@@ -191,6 +248,7 @@ public:
 	public:
 		Trigger(thread_db* tdbb, ExtEngineManager* aExtManager,
 			Firebird::ExternalEngine* aEngine,
+			RoutineMetadata* aMetadata,
 			Firebird::ExternalTrigger* aTrigger,
 			const Jrd::Trigger* aTrg);
 		~Trigger();
@@ -205,6 +263,7 @@ public:
 
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;
+		Firebird::AutoPtr<RoutineMetadata> metadata;
 		Firebird::ExternalTrigger* trigger;
 		const Jrd::Trigger* trg;
 		Database* database;

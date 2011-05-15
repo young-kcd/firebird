@@ -34,24 +34,6 @@ namespace Firebird
 //------------------------------------------------------------------------------
 
 
-// Metadata information passed from the UDR engine to user's routines factories when asking to
-// create routines instances.
-struct MetaInfo
-{
-	const char* package;		// package name - NULL from triggers
-	const char* name;			// metadata object name
-	const char* entryPoint;		// external routine's name
-	const char* info;			// misc. info encoded on the external name
-	const char* body;			// body text
-};
-
-struct TriggerMetaInfo : public MetaInfo
-{
-	ExternalTrigger::Type type;	// trigger type
-	const char* table;			// table name
-};
-
-
 // Factory classes. They should be singletons instances created by user's modules and
 // registered. When UDR engine is going to load a routine, it calls newItem.
 
@@ -59,21 +41,21 @@ class FunctionFactory
 {
 public:
 	virtual const char* FB_CALL getName() = 0;
-	virtual ExternalFunction* FB_CALL newItem(MetaInfo* metaInfo) = 0;
+	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 class ProcedureFactory
 {
 public:
 	virtual const char* FB_CALL getName() = 0;
-	virtual ExternalProcedure* FB_CALL newItem(MetaInfo* metaInfo) = 0;
+	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 class TriggerFactory
 {
 public:
 	virtual const char* FB_CALL getName() = 0;
-	virtual ExternalTrigger* FB_CALL newItem(TriggerMetaInfo* metaInfo) = 0;
+	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 

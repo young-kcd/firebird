@@ -286,10 +286,11 @@ void* FB_CALL ExtEngineManager::ExternalContextImpl::setInfo(int code, void* val
 
 
 ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtManager,
-		ExternalEngine* aEngine, ExternalFunction* aFunction,
+		ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalFunction* aFunction,
 		const Jrd::Function* aUdf)
 	: extManager(aExtManager),
 	  engine(aEngine),
+	  metadata(aMetadata),
 	  function(aFunction),
 	  udf(aUdf),
 	  database(tdbb->getDatabase())
@@ -384,10 +385,11 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const NestValueArray& 
 
 
 ExtEngineManager::Procedure::Procedure(thread_db* tdbb, ExtEngineManager* aExtManager,
-	    ExternalEngine* aEngine, ExternalProcedure* aProcedure,
+	    ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalProcedure* aProcedure,
 		const jrd_prc* aPrc)
 	: extManager(aExtManager),
 	  engine(aEngine),
+	  metadata(aMetadata),
 	  procedure(aProcedure),
 	  prc(aPrc),
 	  database(tdbb->getDatabase())
@@ -467,10 +469,11 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 
 
 ExtEngineManager::Trigger::Trigger(thread_db* tdbb, ExtEngineManager* aExtManager,
-			ExternalEngine* aEngine, ExternalTrigger* aTrigger,
+			ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalTrigger* aTrigger,
 			const Jrd::Trigger* aTrg)
 	: extManager(aExtManager),
 	  engine(aEngine),
+	  metadata(aMetadata),
 	  trigger(aTrigger),
 	  trg(aTrg),
 	  database(tdbb->getDatabase())
@@ -651,14 +654,19 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
 
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
+	metadata->package = udf->getName().package;
+	metadata->name = udf->getName().identifier;
+	metadata->entryPoint = entryPointTrimmed;
+	metadata->body = body;
+
 	ExternalFunction* externalFunction;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment());
 
-		externalFunction = attInfo->engine->makeFunction(RaiseError(),
-			attInfo->context, udf->getName().package.nullStr(), udf->getName().identifier.c_str(),
-			entryPointTrimmed.nullStr(), body.nullStr());
+		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata);
 
 		if (!externalFunction)
 		{
@@ -670,7 +678,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 	try
 	{
-		return FB_NEW(getPool()) Function(tdbb, this, attInfo->engine, externalFunction, udf);
+		return FB_NEW(getPool()) Function(tdbb, this, attInfo->engine, metadata.release(),
+			externalFunction, udf);
 	}
 	catch (...)
 	{
@@ -693,14 +702,19 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 			CallerName(obj_procedure, prc->getName().identifier) :
 			CallerName(obj_package_header, prc->getName().package)));
 
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
+	metadata->package = prc->getName().package;
+	metadata->name = prc->getName().identifier;
+	metadata->entryPoint = entryPointTrimmed;
+	metadata->body = body;
+
 	ExternalProcedure* externalProcedure;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment());
 
-		externalProcedure = attInfo->engine->makeProcedure(RaiseError(),
-			attInfo->context, prc->getName().package.nullStr(), prc->getName().identifier.c_str(),
-			entryPointTrimmed.nullStr(), body.nullStr());
+		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata);
 
 		if (!externalProcedure)
 		{
@@ -712,7 +726,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 
 	try
 	{
-		return FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine, externalProcedure, prc);
+		return FB_NEW(getPool()) Procedure(tdbb, this, attInfo->engine, metadata.release(),
+			externalProcedure, prc);
 	}
 	catch (...)
 	{
@@ -729,22 +744,25 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
 
-	MetaName relationNameTrimmed;
-	if (trg->relation)
-		relationNameTrimmed = trg->relation->rel_name;
-
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		CallerName(obj_trigger, trg->name));
+
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
+	metadata->name = trg->name;
+	metadata->entryPoint = entryPointTrimmed;
+	metadata->body = body;
+	metadata->triggerType = type;
+	if (trg->relation)
+		metadata->triggerTable = trg->relation->rel_name;
 
 	ExternalTrigger* externalTrigger;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment());
 
-		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context,
-			trg->name.c_str(), entryPointTrimmed.nullStr(), body.nullStr(),
-			relationNameTrimmed.c_str(), type);
+		externalTrigger = attInfo->engine->makeTrigger(RaiseError(), attInfo->context, metadata);
 
 		if (!externalTrigger)
 		{
@@ -755,7 +773,8 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 
 	try
 	{
-		return FB_NEW(getPool()) Trigger(tdbb, this, attInfo->engine, externalTrigger, trg);
+		return FB_NEW(getPool()) Trigger(tdbb, this, attInfo->engine, metadata.release(),
+			externalTrigger, trg);
 	}
 	catch (...)
 	{

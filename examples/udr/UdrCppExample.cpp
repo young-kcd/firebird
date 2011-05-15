@@ -30,6 +30,8 @@ using namespace Firebird;
 using namespace Firebird::Udr;
 
 
+typedef IMaster* (ISC_EXPORT *FuncGetMasterInterface)();
+
 typedef ISC_LONG (ISC_EXPORT_VARARG *FuncEventBlock)(ISC_UCHAR**, ISC_UCHAR**, ISC_USHORT, ...);
 typedef ISC_STATUS (ISC_EXPORT *FuncWaitForEvent)(ISC_STATUS*, isc_db_handle*,
 	short, const ISC_UCHAR*, ISC_UCHAR*);
@@ -48,6 +50,87 @@ typedef ISC_STATUS (ISC_EXPORT *FuncDsqlExecute2)(ISC_STATUS*, isc_tr_handle*, i
 typedef ISC_STATUS (ISC_EXPORT *FuncDsqlFreeStatement)(ISC_STATUS*, isc_stmt_handle*, unsigned short);
 typedef ISC_STATUS (ISC_EXPORT *FuncDsqlPrepare)(ISC_STATUS*, isc_tr_handle*, isc_stmt_handle*,
 	unsigned short, const ISC_SCHAR*, unsigned short, XSQLDA*);
+
+
+namespace
+{
+	template <typename T>
+	class AutoDispose
+	{
+	public:
+		AutoDispose<T>(T* aPtr = NULL)
+			: ptr(aPtr)
+		{
+		}
+
+		~AutoDispose()
+		{
+			clear();
+		}
+
+		AutoDispose<T>& operator =(T* aPtr)
+		{
+			clear();
+			ptr = aPtr;
+			return *this;
+		}
+
+		operator T*()
+		{
+			return ptr;
+		}
+
+		operator const T*() const
+		{
+			return ptr;
+		}
+
+		bool operator !() const
+		{
+			return !ptr;
+		}
+
+		bool hasData() const
+		{
+			return ptr != NULL;
+		}
+
+		T* operator ->()
+		{
+			return ptr;
+		}
+
+		T* release()
+		{
+			T* tmp = ptr;
+			ptr = NULL;
+			return tmp;
+		}
+
+		void reset(T* aPtr = NULL)
+		{
+			if (aPtr != ptr)
+			{
+				clear();
+				ptr = aPtr;
+			}
+		}
+
+	private:
+		void clear()
+		{
+			if (ptr)
+				ptr->dispose();
+		}
+
+		// not implemented
+		AutoDispose<T>(AutoDispose<T>&);
+		void operator =(AutoDispose<T>&);
+
+	private:
+		T* ptr;
+	};
+}
 
 
 /***
@@ -135,6 +218,7 @@ private:
 	isc_stmt_handle stmtHandle;
 
 	// ISC entry points
+	FuncGetMasterInterface funcGetMasterInterface;
 	FuncDsqlAllocateStatement funcDsqlAllocateStatement;
 	FuncDsqlDescribe funcDsqlDescribe;
 	FuncDsqlDescribeBind funcDsqlDescribeBind;
@@ -246,6 +330,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 		return;
 
 	// ISC entry points
+	funcGetMasterInterface = (FuncGetMasterInterface) getEntryPoint(context, "fb_get_master_interface");
 	funcDsqlAllocateStatement = (FuncDsqlAllocateStatement)
 		getEntryPoint(context, "isc_dsql_allocate_statement");
 	funcDsqlDescribe = (FuncDsqlDescribe) getEntryPoint(context, "isc_dsql_describe");
@@ -265,14 +350,33 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 		"select data_source from replicate_config where name = ?",
 		SQL_DIALECT_CURRENT, NULL), statusVector);
 
+	AutoDispose<IMaster> master(funcGetMasterInterface());
+	AutoDispose<IStatus> status(master->getStatus());
+
+	const char* table = metadata->getTriggerTable(status);
+	ThrowError::check(status->get());
+
+	// Skip the first exclamation point, separing the module name and entry point.
+	const char* info = strchr(metadata->getEntryPoint(status), '!');
+	ThrowError::check(status->get());
+
+	// Skip the second exclamation point, separing the entry point and the misc info (config).
+	if (info)
+		info = strchr(info + 1, '!');
+
+	if (info)
+		++info;
+	else
+		info = "";
+
 	inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 	inSqlDa->version = SQLDA_VERSION1;
 	inSqlDa->sqln = 1;
 	ThrowError::check(funcDsqlDescribeBind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 		statusVector);
 	inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
-	strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), metaInfo->info, inSqlDa->sqlvar[0].sqllen);
-	*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(metaInfo->info);
+	strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
+	*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
 
 	XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 	outSqlDa->version = SQLDA_VERSION1;
@@ -304,7 +408,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 		const char* name = val->getName(ThrowError());
 
 		strcat(buffer, "    p");
-		sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, metaInfo->table, name);
+		sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
 	}
 
 	strcat(buffer,
@@ -313,7 +417,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 		"begin\n"
 		"    execute statement ('insert into \"");
 
-	strcat(buffer, metaInfo->table);
+	strcat(buffer, table);
 	strcat(buffer, "\" (");
 
 	for (int i = 1; i <= count; ++i)
@@ -449,7 +553,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		{
 			case SQL_VARYING:
 			{
-				uint len;
+				unsigned len;
 				const char* s = val->getString(ThrowError(), &len);
 				*reinterpret_cast<unsigned short*>(var->sqldata) = len;
 				memcpy(var->sqldata + sizeof(unsigned short), s, len);

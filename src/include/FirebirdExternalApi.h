@@ -152,6 +152,19 @@ public:
 };
 
 
+class IRoutineMetadata	// : public IVersioned
+{
+public:
+	virtual const char* FB_CARG getPackage(IStatus* status) const = 0;
+	virtual const char* FB_CARG getName(IStatus* status) const = 0;
+	virtual const char* FB_CARG getEntryPoint(IStatus* status) const = 0;
+	virtual const char* FB_CARG getBody(IStatus* status) const = 0;
+	virtual const char* FB_CARG getTriggerTable(IStatus* status) const = 0;
+	virtual ExternalTrigger::Type FB_CARG getTriggerType(IStatus* status) const = 0;
+};
+// #define FB_I_ROUTINE_METADATA_VERSION (FB_VERSIONED_VERSION + 6)
+
+
 // In SuperServer, shared by all attachments to one database and disposed when last (non-external)
 // user attachment to the database is closed.
 class ExternalEngine : public IPluginBase
@@ -175,12 +188,11 @@ public:
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
 	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
-		const char* package, const char* name, const char* entryPoint, const char* body) = 0;
+		const IRoutineMetadata* metadata) = 0;
 	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
-		const char* package, const char* name, const char* entryPoint, const char* body) = 0;
+		const IRoutineMetadata* metadata) = 0;
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
-		const char* name, const char* entryPoint, const char* body,
-		const char* table, ExternalTrigger::Type type) = 0;
+		const IRoutineMetadata* metadata) = 0;
 };
 #define FB_EXTERNAL_ENGINE_VERSION (FB_PLUGIN_VERSION + 7)
 
