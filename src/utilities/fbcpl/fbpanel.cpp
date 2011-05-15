@@ -74,7 +74,7 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT /*uAppNum*/, LONG /*lData*/)
     // Create the dialog box using the parent window handle
     CFBDialog dlg(CWnd::FromHandle(hwndCPl));
 	bool error = true;
-	try 
+	try
 	{
 		// Check if Firebird is installed by reading the registry
 		HKEY hkey;

@@ -315,7 +315,8 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 #ifndef SUPERSERVER_V2
 	MutexLockGuard guard(main_file->fil_mutex);
 
-//	Database::Checkout dcoHolder(dbb);
+	///Database::Checkout dcoHolder(dbb);
+
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (file->fil_desc != -1)
@@ -542,7 +543,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	FB_UINT64 offset;
 
-//	Database::Checkout dcoHolder(dbb);
+	///Database::Checkout dcoHolder(dbb);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -666,7 +667,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 
 	BufferControl* bcb = bdb->bdb_bcb;
 	Database* dbb = bcb->bcb_database;
-//	Database::Checkout dcoHolder(dbb);
+	///Database::Checkout dcoHolder(dbb);
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
@@ -748,7 +749,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 	BufferControl* bcb = bdb->bdb_bcb;
 	Database* dbb = bcb->bcb_database;
-//	Database::Checkout dcoHolder(dbb);
+	///Database::Checkout dcoHolder(dbb);
 
 	const SLONG size = dbb->dbb_page_size;
 

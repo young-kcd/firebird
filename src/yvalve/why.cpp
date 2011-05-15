@@ -672,7 +672,7 @@ namespace Why
 		{
 			this->addRef();
 		}
-	
+
 		int FB_CARG release()
 		{
 			if (--this->refCounter == 0)
@@ -696,7 +696,7 @@ namespace Why
 
 			return 1;
 		}
-		
+
 		RefPtr<Intf> next;
 	};
 
