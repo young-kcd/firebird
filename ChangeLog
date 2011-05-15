@@ -1,3 +1,7 @@
+ 2011-05-14 21:44  asfernandes 
+   M src/common/classes/SyncObject.h
+Fix warning.
+
  2011-05-14 02:49  asfernandes 
    M src/dsql/pass1.cpp
 Fixed crash with nested unions, reported by Vlad.
