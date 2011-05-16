@@ -545,6 +545,10 @@ extern "C" int remove(const char* path);
 #define SYS_ERR		Arg::Unix
 #endif /* UNIX */
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 4096
+#endif
+
 #ifndef SYS_ERR
 #define SYS_ERR		Arg::Unix
 #endif
