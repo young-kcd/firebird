@@ -1,3 +1,22 @@
+ 2011-05-15 15:37  asfernandes 
+   M src/jrd/os/posix/unix.cpp
+   M src/utilities/fbcpl/fbpanel.cpp
+   M src/yvalve/why.cpp
+Misc
+
+ 2011-05-15 15:37  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdUdr.h
+   M src/include/FirebirdUdrCpp.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Added IRoutineMetadata to external engines.
+Not well tested:
+1) EE is broken after shared page cache.
+2) Semantics of addRef/release still keeps changing in developers minds.
+
  2011-05-14 21:44  asfernandes 
    M src/common/classes/SyncObject.h
 Fix warning.
