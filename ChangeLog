@@ -1,3 +1,12 @@
+ 2011-05-16 14:38  mapopa 
+   M src/jrd/common.h
+Apply Patch that fixes GNU/Hurd Debian  build
+Firebird FTBFS on GNU/Hurd because MAXPATHLEN is not defined on that
+platform.
+Attached is a patch which fixes that.  Please apply, it is a simple
+fix and it blocks php5 build on GNU/Hurd.
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=626931
+
  2011-05-12 14:51  dimitr 
    M src/dsql/dsql.cpp
 Fixed CORE-3477: Passing non-existing SQL parameters always crash server.
