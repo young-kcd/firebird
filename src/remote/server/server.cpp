@@ -34,6 +34,9 @@
 #include <string.h>
 #include "../jrd/ibase.h"
 #include "../common/gdsassert.h"
+#ifdef UNIX
+#include "../common/file_params.h"
+#endif
 #include "../remote/remote.h"
 #include "../common/file_params.h"
 #include "../common/ThreadStart.h"
@@ -3123,7 +3126,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	USHORT response_len = info_db_len ? info_db_len : stuff->p_info_buffer_length;
 
 	SSHORT skip_len = 0;
-	if (*buffer == isc_info_length)
+	if (buffer && *buffer == isc_info_length)
 	{
 		skip_len = gds__vax_integer(buffer + 1, 2);
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);

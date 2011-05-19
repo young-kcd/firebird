@@ -99,16 +99,19 @@ public:
 		freeData();
 	}
 
-	void clear() { count = 0; }
+	void clear() throw()
+	{
+		count = 0;
+	}
 
 protected:
-	const T& getElement(size_t index) const
+	const T& getElement(size_t index) const throw()
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
 
-	T& getElement(size_t index)
+	T& getElement(size_t index) throw()
 	{
   		fb_assert(index < count);
   		return data[index];
@@ -137,12 +140,12 @@ public:
 		return *this;
 	}
 
-	const T& operator[](size_t index) const
+	const T& operator[](size_t index) const throw()
 	{
   		return getElement(index);
 	}
 
-	T& operator[](size_t index)
+	T& operator[](size_t index) throw()
 	{
   		return getElement(index);
 	}
@@ -209,7 +212,7 @@ public:
 	{
 		ensureCapacity(count + 1);
 		data[count] = item;
-  		return ++count;
+  		return count++;
 	}
 
 	void add(const T* items, const size_t itemsCount)
@@ -219,14 +222,14 @@ public:
 		count += itemsCount;
 	}
 
-	T* remove(const size_t index)
+	T* remove(const size_t index) throw()
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
 
-	T* removeRange(const size_t from, const size_t to)
+	T* removeRange(const size_t from, const size_t to) throw()
 	{
   		fb_assert(from <= to);
   		fb_assert(to <= count);
@@ -235,7 +238,7 @@ public:
 		return &data[from];
 	}
 
-	T* removeCount(const size_t index, const size_t n)
+	T* removeCount(const size_t index, const size_t n) throw()
 	{
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
@@ -243,7 +246,7 @@ public:
 		return &data[index];
 	}
 
-	T* remove(T* itr)
+	T* remove(T* itr) throw()
 	{
 		const size_t index = itr - begin();
   		fb_assert(index < count);
@@ -251,12 +254,12 @@ public:
 		return &data[index];
 	}
 
-	T* remove(T* itrFrom, T* itrTo)
+	T* remove(T* itrFrom, T* itrTo) throw()
 	{
 		return removeRange(itrFrom - begin(), itrTo - begin());
 	}
 
-	void shrink(size_t newCount)
+	void shrink(size_t newCount) throw()
 	{
 		fb_assert(newCount <= count);
 		count = newCount;

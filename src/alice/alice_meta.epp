@@ -389,6 +389,11 @@ static tdr* get_description(ISC_QUAD* blob_id)
 
 static void parse_fullpath(tdr* trans)
 {
+	if (!trans->tdr_fullpath)
+	{
+		return;
+	}
+
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	// start at the end of the full pathname

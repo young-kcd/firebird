@@ -89,8 +89,11 @@ public:
 	virtual void FB_CARG rollback(IStatus* status) = 0;
 	virtual void FB_CARG rollbackRetaining(IStatus* status) = 0;
 	virtual void FB_CARG disconnect(IStatus* status) = 0;
+	virtual ITransaction* FB_CARG join(IStatus* status, ITransaction* transaction) = 0;
+	virtual ITransaction* FB_CARG validate(IStatus* status, IAttachment* attachment) = 0;
+	virtual ITransaction* FB_CARG enterDtc(IStatus* status) = 0;
 };
-#define FB_I_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 12)
+#define FB_I_TRANSACTION_VERSION (FB_INTERFACE_VERSION + 10)
 
 class IParametersMetadata	// : public IVersioned
 {
@@ -176,8 +179,6 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-//	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
-// second form is tmp - not to rewrite external engines right now
 	virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int tpbLength, const unsigned char* tpb) = 0;
 	virtual ITransaction* FB_CARG reconnectTransaction(IStatus* status, unsigned int length, const unsigned char* id) = 0;
 	virtual IStatement* FB_CARG allocateStatement(IStatus* status) = 0;
@@ -211,7 +212,7 @@ public:
 	virtual void FB_CARG detach(IStatus* status) = 0;
 	virtual void FB_CARG drop(IStatus* status) = 0;
 };
-#define FB_I_ATTACHMENT_VERSION (FB_INTERFACE_VERSION + 11)
+#define FB_I_ATTACHMENT_VERSION (FB_INTERFACE_VERSION + 17)
 
 class IService : public IInterface
 {
@@ -235,12 +236,25 @@ public:
 		unsigned int dpbLength, const unsigned char* dpb) = 0;
 	virtual IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb) = 0;
-	//virtual ITransaction* FB_CARG startTransaction(IStatus* status, unsigned int count, ...) = 0;
-	//virtual ITransaction* FB_CARG startMultiple(IStatus* status, MultipleTransaction* multi) = 0;
 	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason) = 0;
-	//virtual void FB_CARG fb_shutdown_callback(IStatus* status, const int mask, ShutdownCallback* callback) = 0;
 };
 #define FB_I_PROVIDER_VERSION (FB_PLUGIN_VERSION + 4)
+
+// DtcStart - structure to start transaction over >1 attachments (former TEB)
+struct DtcStart
+{
+	IAttachment *attachment;
+	unsigned int tpbLength;
+	unsigned char* tpb;
+};
+
+// Distributed transactions coordinator
+class IDtc : public IDisposable
+{
+public:
+	virtual ITransaction* FB_CARG start(IStatus* status, unsigned int cnt, DtcStart* components) = 0;
+	virtual ITransaction* FB_CARG join(IStatus* status, ITransaction* one, ITransaction* two) = 0;
+};
 
 } // namespace Firebird
 

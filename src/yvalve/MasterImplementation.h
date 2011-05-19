@@ -51,6 +51,7 @@ namespace Why
 			Firebird::IAttachment* attachment);
 		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
+		Firebird::IDtc* FB_CARG getDtc();
 	};
 
 	void shutdownTimers();

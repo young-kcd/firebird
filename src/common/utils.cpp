@@ -44,6 +44,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../jrd/constants.h"
+#include "../jrd/inf_pub.h"
 #include "../common/os/path_utils.h"
 
 #ifdef WIN_NT
@@ -1080,6 +1081,35 @@ unsigned int statusLength(const ISC_STATUS* const status) throw()
 			return l;
 		}
 		l += (status[l] == isc_arg_cstring ? 3 : 2);
+	}
+}
+
+void getDbpathInfo(unsigned int& itemsLength, const unsigned char*& items,
+	unsigned int& bufferLength, unsigned char*& buffer,
+	Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath)
+{
+	if (itemsLength && items)
+	{
+		const unsigned char* ptr = (const unsigned char*) memchr(items, fb_info_tra_dbpath, itemsLength);
+		if (ptr)
+		{
+			newItemsBuffer.add(items, itemsLength);
+			newItemsBuffer.remove(ptr - items);
+			items = newItemsBuffer.begin();
+			--itemsLength;
+
+			unsigned int len = dbpath.length();
+			if (len + 3 > bufferLength)
+			{
+				len = bufferLength - 3;
+			}
+			bufferLength -= (len + 3);
+			*buffer++ = fb_info_tra_dbpath;
+			*buffer++ = len;
+			*buffer++ = len >> 8;
+			memcpy(buffer, dbpath.c_str(), len);
+			buffer += len;
+		}
 	}
 }
 

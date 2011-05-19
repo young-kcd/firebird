@@ -130,7 +130,7 @@ namespace {
 
 namespace Remote {
 
-typedef Firebird::IStatus IStatus;
+class Attachment;
 
 class Blob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
 {
@@ -147,7 +147,9 @@ public:
 	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
 
 public:
-	Blob(Rbl* handle) : blob(handle) { }
+	Blob(Rbl* handle)
+		: blob(handle)
+	{ }
 
 private:
 	Rbl* blob;
@@ -186,9 +188,15 @@ public:
 	virtual void FB_CARG rollback(IStatus* status);
 	virtual void FB_CARG rollbackRetaining(IStatus* status);
 	virtual void FB_CARG disconnect(IStatus* status);
+	virtual ITransaction* FB_CARG join(IStatus* status, ITransaction* tra);
+	virtual Transaction* FB_CARG validate(IStatus* status, IAttachment* attachment);
+	virtual Transaction* FB_CARG enterDtc(IStatus* status);
 
 public:
-	Transaction(Rtr* handle) : transaction(handle) { }
+	Transaction(Rtr* handle, Attachment* a)
+		: remAtt(a),
+		  transaction(handle)
+	{ }
 
 	Rtr* getTransaction()
 	{
@@ -202,6 +210,12 @@ public:
 	}
 
 private:
+	Transaction(Transaction* from)
+		: remAtt(from->remAtt),
+		  transaction(from->transaction)
+	{ }
+
+	Attachment* remAtt;
 	Rtr* transaction;
 };
 
@@ -246,14 +260,16 @@ public:
 	virtual void FB_CARG free(IStatus* status, unsigned int option);
 
 public:
-	Statement(Rsr* handle)
+	Statement(Rsr* handle, Attachment* a)
 		: metadata(getPool(), this),
+		  remAtt(a),
 		  statement(handle)
 	{
 	}
 
 private:
 	StatementMetadata metadata;
+	Attachment* remAtt;
 	Rsr* statement;
 };
 
@@ -292,9 +308,12 @@ public:
 	virtual void FB_CARG free(IStatus* status);
 
 public:
-	Request(Rrq* handle) : rq(handle) { }
+	Request(Rrq* handle, Attachment* a)
+		: remAtt(a), rq(handle)
+	{ }
 
 private:
+	Attachment* remAtt;
 	Rrq* rq;
 };
 
@@ -389,15 +408,26 @@ public:
 	virtual void FB_CARG drop(IStatus* status);
 
 public:
-	Attachment(Rdb* handle) : rdb(handle) { }
+	Attachment(Rdb* handle, const PathName& path)
+		: rdb(handle), dbPath(getPool(), path)
+	{ }
 
 	Rdb* getRdb()
 	{
 		return rdb;
 	}
 
+	const PathName& getDbPath()
+	{
+		return dbPath;
+	}
+
+	Rtr* remoteTransaction(ITransaction* apiTra);
+	Transaction* remoteTransactionInterface(ITransaction* apiTra);
+
 private:
 	Rdb* rdb;
+	const PathName dbPath;
 };
 
 int Attachment::release()
@@ -466,8 +496,6 @@ public:
 		unsigned int dpbLength, const unsigned char* dpb);
 	virtual Firebird::IService* FB_CARG attachServiceManager(IStatus* status, const char* service,
 										  unsigned int spbLength, const unsigned char* spb);
-	//virtual Firebird::ITransaction* startTransaction(IStatus* status, unsigned int count, ...);
-	//virtual Firebird::ITransaction* startMultiple(IStatus* status, MultipleTransaction* multi);
 	virtual void FB_CARG shutdown(IStatus* status, unsigned int timeout, const int reason);
 
 	virtual int FB_CARG release()
@@ -558,7 +586,7 @@ static Rvnt* find_event(rem_port*, SLONG);
 static bool get_new_dpb(ClumpletWriter&, const ParametersSet&);
 static void handle_error(ISC_STATUS);
 static void info(IStatus*, Rdb*, P_OP, USHORT, USHORT, USHORT,
-				 const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
+				 const UCHAR*, USHORT, const UCHAR*, ULONG, UCHAR*);
 static void init(IStatus*, rem_port*, P_OP, PathName&, ClumpletWriter&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static void mov_dsql_message(const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
@@ -657,7 +685,7 @@ Firebird::IAttachment* Provider::attach(IStatus* status, const char* filename,
 
 		init(status, port, op_attach, expanded_name, newDpb);
 
-		Firebird::IAttachment* a = new Attachment(port->port_context);
+		Attachment* a = new Attachment(port->port_context, filename);
 		a->addRef();
 		return a;
 	}
@@ -910,7 +938,6 @@ void Transaction::commitRetaining(IStatus* status)
 	try
 	{
 		reset(status);
-
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		Rdb* rdb = transaction->rtr_rdb;
@@ -930,6 +957,60 @@ void Transaction::commitRetaining(IStatus* status)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+ITransaction* FB_CARG Transaction::join(IStatus* status, ITransaction* tra)
+{
+/**************************************
+ *
+ *	I T r a n s a c t i o n :: j o i n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Join this and passed transactions
+ *	into single distributed transaction
+ *
+ **************************************/
+	try
+	{
+		reset(status);
+		CHECK_HANDLE(transaction, isc_bad_trans_handle);
+
+		return DtcInterfacePtr()->join(status, this, tra);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
+}
+
+
+Transaction* FB_CARG Transaction::validate(IStatus* status, IAttachment* testAtt)
+{
+	return (transaction && remAtt == testAtt) ? this : NULL;
+}
+
+
+Transaction* FB_CARG Transaction::enterDtc(IStatus* status)
+{
+	try
+	{
+		Transaction* copy = new Transaction(this);
+		copy->addRef();
+
+		transaction = NULL;
+		release();
+
+		return copy;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
 }
 
 
@@ -1012,7 +1093,7 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 			message->msg_address = NULL;
 		}
 
-		Firebird::IRequest* r = new Request(request);
+		Firebird::IRequest* r = new Request(request, this);
 		r->addRef();
 		return r;
 	}
@@ -1046,7 +1127,7 @@ IBlob* Attachment::createBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* b
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -1142,7 +1223,7 @@ Firebird::IAttachment* Provider::create(IStatus* status, const char* filename,
 
 		init(status, port, op_create, expanded_name, newDpb);
 
-		Firebird::IAttachment* a = new Attachment(rdb);
+		Firebird::IAttachment* a = new Attachment(rdb, filename);
 		a->addRef();
 		return a;
 	}
@@ -1254,7 +1335,7 @@ void Attachment::ddl(IStatus* status, ITransaction* apiTra, unsigned int length,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
@@ -1479,7 +1560,7 @@ Firebird::IStatement* Attachment::allocateStatement(IStatus* status)
 		statement->rsr_next = rdb->rdb_sql_requests;
 		rdb->rdb_sql_requests = statement;
 
-		Firebird::IStatement* s = new Statement(statement);
+		Firebird::IStatement* s = new Statement(statement, this);
 		s->addRef();
 		return s;
 	}
@@ -1531,9 +1612,10 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		RefMutexGuard portGuard(*port->port_sync);
 
 		Rtr* transaction = NULL;
-		if (apiTra)
+		Transaction* rt = remAtt->remoteTransactionInterface(apiTra);
+		if (rt)
 		{
-			transaction = ((Transaction*) apiTra)->getTransaction();
+			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
@@ -1664,7 +1746,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			transaction = NULL;
-			((Transaction*)apiTra)->clear();
+			rt->clear();
 			statement->rsr_rtr = NULL;
 			return 0;
 		}
@@ -1672,7 +1754,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
 			statement->rsr_rtr = transaction;
-			Firebird::ITransaction* t = new Transaction(transaction);
+			Transaction* t = new Transaction(transaction, remAtt);
 			t->addRef();
 			return t;
 		}
@@ -1720,9 +1802,10 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 		unsigned char* out_msg = outMsgBuffer ? outMsgBuffer->buffer : NULL;
 
 		Rtr* transaction = NULL;
-		if (apiTra)
+		Transaction* rt = remoteTransactionInterface(apiTra);
+		if (rt)
 		{
-			transaction = ((Transaction*) apiTra)->getTransaction();
+			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
@@ -1853,13 +1936,13 @@ Firebird::ITransaction* Attachment::execute(IStatus* status, Firebird::ITransact
 			REMOTE_cleanup_transaction(transaction);
 			release_transaction(transaction);
 			transaction = NULL;
-			((Transaction*)apiTra)->clear();
+			rt->clear();
 			return 0;
 		}
 		else if (!transaction && packet->p_resp.p_resp_object)
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
-			Firebird::ITransaction* t = new Transaction(transaction);
+			Firebird::ITransaction* t = new Transaction(transaction, this);
 			t->addRef();
 			return t;
 		}
@@ -2364,7 +2447,7 @@ void Statement::prepare(IStatus* status, Firebird::ITransaction* apiTra,
 		Rtr* transaction = NULL;
 		if (apiTra)
 		{
-			transaction = reinterpret_cast<Transaction*>(apiTra)->getTransaction();
+			transaction = remAtt->remoteTransaction(apiTra);
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
 
@@ -2992,7 +3075,7 @@ int Attachment::getSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* array_
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
@@ -3074,7 +3157,7 @@ IBlob* Attachment::openBlob(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		PACKET* packet = &rdb->rdb_packet;
@@ -3277,7 +3360,7 @@ void Attachment::putSlice(IStatus* status, ITransaction* apiTra, ISC_QUAD* id,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION4) {
@@ -3625,7 +3708,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(IStatus* status,
 
 		send_and_receive(status, rdb, packet);
 
-		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
 		t->addRef();
 		return t;
 	}
@@ -4193,7 +4276,7 @@ void Service::start(IStatus* status,
 }
 
 
-void Request::startAndSend(IStatus* status, Firebird::ITransaction* tra, int level,
+void Request::startAndSend(IStatus* status, Firebird::ITransaction* apiTra, int level,
 						   unsigned int msg_type, unsigned int /*length*/, const unsigned char* msg)
 {
 /**************************************
@@ -4213,7 +4296,7 @@ void Request::startAndSend(IStatus* status, Firebird::ITransaction* tra, int lev
 		CHECK_HANDLE(rq, isc_bad_req_handle);
 		Rrq* request = REMOTE_find_request(rq, level);
 
-		Rtr* transaction = ((Transaction*)tra)->getTransaction();
+		Rtr* transaction = remAtt->remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		Rdb* rdb = request->rrq_rdb;
@@ -4274,7 +4357,7 @@ void Request::startAndSend(IStatus* status, Firebird::ITransaction* tra, int lev
 }
 
 
-void Request::start(IStatus* status, Firebird::ITransaction* tra, int level)
+void Request::start(IStatus* status, Firebird::ITransaction* apiTra, int level)
 {
 /**************************************
  *
@@ -4293,7 +4376,7 @@ void Request::start(IStatus* status, Firebird::ITransaction* tra, int level)
 		CHECK_HANDLE(rq, isc_bad_req_handle);
 		Rrq* request = REMOTE_find_request(rq, level);
 
-		Rtr* transaction = ((Transaction*)tra)->getTransaction();
+		Rtr* transaction = remAtt->remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		Rdb* rdb = request->rrq_rdb;
@@ -4373,7 +4456,7 @@ Firebird::ITransaction* Attachment::startTransaction(IStatus* status, unsigned i
 
 		send_and_receive(status, rdb, packet);
 
-		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object));
+		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
 		t->addRef();
 		return t;
 	}
@@ -4408,7 +4491,7 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		Rtr* transaction = apiTra ? ((Transaction*) apiTra)->getTransaction() : NULL;
+		Rtr* transaction = remoteTransaction(apiTra);
 		CHECK_HANDLE(transaction, isc_bad_trans_handle);
 
 		// bag it if the protocol doesn't support it...
@@ -4510,6 +4593,8 @@ void Transaction::getInfo(IStatus* status,
  * Functional description
  *
  **************************************/
+	Array<unsigned char> newItemsBuffer;
+
 	try
 	{
 		reset(status);
@@ -4520,6 +4605,9 @@ void Transaction::getInfo(IStatus* status,
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
+
+		fb_utils::getDbpathInfo(itemsLength, items, bufferLength, buffer,
+								newItemsBuffer, remAtt->getDbPath());
 
 		info(status, rdb, op_info_transaction, transaction->rtr_id, 0,
 			 itemsLength, items, 0, 0, bufferLength, buffer);
@@ -5639,7 +5727,7 @@ static void info(IStatus* status,
 				 const UCHAR* items,
 				 USHORT recv_item_length,
 				 const UCHAR* recv_items,
-				 USHORT buffer_length,
+				 ULONG buffer_length,
 				 UCHAR* buffer)
 {
 /**************************************
@@ -6868,6 +6956,27 @@ void Attachment::cancelOperation(IStatus* status, int kind)
 	{
 		ex.stuffException(status);
 	}
+}
+
+Rtr* Attachment::remoteTransaction(ITransaction* apiTra)
+{
+	Transaction* rt = remoteTransactionInterface(apiTra);
+	return rt ? rt->getTransaction() : NULL;
+}
+
+Transaction* Attachment::remoteTransactionInterface(ITransaction* apiTra)
+{
+	if (!apiTra)
+		return NULL;
+
+	LocalStatus dummy;
+	ITransaction* valid = apiTra->validate(&dummy, this);
+	if (!valid)
+		return NULL;
+
+	// If validation is successfull, this means that this attachment and valid transaction
+	// use same provider. I.e. the following cast is safe.
+	return static_cast<Transaction*>(valid);
 }
 
 } //namespace Remote

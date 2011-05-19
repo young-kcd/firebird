@@ -107,14 +107,6 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 static const USHORT PREPARE_BUFFER_SIZE = 32768;	// size of buffer used in isc_dsql_prepare call
 static const USHORT DESCRIBE_BUFFER_SIZE = 1024;	// size of buffer used in isc_dsql_describe_xxx call
 
-// Information items for two phase commit.
-
-static const UCHAR PREPARE_TR_INFO[] =
-{
-	isc_info_tra_id,
-	isc_info_end
-};
-
 static GlobalPtr<RWLock> handleMappingLock;
 static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YService*> > > > services;
 static GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, YAttachment*> > > > attachments;
@@ -166,11 +158,14 @@ static FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >
 template <typename T>
 static void removeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, FB_API_HANDLE handle)
 {
-	WriteLockGuard sync(handleMappingLock);
-	bool removed = map->remove(handle);
+	if (handle)
+	{
+		WriteLockGuard sync(handleMappingLock);
+		bool removed = map->remove(handle);
 
-	fb_assert(removed);
-	(void) removed;	// avoid warning in prod build
+		fb_assert(removed);
+		(void) removed;	// avoid warning in prod build
+	}
 }
 
 template <typename T>
@@ -577,7 +572,7 @@ namespace Why
 	{
 	public:
 		YObject()
-			: handle(NULL)
+			: handle(0)
 		{
 		}
 
@@ -657,6 +652,17 @@ namespace Why
 
 			while ((i = array.getCount()) > 0)
 				array[i - 1]->destroy();
+		}
+
+		void assign(HandleArray& from)
+		{
+			clear();
+			array.assign(from.array);
+		}
+
+		void clear()
+		{
+			array.clear();
 		}
 
 	private:
@@ -757,27 +763,6 @@ namespace Why
 		static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
 
 		YTransaction(YAttachment* aAttachment, ITransaction* aNext);
-		explicit YTransaction(const Array<YTransaction*>& subTransactions);
-
-		static ITransaction* getNext(ITransaction* transaction, YAttachment* attachment)
-		{
-			if (!transaction)
-				badHandle(isc_bad_trans_handle);
-
-			YTransaction* yTrans = static_cast<YTransaction*>(transaction);
-			ITransaction* nextTrans = yTrans->next;
-
-			for (YTransaction* i = yTrans->sub; !nextTrans && i; i = i->sub)
-			{
-				if (i->attachment == attachment)
-					nextTrans = i->next;
-			}
-
-			if (!nextTrans)
-				badHandle(isc_bad_trans_handle);
-
-			return nextTrans;
-		}
 
 		void destroy();
 
@@ -791,19 +776,30 @@ namespace Why
 		virtual void FB_CARG rollback(IStatus* status);
 		virtual void FB_CARG rollbackRetaining(IStatus* status);
 		virtual void FB_CARG disconnect(IStatus* status);
+		virtual ITransaction* FB_CARG join(IStatus* status, ITransaction* transaction);
+		virtual YTransaction* FB_CARG validate(IStatus* status, IAttachment* testAtt);
+		virtual YTransaction* FB_CARG enterDtc(IStatus* status);
 
 		void addCleanupHandler(IStatus* status, CleanupCallback* callback);
-
-	private:
-		bool prepareCommit(IStatus* status);
-		void buildPrepareInfo(IStatus* status, UCHAR** ptr);
+		void selfCheck();
 
 	public:
 		YAttachment* attachment;
-		YTransaction* sub;
-		bool limbo;
 		HandleArray<YBlob> childBlobs;
 		Array<CleanupCallback*> cleanupHandlers;
+
+	private:
+		YTransaction(YTransaction* from)
+			: YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>(from->next),
+			attachment(from->attachment),
+			childBlobs(getPool()),
+			cleanupHandlers(getPool())
+		{
+			childBlobs.assign(from->childBlobs);
+			from->childBlobs.clear();
+			cleanupHandlers.assign(from->cleanupHandlers);
+			from->cleanupHandlers.clear();
+		}
 	};
 
 	class YBlob : public YHelper<YBlob, IBlob, FB_I_BLOB_VERSION>
@@ -891,7 +887,7 @@ namespace Why
 		static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
 		explicit YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
-			: YHelper(aNext),
+			: YHelper<YAttachment, IAttachment, FB_I_ATTACHMENT_VERSION>(aNext),
 			  provider(aProvider),
 			  dbPath(getPool(), aDbPath),
 			  childBlobs(getPool()),
@@ -912,7 +908,6 @@ namespace Why
 		}
 
 		void destroy();
-		void buildPrepareInfo(UCHAR** ptr);
 
 		// IAttachment implementation
 		virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
@@ -950,6 +945,7 @@ namespace Why
 		virtual void FB_CARG drop(IStatus* status);
 
 		void addCleanupHandler(IStatus* status, CleanupCallback* callback);
+		ITransaction* getNextTransaction(IStatus* status, ITransaction* tra);
 
 	public:
 		IProvider* provider;
@@ -969,7 +965,7 @@ namespace Why
 		static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
 		explicit YService(IProvider* aProvider, IService* aNext)
-			: YHelper(aNext),
+			: YHelper<YService, IService, FB_I_SERVICE_VERSION>(aNext),
 			  provider(aProvider)
 		{
 			provider->addRef();
@@ -3406,8 +3402,8 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 {
 	StatusVector status(userStatus);
 	Array<YTransaction*> subTransactions;
-	YTransaction* multiTrans = NULL;
 	TEB* vector = (TEB*) vec;
+	ITransaction* multiTrans = NULL;
 
 	try
 	{
@@ -3416,29 +3412,24 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		if (count <= 0 || !vector)
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
 
-		for (USHORT n = 0; n < count; ++n, ++vector)
-		{
-			if (vector->teb_tpb_length < 0 || (vector->teb_tpb_length > 0 && !vector->teb_tpb))
-				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+		RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
 
-			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
+		if (count == 1)
+		{
 			YTransaction* transaction = attachment->startTransaction(&status,
 				vector->teb_tpb_length, vector->teb_tpb);
-
-			if (!status.isSuccess())
-				status_exception::raise(status);
-
-			subTransactions.add(transaction);
-
-			if (count == 1)
-			{
-				*traHandle = transaction->handle;
-				return status[1];
-			}
+			*traHandle = transaction->handle;
+			return status[1];
 		}
 
-		multiTrans = new YTransaction(subTransactions);
-		*traHandle = multiTrans->handle;
+		// This works as long as TEB has same layout as DtcStart
+		DtcStart* ds = (DtcStart*) vec;
+		multiTrans = DtcInterfacePtr()->start(&status, count, ds);
+		if (multiTrans)
+		{
+			YTransaction* transaction = new YTransaction(attachment, multiTrans);
+			*traHandle = transaction->handle;
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -3446,15 +3437,6 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 		if (multiTrans)
 			multiTrans->rollback(&temp);
-		else
-		{
-			for (Array<YTransaction*>::iterator i(subTransactions.begin());
-				 i != subTransactions.end();
-				 ++i)
-			{
-				(*i)->rollback(&temp);
-			}
-		}
 
 		e.stuffException(&status);
 	}
@@ -3698,7 +3680,7 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	: YHelper(aNext),
+	: YHelper<YEvents, IEvents, FB_I_EVENTS_VERSION>(aNext),
 	  attachment(aAttachment),
 	  callback(aCallback),
 	  deleteCallback(false)
@@ -3739,7 +3721,7 @@ void YEvents::cancel(IStatus* status)
 
 
 YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
-	: YHelper(aNext),
+	: YHelper<YRequest, IRequest, FB_I_REQUEST_VERSION>(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL)
 {
@@ -3811,7 +3793,7 @@ void YRequest::start(IStatus* status, ITransaction* transaction, int level)
 	{
 		YEntry entry(status, attachment);
 
-		ITransaction* trans = YTransaction::getNext(transaction, attachment);
+		ITransaction* trans = attachment->getNextTransaction(status, transaction);
 		next->start(status, trans, level);
 	}
 	catch (const Exception& e)
@@ -3827,7 +3809,7 @@ void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int leve
 	{
 		YEntry entry(status, attachment);
 
-		ITransaction* trans = YTransaction::getNext(transaction, attachment);
+		ITransaction* trans = attachment->getNextTransaction(status, transaction);
 		next->startAndSend(status, trans, level, msgType, length, message);
 	}
 	catch (const Exception& e)
@@ -3871,7 +3853,7 @@ void YRequest::free(IStatus* status)
 
 
 YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
-	: YHelper(aNext),
+	: YHelper<YBlob, IBlob, FB_I_BLOB_VERSION>(aNext),
 	  attachment(aAttachment),
 	  transaction(aTransaction)
 {
@@ -3987,7 +3969,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
-	: YHelper(aNext),
+	: YHelper<YStatement, IStatement, FB_I_STATEMENT_VERSION>(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL),
 	  prepared(false)
@@ -4022,7 +4004,7 @@ void YStatement::prepare(IStatus* status, ITransaction* transaction,
 		if (!sqlStmt)
 			Arg::Gds(isc_command_end_err).raise();
 
-		ITransaction* trans = transaction ? YTransaction::getNext(transaction, attachment) : NULL;
+		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
 
 		next->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 	}
@@ -4148,7 +4130,7 @@ YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	{
 		YEntry entry(status, attachment);
 
-		ITransaction* trans = transaction ? YTransaction::getNext(transaction, attachment) : NULL;
+		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
 		ITransaction* newTrans = next->execute(status, trans, inMsgType, inMsgBuffer, outMsgBuffer);
 
 		if (newTrans)
@@ -4227,10 +4209,8 @@ void YStatement::free(IStatus* status, unsigned int option)
 
 
 YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
-	: YHelper(aNext),
+	: YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>(aNext),
 	  attachment(aAttachment),
-	  sub(NULL),
-	  limbo(false),
 	  childBlobs(getPool()),
 	  cleanupHandlers(getPool())
 {
@@ -4238,33 +4218,8 @@ YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
 	handle = makeHandle(&transactions, this);
 }
 
-YTransaction::YTransaction(const Array<YTransaction*>& subTransactions)
-	: YHelper(NULL),
-	  attachment(NULL),
-	  sub(NULL),
-	  limbo(false),
-	  childBlobs(getPool()),
-	  cleanupHandlers(getPool())
-{
-	YTransaction* prev = this;
-
-	for (YTransaction* const* i = subTransactions.begin(); i != subTransactions.end(); ++i)
-	{
-		prev->sub = *i;
-		prev = *i;
-	}
-
-	handle = makeHandle(&transactions, this);
-}
-
 void YTransaction::destroy()
 {
-	if (sub)
-	{
-		sub->destroy();
-		sub = NULL;
-	}
-
 	for (CleanupCallback** handler = cleanupHandlers.begin();
 		 handler != cleanupHandlers.end();
 		 ++handler)
@@ -4288,34 +4243,17 @@ void YTransaction::destroy()
 void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
+	Array<unsigned char> newItemsBuffer;
+
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		if (next)
-		{
-			next->getInfo(status, itemsLength, items, bufferLength, buffer);
-			return;
-		}
+		fb_utils::getDbpathInfo(itemsLength, items, bufferLength, buffer,
+								newItemsBuffer, attachment->dbPath);
 
-		for (YTransaction* i = sub; i; i = i->sub)
-		{
-			i->next->getInfo(status, itemsLength, items, bufferLength, buffer);
-			if (!status->isSuccess())
-				return;
-
-			UCHAR* ptr = buffer;
-			const UCHAR* const end = buffer + bufferLength;
-
-			while (ptr < end && *ptr == isc_info_tra_id)
-				ptr += 3 + gds__vax_integer(ptr + 1, 2);
-
-			if (ptr >= end || *ptr != isc_info_end)
-				return;
-
-			bufferLength = end - ptr;
-			buffer = ptr;
-		}
+		next->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -4328,19 +4266,9 @@ void YTransaction::prepare(IStatus* status, unsigned int msgLength, const unsign
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		for (YTransaction* i = this; i; i = i->sub)
-		{
-			if (i->next)
-			{
-				i->next->prepare(status, msgLength, message);
-
-				if (!status->isSuccess())
-					return;
-			}
-		}
-
-		limbo = true;
+		next->prepare(status, msgLength, message);
 	}
 	catch (const Exception& e)
 	{
@@ -4353,30 +4281,9 @@ void YTransaction::commit(IStatus* status)
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		// Handle two phase commit. Start by putting everybody into limbo. If anybody fails, punt.
-
-		if (!next && !limbo)
-		{
-			if (!prepareCommit(status))
-				return;
-		}
-
-		// Everybody is in limbo, now commit. In theory, this can't fail.
-
-		for (YTransaction* i = this; i; i = i->sub)
-		{
-			if (i->next)
-			{
-				i->next->commit(status);
-
-				if (!status->isSuccess())
-					return;
-
-				i->next = NULL;
-			}
-		}
-
+		next->commit(status);
 		destroy();
 	}
 	catch (const Exception& e)
@@ -4390,19 +4297,9 @@ void YTransaction::commitRetaining(IStatus* status)
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		for (YTransaction* i = this; i; i = i->sub)
-		{
-			if (i->next)
-			{
-				i->next->commitRetaining(status);
-
-				if (!status->isSuccess())
-					return;
-			}
-		}
-
-		limbo = true;	// ASF: why do retaining marks limbo?
+		next->commitRetaining(status);
 	}
 	catch (const Exception& e)
 	{
@@ -4415,20 +4312,9 @@ void YTransaction::rollback(IStatus* status)
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		for (YTransaction* i = this; i; i = i->sub)
-		{
-			if (i->next)
-			{
-				i->next->rollback(status);
-
-				if (!status->isSuccess() && (!isNetworkError(status) || limbo))
-					return;
-
-				i->next = NULL;
-			}
-		}
-
+		next->rollback(status);
 		if (isNetworkError(status))
 			status->init();
 
@@ -4445,19 +4331,9 @@ void YTransaction::rollbackRetaining(IStatus* status)
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
-		for (YTransaction* i = this; i; i = i->sub)
-		{
-			if (i->next)
-			{
-				i->next->commitRetaining(status);
-
-				if (!status->isSuccess())
-					return;
-			}
-		}
-
-		limbo = true;	// ASF: why do retaining marks limbo?
+		next->rollbackRetaining(status);
 	}
 	catch (const Exception& e)
 	{
@@ -4470,9 +4346,7 @@ void YTransaction::disconnect(IStatus* status)
 	try
 	{
 		YEntry entry(status, attachment);
-
-		if (!limbo)
-			status_exception::raise(Arg::Gds(isc_no_recon));
+		selfCheck();
 
 		/*** ASF: We must call the provider, but this makes the shutdown to crash currently.
 		for (YTransaction* i = this; i; i = i->sub)
@@ -4502,6 +4376,7 @@ void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 	try
 	{
 		YEntry entry(status, attachment);
+		selfCheck();
 
 		cleanupHandlers.add(callback);
 	}
@@ -4511,91 +4386,76 @@ void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 	}
 }
 
-// Perform the first phase of a two-phase commit for a multi-database transaction.
-bool YTransaction::prepareCommit(IStatus* status)
+
+void YTransaction::selfCheck()
 {
-	YTransaction* i;
-	HalfStaticArray<UCHAR, 1024> tdrBuffer;
-	size_t length = 0;
-	///int transCount = 0;
-
-	for (i = sub; i; i = i->sub)
+	if (!next)
 	{
-		length += 256;
-		///++transCount;
+		Arg::Gds(isc_bad_trans_handle).raise();
 	}
-
-	// To do: use transCount to check the maximum allowed dbs in a two phase commit.
-
-	TEXT host[64];
-	ISC_get_host(host, sizeof(host));
-	const size_t hostlen = strlen(host);
-	length += hostlen + 3; // TDR_version + TDR_host_site + UCHAR(strlen(host))
-
-	UCHAR* const description = tdrBuffer.getBuffer(length);
-
-	// Build a transaction description record containing the host site and database/transaction
-	// information for the target databases.
-
-	unsigned char* p = description;
-	*p++ = TDR_VERSION;
-	*p++ = TDR_HOST_SITE;
-	*p++ = UCHAR(hostlen);
-	memcpy(p, host, hostlen);
-	p += hostlen;
-
-	// Get database and transaction stuff for each sub-transaction.
-
-	for (i = sub; i; i = i->sub)
-	{
-		i->attachment->buildPrepareInfo(&p);
-		i->buildPrepareInfo(status, &p);
-	}
-
-	// So far so good -- prepare each sub-transaction.
-
-	length = p - description;
-
-	for (i = sub; i; i = i->sub)
-	{
-		i->next->prepare(status, length, description);
-
-		if (!status->isSuccess())
-			return false;
-	}
-
-	return true;
 }
 
-// Put a transaction's id into the transaction description record.
-void YTransaction::buildPrepareInfo(IStatus* status, UCHAR** ptr)
+
+ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transaction)
 {
 	try
 	{
-		UCHAR buffer[16];
-		UCHAR* p = *ptr;
+		YEntry entry(status, attachment);
+		selfCheck();
 
-		next->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, sizeof(buffer), buffer);
-		if (!status->isSuccess())
-			return;
-
-		UCHAR* q = buffer + 3;
-		*p++ = TDR_TRANSACTION_ID;
-
-		USHORT length = (USHORT) gds__vax_integer(buffer + 1, 2);
-
-		// Prevent information out of sync.
-		if (length > MAX_UCHAR)
-			length = MAX_UCHAR;
-
-		*p++ = length;
-		memcpy(p, q, length);
-		*ptr = p + length;
+		return DtcInterfacePtr()->join(status, this, transaction);
 	}
-	catch (const Exception& e)
+	catch (const Exception& ex)
 	{
-		e.stuffException(status);
+		ex.stuffException(status);
 	}
+	return NULL;
+}
+
+YTransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testAtt)
+{
+	try
+	{
+		YEntry entry(status, attachment);
+		selfCheck();
+
+		// Do not raise error in status - just return NULL if attachment does not match
+		return attachment == testAtt ? this : NULL;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
+}
+
+YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
+{
+	try
+	{
+		YEntry entry(status, attachment);
+		selfCheck();
+
+		YTransaction* copy = new YTransaction(this);
+		// copy is created with zero handle
+		copy->addRef();
+
+		if (attachment)
+		{
+			attachment->childTransactions.remove(this);
+		}
+		removeHandle(&transactions, handle);
+		handle = 0;
+		next = NULL;
+		release();
+
+		return copy;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
 }
 
 
@@ -4623,28 +4483,6 @@ void YAttachment::destroy()
 
 	next = NULL;
 	release();
-}
-
-// Get the full database pathname and put it in the transaction description record.
-void YAttachment::buildPrepareInfo(UCHAR** ptr)
-{
-	// Look at the changed code: we don't support here more than 254 bytes in the path
-	// so it's better to truncate or we'll have corrupt data in the trans desc record:
-	// the length in one byte would wrap and we would copy more bytes that expected.
-	// Our caller (prepare) assumed each call consumes at most 256 bytes (item, len, data)
-	// hence if we don't check here, we have a B.O.
-
-	UCHAR* p = *ptr;
-	*p++ = TDR_DATABASE_PATH;
-	const char* q = dbPath.c_str();
-	size_t len = strlen(q);
-
-	if (len > 254)
-		len = 254;
-
-	*p++ = (UCHAR) len;
-	memcpy(p, q, len);
-	*ptr = p + len;
 }
 
 void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4694,7 +4532,6 @@ YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int le
 		if (transaction)
 		{
 			transaction = new YTransaction(this, transaction);
-			static_cast<YTransaction*>(transaction)->limbo = true;
 		}
 
 		return static_cast<YTransaction*>(transaction);
@@ -4752,7 +4589,7 @@ void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 
 		next->transactRequest(status, trans, blrLength, blr, inMsgLength, inMsg,
 			outMsgLength, outMsg);
@@ -4770,7 +4607,7 @@ YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_Q
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 
 		IBlob* blob = next->createBlob(status, trans, id, bpbLength, bpb);
 		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
@@ -4791,7 +4628,7 @@ YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUA
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 
 		IBlob* blob = next->openBlob(status, trans, id, bpbLength, bpb);
 		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
@@ -4813,7 +4650,7 @@ int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* 
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 
 		return next->getSlice(status, trans, id, sdlLength, sdl, paramLength, param,
 			sliceLength, slice);
@@ -4834,7 +4671,7 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 		next->putSlice(status, trans, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 	}
 	catch (const Exception& e)
@@ -4850,7 +4687,7 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = YTransaction::getNext(transaction, this);
+		ITransaction* trans = getNextTransaction(status, transaction);
 		return next->ddl(status, trans, length, dyn);
 	}
 	catch (const Exception& e)
@@ -4867,7 +4704,7 @@ YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	{
 		YEntry entry(status, this);
 
-		ITransaction* trans = transaction ? YTransaction::getNext(transaction, this) : NULL;
+		ITransaction* trans = transaction ? getNextTransaction(status, transaction) : NULL;
 		ITransaction* newTrans = next->execute(status, trans, length, string, dialect,
 			inMsgType, inMsgBuffer, outMsgBuffer);
 
@@ -5001,6 +4838,26 @@ void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+ITransaction* YAttachment::getNextTransaction(IStatus* status, ITransaction* tra)
+{
+	if (!tra)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	status->init();
+
+	// If validation is successfull, this means that this attachment and valid transaction
+	// use same provider. I.e. the following cast is safe.
+	YTransaction* yt = static_cast<YTransaction*>(tra->validate(status, this));
+	if (!status->isSuccess())
+		status_exception::raise(status->get());
+	if (!yt)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	yt->selfCheck();
+	return yt->next;
 }
 
 
@@ -5164,7 +5021,7 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 			if (currentStatus->isSuccess())
 			{
 				status->set(currentStatus->get());
-				return new YAttachment(provider, attachment, expandedFilename);
+				return new YAttachment(provider, attachment, filename);
 			}
 
 			if (currentStatus->get()[1] != isc_unavailable)
@@ -5294,7 +5151,7 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 #endif
 
 				status->set(currentStatus->get());
-				return new YAttachment(provider, attachment, path);
+				return new YAttachment(provider, attachment, filename);
 			}
 
 			if (currentStatus->get()[1] != isc_unavailable)

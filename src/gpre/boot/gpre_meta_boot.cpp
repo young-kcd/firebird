@@ -732,6 +732,12 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	virtual IDtc* FB_CARG getDtc()
+	{
+		fb_assert(false);
+		return NULL;
+	}
 };
 
 

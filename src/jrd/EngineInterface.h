@@ -94,6 +94,9 @@ public:
 	virtual void FB_CARG rollback(Firebird::IStatus* status);
 	virtual void FB_CARG rollbackRetaining(Firebird::IStatus* status);
 	virtual void FB_CARG disconnect(Firebird::IStatus* status);
+	virtual Firebird::ITransaction* FB_CARG join(Firebird::IStatus* status, Firebird::ITransaction* transaction);
+	virtual JTransaction* FB_CARG validate(Firebird::IStatus* status, Firebird::IAttachment* testAtt);
+	virtual JTransaction* FB_CARG enterDtc(Firebird::IStatus* status);
 
 public:
 	JTransaction(jrd_tra* handle, JAttachment* ja)
@@ -125,6 +128,11 @@ public:
 private:
 	jrd_tra* transaction;
 	Firebird::RefPtr<JAttachment> jAtt;
+
+	JTransaction(JTransaction* from)
+		: transaction(from->transaction), jAtt(from->jAtt)
+	{
+	}
 
 	void freeEngineData(Firebird::IStatus* status);
 };
@@ -315,6 +323,9 @@ public:
 
 		att = NULL;
 	}
+
+	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra);
+	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
 
 private:
 	Attachment* att;

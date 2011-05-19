@@ -1092,6 +1092,29 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
+JTransaction* JAttachment::getTransactionInterface(IStatus* status, ITransaction* tra)
+{
+	if (!tra)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	status->init();
+
+	// If validation is successfull, this means that this attachment and valid transaction
+	// use same provider. I.e. the following cast is safe.
+	JTransaction* jt = static_cast<JTransaction*>(tra->validate(status, this));
+	if (!status->isSuccess())
+		status_exception::raise(status->get());
+	if (!jt)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	return jt;
+}
+
+jrd_tra* JAttachment::getEngineTransaction(IStatus* status, ITransaction* tra)
+{
+	return getTransactionInterface(status, tra)->getHandle();
+}
+
 JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
@@ -2074,6 +2097,61 @@ void JTransaction::commitRetaining(IStatus* user_status)
 }
 
 
+ITransaction* FB_CARG JTransaction::join(IStatus* user_status, ITransaction* transaction)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this);
+		check_database(tdbb);
+
+		return DtcInterfacePtr()->join(user_status, this, transaction);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+	return NULL;
+}
+
+JTransaction* FB_CARG JTransaction::validate(IStatus* user_status, IAttachment* testAtt)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this);
+		check_database(tdbb);
+
+		// Do not raise error in status - just return NULL if attachment does not match
+		return jAtt == testAtt ? this : NULL;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+	return NULL;
+}
+
+JTransaction* FB_CARG JTransaction::enterDtc(IStatus* user_status)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this);
+		check_database(tdbb);
+
+		JTransaction* copy = new JTransaction(this);
+		copy->addRef();
+
+		transaction = NULL;
+		release();
+
+		return copy;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+	}
+	return NULL;
+}
+
 JRequest* JAttachment::compileRequest(IStatus* user_status,
 	unsigned int blr_length, const unsigned char* blr)
 {
@@ -2154,11 +2232,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 		EngineContextHolder tdbb(user_status, this);
 		check_database(tdbb);
 
-		JTransaction* jt = static_cast<JTransaction*>(tra);
-		if (!jt)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-
-		validateHandle(tdbb, jt->getHandle());
+		validateHandle(tdbb, getEngineTransaction(user_status, tra));
 
 		try
 		{
@@ -2911,9 +2985,7 @@ int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -2966,10 +3038,7 @@ JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* 
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -3093,10 +3162,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -3740,11 +3806,7 @@ void JRequest::startAndSend(IStatus* user_status, Firebird::ITransaction* tra, i
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		if (!tra)
-		{
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-		}
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getAttachment()->getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -3807,7 +3869,7 @@ void JRequest::start(IStatus* user_status, Firebird::ITransaction* tra, int leve
 		if (!tra)
 			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
 
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getAttachment()->getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -4007,10 +4069,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		if (!tra)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
-
-		validateHandle(tdbb, static_cast<JTransaction*>(tra)->getHandle());
+		validateHandle(tdbb, getEngineTransaction(user_status, tra));
 
 		check_database(tdbb);
 
@@ -4226,7 +4285,7 @@ JStatement* JAttachment::allocateStatement(IStatus* user_status)
 JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
-	JTransaction* jt = static_cast<JTransaction*>(apiTra);
+	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 	try
@@ -4294,7 +4353,7 @@ JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction*
 	unsigned int /*in_msg_type*/, const FbMessage* inMsgBuffer,
 	const FbMessage* outMsgBuffer)
 {
-	JTransaction* jt = static_cast<JTransaction*>(apiTra);
+	JTransaction* jt = apiTra ? getTransactionInterface(user_status, apiTra) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 	try
@@ -4476,7 +4535,7 @@ void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		jrd_tra* tra = apiTra ? static_cast<JTransaction*>(apiTra)->getHandle() : NULL;
+		jrd_tra* tra = apiTra ? getAttachment()->getEngineTransaction(user_status, apiTra): NULL;
 
 		if (tra)
 			validateHandle(tdbb, tra);

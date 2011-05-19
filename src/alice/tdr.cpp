@@ -704,63 +704,66 @@ static void reattach_database(tdr* trans)
 
 	ISC_get_host(buffer, sizeof(buffer));
 
-	// if this is being run from the same host,
-	// try to reconnect using the same pathname
-
-	if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
+	if (trans->tdr_fullpath)
 	{
-		if (TDR_attach_database(status_vector, trans,
+		// if this is being run from the same host,
+		// try to reconnect using the same pathname
+
+		if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
+		{
+			if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
-		{
-			return;
+			{
+				return;
+			}
 		}
-	}
-	else if (trans->tdr_host_site)
-	{
-		//  try going through the previous host with all available
-		//  protocols, using chaining to try the same method of
-		//  attachment originally used from that host
-		char* p = buffer;
-		const UCHAR* q = trans->tdr_host_site->str_data;
-		while (*q && p < end)
-			*p++ = *q++;
-		*p++ = ':';
-		q = trans->tdr_fullpath->str_data;
-		while (*q && p < end)
-			*p++ = *q++;
-		*p = 0;
-		if (TDR_attach_database(status_vector, trans, buffer))
+		else if (trans->tdr_host_site)
 		{
-			return;
+			//  try going through the previous host with all available
+			//  protocols, using chaining to try the same method of
+			//  attachment originally used from that host
+			char* p = buffer;
+			const UCHAR* q = trans->tdr_host_site->str_data;
+			while (*q && p < end)
+			*p++ = *q++;
+			*p++ = ':';
+			q = trans->tdr_fullpath->str_data;
+			while (*q && p < end)
+				*p++ = *q++;
+			*p = 0;
+			if (TDR_attach_database(status_vector, trans, buffer))
+			{
+				return;
+			}
 		}
-	}
 
-	// attaching using the old method didn't work;
-	// try attaching to the remote node directly
+		// attaching using the old method didn't work;
+		// try attaching to the remote node directly
 
-	if (trans->tdr_remote_site)
-	{
-		char* p = buffer;
-		const UCHAR* q = trans->tdr_remote_site->str_data;
-		while (*q && p < end)
-			*p++ = *q++;
-		*p++ = ':';
-		q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
-		while (*q && p < end)
-			*p++ = *q++;
-		*p = 0;
-		if (TDR_attach_database (status_vector, trans, buffer))
+		if (trans->tdr_remote_site)
 		{
-			return;
+			char* p = buffer;
+			const UCHAR* q = trans->tdr_remote_site->str_data;
+			while (*q && p < end)
+				*p++ = *q++;
+			*p++ = ':';
+			q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
+			while (*q && p < end)
+				*p++ = *q++;
+			*p = 0;
+			if (TDR_attach_database (status_vector, trans, buffer))
+			{
+				return;
+			}
 		}
-	}
 
+	}
 	// we have failed to reattach; notify the user
 	// and let them try to succeed where we have failed
 
 	ALICE_print(86, SafeArg() << trans->tdr_id);
 	// msg 86: Could not reattach to database for transaction %ld.
-	ALICE_print(87, SafeArg() << trans->tdr_fullpath->str_data);
+	ALICE_print(87, SafeArg() << (trans->tdr_fullpath ? (char*)(trans->tdr_fullpath->str_data) : "is unknown"));
 	// msg 87: Original path: %s
 
 	if (tdgbl->uSvc->isService())

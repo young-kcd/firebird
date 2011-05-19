@@ -1072,7 +1072,7 @@ void INF_transaction_info(const jrd_tra* transaction,
  **************************************/
 	CHECK_INPUT("INF_transaction_info");
 
-	UCHAR buffer[BUFFER_TINY];
+	UCHAR buffer[MAXPATHLEN];
 	USHORT length;
 
 	const UCHAR* const end_items = items + item_length;
@@ -1148,6 +1148,15 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 		case isc_info_tra_lock_timeout:
 			length = INF_convert(transaction->tra_lock_timeout, buffer);
+			break;
+
+		case fb_info_tra_dbpath:
+			length = transaction->tra_attachment->att_database->dbb_database_name.length();
+			if (length > MAXPATHLEN)
+			{
+				length = MAXPATHLEN;
+			}
+			memcpy(buffer, transaction->tra_attachment->att_database->dbb_database_name.c_str(), length);
 			break;
 
 		default:
