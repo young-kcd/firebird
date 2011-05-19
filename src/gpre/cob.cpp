@@ -614,7 +614,7 @@ void COB_action(const act* action, int /*column*/)
 	if ((action->act_flags & ACT_sql) && action->act_whenever)
 		gen_whenever(action->act_whenever);
 	else
-		fprintf(gpreGlob.out_file, names[COLUMN]);
+		fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -945,7 +945,7 @@ static void gen_at_end( const act* action)
 
 	const gpre_req* request = action->act_request;
 	printa(names[COLUMN], false, "IF %s = 0 THEN", gen_name(s, request->req_eof, true));
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -1357,7 +1357,7 @@ static void gen_create_database( const act* action)
 			}
 			if (db->dbb_r_user)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 28, %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 28, %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -1368,7 +1368,7 @@ static void gen_create_database( const act* action)
 			}
 			if (db->dbb_r_password)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 29,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 29,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -1381,7 +1381,7 @@ static void gen_create_database( const act* action)
 			// Process Role Name, isc_dpb_sql_role_name/60
 			if (db->dbb_r_sql_role)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 60,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 60,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -1393,7 +1393,7 @@ static void gen_create_database( const act* action)
 
 			if (db->dbb_r_lc_messages)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 47,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 47,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -1405,7 +1405,7 @@ static void gen_create_database( const act* action)
 			}
 			if (db->dbb_r_lc_ctype)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s %s%s, BY VALUE 48,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s %s%s, BY VALUE 48,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -1436,7 +1436,7 @@ static void gen_create_database( const act* action)
 	TEXT dbname[128];
 	sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
 
-	sprintf(output_buffer, "%sCALL \"%s\" USING %s, %s%d%s, %s%s, %s%s, %s, %s, %s0%s\n",
+	sprintf(output_buffer, "%sCALL \"%s\" USING %s, %s%" SIZEFORMAT "%s, %s%s, %s%s, %s, %s, %s0%s\n",
 			names[COLUMN],
 			ISC_CREATE_DATABASE,
 			status_vector(action),
@@ -1591,12 +1591,12 @@ static void gen_database( const act* action)
 		db->dbb_id = ++count;
 		if (db->dbb_runtime)
 		{
-			printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%d) VALUE IS \"%s\".",
+			printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%" SIZEFORMAT ") VALUE IS \"%s\".",
 				   names[isc_b_pos], db->dbb_id, strlen(db->dbb_runtime), db->dbb_runtime);
 		}
 		else if (db->dbb_filename)
 		{
-			printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%d) VALUE IS \"%s\".",
+			printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%" SIZEFORMAT ") VALUE IS \"%s\".",
 				   names[isc_b_pos], db->dbb_id, strlen(db->dbb_filename), db->dbb_filename);
 		}
 
@@ -1624,14 +1624,14 @@ static void gen_database( const act* action)
 				const TEXT* s = ready->rdy_filename;
 				if (s && ((*s == '\'') || (*s == '\"')))
 				{
-					int len = strlen(++s);
+					size_t len = strlen(++s);
 					if (len >= sizeof(fname))
 						len = sizeof(fname);
 
 					strncpy(fname, s, len);
 					fname[len - 1] = 0;
 					ready->rdy_id = ++count;
-					printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%d) VALUE IS \"%s\".",
+					printa(names[COLUMN_0], false, "01  %s%ddb PIC X(%" SIZEFORMAT ") VALUE IS \"%s\".",
 						   names[isc_b_pos], ready->rdy_id, strlen(fname), fname);
 				}
 			}
@@ -1690,7 +1690,7 @@ static void gen_database( const act* action)
 				if (!chck_dups)
 				{
 					make_name(s1, cur_stmt);
-					printa(names[COLUMN_0], false, "01  ISC-CONST-%s PIC X(%d) VALUE IS \"%s \".",
+					printa(names[COLUMN_0], false, "01  ISC-CONST-%s PIC X(%" SIZEFORMAT ") VALUE IS \"%s \".",
 						   s1, strlen(s1) + 1, s1);
 					printa(names[COLUMN_0], false, "01  ISC-CONST-%sL PIC S9(4) USAGE %s.",
 						   s1, COMP_VALUE);
@@ -1711,7 +1711,7 @@ static void gen_database( const act* action)
 				const gpre_prc* procedure = (gpre_prc*) local_act->act_object;
 				const gpre_sym* symbol = procedure->prc_symbol;
 				const char* sname = symbol->sym_string;
-				printa(names[COLUMN_0], false, "01  %s%dprc PIC X(%d) VALUE IS \"%s\".",
+				printa(names[COLUMN_0], false, "01  %s%dprc PIC X(%" SIZEFORMAT ") VALUE IS \"%s\".",
 					   names[isc_b_pos], request->req_ident, strlen(sname), sname);
 			}
 		}
@@ -2805,7 +2805,7 @@ static TEXT* gen_name(TEXT* const string, const ref* reference, bool as_blob)
 static void gen_on_error() // const act* action)
 {
 	printa(names[COLUMN], false, "IF %s (2) NOT = 0 THEN", names[isc_status_pos]);
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -3005,7 +3005,7 @@ static void gen_ready( const act* action)
 		set_sqlcode(action);
 	}
 
-	fprintf(gpreGlob.out_file, names[COLUMN]);
+	fprintf(gpreGlob.out_file, "%s", names[COLUMN]);
 }
 
 
@@ -3847,7 +3847,7 @@ static void make_array_declaration( ref* reference)
 		}
 	}
 
-	printa(space, false, string1);
+	printa(space, false, "%s", string1);
 }
 
 
@@ -3999,7 +3999,7 @@ static void make_ready(const gpre_dbb* db, const TEXT* filename,
 			}
 			if (db->dbb_r_user)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 28, %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 28, %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -4010,7 +4010,7 @@ static void make_ready(const gpre_dbb* db, const TEXT* filename,
 			}
 			if (db->dbb_r_password)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 29,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 29,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -4023,7 +4023,7 @@ static void make_ready(const gpre_dbb* db, const TEXT* filename,
 			// Process Role Name, isc_dpb_sql_role_name/60
 			if (db->dbb_r_sql_role)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 60,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 60,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -4035,7 +4035,7 @@ static void make_ready(const gpre_dbb* db, const TEXT* filename,
 
 			if (db->dbb_r_lc_messages)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 47,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s, %s%s, BY VALUE 47,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,
@@ -4047,7 +4047,7 @@ static void make_ready(const gpre_dbb* db, const TEXT* filename,
 			}
 			if (db->dbb_r_lc_ctype)
 			{
-				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s %s%s, BY VALUE 48,  %s %s, %s%d%s\n",
+				sprintf(output_buffer, "%sCALL \"%s\" USING %s%s %s%s, BY VALUE 48,  %s %s, %s%" SIZEFORMAT "%s\n",
 						names[COLUMN],
 						ISC_MODIFY_DPB,
 						BY_REF, s2,

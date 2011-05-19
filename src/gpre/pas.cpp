@@ -1031,12 +1031,12 @@ static void gen_create_database( const act* action, int column)
 	align(column);
 
 	if (request->req_length)
-		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, %d, gds__%d, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, %d, gds__%d, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string,
 				   request->req_length, request->req_ident);
 	else
-		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %d, '%s', %s, 0, 0, 0);",
+		fprintf(gpreGlob.out_file, "GDS__CREATE_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, 0, 0, 0);",
 				   status_vector(action), strlen(db->dbb_filename),
 				   db->dbb_filename, db->dbb_name->sym_string);
 
@@ -1359,7 +1359,7 @@ static void gen_drop_database( const act* action, int column)
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 	align(column);
 
-	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %d, '%s', RDB$K_DB_TYPE_GDS);",
+	fprintf(gpreGlob.out_file, "GDS__DROP_DATABASE (%s, %" SIZEFORMAT ", '%s', RDB$K_DB_TYPE_GDS);",
 			   status_vector(action),
 			   strlen(db->dbb_filename), db->dbb_filename);
 	set_sqlcode(action, column);
@@ -1800,7 +1800,7 @@ static void gen_event_init( const act* action, int column)
 	PAT args;
 	args.pat_database = (gpre_dbb*) init->nod_arg[3];
 	args.pat_vector1 = status_vector(action);
-	args.pat_value1 = (int) init->nod_arg[2];
+	args.pat_value1 = (int)(IPTR) init->nod_arg[2];
 	args.pat_value2 = (int) event_list->nod_count;
 	args.pat_string1 = GDS_EVENT_WAIT;
 	args.pat_string2 = GDS_EVENT_COUNTS;
@@ -1872,7 +1872,7 @@ static void gen_event_wait( const act* action, int column)
 		gpre_sym* stack_name = (gpre_sym*) event_init->nod_arg[0];
 		if (!strcmp(event_name->sym_string, stack_name->sym_string))
 		{
-			ident = (int) event_init->nod_arg[2];
+			ident = (int)(IPTR) event_init->nod_arg[2];
 			database = (gpre_dbb*) event_init->nod_arg[3];
 		}
 	}
@@ -3378,7 +3378,7 @@ static void make_ready(const gpre_dbb* db,
 	}
 	else
 	{
-		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %d, '%s', %s, %s, %s);",
+		fprintf(gpreGlob.out_file, "GDS__ATTACH_DATABASE (%s, %" SIZEFORMAT ", '%s', %s, %s, %s);",
 				   vector, strlen(db->dbb_filename), db->dbb_filename,
 				   db->dbb_name->sym_string, (request ? s1 : "0"),
 				   (request ? s2 : "0"));
