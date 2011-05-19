@@ -199,11 +199,7 @@
 * Darwin Platforms
 *****************************************************/
 #ifdef DARWIN
-// EKU: obsolete, replaced by _FILE_OFFSET_BITS
-//#ifndef UNIX_64_BIT_IO
-//#define UNIX_64_BIT_IO
-//#endif
-//
+
 //format for __LINE__
 #define LINEFORMAT "d"
 
@@ -250,12 +246,6 @@
 * FreeBSD for Intel platforms
 *****************************************************/
 #ifdef FREEBSD
-
-// EKU: obsolete, replaced by _FILE_OFFSET_BITS
-//#ifndef UNIX_64_BIT_IO
-//#define UNIX_64_BIT_IO
-//#endif
-//
 
 //#define FB_ALIGNMENT     4
 //#define FB_DOUBLE_ALIGN  4
