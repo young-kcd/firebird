@@ -1043,14 +1043,6 @@ BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
 								  isc_tr_handle,
 								  const ISC_SCHAR*);
 
-/* Disabled, not found anywhere.
-BSTREAM* ISC_EXPORT Bopen2(ISC_QUAD*,
-								   isc_db_handle,
-								   isc_tr_handle,
-								   const ISC_SCHAR*,
-								   unsigned short);
-*/
-
 
 /******************************/
 /* Other Misc functions       */
