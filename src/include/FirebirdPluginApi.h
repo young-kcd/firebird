@@ -70,7 +70,7 @@
 namespace Firebird {
 
 // IPluginBase interface - base for master plugin interfaces (factories are registered for them)
-class IPluginBase : public IInterface
+class IPluginBase : public IRefCounted
 {
 public:
 	// Additional (compared with Interface) functions getOwner() and setOwner()
@@ -79,13 +79,13 @@ public:
 	// after plugin itself, and therefore module is unloaded after release of last plugin from it.
 	// Releasing owner from release() of plugin will unload module and after returning control
 	// to missing code segfault is unavoidable.
-	virtual void FB_CARG setOwner(IInterface*) = 0;
-	virtual IInterface* FB_CARG getOwner() = 0;
+	virtual void FB_CARG setOwner(IRefCounted*) = 0;
+	virtual IRefCounted* FB_CARG getOwner() = 0;
 };
-#define FB_PLUGIN_VERSION (FB_INTERFACE_VERSION + 2)
+#define FB_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 2)
 
 // IPluginSet - low level tool to access plugins according to parameter from firebird.conf
-class IPluginSet : public IInterface
+class IPluginSet : public IRefCounted
 {
 public:
 	virtual const char* FB_CARG getName() const = 0;
@@ -94,33 +94,33 @@ public:
 	virtual void FB_CARG next() = 0;
 	virtual void FB_CARG set(const char*) = 0;
 };
-#define FB_PLUGIN_SET_VERSION (FB_INTERFACE_VERSION + 5)
+#define FB_PLUGIN_SET_VERSION (FB_REFCOUNTED_VERSION + 5)
 
 // Interfaces to work with configuration data
 class IConfig;
 
 // Entry in configuration file
-class IConfigEntry : public IInterface
+class IConfigEntry : public IRefCounted
 {
 public:
 	virtual const char* FB_CARG getName() = 0;
 	virtual const char* FB_CARG getValue() = 0;
 	virtual IConfig* FB_CARG getSubConfig() = 0;
 };
-#define FB_I_CONFIG_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
+#define FB_CONFIG_PARAMETER_VERSION (FB_REFCOUNTED_VERSION + 3)
 
 // Generic form of access to configuration file - find specific entry in it
-class IConfig : public IInterface
+class IConfig : public IRefCounted
 {
 public:
 	virtual IConfigEntry* FB_CARG find(const char* name) = 0;
 	virtual IConfigEntry* FB_CARG findValue(const char* name, const char* value) = 0;
 	virtual IConfigEntry* FB_CARG findPos(const char* name, unsigned int pos) = 0;
 };
-#define FB_I_CONFIG_VERSION (FB_INTERFACE_VERSION + 3)
+#define FB_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 3)
 
 // Used to access config values from firebird.conf (may be DB specific)
-class IFirebirdConf : public IInterface
+class IFirebirdConf : public IRefCounted
 {
 public:
 	// Get integer key by it's name
@@ -132,37 +132,40 @@ public:
 	// Use to access string values
 	virtual const char* FB_CARG asString(unsigned int key) = 0;
 };
-#define FB_I_FIREBIRD_CONF_VERSION (FB_INTERFACE_VERSION + 3)
+#define FB_FIREBIRD_CONF_VERSION (FB_REFCOUNTED_VERSION + 3)
 
 // This interface is passed to plugin's factory as it's single parameter
 // and contains methods to access specific plugin's configuration data
-class IPluginConfig : public IInterface
+class IPluginConfig : public IRefCounted
 {
 public:
 	virtual const char* FB_CARG getConfigFileName() = 0;
 	virtual IConfig* FB_CARG getDefaultConfig() = 0;
 	virtual IFirebirdConf* FB_CARG getFirebirdConf() = 0;
 };
-#define FB_FACTORY_PARAMETER_VERSION (FB_INTERFACE_VERSION + 3)
+#define FB_PLUGIN_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 3)
 
 // Required to creat instances of given plugin
-class IPluginFactory : public IDisposable
+class IPluginFactory : public IVersioned
 {
 public:
 	virtual IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter) = 0;
 };
+#define FB_PLUGIN_FACTORY_VERSION (FB_VERSIONED_VERSION + 1)
 
 // Required to let plugins manager invoke module's cleanup routine before unloading it.
 // For some OS/compiler this may be done in dtor of global variable in module itself.
 // Others (Windows/VC) fail to create some very useful resources (threads) when module is unloading.
-class IPluginModule : public IDisposable
+class IPluginModule : public IVersioned
 {
 public:
 	virtual void FB_CARG doClean() = 0;
 };
+#define FB_PLUGIN_MODULE_VERSION (FB_VERSIONED_VERSION + 1)
+
 
 // Interface to deal with plugins here and there, returned by master interface
-class IPluginManager : public IDisposable
+class IPluginManager : public IVersioned
 {
 public:
 	// Main function called by plugin modules in firebird_plugin()
@@ -192,6 +195,8 @@ public:
 	// will cause resources leak
 	virtual void FB_CARG releasePlugin(IPluginBase* plugin) = 0;
 };
+#define FB_PLUGIN_MANAGER_VERSION (FB_VERSIONED_VERSION + 6)
+
 
 typedef void PluginEntrypoint(IMaster* masterInterface);
 

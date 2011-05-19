@@ -42,7 +42,7 @@ class Service;
 class JAttachment;
 class JProvider;
 
-class JBlob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
+class JBlob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
 	// IBlob implementation
@@ -79,7 +79,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JTransaction : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANSACTION_VERSION>
+class JTransaction : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	// ITransaction implementation
@@ -137,7 +137,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JStatement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION>
+class JStatement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
@@ -185,7 +185,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status, unsigned int option);
 };
 
-class JRequest : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSION>
+class JRequest : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
 {
 public:
 	// IRequest implementation
@@ -226,7 +226,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JEvents : public Firebird::StdIface<Firebird::IEvents, FB_I_EVENTS_VERSION>
+class JEvents : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
 {
 public:
 	// IEvents implementation
@@ -256,7 +256,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JAttachment : public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION>
+class JAttachment : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
 {
 public:
 	// IAttachment implementation
@@ -334,7 +334,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JService : public Firebird::StdIface<Firebird::IService, FB_I_SERVICE_VERSION>
+class JService : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
 {
 public:
 	// IService implementation
@@ -356,7 +356,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_I_PROVIDER_VERSION>
+class JProvider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig*)

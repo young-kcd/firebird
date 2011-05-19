@@ -678,8 +678,9 @@ class DummyMasterImpl : public IMaster
 {
 public:
 	// IMaster implementation (almost dummy, for boot build)
-	virtual void FB_CARG dispose()
+	virtual int FB_CARG getVersion()
 	{
+		return FB_MASTER_VERSION;
 	}
 
 	virtual IStatus* FB_CARG getStatus()
@@ -700,7 +701,7 @@ public:
 		return NULL;
 	}
 
-	virtual int FB_CARG upgradeInterface(IInterface* /*toUpgrade*/, int /*desiredVersion*/,
+	virtual int FB_CARG upgradeInterface(IVersioned* /*toUpgrade*/, int /*desiredVersion*/,
 										 void* /*missingFunctionClass*/)
 	{
 		fb_assert(false);

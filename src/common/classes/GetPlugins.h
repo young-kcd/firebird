@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird interface.
  *	MODULE:			ImplementHelper.h
- *	DESCRIPTION:	Tools to help write plugins.
+ *	DESCRIPTION:	Tools to help access plugins.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -50,7 +50,7 @@ class GetPlugins
 {
 public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, const char* namesList = NULL)
-		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginManager()), missing(),
+		: masterInterface(), pluginInterface(masterInterface), missing(),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
 		  										desiredVersion, &missing, NULL)),
 		  currentPlugin(NULL)
@@ -61,7 +61,7 @@ public:
 
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
 			   Config* knownConfig, const char* namesList = NULL)
-		: masterInterface(fb_get_master_interface()), pluginInterface(masterInterface->getPluginManager()), missing(),
+		: masterInterface(), pluginInterface(masterInterface), missing(),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
 		  										desiredVersion, &missing, new FirebirdConf(knownConfig))),
 		  currentPlugin(NULL)
@@ -122,8 +122,8 @@ public:
 	}
 
 private:
-	AutoPtr<IMaster, AutoDisposable> masterInterface;
-	AutoPtr<IPluginManager, AutoDisposable> pluginInterface;
+	MasterInterfacePtr masterInterface;
+	PluginManagerInterfacePtr pluginInterface;
 	M missing;
 	RefPtr<IPluginSet> pluginSet;
 	P* currentPlugin;

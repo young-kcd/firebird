@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird interface.
  *	MODULE:			ImplementHelper.h
- *	DESCRIPTION:	Tools to help write plugins.
+ *	DESCRIPTION:	Tools to help create interfaces.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -59,25 +59,30 @@ public:
 
 // Implement standard interface and plugin functions
 
-// Helps to implement disposable interfaces
-template <class C, typename S = GlobalStorage>
-class DisposeIface : public C, public S
+// Helps to implement generic versioned interfaces
+template <class C, int V>
+class VersionedIface : public C
 {
 public:
-	DisposeIface() { }
+	VersionedIface() { }
+
+	int FB_CARG getVersion()
+	{
+		return V;
+	}
 
 private:
-	DisposeIface(const DisposeIface&);
-	DisposeIface& operator=(const DisposeIface&);
+	VersionedIface(const VersionedIface&);
+	VersionedIface& operator=(const VersionedIface&);
 };
 
-// Helps to implement disposable interfaces on stack or static
-template <class C, typename S = GlobalStorage>
-class StackIface : public DisposeIface<C, S>
+
+// Helps to implement versioned interfaces on stack or static
+template <class C, int V>
+class AutoIface : public VersionedIface<C, V>
 {
 public:
-	void FB_CARG dispose()
-	{ }
+	AutoIface() { }
 
 	void* operator new(size_t, void* memory) throw()
 	{
@@ -85,20 +90,23 @@ public:
 	}
 };
 
-// Helps to implement standard interfaces
-template <class C, int V, typename S = GlobalStorage>
-class StdIface : public C, public S
+// Helps to implement disposable interfaces
+template <class C, int V>
+class DisposeIface : public VersionedIface<C, V>, public GlobalStorage
 {
 public:
-	StdIface() : refCounter(0) { }
+	DisposeIface() { }
+};
 
-	int FB_CARG getVersion()
-	{
-		return V;
-	}
+// Helps to implement standard interfaces
+template <class C, int V>
+class RefCntIface : public VersionedIface<C, V>, public GlobalStorage
+{
+public:
+	RefCntIface() : refCounter(0) { }
 
 #ifdef DEV_BUILD
-	~StdIface()
+	~RefCntIface()
 	{
 		fb_assert(refCounter.value() == 0);
 	}
@@ -111,30 +119,26 @@ public:
 
 protected:
 	AtomicCounter refCounter;
-
-private:
-	StdIface(const StdIface&);
-	StdIface& operator=(const StdIface&);
 };
 
 
 // Helps to implement plugins
-template <class C, int V, typename S = GlobalStorage>
-class StdPlugin : public StdIface<C, V, S>
+template <class C, int V>
+class StdPlugin : public RefCntIface<C, V>
 {
 private:
-	IInterface* owner;
+	IRefCounted* owner;
 
 public:
 	StdPlugin() : owner(NULL)
 	{ }
 
-	IInterface* FB_CARG getOwner()
+	IRefCounted* FB_CARG getOwner()
 	{
 		return owner;
 	}
 
-	void FB_CARG setOwner(IInterface* iface)
+	void FB_CARG setOwner(IRefCounted* iface)
 	{
 		owner = iface;
 	}
@@ -143,7 +147,7 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public StackIface<IPluginFactory>
+class SimpleFactoryBase : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
 {
 public:
 	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
@@ -160,40 +164,68 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 };
 
 
-// Master interface access
-class MasterInterfacePtr : public AutoPtr<IMaster, AutoDisposable>
+// Base for interface type indpendent accessors
+template <typename C>
+class AccessAutoInterface
 {
 public:
-	MasterInterfacePtr() : AutoPtr<IMaster, AutoDisposable>(fb_get_master_interface())
+	AccessAutoInterface(C* aPtr)
+		: ptr(aPtr)
+	{ }
+
+	operator C*()
+	{
+		return ptr;
+	}
+
+	C* operator->()
+	{
+		return ptr;
+	}
+
+private:
+	C* ptr;
+};
+
+// Master interface access
+class MasterInterfacePtr : public AccessAutoInterface<IMaster>
+{
+public:
+	MasterInterfacePtr()
+		: AccessAutoInterface<IMaster>(fb_get_master_interface())
 	{ }
 };
 
 
 // Generic plugins interface access
-class PluginManagerInterfacePtr : public AutoPtr<IPluginManager, AutoDisposable>
+class PluginManagerInterfacePtr : public AccessAutoInterface<IPluginManager>
 {
 public:
-	PluginManagerInterfacePtr() : AutoPtr<IPluginManager, AutoDisposable>(fb_get_master_interface()->getPluginManager())
+	PluginManagerInterfacePtr()
+		: AccessAutoInterface<IPluginManager>(MasterInterfacePtr()->getPluginManager())
 	{ }
-	PluginManagerInterfacePtr(IMaster* master) : AutoPtr<IPluginManager, AutoDisposable>(master->getPluginManager())
+	PluginManagerInterfacePtr(IMaster* master)
+		: AccessAutoInterface<IPluginManager>(master->getPluginManager())
 	{ }
 };
 
 
 // Control timer interface access
-class TimerInterfacePtr : public AutoPtr<ITimerControl, AutoDisposable>
+class TimerInterfacePtr : public AccessAutoInterface<ITimerControl>
 {
 public:
-	TimerInterfacePtr() : AutoPtr<ITimerControl, AutoDisposable>(fb_get_master_interface()->getTimerControl())
+	TimerInterfacePtr()
+		: AccessAutoInterface<ITimerControl>(fb_get_master_interface()->getTimerControl())
 	{ }
 };
 
 
 // Distributed transactions coordinator access
-class DtcInterfacePtr : public AutoPtr<IDtc, AutoDisposable>
+class DtcInterfacePtr : public AccessAutoInterface<IDtc>
 {
 public:
-	DtcInterfacePtr() : AutoPtr<IDtc, AutoDisposable>(fb_get_master_interface()->getDtc())
+	DtcInterfacePtr()
+		: AccessAutoInterface<IDtc>(fb_get_master_interface()->getDtc())
 	{ }
 };
 
@@ -203,11 +235,7 @@ public:
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
 // module unload and notifies PluginManager about this said fact.
-class DummyStorage
-{
-};
-
-class UnloadDetectorHelper : public DisposeIface<IPluginModule, DummyStorage>
+class UnloadDetectorHelper : public VersionedIface<IPluginModule, FB_PLUGIN_MODULE_VERSION>
 {
 public:
 	explicit UnloadDetectorHelper(MemoryPool&)
@@ -228,11 +256,6 @@ public:
 	bool unloadStarted()
 	{
 		return !flagOsUnload;
-	}
-
-	void FB_CARG dispose()
-	{
-		// delete this;	-don't do that!
 	}
 
 private:

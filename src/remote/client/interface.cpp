@@ -132,7 +132,7 @@ namespace Remote {
 
 class Attachment;
 
-class Blob : public Firebird::StdIface<Firebird::IBlob, FB_I_BLOB_VERSION>
+class Blob : public Firebird::RefCntIface<Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
 	// IBlob implementation
@@ -173,7 +173,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction : public Firebird::StdIface<Firebird::ITransaction, FB_I_TRANSACTION_VERSION>
+class Transaction : public Firebird::RefCntIface<Firebird::ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	// ITransaction implementation
@@ -235,7 +235,7 @@ int Transaction::release()
 	return 0;
 }
 
-class Statement : public Firebird::StdIface<Firebird::IStatement, FB_I_STATEMENT_VERSION>
+class Statement : public Firebird::RefCntIface<Firebird::IStatement, FB_STATEMENT_VERSION>
 {
 public:
 	// IStatement implementation
@@ -289,7 +289,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request : public Firebird::StdIface<Firebird::IRequest, FB_I_REQUEST_VERSION>
+class Request : public Firebird::RefCntIface<Firebird::IRequest, FB_REQUEST_VERSION>
 {
 public:
 	// IRequest implementation
@@ -333,7 +333,7 @@ int Request::release()
 	return 0;
 }
 
-class Events : public Firebird::StdIface<Firebird::IEvents, FB_I_EVENTS_VERSION>
+class Events : public Firebird::RefCntIface<Firebird::IEvents, FB_EVENTS_VERSION>
 {
 public:
 	// IEvents implementation
@@ -363,7 +363,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment : public Firebird::StdIface<Firebird::IAttachment, FB_I_ATTACHMENT_VERSION>
+class Attachment : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
 {
 public:
 	// IAttachment implementation
@@ -446,7 +446,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service : public Firebird::StdIface<Firebird::IService, FB_I_SERVICE_VERSION>
+class Service : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
 {
 public:
 	// IService implementation
@@ -482,7 +482,7 @@ int Service::release()
 	return 0;
 }
 
-class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_I_PROVIDER_VERSION>
+class Provider : public Firebird::StdPlugin<Firebird::IProvider, FB_PROVIDER_VERSION>
 {
 public:
 	explicit Provider(IPluginConfig*)

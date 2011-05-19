@@ -44,7 +44,7 @@
 // Bring in off_t
 #include <sys/types.h>
 
-class TracePluginImpl : public Firebird::StdIface<TracePlugin, FB_TRACE_PLUGIN_VERSION>
+class TracePluginImpl : public Firebird::RefCntIface<TracePlugin, FB_TRACE_PLUGIN_VERSION>
 {
 public:
 	// Serialize exception to TLS buffer to return it to user

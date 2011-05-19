@@ -39,22 +39,33 @@
 
 namespace Firebird {
 
-// Regular interface - base for refCounted FB interfaces
-class IInterface
+// Versioned interface - base for all FB interfaces
+class IVersioned
+{
+public:
+	virtual int FB_CARG getVersion() = 0;
+};
+// If this is changed, types of all interfaces must be changed
+#define FB_VERSIONED_VERSION 1
+
+// Reference counted interface - base for refCounted FB interfaces
+class IRefCounted : public IVersioned
 {
 public:
 	virtual void FB_CARG addRef() = 0;
 	virtual int FB_CARG release() = 0;
-	virtual int FB_CARG getVersion() = 0;
 };
-#define FB_INTERFACE_VERSION 3		// If this is changed, types of all interfaces must be changed
+// If this is changed, types of refCounted interfaces must be changed
+#define FB_REFCOUNTED_VERSION (FB_VERSIONED_VERSION + 2)
 
-// Disposable interface - base for static and onStack interfaces, may be used in regular case too
+// Disposable interface - base for disposable FB interfaces
 class IDisposable
 {
 public:
 	virtual void FB_CARG dispose() = 0;
 };
+// If this is changed, types of disposable interfaces must be changed
+#define FB_DISPOSABLE_VERSION (FB_VERSIONED_VERSION + 1)
 
 // Interface to work with status vector
 // Created by master interface by request
@@ -69,6 +80,7 @@ public:
 	virtual const ISC_STATUS* FB_CARG get() const = 0;
 	virtual int FB_CARG isSuccess() const = 0;
 };
+#define FB_STATUS_VERSION (FB_DISPOSABLE_VERSION + 5)
 
 class IProvider;
 class IPluginManager;
@@ -78,22 +90,20 @@ class ITransaction;
 class IDtc;
 
 // Master interface is used to access almost all other interfaces.
-class IMaster : public IDisposable
+class IMaster : public IVersioned
 {
 public:
-	// This interface can't be upgraded - therefore another form of version is used
-	const static unsigned int VERSION = 1;	// To be changed each time any interface, passed
-											// by firebird to plugins is changed
 	virtual IStatus* FB_CARG getStatus() = 0;
 	virtual IProvider* FB_CARG getDispatcher() = 0;
 	virtual IPluginManager* FB_CARG getPluginManager() = 0;
-	virtual int FB_CARG upgradeInterface(IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
+	virtual int FB_CARG upgradeInterface(IVersioned* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 	virtual IDtc* FB_CARG getDtc() = 0;
 	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
 	virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 };
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 6)
 
 } // namespace Firebird
 

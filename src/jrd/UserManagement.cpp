@@ -71,7 +71,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 	fb_assert(manager);
 	manager->addRef();
 
-	class UserIdInfo : public StackIface<Auth::ILogonInfo>
+	class UserIdInfo : public AutoIface<Auth::ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 	{
 	public:
 		explicit UserIdInfo(const Attachment* pAtt)

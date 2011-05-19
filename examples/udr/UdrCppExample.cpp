@@ -350,7 +350,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 		"select data_source from replicate_config where name = ?",
 		SQL_DIALECT_CURRENT, NULL), statusVector);
 
-	AutoDispose<IMaster> master(funcGetMasterInterface());
+	IMaster* master(funcGetMasterInterface());
 	AutoDispose<IStatus> status(master->getStatus());
 
 	const char* table = metadata->getTriggerTable(status);

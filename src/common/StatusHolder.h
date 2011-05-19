@@ -80,8 +80,11 @@ private:
 	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
 };
 
-class LocalStatus : public StackIface<BaseStatus>
+class LocalStatus : public AutoIface<BaseStatus, FB_STATUS_VERSION>
 {
+public:
+	virtual void FB_CARG dispose()
+	{ }
 };
 
 class StatusHolder

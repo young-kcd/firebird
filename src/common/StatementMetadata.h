@@ -30,6 +30,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
+#include "../common/classes/ImplementHelper.h"
 
 namespace Firebird {
 
@@ -38,7 +39,8 @@ namespace Firebird {
 class StatementMetadata : public PermanentStorage
 {
 public:
-	class Parameters : public IParametersMetadata, public PermanentStorage
+	class Parameters : public VersionedIface<IParametersMetadata, FB_PARAMETERS_METADATA_VERSION>,
+					   public PermanentStorage
 	{
 	public:
 		struct Item : public PermanentStorage

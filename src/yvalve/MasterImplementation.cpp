@@ -51,7 +51,7 @@ namespace Why {
 // getStatus()
 //
 
-class UserStatus : public Firebird::DisposeIface<Firebird::BaseStatus>
+class UserStatus : public Firebird::DisposeIface<Firebird::BaseStatus, FB_STATUS_VERSION>
 {
 private:
 	// IStatus implementation
@@ -106,7 +106,7 @@ namespace
 	GlobalPtr<RWLock> mapLock;
 }
 
-int FB_CARG MasterImplementation::upgradeInterface(IInterface* toUpgrade,
+int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 												   int desiredVersion,
 												   void* missingFunctionClass)
 {
@@ -466,7 +466,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public StackIface<ITimerControl>
+class TimerImplementation : public AutoIface<ITimerControl, FB_TIMER_CONTROL_VERSION>
 {
 public:
 	// ITimerControl implementation

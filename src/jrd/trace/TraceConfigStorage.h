@@ -70,7 +70,7 @@ private:
 	void checkFile();
 	void touchFile();
 
-	class TouchFile : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+	class TouchFile : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 	{
 	public:
 		void FB_CARG handler();

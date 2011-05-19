@@ -351,7 +351,7 @@ public:
 };
 
 // Implementation of interface to access master configuration file
-class FirebirdConf : public Firebird::StdIface<Firebird::IFirebirdConf, FB_I_FIREBIRD_CONF_VERSION>
+class FirebirdConf : public Firebird::RefCntIface<Firebird::IFirebirdConf, FB_FIREBIRD_CONF_VERSION>
 {
 public:
 	FirebirdConf(Config* existingConfig)

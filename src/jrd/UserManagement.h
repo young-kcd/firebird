@@ -54,7 +54,7 @@ protected:
 class UserManagement : public DataDump
 {
 public:
-	class Display : public Firebird::StackIface<Auth::IListUsers>
+	class Display : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
 	{
 	public:
 		explicit Display(UserManagement* um)

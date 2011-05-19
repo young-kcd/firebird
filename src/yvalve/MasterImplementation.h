@@ -37,14 +37,14 @@ namespace Why
 {
 	extern Firebird::IProvider* dispatcherPtr;
 
-	class MasterImplementation : public Firebird::StackIface<Firebird::IMaster>
+	class MasterImplementation : public Firebird::AutoIface<Firebird::IMaster, FB_MASTER_VERSION>
 	{
 	public:
 		// IMaster implementation
 		Firebird::IStatus* FB_CARG getStatus();
 		Firebird::IProvider* FB_CARG getDispatcher();
 		Firebird::IPluginManager* FB_CARG getPluginManager();
-		int FB_CARG upgradeInterface(Firebird::IInterface* toUpgrade, int desiredVersion, void* missingFunctionClass);
+		int FB_CARG upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion, void* missingFunctionClass);
 		const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
 		Firebird::ITimerControl* FB_CARG getTimerControl();
 		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,

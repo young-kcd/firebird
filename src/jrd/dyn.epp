@@ -1969,16 +1969,24 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try
 	{
-		class DisposeableUserData : public Firebird::DisposeIface<Auth::UserData, pool_alloc<type_user_data> >
+		class DynamicUserData : public Firebird::VersionedIface<Auth::UserData, FB_AUTH_USER_VERSION>
 		{
 		public:
-			void FB_CARG dispose()
+
+#ifdef DEBUG_GDS_ALLOC
+			void* operator new(size_t size, Firebird::MemoryPool& pool, const char* fileName, int line)
 			{
-				delete this;
+				return pool.allocate(size, fileName, line);
 			}
+#else	// DEBUG_GDS_ALLOC
+			void* operator new(size_t size, Firebird::MemoryPool& pool)
+			{
+				return pool.allocate(size);
+			}
+#endif	// DEBUG_GDS_ALLOC
 		};
 
-		DisposeableUserData* userData = FB_NEW(*tra->tra_pool) DisposeableUserData;
+		DynamicUserData* userData = FB_NEW(*tra->tra_pool) DynamicUserData;
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_user_end)
 		{

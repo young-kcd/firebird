@@ -189,7 +189,7 @@ static RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HAND
 namespace Why
 {
 	// StatusVector:	Provides correct status vector for operation and init() it.
-	class StatusVector : public StackIface<IStatus>
+	class StatusVector : public AutoIface<IStatus, FB_STATUS_VERSION>
 	{
 	public:
 		explicit StatusVector(ISC_STATUS* v) throw()
@@ -211,6 +211,9 @@ namespace Why
 		}
 
 		// IStatus implementation
+		void FB_CARG dispose()
+		{ }
+
 		void FB_CARG set(unsigned int length, const ISC_STATUS* value)
 		{
 			fb_utils::copyStatus(localVector, FB_NELEM(localStatus), value, length);
@@ -706,7 +709,7 @@ namespace Why
 		RefPtr<Intf> next;
 	};
 
-	class YEvents : public YHelper<YEvents, IEvents, FB_I_EVENTS_VERSION>
+	class YEvents : public YHelper<YEvents, IEvents, FB_EVENTS_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
@@ -730,7 +733,7 @@ namespace Why
 		bool deleteCallback;
 	};
 
-	class YRequest : public YHelper<YRequest, IRequest, FB_I_REQUEST_VERSION>
+	class YRequest : public YHelper<YRequest, IRequest, FB_REQUEST_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -757,7 +760,7 @@ namespace Why
 		FB_API_HANDLE* userHandle;
 	};
 
-	class YTransaction : public YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>
+	class YTransaction : public YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
@@ -790,7 +793,7 @@ namespace Why
 
 	private:
 		YTransaction(YTransaction* from)
-			: YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>(from->next),
+			: YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>(from->next),
 			attachment(from->attachment),
 			childBlobs(getPool()),
 			cleanupHandlers(getPool())
@@ -802,7 +805,7 @@ namespace Why
 		}
 	};
 
-	class YBlob : public YHelper<YBlob, IBlob, FB_I_BLOB_VERSION>
+	class YBlob : public YHelper<YBlob, IBlob, FB_BLOB_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_segstr_handle;
@@ -825,7 +828,7 @@ namespace Why
 		YTransaction* transaction;
 	};
 
-	class YStatement : public YHelper<YStatement, IStatement, FB_I_STATEMENT_VERSION>
+	class YStatement : public YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
@@ -881,13 +884,13 @@ namespace Why
 		Mutex enterMutex;
 	};
 
-	class YAttachment : public YHelper<YAttachment, IAttachment, FB_I_ATTACHMENT_VERSION>, public EnterCount
+	class YAttachment : public YHelper<YAttachment, IAttachment, FB_ATTACHMENT_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_db_handle;
 
 		explicit YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
-			: YHelper<YAttachment, IAttachment, FB_I_ATTACHMENT_VERSION>(aNext),
+			: YHelper<YAttachment, IAttachment, FB_ATTACHMENT_VERSION>(aNext),
 			  provider(aProvider),
 			  dbPath(getPool(), aDbPath),
 			  childBlobs(getPool()),
@@ -959,13 +962,13 @@ namespace Why
 		StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 	};
 
-	class YService : public YHelper<YService, IService, FB_I_SERVICE_VERSION>, public EnterCount
+	class YService : public YHelper<YService, IService, FB_SERVICE_VERSION>, public EnterCount
 	{
 	public:
 		static const ISC_STATUS ERROR_CODE = isc_bad_svc_handle;
 
 		explicit YService(IProvider* aProvider, IService* aNext)
-			: YHelper<YService, IService, FB_I_SERVICE_VERSION>(aNext),
+			: YHelper<YService, IService, FB_SERVICE_VERSION>(aNext),
 			  provider(aProvider)
 		{
 			provider->addRef();
@@ -993,7 +996,7 @@ namespace Why
 		IProvider* provider;
 	};
 
-	class Dispatcher : public StdPlugin<IProvider, FB_I_PROVIDER_VERSION>
+	class Dispatcher : public StdPlugin<IProvider, FB_PROVIDER_VERSION>
 	{
 	public:
 		void* operator new(size_t, void* memory) throw()
@@ -1086,7 +1089,7 @@ namespace Why
 		YEntry(const YEntry&);	// prohibit copy constructor
 
 	private:
-		RefPtr<IInterface> ref;
+		RefPtr<IRefCounted> ref;
 		EnterCount* counter;
 	};
 }	// namespace Why
@@ -2773,7 +2776,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	StatusVector status(userStatus);
 	YEvents* events = NULL;
 
-	class Callback : public IEventCallback
+	class Callback : public AutoIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
 	{
 	public:
 		explicit Callback(UCHAR* aBuffer)
@@ -2997,7 +3000,8 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 
 		///nullCheck(id, isc_bad_events_handle);
 
-		class Callback : public IEventCallback
+		class Callback : public VersionedIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>,
+						 public GlobalStorage
 		{
 		public:
 			Callback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -3680,7 +3684,7 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	: YHelper<YEvents, IEvents, FB_I_EVENTS_VERSION>(aNext),
+	: YHelper<YEvents, IEvents, FB_EVENTS_VERSION>(aNext),
 	  attachment(aAttachment),
 	  callback(aCallback),
 	  deleteCallback(false)
@@ -3721,7 +3725,7 @@ void YEvents::cancel(IStatus* status)
 
 
 YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
-	: YHelper<YRequest, IRequest, FB_I_REQUEST_VERSION>(aNext),
+	: YHelper<YRequest, IRequest, FB_REQUEST_VERSION>(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL)
 {
@@ -3853,7 +3857,7 @@ void YRequest::free(IStatus* status)
 
 
 YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
-	: YHelper<YBlob, IBlob, FB_I_BLOB_VERSION>(aNext),
+	: YHelper<YBlob, IBlob, FB_BLOB_VERSION>(aNext),
 	  attachment(aAttachment),
 	  transaction(aTransaction)
 {
@@ -3969,7 +3973,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
-	: YHelper<YStatement, IStatement, FB_I_STATEMENT_VERSION>(aNext),
+	: YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL),
 	  prepared(false)
@@ -4209,7 +4213,7 @@ void YStatement::free(IStatus* status, unsigned int option)
 
 
 YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
-	: YHelper<YTransaction, ITransaction, FB_I_TRANSACTION_VERSION>(aNext),
+	: YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>(aNext),
 	  attachment(aAttachment),
 	  childBlobs(getPool()),
 	  cleanupHandlers(getPool())
@@ -5009,7 +5013,7 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_I_PROVIDER_VERSION, config);
+				FB_PROVIDER_VERSION, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5132,7 +5136,7 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 		***/
 
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_I_PROVIDER_VERSION/***, config***/);
+				FB_PROVIDER_VERSION/***, config***/);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5196,7 +5200,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		try
 		{
 			for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-					FB_I_PROVIDER_VERSION);
+					FB_PROVIDER_VERSION);
 				 providerIterator.hasData();
 				 providerIterator.next())
 			{
@@ -5285,7 +5289,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 		// Shutdown providers (if any present).
 		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(
-				PluginType::Provider, FB_I_PROVIDER_VERSION);
+				PluginType::Provider, FB_PROVIDER_VERSION);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{

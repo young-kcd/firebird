@@ -315,7 +315,7 @@ public:
 static GlobalPtr<ShutdownBeforeUnload, InstanceControl::PRIORITY_DETECT_UNLOAD> shutdownBeforeUnload;
 
 
-class EngineFactory : public StackIface<IPluginFactory>
+class EngineFactory : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
 {
 public:
 	// IPluginFactory implementation
@@ -745,7 +745,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public StackIface<TraceConnection>
+class TraceFailedConnection : public AutoIface<TraceConnection, FB_TRACE_CONNECTION_VERSION>
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);

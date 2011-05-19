@@ -33,6 +33,7 @@
 #include "../common/classes/NestConst.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/rwlock.h"
+#include "../common/classes/ImplementHelper.h"
 ///#include "../dsql/Nodes.h"
 
 struct dsc;
@@ -61,7 +62,8 @@ private:
 	template <typename T> class ContextManager;
 	class TransactionImpl;
 
-	class RoutineMetadata : public Firebird::IRoutineMetadata, public Firebird::PermanentStorage
+	class RoutineMetadata : public Firebird::VersionedIface<Firebird::IRoutineMetadata, FB_ROUTINE_METADATA_VERSION>,
+							public Firebird::PermanentStorage
 	{
 	public:
 		RoutineMetadata(MemoryPool& pool)

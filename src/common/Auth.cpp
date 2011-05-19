@@ -33,7 +33,8 @@
 namespace Auth {
 
 WriterImplementation::WriterImplementation(bool svcFlag)
-	: body(getPool()), sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
+	: body(*getDefaultMemoryPool()), 
+	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
 { }
 
 void WriterImplementation::store(Firebird::ClumpletWriter& to)

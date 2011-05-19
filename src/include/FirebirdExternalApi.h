@@ -152,7 +152,7 @@ public:
 };
 
 
-class IRoutineMetadata	// : public IVersioned
+class IRoutineMetadata : public IVersioned
 {
 public:
 	virtual const char* FB_CARG getPackage(IStatus* status) const = 0;
@@ -162,7 +162,7 @@ public:
 	virtual const char* FB_CARG getTriggerTable(IStatus* status) const = 0;
 	virtual ExternalTrigger::Type FB_CARG getTriggerType(IStatus* status) const = 0;
 };
-// #define FB_I_ROUTINE_METADATA_VERSION (FB_VERSIONED_VERSION + 6)
+#define FB_ROUTINE_METADATA_VERSION (FB_VERSIONED_VERSION + 6)
 
 
 // In SuperServer, shared by all attachments to one database and disposed when last (non-external)

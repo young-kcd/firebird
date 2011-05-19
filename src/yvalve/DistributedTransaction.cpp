@@ -43,7 +43,7 @@ using namespace Firebird;
 
 namespace {
 
-class DTransaction : public StdIface<ITransaction, FB_I_TRANSACTION_VERSION>
+class DTransaction : public RefCntIface<ITransaction, FB_TRANSACTION_VERSION>
 {
 public:
 	DTransaction()
@@ -178,7 +178,7 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 	return true;
 }
 
-class Dtc : public StackIface<IDtc>
+class Dtc : public AutoIface<IDtc, FB_DTC_VERSION>
 {
 public:
 	// IDtc implementation

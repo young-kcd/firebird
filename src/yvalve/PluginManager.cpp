@@ -126,10 +126,10 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess : public StdIface<IConfigEntry, FB_I_CONFIG_PARAMETER_VERSION>
+	class ConfigParameterAccess : public RefCntIface<IConfigEntry, FB_CONFIG_PARAMETER_VERSION>
 	{
 	public:
-		ConfigParameterAccess(IInterface* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
+		ConfigParameterAccess(IRefCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
 		// IConfigEntry implementation
 		const char* FB_CARG getName()
@@ -156,11 +156,11 @@ namespace
 		}
 
 	private:
-		RefPtr<IInterface> cf;
+		RefPtr<IRefCounted> cf;
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess : public StdIface<IConfig, FB_I_CONFIG_VERSION>
+	class ConfigAccess : public RefCntIface<IConfig, FB_CONFIG_VERSION>
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
@@ -338,11 +338,6 @@ namespace
 			}
 			*prev = next;
 
-			for (unsigned int i = 0; i < regPlugins.getCount(); ++i)
-			{
-				regPlugins[i].factory->dispose();
-			}
-
 			if (cleanup)
 			{
 				cleanup->doClean();
@@ -453,7 +448,7 @@ namespace
 	};
 
 	// Delays destruction of ConfiguredPlugin instance
-	class PluginDestroyTimer : public Firebird::StdIface<Firebird::ITimer, FB_I_TIMER_VERSION>
+	class PluginDestroyTimer : public RefCntIface<ITimer, FB_TIMER_VERSION>
 	{
 	public:
 		PluginDestroyTimer(ConfiguredPlugin* cp)
@@ -480,7 +475,7 @@ namespace
 	};
 
 	// Provides per-database configuration from aliases.conf.
-	class FactoryParameter : public StdIface<IPluginConfig, FB_FACTORY_PARAMETER_VERSION>
+	class FactoryParameter : public RefCntIface<IPluginConfig, FB_PLUGIN_CONFIG_VERSION>
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -633,7 +628,7 @@ namespace
 	}
 
 	// Provides access to plugins of given type / name.
-	class PluginSet : public StdIface<IPluginSet, FB_PLUGIN_SET_VERSION>
+	class PluginSet : public RefCntIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
 	public:
 		// IPluginSet implementation
@@ -663,7 +658,7 @@ namespace
 			: interfaceType(pinterfaceType), namesList(getPool()),
 			  desiredVersion(pdesiredVersion), missingFunctionClass(pmissingFunctionClass),
 			  currentName(getPool()), currentPlugin(NULL),
-			  firebirdConf(fbConf), masterInterface(fb_get_master_interface())
+			  firebirdConf(fbConf)
 		{
 			namesList.assign(pnamesList);
 			namesList.alltrim(" \t");
@@ -691,7 +686,7 @@ namespace
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
 
 		RefPtr<IFirebirdConf> firebirdConf;
-		AutoPtr<IMaster, AutoDisposable> masterInterface;
+		MasterInterfacePtr masterInterface;
 
 		RefPtr<PluginModule> loadModule(const PathName& modName);
 
@@ -924,7 +919,7 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 {
 	MutexLockGuard g(plugins->mutex);
 
-	IInterface* parent = plugin->getOwner();
+	IRefCounted* parent = plugin->getOwner();
 
 	if (plugin->release() == 0)
 	{

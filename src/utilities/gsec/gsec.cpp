@@ -252,7 +252,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		fb_assert(user_data->trustedUser.entered());
 		if (user_data->trustedUser.entered())
 		{
-			class GsecInfo : public Firebird::StackIface<Auth::ILogonInfo>
+			class GsecInfo : public Firebird::AutoIface<Auth::ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 			{
 			public:
 				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
@@ -335,7 +335,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	class Display : public Firebird::StackIface<Auth::IListUsers>
+	class Display : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
 	{
 	public:
 		explicit Display(tsec* t)

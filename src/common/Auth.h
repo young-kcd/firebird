@@ -41,7 +41,7 @@ namespace Auth {
 
 bool legacy(const char* nm);
 
-class WriterImplementation : public Firebird::StackIface<IWriter>
+class WriterImplementation : public Firebird::AutoIface<IWriter, FB_AUTH_WRITER_VERSION>
 {
 public:
 	WriterImplementation(bool svcFlag);
@@ -58,7 +58,7 @@ private:
 	unsigned char tag;
 };
 
-class DpbImplementation : public Firebird::StackIface<IDpbReader>
+class DpbImplementation : public Firebird::AutoIface<IDpbReader, FB_AUTH_DPB_READER_VERSION>
 {
 public:
 	DpbImplementation(Firebird::ClumpletWriter& base);

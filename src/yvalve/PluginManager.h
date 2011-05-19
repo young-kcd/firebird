@@ -38,7 +38,7 @@
 
 namespace Firebird {
 
-class PluginManager : public StackIface<IPluginManager>
+class PluginManager : public AutoIface<IPluginManager, FB_PLUGIN_MANAGER_VERSION>
 {
 public:
 	// IPluginManager implementation

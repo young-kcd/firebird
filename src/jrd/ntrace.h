@@ -37,7 +37,7 @@
 
 struct PerformanceInfo;
 
-class TraceConnection : public Firebird::IDisposable
+class TraceConnection : public Firebird::IVersioned
 {
 public:
 	virtual int FB_CARG getConnectionID() = 0;
@@ -52,6 +52,7 @@ public:
 	virtual int FB_CARG getRemoteProcessID() = 0;
 	virtual const char* FB_CARG getRemoteProcessName() = 0;
 };
+#define FB_TRACE_CONNECTION_VERSION (FB_VERSIONED_VERSION + 10)
 
 enum ntrace_tra_isolation_t
 {
@@ -61,7 +62,7 @@ enum ntrace_tra_isolation_t
 	tra_iso_read_committed_norecver
 };
 
-class TraceTransaction : public Firebird::IDisposable
+class TraceTransaction : public Firebird::IVersioned
 {
 public:
 	virtual int FB_CARG getTransactionID() = 0;
@@ -70,22 +71,25 @@ public:
 	virtual ntrace_tra_isolation_t FB_CARG getIsolation() = 0;
 	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_TRANSACTION_VERSION (FB_VERSIONED_VERSION + 5)
 
 typedef int ntrace_relation_t;
 
-class TraceParams : public Firebird::IDisposable
+class TraceParams : public Firebird::IVersioned
 {
 public:
 	virtual size_t FB_CARG getCount() = 0;
 	virtual const struct dsc* FB_CARG getParam(size_t idx) = 0;
 };
+#define FB_TRACE_PARAMS_VERSION (FB_VERSIONED_VERSION + 2)
 
-class TraceStatement : public Firebird::IDisposable
+class TraceStatement : public Firebird::IVersioned
 {
 public:
 	virtual int FB_CARG getStmtID() = 0;
 	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_STATEMENT_VERSION (FB_VERSIONED_VERSION + 2)
 
 class TraceSQLStatement : public TraceStatement
 {
@@ -95,6 +99,7 @@ public:
 	virtual TraceParams* FB_CARG getInputs() = 0;
 	virtual const char* FB_CARG getTextUTF8() = 0;
 };
+#define FB_TRACE_SQL_STATEMENT_VERSION (FB_TRACE_STATEMENT_VERSION + 4)
 
 class TraceBLRStatement : public TraceStatement
 {
@@ -103,32 +108,36 @@ public:
 	virtual size_t FB_CARG getDataLength() = 0;
 	virtual const char* FB_CARG getText() = 0;
 };
+#define FB_TRACE_BLR_STATEMENT_VERSION (FB_TRACE_STATEMENT_VERSION + 3)
 
-class TraceDYNRequest : public Firebird::IDisposable
+class TraceDYNRequest : public Firebird::IVersioned
 {
 public:
 	virtual const unsigned char* FB_CARG getData() = 0;
 	virtual size_t FB_CARG getDataLength() = 0;
 	virtual const char* FB_CARG getText() = 0;
 };
+#define FB_TRACE_DYN_REQUEST_VERSION (FB_VERSIONED_VERSION + 3)
 
-class TraceContextVariable : public Firebird::IDisposable
+class TraceContextVariable : public Firebird::IVersioned
 {
 public:
 	virtual const char* FB_CARG getNameSpace() = 0;
 	virtual const char* FB_CARG getVarName() = 0;
 	virtual const char* FB_CARG getVarValue() = 0;
 };
+#define FB_TRACE_CONTEXT_VARIABLE_VERSION (FB_VERSIONED_VERSION + 3)
 
-class TraceProcedure : public Firebird::IDisposable
+class TraceProcedure : public Firebird::IVersioned
 {
 public:
 	virtual const char* FB_CARG getProcName() = 0;
 	virtual TraceParams* FB_CARG getInputs() = 0;
 	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_PROCEDURE_VERSION (FB_VERSIONED_VERSION + 3)
 
-class TraceTrigger : public Firebird::IDisposable
+class TraceTrigger : public Firebird::IVersioned
 {
 public:
 	virtual const char* FB_CARG getTriggerName() = 0;
@@ -137,10 +146,11 @@ public:
 	virtual int FB_CARG getWhich() = 0;
 	virtual PerformanceInfo* FB_CARG getPerf() = 0;
 };
+#define FB_TRACE_TRIGGER_VERSION (FB_VERSIONED_VERSION + 5)
 
 typedef void* ntrace_service_t;
 
-class TraceService : public Firebird::IDisposable
+class TraceService : public Firebird::IVersioned
 {
 public:
 	virtual ntrace_service_t FB_CARG getServiceID() = 0;
@@ -155,6 +165,7 @@ public:
 	virtual int FB_CARG getRemoteProcessID() = 0;
 	virtual const char* FB_CARG getRemoteProcessName() = 0;
 };
+#define FB_TRACE_SERVICE_VERSION (FB_VERSIONED_VERSION + 10)
 
 
 // Plugin-specific argument. Passed by the engine to each hook
@@ -221,14 +232,14 @@ struct PerformanceInfo
 	ntrace_counter_t pin_records_fetched;	// records fetched from statement/procedure
 };
 
-class TraceLogWriter : public Firebird::IInterface
+class TraceLogWriter : public Firebird::IRefCounted
 {
 public:
 	virtual size_t FB_CARG write(const void* buf, size_t size) = 0;
 };
-#define FB_TRACE_LOG_WRITER_VERSION (FB_INTERFACE_VERSION + 1)
+#define FB_TRACE_LOG_WRITER_VERSION (FB_REFCOUNTED_VERSION + 1)
 
-class TraceInitInfo : public Firebird::IDisposable
+class TraceInitInfo : public Firebird::IVersioned
 {
 public:
 	virtual const char* FB_CARG getConfigText() = 0;
@@ -239,10 +250,11 @@ public:
 	virtual TraceConnection* FB_CARG getConnection() = 0;
 	virtual TraceLogWriter* FB_CARG getLogWriter() = 0;
 };
+#define FB_TRACE_INIT_INFO_VERSION (FB_VERSIONED_VERSION + 7)
 
 
 // API of trace plugin. Used to deliver notifications for each database
-class TracePlugin : public Firebird::IInterface
+class TracePlugin : public Firebird::IRefCounted
 {
 public:
 	// Function to return error string for hook failure
@@ -295,7 +307,7 @@ public:
 			const ntrace_byte_t* recv_items, ntrace_result_t query_result) = 0;
 	virtual int FB_CARG trace_service_detach(TraceService* service, ntrace_result_t detach_result) = 0;
 };
-#define FB_TRACE_PLUGIN_VERSION (FB_INTERFACE_VERSION + 18)
+#define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 18)
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
 class TraceFactory : public Firebird::IPluginBase
