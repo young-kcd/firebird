@@ -3,7 +3,7 @@
 # Run this to generate all the initial makefiles, etc.
 #
 
-PKG_NAME=Firebird2
+PKG_NAME=Firebird3
 SRCDIR=`dirname $0`
 DIE=0
 
