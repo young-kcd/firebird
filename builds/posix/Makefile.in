@@ -118,15 +118,15 @@ master_process:
 	$(MAKE) engine
 	$(MAKE) fbintl
 	$(MAKE) utilities
-# Now having ready such useful tool as gbak, we may restore required databases
-# and switch to full-featured gpre
+# Now having ready such useful tools as gbak and isql, we may restore / create
+# required databases and switch to full-featured gpre
 	$(MAKE) gpre
 # Pay attention - after build force gpre_current to point to gpre 
 # even if gpre itself was not rebuilt
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(BIN); $(LN) $(notdir $(GPRE)) $(notdir $(GPRE_CURRENT)))
 ifeq ($(IsDeveloper), Y)
-# In developer mode we must regenerate verious files in include/gen
+# In developer mode we must regenerate various files in include/gen
 	$(MAKE) codes
 endif
 	$(MAKE) plugins
