@@ -346,11 +346,10 @@ protected:
 
 } // namespace Firebird
 
-#elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
+#elif defined(__GNUC__) //&& (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
 
 namespace Firebird {
 
-// Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class PlatformAtomicCounter
 {
 public:
@@ -359,40 +358,33 @@ public:
 	explicit PlatformAtomicCounter(AtomicType value = 0) : counter(value) {}
 	~PlatformAtomicCounter() {}
 
-	AtomicType exchangeAdd(AtomicType value)
+	AtomicType exchangeAdd(AtomicType val)
 	{
-		register counter_type result;
-
-		__asm __volatile ("lock; xadd %0, %1"
-			: "=r" (result), "=m" (counter)
-			: "0" (value), "m" (counter)
-			: "cc", "memory");
-
-		return result;
+		return __sync_fetch_and_add(&counter, val);
 	}
 
 	AtomicType setValue(AtomicType val)
 	{
-		register counter_type result;
-
-		__asm __volatile ("lock; xchg %0, %1"
-			: "=r" (result), "=m" (counter)
-			: "0" (val), "m" (counter)
-			: "cc", "memory");
-
-		return result;
+/* This may require special processing at least on HPPA because:
+ * Many targets have only minimal support for such locks, and do not support a full exchange operation.
+ * In this case, a target may support reduced functionality here by which the only valid value to store 
+ * is the immediate constant 1. The exact value actually stored in *ptr is implementation defined.
+ */
+#ifdef DEFINE_ACCORDING_IMPLEMENTATION_SPECIFIC
+		counter_type old;
+		do
+		{
+			old = counter;
+		} while (!__sync_bool_compare_and_swap(&counter, old, val));
+		return old;
+#else
+		return __sync_lock_test_and_set(&counter, val);
+#endif
 	}
 
 	bool compareExchange(counter_type oldVal, counter_type newVal)
 	{
-		register char ret;
-
-		__asm __volatile ("lock; cmpxchg %2, %1 ; sete %0"
-			: "=r" (ret), "+m" (counter)
-			: "r" (newVal), "a" (oldVal)
-			: "cc", "memory");
-
-	    return ret;
+		return __sync_bool_compare_and_swap(&counter, oldVal, newVal);
 	}
 
 protected:
@@ -409,26 +401,21 @@ public:
 
 	void* platformSetValue(void* val)
 	{
-		register void* result;
-
-		__asm __volatile ("lock; xchg %0, %1"
-			: "=r" (result), "=m" (pointer)
-			: "0" (val), "m" (pointer)
-			: "cc", "memory");
-
-		return result;
+#ifdef DEFINE_ACCORDING_IMPLEMENTATION_SPECIFIC
+		void* old;
+		do
+		{
+			old = pointer;
+		} while (!__sync_bool_compare_and_swap(&pointer, old, val));
+		return old;
+#else
+		return __sync_lock_test_and_set(&pointer, val);
+#endif
 	}
 
 	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
-		register char ret;
-
-		__asm __volatile ("lock; cmpxchg %2, %1 ; sete %0"
-			: "=r" (ret), "+m" (pointer)
-			: "r" (newVal), "a" (oldVal)
-			: "cc", "memory");
-
-	    return ret;
+		return __sync_bool_compare_and_swap(&pointer, oldVal, newVal);
 	}
 
 private:
@@ -456,7 +443,7 @@ namespace Firebird {
 class PlatformAtomicCounter
 {
 public:
-	typedef AO_t counter_type;		// AO_t should match maximum native in type
+	typedef AO_t counter_type;		// AO_t should match maximum native 'int' type
 
 	explicit PlatformAtomicCounter(counter_type value = 0) : counter(value) {}
 	~PlatformAtomicCounter() {}
@@ -493,12 +480,60 @@ public:
 
 	bool compareExchange(counter_type oldVal, counter_type newVal)
 	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(void*) != sizeof(AO_t)) abort();
+#endif
 		return AO_compare_and_swap_full(&counter, oldVal, newVal);
 	}
 
 protected:
 	counter_type counter;
 };
+
+class PlatformAtomicPointer
+{
+public:
+	explicit PlatformAtomicPointer(void* val = NULL) : pointer((AO_t)val) {}
+	~PlatformAtomicPointer() {}
+
+	void* platformValue() const
+	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(void*) != sizeof(AO_t)) abort();
+#endif
+		return (void*) pointer;
+	}
+
+	void* platformSetValue(void* val)
+	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(void*) != sizeof(AO_t)) abort();
+#endif
+
+		AO_t old;
+		do
+		{
+			old = pointer;
+		} while (!AO_compare_and_swap_full(&pointer, old, (AO_T) val));
+		return (void*) old;
+	}
+
+	bool platformCompareExchange(void* oldVal, void* newVal)
+	{
+#ifdef DEV_BUILD
+		// check that AO_t size is as we expect (can't fb_assert here)
+		if (sizeof(void*) != sizeof(AO_t)) abort();
+#endif
+		return AO_compare_and_swap_full(&pointer, (AO_t)oldVal, (AO_t)newVal);
+	}
+
+private:
+	AO_t pointer;
+};
+
 
 } // namespace Firebird
 
