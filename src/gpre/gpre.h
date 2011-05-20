@@ -1231,7 +1231,7 @@ public:
 	{
 		add_byte(strlen(string));
 		UCHAR c;
-		while (c = *string++) {
+		while ((c = *string++)) {
 			add_byte(c);
 		}
 	}
