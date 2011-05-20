@@ -1,3 +1,80 @@
+ 2011-05-19 17:09  alexpeshkoff 
+   M src/gpre/languages/rmc.cpp
+warnings
+
+ 2011-05-19 16:24  alexpeshkoff 
+   M examples/udr/UdrCppExample.cpp
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/StatementMetadata.h
+   M src/common/StatusHolder.h
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/config/config.h
+   M src/common/security.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdPluginApi.h
+   M src/include/Interface.h
+   M src/include/ProviderInterface.h
+   M src/include/Timer.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/dyn.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/remote/client/interface.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/why.cpp
+Better interfaces hierarchy: all of them are derived from IVersioned
+
+ 2011-05-19 11:38  alexpeshkoff 
+   M src/alice/alice_meta.epp
+   M src/alice/tdr.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/array.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/Interface.h
+   M src/include/ProviderInterface.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_pub.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   A src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/why.cpp
+Interface for 2PC (distributed transactions coordinator)
+
+ 2011-05-19 11:12  mapopa 
+   M src/common/common.h
+cleanup comment EKU: obsolete, replaced by _FILE_OFFSET_BITS
+
+ 2011-05-19 09:46  mapopa 
+   M src/jrd/inf_pub.h
+header cleanup , unused defines anywhere (long dead platforms)
+
+ 2011-05-19 09:44  mapopa 
+   M src/jrd/ibase.h
+Disabled, not found anywhere function (commented anyway)
+
  2011-05-15 15:37  asfernandes 
    M src/jrd/os/posix/unix.cpp
    M src/utilities/fbcpl/fbpanel.cpp
