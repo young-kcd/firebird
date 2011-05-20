@@ -4288,7 +4288,10 @@ void YTransaction::commit(IStatus* status)
 		selfCheck();
 
 		next->commit(status);
-		destroy();
+		if (status->isSuccess())
+		{
+			destroy();
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -4322,7 +4325,10 @@ void YTransaction::rollback(IStatus* status)
 		if (isNetworkError(status))
 			status->init();
 
-		destroy();
+		if (status->isSuccess())
+		{
+			destroy();
+		}
 	}
 	catch (const Exception& e)
 	{
