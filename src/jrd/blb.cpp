@@ -299,8 +299,8 @@ blb* BLB_create2(thread_db* tdbb,
 	BlobFilter* filter = NULL;
 	if (to && from != to)
 	{
-		// ASF: filter_text is not supported for write operations
-		if (!(from == 0 && to == 1))
+		if (!(from == 0 && to == 1) &&	// ASF: filter_text is not supported for write operations
+			!(to == isc_blob_text && to_charset == CS_BINARY))
 		{
 			filter = find_filter(tdbb, from, to);
 			filter_required = true;
@@ -1407,8 +1407,11 @@ blb* BLB_open2(thread_db* tdbb,
 	bool filter_required = false;
 	if (to && from != to)
 	{
-		filter = find_filter(tdbb, from, to);
-		filter_required = true;
+		if (!(to == isc_blob_text && to_charset == CS_BINARY))
+		{
+			filter = find_filter(tdbb, from, to);
+			filter_required = true;
+		}
 	}
 	else if (to == isc_blob_text && from_charset != to_charset)
 	{
