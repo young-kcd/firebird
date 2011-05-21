@@ -103,7 +103,7 @@ public:
 	virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
 	virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 6)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 9)
 
 } // namespace Firebird
 
