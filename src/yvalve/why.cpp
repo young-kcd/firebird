@@ -3405,7 +3405,6 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 	SSHORT count, void* vec)
 {
 	StatusVector status(userStatus);
-	Array<YTransaction*> subTransactions;
 	TEB* vector = (TEB*) vec;
 	ITransaction* multiTrans = NULL;
 
