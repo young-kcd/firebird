@@ -59,7 +59,7 @@ public:
 #define FB_REFCOUNTED_VERSION (FB_VERSIONED_VERSION + 2)
 
 // Disposable interface - base for disposable FB interfaces
-class IDisposable
+class IDisposable : public IVersioned
 {
 public:
 	virtual void FB_CARG dispose() = 0;
