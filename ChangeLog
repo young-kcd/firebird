@@ -1,3 +1,37 @@
+ 2011-05-21 01:02  asfernandes 
+   M src/gpre/sqe.cpp
+   M src/qli/exe.h
+   M src/qli/gener_proto.h
+Warnings.
+
+ 2011-05-20 17:14  alexpeshkoff 
+   M src/yvalve/why.cpp
+Destroy transaction only when next level returns success
+
+ 2011-05-20 16:45  alexpeshkoff 
+   M src/common/classes/fb_atomic.h
+Atomic operations: use gcc builtin functions instead asm, fix atomic_ops library use
+
+ 2011-05-20 16:44  alexpeshkoff 
+   M builds/posix/Makefile.in
+misc
+
+ 2011-05-20 09:13  mapopa 
+   M src/gpre/gpre.h
+fix warning: using the result of an assignment as a condition without parentheses
+note:place parentheses around the assignment to silence this warning
+
+ 2011-05-20 08:31  mapopa 
+   M autogen.sh
+PKG_NAME is now Firebird3 for trunk
+
+ 2011-05-20 07:22  hvlad 
+   M builds/win32/msvc10/yvalve.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+   M builds/win32/msvc8/yvalve.vcproj
+   M builds/win32/msvc9/yvalve.vcproj
+Update Windows build
+
  2011-05-19 17:09  alexpeshkoff 
    M src/gpre/languages/rmc.cpp
 warnings
