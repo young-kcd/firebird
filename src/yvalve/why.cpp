@@ -4255,7 +4255,7 @@ void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
 		YEntry entry(status, attachment);
 		selfCheck();
 
-		fb_utils::getDbpathInfo(itemsLength, items, bufferLength, buffer,
+		fb_utils::getDbPathInfo(itemsLength, items, bufferLength, buffer,
 								newItemsBuffer, attachment->dbPath);
 
 		next->getInfo(status, itemsLength, items, bufferLength, buffer);

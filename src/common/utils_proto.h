@@ -152,7 +152,7 @@ namespace fb_utils
 	// Add appropriate file prefix.
 	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
 
-	void getDbpathInfo(unsigned int& itemsLength, const unsigned char*& items,
+	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
 		unsigned int& bufferLength, unsigned char*& buffer,
 		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
 

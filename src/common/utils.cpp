@@ -1084,7 +1084,7 @@ unsigned int statusLength(const ISC_STATUS* const status) throw()
 	}
 }
 
-void getDbpathInfo(unsigned int& itemsLength, const unsigned char*& items,
+void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
 	unsigned int& bufferLength, unsigned char*& buffer,
 	Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath)
 {

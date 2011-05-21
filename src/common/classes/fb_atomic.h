@@ -444,16 +444,23 @@ class PlatformAtomicCounter
 public:
 	typedef AO_t counter_type;		// AO_t should match maximum native 'int' type
 
-	explicit PlatformAtomicCounter(counter_type value = 0) : counter(value) {}
-	~PlatformAtomicCounter() {}
-
-	AtomicType exchangeAdd(AtomicType value)
+	explicit PlatformAtomicCounter(counter_type value = 0)
+		: counter(value)
 	{
 #ifdef DEV_BUILD
 		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
-#endif
 
+		if (sizeof(AtomicType) != sizeof(AO_t) || sizeof(void*) != sizeof(AO_t))
+			abort();
+#endif
+	}
+
+	~PlatformAtomicCounter()
+	{
+	}
+
+	AtomicType exchangeAdd(AtomicType value)
+	{
 		counter_type old;
 		do
 		{
@@ -464,11 +471,6 @@ public:
 
 	AtomicType setValue(AtomicType val)
 	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(AtomicType) != sizeof(AO_t)) abort();
-#endif
-
 		counter_type old;
 		do
 		{
@@ -479,10 +481,6 @@ public:
 
 	bool compareExchange(counter_type oldVal, counter_type newVal)
 	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(void*) != sizeof(AO_t)) abort();
-#endif
 		return AO_compare_and_swap_full(&counter, oldVal, newVal);
 	}
 
@@ -493,25 +491,27 @@ protected:
 class PlatformAtomicPointer
 {
 public:
-	explicit PlatformAtomicPointer(void* val = NULL) : pointer((AO_t)val) {}
-	~PlatformAtomicPointer() {}
-
-	void* platformValue() const
+	explicit PlatformAtomicPointer(void* val = NULL)
+		: pointer((AO_t) val)
 	{
 #ifdef DEV_BUILD
 		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(void*) != sizeof(AO_t)) abort();
+		if (sizeof(void*) != sizeof(AO_t))
+			abort();
 #endif
+	}
+
+	~PlatformAtomicPointer()
+	{
+	}
+
+	void* platformValue() const
+	{
 		return (void*) pointer;
 	}
 
 	void* platformSetValue(void* val)
 	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(void*) != sizeof(AO_t)) abort();
-#endif
-
 		AO_t old;
 		do
 		{
@@ -522,10 +522,6 @@ public:
 
 	bool platformCompareExchange(void* oldVal, void* newVal)
 	{
-#ifdef DEV_BUILD
-		// check that AO_t size is as we expect (can't fb_assert here)
-		if (sizeof(void*) != sizeof(AO_t)) abort();
-#endif
 		return AO_compare_and_swap_full(&pointer, (AO_t)oldVal, (AO_t)newVal);
 	}
 

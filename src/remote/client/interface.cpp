@@ -4606,7 +4606,7 @@ void Transaction::getInfo(IStatus* status,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync);
 
-		fb_utils::getDbpathInfo(itemsLength, items, bufferLength, buffer,
+		fb_utils::getDbPathInfo(itemsLength, items, bufferLength, buffer,
 			newItemsBuffer, remAtt->getDbPath());
 
 		info(status, rdb, op_info_transaction, transaction->rtr_id, 0,
