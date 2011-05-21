@@ -29,5 +29,12 @@ void		GEN_release();
 qli_rlb*	GEN_rlb_extend(qli_rlb*);
 void		GEN_rlb_release(qli_rlb*);
 
+inline qli_rlb* CHECK_RLB(qli_rlb*& in)
+{
+	if (!in || (in->rlb_data > in->rlb_limit))
+		in = GEN_rlb_extend(in);
+	return in;
+}
+
 #endif // QLI_GENER_PROTO_H
 

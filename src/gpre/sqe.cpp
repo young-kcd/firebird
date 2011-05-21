@@ -2532,7 +2532,7 @@ static gpre_nod* par_primitive_value(gpre_req* request, bool aster_ok,
 		return par_stat(request);
 
 	if (MSC_match(KW_MINUS))
-		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, false));
+		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, NULL));
 
 	MSC_match(KW_PLUS);
 

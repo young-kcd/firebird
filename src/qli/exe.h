@@ -39,26 +39,6 @@ struct qli_rlb
 const USHORT RLB_BUFFER_SIZE	= 2048;
 const USHORT RLB_SAFETY_MARGIN	= 48;
 
-#define CHECK_RLB(in)	(!in || (in->rlb_data > in->rlb_limit)) ? (in = GEN_rlb_extend (in)) : in;
-/* Would need gener_proto.h visible here to use this macro.
-inline qli_rlb* CHECK_RLB(qli_rlb*& in)
-{
-	if (!in || (in->rlb_data > in->rlb_limit))
-		in = GEN_rlb_extend(in);
-	return in;
-}
-*/
-
-// If used to replace the macro shown above, this function should be declared
-// in gener_proto.h and defined in gener.cpp or declared and defined in gener_proto.h
-// if "inline" is preserved.
-//static inline rlb* check_rlb(rlb*& in)
-//{
-//	if (!in || (in->rlb_data > in->rlb_limit))
-//	    in = GEN_rlb_extend(in);
-//	return in;
-//}
-
 #define STUFF(blr)	*rlb->rlb_data++ = blr
 #define STUFF_WORD(blr)	{STUFF (blr); STUFF (blr >> 8);}
 
