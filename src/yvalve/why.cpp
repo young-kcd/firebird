@@ -794,9 +794,9 @@ namespace Why
 	private:
 		YTransaction(YTransaction* from)
 			: YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>(from->next),
-			attachment(from->attachment),
-			childBlobs(getPool()),
-			cleanupHandlers(getPool())
+			  attachment(from->attachment),
+			  childBlobs(getPool()),
+			  cleanupHandlers(getPool())
 		{
 			childBlobs.assign(from->childBlobs);
 			from->childBlobs.clear();
@@ -3429,6 +3429,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		// This works as long as TEB has same layout as DtcStart
 		DtcStart* ds = (DtcStart*) vec;
 		multiTrans = DtcInterfacePtr()->start(&status, count, ds);
+
 		if (multiTrans)
 		{
 			YTransaction* transaction = new YTransaction(attachment, multiTrans);
@@ -4288,10 +4289,9 @@ void YTransaction::commit(IStatus* status)
 		selfCheck();
 
 		next->commit(status);
+
 		if (status->isSuccess())
-		{
 			destroy();
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -4326,9 +4326,7 @@ void YTransaction::rollback(IStatus* status)
 			status->init();
 
 		if (status->isSuccess())
-		{
 			destroy();
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -4396,15 +4394,11 @@ void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 	}
 }
 
-
 void YTransaction::selfCheck()
 {
 	if (!next)
-	{
 		Arg::Gds(isc_bad_trans_handle).raise();
-	}
 }
-
 
 ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transaction)
 {
@@ -4419,6 +4413,7 @@ ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transact
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -4451,9 +4446,8 @@ YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
 		copy->addRef();
 
 		if (attachment)
-		{
 			attachment->childTransactions.remove(this);
-		}
+
 		removeHandle(&transactions, handle);
 		handle = 0;
 		next = NULL;
@@ -4465,6 +4459,7 @@ YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -4540,9 +4535,7 @@ YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int le
 		ITransaction* transaction = next->reconnectTransaction(status, length, id);
 
 		if (transaction)
-		{
 			transaction = new YTransaction(this, transaction);
-		}
 
 		return static_cast<YTransaction*>(transaction);
 	}

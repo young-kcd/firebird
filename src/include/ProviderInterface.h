@@ -244,7 +244,7 @@ public:
 // DtcStart - structure to start transaction over >1 attachments (former TEB)
 struct DtcStart
 {
-	IAttachment *attachment;
+	IAttachment* attachment;
 	unsigned int tpbLength;
 	unsigned char* tpb;
 };

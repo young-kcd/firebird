@@ -365,11 +365,10 @@ public:
 
 	AtomicType setValue(AtomicType val)
 	{
-/* This may require special processing at least on HPPA because:
- * Many targets have only minimal support for such locks, and do not support a full exchange operation.
- * In this case, a target may support reduced functionality here by which the only valid value to store 
- * is the immediate constant 1. The exact value actually stored in *ptr is implementation defined.
- */
+		// This may require special processing at least on HPPA because:
+		// Many targets have only minimal support for such locks, and do not support a full exchange operation.
+		// In this case, a target may support reduced functionality here by which the only valid value to store
+		// is the immediate constant 1. The exact value actually stored in *ptr is implementation defined.
 #ifdef DEFINE_ACCORDING_IMPLEMENTATION_SPECIFIC
 		counter_type old;
 		do

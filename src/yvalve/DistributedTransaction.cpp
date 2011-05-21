@@ -36,9 +36,8 @@
 #include "../jrd/inf_pub.h"
 #include "../common/isc_proto.h"
 #include "../jrd/acl.h"
-/*
-#include "../common/classes/init.h"
- */
+///#include "../common/classes/init.h"
+
 using namespace Firebird;
 
 namespace {
@@ -110,15 +109,14 @@ bool DTransaction::buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransactio
 	UCHAR* buf = bigBuffer.getBuffer(MAX_USHORT);
 	from->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, bigBuffer.getCount(), buf);
 	if (!status->isSuccess())
-	{
 		return false;
-	}
 
 	UCHAR* const end = bigBuffer.end();
+
 	while (buf < end)
 	{
 		UCHAR item = buf[0];
-		buf++;
+		++buf;
 		const USHORT length = (USHORT) gds__vax_integer(buf, 2);
 		// Prevent information out of sync.
 		UCHAR lengthByte = length > MAX_UCHAR ? MAX_UCHAR : length;
@@ -126,20 +124,20 @@ bool DTransaction::buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransactio
 
 		switch(item)
 		{
-		case isc_info_tra_id:
-			tdr.add(TDR_TRANSACTION_ID);
-			tdr.add(lengthByte);
-			tdr.add(buf, lengthByte);
-			break;
+			case isc_info_tra_id:
+				tdr.add(TDR_TRANSACTION_ID);
+				tdr.add(lengthByte);
+				tdr.add(buf, lengthByte);
+				break;
 
-		case fb_info_tra_dbpath:
-			tdr.add(TDR_DATABASE_PATH);
-			tdr.add(lengthByte);
-			tdr.add(buf, lengthByte);
-			break;
+			case fb_info_tra_dbpath:
+				tdr.add(TDR_DATABASE_PATH);
+				tdr.add(lengthByte);
+				tdr.add(buf, lengthByte);
+				break;
 
-		case isc_info_end:
-			return true;
+			case isc_info_end:
+				return true;
 		}
 
 		buf += length;
@@ -163,15 +161,13 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 	tdr.add(reinterpret_cast<UCHAR*>(host), hostlen);
 
 	// Get database and transaction stuff for each sub-transaction.
-	unsigned int i;
-	for (i = 0; i < sub.getCount(); ++i)
+
+	for (unsigned i = 0; i < sub.getCount(); ++i)
 	{
 		if (sub[i])
 		{
 			if (! buildPrepareInfo(status, tdr, sub[i]))
-			{
 				return false;
-			}
 		}
 	}
 
@@ -198,11 +194,12 @@ DTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* co
 		{
 			RefPtr<ITransaction> transaction(components[i].attachment->
 				startTransaction(status, components[i].tpbLength, components[i].tpb));
+
 			if (! status->isSuccess())
-			{
 				return NULL;
-			}
+
 			dtransaction->join(status, transaction);
+
 			if (! status->isSuccess())
 			{
 				LocalStatus tmp;
@@ -218,6 +215,7 @@ DTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* co
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -231,17 +229,14 @@ DTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction
 
 		dtransaction->join(status, one);
 		if (! status->isSuccess())
-		{
 			return NULL;
-		}
 
 		dtransaction->join(status, two);
-/* We must not return NULL - first transaction is available only inside dtransaction
+		/* We must not return NULL - first transaction is available only inside dtransaction
 		if (! status->isSuccess())
-		{
 			return NULL;
-		}
- */
+		*/
+
 		dtransaction->addRef();
 		return dtransaction;
 	}
@@ -249,6 +244,7 @@ DTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -275,10 +271,10 @@ void FB_CARG DTransaction::getInfo(IStatus* status,
 				unsigned char* const end = buffer + bufferLength;
 				while (buffer < end && (buffer[0] == isc_info_tra_id || buffer[0] == fb_info_tra_dbpath))
 				{
-					buffer += (3 + gds__vax_integer(&buffer[1], 2));
+					buffer += 3 + gds__vax_integer(&buffer[1], 2);
 				}
 
-				if (buffer >= end || buffer[0] != isc_info_end) 
+				if (buffer >= end || buffer[0] != isc_info_end)
 				{
 					return;
 				}
@@ -303,17 +299,14 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 		WriteLockGuard guard(rwLock);
 
 		if (limbo)
-		{
 			return;
-		}
 
 		TdrBuffer tdr;
 		if (!msgLength)
 		{
 			if (!prepareCommit(status, tdr))
-			{
 				return;
-			}
+
 			msgLength = tdr.getCount();
 			message = tdr.begin();
 		}
@@ -323,10 +316,9 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 			if (sub[i])
 			{
 				sub[i]->prepare(status, msgLength, message);
+
 				if (!status->isSuccess())
-				{
 					return;
-				}
 			}
 		}
 
@@ -359,9 +351,8 @@ void FB_CARG DTransaction::commit(IStatus* status)
 				{
 					sub[i]->commit(status);
 					if (!status->isSuccess())
-					{
 						return;
-					}
+
 					sub[i] = NULL;
 				}
 			}
@@ -392,9 +383,7 @@ void FB_CARG DTransaction::commitRetaining(IStatus* status)
 			{
 				sub[i]->commitRetaining(status);
 				if (!status->isSuccess())
-				{
 					return;
-				}
 			}
 		}
 
@@ -421,9 +410,8 @@ void FB_CARG DTransaction::rollback(IStatus* status)
 				{
 					sub[i]->rollback(status);
 					if (!status->isSuccess())
-					{
 						return;
-					}
+
 					sub[i] = NULL;
 				}
 			}
@@ -451,11 +439,10 @@ void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
 			{
 				sub[i]->rollbackRetaining(status);
 				if (!status->isSuccess())
-				{
 					return;
-				}
 			}
 		}
+
 		limbo = true;	// ASF: why do retaining marks limbo?
 	}
 	catch(const Exception& ex)
@@ -473,22 +460,17 @@ void FB_CARG DTransaction::disconnect(IStatus* status)
 		WriteLockGuard guard(rwLock);
 
 		if (!limbo)
-		{
 			status_exception::raise(Arg::Gds(isc_no_recon));
-		}
 
-		{	// guard scope
-			for (unsigned int i = 0; i < sub.getCount(); ++i)
+		for (unsigned int i = 0; i < sub.getCount(); ++i)
+		{
+			if (sub[i])
 			{
-				if (sub[i])
-				{
-					sub[i]->disconnect(status);
-					if (!status->isSuccess())
-					{
-						return;
-					}
-					sub[i] = NULL;
-				}
+				sub[i]->disconnect(status);
+				if (!status->isSuccess())
+					return;
+
+				sub[i] = NULL;
 			}
 		}
 
@@ -528,6 +510,7 @@ DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transact
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -542,10 +525,9 @@ ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attac
 		for (unsigned int i = 0; i < sub.getCount(); ++i)
 		{
 			ITransaction* rc = sub[i]->validate(status, attachment);
+
 			if (rc)
-			{
 				return rc;
-			}
 		}
 
 		Arg::Gds(isc_bad_trans_handle).raise();
@@ -554,6 +536,7 @@ ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attac
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -576,6 +559,7 @@ DTransaction* FB_CARG DTransaction::enterDtc(IStatus* status)
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -584,9 +568,7 @@ DTransaction::~DTransaction()
 	for (unsigned int i = 0; i < sub.getCount(); ++i)
 	{
 		if (sub[i])
-		{
 			sub[i]->release();
-		}
 	}
 }
 

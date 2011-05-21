@@ -33,7 +33,7 @@
 namespace Auth {
 
 WriterImplementation::WriterImplementation(bool svcFlag)
-	: body(*getDefaultMemoryPool()), 
+	: body(*getDefaultMemoryPool()),
 	  sequence(0), tag(svcFlag ? isc_spb_auth_block : isc_dpb_auth_block)
 { }
 

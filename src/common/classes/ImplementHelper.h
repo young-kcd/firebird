@@ -164,7 +164,7 @@ class SimpleFactory : public Static<SimpleFactoryBase<P> >
 };
 
 
-// Base for interface type indpendent accessors
+// Base for interface type independent accessors
 template <typename C>
 class AccessAutoInterface
 {

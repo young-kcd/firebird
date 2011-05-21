@@ -4535,7 +4535,7 @@ void JStatement::prepare(IStatus* user_status, Firebird::ITransaction* apiTra,
 	{
 		EngineContextHolder tdbb(user_status, this);
 
-		jrd_tra* tra = apiTra ? getAttachment()->getEngineTransaction(user_status, apiTra): NULL;
+		jrd_tra* tra = apiTra ? getAttachment()->getEngineTransaction(user_status, apiTra) : NULL;
 
 		if (tra)
 			validateHandle(tdbb, tra);
