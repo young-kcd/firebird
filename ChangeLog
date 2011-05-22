@@ -1,3 +1,39 @@
+ 2011-05-21 21:43  asfernandes 
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-05-21 19:11  asfernandes 
+   M src/common/classes/fb_atomic.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-05-21 19:10  asfernandes 
+   M src/include/Interface.h
+Correction.
+
+ 2011-05-21 18:56  asfernandes 
+   M src/common/Auth.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/fb_atomic.h
+   M src/gpre/gpre.h
+   M src/include/ProviderInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2011-05-21 18:55  asfernandes 
+   M src/include/Interface.h
+Correction.
+
+ 2011-05-21 14:04  asfernandes 
+   M src/jrd/blb.cpp
+Fixed CORE-3476 - LIST function wrongly concatenates binary blobs.
+
  2011-05-21 01:02  asfernandes 
    M src/gpre/sqe.cpp
    M src/qli/exe.h
