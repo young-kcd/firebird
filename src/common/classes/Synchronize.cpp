@@ -32,9 +32,19 @@
 #include "../../common/common.h"
 #include "fb_tls.h"
 #include "../thd.h"
-
 #include "SyncObject.h"
 #include "Synchronize.h"
+
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
 
 #define NANO		1000000000
 #define MICRO		1000000
@@ -48,16 +58,9 @@ Synchronize::Synchronize()
 {
 #ifdef _WIN32
 	evnt = CreateEvent(NULL, false, false, NULL);
-#endif
-
-#ifdef _PTHREADS
+#else
 	int ret = pthread_mutex_init(&mutex, NULL);
 	pthread_cond_init(&condition, NULL);
-#endif
-
-#ifdef SOLARIS_MT
-	int ret = mutex_init(&mutex, USYNC_THREAD, NULL);
-	cond_init(&condition, USYNC_THREAD, NULL);
 #endif
 }
 
@@ -65,22 +68,18 @@ Synchronize::~Synchronize()
 {
 #ifdef _WIN32
 	CloseHandle(evnt);
-#endif
-
-#ifdef _PTHREADS
+#else
 	int ret = pthread_mutex_destroy(&mutex);
 	ret = pthread_cond_destroy(&condition);
-#endif
-
-#ifdef SOLARIS_MT
-	int ret = mutex_destroy(&mutex);
 #endif
 }
 
 void Synchronize::sleep()
 {
 	sleeping = true;
+
 #ifdef _WIN32
+
 #ifdef _DEBUG
 	for (;;)
 	{
@@ -91,30 +90,19 @@ void Synchronize::sleep()
 #else
 	sleep (INFINITE);
 #endif
-#endif
 
-#ifdef _PTHREADS
+#else
 	int ret = pthread_mutex_lock(&mutex);
-	CHECK_RET("pthread_mutex_lock failed, errno %d", errno);
+	if (ret)
+		system_call_failed::raise("pthread_mutex_lock", ret);
 
 	while (!wakeup)
 		pthread_cond_wait(&condition, &mutex);
 
 	wakeup = false;
 	ret = pthread_mutex_unlock(&mutex);
-	CHECK_RET("pthread_mutex_unlock failed, errno %d", errno);
-#endif
-
-#ifdef SOLARIS_MT
-	int ret = mutex_lock(&mutex);
-	CHECK_RET("mutex_lock failed, errno %d", errno);
-
-	while (!wakeup)
-		cond_wait(&condition, &mutex);
-
-	wakeup = false;
-	ret = mutex_unlock(&mutex);
-	CHECK_RET("mutex_unlock failed, errno %d", errno);
+	if (ret)
+		system_call_failed::raise("pthread_mutex_unlock", ret);
 #endif
 
 	sleeping = false;
@@ -129,9 +117,7 @@ bool Synchronize::sleep(int milliseconds)
 	sleeping = false;
 
 	return n != WAIT_TIMEOUT;
-#endif
-
-#ifdef _PTHREADS
+#else
 	struct timeval microTime;
 	int ret = gettimeofday(&microTime, NULL);
 	SINT64 nanos = (SINT64) microTime.tv_sec * NANO + microTime.tv_usec * 1000 +
@@ -139,8 +125,11 @@ bool Synchronize::sleep(int milliseconds)
 	struct timespec nanoTime;
 	nanoTime.tv_sec = nanos / NANO;
 	nanoTime.tv_nsec = nanos % NANO;
+
 	ret = pthread_mutex_lock (&mutex);
-	CHECK_RET("pthread_mutex_lock failed, errno %d", errno);
+	if (ret)
+		system_call_failed::raise("pthread_mutex_lock", ret);
+
 	int seconds = nanoTime.tv_sec - microTime.tv_sec;
 
 	while (!wakeup)
@@ -166,60 +155,23 @@ bool Synchronize::sleep(int milliseconds)
 	pthread_mutex_unlock(&mutex);
 	return ret != ETIMEDOUT;
 #endif
-
-#ifdef SOLARIS_MT
-	struct timeval microTime;
-	int ret = gettimeofday(&microTime, NULL);
-	SINT64 nanos = (SINT64) microTime.tv_sec * NANO + microTime.tv_usec * 1000 +
-		(SINT64) milliseconds * 1000000;
-	struct timespec nanoTime;
-	nanoTime.tv_sec = nanos / NANO;
-	nanoTime.tv_nsec = nanos % NANO;
-	ret = mutex_lock (&mutex);
-	CHECK_RET("mutex_lock failed, errno %d", errno);
-	int seconds = nanoTime.tv_sec - microTime.tv_sec;
-
-	while (!wakeup)
-	{
-		ret = cond_timedwait(&condition, &mutex, &nanoTime);
-		if (ret == ETIMEDOUT)
-			break;
-		/***
-		if (!wakeup)
-			Log::debug("Synchronize::sleep(milliseconds): unexpected wakeup, ret %d\n", ret);
-		***/
-	}
-
-	sleeping = false;
-	wakeup = false;
-	mutex_unlock(&mutex);
-
-	return ret != ETIMEDOUT;
-#endif
 }
 
 void Synchronize::wake()
 {
 #ifdef _WIN32
 	SetEvent(evnt);
-#endif
-
-#ifdef _PTHREADS
+#else
 	int ret = pthread_mutex_lock(&mutex);
-	CHECK_RET("pthread_mutex_lock failed, errno %d", errno);
+	if (ret)
+		system_call_failed::raise("pthread_mutex_lock", ret);
+
 	wakeup = true;
 	pthread_cond_broadcast(&condition);
-	ret = pthread_mutex_unlock(&mutex);
-	CHECK_RET("pthread_mutex_unlock failed, errno %d", errno);
-#endif
 
-#ifdef SOLARIS_MT
-	int ret = mutex_lock(&mutex);
-	CHECK_RET("mutex_lock failed, errno %d", errno);
-	wakeup = true;
-	cond_broadcast(&condition);
-	ret = mutex_unlock(&mutex);
-	CHECK_RET("mutex_unlock failed, errno %d", errno);
+	ret = pthread_mutex_unlock(&mutex);
+	if (ret)
+		system_call_failed::raise("pthread_mutex_unlock", ret);
 #endif
 }
 

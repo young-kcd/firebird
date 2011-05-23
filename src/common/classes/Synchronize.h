@@ -35,6 +35,10 @@
 #include "../../common/common.h"
 #include "../../common/classes/SyncObject.h"
 
+#ifndef _WIN32
+#include <pthread.h>
+#endif
+
 
 namespace Firebird {
 
@@ -57,16 +61,9 @@ protected:
 
 #ifdef _WIN32
 	void* evnt;
-#endif
-
-#ifdef _PTHREADS
+#else
 	pthread_cond_t condition;
 	pthread_mutex_t mutex;
-#endif
-
-#ifdef SOLARIS_MT
-	cond_t condition;
-	mutex_t mutex;
 #endif
 };
 
