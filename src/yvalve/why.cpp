@@ -780,7 +780,7 @@ namespace Why
 		virtual void FB_CARG rollbackRetaining(IStatus* status);
 		virtual void FB_CARG disconnect(IStatus* status);
 		virtual ITransaction* FB_CARG join(IStatus* status, ITransaction* transaction);
-		virtual YTransaction* FB_CARG validate(IStatus* status, IAttachment* testAtt);
+		virtual ITransaction* FB_CARG validate(IStatus* status, IAttachment* testAtt);
 		virtual YTransaction* FB_CARG enterDtc(IStatus* status);
 
 		void addCleanupHandler(IStatus* status, CleanupCallback* callback);
@@ -3407,6 +3407,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 	StatusVector status(userStatus);
 	TEB* vector = (TEB*) vec;
 	ITransaction* multiTrans = NULL;
+	DtcStart* ds = NULL;
 
 	try
 	{
@@ -3415,23 +3416,35 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		if (count <= 0 || !vector)
 			status_exception::raise(Arg::Gds(isc_bad_teb_form));
 
-		RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
-
 		if (count == 1)
 		{
+			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
+
 			YTransaction* transaction = attachment->startTransaction(&status,
 				vector->teb_tpb_length, vector->teb_tpb);
 			*traHandle = transaction->handle;
 			return status[1];
 		}
 
-		// This works as long as TEB has same layout as DtcStart
-		DtcStart* ds = (DtcStart*) vec;
+		HalfStaticArray<DtcStart, 16> dtcStartBuffer;
+		DtcStart* ds = dtcStartBuffer.getBuffer(count);
+		memset(ds, 0, sizeof(DtcStart) * count);
+		DtcStart* p = ds;
+		DtcStart* const end = p + count;
+		for (; p < end; ++p, ++vector)
+		{
+			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
+			p->attachment = attachment;
+			attachment->addRef();
+			p->tpbLength = vector->teb_tpb_length;
+			p->tpb = reinterpret_cast<const unsigned char*>(vector->teb_tpb);
+		}
+
 		multiTrans = DtcInterfacePtr()->start(&status, count, ds);
 
 		if (multiTrans)
 		{
-			YTransaction* transaction = new YTransaction(attachment, multiTrans);
+			YTransaction* transaction = new YTransaction(NULL, multiTrans);
 			*traHandle = transaction->handle;
 		}
 	}
@@ -3443,6 +3456,19 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 			multiTrans->rollback(&temp);
 
 		e.stuffException(&status);
+	}
+
+	if (ds)
+	{
+		DtcStart* p = ds;
+		DtcStart* const end = p + count;
+		for (; p < end; ++p)
+		{
+			if (p->attachment)
+			{
+				p->attachment->release();
+			}
+		}
 	}
 
 	return status[1];
@@ -4416,7 +4442,7 @@ ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transact
 	return NULL;
 }
 
-YTransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testAtt)
+ITransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testAtt)
 {
 	try
 	{
@@ -4424,7 +4450,11 @@ YTransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testA
 		selfCheck();
 
 		// Do not raise error in status - just return NULL if attachment does not match
-		return attachment == testAtt ? this : NULL;
+		if (attachment == testAtt)
+		{
+			return this;
+		}
+		return next->validate(status, testAtt);
 	}
 	catch (const Exception& ex)
 	{
