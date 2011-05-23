@@ -245,8 +245,8 @@ public:
 struct DtcStart
 {
 	IAttachment* attachment;
+	const unsigned char* tpb;
 	unsigned int tpbLength;
-	unsigned char* tpb;
 };
 
 // Distributed transactions coordinator
