@@ -29,6 +29,7 @@
 #include "firebird.h"
 
 #include "../yvalve/MasterImplementation.h"
+#include "../yvalve/YObjects.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/array.h"
@@ -39,6 +40,7 @@
 ///#include "../common/classes/init.h"
 
 using namespace Firebird;
+using namespace Why;
 
 namespace {
 
@@ -172,80 +174,6 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 	}
 
 	return true;
-}
-
-class Dtc : public AutoIface<IDtc, FB_DTC_VERSION>
-{
-public:
-	// IDtc implementation
-	virtual DTransaction* FB_CARG start(IStatus* status, unsigned int cnt, DtcStart* components);
-	virtual DTransaction* FB_CARG join(IStatus* status, ITransaction* one, ITransaction* two);
-};
-
-DTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components)
-{
-	try
-	{
-		status->init();
-
-		RefPtr<DTransaction> dtransaction(new DTransaction);
-
-		for (unsigned int i = 0; i < cnt; ++i)
-		{
-			RefPtr<ITransaction> transaction(components[i].attachment->
-				startTransaction(status, components[i].tpbLength, components[i].tpb));
-
-			if (! status->isSuccess())
-				return NULL;
-
-			dtransaction->join(status, transaction);
-
-			if (! status->isSuccess())
-			{
-				LocalStatus tmp;
-				dtransaction->rollback(&tmp);
-				return NULL;
-			}
-		}
-
-		dtransaction->addRef();
-		return dtransaction;
-	}
-	catch(const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return NULL;
-}
-
-DTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
-{
-	try
-	{
-		status->init();
-
-		RefPtr<DTransaction> dtransaction(new DTransaction);
-
-		dtransaction->join(status, one);
-		if (! status->isSuccess())
-			return NULL;
-
-		dtransaction->join(status, two);
-		/* We must not return NULL - first transaction is available only inside dtransaction
-		if (! status->isSuccess())
-			return NULL;
-		*/
-
-		dtransaction->addRef();
-		return dtransaction;
-	}
-	catch(const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	return NULL;
 }
 
 void FB_CARG DTransaction::getInfo(IStatus* status,
@@ -572,20 +500,75 @@ DTransaction::~DTransaction()
 	}
 }
 
-Static<Dtc> dtc;
-
 } // anonymous namespace
 
 
 namespace Why {
 
-//
-// getDtc()
-//
-
-IDtc* FB_CARG MasterImplementation::getDtc()
+YTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components)
 {
-	return &dtc;
+	try
+	{
+		status->init();
+
+		RefPtr<DTransaction> dtransaction(new DTransaction);
+
+		for (unsigned int i = 0; i < cnt; ++i)
+		{
+			RefPtr<ITransaction> transaction(components[i].attachment->
+				startTransaction(status, components[i].tpbLength, components[i].tpb));
+
+			if (! status->isSuccess())
+				return NULL;
+
+			dtransaction->join(status, transaction);
+
+			if (! status->isSuccess())
+			{
+				LocalStatus tmp;
+				dtransaction->rollback(&tmp);
+				return NULL;
+			}
+		}
+
+		dtransaction->addRef();
+		return new YTransaction(NULL, dtransaction);
+	}
+	catch(const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+YTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
+{
+	try
+	{
+		status->init();
+
+		RefPtr<DTransaction> dtransaction(new DTransaction);
+
+		dtransaction->join(status, one);
+		if (! status->isSuccess())
+			return NULL;
+
+		dtransaction->join(status, two);
+		/* We must not return NULL - first transaction is available only inside dtransaction
+		if (! status->isSuccess())
+			return NULL;
+		*/
+
+		dtransaction->addRef();
+		return new YTransaction(NULL, dtransaction);
+	}
+	catch(const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
 }
 
 } // namespace Why

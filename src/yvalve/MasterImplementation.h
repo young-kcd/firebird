@@ -31,14 +31,28 @@
 
 #include "firebird.h"
 #include "Interface.h"
+#include "../yvalve/YObjects.h"
 #include "../common/classes/ImplementHelper.h"
 
 namespace Why
 {
-	extern Firebird::IProvider* dispatcherPtr;
+	class Dtc : public Firebird::AutoIface<Firebird::IDtc, FB_DTC_VERSION>
+	{
+	public:
+		// IDtc implementation
+		virtual YTransaction* FB_CARG start(Firebird::IStatus* status,
+			unsigned int cnt, Firebird::DtcStart* components);
+		virtual YTransaction* FB_CARG join(Firebird::IStatus* status,
+			Firebird::ITransaction* one, Firebird::ITransaction* two);
+	};
 
 	class MasterImplementation : public Firebird::AutoIface<Firebird::IMaster, FB_MASTER_VERSION>
 	{
+	public:
+		static Firebird::Static<MasterImplementation> instance;
+		static Firebird::Static<Dispatcher> dispatcher;
+		static Firebird::Static<Dtc> dtc;
+
 	public:
 		// IMaster implementation
 		Firebird::IStatus* FB_CARG getStatus();
@@ -51,7 +65,7 @@ namespace Why
 			Firebird::IAttachment* attachment);
 		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
-		Firebird::IDtc* FB_CARG getDtc();
+		Dtc* FB_CARG getDtc();
 	};
 
 	void shutdownTimers();

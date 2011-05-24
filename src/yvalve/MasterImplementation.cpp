@@ -61,6 +61,10 @@ private:
 	}
 };
 
+Static<MasterImplementation> MasterImplementation::instance;
+Static<Dispatcher> MasterImplementation::dispatcher;
+Static<Dtc> MasterImplementation::dtc;
+
 Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
 {
 	return new UserStatus;
@@ -72,8 +76,17 @@ Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
 
 IProvider* FB_CARG MasterImplementation::getDispatcher()
 {
-	dispatcherPtr->addRef();
-	return dispatcherPtr;
+	dispatcher->addRef();
+	return &dispatcher;
+}
+
+//
+// getDtc()
+//
+
+Dtc* FB_CARG MasterImplementation::getDtc()
+{
+	return &dtc;
 }
 
 //
@@ -536,7 +549,5 @@ void shutdownTimers()
 
 Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
 {
-	static Firebird::Static<Why::MasterImplementation> master;
-
-	return &master;
+	return &Why::MasterImplementation::instance;
 }
