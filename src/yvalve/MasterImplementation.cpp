@@ -61,7 +61,6 @@ private:
 	}
 };
 
-Static<MasterImplementation> MasterImplementation::instance;
 Static<Dispatcher> MasterImplementation::dispatcher;
 Static<Dtc> MasterImplementation::dtc;
 
@@ -549,5 +548,6 @@ void shutdownTimers()
 
 Firebird::IMaster* ISC_EXPORT fb_get_master_interface()
 {
-	return &Why::MasterImplementation::instance;
+	static Static<Why::MasterImplementation> instance;
+	return &instance;
 }

@@ -49,7 +49,6 @@ namespace Why
 	class MasterImplementation : public Firebird::AutoIface<Firebird::IMaster, FB_MASTER_VERSION>
 	{
 	public:
-		static Firebird::Static<MasterImplementation> instance;
 		static Firebird::Static<Dispatcher> dispatcher;
 		static Firebird::Static<Dtc> dtc;
 
