@@ -1,3 +1,16 @@
+ 2011-05-23 15:33  asfernandes 
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+Make synchronization primitives work in the POSIX build.
+
+ 2011-05-23 11:45  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed isc_start_multiple() - thanks to Adriano
+
+ 2011-05-23 11:45  alexpeshkoff 
+   M src/include/ProviderInterface.h
+Slightly better struct layout from cunning alignment POV
+
  2011-05-21 21:43  asfernandes 
    M src/yvalve/why.cpp
 Misc.
