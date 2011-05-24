@@ -104,7 +104,6 @@
     <ClInclude Include="..\..\..\src\common\classes\Hash.h" />
     <ClInclude Include="..\..\..\src\common\classes\ImplementHelper.h" />
     <ClInclude Include="..\..\..\src\common\classes\init.h" />
-    <ClInclude Include="..\..\..\src\common\classes\Interlock.h" />
     <ClInclude Include="..\..\..\src\common\classes\locks.h" />
     <ClInclude Include="..\..\..\src\common\classes\MetaName.h" />
     <ClInclude Include="..\..\..\src\common\classes\MsgPrint.h" />

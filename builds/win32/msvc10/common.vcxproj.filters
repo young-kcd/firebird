@@ -371,9 +371,6 @@
     <ClInclude Include="..\..\..\src\common\classes\init.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\common\classes\Interlock.h">
-      <Filter>headers</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\common\classes\locks.h">
       <Filter>headers</Filter>
     </ClInclude>

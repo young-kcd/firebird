@@ -30,7 +30,7 @@
     <ClCompile Include="..\..\..\src\yvalve\alt.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp" />
+    <ClCompile Include="..\..\..\src\yvalve\DistributedTransaction.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\yvalve\gds.cpp">

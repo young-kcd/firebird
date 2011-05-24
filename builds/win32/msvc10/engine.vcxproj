@@ -277,7 +277,6 @@
     <ClInclude Include="..\..\..\src\jrd\msg_encode.h" />
     <ClInclude Include="..\..\..\src\jrd\names.h" />
     <ClInclude Include="..\..\..\src\jrd\nbak.h" />
-    <ClInclude Include="..\..\..\src\jrd\nod.h" />
     <ClInclude Include="..\..\..\src\jrd\ntrace.h" />
     <ClInclude Include="..\..\..\src\jrd\obj.h" />
     <ClInclude Include="..\..\..\src\jrd\ods.h" />
