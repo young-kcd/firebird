@@ -2993,11 +2993,11 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		}
 
 		HalfStaticArray<DtcStart, 16> dtcStartBuffer;
-		DtcStart* ds = dtcStartBuffer.getBuffer(count);
+		ds = dtcStartBuffer.getBuffer(count);
 		memset(ds, 0, sizeof(DtcStart) * count);
-		DtcStart* p = ds;
-		DtcStart* const end = p + count;
-		for (; p < end; ++p, ++vector)
+		DtcStart* const end = ds + count;
+
+		for (DtcStart* p = ds; p < end; ++p, ++vector)
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
 			p->attachment = attachment;
@@ -3023,14 +3023,12 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 	if (ds)
 	{
-		DtcStart* p = ds;
-		DtcStart* const end = p + count;
-		for (; p < end; ++p)
+		DtcStart* const end = ds + count;
+
+		for (DtcStart* p = ds; p < end; ++p)
 		{
 			if (p->attachment)
-			{
 				p->attachment->release();
-			}
 		}
 	}
 
