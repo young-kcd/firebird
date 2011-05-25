@@ -211,7 +211,7 @@ void FB_CARG DTransaction::getInfo(IStatus* status,
 			}
 		}
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -252,7 +252,7 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 
 		limbo = true;
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -288,7 +288,7 @@ void FB_CARG DTransaction::commit(IStatus* status)
 
 		release();
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -317,7 +317,7 @@ void FB_CARG DTransaction::commitRetaining(IStatus* status)
 
 		limbo = true;	// ASF: why do retaining marks limbo?
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -347,7 +347,7 @@ void FB_CARG DTransaction::rollback(IStatus* status)
 
 		release();
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -373,7 +373,7 @@ void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
 
 		limbo = true;	// ASF: why do retaining marks limbo?
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -404,7 +404,7 @@ void FB_CARG DTransaction::disconnect(IStatus* status)
 
 		release();
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -434,7 +434,7 @@ DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transact
 		// enterDtc() failed - remove reserved array element
 		sub.remove(pos);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -460,7 +460,7 @@ ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attac
 
 		Arg::Gds(isc_bad_trans_handle).raise();
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -483,7 +483,7 @@ DTransaction* FB_CARG DTransaction::enterDtc(IStatus* status)
 		traCopy->addRef();
 		return traCopy;
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -534,7 +534,7 @@ YTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* co
 		dtransaction->addRef();
 		return new YTransaction(NULL, dtransaction);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
@@ -563,7 +563,7 @@ YTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction
 		dtransaction->addRef();
 		return new YTransaction(NULL, dtransaction);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
