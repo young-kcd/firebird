@@ -1,3 +1,35 @@
+ 2011-05-25 00:54  asfernandes 
+   M src/yvalve/why.cpp
+Fix attachment leak due to variable shadow in isc_start_multiple.
+
+ 2011-05-25 00:45  asfernandes 
+   M src/yvalve/DistributedTransaction.cpp
+Misc.
+
+ 2011-05-24 22:39  asfernandes 
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+Hope this fixes the windows build.
+
+ 2011-05-24 20:44  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+Cleanup
+
+ 2011-05-24 15:20  asfernandes 
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   A src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fix problems with new multi-db transactions implementation:
+1) fb_get_transaction_handle access object of invalid type and crash
+2) Attachment::createBlob/openBlob access object of invalid type and crash
+3) isc_start_multiple creates YTransaction with NULL attachment and makes its constructor crash
+
  2011-05-23 15:33  asfernandes 
    M src/common/classes/Synchronize.cpp
    M src/common/classes/Synchronize.h
