@@ -978,9 +978,6 @@ namespace
 			return;
 		}
 		killed = sig;
-#if !defined (SUPERCLIENT)
-		disableConnections = true;
-#endif
 		shutdownSemaphore->release();
 	}
 
