@@ -2751,16 +2751,16 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
 		value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
 
-		if (!Firebird::TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp)) {
-			ERR_post(Arg::Gds(isc_datetime_range_exceeded));
-		}
-
 		// Make sure the TIME portion is non-negative
 
 		if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0) {
 			value->vlu_misc.vlu_timestamp.timestamp_time =
 				((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time) + ISC_TICKS_PER_DAY;
 			value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
+		}
+
+		if (!Firebird::TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp)) {
+			ERR_post(Arg::Gds(isc_datetime_range_exceeded));
 		}
 
 	} // scope block for goto v/s var initialization error
