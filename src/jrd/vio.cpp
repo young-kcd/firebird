@@ -2135,7 +2135,7 @@ void VIO_merge_proc_sav_points(thread_db* tdbb,
 		sav_point_list = &sav_point->sav_next;
 	}
 
-	fb_assert(org_save_point == transaction->tra_save_point);
+	fb_assert(!transaction->tra_save_point || org_save_point == transaction->tra_save_point);
 }
 
 
