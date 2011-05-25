@@ -2448,9 +2448,6 @@ dsc* ArithmeticNode::addTimeStamp(const dsc* desc, impure_value* value) const
 		value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
 		value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
 
-		if (!TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp))
-			ERR_post(Arg::Gds(isc_datetime_range_exceeded));
-
 		// Make sure the TIME portion is non-negative
 
 		if ((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time < 0)
@@ -2459,6 +2456,9 @@ dsc* ArithmeticNode::addTimeStamp(const dsc* desc, impure_value* value) const
 				((SLONG) value->vlu_misc.vlu_timestamp.timestamp_time) + ISC_TICKS_PER_DAY;
 			value->vlu_misc.vlu_timestamp.timestamp_date -= 1;
 		}
+
+		if (!TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp))
+			ERR_post(Arg::Gds(isc_datetime_range_exceeded));
 	}
 
 	fb_assert(value->vlu_misc.vlu_timestamp.timestamp_time >= 0 &&
