@@ -2274,6 +2274,8 @@ C --
       PARAMETER (GDS__nbackup_lostguid_l0bk            = 337117251)
       INTEGER*4 GDS__nbackup_switchd_parameter       
       PARAMETER (GDS__nbackup_switchd_parameter        = 337117255)
+      INTEGER*4 GDS__nbackup_user_stop               
+      PARAMETER (GDS__nbackup_user_stop                = 337117257)
       INTEGER*4 GDS__trace_conflict_acts             
       PARAMETER (GDS__trace_conflict_acts              = 337182750)
       INTEGER*4 GDS__trace_act_notfound              

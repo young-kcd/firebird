@@ -3147,6 +3147,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 70, NULL, '  -D(IRECT) [ON | OFF]                   Use or not direct I/O when backing up database', NULL, NULL)
 ('nbackup_switchd_parameter', 'main', 'nbackup.cpp', NULL, 24, 71, NULL, 'Wrong parameter @1 for switch -D, need ON or OFF', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 72, NULL, 'special options are:', NULL, NULL)
+('nbackup_user_stop', 'checkCtrlC()', 'nbackup.cpp', NULL, 24, 73, NULL, 'Terminated due to user request', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

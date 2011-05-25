@@ -1136,6 +1136,7 @@ Data source : @4"},		/* eds_statement */
 	{337117250, "Unexpected end of file when reading header of restored database file (stage @1)"},		/* nbackup_err_eofhdr_restdb */
 	{337117251, "Cannot get backup guid clumplet from L0 backup"},		/* nbackup_lostguid_l0bk */
 	{337117255, "Wrong parameter @1 for switch -D, need ON or OFF"},		/* nbackup_switchd_parameter */
+	{337117257, "Terminated due to user request"},		/* nbackup_user_stop */
 	{337182750, "conflicting actions \"@1\" and \"@2\" found"},		/* trace_conflict_acts */
 	{337182751, "action switch not found"},		/* trace_act_notfound */
 	{337182752, "switch \"@1\" must be set only once"},		/* trace_switch_once */

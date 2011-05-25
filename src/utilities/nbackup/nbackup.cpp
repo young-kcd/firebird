@@ -212,8 +212,28 @@ namespace
 	}
 #endif // HAVE_POSIX_FADVISE
 
+	bool flShutdown = false;
+
+	int nbackupShutdown(const int reason, const int, void*)
+	{
+		if (reason == fb_shutrsn_signal)
+		{
+			flShutdown = true;
+			return FB_FAILURE;
+		}
+		return FB_SUCCESS;
+	}
+
 } // namespace
 
+
+static void checkCtrlC(UtilSvc* uSvc)
+{
+	if (flShutdown)
+	{
+		Arg::Gds(isc_nbackup_user_stop).raise();
+	}
+}
 
 
 #ifdef WIN_NT
@@ -261,6 +281,15 @@ public:
 
 		if (!ResolveDatabaseAlias(db, dbname, NULL))
 			dbname = db;
+
+		if (!uSvc->isService())
+		{
+			// It's time to take care about shutdown handling
+			if (fb_shutdown_callback(status, nbackupShutdown, fb_shut_confirmation, NULL))
+			{
+				pr_error(status, "setting shutdown callback");
+			}
+		}
 	}
 
 	typedef ObjectsArray<PathName> BackupFiles;
@@ -960,6 +989,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 				page_writes++;
 			}
 
+			checkCtrlC(uSvc);
+
 			if ((db_size_pages != 0) && (db_size == 0))
 				break;
 
@@ -1241,6 +1272,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					}
 					seek_file(dbase, ((SINT64) pageNum) * bakheader.page_size);
 					write_file(dbase, page_buffer, bakheader.page_size);
+					checkCtrlC(uSvc);
 				}
 				delete_database = false;
 			}
@@ -1252,6 +1284,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					status_exception::raise(Arg::Gds(isc_nbackup_err_copy) <<
 						dbname.c_str() << bakname.c_str() << Arg::OsError());
 				}
+				checkCtrlC(uSvc);
 				delete_database = true; // database is possibly broken
 				open_database_write();
 #else
@@ -1263,6 +1296,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					if (bytesRead == 0)
 						break;
 					write_file(dbase, buffer, bytesRead);
+					checkCtrlC(uSvc);
 				}
 				seek_file(dbase, 0);
 #endif
