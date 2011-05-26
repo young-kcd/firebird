@@ -1,3 +1,7 @@
+ 2011-05-25 07:51  dimitr 
+   M src/jrd/vio.cpp
+Fixed the assertion.
+
  2011-05-12 09:03  dimitr 
    M src/jrd/build_no.h
    M src/misc/writeBuildNum.sh
