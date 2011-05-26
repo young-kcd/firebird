@@ -1,3 +1,11 @@
+ 2011-05-25 10:56  dimitr 
+   M src/jrd/evl.cpp
+Fixed CORE-3493: Adding a value to a timestamp below '16.11.1858 00:00:01' throws 'value exceeds the range for valid timestamp'. v2.1 wasn't really affected although the validation sequence was wrong.
+
+ 2011-05-25 07:50  dimitr 
+   M src/jrd/vio.cpp
+Fixed the assertion.
+
  2011-05-12 09:01  dimitr 
    M src/jrd/build_no.h
    M src/misc/writeBuildNum.sh
