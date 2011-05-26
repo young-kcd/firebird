@@ -1,3 +1,21 @@
+ 2011-05-25 12:59  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/utilities/nbackup/nbackup.cpp
+Frontported fix for CORE-3482: nbackup ctrl-c segfaults and leaves db locked (delta file continues to grow)
+
+ 2011-05-25 10:59  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3493: Adding a value to a timestamp below '16.11.1858 00:00:01' throws 'value exceeds the range for valid timestamp'. v2.1 wasn't really affected although the validation sequence was wrong.
+
  2011-05-25 00:54  asfernandes 
    M src/yvalve/why.cpp
 Fix attachment leak due to variable shadow in isc_start_multiple.
