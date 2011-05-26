@@ -1,3 +1,19 @@
+ 2011-05-25 11:50  alexpeshkoff 
+   M src/utilities/nbackup.cpp
+Fixed CORE-3482: nbackup ctrl-c segfaults and leaves db locked (delta file continues to grow)
+
+ 2011-05-25 11:41  alexpeshkoff 
+   M src/jrd/why.cpp
+Fixed CORE-3494: Attach fails after shutdown rejected by handler installed in fb_shutdown_callback()
+
+ 2011-05-25 10:56  dimitr 
+   M src/jrd/evl.cpp
+Fixed CORE-3493: Adding a value to a timestamp below '16.11.1858 00:00:01' throws 'value exceeds the range for valid timestamp'. v2.1 wasn't really affected although the validation sequence was wrong.
+
+ 2011-05-25 07:48  dimitr 
+   M src/jrd/vio.cpp
+Fixed the assertion.
+
  2011-05-19 17:08  alexpeshkoff 
    M src/gpre/ada.cpp
    M src/gpre/cob.cpp
