@@ -45,7 +45,7 @@ public:
 	~GarbageCollector();
 
 	void addPage(const USHORT relID, const ULONG pageno, const SLONG tranid);
-	bool getPageBitmap(const SLONG oldest_snapshot, USHORT &relID, PageBitmap **sbm);
+	bool getPageBitmap(const SLONG oldest_snapshot, USHORT &relID, PageBitmap** sbm);
 	void removeRelation(const USHORT relID);
 	void sweptRelation(const SLONG oldest_snapshot, const USHORT relID);
 
@@ -55,7 +55,6 @@ private:
 	typedef Firebird::Pair<Firebird::NonPooled<SLONG, PageBitmap*> > TranBitMap;
 	typedef Firebird::GenericMap<TranBitMap> TranData;
 
-
 	class RelationData
 	{
 	public:
@@ -63,10 +62,13 @@ private:
 			: m_pool(p), m_tranData(p), m_relID(relID)
 		{}
 
-		~RelationData() { clear(); }
+		~RelationData()
+		{
+			clear();
+		}
 
 		void addPage(const ULONG pageno, const SLONG tranid);
-		void getPageBitmap(const SLONG oldest_snapshot, PageBitmap **sbm);
+		void getPageBitmap(const SLONG oldest_snapshot, PageBitmap** sbm);
 		void swept(const SLONG oldest_snapshot);
 		SLONG minTranID() const;
 
@@ -75,9 +77,9 @@ private:
 			return m_relID;
 		}
 
-		static inline const USHORT generate(void const*, const RelationData* Item)
+		static inline const USHORT generate(void const*, const RelationData* item)
 		{
-			return Item->m_relID;
+			return item->m_relID;
 		}
 
 		void clear();
@@ -94,7 +96,7 @@ private:
 				USHORT,
 				RelationData> RelGarbageArray;
 
-	RelationData* getRelData(Firebird::Sync &sync, const USHORT relID, bool allowCreate);
+	RelationData* getRelData(Firebird::Sync& sync, const USHORT relID, bool allowCreate);
 
 	Firebird::MemoryPool& m_pool;
 	Firebird::SyncObject m_sync;

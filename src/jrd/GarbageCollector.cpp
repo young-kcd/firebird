@@ -27,17 +27,19 @@
 using namespace Jrd;
 using namespace Firebird;
 
-
 namespace Jrd {
+
 
 void GarbageCollector::RelationData::clear()
 {
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
+	{
 		do 
 		{
 			delete accessor.current()->second;
-		} while(accessor.getNext());
+		} while (accessor.getNext());
+	}
 
 	m_tranData.clear();
 }
@@ -56,7 +58,8 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 	// if found at yanger tx - clear it as page should be set at oldest tx (our)
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
-		do 
+	{
+		do
 		{
 			const TranBitMap* item = accessor.current();
 			if (item->first <= tranid)
@@ -70,6 +73,7 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 					break;
 			}		
 		} while(accessor.getNext());
+	}
 
 	// add page to the our tx bitmap
 	if (bm)
@@ -96,12 +100,14 @@ void GarbageCollector::RelationData::getPageBitmap(const SLONG oldest_snapshot, 
 
 		PageBitmap* bm_tran = item->second;
 		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
+
 		if (*bm_or == item->second)
 		{
 			bm_tran = *sbm;
 			*sbm = item->second;
 			item->second = bm_tran;
 		}
+
 		delete item->second;
 
 		m_tranData.remove(item->first);
@@ -138,6 +144,7 @@ SLONG GarbageCollector::RelationData::minTranID() const
 GarbageCollector::~GarbageCollector()
 {
 	SyncLockGuard exGuard(&m_sync, SYNC_EXCLUSIVE, "GarbageCollector::~GarbageCollector");
+
 	for (size_t pos = 0; pos < m_relations.getCount(); pos++)
 	{
 		Sync sync(&m_relations[pos]->m_sync, "GarbageCollector::~GarbageCollector");
@@ -174,14 +181,16 @@ bool GarbageCollector::getPageBitmap(const SLONG oldest_snapshot, USHORT &relID,
 	}
 
 	size_t pos;
-	if (!m_relations.find(m_nextRelID, pos) && (pos == m_relations.getCount()) )
+	if (!m_relations.find(m_nextRelID, pos) && (pos == m_relations.getCount()))
 		pos = 0;
 
 	for (; pos < m_relations.getCount(); pos++)
 	{
 		RelationData* relData = m_relations[pos];
 		SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::getPageBitmap");
+
 		relData->getPageBitmap(oldest_snapshot, sbm);
+
 		if (*sbm)
 		{
 			relID = relData->getRelID();
@@ -228,7 +237,6 @@ void GarbageCollector::sweptRelation(const SLONG oldest_snapshot, const USHORT r
 		syncGC.unlock();
 		relData->swept(oldest_snapshot);
 	}
-	return;
 }
 
 
@@ -249,7 +257,8 @@ SLONG GarbageCollector::minTranID(const USHORT relID)
 }
 
 
-GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const USHORT relID, bool allowCreate)
+GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const USHORT relID,
+	bool allowCreate)
 {
 	size_t pos;
 
