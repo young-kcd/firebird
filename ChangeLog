@@ -1,3 +1,12 @@
+ 2011-05-27 02:05  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.h
+   M src/dsql/metd.epp
+   M src/dsql/parse.y
+Frontported changes of CORE-3491.
+
  2011-05-25 12:59  alexpeshkoff 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
