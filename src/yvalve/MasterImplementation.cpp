@@ -364,8 +364,8 @@ namespace {
 
 GlobalPtr<Mutex> timerAccess;
 GlobalPtr<Semaphore> timerWakeup;
-
-bool stopThread = false;
+// Should use atomic flag for thread stop to provide correct membar
+AtomicCounter stopTimerThread(0);
 Thread::Handle timerThreadHandle = 0;
 
 struct TimerEntry
@@ -394,7 +394,7 @@ void TimerEntry::cleanup()
 	{
 		MutexLockGuard guard(timerAccess);
 
-		stopThread = true;
+		stopTimerThread.setValue(1);
 		timerWakeup->release();
 	}
 	Thread::waitForCompletion(timerThreadHandle);
@@ -436,7 +436,7 @@ TimerEntry* getTimer(ITimer* timer)
 
 THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 {
-	while (!stopThread)
+	while (stopTimerThread.value() == 0)
 	{
 		TimerDelay microSeconds = 0;
 
@@ -452,6 +452,10 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 				if (e.fireTime <= cur)
 				{
 					timerQueue->remove((size_t) 0);
+
+					// We must leave timerAccess mutex here to avoid deadlocks
+					MutexUnlockGuard ug(timerAccess);
+
 					e.timer->handler();
 					e.timer->release();
 				}
@@ -486,15 +490,19 @@ public:
 	{
 		MutexLockGuard guard(timerAccess);
 
-		timerHolder.init();
-
-		if (stopThread)
+		if (stopTimerThread.value() != 0)
 		{
-			// ignore an attempt to start timer - anyway thread to make it fire is down
+			// Ignore an attempt to start timer - anyway thread to make it fire is down
+
+			// We must leave timerAccess mutex here to avoid deadlocks
+			MutexUnlockGuard ug(timerAccess);
+
 			timer->addRef();
 			timer->release();
 			return;
 		}
+
+		timerHolder.init();
 
 		TimerEntry* curTimer = getTimer(timer);
 		if (!curTimer)

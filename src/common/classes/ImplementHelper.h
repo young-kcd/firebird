@@ -238,8 +238,10 @@ public:
 class UnloadDetectorHelper : public VersionedIface<IPluginModule, FB_PLUGIN_MODULE_VERSION>
 {
 public:
+	typedef void VoidNoParam();
+
 	explicit UnloadDetectorHelper(MemoryPool&)
-		: flagOsUnload(true)
+		: cleanup(NULL), flagOsUnload(true)
 	{ }
 
 	~UnloadDetectorHelper()
@@ -249,7 +251,7 @@ public:
 			PluginManagerInterfacePtr pi;
 			pi->unregisterModule(this);
 
-			flagOsUnload = false;
+			doClean();
 		}
 	}
 
@@ -258,12 +260,23 @@ public:
 		return !flagOsUnload;
 	}
 
+	void setCleanup(VoidNoParam* function)
+	{
+		cleanup = function;
+	}
+
 private:
+	VoidNoParam* cleanup;
 	bool flagOsUnload;
 
 	void FB_CARG doClean()
 	{
 		flagOsUnload = false;
+		if (cleanup)
+		{
+			cleanup();
+			cleanup = NULL;
+		}
 	}
 };
 

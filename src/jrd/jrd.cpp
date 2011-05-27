@@ -295,25 +295,14 @@ int JProvider::release()
 	return 1;
 }
 
+
 static UnloadDetector unloadDetector;
 
-
-class ShutdownBeforeUnload
+static void shutdownBeforeUnload()
 {
-public:
-	ShutdownBeforeUnload(Firebird::MemoryPool&)
-	{
-	}
-
-	~ShutdownBeforeUnload()
-	{
-		LocalStatus status;
-		JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
-	}
+	LocalStatus status;
+	JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
 };
-
-static GlobalPtr<ShutdownBeforeUnload, InstanceControl::PRIORITY_DETECT_UNLOAD> shutdownBeforeUnload;
-
 
 class EngineFactory : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
 {
@@ -336,6 +325,7 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
+	unloadDetector->setCleanup(shutdownBeforeUnload);
 	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
 	iPlugin->registerModule(&unloadDetector);
 }
@@ -3947,10 +3937,17 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
  *
  **************************************/
 	static AtomicCounter shutCounter;
+	static bool shutdownComplete = false;
 
 	try
 	{
 		CounterGuard guard(shutCounter);
+
+		if (shutdownComplete)
+		{
+			return;
+		}
+		shutdownComplete = true;
 
 		ThreadContextHolder tdbb;
 

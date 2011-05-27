@@ -314,6 +314,9 @@ namespace
 			if (cleanup == c)
 			{
 				cleanup = 0;
+#ifdef DEBUG_PLUGINS
+				fprintf(stderr, "resetCleanup() of module %s\n", name.c_str());
+#endif
 				// This is called only by unregister module
 				// when current module is forced to go away by OS.
 				// Do not unload it ourself in this case.
@@ -382,7 +385,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in aliases.conf
-	class ConfiguredPlugin : public RefCounted, public GlobalStorage
+	class ConfiguredPlugin : public RefCntIface<ITimer, FB_TIMER_VERSION>
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -439,39 +442,18 @@ namespace
 
 		~ConfiguredPlugin();
 
+		// ITimer implementation
+		void FB_CARG handler()
+		{ }
+
+		int FB_CARG release();
+
 	private:
 		RefPtr<PluginModule> module;
 		unsigned int regPlugin;
 		RefPtr<ConfigFile> defaultConfig;
 		PathName confName;
 		PathName plugName;
-	};
-
-	// Delays destruction of ConfiguredPlugin instance
-	class PluginDestroyTimer : public RefCntIface<ITimer, FB_TIMER_VERSION>
-	{
-	public:
-		PluginDestroyTimer(ConfiguredPlugin* cp)
-			: configuredPlugin(cp)
-		{ }
-
-		// ITimer implementation
-		void FB_CARG handler()
-		{ }
-
-		int FB_CARG release()
-		{
-			if (--refCounter == 0)
-			{
-				delete this;
-				return 0;
-			}
-
-			return 1;
-		}
-
-	private:
-		RefPtr<ConfiguredPlugin> configuredPlugin;
 	};
 
 	// Provides per-database configuration from aliases.conf.
@@ -517,13 +499,10 @@ namespace
 		}
 
 	private:
-		/***
 		~FactoryParameter()
 		{
-			PluginDestroyTimer* timer = new PluginDestroyTimer(configuredPlugin);
-			TimerInterfacePtr()->start(timer, 1000000);		// 1 sec
+			TimerInterfacePtr()->start(configuredPlugin, 1000000);		// 1 sec
 		}
-		***/
 
 		RefPtr<ConfiguredPlugin> configuredPlugin;
 		RefPtr<IFirebirdConf> firebirdConf;
@@ -625,6 +604,19 @@ namespace
 			next->prev = &next;
 		}
 		*prev = this;
+	}
+
+	int FB_CARG ConfiguredPlugin::release()
+	{
+		MutexLockGuard g(plugins->mutex);
+
+		if (--refCounter == 0)
+		{
+			delete this;
+			return 0;
+		}
+
+		return 1;
 	}
 
 	// Provides access to plugins of given type / name.
