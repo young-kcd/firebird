@@ -1,3 +1,16 @@
+ 2011-05-27 02:00  asfernandes 
+   M src/dsql/metd.epp
+Missed piece for CORE-3491.
+
+ 2011-05-27 01:13  asfernandes 
+   M src/dsql/ddl.cpp
+   M src/dsql/dsql.h
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/dsql/parse.y
+   M src/dsql/pass1.cpp
+Fixed CORE-3491 - Altering of a TYPE OF COLUMN parameter affects the original column.
+
  2011-05-25 11:50  alexpeshkoff 
    M src/utilities/nbackup.cpp
 Fixed CORE-3482: nbackup ctrl-c segfaults and leaves db locked (delta file continues to grow)
