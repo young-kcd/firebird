@@ -63,53 +63,6 @@ public:
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
 		USHORT, ViewContext> ViewContexts;
 
-#ifdef GARBAGE_THREAD
-
-class RelationGarbage
-{
-private:
-	class TranGarbage
-	{
-	public:
-		SLONG tran;
-		PageBitmap *bm;
-
-		TranGarbage(PageBitmap* aBm, SLONG aTran)
-			: tran(aTran), bm(aBm)
-		{}
-
-		static inline const SLONG generate(void const*, const TranGarbage& Item)
-		{
-			return Item.tran;
-		}
-	};
-
-	typedef	Firebird::SortedArray<
-				TranGarbage,
-				Firebird::EmptyStorage<TranGarbage>,
-				SLONG,
-				TranGarbage> TranGarbageArray;
-
-	TranGarbageArray array;
-
-public:
-	explicit RelationGarbage(MemoryPool& p)
-		: array(p)
-	{}
-	~RelationGarbage() { clear(); }
-
-	void addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid);
-	void clear();
-
-	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
-
-	SLONG minTranID() const
-	{
-		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
-	}
-};
-
-#endif //GARBAGE_THREAD
 
 class RelationPages
 {
@@ -197,10 +150,6 @@ public:
 	ExternalFile* 	rel_file;			// external file name
 
 	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection
-#ifdef GARBAGE_THREAD
-	PageBitmap*		rel_gc_bitmap;		// garbage collect bitmap of data page sequences
-	RelationGarbage*	rel_garbage;	// deferred gc bitmap's by tran numbers
-#endif
 
 	USHORT		rel_use_count;		// requests compiled with relation
 	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active

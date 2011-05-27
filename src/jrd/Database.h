@@ -75,6 +75,7 @@ class TipCache;
 class BackupManager;
 class ExternalFileDirectoryList;
 class MonitoringData;
+class GarbageCollector;
 
 
 // general purpose vector
@@ -196,11 +197,9 @@ typedef vec<SLONG> TransactionsVector;
 const ULONG DBB_damaged				= 0x1L;
 const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
 const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
-#ifdef GARBAGE_THREAD
 const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
 const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
 const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
-#endif
 const ULONG DBB_force_write			= 0x40L;	// Database is forced write
 const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
 const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
@@ -314,6 +313,7 @@ public:
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
+	Attachment* dbb_sys_attachments;	// System attachments
 	BufferControl*	dbb_bcb;			// Buffer control block
 	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// granddaddy lock
@@ -370,12 +370,10 @@ public:
 	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
-
-#ifdef GARBAGE_THREAD
+	GarbageCollector*	dbb_garbage_collector;	// GarbageCollector class
 	Firebird::Semaphore dbb_gc_sem;		// Event to wake up garbage collector
 	Firebird::Semaphore dbb_gc_init;	// Event for initialization garbage collector
 	Firebird::Semaphore dbb_gc_fini;	// Event for finalization garbage collector
-#endif
 
 	Firebird::MemoryStats dbb_memory_stats;
 

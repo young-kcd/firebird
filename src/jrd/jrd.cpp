@@ -1379,6 +1379,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
+				CCH_init2(tdbb);
 			}
 			else
 			{
@@ -1604,11 +1605,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_validate));
 				}
 
-#ifdef GARBAGE_THREAD
 				// Can't allow garbage collection during database validation.
 
 				VIO_fini(tdbb);
-#endif
+
 				if (!VAL_validate(tdbb, options.dpb_verify)) {
 					ERR_punt();
 				}
@@ -1685,11 +1685,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			PAG_attachment_id(tdbb);
-
-#ifdef GARBAGE_THREAD
 			VIO_init(tdbb);
-#endif
-
 			CCH_release_exclusive(tdbb);
 
 			// if there was an error, the status vector is all set
@@ -2573,10 +2569,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// but before any real work is done
 
 			SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
-
-#ifdef GARBAGE_THREAD
+			CCH_init2(tdbb);
 			VIO_init(tdbb);
-#endif
 
 			if (options.dpb_set_db_readonly)
 			{
@@ -4282,6 +4276,22 @@ JStatement* JAttachment::allocateStatement(IStatus* user_status)
 }
 
 
+void SysAttachment::destroy(Attachment* attachment)
+{
+	Database* dbb = attachment->att_database;
+
+	for (Jrd::Attachment** ptr = &dbb->dbb_sys_attachments; *ptr; ptr = &(*ptr)->att_next)
+	{
+		if (*ptr == attachment)
+		{
+			*ptr = attachment->att_next;
+			break;
+		}
+	}
+	Jrd::Attachment::destroy(attachment);
+}
+
+
 JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* apiTra,
 	unsigned int in_msg_type, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
@@ -5666,21 +5676,27 @@ static Database* init(thread_db* tdbb,
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 	{
-		string gc_policy = dbb->dbb_config->getGCPolicy();
-		gc_policy.lower();
-		if (gc_policy == GCPolicyCooperative) {
+		if (!dbb->dbb_config->getSharedCache()) {
 			dbb->dbb_flags |= DBB_gc_cooperative;
 		}
-		else if (gc_policy == GCPolicyBackground) {
-			dbb->dbb_flags |= DBB_gc_background;
-		}
-		else if (gc_policy == GCPolicyCombined) {
-			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
-		}
-		else // config value is invalid
+		else
 		{
-			// this should not happen - means bug in config
-			fb_assert(false);
+			string gc_policy = dbb->dbb_config->getGCPolicy();
+			gc_policy.lower();
+			if (gc_policy == GCPolicyCooperative) {
+				dbb->dbb_flags |= DBB_gc_cooperative;
+			}
+			else if (gc_policy == GCPolicyBackground) {
+				dbb->dbb_flags |= DBB_gc_background;
+			}
+			else if (gc_policy == GCPolicyCombined) {
+				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
+			}
+			else // config value is invalid
+			{
+				// this should not happen - means bug in config
+				fb_assert(false);
+			}
 		}
 	}
 
@@ -6054,9 +6070,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	TRA_header_write(tdbb, dbb, 0L);	// Update transaction info on header page.
 #endif
 
-#ifdef GARBAGE_THREAD
 	VIO_fini(tdbb);
-#endif
 	CMP_fini(tdbb);
 	CCH_fini(tdbb);
 
@@ -6852,6 +6866,10 @@ static ISC_STATUS unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::I
 				if (!dbb->dbb_attachments)
 				{
 					shutdown_database(dbb, true);
+				}
+				else
+				{
+					dbb->dbb_sync.unlock();
 				}
 			}
 		}

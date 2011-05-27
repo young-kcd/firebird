@@ -784,59 +784,70 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	{
 		Attachment::SyncGuard attGuard(attachment);
 		tdbb->setAttachment(attachment);
+		dumpAttachment(tdbb, attachment, writer);
+	}
 
-		if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
-			continue;
+	for (Attachment* attachment = dbb->dbb_sys_attachments; attachment; attachment = attachment->att_next)
+	{
+		Attachment::SyncGuard attGuard(attachment);
+		tdbb->setAttachment(attachment);
+		dumpAttachment(tdbb, attachment, writer);
+	}
 
-		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
+	tdbb->setAttachment(old_attachment);
+}
 
-		jrd_tra* transaction = NULL;
-		jrd_req* request = NULL;
+void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachment, Writer& writer)
+{
+	if (!putAttachment(tdbb, attachment, writer, fb_utils::genUniqueId()))
+		return;
 
-		// Transaction information
+	putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
 
-		for (transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
+	jrd_tra* transaction = NULL;
+	jrd_req* request = NULL;
+
+	// Transaction information
+
+	for (transaction = attachment->att_transactions;
+		transaction; transaction = transaction->tra_next)
+	{
+		putTransaction(transaction, writer, fb_utils::genUniqueId());
+		putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
+	}
+
+	// Call stack information
+
+	for (transaction = attachment->att_transactions;
+		transaction; transaction = transaction->tra_next)
+	{
+		for (request = transaction->tra_requests; request; request = request->req_caller)
 		{
-			putTransaction(transaction, writer, fb_utils::genUniqueId());
-			putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
-		}
-
-		// Call stack information
-
-		for (transaction = attachment->att_transactions;
-			transaction; transaction = transaction->tra_next)
-		{
-			for (request = transaction->tra_requests; request; request = request->req_caller)
-			{
-				request->adjustCallerStats();
-
-				if (!(request->getStatement()->flags &
-						(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
-					request->req_caller)
-				{
-					putCall(request, writer, fb_utils::genUniqueId());
-				}
-			}
-		}
-
-		// Request information
-
-		for (const jrd_req* const* i = attachment->att_requests.begin();
-			 i != attachment->att_requests.end();
-			 ++i)
-		{
-			const jrd_req* request = *i;
+			request->adjustCallerStats();
 
 			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
+				request->req_caller)
 			{
-				putRequest(request, writer, fb_utils::genUniqueId());
+				putCall(request, writer, fb_utils::genUniqueId());
 			}
 		}
 	}
 
-	tdbb->setAttachment(old_attachment);
+	// Request information
+
+	for (const jrd_req* const* i = attachment->att_requests.begin();
+			i != attachment->att_requests.end();
+			++i)
+	{
+		const jrd_req* request = *i;
+
+		if (!(request->getStatement()->flags &
+				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+		{
+			putRequest(request, writer, fb_utils::genUniqueId());
+		}
+	}
 }
 
 

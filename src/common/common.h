@@ -78,10 +78,6 @@
   do not use links in source code to maintain platform neutrality
 */
 
-#ifdef SUPERSERVER
-#define GARBAGE_THREAD
-#endif
-
 
 /*****************************************************
 * Linux platforms

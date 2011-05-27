@@ -351,31 +351,25 @@ private:
 
 // Attachment flags
 
-const ULONG ATT_no_cleanup			= 1;	// Don't expunge, purge, or garbage collect
-const ULONG ATT_shutdown			= 2;	// attachment has been shutdown
-const ULONG ATT_purge_error			= 4;	// trouble happened in purge attachment, att_mutex remains locked
-const ULONG ATT_shutdown_manager	= 8;	// attachment requesting shutdown
-const ULONG ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
-const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access
-const ULONG ATT_attach_pending		= 64;	// Indicate attachment is only pending
-const ULONG ATT_exclusive_pending	= 128;	// Indicate exclusive attachment pending
-const ULONG ATT_gbak_attachment		= 256;	// Indicate GBAK attachment
-
-#ifdef GARBAGE_THREAD
-const ULONG ATT_notify_gc			= 1024;	// Notify garbage collector to expunge, purge ..
-const ULONG ATT_disable_notify_gc	= 2048;	// Temporarily perform own garbage collection
-const ULONG ATT_garbage_collector	= 4096;	// I'm a garbage collector
+const ULONG ATT_no_cleanup			= 0x0001L;	// Don't expunge, purge, or garbage collect
+const ULONG ATT_shutdown			= 0x0002L;	// attachment has been shutdown
+const ULONG ATT_purge_error			= 0x0004L;	// trouble happened in purge attachment, att_mutex remains locked
+const ULONG ATT_shutdown_manager	= 0x0008L;	// attachment requesting shutdown
+const ULONG ATT_lck_init_done		= 0x0010L;	// LCK_init() called for the attachment
+const ULONG ATT_exclusive			= 0x0020L;	// attachment wants exclusive database access
+const ULONG ATT_attach_pending		= 0x0040L;	// Indicate attachment is only pending
+const ULONG ATT_exclusive_pending	= 0x0080L;	// Indicate exclusive attachment pending
+const ULONG ATT_gbak_attachment		= 0x0100L;	// Indicate GBAK attachment
+const ULONG ATT_notify_gc			= 0x0200L;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_disable_notify_gc	= 0x0400L;	// Temporarily perform own garbage collection
+const ULONG ATT_garbage_collector	= 0x0800L;	// I'm a garbage collector
+const ULONG ATT_cancel_raise		= 0x1000L;	// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 0x2000L;	// Disable cancel operations
+const ULONG ATT_gfix_attachment		= 0x4000L;	// Indicate a GFIX attachment
+const ULONG ATT_gstat_attachment	= 0x8000L;	// Indicate a GSTAT attachment
+const ULONG ATT_no_db_triggers		= 0x10000L;	// Don't execute database triggers
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
-#else
-const ULONG ATT_NO_CLEANUP			= ATT_no_cleanup;
-#endif
-
-const ULONG ATT_cancel_raise		= 8192;		// Cancel currently running operation
-const ULONG ATT_cancel_disable		= 16384;	// Disable cancel operations
-const ULONG ATT_gfix_attachment		= 32768;	// Indicate a GFIX attachment
-const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
-const ULONG ATT_no_db_triggers		= 131072;	// Don't execute database triggers
 
 
 inline bool Attachment::locksmith() const

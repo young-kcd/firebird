@@ -10,10 +10,10 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vlad Horsun
+ *  The Original Code was created by Vlad Khorsun
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2005 Vlad Horsun <hvlad@users.sourceforge.net>
+ *  Copyright (c) 2005 Vlad Khorsun <hvlad@users.sourceforge.net>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -32,87 +32,7 @@
 
 using namespace Jrd;
 
-#ifdef GARBAGE_THREAD
-
-void RelationGarbage::clear()
-{
-	TranGarbage *item = array.begin(), *const last = array.end();
-
-	for (; item < last; item++)
-	{
-		delete item->bm;
-		item->bm = NULL;
-	}
-
-	array.clear();
-}
-
-void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid)
-{
-	bool found = false;
-	TranGarbage const *item = array.begin(), *const last = array.end();
-
-	for (; item < last; item++)
-	{
-		if (item->tran <= tranid)
-		{
-			if (PageBitmap::test(item->bm, pageno))
-			{
-				found = true;
-				break;
-			}
-		}
-		else
-		{
-			if (item->bm->clear(pageno))
-				break;
-		}
-	}
-
-	if (!found)
-	{
-		PageBitmap *bm = NULL;
-		size_t pos = 0;
-
-		if (array.find(tranid, pos) )
-		{
-			bm = array[pos].bm;
-			PBM_SET(pool, &bm, pageno);
-		}
-		else
-		{
-			bm = NULL;
-			PBM_SET(pool, &bm, pageno);
-			array.add(TranGarbage(bm, tranid));
-		}
-	}
-}
-
-void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
-{
-	while (array.getCount() > 0)
-	{
-		TranGarbage& garbage = array[0];
-
-		if (garbage.tran >= oldest_snapshot)
-			break;
-
-		PageBitmap* bm_tran = garbage.bm;
-		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
-		if (*bm_or == garbage.bm)
-		{
-			bm_tran = *sbm;
-			*sbm = garbage.bm;
-			garbage.bm = bm_tran;
-		}
-		delete garbage.bm;
-
-		// Need to cast zero to exact type because literal zero means null pointer
-		array.remove(static_cast<size_t>(0));
-	}
-}
-
-#endif //GARBAGE_THREAD
+/// jrd_rel
 
 RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages)
 {

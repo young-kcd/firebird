@@ -334,6 +334,36 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
+// internal class used in system background threads
+class SysAttachment : public JAttachment
+{
+public:
+	SysAttachment(Attachment* handle) : 
+	  JAttachment(handle)
+	{
+	}
+
+	virtual int FB_CARG release()
+	{
+		if (--refCounter != 0)
+			return 1;
+
+		Attachment* attachment = getHandle();
+		if (attachment)
+		{
+			destroy(attachment);
+		}
+		if (!attachment)
+		{
+			delete this;
+		}
+		return 0;
+	}
+
+private:
+	void destroy(Attachment* attachment);
+};
+
 class JService : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
 {
 public:

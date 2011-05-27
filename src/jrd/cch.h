@@ -111,12 +111,10 @@ public:
 	static BufferControl* create();
 	static void destroy(BufferControl*);
 
+	Database*	bcb_database;
+
 	Firebird::MemoryPool* bcb_bufferpool;
 	Firebird::MemoryStats bcb_memory_stats;
-
-	// To be deleted when PAG will be not coupled with Database.
-	// Used only in CS mode when each BufferControl have one Database.
-	Database*	bcb_database;
 
 	UCharStack	bcb_memory;			// Large block partitioned into buffers
 	que			bcb_in_use;			// Que of buffers in use, main LRU que

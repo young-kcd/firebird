@@ -360,6 +360,7 @@ private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 
 	static void dumpData(thread_db*);
+	static void dumpAttachment(thread_db*, const Attachment*, Writer&);
 
 	static SINT64 getGlobalId(int);
 

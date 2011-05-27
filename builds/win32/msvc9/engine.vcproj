@@ -420,6 +420,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\GarbageCollector.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp"
 				>
 			</File>
@@ -1165,6 +1169,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\gen_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GarbageCollector.h"
 				>
 			</File>
 			<File

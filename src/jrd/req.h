@@ -123,6 +123,7 @@ const USHORT RPB_s_refetch		= 0x1;	// re-fetch required due to sort
 const USHORT RPB_s_update		= 0x2;	// input stream fetched for update
 const USHORT RPB_s_no_data		= 0x4;	// nobody is going to access the data
 const USHORT RPB_s_undo_data	= 0x8;	// data got from undo log
+const USHORT RPB_s_sweeper		= 0x10;	// garbage collector - skip swept pages
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))

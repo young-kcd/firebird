@@ -82,6 +82,7 @@
     <ClCompile Include="..\..\..\src\jrd\ExtEngineManager.cpp" />
     <ClCompile Include="..\..\..\src\jrd\filters.cpp" />
     <ClCompile Include="..\..\..\src\jrd\flu.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\GarbageCollector.cpp" />
     <ClCompile Include="..\..\..\src\jrd\GlobalRWLock.cpp" />
     <ClCompile Include="..\..\..\src\jrd\idx.cpp" />
     <ClCompile Include="..\..\..\src\jrd\inf.cpp" />
@@ -247,6 +248,7 @@
     <ClInclude Include="..\..\..\src\jrd\flu_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\Function.h" />
     <ClInclude Include="..\..\..\src\jrd\fun_proto.h" />
+    <ClInclude Include="..\..\..\src\jrd\GarbageCollector.h" />
     <ClInclude Include="..\..\..\src\jrd\GlobalRWLock.h" />
     <ClInclude Include="..\..\..\src\jrd\grant_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\ibase.h" />

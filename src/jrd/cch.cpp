@@ -76,7 +76,7 @@ using namespace Firebird;
 IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #endif
 
-// #define CACHE_WRITER
+#define CACHE_WRITER
 
 #ifdef SUPERSERVER_V2
 #define CACHE_READER
@@ -1038,7 +1038,6 @@ void CCH_fini(thread_db* tdbb)
 		// Wait for cache writer startup to complete.
 		while (bcb->bcb_flags & BCB_writer_start)
 		{
-			Database::Checkout dcoHolder(dbb);
 			THREAD_YIELD();
 		}
 
@@ -1048,10 +1047,7 @@ void CCH_fini(thread_db* tdbb)
 		{
 			bcb->bcb_flags &= ~BCB_cache_writer;
 			bcb->bcb_writer_sem.release(); // Wake up running thread
-			{ // scope
-				Database::Checkout dcoHolder(dbb);
-				bcb->bcb_writer_fini.enter();
-			}
+			bcb->bcb_writer_fini.enter();
 		}
 #endif
 
@@ -1268,7 +1264,7 @@ bool CCH_free_page(thread_db* tdbb)
 	BufferDesc* bdb;
 
 	if ((bcb->bcb_flags & BCB_free_pending) &&
-		(bdb = get_buffer(tdbb, FREE_PAGE, SYNC_SHARED /*LATCH_none*/, 1)))
+		(bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1)))
 	{
 		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
 			CCH_unwind(tdbb, false);
@@ -1565,6 +1561,16 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 	if (dbb->dbb_lock->lck_logical != LCK_EX) {
 		dbb->dbb_ast_flags |= DBB_assert_locks;
 	}
+}
+
+
+void CCH_init2(thread_db* tdbb)
+{
+	Database* dbb = tdbb->getDatabase();
+	BufferControl* bcb = dbb->dbb_bcb;
+	
+	if (!(bcb->bcb_flags & BCB_exclusive) || (bcb->bcb_flags & (BCB_cache_writer | BCB_writer_start)))
+		return;
 
 #ifdef CACHE_READER
 	if (gds__thread_start(cache_reader, dbb, THREAD_high, 0, 0))
@@ -1586,7 +1592,7 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 
 		try
 		{
-			ThreadSync::start(cache_writer, dbb, THREAD_high);
+			Thread::start(cache_writer, dbb, THREAD_medium);
 		}
 		catch (const Exception&)
 		{
@@ -1594,10 +1600,7 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
 			ERR_bugcheck_msg("cannot start cache writer thread");
 		}
 
-		{ // scope
-			Database::Checkout dcoHolder(dbb);
-			bcb->bcb_writer_init.enter();
-		}
+		bcb->bcb_writer_init.enter();
 	}
 #endif
 }
@@ -2942,6 +2945,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 
 #ifdef CACHE_WRITER
+
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 {
 /**************************************
@@ -2958,11 +2962,10 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 
-	/***
 	Database* dbb = (Database*)arg;
-	Database::SyncGuard dsGuard(dbb);
 
 	ISC_STATUS_ARRAY status_vector;
+	MOVE_CLEAR(status_vector, sizeof(status_vector));
 
 	// Establish a thread context.
 	ThreadContextHolder tdbb(status_vector);
@@ -2970,9 +2973,19 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// Dummy attachment needed for lock owner identification.
 
 	tdbb->setDatabase(dbb);
-	Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb, 0);
+
+	RefPtr<JAttachment> jAtt(NULL);
+
+	Jrd::Attachment* attachment = Jrd::Attachment::create(dbb);
+	jAtt = attachment->att_interface = new SysAttachment(attachment);
+	jAtt->getMutex()->enter();
+
 	tdbb->setAttachment(attachment);
 	attachment->att_filename = dbb->dbb_filename;
+
+	UserId user;
+	user.usr_user_name = "Cache Writer";
+	attachment->att_user = &user;
 
 	BufferControl* bcb = dbb->dbb_bcb;
 	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
@@ -2982,9 +2995,13 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// return, unlike the other try blocks further down the page.
 	Semaphore& writer_sem = bcb->bcb_writer_sem;
 
-	try {
+	try 
+	{
 		LCK_init(tdbb, LCK_OWNER_attachment);
+		PAG_header(tdbb, true);
+		PAG_attachment_id(tdbb);
 		TRA_init(attachment);
+
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 
@@ -2999,48 +3016,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
-	***/
 
-	ISC_STATUS_ARRAY status_vector = {0};
-	Jrd::Attachment* attachment= NULL;
-
-	{
-		bcb->bcb_flags |= BCB_cache_writer;
-		bcb->bcb_flags &= ~BCB_writer_start;
-		bcb->bcb_writer_init.release();
-
-		Database* dbb = (Database*)arg;
-		Database::SyncGuard dsGuard(dbb);
-		RefPtr<BufferControl> bcb = dbb->dbb_bcb;
-
-		ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE);
-		dpb.reset(isc_dpb_version1);
-		dpb.insertString(isc_dpb_trusted_auth, "Cache Writer");
-
-		if (jrd8_attach_database(status_vector, NULL, dbb->dbb_filename.c_str(), &attachment,
-			dpb.getBufferLength(), dpb.getBuffer()))
-		{
-			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
-
-			bcb->bcb_flags &= ~BCB_writer_start;
-
-			bcb->bcb_writer_init.release(); // ?
-
-			return (THREAD_ENTRY_RETURN)(-1);
-		}
-	}
-
-	Database* dbb = attachment->att_database;
-
-	// Establish a thread context.
-	ThreadContextHolder tdbb(status_vector);
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(attachment);
-
-	BufferControl* bcb = dbb->dbb_bcb;
-	Jrd::ContextPoolHolder context(tdbb, bcb->bcb_bufferpool);
-
-	Semaphore& writer_sem = bcb->bcb_writer_sem;
+	attachment->att_next = dbb->dbb_sys_attachments;
+	dbb->dbb_sys_attachments = attachment;
 
 	try
 	{
@@ -3053,10 +3031,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 			if (dbb->dbb_flags & DBB_suspend_bgio)
 			{
-				{ //scope
-					Database::Checkout dcoHolder(dbb);
-					writer_sem.tryEnter(10);
-				}
+				Attachment::Checkout cout(attachment);
+				writer_sem.tryEnter(10);
 				continue;
 			}
 
@@ -3070,14 +3046,9 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			}
 #endif
 
-			{ // scope
-				Database::Checkout dcoHolder(dbb);
-				THREAD_YIELD();
-			}
-
 			if (bcb->bcb_flags & BCB_free_pending)
 			{
-				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, None, 1);
+				BufferDesc* bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
 				if (bdb) {
 					write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
 				}
@@ -3090,12 +3061,11 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 					dbb->dbb_reader_sem.post();
 				}
 #endif
-#ifdef GARBAGE_THREAD
+
 				if ((dbb->dbb_flags & DBB_garbage_collector) && !(dbb->dbb_flags & DBB_gc_active))
 				{
 					dbb->dbb_gc_sem.release();
 				}
-#endif
 			}
 
 			// If there's more work to do voluntarily ask to be rescheduled.
@@ -3121,16 +3091,14 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			else
 			{
 				bcb->bcb_flags &= ~BCB_writer_active;
-				Database::Checkout dcoHolder(dbb);
+				Attachment::Checkout cout(attachment);
 				writer_sem.tryEnter(10);
 			}
 		}
 
-		/***
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Jrd::Attachment::destroy(attachment);	// no need saving warning error strings here
-		***/
-		jrd8_detach_database(status_vector, &attachment);
+		jAtt = NULL;
+	
 
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
@@ -3964,6 +3932,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				}
 				if (walk)
 				{
+					oldest->release(tdbb);
 					if (!--walk)
 						break;
 
@@ -5047,7 +5016,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 
 			if (!isTempPage &&
 				(backup_state == nbak_state_stalled ||
-					(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
+				(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,

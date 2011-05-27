@@ -465,6 +465,9 @@
     <ClCompile Include="..\..\..\src\jrd\recsrc\ConditionalStream.cpp">
       <Filter>JRD files\Data Access</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\GarbageCollector.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -1008,6 +1011,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\vio_proto.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\GarbageCollector.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -118,6 +118,7 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
 #include "../jrd/trig.h"
+#include "../jrd/GarbageCollector.h"
 #include "../jrd/IntlManager.h"
 #include "../jrd/UserManagement.h"
 #include "../jrd/Function.h"
@@ -4166,15 +4167,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 		}
 
-#ifdef GARBAGE_THREAD
 		// Free any memory associated with the relation's garbage collection bitmap
+		if (dbb->dbb_garbage_collector) {
+			dbb->dbb_garbage_collector->removeRelation(relation->rel_id);
+		}
 
-		delete relation->rel_gc_bitmap;
-		relation->rel_gc_bitmap = NULL;
-
-	    delete relation->rel_garbage;
-	    relation->rel_garbage = NULL;
-#endif
 		if (relation->rel_file) {
 		    EXT_fini (relation, false);
 		}

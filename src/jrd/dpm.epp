@@ -1549,7 +1549,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 	// If I'm a sweeper I don't need to look at swept pages. Also I should
 	// check processed pages if they were swept.
 
-	const bool sweeper = (tdbb->tdbb_flags & TDBB_sweeper);
+	const bool sweeper = (rpb->rpb_stream_flags & RPB_s_sweeper);
 
 	if (sweeper && (pp_sequence || slot) && !line)
 	{

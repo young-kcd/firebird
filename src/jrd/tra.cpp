@@ -82,10 +82,6 @@ using namespace Jrd;
 using namespace Ods;
 using namespace Firebird;
 
-#ifdef GARBAGE_THREAD
-#include "../common/isc_s_proto.h"
-#endif
-
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> > > RelationLockTypeMap;
 
 
@@ -446,13 +442,10 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
 
-#ifdef GARBAGE_THREAD
 	// Flush pages if transaction logically modified data
 
 	if (transaction->tra_flags & TRA_write)
-#endif
 		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-#ifdef GARBAGE_THREAD
 	else if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 	{
 		// If the transaction only read data but is a member of a
@@ -461,7 +454,6 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
-#endif
 
 	if (retaining_flag)
 	{
@@ -993,13 +985,10 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 
 	DFW_perform_work(tdbb, transaction);
 
-#ifdef GARBAGE_THREAD
 	// Flush pages if transaction logically modified data
 
 	if (transaction->tra_flags & TRA_write)
-#endif
 		CCH_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
-#ifdef GARBAGE_THREAD
 	else if (transaction->tra_flags & TRA_prepare2)
 	{
 		// If the transaction only read data but is a member of a
@@ -1008,7 +997,6 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 
 		CCH_flush(tdbb, FLUSH_SYSTEM, 0);
 	}
-#endif
 
 	// Set the state on the inventory page to be limbo
 
@@ -1779,7 +1767,6 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	tdbb->setTransaction(transaction);
 
 
-#ifdef GARBAGE_THREAD
 	// The garbage collector runs asynchronously with respect to
 	// our database sweep. This isn't good enough since we must
 	// be absolutely certain that all dead transactions have been
@@ -1788,7 +1775,6 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	// synchronously perform the garbage collection ourselves.
 
 	transaction->tra_attachment->att_flags &= ~ATT_notify_gc;
-#endif
 
 	if (VIO_sweep(tdbb, transaction))
 	{
@@ -3490,13 +3476,11 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	{
 		dbb->dbb_oldest_snapshot = trans->tra_oldest_active;
 
-#if defined(GARBAGE_THREAD)
 		if (!(dbb->dbb_flags & DBB_gc_active) && (dbb->dbb_flags & DBB_gc_background))
 		{
 			dbb->dbb_flags |= DBB_gc_pending;
 			dbb->dbb_gc_sem.release();
 		}
-#endif
 	}
 
 	// If the transaction block is getting out of hand, force a sweep
