@@ -662,6 +662,9 @@ bool METD_get_domain(jrd_tra* transaction, dsql_fld* field, const char* name) //
 		if (!FLX.RDB$COMPUTED_BLR.NULL)
 			field->fld_flags |= FLD_computed;
 
+		if (FLX.RDB$NULL_FLAG.NULL || !FLX.RDB$NULL_FLAG)
+			field->fld_flags |= FLD_nullable;
+
 		if (FLX.RDB$SYSTEM_FLAG == 1)
 			field->fld_flags |= FLD_system;
 

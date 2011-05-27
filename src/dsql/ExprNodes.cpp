@@ -2657,6 +2657,8 @@ bool CastNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 		{
 			parameter->par_node = dsqlSource;
 			MAKE_desc_from_field(&parameter->par_desc, dsqlField);
+			if (!dsqlField->fld_full_domain)
+				parameter->par_desc.setNullable(true);
 			return true;
 		}
 	}
