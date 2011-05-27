@@ -91,7 +91,7 @@ private:
 	typedef	Firebird::SortedArray<
 				RelationData*,
 				Firebird::EmptyStorage<RelationData*>,
-				LONG,
+				USHORT,
 				RelationData> RelGarbageArray;
 
 	RelationData* getRelData(Firebird::Sync &sync, const USHORT relID, bool allowCreate);
