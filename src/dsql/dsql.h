@@ -200,6 +200,7 @@ class dsql_fld : public pool_alloc<dsql_type_fld>
 public:
 	explicit dsql_fld(MemoryPool& p)
 		: fld_type_of_name(p),
+		  fld_type_of_table(p),
 		  fld_name(p),
 		  fld_source(p)
 	{
@@ -227,7 +228,7 @@ public:
 	SSHORT		fld_collation_id;		// ID of field's collation
 	SSHORT		fld_ttype;				// ID of field's language_driver
 	Firebird::string fld_type_of_name;	// TYPE OF
-	dsql_str*	fld_type_of_table;		// TYPE OF table name
+	Firebird::string fld_type_of_table;	// TYPE OF table name
 	bool		fld_explicit_collation;	// COLLATE was explicit specified
 	bool		fld_not_nullable;		// NOT NULL was explicit specified
 	bool		fld_full_domain;		// Domain name without TYPE OF prefix

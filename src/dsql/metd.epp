@@ -1302,6 +1302,15 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 			if (FLD.RDB$FIELD_TYPE == blr_blob)
 				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
 
+			if (!PR.RDB$FIELD_NAME.NULL)
+				parameter->fld_type_of_name = PR.RDB$FIELD_NAME;
+
+			if (!PR.RDB$RELATION_NAME.NULL)
+			{
+				fb_utils::exact_name(PR.RDB$RELATION_NAME);
+				parameter->fld_type_of_table = PR.RDB$RELATION_NAME;
+			}
+
 			if (type == 0 &&
 				(!pr_default_value_null ||
 					(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && !FLD.RDB$DEFAULT_VALUE.NULL)))
@@ -1355,7 +1364,7 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 }
 
 
-dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
+dsql_rel* METD_get_relation(CompiledStatement* statement, const char* name)
 {
 /**************************************
  *
@@ -1375,7 +1384,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	// See if the relation is the one currently being defined in this statement
 
 	dsql_rel* temp = statement->req_relation;
-	if (temp != NULL && temp->rel_name == name->str_data)
+	if (temp != NULL && temp->rel_name == name)
 	{
 		return temp;
 	}
@@ -1384,7 +1393,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 
 	// Start by seeing if symbol is already defined
 
-	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_relation);
+	dsql_sym* symbol = lookup_symbol(statement->req_dbb, strlen(name), name, SYM_relation);
 	if (symbol)
 		return (dsql_rel*) symbol->sym_object;
 
@@ -1401,7 +1410,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
-		WITH REL.RDB$RELATION_NAME EQ name->str_data
+		WITH REL.RDB$RELATION_NAME EQ name
 		AND (REL.RDB$RELATION_ID MISSING OR RFR.RDB$FIELD_ID MISSING)
 
 		if (!DSQL_REQUEST(irq_rel_ids))
@@ -1423,7 +1432,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
-		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
+		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name
 
 		if (!DSQL_REQUEST(irq_relation))
 			DSQL_REQUEST(irq_relation) = handle2;
@@ -1443,7 +1452,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		// fill out the relation information
 
 		if (relation) {
-			relation->rel_name = name->str_data;
+			relation->rel_name = name;
 			relation->rel_owner = X.RDB$OWNER_NAME;
 			if (!(relation->rel_dbkey_length = X.RDB$DBKEY_LENGTH))
 				relation->rel_dbkey_length = 8;
@@ -1475,7 +1484,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 		FLX IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
-		AND RFR.RDB$RELATION_NAME EQ name->str_data
+		AND RFR.RDB$RELATION_NAME EQ name
 		SORTED BY RFR.RDB$FIELD_POSITION
 
 		if (!DSQL_REQUEST(irq_fields))
@@ -1550,7 +1559,7 @@ dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 	if (!DSQL_REQUEST(irq_fields))
 		DSQL_REQUEST(irq_fields) = handle3;
 
-	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_relation)))
+	if ((symbol = lookup_symbol(statement->req_dbb, strlen(name), name, SYM_relation)))
 	{
 		free_relation(relation);
 		return (dsql_rel*) symbol->sym_object;
@@ -1727,9 +1736,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			fb_utils::exact_name(X.RDB$CONTEXT_NAME);
 			fb_utils::exact_name(X.RDB$RELATION_NAME);
 
-			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(statement, relation_name);
-			delete relation_name;
+			relation = METD_get_relation(statement, X.RDB$RELATION_NAME);
 
 			Array<MetaName> ambiguities;
 			MetaNamePairMap currentAux;
@@ -1856,9 +1863,7 @@ dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 		if (!strcmp(X.RDB$RELATION_NAME, relation_or_alias) ||
 			!strcmp(X.RDB$CONTEXT_NAME, relation_or_alias))
 		{
-			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(statement, relation_name);
-			delete relation_name;
+			relation = METD_get_relation(statement, X.RDB$RELATION_NAME);
 			EXE_unwind(tdbb, handle);
 			return relation;
 		}

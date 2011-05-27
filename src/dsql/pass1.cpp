@@ -378,7 +378,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 	}
 	else
 	{
-		relation = METD_get_relation(statement, relation_name);
+		relation = METD_get_relation(statement, relation_name->str_data);
 		if (!relation && (relation_node->nod_type == nod_rel_proc_name))
 		{
 			procedure = METD_get_procedure(statement, relation_name);

@@ -512,9 +512,9 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 					  Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << Arg::Num(1));
 		}
 
-		if (field->fld_type_of_table)
+		if (field->fld_type_of_table.hasData())
 		{
-			dsql_rel* relation = METD_get_relation(statement, field->fld_type_of_table);
+			dsql_rel* relation = METD_get_relation(statement, field->fld_type_of_table.c_str());
 			const dsql_fld* fld = NULL;
 
 			if (relation)
@@ -546,7 +546,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 				// column @1 does not exist in table/view @2
 				post_607(Arg::Gds(isc_dyn_column_does_not_exist) <<
 						 		Arg::Str(field->fld_type_of_name) <<
-						 		Arg::Str(field->fld_type_of_table->str_data));
+								field->fld_type_of_table);
 			}
 		}
 		else
@@ -3497,7 +3497,7 @@ static void define_update_action(CompiledStatement* statement,
 	if (!fields_node)
 	{
 		const dsql_str* rel_name = reinterpret_cast<const dsql_str*>(relation_node->nod_arg[e_rln_name]);
-		const dsql_rel* relation = METD_get_relation(statement, rel_name);
+		const dsql_rel* relation = METD_get_relation(statement, rel_name->str_data);
 		DsqlNodStack field_stack;
 		for (const dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 		{
@@ -3674,7 +3674,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	switch (op)
 	{
 	case nod_replace_view:
-		if (METD_get_relation(statement, view_name))
+		if (METD_get_relation(statement, view_name->str_data))
 			define_view(statement, nod_mod_view);
 		else
 			define_view(statement, nod_def_view);
@@ -3689,7 +3689,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 	default: // op == nod_mod_view
 		statement->append_cstring(isc_dyn_mod_view, view_name->str_data);
-		view_relation = METD_get_relation(statement, view_name);
+		view_relation = METD_get_relation(statement, view_name->str_data);
 		if (!view_relation)
 		{
 			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(view_name->str_data));
@@ -4297,7 +4297,7 @@ static void delete_relation_view (CompiledStatement* statement, dsql_nod* node, 
 
 	fb_assert (string);
 
-	const dsql_rel* relation = METD_get_relation (statement, string);
+	const dsql_rel* relation = METD_get_relation (statement, string->str_data);
 
 	if (node->nod_type == nod_del_relation || node->nod_type == nod_redef_relation)
 	{
@@ -5984,13 +5984,13 @@ static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool 
 
 	if (field->fld_type_of_name.hasData())
 	{
-		if (field->fld_type_of_table)
+		if (field->fld_type_of_table.hasData())
 		{
 			if (field->fld_explicit_collation)
 			{
 				statement->append_uchar(blr_column_name2);
 				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_table->str_data);
+				statement->append_meta_string(field->fld_type_of_table.c_str());
 				statement->append_meta_string(field->fld_type_of_name.c_str());
 				statement->append_ushort(field->fld_ttype);
 			}
@@ -5998,7 +5998,7 @@ static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool 
 			{
 				statement->append_uchar(blr_column_name);
 				statement->append_uchar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				statement->append_meta_string(field->fld_type_of_table->str_data);
+				statement->append_meta_string(field->fld_type_of_table.c_str());
 				statement->append_meta_string(field->fld_type_of_name.c_str());
 			}
 		}
@@ -6091,7 +6091,7 @@ static void put_field( CompiledStatement* statement, dsql_fld* field, bool udf_f
 		{
 			statement->append_string(isc_dyn_fld_source, field->fld_source);
 			statement->append_string(isc_dyn_fld_name, field->fld_type_of_name);
-			statement->append_cstring(isc_dyn_rel_name, field->fld_type_of_table->str_data);
+			statement->append_string(isc_dyn_rel_name, field->fld_type_of_table);
 		}
 		else
 			statement->append_string(isc_dyn_fld_source, field->fld_type_of_name);
@@ -6475,7 +6475,7 @@ static void save_relation(CompiledStatement* statement, const dsql_str* relation
 
 	if (ddl_node->nod_type == nod_mod_relation)
 	{
-		relation = METD_get_relation(statement, relation_name);
+		relation = METD_get_relation(statement, relation_name->str_data);
 	}
 	else
 	{
