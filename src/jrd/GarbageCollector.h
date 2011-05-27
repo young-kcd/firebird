@@ -105,4 +105,4 @@ private:
 
 } // namespace Jrd
 
-#endif JRD_GARBAGE_COLLECTOR_H
+#endif	// JRD_GARBAGE_COLLECTOR_H
