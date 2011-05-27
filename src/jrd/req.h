@@ -64,7 +64,13 @@ class thread_db;
 struct record_param
 {
 	record_param() :
-		rpb_relation(0),
+		rpb_transaction_nr(0), rpb_relation(0), rpb_record(NULL), rpb_prior(NULL),
+		rpb_copy(NULL), rpb_undo(NULL), rpb_format_number(0), 
+		rpb_page(0), rpb_line(0),
+		rpb_f_page(0), rpb_f_line(0),
+		rpb_b_page(0), rpb_b_line(0),
+		rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
+		rpb_org_scans(0),
 		rpb_window(DB_PAGE_SPACE, -1)
 		{}
 	RecordNumber rpb_number;		// record number in relation
