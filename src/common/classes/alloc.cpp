@@ -125,11 +125,6 @@ inline MemoryBlock* next_block(MemoryBlock* block)
 	return (MemoryBlock*)((char*)block + block->mbk_small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock)));
 }
 
-inline size_t FB_MAX(size_t M, size_t N)
-{
-	return M > N ? M : N;
-}
-
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
 // It should also be a multiply of page size
 const size_t OS_EXTENT_SIZE = 65536;
