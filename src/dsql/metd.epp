@@ -1303,7 +1303,10 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
 
 			if (!PR.RDB$FIELD_NAME.NULL)
+			{
+				fb_utils::exact_name(PR.RDB$FIELD_NAME);
 				parameter->fld_type_of_name = PR.RDB$FIELD_NAME;
+			}
 
 			if (!PR.RDB$RELATION_NAME.NULL)
 			{
