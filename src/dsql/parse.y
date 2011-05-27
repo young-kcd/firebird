@@ -1826,7 +1826,7 @@ data_type_descriptor :	init_data_type data_type
 		| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 			{
 				lex.g_field = make_field(NULL);
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
+				lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
 				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
 				$$ = lex.g_field;
 			}
@@ -3509,7 +3509,7 @@ domain_type
 	|	KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
 			{
 				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
+				lex.g_field->fld_type_of_table = ((dsql_str*) $4)->str_data;
 			}
 	|	symbol_column_name
 			{

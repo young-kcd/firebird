@@ -310,10 +310,10 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 
 	if (field->fld_type_of_name.hasData())
 	{
-		if (field->fld_type_of_table)
+		if (field->fld_type_of_table.hasData())
 		{
 			dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch,
-				field->fld_type_of_table->str_data);
+				field->fld_type_of_table.c_str());
 			const dsql_fld* fld = NULL;
 
 			if (relation)
@@ -345,7 +345,7 @@ void DDL_resolve_intl_type2(DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 				// column @1 does not exist in table/view @2
 				post_607(Arg::Gds(isc_dyn_column_does_not_exist) <<
 						 		Arg::Str(field->fld_type_of_name) <<
-						 		Arg::Str(field->fld_type_of_table->str_data));
+								field->fld_type_of_table);
 			}
 		}
 		else
@@ -1929,7 +1929,7 @@ static void put_field( DsqlCompilerScratch* dsqlScratch, dsql_fld* field, bool u
 		{
 			dsqlScratch->appendString(isc_dyn_fld_source, field->fld_source);
 			dsqlScratch->appendString(isc_dyn_fld_name, field->fld_type_of_name);
-			dsqlScratch->appendNullString(isc_dyn_rel_name, field->fld_type_of_table->str_data);
+			dsqlScratch->appendString(isc_dyn_rel_name, field->fld_type_of_table);
 		}
 		else
 			dsqlScratch->appendString(isc_dyn_fld_source, field->fld_type_of_name);

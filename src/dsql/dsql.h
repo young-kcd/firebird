@@ -232,7 +232,7 @@ public:
 		  fld_collation_id(0),
 		  fld_ttype(0),
 		  fld_type_of_name(p),
-		  fld_type_of_table(NULL),
+		  fld_type_of_table(p),
 		  fld_explicit_collation(false),
 		  fld_not_nullable(false),
 		  fld_full_domain(false),
@@ -263,7 +263,7 @@ public:
 	SSHORT		fld_collation_id;		// ID of field's collation
 	SSHORT		fld_ttype;				// ID of field's language_driver
 	Firebird::string fld_type_of_name;	// TYPE OF
-	dsql_str*	fld_type_of_table;		// TYPE OF table name
+	Firebird::string fld_type_of_table;	// TYPE OF table name
 	bool		fld_explicit_collation;	// COLLATE was explicit specified
 	bool		fld_not_nullable;		// NOT NULL was explicit specified
 	bool		fld_full_domain;		// Domain name without TYPE OF prefix

@@ -1278,6 +1278,18 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			if (FLD.RDB$FIELD_TYPE == blr_blob)
 				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
 
+			if (!PR.RDB$FIELD_NAME.NULL)
+			{
+				fb_utils::exact_name(PR.RDB$FIELD_NAME);
+				parameter->fld_type_of_name = PR.RDB$FIELD_NAME;
+			}
+
+			if (!PR.RDB$RELATION_NAME.NULL)
+			{
+				fb_utils::exact_name(PR.RDB$RELATION_NAME);
+				parameter->fld_type_of_table = PR.RDB$RELATION_NAME;
+			}
+
 			if (type == 0 &&
 				(!pr_default_value_null ||
 					(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && !FLD.RDB$DEFAULT_VALUE.NULL)))

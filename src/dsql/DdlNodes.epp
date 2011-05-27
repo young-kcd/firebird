@@ -754,8 +754,8 @@ void TypeClause::setup(DsqlCompilerScratch* /*dsqlScratch*/)
 	notNull = legacyField->fld_not_nullable;
 	fieldSource = legacyField->fld_source;
 
-	if (legacyField->fld_type_of_table)
-		typeOfTable = legacyField->fld_type_of_table->str_data;
+	if (legacyField->fld_type_of_table.hasData())
+		typeOfTable = legacyField->fld_type_of_table.c_str();
 
 	typeOfName = legacyField->fld_type_of_name;
 }

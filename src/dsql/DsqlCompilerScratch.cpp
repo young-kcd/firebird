@@ -60,13 +60,13 @@ void DsqlCompilerScratch::putDtype(const dsql_fld* field, bool useSubType)
 
 	if (field->fld_type_of_name.hasData())
 	{
-		if (field->fld_type_of_table)
+		if (field->fld_type_of_table.hasData())
 		{
 			if (field->fld_explicit_collation)
 			{
 				appendUChar(blr_column_name2);
 				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_table->str_data);
+				appendMetaString(field->fld_type_of_table.c_str());
 				appendMetaString(field->fld_type_of_name.c_str());
 				appendUShort(field->fld_ttype);
 			}
@@ -74,7 +74,7 @@ void DsqlCompilerScratch::putDtype(const dsql_fld* field, bool useSubType)
 			{
 				appendUChar(blr_column_name);
 				appendUChar(field->fld_full_domain ? blr_domain_full : blr_domain_type_of);
-				appendMetaString(field->fld_type_of_table->str_data);
+				appendMetaString(field->fld_type_of_table.c_str());
 				appendMetaString(field->fld_type_of_name.c_str());
 			}
 		}
