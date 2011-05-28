@@ -1,3 +1,7 @@
+ 2011-05-27 09:00  mapopa 
+   M src/common/classes/alloc.cpp
+Unused inline function 
+
  2011-05-27 02:00  asfernandes 
    M src/dsql/metd.epp
 Missed piece for CORE-3491.
