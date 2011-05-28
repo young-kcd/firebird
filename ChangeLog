@@ -1,3 +1,72 @@
+ 2011-05-28 02:05  asfernandes 
+   M src/common/classes/ImplementHelper.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/GarbageCollector.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Misc.
+
+ 2011-05-27 16:18  asfernandes 
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/GarbageCollector.h
+Misc.
+
+ 2011-05-27 16:04  asfernandes 
+   M src/jrd/GarbageCollector.h
+Correction.
+
+ 2011-05-27 15:29  asfernandes 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/metd.epp
+Fixed CORE-3475 - Parameters inside the CAST function are described as not nullable.
+
+ 2011-05-27 11:31  alexpeshkoff 
+   M src/common/classes/ImplementHelper.h
+   M src/jrd/jrd.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Avoid deadlocks in timers. Fixes use of timers to delay plugin modules unload.
+
+ 2011-05-27 10:13  alexpeshkoff 
+   M src/jrd/req.h
+Make sure rpb is initialized
+
+ 2011-05-27 09:48  alexpeshkoff 
+   M src/jrd/GarbageCollector.h
+Misc
+
+ 2011-05-27 07:57  hvlad 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M src/common/common.h
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/EngineInterface.h
+   A src/jrd/GarbageCollector.cpp
+   A src/jrd/GarbageCollector.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+   M src/jrd/cch_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/req.h
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Enabled background threads (garbage collector and cache writer).
+Introduced special kind of system attachments used in this threads and show its activity in monitoring.
+
  2011-05-27 02:05  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/DsqlCompilerScratch.cpp
