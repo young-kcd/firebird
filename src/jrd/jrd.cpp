@@ -4285,6 +4285,7 @@ void SysAttachment::destroy(Attachment* attachment)
 			break;
 		}
 	}
+
 	Jrd::Attachment::destroy(attachment);
 }
 

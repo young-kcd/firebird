@@ -1568,7 +1568,7 @@ void CCH_init2(thread_db* tdbb)
 {
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
-	
+
 	if (!(bcb->bcb_flags & BCB_exclusive) || (bcb->bcb_flags & (BCB_cache_writer | BCB_writer_start)))
 		return;
 
@@ -2955,14 +2955,11 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  **************************************
  *
  * Functional description
- *	Write dirty pages to database to maintain an
- *	adequate supply of free pages. If WAL is enabled,
- *	perform database checkpoint when WAL subsystem
- *	deems it necessary.
+ *	Write dirty pages to database to maintain an adequate supply of free pages.
  *
  **************************************/
 
-	Database* dbb = (Database*)arg;
+	Database* dbb = (Database*) arg;
 
 	ISC_STATUS_ARRAY status_vector;
 	MOVE_CLEAR(status_vector, sizeof(status_vector));
@@ -2995,7 +2992,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	// return, unlike the other try blocks further down the page.
 	Semaphore& writer_sem = bcb->bcb_writer_sem;
 
-	try 
+	try
 	{
 		LCK_init(tdbb, LCK_OWNER_attachment);
 		PAG_header(tdbb, true);
@@ -3098,7 +3095,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
 		jAtt = NULL;
-	
 
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;

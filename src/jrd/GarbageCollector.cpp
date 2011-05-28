@@ -35,7 +35,7 @@ void GarbageCollector::RelationData::clear()
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
 	{
-		do 
+		do
 		{
 			delete accessor.current()->second;
 		} while (accessor.getNext());
@@ -71,7 +71,7 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 			{
 				if (item->second->clear(pageno))
 					break;
-			}		
+			}
 		} while(accessor.getNext());
 	}
 
@@ -208,15 +208,15 @@ void GarbageCollector::removeRelation(const USHORT relID)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::removeRelation");
 	syncGC.lock(SYNC_EXCLUSIVE);
-	
+
 	size_t pos;
 	if (!m_relations.find(relID, pos))
 		return;
-	
+
 	RelationData* relData = m_relations[pos];
 	Sync syncData(&relData->m_sync, "GarbageCollector::removeRelation");
 	syncData.lock(SYNC_EXCLUSIVE);
-	
+
 	m_relations.remove(pos);
 	syncGC.unlock();
 
@@ -228,12 +228,12 @@ void GarbageCollector::removeRelation(const USHORT relID)
 void GarbageCollector::sweptRelation(const SLONG oldest_snapshot, const USHORT relID)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::sweptRelation");
-	
+
 	RelationData* relData = getRelData(syncGC, relID, false);
 	if (relData)
 	{
 		SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::sweptRelation");
-		
+
 		syncGC.unlock();
 		relData->swept(oldest_snapshot);
 	}
@@ -248,7 +248,7 @@ SLONG GarbageCollector::minTranID(const USHORT relID)
 	if (relData)
 	{
 		SyncLockGuard syncData(&relData->m_sync, SYNC_SHARED, "GarbageCollector::minTranID");
-		
+
 		syncGC.unlock();
 		return relData->minTranID();
 	}

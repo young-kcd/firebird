@@ -73,7 +73,7 @@ private:
 		SLONG minTranID() const;
 
 		USHORT getRelID() const
-		{ 
+		{
 			return m_relID;
 		}
 

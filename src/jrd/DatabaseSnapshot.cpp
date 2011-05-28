@@ -809,8 +809,7 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachm
 
 	// Transaction information
 
-	for (transaction = attachment->att_transactions;
-		transaction; transaction = transaction->tra_next)
+	for (transaction = attachment->att_transactions; transaction; transaction = transaction->tra_next)
 	{
 		putTransaction(transaction, writer, fb_utils::genUniqueId());
 		putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
@@ -818,8 +817,7 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachm
 
 	// Call stack information
 
-	for (transaction = attachment->att_transactions;
-		transaction; transaction = transaction->tra_next)
+	for (transaction = attachment->att_transactions; transaction; transaction = transaction->tra_next)
 	{
 		for (request = transaction->tra_requests; request; request = request->req_caller)
 		{
@@ -837,8 +835,8 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachm
 	// Request information
 
 	for (const jrd_req* const* i = attachment->att_requests.begin();
-			i != attachment->att_requests.end();
-			++i)
+		 i != attachment->att_requests.end();
+		 ++i)
 	{
 		const jrd_req* request = *i;
 

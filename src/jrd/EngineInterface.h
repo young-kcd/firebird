@@ -338,8 +338,8 @@ private:
 class SysAttachment : public JAttachment
 {
 public:
-	SysAttachment(Attachment* handle) : 
-	  JAttachment(handle)
+	SysAttachment(Attachment* handle)
+		: JAttachment(handle)
 	{
 	}
 

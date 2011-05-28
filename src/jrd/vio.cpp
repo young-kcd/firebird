@@ -120,7 +120,7 @@ enum UndoDataRet {
 static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction, record_param* rpb);
 
 static void list_staying(thread_db*, record_param*, RecordStack&);
-static void notify_garbage_collector(thread_db*, record_param *, SLONG = -1);
+static void notify_garbage_collector(thread_db*, record_param*, SLONG = -1);
 static Record* realloc_record(Record*& record, USHORT fmt_length);
 
 const int PREPARE_OK		= 0;
@@ -4191,7 +4191,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 	GarbageCollector* gc = NULL;
 
-	try {
+	try
+	{
 		// Pseudo attachment needed for lock owner identification.
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
@@ -4223,12 +4224,13 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		dbb->dbb_flags |= DBB_garbage_collector;
 		dbb->dbb_gc_init.release();
 	}	// try
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&)
+	{
 		goto gc_exit;
 	}
 
-	try {
-
+	try
+	{
 		// Initialize status vector after logging error.
 
 		MOVE_CLEAR(status_vector, sizeof(status_vector));
@@ -4431,13 +4433,12 @@ rel_exit:
 
 gc_exit:
 
-	try {
-
+	try
+	{
 		delete rpb.rpb_record;
 
-		if (transaction) {
+		if (transaction)
 			TRA_commit(tdbb, transaction, false);
-		}
 
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
 		if (attachment)

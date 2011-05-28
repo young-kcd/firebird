@@ -272,6 +272,7 @@ private:
 	void FB_CARG doClean()
 	{
 		flagOsUnload = false;
+
 		if (cleanup)
 		{
 			cleanup();

@@ -63,16 +63,18 @@ class thread_db;
 
 struct record_param
 {
-	record_param() :
-		rpb_transaction_nr(0), rpb_relation(0), rpb_record(NULL), rpb_prior(NULL),
-		rpb_copy(NULL), rpb_undo(NULL), rpb_format_number(0), 
-		rpb_page(0), rpb_line(0),
-		rpb_f_page(0), rpb_f_line(0),
-		rpb_b_page(0), rpb_b_line(0),
-		rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
-		rpb_org_scans(0),
-		rpb_window(DB_PAGE_SPACE, -1)
-		{}
+	record_param()
+		: rpb_transaction_nr(0), rpb_relation(0), rpb_record(NULL), rpb_prior(NULL),
+		  rpb_copy(NULL), rpb_undo(NULL), rpb_format_number(0),
+		  rpb_page(0), rpb_line(0),
+		  rpb_f_page(0), rpb_f_line(0),
+		  rpb_b_page(0), rpb_b_line(0),
+		  rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
+		  rpb_org_scans(0),
+		  rpb_window(DB_PAGE_SPACE, -1)
+	{
+	}
+
 	RecordNumber rpb_number;		// record number in relation
 	SLONG rpb_transaction_nr;		// transaction number
 	jrd_rel*	rpb_relation;		// relation of record
@@ -125,10 +127,10 @@ const USHORT rpb_uk_modified= 512;		// record key field values are changed
 
 // Stream flags
 
-const USHORT RPB_s_refetch		= 0x1;	// re-fetch required due to sort
-const USHORT RPB_s_update		= 0x2;	// input stream fetched for update
-const USHORT RPB_s_no_data		= 0x4;	// nobody is going to access the data
-const USHORT RPB_s_undo_data	= 0x8;	// data got from undo log
+const USHORT RPB_s_refetch		= 0x01;	// re-fetch required due to sort
+const USHORT RPB_s_update		= 0x02;	// input stream fetched for update
+const USHORT RPB_s_no_data		= 0x04;	// nobody is going to access the data
+const USHORT RPB_s_undo_data	= 0x08;	// data got from undo log
 const USHORT RPB_s_sweeper		= 0x10;	// garbage collector - skip swept pages
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
