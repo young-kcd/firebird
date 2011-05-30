@@ -849,6 +849,14 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet)
 	{
+		int optval = 1;
+		n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+
+		if (n == -1)
+		{
+			gds__log("setsockopt: error setting SO_KEEPALIVE");
+		}
+
 		if (! setNoNagleOption(port))
 		{
 			inet_error(true, port, "setsockopt TCP_NODELAY", isc_net_connect_err, INET_ERRNO);
