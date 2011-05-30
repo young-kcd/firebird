@@ -801,6 +801,20 @@ static void ctrl_c_handler(int signal)
 }
 
 
+static int shutdownCallback(const int reason, const int, void*)
+{
+	static bool recursion = false;
+	if (!recursion)
+	{
+		recursion = true;
+		fb_shutdown(0, reason);
+		recursion = false;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
+
+
 // simple main function
 
 int main(int ac, char** av)
@@ -818,6 +832,7 @@ int main(int ac, char** av)
 	}
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
 
 	ISC_STATUS_ARRAY status;
 
