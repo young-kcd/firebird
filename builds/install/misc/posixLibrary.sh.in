@@ -830,3 +830,32 @@ updateInetdServiceEntry() {
 		fi
     fi
 }
+
+
+#------------------------------------------------------------------------
+#  parseArgs
+#  Parse passed arguments.
+#  Set appropriate global flags.
+
+parseArgs() {
+	flSilent=0
+
+	while [ -n "$1" ]; do
+		case $1 in
+			-silent)
+				flSilent=1
+				;;
+			*)
+				echo "Invalid option: $1. Known option is '-silent'."
+				exit 1
+				;;
+		esac
+		shift
+	done
+
+	if [ $flSilent -eq 0 ]; then
+		InteractiveInstall=1
+		export InteractiveInstall
+	fi
+}
+

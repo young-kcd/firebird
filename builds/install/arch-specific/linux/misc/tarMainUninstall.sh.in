@@ -25,10 +25,7 @@
 #  UnInstall script for FirebirdSQL database engine
 #  http://www.firebirdsql.org
 
-
-InteractiveInstall=1
-export InteractiveInstall
-
+parseArgs ${*}
 
 checkInstallUser
 
@@ -38,8 +35,9 @@ CpuType=@CPU_TYPE@
 
 Version="$BuildVersion-$PackageVersion.$CpuType"
 
-
-cat <<EOF
+if [ ! -z "$InteractiveInstall" ]
+then
+	cat <<EOF
 
 Firebird @FIREBIRD_ARCH_TYPE@ $Version Uninstall program
 
@@ -47,10 +45,8 @@ Are you sure you want to proceed?
 
 EOF
 
-
-
-AskQuestion "Press Enter to start uninstall or ^C to abort"
-
+	AskQuestion "Press Enter to start uninstall or ^C to abort"
+fi
 
 # Here we are uninstalling from a install tar.gz file
 
@@ -59,7 +55,7 @@ scriptsDir=@FB_MISCDIR@/scripts
 
 if [ -e $scriptsDir ]
   then
-    echo "Extracting install data"
+    displayMessage "Extracting install data"
 
     runAndCheckExit "$scriptsDir/preuninstall.sh"
     runAndCheckExit "$scriptsDir/postuninstall.sh"
@@ -70,4 +66,4 @@ if [ -e $scriptsDir ]
 
 fi
 
-echo "Uninstall completed"
+displayMessage "Uninstall completed"
