@@ -173,7 +173,7 @@ namespace Jrd
 	FPTR_INT Module::lookup(const char* module, const char* name, DatabaseModules& interest)
 	{
 		// Try to find loadable module
-		Module m = lookupModule(module, true);
+		Module m = lookupModule(module);
 		if (! m)
 		{
 			return 0;
@@ -193,24 +193,11 @@ namespace Jrd
 		return (FPTR_INT)rc;
 	}
 
-	FPTR_INT Module::lookup(const TEXT* module, const TEXT* name)
-	{
-		// Try to find loadable module
-		Module m = lookupModule(module, false);
-		if (! m)
-		{
-			return 0;
-		}
-
-		Firebird::string symbol;
-		terminate_at_space(symbol, name);
-		return (FPTR_INT)(m.lookupSymbol(symbol));
-	}
-
 	// flag 'udf' means pass name-path through UdfDirectoryList
-	Module Module::lookupModule(const char* name, bool udf)
+	Module Module::lookupModule(const char* name)
 	{
 		Firebird::MutexLockGuard lg(modulesMutex);
+
 		Firebird::PathName initialModule;
 		terminate_at_space(initialModule, name);
 
@@ -248,53 +235,37 @@ namespace Jrd
 				return Module(im);
 			}
 
-			if (udf)
+			// UdfAccess verification
+			Firebird::PathName path, relative;
+
+			// Search for module name in UdfAccess restricted
+			// paths list
+			PathUtils::splitLastComponent(path, relative, fixedModule);
+			if (path.length() == 0 && PathUtils::isRelative(fixedModule))
 			{
-				// UdfAccess verification
-				Firebird::PathName path, relative;
-
-				// Search for module name in UdfAccess restricted
-				// paths list
-				PathUtils::splitLastComponent(path, relative, fixedModule);
-				if (path.length() == 0 && PathUtils::isRelative(fixedModule))
+				path = fixedModule;
+				if (! iUdfDirectoryList().expandFileName(fixedModule, path))
 				{
-					path = fixedModule;
-					if (! iUdfDirectoryList().expandFileName(fixedModule, path))
-					{
-						// relative path was used, but no appropriate file present
-						continue;
-					}
-				}
-
-				// The module name, including directory path,
-				// must satisfy UdfAccess entry in config file.
-				if (! iUdfDirectoryList().isPathInList(fixedModule))
-				{
-					ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("UDF/BLOB-filter module") <<
-																 Arg::Str(initialModule));
-				}
-
-				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
-				if (mlm)
-				{
-					im = FB_NEW(*getDefaultMemoryPool())
-						InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
-					loadedModules().add(im);
-					return Module(im);
+					// relative path was used, but no appropriate file present
+					continue;
 				}
 			}
-			else
+
+			// The module name, including directory path,
+			// must satisfy UdfAccess entry in config file.
+			if (! iUdfDirectoryList().isPathInList(fixedModule))
 			{
-				// try to load permanent module
-				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
-				if (mlm)
-				{
-					im = FB_NEW(*getDefaultMemoryPool())
-						InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
-					loadedModules().add(im);
-					im->acquire();	// make permanent
-					return Module(im);
-				}
+				ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("UDF/BLOB-filter module") <<
+															 Arg::Str(initialModule));
+			}
+
+			ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
+			if (mlm)
+			{
+				im = FB_NEW(*getDefaultMemoryPool())
+					InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
+				loadedModules().add(im);
+				return Module(im);
 			}
 		}
 
@@ -302,29 +273,22 @@ namespace Jrd
 		return Module();
 	}
 
-	Module::~Module()
+	Module::InternalModule::~InternalModule()
 	{
-		if (interMod)
+		delete handle;
+
+		Firebird::MutexLockGuard lg(modulesMutex);
+
+		for (size_t m = 0; m < loadedModules().getCount(); m++)
 		{
-			interMod->release();
-			if (! interMod->inUse())
+			if (loadedModules()[m] == this)
 			{
-				Firebird::MutexLockGuard lg(modulesMutex);
-				for (size_t m = 0; m < loadedModules().getCount(); m++)
-				{
-					if (loadedModules()[m] == interMod)
-					{
-						loadedModules().remove(m);
-						delete interMod;
-						return;
-					}
-				}
-				fb_assert(false);
-				// In production server we delete interMod here
-				// (though this is not normal case)
-				delete interMod;
+				loadedModules().remove(m);
+				return;
 			}
 		}
+
+		fb_assert(false);
 	}
 
 } // namespace Jrd
