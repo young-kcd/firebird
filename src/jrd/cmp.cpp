@@ -6304,17 +6304,17 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		}
 		dsc* desc = &format->fmt_desc[id];
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
+
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (!min) {			// eg: dtype_unknown
+
+		if (!min)			// eg: dtype_unknown
 			*desc = desc2;
-		}
-		else if (max == dtype_blob) {
-			desc->dsc_dtype = dtype_blob;
-			desc->dsc_length = sizeof(ISC_QUAD);
-			desc->dsc_scale = 0;
-			desc->dsc_sub_type = DataTypeUtil::getResultBlobSubType(desc, &desc2);
-			desc->dsc_flags = 0;
+		else if (max == dtype_blob)
+		{
+			USHORT subtype = DataTypeUtil::getResultBlobSubType(desc, &desc2);
+			USHORT ttype = DataTypeUtil::getResultTextType(desc, &desc2);
+			desc->makeBlob(subtype, ttype);
 		}
 		else if (min <= dtype_any_text) {	// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
