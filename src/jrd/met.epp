@@ -2491,7 +2491,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
 		
 		if (!X.RDB$RELATION_TYPE.NULL)
 		{
-			relation->rel_flags |= get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
+			relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
 		}
 	}
 	END_FOR
@@ -2575,7 +2575,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		
 		if (!X.RDB$RELATION_TYPE.NULL)
 		{
-			relation->rel_flags |= get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
+			relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
 		}
 	}
 	END_FOR
@@ -3546,15 +3546,20 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					break;
 				case rel_view:
 					fb_assert(relation->rel_view_rse);
+					fb_assert(relation->rel_flags & REL_jrd_view);
+					relation->rel_flags |= REL_jrd_view;
 					break;
 				case rel_virtual:
 					fb_assert(relation->rel_flags & REL_virtual);
+					relation->rel_flags |= REL_virtual;
 					break;
 				case rel_global_temp_preserve:
 					fb_assert(relation->rel_flags & REL_temp_conn);
+					relation->rel_flags |= REL_temp_conn;
 					break;
 				case rel_global_temp_delete:
 					fb_assert(relation->rel_flags & REL_temp_tran);
+					relation->rel_flags |= REL_temp_tran;
 					break;
 				default:
 					fb_assert(false);
@@ -4132,11 +4137,11 @@ static ULONG get_rel_flags_from_FLAGS(USHORT flags)
 }
 
 
-static ULONG get_rel_flags_from_TYPE(USHORT type)
+ULONG MET_get_rel_flags_from_TYPE(USHORT type)
 {
 /**************************************
  *
- *      g e t _ r e l _ f l a g s _ f r o m _ F L A G S
+ *      M E T _g e t _ r e l _ f l a g s _ f r o m _ T Y P E
  *
  **************************************
  *
