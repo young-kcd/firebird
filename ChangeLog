@@ -1,3 +1,22 @@
+ 2011-05-31 00:54  asfernandes 
+   M src/jrd/cmp.cpp
+Fixed CORE-3489 - Blob transliteration may not happen inside the union.
+
+ 2011-05-30 15:50  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+   M builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
+   M builds/install/misc/posixLibrary.sh.in
+Fixed CORE-3467: provide a silent install switch
+
+ 2011-05-30 12:39  alexpeshkoff 
+   M src/utilities/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Fixed CORE-3487: sometimes fbtracemgr segfaults when ending with ctrl+c
+
+ 2011-05-30 09:55  dimitr 
+   M src/remote/inet.cpp
+Fixed CORE-3387: Client library could hang infinitely waiting for a reply packet on a forcibly disconnected server socket.
+
  2011-05-27 09:00  mapopa 
    M src/common/classes/alloc.cpp
 Unused inline function 
