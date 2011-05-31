@@ -1,3 +1,31 @@
+ 2011-05-31 01:00  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Frontport fix for CORE-3489 - Blob transliteration may not happen inside the union.
+
+ 2011-05-30 15:51  alexpeshkoff 
+   M builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+   M builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
+   M builds/install/misc/posixLibrary.sh.in
+Frontported CORE-3467: provide a silent install switch
+
+ 2011-05-30 14:26  hvlad 
+   M src/jrd/Relation.h
+   M src/jrd/dfw.epp
+   M src/jrd/met.epp
+Fixed related bugs 
+CORE-3502 : DROP VIEW ignores the existing non-column dependencies, and 
+CORE-3503 : ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream at the position of a regular context in the older version.
+// Name REL_view is already used in DSQL so i introduced ugly REL_jrd_view flag
+
+ 2011-05-30 14:05  alexpeshkoff 
+   M src/jrd/flu.cpp
+   M src/jrd/flu.h
+Frontported CORE-3443: Races in UDF library lookup
+
+ 2011-05-30 09:59  dimitr 
+   M src/remote/inet.cpp
+Fixed CORE-3387: Client library could hang infinitely waiting for a reply packet on a forcibly disconnected server socket.
+
  2011-05-28 02:05  asfernandes 
    M src/common/classes/ImplementHelper.h
    M src/jrd/DatabaseSnapshot.cpp
