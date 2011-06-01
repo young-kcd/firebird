@@ -357,6 +357,7 @@ const SvcSwitches restoreOptions[] =
 	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
 	{"res_fix_fss_data", putStringArgument, 0, isc_spb_res_fix_fss_data, 0},
 	{"res_fix_fss_metadata", putStringArgument, 0, isc_spb_res_fix_fss_metadata, 0},
+	{"res_metadata_only", putOption, 0, isc_spb_res_metadata_only, 0},
 	{0, 0, 0, 0, 0}
 };
 

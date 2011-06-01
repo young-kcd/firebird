@@ -453,6 +453,7 @@
 #define isc_spb_res_access_mode			12
 #define isc_spb_res_fix_fss_data		13
 #define isc_spb_res_fix_fss_metadata	14
+#define isc_spb_res_metadata_only		isc_spb_bkp_metadata_only
 #define isc_spb_res_deactivate_idx		0x0100
 #define isc_spb_res_no_shadow			0x0200
 #define isc_spb_res_no_validity			0x0400
