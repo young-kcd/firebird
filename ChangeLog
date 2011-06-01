@@ -1,3 +1,36 @@
+ 2011-06-01 01:44  asfernandes 
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M examples/udr/UdrCppExample.cpp
+   M src/common/dsc.cpp
+   M src/common/dsc.h
+   M src/dsql/dsql.cpp
+   M src/include/FirebirdApi.h
+   M src/include/FirebirdExternalApi.h
+   M src/include/FirebirdUdrCpp.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   D src/jrd/ValueImpl.cpp
+   D src/jrd/ValueImpl.h
+   D src/jrd/ValuesImpl.cpp
+   D src/jrd/ValuesImpl.h
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/req.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/yvalve/YObjects.h
+Work in progress on the external engines API changes.
+
+ 2011-05-31 14:18  hvlad 
+   M src/jrd/ini.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Additional fix for CORE-3502 and CORE-3503
+
  2011-05-31 01:00  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Frontport fix for CORE-3489 - Blob transliteration may not happen inside the union.
