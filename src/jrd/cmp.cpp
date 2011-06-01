@@ -88,7 +88,6 @@
 #include "../common/utils_proto.h"
 #include "../dsql/Nodes.h"
 #include "../jrd/RecordSourceNodes.h"
-#include "../jrd/ValuesImpl.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"

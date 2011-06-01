@@ -394,6 +394,8 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				{
 					function->setImplemented(false);
 				}
+
+				function->makeFormat();
 			}
 			else if (!X.RDB$FUNCTION_BLR.NULL)
 			{
@@ -553,7 +555,7 @@ ULONG Function::allocateImpure(CompilerScratch* csb) const
 {
 	const ULONG impure = CMP_impure(csb, sizeof(impure_value));
 
-	if (getStatement())
+	if (fun_external || getStatement())
 	{
 		if (fun_in_msg_format.fmt_count)
 		{
@@ -709,14 +711,8 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 	// Evaluate the function
 
 	if (fun_entrypoint)
-	{
 		FUN_evaluate(tdbb, this, args, value);
-	}
-	else if (fun_external)
-	{
-		fun_external->execute(tdbb, args, value);
-	}
-	else if (getStatement())
+	else if (fun_external || getStatement())
 	{
 		fb_assert(!fun_return_arg);
 		fb_assert(args.getCount() == fun_inputs);
@@ -746,68 +742,69 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 				MOV_move(tdbb, src_desc, &arg_desc);
 			}
 			else
-			{
 				*reinterpret_cast<SSHORT*>(null_ptr) = TRUE;
-			}
 		}
 
-		jrd_req* const new_request = getStatement()->findRequest(tdbb);
-
-		try
+		if (fun_external)
+			fun_external->execute(tdbb, in_msg, out_msg);
+		else
 		{
-			// Save the old pool
-			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
+			jrd_req* const new_request = getStatement()->findRequest(tdbb);
 
-			jrd_tra* const transaction = request->req_transaction;
-			const SLONG save_point_number = transaction->tra_save_point ?
-				transaction->tra_save_point->sav_number : 0;
-
-			new_request->req_timestamp = request->req_timestamp;
-
-			EXE_start(tdbb, new_request, transaction);
-
-			if (in_msg_length)
+			try
 			{
-				EXE_send(tdbb, new_request, 0, in_msg_length, in_msg);
-			}
+				// Save the old pool
+				Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 
-			fb_assert(out_msg_length);
-			EXE_receive(tdbb, new_request, 1, out_msg_length, out_msg);
+				jrd_tra* const transaction = request->req_transaction;
+				const SLONG save_point_number = transaction->tra_save_point ?
+					transaction->tra_save_point->sav_number : 0;
 
-			// Clean up all savepoints started during execution of the function
+				new_request->req_timestamp = request->req_timestamp;
 
-			if (transaction != attachment->getSysTransaction())
-			{
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && save_point_number < save_point->sav_number;
-					 save_point = transaction->tra_save_point)
+				EXE_start(tdbb, new_request, transaction);
+
+				if (in_msg_length)
 				{
-					VIO_verb_cleanup(tdbb, transaction);
+					EXE_send(tdbb, new_request, 0, in_msg_length, in_msg);
+				}
+
+				fb_assert(out_msg_length);
+				EXE_receive(tdbb, new_request, 1, out_msg_length, out_msg);
+
+				// Clean up all savepoints started during execution of the function
+
+				if (transaction != attachment->getSysTransaction())
+				{
+					for (const Savepoint* save_point = transaction->tra_save_point;
+						 save_point && save_point_number < save_point->sav_number;
+						 save_point = transaction->tra_save_point)
+					{
+						VIO_verb_cleanup(tdbb, transaction);
+					}
 				}
 			}
-		}
-		catch (const Firebird::Exception&)
-		{
+			catch (const Firebird::Exception&)
+			{
+				tdbb->setRequest(request);
+				EXE_unwind(tdbb, new_request);
+				new_request->req_attachment = NULL;
+				new_request->req_flags &= ~req_in_use;
+				throw;
+			}
+
 			tdbb->setRequest(request);
 			EXE_unwind(tdbb, new_request);
 			new_request->req_attachment = NULL;
 			new_request->req_flags &= ~req_in_use;
-			throw;
 		}
-
-		tdbb->setRequest(request);
-		EXE_unwind(tdbb, new_request);
-		new_request->req_attachment = NULL;
-		new_request->req_flags &= ~req_in_use;
 
 		const ULONG arg_offset = (IPTR) fun_out_msg_format.fmt_desc[0].dsc_address;
 		const ULONG null_offset = (IPTR) fun_out_msg_format.fmt_desc[1].dsc_address;
 
 		UCHAR* const null_ptr = out_msg + null_offset;
 		if (*reinterpret_cast<SSHORT*>(null_ptr))
-		{
 			request->req_flags |= req_null;
-		}
 		else
 		{
 			dsc arg_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
@@ -817,9 +814,7 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 		}
 	}
 	else
-	{
 		fb_assert(false);
-	}
 
 	// If the function is declared as invariant, mark it as computed
 

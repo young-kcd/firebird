@@ -34,6 +34,8 @@
 #include "../common/gdsassert.h"
 #include "../common/dsc_proto.h"
 
+using namespace Firebird;
+
 
 // When converting non-text values to text, how many bytes to allocate
 // for holding the text image of the value.
@@ -1167,6 +1169,96 @@ const char* dsc::typeToText() const
 		return "boolean";
 	default:
 		return "out of range";
+	}
+}
+
+
+void dsc::getSqlInfo(SLONG* sqlLength, SLONG* sqlSubType, SLONG* sqlScale, SLONG* sqlType) const
+{
+	*sqlLength = dsc_length;
+	*sqlSubType = 0;
+	*sqlScale = 0;
+	*sqlType = 0;
+
+	switch (dsc_dtype)
+	{
+		case dtype_real:
+			*sqlType = SQL_FLOAT;
+			break;
+
+		case dtype_array:
+			*sqlType = SQL_ARRAY;
+			break;
+
+		case dtype_timestamp:
+			*sqlType = SQL_TIMESTAMP;
+			break;
+
+		case dtype_sql_date:
+			*sqlType = SQL_TYPE_DATE;
+			break;
+
+		case dtype_sql_time:
+			*sqlType = SQL_TYPE_TIME;
+			break;
+
+		case dtype_double:
+			*sqlType = SQL_DOUBLE;
+			*sqlScale = dsc_scale;
+			break;
+
+		case dtype_text:
+			*sqlType = SQL_TEXT;
+			*sqlSubType = dsc_sub_type;
+			break;
+
+		case dtype_blob:
+			*sqlType = SQL_BLOB;
+			*sqlSubType = dsc_sub_type;
+			*sqlScale = dsc_scale;
+			break;
+
+		case dtype_varying:
+			*sqlType = SQL_VARYING;
+			*sqlLength -= sizeof(USHORT);
+			*sqlSubType = dsc_sub_type;
+			break;
+
+		case dtype_short:
+		case dtype_long:
+		case dtype_int64:
+			switch (dsc_dtype)
+			{
+				case dtype_short:
+					*sqlType = SQL_SHORT;
+					break;
+
+				case dtype_long:
+					*sqlType = SQL_LONG;
+					break;
+
+				default:
+					*sqlType = SQL_INT64;
+			}
+
+			*sqlScale = dsc_scale;
+			if (dsc_sub_type)
+				*sqlSubType = dsc_sub_type;
+			break;
+
+		case dtype_quad:
+			*sqlType = SQL_QUAD;
+			*sqlScale = dsc_scale;
+			break;
+
+		case dtype_boolean:
+			*sqlType = SQL_BOOLEAN;
+			break;
+
+		default:
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				Arg::Gds(isc_dsql_datatype_err));
 	}
 }
 

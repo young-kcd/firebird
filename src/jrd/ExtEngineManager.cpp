@@ -26,10 +26,9 @@
 #include "inf_pub.h"
 #include "../jrd/ExtEngineManager.h"
 #include "../jrd/ErrorImpl.h"
-#include "../jrd/ValueImpl.h"
-#include "../jrd/ValuesImpl.h"
 #include "../dsql/sqlda_pub.h"
 #include "../common/dsc.h"
+#include "../jrd/align.h"
 #include "../jrd/jrd.h"
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
@@ -305,8 +304,7 @@ ExtEngineManager::Function::~Function()
 }
 
 
-void ExtEngineManager::Function::execute(thread_db* tdbb, const NestValueArray& args,
-	impure_value* impure) const
+void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
 	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
@@ -314,70 +312,9 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, const NestValueArray& 
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
 
-	impure->vlu_desc.dsc_flags = DSC_null;
-	MemoryPool& pool = *tdbb->getDefaultPool();
-	ValueImpl result(pool, &impure->vlu_desc, "", true);
+	Attachment::Checkout attCout(tdbb->getAttachment());
 
-	HalfStaticArray<impure_value, 32> impureArgs;
-
-	jrd_req* request = tdbb->getRequest();
-	impure_value* impureArgsPtr = impureArgs.getBuffer(args.getCount());
-
-	try
-	{
-		ValuesImpl params(pool, args.getCount());
-
-		for (size_t i = 0; i < args.getCount(); ++i)
-		{
-			impureArgsPtr->vlu_desc = udf->fun_args[i + 1].fun_parameter->prm_desc;
-
-			if (impureArgsPtr->vlu_desc.isText())
-			{
-				impureArgsPtr->vlu_string =
-					FB_NEW_RPT(pool, impureArgsPtr->vlu_desc.getStringLength()) VaryingString();
-				impureArgsPtr->vlu_desc.dsc_address = (UCHAR*) impureArgsPtr->vlu_string;
-			}
-			else
-			{
-				impureArgsPtr->vlu_string = NULL;
-				impureArgsPtr->vlu_desc.dsc_address = (UCHAR*) &impureArgsPtr->vlu_misc;
-			}
-
-			dsc* arg = EVL_expr(tdbb, request, args[i]);
-
-			if (request->req_flags & req_null)
-				impureArgsPtr->vlu_desc.dsc_flags = DSC_null;
-			else
-			{
-				MOV_move(tdbb, arg, &impureArgsPtr->vlu_desc);
-				INTL_adjust_text_descriptor(tdbb, &impureArgsPtr->vlu_desc);
-			}
-
-			params.getValue(i + 1)->make(&impureArgsPtr->vlu_desc, "", true);
-
-			++impureArgsPtr;
-		}
-
-		{	// scope
-			Attachment::Checkout attCout(tdbb->getAttachment());
-			function->execute(RaiseError(), attInfo->context, &params, &result);
-		}
-	}
-	catch (...)
-	{
-		for (size_t i = 0; i < args.getCount(); ++i)
-			delete impureArgs[i].vlu_string;
-
-		throw;
-	}
-
-	for (size_t i = 0; i < args.getCount(); ++i)
-		delete impureArgs[i].vlu_string;
-
-	if (result.isNull())
-		request->req_flags |= req_null;
-	else
-		request->req_flags &= ~req_null;
+	function->execute(RaiseError(), attInfo->context, inMsg, outMsg);
 }
 
 
@@ -405,17 +342,17 @@ ExtEngineManager::Procedure::~Procedure()
 
 
 ExtEngineManager::ResultSet* ExtEngineManager::Procedure::open(thread_db* tdbb,
-	ValuesImpl* inputParams, ValuesImpl* outputParams) const
+	UCHAR* inMsg, UCHAR* outMsg) const
 {
-	return FB_NEW(*tdbb->getDefaultPool()) ResultSet(tdbb, inputParams, outputParams, this);
+	return FB_NEW(*tdbb->getDefaultPool()) ResultSet(tdbb, inMsg, outMsg, this);
 }
 
 
 //---------------------
 
 
-ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, ValuesImpl* inputParams,
-		ValuesImpl* outputParams, const ExtEngineManager::Procedure* aProcedure)
+ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg,
+		const ExtEngineManager::Procedure* aProcedure)
 	: procedure(aProcedure),
 	  attachment(tdbb->getAttachment()),
 	  firstFetch(true)
@@ -430,8 +367,7 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, ValuesImpl* inputParams,
 
 	Attachment::Checkout attCout(attachment);
 
-	resultSet = procedure->procedure->open(RaiseError(), attInfo->context, inputParams,
-		outputParams);
+	resultSet = procedure->procedure->open(RaiseError(), attInfo->context, inMsg, outMsg);
 }
 
 
@@ -494,82 +430,95 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, trigger,
 		CallerName(obj_trigger, trg->name));
 
-	Array<dsc*> descs;
-	try
+	// ASF: Using Array instead of HalfStaticArray to not need to do alignment hacks here.
+	Array<UCHAR> oldMsg;
+	Array<UCHAR> newMsg;
+
+	if (oldRpb)
+		setValues(tdbb, oldMsg, oldRpb);
+
+	if (newRpb)
+		setValues(tdbb, newMsg, newRpb);
+
+	Attachment::Checkout attCout(tdbb->getAttachment());
+
+	trigger->execute(RaiseError(), attInfo->context, action,
+		(oldRpb ? oldMsg.begin() : NULL), (newRpb ? newMsg.begin() : NULL));
+
+	if (newRpb)
 	{
-		MemoryPool& pool = *tdbb->getDefaultPool();
-		AutoPtr<ValuesImpl> oldValues, newValues;
-		int valueOldCount = 0;
-		int valueNewCount = 0;
+		Record* record = newRpb->rpb_record;
+		const Format* format = record->rec_format;
+		const UCHAR* msg = newMsg.begin();
+		unsigned pos = 0;
 
-		if (oldRpb)
-			valueOldCount = setValues(tdbb, pool, oldValues, descs, oldRpb);
+		for (unsigned i = 0; i < format->fmt_count; ++i)
+		{
+			if (format->fmt_desc[i].dsc_dtype == dtype_unknown)
+				continue;
 
-		if (newRpb)
-			valueNewCount = setValues(tdbb, pool, newValues, descs, newRpb);
+			dsc desc;
+			bool readonly = !EVL_field(newRpb->rpb_relation, record, i, &desc) &&
+				desc.dsc_address && !(desc.dsc_flags & DSC_null);
 
-		{	// scope
-			Attachment::Checkout attCout(tdbb->getAttachment());
+			unsigned align = type_alignments[desc.dsc_dtype];
+			if (align)
+				pos = FB_ALIGN(pos, align);
 
-			trigger->execute(RaiseError(), attInfo->context, action, oldValues, newValues);
+			unsigned dataPos = pos;
+			pos += desc.dsc_length;
 
-			for (int i = 1; i <= valueNewCount; ++i)
+			align = type_alignments[dtype_short];
+			if (align)
+				pos = FB_ALIGN(pos, align);
+
+			if (!readonly)
 			{
-				ValueImpl* val = newValues->getValue(i);
-
-				if (val->isNull())
-					SET_NULL(newRpb->rpb_record, val->getFieldNumber());
+				if (*(USHORT*) &msg[pos])
+					SET_NULL(record, i);
 				else
-					CLEAR_NULL(newRpb->rpb_record, val->getFieldNumber());
+				{
+					memcpy(desc.dsc_address, msg + dataPos, desc.dsc_length);
+					CLEAR_NULL(record, i);
+				}
 			}
+
+			pos += sizeof(USHORT);
 		}
 	}
-	catch (...)
-	{
-		for (size_t i = 0; i < descs.getCount(); ++i)
-			delete descs[i];
-		throw;
-	}
-
-	for (size_t i = 0; i < descs.getCount(); ++i)
-		delete descs[i];
 }
 
 
-int ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, MemoryPool& pool,
-	AutoPtr<ValuesImpl>& values, Array<dsc*>& descs,
+void ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, Array<UCHAR>& msgBuffer,
 	record_param* rpb) const
 {
 	if (!rpb || !rpb->rpb_record)
-		return 0;
+		return;
 
 	Record* record = rpb->rpb_record;
 	const Format* format = record->rec_format;
 
-	values = FB_NEW(pool) ValuesImpl(pool, format->fmt_count);
-
-	int start = descs.getCount();
-	descs.resize(start + format->fmt_count);
-
-	int j = 0;
-
-	for (int i = 0; i < format->fmt_count; ++i)
+	for (unsigned i = 0; i < format->fmt_count; ++i)
 	{
-		descs[start + i] = FB_NEW(pool) dsc;
+		if (format->fmt_desc[i].dsc_dtype == dtype_unknown)
+			continue;
 
-		if (format->fmt_desc[i].dsc_dtype != dtype_unknown)
-		{
-			EVL_field(rpb->rpb_relation, record, i, descs[start + i]);
+		dsc desc;
+		EVL_field(rpb->rpb_relation, record, i, &desc);
 
-			jrd_fld* field = (*rpb->rpb_relation->rel_fields)[i];
-			fb_assert(field);
+		unsigned align = type_alignments[desc.dsc_dtype];
+		if (align)
+			msgBuffer.resize(FB_ALIGN(msgBuffer.getCount(), align));
 
-			values->getValue(j + 1)->make(descs[start + i], field->fld_name, true, i);
-			++j;
-		}
+		msgBuffer.add(desc.dsc_address, desc.dsc_length);
+
+		align = type_alignments[dtype_short];
+		if (align)
+			msgBuffer.resize(FB_ALIGN(msgBuffer.getCount(), align));
+
+		USHORT nullFlag = (desc.dsc_flags & DSC_null) != 0;
+		msgBuffer.add((UCHAR*) &nullFlag, sizeof(nullFlag));
 	}
-
-	return j;
 }
 
 
@@ -654,12 +603,35 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
 
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	///MemoryPool& pool = *tdbb->getDefaultPool();
+	MemoryPool& pool = *getDefaultMemoryPool();
+
 	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
 	metadata->package = udf->getName().package;
 	metadata->name = udf->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
+	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+
+	for (Array<Jrd::Function::Argument>::const_iterator i = udf->fun_args.begin();
+		 i != udf->fun_args.end();
+		 ++i)
+	{
+		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+		i->fun_parameter->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+		StatementMetadata::Parameters::Item& item = i == udf->fun_args.begin() ?
+			metadata->outputParameters->items.add() :
+			metadata->inputParameters->items.add();
+
+		item.field = i->fun_parameter->prm_name.c_str();
+		item.type = sqlType;
+		item.subType = sqlSubType;
+		item.length = sqlLen;
+		item.scale = sqlScale;
+		item.nullable = i->fun_parameter->prm_nullable;
+	}
 
 	ExternalFunction* externalFunction;
 
@@ -702,12 +674,40 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 			CallerName(obj_procedure, prc->getName().identifier) :
 			CallerName(obj_package_header, prc->getName().package)));
 
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	///MemoryPool& pool = *tdbb->getDefaultPool();
+	MemoryPool& pool = *getDefaultMemoryPool();
+
 	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
 	metadata->package = prc->getName().package;
 	metadata->name = prc->getName().identifier;
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
+	metadata->inputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+	metadata->outputParameters = FB_NEW(pool) StatementMetadata::Parameters(pool);
+
+	const Array<NestConst<Parameter> >* parameters[] = {&prc->prc_input_fields, &prc->prc_output_fields};
+
+	for (unsigned i = 0; i < 2; ++i)
+	{
+		for (Array<NestConst<Parameter> >::const_iterator j = parameters[i]->begin();
+			 j != parameters[i]->end();
+			 ++j)
+		{
+			SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+			(*j)->prm_desc.getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+			StatementMetadata::Parameters::Item& item = i == 1 ?
+				metadata->outputParameters->items.add() :
+				metadata->inputParameters->items.add();
+
+			item.field = (*j)->prm_name.c_str();
+			item.type = sqlType;
+			item.subType = sqlSubType;
+			item.length = sqlLen;
+			item.scale = sqlScale;
+			item.nullable = (*j)->prm_nullable;
+		}
+	}
 
 	ExternalProcedure* externalProcedure;
 
@@ -748,7 +748,9 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		CallerName(obj_trigger, trg->name));
 
-	MemoryPool& pool = *tdbb->getDefaultPool();
+	///MemoryPool& pool = *tdbb->getDefaultPool();
+	MemoryPool& pool = *getDefaultMemoryPool();
+
 	AutoPtr<RoutineMetadata> metadata(FB_NEW(pool) RoutineMetadata(pool));
 	metadata->name = trg->name;
 	metadata->entryPoint = entryPointTrimmed;
@@ -756,6 +758,28 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	metadata->triggerType = type;
 	if (trg->relation)
 		metadata->triggerTable = trg->relation->rel_name;
+	metadata->triggerFields = FB_NEW(pool) StatementMetadata::Parameters(pool);
+
+	jrd_rel* relation = trg->relation;
+	Format* relFormat = relation->rel_current_format;
+
+	for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+	{
+		jrd_fld* field = (*relation->rel_fields)[i];
+		if (!field)
+			continue;
+
+		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+		relFormat->fmt_desc[i].getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+		StatementMetadata::Parameters::Item& item = metadata->triggerFields->items.add();
+		item.field = field->fld_name.c_str();
+		item.type = sqlType;
+		item.subType = sqlSubType;
+		item.length = sqlLen;
+		item.scale = sqlScale;
+		item.nullable = !field->fld_not_null;
+	}
 
 	ExternalTrigger* externalTrigger;
 

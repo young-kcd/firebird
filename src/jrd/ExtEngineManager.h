@@ -34,7 +34,7 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/ImplementHelper.h"
-///#include "../dsql/Nodes.h"
+#include "../common/StatementMetadata.h"
 
 struct dsc;
 
@@ -49,8 +49,6 @@ class Format;
 class Trigger;
 class Function;
 class ValueExprNode;
-class ValueImpl;
-class ValuesImpl;
 struct impure_value;
 struct record_param;
 
@@ -97,6 +95,24 @@ private:
 			return body.c_str();
 		}
 
+		virtual const Firebird::IParametersMetadata* FB_CARG getInputParameters(
+			Firebird::IStatus* /*status*/) const
+		{
+			return inputParameters;
+		}
+
+		virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(
+			Firebird::IStatus* /*status*/) const
+		{
+			return outputParameters;
+		}
+
+		virtual const Firebird::IParametersMetadata* FB_CARG getTriggerFields(
+			Firebird::IStatus* /*status*/) const
+		{
+			return triggerFields;
+		}
+
 		virtual const char* FB_CARG getTriggerTable(Firebird::IStatus* /*status*/) const
 		{
 			return triggerTable.c_str();
@@ -112,6 +128,9 @@ private:
 		Firebird::MetaName name;
 		Firebird::string entryPoint;
 		Firebird::string body;
+		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> inputParameters;
+		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> outputParameters;
+		Firebird::AutoPtr<Firebird::StatementMetadata::Parameters> triggerFields;
 		Firebird::MetaName triggerTable;
 		Firebird::ExternalTrigger::Type triggerType;
 	};
@@ -190,8 +209,7 @@ public:
 			const Jrd::Function* aUdf);
 		~Function();
 
-		void execute(thread_db* tdbb, const Firebird::Array<NestConst<ValueExprNode> >& args,
-			impure_value* impure) const;
+		void execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg) const;
 
 	private:
 		ExtEngineManager* extManager;
@@ -214,7 +232,7 @@ public:
 			const jrd_prc* aPrc);
 		~Procedure();
 
-		ResultSet* open(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams) const;
+		ResultSet* open(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg) const;
 
 	private:
 		ExtEngineManager* extManager;
@@ -230,8 +248,7 @@ public:
 	class ResultSet
 	{
 	public:
-		ResultSet(thread_db* tdbb, ValuesImpl* inputParams, ValuesImpl* outputParams,
-			const Procedure* aProcedure);
+		ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg, const Procedure* aProcedure);
 		~ResultSet();
 
 		bool fetch(thread_db* tdbb);
@@ -259,9 +276,7 @@ public:
 			record_param* oldRpb, record_param* newRpb) const;
 
 	private:
-		int setValues(thread_db* tdbb, Firebird::MemoryPool& pool,
-			Firebird::AutoPtr<ValuesImpl>& values, Firebird::Array<dsc*>& descs,
-			record_param* rpb) const;
+		void setValues(thread_db* tdbb, Firebird::Array<UCHAR>& msgBuffer, record_param* rpb) const;
 
 		ExtEngineManager* extManager;
 		Firebird::ExternalEngine* engine;

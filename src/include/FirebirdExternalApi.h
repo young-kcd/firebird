@@ -95,8 +95,8 @@ public:
 	virtual void FB_CALL getCharSet(Error* error, ExternalContext* context,
 		Utf8* name, uint nameSize) = 0;
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context, Values* params,
-		Value* result) = 0;
+	virtual void FB_CALL execute(Error* error, ExternalContext* context,
+		UCHAR* inMsg, UCHAR* outMsg) = 0;
 };
 
 
@@ -113,7 +113,7 @@ public:
 	// Returning NULL results in a result set of one record.
 	// Procedures without output parameters should return NULL.
 	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
-		Values* params, Values* results) = 0;
+		UCHAR* inMsg, UCHAR* outMsg) = 0;
 };
 
 
@@ -148,7 +148,7 @@ public:
 		Utf8* name, uint nameSize) = 0;
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
-		Action action, const Values* oldValues, Values* newValues) = 0;
+		Action action, UCHAR* oldMsg, UCHAR* newMsg) = 0;
 };
 
 
@@ -159,10 +159,13 @@ public:
 	virtual const char* FB_CARG getName(IStatus* status) const = 0;
 	virtual const char* FB_CARG getEntryPoint(IStatus* status) const = 0;
 	virtual const char* FB_CARG getBody(IStatus* status) const = 0;
+	virtual const IParametersMetadata* FB_CARG getInputParameters(IStatus* status) const = 0;
+	virtual const IParametersMetadata* FB_CARG getOutputParameters(IStatus* status) const = 0;
+	virtual const IParametersMetadata* FB_CARG getTriggerFields(IStatus* status) const = 0;
 	virtual const char* FB_CARG getTriggerTable(IStatus* status) const = 0;
 	virtual ExternalTrigger::Type FB_CARG getTriggerType(IStatus* status) const = 0;
 };
-#define FB_ROUTINE_METADATA_VERSION (FB_VERSIONED_VERSION + 6)
+#define FB_ROUTINE_METADATA_VERSION (FB_VERSIONED_VERSION + 9)
 
 
 // In SuperServer, shared by all attachments to one database and disposed when last (non-external)

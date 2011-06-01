@@ -384,12 +384,6 @@
     <ClCompile Include="..\..\..\src\jrd\validation.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\ValueImpl.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\ValuesImpl.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\vio.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -999,12 +993,6 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\val_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\ValueImpl.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\ValuesImpl.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\jrd\vio_debug.h">

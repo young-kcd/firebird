@@ -588,14 +588,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ValueImpl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ValuesImpl.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\vio.cpp"
 				>
 			</File>
@@ -1665,14 +1657,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\val_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ValueImpl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ValuesImpl.h"
 				>
 			</File>
 			<File

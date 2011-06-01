@@ -50,7 +50,7 @@ namespace Firebird
 	{	\
 	public:	\
 		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::Values* params, ::Firebird::Value* result);	\
+			UCHAR* inMsg, UCHAR* outMsg);	\
 	private:
 
 #define FB_UDR_END_DECLARE_FUNCTION(name)	\
@@ -62,7 +62,7 @@ namespace Firebird
 
 #define FB_UDR_BEGIN_FUNCTION(name)	\
 	void FB_CALL FB_UDR_FUNCTION(name)::execute(::Firebird::Error* error, \
-		::Firebird::ExternalContext* context, ::Firebird::Values* params, ::Firebird::Value* result)	\
+		::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)	\
 	{	\
 		try	\
 		{
@@ -90,8 +90,7 @@ namespace Firebird
 	{	\
 	public:	\
 		virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::Error* error, \
-			::Firebird::ExternalContext* context, ::Firebird::Values* params, \
-			::Firebird::Values* results);	\
+			::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg);	\
 
 #define FB_UDR_END_DECLARE_PROCEDURE(name)	\
 	};
@@ -104,8 +103,8 @@ namespace Firebird
 	class ResultSet##name : public ::Firebird::Udr::ResultSet	\
 	{	\
 	public:	\
-		ResultSet##name(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::Values* params, ::Firebird::Values* results);	\
+		ResultSet##name(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+			::Firebird::Udr::Procedure* procedure, UCHAR* inMsg, UCHAR* outMsg);	\
 	\
 	public:	\
 		virtual bool FB_CALL fetch(::Firebird::Error* error);	\
@@ -125,15 +124,14 @@ namespace Firebird
 
 #define FB_UDR_BEGIN_PROCEDURE(name)	\
 	::Firebird::ExternalResultSet* FB_CALL Proc##name::open(::Firebird::Error* error, \
-		::Firebird::ExternalContext* context, ::Firebird::Values* params, \
-		::Firebird::Values* results)	\
+		::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)	\
 	{	\
-		return new ResultSet##name(error, context, params, results);	\
+		return new ResultSet##name(error, context, this, inMsg, outMsg);	\
 	}	\
 	\
 	ResultSet##name::ResultSet##name(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::Values* params, ::Firebird::Values* results)	\
-		: ResultSet(context, params, results)	\
+			::Firebird::Udr::Procedure* procedure, UCHAR* inMsg, UCHAR* outMsg)	\
+		: ResultSet(context, procedure, inMsg, outMsg)	\
 	{	\
 		try	\
 		{
@@ -183,8 +181,7 @@ namespace Firebird
 	{	\
 	public:	\
 		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::ExternalTrigger::Action action, const ::Firebird::Values* oldValues,	\
-			::Firebird::Values* newValues);	\
+			::Firebird::ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg);	\
 	private:
 
 #define FB_UDR_END_DECLARE_TRIGGER(name)	\
@@ -197,7 +194,7 @@ namespace Firebird
 #define FB_UDR_BEGIN_TRIGGER(name)	\
 	void FB_CALL FB_UDR_TRIGGER(name)::execute(::Firebird::Error* error,	\
 		::Firebird::ExternalContext* context, ::Firebird::ExternalTrigger::Action action, \
-		const ::Firebird::Values* oldValues, ::Firebird::Values* newValues)	\
+		UCHAR* oldMsg, UCHAR* newMsg)	\
 	{	\
 		try	\
 		{
@@ -429,6 +426,9 @@ protected:
 };
 
 
+class Procedure;
+
+
 class Helper
 {
 public:
@@ -460,11 +460,12 @@ public:
 class ResultSet : public ExternalResultSet, public Helper
 {
 public:
-	ResultSet(Firebird::ExternalContext* aContext, Firebird::Values* aParams,
-				Firebird::Values* aResults)
+	ResultSet(Firebird::ExternalContext* aContext, Firebird::Udr::Procedure* aProcedure,
+				UCHAR* aInMsg, UCHAR* aOutMsg)
 		: context(aContext),
-		  params(aParams),
-		  results(aResults)
+		  procedure(aProcedure),
+		  inMsg(aInMsg),
+		  outMsg(aOutMsg)
 	{
 	}
 
@@ -480,8 +481,9 @@ public:
 
 protected:
 	Firebird::ExternalContext* context;
-	Firebird::Values* params;
-	Firebird::Values* results;
+	Firebird::Udr::Procedure* procedure;
+	UCHAR* inMsg;
+	UCHAR* outMsg;
 };
 
 

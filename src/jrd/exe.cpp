@@ -109,7 +109,6 @@
 #include "../jrd/trace/TraceJrdHelpers.h"
 
 #include "../dsql/Nodes.h"
-#include "../jrd/ValuesImpl.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Function.h"
@@ -728,12 +727,6 @@ void EXE_release(thread_db* tdbb, jrd_req* request)
 	SET_TDBB(tdbb);
 
 	EXE_unwind(tdbb, request);
-
-	delete request->inputParams;
-	request->inputParams = NULL;
-
-	delete request->outputParams;
-	request->outputParams = NULL;
 
 	// system requests are released after all attachments gone and with
 	// req_attachment not cleared
@@ -1420,25 +1413,10 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 								list->statements[i].getObject()));
 						}
 
-						if (!request->inputParams)
-						{
-							UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->impureOffset);
+						UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->impureOffset);
 
-							request->inputParams = FB_NEW(*request->req_pool) ValuesImpl(
-								*request->req_pool, format, inMsg,
-								statement->procedure->prc_input_fields);
-						}
-
-						if (!request->outputParams)
-						{
-							request->outputParams = FB_NEW(*request->req_pool) ValuesImpl(
-								*request->req_pool, outFormat, outMsg,
-								statement->procedure->prc_output_fields);
-							request->outputParams->setNull();
-						}
-
-						request->resultSet = statement->procedure->getExternal()->open(tdbb,
-							request->inputParams, request->outputParams);
+						request->resultSet = statement->procedure->getExternal()->open(
+							tdbb, inMsg, outMsg);
 					}
 
 					request->req_message = outMsgNode;

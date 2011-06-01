@@ -59,10 +59,12 @@ udrcpp_example: $(PLUGINS)/udr/$(LIB_PREFIX)udrcpp_example.$(SHRLIB_EXT)
 
 $(PLUGINS)/udr/$(LIB_PREFIX)udrcpp_example.$(SHRLIB_EXT): $(UDR_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ \
+		$(FIREBIRD_LIBRARY_LINK)
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)udrcpp_example.$(SHRLIB_EXT) \
-$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT)
+		$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT) \
+		$(FIREBIRD_LIBRARY_LINK)
 endif
 
 include $(ROOT)/gen/make.shared.targets

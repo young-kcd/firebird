@@ -2621,95 +2621,21 @@ static UCHAR* var_info(const dsql_msg* message,
 
 		if (param->par_index >= first_index)
 		{
-			SLONG sql_len = param->par_desc.dsc_length;
-			SLONG sql_sub_type = 0;
-			SLONG sql_scale = 0;
-			SLONG sql_type = 0;
+			SLONG sql_len, sql_sub_type, sql_scale, sql_type;
+			param->par_desc.getSqlInfo(&sql_len, &sql_sub_type, &sql_scale, &sql_type);
 
-			switch (param->par_desc.dsc_dtype)
+			if (input_message && param->par_desc.dsc_dtype == dtype_text &&
+				(param->par_desc.dsc_flags & DSC_null))
 			{
-			case dtype_real:
-				sql_type = SQL_FLOAT;
-				break;
-			case dtype_array:
-				sql_type = SQL_ARRAY;
-				break;
-
-			case dtype_timestamp:
-				sql_type = SQL_TIMESTAMP;
-				break;
-			case dtype_sql_date:
-				sql_type = SQL_TYPE_DATE;
-				break;
-			case dtype_sql_time:
-				sql_type = SQL_TYPE_TIME;
-				break;
-
-			case dtype_double:
-				sql_type = SQL_DOUBLE;
-				sql_scale = param->par_desc.dsc_scale;
-				break;
-
-			case dtype_text:
-				if (input_message && (param->par_desc.dsc_flags & DSC_null))
-				{
-					sql_type = SQL_NULL;
-					sql_len = 0;
-				}
-				else
-				{
-					sql_type = SQL_TEXT;
-					sql_sub_type = param->par_desc.dsc_sub_type;
-				}
-				break;
-
-			case dtype_blob:
-				sql_type = SQL_BLOB;
-				sql_sub_type = param->par_desc.dsc_sub_type;
-				sql_scale = param->par_desc.dsc_scale;
-				break;
-
-			case dtype_varying:
-				sql_type = param->par_is_text ? SQL_TEXT : SQL_VARYING;
-				sql_len -= sizeof(USHORT);
-				sql_sub_type = param->par_desc.dsc_sub_type;
-				break;
-
-			case dtype_short:
-			case dtype_long:
-			case dtype_int64:
-				switch (param->par_desc.dsc_dtype)
-				{
-				case dtype_short:
-					sql_type = SQL_SHORT;
-					break;
-				case dtype_long:
-					sql_type = SQL_LONG;
-					break;
-				default:
-					sql_type = SQL_INT64;
-				}
-				sql_scale = param->par_desc.dsc_scale;
-				if (param->par_desc.dsc_sub_type)
-					sql_sub_type = param->par_desc.dsc_sub_type;
-				break;
-
-			case dtype_quad:
-				sql_type = SQL_QUAD;
-				sql_scale = param->par_desc.dsc_scale;
-				break;
-
-			case dtype_boolean:
-				sql_type = SQL_BOOLEAN;
-				break;
-
-			default:
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-						  Arg::Gds(isc_dsql_datatype_err));
+				sql_type = SQL_NULL;
+				sql_len = 0;
+				sql_sub_type = 0;
 			}
+			else if (param->par_desc.dsc_dtype == dtype_varying && param->par_is_text)
+				sql_type = SQL_TEXT;
 
 			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))
-				sql_type++;
+				sql_type |= 0x1;
 
 			for (const UCHAR* describe = items; describe < end_describe;)
 			{

@@ -30,28 +30,6 @@ using namespace Firebird;
 using namespace Firebird::Udr;
 
 
-typedef IMaster* (ISC_EXPORT *FuncGetMasterInterface)();
-
-typedef ISC_LONG (ISC_EXPORT_VARARG *FuncEventBlock)(ISC_UCHAR**, ISC_UCHAR**, ISC_USHORT, ...);
-typedef ISC_STATUS (ISC_EXPORT *FuncWaitForEvent)(ISC_STATUS*, isc_db_handle*,
-	short, const ISC_UCHAR*, ISC_UCHAR*);
-typedef void (ISC_EXPORT *FuncEventCounts)(ISC_ULONG*, short, ISC_UCHAR*, const ISC_UCHAR*);
-
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlAllocateStatement)(ISC_STATUS*, isc_db_handle*,
-	isc_stmt_handle*);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlDescribe)(ISC_STATUS*, isc_stmt_handle*, unsigned short,
-	XSQLDA*);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlDescribeBind)(ISC_STATUS*, isc_stmt_handle*, unsigned short,
-	XSQLDA*);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlExecute)(ISC_STATUS*, isc_tr_handle*, isc_stmt_handle*,
-	unsigned short, XSQLDA*);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlExecute2)(ISC_STATUS*, isc_tr_handle*, isc_stmt_handle*,
-	unsigned short, XSQLDA*, XSQLDA*);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlFreeStatement)(ISC_STATUS*, isc_stmt_handle*, unsigned short);
-typedef ISC_STATUS (ISC_EXPORT *FuncDsqlPrepare)(ISC_STATUS*, isc_tr_handle*, isc_stmt_handle*,
-	unsigned short, const ISC_SCHAR*, unsigned short, XSQLDA*);
-
-
 namespace
 {
 	template <typename T>
@@ -133,10 +111,461 @@ namespace
 }
 
 
+static IMaster* master = fb_get_master_interface();
+
+
+//------------------------------------------------------------------------------
+
+
+class MessageImpl;
+
+class ParamDescBase
+{
+public:
+	ParamDescBase()
+		: pos(0),
+		  nullPos(0)
+	{
+	}
+
+	unsigned pos;
+	unsigned nullPos;
+};
+
+template <class T>
+class ParamDesc : public ParamDescBase
+{
+};
+
+template <>
+class ParamDesc<void*> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message, const Firebird::IParametersMetadata* aParams);
+
+	unsigned align(unsigned size, unsigned aIndex)
+	{
+		index = aIndex;
+
+		AutoDispose<IStatus> status(master->getStatus());
+
+		switch ((type = params->getType(status, index)))
+		{
+			case SQL_SHORT:
+				size = FB_ALIGN(size, sizeof(ISC_SHORT));
+				break;
+
+			case SQL_LONG:
+				size = FB_ALIGN(size, sizeof(ISC_LONG));
+				break;
+
+			case SQL_INT64:
+				size = FB_ALIGN(size, sizeof(ISC_INT64));
+				break;
+
+			case SQL_FLOAT:
+				size = FB_ALIGN(size, sizeof(float));
+				break;
+
+			case SQL_DOUBLE:
+				size = FB_ALIGN(size, sizeof(double));
+				break;
+
+			case SQL_BLOB:
+				size = FB_ALIGN(size, sizeof(ISC_QUAD));
+				break;
+
+			case SQL_TEXT:
+			case SQL_VARYING:
+				size = FB_ALIGN(size, sizeof(ISC_USHORT));
+				break;
+
+			default:
+				assert(false);
+				break;
+		}
+
+		return size;
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		AutoDispose<IStatus> status(master->getStatus());
+		unsigned ret;
+
+		switch (type)
+		{
+			case SQL_SHORT:
+			{
+				unsigned scale = params->getScale(status, index);
+				*blr++ = blr_short;
+				*blr++ = scale;
+				ret = sizeof(ISC_SHORT);
+				break;
+			}
+
+			case SQL_LONG:
+			{
+				unsigned scale = params->getScale(status, index);
+				*blr++ = blr_long;
+				*blr++ = scale;
+				ret = sizeof(ISC_LONG);
+				break;
+			}
+
+			case SQL_INT64:
+			{
+				unsigned scale = params->getScale(status, index);
+				*blr++ = blr_int64;
+				*blr++ = scale;
+				ret = sizeof(ISC_INT64);
+				break;
+			}
+
+			case SQL_FLOAT:
+				*blr++ = blr_float;
+				ret = sizeof(float);
+				break;
+
+			case SQL_DOUBLE:
+				*blr++ = blr_double;
+				ret = sizeof(double);
+				break;
+
+			case SQL_BLOB:
+				*blr++ = blr_blob2;
+				*blr++ = 0;
+				*blr++ = 0;
+				*blr++ = 0;
+				*blr++ = 0;
+				ret = sizeof(ISC_QUAD);
+				break;
+
+			case SQL_TEXT:
+			case SQL_VARYING:
+			{
+				unsigned length = params->getLength(status, index);
+				*blr++ = blr_varying;
+				*blr++ = length & 0xFF;
+				*blr++ = (length >> 8) & 0xFF;
+				ret = sizeof(ISC_USHORT) + length;
+				break;
+			}
+
+			default:
+				assert(false);
+				ret = 0;
+				break;
+		}
+
+		return ret;
+	}
+
+	unsigned getType() const
+	{
+		return type;
+	}
+
+private:
+	const Firebird::IParametersMetadata* params;
+	unsigned type;
+	unsigned index;
+};
+
+class MessageImpl : public Firebird::FbMessage
+{
+public:
+	MessageImpl(unsigned aItemCount, ISC_UCHAR* aBuffer = NULL)
+		: itemCount(aItemCount * 2),
+		  freeBuffer(!aBuffer),
+		  items(0)
+	{
+		static const ISC_UCHAR HEADER[] = {
+			blr_version5,
+			blr_begin,
+			blr_message, 0, 0, 0
+		};
+
+		blrLength = 0;
+		blr = blrPos = new ISC_UCHAR[sizeof(HEADER) + 10 * itemCount + 2];
+		bufferLength = 0;
+		buffer = aBuffer;
+
+		memcpy(blrPos, HEADER, sizeof(HEADER));
+		blrPos += sizeof(HEADER);
+	}
+
+	~MessageImpl()
+	{
+		if (freeBuffer && buffer)
+			delete [] buffer;
+
+		if (blr)
+			delete [] blr;
+	}
+
+	template <typename T>
+	void add(ParamDesc<T>& paramDesc)
+	{
+		if (items >= itemCount)
+			return;	// return an error, this is already constructed message
+
+		bufferLength = paramDesc.align(bufferLength, items / 2);
+		paramDesc.pos = bufferLength;
+		bufferLength += paramDesc.addBlr(blrPos);
+
+		bufferLength = FB_ALIGN(bufferLength, sizeof(ISC_SHORT));
+		paramDesc.nullPos = bufferLength;
+		bufferLength += sizeof(ISC_SHORT);
+
+		*blrPos++ = blr_short;
+		*blrPos++ = 0;
+
+		items += 2;
+
+		if (items == itemCount)
+		{
+			*blrPos++ = blr_end;
+			*blrPos++ = blr_eoc;
+
+			blrLength = blrPos - blr;
+
+			ISC_UCHAR* blrStart = blrPos - blrLength;
+			blrStart[4] = items & 0xFF;
+			blrStart[5] = (items >> 8) & 0xFF;
+
+			if (!buffer)
+			{
+				buffer = new ISC_UCHAR[bufferLength];
+				memset(buffer, 0, bufferLength);
+			}
+		}
+	}
+
+	bool isNull(const ParamDescBase& index)
+	{
+		return *(ISC_SHORT*) (buffer + index.nullPos);
+	}
+
+	void setNull(const ParamDescBase& index, bool null)
+	{
+		*(ISC_SHORT*) (buffer + index.nullPos) = (ISC_SHORT) null;
+	}
+
+	template <typename T> T& operator [](const ParamDesc<T>& index)
+	{
+		return *(T*) (buffer + index.pos);
+	}
+
+	void* operator [](const ParamDesc<void*>& index)
+	{
+		return buffer + index.pos;
+	}
+
+public:
+	unsigned itemCount;
+	bool freeBuffer;
+	unsigned items;
+	ISC_UCHAR* blrPos;
+};
+
+template <>
+class ParamDesc<ISC_SHORT> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
+		: scale(aScale)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(ISC_SHORT));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_short;
+		*blr++ = scale;
+		return sizeof(ISC_SHORT);
+	}
+
+private:
+	ISC_UCHAR scale;
+};
+
+template <>
+class ParamDesc<ISC_LONG> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
+		: scale(aScale)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(ISC_LONG));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_long;
+		*blr++ = scale;
+		return sizeof(ISC_LONG);
+	}
+
+private:
+	ISC_UCHAR scale;
+};
+
+template <>
+class ParamDesc<ISC_INT64> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message, ISC_UCHAR aScale = 0)
+		: scale(aScale)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(ISC_INT64));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_int64;
+		*blr++ = scale;
+		return sizeof(ISC_INT64);
+	}
+
+private:
+	ISC_UCHAR scale;
+};
+
+template <>
+class ParamDesc<float> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(float));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_float;
+		return sizeof(float);
+	}
+};
+
+template <>
+class ParamDesc<double> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(double));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_double;
+		return sizeof(double);
+	}
+};
+
+template <>
+class ParamDesc<ISC_QUAD> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(ISC_QUAD));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_blob2;
+		*blr++ = 0;
+		*blr++ = 0;
+		*blr++ = 0;
+		*blr++ = 0;
+		return sizeof(ISC_QUAD);
+	}
+};
+
+struct FbString
+{
+	ISC_USHORT length;
+	char str[1];
+};
+
+template <>
+class ParamDesc<FbString> : public ParamDescBase
+{
+public:
+	ParamDesc(MessageImpl& message, ISC_USHORT aLength)
+		: length(aLength)
+	{
+		message.add(*this);
+	}
+
+	unsigned align(unsigned size, unsigned /*index*/)
+	{
+		return FB_ALIGN(size, sizeof(ISC_USHORT));
+	}
+
+	unsigned addBlr(ISC_UCHAR*& blr)
+	{
+		*blr++ = blr_varying;
+		*blr++ = length & 0xFF;
+		*blr++ = (length >> 8) & 0xFF;
+		return sizeof(ISC_USHORT) + length;
+	}
+
+private:
+	ISC_USHORT length;
+};
+
+//// TODO: boolean, date, time, timestamp
+
+//--------------------------------------
+
+inline ParamDesc<void*>::ParamDesc(MessageImpl& message, const Firebird::IParametersMetadata* aParams)
+	: params(aParams),
+	  type(0)
+{
+	message.add(*this);
+}
+
+
+//------------------------------------------------------------------------------
+
+
 /***
 create function wait_event (
-    event_name varchar(31) character set ascii
-) returns integer
+    event_name varchar(31) character set ascii not null
+) returns integer not null
     external name 'udrcpp_example!wait_event'
     engine udr;
 ***/
@@ -211,90 +640,109 @@ public:
 	~FB_UDR_TRIGGER(replicate)();
 
 private:
-	void initialize(ExternalContext* context, Values* values);
+	void initialize(ExternalContext* context);
 
 	bool initialized;
 	XSQLDA* inSqlDa;
 	isc_stmt_handle stmtHandle;
-
-	// ISC entry points
-	FuncGetMasterInterface funcGetMasterInterface;
-	FuncDsqlAllocateStatement funcDsqlAllocateStatement;
-	FuncDsqlDescribe funcDsqlDescribe;
-	FuncDsqlDescribeBind funcDsqlDescribeBind;
-	FuncDsqlExecute funcDsqlExecute;
-	FuncDsqlExecute2 funcDsqlExecute2;
-	FuncDsqlFreeStatement funcDsqlFreeStatement;
-	FuncDsqlPrepare funcDsqlPrepare;
+#if 0
+	IStatement* stmt;
+#endif
 FB_UDR_END_DECLARE_TRIGGER(replicate)
 
 
 FB_UDR_BEGIN_FUNCTION(wait_event)
 {
-	// ISC entry points
-	FuncEventBlock funcEventBlock = (FuncEventBlock) getEntryPoint(context, "isc_event_block");
-	FuncWaitForEvent funcWaitForEvent = (FuncWaitForEvent) getEntryPoint(context, "isc_wait_for_event");
-	FuncEventCounts funcEventCounts = (FuncEventCounts) getEntryPoint(context, "isc_event_counts");
+	MessageImpl inMessage(1, inMsg);
+	ParamDesc<FbString> nameDesc(inMessage, 31);
 
-	Value* val = params->getValue(ThrowError(), 1);
+	FbString& name = inMessage[nameDesc];
 
-	const char* s = val->getString(ThrowError());
+	char* s = new char[name.length + 1];
+	memcpy(s, name.str, name.length);
+	s[name.length] = '\0';
 
 	unsigned char* eveBuffer;
 	unsigned char* eveResult;
-	int eveLen = funcEventBlock(&eveBuffer, &eveResult, 1, s);
+	int eveLen = isc_event_block(&eveBuffer, &eveResult, 1, s);
+
+	delete [] s;
 
 	ISC_STATUS_ARRAY statusVector = {0};
 	isc_db_handle dbHandle = getIscDbHandle(context);
 	ISC_ULONG counter = 0;
 
-	ThrowError::check(funcWaitForEvent(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+	ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
 		statusVector);
-	funcEventCounts(&counter, eveLen, eveBuffer, eveResult);
-	ThrowError::check(funcWaitForEvent(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+	isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
+	ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
 		statusVector);
-	funcEventCounts(&counter, eveLen, eveBuffer, eveResult);
+	isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
 
 	isc_free((char*) eveBuffer);
 	isc_free((char*) eveResult);
 
-	// returns the counter
-	result->setInt(ThrowError(), counter);
+	MessageImpl outMessage(1, outMsg);
+	ParamDesc<ISC_LONG> retDesc(outMessage);
+
+	outMessage[retDesc] = counter;
 }
 FB_UDR_END_FUNCTION(wait_event)
 
 
 FB_UDR_BEGIN_FUNCTION(sum_args)
 {
-	unsigned count = params->getCount();
+	AutoDispose<IStatus> status(master->getStatus());
+
+	const IParametersMetadata* params = metadata->getInputParameters(status);
+	ThrowError::check(status->get());
+
+	unsigned count = params->getCount(status);
+	ThrowError::check(status->get());
+
+	MessageImpl inMessage(count, inMsg);
+
+	MessageImpl outMessage(1, outMsg);
+	ParamDesc<ISC_LONG> retDesc(outMessage);
+
 	int ret = 0;
 
 	for (unsigned i = 0; i < count; ++i)
 	{
-		Value* val = params->getValue(ThrowError(), i + 1);
-		ret += val->getInt(ThrowError());
+		ParamDesc<ISC_LONG> numDesc(inMessage);
+
+		if (inMessage.isNull(numDesc))
+		{
+			outMessage.setNull(retDesc, true);
+			return;
+		}
+		else
+			ret += inMessage[numDesc];
 	}
 
-	result->setInt(ThrowError(), ret);
+	outMessage[retDesc] = ret;
 }
 FB_UDR_END_FUNCTION(sum_args)
 
 
 FB_UDR_BEGIN_PROCEDURE(gen_rows)
 {
-	Value* valStart = params->getValue(ThrowError(), 1);
-	Value* valEnd = params->getValue(ThrowError(), 2);
+	MessageImpl inMessage(2, inMsg);
+	ParamDesc<ISC_LONG> startDesc(inMessage);
+	ParamDesc<ISC_LONG> endDesc(inMessage);
 
-	counter = valStart->getInt(ThrowError());
-	end = valEnd->getInt(ThrowError());
+	counter = inMessage[startDesc];
+	end = inMessage[endDesc];
 }
 FB_UDR_FETCH_PROCEDURE(gen_rows)
 {
 	if (counter > end)
 		return false;
 
-	Value* ret = results->getValue(ThrowError(), 1);
-	ret->setInt(ThrowError(), counter++);
+	MessageImpl outMessage(1, outMsg);
+	ParamDesc<ISC_LONG> retDesc(outMessage);
+
+	outMessage[retDesc] = counter++;
 
 	return true;
 }
@@ -321,36 +769,24 @@ FB_UDR_TRIGGER(replicate)::~FB_UDR_TRIGGER(replicate)()
 	delete [] reinterpret_cast<char*>(inSqlDa);
 
 	ISC_STATUS_ARRAY statusVector = {0};
-	funcDsqlFreeStatement(statusVector, &stmtHandle, DSQL_drop);
+	isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_drop);
 }
 
-void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* values)
+void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context)
 {
 	if (initialized)
 		return;
-
-	// ISC entry points
-	funcGetMasterInterface = (FuncGetMasterInterface) getEntryPoint(context, "fb_get_master_interface");
-	funcDsqlAllocateStatement = (FuncDsqlAllocateStatement)
-		getEntryPoint(context, "isc_dsql_allocate_statement");
-	funcDsqlDescribe = (FuncDsqlDescribe) getEntryPoint(context, "isc_dsql_describe");
-	funcDsqlDescribeBind = (FuncDsqlDescribeBind) getEntryPoint(context, "isc_dsql_describe_bind");
-	funcDsqlExecute = (FuncDsqlExecute) getEntryPoint(context, "isc_dsql_execute");
-	funcDsqlExecute2 = (FuncDsqlExecute2) getEntryPoint(context, "isc_dsql_execute2");
-	funcDsqlFreeStatement = (FuncDsqlFreeStatement) getEntryPoint(context, "isc_dsql_free_statement");
-	funcDsqlPrepare = (FuncDsqlPrepare) getEntryPoint(context, "isc_dsql_prepare");
 
 	ISC_STATUS_ARRAY statusVector = {0};
 	isc_db_handle dbHandle = getIscDbHandle(context);
 	isc_tr_handle trHandle = getIscTrHandle(context);
 
 	stmtHandle = 0;
-	ThrowError::check(funcDsqlAllocateStatement(statusVector, &dbHandle, &stmtHandle), statusVector);
-	ThrowError::check(funcDsqlPrepare(statusVector, &trHandle, &stmtHandle, 0,
+	ThrowError::check(isc_dsql_allocate_statement(statusVector, &dbHandle, &stmtHandle), statusVector);
+	ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 		"select data_source from replicate_config where name = ?",
 		SQL_DIALECT_CURRENT, NULL), statusVector);
 
-	IMaster* master(funcGetMasterInterface());
 	AutoDispose<IStatus> status(master->getStatus());
 
 	const char* table = metadata->getTriggerTable(status);
@@ -372,7 +808,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 	inSqlDa->version = SQLDA_VERSION1;
 	inSqlDa->sqln = 1;
-	ThrowError::check(funcDsqlDescribeBind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+	ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 		statusVector);
 	inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 	strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
@@ -381,31 +817,35 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 	outSqlDa->version = SQLDA_VERSION1;
 	outSqlDa->sqln = 1;
-	ThrowError::check(funcDsqlDescribe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
+	ThrowError::check(isc_dsql_describe(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa),
 		statusVector);
 	outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 	outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-	ThrowError::check(funcDsqlExecute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+	ThrowError::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 		inSqlDa, outSqlDa), statusVector);
-	ThrowError::check(funcDsqlFreeStatement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+	ThrowError::check(isc_dsql_free_statement(statusVector, &stmtHandle, DSQL_unprepare), statusVector);
 
 	delete [] inSqlDa->sqlvar[0].sqldata;
 	delete [] reinterpret_cast<char*>(inSqlDa);
 	inSqlDa = NULL;
 
-	int count = values->getCount();
+	const IParametersMetadata* fields = metadata->getTriggerFields(status);
+	ThrowError::check(status->get());
+
+	unsigned count = fields->getCount(status);
+	ThrowError::check(status->get());
 
 	char buffer[65536];
 	strcpy(buffer, "execute block (\n");
 
-	for (int i = 1; i <= count; ++i)
+	for (unsigned i = 0; i < count; ++i)
 	{
-		if (i > 1)
+		if (i > 0)
 			strcat(buffer, ",\n");
 
-		Value* val = values->getValue(ThrowError(), i);
-		const char* name = val->getName(ThrowError());
+		const char* name = fields->getField(status, i);
+		ThrowError::check(status->get());
 
 		strcat(buffer, "    p");
 		sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
@@ -420,13 +860,13 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	strcat(buffer, table);
 	strcat(buffer, "\" (");
 
-	for (int i = 1; i <= count; ++i)
+	for (unsigned i = 0; i < count; ++i)
 	{
-		if (i > 1)
+		if (i > 0)
 			strcat(buffer, ", ");
 
-		Value* val = values->getValue(ThrowError(), i);
-		const char* name = val->getName(ThrowError());
+		const char* name = fields->getField(status, i);
+		ThrowError::check(status->get());
 
 		strcat(buffer, "\"");
 		strcat(buffer, name);
@@ -435,18 +875,18 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 
 	strcat(buffer, ") values (");
 
-	for (int i = 1; i <= count; ++i)
+	for (unsigned i = 0; i < count; ++i)
 	{
-		if (i > 1)
+		if (i > 0)
 			strcat(buffer, ", ");
 		strcat(buffer, "?");
 	}
 
 	strcat(buffer, ")') (");
 
-	for (int i = 1; i <= count; ++i)
+	for (unsigned i = 0; i < count; ++i)
 	{
-		if (i > 1)
+		if (i > 0)
 			strcat(buffer, ", ");
 		strcat(buffer, ":p");
 		sprintf(buffer + strlen(buffer), "%d", i);
@@ -456,27 +896,28 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 	strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 	strcat(buffer, "';\nend");
 
-	ThrowError::check(funcDsqlPrepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
+	ThrowError::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0, buffer,
 		SQL_DIALECT_CURRENT, NULL), statusVector);
 
 	inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(count))]);
 	inSqlDa->version = SQLDA_VERSION1;
 	inSqlDa->sqln = count;
-	ThrowError::check(funcDsqlDescribeBind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
+	ThrowError::check(isc_dsql_describe_bind(statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa),
 		statusVector);
 
-	for (int i = 0; i < count; ++i)
+	for (unsigned i = 0; i < count; ++i)
 	{
 		XSQLVAR* var = &inSqlDa->sqlvar[i];
 
 		switch (var->sqltype & ~1)
 		{
 			case SQL_TEXT:
-				var->sqltype = SQL_VARYING | (var->sqltype & 1);
-				// fall into
+				var->sqldata = new char[var->sqllen];
+				break;
 
 			case SQL_VARYING:
-				var->sqldata = new char[sizeof(short) + var->sqllen];
+				var->sqldata = new char[var->sqllen];
+				var->sqllen += sizeof(short);
 				break;
 
 			case SQL_SHORT:
@@ -493,6 +934,7 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 
 			case SQL_FLOAT:
 				var->sqltype = SQL_DOUBLE | (var->sqltype & 1);
+				var->sqllen = sizeof(double);
 				// fall into
 
 			case SQL_DOUBLE:
@@ -526,75 +968,38 @@ void FB_UDR_TRIGGER(replicate)::initialize(ExternalContext* context, Values* val
 
 FB_UDR_BEGIN_TRIGGER(replicate)
 {
-	Values* values = newValues;
+	initialize(context);
 
-	initialize(context, values);
+	AutoDispose<IStatus> status(master->getStatus());
 
-	int count = values->getCount();
+	const IParametersMetadata* fields = metadata->getTriggerFields(status);
+	ThrowError::check(status->get());
+
+	unsigned fieldsCount = fields->getCount(status);
+	ThrowError::check(status->get());
+
+	MessageImpl message(fieldsCount, newMsg);
 
 	ISC_STATUS_ARRAY statusVector = {0};
 	isc_db_handle dbHandle = getIscDbHandle(context);
 	isc_tr_handle trHandle = getIscTrHandle(context);
 
-	for (int i = 1; i <= count; ++i)
+	for (unsigned i = 1; i <= fieldsCount; ++i)
 	{
+		ParamDesc<void*> field(message, fields);
+
 		XSQLVAR* var = &inSqlDa->sqlvar[i - 1];
-		Value* val = values->getValue(ThrowError(), i);
 
-		if (val->isNull())
-		{
+		if (message.isNull(field))
 			*var->sqlind = -1;
-			continue;
-		}
 		else
-			*var->sqlind = 0;
-
-		switch (var->sqltype & ~1)
 		{
-			case SQL_VARYING:
-			{
-				unsigned len;
-				const char* s = val->getString(ThrowError(), &len);
-				*reinterpret_cast<unsigned short*>(var->sqldata) = len;
-				memcpy(var->sqldata + sizeof(unsigned short), s, len);
-				break;
-			}
-
-			case SQL_SHORT:
-				*reinterpret_cast<short*>(var->sqldata) = (short) val->getInt(
-					ThrowError(), var->sqlscale);
-				break;
-
-			case SQL_LONG:
-				*reinterpret_cast<int32*>(var->sqldata) = val->getInt(ThrowError(), var->sqlscale);
-				break;
-
-			case SQL_INT64:
-				*reinterpret_cast<int64*>(var->sqldata) = val->getBigInt(ThrowError(), var->sqlscale);
-				break;
-
-			case SQL_DOUBLE:
-				*reinterpret_cast<double*>(var->sqldata) = val->getDouble(ThrowError());
-				break;
-
-			case SQL_BLOB:
-			{
-				int64 blobId = val->getBlobId(ThrowError());
-				ISC_QUAD quad;
-				quad.gds_quad_low = ISC_ULONG(blobId);
-				quad.gds_quad_high = ISC_ULONG(blobId >> 32);
-				*reinterpret_cast<ISC_QUAD*>(var->sqldata) = quad;
-				break;
-			}
-
-			//// TODO: SQL_TYPE_DATE, SQL_TIMESTAMP, SQL_TYPE_TIME
-
-			default:
-				assert(false);
+			*var->sqlind = 0;
+			memcpy(var->sqldata, message[field], var->sqllen);
 		}
 	}
 
-	ThrowError::check(funcDsqlExecute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
+	ThrowError::check(isc_dsql_execute(statusVector, &trHandle, &stmtHandle, SQL_DIALECT_CURRENT,
 		inSqlDa), statusVector);
 }
 FB_UDR_END_TRIGGER(replicate)

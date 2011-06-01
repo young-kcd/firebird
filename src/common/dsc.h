@@ -348,6 +348,7 @@ typedef struct dsc
 #endif
 
 	const char* typeToText() const;
+	void getSqlInfo(SLONG* sqlLength, SLONG* sqlSubType, SLONG* sqlScale, SLONG* sqlType) const;
 #endif	// __cpluplus
 } DSC;
 

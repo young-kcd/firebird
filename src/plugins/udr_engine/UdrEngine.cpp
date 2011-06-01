@@ -247,13 +247,12 @@ public:
 		}
 	}
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context, Values* params,
-		Value* result)
+	virtual void FB_CALL execute(Error* error, ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)
 	{
 		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(
 			children, this, context, registeredFunctions, engine->functions, moduleName);
 		if (function)
-			function->execute(error, context, params, result);
+			function->execute(error, context, inMsg, outMsg);
 	}
 
 public:
@@ -274,6 +273,7 @@ class SharedProcedure : public ExternalProcedure
 public:
 	SharedProcedure(Engine* aEngine, const IRoutineMetadata* aMetadata)
 		: engine(aEngine),
+		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
 		  entryPoint(*getDefaultMemoryPool()),
 		  info(*getDefaultMemoryPool()),
@@ -314,13 +314,13 @@ public:
 	}
 
 	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
-		Values* params, Values* results)
+		UCHAR* inMsg, UCHAR* outMsg)
 	{
 		try
 		{
 			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
-			return procedure ? procedure->open(error, context, params, results) : NULL;
+			return procedure ? procedure->open(error, context, inMsg, outMsg) : NULL;
 		}
 		catch (const ThrowError::Exception& e)
 		{
@@ -388,12 +388,12 @@ public:
 	}
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
-		ExternalTrigger::Action action, const Values* oldValues, Values* newValues)
+		ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg)
 	{
 		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
 		if (trigger)
-			trigger->execute(error, context, action, oldValues, newValues);
+			trigger->execute(error, context, action, oldMsg, newMsg);
 	}
 
 public:

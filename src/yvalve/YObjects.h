@@ -130,9 +130,6 @@ public:
 
 			if (next)
 			{
-				// destroy() was not called - BUG in callers code !!!
-				fb_assert_continue(false);
-
 				++this->refCounter; // to be decremented in destroy()
 				++this->refCounter; // to avoid recursion
 				impl->destroy(); // destroy() must call release()
