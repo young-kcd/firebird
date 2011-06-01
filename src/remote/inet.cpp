@@ -435,6 +435,15 @@ inline void START_PORT_CRITICAL() { }
 inline void STOP_PORT_CRITICAL() { }
 #endif
 
+#if (defined(HPUX) && defined(__GNUC__) && SIZEOF_VOID_P == 8) 
+typedef int FbSocklenT;
+#define LEN_ARG(x) (socklen_t*)(x)
+#else
+typedef socklen_t FbSocklenT;
+#define LEN_ARG(x) x
+#endif
+
+
 
 rem_port* INET_analyze(Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
@@ -887,9 +896,9 @@ rem_port* INET_connect(const TEXT* name,
 		/* Get any values for SO_LINGER so that they can be reset during
 		 * disconnect.  SO_LINGER should be set by default on the socket
 		 */
-		socklen_t optlen = sizeof(port->port_linger);
+		FbSocklenT optlen = sizeof(port->port_linger);
 		n = getsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_LINGER,
-					   (SCHAR *) & port->port_linger, &optlen);
+					   (SCHAR *) & port->port_linger, LEN_ARG(&optlen));
 
 		if (n != 0)				/* getsockopt failed */
 			port->port_linger.l_onoff = 0;
@@ -955,9 +964,9 @@ rem_port* INET_connect(const TEXT* name,
 
 	while (true) {
 		THREAD_EXIT();
-		socklen_t l = sizeof(address);
+		FbSocklenT l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
-				   (struct sockaddr *) &address, &l);
+				   (struct sockaddr *) &address, LEN_ARG(&l));
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET) {
 			THREAD_ENTER();
@@ -1291,10 +1300,10 @@ static int accept_connection(rem_port* port,
 	port->port_protocol_str = REMOTE_make_string("TCPv4");
 
 	struct sockaddr_in address;
-	socklen_t l = sizeof(address);
+	FbSocklenT l = sizeof(address);
 
 	inet_zero(&address, sizeof(address));
-	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, LEN_ARG(&l));
 	if (status == 0) {
 		Firebird::string addr_str;
 		UCHAR* ip = (UCHAR*) &address.sin_addr;
@@ -1425,7 +1434,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
  **************************************/
 	struct sockaddr_in address;
 
-	socklen_t l = sizeof(address);
+	FbSocklenT l = sizeof(address);
 
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
@@ -1474,7 +1483,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		}
 
 		THREAD_EXIT();
-		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
+		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, LEN_ARG(&l));
 		inetErrNo = INET_ERRNO;
 		THREAD_ENTER();
 		
@@ -1517,9 +1526,9 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
  */
 
 	inet_zero(&address, sizeof(address));
-	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, &l);
+	int status = getpeername((SOCKET) port->port_handle, (struct sockaddr *) &address, LEN_ARG(&l));
 	if (status != 0) {
-		inet_error(port, "socket", isc_net_event_connect_err, INET_ERRNO);
+		inet_error(port, "getpeername", isc_net_event_connect_err, INET_ERRNO);
 		SOCLOSE(n);
 		return NULL;
 	}
@@ -1614,9 +1623,9 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		return NULL;
 	}
 
-	socklen_t length = sizeof(address);
+	FbSocklenT length = sizeof(address);
 
-	if (getsockname(n, (struct sockaddr *) &address, &length) < 0) {
+	if (getsockname(n, (struct sockaddr *) &address, LEN_ARG(&length)) < 0) {
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1638,7 +1647,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	P_RESP* response = &packet->p_resp;
 
 	struct sockaddr_in port_address;
-	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, &length) < 0) {
+	if (getsockname((SOCKET) port->port_handle, (struct sockaddr *) &port_address, LEN_ARG(&length)) < 0) {
 		inet_error(port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 		return NULL;
 	}
@@ -1711,9 +1720,9 @@ static int check_host(
  **************************************/
 	struct sockaddr_in address;
 
-	socklen_t length = sizeof(address);
+	FbSocklenT length = sizeof(address);
 
-	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, &length) == -1)
+	if (getpeername((int) port->port_handle, (struct sockaddr*)&address, LEN_ARG(&length)) == -1)
 		return 0;
 
 	// If source address is in the loopback net - trust it
@@ -2588,10 +2597,10 @@ static rem_port* select_accept( rem_port* main_port)
 	struct sockaddr_in address;
 
 	rem_port* port = alloc_port(main_port);
-	socklen_t l = sizeof(address);
+	FbSocklenT l = sizeof(address);
 
 	port->port_handle = (HANDLE) accept((SOCKET) main_port->port_handle,
-										(struct sockaddr *) &address, &l);
+										(struct sockaddr *) &address, LEN_ARG(&l));
 	if ((SOCKET) port->port_handle == INVALID_SOCKET) {
 		inet_error(port, "accept", isc_net_connect_err, INET_ERRNO);
 		disconnect(port);
@@ -2763,7 +2772,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 					// broken connection correctly
 
 					struct linger lngr;
-					socklen_t optlen = sizeof(lngr);
+					FbSocklenT optlen = sizeof(lngr);
 					const bool badSocket = 
 #ifdef WIN_NT
 						false;
@@ -2772,8 +2781,8 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 						((SOCKET) port->port_handle) >= FD_SETSIZE;
 #endif
 
-					if (badSocket || getsockopt((SOCKET) port->port_handle, 
-						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+					if (badSocket || getsockopt((SOCKET) port->port_handle,
+						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, LEN_ARG(&optlen)) != 0)
 					{
 						if (badSocket || INET_ERRNO == NOTASOCKET)
 						{

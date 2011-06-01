@@ -33,14 +33,27 @@
 #include <inttypes.h>
 #else
 
+#if defined(__HP_aCC)		// HP compiler
+#define _INTPTR_T_DEFINED	// defines intptr_t and uintptr_t
+#define _UINTPTR_T_DEFINED	// but misses appropriate macros
+#endif
+
 #if !defined(_INTPTR_T_DEFINED)
 #if defined(_WIN64)
 typedef __int64 intptr_t;
-typedef unsigned __int64 uintptr_t;
 #else
 typedef long intptr_t;
+#endif
+#define _INTPTR_T_DEFINED 1
+#endif
+
+#if !defined(_UINTPTR_T_DEFINED)
+#if defined(_WIN64)
+typedef unsigned __int64 uintptr_t;
+#else
 typedef unsigned long uintptr_t;
 #endif
+#define _UINTPTR_T_DEFINED 1
 #endif
 
 #endif
