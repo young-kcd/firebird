@@ -10327,7 +10327,7 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 			   " WHERE SUBSTRING(%s FROM %d FOR 32) < '999999999999999999999999999999' "
 			   "   AND %s STARTING WITH '%s' ORDER BY 1 DESC INTO :maxInTable; "
 			   " "
-			   " SELECT gen_id(%s, 0) FROM RDB$DATABASE INTO :currentGen; "
+			   " currentGen = gen_id(%s, 0); "
 			   " IF (currentGen < maxInTable) THEN "
 			   "  EXECUTE STATEMENT 'SET GENERATOR %s TO ' || maxInTable; "
 			   "END",
