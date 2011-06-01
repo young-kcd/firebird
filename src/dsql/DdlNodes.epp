@@ -1247,7 +1247,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 		}
 		catch (const status_exception& ex)
 		{
-			if (ex.value()[1] != isc_no_dup)
+			if (ex.value()[1] != isc_unique_key_violation)
 				throw;
 
 			if (++faults > MAX_SSHORT)
@@ -1995,7 +1995,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 		}
 		catch (const status_exception& ex)
 		{
-			if (ex.value()[1] != isc_no_dup)
+			if (ex.value()[1] != isc_unique_key_violation)
 				throw;
 
 			if (++faults > MAX_SSHORT)
@@ -4388,7 +4388,10 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 		}
 		catch (const status_exception& ex)
 		{
-			if (ex.value()[1] != isc_no_dup || ++faults > MAX_SSHORT)
+			if (ex.value()[1] != isc_unique_key_violation)
+				throw;
+
+			if (++faults > MAX_SSHORT)
 				throw;
 
 			fb_utils::init_status(tdbb->tdbb_status_vector);
@@ -4520,7 +4523,10 @@ void CreateSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const Meta
 		}
 		catch (const status_exception& ex)
 		{
-			if (ex.value()[1] != isc_no_dup || ++faults > MAX_SSHORT)
+			if (ex.value()[1] != isc_unique_key_violation)
+				throw;
+
+			if (++faults > MAX_SSHORT)
 				throw;
 
 			fb_utils::init_status(tdbb->tdbb_status_vector);
