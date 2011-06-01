@@ -161,6 +161,7 @@ USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT);
 void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT*, SINT64, const ISC_QUAD*);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
+void	fix_system_generators(BurpGlobals* tdgbl);
 void	general_on_error();
 #ifdef DEBUG
 UCHAR	debug_on = 0;   // able to turn this on in the debugger 
@@ -561,6 +562,9 @@ int RESTORE_restore (const TEXT* file_name,
 
 		MISC_release_request_silent(req_handle1);
 	}
+
+	// Fix values of system generators.
+	fix_system_generators(tdgbl);
 
 	COMMIT;
 	ON_ERROR
@@ -7841,6 +7845,81 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 	MISC_release_request_silent(req_handle2);
 }
 
+struct FixGenerator
+{
+	const char* name;
+	const char* table;
+	const char* field;
+	const char* prefix;
+};
+
+void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
+{
+/**************************************
+ *
+ *	f i x G e n e r a t o r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set value of system generator based on
+ *	current state of related table.
+ *
+ **************************************/
+
+	int start = strlen(g->prefix) + 1;
+
+	Firebird::string sql;
+	sql.printf("EXECUTE BLOCK AS "
+			   "DECLARE VARIABLE maxInTable INT; "
+			   "DECLARE VARIABLE currentGen INT; "
+			   "BEGIN "
+			   " SELECT FIRST(1) CAST(SUBSTRING(%s FROM %d FOR 32) AS INT) FROM %s "
+			   " WHERE SUBSTRING(%s FROM %d FOR 32) < '999999999999999999999999999999' "
+			   "   AND %s STARTING WITH '%s' ORDER BY 1 DESC INTO :maxInTable; "
+			   " "
+			   " currentGen = gen_id(%s, 0); "
+			   " IF (currentGen < maxInTable) THEN "
+			   "  EXECUTE STATEMENT 'SET GENERATOR %s TO ' || maxInTable; "
+			   "END",
+			   /* SELECT 1 */ g->field, start, g->table, g->field, start, g->field, g->prefix,
+			   /* SELECT 2 */ g->name,
+			   /* SET GEN  */ g->name);
+
+	if (isc_execute_immediate(isc_status, &DB, &gds_trans, 0, sql.c_str()) != 0)
+		general_on_error();
+}
+
+const FixGenerator genToFix[] = 
+{
+	{  "RDB$CONSTRAINT_NAME",	"RDB$RELATION_CONSTRAINTS",	"RDB$CONSTRAINT_NAME",	"INTEG_" },
+	{  "RDB$FIELD_NAME",		"RDB$FIELDS",				"RDB$FIELD_NAME",		"RDB$" },
+	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$" },
+	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$PRIMARY" },
+	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$FOREIGN" },
+	{  "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_" },
+	{ NULL, NULL, NULL, NULL }
+};
+
+void fix_system_generators(BurpGlobals* tdgbl)
+{
+/**************************************
+ *
+ *	f i x A l l G e n e r a t o r s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set value of system generators based on
+ *	current state of related tables.
+ *
+ **************************************/
+
+	for (const FixGenerator* g = genToFix; g->name; ++g)
+	{
+		fix_generator(tdgbl, g);
+	}
+}
 
 } // namespace
 
