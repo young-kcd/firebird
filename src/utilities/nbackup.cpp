@@ -475,12 +475,21 @@ void NBackup::open_database_scan()
 
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
+	{
+		// Non-root may fail when opening file of another user with O_NOATIME
+		dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | (direct_io ? O_DIRECT : 0));
+	}
+	if (dbase < 0)
+	{
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
+	}
 
 #ifdef POSIX_FADV_SEQUENTIAL
 	int rc = fb_fadvise(dbase, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (rc)
+	{
 		b_error::raise(uSvc, "Error (%d) in posix_fadvise(SEQUENTIAL) for %s", rc, dbname.c_str());
+	}
 #endif // POSIX_FADV_SEQUENTIAL
 #ifdef POSIX_FADV_NOREUSE
 	if (direct_io)
