@@ -2988,7 +2988,10 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 			YTransaction* transaction = attachment->startTransaction(&status,
 				vector->teb_tpb_length, vector->teb_tpb);
-			*traHandle = transaction->handle;
+
+			if (transaction)
+				*traHandle = transaction->handle;
+
 			return status[1];
 		}
 
