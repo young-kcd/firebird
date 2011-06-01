@@ -136,6 +136,8 @@ const char* const TRA_UNDO_SPACE = "fb_undo_";
 
 class jrd_tra : public pool_alloc<type_tra>
 {
+	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, SINT64> > > GenIdCache;
+
 public:
 	enum wait_t {
 		tra_no_wait,
@@ -165,7 +167,8 @@ public:
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
-		tra_user_management(NULL)
+		tra_user_management(NULL),
+		tra_gen_ids(NULL)
 	{
 		if (outer)
 		{
@@ -264,6 +267,7 @@ public:
 	//Transaction *tra_ext_two_phase;
 	JTransaction* tra_interface;
 	Firebird::ITransaction* tra_public_interface;
+	GenIdCache* tra_gen_ids;
 
 private:
 	TempSpace* tra_blob_space;	// temp blob storage
@@ -315,6 +319,16 @@ public:
 	}
 
 	UserManagement* getUserManagement();
+
+	GenIdCache* getGenIdCache()
+	{
+		if (!tra_gen_ids)
+		{
+			tra_gen_ids = FB_NEW(*tra_pool) GenIdCache(*tra_pool);
+		}
+
+		return tra_gen_ids;
+	}
 };
 
 // System transaction is always transaction 0.

@@ -3112,7 +3112,7 @@ static bool delete_exception(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 static bool create_generator(thread_db* tdbb,
 							 SSHORT phase,
 							 DeferredWork* work,
-							 jrd_tra* /*transaction*/)
+							 jrd_tra* transaction)
 {
 /**************************************
  *
@@ -3128,15 +3128,23 @@ static bool create_generator(thread_db* tdbb,
 
 	switch (phase)
 	{
-		case 1:
+	case 1:
+	case 2:
+		return true;
+
+	case 3:
+		{
+			const SLONG id = MET_lookup_generator(tdbb, work->dfw_name);
+			if (id >= 0)
 			{
-				const SLONG id = MET_lookup_generator(tdbb, work->dfw_name);
-				if (id >= 0)
-				{
-					DPM_gen_id(tdbb, id, true, 0);
-				}
+				fb_assert(id == work->dfw_id);
+				SINT64 value = 0;
+				if (transaction->getGenIdCache()->get(id, value))
+					transaction->getGenIdCache()->remove(id);
+				DPM_gen_id(tdbb, id, true, value);
 			}
-			break;
+		}
+		break;
 	}
 
 	return false;

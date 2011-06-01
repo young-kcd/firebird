@@ -3551,6 +3551,7 @@ jrd_tra::~jrd_tra()
 	delete tra_undo_record;
 	delete tra_undo_space;
 	delete tra_user_management;
+	delete tra_gen_ids;
 
 	if (!tra_outer)
 	{

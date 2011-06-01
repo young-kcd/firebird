@@ -3059,7 +3059,12 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_gens:
 			EVL_field(0, rpb->rpb_record, f_gen_name, &desc);
-			DFW_post_work(transaction, dfw_create_generator, &desc, 0);
+			EVL_field(0, rpb->rpb_record, f_gen_id, &desc2);
+			{
+				const USHORT id = MOV_get_long(&desc2, 0);
+				transaction->getGenIdCache()->put(id, 0);
+				DFW_post_work(transaction, dfw_create_generator, &desc, id);
+			}
 			break;
 
 		default:    // Shut up compiler warnings

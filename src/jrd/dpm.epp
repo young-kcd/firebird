@@ -1194,6 +1194,27 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	}
 #endif
 
+	// For the uncommited transaction, values are stored in the transaction-level cache,
+	// so look there as the first attempt
+
+	jrd_tra* const transaction = tdbb->getTransaction();
+	if (transaction && transaction->tra_gen_ids)
+	{
+		SINT64 value;
+		if (transaction->tra_gen_ids->get(generator, value))
+		{
+			if (initialize)
+				value = val;
+			else
+				value += val;
+
+			transaction->tra_gen_ids->put(generator, value);
+			return value;
+		}
+	}
+
+	// Now fetch the proper generator page and read the value from there
+
 	const USHORT sequence = generator / dbb->dbb_page_manager.gensPerPage;
 	const USHORT offset = generator % dbb->dbb_page_manager.gensPerPage;
 
@@ -1257,7 +1278,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 		}
 	}
 
-	SINT64 value = *ptr;
+	const SINT64 value = *ptr;
 
 	CCH_RELEASE(tdbb, &window);
 
