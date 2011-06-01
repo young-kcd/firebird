@@ -1077,7 +1077,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 	SLONG start, max;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -1096,7 +1096,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_lock_timeout) <<
 				 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
-		return false;
+		break;
 
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
@@ -1206,7 +1206,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	Firebird::PathName expanded_fname;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -1357,16 +1357,14 @@ static bool add_difference(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 	case 2:
 		return true;
+
 	case 3:
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
@@ -1378,8 +1376,7 @@ static bool add_difference(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->setDifference(tdbb, work->dfw_name.c_str());
 		}
-
-		return false;
+		break;
 	}
 
 	return false;
@@ -1399,15 +1396,14 @@ static bool delete_difference(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 	case 2:
 		return true;
+
 	case 3:
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
@@ -1419,8 +1415,7 @@ static bool delete_difference(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_
 			}
 			dbb->dbb_backup_manager->setDifference(tdbb, NULL);
 		}
-
-		return false;
+		break;
 	}
 
 	return false;
@@ -1439,18 +1434,17 @@ static bool begin_backup(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_tra*)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 	case 2:
 		return true;
+
 	case 3:
 		dbb->dbb_backup_manager->beginBackup(tdbb);
-		return false;
+		break;
 	}
 
 	return false;
@@ -1469,19 +1463,18 @@ static bool end_backup(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_tra*)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 	case 2:
 		return true;
+
 	case 3:
 		// End backup normally
 		dbb->dbb_backup_manager->endBackup(tdbb, false);
-		return false;
+		break;
 	}
 
 	return false;
@@ -1721,17 +1714,17 @@ static bool user_management(thread_db* /*tdbb*/, SSHORT phase, DeferredWork* wor
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 	case 2:
 		return true;
+
 	case 3:
 		transaction->getUserManagement()->execute(work->dfw_id);
 		return true;
+
 	case 4:
 		transaction->getUserManagement()->commit();	// safe to be called multiple times
-		return false;
+		break;
 	}
 
 	return false;
@@ -1745,12 +1738,10 @@ static bool drop_package_header(thread_db* tdbb, SSHORT phase, DeferredWork* wor
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_body, transaction);
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_header, transaction);
-		return false;
+		break;
 	}
 
 	return false;
@@ -1764,11 +1755,9 @@ static bool drop_package_body(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	switch (phase)
 	{
-	case 0:
-		return false;
 	case 1:
 		MET_delete_dependencies(tdbb, work->dfw_name, obj_package_body, transaction);
-		return false;
+		break;
 	}
 
 	return false;
@@ -2966,13 +2955,10 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
  **************************************/
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 		{
 			const USHORT charSetId = TTYPE_TO_CHARSET(work->dfw_id);
@@ -3026,7 +3012,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 			END_FOR
 		}
 
-		return true;
+		break;
 	}
 
 	return false;
@@ -3051,9 +3037,6 @@ static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_collation, transaction);
 		return true;
@@ -3063,7 +3046,7 @@ static bool delete_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	case 3:
 		INTL_texttype_unload(tdbb, work->dfw_id);
-		return true;
+		break;
 	}
 
 	return false;
@@ -3088,20 +3071,8 @@ static bool delete_exception(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, obj_exception, transaction);
-		return true;
-
-	case 2:
-		return true;
-
-	case 3:
-		return true;
-
-	case 4:
 		break;
 	}
 
@@ -3171,18 +3142,10 @@ static bool delete_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	switch (phase)
 	{
-		case 0:
-			return false;
-		case 1:
-			check_system_generator(gen_name, dfw_delete_generator);
-			check_dependencies(tdbb, gen_name, NULL, NULL, obj_generator, transaction);
-			return true;
-		case 2:
-			return true;
-		case 3:
-			return true;
-		case 4:
-			break;
+	case 1:
+		check_system_generator(gen_name, dfw_delete_generator);
+		check_dependencies(tdbb, gen_name, NULL, NULL, obj_generator, transaction);
+		break;
 	}
 
 	return false;
@@ -3210,22 +3173,13 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 
 	switch (phase)
 	{
-		case 0:
-			return false;
-		case 1:
-			check_system_generator(gen_name, dfw_modify_generator);
-			if (work->dfw_id) // != 0 means not only the desc was changed.
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
-						 Arg::Gds(isc_random) << Arg::Str("Only can modify description for user generators."));
-
-			return true;
-		case 2:
-			return true;
-		case 3:
-			return true;
-		case 4:
-			break;
+	case 1:
+		check_system_generator(gen_name, dfw_modify_generator);
+		if (work->dfw_id) // != 0 means not only the desc was changed.
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
+					 Arg::Gds(isc_random) << Arg::Str("Only can modify description for user generators."));
+		break;
 	}
 
 	return false;
@@ -3252,9 +3206,6 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 		{
 			const Firebird::MetaName depName(work->dfw_name);
@@ -3316,7 +3267,7 @@ static bool delete_field(thread_db*	tdbb, SSHORT phase, DeferredWork* work, jrd_
 	AutoRequest handle;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	switch (phase)
 	{
@@ -3383,9 +3334,6 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	switch (phase)
 	{
-	case 0:
-		return false;
-
 	case 1:
 		{
 			const Firebird::MetaName depName(work->dfw_name);
@@ -3891,10 +3839,6 @@ static bool delete_parameter(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_t
 							   obj_procedure, transaction);
 		}
 		*/
-	case 2:
-		return true;
-
-	case 3:
 		break;
 	}
 
@@ -5535,9 +5479,8 @@ static bool modify_function(thread_db*	tdbb, SSHORT phase, DeferredWork* work, j
 		}
 		return false;
 	}
-	case 1:
-		return true;
 
+	case 1:
 	case 2:
 		return true;
 
@@ -5735,9 +5678,8 @@ static bool modify_procedure(thread_db*	tdbb, SSHORT phase, DeferredWork* work, 
 		}
 		return false;
 	}
-	case 1:
-		return true;
 
+	case 1:
 	case 2:
 		return true;
 
