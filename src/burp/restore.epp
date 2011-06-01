@@ -10366,6 +10366,9 @@ void fix_system_generators(BurpGlobals* tdgbl)
  *
  **************************************/
 
+	BURP_verbose (350);
+	// msg 350 fixing system generators
+
 	for (const FixGenerator* g = genToFix; g->name; ++g)
 	{
 		fix_generator(tdgbl, g);
