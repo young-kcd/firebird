@@ -461,6 +461,11 @@ void NBackup::open_database_scan()
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
 	{
+		// Non-root may fail when opening file of another user with O_NOATIME
+		dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | (direct_io ? O_DIRECT : 0));
+	}
+	if (dbase < 0)
+	{
 		status_exception::raise(Arg::Gds(isc_nbackup_err_opendb) << dbname.c_str() << Arg::OsError());
 	}
 
