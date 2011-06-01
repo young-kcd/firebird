@@ -108,10 +108,6 @@
 
 const char* TEMP_DIR = "/tmp";
 
-const char* INTERBASE_USER_NAME		= "interbase";
-const char* INTERBASE_USER_SHORT	= "interbas";
-const char* FIREBIRD_USER_NAME		= "firebird";
-
 static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 

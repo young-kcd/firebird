@@ -63,10 +63,6 @@ const USHORT NORMAL_EXIT= 0;
 
 const char* const SERVER_BINARY			= "firebird";
 
-const char* const INTERBASE_USER		= "interbase";
-const char* const FIREBIRD_USER			= "firebird";
-const char* const INTERBASE_USER_SHORT	= "interbas";
-
 const char* const GUARD_FILE	= "fb_guard";
 
 volatile sig_atomic_t shutting_down;
@@ -130,19 +126,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 
 	} // while
-
-	// check user id
-	Firebird::string user_name;		// holds the user name
-	ISC_get_user(&user_name, NULL, NULL);
-
-	if (user_name != INTERBASE_USER && user_name != "root" && user_name != FIREBIRD_USER &&
-		user_name != INTERBASE_USER_SHORT)
-	{
-		// invalid user bail out
-		fprintf(stderr, "%s: Invalid user (must be %s, %s, %s or root).\n",
-				   prog_name, FIREBIRD_USER, INTERBASE_USER, INTERBASE_USER_SHORT);
-		exit(-2);
-	}
 
 	// get and set the umask for the current process
 	const ULONG new_mask = 0000;
