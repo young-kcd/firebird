@@ -29,6 +29,22 @@
 #include "firebird.h"
 #include "../burp/burp_proto.h"
 #include "../common/classes/auto.h"
+#include "../jrd/ibase.h"
+
+
+static int shutdownCallback(const int reason, const int, void*)
+{
+	static bool recursion = false;
+
+	if (!recursion)
+	{
+		recursion = true;
+		fb_shutdown(0, reason);
+		recursion = false;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
 
 
 int CLIB_ROUTINE main( int argc, char* argv[])
@@ -43,6 +59,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	Invoke real gbak main function
  *
  **************************************/
+	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
+
 	Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));
  	return gbak(uSvc);
 }
