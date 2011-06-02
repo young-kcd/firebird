@@ -164,11 +164,11 @@ public:
 		tra_sorts(*p),
 		tra_interface(NULL),
 		tra_public_interface(NULL),
+		tra_gen_ids(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
-		tra_user_management(NULL),
-		tra_gen_ids(NULL)
+		tra_user_management(NULL)
 	{
 		if (outer)
 		{
