@@ -1,3 +1,59 @@
+ 2011-06-01 17:29  dimitr 
+   M src/jrd/dfw.epp
+Cleanup.
+
+ 2011-06-01 17:03  dimitr 
+   M src/jrd/dpm.epp
+Misc.
+
+ 2011-06-01 16:58  dimitr 
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Better (I hope) solution for CORE-3058: New generators are created with wrong value when more than 32K generators was previously created. It also resolves the [temporary] inability to restore generator values.
+
+ 2011-06-01 16:44  dimitr 
+   M src/dsql/DdlNodes.epp
+Fixed the error handling broken after introducing system constraints.
+
+ 2011-06-01 14:09  hvlad 
+   M src/yvalve/why.cpp
+Fixed AV when transaction start failed
+
+ 2011-06-01 12:16  alexpeshkoff 
+   M src/utilities/nbackup/nbackup.cpp
+Fixed CORE-3199: nackup fails due to O_NOATIME flag in database open
+
+ 2011-06-01 10:52  alexpeshkoff 
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/utilities/guard/guard.cpp
+Fixed CORE-3250: Cannot start firebird server under any username other than "root", "firebird" , "interbas"or "interbase"
+
+ 2011-06-01 10:38  alexpeshkoff 
+   M src/include/consts_pub.h
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Fixed CORE-3462: Add metadata only restore to Services API
+
+ 2011-06-01 09:36  alexpeshkoff 
+   M src/burp/restore.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Add verbose message for CORE-3461
+
+ 2011-06-01 08:04  alexpeshkoff 
+   M src/burp/restore.epp
+Simplification - thanks to Vlad
+
+ 2011-06-01 07:47  alexpeshkoff 
+   M src/burp/restore.epp
+Fixed CORE-3461: DDL operations fail after backup/restore
+
+ 2011-06-01 06:57  alexpeshkoff 
+   M src/jrd/met.epp
+Misc
+
  2011-06-01 01:44  asfernandes 
    M builds/posix/Makefile.in.plugins_examples
    M builds/win32/msvc10/engine.vcxproj
