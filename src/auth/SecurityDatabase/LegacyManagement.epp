@@ -40,7 +40,7 @@
 #include "../auth/SecurityDatabase/LegacyManagement.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 
 // Here we use version-independent symbolic link (or copy) of actual database
 DATABASE database = STATIC FILENAME "security.fdb";

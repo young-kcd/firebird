@@ -670,7 +670,7 @@ bool MET_trigger_exists(gpre_dbb* /*db*/, const TEXT* /*trigger_name*/)
 	return false;
 }
 
-#include "Interface.h"
+#include "firebird/Interface.h"
 
 using namespace Firebird;
 

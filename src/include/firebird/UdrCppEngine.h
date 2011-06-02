@@ -23,9 +23,8 @@
 #ifndef FIREBIRD_PLUGIN_UDR_CPP
 #define FIREBIRD_PLUGIN_UDR_CPP
 
-#include "FirebirdApi.h"
-#include "FirebirdExternalApi.h"
-#include "FirebirdUdr.h"
+#include "./ExternalEngine.h"
+#include "./UdrEngine.h"
 #ifndef JRD_IBASE_H
 #include "ibase.h"
 #include "iberror.h"

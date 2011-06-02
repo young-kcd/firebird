@@ -24,7 +24,7 @@
 #ifndef COMMON_STATEMENT_METADATA_H
 #define COMMON_STATEMENT_METADATA_H
 
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "iberror.h"
 #include "../common/classes/Nullable.h"
 #include "../common/classes/array.h"

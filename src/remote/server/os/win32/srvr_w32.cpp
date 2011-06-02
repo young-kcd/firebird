@@ -107,7 +107,7 @@
 #include "../remote/os/win32/xnet_proto.h"
 #include "../yvalve/gds_proto.h"
 
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"

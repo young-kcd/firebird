@@ -29,7 +29,7 @@
 #ifndef FB_AUTH_INTERFACE
 #define FB_AUTH_INTERFACE
 
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 
 namespace Firebird {
 class IStatus;

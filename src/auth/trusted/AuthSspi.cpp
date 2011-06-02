@@ -30,7 +30,7 @@
 #ifdef TRUSTED_AUTH
 
 #include "../common/classes/ClumpletReader.h"
-#include "Interface.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 
 using namespace Firebird;

@@ -57,7 +57,7 @@
 #include "../jrd/scl.h"
 #include "../jrd/Routine.h"
 #include "../jrd/ExtEngineManager.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 
 #ifdef DEV_BUILD
 //#define DEBUG                   if (debug) DBG_supervisor(debug);

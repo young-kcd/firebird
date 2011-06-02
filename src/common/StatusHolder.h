@@ -29,7 +29,7 @@
 #ifndef FB_STATUS_HOLDER
 #define FB_STATUS_HOLDER
 
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ImplementHelper.h"
 

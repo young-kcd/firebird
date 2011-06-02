@@ -1,6 +1,6 @@
 #include "firebird.h"
 
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 
 #include <string.h>
 #include <errno.h>

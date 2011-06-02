@@ -29,7 +29,7 @@
 #include "../common/isc_s_proto.h"
 #include "../common/file_params.h"
 #include "../jrd/que.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 
 // Global section header
 

@@ -32,7 +32,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "../common/classes/ImplementHelper.h"
 namespace Jrd {
 

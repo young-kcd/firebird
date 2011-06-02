@@ -23,8 +23,7 @@
 #ifndef FIREBIRD_UDR_H
 #define FIREBIRD_UDR_H
 
-#include "FirebirdApi.h"
-#include "FirebirdExternalApi.h"
+#include "./ExternalEngine.h"
 
 
 namespace Firebird

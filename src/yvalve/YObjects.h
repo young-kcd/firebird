@@ -27,7 +27,7 @@
 #define YVALVE_Y_OBJECTS_H
 
 #include "firebird.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "gen/iberror.h"
 #include "../common/common.h"
 #include "../common/StatusHolder.h"

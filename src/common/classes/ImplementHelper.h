@@ -29,9 +29,9 @@
 #ifndef FB_COMMON_CLASSES_IMPLEMENT_HELPER
 #define FB_COMMON_CLASSES_IMPLEMENT_HELPER
 
-#include "FirebirdPluginApi.h"
-#include "Timer.h"
-#include "ProviderInterface.h"
+#include "firebird/Plugin.h"
+#include "firebird/Timer.h"
+#include "firebird/Provider.h"
 #include "../common/classes/alloc.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"

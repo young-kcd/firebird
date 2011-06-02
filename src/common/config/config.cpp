@@ -28,7 +28,7 @@
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
 #include "../common/os/fbsyslog.h"
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

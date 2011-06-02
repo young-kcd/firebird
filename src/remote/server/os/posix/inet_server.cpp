@@ -87,7 +87,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/fb_string.h"
 
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
 #include "../auth/trusted/AuthSspi.h"

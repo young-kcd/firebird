@@ -63,7 +63,7 @@
 #include "../common/classes/DbImplementation.h"
 #include "../common/Auth.h"
 #include "../common/classes/GetPlugins.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "../common/StatementMetadata.h"
 
 #include "../auth/SecurityDatabase/LegacyClient.h"

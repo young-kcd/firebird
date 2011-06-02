@@ -62,7 +62,7 @@
 #ifndef FIREBIRD_PLUGIN_API_H
 #define FIREBIRD_PLUGIN_API_H
 
-#include "Interface.h"
+#include "./Interface.h"
 
 #define FB_PLUGIN_ENTRY_POINT		firebird_plugin
 

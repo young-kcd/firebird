@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird basic API
- *	MODULE:			YValveInterface.h
+ *	MODULE:			YValvefirebird/Interface.h
  *	DESCRIPTION:	Interfaces, used by yValve
  *
  *  The contents of this file are subject to the Initial
@@ -29,8 +29,8 @@
 #ifndef FB_PROVIDER_INTERFACE
 #define FB_PROVIDER_INTERFACE
 
-#include "firebird.h"
-#include "FirebirdPluginApi.h"
+#include "firebird.h"	//// FIXME:
+#include "./Plugin.h"
 
 namespace Firebird {
 

@@ -30,7 +30,7 @@
 #define JRD_ERROR_IMPL_H
 
 #include "FirebirdApi.h"
-#include "FirebirdExternalApi.h"
+#include "firebird/ExternalEngine.h"
 #include "iberror.h"
 
 namespace Jrd {

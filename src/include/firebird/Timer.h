@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird interface.
- *	MODULE:			Timer.h
+ *	MODULE:			firebird/Timer.h
  *	DESCRIPTION:	Timer interface defnition.
  *
  *  The contents of this file are subject to the Initial
@@ -29,7 +29,7 @@
 #ifndef FIREBIRD_TIMER_H
 #define FIREBIRD_TIMER_H
 
-#include "Interface.h"
+#include "./Interface.h"
 
 namespace Firebird {
 

@@ -35,7 +35,7 @@
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;

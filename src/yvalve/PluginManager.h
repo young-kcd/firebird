@@ -23,7 +23,7 @@
 #ifndef YVALVE_PLUGIN_MANAGER_H
 #define YVALVE_PLUGIN_MANAGER_H
 
-#include "FirebirdPluginApi.h"
+#include "firebird/Plugin.h"
 #include "../common/classes/ImplementHelper.h"
 
 #include "../common/common.h"

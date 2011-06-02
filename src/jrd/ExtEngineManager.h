@@ -24,7 +24,7 @@
 #define JRD_EXT_ENGINE_MANAGER_H
 
 #include "FirebirdApi.h"
-#include "FirebirdExternalApi.h"
+#include "firebird/ExternalEngine.h"
 #include "../common/common.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"

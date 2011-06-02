@@ -43,7 +43,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ImplementHelper.h"
-#include "Timer.h"
+#include "firebird/Timer.h"
 
 using namespace Firebird;
 

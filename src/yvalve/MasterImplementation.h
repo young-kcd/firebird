@@ -30,7 +30,7 @@
 #define YVALVE_MASTER_IMPLEMENTATION_H
 
 #include "firebird.h"
-#include "Interface.h"
+#include "firebird/Interface.h"
 #include "../yvalve/YObjects.h"
 #include "../common/classes/ImplementHelper.h"
 

@@ -28,7 +28,7 @@
  */
 
 #include "firebird.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "memory_routines.h"
 #include "gen/iberror.h"
 #include "gen/msg_facs.h"

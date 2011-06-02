@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:		Firebird interface.
- *	MODULE:			Interface.h
+ *	MODULE:			firebird/Interface.h
  *	DESCRIPTION:	Base class for all FB interfaces / plugins.
  *
  *  The contents of this file are subject to the Initial
@@ -29,7 +29,7 @@
 #ifndef FB_INCLUDE_INTERFACE
 #define FB_INCLUDE_INTERFACE
 
-#include "types_pub.h"
+#include "types_pub.h"	//// FIXME:
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define FB_CARG __cdecl

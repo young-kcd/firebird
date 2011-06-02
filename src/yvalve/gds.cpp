@@ -36,7 +36,7 @@
 //#define ISC_TIME_SECONDS_PRECISION_SCALE	-4
 
 #include "firebird.h"
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -23,7 +23,7 @@
 #ifndef JRD_ENGINE_INTERFACE_H
 #define JRD_ENGINE_INTERFACE_H
 
-#include "ProviderInterface.h"
+#include "firebird/Provider.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/StatementMetadata.h"
 #include "../common/classes/RefCounted.h"

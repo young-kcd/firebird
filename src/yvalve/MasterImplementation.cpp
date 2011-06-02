@@ -27,8 +27,8 @@
  */
 
 #include "firebird.h"
-#include "Interface.h"
-#include "Timer.h"
+#include "firebird/Interface.h"
+#include "firebird/Timer.h"
 
 #include "../yvalve/MasterImplementation.h"
 #include "../common/classes/init.h"

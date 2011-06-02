@@ -30,8 +30,8 @@
 #define FIREBIRD_EXTERNAL_API_H
 
 #include "FirebirdApi.h"
-#include "FirebirdPluginApi.h"
-#include "ProviderInterface.h"
+#include "./Plugin.h"
+#include "./Provider.h"
 
 
 namespace Firebird {
