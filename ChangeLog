@@ -1,3 +1,12 @@
+ 2011-06-01 08:55  alexpeshkoff 
+   M src/burp/restore.epp
+Backported CORE-3461: DDL operations fail after backup/restore
+
+ 2011-06-01 08:07  alexpeshkoff 
+   M src/include/types_pub.h
+   M src/remote/inet.cpp
+HPUX/PARISC port - awful hack to avoid errors in OS
+
  2011-05-25 10:56  dimitr 
    M src/jrd/evl.cpp
 Fixed CORE-3493: Adding a value to a timestamp below '16.11.1858 00:00:01' throws 'value exceeds the range for valid timestamp'. v2.1 wasn't really affected although the validation sequence was wrong.
