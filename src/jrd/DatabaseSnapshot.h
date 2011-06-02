@@ -191,7 +191,7 @@ public:
 	};
 
 	void clearRecord(Record*);
-	void putField(thread_db*, Record*, const DumpField&, int&, bool = false);
+	void putField(thread_db*, Record*, const DumpField&, int);
 
 private:
 	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
