@@ -24,6 +24,8 @@
 #ifndef DSQL_SQLDA_H
 #define DSQL_SQLDA_H
 
+#include "../jrd/gds_proto.h"
+
 // SQLDA dialects
 
 const USHORT DIALECT_sqlda	= 0;
@@ -52,6 +54,10 @@ struct SQLDA
 
 // Structure to support conversion of SQLDA's to messages
 
+// enum would be troblesome here
+const USHORT DASUP_CLAUSE_select	= 0;
+const USHORT DASUP_CLAUSE_bind		= 1;
+
 struct sqlda_sup
 {
 	struct dasup_clause
@@ -69,11 +75,50 @@ struct sqlda_sup
 	USHORT	dasup_dialect;		// Dialect associated with statement
 	USHORT	dasup_stmt_type;	// Type of statement
 
-};
+public:
+	sqlda_sup()
+	{
+		init();
+	}
 
-// enum would be troblesome here
-const USHORT DASUP_CLAUSE_select	= 0;
-const USHORT DASUP_CLAUSE_bind		= 1;
+	void reset()
+	{
+		release();
+		init();
+	}
+
+	~sqlda_sup()
+	{
+		release();
+	}
+
+private:
+	void freeIfSet(SCHAR** pMem)
+	{
+		if (*pMem)
+		{
+			gds__free(*pMem);
+			*pMem = 0;
+		}
+	}
+
+	void init()
+	{
+		memset(dasup_clauses, 0, sizeof(dasup_clauses));
+		dasup_dialect = 0;
+		dasup_stmt_type = 0;
+	}
+
+	void release()
+	{
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_bind].dasup_blr);
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_select].dasup_blr);
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_bind].dasup_msg);
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_select].dasup_msg);
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_bind].dasup_info_buf);
+		freeIfSet(&dasup_clauses[DASUP_CLAUSE_select].dasup_info_buf);
+	}
+};
 
 #include "../dsql/sqlda_pub.h"
 

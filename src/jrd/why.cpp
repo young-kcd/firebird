@@ -178,7 +178,6 @@ static SCHAR *alloc(SLONG);
 static void free_block(void*);
 static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
 										  const int proc, const ISC_STATUS specCode = 0);
-static void release_dsql_support(sqlda_sup&);
 
 namespace Jrd {
 	class Attachment;
@@ -542,7 +541,6 @@ namespace Why
 			: BaseHandle(hType(), pub, par), handle(h)
 		{
 			parent->statements.toParent(this);
-			memset(&das, 0, sizeof das);
 		}
 
 		void checkPrepared() const
@@ -558,15 +556,6 @@ namespace Why
 			h->release_user_handle();
 			h->parent->statements.fromParent(h);
 			drop(h);
-		}
-
-	private:
-		~CStatement()
-		{
-			if (parent->destroying())
-			{
-				release_dsql_support(das);
-			}
 		}
 	};
 
@@ -2819,7 +2808,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 	Status status(user_status);
 	ISC_STATUS s = 0;
 	sqlda_sup dasup;
-	memset(&dasup, 0, sizeof(sqlda_sup));
 
 	try
 	{
@@ -2865,7 +2853,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 		s = status[1];
 	}
 
-	release_dsql_support(dasup);
 	return s;
 }
 
@@ -3359,7 +3346,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS* user_status,
 
 		if (option & DSQL_drop)
 		{
-			release_dsql_support(statement->das);
 			destroy(statement);
 			*stmt_handle = 0;
 		}
@@ -3444,7 +3430,6 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
 		YEntry entryGuard(status, statement);
 
 		statement->checkPrepared();
-		//sqlda_sup& dasup = statement->das;
 
 		CALL(PROC_DSQL_INSERT, statement->implementation) (status, &statement->handle,
 														   blr_length, blr,
@@ -3501,8 +3486,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 								buffer))
 		{
 			statement->flags &= ~HANDLE_STATEMENT_prepared;
-			release_dsql_support(dasup);
-			memset(&dasup, 0, sizeof(dasup));
+			dasup.reset();
 
 			dasup.dasup_dialect = dialect;
 
@@ -5755,38 +5739,6 @@ static ISC_STATUS prepare(ISC_STATUS* user_status, Transaction transaction)
 		free_block(description);
 
 	return FB_SUCCESS;
-}
-
-
-inline void why_priv_gds__free_if_set(SCHAR** pMem)
-{
-	if (*pMem)
-	{
-		gds__free(*pMem);
-		*pMem = 0;
-	}
-}
-
-static void release_dsql_support(sqlda_sup& dasup)
-{
-/**************************************
- *
- *	r e l e a s e _ d s q l _ s u p p o r t
- *
- **************************************
- *
- * Functional description
- *	Release some memory.
- *
- **************************************/
-	sqlda_sup::dasup_clause* pClauses = dasup.dasup_clauses;
-
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_bind].dasup_blr);
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_blr);
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_bind].dasup_msg);
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_msg);
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_bind].dasup_info_buf);
-	why_priv_gds__free_if_set(&pClauses[DASUP_CLAUSE_select].dasup_info_buf);
 }
 
 
