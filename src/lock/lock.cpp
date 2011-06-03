@@ -1436,6 +1436,11 @@ static void acquire( SRQ_PTR owner_offset)
 
 	if (status != FB_SUCCESS) {
 		if (ISC_mutex_lock(MUTEX)) {
+			if (errno == EINVAL && owner_offset == DUMMY_OWNER_SHUTDOWN)
+			{
+				// shutdown requested - but there is no mutex, i,e. no manager process
+				exit(0);
+			}
 			bug(NULL, "semop failed (acquire)");
 		}
 	}
