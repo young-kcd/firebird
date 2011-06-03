@@ -1,3 +1,16 @@
+ 2011-06-02 13:48  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed CORE-3508: MON$DATABASE_NAME and MON$ATTACHMENT_NAME fields contain question marks instead of non-ASCII characters regardless of the connection charset.
+
+ 2011-06-02 08:42  alexpeshkoff 
+   M src/dsql/sqlda.h
+   M src/jrd/why.cpp
+Fixed CORE-3151: memory allocated in sqlda_sup may be not released in some cases
+
+ 2011-06-02 07:45  alexpeshkoff 
+   M src/burp/burpMain.cpp
+Fixed CORE-3150: segmentation fault in gbak when interrupted with Ctrl-C
+
  2011-06-01 12:17  alexpeshkoff 
    M src/utilities/nbackup.cpp
 Backported CORE-3199: nackup fails due to O_NOATIME flag in database open
