@@ -387,8 +387,26 @@ ULONG IntlUtil::cvtUtf16ToUtf8(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 }
 
 
-INTL_BOOL IntlUtil::utf8WellFormed(charset* cs, ULONG len, const UCHAR* str,
-	ULONG* offendingPos)
+INTL_BOOL IntlUtil::asciiWellFormed(charset* cs, ULONG len, const UCHAR* str, ULONG* offendingPos)
+{
+	fb_assert(cs != NULL);
+	fb_assert(str != NULL);
+
+	for (const UCHAR* p = str, *const end = str + len; p != end; ++p, --len)
+	{
+		if (*p > 127)
+		{
+			if (offendingPos)
+				*offendingPos = p - str;
+			return false;	// malformed
+		}
+	}
+
+	return true;	// well-formed
+}
+
+
+INTL_BOOL IntlUtil::utf8WellFormed(charset* cs, ULONG len, const UCHAR* str, ULONG* offendingPos)
 {
 	fb_assert(cs != NULL);
 	return UnicodeUtil::utf8WellFormed(len, str, offendingPos);
@@ -398,6 +416,8 @@ INTL_BOOL IntlUtil::utf8WellFormed(charset* cs, ULONG len, const UCHAR* str,
 void IntlUtil::initAsciiCharset(charset* cs)
 {
 	initNarrowCharset(cs, "ASCII");
+	cs->charset_fn_well_formed = asciiWellFormed;
+
 	initConvert(&cs->charset_to_unicode, cvtAsciiToUtf16);
 	initConvert(&cs->charset_from_unicode, cvtUtf16ToAscii);
 }
