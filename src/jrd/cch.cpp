@@ -1266,10 +1266,10 @@ bool CCH_free_page(thread_db* tdbb)
 	if ((bcb->bcb_flags & BCB_free_pending) &&
 		(bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1)))
 	{
-		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
-			CCH_unwind(tdbb, false);
+		if (write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
+			return true;
 
-		return true;
+		CCH_unwind(tdbb, false);
 	}
 
 	return false;
