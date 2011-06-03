@@ -55,7 +55,7 @@ addLibs() {
 	libTarget=$libTdir/$libScript
 
 	rm -f $libTarget
-	touch $libTarget
+	echo '#!/bin/sh' >$libTarget
 	for i in posixLibrary.sh @FIREBIRD_ARCH_TYPE@Library.sh freebsdLibrary.sh
 	do
 		echo "# $i" >>$libTarget
@@ -167,18 +167,20 @@ copyFiles() {
 	cp -f $BuiltFBDir/bin/fbguard ${TargetDir}@FB_SBINDIR@
     copyIfExists $BuiltFBDir/bin/fb_lock_print ${TargetDir}@FB_SBINDIR@
 	copyIfExists $BuiltFBDir/bin/fbmgr.bin ${TargetDir}@FB_SBINDIR@
-
-    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
-    addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh ${TargetDir}@FB_SBINDIR@
-    cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
-    cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
+#    cp $BuiltFBDir/bin/fb_config ${TargetDir}@FB_SBINDIR@
 
 	chown root:wheel ${TargetDir}@FB_SBINDIR@/*
 	chmod 0755 ${TargetDir}@FB_SBINDIR@/*
-	chmod 0700 ${TargetDir}@FB_SBINDIR@/*.sh
+
+#    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh ${TargetDir}@FB_SBINDIR@
+#    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh ${TargetDir}@FB_SBINDIR@
+#    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh ${TargetDir}@FB_SBINDIR@
+#    addLibs $BuiltFBDir/bin changeGdsLibraryCompatibleLink.sh ${TargetDir}@FB_SBINDIR@
+#    cp $BuiltFBDir/bin/createAliasDB.sh ${TargetDir}@FB_SBINDIR@
+	if [ "@FIREBIRD_ARCH_TYPE@" = "classic" ]; then
+    	addLibs $BuildRootDir/gen/firebird/bin changeMultiConnectMode.sh ${TargetDir}@FB_SBINDIR@
+		chmod 0700 ${TargetDir}@FB_SBINDIR@/*.sh
+	fi
 
 	#install scripts
     addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
@@ -296,13 +298,15 @@ copyFiles() {
     cp $BuildRootDir/src/misc/upgrade/v2/security_database*		${TargetDir}@FB_MISCDIR@/upgrade/security
     cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	${TargetDir}@FB_MISCDIR@/upgrade/metadata
 
+	cp $BuildRootDir/gen/install/misc/firebird_daemon_startup_script	${TargetDir}@FB_MISCDIR@
+
     chown -R root:wheel ${TargetDir}@FB_MISCDIR@
     chmod -R go-rwx ${TargetDir}@FB_MISCDIR@
 
 	#conf
-    cp $BuildRootDir/gen/install/misc/firebird.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuildRootDir/gen/install/misc/aliases.conf ${TargetDir}@FB_CONFDIR@
-    cp $BuildRootDir/gen/install/misc/fbtrace.conf ${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/firebird.conf				${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/aliases.conf				${TargetDir}@FB_CONFDIR@
+    cp $BuildRootDir/gen/install/misc/fbtrace.conf				${TargetDir}@FB_CONFDIR@
 
 	chown root:wheel ${TargetDir}@FB_CONFDIR@/*.conf
 	chmod 0644 ${TargetDir}@FB_CONFDIR@/*.conf
@@ -423,30 +427,56 @@ fi
 
 fixFilePermissions
 
-# remove any existing gds service
+# remove any existing gds services
 cp /etc/services /etc/services.old
 cp /etc/inetd.conf /etc/inetd.conf.old
 cat /etc/services |grep -v @FB_SERVICE_NAME@ >/etc/services.new
 cat /etc/inetd.conf |grep -v @FB_SERVICE_NAME@ >/etc/inetd.conf.new
 mv /etc/services.new /etc/services
 mv /etc/inetd.conf.new /etc/inetd.conf
+rm -f /etc/rc.d/*firebird*
 
-# add the gds service and restart inetd
-cat >>/etc/services <<EOF
+# shared lib and lock dir startup script
+if [ -d /etc/rc.d ]; then
+	cat > /etc/rc.d/000.firebird.sh <<EOC
+#!/bin/sh
+[ -d @FB_LIBDIR@ ] && /sbin/ldconfig -m @FB_LIBDIR@
+[ -d /tmp/firebird ] || (rm -f /tmp/firebird; mkdir /tmp/firebird)
+chown -R firebird:firebird /tmp/firebird
+chmod -R 0660 /tmp/firebird
+chmod 0770 /tmp/firebird
+EOC
+	chmod a=rx /etc/rc.d/000.firebird.sh
+	. /etc/rc.d/000.firebird.sh
+fi
+
+# add the gds service
+if [ "@FIREBIRD_ARCH_TYPE@" = "classic" ]; then
+	cat >>/etc/services <<EOF
 @FB_SERVICE_NAME@		@FB_SERVICE_PORT@/tcp  #Firebird Database Remote Protocol
 EOF
-cat >>/etc/inetd.conf <<EOF
+
+	cat >>/etc/inetd.conf <<EOF
 @FB_SERVICE_NAME@	stream	tcp	nowait	firebird	${TargetDir}@FB_SBINDIR@/fb_inet_server  fb_inet_server
 EOF
+
+fi
+
+# reset make env
+FIREBIRD_LOCK=
+export FIREBIRD_LOCK
+
+# restart inetd
 if [ -f /var/run/inetd.pid ]; then
-        kill -HUP `cat /var/run/inetd.pid`
+	kill -HUP `cat /var/run/inetd.pid`
+	sleep 1			# Give it time to reload
 fi
 
-# shared lib startup script
-if [ -d /etc/rc.d ]; then
-	(
-	echo "#!/bin/sh"; echo "[ -d @FB_LIBDIR@ ] && /sbin/ldconfig -m @FB_LIBDIR@"
-	) > /etc/rc.d/000.firebird.sh
-	chmod a=rx /etc/rc.d/000.firebird.sh
+# add firebird startup script
+if [ "@FIREBIRD_ARCH_TYPE@" = "super" ]; then
+	initScript=/etc/rc.d/firebird
+	rm -f $initScript
+	cp @FB_MISCDIR@/firebird_daemon_startup_script $initScript
+	chmod a=rx $initScript
+	$initScript start
 fi
-

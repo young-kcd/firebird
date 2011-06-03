@@ -148,7 +148,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -eaf$psOptions | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`ps $psOptions | grep inetd | grep -v grep | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -202,7 +202,7 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
-	checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
+	checkString=`ps $psOptions | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
 	then
 		serverMode=super
@@ -217,7 +217,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
+    checkString=`ps $psOptions | egrep "\b(fb_smp_server)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird SuperClassic server seems to be running."
@@ -225,7 +225,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+    checkString=`ps $psOptions | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -233,7 +233,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(fb_inet_server|fb_smp_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps $psOptions | egrep "\b(fb_inet_server|fb_smp_server|gds_pipe)\b" |grep -v grep`
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -244,7 +244,7 @@ checkIfServerRunning() {
 
 # The following check for running interbase or firebird 1.0 servers.
 
-    checkString=`ps -ef$psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+    checkString=`ps $psOptions | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -253,7 +253,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -ef$psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps $psOptions | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 

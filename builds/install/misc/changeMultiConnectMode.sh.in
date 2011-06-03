@@ -52,7 +52,7 @@ removeInetdServiceEntry
 removeServiceAutostart
 
 echo "Starting firebird in multi$multiAnswer mode..."
-if [ $multiAnswer == process ]; then
+if [ $multiAnswer = process ]; then
 	updateInetdServiceEntry
 	resetInetdServer
 else

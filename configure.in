@@ -1330,6 +1330,7 @@ case "$PLATFORM" in
     ;;
   FREEBSD)
     AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in
+                     gen/install/misc/firebird_daemon_startup_script:builds/install/arch-specific/freebsd/firebird_daemon_startup_script.in
                      gen/firebird/bin/freebsdLibrary.sh:builds/install/arch-specific/freebsd/freebsdLibrary.sh.in]
       ,[chmod a+x gen/install/*.sh gen/firebird/bin/*sh 2>/dev/null])
     ;;
