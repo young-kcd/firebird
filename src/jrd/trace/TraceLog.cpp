@@ -193,8 +193,13 @@ size_t TraceLog::write(const void* buf, size_t size)
 			// While this instance of writer was idle, new log file was created.
 			// More, if current file was already read by reader, we must delete it.
 			::close(m_fileHandle);
-			if (m_fileNum < sh_mem_header->readFileNum) {
+			if (m_fileNum < sh_mem_header->readFileNum)
+			{
 				removeFile(m_fileNum);
+			}
+			if (m_fileNum == sh_mem_header->writeFileNum)
+			{
+				++sh_mem_header->writeFileNum;
 			}
 			m_fileNum = sh_mem_header->writeFileNum;
 			m_fileHandle = openFile(m_fileNum);
