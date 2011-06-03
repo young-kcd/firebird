@@ -1,3 +1,60 @@
+ 2011-06-02 15:57  asfernandes 
+   M src/jrd/tra.h
+Warning.
+
+ 2011-06-02 15:57  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/auth/AuthInterface.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/common/StatementMetadata.h
+   M src/common/StatusHolder.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/config/config.cpp
+   M src/common/fb_exception.cpp
+   M src/common/utils_proto.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   D src/include/FirebirdExternalApi.h
+   D src/include/FirebirdPluginApi.h
+   D src/include/FirebirdUdr.h
+   D src/include/FirebirdUdrCpp.h
+   D src/include/Interface.h
+   D src/include/ProviderInterface.h
+   D src/include/Timer.h
+   A src/include/firebird
+   A src/include/firebird/ExternalEngine.h (from /firebird/trunk/src/include/FirebirdExternalApi.h:53092)
+   A src/include/firebird/Interface.h (from /firebird/trunk/src/include/Interface.h:53092)
+   A src/include/firebird/Plugin.h (from /firebird/trunk/src/include/FirebirdPluginApi.h:53092)
+   A src/include/firebird/Provider.h (from /firebird/trunk/src/include/ProviderInterface.h:53092)
+   A src/include/firebird/Timer.h (from /firebird/trunk/src/include/Timer.h:53092)
+   A src/include/firebird/UdrCppEngine.h (from /firebird/trunk/src/include/FirebirdUdrCpp.h:53092)
+   A src/include/firebird/UdrEngine.h (from /firebird/trunk/src/include/FirebirdUdr.h:53092)
+   M src/jrd/EngineInterface.h
+   M src/jrd/ErrorImpl.h
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/blb.h
+   M src/jrd/event.h
+   M src/jrd/jrd.h
+   M src/jrd/ntrace.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/gds.cpp
+   M src/yvalve/why.cpp
+Move v3 public include files to src/include/firebird.
+
+ 2011-06-02 14:19  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+Fixed CORE-3508: MON$DATABASE_NAME and MON$ATTACHMENT_NAME fields contain question marks instead of non-ASCII characters regardless of the connection charset.
+
  2011-06-01 17:29  dimitr 
    M src/jrd/dfw.epp
 Cleanup.
