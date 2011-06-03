@@ -162,9 +162,9 @@ public:
 		tra_outer(outer),
 		tra_transactions(*p),
 		tra_sorts(*p),
-		tra_interface(NULL),
 		tra_public_interface(NULL),
 		tra_gen_ids(NULL),
+		tra_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
@@ -222,6 +222,9 @@ public:
 		return tra_attachment->att_dsql_instance;
 	}
 
+	JTransaction* getInterface();
+	void setInterface(JTransaction* jt);
+
 	FB_API_HANDLE tra_public_handle;	// Public handle
 	Attachment* tra_attachment;			// database attachment
 	SLONG tra_number;					// transaction number
@@ -265,11 +268,11 @@ public:
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
-	JTransaction* tra_interface;
 	Firebird::ITransaction* tra_public_interface;
 	GenIdCache* tra_gen_ids;
 
 private:
+	JTransaction* tra_interface;
 	TempSpace* tra_blob_space;	// temp blob storage
 	TempSpace* tra_undo_space;	// undo log storage
 
@@ -336,24 +339,25 @@ const SLONG TRA_system_transaction = 0;
 
 // Flag definitions for tra_flags.
 
-const ULONG TRA_system				= 1L;		// system transaction
-const ULONG TRA_prepared			= 2L;		// transaction is in limbo
-const ULONG TRA_reconnected			= 4L;		// reconnect in progress
-const ULONG TRA_degree3				= 8L;		// serializeable transaction
-const ULONG TRA_write				= 16L;		// transaction has written
-const ULONG TRA_readonly			= 32L;		// transaction is readonly
-const ULONG TRA_prepare2			= 64L;		// transaction has updated RDB$TRANSACTIONS
-const ULONG TRA_ignore_limbo		= 128L;		// ignore transactions in limbo
-const ULONG TRA_invalidated 		= 256L;		// transaction invalidated by failed write
-const ULONG TRA_deferred_meta 		= 512L;		// deferred meta work posted
-const ULONG TRA_read_committed		= 1024L;	// can see latest committed records
-const ULONG TRA_autocommit			= 2048L;	// autocommits all updates
-const ULONG TRA_perform_autocommit	= 4096L;	// indicates autocommit is necessary
-const ULONG TRA_rec_version			= 8192L;	// don't wait for uncommitted versions
-const ULONG TRA_restart_requests	= 16384L;	// restart all requests in attachment
-const ULONG TRA_no_auto_undo		= 32768L;	// don't start a savepoint in TRA_start
-const ULONG TRA_cancel_request		= 65536L;	// cancel active request, if any
-const ULONG TRA_precommitted		= 131072L;	// transaction committed at startup
+const ULONG TRA_system				= 0x1L;		// system transaction
+const ULONG TRA_prepared			= 0x2L;		// transaction is in limbo
+const ULONG TRA_reconnected			= 0x4L;		// reconnect in progress
+const ULONG TRA_degree3				= 0x8L;		// serializeable transaction
+const ULONG TRA_write				= 0x10L;	// transaction has written
+const ULONG TRA_readonly			= 0x20L;	// transaction is readonly
+const ULONG TRA_prepare2			= 0x40L;	// transaction has updated RDB$TRANSACTIONS
+const ULONG TRA_ignore_limbo		= 0x80L;	// ignore transactions in limbo
+const ULONG TRA_invalidated 		= 0x100L;	// transaction invalidated by failed write
+const ULONG TRA_deferred_meta 		= 0x200L;	// deferred meta work posted
+const ULONG TRA_read_committed		= 0x400L;	// can see latest committed records
+const ULONG TRA_autocommit			= 0x800L;	// autocommits all updates
+const ULONG TRA_perform_autocommit	= 0x1000L;	// indicates autocommit is necessary
+const ULONG TRA_rec_version			= 0x2000L;	// don't wait for uncommitted versions
+const ULONG TRA_restart_requests	= 0x4000L;	// restart all requests in attachment
+const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
+const ULONG TRA_cancel_request		= 0x10000L;	// cancel active request, if any
+const ULONG TRA_precommitted		= 0x20000L;	// transaction committed at startup
+const ULONG TRA_own_interface		= 0x40000L;	// tra_interface was created for internal needs
 
 const int TRA_MASK				= 3;
 //const int TRA_BITS_PER_TRANS	= 2;

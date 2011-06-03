@@ -3304,7 +3304,7 @@ JTransaction* JAttachment::reconnectTransaction(IStatus* user_status, unsigned i
 	successful_completion(user_status);
 
 	JTransaction* jt = new JTransaction(tra, this);
-	tra->tra_interface = jt;
+	tra->setInterface(jt);
 	jt->addRef();
 	return jt;
 }
@@ -4037,7 +4037,7 @@ JTransaction* JAttachment::startTransaction(IStatus* user_status,
 	successful_completion(user_status);
 
 	JTransaction* jt = new JTransaction(tra, this);
-	tra->tra_interface = jt;
+	tra->setInterface(jt);
 	jt->addRef();
 	return jt;
 }
@@ -4331,13 +4331,13 @@ JTransaction* JStatement::execute(IStatus* user_status, Firebird::ITransaction* 
 			else if (tra && !jt)
 			{
 				jt = new JTransaction(tra, getAttachment());
-				tra->tra_interface = jt;
+				tra->setInterface(jt);
 				jt->addRef();
 			}
 			else if (tra && jt)
 			{
 				jt->setHandle(tra);
-				tra->tra_interface = jt;
+				tra->setInterface(jt);
 			}
 		}
 		catch (const Exception& ex)
@@ -4401,12 +4401,12 @@ JTransaction* JAttachment::execute(IStatus* user_status, Firebird::ITransaction*
 			{
 				jt = new JTransaction(tra, this);
 				jt->addRef();
-				tra->tra_interface = jt;
+				tra->setInterface(jt);
 			}
 			else if (tra && jt)
 			{
 				jt->setHandle(tra);
-				tra->tra_interface = jt;
+				tra->setInterface(jt);
 			}
 		}
 		catch (const Exception& ex)

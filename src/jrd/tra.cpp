@@ -3559,6 +3559,32 @@ jrd_tra::~jrd_tra()
 	}
 
 	DFW_delete_deferred(this, -1);
+
+	if (tra_flags & TRA_own_interface)
+	{
+		tra_interface->setHandle(NULL);
+		tra_interface->release();
+	}
+}
+
+
+JTransaction* jrd_tra::getInterface()
+{
+	if (!tra_interface)
+	{
+		tra_flags |= TRA_own_interface;
+		tra_interface = new JTransaction(this, tra_attachment->att_interface);
+		tra_interface->addRef();
+	}
+
+	return tra_interface;
+}
+
+
+void jrd_tra::setInterface(JTransaction* jt)
+{
+	fb_assert(tra_interface == NULL || tra_interface == jt);
+	tra_interface = jt;
 }
 
 

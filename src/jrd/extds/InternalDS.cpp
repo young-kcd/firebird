@@ -265,7 +265,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 	fb_assert(!m_transaction);
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
-		m_transaction = tdbb->getTransaction()->tra_interface;
+		m_transaction = tdbb->getTransaction()->getInterface();
 	}
 	else
 	{
