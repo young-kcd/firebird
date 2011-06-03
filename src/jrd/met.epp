@@ -4835,7 +4835,8 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 
 	if (!vector)
 	{
-		vector = FB_NEW(*relation->rel_pool) trig_vec(*relation->rel_pool);
+		MemoryPool* pool = relation ? relation->rel_pool : attachment->att_pool;
+		vector = FB_NEW(*pool) trig_vec(*pool);
 		*ptr = vector;
 	}
 
