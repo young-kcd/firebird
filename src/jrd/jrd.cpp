@@ -1446,14 +1446,17 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 					break;
 				}
 
+				CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
+
 				switch (options.dpb_sql_dialect)
 				{
 				case SQL_DIALECT_V5:
 					{
 						strip_quotes(userId.usr_sql_role_name);
-						userId.usr_sql_role_name.upper();
+						IntlUtil::toUpper(utf8CharSet, userId.usr_sql_role_name);
 					}
 					break;
+
 				case SQL_DIALECT_V6_TRANSITION:
 				case SQL_DIALECT_V6:
 					{
@@ -1482,11 +1485,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 							}
 						}
 						else
-						{
-							role.upper();
-						}
+							IntlUtil::toUpper(utf8CharSet, role);
 					}
 					break;
+
 				default:
 					break;
 				}
