@@ -1,3 +1,21 @@
+ 2011-06-03 16:58  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2011-06-03 14:10  alexpeshkoff 
+   M src/jrd/trace/TraceLog.cpp
+Backported CORE-3512: Server hangs when trace is running
+
+ 2011-06-03 09:52  alexpeshkoff 
+   A builds/install/arch-specific/freebsd/firebird_daemon_startup_script.in
+   M builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+   M builds/install/arch-specific/freebsd/install.sh.in
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+   M builds/install/misc/changeMultiConnectMode.sh.in
+   M builds/install/misc/posixLibrary.sh.in
+   M configure.in
+Fixed CORE-2921: 'make install' does not work on freebsd
+
  2011-06-02 13:48  dimitr 
    M src/jrd/DatabaseSnapshot.cpp
 Fixed CORE-3508: MON$DATABASE_NAME and MON$ATTACHMENT_NAME fields contain question marks instead of non-ASCII characters regardless of the connection charset.
