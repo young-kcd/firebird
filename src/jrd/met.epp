@@ -2487,7 +2487,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
 		}
 
 		relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
-		
+
 		if (!X.RDB$RELATION_TYPE.NULL)
 		{
 			relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
@@ -2571,7 +2571,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 		}
 
 		relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
-		
+
 		if (!X.RDB$RELATION_TYPE.NULL)
 		{
 			relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);

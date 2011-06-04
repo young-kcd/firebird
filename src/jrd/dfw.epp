@@ -4038,12 +4038,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		relation = MET_lookup_relation_id(tdbb, work->dfw_id, false);
-		if (!relation) {
+		if (!relation)
 			return false;
-		}
 
-		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL, 
-			relation->isView() ? obj_view : obj_relation, transaction);
+		check_dependencies(tdbb, work->dfw_name.c_str(), NULL, NULL,
+			(relation->isView() ? obj_view : obj_relation), transaction);
 		return true;
 
 	case 2:
@@ -4262,7 +4261,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 		if ( (relation = MET_lookup_relation_id(tdbb, work->dfw_id, false)) )
 		{
 			check_dependencies(tdbb, relation->rel_name.c_str(), work->dfw_name.c_str(), NULL,
-							   relation->isView() ? obj_view : obj_relation,
+							   (relation->isView() ? obj_view : obj_relation),
 							   transaction);
 		}
 

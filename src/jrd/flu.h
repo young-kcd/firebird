@@ -48,7 +48,7 @@ namespace Jrd
 			ModuleLoader::Module* handle;
 			Firebird::PathName originalName, loadName;
 
-			void *findSymbol(const Firebird::string& name)
+			void* findSymbol(const Firebird::string& name)
 			{
 				if (! handle)
 				{
@@ -62,7 +62,8 @@ namespace Jrd
 						   const Firebird::PathName& on,
 						   const Firebird::PathName& ln)
 				: handle(h),
-					originalName(p, on), loadName(p, ln)
+				  originalName(p, on),
+				  loadName(p, ln)
 			{ }
 
 			~InternalModule();

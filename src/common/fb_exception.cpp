@@ -1,7 +1,5 @@
 #include "firebird.h"
-
 #include "firebird/Provider.h"
-
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>

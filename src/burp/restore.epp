@@ -10339,15 +10339,15 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 		general_on_error();
 }
 
-const FixGenerator genToFix[] = 
+static const FixGenerator genToFix[] =
 {
-	{  "RDB$CONSTRAINT_NAME",	"RDB$RELATION_CONSTRAINTS",	"RDB$CONSTRAINT_NAME",	"INTEG_" },
-	{  "RDB$FIELD_NAME",		"RDB$FIELDS",				"RDB$FIELD_NAME",		"RDB$" },
-	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$" },
-	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$PRIMARY" },
-	{  "RDB$INDEX_NAME",		"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$FOREIGN" },
-	{  "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_" },
-//	   "RDB$BACKUP_HISTORY"		// unused ???
+	{ "RDB$CONSTRAINT_NAME",	"RDB$RELATION_CONSTRAINTS",	"RDB$CONSTRAINT_NAME",	"INTEG_" },
+	{ "RDB$FIELD_NAME",			"RDB$FIELDS",				"RDB$FIELD_NAME",		"RDB$" },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$" },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$PRIMARY" },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$FOREIGN" },
+	{ "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_" },
+	///"RDB$BACKUP_HISTORY"	// unused ???
 	{ "RDB$GENERATOR_NAME",		"RDB$GENERATORS",			"RDB$GENERATOR_NAME",	"RDB$" },
 	{ NULL, NULL, NULL, NULL }
 };

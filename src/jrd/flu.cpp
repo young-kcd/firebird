@@ -241,7 +241,7 @@ namespace Jrd
 			// Search for module name in UdfAccess restricted
 			// paths list
 			PathUtils::splitLastComponent(path, relative, fixedModule);
-			if (path.length() == 0 && PathUtils::isRelative(fixedModule))
+			if (path.isEmpty() && PathUtils::isRelative(fixedModule))
 			{
 				path = fixedModule;
 				if (! iUdfDirectoryList().expandFileName(fixedModule, path))
