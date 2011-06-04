@@ -756,29 +756,33 @@ ExtEngineManager::Trigger* ExtEngineManager::makeTrigger(thread_db* tdbb, const 
 	metadata->entryPoint = entryPointTrimmed;
 	metadata->body = body;
 	metadata->triggerType = type;
-	if (trg->relation)
-		metadata->triggerTable = trg->relation->rel_name;
-	metadata->triggerFields = FB_NEW(pool) StatementMetadata::Parameters(pool);
 
 	jrd_rel* relation = trg->relation;
-	Format* relFormat = relation->rel_current_format;
 
-	for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+	if (relation)
 	{
-		jrd_fld* field = (*relation->rel_fields)[i];
-		if (!field)
-			continue;
+		metadata->triggerTable = relation->rel_name;
+		metadata->triggerFields = FB_NEW(pool) StatementMetadata::Parameters(pool);
 
-		SLONG sqlLen, sqlSubType, sqlScale, sqlType;
-		relFormat->fmt_desc[i].getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+		Format* relFormat = relation->rel_current_format;
 
-		StatementMetadata::Parameters::Item& item = metadata->triggerFields->items.add();
-		item.field = field->fld_name.c_str();
-		item.type = sqlType;
-		item.subType = sqlSubType;
-		item.length = sqlLen;
-		item.scale = sqlScale;
-		item.nullable = !field->fld_not_null;
+		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+		{
+			jrd_fld* field = (*relation->rel_fields)[i];
+			if (!field)
+				continue;
+
+			SLONG sqlLen, sqlSubType, sqlScale, sqlType;
+			relFormat->fmt_desc[i].getSqlInfo(&sqlLen, &sqlSubType, &sqlScale, &sqlType);
+
+			StatementMetadata::Parameters::Item& item = metadata->triggerFields->items.add();
+			item.field = field->fld_name.c_str();
+			item.type = sqlType;
+			item.subType = sqlSubType;
+			item.length = sqlLen;
+			item.scale = sqlScale;
+			item.nullable = !field->fld_not_null;
+		}
 	}
 
 	ExternalTrigger* externalTrigger;
