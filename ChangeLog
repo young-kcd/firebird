@@ -1,3 +1,7 @@
+ 2011-06-03 12:24  alexpeshkoff 
+   M src/lock/lock.cpp
+Fixed CORE-3510: gds_drop utility prints an error when trying to shutdown missing lock manager process
+
  2011-06-01 08:55  alexpeshkoff 
    M src/burp/restore.epp
 Backported CORE-3461: DDL operations fail after backup/restore
