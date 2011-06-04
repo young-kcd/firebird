@@ -28,8 +28,10 @@
 #define JRD_INTLUTIL_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/fb_string.h"
+#include "../common/classes/init.h"
 #include "../jrd/intlobj_new.h"
 
 namespace Jrd
@@ -46,6 +48,11 @@ public:
 	typedef GenericMap<SpecificAttribute> SpecificAttributesMap;
 
 public:
+	static Jrd::CharSet* getUtf8CharSet()
+	{
+		return utf8CharSet->charSet;
+	}
+
 	static string generateSpecificAttributes(Jrd::CharSet* cs, SpecificAttributesMap& map);
 	static bool parseSpecificAttributes(Jrd::CharSet* cs, ULONG len, const UCHAR* s,
 										SpecificAttributesMap* map);
@@ -77,6 +84,7 @@ public:
 		const ULONG* exceptions);
 	static ULONG toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst,
 		const ULONG* exceptions);
+	static void toUpper(Jrd::CharSet* cs, string& s);
 
 	static bool readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size);
 
@@ -91,6 +99,19 @@ private:
 
 	static bool readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size,
 		bool returnEscape);
+
+private:
+	class Utf8CharSet
+	{
+	public:
+		Utf8CharSet(MemoryPool& pool);
+
+	public:
+		charset obj;
+		AutoPtr<Jrd::CharSet> charSet;
+	};
+
+	static GlobalPtr<Utf8CharSet> utf8CharSet;
 };
 
 }	// namespace Firebird

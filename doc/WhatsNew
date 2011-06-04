@@ -7,6 +7,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-3511
+        Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly.
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-3508
         MON$DATABASE_NAME and MON$ATTACHMENT_NAME fields contain question marks
         instead of non-ASCII characters regardless of the connection charset

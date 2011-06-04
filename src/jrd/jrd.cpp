@@ -1082,6 +1082,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		attachment->att_requested_role = userId.usr_sql_role_name;
 
+		CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
+
 		switch (options.dpb_sql_dialect)
 		{
 		case 0:
@@ -1120,7 +1122,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		case SQL_DIALECT_V5:
 			{
 				strip_quotes(userId.usr_sql_role_name);
-				userId.usr_sql_role_name.upper();
+				IntlUtil::toUpper(utf8CharSet, userId.usr_sql_role_name);
 			}
 			break;
 		case SQL_DIALECT_V6_TRANSITION:
@@ -1151,9 +1153,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					}
 				}
 				else
-				{
-					role.upper();
-				}
+					IntlUtil::toUpper(utf8CharSet, role);
 			}
 			break;
 		default:
