@@ -1,3 +1,54 @@
+ 2011-06-04 02:18  asfernandes 
+   M builds/install/misc/posixLibrary.sh.in
+   M src/burp/restore.epp
+   M src/common/fb_exception.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/flu.cpp
+   M src/jrd/flu.h
+   M src/jrd/met.epp
+Misc.
+
+ 2011-06-04 02:18  asfernandes 
+   M src/jrd/ExtEngineManager.cpp
+Fix for external database/DDL trigger.
+
+ 2011-06-03 19:12  asfernandes 
+   M src/common/IntlUtil.cpp
+   M src/common/IntlUtil.h
+Fixed CORE-3416 - Inserting K?\195?\164se into a CHARACTER SET ASCII column succeeds.
+
+ 2011-06-03 17:39  asfernandes 
+   M src/jrd/met.epp
+Fix problem with database triggers.
+
+ 2011-06-03 17:08  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3479 - ASCII_VAL raises error instead of return 0 for empty strings.
+
+ 2011-06-03 15:29  alexpeshkoff 
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Fixed segfault in execute statement, reported by Dmitry privately
+
+ 2011-06-03 14:19  asfernandes 
+   M src/common/IntlUtil.cpp
+   M src/common/IntlUtil.h
+   M src/jrd/jrd.cpp
+Fixed CORE-3511 - Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly.
+
+ 2011-06-03 14:09  alexpeshkoff 
+   M src/jrd/trace/TraceLog.cpp
+Fixed CORE-3512: Server hangs when trace is running (big thanks to Vlad)
+
+ 2011-06-03 08:25  hvlad 
+   M src/jrd/cch.cpp
+Fixed mistake noted by Claudio
+
  2011-06-02 15:57  asfernandes 
    M src/jrd/tra.h
 Warning.
