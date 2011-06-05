@@ -299,6 +299,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	Record* old_data = NULL;
 	Record* gc_rec2 = NULL;
 
+	bool samePage;
+	bool deleted;
+
 	if ((temp.rpb_flags & rpb_deleted) && (!(temp.rpb_flags & rpb_delta)))
 		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 	else
@@ -389,25 +392,53 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	if (!rpb->rpb_b_page)
 	{
-		delete_record(tdbb, rpb, (SLONG) 0, 0);
 		if (!(rpb->rpb_flags & rpb_deleted))
 		{
+			DPM_backout_mark(tdbb, rpb, transaction);
+
 			RecordStack empty_staying;
 			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			going.pop();
+
+			if (!DPM_get(tdbb, rpb, LCK_write))
+				BUGCHECK(186);	// msg 186 record disappeared
 		}
+
+		delete_record(tdbb, rpb, (SLONG) 0, 0);
 		goto gc_cleanup;
 	}
 
 	// If both record versions are on the same page, things are a little simpler
 
-	if (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior)
+	samePage = (rpb->rpb_page == temp.rpb_page && !rpb->rpb_prior);
+	deleted = (temp2.rpb_flags & rpb_deleted);
+	if (!deleted)
+	{
+		DPM_backout_mark(tdbb, rpb, transaction);
+
+		rpb->rpb_prior = NULL;
+		list_staying(tdbb, rpb, staying);
+		BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
+		IDX_garbage_collect(tdbb, rpb, going, staying);
+
+		if (going.hasData())
+		{
+			going.pop();
+		}
+
+		clearRecordStack(staying);
+
+		if (!DPM_get(tdbb, rpb, LCK_write))
+			BUGCHECK(186);	// msg 186 record disappeared
+	}
+
+	if (samePage)
 	{
 		DPM_backout(tdbb, rpb);
-		if (temp2.rpb_flags & rpb_deleted)
-			goto gc_cleanup;
-		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
+		if (!deleted) {
+			delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
+		}
 	}
 	else
 	{
@@ -424,20 +455,18 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		rpb->rpb_transaction_nr = temp.rpb_transaction_nr;
 		rpb->rpb_format_number = temp.rpb_format_number;
 
-		if (temp2.rpb_flags & rpb_deleted)
+		if (deleted)
 		{
 			replace_record(tdbb, rpb, 0, transaction);
-			if (!DPM_fetch(tdbb, &temp, LCK_write))
-				BUGCHECK(291);	// msg 291 cannot find record back version
-			delete_record(tdbb, &temp, rpb->rpb_page, 0);
-			goto gc_cleanup;
 		}
+		else
+		{
+			// There is cleanup to be done.  Bring the old version forward first
 
-		// There is cleanup to be done.  Bring the old version forward first
-
-		rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
-		DPM_update(tdbb, rpb, 0, transaction);
-		delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
+			rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
+			DPM_update(tdbb, rpb, 0, transaction);
+			delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
+		}
 
 		// Next, delete the old copy of the now current version.
 
@@ -445,19 +474,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			BUGCHECK(291);		// msg 291 cannot find record back version
 		delete_record(tdbb, &temp, rpb->rpb_page, 0);
 	}
-
-
-	rpb->rpb_prior = NULL;
-	list_staying(tdbb, rpb, staying);
-	BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
-	IDX_garbage_collect(tdbb, rpb, going, staying);
-
-	if (going.hasData())
-	{
-		going.pop();
-	}
-
-	clearRecordStack(staying);
 
 	// Return relation garbage collect record blocks to vector.
 
@@ -4244,6 +4260,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	SET_TDBB(tdbb);
 
 	Record* data = rpb->rpb_prior;
+	Record* backout_rec = NULL;
 	ULONG next_page = rpb->rpb_page;
 	USHORT next_line = rpb->rpb_line;
 	int max_depth = 0;
@@ -4261,6 +4278,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		if (!DPM_fetch(tdbb, &temp, LCK_read))
 		{
 			clearRecordStack(staying);
+			delete backout_rec;
+			backout_rec = NULL;
 			return;
 		}
 
@@ -4271,6 +4290,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			temp.rpb_flags != rpb->rpb_flags)
 		{
 			clearRecordStack(staying);
+			delete backout_rec;
+			backout_rec = NULL;
 			next_page = temp.rpb_page;
 			next_line = temp.rpb_line;
 			max_depth = 0;
@@ -4293,6 +4314,8 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				fb_utils::init_status(tdbb->tdbb_status_vector);
 
 				clearRecordStack(staying);
+				delete backout_rec;
+				backout_rec = NULL;
 				next_page = rpb->rpb_page;
 				next_line = rpb->rpb_line;
 				max_depth = 0;
@@ -4321,8 +4344,18 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			}
 			else
 			{
+				// VIO_data below could change the flags
+				const bool backout = (temp.rpb_flags & rpb_gc_active);
 				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
-				staying.push(temp.rpb_record);
+				if (!backout) 
+				{
+					staying.push(temp.rpb_record);
+				}
+				else 
+				{
+					fb_assert(!backout_rec);
+					backout_rec = temp.rpb_record;
+				}
 				data = temp.rpb_record;
 			}
 			max_depth = depth;
@@ -4346,6 +4379,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			delete staying.pop();
 		}
 	}
+	delete backout_rec;
 }
 
 
