@@ -43,6 +43,7 @@ namespace Ods {
 
 Ods::pag* DPM_allocate(Jrd::thread_db*, Jrd::win*);
 void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
+void	DPM_backout_mark(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 double	DPM_cardinality(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::Format*);
 bool	DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
 int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
