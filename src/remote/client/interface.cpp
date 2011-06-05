@@ -5810,7 +5810,8 @@ static void init(IStatus* status,
 	LocalStatus s;
 	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
 
-	for (bool working = true; working && authItr.hasData(); authItr.next())
+	bool working = true; 
+	while (working && authItr.hasData())
 	{
 		if (port->port_protocol >= PROTOCOL_VERSION13 ||
 			(port->port_protocol >= PROTOCOL_VERSION11 && Auth::legacy(authItr.name())))
@@ -5825,6 +5826,7 @@ static void init(IStatus* status,
 				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
 				break;	// compiler silencer
 			default:
+				authItr.next();
 				break;
 			}
 		}
