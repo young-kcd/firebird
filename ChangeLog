@@ -1,3 +1,15 @@
+ 2011-06-04 18:43  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/IntlUtil.cpp
+   M src/jrd/IntlUtil.h
+   M src/jrd/jrd.cpp
+Backport fix for CORE-3511 - Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly.
+
+ 2011-06-04 18:42  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/SysFunction.cpp
+Backport fix for CORE-3479 - ASCII_VAL raises error instead of return 0 for empty strings.
+
  2011-06-03 16:58  dimitr 
    M doc/WhatsNew
 Updated the docs.
