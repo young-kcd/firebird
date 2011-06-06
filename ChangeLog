@@ -1,3 +1,8 @@
+ 2011-06-05 16:40  asfernandes 
+   M src/jrd/dsc.h
+Fixed CORE-3231 - OVERLAY() fails when used with text BLOBs containing multi-byte chars.
+The issue was fixed in others versions with CORE-2361.
+
  2011-06-03 12:24  alexpeshkoff 
    M src/lock/lock.cpp
 Fixed CORE-3510: gds_drop utility prints an error when trying to shutdown missing lock manager process
