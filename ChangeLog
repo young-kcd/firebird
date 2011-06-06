@@ -1,3 +1,18 @@
+ 2011-06-06 02:58  asfernandes 
+   M src/jrd/cvt.cpp
+Fixed CORE-3373 - It is possible to store string with lenght 31 chars into column varchar(25).
+
+ 2011-06-05 22:50  hvlad 
+   M src/remote/client/interface.cpp
+Windows trusted auth didn't worked
+
+ 2011-06-05 08:15  hvlad 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+Fixed bug CORE-3515 : Index corruption. Validation put "missing entries" message into firebird.log
+
  2011-06-04 02:18  asfernandes 
    M builds/install/misc/posixLibrary.sh.in
    M src/burp/restore.epp
