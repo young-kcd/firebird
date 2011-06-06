@@ -1,3 +1,10 @@
+ 2011-06-05 08:17  hvlad 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+Fixed bug CORE-3515 : Index corruption. Validation put "missing entries" message into firebird.log
+
  2011-06-04 18:43  asfernandes 
    M doc/WhatsNew
    M src/jrd/IntlUtil.cpp
