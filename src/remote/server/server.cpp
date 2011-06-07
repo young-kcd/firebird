@@ -288,7 +288,6 @@ public:
 			case Auth::AUTH_MORE_DATA:
 				if (port->port_protocol < PROTOCOL_VERSION11)
 				{
-					authServer->release();
 					authServer = NULL;
 					working = false;
 					break;
@@ -332,7 +331,6 @@ public:
 					}
 					else
 					{
-						authServer->release();
 						authServer = NULL;
 						working = false;
 						break;

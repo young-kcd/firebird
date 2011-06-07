@@ -80,7 +80,7 @@ bool legacy(const char* nm)
 	const char* legacyTrusted = "WIN_SSPI";
 	const unsigned short legLength = strlen(legacyTrusted);
 
-	return strlen(nm) == legLength && memcmp(legacyTrusted, nm, legLength) == 0;
+	return strlen(nm) == legLength && strnicmp(legacyTrusted, nm, legLength) == 0;
 }
 
 } // namespace Auth
