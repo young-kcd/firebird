@@ -136,6 +136,8 @@ ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t b
 
 void ClumpletReader::create(const KindList* kl, size_t buffLen, FPTR_VOID raise)
 {
+	cur_offset = 0;
+
 	if (buffLen)
 	{
 		while (kl->kind != EndOfList)
