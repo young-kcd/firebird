@@ -1,3 +1,14 @@
+ 2011-06-08 01:55  asfernandes 
+   M src/jrd/dpm.epp
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+Misc.
+
+ 2011-06-07 12:59  hvlad 
+   M src/common/Auth.cpp
+   M src/remote/server/server.cpp
+Make TA work with 2.1 clients and not crash. Thanks to Alex.
+
  2011-06-06 02:58  asfernandes 
    M src/jrd/cvt.cpp
 Fixed CORE-3373 - It is possible to store string with lenght 31 chars into column varchar(25).
