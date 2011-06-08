@@ -29,6 +29,7 @@
 #include "../common/Auth.h"
 #include "../jrd/ibase.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/utils_proto.h"
 
 namespace Auth {
 
@@ -78,9 +79,8 @@ void DpbImplementation::drop()
 bool legacy(const char* nm)
 {
 	const char* legacyTrusted = "WIN_SSPI";
-	const unsigned short legLength = strlen(legacyTrusted);
 
-	return strlen(nm) == legLength && strnicmp(legacyTrusted, nm, legLength) == 0;
+	return fb_utils::stricmp(legacyTrusted, nm) == 0;
 }
 
 } // namespace Auth
