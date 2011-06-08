@@ -110,6 +110,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
+static ULONG get_rel_flags_from_FLAGS(USHORT);
 static void get_trigger(thread_db*, jrd_rel*, bid*, bid*, trig_vec**, const TEXT*, UCHAR, bool, USHORT);
 static bool get_type(thread_db*, USHORT*, const UCHAR*, const TEXT*);
 static void lookup_view_contexts(thread_db*, jrd_rel*);
@@ -2606,19 +2607,52 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 
 	jrd_req* request = CMP_find_request(tdbb, irq_l_relation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request)
-		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name.c_str()
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name.c_str()
 
-		if (!REQUEST(irq_l_relation))
-		{
-			REQUEST(irq_l_relation) = request;
-		}
+			if (!REQUEST(irq_l_relation))
+			{
+				REQUEST(irq_l_relation) = request;
+			}
 
-		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		if (relation->rel_name.length() == 0) {
-			relation->rel_name = name;
-		}
-	END_FOR;
+			relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+			if (relation->rel_name.length() == 0) {
+				relation->rel_name = name;
+			}
+
+			relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
+
+			if (!X.RDB$RELATION_TYPE.NULL)
+			{
+				relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
+			}
+		END_FOR;
+	}
+	else
+	{
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name.c_str()
+
+			if (!REQUEST(irq_l_relation))
+			{
+				REQUEST(irq_l_relation) = request;
+			}
+
+			relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+			if (relation->rel_name.length() == 0) {
+				relation->rel_name = name;
+			}
+
+			relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
+
+			if (!X.RDB$VIEW_BLR.isEmpty())
+			{
+				relation->rel_flags |= REL_jrd_view;
+			}
+		END_FOR;
+	}
 
 	if (!REQUEST(irq_l_relation))
 	{
@@ -2694,17 +2728,48 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
 	jrd_req* request = CMP_find_request(tdbb, irq_l_rel_id, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request)
-		X IN RDB$RELATIONS WITH X.RDB$RELATION_ID EQ id
+	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
+	{
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH X.RDB$RELATION_ID EQ id
 
-		if (!REQUEST(irq_l_rel_id))
-			REQUEST(irq_l_rel_id) = request;
+			if (!REQUEST(irq_l_rel_id))
+				REQUEST(irq_l_rel_id) = request;
 
-		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		if (relation->rel_name.length() == 0) {
-			relation->rel_name = X.RDB$RELATION_NAME;
-		}
-	END_FOR;
+			relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+			if (relation->rel_name.length() == 0) {
+				relation->rel_name = X.RDB$RELATION_NAME;
+			}
+
+			relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
+
+			if (!X.RDB$RELATION_TYPE.NULL)
+			{
+				relation->rel_flags |= MET_get_rel_flags_from_TYPE(X.RDB$RELATION_TYPE);
+			}
+		END_FOR;
+	}
+	else
+	{
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$RELATIONS WITH X.RDB$RELATION_ID EQ id
+
+			if (!REQUEST(irq_l_rel_id))
+				REQUEST(irq_l_rel_id) = request;
+
+			relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+			if (relation->rel_name.length() == 0) {
+				relation->rel_name = X.RDB$RELATION_NAME;
+			}
+
+			relation->rel_flags |= get_rel_flags_from_FLAGS(X.RDB$FLAGS);
+
+			if (!X.RDB$VIEW_BLR.isEmpty())
+			{
+				relation->rel_flags |= REL_jrd_view;
+			}
+		END_FOR;
+	}
 
 	if (!REQUEST(irq_l_rel_id))
 		REQUEST(irq_l_rel_id) = request;
@@ -3662,15 +3727,21 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	{
 		case rel_persistent:
 		case rel_external:
+			break;
 		case rel_view:
+			fb_assert(relation->rel_flags & REL_jrd_view);
+			relation->rel_flags |= REL_jrd_view;
 			break;
 		case rel_virtual:
+			fb_assert(relation->rel_flags & REL_virtual);
 			relation->rel_flags |= REL_virtual;
 			break;
 		case rel_global_temp_preserve:
+			fb_assert(relation->rel_flags & REL_temp_conn);
 			relation->rel_flags |= REL_temp_conn;
 			break;
 		case rel_global_temp_delete:
+			fb_assert(relation->rel_flags & REL_temp_tran);
 			relation->rel_flags |= REL_temp_tran;
 			break;
 		default:
@@ -3697,11 +3768,6 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 		relation->rel_name = REL.RDB$RELATION_NAME;
 		relation->rel_owner_name = REL.RDB$OWNER_NAME;
-
-		if (REL.RDB$FLAGS & REL_sql)
-		{
-			relation->rel_flags |= REL_sql_relation;
-		}
 
 		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
@@ -4266,6 +4332,68 @@ static int partners_ast_relation(void* ast_object)
 	{} // no-op
 
 	return 0;
+}
+
+
+static ULONG get_rel_flags_from_FLAGS(USHORT flags)
+{
+/**************************************
+ *
+ *      g e t _ r e l _ f l a g s _ f r o m _ F L A G S
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get rel_flags from RDB$FLAGS
+ *
+ **************************************/
+	ULONG ret = 0;
+
+	if (flags & REL_sql) {
+		ret |= REL_sql_relation;
+	}
+
+	return ret;
+}
+
+
+ULONG MET_get_rel_flags_from_TYPE(USHORT type)
+{
+/**************************************
+ *
+ *      M E T _ g e t _ r e l _ f l a g s _ f r o m _ T Y P E
+ *
+ **************************************
+ *
+ * Functional description
+ *      Get rel_flags from RDB$RELATION_TYPE
+ *
+ **************************************/
+	ULONG ret = 0;
+
+	switch (type)
+	{
+		case rel_persistent:
+			break;
+		case rel_external:
+			break;
+		case rel_view:
+			ret |= REL_jrd_view;
+			break;
+		case rel_virtual:
+			ret |= REL_virtual;
+			break;
+		case rel_global_temp_preserve:
+			ret |= REL_temp_conn;
+			break;
+		case rel_global_temp_delete:
+			ret |= REL_temp_tran;
+			break;
+		default:
+			fb_assert(false);
+	}
+
+	return ret;
 }
 
 
