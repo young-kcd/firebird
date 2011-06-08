@@ -434,9 +434,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		IDX_garbage_collect(tdbb, rpb, going, staying);
 
 		if (going.hasData())
-		{
 			going.pop();
-		}
 
 		clearRecordStack(staying);
 
@@ -447,9 +445,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	if (samePage)
 	{
 		DPM_backout(tdbb, rpb);
-		if (!deleted) {
+
+		if (!deleted)
 			delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
-		}
 	}
 	else
 	{
@@ -467,9 +465,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		rpb->rpb_format_number = temp.rpb_format_number;
 
 		if (deleted)
-		{
 			replace_record(tdbb, rpb, 0, transaction);
-		}
 		else
 		{
 			// There is cleanup to be done.  Bring the old version forward first
@@ -4677,22 +4673,25 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				// VIO_data below could change the flags
 				const bool backout = (temp.rpb_flags & rpb_gc_active);
 				VIO_data(tdbb, &temp, tdbb->getDefaultPool());
-				if (!backout) 
-				{
+
+				if (!backout)
 					staying.push(temp.rpb_record);
-				}
-				else 
+				else
 				{
 					fb_assert(!backout_rec);
 					backout_rec = temp.rpb_record;
 				}
+
 				data = temp.rpb_record;
 			}
+
 			max_depth = depth;
+
 			if (!next_page)
 				break;
 		}
-		else {
+		else
+		{
 			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 			break;
 		}
@@ -4709,6 +4708,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 			delete staying.pop();
 		}
 	}
+
 	delete backout_rec;
 }
 

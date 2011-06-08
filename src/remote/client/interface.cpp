@@ -5810,7 +5810,8 @@ static void init(IStatus* status,
 	LocalStatus s;
 	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
 
-	bool working = true; 
+	bool working = true;
+
 	while (working && authItr.hasData())
 	{
 		if (port->port_protocol >= PROTOCOL_VERSION13 ||
