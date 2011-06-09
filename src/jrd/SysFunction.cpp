@@ -717,7 +717,7 @@ static void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 
 	if (!result->isBlob())
 	{
-		if (length->dsc_address)	// constant
+		if (length->isExact() && length->dsc_address)	// constant
 		{
 			result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result,
 				CVT_get_long(length, 0, ERR_post) *
