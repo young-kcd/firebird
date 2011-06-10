@@ -49,6 +49,8 @@ using namespace Firebird;
 
 namespace {
 
+MakeUpgradeInfo<> upInfo;
+
 // BLR to search database for user name record
 
 const UCHAR PWD_REQUEST[] =
@@ -367,6 +369,7 @@ Result SecurityDatabase::verify(IWriter* authBlock, ClumpletReader& originalDpb)
 			}
 		}
 
+		MasterInterfacePtr()->upgradeInterface(authBlock, FB_AUTH_WRITER_VERSION, upInfo);
 		authBlock->add(login.c_str(), "SecDB", secureDbName);
 		return AUTH_SUCCESS;
 	}
@@ -517,7 +520,7 @@ Result SecurityDatabaseServer::startAuthentication(Firebird::IStatus* status,
 
 		ClumpletReader rdr(isService ? ClumpletReader::spbList : ClumpletReader::dpbList, dpb, dpbSize);
 		Result rc = instance->verify(writerInterface, rdr);
-		Firebird::TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
+		TimerInterfacePtr()->start(instance, 10 * 1000 * 1000);
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)

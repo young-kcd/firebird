@@ -43,14 +43,14 @@ class PluginManager : public AutoIface<IPluginManager, FB_PLUGIN_MANAGER_VERSION
 public:
 	// IPluginManager implementation
 	IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
-								   int desiredVersion, void* missingFunctionClass,
+								   int desiredVersion, UpgradeInfo* ui,
 								   IFirebirdConf* firebirdConf);
 	void FB_CARG registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 								IPluginFactory* factory);
 	IConfig* FB_CARG getConfig(const char* filename);
 	void FB_CARG releasePlugin(IPluginBase* plugin);
-	void FB_CARG registerModule(IPluginModule* cleanup);
-	void FB_CARG unregisterModule(IPluginModule* cleanup);
+	void FB_CARG registerModule(IPluginModule* module);
+	void FB_CARG unregisterModule(IPluginModule* module);
 
 	PluginManager();
 

@@ -26,6 +26,8 @@
  *  2008 Khorsun Vladyslav
  */
 
+#include "../common/classes/ImplementHelper.h"
+
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
@@ -51,6 +53,8 @@ int FB_CARG TraceFactoryImpl::release()
 	return 1;
 }
 
+static Firebird::MakeUpgradeInfo<> upInfo;
+
 ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
 {
 	return (1 << TRACE_EVENT_MAX) - 1;
@@ -58,9 +62,12 @@ ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
 
 TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, TraceInitInfo* initInfo)
 {
+	Firebird::MasterInterfacePtr master;
 	const char* dbname = NULL;
 	try
 	{
+		master->upgradeInterface(initInfo, FB_TRACE_INIT_INFO_VERSION, upInfo);
+
 		dbname = initInfo->getDatabaseName();
 		if (!dbname)
 			dbname = "";
@@ -69,6 +76,11 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		TraceCfgReader::readTraceConfiguration(initInfo->getConfigText(), dbname, config);
 
 		TraceConnection* connection = initInfo->getConnection();
+		if (connection)
+		{
+			master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		}
+
 		if (!config.enabled ||
 			(config.connection_id && connection &&
 				(connection->getConnectionID() != SLONG(config.connection_id))))
@@ -90,6 +102,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		TraceLogWriter* logWriter = initInfo->getLogWriter();
 		if (logWriter)
 		{
+			master->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 			const char* strEx = TracePluginImpl::marshal_exception(ex);
 			Firebird::string err;
 			if (dbname)
@@ -111,12 +124,11 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 
 
 static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
-static Firebird::UnloadDetector unloadDetector;
 
 void registerTrace(Firebird::IPluginManager* iPlugin)
 {
 	iPlugin->registerPluginFactory(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
-	iPlugin->registerModule(&unloadDetector);
+	iPlugin->registerModule(&Firebird::myModule);
 }
 
 

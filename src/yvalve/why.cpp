@@ -557,9 +557,11 @@ namespace Why
 	public:
 		virtual void FB_CARG noEntrypoint(IStatus* s)
 		{
-			s->set(Arg::Gds(isc_unavailable).value());
+			s->set(Arg::Gds(isc_wish_list).value());
 		}
 	};
+
+	MakeUpgradeInfo<NoEntrypoint> upInfo;
 
 	template <typename T, typename CleanupRoutine>	// T = YAttachment or YTransaction
 	class CleanupCallbackImpl : public CleanupCallback
@@ -3269,6 +3271,13 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	return new YTransaction(static_cast<YAttachment*>(attachment), transaction);
 }
 
+template <typename Impl, typename Intf, int Vers>
+YHelper<Impl, Intf, Vers>::YHelper(Intf* aNext)
+{
+	MasterInterfacePtr()->upgradeInterface(aNext, Vers, upInfo);
+	next = aNext;
+	this->addRef();
+}
 
 //-------------------------------------
 
@@ -4640,8 +4649,8 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 		RefPtr<Config> config;
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 
-		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, config);
+		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+				FB_PROVIDER_VERSION, upInfo, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -4763,8 +4772,8 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 		ResolveDatabaseAlias(expandedFilename, dummy, &config);
 		***/
 
-		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION/***, config***/);
+		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+				FB_PROVIDER_VERSION, upInfo/***, config***/);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -4827,8 +4836,8 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 
 		try
 		{
-			for (GetPlugins<IProvider, NoEntrypoint> providerIterator(PluginType::Provider,
-					FB_PROVIDER_VERSION);
+			for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+					FB_PROVIDER_VERSION, upInfo);
 				 providerIterator.hasData();
 				 providerIterator.next())
 			{
@@ -4916,8 +4925,8 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		shutdownStarted = true;
 
 		// Shutdown providers (if any present).
-		for (GetPlugins<IProvider, NoEntrypoint> providerIterator(
-				PluginType::Provider, FB_PROVIDER_VERSION);
+		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
+				FB_PROVIDER_VERSION, upInfo);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{

@@ -296,8 +296,6 @@ int JProvider::release()
 }
 
 
-static UnloadDetector unloadDetector;
-
 static void shutdownBeforeUnload()
 {
 	LocalStatus status;
@@ -310,7 +308,7 @@ public:
 	// IPluginFactory implementation
 	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
 	{
-		if (unloadDetector->unloadStarted())
+		if (myModule->unloadStarted())
 		{
 			return NULL;
 		}
@@ -325,9 +323,9 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
-	unloadDetector->setCleanup(shutdownBeforeUnload);
+	myModule->setCleanup(shutdownBeforeUnload);
 	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
-	iPlugin->registerModule(&unloadDetector);
+	iPlugin->registerModule(&myModule);
 }
 
 } // namespace Jrd

@@ -5779,6 +5779,7 @@ static void info(IStatus* status,
 	response->p_resp_data = temp;
 }
 
+static MakeUpgradeInfo<> upInfo;
 
 static void init(IStatus* status,
 				 rem_port* port,
@@ -5808,7 +5809,7 @@ static void init(IStatus* status,
 	// Let plugins try to add data to DPB in order to avoid extra network roundtrip
 	Auth::DpbImplementation di(dpb);
 	LocalStatus s;
-	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION);
+	GetPlugins<Auth::IClient> authItr(PluginType::AuthClient, FB_AUTH_CLIENT_VERSION, upInfo);
 
 	bool working = true;
 

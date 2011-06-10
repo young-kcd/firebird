@@ -34,36 +34,27 @@
 
 namespace Firebird {
 
-// Default replacement for missing virtual functions
-class DefaultMissingEntrypoint
-{
-public:
-	virtual void FB_CARG noEntrypoint()
-	{
-		Arg::Gds(isc_wish_list).raise();
-	}
-};
-
 // Template to help with loop in the set of plugins
-template <typename P, typename M = DefaultMissingEntrypoint>
+template <typename P>
 class GetPlugins
 {
 public:
-	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, const char* namesList = NULL)
-		: masterInterface(), pluginInterface(masterInterface), missing(),
+	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
+			   UpgradeInfo* ui, const char* namesList = NULL)
+		: masterInterface(), pluginInterface(masterInterface),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
-		  										desiredVersion, &missing, NULL)),
+		  										desiredVersion, ui, NULL)),
 		  currentPlugin(NULL)
 	{
 		pluginSet->release();
 		getPlugin();
 	}
 
-	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
+	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, UpgradeInfo* ui,
 			   Config* knownConfig, const char* namesList = NULL)
-		: masterInterface(), pluginInterface(masterInterface), missing(),
+		: masterInterface(), pluginInterface(masterInterface),
 		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
-		  										desiredVersion, &missing, new FirebirdConf(knownConfig))),
+		  										desiredVersion, ui, new FirebirdConf(knownConfig))),
 		  currentPlugin(NULL)
 	{
 		pluginSet->release();
@@ -124,7 +115,6 @@ public:
 private:
 	MasterInterfacePtr masterInterface;
 	PluginManagerInterfacePtr pluginInterface;
-	M missing;
 	RefPtr<IPluginSet> pluginSet;
 	P* currentPlugin;
 

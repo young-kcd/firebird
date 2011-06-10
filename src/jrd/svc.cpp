@@ -1890,6 +1890,10 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
 
 	// The name of the service is the first element of the buffer
+	if (spb.isEof())
+	{
+		status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_spb_no_id));
+	}
 	const UCHAR svc_id = spb.getClumpTag();
 	const serv_entry* serv;
 	for (serv = services; serv->serv_action; serv++)

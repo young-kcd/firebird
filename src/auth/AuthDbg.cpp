@@ -33,6 +33,8 @@
 
 //#define AUTH_VERBOSE
 
+static Firebird::MakeUpgradeInfo<> upInfo;
+
 // register plugin
 static Firebird::SimpleFactory<Auth::DebugClient> clientFactory;
 static Firebird::SimpleFactory<Auth::DebugServer> serverFactory;
@@ -60,6 +62,7 @@ Result FB_CARG DebugServer::startAuthentication(Firebird::IStatus* status, bool 
 {
 	try
 	{
+		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 		str.erase();
 		Firebird::ClumpletReader rdr(isService ?
 			Firebird::ClumpletReader::spbList :
@@ -88,6 +91,7 @@ Result FB_CARG DebugServer::contAuthentication(Firebird::IStatus* status, IWrite
 #ifdef AUTH_VERBOSE
 		fprintf(stderr, "DebugServerInstance::contAuthentication: %.*s\n", size, data);
 #endif
+		Firebird::MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 		writerInterface->add(Firebird::string((const char*) data, size).c_str(), "DEBUG", "");
 		return AUTH_SUCCESS;
 	}
@@ -126,6 +130,7 @@ Result FB_CARG DebugClient::startAuthentication(Firebird::IStatus* status, bool 
 {
 	try
 	{
+		Firebird::MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
 		str = "HAND";
 		if (dpb)
 		{

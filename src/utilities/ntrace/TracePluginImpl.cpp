@@ -38,12 +38,14 @@
 #include "../../common/os/path_utils.h"
 #include "../../jrd/inf_pub.h"
 #include "../../dsql/sqlda_pub.h"
+#include "../common/classes/ImplementHelper.h"
 
 
 using namespace Firebird;
 using namespace Jrd;
 
 static const char* const DEFAULT_LOG_NAME = "default_trace.log";
+static MakeUpgradeInfo<> upInfo;
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"
@@ -89,6 +91,7 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 	services(getDefaultMemoryPool()),
 	unicodeCollation(*getDefaultMemoryPool())
 {
+	MasterInterfacePtr()->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 	const char* ses_name = initInfo->getTraceSessionName();
 	session_name = ses_name && *ses_name ? ses_name : " ";
 
@@ -1937,6 +1940,8 @@ ntrace_boolean_t TracePluginImpl::trace_attach(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+
 		log_event_attach(connection, create_db, att_result);
 		return true;
 	}
@@ -1951,6 +1956,8 @@ ntrace_boolean_t TracePluginImpl::trace_detach(TraceConnection* connection, ntra
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+
 		log_event_detach(connection, drop_db);
 		return true;
 	}
@@ -1967,6 +1974,10 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceConnection* conne
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+
 		log_event_transaction_start(connection, transaction, tpb_length, tpb, tra_result);
 		return true;
 	}
@@ -1982,6 +1993,10 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceConnection* connect
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+
 		log_event_transaction_end(connection, transaction, commit, retain_context, tra_result);
 		return true;
 	}
@@ -1998,6 +2013,11 @@ ntrace_boolean_t TracePluginImpl::trace_set_context(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(variable, FB_TRACE_CONTEXT_VARIABLE_VERSION, upInfo);
+
 		log_event_set_context(connection, transaction, variable);
 		return true;
 	}
@@ -2015,6 +2035,11 @@ ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceConnection* connection
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(procedure, FB_TRACE_PROCEDURE_VERSION, upInfo);
+
 		log_event_proc_execute(connection, transaction, procedure, started, proc_result);
 		return true;
 	}
@@ -2031,6 +2056,11 @@ ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceConnection* connect
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(trigger, FB_TRACE_TRIGGER_VERSION, upInfo);
+
 		log_event_trigger_execute(connection, transaction, trigger, started, trig_result);
 		return true;
 	}
@@ -2048,6 +2078,11 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceConnection* connection
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
+
 		log_event_dsql_prepare(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2063,6 +2098,10 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
+
 		log_event_dsql_free(connection, statement, option);
 		return true;
 	}
@@ -2079,6 +2118,11 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceConnection* connection
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
+
 		log_event_dsql_execute(connection, transaction, statement, started, req_result);
 		return true;
 	}
@@ -2096,6 +2140,11 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
+
 		log_event_blr_compile(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2111,6 +2160,11 @@ ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
+
 		log_event_blr_execute(connection, transaction, statement, req_result);
 		return true;
 	}
@@ -2127,6 +2181,11 @@ ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceConnection* connection,
 {
 	try
 	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(request, FB_TRACE_DYN_REQUEST_VERSION, upInfo);
+
 		log_event_dyn_execute(connection, transaction, request, time_millis, req_result);
 		return true;
 	}
@@ -2142,6 +2201,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceService* service, nt
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_attach(service, att_result);
 		return true;
 	}
@@ -2157,6 +2217,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_start(TraceService* service, siz
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_start(service, switches_length, switches, start_result);
 		return true;
 	}
@@ -2173,6 +2234,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceService* service, siz
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_query(service, send_item_length, send_items,
 								recv_item_length, recv_items, query_result);
 		return true;
@@ -2189,6 +2251,7 @@ ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceService* service, nt
 {
 	try
 	{
+		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_detach(service, detach_result);
 		return true;
 	}

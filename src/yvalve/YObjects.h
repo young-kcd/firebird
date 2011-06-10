@@ -117,10 +117,7 @@ template <typename Impl, typename Intf, int Vers>
 class YHelper : public Firebird::StdPlugin<Intf, Vers>, public YObject
 {
 public:
-	YHelper(Intf* aNext) : next(aNext)
-	{
-		this->addRef();
-	}
+	YHelper(Intf* aNext);
 
 	int FB_CARG release()
 	{
@@ -426,7 +423,7 @@ public:
 	{
 		if (--refCounter == 0)
 		{
-			delete this;
+			//delete this;
 			return 0;
 		}
 

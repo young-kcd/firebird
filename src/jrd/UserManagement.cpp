@@ -36,6 +36,7 @@
 using namespace Jrd;
 using namespace Firebird;
 
+static MakeUpgradeInfo<> upInfo;
 
 const Format* UsersTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
 {
@@ -212,6 +213,7 @@ void UserManagement::execute(USHORT id)
 
 void UserManagement::Display::list(Auth::IUser* u)
 {
+	MasterInterfacePtr()->upgradeInterface(u, FB_AUTH_USER_VERSION, upInfo);
 	userManagement->list(u);
 }
 

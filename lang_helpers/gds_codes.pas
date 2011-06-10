@@ -737,6 +737,7 @@ const
 	gds_cannot_copy_stmt                 = 335545022;
 	gds_invalid_boolean_usage            = 335545023;
 	gds_sysf_argscant_both_be_zero       = 335545024;
+	gds_spb_no_id                        = 335545025;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

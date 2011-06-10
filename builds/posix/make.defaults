@@ -292,7 +292,7 @@ FB_DAEMON = $(BIN)/firebird$(EXEC_EXT)
 
 # Per-library link rules
 LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT)) $(UNDEF_FLAGS)\
- $(call LIB_LINK_RPATH,lib) -lm
+ $(call LIB_LINK_RPATH,lib) $(SO_LINK_LIBS)
 LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util
 
 LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\

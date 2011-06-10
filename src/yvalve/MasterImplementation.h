@@ -57,7 +57,8 @@ namespace Why
 		Firebird::IStatus* FB_CARG getStatus();
 		Firebird::IProvider* FB_CARG getDispatcher();
 		Firebird::IPluginManager* FB_CARG getPluginManager();
-		int FB_CARG upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion, void* missingFunctionClass);
+		int FB_CARG upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion,
+									 Firebird::UpgradeInfo* upgradeInfo);
 		const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
 		Firebird::ITimerControl* FB_CARG getTimerControl();
 		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
@@ -68,6 +69,7 @@ namespace Why
 	};
 
 	void shutdownTimers();
+	void releaseUpgradeTabs(Firebird::IPluginModule* module);
 } // namespace Why
 
 #endif // YVALVE_MASTER_IMPLEMENTATION_H

@@ -24,6 +24,7 @@
 #include "consts_pub.h"
 #include "iberror.h"
 #include "../yvalve/PluginManager.h"
+#include "../yvalve/MasterImplementation.h"
 
 #include "../dsql/sqlda_pub.h"
 #include "../yvalve/why_proto.h"
@@ -344,6 +345,7 @@ namespace
 			if (cleanup)
 			{
 				cleanup->doClean();
+				Why::releaseUpgradeTabs(cleanup);
 			}
 		}
 
@@ -442,6 +444,11 @@ namespace
 
 		~ConfiguredPlugin();
 
+		const char* getPlugName()
+		{
+			return plugName.c_str();
+		}
+
 		// ITimer implementation
 		void FB_CARG handler()
 		{ }
@@ -501,6 +508,9 @@ namespace
 	private:
 		~FactoryParameter()
 		{
+#ifdef DEBUG_PLUGINS
+			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query\n", configuredPlugin->getPlugName());
+#endif
 			TimerInterfacePtr()->start(configuredPlugin, 1000000);		// 1 sec
 		}
 
@@ -645,10 +655,10 @@ namespace
 		void FB_CARG next();
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
-				  int pdesiredVersion, void* pmissingFunctionClass,
+				  int pdesiredVersion, UpgradeInfo* pui,
 				  IFirebirdConf* fbConf)
 			: interfaceType(pinterfaceType), namesList(getPool()),
-			  desiredVersion(pdesiredVersion), missingFunctionClass(pmissingFunctionClass),
+			  desiredVersion(pdesiredVersion), ui(pui),
 			  currentName(getPool()), currentPlugin(NULL),
 			  firebirdConf(fbConf)
 		{
@@ -672,7 +682,7 @@ namespace
 		unsigned int interfaceType;
 		PathName namesList;
 		int desiredVersion;
-		void* missingFunctionClass;
+		UpgradeInfo* ui;
 
 		PathName currentName;
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
@@ -807,7 +817,7 @@ namespace
 			IPluginBase* p = currentPlugin->factory(firebirdConf);
 			if (p)
 			{
-				if (masterInterface->upgradeInterface(p, desiredVersion, missingFunctionClass) >= 0)
+				if (masterInterface->upgradeInterface(p, desiredVersion, ui) >= 0)
 				{
 					return p;
 				}
@@ -895,13 +905,13 @@ void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 }
 
 IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const char* namesList,
-											  int desiredVersion, void* missingFunctionClass,
+											  int desiredVersion, UpgradeInfo* ui,
 											  IFirebirdConf* firebirdConf)
 {
 	MutexLockGuard g(plugins->mutex);
 
 	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion,
-		missingFunctionClass, firebirdConf);
+		ui, firebirdConf);
 	rc->addRef();
 	return rc;
 }

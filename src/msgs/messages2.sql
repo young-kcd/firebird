@@ -812,6 +812,7 @@ Data source : @4', NULL, NULL)
 ('cannot_copy_stmt', NULL, NULL, NULL, 0, 702, NULL, 'Cannot copy statement @1', NULL, NULL);
 ('invalid_boolean_usage', NULL, NULL, NULL, 0, 703, NULL, 'Invalid usage of boolean expression', NULL, NULL);
 ('sysf_argscant_both_be_zero', 'evlAtan2', 'SysFunction.cpp', NULL, 0, 704, NULL, 'Arguments for @1 cannot both be zero', NULL, NULL)
+('spb_no_id', 'Service::start', 'svc.c', NULL, 0, 705, NULL, 'missing service ID in spb', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

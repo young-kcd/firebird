@@ -683,6 +683,11 @@ public:
 		return FB_MASTER_VERSION;
 	}
 
+	virtual IPluginModule* FB_CARG getModule()
+	{
+		return NULL;
+	}
+
 	virtual IStatus* FB_CARG getStatus()
 	{
 		fb_assert(false);
@@ -697,12 +702,12 @@ public:
 
 	virtual IPluginManager* FB_CARG getPluginManager()
 	{
-		fb_assert(false);
+		//fb_assert(false);
 		return NULL;
 	}
 
 	virtual int FB_CARG upgradeInterface(IVersioned* /*toUpgrade*/, int /*desiredVersion*/,
-										 void* /*missingFunctionClass*/)
+										 struct UpgradeInfo* /*upInfo*/)
 	{
 		fb_assert(false);
 		return 0;

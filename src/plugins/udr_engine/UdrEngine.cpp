@@ -754,13 +754,12 @@ public:
 class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
-static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	PluginManagerInterfacePtr pi;
 	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
-	pi->registerModule(&unloadDetector);
+	pi->registerModule(&myModule);
 
 	libraryName->assign("fbclient");
 	ModuleLoader::doctorModuleExtension(libraryName);

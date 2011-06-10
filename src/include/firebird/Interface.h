@@ -39,14 +39,18 @@
 
 namespace Firebird {
 
+// Forward declaration - used to identify client and provider of upgraded interface
+class IPluginModule;
+
 // Versioned interface - base for all FB interfaces
 class IVersioned
 {
 public:
 	virtual int FB_CARG getVersion() = 0;
+	virtual IPluginModule* getModule() = 0;
 };
 // If this is changed, types of all interfaces must be changed
-#define FB_VERSIONED_VERSION 1
+#define FB_VERSIONED_VERSION 2
 
 // Reference counted interface - base for refCounted FB interfaces
 class IRefCounted : public IVersioned
@@ -89,6 +93,12 @@ class IAttachment;
 class ITransaction;
 class IDtc;
 
+struct UpgradeInfo
+{
+	void* missingFunctionClass;
+	IPluginModule* clientModule;
+};
+
 // Master interface is used to access almost all other interfaces.
 class IMaster : public IVersioned
 {
@@ -96,7 +106,8 @@ public:
 	virtual IStatus* FB_CARG getStatus() = 0;
 	virtual IProvider* FB_CARG getDispatcher() = 0;
 	virtual IPluginManager* FB_CARG getPluginManager() = 0;
-	virtual int FB_CARG upgradeInterface(IVersioned* toUpgrade, int desiredVersion, void* missingFunctionClass) = 0;
+	virtual int FB_CARG upgradeInterface(IVersioned* toUpgrade, int desiredVersion,
+										 struct UpgradeInfo* upgradeInfo) = 0;
 	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
 	virtual ITimerControl* FB_CARG getTimerControl() = 0;
 	virtual IDtc* FB_CARG getDtc() = 0;

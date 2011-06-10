@@ -30,6 +30,8 @@
 #include "firebird/Interface.h"
 #include "firebird/Timer.h"
 
+#include <string.h>
+
 #include "../yvalve/MasterImplementation.h"
 #include "../common/classes/init.h"
 #include "../common/StatusHolder.h"
@@ -113,14 +115,50 @@ namespace
 		FunctionPtr* vTab;
 	};
 
-	typedef Firebird::Pair<Firebird::NonPooled<U_IPTR, FunctionPtr*> > FunctionPair;
+	class UpgradeKey
+	{
+	public:
+		UpgradeKey(FunctionPtr* aFunc, IPluginModule* aModuleA, IPluginModule* aModuleB)
+			: func(aFunc), moduleA(aModuleA), moduleB(aModuleB)
+		{ }
+
+		UpgradeKey(const UpgradeKey& el)
+			: func(el.func), moduleA(el.moduleA), moduleB(el.moduleB)
+		{ }
+
+		UpgradeKey()
+			: func(NULL), moduleA(NULL), moduleB(NULL)
+		{ }
+
+		bool operator<(const UpgradeKey& el) const
+		{
+			return memcmp(this, &el, sizeof(UpgradeKey)) < 0;
+		}
+
+		bool operator>(const UpgradeKey& el) const
+		{
+			return memcmp(this, &el, sizeof(UpgradeKey)) > 0;
+		}
+
+		bool contains(IPluginModule* module)
+		{
+			return moduleA == module || moduleB == module;
+		}
+
+	private:
+		FunctionPtr* func;
+		IPluginModule* moduleA;
+		IPluginModule* moduleB;
+	};
+
+	typedef Firebird::Pair<Firebird::NonPooled<UpgradeKey, FunctionPtr*> > FunctionPair;
 	GlobalPtr<GenericMap<FunctionPair> > functionMap;
 	GlobalPtr<RWLock> mapLock;
 }
 
 int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 												   int desiredVersion,
-												   void* missingFunctionClass)
+												   struct UpgradeInfo* upgradeInfo)
 {
 	int existingVersion = toUpgrade->getVersion();
 
@@ -132,9 +170,11 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 	{
 		CVirtualClass* target = (CVirtualClass*) toUpgrade;
 
+		UpgradeKey key(target->vTab, toUpgrade->getModule(), upgradeInfo->clientModule);
+
 		{ // sync scope
 			ReadLockGuard sync(mapLock);
-			if (functionMap->get((U_IPTR) target->vTab, newTab))
+			if (functionMap->get(key, newTab))
 			{
 				target->vTab = newTab;
 				return 0;
@@ -143,9 +183,9 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 
 		WriteLockGuard sync(mapLock);
 
-		if (!functionMap->get((U_IPTR) target->vTab, newTab))
+		if (!functionMap->get(key, newTab))
 		{
-			CVirtualClass* miss = (CVirtualClass*) missingFunctionClass;
+			CVirtualClass* miss = (CVirtualClass*) (upgradeInfo->missingFunctionClass);
 			newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
 
 			for (int i = 0; i < desiredVersion; ++i)
@@ -153,7 +193,7 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 				newTab[i] = i < existingVersion ? target->vTab[i] : miss->vTab[0];
 			}
 
-			functionMap->put((U_IPTR) target->vTab, newTab);
+			functionMap->put(key, newTab);
 		}
 
 		target->vTab = newTab;
@@ -171,6 +211,29 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 	}
 
 	return 0;
+}
+
+void releaseUpgradeTabs(IPluginModule* module)
+{
+	HalfStaticArray<UpgradeKey, 16> removeList;
+
+	WriteLockGuard sync(mapLock);
+
+	GenericMap<FunctionPair>::Accessor scan(&functionMap);
+	if (scan.getFirst()) do
+	{
+		UpgradeKey& cur(scan.current()->first);
+		if (cur.contains(module))
+		{
+			removeList.add(cur);
+		}
+	}
+	while (scan.getNext());
+
+	for(unsigned int i = 0; i < removeList.getCount(); ++i)
+	{
+		functionMap->remove(removeList[i]);
+	}
 }
 
 } // namespace Why
@@ -415,7 +478,7 @@ void TimerEntry::cleanup()
 
 TimerDelay curTime()
 {
-	return fb_utils::query_performance_counter() / fb_utils::query_performance_frequency();
+	return fb_utils::query_performance_counter() / (fb_utils::query_performance_frequency() / 1000000);
 }
 
 TimerEntry* getTimer(ITimer* timer)

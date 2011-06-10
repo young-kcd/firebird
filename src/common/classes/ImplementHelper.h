@@ -71,6 +71,8 @@ public:
 		return V;
 	}
 
+	IPluginModule* getModule();
+
 private:
 	VersionedIface(const VersionedIface&);
 	VersionedIface& operator=(const VersionedIface&);
@@ -249,7 +251,10 @@ public:
 		if (flagOsUnload)
 		{
 			PluginManagerInterfacePtr pi;
-			pi->unregisterModule(this);
+			if (pi)
+			{
+				pi->unregisterModule(this);
+			}
 
 			doClean();
 		}
@@ -282,6 +287,44 @@ private:
 };
 
 typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD> UnloadDetector;
+extern UnloadDetector myModule;
+
+template <class C, int V> IPluginModule* VersionedIface<C, V>::getModule()
+{
+	return &myModule;
+}
+
+
+// Default replacement for missing virtual functions
+class DefaultMissingEntrypoint
+{
+public:
+	virtual void FB_CARG noEntrypoint()
+	{
+		Arg::Gds(isc_wish_list).raise();
+	}
+};
+
+// Helps to create update information
+template <typename M = DefaultMissingEntrypoint>
+class MakeUpgradeInfo
+{
+public:
+	MakeUpgradeInfo()
+	{
+		ui.missingFunctionClass = &missing;
+		ui.clientModule = &myModule;
+	}
+
+	operator UpgradeInfo*()
+	{
+		return &ui;
+	}
+
+private:
+	M missing;
+	struct UpgradeInfo ui;
+};
 
 
 class InternalMessageBuffer : public FbMessage

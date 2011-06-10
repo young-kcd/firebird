@@ -187,7 +187,7 @@ public:
 	// If caller already has an interface for firebird.conf, it may be passed here
 	// If parameter is missing, plugins will get access to default (non database specific) config
 	virtual IPluginSet* FB_CARG getPlugins(unsigned int interfaceType, const char* namesList,
-										   int desiredVersion, void* missingFunctionClass,
+										   int desiredVersion, UpgradeInfo* ui,
 										   IFirebirdConf* firebirdConf) = 0;
 	// Get generic config interface for given file
 	virtual IConfig* FB_CARG getConfig(const char* filename) = 0;

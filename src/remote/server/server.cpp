@@ -217,6 +217,8 @@ public:
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
 
+MakeUpgradeInfo<> upInfo;
+
 // delayed authentication block for auth callback
 class ServerAuth : public GlobalStorage, public ServerAuthBase
 {
@@ -231,7 +233,7 @@ public:
 		  wrt(getPool(), op == op_service_attach ? ClumpletReader::spbList : ClumpletReader::dpbList,
 		  	  MAX_DPB_SIZE, pb, pbLen),
 		  authBlockInterface(op == op_service_attach),
-		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, config),
+		  authItr(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo, config),
 		  remoteId(getPool()), userName(getPool()), authServer(NULL),
 		  part2(p2), operation(op)
 	{

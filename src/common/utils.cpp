@@ -807,7 +807,7 @@ SINT64 query_performance_counter()
 	return counter.QuadPart;
 #elif defined(HAVE_CLOCK_GETTIME)
 
-	// Use high-resultion clock
+	// Use high-resolution clock
 	struct timespec tp;
 	if (clock_gettime(CLOCK_REALTIME, &tp) != 0)
 		return 0;

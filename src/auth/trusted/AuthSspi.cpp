@@ -69,6 +69,8 @@ namespace
 		*data = name;
 		*dataSize = strlen(name);
 	}
+
+	MakeUpgradeInfo<> upInfo;
 }
 
 namespace Auth {
@@ -380,6 +382,7 @@ Result WinSspiServer::contAuthentication(Firebird::IStatus* status,
 		bool wheel = false;
 		string login;
 		sspi.getLogin(login, wheel);
+		MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 		writerInterface->add(login.c_str(), "WIN_SSPI", "");
 		if (wheel)
 		{
@@ -417,6 +420,8 @@ Result WinSspiClient::startAuthentication(Firebird::IStatus* status,
 
 	if (dpb)
 	{
+		MasterInterfacePtr()->upgradeInterface(dpb, FB_AUTH_DPB_READER_VERSION, upInfo);
+
 		UCHAR tag = isService ? isc_spb_trusted_role : isc_dpb_trusted_role;
 		while (dpb->find(tag))
 		{

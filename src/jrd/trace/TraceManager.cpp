@@ -64,6 +64,9 @@ namespace
 			return 1;
 		}
 	};
+
+	MakeUpgradeInfo<IgnoreMissing> upgradePlugin;
+	MakeUpgradeInfo<> upgradeFactory;
 }
 
 namespace Jrd {
@@ -156,7 +159,7 @@ void TraceManager::load_plugins()
 	init_factories = true;
 
 	factories = FB_NEW(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
-	for (GetPlugins<TraceFactory, IgnoreMissing> traceItr(PluginType::Trace, FB_TRACE_PLUGIN_VERSION);
+	for (GetPlugins<TraceFactory> traceItr(PluginType::Trace, FB_TRACE_FACTORY_VERSION, upgradeFactory);
 		 traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;
@@ -259,6 +262,8 @@ void TraceManager::update_session(const TraceSession& session)
 		}
 	}
 
+	MasterInterfacePtr master;
+
 	for (FactoryInfo* info = factories->begin(); info != factories->end(); ++info)
 	{
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
@@ -267,6 +272,8 @@ void TraceManager::update_session(const TraceSession& session)
 
 		if (plugin)
 		{
+			master->upgradeInterface(plugin, FB_TRACE_PLUGIN_VERSION, upgradePlugin);
+
 			plugin->addRef();
 			SessionInfo sesInfo;
 			sesInfo.plugin = plugin;

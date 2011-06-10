@@ -710,6 +710,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-104, 'XX', '000', 0, 702, 'cannot_copy_stmt', NULL, NULL)
 (-104, '22', '000', 0, 703, 'invalid_boolean_usage', NULL, NULL)
 (-833, '42', '000', 0, 704, 'sysf_argscant_both_be_zero', NULL, NULL)
+(-901, 'HY', '000', 0, 705, 'spb_no_id', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

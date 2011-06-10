@@ -42,6 +42,8 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "firebird/Plugin.h"
 
+static Firebird::MakeUpgradeInfo<> upInfo;
+
 // Here we use version-independent symbolic link (or copy) of actual database
 DATABASE database = STATIC FILENAME "security.fdb";
 
@@ -124,6 +126,8 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 {
 	try
 	{
+		Firebird::MasterInterfacePtr()->upgradeInterface(logonInfo, FB_AUTH_LOGON_INFO_VERSION, upInfo);
+
 		st->init();
 
 		if (secDbKey == INIT_KEY)
@@ -310,6 +314,8 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 
 	try
 	{
+		Firebird::MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
+
 		ISC_STATUS_ARRAY isc_status;
 		fb_utils::init_status(isc_status);
 		st->init();
@@ -668,12 +674,11 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 
 // register plugin
 static Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> factory;
-static Firebird::UnloadDetector unloadDetector;
 
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::PluginManagerInterfacePtr pi(master);
 
 	pi->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_Auth", &factory);
-	pi->registerModule(&unloadDetector);
+	pi->registerModule(&Firebird::myModule);
 }

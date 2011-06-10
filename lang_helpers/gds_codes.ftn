@@ -1460,6 +1460,8 @@ C --
       PARAMETER (GDS__invalid_boolean_usage            = 335545023)
       INTEGER*4 GDS__sysf_argscant_both_be_zero      
       PARAMETER (GDS__sysf_argscant_both_be_zero       = 335545024)
+      INTEGER*4 GDS__spb_no_id                       
+      PARAMETER (GDS__spb_no_id                        = 335545025)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -36,12 +36,14 @@ void raise()
 	(Arg::Gds(isc_random) << "Missing user management plugin").raise();
 }
 
+MakeUpgradeInfo<> ui;
+
 } // anonymous namespace
 
 namespace Auth {
 
 Get::Get(Config* firebirdConf)
-	: GetPlugins<Auth::IManagement>(PluginType::AuthUserManagement, FB_AUTH_MANAGE_VERSION, firebirdConf)
+	: GetPlugins<Auth::IManagement>(PluginType::AuthUserManagement, FB_AUTH_MANAGE_VERSION, ui, firebirdConf)
 {
 	if (!hasData())
 	{

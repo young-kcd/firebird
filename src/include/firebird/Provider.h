@@ -29,7 +29,6 @@
 #ifndef FB_PROVIDER_INTERFACE
 #define FB_PROVIDER_INTERFACE
 
-#include "firebird.h"	//// FIXME:
 #include "./Plugin.h"
 
 namespace Firebird {

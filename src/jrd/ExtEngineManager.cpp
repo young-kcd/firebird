@@ -58,6 +58,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
+MakeUpgradeInfo<> upInfo;
 
 template <typename T> class ExtEngineManager::ContextManager
 {
@@ -826,7 +827,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 		if (!engines.get(name, engine))
 		{
 			GetPlugins<ExternalEngine> engineControl(PluginType::ExternalEngine,
-				FB_EXTERNAL_ENGINE_VERSION, name.c_str());
+				FB_EXTERNAL_ENGINE_VERSION, upInfo, name.c_str());
 
 			if (engineControl.hasData())
 			{
