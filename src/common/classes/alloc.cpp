@@ -600,7 +600,7 @@ void MemoryPool::releaseBlock(MemBlock *block) throw ()
 		}
 
 		int slot = length / roundingSize;
-		void *next = freeObjects [slot];
+		void *next = freeObjects[slot];
 		block->pool = (MemoryPool*) next;
 		freeObjects[slot] = block;
 
