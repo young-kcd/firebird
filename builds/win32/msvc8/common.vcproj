@@ -281,7 +281,7 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\os\win32\config_root.cpp"
-			>
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\config\ConfigCache.cpp"
@@ -317,7 +317,7 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\dllinst.cpp"
-			>
+				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\dsc.cpp"
