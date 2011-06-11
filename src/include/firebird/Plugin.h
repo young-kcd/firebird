@@ -172,10 +172,10 @@ public:
 	virtual void FB_CARG registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 										IPluginFactory* factory) = 0;
 	// Sets cleanup for plugin module
-	// Pay attention - this should be called at plugin-regsiter time!
+	// Pay attention - this should be called at plugin-register time!
 	// Only at this moment manager knows, which module sets his cleanup
 	virtual void FB_CARG registerModule(IPluginModule* cleanup) = 0;
-	// Remove registered before cleanup routine.
+	// Remove registered module before cleanup routine.
 	// This method must be called by module which detects that it's unloaded,
 	// but not notified prior to it by PluginManager via IPluginModule.
 	virtual void FB_CARG unregisterModule(IPluginModule* cleanup) = 0;
