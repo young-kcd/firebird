@@ -104,7 +104,7 @@ private:
 	class Utf8CharSet
 	{
 	public:
-		Utf8CharSet(MemoryPool& pool);
+		explicit Utf8CharSet(MemoryPool& pool);
 
 	public:
 		charset obj;
