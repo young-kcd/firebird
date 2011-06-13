@@ -468,6 +468,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\common\classes\ImplementHelper.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\common\classes\init.cpp"
 				>
 			</File>

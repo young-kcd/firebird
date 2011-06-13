@@ -28,6 +28,7 @@
     <ClCompile Include="..\..\..\src\common\classes\ClumpletWriter.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\DbImplementation.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\fb_string.cpp" />
+    <ClCompile Include="..\..\..\src\common\classes\ImplementHelper.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\init.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\locks.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\MetaName.cpp" />
