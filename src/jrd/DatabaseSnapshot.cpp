@@ -774,23 +774,31 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 	// Attachment information
 
 	Attachment* old_attachment = tdbb->getAttachment();
-	Attachment::Checkout attCout(old_attachment, true);
-
-	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
+	try
 	{
-		Attachment::SyncGuard attGuard(attachment);
-		tdbb->setAttachment(attachment);
-		dumpAttachment(tdbb, attachment, writer);
-	}
+		Attachment::Checkout attCout(old_attachment, true);
 
-	for (Attachment* attachment = dbb->dbb_sys_attachments; attachment; attachment = attachment->att_next)
+		for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
+		{
+			Attachment::SyncGuard attGuard(attachment);
+			tdbb->setAttachment(attachment);
+			dumpAttachment(tdbb, attachment, writer);
+		}
+
+		for (Attachment* attachment = dbb->dbb_sys_attachments; attachment; attachment = attachment->att_next)
+		{
+			Attachment::SyncGuard attGuard(attachment);
+			tdbb->setAttachment(attachment);
+			dumpAttachment(tdbb, attachment, writer);
+		}
+
+		tdbb->setAttachment(old_attachment);
+	}
+	catch(const Exception&)
 	{
-		Attachment::SyncGuard attGuard(attachment);
-		tdbb->setAttachment(attachment);
-		dumpAttachment(tdbb, attachment, writer);
+		tdbb->setAttachment(old_attachment);
+		throw;
 	}
-
-	tdbb->setAttachment(old_attachment);
 }
 
 void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, const Attachment* attachment, Writer& writer)
