@@ -353,10 +353,8 @@ public:
 		{
 			destroy(attachment);
 		}
-		if (!attachment)
-		{
-			delete this;
-		}
+
+		delete this;
 		return 0;
 	}
 

@@ -4464,6 +4464,8 @@ gc_exit:
 			dbb->dbb_garbage_collector = NULL;
 
 			LCK_fini(tdbb, LCK_OWNER_attachment);
+
+			jAtt->getMutex()->leave();
 			jAtt = NULL;
 			tdbb->setAttachment(NULL);
 		}

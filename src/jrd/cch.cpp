@@ -3094,9 +3094,11 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		jAtt = NULL;
 
+		jAtt->getMutex()->leave();
+		jAtt = NULL;
 		tdbb->setAttachment(NULL);
+
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		// Notify the finalization caller that we're finishing.
 		bcb->bcb_writer_fini.release();
