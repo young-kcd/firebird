@@ -71,7 +71,7 @@ public:
 		return V;
 	}
 
-	IPluginModule* getModule();
+	IPluginModule* FB_CARG getModule();
 
 private:
 	VersionedIface(const VersionedIface&);

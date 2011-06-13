@@ -47,7 +47,7 @@ class IVersioned
 {
 public:
 	virtual int FB_CARG getVersion() = 0;
-	virtual IPluginModule* getModule() = 0;
+	virtual IPluginModule* FB_CARG getModule() = 0;
 };
 // If this is changed, types of all interfaces must be changed
 #define FB_VERSIONED_VERSION 2
