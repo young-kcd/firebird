@@ -243,19 +243,20 @@ public:
 	typedef void VoidNoParam();
 
 	explicit UnloadDetectorHelper(MemoryPool&)
-		: cleanup(NULL), flagOsUnload(true)
+		: cleanup(NULL), flagOsUnload(false)
 	{ }
+
+	void registerMe()
+	{
+		PluginManagerInterfacePtr()->registerModule(this);
+		flagOsUnload = true;
+	}
 
 	~UnloadDetectorHelper()
 	{
 		if (flagOsUnload)
 		{
-			PluginManagerInterfacePtr pi;
-			if (pi)
-			{
-				pi->unregisterModule(this);
-			}
-
+			PluginManagerInterfacePtr()->unregisterModule(this);
 			doClean();
 		}
 	}

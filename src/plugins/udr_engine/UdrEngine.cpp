@@ -759,7 +759,7 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	PluginManagerInterfacePtr pi;
 	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
-	pi->registerModule(&myModule);
+	myModule->registerMe();
 
 	libraryName->assign("fbclient");
 	ModuleLoader::doctorModuleExtension(libraryName);

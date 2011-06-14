@@ -128,7 +128,7 @@ static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
 void registerTrace(Firebird::IPluginManager* iPlugin)
 {
 	iPlugin->registerPluginFactory(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
-	iPlugin->registerModule(&Firebird::myModule);
+	Firebird::myModule->registerMe();
 }
 
 

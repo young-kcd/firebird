@@ -325,7 +325,7 @@ void registerEngine(IPluginManager* iPlugin)
 {
 	myModule->setCleanup(shutdownBeforeUnload);
 	iPlugin->registerPluginFactory(PluginType::Provider, "Engine12", &engineFactory);
-	iPlugin->registerModule(&myModule);
+	myModule->registerMe();
 }
 
 } // namespace Jrd
