@@ -21,7 +21,7 @@
 # 1. edit configure.in so that MAKEFILE_PREFIX=darwin_i386
 # 2. dnl the CPU_TYPE
 # 3. edit extern/icu/source/config and set the right 32bit flags (-arch i386)
-# 4. for  CFLAGS, CXXFLAGS. LDFLAGS export '-m32 -arch i386'
+# 4. for  CFLAGS, CXXFLAGS, LDFLAGS export '-m32 -arch i386'
 # 5. export MACOSX_DEPLOYMENT_TARGET=10.6 
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
