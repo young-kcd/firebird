@@ -43,7 +43,7 @@ int		TRA_get_state(Jrd::thread_db*, SLONG);
 void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 #endif
 void	TRA_init(Jrd::Attachment*);
-void	TRA_invalidate(Jrd::Database*, ULONG);
+void	TRA_invalidate(Jrd::thread_db*, ULONG);
 void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
 void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
 void	TRA_post_resources(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::ResourceList&);

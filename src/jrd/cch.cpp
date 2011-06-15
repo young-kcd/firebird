@@ -1649,6 +1649,8 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 
 	fb_assert(bdb->ourIOLock());
 
+	set_diff_page(tdbb, bdb);
+
 	bdb->bdb_incarnation = ++bcb->bcb_page_incarnation;
 
 	// mark the dirty bit vector for this specific transaction,
@@ -1690,7 +1692,6 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 	if (!(tdbb->tdbb_flags & TDBB_sweeper) || (bdb->bdb_flags & BDB_system_dirty))
 		insertDirty(dbb, bcb, bdb);
 
-	set_diff_page(tdbb, bdb);
 	bdb->bdb_flags |= BDB_marked;
 }
 
@@ -3026,6 +3027,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
+		bcb->bcb_writer_init.release();
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
 
@@ -3475,7 +3477,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		bdb->bdb_flags |= BDB_not_valid;
 		clear_dirty_flag(tdbb, bdb);
 		bdb->bdb_ast_flags &= ~BDB_blocking;
-		TRA_invalidate(dbb, bdb->bdb_transactions);
+		TRA_invalidate(tdbb, bdb->bdb_transactions);
 		bdb->bdb_transactions = 0;
 		PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 	}
@@ -3977,7 +3979,12 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				const bool write_thru = (bcb->bcb_flags & BCB_exclusive);
 				if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, tdbb->tdbb_status_vector, true))
 				{
-					bdb->bdb_flags &= ~BDB_free_pending;	// hvlad: leave in bcb_pending que ?
+					bcbSync.lock(SYNC_EXCLUSIVE);
+					bdb->bdb_flags &= ~BDB_free_pending;
+					QUE_DELETE(bdb->bdb_in_use);
+					QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
+					bcbSync.unlock();
+
 					bdb->release(tdbb);
 					CCH_unwind(tdbb, true);
 				}
@@ -4142,11 +4149,26 @@ static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
  *
  **************************************/
 	Database* dbb = tdbb->getDatabase();
+
 	bdb->bdb_flags |= BDB_not_valid;
+	bdb->bdb_flags &= ~BDB_db_dirty;
 	clear_dirty_flag(tdbb, bdb);
-	TRA_invalidate(dbb, bdb->bdb_transactions);
+	const ULONG mask = bdb->bdb_transactions;
 	bdb->bdb_transactions = 0;
-	bdb->release(tdbb);
+
+	// mark bdb to be re-read at next access
+	BufferControl* bcb = dbb->dbb_bcb;
+	if (bcb->bcb_flags & BCB_exclusive)
+		bdb->bdb_flags |= BDB_read_pending;
+	else
+		PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
+
+	CCH_unwind(tdbb, false);
+
+	if (mask)
+		TRA_invalidate(tdbb, mask);
+
+	ERR_punt();
 }
 
 

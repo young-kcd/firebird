@@ -757,7 +757,7 @@ void TRA_init(Jrd::Attachment* attachment)
 }
 
 
-void TRA_invalidate(Database* database, ULONG mask)
+void TRA_invalidate(thread_db* tdbb, ULONG mask)
 {
 /**************************************
  *
@@ -770,10 +770,16 @@ void TRA_invalidate(Database* database, ULONG mask)
  *	modified a page that couldn't be written.
  *
  **************************************/
-	SyncLockGuard dbbGuard(&database->dbb_sync, SYNC_EXCLUSIVE, "TRA_invalidate");
 
-	for (Jrd::Attachment* attachment = database->dbb_attachments; attachment;
-		 attachment = attachment->att_next)
+	Database* database = tdbb->getDatabase();
+	Jrd::Attachment* currAttach = tdbb->getAttachment();
+
+	Jrd::Attachment::Checkout cout(currAttach, true);
+
+	SyncLockGuard dbbSync(&database->dbb_sync, SYNC_SHARED, "TRA_invalidate");
+	
+	Jrd::Attachment* attachment = database->dbb_attachments;
+	while (attachment)
 	{
 		Jrd::Attachment::SyncGuard attGuard(attachment);
 
@@ -784,6 +790,8 @@ void TRA_invalidate(Database* database, ULONG mask)
 			if (transaction_mask & mask && transaction->tra_flags & TRA_write)
 				transaction->tra_flags |= TRA_invalidated;
 		}
+
+		attachment = attachment->att_next;
 	}
 }
 
@@ -1249,7 +1257,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		MET_update_transaction(tdbb, transaction, false);
 
 	// If force flag is true, get rid of all savepoints to mark the transaction as dead
-	if (force_flag)
+	if (force_flag || transaction->tra_flags & TRA_invalidated)
 	{
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
