@@ -1187,6 +1187,15 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		{
 			PIO_flush(dbb, dbb->dbb_shadow->sdw_file);
 		}
+
+		{
+			BackupManager* bm = dbb->dbb_backup_manager;
+			BackupManager::StateReadGuard stateGuard(tdbb);
+			const int backup_state = bm->getState();
+			if (backup_state == nbak_state_stalled || backup_state == nbak_state_merge)
+				bm->flushDifference();
+		}
+
 		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
 
