@@ -910,8 +910,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(unsigned int interfaceType, const 
 {
 	MutexLockGuard g(plugins->mutex);
 
-	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion,
-		ui, firebirdConf);
+	IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);
 	rc->addRef();
 	return rc;
 }

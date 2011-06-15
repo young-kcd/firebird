@@ -42,8 +42,9 @@ public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
 			   UpgradeInfo* ui, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(masterInterface),
-		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
-		  										desiredVersion, ui, NULL)),
+		  pluginSet(pluginInterface->getPlugins(interfaceType,
+						namesList ? namesList : Config::getPlugins(interfaceType),
+					desiredVersion, ui, NULL)),
 		  currentPlugin(NULL)
 	{
 		pluginSet->release();
@@ -53,8 +54,9 @@ public:
 	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, UpgradeInfo* ui,
 			   Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(masterInterface),
-		  pluginSet(pluginInterface->getPlugins(interfaceType, namesList ? namesList : Config::getPlugins(interfaceType),
-		  										desiredVersion, ui, new FirebirdConf(knownConfig))),
+		  pluginSet(pluginInterface->getPlugins(interfaceType,
+						namesList ? namesList : Config::getPlugins(interfaceType),
+					desiredVersion, ui, new FirebirdConf(knownConfig))),
 		  currentPlugin(NULL)
 	{
 		pluginSet->release();

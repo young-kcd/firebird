@@ -220,20 +220,20 @@ void releaseUpgradeTabs(IPluginModule* module)
 	WriteLockGuard sync(mapLock);
 
 	GenericMap<FunctionPair>::Accessor scan(&functionMap);
-	if (scan.getFirst()) do
+
+	if (scan.getFirst())
 	{
-		UpgradeKey& cur(scan.current()->first);
-		if (cur.contains(module))
+		do
 		{
-			removeList.add(cur);
-		}
+			UpgradeKey& cur(scan.current()->first);
+
+			if (cur.contains(module))
+				removeList.add(cur);
+		} while (scan.getNext());
 	}
-	while (scan.getNext());
 
 	for(unsigned int i = 0; i < removeList.getCount(); ++i)
-	{
 		functionMap->remove(removeList[i]);
-	}
 }
 
 } // namespace Why

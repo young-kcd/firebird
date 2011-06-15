@@ -96,7 +96,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		return new TracePluginImpl(config, initInfo);	// Everything is ok, we created a plugin
 
 	}
-	catch(Firebird::Exception& ex)
+	catch (Firebird::Exception& ex)
 	{
 		// put error into trace log
 		TraceLogWriter* logWriter = initInfo->getLogWriter();
