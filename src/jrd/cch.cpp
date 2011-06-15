@@ -590,7 +590,6 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, int wait)
 
 		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
 		{
-			attachment->backupStateReadUnLock(tdbb);
 			CCH_unwind(tdbb, true);
 		}
 	}
@@ -2205,15 +2204,22 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 				BUGCHECK(268);	// msg 268 buffer marked during cache unwind
 			}
 
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
-
-			if (bdb->ourExclusiveLock()) {
-				bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
-			}
-			bdb->release(tdbb);
-
-			while (bdb->ourIOLock())
+			if (bdb->ourIOLock())
+			{
 				bdb->unLockIO(tdbb);
+			}
+			else
+			{
+				if (tdbb->getAttachment()) {
+					tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+				}
+
+				if (bdb->ourExclusiveLock()) {
+					bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
+				}
+
+				bdb->release(tdbb);
+			}
 		}
 	}
 
