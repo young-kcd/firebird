@@ -748,11 +748,9 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				for (++stack2; stack2.hasData(); ++stack2)
 				{
 					Record* rec2 = stack2.object();
-					if (rec2->rec_number == rec1->rec_number) {
-						BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
-						if (key_equal(&key1, &key2))
-							break;
-					}
+					BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
+					if (key_equal(&key1, &key2))
+						break;
 				}
 				if (stack2.hasData())
 					continue;
