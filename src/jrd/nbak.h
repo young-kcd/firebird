@@ -362,6 +362,7 @@ public:
 	void closeDelta();
 	bool writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
+	void flushDifference();
 
 	void shutdown(thread_db* tdbb);
 
