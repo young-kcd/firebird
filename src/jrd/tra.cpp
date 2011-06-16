@@ -1607,7 +1607,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	Jrd::ContextPoolHolder context(tdbb, pool);
 	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
-	temp->tra_flags = flags;
+	temp->tra_flags = flags & TRA_OPTIONS_MASK;
 	temp->tra_lock_timeout = lock_timeout;
 
 	jrd_tra* transaction = NULL;

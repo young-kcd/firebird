@@ -295,6 +295,10 @@ const ULONG TRA_no_auto_undo		= 2097152L;	// don't start a savepoint in TRA_star
 const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
 const ULONG TRA_precommitted		= 8388608L;	// transaction committed at startup
 
+// flags derived from TPB, see also transaction_options() at tra.cpp
+const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed | 
+	TRA_autocommit | TRA_rec_version | TRA_no_auto_undo | TRA_restart_requests);
+
 const int TRA_MASK				= 3;
 //const int TRA_BITS_PER_TRANS	= 2;
 //const int TRA_TRANS_PER_BYTE	= 4;
