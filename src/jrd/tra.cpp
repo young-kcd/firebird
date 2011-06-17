@@ -777,7 +777,7 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 	Jrd::Attachment::Checkout cout(currAttach, true);
 
 	SyncLockGuard dbbSync(&database->dbb_sync, SYNC_SHARED, "TRA_invalidate");
-	
+
 	Jrd::Attachment* attachment = database->dbb_attachments;
 	while (attachment)
 	{
@@ -1257,7 +1257,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		MET_update_transaction(tdbb, transaction, false);
 
 	// If force flag is true, get rid of all savepoints to mark the transaction as dead
-	if (force_flag || transaction->tra_flags & TRA_invalidated)
+	if (force_flag || (transaction->tra_flags & TRA_invalidated))
 	{
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
