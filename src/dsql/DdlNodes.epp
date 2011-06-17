@@ -2155,7 +2155,13 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 		for (unsigned i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause& parameter = returns[i];
-			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, NULL);
+			bid comment;
+
+			// Find the original comment to recreate in the new parameter.
+			if (!comments.get(parameter.name, comment))
+				comment.clear();
+
+			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, &comment);
 		}
 
 		AutoCacheRequest requestHandle2(tdbb, drq_m_prm_view, DYN_REQUESTS);
