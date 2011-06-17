@@ -850,22 +850,11 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 					len = charSet->substring(originalPatternLen, originalPatternStr,
 											 sizeof(c), c, patternPos - patternStart, 1);
 
-					if (textType->compare(rangeBuffer[previousRangeBufferCount],
-										  &rangeBuffer[previousRangeBufferCount + 1], len, c) <= 0)
-					{
-						rangeBuffer.push(len);
-						rangeCount = rangeBuffer.getCount();
-						memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
+					rangeBuffer.push(len);
+					rangeCount = rangeBuffer.getCount();
+					memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
-						charsBuffer.push(*patternPos);
-					}
-					else
-					{
-						rangeBuffer.shrink(previousRangeBufferCount);
-						charsBuffer.pop();
-					}
-
-					++patternPos;
+					charsBuffer.push(*patternPos++);
 				}
 			}
 
