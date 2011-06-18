@@ -2473,6 +2473,20 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 			statement->append_number(isc_dyn_prm_number, position);
 			statement->append_number(isc_dyn_prm_type, 0);
 
+			if (op == nod_mod_procedure && !modifyInputs.exist(field->fld_name))
+			{
+				UCharBuffer description;
+
+				METD_get_procedure_parameter(statement, procedure_name->str_data, field->fld_name,
+					description);
+
+				if (description.hasData())
+				{
+					statement->append_string(isc_dyn_description,
+						(const char*) description.begin(), description.getCount());
+				}
+			}
+
 			DDL_resolve_intl_type(statement, field,
 				reinterpret_cast<const dsql_str*>(parameter->nod_arg[e_dfl_collate]));
 			put_field(statement, field, false);

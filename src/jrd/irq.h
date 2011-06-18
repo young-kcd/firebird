@@ -141,6 +141,7 @@ enum irq_type_t
     irq_procedure,			// DSQL/METD: lookup a stored procedure
     irq_parameters,			// DSQL/METD: lookup a procedure's parameters
     irq_parameters2,		// DSQL/METD: lookup a procedure's parameters (ODS 11.1)
+    irq_parameters_description,	// DSQL/METD: lookup a procedure's parameters description
     irq_collation,			// DSQL/METD: lookup a collation name
     irq_charset,			// DSQL/METD: lookup a character set
     irq_trigger,			// DSQL/METD: lookup a trigger

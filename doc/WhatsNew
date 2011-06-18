@@ -498,6 +498,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-3140
+        Preserve comments for parameters after altering procedures.
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-3138
         Internal error or crash occurs when accessing any MON$ table after altering its structure
       Contributor(s):

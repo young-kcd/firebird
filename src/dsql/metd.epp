@@ -1367,6 +1367,46 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 }
 
 
+// Get the description of a procedure parameter. The description is returned in the client charset.
+void METD_get_procedure_parameter(CompiledStatement* statement, const MetaName& procedure,
+	const MetaName& parameter, UCharBuffer& buffer)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	dsql_dbb* dbb = statement->req_dbb;
+
+	MutexHolder holder(statement);
+
+	validateTransaction(statement);
+
+	buffer.clear();
+
+	jrd_req* handle = CMP_find_request(tdbb, irq_parameters_description, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE statement->req_transaction)
+		X IN RDB$PROCEDURE_PARAMETERS
+		WITH X.RDB$PROCEDURE_NAME EQ procedure.c_str() AND
+			 X.RDB$PARAMETER_NAME EQ parameter.c_str() AND
+			 X.RDB$DESCRIPTION NOT MISSING
+	{
+		if (!DSQL_REQUEST(irq_parameters_description))
+			DSQL_REQUEST(irq_parameters_description) = handle;
+
+		UCharBuffer bpb;
+		BLB_gen_bpb(isc_blob_text, isc_blob_text, CS_METADATA, CS_dynamic, bpb);
+
+		blb* blob = BLB_open2(tdbb, statement->req_transaction, &X.RDB$DESCRIPTION,
+			bpb.getCount(), bpb.begin());
+		buffer.resize(blob->blb_length);
+		BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCount());
+	}
+	END_FOR
+
+	if (!DSQL_REQUEST(irq_parameters_description))
+		DSQL_REQUEST(irq_parameters_description) = handle;
+}
+
+
 dsql_rel* METD_get_relation(CompiledStatement* statement, const char* name)
 {
 /**************************************

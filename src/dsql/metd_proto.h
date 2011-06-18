@@ -57,6 +57,9 @@ bool METD_get_exception(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_udf*      METD_get_function(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*);
+void METD_get_procedure_parameter(Jrd::CompiledStatement* statement,
+	const Firebird::MetaName& procedure, const Firebird::MetaName& parameter,
+	Firebird::UCharBuffer& buffer);
 Jrd::dsql_rel* METD_get_relation(Jrd::CompiledStatement*, const char*);
 bool   METD_get_trigger(Jrd::dsql_req*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
 bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, const char*, SSHORT*);
