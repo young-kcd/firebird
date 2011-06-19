@@ -2,10 +2,30 @@
   * v2.5.1
   **************************
 
+    * Bugfix CORE-3525
+        Autonomous transactions wrongly inherit run-time flags of "parent" transaction
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3524
+        Server crashes while compiling a stored procedure being in use
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-3523
-        SIMILAR TO: False matches on descending ranges.
+        SIMILAR TO: False matches on descending ranges
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-3521
+        Delta file contents is not flushed to disk
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3515
+        Index corruption. Validation puts the "missing entries" message into firebird.log
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3512
         Server hangs when trace is running
@@ -13,7 +33,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3511
-        Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly.
+        Unquoted role names with non-ASCII characters passed in DPB are upper-cased wrongly
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -22,6 +42,17 @@
         instead of non-ASCII characters regardless of the connection charset
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3503
+        ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream
+        at the position of a regular context in the older version
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3502
+        DROP VIEW ignores the existing non-column dependencies
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-3494
         Attach fails after shutdown rejected by handler installed in fb_shutdown_callback()
@@ -60,7 +91,7 @@
         Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3479
-        ASCII_VAL raises error instead of return 0 for empty strings.
+        ASCII_VAL raises error instead of return 0 for empty strings
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -499,7 +530,7 @@
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Bugfix CORE-3140
-        Preserve comments for parameters after altering procedures.
+        Preserve comments for parameters after altering procedures
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
