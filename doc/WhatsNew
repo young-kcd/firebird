@@ -684,6 +684,11 @@
         Damyan Ivanov <dmn at debian.org>
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Improvement CORE-2752
+        Set the SO_KEEPALIVE option on the client TCP socket
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Improvement CORE-2305
         Make MON$STATEMENT_ID value constant among monitoring snapshots
       Contributor(s):
