@@ -125,6 +125,7 @@ private:
 	struct mtx m_winMutex;
 #endif
 	struct mtx* m_mutex;
+	int m_recursive;
 	int  m_cfg_file;
 	bool m_dirty;
 	Firebird::Semaphore m_touchStartStop;

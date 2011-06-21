@@ -81,6 +81,7 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 
 ConfigStorage::ConfigStorage() :
 	m_base(NULL),
+	m_recursive(0),
 	m_cfg_file(-1),
 	m_dirty(false),
 	m_touchSemaphore(FB_NEW(*getDefaultMemoryPool()) AnyRef<Semaphore>),
@@ -354,13 +355,23 @@ void ConfigStorage::touchThreadFunc()
 
 void ConfigStorage::acquire()
 {
-	checkMutex("lock", ISC_mutex_lock(m_mutex));
+	fb_assert(m_recursive >= 0);
+
+	if (m_recursive++ == 0)
+	{
+		checkMutex("lock", ISC_mutex_lock(m_mutex));
+	}
 }
 
 void ConfigStorage::release()
 {
-	checkDirty();
-	checkMutex("unlock", ISC_mutex_unlock(m_mutex));
+	fb_assert(m_recursive > 0);
+
+	if (--m_recursive == 0)
+	{
+		checkDirty();
+		checkMutex("unlock", ISC_mutex_unlock(m_mutex));
+	}
 }
 
 void ConfigStorage::addSession(TraceSession& session)
