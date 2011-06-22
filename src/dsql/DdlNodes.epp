@@ -2140,7 +2140,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 		// And insert the new ones.
 
-		for (unsigned i = 0; i < parameters.getCount(); ++i)
+		for (size_t i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
 			bid comment;
@@ -2152,7 +2152,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &comment);
 		}
 
-		for (unsigned i = 0; i < returns.getCount(); ++i)
+		for (size_t i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause& parameter = returns[i];
 			bid comment;
