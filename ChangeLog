@@ -1,3 +1,62 @@
+ 2011-06-21 09:06  alexpeshkoff 
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+Fixed CORE-3532: Server hangs starting new session when trace is running
+
+ 2011-06-20 08:41  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2011-06-19 13:59  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2011-06-18 18:49  asfernandes 
+   M doc/WhatsNew
+   M src/dsql/ddl.cpp
+   M src/dsql/metd.epp
+   M src/dsql/metd_proto.h
+   M src/jrd/irq.h
+Backported fix for CORE-3140 - Preserve comments for parameters after altering procedures.
+
+ 2011-06-17 12:41  hvlad 
+   M src/jrd/cmp.cpp
+Fixed bug CORE-3524 : Compiling stored procedure while in use shutdown database
+
+ 2011-06-17 01:20  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/SimilarToMatcher.h
+Backported fix for CORE-3523 - SIMILAR TO: False matches on descending ranges.
+
+ 2011-06-16 09:11  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Backport fix for bug CORE-3521 : Delta file contents is not flushed to disk
+
+ 2011-06-16 08:44  hvlad 
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Fixed bug CORE-3525 : Autonomous transactions should not inherit run-time flags of "parent" transaction
+
+ 2011-06-15 08:30  paulbeach 
+   M builds/posix/prefix.darwin_i386
+Fix typo
+
+ 2011-06-11 06:06  robocop 
+   M src/jrd/IntlUtil.h
+Misc.
+
+ 2011-06-08 08:57  hvlad 
+   M src/jrd/Relation.h
+   M src/jrd/dfw.epp
+   M src/jrd/ini.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+Backport fix for two related bugs
+CORE-3502 : DROP VIEW ignores the existing non-column dependencies, and
+CORE-3503 : ALTER VIEW crashes the server if the new version has an artificial (aggregate or union) stream at the position of a regular context in the older version.
+
  2011-06-05 08:17  hvlad 
    M src/jrd/dpm.epp
    M src/jrd/dpm_proto.h
