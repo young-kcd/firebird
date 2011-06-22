@@ -1,3 +1,26 @@
+ 2011-06-17 12:41  hvlad 
+   M src/jrd/cmp.cpp
+Fixed bug CORE-3524 : Compiling stored procedure while in use shutdown database
+
+ 2011-06-15 10:00  hvlad 
+   M src/jrd/cch.cpp
+Backport fix for bug CORE-3464 : Dirty page could be written without releasing (or downgrading) page lock. It results in "lock denied" or "lock conversion denied" bugcheck
+
+ 2011-06-15 09:53  hvlad 
+   M src/jrd/dpm.epp
+Backport fix for bug CORE-3468 : Attempt to read after the end of file when nbackup state is stalled
+
+ 2011-06-15 09:47  hvlad 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+Backport fix for bug CORE-3515 : Index corruption. Validation put "missing entries" message into firebird.log
+
+ 2011-06-09 00:41  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-3517 - Server crash with built in function LPAD with string as second parameter.
+
  2011-06-05 16:40  asfernandes 
    M src/jrd/dsc.h
 Fixed CORE-3231 - OVERLAY() fails when used with text BLOBs containing multi-byte chars.
