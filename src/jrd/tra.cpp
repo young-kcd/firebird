@@ -1276,6 +1276,10 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			transaction->tra_save_point = next;
 		}
 	}
+	else
+	{
+		VIO_temp_cleanup(tdbb, transaction);
+	}
 
 	//  Find out if there is a transaction savepoint we can use to rollback our transaction
 	bool tran_sav = false;
