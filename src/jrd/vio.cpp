@@ -3238,6 +3238,45 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 }
 
 
+void VIO_temp_cleanup(thread_db* tdbb, jrd_tra* transaction)
+/**************************************
+ *
+ *	V I O _ t e m p _ c l e a n u p
+ *
+ **************************************
+ *
+ * Functional description
+ *  Remove undo data for GTT ON COMMIT DELETE ROWS as they data will be released
+ *  at transaction end anyway and we don't need to waste a time backing it out on 
+ *  rollback
+ *
+ **************************************/
+{
+	Savepoint* sav_point = transaction->tra_save_point;
+	for (; sav_point; sav_point = sav_point->sav_next)
+	{
+		for (VerbAction* action = sav_point->sav_verb_actions; action; action = action->vct_next)
+		{
+			if (action->vct_relation->rel_flags & REL_temp_tran)
+			{
+				RecordBitmap::reset(action->vct_records);
+				if (action->vct_undo)
+				{
+					if (action->vct_undo->getFirst())
+					{
+						do {
+							action->vct_undo->current().release(transaction);
+						} while (action->vct_undo->getNext());
+					}
+					delete action->vct_undo;
+					action->vct_undo = NULL;
+				}
+			}
+		}
+	}
+}
+
+
 void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
