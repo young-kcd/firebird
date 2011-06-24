@@ -209,13 +209,26 @@ public:
 	public:
 		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
-			if (!tdbb->getAttachment()->backupStateReadLock(tdbb, true))
+			Jrd::Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
+
+			const bool ok = att ? 
+				att->backupStateReadLock(tdbb, LCK_WAIT) :
+				dbb->dbb_backup_manager->lockStateRead(tdbb, LCK_WAIT);
+
+			if (!ok)
 				ERR_bugcheck_msg("Can't lock state for read");
 		}
 
 		~StateReadGuard()
 		{
-			tdbb->getAttachment()->backupStateReadUnLock(tdbb);
+			Jrd::Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
+
+			if (att)
+				att->backupStateReadUnLock(tdbb);
+			else
+				dbb->dbb_backup_manager->unlockStateRead(tdbb);
 		}
 
 	private:
