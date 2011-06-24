@@ -298,6 +298,8 @@ public:
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
+	SLONG		att_oldest_snapshot;		// GTT's record versions older than this can be gargage-collected
+
 	jrd_req*	att_requests;				// Requests belonging to attachment
 	sort_context*	att_active_sorts;		// Active sorts
 	Lock*		att_id_lock;				// Attachment lock (if any)

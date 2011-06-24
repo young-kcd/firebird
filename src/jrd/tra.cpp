@@ -3446,6 +3446,23 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		}
 	}
 
+	// Calculate oldest active and oldest snapshot numbers looking at current
+	// attachment's transactions only. Calculated values are used to determine
+	// garbage collection treshold for attachment-local data such as temporary
+	// tables (GTTs)
+
+	trans->tra_att_oldest_active = number;
+	SLONG att_oldest_active = number;
+	SLONG att_oldest_snapshot = number;
+	for (jrd_tra* tx_att = attachment->att_transactions; tx_att; tx_att = tx_att->tra_next)
+	{
+		att_oldest_active = MIN(att_oldest_active, tx_att->tra_number);
+		att_oldest_snapshot = MIN(att_oldest_snapshot, tx_att->tra_att_oldest_active);
+	}
+	trans->tra_att_oldest_active = (trans->tra_flags & TRA_read_committed) ? number : att_oldest_active;
+	if (attachment->att_oldest_snapshot < att_oldest_snapshot)
+		attachment->att_oldest_snapshot = att_oldest_snapshot;
+
 	// Put the TID of the oldest active transaction (just calculated)
 	// in the new transaction's lock.
 	// hvlad: for read-committed transaction put tra_number to prevent
