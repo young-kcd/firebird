@@ -2142,6 +2142,8 @@ void CCH_shutdown_database(Database* dbb)
  **************************************/
 	bcb_repeat* tail;
 	BufferControl* bcb = dbb->dbb_bcb;
+	SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_shutdown_database");
+
 	if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb))
 	{
 		thread_db* tdbb = JRD_get_thread_data();
