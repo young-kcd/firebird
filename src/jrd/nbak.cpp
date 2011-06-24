@@ -137,7 +137,7 @@ bool NBackupAllocLock::fetch(thread_db* tdbb)
 /******************************** BackupManager::StateWriteGuard ******************************/
 
 BackupManager::StateWriteGuard::StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd)
-	: tdbb(_tdbb), window(NULL)
+	: tdbb(_tdbb), window(NULL), success(false)
 {
 	Database* dbb = tdbb->getDatabase();
 	dbb->dbb_backup_manager->beginFlush();
@@ -150,6 +150,24 @@ BackupManager::StateWriteGuard::StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd)
 	NBAK_TRACE(("backup state locked for write"));
 	CCH_FETCH(tdbb, wnd, LCK_write, pag_header);
 	window = wnd;
+}
+
+BackupManager::StateWriteGuard::~StateWriteGuard()
+{
+	// It is important to set state into nbak_state_unknown *before* release of state lock, 
+	// else someone could acquire state lock, fetch and modify some page before state will 
+	// be set into unknown. But dirty page can't be written when backup state is unknown 
+	// because write target (database or delta) is also unknown.
+
+	if (!success)
+	{
+		NBAK_TRACE( ("invalidate state") );
+		Database* dbb = tdbb->getDatabase();
+		dbb->dbb_backup_manager->setState(nbak_state_unknown);
+	}
+
+	releaseHeader();
+	tdbb->getAttachment()->backupStateWriteUnLock(tdbb);
 }
 
 void BackupManager::StateWriteGuard::releaseHeader()
@@ -211,7 +229,8 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	// Check state
 	if (backup_state != nbak_state_normal)
 	{
-		NBAK_TRACE(("end backup - invalid state %d", backup_state));
+		NBAK_TRACE(("begin backup - invalid state %d", backup_state));
+		stateGuard.setSuccess();
 		return;
 	}
 
@@ -224,12 +243,12 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	catch (const Firebird::Exception&)
 	{
 		// no reasons to set it to unknown if we just failed to create difference file
+		stateGuard.setSuccess();
 		backup_state = nbak_state_normal;
 		throw;
 	}
 
-	try
-	{
+	{ // logical scope
 		if (database->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 		{
 			PIO_force_write(diff_file,
@@ -243,23 +262,26 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		{
 			struct stat st;
 			PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			while (fstat(pageSpace->file->fil_desc, &st) != 0)
+			char* func = NULL;
+			while (!func && fstat(pageSpace->file->fil_desc, &st) != 0)
 			{
-				if (errno != EINTR) {
-					Firebird::system_call_failed::raise("fstat");
-				}
+				if (errno != EINTR) 
+					func = "fstat";
 			}
-			while (fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0)
+			while (!func && fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0)
 			{
-				if (errno != EINTR) {
-					Firebird::system_call_failed::raise("fchown");
-				}
+				if (errno != EINTR) 
+					func = "fchown";
 			}
-			while (fchmod(diff_file->fil_desc, st.st_mode) != 0)
+			while (!func && fchmod(diff_file->fil_desc, st.st_mode) != 0)
 			{
-				if (errno != EINTR) {
-					Firebird::system_call_failed::raise("fchmod");
-				}
+				if (errno != EINTR) 
+					func = "fchmod";
+			}
+			if (func) 
+			{
+				stateGuard.setSuccess();
+				Firebird::system_call_failed::raise(func);
 			}
 		}
 #endif
@@ -283,17 +305,12 @@ void BackupManager::beginBackup(thread_db* tdbb)
 			reinterpret_cast<const UCHAR*>(&guid));
 
 		stateGuard.releaseHeader();
+		stateGuard.setSuccess();
 
 		backup_state = newState;
 		current_scn = adjusted_scn;
 
 		// All changes go to the difference file now
-	}
-	catch (const Firebird::Exception&)
-	{
-		NBAK_TRACE( ("invalidate state E1") );
-		backup_state = nbak_state_unknown;
-		throw;
 	}
 }
 
@@ -386,6 +403,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 
 		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
 		{
+			stateGuard.setSuccess();
 			NBAK_TRACE(("invalid state %d", backup_state));
 			endLock.unlockWrite(tdbb);
 			return;
@@ -405,11 +423,10 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
 		NBAK_TRACE(("Setting state %d in header page is over", backup_state));
+		stateGuard.setSuccess();
 	}
 	catch (const Firebird::Exception&)
 	{
-		NBAK_TRACE( ("invalidate state E2") );
-		backup_state = nbak_state_unknown;
 		endLock.unlockWrite(tdbb);
 		throw;
 	}
@@ -479,6 +496,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("new SCN=%d is getting written to header", header->hdr_header.pag_scn));
 
 		stateGuard.releaseHeader();
+		stateGuard.setSuccess();
 
 		// Page allocation table cache is no longer valid
 		NBAK_TRACE(("Dropping alloc table"));
@@ -496,8 +514,6 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 	}
 	catch (const Firebird::Exception&)
 	{
-		NBAK_TRACE( ("invalidate state E3") );
-		backup_state = nbak_state_unknown;
 		endLock.unlockWrite(tdbb);
 		throw;
 	}
@@ -639,6 +655,15 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 
 bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page)
 {
+	if (!diff_page)
+	{
+		// We should never be here but if it happens let not overwrite first allocation
+		// page with garbage.
+
+		(Arg::Gds(isc_random) << "Can't allocate difference page").copyTo(status);
+		return false;
+	}
+
 	NBAK_TRACE(("write_diff page=%d, diff=%d", page->pag_pageno, diff_page));
 	BufferDesc temp_bdb(database->dbb_bcb);
 	temp_bdb.bdb_page = diff_page;

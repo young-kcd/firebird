@@ -187,13 +187,13 @@ public:
 	{
 	public:
 		StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd);
-		~StateWriteGuard()
-		{
-			releaseHeader();
-			tdbb->getAttachment()->backupStateWriteUnLock(tdbb);
-		}
+		~StateWriteGuard();
 
 		void releaseHeader();
+		void setSuccess()
+		{
+			success = true;
+		}
 
 	private:
 		// copying is prohibited
@@ -202,6 +202,7 @@ public:
 
 		thread_db* tdbb;
 		Jrd::WIN* window;
+		bool success;
 	};
 
 	class StateReadGuard
