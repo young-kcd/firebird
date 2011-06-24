@@ -739,7 +739,6 @@ pag* CCH_fake(thread_db* tdbb, WIN* window, SSHORT latch_wait)
 
 		if (!write_buffer(tdbb, bdb, bdb->bdb_page, true, tdbb->tdbb_status_vector, true))
 		{
-			attachment->backupStateReadUnLock(tdbb);
 			CCH_unwind(tdbb, true);
 		}
 	}
