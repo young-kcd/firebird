@@ -64,7 +64,7 @@ private:
 							public Firebird::PermanentStorage
 	{
 	public:
-		RoutineMetadata(MemoryPool& pool)
+		explicit RoutineMetadata(MemoryPool& pool)
 			: PermanentStorage(pool),
 			  package(pool),
 			  name(pool),

@@ -132,7 +132,7 @@ public:
 	class SyncGuard
 	{
 	public:
-		SyncGuard(Attachment* att, bool optional = false)
+		explicit SyncGuard(Attachment* att, bool optional = false)
 			: m_mutex(NULL)
 		{
 			if (att && att->att_interface)
@@ -161,7 +161,7 @@ public:
 	class Checkout
 	{
 	public:
-		Checkout(Attachment* att, bool optional = false)
+		explicit Checkout(Attachment* att, bool optional = false)
 			: m_mutex(NULL)
 		{
 			if (att && att->att_interface)

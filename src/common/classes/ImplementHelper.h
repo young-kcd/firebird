@@ -171,7 +171,7 @@ template <typename C>
 class AccessAutoInterface
 {
 public:
-	AccessAutoInterface(C* aPtr)
+	explicit AccessAutoInterface(C* aPtr)
 		: ptr(aPtr)
 	{ }
 
@@ -206,7 +206,7 @@ public:
 	PluginManagerInterfacePtr()
 		: AccessAutoInterface<IPluginManager>(MasterInterfacePtr()->getPluginManager())
 	{ }
-	PluginManagerInterfacePtr(IMaster* master)
+	explicit PluginManagerInterfacePtr(IMaster* master)
 		: AccessAutoInterface<IPluginManager>(master->getPluginManager())
 	{ }
 };

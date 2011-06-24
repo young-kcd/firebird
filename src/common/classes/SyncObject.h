@@ -99,7 +99,7 @@ protected:
 	void wait(SyncType type, ThreadSync* thread, Sync* sync);
 	ThreadSync* grantThread(ThreadSync* thread);
 	void grantLocks();
-	void validate(SyncType lockType);
+	void validate(SyncType lockType) const;
 
 	AtomicCounter lockState;
 	AtomicCounter waiters;
@@ -207,7 +207,7 @@ public:
 class SyncUnlockGuard
 {
 public:
-	SyncUnlockGuard(Sync& aSync) :
+	explicit SyncUnlockGuard(Sync& aSync) :
 	  sync(aSync)
 	{
 		oldState = sync.getState();

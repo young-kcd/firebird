@@ -39,7 +39,7 @@ class thread_db;
 class TipCache
 {
 public:
-	TipCache(Database* dbb);
+	explicit TipCache(Database* dbb);
 	~TipCache();
 
 	int		cacheState(thread_db*, SLONG number);

@@ -773,7 +773,7 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb)
 
 	// Attachment information
 
-	Attachment* old_attachment = tdbb->getAttachment();
+	Attachment* const old_attachment = tdbb->getAttachment();
 	try
 	{
 		Attachment::Checkout attCout(old_attachment, true);

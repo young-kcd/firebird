@@ -153,7 +153,6 @@ bool SyncObject::lockConditional(SyncType type)
 			}
 		}
 
-		return false;
 	}
 	else
 	{
@@ -180,8 +179,9 @@ bool SyncObject::lockConditional(SyncType type)
 			}
 		}
 
-		return false;
 	}
+	
+	return false;
 }
 
 void SyncObject::unlock(Sync* sync, SyncType type)
@@ -366,7 +366,7 @@ void SyncObject::grantLocks()
 	}
 }
 
-void SyncObject::validate(SyncType lockType)
+void SyncObject::validate(SyncType lockType) const
 {
 	switch (lockType)
 	{

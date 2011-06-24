@@ -147,7 +147,7 @@ public:
 	virtual int FB_CARG seek(IStatus* status, int mode, int offset);			// returns position
 
 public:
-	Blob(Rbl* handle)
+	explicit Blob(Rbl* handle)
 		: blob(handle)
 	{ }
 

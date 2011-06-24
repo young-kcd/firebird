@@ -471,7 +471,7 @@ namespace
 	class DatabaseContextHolder : public Jrd::ContextPoolHolder
 	{
 	public:
-		DatabaseContextHolder(thread_db* tdbb)
+		explicit DatabaseContextHolder(thread_db* tdbb)
 			: Jrd::ContextPoolHolder(tdbb, tdbb->getDatabase()->dbb_permanent),
 			  savedTdbb(tdbb)
 		{
@@ -7281,6 +7281,9 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 		try
 		{
+			if (tpb_length > 0 && tpb == NULL)
+				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+				
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
 			transaction->tra_sibling = NULL;

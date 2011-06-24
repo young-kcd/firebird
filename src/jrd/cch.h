@@ -177,7 +177,7 @@ const int BCB_exclusive		= 128;	// there is only BCB in whole system
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc(BufferControl* bcb)
+	explicit BufferDesc(BufferControl* bcb)
 		: bdb_bcb(bcb),
 		  bdb_page(0, 0),
 		  bdb_pending_page(0, 0)

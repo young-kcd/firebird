@@ -55,7 +55,7 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 
 	// search for given page at other transactions bitmaps
 	// if found at older tx - we are done, just return
-	// if found at yanger tx - clear it as page should be set at oldest tx (our)
+	// if found at younger tx - clear it as page should be set at oldest tx (our)
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
 	{
@@ -75,16 +75,10 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const SLONG tra
 		} while(accessor.getNext());
 	}
 
-	// add page to the our tx bitmap
-	if (bm)
-	{
-		PBM_SET(&m_pool, &bm, pageno);
-	}
-	else
-	{
-		PBM_SET(&m_pool, &bm, pageno);
+	// add page to our tx bitmap
+	PBM_SET(&m_pool, &bm, pageno);
+	if (!bm)
 		m_tranData.put(tranid, bm);
-	}
 }
 
 
@@ -136,8 +130,8 @@ SLONG GarbageCollector::RelationData::minTranID() const
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
 		return accessor.current()->first;
-	else
-		return MAX_TRA_NUMBER;
+	
+	return MAX_TRA_NUMBER;
 }
 
 

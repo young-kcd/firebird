@@ -716,8 +716,8 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 			outMessage.setNull(retDesc, true);
 			return;
 		}
-		else
-			ret += inMessage[numDesc];
+
+		ret += inMessage[numDesc];
 	}
 
 	outMessage[retDesc] = ret;

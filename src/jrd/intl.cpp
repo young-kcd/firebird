@@ -349,7 +349,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	}
 
 	Jrd::Attachment* att = tdbb->getAttachment();
-	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx); // are we need it ?
+	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx); // do we need it ?
 
 	Collation* to_delete = NULL;
 

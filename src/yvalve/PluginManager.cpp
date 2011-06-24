@@ -320,7 +320,7 @@ namespace
 #endif
 				// This is called only by unregister module
 				// when current module is forced to go away by OS.
-				// Do not unload it ourself in this case.
+				// Do not unload it ourselves in this case.
 				addRef();
 			}
 			else if (next)
@@ -900,7 +900,7 @@ void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 	// Module cleanup should be unregistered only if it's unloaded
 	// and only if it's unloaded not by PluginManager, but by OS.
 	// That means that task is closing unexpectedly - sooner of all
-	// exit() is called by client of embedded server. Shutdown ourself.
+	// exit() is called by client of embedded server. Shutdown ourselves.
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 

@@ -239,7 +239,7 @@ FB_THREAD_ID ThreadSync::getCurrentThreadId()
 }
 
 
-const char* ThreadSync::getWhere()
+const char* ThreadSync::getWhere() const
 {
 	if (lockPending && lockPending->where)
 		return lockPending->where;

@@ -299,7 +299,7 @@ public:
 	virtual void FB_CARG drop(Firebird::IStatus* status);
 
 public:
-	JAttachment(Attachment* handle);
+	explicit JAttachment(Attachment* handle);
 
 	Attachment* getHandle()
 	{
@@ -338,7 +338,7 @@ private:
 class SysAttachment : public JAttachment
 {
 public:
-	SysAttachment(Attachment* handle)
+	explicit SysAttachment(Attachment* handle)
 		: JAttachment(handle)
 	{
 	}
@@ -376,7 +376,7 @@ public:
 					   unsigned int spbLength, const unsigned char* spb);
 
 public:
-	JService(Service* handle);
+	explicit JService(Service* handle);
 
 private:
 	Service* svc;

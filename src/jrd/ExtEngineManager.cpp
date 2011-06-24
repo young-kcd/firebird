@@ -466,7 +466,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action
 			if (align)
 				pos = FB_ALIGN(pos, align);
 
-			unsigned dataPos = pos;
+			const unsigned dataPos = pos;
 			pos += desc.dsc_length;
 
 			align = type_alignments[dtype_short];
@@ -506,7 +506,8 @@ void ExtEngineManager::Trigger::setValues(thread_db* /*tdbb*/, Array<UCHAR>& msg
 
 		dsc desc;
 		EVL_field(rpb->rpb_relation, record, i, &desc);
-
+		// CVC: I'm not sure why it's not important to check EVL_field's result.
+		
 		unsigned align = type_alignments[desc.dsc_dtype];
 		if (align)
 			msgBuffer.resize(FB_ALIGN(msgBuffer.getCount(), align));

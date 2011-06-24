@@ -984,7 +984,7 @@ void CCH_fini(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
-	if (!dbb->dbb_bcb)
+	if (!bcb)
 		return;
 
 	bool flush_error = false;
@@ -3572,7 +3572,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	const bcb_repeat* const old_end = bcb->bcb_rpt + bcb->bcb_count;
 
 	bcb_repeat* new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
-	bcb_repeat* old_rpt = bcb->bcb_rpt;
+	bcb_repeat* const old_rpt = bcb->bcb_rpt;
 	bcb->bcb_rpt = new_rpt;
 
 	bcb->bcb_count = number;
@@ -3913,12 +3913,14 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			if (oldest->bdb_use_count || !oldest->addRefConditional(tdbb, SYNC_EXCLUSIVE))
 				continue;
 
-			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(dbb, oldest)) {
+			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(dbb, oldest))
+			{
 				oldest->release(tdbb);
 				continue;
 			}
 
-			if (oldest->bdb_flags & BDB_lru_chained) {
+			if (oldest->bdb_flags & BDB_lru_chained)
+			{
 				oldest->release(tdbb);
 				continue;
 			}
@@ -5051,7 +5053,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 
 			if (!isTempPage &&
 				(backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
+					(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
 			{
 
 				const bool res = dbb->dbb_backup_manager->writeDifference(status,

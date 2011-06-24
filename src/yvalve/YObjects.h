@@ -117,7 +117,7 @@ template <typename Impl, typename Intf, int Vers>
 class YHelper : public Firebird::StdPlugin<Intf, Vers>, public YObject
 {
 public:
-	YHelper(Intf* aNext);
+	explicit YHelper(Intf* aNext);
 
 	int FB_CARG release()
 	{

@@ -76,14 +76,14 @@ class ThreadSync : public Synchronize
 friend class SyncObject;
 
 public:
-	ThreadSync(const char* desc);
+	explicit ThreadSync(const char* desc);
 	virtual ~ThreadSync();
 
 	static ThreadSync* findThread();
 	static ThreadSync* getThread(const char* desc);
 	static FB_THREAD_ID getCurrentThreadId();
 
-	const char* getWhere();
+	const char* getWhere() const;
 
 	static void validateLocks();
 

@@ -83,7 +83,7 @@ private:
 	RWLock rwLock;
 	bool limbo;
 
-	DTransaction(const SubArray& aSub)
+	explicit DTransaction(const SubArray& aSub)
 		: sub(getPool()), limbo(false)
 	{
 		sub.assign(aSub);

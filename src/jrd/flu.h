@@ -77,7 +77,7 @@ namespace Jrd
 
 		Firebird::RefPtr<InternalModule> interMod;
 
-		Module(InternalModule* h)
+		explicit Module(InternalModule* h)
 			: interMod(h)
 		{ }
 

@@ -4273,7 +4273,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 				{
-					if (attachment->att_flags & ATT_notify_gc) {
+					if (attachment->att_flags & ATT_notify_gc)
+					{
 						attachment->att_flags &= ~ATT_notify_gc;
 						attachment->att_flags |= ATT_disable_notify_gc;
 					}
@@ -4290,7 +4291,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 				for (attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 				{
-					if (attachment->att_flags & ATT_disable_notify_gc) {
+					if (attachment->att_flags & ATT_disable_notify_gc)
+					{
 						attachment->att_flags &= ~ATT_disable_notify_gc;
 						attachment->att_flags |= ATT_notify_gc;
 					}
