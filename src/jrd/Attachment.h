@@ -229,6 +229,7 @@ public:
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
+	SLONG		att_oldest_snapshot;		// GTT's record versions older than this can be gargage-collected
 
 private:
 	jrd_tra*	att_sys_transaction;		// system transaction

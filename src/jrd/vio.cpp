@@ -546,9 +546,12 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = transaction->tra_attachment;
 
 	const bool gcPolicyCooperative = tdbb->getDatabase()->dbb_flags & DBB_gc_cooperative;
 	const bool gcPolicyBackground = tdbb->getDatabase()->dbb_flags & DBB_gc_background;
+	const SLONG oldest_snapshot = 
+		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -617,15 +620,13 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	if ((state == tra_committed || state == tra_us) && !forceBack &&
 		!(rpb->rpb_flags & (rpb_deleted | rpb_damaged)) &&
-		(rpb->rpb_b_page == 0 || rpb->rpb_transaction_nr >= transaction->tra_oldest_active))
+		(rpb->rpb_b_page == 0 || rpb->rpb_transaction_nr >= oldest_snapshot))
 	{
 		if (gcPolicyBackground && rpb->rpb_b_page)
 			notify_garbage_collector(tdbb, rpb);
 
 		return true;
 	}
-
-	Jrd::Attachment* attachment = transaction->tra_attachment;
 
 	// OK, something about the record is fishy.  Loop thru versions until a
 	// satisfactory version is found or we run into a brick wall.  Do any
@@ -976,7 +977,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #endif
 			if (rpb->rpb_flags & rpb_deleted)
 			{
-				if (rpb->rpb_transaction_nr < transaction->tra_oldest_active &&
+				if (rpb->rpb_transaction_nr < oldest_snapshot &&
 					!(attachment->att_flags & ATT_no_cleanup))
 				{
 					if (!gcPolicyCooperative && (attachment->att_flags & ATT_notify_gc) &&
@@ -1003,7 +1004,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			// That might be the reason for the rpb_chained check.
 
 			const bool cannotGC =
-				rpb->rpb_transaction_nr >= transaction->tra_oldest_active || rpb->rpb_b_page == 0 ||
+				rpb->rpb_transaction_nr >= oldest_snapshot || rpb->rpb_b_page == 0 ||
 				rpb->rpb_flags & rpb_chained || attachment->att_flags & ATT_no_cleanup;
 
 			if (cannotGC)
@@ -1732,6 +1733,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = transaction->tra_attachment;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE)
@@ -1750,9 +1752,12 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 	}
 #endif
 
-	if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
+	if (attachment->att_flags & ATT_no_cleanup) {
 		return true;
 	}
+
+	const SLONG oldest_snapshot = 
+		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
 
 	while (true)
 	{
@@ -1800,7 +1805,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 		{
 			if (rpb->rpb_flags & rpb_deleted)
 			{
-				if (rpb->rpb_transaction_nr >= transaction->tra_oldest_active)
+				if (rpb->rpb_transaction_nr >= oldest_snapshot)
 				{
 					return true;
 				}
@@ -1810,7 +1815,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 				return false;
 			}
 
-			if (rpb->rpb_transaction_nr >= transaction->tra_oldest_active || rpb->rpb_b_page == 0)
+			if (rpb->rpb_transaction_nr >= oldest_snapshot || rpb->rpb_b_page == 0)
 			{
 				return true;
 			}
@@ -3633,7 +3638,7 @@ static int check_precommitted(const jrd_tra* transaction, const record_param* rp
  * Functional description
  *	Check if precommitted transaction which created given record version is
  *  current transaction or it is a still active and belongs to the current
- *	attachment. This is needed to detect visibility of records modified by
+ *	attachment. This is needed to detect visibility of records modified in
  *	temporary tables in read-only transactions.
  *
  **************************************/
@@ -3981,6 +3986,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Jrd::Attachment* attachment = transaction->tra_attachment;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
@@ -3992,7 +3998,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	}
 #endif
 
-	if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
+	if (attachment->att_flags & ATT_no_cleanup) {
 		return;
 	}
 
@@ -4021,7 +4027,10 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 	// Make sure it looks kosher and delete the record.
 
-	if (!(rpb->rpb_flags & rpb_deleted) || rpb->rpb_transaction_nr >= transaction->tra_oldest_active)
+	const SLONG oldest_snapshot = 
+		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
+
+	if (!(rpb->rpb_flags & rpb_deleted) || rpb->rpb_transaction_nr >= oldest_snapshot)
 	{
 
 		// expunge
