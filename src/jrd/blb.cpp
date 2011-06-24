@@ -299,7 +299,8 @@ blb* BLB_create2(thread_db* tdbb,
 	BlobFilter* filter = NULL;
 	if (to && from != to)
 	{
-		if (!(from == 0 && to == 1) &&	// ASF: filter_text is not supported for write operations
+		// ASF: filter_text is not supported for write operations
+		if (!(from == 0 && to == isc_blob_text) &&
 			!(to == isc_blob_text && to_charset == CS_BINARY))
 		{
 			filter = find_filter(tdbb, from, to);
