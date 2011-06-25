@@ -1,3 +1,39 @@
+ 2011-06-24 13:14  hvlad 
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Backport improvement CORE-3537 : There is no need to undo changes made in GTT created with ON COMMIT DELETE ROWS option when transaction is rolled back.
+
+ 2011-06-24 13:08  hvlad 
+   M src/jrd/jrd.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Backport improvement CORE-3536 : Garbage collection in GTT is unnecessary delayed by active transactions in another attachments
+
+ 2011-06-24 11:52  hvlad 
+   M src/jrd/vio.cpp
+Delete deferred work when savepoint is cleaned up after failure even if no records was modified. Else DFW task will be repeated at commit making system tables logically inconsistent.
+
+ 2011-06-24 11:48  hvlad 
+   M src/jrd/tra.cpp
+Backported : don't try to undo changes when invalidated transaction is rolled back. I.e. force rollback via TIP if transaction was invalidated.
+
+ 2011-06-24 11:42  hvlad 
+   M src/jrd/cch.cpp
+Additional fix for correct Nbackup state lock accounting. See also CORE-3465
+
+ 2011-06-24 08:56  hvlad 
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Fixed bug CORE-3535 : Write target of dirty page could be undefined if error happens when nbackup state is changed.
+Also prevent overwriting of first page of allocation table by data page contents.
+
+ 2011-06-24 08:17  hvlad 
+   M src/jrd/nbak.h
+Additional patch for CORE-3521. 
+When CCH_flush() is called after last disconnect there is no attachment.
+
  2011-06-21 09:06  alexpeshkoff 
    M src/jrd/trace/TraceConfigStorage.cpp
    M src/jrd/trace/TraceConfigStorage.h
