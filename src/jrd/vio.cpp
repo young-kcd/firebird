@@ -3246,8 +3246,8 @@ void VIO_temp_cleanup(thread_db* tdbb, jrd_tra* transaction)
  **************************************
  *
  * Functional description
- *  Remove undo data for GTT ON COMMIT DELETE ROWS as they data will be released
- *  at transaction end anyway and we don't need to waste a time backing it out on 
+ *  Remove undo data for GTT ON COMMIT DELETE ROWS as their data will be released
+ *  at transaction end anyway and we don't need to waste time backing it out on 
  *  rollback
  *
  **************************************/

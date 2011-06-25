@@ -3438,7 +3438,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	// Calculate attachment-local oldest active and oldest snapshot numbers 
 	// looking at current attachment's transactions only. Calculated values 
-	// are used to determine garbage collection treshold for attachment-local 
+	// are used to determine garbage collection threshold for attachment-local 
 	// data such as temporary tables (GTT's).
 
 	trans->tra_att_oldest_active = number;
