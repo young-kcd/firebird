@@ -1413,7 +1413,7 @@ conditional
 	;
 
 first_file_length
-	: /* nothing */								{ $$ = NULL; }
+	: /* nothing */								{ $$ = 0; }
 	| LENGTH equals long_integer page_noise		{ $$ = $3; }
 	;
 
