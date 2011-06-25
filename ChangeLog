@@ -1,3 +1,68 @@
+ 2011-06-24 12:54  hvlad 
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Improvement CORE-3537 : There is no need to undo changes made in GTT created with ON COMMIT DELETE ROWS option when transaction is rolled back.
+
+ 2011-06-24 12:49  hvlad 
+   M src/jrd/Attachment.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Improvement CORE-3536 : Garbage collection in GTT is unnecessary delayed by active transactions in another attachments
+
+ 2011-06-24 12:03  hvlad 
+   M src/jrd/vio.cpp
+Delete deferred work when savepoint is cleaned up after failure even if no records was modified. Else DFW task will be repeated at commit making system tables logically inconsistent.
+
+ 2011-06-24 08:44  hvlad 
+   M src/jrd/cch.cpp
+Missed lock
+
+ 2011-06-24 08:39  hvlad 
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Fixed bug CORE-3535 : Write target of dirty page could be undefined if error happens when nbackup state is changed.
+Also prevent overwriting of first page of allocation table by data page contents.
+
+ 2011-06-24 07:55  hvlad 
+   M src/jrd/nbak.h
+Additional patch for CORE-3521. 
+When CCH_flush() is called after last disconnect there is no attachment.
+
+ 2011-06-24 06:35  robocop 
+   M src/jrd/blb.cpp
+Misc.
+
+ 2011-06-24 06:34  robocop 
+   M examples/udr/UdrCppExample.cpp
+   M src/common/IntlUtil.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/Synchronize.h
+   M src/jrd/Attachment.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cch.h
+   M src/jrd/flu.h
+   M src/jrd/intl.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/tpc.cpp
+   M src/jrd/tpc_proto.h
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/YObjects.h
+Misc.
+
  2011-06-22 00:30  asfernandes 
    M src/dsql/DdlNodes.epp
 Misc.
