@@ -2376,7 +2376,15 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 						const dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 
 						if (field->fld_type_of_name.isEmpty() && field->fld_source.isEmpty())
+						{
+							if (newInputs.exist(field->fld_name))
+							{
+								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+										  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(field->fld_name));
+							}
+
 							newInputs.add(field->fld_name);
+						}
 					}
 				}
 
@@ -2390,7 +2398,15 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 						const dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
 
 						if (field->fld_type_of_name.isEmpty() && field->fld_source.isEmpty())
+						{
+							if (newInputs.exist(field->fld_name) || newOutputs.exist(field->fld_name))
+							{
+								ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+										  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(field->fld_name));
+							}
+
 							newOutputs.add(field->fld_name);
+						}
 					}
 				}
 
