@@ -15,6 +15,7 @@ git add src/include/firebird/impl/boost/preprocessor/detail
 git add src/include/firebird/impl/boost/preprocessor/repetition/detail
 rm gen/boost
 
-#git commit src/include/firebird/impl/boost
-#rm -rf src/include/firebird/impl/boost
-#git checkout -- src/include/firebird
+echo Now run this:
+echo git commit src/include/firebird/impl/boost
+echo rm -rf src/include/firebird/impl/boost
+echo git checkout -- src/include/firebird

@@ -275,7 +275,7 @@ private:
 class MessageImpl : public Firebird::FbMessage
 {
 public:
-	MessageImpl(unsigned aItemCount, ISC_UCHAR* aBuffer = NULL)
+	MessageImpl(unsigned aItemCount, void* aBuffer = NULL)
 		: itemCount(aItemCount * 2),
 		  freeBuffer(!aBuffer),
 		  items(0)
@@ -289,7 +289,7 @@ public:
 		blrLength = 0;
 		blr = blrPos = new ISC_UCHAR[sizeof(HEADER) + 10 * itemCount + 2];
 		bufferLength = 0;
-		buffer = aBuffer;
+		buffer = (ISC_UCHAR*) aBuffer;
 
 		memcpy(blrPos, HEADER, sizeof(HEADER));
 		blrPos += sizeof(HEADER);
@@ -564,12 +564,44 @@ inline ParamDesc<void*>::ParamDesc(MessageImpl& message, const Firebird::IParame
 
 /***
 create function wait_event (
-    event_name varchar(31) character set ascii not null
+    event_name varchar(31) character set utf8 not null
 ) returns integer not null
     external name 'udrcpp_example!wait_event'
     engine udr;
 ***/
-FB_UDR_DECLARE_FUNCTION(wait_event)
+FB_UDR_BEGIN_FUNCTION(wait_event)
+	FB_UDR_EXECUTE_MESSAGE_FUNCTION(
+		(FB_VARCHAR(31 * 4), name)
+	,
+		(FB_INTEGER, result))
+	{
+		char* s = new char[in->name.length + 1];
+		memcpy(s, in->name.str, in->name.length);
+		s[in->name.length] = '\0';
+
+		unsigned char* eveBuffer;
+		unsigned char* eveResult;
+		int eveLen = isc_event_block(&eveBuffer, &eveResult, 1, s);
+
+		delete [] s;
+
+		ISC_STATUS_ARRAY statusVector = {0};
+		isc_db_handle dbHandle = getIscDbHandle(context);
+		ISC_ULONG counter = 0;
+
+		ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+			statusVector);
+		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
+		ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
+			statusVector);
+		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
+
+		isc_free((char*) eveBuffer);
+		isc_free((char*) eveResult);
+
+		out->result = counter;
+	}
+FB_UDR_END_FUNCTION
 
 
 /***
@@ -581,7 +613,40 @@ create function sum_args (
     external name 'udrcpp_example!sum_args'
     engine udr;
 ***/
-FB_UDR_DECLARE_FUNCTION(sum_args)
+FB_UDR_BEGIN_FUNCTION(sum_args)
+	FB_UDR_EXECUTE_DYNAMIC_FUNCTION
+	{
+		AutoDispose<IStatus> status(master->getStatus());
+
+		const IParametersMetadata* params = metadata->getInputParameters(status);
+		ThrowError::check(status->get());
+
+		unsigned count = params->getCount(status);
+		ThrowError::check(status->get());
+
+		MessageImpl inMessage(count, in);
+
+		MessageImpl outMessage(1, out);
+		ParamDesc<ISC_LONG> retDesc(outMessage);
+
+		int ret = 0;
+
+		for (unsigned i = 0; i < count; ++i)
+		{
+			ParamDesc<ISC_LONG> numDesc(inMessage);
+
+			if (inMessage.isNull(numDesc))
+			{
+				outMessage.setNull(retDesc, true);
+				return;
+			}
+			else
+				ret += inMessage[numDesc];
+		}
+
+		outMessage[retDesc] = ret;
+	}
+FB_UDR_END_FUNCTION
 
 
 /***
@@ -594,11 +659,140 @@ create procedure gen_rows (
     external name 'udrcpp_example!gen_rows'
     engine udr;
 ***/
-FB_UDR_DECLARE_PROCEDURE(gen_rows)
-FB_UDR_BEGIN_DECLARE_FETCH_PROCEDURE(gen_rows)
-	int counter;
-	int end;
-FB_UDR_END_DECLARE_FETCH_PROCEDURE(gen_rows)
+FB_UDR_BEGIN_PROCEDURE(gen_rows)
+	FB_UDR_EXECUTE_DYNAMIC_PROCEDURE
+	{
+		MessageImpl inMessage(2, inMsg);
+		ParamDesc<ISC_LONG> startDesc(inMessage);
+		ParamDesc<ISC_LONG> endDesc(inMessage);
+
+		counter = inMessage[startDesc];
+		end = inMessage[endDesc];
+	}
+
+	FB_UDR_FETCH_PROCEDURE
+	{
+		if (counter > end)
+			return false;
+
+		MessageImpl outMessage(1, out);
+		ParamDesc<ISC_LONG> retDesc(outMessage);
+
+		outMessage[retDesc] = counter++;
+
+		return true;
+	}
+
+	ISC_LONG counter;
+	ISC_LONG end;
+FB_UDR_END_PROCEDURE
+
+
+/***
+create procedure gen_rows2 (
+    start_n integer not null,
+    end_n integer not null
+) returns (
+    n integer not null
+)
+    external name 'udrcpp_example!gen_rows2'
+    engine udr;
+***/
+FB_UDR_BEGIN_PROCEDURE(gen_rows2)
+	FB_UDR_EXECUTE_MESSAGE_PROCEDURE(
+		(FB_INTEGER, start)
+		(FB_INTEGER, end)
+	,
+		(FB_INTEGER, result))
+	{
+		out->result = in->start - 1;
+	}
+
+	FB_UDR_FETCH_PROCEDURE
+	{
+		return out->result++ < in->end;
+	}
+FB_UDR_END_PROCEDURE
+
+
+/***
+create procedure inc (
+    count_n integer not null
+) returns (
+    n0 integer not null,
+    n1 integer not null,
+    n2 integer not null,
+    n3 integer not null,
+    n4 integer not null
+)
+    external name 'udrcpp_example!inc'
+    engine udr;
+***/
+// This is a sample procedure demonstrating how the scopes of variables works.
+// n1 and n2 are on the Procedure scope, i.e., they're shared for each execution of the same cached
+// metadata object.
+// n3 and n4 are on the ResultSet scope, i.e., each procedure execution have they own instances.
+FB_UDR_BEGIN_PROCEDURE(inc)
+	ISC_LONG n1;
+
+	// This is how a procedure (class) initializer is written.
+	// ResultSet variables are not accessible here.
+	// If there is nothing to initialize, it can be completelly suppressed.
+	FB_UDR_PROCEDURE(inc)()
+		: n1(0),
+		  n2(0)
+	{
+	}
+
+	ISC_LONG n2;
+
+	// FB_UDR_EXECUTE_MESSAGE_PROCEDURE or FB_UDR_EXECUTE_DYNAMIC_PROCEDURE starts the ResultSet scope.
+	FB_UDR_EXECUTE_MESSAGE_PROCEDURE(
+		(FB_INTEGER, count)
+	,
+		(FB_INTEGER, n0)
+		(FB_INTEGER, n1)
+		(FB_INTEGER, n2)
+		(FB_INTEGER, n3)
+		(FB_INTEGER, n4))
+	// This is the ResultSet (class) initializer. If there is nothing to initialize, the comma
+	// should be suppressed.
+	,
+		n3(procedure->n1),	// n3 will start with the next value for n1 of the last execution
+		n4(0)
+	{
+		out->n0 = 0;
+
+		// In the execute method, the procedure scope must be accessed using the 'procedure' pointer.
+		procedure->n1 = 0;
+
+		// We don't touch n2 here, so it incremented counter will be kept after each execution.
+
+		// The ResultSet scope must be accessed directly, i.e., they're member variables of the
+		// 'this' pointer.
+		++n4;
+	}
+
+	ISC_LONG n3;
+
+	// FB_UDR_FETCH must be always after FB_UDR_EXECUTE_MESSAGE_PROCEDURE or
+	// FB_UDR_EXECUTE_DYNAMIC_PROCEDURE.
+	FB_UDR_FETCH_PROCEDURE
+	{
+		if (out->n0++ <= in->count)
+		{
+			out->n1 = ++procedure->n1;
+			out->n2 = ++procedure->n2;
+			out->n3 = ++n3;
+			out->n4 = ++n4;
+			return true;
+		}
+
+		return false;
+	}
+
+	ISC_LONG n4;
+FB_UDR_END_PROCEDURE
 
 
 /***
@@ -645,108 +839,7 @@ private:
 	bool initialized;
 	XSQLDA* inSqlDa;
 	isc_stmt_handle stmtHandle;
-#if 0
-	IStatement* stmt;
-#endif
 FB_UDR_END_DECLARE_TRIGGER(replicate)
-
-
-FB_UDR_BEGIN_FUNCTION(wait_event)
-{
-	MessageImpl inMessage(1, inMsg);
-	ParamDesc<FbString> nameDesc(inMessage, 31);
-
-	FbString& name = inMessage[nameDesc];
-
-	char* s = new char[name.length + 1];
-	memcpy(s, name.str, name.length);
-	s[name.length] = '\0';
-
-	unsigned char* eveBuffer;
-	unsigned char* eveResult;
-	int eveLen = isc_event_block(&eveBuffer, &eveResult, 1, s);
-
-	delete [] s;
-
-	ISC_STATUS_ARRAY statusVector = {0};
-	isc_db_handle dbHandle = getIscDbHandle(context);
-	ISC_ULONG counter = 0;
-
-	ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
-		statusVector);
-	isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
-	ThrowError::check(isc_wait_for_event(statusVector, &dbHandle, eveLen, eveBuffer, eveResult),
-		statusVector);
-	isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
-
-	isc_free((char*) eveBuffer);
-	isc_free((char*) eveResult);
-
-	MessageImpl outMessage(1, outMsg);
-	ParamDesc<ISC_LONG> retDesc(outMessage);
-
-	outMessage[retDesc] = counter;
-}
-FB_UDR_END_FUNCTION(wait_event)
-
-
-FB_UDR_BEGIN_FUNCTION(sum_args)
-{
-	AutoDispose<IStatus> status(master->getStatus());
-
-	const IParametersMetadata* params = metadata->getInputParameters(status);
-	ThrowError::check(status->get());
-
-	unsigned count = params->getCount(status);
-	ThrowError::check(status->get());
-
-	MessageImpl inMessage(count, inMsg);
-
-	MessageImpl outMessage(1, outMsg);
-	ParamDesc<ISC_LONG> retDesc(outMessage);
-
-	int ret = 0;
-
-	for (unsigned i = 0; i < count; ++i)
-	{
-		ParamDesc<ISC_LONG> numDesc(inMessage);
-
-		if (inMessage.isNull(numDesc))
-		{
-			outMessage.setNull(retDesc, true);
-			return;
-		}
-
-		ret += inMessage[numDesc];
-	}
-
-	outMessage[retDesc] = ret;
-}
-FB_UDR_END_FUNCTION(sum_args)
-
-
-FB_UDR_BEGIN_PROCEDURE(gen_rows)
-{
-	MessageImpl inMessage(2, inMsg);
-	ParamDesc<ISC_LONG> startDesc(inMessage);
-	ParamDesc<ISC_LONG> endDesc(inMessage);
-
-	counter = inMessage[startDesc];
-	end = inMessage[endDesc];
-}
-FB_UDR_FETCH_PROCEDURE(gen_rows)
-{
-	if (counter > end)
-		return false;
-
-	MessageImpl outMessage(1, outMsg);
-	ParamDesc<ISC_LONG> retDesc(outMessage);
-
-	outMessage[retDesc] = counter++;
-
-	return true;
-}
-FB_UDR_END_PROCEDURE(gen_rows)
 
 
 FB_UDR_TRIGGER(replicate)::FB_UDR_TRIGGER(replicate)()

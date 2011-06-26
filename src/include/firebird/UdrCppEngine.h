@@ -20,11 +20,12 @@
  *  Contributor(s): ______________________________________.
  */
 
-#ifndef FIREBIRD_PLUGIN_UDR_CPP
-#define FIREBIRD_PLUGIN_UDR_CPP
+#ifndef FIREBIRD_UDR_CPP_ENGINE
+#define FIREBIRD_UDR_CPP_ENGINE
 
 #include "./ExternalEngine.h"
 #include "./UdrEngine.h"
+#include "./Message.h"
 #ifndef JRD_IBASE_H
 #include "ibase.h"
 #include "iberror.h"
@@ -44,29 +45,41 @@ namespace Firebird
 #define FB_UDR_TRIGGER(name)	Trig##name
 
 
-#define FB_UDR_BEGIN_DECLARE_FUNCTION(name)	\
-	class FB_UDR_FUNCTION(name) : public ::Firebird::Udr::Function	\
+#define FB_UDR_BEGIN_FUNCTION(name)	\
+	class FB_UDR_FUNCTION(name);	\
+	\
+	::Firebird::Udr::FunctionFactoryImpl<FB_UDR_FUNCTION(name)> FuncFactory##name(#name);	\
+	\
+	class FB_UDR_FUNCTION(name) : public ::Firebird::Udr::Function<FB_UDR_FUNCTION(name)>	\
 	{	\
-	public:	\
-		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			UCHAR* inMsg, UCHAR* outMsg);	\
-	private:
+	public:
 
-#define FB_UDR_END_DECLARE_FUNCTION(name)	\
+#define FB_UDR_END_FUNCTION	\
 	};
 
-#define FB_UDR_DECLARE_FUNCTION(name)	\
-	FB_UDR_BEGIN_DECLARE_FUNCTION(name)	\
-	FB_UDR_END_DECLARE_FUNCTION(name)
+#define FB_UDR_EXECUTE_DYNAMIC_FUNCTION	\
+	typedef void* InMessage;	\
+	typedef void* OutMessage;	\
+	\
+	FB_UDR_EXECUTE__FUNCTION
 
-#define FB_UDR_BEGIN_FUNCTION(name)	\
-	void FB_CALL FB_UDR_FUNCTION(name)::execute(::Firebird::Error* error, \
-		::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)	\
+#define FB_UDR_EXECUTE_MESSAGE_FUNCTION(inputs, output)	\
+	FB_MESSAGE(InMessage,	\
+		inputs	\
+	)	\
+	FB_MESSAGE(OutMessage,	\
+		output	\
+	)	\
+	\
+	FB_UDR_EXECUTE__FUNCTION
+
+#define FB_UDR_EXECUTE__FUNCTION	\
+	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+		UCHAR* inMsg, UCHAR* outMsg)	\
 	{	\
 		try	\
-		{
-
-#define FB_UDR_END_FUNCTION(name)	\
+		{	\
+			execute(error, context, (InMessage*) inMsg, (OutMessage*) outMsg);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -81,61 +94,48 @@ namespace Firebird
 				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
 		}	\
 	}	\
-	::Firebird::Udr::FunctionFactoryImpl<FB_UDR_FUNCTION(name)> FuncFactory##name(#name);
-
-
-#define FB_UDR_BEGIN_DECLARE_PROCEDURE(name)	\
-	class FB_UDR_PROCEDURE(name) : public ::Firebird::Udr::Procedure	\
-	{	\
-	public:	\
-		virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::Error* error, \
-			::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg);	\
-
-#define FB_UDR_END_DECLARE_PROCEDURE(name)	\
-	};
-
-#define FB_UDR_DECLARE_PROCEDURE(name)	\
-	FB_UDR_BEGIN_DECLARE_PROCEDURE(name)	\
-	FB_UDR_END_DECLARE_PROCEDURE(name)
-
-#define FB_UDR_BEGIN_DECLARE_FETCH_PROCEDURE(name)	\
-	class ResultSet##name : public ::Firebird::Udr::ResultSet	\
-	{	\
-	public:	\
-		ResultSet##name(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
-			::Firebird::Udr::Procedure* procedure, UCHAR* inMsg, UCHAR* outMsg);	\
 	\
-	public:	\
-		virtual bool FB_CALL fetch(::Firebird::Error* error);	\
-	\
-	private:
+	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
+		InMessage* in, OutMessage* out)
 
-#define FB_UDR_END_DECLARE_FETCH_PROCEDURE(name)	\
-	};
-
-#define FB_UDR_DECLARE_FETCH_PROCEDURE(name)	\
-	FB_UDR_BEGIN_DECLARE_FETCH_PROCEDURE(name)	\
-	FB_UDR_END_DECLARE_FETCH_PROCEDURE(name)
-
-#define FB_UDR_DECLARE_PROCEDURE(name)	\
-	FB_UDR_BEGIN_DECLARE_PROCEDURE(name)	\
-	FB_UDR_END_DECLARE_PROCEDURE(name)
 
 #define FB_UDR_BEGIN_PROCEDURE(name)	\
-	::Firebird::ExternalResultSet* FB_CALL Proc##name::open(::Firebird::Error* error, \
+	class FB_UDR_PROCEDURE(name);	\
+	\
+	::Firebird::Udr::ProcedureFactoryImpl<FB_UDR_PROCEDURE(name)> ProcFactory##name(#name);	\
+	\
+	class FB_UDR_PROCEDURE(name) : public ::Firebird::Udr::Procedure<FB_UDR_PROCEDURE(name)>	\
+	{	\
+	public:	\
+		typedef FB_UDR_PROCEDURE(name) This;
+
+#define FB_UDR_END_PROCEDURE	\
+		};	\
+	};
+
+#define FB_UDR_EXECUTE_DYNAMIC_PROCEDURE	\
+	typedef void* InMessage;	\
+	typedef void* OutMessage;	\
+	\
+	FB_UDR_EXECUTE__PROCEDURE
+
+#define FB_UDR_EXECUTE_MESSAGE_PROCEDURE(inputs, outputs)	\
+	FB_MESSAGE(InMessage,	\
+		inputs	\
+	)	\
+	FB_MESSAGE(OutMessage,	\
+		outputs	\
+	)	\
+	\
+	FB_UDR_EXECUTE__PROCEDURE
+
+#define FB_UDR_EXECUTE__PROCEDURE	\
+	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::Error* error, \
 		::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)	\
 	{	\
-		return new ResultSet##name(error, context, this, inMsg, outMsg);	\
-	}	\
-	\
-	ResultSet##name::ResultSet##name(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::Udr::Procedure* procedure, UCHAR* inMsg, UCHAR* outMsg)	\
-		: ResultSet(context, procedure, inMsg, outMsg)	\
-	{	\
 		try	\
-		{
-
-#define FB_UDR_FETCH_PROCEDURE(name)	\
+		{	\
+			return new ResultSet(error, context, this, (InMessage*) inMsg, (OutMessage*) outMsg);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -149,14 +149,24 @@ namespace Firebird
 				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
 				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
 		}	\
+		\
+		return 0;	\
 	}	\
 	\
-	bool FB_CALL ResultSet##name::fetch(::Firebird::Error* error)	\
+	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>	\
+	{	\
+	public:	\
+		ResultSet(::Firebird::Error* error, ::Firebird::ExternalContext* context,	\
+				This* procedure, InMessage* inMsg, OutMessage* outMsg)	\
+			: ::Firebird::Udr::ResultSet<ResultSet, This, InMessage, OutMessage>(	\
+					context, procedure, inMsg, outMsg)
+
+#define FB_UDR_FETCH_PROCEDURE	\
+	virtual bool FB_CALL fetch(::Firebird::Error* error)	\
 	{	\
 		try	\
-		{
-
-#define FB_UDR_END_PROCEDURE(name)	\
+		{	\
+			return fetch0(error);	\
 		}	\
 		catch (const ::Firebird::Udr::ThrowError::Exception& e)	\
 		{	\
@@ -170,18 +180,19 @@ namespace Firebird
 				FB_UDR_UNRECOGNIZED_EXCEPTION,	\
 				strlen(FB_UDR_UNRECOGNIZED_EXCEPTION));	\
 		}	\
-		return false;	\
+		\
+		return 0;	\
 	}	\
-	::Firebird::Udr::ProcedureFactoryImpl<FB_UDR_PROCEDURE(name)> ProcFactory##name(#name);
+	\
+	bool FB_CALL fetch0(::Firebird::Error* error)
 
 
 #define FB_UDR_BEGIN_DECLARE_TRIGGER(name)	\
-	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger	\
+	class FB_UDR_TRIGGER(name) : public ::Firebird::Udr::Trigger<FB_UDR_TRIGGER(name)>	\
 	{	\
 	public:	\
 		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg);	\
-	private:
+			::Firebird::ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg);
 
 #define FB_UDR_END_DECLARE_TRIGGER(name)	\
 	};
@@ -425,7 +436,7 @@ protected:
 };
 
 
-class Procedure;
+template <typename T> class Procedure;
 
 
 class Helper
@@ -456,51 +467,69 @@ public:
 };
 
 
+template <typename This, typename Procedure, typename InMessage, typename OutMessage>
 class ResultSet : public ExternalResultSet, public Helper
 {
 public:
-	ResultSet(Firebird::ExternalContext* aContext, Firebird::Udr::Procedure* aProcedure,
-				UCHAR* aInMsg, UCHAR* aOutMsg)
+	ResultSet(Firebird::ExternalContext* aContext, Procedure* aProcedure,
+				InMessage* aIn, OutMessage* aOut)
 		: context(aContext),
 		  procedure(aProcedure),
-		  inMsg(aInMsg),
-		  outMsg(aOutMsg)
-	{
-	}
-
-	virtual ~ResultSet()
+		  in(aIn),
+		  out(aOut)
 	{
 	}
 
 public:
 	virtual void FB_CALL dispose(Firebird::Error* /*error*/)
 	{
-		delete this;
+		delete static_cast<This*>(this);
 	}
 
 protected:
 	Firebird::ExternalContext* context;
-	Firebird::Udr::Procedure* procedure;
-	UCHAR* inMsg;
-	UCHAR* outMsg;
+	Procedure* procedure;
+	InMessage* in;
+	OutMessage* out;
 };
 
 
+// This class is used to fix an apparent bug with clang, where the object is wrongly initialized
+// and overwrites the members set in the operator new.
+template <typename T>
+class Routine : public T
+{
+public:
+	Routine()
+	{
+	}
+};
+
+
+template <typename This>
 class Function : public ExternalFunction, public Helper
 {
 public:
-	virtual ~Function()
-	{
-	}
-
-public:
 	virtual void FB_CALL dispose(Error* /*error*/)
 	{
-		delete this;
+		delete static_cast<This*>(this);
 	}
 
-	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
+	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+		Utf8* /*name*/, uint /*nameSize*/)
 	{
+	}
+
+	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	{
+		Function* p = reinterpret_cast<Function*>(::new char[size]);
+		p->metadata = metadata;
+		return p;
+	}
+
+	void operator delete(void* p)
+	{
+		::delete [] static_cast<char*>(p);
 	}
 
 public:
@@ -508,21 +537,30 @@ public:
 };
 
 
+template <typename This>
 class Procedure : public ExternalProcedure, public Helper
 {
 public:
-	virtual ~Procedure()
-	{
-	}
-
-public:
 	virtual void FB_CALL dispose(Error* /*error*/)
 	{
-		delete this;
+		delete static_cast<This*>(this);
 	}
 
-	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
+	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+		Utf8* /*name*/, uint /*nameSize*/)
 	{
+	}
+
+	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	{
+		Procedure* p = reinterpret_cast<Procedure*>(::new char[size]);
+		p->metadata = metadata;
+		return p;
+	}
+
+	void operator delete(void* p)
+	{
+		::delete [] static_cast<char*>(p);
 	}
 
 public:
@@ -530,21 +568,30 @@ public:
 };
 
 
+template <typename This>
 class Trigger : public ExternalTrigger, public Helper
 {
 public:
-	virtual ~Trigger()
-	{
-	}
-
-public:
 	virtual void FB_CALL dispose(Error* /*error*/)
 	{
-		delete this;
+		delete static_cast<This*>(this);
 	}
 
-	void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/, Utf8* /*name*/, uint /*nameSize*/)
+	virtual void FB_CALL getCharSet(Error* /*error*/, ExternalContext* /*context*/,
+		Utf8* /*name*/, uint /*nameSize*/)
 	{
+	}
+
+	void* operator new(size_t size, const IRoutineMetadata* metadata)
+	{
+		Trigger* p = reinterpret_cast<Trigger*>(::new char[size]);
+		p->metadata = metadata;
+		return p;
+	}
+
+	void operator delete(void* p)
+	{
+		::delete [] static_cast<char*>(p);
 	}
 
 public:
@@ -569,9 +616,7 @@ public:
 
 	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
-		Function* function = new T();
-		function->metadata = metadata;
-		return function;
+		return new(metadata) Routine<T>;
 	}
 
 private:
@@ -596,9 +641,7 @@ public:
 
 	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
-		Procedure* procedure = new T();
-		procedure->metadata = metadata;
-		return procedure;
+		return new(metadata) Routine<T>;
 	}
 
 private:
@@ -623,9 +666,7 @@ public:
 
 	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
-		Trigger* trigger = new T();
-		trigger->metadata = metadata;
-		return trigger;
+		return new(metadata) Routine<T>;
 	}
 
 private:
@@ -637,4 +678,4 @@ private:
 	}	// namespace Udr
 }	// namespace Firebird
 
-#endif	// FIREBIRD_PLUGIN_UDR_CPP
+#endif	// FIREBIRD_UDR_CPP_ENGINE
