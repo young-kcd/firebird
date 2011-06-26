@@ -7281,9 +7281,9 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 
 		try
 		{
-			if (tpb_length > 0 && tpb == NULL)
+			if (tpb_length > 0 && !tpb)
 				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
-				
+
 			jrd_tra* transaction = TRA_start(tdbb, tpb_length, tpb);
 
 			transaction->tra_sibling = NULL;

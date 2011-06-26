@@ -154,9 +154,9 @@ BackupManager::StateWriteGuard::StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd)
 
 BackupManager::StateWriteGuard::~StateWriteGuard()
 {
-	// It is important to set state into nbak_state_unknown *before* release of state lock, 
-	// else someone could acquire state lock, fetch and modify some page before state will 
-	// be set into unknown. But dirty page can't be written when backup state is unknown 
+	// It is important to set state into nbak_state_unknown *before* release of state lock,
+	// otherwise someone could acquire state lock, fetch and modify some page before state will
+	// be set into unknown. But dirty page can't be written when backup state is unknown
 	// because write target (database or delta) is also unknown.
 
 	if (!success)
@@ -263,22 +263,26 @@ void BackupManager::beginBackup(thread_db* tdbb)
 			struct stat st;
 			PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			char* func = NULL;
+
 			while (!func && fstat(pageSpace->file->fil_desc, &st) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fstat";
 			}
+
 			while (!func && fchown(diff_file->fil_desc, st.st_uid, st.st_gid) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fchown";
 			}
+
 			while (!func && fchmod(diff_file->fil_desc, st.st_mode) != 0)
 			{
-				if (errno != EINTR) 
+				if (errno != EINTR)
 					func = "fchmod";
 			}
-			if (func) 
+
+			if (func)
 			{
 				stateGuard.setSuccess();
 				Firebird::system_call_failed::raise(func);

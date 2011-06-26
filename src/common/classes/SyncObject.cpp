@@ -152,7 +152,6 @@ bool SyncObject::lockConditional(SyncType type)
 				return true;
 			}
 		}
-
 	}
 	else
 	{
@@ -180,7 +179,7 @@ bool SyncObject::lockConditional(SyncType type)
 		}
 
 	}
-	
+
 	return false;
 }
 

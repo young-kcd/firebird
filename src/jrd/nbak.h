@@ -190,6 +190,7 @@ public:
 		~StateWriteGuard();
 
 		void releaseHeader();
+
 		void setSuccess()
 		{
 			success = true;
@@ -213,7 +214,7 @@ public:
 			Jrd::Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
-			const bool ok = att ? 
+			const bool ok = att ?
 				att->backupStateReadLock(tdbb, LCK_WAIT) :
 				dbb->dbb_backup_manager->lockStateRead(tdbb, LCK_WAIT);
 

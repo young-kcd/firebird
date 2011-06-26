@@ -130,7 +130,7 @@ SLONG GarbageCollector::RelationData::minTranID() const
 	TranData::ConstAccessor accessor(&m_tranData);
 	if (accessor.getFirst())
 		return accessor.current()->first;
-	
+
 	return MAX_TRA_NUMBER;
 }
 

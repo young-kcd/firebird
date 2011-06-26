@@ -550,8 +550,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 	const bool gcPolicyCooperative = tdbb->getDatabase()->dbb_flags & DBB_gc_cooperative;
 	const bool gcPolicyBackground = tdbb->getDatabase()->dbb_flags & DBB_gc_background;
-	const SLONG oldest_snapshot = 
-		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
+	const SLONG oldest_snapshot = rpb->rpb_relation->isTemporary() ?
+		attachment->att_oldest_snapshot : transaction->tra_oldest_active;
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL)
@@ -1756,8 +1756,8 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 		return true;
 	}
 
-	const SLONG oldest_snapshot = 
-		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
+	const SLONG oldest_snapshot = rpb->rpb_relation->isTemporary() ?
+		attachment->att_oldest_snapshot : transaction->tra_oldest_active;
 
 	while (true)
 	{
@@ -3247,12 +3247,13 @@ void VIO_temp_cleanup(thread_db* tdbb, jrd_tra* transaction)
  *
  * Functional description
  *  Remove undo data for GTT ON COMMIT DELETE ROWS as their data will be released
- *  at transaction end anyway and we don't need to waste time backing it out on 
- *  rollback
+ *  at transaction end anyway and we don't need to waste time backing it out on
+ *  rollback.
  *
  **************************************/
 {
 	Savepoint* sav_point = transaction->tra_save_point;
+
 	for (; sav_point; sav_point = sav_point->sav_next)
 	{
 		for (VerbAction* action = sav_point->sav_verb_actions; action; action = action->vct_next)
@@ -3260,14 +3261,17 @@ void VIO_temp_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			if (action->vct_relation->rel_flags & REL_temp_tran)
 			{
 				RecordBitmap::reset(action->vct_records);
+
 				if (action->vct_undo)
 				{
 					if (action->vct_undo->getFirst())
 					{
-						do {
+						do
+						{
 							action->vct_undo->current().release(transaction);
 						} while (action->vct_undo->getNext());
 					}
+
 					delete action->vct_undo;
 					action->vct_undo = NULL;
 				}
@@ -3336,7 +3340,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 	// Cleanup/merge deferred work/event post
 
-	if (sav_point->sav_verb_actions || sav_point->sav_verb_count || (sav_point->sav_flags & SAV_force_dfw))
+	if (sav_point->sav_verb_actions || sav_point->sav_verb_count ||
+		(sav_point->sav_flags & SAV_force_dfw))
 	{
 		if (sav_point->sav_verb_count) {
 			DFW_delete_deferred(transaction, sav_point->sav_number);
@@ -4037,9 +4042,8 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	}
 #endif
 
-	if (attachment->att_flags & ATT_no_cleanup) {
+	if (attachment->att_flags & ATT_no_cleanup)
 		return;
-	}
 
 	// Re-fetch the record
 
@@ -4066,8 +4070,8 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 	// Make sure it looks kosher and delete the record.
 
-	const SLONG oldest_snapshot = 
-		rpb->rpb_relation->isTemporary() ? attachment->att_oldest_snapshot : transaction->tra_oldest_active;
+	const SLONG oldest_snapshot = rpb->rpb_relation->isTemporary() ?
+		attachment->att_oldest_snapshot : transaction->tra_oldest_active;
 
 	if (!(rpb->rpb_flags & rpb_deleted) || rpb->rpb_transaction_nr >= oldest_snapshot)
 	{

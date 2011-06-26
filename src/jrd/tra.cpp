@@ -1271,9 +1271,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		}
 	}
 	else
-	{
 		VIO_temp_cleanup(tdbb, transaction);
-	}
 
 	//  Find out if there is a transaction savepoint we can use to rollback our transaction
 	bool tran_sav = false;
@@ -3436,20 +3434,23 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		}
 	}
 
-	// Calculate attachment-local oldest active and oldest snapshot numbers 
-	// looking at current attachment's transactions only. Calculated values 
-	// are used to determine garbage collection threshold for attachment-local 
+	// Calculate attachment-local oldest active and oldest snapshot numbers
+	// looking at current attachment's transactions only. Calculated values
+	// are used to determine garbage collection threshold for attachment-local
 	// data such as temporary tables (GTT's).
 
 	trans->tra_att_oldest_active = number;
 	SLONG att_oldest_active = number;
 	SLONG att_oldest_snapshot = number;
+
 	for (jrd_tra* tx_att = attachment->att_transactions; tx_att; tx_att = tx_att->tra_next)
 	{
 		att_oldest_active = MIN(att_oldest_active, tx_att->tra_number);
 		att_oldest_snapshot = MIN(att_oldest_snapshot, tx_att->tra_att_oldest_active);
 	}
+
 	trans->tra_att_oldest_active = (trans->tra_flags & TRA_read_committed) ? number : att_oldest_active;
+
 	if (attachment->att_oldest_snapshot < att_oldest_snapshot)
 		attachment->att_oldest_snapshot = att_oldest_snapshot;
 

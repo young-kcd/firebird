@@ -406,7 +406,7 @@ SLONG TipCache::cacheTransactions(thread_db* tdbb, SLONG oldest)
 #endif
 
 	// hvlad: No need to cache TIP pages below hdr_oldest just refreshed from
-	// header page. Moreover out tip cache can now contain a gap between the last
+	// header page. Moreover our tip cache can now contain a gap between the last
 	// cached tip page and new pages if our process was idle for long time
 
 	oldest = MAX(oldest, hdr_oldest);

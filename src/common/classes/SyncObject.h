@@ -207,8 +207,8 @@ public:
 class SyncUnlockGuard
 {
 public:
-	explicit SyncUnlockGuard(Sync& aSync) :
-	  sync(aSync)
+	explicit SyncUnlockGuard(Sync& aSync)
+		: sync(aSync)
 	{
 		oldState = sync.getState();
 
