@@ -1,3 +1,7 @@
+ 2011-06-26 22:27  hvlad 
+   M src/dsql/ddl.cpp
+Fixed bug CORE-3509 : Alter procedure allows to add the parameter with the same name.
+
  2011-06-25 03:33  robocop 
    M src/jrd/tra.cpp
    M src/jrd/vio.cpp
