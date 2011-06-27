@@ -1,3 +1,75 @@
+ 2011-06-26 18:48  asfernandes 
+   M src/common/classes/SyncObject.cpp
+   M src/common/classes/SyncObject.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2011-06-26 15:57  asfernandes 
+   M builds/win32/msvc9/Firebird3_Examples.sln
+   M examples/udr/UdrCppExample.cpp
+   A src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   A src/include/ibase.h
+   M src/misc/copy-boost.sh
+Work in progress on message-based external functions and procedures.
+
+ 2011-06-26 15:56  asfernandes 
+   A src/include/firebird/impl
+   A src/include/firebird/impl/boost
+   A src/include/firebird/impl/boost/preprocessor
+   A src/include/firebird/impl/boost/preprocessor/arithmetic
+   A src/include/firebird/impl/boost/preprocessor/arithmetic/dec.hpp
+   A src/include/firebird/impl/boost/preprocessor/arithmetic/inc.hpp
+   A src/include/firebird/impl/boost/preprocessor/cat.hpp
+   A src/include/firebird/impl/boost/preprocessor/config
+   A src/include/firebird/impl/boost/preprocessor/config/config.hpp
+   A src/include/firebird/impl/boost/preprocessor/control
+   A src/include/firebird/impl/boost/preprocessor/control/expr_if.hpp
+   A src/include/firebird/impl/boost/preprocessor/control/expr_iif.hpp
+   A src/include/firebird/impl/boost/preprocessor/control/if.hpp
+   A src/include/firebird/impl/boost/preprocessor/control/iif.hpp
+   A src/include/firebird/impl/boost/preprocessor/debug
+   A src/include/firebird/impl/boost/preprocessor/debug/error.hpp
+   A src/include/firebird/impl/boost/preprocessor/detail
+   A src/include/firebird/impl/boost/preprocessor/detail/auto_rec.hpp
+   A src/include/firebird/impl/boost/preprocessor/detail/dmc
+   A src/include/firebird/impl/boost/preprocessor/detail/dmc/auto_rec.hpp
+   A src/include/firebird/impl/boost/preprocessor/facilities
+   A src/include/firebird/impl/boost/preprocessor/facilities/empty.hpp
+   A src/include/firebird/impl/boost/preprocessor/logical
+   A src/include/firebird/impl/boost/preprocessor/logical/bool.hpp
+   A src/include/firebird/impl/boost/preprocessor/repetition
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/dmc
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/dmc/for.hpp
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/edg
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/edg/for.hpp
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/for.hpp
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/msvc
+   A src/include/firebird/impl/boost/preprocessor/repetition/detail/msvc/for.hpp
+   A src/include/firebird/impl/boost/preprocessor/repetition/for.hpp
+   A src/include/firebird/impl/boost/preprocessor/seq
+   A src/include/firebird/impl/boost/preprocessor/seq/elem.hpp
+   A src/include/firebird/impl/boost/preprocessor/seq/for_each_i.hpp
+   A src/include/firebird/impl/boost/preprocessor/seq/seq.hpp
+   A src/include/firebird/impl/boost/preprocessor/seq/size.hpp
+   A src/include/firebird/impl/boost/preprocessor/tuple
+   A src/include/firebird/impl/boost/preprocessor/tuple/eat.hpp
+   A src/include/firebird/impl/boost/preprocessor/tuple/elem.hpp
+   A src/include/firebird/impl/boost/preprocessor/tuple/rem.hpp
+Add boost files for FB_MESSAGE.
+
+ 2011-06-26 15:38  asfernandes 
+   A src/misc/copy-boost.sh
+Add script to copy a modified subset of boost to our tree.
+
  2011-06-25 18:13  asfernandes 
    M src/dsql/parse.y
 Warning.
