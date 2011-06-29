@@ -5008,6 +5008,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 						if (service->provider)
 						{
+							service->next = NULL;
 							PluginManagerInterfacePtr()->releasePlugin(service->provider);
 							service->provider = NULL;
 						}
@@ -5031,6 +5032,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 
 						if (attachment->provider)
 						{
+							attachment->next = NULL;
 							PluginManagerInterfacePtr()->releasePlugin(attachment->provider);
 							attachment->provider = NULL;
 						}
