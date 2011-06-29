@@ -105,6 +105,9 @@ const char* const WNET_LOCALHOST = "\\\\.";
 using namespace Firebird;
 
 namespace {
+	// Success vector for general use
+	const ISC_STATUS success_vector[] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+
 	// this sets of parameters help use same functions
 	// for both services and databases attachments
 	struct ParametersSet
@@ -2280,7 +2283,6 @@ void Statement::free(IStatus* status, unsigned int option)
 			send_and_receive(status, rdb, packet);
 		}
 
-		statement->rsr_handle = (FB_API_HANDLE) (IPTR) packet->p_resp.p_resp_object;
 		if (packet->p_resp.p_resp_object == INVALID_OBJECT)
 		{
 			release_sql_request(statement);
@@ -3476,8 +3478,8 @@ Firebird::IEvents* Attachment::queEvents(IStatus* status, Firebird::IEventCallba
 		Rvnt* rem_event = add_event(port);
 
 		rem_event->rvnt_callback = callback;
+		rem_event->rvnt_flags &= ~Rvnt::OWN_CALLBACK;
 		rem_event->rvnt_port = port->port_async;
-		rem_event->rvnt_items = events;
 		rem_event->rvnt_length = length;
 		rem_event->rvnt_rdb = rdb;
 
@@ -5345,14 +5347,23 @@ static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
  *	Check response to a remote call.
  *
  **************************************/
-	rem_port* port = rdb->rdb_port;
-	ISC_STATUS* vector = packet->p_resp.p_resp_status_vector;
+
+	// Get status vector
+
+	const ISC_STATUS* vector = success_vector;
+	if (packet->p_resp.p_resp_status_vector)
+	{
+		vector = packet->p_resp.p_resp_status_vector->value();
+	}
 
 	// Translate any gds codes into local operating specific codes
 
+	SimpleStatusVector newVector;
+	rem_port* port = rdb->rdb_port;
 	while (*vector != isc_arg_end)
 	{
 		const ISC_STATUS vec = *vector++;
+		newVector.push(vec);
 		switch ((USHORT) vec)
 		{
 		case isc_arg_warning:
@@ -5360,30 +5371,30 @@ static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
 			if (port->port_protocol < PROTOCOL_VERSION10)
 			{
 				fb_assert(vec == isc_arg_gds);
-				*vector = gds__encode(*vector, 0);
+				newVector.push(gds__encode(*vector++, 0));
 			}
 			else
-				*vector = *vector;
-			vector++;
+				newVector.push(*vector++);
 			break;
 
 		case isc_arg_cstring:
-			vector += 2;
-			break;
+			newVector.push(*vector++);
+			// fall down
 
 		default:
-			vector++;
+			newVector.push(*vector++);
 			break;
 		}
 	}
+	newVector.push(isc_arg_end);
+	vector = newVector.begin();
 
-	const ISC_STATUS pktErr = packet->p_resp.p_resp_status_vector[1];
+	const ISC_STATUS pktErr = vector[1];
 	if (pktErr == isc_shutdown || pktErr == isc_att_shutdown)
 	{
 		port->port_flags |= PORT_rdb_shutdown;
 	}
 
-	vector = packet->p_resp.p_resp_status_vector;
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
 		!vector[1])
 	{
@@ -5393,9 +5404,7 @@ static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
 
 	if (!vector[1])
 	{
-		vector[0] = isc_arg_gds;
-		vector[1] = isc_net_read_err;
-		vector[2] = isc_arg_end;
+		Arg::Gds(isc_net_read_err).raise();
 	}
 
 	status_exception::raise(vector);

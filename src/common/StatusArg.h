@@ -31,6 +31,7 @@
 
 namespace Firebird {
 
+class IStatus;
 class AbstractString;
 class MetaName;
 class QualifiedName;
@@ -66,6 +67,7 @@ protected:
 		virtual void makePermanent() throw() { }
 		virtual void append(const StatusVector&) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
+		virtual ISC_STATUS copyTo(IStatus*) const throw() { return 0; }
 
 		virtual void shiftLeft(const Base&) throw() { }
 		virtual void shiftLeft(const Warning&) throw() { }
@@ -111,6 +113,7 @@ protected:
 		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
+		virtual ISC_STATUS copyTo(IStatus* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
 		virtual void shiftLeft(const Warning& arg) throw();
 		virtual void shiftLeft(const char* text) throw();
@@ -143,6 +146,7 @@ public:
 	void append(const StatusVector& v) throw() { implementation->append(v); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
+	ISC_STATUS copyTo(IStatus* dest) const throw() { return implementation->copyTo(dest); }
 
 	// generic argument insert
 	StatusVector& operator<<(const Base& arg) throw()

@@ -32,6 +32,7 @@
 #include "firebird/Provider.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/classes/array.h"
 
 namespace Firebird {
 
@@ -87,20 +88,66 @@ public:
 	{ }
 };
 
+
+// This trivial container is used when we need to grow vector element by element w/o any conversions
+typedef HalfStaticArray<ISC_STATUS, ISC_STATUS_LENGTH> SimpleStatusVector;
+
+
+// DynamicStatusVector owns strings, contained in it
+class DynamicStatusVector
+{
+public:
+	explicit DynamicStatusVector(const ISC_STATUS* status = NULL)
+		: m_status_vector(*getDefaultMemoryPool())
+	{
+		ISC_STATUS* s = m_status_vector.getBuffer(ISC_STATUS_LENGTH);
+		fb_utils::init_status(s);
+
+		if (status)
+		{
+			save(status);
+		}
+	}
+
+	~DynamicStatusVector()
+	{
+		clear();
+	}
+
+	ISC_STATUS save(const ISC_STATUS* status);
+	void clear();
+
+	ISC_STATUS getError()
+	{
+		return value()[1];
+	}
+
+	const ISC_STATUS* value()
+	{
+		return m_status_vector.begin();
+	}
+
+	bool isSuccess()
+	{
+		return getError() == 0;
+	}
+
+	ISC_STATUS& operator[](unsigned int index)
+	{
+		return m_status_vector[index];
+	}
+
+private:
+	SimpleStatusVector m_status_vector;
+};
+
+
 class StatusHolder
 {
 public:
 	explicit StatusHolder(const ISC_STATUS* status = NULL)
-	{
-		fb_utils::init_status(m_status_vector);
-		m_raised = false;
-
-		if (status)
-			save(status);
-	}
-
-	~StatusHolder()
-	{ clear(); }
+		: m_status_vector(status), m_raised(false)
+	{ }
 
 	ISC_STATUS save(const ISC_STATUS* status);
 	void clear();
@@ -116,7 +163,7 @@ public:
 		if (m_raised) {
 			clear();
 		}
-		return m_status_vector;
+		return m_status_vector.value();
 	}
 
 	bool isSuccess()
@@ -125,7 +172,7 @@ public:
 	}
 
 private:
-	ISC_STATUS_ARRAY m_status_vector;
+	DynamicStatusVector m_status_vector;
 	bool m_raised;
 };
 

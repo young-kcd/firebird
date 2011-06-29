@@ -40,6 +40,9 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
+#include "../common/classes/RefCounted.h"
+
+#include "firebird/Provider.h"
 
 #ifndef WIN_NT
 #include <signal.h>
@@ -88,40 +91,39 @@ struct rem_port;
 
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
 
+typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
+typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;
+typedef Firebird::RefPtr<Firebird::ITransaction> ServTransaction;
+typedef Firebird::RefPtr<Firebird::IStatement> ServStatement;
+typedef Firebird::RefPtr<Firebird::IRequest> ServRequest;
+typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
+typedef Firebird::RefPtr<Firebird::IService> ServService;
+
 
 struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 {
-	USHORT			rdb_id;
-	USHORT			rdb_flags;
-	FB_API_HANDLE	rdb_handle;				// database handle
+	ServAttachment	rdb_iface;				// attachment interface
+	ServService		rdb_svc_iface;			// service interface
 	rem_port*		rdb_port;				// communication port
 	struct Rtr*		rdb_transactions;		// linked list of transactions
 	struct Rrq*		rdb_requests;			// compiled requests
 	struct Rvnt*	rdb_events;				// known events
 	struct Rsr*		rdb_sql_requests;		// SQL requests
 	PACKET			rdb_packet;				// Communication structure
+	USHORT			rdb_id;
 
 private:
-	//ISC_STATUS*		rdb_status_vector;			// Normally used status vector
-	//ISC_STATUS*		rdb_async_status_vector;	// status vector for async thread
 	FB_THREAD_ID	rdb_async_thread_id;		// Id of async thread (when active)
 
 public:
 	Firebird::Mutex	rdb_async_lock;			// Sync to avoid 2 async calls at once
 
 public:
-	// Values for rdb_flags
-	enum {
-		SERVICE = 1
-	};
-
-public:
 	Rdb() :
-		rdb_id(0), rdb_flags(0), rdb_handle(0),
+		rdb_iface(NULL), rdb_svc_iface(NULL),
 		rdb_port(0), rdb_transactions(0), rdb_requests(0),
 		rdb_events(0), rdb_sql_requests(0),
-		//rdb_status_vector(0), rdb_async_status_vector(0),
-		rdb_async_thread_id(0)
+		rdb_id(0), rdb_async_thread_id(0)
 	{
 	}
 
@@ -152,17 +154,17 @@ public:
 
 struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
 {
-	Rdb*		rtr_rdb;
-	Rtr*		rtr_next;
-	struct Rbl*	rtr_blobs;
-	FB_API_HANDLE rtr_handle;
-	USHORT		rtr_id;
-	bool		rtr_limbo;
+	Rdb*			rtr_rdb;
+	Rtr*			rtr_next;
+	struct Rbl*		rtr_blobs;
+	ServTransaction	rtr_iface;
+	USHORT			rtr_id;
+	bool			rtr_limbo;
 
 public:
 	Rtr() :
 		rtr_rdb(0), rtr_next(0), rtr_blobs(0),
-		rtr_handle(0), rtr_id(0), rtr_limbo(0)
+		rtr_iface(NULL), rtr_id(0), rtr_limbo(0)
 	{ }
 
 	static ISC_STATUS badHandle() { return isc_bad_trans_handle; }
@@ -177,7 +179,7 @@ struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
 	Rbl*		rbl_next;
 	UCHAR*		rbl_buffer;
 	UCHAR*		rbl_ptr;
-	FB_API_HANDLE rbl_handle;
+	ServBlob	rbl_iface;
 	SLONG		rbl_offset;			// Apparent (to user) offset in blob
 	USHORT		rbl_id;
 	USHORT		rbl_flags;
@@ -199,7 +201,7 @@ public:
 public:
 	Rbl() :
 		rbl_data(getPool()), rbl_rdb(0), rbl_rtr(0), rbl_next(0),
-		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_handle(0),
+		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_iface(NULL),
 		rbl_offset(0), rbl_id(0), rbl_flags(0),
 		rbl_buffer_length(BLOB_LENGTH), rbl_length(0), rbl_fragment_length(0),
 		rbl_source_interp(0), rbl_target_interp(0)
@@ -213,24 +215,29 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 {
 	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
-// if client
-	Firebird::IEventCallback* rvnt_callback;
-// else if server
-	FPTR_EVENT_CALLBACK	rvnt_ast;
-	void*		rvnt_arg;
-// endif
-	SLONG		rvnt_id;
-	SLONG		rvnt_rid;	// used by server to store client-side id
+	Firebird::IEventCallback*	rvnt_callback;
+	ServEvents	rvnt_iface;
 	rem_port*	rvnt_port;	// used to id server from whence async came
-	const UCHAR*		rvnt_items;
+	SLONG		rvnt_id;	// used to store client-side id
 	USHORT		rvnt_length;
+	USHORT		rvnt_flags;
 
 public:
+	// rvnt_flags' bits
+	static const USHORT OWN_CALLBACK = 0x1;
+
 	Rvnt() :
-		rvnt_next(0), rvnt_rdb(0), rvnt_callback(0),
-		rvnt_ast(0), rvnt_arg(0), rvnt_id(0), rvnt_rid(0),
-		rvnt_port(0), rvnt_items(0), rvnt_length(0)
+		rvnt_next(NULL), rvnt_rdb(NULL), rvnt_callback(NULL), rvnt_iface(NULL),
+		rvnt_port(NULL), rvnt_id(0), rvnt_length(0), rvnt_flags(0)
 	{ }
+
+	~Rvnt()
+	{
+		if (rvnt_flags & OWN_CALLBACK)
+		{
+			delete rvnt_callback;
+		}
+	}
 };
 
 
@@ -287,7 +294,6 @@ struct Rpr : public Firebird::GlobalStorage
 {
 	Rdb*		rpr_rdb;
 	Rtr*		rpr_rtr;
-	FB_API_HANDLE rpr_handle;
 	RMessage*	rpr_in_msg;		// input message
 	RMessage*	rpr_out_msg;	// output message
 	rem_fmt*	rpr_in_format;	// Format of input message
@@ -295,7 +301,7 @@ struct Rpr : public Firebird::GlobalStorage
 
 public:
 	Rpr() :
-		rpr_rdb(0), rpr_rtr(0), rpr_handle(0),
+		rpr_rdb(0), rpr_rtr(0),
 		rpr_in_msg(0), rpr_out_msg(0), rpr_in_format(0), rpr_out_format(0)
 	{ }
 };
@@ -306,7 +312,7 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 	Rtr*	rrq_rtr;
 	Rrq*	rrq_next;
 	Rrq*	rrq_levels;		// RRQ block for next level
-	FB_API_HANDLE rrq_handle;
+	ServRequest rrq_iface;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
@@ -328,7 +334,7 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 public:
 	explicit Rrq(size_t rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
-		rrq_handle(0), rrq_id(0), rrq_max_msg(0), rrq_level(0),
+		rrq_iface(NULL), rrq_id(0), rrq_max_msg(0), rrq_level(0),
 		rrqStatus(0), rrq_rpt(getPool(), rpt)
 	{
 		//memset(rrq_status_vector, 0, sizeof rrq_status_vector);
@@ -398,7 +404,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	Rsr*			rsr_next;
 	Rdb*			rsr_rdb;
 	Rtr*			rsr_rtr;
-	FB_API_HANDLE	rsr_handle;
+	ServStatement	rsr_iface;
 	rem_fmt*		rsr_bind_format;		// Format of bind message
 	rem_fmt*		rsr_select_format;		// Format of select message
 	rem_fmt*		rsr_user_select_format; // Format of user's select message
@@ -430,7 +436,7 @@ public:
 
 public:
 	Rsr() :
-		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_handle(0),
+		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL),
 		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0),
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
@@ -852,12 +858,16 @@ public:
 	ISC_STATUS	put_segment(P_OP, P_SGMT*, PACKET*);
 	ISC_STATUS	put_slice(P_SLC*, PACKET*);
 	ISC_STATUS	que_events(P_EVENT*, PACKET*);
-	ISC_STATUS	receive_after_start(P_DATA*, PACKET*, ISC_STATUS*);
+	ISC_STATUS	receive_after_start(P_DATA*, PACKET*, Firebird::IStatus*);
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
 	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
-	ISC_STATUS	service_attach(const char*, const USHORT, Firebird::ClumpletWriter&, PACKET*);
+	ISC_STATUS	send_response(PACKET* p, OBJCT obj, USHORT length, Firebird::IStatus* status, bool defer_flag)
+	{
+		return send_response(p, obj, length, status->get(), defer_flag);
+	}
+	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter&, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);

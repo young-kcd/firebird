@@ -146,7 +146,7 @@ static FB_API_HANDLE makeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >
 }
 
 template <typename T>
-static void removeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, FB_API_HANDLE handle)
+static void removeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, FB_API_HANDLE& handle)
 {
 	if (handle)
 	{
@@ -155,6 +155,7 @@ static void removeHandle(GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > >* map, 
 
 		fb_assert(removed);
 		(void) removed;	// avoid warning in prod build
+		handle = 0;
 	}
 }
 
@@ -175,6 +176,121 @@ static RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HAND
 
 //-------------------------------------
 
+namespace {
+
+#ifdef UNIX
+	int killed;
+	bool procInt, procTerm;
+	SignalSafeSemaphore* shutdownSemaphore = NULL;
+
+	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+
+	void atExitShutdown()
+	{
+		if (!shutdownStarted)	// static not protected by mutex flag is OK here - works in dtors
+			fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
+	}
+
+	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
+	{
+		for (;;)
+		{
+			killed = 0;
+			try
+			{
+				if (shutdownSemaphore)
+					shutdownSemaphore->enter();
+			}
+			catch (status_exception& e)
+			{
+				TEXT buffer[BUFFER_LARGE];
+				const ISC_STATUS* vector = e.value();
+
+				if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
+					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
+
+				gds__log("%s", buffer);
+				exit(0);
+			}
+
+			if (!killed)
+				break;
+
+			// perform shutdown
+			if (fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_signal) == FB_SUCCESS)
+			{
+				InstanceControl::registerShutdown(0);
+				break;	//exit(0);
+			}
+		}
+
+		return 0;
+	}
+
+	void handler(int sig)
+	{
+		if (!killed && shutdownSemaphore)
+		{
+			killed = sig;
+			shutdownSemaphore->release();
+		}
+	}
+
+	void handlerInt(void*)
+	{
+		handler(SIGINT);
+	}
+
+	void handlerTerm(void*)
+	{
+		handler(SIGTERM);
+	}
+
+	class CtrlCHandler
+	{
+	public:
+		SignalSafeSemaphore semaphore;
+
+		explicit CtrlCHandler(MemoryPool&)
+		{
+			InstanceControl::registerShutdown(atExitShutdown);
+
+			Thread::start(shutdownThread, 0, 0, &handle);
+
+			procInt = ISC_signal(SIGINT, handlerInt, 0);
+			procTerm = ISC_signal(SIGTERM, handlerTerm, 0);
+			shutdownSemaphore = &semaphore;
+		}
+
+		~CtrlCHandler()
+		{
+			ISC_signal_cancel(SIGINT, handlerInt, 0);
+			ISC_signal_cancel(SIGTERM, handlerTerm, 0);
+
+			if (!killed)
+			{
+				// Must be done to let shutdownThread close.
+				shutdownSemaphore->release();
+				shutdownSemaphore = NULL;
+				Thread::waitForCompletion(handle);
+			}
+		}
+	private:
+		Thread::Handle handle;
+	};
+#endif // UNIX
+
+void signalInit()
+{
+#ifdef UNIX
+	static GlobalPtr<CtrlCHandler> ctrlCHandler;
+#endif // UNIX
+}
+
+} // anonymous namespace
+
+
+//-------------------------------------
 
 namespace Why
 {
@@ -436,108 +552,6 @@ namespace Why
 	ShutChain* ShutChain::list = NULL;
 	GlobalPtr<Mutex> ShutChain::shutdownCallbackMutex;
 
-#ifdef UNIX
-	int killed;
-	bool procInt, procTerm;
-	SignalSafeSemaphore* shutdownSemaphore = NULL;
-
-	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
-
-	void atExitShutdown()
-	{
-		if (!shutdownStarted)	// static not protected by mutex flag is OK here - works in dtors
-			fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
-	}
-
-	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
-	{
-		for (;;)
-		{
-			killed = 0;
-			try
-			{
-				if (shutdownSemaphore)
-					shutdownSemaphore->enter();
-			}
-			catch (status_exception& e)
-			{
-				TEXT buffer[BUFFER_LARGE];
-				const ISC_STATUS* vector = e.value();
-
-				if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
-					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
-
-				gds__log("%s", buffer);
-				exit(0);
-			}
-
-			if (!killed)
-				break;
-
-			// perform shutdown
-			if (fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_signal) == FB_SUCCESS)
-			{
-				InstanceControl::registerShutdown(0);
-				break;	//exit(0);
-			}
-		}
-
-		return 0;
-	}
-
-	void handler(int sig)
-	{
-		if (!killed && shutdownSemaphore)
-		{
-			killed = sig;
-			shutdownSemaphore->release();
-		}
-	}
-
-	void handlerInt(void*)
-	{
-		handler(SIGINT);
-	}
-
-	void handlerTerm(void*)
-	{
-		handler(SIGTERM);
-	}
-
-	class CtrlCHandler
-	{
-	public:
-		SignalSafeSemaphore semaphore;
-
-		explicit CtrlCHandler(MemoryPool&)
-		{
-			InstanceControl::registerShutdown(atExitShutdown);
-
-			Thread::start(shutdownThread, 0, 0, &handle);
-
-			procInt = ISC_signal(SIGINT, handlerInt, 0);
-			procTerm = ISC_signal(SIGTERM, handlerTerm, 0);
-			shutdownSemaphore = &semaphore;
-		}
-
-		~CtrlCHandler()
-		{
-			ISC_signal_cancel(SIGINT, handlerInt, 0);
-			ISC_signal_cancel(SIGTERM, handlerTerm, 0);
-
-			if (!killed)
-			{
-				// Must be done to let shutdownThread close.
-				shutdownSemaphore->release();
-				shutdownSemaphore = NULL;
-				Thread::waitForCompletion(handle);
-			}
-		}
-	private:
-		Thread::Handle handle;
-	};
-#endif // UNIX
-
 	class BuiltinRegister
 	{
 	public:
@@ -597,31 +611,21 @@ namespace Why
 		void* arg;
 	};
 
+	template <typename Y>
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		YEntry(IStatus* aStatus, YAttachment* aAttachment, bool checkAttachment = true)
-			: ref(aAttachment), counter(aAttachment)
+		YEntry(IStatus* aStatus, Y* object, bool checkAttachment = true)
+			: ref(object->attachment), nextRef(object->next), counter(object->attachment)
 		{
 			aStatus->init();
 
-			if (aAttachment && checkAttachment && aAttachment->savedStatus.getError())
-				status_exception::raise(aAttachment->savedStatus.value());
+			if (checkAttachment && !(nextRef.hasData()))
+				Arg::Gds(Y::ERROR_CODE).raise();
 
-			init();
-		}
+			if (object->attachment && checkAttachment && object->attachment->savedStatus.getError())
+				status_exception::raise(object->attachment->savedStatus.value());
 
-		YEntry(IStatus* aStatus, YService* aService)
-			: ref(aService), counter(aService)
-		{
-			aStatus->init();
-			init();
-		}
-
-		explicit YEntry(IStatus* aStatus)
-			: counter(NULL)
-		{
-			aStatus->init();
 			init();
 		}
 
@@ -636,12 +640,7 @@ namespace Why
 
 		void init()
 		{
-#ifdef UNIX
-			static GlobalPtr<CtrlCHandler> ctrlCHandler;
-#endif // UNIX
-
-			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
-			registerBuiltinPlugins.init();
+			signalInit();
 
 			if (shutdownStarted)
 			{
@@ -655,13 +654,67 @@ namespace Why
 			}
 		}
 
+		typename Y::NextInterface* next()
+		{
+			return nextRef;
+		}
+
 	private:
 		YEntry(const YEntry&);	// prohibit copy constructor
 
 	private:
 		RefPtr<IRefCounted> ref;
+		RefPtr<typename Y::NextInterface> nextRef;
 		EnterCount* counter;
 	};
+
+	template <>
+	YEntry<YAttachment>::YEntry(IStatus* aStatus, YAttachment* aAttachment, bool checkAttachment)
+		: ref(aAttachment), nextRef(aAttachment->next), counter(aAttachment)
+	{
+		aStatus->init();
+
+		if (checkAttachment && !(nextRef.hasData()))
+			Arg::Gds(YAttachment::ERROR_CODE).raise();
+
+		if (aAttachment && checkAttachment && aAttachment->savedStatus.getError())
+			status_exception::raise(aAttachment->savedStatus.value());
+
+		init();
+	}
+
+	template <>
+	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, bool)
+		: ref(aService), nextRef(aService->next), counter(aService)
+	{
+		aStatus->init();
+
+		if (!(nextRef.hasData()))
+			Arg::Gds(YService::ERROR_CODE).raise();
+
+		init();
+	}
+
+	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
+	{
+	public:
+		explicit DispatcherEntry(IStatus* aStatus)
+		{
+			signalInit();
+
+			static InitMutex<BuiltinRegister> registerBuiltinPlugins;
+			registerBuiltinPlugins.init();
+
+			if (shutdownStarted)
+			{
+				Arg::Gds(isc_att_shutdown).raise();
+			}
+		}
+
+	private:
+		DispatcherEntry(const DispatcherEntry&);	// prohibit copy constructor
+	};
+
 }	// namespace Why
 
 
@@ -2119,10 +2172,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 		InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(blr),
 										msgLength, reinterpret_cast<UCHAR*>(msg));
 
-		int s = statement->fetch(&status, &msgBuffer);
-
-		if (s == 100 || s == 101)
-			return s;
+		return statement->fetch(&status, &msgBuffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3306,9 +3356,9 @@ void YEvents::cancel(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YEvents> entry(status, this);
 
-		next->cancel(status);
+		entry.next()->cancel(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -3353,8 +3403,8 @@ void YRequest::receive(IStatus* status, int level, unsigned int msgType,
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->receive(status, level, msgType, length, message);
+		YEntry<YRequest> entry(status, this);
+		entry.next()->receive(status, level, msgType, length, message);
 	}
 	catch (const Exception& e)
 	{
@@ -3367,8 +3417,8 @@ void YRequest::send(IStatus* status, int level, unsigned int msgType,
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->send(status, level, msgType, length, message);
+		YEntry<YRequest> entry(status, this);
+		entry.next()->send(status, level, msgType, length, message);
 	}
 	catch (const Exception& e)
 	{
@@ -3381,8 +3431,8 @@ void YRequest::getInfo(IStatus* status, int level, unsigned int itemsLength,
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->getInfo(status, level, itemsLength, items, bufferLength, buffer);
+		YEntry<YRequest> entry(status, this);
+		entry.next()->getInfo(status, level, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3394,10 +3444,10 @@ void YRequest::start(IStatus* status, ITransaction* transaction, int level)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YRequest> entry(status, this);
 
 		ITransaction* trans = attachment->getNextTransaction(status, transaction);
-		next->start(status, trans, level);
+		entry.next()->start(status, trans, level);
 	}
 	catch (const Exception& e)
 	{
@@ -3410,10 +3460,10 @@ void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int leve
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YRequest> entry(status, this);
 
 		ITransaction* trans = attachment->getNextTransaction(status, transaction);
-		next->startAndSend(status, trans, level, msgType, length, message);
+		entry.next()->startAndSend(status, trans, level, msgType, length, message);
 	}
 	catch (const Exception& e)
 	{
@@ -3425,8 +3475,8 @@ void YRequest::unwind(IStatus* status, int level)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->unwind(status, level);
+		YEntry<YRequest> entry(status, this);
+		entry.next()->unwind(status, level);
 	}
 	catch (const Exception& e)
 	{
@@ -3438,9 +3488,9 @@ void YRequest::free(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YRequest> entry(status, this);
 
-		next->free(status);
+		entry.next()->free(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -3481,8 +3531,8 @@ void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->getInfo(status, itemsLength, items, bufferLength, buffer);
+		YEntry<YBlob> entry(status, this);
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3494,8 +3544,8 @@ unsigned int YBlob::getSegment(IStatus* status, unsigned int length, void* buffe
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		return next->getSegment(status, length, buffer);
+		YEntry<YBlob> entry(status, this);
+		return entry.next()->getSegment(status, length, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3509,8 +3559,8 @@ void YBlob::putSegment(IStatus* status, unsigned int length, const void* buffer)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		next->putSegment(status, length, buffer);
+		YEntry<YBlob> entry(status, this);
+		entry.next()->putSegment(status, length, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3522,9 +3572,9 @@ void YBlob::cancel(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YBlob> entry(status, this);
 
-		next->cancel(status);
+		entry.next()->cancel(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -3539,9 +3589,9 @@ void YBlob::close(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YBlob> entry(status, this);
 
-		next->close(status);
+		entry.next()->close(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -3556,8 +3606,8 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		return next->seek(status, mode, offset);
+		YEntry<YBlob> entry(status, this);
+		return entry.next()->seek(status, mode, offset);
 	}
 	catch (const Exception& e)
 	{
@@ -3602,14 +3652,14 @@ void YStatement::prepare(IStatus* status, ITransaction* transaction,
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
 		if (!sqlStmt)
 			Arg::Gds(isc_command_end_err).raise();
 
 		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
 
-		next->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
+		entry.next()->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 	}
 	catch (const Exception& e)
 	{
@@ -3622,9 +3672,9 @@ void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		next->getInfo(status, itemsLength, items, bufferLength, buffer);
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3636,9 +3686,9 @@ unsigned YStatement::getType(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		return next->getType(status);
+		return entry.next()->getType(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3652,9 +3702,9 @@ const char* YStatement::getPlan(IStatus* status, bool detailed)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		return next->getPlan(status, detailed);
+		return entry.next()->getPlan(status, detailed);
 	}
 	catch (const Exception& e)
 	{
@@ -3668,9 +3718,9 @@ const IParametersMetadata* YStatement::getInputParameters(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		return next->getInputParameters(status);
+		return entry.next()->getInputParameters(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3684,9 +3734,9 @@ const IParametersMetadata* YStatement::getOutputParameters(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		return next->getOutputParameters(status);
+		return entry.next()->getOutputParameters(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3700,9 +3750,9 @@ FB_UINT64 YStatement::getAffectedRecords(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		return next->getAffectedRecords(status);
+		return entry.next()->getAffectedRecords(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3716,9 +3766,9 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		next->setCursorName(status, name);
+		entry.next()->setCursorName(status, name);
 	}
 	catch (const Exception& e)
 	{
@@ -3731,10 +3781,10 @@ YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
 		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
-		ITransaction* newTrans = next->execute(status, trans, inMsgType, inMsgBuffer, outMsgBuffer);
+		ITransaction* newTrans = entry.next()->execute(status, trans, inMsgType, inMsgBuffer, outMsgBuffer);
 
 		if (newTrans)
 		{
@@ -3758,8 +3808,11 @@ int YStatement::fetch(IStatus* status, const FbMessage* msgBuffer)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		return next->fetch(status, msgBuffer);
+		YEntry<YStatement> entry(status, this);
+
+		int s = entry.next()->fetch(status, msgBuffer);
+		if (s == 100 || s == 101)
+			return s;
 	}
 	catch (const Exception& e)
 	{
@@ -3773,10 +3826,10 @@ void YStatement::insert(IStatus* status, const FbMessage* msgBuffer)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
 		checkPrepared();
-		next->insert(status, msgBuffer);
+		entry.next()->insert(status, msgBuffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3788,9 +3841,9 @@ void YStatement::free(IStatus* status, unsigned int option)
 {
 	try
 	{
-		YEntry entry(status, attachment);
+		YEntry<YStatement> entry(status, this);
 
-		next->free(status, option);
+		entry.next()->free(status, option);
 
 		if (status->isSuccess())
 		{
@@ -3851,13 +3904,12 @@ void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
 
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		fb_utils::getDbPathInfo(itemsLength, items, bufferLength, buffer,
 								newItemsBuffer, attachment->dbPath);
 
-		next->getInfo(status, itemsLength, items, bufferLength, buffer);
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3869,10 +3921,9 @@ void YTransaction::prepare(IStatus* status, unsigned int msgLength, const unsign
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
-		next->prepare(status, msgLength, message);
+		entry.next()->prepare(status, msgLength, message);
 	}
 	catch (const Exception& e)
 	{
@@ -3884,10 +3935,9 @@ void YTransaction::commit(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
-		next->commit(status);
+		entry.next()->commit(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -3902,10 +3952,9 @@ void YTransaction::commitRetaining(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
-		next->commitRetaining(status);
+		entry.next()->commitRetaining(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3917,10 +3966,9 @@ void YTransaction::rollback(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
-		next->rollback(status);
+		entry.next()->rollback(status);
 		if (isNetworkError(status))
 			status->init();
 
@@ -3937,10 +3985,9 @@ void YTransaction::rollbackRetaining(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
-		next->rollbackRetaining(status);
+		entry.next()->rollbackRetaining(status);
 	}
 	catch (const Exception& e)
 	{
@@ -3952,8 +3999,7 @@ void YTransaction::disconnect(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		/*** ASF: We must call the provider, but this makes the shutdown to crash currently.
 		for (YTransaction* i = this; i; i = i->sub)
@@ -3982,8 +4028,7 @@ void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		cleanupHandlers.add(callback);
 	}
@@ -4003,8 +4048,7 @@ ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transact
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		return DtcInterfacePtr()->join(status, this, transaction);
 	}
@@ -4020,15 +4064,14 @@ ITransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testA
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		// Do not raise error in status - just return NULL if attachment does not match
 		if (attachment == testAtt)
 		{
 			return this;
 		}
-		return next->validate(status, testAtt);
+		return entry.next()->validate(status, testAtt);
 	}
 	catch (const Exception& ex)
 	{
@@ -4041,8 +4084,7 @@ YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, attachment);
-		selfCheck();
+		YEntry<YTransaction> entry(status, this);
 
 		YTransaction* copy = new YTransaction(this);
 		// copy is created with zero handle
@@ -4111,6 +4153,7 @@ void YAttachment::destroy()
 	removeHandle(&attachments, handle);
 
 	next = NULL;
+
 	release();
 }
 
@@ -4119,8 +4162,8 @@ void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
 {
 	try
 	{
-		YEntry entry(status, this);
-		next->getInfo(status, itemsLength, items, bufferLength, buffer);
+		YEntry<YAttachment> entry(status, this);
+		entry.next()->getInfo(status, itemsLength, items, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -4133,9 +4176,9 @@ YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLen
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* transaction = next->startTransaction(status, tpbLength, tpb);
+		ITransaction* transaction = entry.next()->startTransaction(status, tpbLength, tpb);
 		if (transaction)
 			transaction = new YTransaction(this, transaction);
 
@@ -4154,9 +4197,9 @@ YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int le
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* transaction = next->reconnectTransaction(status, length, id);
+		ITransaction* transaction = entry.next()->reconnectTransaction(status, length, id);
 
 		if (transaction)
 			transaction = new YTransaction(this, transaction);
@@ -4175,9 +4218,9 @@ YStatement* YAttachment::allocateStatement(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		IStatement* statement = next->allocateStatement(status);
+		IStatement* statement = entry.next()->allocateStatement(status);
 		YStatement* yStatement = statement ? new YStatement(this, statement) : NULL;
 		return yStatement;
 	}
@@ -4194,9 +4237,9 @@ YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		IRequest* request = next->compileRequest(status, blrLength, blr);
+		IRequest* request = entry.next()->compileRequest(status, blrLength, blr);
 		YRequest* yRequest = request ? new YRequest(this, request) : NULL;
 		return yRequest;
 	}
@@ -4209,16 +4252,17 @@ YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
 }
 
 void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
-	unsigned int blrLength, const unsigned char* blr, unsigned int inMsgLength,
-	const unsigned char* inMsg, unsigned int outMsgLength, unsigned char* outMsg)
+	unsigned int blrLength, const unsigned char* blr,
+	unsigned int inMsgLength, const unsigned char* inMsg,
+	unsigned int outMsgLength, unsigned char* outMsg)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
 
-		next->transactRequest(status, trans, blrLength, blr, inMsgLength, inMsg,
+		entry.next()->transactRequest(status, trans, blrLength, blr, inMsgLength, inMsg,
 			outMsgLength, outMsg);
 	}
 	catch (const Exception& e)
@@ -4232,11 +4276,11 @@ YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_Q
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
 
-		IBlob* blob = next->createBlob(status, trans, id, bpbLength, bpb);
+		IBlob* blob = entry.next()->createBlob(status, trans, id, bpbLength, bpb);
 		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
 		return yBlob;
 	}
@@ -4253,11 +4297,11 @@ YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUA
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
 
-		IBlob* blob = next->openBlob(status, trans, id, bpbLength, bpb);
+		IBlob* blob = entry.next()->openBlob(status, trans, id, bpbLength, bpb);
 		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
 		return yBlob;
 	}
@@ -4275,11 +4319,11 @@ int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* 
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
 
-		return next->getSlice(status, trans, id, sdlLength, sdl, paramLength, param,
+		return entry.next()->getSlice(status, trans, id, sdlLength, sdl, paramLength, param,
 			sliceLength, slice);
 	}
 	catch (const Exception& e)
@@ -4296,10 +4340,10 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
-		next->putSlice(status, trans, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+		entry.next()->putSlice(status, trans, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 	}
 	catch (const Exception& e)
 	{
@@ -4312,10 +4356,10 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = getNextTransaction(status, transaction);
-		return next->ddl(status, trans, length, dyn);
+		return entry.next()->ddl(status, trans, length, dyn);
 	}
 	catch (const Exception& e)
 	{
@@ -4329,10 +4373,10 @@ YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		ITransaction* trans = transaction ? getNextTransaction(status, transaction) : NULL;
-		ITransaction* newTrans = next->execute(status, trans, length, string, dialect,
+		ITransaction* newTrans = entry.next()->execute(status, trans, length, string, dialect,
 			inMsgType, inMsgBuffer, outMsgBuffer);
 
 		if (newTrans)
@@ -4358,9 +4402,9 @@ YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		IEvents* events = next->queEvents(status, callback, length, eventsData);
+		IEvents* events = entry.next()->queEvents(status, callback, length, eventsData);
 		YEvents* yEvents = events ? new YEvents(this, events, callback) : NULL;
 		return yEvents;
 	}
@@ -4376,13 +4420,13 @@ void YAttachment::cancelOperation(IStatus* status, int option)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		// Mutex will be locked here for a really long time.
 		MutexLockGuard guard(enterMutex);
 
 		if (enterCount > 1 || option != fb_cancel_raise)
-			next->cancelOperation(status, option);
+			entry.next()->cancelOperation(status, option);
 		else
 			status_exception::raise(Arg::Gds(isc_nothing_to_cancel));
 	}
@@ -4396,9 +4440,9 @@ void YAttachment::ping(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		next->ping(status);
+		entry.next()->ping(status);
 
 		if (!status->isSuccess())
 		{
@@ -4406,7 +4450,7 @@ void YAttachment::ping(IStatus* status)
 				savedStatus.save(status->get());
 
 			StatusVector temp(NULL);
-			next->detach(&temp);
+			entry.next()->detach(&temp);
 			next = NULL;
 
 			status_exception::raise(savedStatus.value());
@@ -4422,10 +4466,10 @@ void YAttachment::detach(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, this, false);
+		YEntry<YAttachment> entry(status, this, false);
 
-		if (next)
-			next->detach(status);
+		if (entry.next())
+			entry.next()->detach(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -4440,9 +4484,9 @@ void YAttachment::drop(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
-		next->drop(status);
+		entry.next()->drop(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -4457,7 +4501,7 @@ void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YAttachment> entry(status, this);
 
 		cleanupHandlers.add(callback);
 	}
@@ -4517,9 +4561,9 @@ void YService::detach(IStatus* status)
 {
 	try
 	{
-		YEntry entry(status, this);
+		YEntry<YService> entry(status, this);
 
-		next->detach(status);
+		entry.next()->detach(status);
 
 		if (status->isSuccess())
 			destroy();
@@ -4536,8 +4580,8 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 {
 	try
 	{
-		YEntry entry(status, this);
-		next->query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+		YEntry<YService> entry(status, this);
+		entry.next()->query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -4549,8 +4593,8 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 {
 	try
 	{
-		YEntry entry(status, this);
-		next->start(status, spbLength, spb);
+		YEntry<YService> entry(status, this);
+		entry.next()->start(status, spbLength, spb);
 	}
 	catch (const Exception& e)
 	{
@@ -4568,7 +4612,7 @@ YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
 {
 	try
 	{
-		YEntry entry(status);
+		DispatcherEntry entry(status);
 
 		if (shutdownStarted)
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
@@ -4687,7 +4731,7 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 {
 	try
 	{
-		YEntry entry(status);
+		DispatcherEntry entry(status);
 
 		if (shutdownStarted)
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
@@ -4818,7 +4862,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 {
 	try
 	{
-		YEntry entry(status);
+		DispatcherEntry entry(status);
 
 		IService* service = NULL;
 
@@ -4880,7 +4924,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 {
 	try
 	{
-		YEntry entry(userStatus);
+		DispatcherEntry entry(userStatus);
 
 		static GlobalPtr<Mutex> singleShutdown;
 		MutexLockGuard guard(singleShutdown);

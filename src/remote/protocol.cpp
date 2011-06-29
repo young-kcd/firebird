@@ -39,6 +39,8 @@
 #include "../remote/remot_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/sdl_proto.h"
+#include "../common/StatusHolder.h"
+#include "../common/classes/stack.h"
 
 #ifdef DEBUG_XDR_MEMORY
 inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
@@ -104,7 +106,7 @@ static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
 static bool_t xdr_quad(XDR*, struct bid*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-static bool_t xdr_status_vector(XDR*, ISC_STATUS*);
+static bool_t xdr_status_vector(XDR*, Firebird::DynamicStatusVector*&);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
@@ -1614,7 +1616,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 }
 
 
-static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector)
+static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vector)
 {
 /**************************************
  *
@@ -1632,68 +1634,92 @@ static bool_t xdr_status_vector(XDR* xdrs, ISC_STATUS* vector)
 
 	if (xdrs->x_op == XDR_FREE)
 	{
+		delete vector;
+		vector = NULL;
 		return TRUE;
 	}
 
+	if (!vector)
+	{
+		vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
+	}
+
+	Firebird::SimpleStatusVector vectorDecode;
+	const ISC_STATUS* vectorEncode = vector->value();
+
+	Firebird::Stack<SCHAR*> space;
+	bool rc = false;
+
 	SLONG vec;
-	SCHAR* sp = NULL;
 
 	while (true)
 	{
 		if (xdrs->x_op == XDR_ENCODE)
-			vec = (SLONG) * vector++;
+			vec = *vectorEncode++;
 		if (!xdr_long(xdrs, &vec))
-			return FALSE;
+			goto brk;
 		if (xdrs->x_op == XDR_DECODE)
-			*vector++ = (ISC_STATUS) vec;
+			vectorDecode.push((ISC_STATUS) vec);
 
 		switch (static_cast<ISC_STATUS>(vec))
 		{
 		case isc_arg_end:
-			return TRUE;
+			rc = true;
+			goto brk;
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
 		case isc_arg_sql_state:
 			if (xdrs->x_op == XDR_ENCODE)
 			{
-				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
-					return FALSE;
+				if (!xdr_wrapstring(xdrs, (SCHAR**)(vectorEncode++)))
+					goto brk;
 			}
 			else
 			{
+				SCHAR* sp = NULL;
+
 				if (!xdr_wrapstring(xdrs, &sp))
-					return FALSE;
-				*vector++ = (ISC_STATUS)(IPTR) sp;
-				*vector = 0;
-
-				// Save string in circular buffer
-				Firebird::makePermanentVector(vector - 2);
-
-				// Free memory allocated by xdr_wrapstring()
-				if (sp)
-				{
-					XDR freeXdrs;
-					freeXdrs.x_public = xdrs->x_public;
-					freeXdrs.x_op = XDR_FREE;
-					if (!xdr_wrapstring(&freeXdrs, &sp))
-						return FALSE;
-					sp = NULL;
-				}
+					goto brk;
+				vectorDecode.push((ISC_STATUS)(IPTR) sp);
+				space.push(sp);
 			}
 			break;
 
 		case isc_arg_number:
 		default:
 			if (xdrs->x_op == XDR_ENCODE)
-				vec = (SLONG) * vector++;
+				vec = *vectorEncode++;
 			if (!xdr_long(xdrs, &vec))
-				return FALSE;
+				goto brk;
 			if (xdrs->x_op == XDR_DECODE)
-				*vector++ = (ISC_STATUS) vec;
+				vectorDecode.push((ISC_STATUS) vec);
 			break;
 		}
 	}
+
+brk:
+	// If everything is OK, copy temp buffer to dynamic storage
+	if (rc && xdrs->x_op == XDR_DECODE)
+	{
+		vector->save(vectorDecode.begin());
+	}
+
+	// Free memory allocated by xdr_wrapstring()
+	while (space.hasData())
+	{
+		SCHAR* sp = space.pop();
+		XDR freeXdrs;
+		freeXdrs.x_public = xdrs->x_public;
+		freeXdrs.x_op = XDR_FREE;
+		if (!xdr_wrapstring(&freeXdrs, &sp))
+		{
+			fb_assert(false);	// Very interesting how could it happen
+			return FALSE;
+		}
+	}
+
+	return rc;
 }
 
 

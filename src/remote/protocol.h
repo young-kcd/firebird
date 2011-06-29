@@ -33,6 +33,11 @@
 #ifndef REMOTE_PROTOCOL_H
 #define REMOTE_PROTOCOL_H
 
+// forward
+namespace Firebird {
+	class DynamicStatusVector;
+}
+
 // dimitr: ask for asymmetric protocols only.
 // Comment it out to return back to FB 1.0 behaviour.
 #define ASYMMETRIC_PROTOCOLS_ONLY
@@ -432,7 +437,7 @@ typedef struct p_resp
 	OBJCT		p_resp_object;		// Object id
 	struct bid	p_resp_blob_id;		// Blob id
 	CSTRING		p_resp_data;		// Data
-	ISC_STATUS_ARRAY	p_resp_status_vector;
+	Firebird::DynamicStatusVector* p_resp_status_vector;
 } P_RESP;
 
 #define p_resp_partner	p_resp_blob_id.bid_number

@@ -140,7 +140,8 @@ public:
 		return 1;
 	}
 
-	Firebird::RefPtr<Intf> next;
+	typedef Intf NextInterface;
+	Firebird::RefPtr<NextInterface> next;
 };
 
 class YEvents : public YHelper<YEvents, Firebird::IEvents, FB_EVENTS_VERSION>

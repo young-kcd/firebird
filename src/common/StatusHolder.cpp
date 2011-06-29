@@ -33,18 +33,15 @@
 
 namespace Firebird {
 
-ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
+ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 {
-	fb_assert(m_status_vector[1] == 0 || m_raised);
-	if (m_raised) {
-		clear();
-	}
+	m_status_vector.clear();
 
-	const ISC_STATUS *from = status;
-	ISC_STATUS *to = m_status_vector;
+	const ISC_STATUS* from = status;
 	while (true)
 	{
-		const ISC_STATUS type = *to++ = *from++;
+		const ISC_STATUS type = *from++;
+		m_status_vector.push(type == isc_arg_cstring ? isc_arg_string : type);
 		if (type == isc_arg_end)
 			break;
 
@@ -52,11 +49,14 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 		{
 		case isc_arg_cstring:
 			{
-				const size_t len = *to++ = *from++;
-				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
+				const size_t len = *from++;
+
+				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				const char *temp = reinterpret_cast<const char*>(*from++);
 				memcpy(string, temp, len);
-				*to++ = (ISC_STATUS)(IPTR) string;
+				string[len] = 0;
+
+				m_status_vector.push((ISC_STATUS)(IPTR) string);
 			}
 			break;
 
@@ -70,21 +70,28 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				memcpy(string, temp, len + 1);
 
-				*to++ = (ISC_STATUS)(IPTR) string;
+				m_status_vector.push((ISC_STATUS)(IPTR) string);
 			}
 			break;
 
 		default:
-			*to++ = *from++;
+			m_status_vector.push(*from++);
 			break;
 		}
 	}
+
+	// Sanity check
+	if (m_status_vector.getCount() < 3)
+	{
+		fb_utils::init_status(m_status_vector.getBuffer(3));
+	}
+
 	return m_status_vector[1];
 }
 
-void StatusHolder::clear()
+void DynamicStatusVector::clear()
 {
-	ISC_STATUS *ptr = m_status_vector;
+	ISC_STATUS *ptr = m_status_vector.begin();
 	while (true)
 	{
 		const ISC_STATUS type = *ptr++;
@@ -109,7 +116,30 @@ void StatusHolder::clear()
 			break;
 		}
 	}
-	fb_utils::init_status(m_status_vector);
+
+	// Sanity check
+	if (m_status_vector.getCount() < 3)
+	{
+		m_status_vector.getBuffer(3);
+	}
+
+	fb_utils::init_status(m_status_vector.begin());
+}
+
+ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
+{
+	fb_assert(isSuccess() || m_raised);
+	if (m_raised)
+	{
+		clear();
+	}
+
+	return m_status_vector.save(status);
+}
+
+void StatusHolder::clear()
+{
+	m_status_vector.clear();
 	m_raised = false;
 }
 
@@ -118,7 +148,7 @@ void StatusHolder::raise()
 	if (getError())
 	{
 		m_raised = true;
-		status_exception::raise(m_status_vector);
+		status_exception::raise(m_status_vector.value());
 	}
 }
 

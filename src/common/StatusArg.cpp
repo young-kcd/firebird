@@ -36,6 +36,7 @@
 #include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
+#include "firebird/Interface.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -194,6 +195,20 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 		dest[2] = isc_arg_end;
 	}
 	return dest[1];
+}
+
+ISC_STATUS StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
+{
+	if (hasData())
+	{
+		dest->set(length() + 1u, value());
+	}
+	else
+	{
+		ISC_STATUS t[3] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+		dest->set(3, t);
+	}
+	return dest->get()[1];
 }
 
 Gds::Gds(ISC_STATUS s) throw() :
