@@ -1,3 +1,24 @@
+ 2011-06-29 20:18  hvlad 
+   M src/jrd/jrd.cpp
+   M src/yvalve/why.cpp
+Fixed some AV's reported privately
+
+ 2011-06-29 09:41  alexpeshkoff 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   M src/dsql/sqlda_pub.h
+   M src/include/firebird/Provider.h
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Use interface-based API in remote server. Use stable "next" pointers in yvalve.
+
  2011-06-26 18:48  asfernandes 
    M src/common/classes/SyncObject.cpp
    M src/common/classes/SyncObject.h
