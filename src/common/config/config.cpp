@@ -169,7 +169,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"Providers",				(ConfigValue) "Remote, Engine12, Loopback"},
 	{TYPE_STRING,		"AuthServer",				(ConfigValue) "Legacy_Auth, Win_Sspi"},
 	{TYPE_STRING,		"AuthClient",				(ConfigValue) "Legacy_Auth, Win_Sspi"},
-	{TYPE_STRING,		"UserManager",				(ConfigValue) "Legacy_Auth"},
+	{TYPE_STRING,		"UserManager",				(ConfigValue) "Legacy_UserManager"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
 	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(root)/security3.fdb"},	// security database name
 	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},

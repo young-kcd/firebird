@@ -75,7 +75,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_common", "gpre_common.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcxproj", "{4FE03933-98CD-4879-A135-FD9430087A6B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "user_management", "user_management.vcxproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_usermanager", "legacy_usermanager.vcxproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

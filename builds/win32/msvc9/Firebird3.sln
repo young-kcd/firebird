@@ -162,7 +162,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "yvalve", "yvalve.vcproj", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gpre_common", "gpre_common.vcproj", "{2925B855-5975-44AE-BB00-1217A2A4E511}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "user_management", "user_management.vcproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "legacy_usermanager", "legacy_usermanager.vcproj", "{D836FBF5-071E-4E04-8D63-C7EB6701B296}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4FE03933-98CD-4879-A135-FD9430087A6B} = {4FE03933-98CD-4879-A135-FD9430087A6B}
 		{15605F44-BFFD-444F-AD4C-55DC9D704465} = {15605F44-BFFD-444F-AD4C-55DC9D704465}
