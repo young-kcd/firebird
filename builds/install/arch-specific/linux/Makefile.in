@@ -157,7 +157,7 @@ buildTarDir: buildImageDir
 
 
 install: buildTarDir
-	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= ./install.sh)
+	(cd $(GEN_ROOT)/$(TarDir); FIREBIRD= FIREBIRD_LOCK= ./install.sh)
 	cp -r $(GEN_ROOT)/$(DebugDir)/* /
 
 
