@@ -2,6 +2,11 @@
   * v2.5.1
   **************************
 
+    * Bugfix CORE-3544
+        Make install fails on linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-3525
         Autonomous transactions wrongly inherit run-time flags of "parent" transaction
       Contributor(s):
@@ -139,6 +144,11 @@
         Database trigger created as INACTIVE is really active
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-3400
+        Server crash every 3 hour (FreeBSD8.2R)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-3398
         GRANT ADMIN ROLE is not accepted
