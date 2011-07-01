@@ -1890,7 +1890,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
-		YTransaction* newTrans = statement->execute(&status, transaction, inMsgType,
+		ITransaction* newTrans = statement->execute(&status, transaction, inMsgType,
 			&inMsgBuffer, &outMsgBuffer);
 
 		if (status.isSuccess())
@@ -1902,8 +1902,9 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			}
 			else if (!transaction && newTrans)
 			{
+				// in this case we know for sure that newTrans points to YTransaction
 				if (traHandle)
-					*traHandle = newTrans->handle;
+					*traHandle = static_cast<YTransaction*>(newTrans)->handle;
 			}
 		}
 	}
@@ -2097,7 +2098,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
-		YTransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
+		ITransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
 			dialect, inMsgType, &inMsgBuffer, &outMsgBuffer);
 
 		if (status.isSuccess())
@@ -2109,8 +2110,9 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 			}
 			else if (!transaction && newTrans)
 			{
+				// in this case we know for sure that newTrans points to YTransaction
 				if (traHandle)
-					*traHandle = newTrans->handle;
+					*traHandle = static_cast<YTransaction*>(newTrans)->handle;
 			}
 		}
 	}
@@ -3446,7 +3448,8 @@ void YRequest::start(IStatus* status, ITransaction* transaction, int level)
 	{
 		YEntry<YRequest> entry(status, this);
 
-		ITransaction* trans = attachment->getNextTransaction(status, transaction);
+		NextTransaction trans;
+		attachment->getNextTransaction(status, transaction, trans);
 		entry.next()->start(status, trans, level);
 	}
 	catch (const Exception& e)
@@ -3462,7 +3465,8 @@ void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int leve
 	{
 		YEntry<YRequest> entry(status, this);
 
-		ITransaction* trans = attachment->getNextTransaction(status, transaction);
+		NextTransaction trans;
+		attachment->getNextTransaction(status, transaction, trans);
 		entry.next()->startAndSend(status, trans, level, msgType, length, message);
 	}
 	catch (const Exception& e)
@@ -3657,7 +3661,9 @@ void YStatement::prepare(IStatus* status, ITransaction* transaction,
 		if (!sqlStmt)
 			Arg::Gds(isc_command_end_err).raise();
 
-		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
+		NextTransaction trans;
+		if (transaction)
+			attachment->getNextTransaction(status, transaction, trans);
 
 		entry.next()->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 	}
@@ -3776,14 +3782,16 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 	}
 }
 
-YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
+ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	unsigned int inMsgType, const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
 	try
 	{
 		YEntry<YStatement> entry(status, this);
 
-		ITransaction* trans = transaction ? attachment->getNextTransaction(status, transaction) : NULL;
+		NextTransaction trans;
+		if (transaction)
+			attachment->getNextTransaction(status, transaction, trans);
 		ITransaction* newTrans = entry.next()->execute(status, trans, inMsgType, inMsgBuffer, outMsgBuffer);
 
 		if (newTrans)
@@ -3794,7 +3802,7 @@ YTransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 				newTrans = new YTransaction(attachment, newTrans);
 		}
 
-		return static_cast<YTransaction*>(newTrans);
+		return newTrans;
 	}
 	catch (const Exception& e)
 	{
@@ -4180,9 +4188,7 @@ YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLen
 
 		ITransaction* transaction = entry.next()->startTransaction(status, tpbLength, tpb);
 		if (transaction)
-			transaction = new YTransaction(this, transaction);
-
-		return static_cast<YTransaction*>(transaction);
+			return new YTransaction(this, transaction);
 	}
 	catch (const Exception& e)
 	{
@@ -4202,9 +4208,7 @@ YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int le
 		ITransaction* transaction = entry.next()->reconnectTransaction(status, length, id);
 
 		if (transaction)
-			transaction = new YTransaction(this, transaction);
-
-		return static_cast<YTransaction*>(transaction);
+			return new YTransaction(this, transaction);
 	}
 	catch (const Exception& e)
 	{
@@ -4260,7 +4264,8 @@ void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		NextTransaction trans;
+		getNextTransaction(status, transaction, trans);
 
 		entry.next()->transactRequest(status, trans, blrLength, blr, inMsgLength, inMsg,
 			outMsgLength, outMsg);
@@ -4278,10 +4283,11 @@ YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_Q
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		YTransaction* yTra = getTransaction(status, transaction);
+		NextTransaction nextTra(yTra->next);
 
-		IBlob* blob = entry.next()->createBlob(status, trans, id, bpbLength, bpb);
-		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
+		IBlob* blob = entry.next()->createBlob(status, nextTra, id, bpbLength, bpb);
+		YBlob* yBlob = blob ? new YBlob(this, yTra, blob) : NULL;
 		return yBlob;
 	}
 	catch (const Exception& e)
@@ -4299,10 +4305,11 @@ YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUA
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		YTransaction* yTra = getTransaction(status, transaction);
+		NextTransaction nextTra(yTra->next);
 
-		IBlob* blob = entry.next()->openBlob(status, trans, id, bpbLength, bpb);
-		YBlob* yBlob = blob ? new YBlob(this, static_cast<YTransaction*>(transaction), blob) : NULL;
+		IBlob* blob = entry.next()->openBlob(status, nextTra, id, bpbLength, bpb);
+		YBlob* yBlob = blob ? new YBlob(this, yTra, blob) : NULL;
 		return yBlob;
 	}
 	catch (const Exception& e)
@@ -4321,7 +4328,8 @@ int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* 
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		NextTransaction trans;
+		getNextTransaction(status, transaction, trans);
 
 		return entry.next()->getSlice(status, trans, id, sdlLength, sdl, paramLength, param,
 			sliceLength, slice);
@@ -4342,7 +4350,8 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		NextTransaction trans;
+		getNextTransaction(status, transaction, trans);
 		entry.next()->putSlice(status, trans, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 	}
 	catch (const Exception& e)
@@ -4358,7 +4367,8 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = getNextTransaction(status, transaction);
+		NextTransaction trans;
+		getNextTransaction(status, transaction, trans);
 		return entry.next()->ddl(status, trans, length, dyn);
 	}
 	catch (const Exception& e)
@@ -4367,7 +4377,7 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 	}
 }
 
-YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
+ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
 	const FbMessage* inMsgBuffer, const FbMessage* outMsgBuffer)
 {
@@ -4375,7 +4385,9 @@ YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	{
 		YEntry<YAttachment> entry(status, this);
 
-		ITransaction* trans = transaction ? getNextTransaction(status, transaction) : NULL;
+		NextTransaction trans;
+		if (transaction)
+			getNextTransaction(status, transaction, trans);
 		ITransaction* newTrans = entry.next()->execute(status, trans, length, string, dialect,
 			inMsgType, inMsgBuffer, outMsgBuffer);
 
@@ -4387,7 +4399,7 @@ YTransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 				newTrans = new YTransaction(this, newTrans);
 		}
 
-		return static_cast<YTransaction*>(newTrans);
+		return newTrans;
 	}
 	catch (const Exception& e)
 	{
@@ -4512,7 +4524,7 @@ void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 }
 
 
-ITransaction* YAttachment::getNextTransaction(IStatus* status, ITransaction* tra)
+YTransaction* YAttachment::getTransaction(IStatus* status, ITransaction* tra)
 {
 	if (!tra)
 		Arg::Gds(isc_bad_trans_handle).raise();
@@ -4528,7 +4540,15 @@ ITransaction* YAttachment::getNextTransaction(IStatus* status, ITransaction* tra
 		Arg::Gds(isc_bad_trans_handle).raise();
 
 	yt->selfCheck();
-	return yt->next;
+	return yt;
+}
+
+
+void YAttachment::getNextTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra, NextTransaction& next)
+{
+	next = getTransaction(status, tra)->next;
+	if (!next.hasData())
+		Arg::Gds(isc_bad_trans_handle).raise();
 }
 
 
@@ -4891,8 +4911,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 
 				if (status->isSuccess())
 				{
-					service = new YService(provider, service);
-					return static_cast<YService*>(service);
+					return new YService(provider, service);
 				}
 
 				service = NULL;

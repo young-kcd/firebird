@@ -240,6 +240,8 @@ private:
 	}
 };
 
+typedef Firebird::RefPtr<Firebird::ITransaction> NextTransaction;
+
 class YBlob : public YHelper<YBlob, Firebird::IBlob, FB_BLOB_VERSION>
 {
 public:
@@ -290,7 +292,7 @@ public:
 	virtual const Firebird::IParametersMetadata* FB_CARG getOutputParameters(Firebird::IStatus* status);
 	virtual ISC_UINT64 FB_CARG getAffectedRecords(Firebird::IStatus* status);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
-	virtual YTransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 		unsigned int inMsgType, const Firebird::FbMessage* inMsgBuffer,
 		const Firebird::FbMessage* outMsgBuffer);
 	virtual int FB_CARG fetch(Firebird::IStatus* status, const Firebird::FbMessage* msgBuffer);
@@ -355,7 +357,7 @@ public:
 		const unsigned char* param, int sliceLength, unsigned char* slice);
 	virtual void FB_CARG ddl(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
-	virtual YTransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
+	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 		unsigned int length, const char* string, unsigned int dialect, unsigned int inMsgType,
 		const Firebird::FbMessage* inMsgBuffer, const Firebird::FbMessage* outMsgBuffer);
 	virtual YEvents* FB_CARG queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
@@ -366,7 +368,8 @@ public:
 	virtual void FB_CARG drop(Firebird::IStatus* status);
 
 	void addCleanupHandler(Firebird::IStatus* status, CleanupCallback* callback);
-	Firebird::ITransaction* getNextTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
+	YTransaction* getTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
+	void getNextTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra, NextTransaction& next);
 
 public:
 	Firebird::IProvider* provider;
