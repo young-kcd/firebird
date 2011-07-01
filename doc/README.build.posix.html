@@ -232,6 +232,9 @@ td.right    {
             <li>
                 <a href="#sol2">Solaris 10, Intel</a>
             </li>
+            <li>
+                <a href="#freebsd">FreeBSD</a>
+            </li>
         </ul>
         <h1>
             <a name="preparing" id="preparing">3.0 Preparing to Build
@@ -674,6 +677,17 @@ td.right    {
                     Frequently Tested
                 </td>
             </tr>
+            <tr class="rarely">
+                <td>
+                    FreeBSD 8, AMD64/i386
+                </td>
+                <td>
+                    g++ 4.2.1
+                </td>
+                <td>
+                    Rarely Tested
+                </td>
+            </tr>
         </table>
         <h2>
             <a name="aix1" id="aix1">4.1 AIX 6.1 on Power, IBM XL C++</a>
@@ -835,6 +849,35 @@ td.right    {
             The default instruction set architecture for Solaris on AMD64 is
             generic (-xarch=generic). Enthusiasts may add -xarch=native to the CFLAGS/CXXFLAGS,
             which tunes for the processor on which the compiler is running.
+        </p>
+        <h2>
+            <a name="freebsd" id="freebsd">4.8 FreeBSD, g++</a>
+        </h2>
+        <p>
+            Firebird runs on freebsd, but not too efficient - that OS is missing support of
+            futex in shared memory. Therefore SystemV semaphores are used, which is not too efficient.
+            To build and run firebird you should tune kernel. The following IPC settings are known to work OK:
+        </p>
+        <pre>
+# ipcs -S
+seminfo:
+semmap:         1024(# of entries in semaphore map)
+semmni:         1024(# of semaphore identifiers)
+semmns:         2048(# of semaphores in system)
+semmnu:          128(# of undo structures in system)
+semmsl:         1024(max # of semaphores per id)
+semopm:          100(max # of operations per semop call)
+semume:           10(max # of undo entries per process)
+semusz:          152(size in bytes of undo structure)
+semvmx:        32767(semaphore maximum value)
+semaem:        16384(adjust on exit max value)
+</pre>
+        <p>
+            Please pass the following parameter to autogen.sh or configure: <br>
+            --with-system-editline <br>
+            or: <br>
+            --without-editline (this will break command line editing in isql) <br>
+            Builtin library does not compile on FreeBSD!
         </p>
         <h1>
             <a name="testing" id="testing">5.0 Testing in Place</a>
