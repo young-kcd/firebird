@@ -9,9 +9,9 @@ WriteBuildNumFile="src/misc/writeBuildNum.sh"
 HeaderFile="src/jrd/build_no.h"
 
 cd /home/fbadmin/changelogs/trunk
-svn up
-svn log -v >$TempLog
-smallog <$TempLog >ChangeLog
+svn up || exit
+svn log -v >$TempLog || exit
+smallog <$TempLog >ChangeLog || exit
 
 VersionCount=`egrep -c '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}' ChangeLog`
 BuildNo=$((${VersionCount}+${PositiveOffset}))
