@@ -1,3 +1,23 @@
+ 2011-07-01 10:39  alexpeshkoff 
+   M doc/WhatsNew
+updated
+
+ 2011-07-01 10:15  alexpeshkoff 
+   M doc/README.build.posix.html
+   M src/jrd/isc_sync.cpp
+This appears to fix CORE-3400: Server crash every 3 hour (FreeBSD8.2R), but I did not get final confirmation from the reporter too long
+
+ 2011-07-01 09:22  alexpeshkoff 
+   M builds/install/arch-specific/hpux/Makefile.in
+   M builds/install/arch-specific/linux/Makefile.in
+   M builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
+   M builds/install/arch-specific/netbsd/Makefile.in
+Fixed CORE-3544: make install fails
+
+ 2011-07-01 08:35  dimitr 
+   M src/jrd/nbak.h
+Misc.
+
  2011-06-26 22:27  hvlad 
    M src/dsql/ddl.cpp
 Fixed bug CORE-3509 : Alter procedure allows to add the parameter with the same name.
@@ -19308,7 +19328,7 @@ Fixed CORE-1842 - DEFAULT values are unnecessary evaluated.
  2008-11-29 18:47  asfernandes 
    M src/jrd/DataTypeUtil.cpp
    M src/jrd/DataTypeUtil.h
-Fixed CORE-2019 ?\195?\162?\226?\130?\172?\226?\128?\156 UTF-8 conversion error (string truncation).
+Fixed CORE-2019 â€“ UTF-8 conversion error (string truncation).
 
  2008-11-28 18:49  alexpeshkoff 
    M src/common/classes/SafeArg.cpp
@@ -21660,7 +21680,7 @@ Fixed bug CORE-1970 : Lock conversion denied (215) error may occurs
 
  2008-07-16 14:16  asfernandes 
    M src/jrd/idx.cpp
-Fixed CORE-1989 - UTF8 UNICODE_CI collate can?\194?\180t be used in foreing key constraint
+Fixed CORE-1989 - UTF8 UNICODE_CI collate can´t be used in foreing key constraint
 
  2008-07-16 13:55  asfernandes 
    M src/jrd/Optimizer.cpp
@@ -22668,7 +22688,7 @@ Constness and some unsigned values.
  2008-06-14 02:17  asfernandes 
    M doc/sql.extensions/README.similar_to.txt
    M src/jrd/SimilarToMatcher.h
-1) Fixed CORE-1935 ?\195?\162?\226?\130?\172?\226?\128?\156 SIMILAR TO character classes are incorrectly recognized.
+1) Fixed CORE-1935 â€“ SIMILAR TO character classes are incorrectly recognized.
 2) Improve the documentation after some questions from Claudio.
 
  2008-06-13 14:01  dimitr 
@@ -34936,7 +34956,7 @@ Fixed CORE-1253 - LIST(DISTINCT) concatenate VARCHAR values as CHAR
 
  2007-05-09 15:23  asfernandes 
    M doc/sql.extensions/README.list
-Updated LIST documentation - thanks to Maycon Ferra?\195?\167a
+Updated LIST documentation - thanks to Maycon Ferraça
 
  2007-05-09 02:03  asfernandes 
    M src/burp/burp.cpp
@@ -36887,7 +36907,7 @@ Patch by Damyan Ivanov - accept localhost connections without /etc/host.equiv
 
  2007-03-22 13:07  asfernandes 
    M doc/sql.extensions/README.context_variables2
-Document the new context variable - thanks to Maicon Ferra?\195?\167a
+Document the new context variable - thanks to Maicon Ferraça
 
  2007-03-22 12:53  dimitr 
    M src/dsql/pass1.cpp
@@ -38564,7 +38584,7 @@ Misc.
 
  2006-12-14 10:30  asfernandes 
    M doc/sql.extensions/README.returning
-Correction - thanks to Maycon Ferra?\195?\167a
+Correction - thanks to Maycon Ferraça
 
  2006-12-14 09:14  dimitr 
    A doc/README.monitoring_tables
@@ -40008,7 +40028,7 @@ Fixed the project files.
 
  2006-10-10 03:53  asfernandes 
    M src/jrd/jrd.cpp
-Fix problem reported by Carsten Sch?\195?\164fer in fbdevel of incorrect server start when using connection pooling
+Fix problem reported by Carsten Schäfer in fbdevel of incorrect server start when using connection pooling
 
  2006-10-10 03:39  asfernandes 
    M src/jrd/os/posix/isc_ipc.cpp
@@ -40357,7 +40377,7 @@ MERGE statement
 
  2006-09-13 12:59  asfernandes 
    M src/dsql/pass1.cpp
-Fix the problem with CAST and parameters reported by Maycon Ferra?\195?\167a in fb-devel
+Fix the problem with CAST and parameters reported by Maycon Ferraça in fb-devel
 
  2006-09-12 16:31  asfernandes 
    M src/jrd/opt.cpp
