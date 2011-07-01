@@ -357,7 +357,7 @@ $(NBACKUP):		$(NBACKUP_Objects) $(COMMON_LIB)
 .PHONY:	udr legacy_user_management trace auth_debug
 makePluginName= $(PLUGINS)/$(LIB_PREFIX)$(1).$(SHRLIB_EXT)
 UDR_PLUGIN = $(call makePluginName,udr_engine)
-LEGACY_USER_MANAGER = $(call makePluginName,Legacy_Auth)
+LEGACY_USER_MANAGER = $(call makePluginName,Legacy_UserManager)
 AUTH_DEBUGGER = $(call makePluginName,Auth_Debug)
 
 BUILD_DEBUG:=
