@@ -185,7 +185,7 @@ public:
 	class StateWriteGuard
 	{
 	public:
-		StateWriteGuard(thread_db* _tdbb, Jrd::WIN* wnd);
+		StateWriteGuard(thread_db* _tdbb, WIN* wnd);
 		~StateWriteGuard();
 
 		void releaseHeader();
@@ -200,7 +200,7 @@ public:
 		StateWriteGuard& operator=(const StateWriteGuard&);
 
 		thread_db* tdbb;
-		Jrd::WIN* window;
+		WIN* window;
 		bool success;
 	};
 
@@ -209,7 +209,7 @@ public:
 	public:
 		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
+			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
 			const bool ok = att ? 
@@ -222,7 +222,7 @@ public:
 
 		~StateReadGuard()
 		{
-			Jrd::Attachment* att = tdbb->getAttachment();
+			Attachment* att = tdbb->getAttachment();
 			Database* dbb = tdbb->getDatabase();
 
 			if (att)
