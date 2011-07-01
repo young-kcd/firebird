@@ -1,3 +1,22 @@
+ 2011-06-30 13:17  hvlad 
+   M builds/install/misc/firebird.conf.in
+   M builds/win32/msvc10/Firebird3.sln
+   A builds/win32/msvc10/legacy_usermanager.vcxproj (from /firebird/trunk/builds/win32/msvc10/user_management.vcxproj:53251)
+   A builds/win32/msvc10/legacy_usermanager.vcxproj.filters (from /firebird/trunk/builds/win32/msvc10/user_management.vcxproj.filters:53251)
+   D builds/win32/msvc10/user_management.vcxproj
+   D builds/win32/msvc10/user_management.vcxproj.filters
+   M builds/win32/msvc8/Firebird3.sln
+   A builds/win32/msvc8/legacy_usermanager.vcxproj (from /firebird/trunk/builds/win32/msvc8/user_management.vcproj:53251)
+   D builds/win32/msvc8/user_management.vcproj
+   M builds/win32/msvc9/Firebird3.sln
+   A builds/win32/msvc9/legacy_usermanager.vcxproj (from /firebird/trunk/builds/win32/msvc9/user_management.vcproj:53251)
+   D builds/win32/msvc9/user_management.vcproj
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/config/config.cpp
+Make legacy (security database based) user management plugin consistent : 
+- binary name changed from user_management.dll to legacy_usermanager.dll (on Windows only, POSIX will follow soon)
+- registration name was changed from "Legacy_Auth" to "Legacy_UserManager" (see UserManager setting in firebird.conf)
+
  2011-06-29 20:18  hvlad 
    M src/jrd/jrd.cpp
    M src/yvalve/why.cpp
