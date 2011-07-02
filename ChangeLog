@@ -1,3 +1,23 @@
+ 2011-07-01 16:15  dimitr 
+   A builds/win32/msvc8/legacy_usermanager.vcproj (from /firebird/trunk/builds/win32/msvc8/legacy_usermanager.vcxproj:53272)
+   D builds/win32/msvc8/legacy_usermanager.vcxproj
+   A builds/win32/msvc9/legacy_usermanager.vcproj (from /firebird/trunk/builds/win32/msvc9/legacy_usermanager.vcxproj:53272)
+   D builds/win32/msvc9/legacy_usermanager.vcxproj
+Fixed the build.
+
+ 2011-07-01 11:08  firebirds 
+   M mkChangeLog.sh
+Check svn exit codes in order to avoid half-done ChangeLog
+
+ 2011-07-01 07:56  alexpeshkoff 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Avoid some casts in yValve
+
+ 2011-07-01 07:55  alexpeshkoff 
+   M builds/posix/Makefile.in
+Reflect Vlad's changes in posix build
+
  2011-06-30 13:17  hvlad 
    M builds/install/misc/firebird.conf.in
    M builds/win32/msvc10/Firebird3.sln
