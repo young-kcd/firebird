@@ -38,6 +38,7 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 	m_status_vector.clear();
 
 	const ISC_STATUS* from = status;
+
 	while (true)
 	{
 		const ISC_STATUS type = *from++;
@@ -51,7 +52,7 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 			{
 				const size_t len = *from++;
 
-				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
+				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				const char *temp = reinterpret_cast<const char*>(*from++);
 				memcpy(string, temp, len);
 				string[len] = 0;
@@ -92,6 +93,7 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 void DynamicStatusVector::clear()
 {
 	ISC_STATUS *ptr = m_status_vector.begin();
+
 	while (true)
 	{
 		const ISC_STATUS type = *ptr++;

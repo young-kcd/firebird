@@ -4076,15 +4076,15 @@ ITransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testA
 
 		// Do not raise error in status - just return NULL if attachment does not match
 		if (attachment == testAtt)
-		{
 			return this;
-		}
+
 		return entry.next()->validate(status, testAtt);
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
+
 	return NULL;
 }
 
@@ -4102,7 +4102,6 @@ YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
 			attachment->childTransactions.remove(this);
 
 		removeHandle(&transactions, handle);
-		handle = 0;
 		next = NULL;
 		release();
 
@@ -4225,8 +4224,7 @@ YStatement* YAttachment::allocateStatement(IStatus* status)
 		YEntry<YAttachment> entry(status, this);
 
 		IStatement* statement = entry.next()->allocateStatement(status);
-		YStatement* yStatement = statement ? new YStatement(this, statement) : NULL;
-		return yStatement;
+		return statement ? new YStatement(this, statement) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -4244,8 +4242,7 @@ YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
 		YEntry<YAttachment> entry(status, this);
 
 		IRequest* request = entry.next()->compileRequest(status, blrLength, blr);
-		YRequest* yRequest = request ? new YRequest(this, request) : NULL;
-		return yRequest;
+		return request ? new YRequest(this, request) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -4287,8 +4284,7 @@ YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_Q
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->createBlob(status, nextTra, id, bpbLength, bpb);
-		YBlob* yBlob = blob ? new YBlob(this, yTra, blob) : NULL;
-		return yBlob;
+		return blob ? new YBlob(this, yTra, blob) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -4309,8 +4305,7 @@ YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUA
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->openBlob(status, nextTra, id, bpbLength, bpb);
-		YBlob* yBlob = blob ? new YBlob(this, yTra, blob) : NULL;
-		return yBlob;
+		return blob ? new YBlob(this, yTra, blob) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -4352,6 +4347,7 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 
 		NextTransaction trans;
 		getNextTransaction(status, transaction, trans);
+
 		entry.next()->putSlice(status, trans, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 	}
 	catch (const Exception& e)
@@ -4369,6 +4365,7 @@ void YAttachment::ddl(IStatus* status, ITransaction* transaction, unsigned int l
 
 		NextTransaction trans;
 		getNextTransaction(status, transaction, trans);
+
 		return entry.next()->ddl(status, trans, length, dyn);
 	}
 	catch (const Exception& e)
@@ -4388,6 +4385,7 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 		NextTransaction trans;
 		if (transaction)
 			getNextTransaction(status, transaction, trans);
+
 		ITransaction* newTrans = entry.next()->execute(status, trans, length, string, dialect,
 			inMsgType, inMsgBuffer, outMsgBuffer);
 
@@ -4417,8 +4415,7 @@ YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
 		YEntry<YAttachment> entry(status, this);
 
 		IEvents* events = entry.next()->queEvents(status, callback, length, eventsData);
-		YEvents* yEvents = events ? new YEvents(this, events, callback) : NULL;
-		return yEvents;
+		return events ? new YEvents(this, events, callback) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -4544,7 +4541,7 @@ YTransaction* YAttachment::getTransaction(IStatus* status, ITransaction* tra)
 }
 
 
-void YAttachment::getNextTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra, NextTransaction& next)
+void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTransaction& next)
 {
 	next = getTransaction(status, tra)->next;
 	if (!next.hasData())
@@ -4910,9 +4907,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 				service = provider->attachServiceManager(status, svcName.c_str(), spbLength, spb);
 
 				if (status->isSuccess())
-				{
 					return new YService(provider, service);
-				}
 
 				service = NULL;
 			}

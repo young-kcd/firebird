@@ -1413,10 +1413,11 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
  *	Process an attach or create packet.
  *
  **************************************/
-	port->port_auth = new ServerAuth(port, PathName(attach->p_atch_file.cstr_address,
-													attach->p_atch_file.cstr_length),
-									 attach->p_atch_dpb.cstr_address,
-									 attach->p_atch_dpb.cstr_length, attach_database2, operation);
+	port->port_auth = new ServerAuth(port,
+		PathName(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length),
+		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length,
+		attach_database2, operation);
+
 	if (port->port_auth->authenticate(port, send, NULL))
 	{
 		delete port->port_auth;
@@ -1467,7 +1468,7 @@ static void attach_database2(rem_port* port,
 	// they will be stuffed in the DPB if so.
 	REMOTE_get_timeout_params(port, &dpb_buffer);
 
-	const unsigned char* dpb = dpb_buffer.getBuffer();
+	const UCHAR* dpb = dpb_buffer.getBuffer();
 	unsigned int dl = dpb_buffer.getBufferLength();
 
 	LocalStatus status_vector;
@@ -1478,19 +1479,13 @@ static void attach_database2(rem_port* port,
 	if (status_vector.isSuccess())
 	{
 		Rdb* rdb = new Rdb;
-		if (rdb)
-		{
-			port->port_context = rdb;
+
+		port->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-			printf("attach_databases(server)  allocate rdb     %x\n", rdb);
+		printf("attach_databases(server)  allocate rdb     %x\n", rdb);
 #endif
-			rdb->rdb_port = port;
-			rdb->rdb_iface = iface;
-		}
-		else
-		{
-			(Arg::Gds(isc_virmemexh)).copyTo(&status_vector);
-		}
+		rdb->rdb_port = port;
+		rdb->rdb_iface = iface;
 	}
 
 	port->send_response(send, 0, 0, &status_vector, false);
@@ -1626,9 +1621,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 	Rdb* rdb = port->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return port->send_response(send, 0, 0, &status_vector, false);
-	}
 
 	// Find the event
 
@@ -1641,15 +1634,13 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 	// If no event found, pretend it was cancelled
 
-	if (!event) {
+	if (!event)
 		return port->send_response(send, 0, 0, &status_vector, false);
-	}
 
 	// cancel the event
 
-	if (event->rvnt_iface) {
+	if (event->rvnt_iface)
 		event->rvnt_iface->cancel(&status_vector);
-	}
 
 	// zero event info
 
@@ -1662,7 +1653,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 }
 
 
-static void cancel_operation( rem_port* port, USHORT kind)
+static void cancel_operation(rem_port* port, USHORT kind)
 {
 /**************************************
  *
@@ -1678,9 +1669,7 @@ static void cancel_operation( rem_port* port, USHORT kind)
  **************************************/
 	Rdb* rdb;
 	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(rdb = port->port_context))
-	{
 		return;
-	}
 
 	if (rdb->rdb_iface)
 	{
@@ -1708,7 +1697,7 @@ static bool check_request(Rrq* request, USHORT incarnation, USHORT msg_number)
 	if (!get_next_msg_no(request, incarnation, &n))
 		return false;
 
-	return (msg_number == n);
+	return msg_number == n;
 }
 
 
@@ -1729,8 +1718,8 @@ static USHORT check_statement_type( Rsr* statement)
 	USHORT ret = 0;
 	bool done = false;
 
-	statement->rsr_iface->getInfo(&local_status, sizeof(sql_info), sql_info,
-												 sizeof(buffer), buffer);
+	statement->rsr_iface->getInfo(&local_status, sizeof(sql_info), sql_info, sizeof(buffer), buffer);
+
 	if (local_status.isSuccess())
 	{
 		for (const UCHAR* info = buffer; (*info != isc_info_end) && !done;)
@@ -1941,17 +1930,19 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		// a good, clean detach from the database.
 
 		rdb->rdb_iface->cancelOperation(&status_vector, fb_cancel_disable);
+
 		while (rdb->rdb_requests)
 			release_request(rdb->rdb_requests);
+
 		while (rdb->rdb_sql_requests)
 			release_sql_request(rdb->rdb_sql_requests);
+
 		Rtr* transaction;
+
 		while (transaction = rdb->rdb_transactions)
 		{
 			if (!transaction->rtr_limbo)
-			{
 				transaction->rtr_iface->rollback(&status_vector);
-			}
 			else
 			{
 				// The underlying JRD subsystem will release all
@@ -1963,25 +1954,25 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 			release_transaction(rdb->rdb_transactions);
 		}
+
 		rdb->rdb_iface->detach(&status_vector);
+
 		if (status_vector.isSuccess())
-		{
 			rdb->rdb_iface = NULL;
-		}
-		while (rdb->rdb_events) {
+
+		while (rdb->rdb_events)
 			release_event(rdb->rdb_events);
-		}
-		if (this->port_statement) {
+
+		if (this->port_statement)
 			release_statement(&this->port_statement);
-		}
 	}
+
 	if (rdb->rdb_svc_iface)
 	{
 		rdb->rdb_svc_iface->detach(&status_vector);
+
 		if (status_vector.isSuccess())
-		{
 			rdb->rdb_svc_iface = NULL;
-		}
 	}
 
 	REMOTE_free_packet(this, sendL);
@@ -2111,9 +2102,8 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 	else
 		blob->rbl_iface->cancel(&status_vector);
 
-	if (status_vector.isSuccess()) {
+	if (status_vector.isSuccess())
 		release_blob(blob);
-	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -2135,9 +2125,7 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	rdb->rdb_iface->detach(&status_vector);
 
@@ -2380,16 +2368,14 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
 
-	InternalMessageBuffer iMsgBuffer(in_blr_length, in_blr,
-									 in_msg_length, in_msg);
-	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr,
-									 out_msg_length, out_msg);
+	InternalMessageBuffer iMsgBuffer(in_blr_length, in_blr, in_msg_length, in_msg);
+	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
 
 	ITransaction* newTra = rdb->rdb_iface->execute(&status_vector, tra,
-												   exnow->p_sqlst_SQL_str.cstr_length,
-												   reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
-												   exnow->p_sqlst_SQL_dialect * 10 + parser_version,
-												   in_msg_type, &iMsgBuffer, &oMsgBuffer);
+		exnow->p_sqlst_SQL_str.cstr_length,
+		reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
+		exnow->p_sqlst_SQL_dialect * 10 + parser_version,
+		in_msg_type, &iMsgBuffer, &oMsgBuffer);
 
 	if (op == op_exec_immediate2)
 	{
@@ -2411,18 +2397,14 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		else if (!transaction && newTra)
 		{
 			if (!(transaction = make_transaction(rdb, newTra)))
-			{
 				(Arg::Gds(isc_too_many_handles)).copyTo(&status_vector);
-			}
 		}
 		else if (newTra && newTra != tra)
-		{
 			transaction->rtr_iface = newTra;
-		}
 	}
 
-	return this->send_response(	sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
-								0, &status_vector, false);
+	return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
+		0, &status_vector, false);
 }
 
 
@@ -2487,14 +2469,11 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	LocalStatus status_vector;
 	InternalMessageBuffer iMsgBuffer(sqldata->p_sqldata_blr.cstr_length,
-									 sqldata->p_sqldata_blr.cstr_address,
-									 in_msg_length, in_msg);
-	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr,
-									 out_msg_length, out_msg);
+		sqldata->p_sqldata_blr.cstr_address, in_msg_length, in_msg);
+	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
 
 	ITransaction* newTra = statement->rsr_iface->execute(&status_vector, tra,
-														 sqldata->p_sqldata_message_number,
-														 &iMsgBuffer, &oMsgBuffer);
+		sqldata->p_sqldata_message_number, &iMsgBuffer, &oMsgBuffer);
 
 	if (op == op_execute2)
 	{
@@ -2516,22 +2495,18 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		else if (!transaction && newTra)
 		{
 			if (!(transaction = make_transaction(statement->rsr_rdb, newTra)))
-			{
 				(Arg::Gds(isc_too_many_handles)).copyTo(&status_vector);
-			}
 		}
 		else if (newTra && newTra != tra)
-		{
 			transaction->rtr_iface = newTra;
-		}
 
 		statement->rsr_rtr = transaction;
 	}
 
 	const bool defer = this->haveRecvData();
 
-	return this->send_response(	sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
-								0, &status_vector, defer);
+	return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
+		0, &status_vector, defer);
 }
 
 
@@ -2633,8 +2608,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			fb_assert(statement->rsr_msgs_waiting == 0);
 
 			InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-											sqldata->p_sqldata_blr.cstr_address,
-											msg_length, message->msg_buffer);
+				sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
 			s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
 
 			statement->rsr_flags.set(Rsr::FETCHED);
@@ -2648,6 +2622,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 				return this->send_response(sendL, 0, 0, &status_vector, false);
 			}
+
 			message->msg_address = message->msg_buffer;
 		}
 		else
@@ -2661,15 +2636,14 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		// loop before sending the last record.
 
 		count--;
-		if (this->port_protocol <= PROTOCOL_VERSION7 && count <= 0) {
+		if (this->port_protocol <= PROTOCOL_VERSION7 && count <= 0)
 			break;
-		}
 
 		// There's a buffer waiting -- send it
 
-		if (!this->send_partial(sendL)) {
+		if (!this->send_partial(sendL))
 			return FALSE;
-		}
+
 		message->msg_address = NULL;
 
 		// If we've sent the requested amount, break out of loop
@@ -2722,9 +2696,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 
 		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-										sqldata->p_sqldata_blr.cstr_address,
-										msg_length, message->msg_buffer);
+			sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
 		s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
+
 		if (s)
 		{
 			if (!status_vector.isSuccess())
@@ -2736,12 +2710,13 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 					statement->saveException(status_vector.get(), true);
 				}
 			}
+
 			if (s == 100)
-			{
 				statement->rsr_flags.set(Rsr::EOF_SET);
-			}
+
 			break;
 		}
+
 		message->msg_address = message->msg_buffer;
 		message = message->msg_next;
 		statement->rsr_msgs_waiting++;
@@ -2788,11 +2763,11 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 
 	LocalStatus status_vector;
 	InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
-									sqldata->p_sqldata_blr.cstr_address,
-									msg_length, message->msg_buffer);
+		sqldata->p_sqldata_blr.cstr_address, msg_length, message->msg_buffer);
 	ISC_STATUS s = statement->rsr_iface->fetch(&status_vector, &msgBuffer);
 
-	if (status_vector.isSuccess() || status_vector.get()[1] == isc_segment || status_vector.get()[1] == isc_segstr_eof)
+	if (status_vector.isSuccess() || status_vector.get()[1] == isc_segment ||
+		status_vector.get()[1] == isc_segstr_eof)
 	{
 		message->msg_address = message->msg_buffer;
 		response->p_sqldata_status = s;
@@ -2822,8 +2797,7 @@ static bool get_next_msg_no(Rrq* request, USHORT incarnation, USHORT * msg_numbe
 	UCHAR info_buffer[128];
 
 	request->rrq_iface->getInfo(&status_vector, incarnation,
-								sizeof(request_info), request_info,
-								sizeof(info_buffer), info_buffer);
+		sizeof(request_info), request_info, sizeof(info_buffer), info_buffer);
 
 	if (!status_vector.isSuccess())
 		return false;
@@ -2944,7 +2918,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	}
 
 	const ISC_STATUS status = this->send_response(sendL, (OBJCT) state, (USHORT) (p - buffer),
-												  &status_vector, false);
+		&status_vector, false);
 
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("get_segment(server)       free buffer      %x\n", buffer);
@@ -2971,9 +2945,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	getHandle(transaction, stuff->p_slc_transaction);
 
@@ -2992,12 +2964,9 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 	P_SLR* response = &sendL->p_slr;
 
 	response->p_slr_length = rdb->rdb_iface->getSlice(&status_vector,
-				  transaction->rtr_iface,
-				  (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
-				  stuff->p_slc_sdl.cstr_address,
-				  stuff->p_slc_parameters.cstr_length,
-				  stuff->p_slc_parameters.cstr_address,
-				  stuff->p_slc_length, slice);
+		transaction->rtr_iface, (ISC_QUAD*) &stuff->p_slc_id, stuff->p_slc_sdl.cstr_length,
+		stuff->p_slc_sdl.cstr_address, stuff->p_slc_parameters.cstr_length,
+		stuff->p_slc_parameters.cstr_address, stuff->p_slc_length, slice);
 
 	ISC_STATUS status;
 	if (!status_vector.isSuccess())
@@ -3034,11 +3003,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	LocalStatus status_vector;
 
 	Rdb* rdb = this->port_context;
-	if ((op == op_service_info) ? bad_service(&status_vector, rdb) :
-								  bad_db(&status_vector, rdb))
-	{
+	if ((op == op_service_info) ? bad_service(&status_vector, rdb) : bad_db(&status_vector, rdb))
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	// Make sure there is a suitable temporary blob buffer
 	Array<UCHAR> buf;
@@ -3046,7 +3012,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	memset(buffer, 0, stuff->p_info_buffer_length);
 
 	HalfStaticArray<UCHAR, 1024> info;
-	UCHAR* info_buffer = 0;
+	UCHAR* info_buffer = NULL;
 	USHORT info_len;
 	HalfStaticArray<UCHAR, 1024> temp;
 	UCHAR* temp_buffer = 0;
@@ -3080,15 +3046,15 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 	case op_info_blob:
 		getHandle(blob, stuff->p_info_object);
 		blob->rbl_iface->getInfo(&status_vector, info_len, info_buffer,
-					  stuff->p_info_buffer_length, buffer);
+			stuff->p_info_buffer_length, buffer);
 		break;
 
 	case op_info_database:
 		rdb->rdb_iface->getInfo(&status_vector,
-						  stuff->p_info_items.cstr_length,
-						  stuff->p_info_items.cstr_address,
-						  stuff->p_info_buffer_length, //sizeof(temp)
-						  temp_buffer); //temp
+			stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
+			stuff->p_info_buffer_length, //sizeof(temp)
+			temp_buffer); //temp
+
 		if (status_vector.isSuccess())
 		{
 			string version;
@@ -3106,30 +3072,27 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 			Rrq* requestL;
 			getHandle(requestL, stuff->p_info_object);
 			requestL->rrq_iface->getInfo(&status_vector, stuff->p_info_incarnation,
-										 info_len, info_buffer,
-										 stuff->p_info_buffer_length, buffer);
+				info_len, info_buffer, stuff->p_info_buffer_length, buffer);
 		}
 		break;
 
 	case op_info_transaction:
 		getHandle(transaction, stuff->p_info_object);
 		transaction->rtr_iface->getInfo(&status_vector, info_len, info_buffer,
-										stuff->p_info_buffer_length, buffer);
+			stuff->p_info_buffer_length, buffer);
 		break;
 
 	case op_service_info:
 		rdb->rdb_svc_iface->query(&status_vector,
-								  stuff->p_info_items.cstr_length,
-								  stuff->p_info_items.cstr_address,
-								  info_len, info_buffer,
-								  stuff->p_info_buffer_length, buffer);
+			stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address,
+			info_len, info_buffer, stuff->p_info_buffer_length, buffer);
 		break;
 
 	case op_info_sql:
 		getHandle(statement, stuff->p_info_object);
 
 		statement->rsr_iface->getInfo(&status_vector, info_len, info_buffer,
-									  stuff->p_info_buffer_length, buffer);
+			stuff->p_info_buffer_length, buffer);
 		break;
 	}
 
@@ -3144,9 +3107,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		const SLONG val = gds__vax_integer(buffer + 3, skip_len);
 		fb_assert(val >= 0);
 		skip_len += 3;
-		if (val && ULONG(val) < ULONG(response_len)) {
+		if (val && ULONG(val) < ULONG(response_len))
 			response_len = val;
-		}
 	}
 
 	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
@@ -3189,8 +3151,8 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 
 	LocalStatus status_vector;
 
-	InternalMessageBuffer message(sqldata->p_sqldata_blr.cstr_length, sqldata->p_sqldata_blr.cstr_address,
-								  msg_length, msg);
+	InternalMessageBuffer message(sqldata->p_sqldata_blr.cstr_length,
+		sqldata->p_sqldata_blr.cstr_address, msg_length, msg);
 	statement->rsr_iface->insert(&status_vector, &message);
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -3243,9 +3205,7 @@ static void ping_connection(rem_port* port, PACKET* send)
 
 	Rdb* rdb = port->port_context;
 	if (!bad_db(&status_vector, rdb))
-	{
 		rdb->rdb_iface->ping(&status_vector);
-	}
 
 	port->send_response(send, 0, 0, &status_vector, false);
 }
@@ -3285,9 +3245,9 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 
 	ServBlob iface(op == op_open_blob || op == op_open_blob2 ?
 		rdb->rdb_iface->openBlob(&status_vector, transaction->rtr_iface,
-								 (ISC_QUAD*) &stuff->p_blob_id, bpb_length, bpb) :
+			(ISC_QUAD*) &stuff->p_blob_id, bpb_length, bpb) :
 		rdb->rdb_iface->createBlob(&status_vector, transaction->rtr_iface,
-								 (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id, bpb_length, bpb));
+			(ISC_QUAD*) &sendL->p_resp.p_resp_blob_id, bpb_length, bpb));
 
 	USHORT object;
 	if (!status_vector.isSuccess())
@@ -3338,8 +3298,7 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 	getHandle(transaction, stuff->p_prep_transaction);
 
 	transaction->rtr_iface->prepare(&status_vector,
-									stuff->p_prep_data.cstr_length,
-									stuff->p_prep_data.cstr_address);
+		stuff->p_prep_data.cstr_length, stuff->p_prep_data.cstr_address);
 	if (status_vector.isSuccess())
 	{
 		transaction->rtr_limbo = true;
@@ -3409,22 +3368,17 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	LocalStatus status_vector;
 
 	statement->rsr_iface->prepare(&status_vector,
-					 iface,
-					 prepareL->p_sqlst_SQL_str.cstr_length,
-					 reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
-					 prepareL->p_sqlst_SQL_dialect * 10 + parser_version,
-					 flags);
+		iface, prepareL->p_sqlst_SQL_str.cstr_length,
+		reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
+		prepareL->p_sqlst_SQL_dialect * 10 + parser_version, flags);
 
-	if (!status_vector.isSuccess()) {
+	if (!status_vector.isSuccess())
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	LocalStatus s2;
-	statement->rsr_iface->getInfo(&s2, infoLength, info,
-								  prepareL->p_sqlst_buffer_length, buffer);
-	if (!s2.isSuccess()) {
+	statement->rsr_iface->getInfo(&s2, infoLength, info, prepareL->p_sqlst_buffer_length, buffer);
+	if (!s2.isSuccess())
 		return this->send_response(sendL, 0, 0, &s2, false);
-	}
 
 	REMOTE_reset_statement(statement);
 
@@ -3887,19 +3841,14 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	sendL->p_resp.p_resp_blob_id = stuff->p_slc_id;
 	rdb->rdb_iface->putSlice(&status_vector, transaction->rtr_iface,
-				  (ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
-				  stuff->p_slc_sdl.cstr_length,
-				  stuff->p_slc_sdl.cstr_address,
-				  stuff->p_slc_parameters.cstr_length,
-				  stuff->p_slc_parameters.cstr_address,
-				  stuff->p_slc_slice.lstr_length,
-				  stuff->p_slc_slice.lstr_address);
+		(ISC_QUAD*) &sendL->p_resp.p_resp_blob_id,
+		stuff->p_slc_sdl.cstr_length, stuff->p_slc_sdl.cstr_address,
+		stuff->p_slc_parameters.cstr_length, stuff->p_slc_parameters.cstr_address,
+		stuff->p_slc_slice.lstr_length, stuff->p_slc_slice.lstr_address);
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -3920,18 +3869,15 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	// Find unused event block or, if necessary, a new one
 
 	Rvnt* event;
 	for (event = rdb->rdb_events; event; event = event->rvnt_next)
 	{
-		if (!event->rvnt_iface) {
+		if (!event->rvnt_iface)
 			break;
-		}
 	}
 
 	if (!event)
@@ -3950,8 +3896,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	event->rvnt_rdb = rdb;
 
 	event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
-												  stuff->p_event_items.cstr_length,
-												  stuff->p_event_items.cstr_address);
+		stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -3979,18 +3924,17 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	// Figure out the number of the message that we're stalled on.
 
 	USHORT msg_number;
-	if (!get_next_msg_no(requestL, level, &msg_number)) {
+	if (!get_next_msg_no(requestL, level, &msg_number))
 		return this->send_response(sendL, 0, 0, status_vector, false);
-	}
 
 	sendL->p_operation = op_response_piggyback;
 	P_RESP* response = &sendL->p_resp;
 	response->p_resp_object = msg_number;
 	response->p_resp_data.cstr_length = 0;
+
 	if (!sendL->p_resp.p_resp_status_vector)
-	{
 		sendL->p_resp.p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
-	}
+
 	sendL->p_resp.p_resp_status_vector->save(status_vector->get());
 
 	this->send_partial(sendL);
@@ -4008,11 +3952,8 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	}
 	else
 	{
-		data->p_data_messages =
-			(USHORT) REMOTE_compute_batch_size(this,
-										(USHORT) xdr_protocol_overhead(op_response_piggyback),
-										op_send,
-										format);
+		data->p_data_messages = (USHORT) REMOTE_compute_batch_size(this,
+			(USHORT) xdr_protocol_overhead(op_response_piggyback), op_send, format);
 	}
 
 	return this->receive_msg(data, sendL);
@@ -4086,7 +4027,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			}
 
 			requestL->rrq_iface->receive(&status_vector, level,
-										 msg_number, format->fmt_length, message->msg_buffer);
+				msg_number, format->fmt_length, message->msg_buffer);
 
 			if (!status_vector.isSuccess())
 				return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -4165,7 +4106,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		// so there is no reason to do an isc_receive2()
 
 		requestL->rrq_iface->receive(&status_vector, data->p_data_incarnation,
-									 msg_number, format->fmt_length, message->msg_buffer);
+			msg_number, format->fmt_length, message->msg_buffer);
 
 		// Did we have an error?  If so, save it for later delivery
 
@@ -4173,9 +4114,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		{
 			// If already have an error queued, don't overwrite it
 
-			if (requestL->rrqStatus.isSuccess()) {
+			if (requestL->rrqStatus.isSuccess())
 				requestL->rrqStatus.save(status_vector.get());
-			}
+
 			break;
 		}
 
@@ -4406,7 +4347,7 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 
 	requestL->rrq_iface->send(&status_vector, data->p_data_incarnation, number,
-							  format->fmt_length, message->msg_address);
+		format->fmt_length, message->msg_address);
 
 	message->msg_address = NULL;
 
@@ -4471,9 +4412,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 				USHORT fac = 0, code_class = 0;
 				new_vector.push(gds__decode(*old_vector++, &fac, &code_class));
 			}
-			else {
+			else
 				new_vector.push(*old_vector++);
-			}
 
 			for (;;)
 			{
@@ -4517,9 +4457,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	// of the response packet may contain valid data.  Don't trash them.
 
 	if (!response->p_resp_status_vector)
-	{
 		response->p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
-	}
+
 	response->p_resp_status_vector->save(new_vector.begin());
 
 	sendL->p_operation = op_response;
@@ -4558,10 +4497,11 @@ static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
 
 static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 {
-	port->port_auth = new ServerAuth(port, PathName(attach->p_atch_file.cstr_address,
-													attach->p_atch_file.cstr_length),
-									 attach->p_atch_dpb.cstr_address,
-									 attach->p_atch_dpb.cstr_length, attach_service2, op_service_attach);
+	port->port_auth = new ServerAuth(port,
+		PathName(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length),
+		attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length,
+		attach_service2, op_service_attach);
+
 	if (port->port_auth->authenticate(port, sendL, NULL))
 	{
 		delete port->port_auth;
@@ -4627,24 +4567,18 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	static IProvider* provider = fb_get_master_interface()->getDispatcher();
 	LocalStatus status_vector;
 	ServService iface(provider->attachServiceManager(&status_vector, service_name,
-													 spb.getBufferLength(), spb.getBuffer()));
+		spb.getBufferLength(), spb.getBuffer()));
 
 	if (status_vector.isSuccess())
 	{
 		Rdb* rdb = new Rdb;
-		if (rdb)
-		{
-			this->port_context = rdb;
+
+		this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
-			printf("attach_service(server)  allocate rdb     %x\n", rdb);
+		printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
-			rdb->rdb_port = this;
-			rdb->rdb_svc_iface = iface;
-		}
-		else
-		{
-			(Arg::Gds(isc_virmemexh)).copyTo(&status_vector);
-		}
+		rdb->rdb_port = this;
+		rdb->rdb_svc_iface = iface;
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -4667,13 +4601,12 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_service(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	rdb->rdb_svc_iface->detach(&status_vector);
 
-	if (status_vector.isSuccess()) {
+	if (status_vector.isSuccess())
+	{
 		port_flags |= PORT_detached;
 		rdb->rdb_svc_iface = NULL;
 	}
@@ -4698,12 +4631,10 @@ ISC_STATUS rem_port::service_start(P_INFO * stuff, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_service(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	rdb->rdb_svc_iface->start(&status_vector,
-							  stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address);
+		stuff->p_info_items.cstr_length, stuff->p_info_items.cstr_address);
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
@@ -4727,13 +4658,13 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 	getHandle(statement, sqlcur->p_sqlcur_statement);
 
 	statement->rsr_iface->setCursorName(&status_vector,
-										reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address));
+		reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address));
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
 }
 
 
-void set_server( rem_port* port, USHORT flags)
+void set_server(rem_port* port, USHORT flags)
 {
 /**************************************
  *
@@ -4752,9 +4683,8 @@ void set_server( rem_port* port, USHORT flags)
 
 	for (server = servers; server; server = server->srvr_next)
 	{
-		if (port->port_type == server->srvr_port_type) {
+		if (port->port_type == server->srvr_port_type)
 			break;
-		}
 	}
 
 	if (!server)
@@ -4829,20 +4759,20 @@ ISC_STATUS rem_port::start_and_send(P_OP operation, P_DATA* data, PACKET* sendL)
 		(Arg::Gds(isc_badmsgnum)).copyTo(&status_vector);
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 	}
+
 	RMessage* message = requestL->rrq_rpt[number].rrq_message;
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 	REMOTE_reset_request(requestL, message);
 
 	requestL->rrq_iface->startAndSend(&status_vector,
-									  transaction->rtr_iface, data->p_data_incarnation,
-									  number, format->fmt_length, message->msg_address);
+		transaction->rtr_iface, data->p_data_incarnation,
+		number, format->fmt_length, message->msg_address);
 
 	if (status_vector.isSuccess())
 	{
 		requestL->rrq_rtr = transaction;
-		if (operation == op_start_send_and_receive) {
+		if (operation == op_start_send_and_receive)
 			return this->receive_after_start(data, sendL, &status_vector);
-		}
 	}
 
 	return this->send_response(sendL, 0, 0, &status_vector, false);
@@ -4865,19 +4795,18 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	ServTransaction iface(operation == op_reconnect ?
-		rdb->rdb_iface->reconnectTransaction(&status_vector, stuff->p_sttr_tpb.cstr_length, stuff->p_sttr_tpb.cstr_address) :
-		rdb->rdb_iface->startTransaction(&status_vector, stuff->p_sttr_tpb.cstr_length, stuff->p_sttr_tpb.cstr_address));
+		rdb->rdb_iface->reconnectTransaction(&status_vector,
+			stuff->p_sttr_tpb.cstr_length, stuff->p_sttr_tpb.cstr_address) :
+		rdb->rdb_iface->startTransaction(&status_vector,
+			stuff->p_sttr_tpb.cstr_length, stuff->p_sttr_tpb.cstr_address));
 
 	OBJCT object;
+
 	if (!status_vector.isSuccess())
-	{
 		object = 0;
-	}
 	else
 	{
 		Rtr* transaction = make_transaction(rdb, iface);
@@ -5204,9 +5133,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
-	{
 		return this->send_response(sendL, 0, 0, &status_vector, false);
-	}
 
 	UCHAR* blr = trrq->p_trrq_blr.cstr_address;
 	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
@@ -5218,11 +5145,8 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	const USHORT out_msg_length =
 		(procedure->rpr_out_format) ? procedure->rpr_out_format->fmt_length : 0;
 
-	rdb->rdb_iface->transactRequest(&status_vector,
-									transaction->rtr_iface,
-									blr_length, blr,
-									in_msg_length, in_msg,
-									out_msg_length, out_msg);
+	rdb->rdb_iface->transactRequest(&status_vector, transaction->rtr_iface,
+		blr_length, blr, in_msg_length, in_msg, out_msg_length, out_msg);
 
 	if (!status_vector.isSuccess())
 		return this->send_response(sendL, 0, 0, &status_vector, false);

@@ -1759,9 +1759,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
 			dbbGuard.unlock();
 
-			if (attachment) {
+			if (attachment)
 				attachment->att_interface = NULL;
-			}
+
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
 	}
@@ -2609,9 +2609,9 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			dbb->dbb_sync.lock(NULL, SYNC_EXCLUSIVE);
 			dbbGuard.unlock();
 
-			if (attachment) {
+			if (attachment)
 				attachment->att_interface = NULL;
-			}
+
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
 	}

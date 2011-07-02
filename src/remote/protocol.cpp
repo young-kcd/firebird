@@ -1640,9 +1640,7 @@ static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vecto
 	}
 
 	if (!vector)
-	{
 		vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
-	}
 
 	Firebird::SimpleStatusVector vectorDecode;
 	const ISC_STATUS* vectorEncode = vector->value();

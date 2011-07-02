@@ -5360,10 +5360,12 @@ static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
 
 	SimpleStatusVector newVector;
 	rem_port* port = rdb->rdb_port;
+
 	while (*vector != isc_arg_end)
 	{
 		const ISC_STATUS vec = *vector++;
 		newVector.push(vec);
+
 		switch ((USHORT) vec)
 		{
 		case isc_arg_warning:
@@ -5386,6 +5388,7 @@ static void check_response(IStatus* warning, Rdb* rdb, PACKET* packet)
 			break;
 		}
 	}
+
 	newVector.push(isc_arg_end);
 	vector = newVector.begin();
 
