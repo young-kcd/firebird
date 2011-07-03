@@ -1,3 +1,12 @@
+ 2011-07-02 22:10  asfernandes 
+   M src/common/StatusHolder.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2011-07-01 16:15  dimitr 
    A builds/win32/msvc8/legacy_usermanager.vcproj (from /firebird/trunk/builds/win32/msvc8/legacy_usermanager.vcxproj:53272)
    D builds/win32/msvc8/legacy_usermanager.vcxproj
