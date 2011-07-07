@@ -509,7 +509,7 @@ class Callback : public VersionedIface<IEventCallback, FB_EVENT_CALLBACK_VERSION
 				 public GlobalStorage
 {
 public:
-	Callback(Rvnt* aevent)
+	explicit Callback(Rvnt* aevent)
 		: event(aevent)
 	{ }
 
@@ -522,7 +522,7 @@ public:
 	 **************************************
 	 *
 	 * Functional description
-	 *	Send an asynchrous event packet back to client.
+	 *	Send an asynchronous event packet back to client.
 	 *
 	 **************************************/
 	{
@@ -1280,7 +1280,6 @@ static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACK
 		}
 		else
 		{
-			object = 0;
 			statement->rsr_iface->free(&status_vector, DSQL_drop);
 			delete statement;
 
@@ -2891,7 +2890,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	{
 		buffer_length -= 2;
 		p += 2;
-		USHORT length = blob->rbl_iface->getSegment(&status_vector, buffer_length, p);
+		const USHORT length = blob->rbl_iface->getSegment(&status_vector, buffer_length, p);
 
 		if (status_vector.get()[1] == isc_segstr_eof)
 		{
@@ -3249,10 +3248,8 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		rdb->rdb_iface->createBlob(&status_vector, transaction->rtr_iface,
 			(ISC_QUAD*) &sendL->p_resp.p_resp_blob_id, bpb_length, bpb));
 
-	USHORT object;
-	if (!status_vector.isSuccess())
-		object = 0;
-	else
+	USHORT object = 0;
+	if (status_vector.isSuccess())
 	{
 		Rbl* blob = new Rbl;
 #ifdef DEBUG_REMOTE_MEMORY
@@ -3269,7 +3266,6 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		}
 		else
 		{
-			object = 0;
 			blob->rbl_iface->cancel(&status_vector);
 			delete blob;
 			(Arg::Gds(isc_too_many_handles)).copyTo(&status_vector);
@@ -3338,7 +3334,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	// stuff isc_info_length in front of info items buffer
 	*info = isc_info_length;
 	memmove(info + 1, prepareL->p_sqlst_items.cstr_address, infoLength++);
-	unsigned int flags = StatementMetadata::buildInfoFlags(infoLength, info);
+	const unsigned int flags = StatementMetadata::buildInfoFlags(infoLength, info);
 
 	ITransaction* iface = NULL;
 	if (transaction)
@@ -4803,11 +4799,8 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		rdb->rdb_iface->startTransaction(&status_vector,
 			stuff->p_sttr_tpb.cstr_length, stuff->p_sttr_tpb.cstr_address));
 
-	OBJCT object;
-
-	if (!status_vector.isSuccess())
-		object = 0;
-	else
+	OBJCT object = 0;
+	if (status_vector.isSuccess())
 	{
 		Rtr* transaction = make_transaction(rdb, iface);
 		if (transaction)
@@ -4821,7 +4814,6 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 		}
 		else
 		{
-			object = 0;
 			if (operation != op_reconnect)
 			{
 				iface->rollback(&status_vector);

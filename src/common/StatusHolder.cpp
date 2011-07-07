@@ -105,6 +105,7 @@ void DynamicStatusVector::clear()
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
+			fb_assert(false); // CVC: according to the new logic, this case cannot happen
 			break;
 
 		case isc_arg_string:

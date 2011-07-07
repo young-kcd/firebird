@@ -117,17 +117,17 @@ public:
 	ISC_STATUS save(const ISC_STATUS* status);
 	void clear();
 
-	ISC_STATUS getError()
+	ISC_STATUS getError() const
 	{
 		return value()[1];
 	}
 
-	const ISC_STATUS* value()
+	const ISC_STATUS* value() const
 	{
 		return m_status_vector.begin();
 	}
 
-	bool isSuccess()
+	bool isSuccess() const
 	{
 		return getError() == 0;
 	}

@@ -102,6 +102,7 @@ struct FbVarChar
 	void set(const char* s)
 	{
 		length = strlen(s);
+		// check that length <= N ?
 		memcpy(str, s, length);
 	}
 };
