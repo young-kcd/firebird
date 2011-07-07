@@ -2759,6 +2759,13 @@ static void compress(thread_db* tdbb,
 
 	}
 
+	// This trick replaces possibly negative zero with positive zero, so that both
+	// would be compressed to the same index key and thus properly compared (see CORE-3547).
+	if (temp.temp_double == 0)
+	{
+		temp.temp_double = 0;
+	}
+
 #ifdef IEEE
 
 	const UCHAR* q;
