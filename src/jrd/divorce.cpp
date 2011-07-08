@@ -99,11 +99,13 @@ void divorce_terminal(int mask)
 
 	for (fid = 0; fid < NOFILE; fid++)
 	{
-#ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
-		if (Firebird::SignalSafeSemaphore::checkHandle(fid))
+#ifdef DARWIN
+#ifdef HAVE_UNISTD_H
+		if (isatty(fid) <= 0)
 		{
 			continue;
 		}
+#endif
 #endif
 		if (!(mask & (1 << fid)))
 		{
