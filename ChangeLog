@@ -1,3 +1,11 @@
+ 2011-07-08 11:33  paulbeach 
+   M src/jrd/divorce.cpp
+Fix problem with fid's and GCD for MacOS 10.7 SuperServer
+
+ 2011-07-08 11:31  paulbeach 
+   M configure.in
+False positive for fdatasync on MacOS
+
  2011-07-07 16:24  dimitr 
    M src/jrd/btr.cpp
    M src/jrd/sort.cpp
