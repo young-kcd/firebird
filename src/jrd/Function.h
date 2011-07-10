@@ -75,6 +75,8 @@ namespace Jrd
 			  fun_temp_length(0),
 			  fun_in_msg_format(p, 0),
 			  fun_out_msg_format(p, 0),
+			  fun_in_msg_format2(p, 0),
+			  fun_out_msg_format2(p, 0),
 			  fun_args(p),
 			  fun_flags(0),
 			  fun_use_count(0),
@@ -86,7 +88,8 @@ namespace Jrd
 		{
 		}
 
-		void makeFormat();
+		void makeFormat(thread_db* tdbb, const Firebird::BlrMessage* inBlr,
+			const Firebird::BlrMessage* outBlr);
 
 		static Function* loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT flags);
 		static int blockingAst(void*);
@@ -111,6 +114,8 @@ namespace Jrd
 
 		Format fun_in_msg_format;
 		Format fun_out_msg_format;
+		Format fun_in_msg_format2;
+		Format fun_out_msg_format2;
 
 		Firebird::Array<Argument> fun_args;
 

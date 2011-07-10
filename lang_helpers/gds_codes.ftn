@@ -1462,6 +1462,10 @@ C --
       PARAMETER (GDS__sysf_argscant_both_be_zero       = 335545024)
       INTEGER*4 GDS__spb_no_id                       
       PARAMETER (GDS__spb_no_id                        = 335545025)
+      INTEGER*4 GDS__ee_blr_mismatch_null            
+      PARAMETER (GDS__ee_blr_mismatch_null             = 335545026)
+      INTEGER*4 GDS__ee_blr_mismatch_length          
+      PARAMETER (GDS__ee_blr_mismatch_length           = 335545027)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

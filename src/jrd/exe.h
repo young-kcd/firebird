@@ -130,8 +130,10 @@ struct impure_agg_sort
 // index (in CompoundStmtNode) for external procedure blr
 const int e_extproc_input_message	= 0;
 const int e_extproc_output_message	= 1;
-const int e_extproc_input_assign	= 2;
-const int e_extproc_output_assign	= 3;
+const int e_extproc_input_message2	= 2;
+const int e_extproc_output_message2	= 3;
+const int e_extproc_input_assign	= 4;
+const int e_extproc_output_assign	= 5;
 
 // Request resources
 

@@ -103,6 +103,40 @@ public:
 		return high * 256 + low;
 	}
 
+	UCHAR checkByte(UCHAR expected)
+	{
+		using namespace Firebird;
+
+		UCHAR byte = getByte();
+
+		if (byte != expected)
+		{
+			status_exception::raise(Arg::Gds(isc_syntaxerr) <<
+				Arg::Num(expected) <<
+				Arg::Num(getOffset() - 1) <<
+				Arg::Num(byte));
+		}
+
+		return byte;
+	}
+
+	USHORT checkWord(USHORT expected)
+	{
+		using namespace Firebird;
+
+		USHORT word = getWord();
+
+		if (word != expected)
+		{
+			status_exception::raise(Arg::Gds(isc_syntaxerr) <<
+				Arg::Num(expected) <<
+				Arg::Num(getOffset() - 2) <<
+				Arg::Num(word));
+		}
+
+		return word;
+	}
+
 private:
 	const UCHAR* start;
 	const UCHAR* end;

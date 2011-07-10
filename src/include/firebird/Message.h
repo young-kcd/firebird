@@ -37,8 +37,7 @@
 #define FB_MESSAGE_I(name, fields)	\
 	struct name	\
 	{	\
-		/* TODO: use it */	\
-		static const unsigned char* BLR()	\
+		static const unsigned char* getBlr(unsigned* length)	\
 		{	\
 			static const unsigned char blr[] = {	\
 				blr_version5,	\
@@ -50,10 +49,11 @@
 				blr_end,	\
 				blr_eoc	\
 			};	\
+			*length = sizeof(blr);	\
 			return blr;	\
 		}	\
 		\
-		static unsigned SIZE()	\
+		static unsigned getSize()	\
 		{	\
 			return (unsigned)(size_t) (&((name*) 0)->FB_BOOST_PP_CAT(	\
 				FB_BOOST_PP_TUPLE_ELEM(2, 1,	\
@@ -79,7 +79,7 @@
 #define FB_BLR_FB_SMALLINT					FB_BLR_FB_SCALED_SMALLINT(0)
 #define FB_BLR_FB_INTEGER					FB_BLR_FB_SCALED_INTEGER(0)
 #define FB_BLR_FB_BIGINT					FB_BLR_FB_SCALED_BIGINT(0)
-#define FB_BLR_FB_VARCHAR(len)				blr_varying, (len) & 0xFF, (len) >> 8
+#define FB_BLR_FB_VARCHAR(len)				blr_varying2, 0, 0, (len) & 0xFF, (len) >> 8
 
 #define FB_TYPE_FB_SCALED_SMALLINT(x)	ISC_SHORT
 #define FB_TYPE_FB_SCALED_INTEGER(x)	ISC_LONG
@@ -87,7 +87,7 @@
 #define FB_TYPE_FB_SMALLINT				ISC_SHORT
 #define FB_TYPE_FB_INTEGER				ISC_LONG
 #define FB_TYPE_FB_BIGINT				ISC_INT64
-#define FB_TYPE_FB_VARCHAR(len)			FbVarChar<(len)>
+#define FB_TYPE_FB_VARCHAR(len)			::Firebird::FbVarChar<(len)>
 
 
 namespace Firebird {

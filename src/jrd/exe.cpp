@@ -202,6 +202,7 @@ void StatusXcp::as_sqlstate(char* sqlstate) const
 	fb_sqlstate(sqlstate, status);
 }
 
+static void execute_ext_procedure(thread_db* tdbb, jrd_req* request);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, jrd_req::req_s);
 static void looper_seh(thread_db*, jrd_req*);
 static void release_blobs(thread_db*, jrd_req*);
@@ -1048,6 +1049,107 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 }
 
 
+// Execute an external procedure.
+static void execute_ext_procedure(thread_db* tdbb, jrd_req* request)
+{
+	const JrdStatement* statement = request->getStatement();
+
+	fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
+	const CompoundStmtNode* extStmts = StmtNode::as<CompoundStmtNode>(
+		static_cast<const StmtNode*>(statement->topNode));
+	fb_assert(extStmts);
+
+	switch (request->req_operation)
+	{
+		case jrd_req::req_evaluate:
+			request->req_message = extStmts->statements[e_extproc_input_message]->as<MessageNode>();
+			request->req_flags |= req_stall;
+			request->req_operation = jrd_req::req_receive;
+			break;
+
+		case jrd_req::req_sync:
+		{
+			const MessageNode* outMsgNode =
+				extStmts->statements[e_extproc_output_message]->as<MessageNode>();
+			fb_assert(outMsgNode);
+
+			const Format* outFormat = outMsgNode->format;
+
+			if (!request->resultSet)
+			{
+				const MessageNode* inMsgNode =
+					extStmts->statements[e_extproc_input_message]->as<MessageNode>();
+				fb_assert(inMsgNode && request->req_message == inMsgNode);
+
+				const CompoundStmtNode* list =
+					extStmts->statements[e_extproc_input_assign]->as<CompoundStmtNode>();
+				fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
+
+				const Format* format = inMsgNode->format;
+
+				// Clear the flags from the input message.
+				USHORT* impure_flags = request->getImpure<USHORT>(inMsgNode->impureFlags);
+				memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
+
+				// Clear the flags from the output message.
+				impure_flags = request->getImpure<USHORT>(outMsgNode->impureFlags);
+				memset(impure_flags, 0, sizeof(USHORT) * outFormat->fmt_count);
+
+				// Validate/move input parameters.
+				for (size_t i = 0; i < list->statements.getCount(); ++i)
+				{
+					EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
+						list->statements[i].getObject()));
+				}
+
+				const MessageNode* inMsgNode2 =
+					extStmts->statements[e_extproc_input_message2]->as<MessageNode>();
+				if (!inMsgNode2)
+					inMsgNode2 = inMsgNode;
+
+				const MessageNode* outMsgNode2 =
+					extStmts->statements[e_extproc_output_message2]->as<MessageNode>();
+				if (!outMsgNode2)
+					outMsgNode2 = outMsgNode;
+
+				UCHAR* inMsg = request->getImpure<UCHAR>(inMsgNode2->impureOffset);
+				UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode2->impureOffset);
+
+				request->resultSet = statement->procedure->getExternal()->open(tdbb, inMsg, outMsg);
+			}
+
+			request->req_message = outMsgNode;
+			bool result = request->resultSet->fetch(tdbb);
+			UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->impureOffset);
+
+			// Set the eof flag.
+			const dsc& eofDesc = outFormat->fmt_desc[outFormat->fmt_count - 1];
+			fb_assert(eofDesc.dsc_dtype == dtype_short);
+			*((SSHORT*)(UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
+
+			const CompoundStmtNode* list =
+				extStmts->statements[e_extproc_output_assign]->as<CompoundStmtNode>();
+			fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
+
+			if (result)
+			{
+				// Validate/move output parameters.
+				for (size_t i = 0; i < list->statements.getCount(); ++i)
+				{
+					EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
+						list->statements[i].getObject()));
+				}
+			}
+
+			break;
+		}
+
+		default:
+			fb_assert(false);
+			break;
+	}
+}
+
 
 static void execute_looper(thread_db* tdbb,
 						   jrd_req* request,
@@ -1362,100 +1464,12 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			else
 				break;
 
-			fb_assert(statement->topNode->kind == DmlNode::KIND_STATEMENT);
-			const CompoundStmtNode* extStmts = StmtNode::as<CompoundStmtNode>(
-				static_cast<const StmtNode*>(statement->topNode));
-			fb_assert(extStmts);
-
-			switch (request->req_operation)
-			{
-				case jrd_req::req_evaluate:
-					request->req_message = extStmts->statements[e_extproc_input_message]->as<MessageNode>();
-					request->req_flags |= req_stall;
-					request->req_operation = jrd_req::req_receive;
-					break;
-
-				case jrd_req::req_sync:
-				{
-					const MessageNode* outMsgNode =
-						extStmts->statements[e_extproc_output_message]->as<MessageNode>();
-					fb_assert(outMsgNode);
-
-					const Format* outFormat = outMsgNode->format;
-					UCHAR* outMsg = request->getImpure<UCHAR>(outMsgNode->impureOffset);
-
-					if (!request->resultSet)
-					{
-						// input message
-						const MessageNode* inMsgNode =
-							extStmts->statements[e_extproc_input_message]->as<MessageNode>();
-						fb_assert(inMsgNode);
-						fb_assert(request->req_message == inMsgNode);
-
-						const CompoundStmtNode* list =
-							extStmts->statements[e_extproc_input_assign]->as<CompoundStmtNode>();
-						fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
-
-						const Format* format = inMsgNode->format;
-
-						// clear the flags from the input message
-						USHORT* impure_flags = request->getImpure<USHORT>(inMsgNode->impureFlags);
-						memset(impure_flags, 0, sizeof(USHORT) * format->fmt_count);
-
-						// clear the flags from the output message
-						impure_flags = request->getImpure<USHORT>(outMsgNode->impureFlags);
-						memset(impure_flags, 0, sizeof(USHORT) * outFormat->fmt_count);
-
-						// validate input parameters
-						for (size_t i = 0; i < list->statements.getCount(); ++i)
-						{
-							EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
-								list->statements[i].getObject()));
-						}
-
-						UCHAR* inMsg = request->getImpure<UCHAR>(request->req_message->impureOffset);
-
-						request->resultSet = statement->procedure->getExternal()->open(
-							tdbb, inMsg, outMsg);
-					}
-
-					request->req_message = outMsgNode;
-					bool result = request->resultSet->fetch(tdbb);
-
-					// end flag
-					const dsc& eofDesc = outFormat->fmt_desc[outFormat->fmt_count - 1];
-					fb_assert(eofDesc.dsc_dtype == dtype_short);
-					*((SSHORT*) (UCHAR*) (outMsg + (IPTR) eofDesc.dsc_address)) = (SSHORT) result;
-
-					const CompoundStmtNode* list =
-						extStmts->statements[e_extproc_output_assign]->as<CompoundStmtNode>();
-					fb_assert(list && (list->onlyAssignments || list->statements.isEmpty()));
-
-					if (result)
-					{
-						// validate output parameters
-						for (size_t i = 0; i < list->statements.getCount(); ++i)
-						{
-							EXE_assignment(tdbb, static_cast<const AssignmentNode*>(
-								list->statements[i].getObject()));
-						}
-					}
-
-					break;
-				}
-
-				default:
-					fb_assert(false);
-					break;
-			}
-
+			execute_ext_procedure(tdbb, request);
 			goto end;
 		}
 
 		if (request->req_operation == jrd_req::req_evaluate && (--tdbb->tdbb_quantum < 0))
-		{
 			JRD_reschedule(tdbb, 0, true);
-		}
 
 		if (request->req_operation == jrd_req::req_evaluate && node->hasLineColumn)
 		{

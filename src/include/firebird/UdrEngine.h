@@ -39,30 +39,29 @@ namespace Firebird
 class FunctionFactory
 {
 public:
-	virtual const char* FB_CALL getName() = 0;
+	virtual void setup(const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
 	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 class ProcedureFactory
 {
 public:
-	virtual const char* FB_CALL getName() = 0;
+	virtual void setup(const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
 	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 class TriggerFactory
 {
 public:
-	virtual const char* FB_CALL getName() = 0;
+	virtual void setup(const IRoutineMetadata* metadata) = 0;
 	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata) = 0;
 };
 
 
 // Routine registration functions.
-extern "C" void fbUdrRegFunction(FunctionFactory* factory);
-extern "C" void fbUdrRegProcedure(ProcedureFactory* factory);
-extern "C" void fbUdrRegTrigger(TriggerFactory* factory);
-extern "C" void* fbUdrGetFunction(const char* symbol);
+extern "C" void fbUdrRegFunction(const char* name, FunctionFactory* factory);
+extern "C" void fbUdrRegProcedure(const char* name, ProcedureFactory* factory);
+extern "C" void fbUdrRegTrigger(const char* name, TriggerFactory* factory);
 
 
 //------------------------------------------------------------------------------

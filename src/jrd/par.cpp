@@ -81,6 +81,7 @@ using namespace Firebird;
 static NodeParseFunc blr_parsers[256] = {NULL};
 
 
+static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError = true);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
 
 
@@ -328,19 +329,123 @@ void PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, UL
 }
 
 
-USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* itemInfo)
+// Parse a BLR datatype. Return the alignment requirements of the datatype.
+USHORT PAR_datatype(thread_db* tdbb, BlrReader& blrReader, dsc* desc)
 {
-/**************************************
- *
- *	P A R _ d e s c
- *
- **************************************
- *
- * Functional description
- *	Parse a BLR descriptor.  Return the alignment requirements
- *	of the datatype.
- *
- **************************************/
+	desc->clear();
+
+	const USHORT dtype = blrReader.getByte();
+	USHORT textType;
+
+	switch (dtype)
+	{
+		case blr_text:
+			desc->makeText(blrReader.getWord(), ttype_dynamic);
+			desc->dsc_flags |= DSC_no_subtype;
+			break;
+
+		case blr_cstring:
+			desc->dsc_dtype = dtype_cstring;
+			desc->dsc_flags |= DSC_no_subtype;
+			desc->dsc_length = blrReader.getWord();
+			desc->setTextType(ttype_dynamic);
+			break;
+
+		case blr_varying:
+			desc->makeVarying(blrReader.getWord(), ttype_dynamic);
+			desc->dsc_flags |= DSC_no_subtype;
+			break;
+
+		case blr_text2:
+			textType = blrReader.getWord();
+			desc->makeText(blrReader.getWord(), textType);
+			break;
+
+		case blr_cstring2:
+			desc->dsc_dtype = dtype_cstring;
+			desc->setTextType(blrReader.getWord());
+			desc->dsc_length = blrReader.getWord();
+			break;
+
+		case blr_varying2:
+			textType = blrReader.getWord();
+			desc->makeVarying(blrReader.getWord(), textType);
+			break;
+
+		case blr_short:
+			desc->dsc_dtype = dtype_short;
+			desc->dsc_length = sizeof(SSHORT);
+			desc->dsc_scale = (int) blrReader.getByte();
+			break;
+
+		case blr_long:
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_scale = (int) blrReader.getByte();
+			break;
+
+		case blr_int64:
+			desc->dsc_dtype = dtype_int64;
+			desc->dsc_length = sizeof(SINT64);
+			desc->dsc_scale = (int) blrReader.getByte();
+			break;
+
+		case blr_quad:
+			desc->dsc_dtype = dtype_quad;
+			desc->dsc_length = sizeof(ISC_QUAD);
+			desc->dsc_scale = (int) blrReader.getByte();
+			break;
+
+		case blr_float:
+			desc->dsc_dtype = dtype_real;
+			desc->dsc_length = sizeof(float);
+			break;
+
+		case blr_timestamp:
+			desc->dsc_dtype = dtype_timestamp;
+			desc->dsc_length = sizeof(ISC_QUAD);
+			break;
+
+		case blr_sql_date:
+			desc->dsc_dtype = dtype_sql_date;
+			desc->dsc_length = type_lengths[dtype_sql_date];
+			break;
+
+		case blr_sql_time:
+			desc->dsc_dtype = dtype_sql_time;
+			desc->dsc_length = type_lengths[dtype_sql_time];
+			break;
+
+		case blr_double:
+		case blr_d_float:
+			desc->dsc_dtype = dtype_double;
+			desc->dsc_length = sizeof(double);
+			break;
+
+		case blr_blob2:
+			desc->dsc_dtype = dtype_blob;
+			desc->dsc_length = sizeof(ISC_QUAD);
+			desc->dsc_sub_type = blrReader.getWord();
+			textType = blrReader.getWord();
+			desc->dsc_scale = textType & 0xFF;		// BLOB character set
+			desc->dsc_flags = textType & 0xFF00;	// BLOB collation
+			break;
+
+		case blr_bool:
+			desc->makeBoolean();
+			break;
+
+		default:
+			par_error(blrReader, Arg::Gds(isc_datnotsup));
+	}
+
+	return type_alignments[desc->dsc_dtype];
+}
+
+
+// Parse a BLR descriptor. Return the alignment requirements of the datatype.
+USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* itemInfo)
+{
 	if (itemInfo)
 	{
 		itemInfo->nullable = true;
@@ -348,123 +453,21 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		itemInfo->fullDomain = false;
 	}
 
-	desc->dsc_scale = 0;
-	desc->dsc_sub_type = 0;
-	desc->dsc_address = NULL;
-	desc->dsc_flags = 0;
+	desc->clear();
 
 	const USHORT dtype = csb->csb_blr_reader.getByte();
 	USHORT textType;
 
 	switch (dtype)
 	{
-	case blr_not_nullable:
-		PAR_desc(tdbb, csb, desc, itemInfo);
-		if (itemInfo)
-			itemInfo->nullable = false;
-		break;
-
-	case blr_text:
-		desc->makeText(csb->csb_blr_reader.getWord(), ttype_dynamic);
-		desc->dsc_flags |= DSC_no_subtype;
-		break;
-
-	case blr_cstring:
-		desc->dsc_dtype = dtype_cstring;
-		desc->dsc_flags |= DSC_no_subtype;
-		desc->dsc_length = csb->csb_blr_reader.getWord();
-		desc->setTextType(ttype_dynamic);
-		break;
-
-	case blr_varying:
-		desc->makeVarying(csb->csb_blr_reader.getWord(), ttype_dynamic);
-		desc->dsc_flags |= DSC_no_subtype;
-		break;
-
-	case blr_text2:
-		textType = csb->csb_blr_reader.getWord();
-		desc->makeText(csb->csb_blr_reader.getWord(), textType);
-		break;
-
-	case blr_cstring2:
-		desc->dsc_dtype = dtype_cstring;
-		desc->setTextType(csb->csb_blr_reader.getWord());
-		desc->dsc_length = csb->csb_blr_reader.getWord();
-		break;
-
-	case blr_varying2:
-		textType = csb->csb_blr_reader.getWord();
-		desc->makeVarying(csb->csb_blr_reader.getWord(), textType);
-		break;
-
-	case blr_short:
-		desc->dsc_dtype = dtype_short;
-		desc->dsc_length = sizeof(SSHORT);
-		desc->dsc_scale = (int) csb->csb_blr_reader.getByte();
-		break;
-
-	case blr_long:
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
-		desc->dsc_scale = (int) csb->csb_blr_reader.getByte();
-		break;
-
-	case blr_int64:
-		desc->dsc_dtype = dtype_int64;
-		desc->dsc_length = sizeof(SINT64);
-		desc->dsc_scale = (int) csb->csb_blr_reader.getByte();
-		break;
-
-	case blr_quad:
-		desc->dsc_dtype = dtype_quad;
-		desc->dsc_length = sizeof(ISC_QUAD);
-		desc->dsc_scale = (int) csb->csb_blr_reader.getByte();
-		break;
-
-	case blr_float:
-		desc->dsc_dtype = dtype_real;
-		desc->dsc_length = sizeof(float);
-		break;
-
-	case blr_timestamp:
-		desc->dsc_dtype = dtype_timestamp;
-		desc->dsc_length = sizeof(ISC_QUAD);
-		break;
-
-	case blr_sql_date:
-		desc->dsc_dtype = dtype_sql_date;
-		desc->dsc_length = type_lengths[dtype_sql_date];
-		break;
-
-	case blr_sql_time:
-		desc->dsc_dtype = dtype_sql_time;
-		desc->dsc_length = type_lengths[dtype_sql_time];
-		break;
-
-	case blr_double:
-	case blr_d_float:
-		desc->dsc_dtype = dtype_double;
-		desc->dsc_length = sizeof(double);
-		break;
-
-	case blr_blob2:
-		{
-			desc->dsc_dtype = dtype_blob;
-			desc->dsc_length = sizeof(ISC_QUAD);
-			desc->dsc_sub_type = csb->csb_blr_reader.getWord();
-
-			USHORT ttype = csb->csb_blr_reader.getWord();
-			desc->dsc_scale = ttype & 0xFF;		// BLOB character set
-			desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
+		case blr_not_nullable:
+			PAR_desc(tdbb, csb, desc, itemInfo);
+			if (itemInfo)
+				itemInfo->nullable = false;
 			break;
-		}
 
-	case blr_bool:
-		desc->makeBoolean();
-		break;
-
-	case blr_domain_name:
-	case blr_domain_name2:
+		case blr_domain_name:
+		case blr_domain_name2:
 		{
 			bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			MetaName* name = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
@@ -522,8 +525,8 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 			break;
 		}
 
-	case blr_column_name:
-	case blr_column_name2:
+		case blr_column_name:
+		case blr_column_name2:
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			MetaName* relationName = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
@@ -584,8 +587,10 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 			break;
 		}
 
-	default:
-		PAR_error(csb, Arg::Gds(isc_datnotsup));
+		default:
+			csb->csb_blr_reader.seekBackward(1);
+			PAR_datatype(tdbb, csb->csb_blr_reader, desc);
+			break;
 	}
 
 	if (desc->getTextType() != CS_NONE)
@@ -765,18 +770,9 @@ void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 }
 
 
-void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
+// We've got a blr error other than a syntax error. Handle it.
+static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError)
 {
-/**************************************
- *
- *	P A R _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	We've got a blr error other than a syntax error.  Handle it.
- *
- **************************************/
 	fb_assert(v.value()[0] == isc_arg_gds);
 
 	// Don't bother to pass tdbb for error handling
@@ -784,9 +780,9 @@ void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxEr
 
 	if (isSyntaxError)
 	{
-		csb->csb_blr_reader.seekBackward(1);
+		blrReader.seekBackward(1);
 		Arg::Gds p(isc_invalid_blr);
-		p << Arg::Num(csb->csb_blr_reader.getOffset());
+		p << Arg::Num(blrReader.getOffset());
 		p.append(v);
 		p.copyTo(tdbb->tdbb_status_vector);
 	}
@@ -797,6 +793,12 @@ void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxEr
 
 	// Give up whatever we were doing and return to the user.
 	ERR_punt();
+}
+
+// We've got a blr error other than a syntax error. Handle it.
+void PAR_error(CompilerScratch* csb, const Arg::StatusVector& v, bool isSyntaxError)
+{
+	par_error(csb->csb_blr_reader, v, isSyntaxError);
 }
 
 
@@ -1621,6 +1623,9 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 			csb->csb_blr_reader.seekBackward(1);
 			return PAR_parseRecordSource(tdbb, csb);
 	}
+
+	if (!blr_parsers[blr_operator])
+        PAR_syntax_error(csb, "valid BLR code");
 
 	DmlNode* node = blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator);
 	size_t pos = 0;

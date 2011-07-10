@@ -726,6 +726,8 @@ static const struct {
 	{335545023, "22000"}, // 703 invalid_boolean_usage
 	{335545024, "42000"}, // 704 sysf_argscant_both_be_zero
 	{335545025, "HY000"}, // 705 spb_no_id
+	{335545026, "42000"}, // 706 ee_blr_mismatch_null
+	{335545027, "42000"}, // 707 ee_blr_mismatch_length
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

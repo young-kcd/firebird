@@ -48,10 +48,12 @@ namespace Firebird
 struct Node
 {
 	Node()
-		: module(*getDefaultMemoryPool())
+		: name(*getDefaultMemoryPool()),
+		  module(*getDefaultMemoryPool())
 	{
 	}
 
+	string name;
 	PathName module;
 };
 
@@ -151,9 +153,9 @@ public:
 	virtual void FB_CALL openAttachment(Error* error, ExternalContext* context);
 	virtual void FB_CALL closeAttachment(Error* error, ExternalContext* context);
 	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata);
+		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr);
 	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata);
+		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr);
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata);
 
@@ -204,7 +206,8 @@ static TriggerNode* registeredTriggers = NULL;
 class SharedFunction : public ExternalFunction
 {
 public:
-	SharedFunction(Engine* aEngine, const IRoutineMetadata* aMetadata)
+	SharedFunction(Engine* aEngine, const IRoutineMetadata* aMetadata,
+				BlrMessage* inBlr, BlrMessage* outBlr)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -213,7 +216,8 @@ public:
 		  children(*getDefaultMemoryPool())
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
-		engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
+		FunctionNode* node = engine->findNode<FunctionNode>(registeredFunctions, moduleName, entryPoint);
+		node->factory->setup(metadata, inBlr, outBlr);
 	}
 
 	virtual ~SharedFunction()
@@ -246,7 +250,7 @@ public:
 		}
 	}
 
-	virtual void FB_CALL execute(Error* error, ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)
+	virtual void FB_CALL execute(Error* error, ExternalContext* context, void* inMsg, void* outMsg)
 	{
 		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(
 			children, this, context, registeredFunctions, engine->functions, moduleName);
@@ -270,7 +274,8 @@ public:
 class SharedProcedure : public ExternalProcedure
 {
 public:
-	SharedProcedure(Engine* aEngine, const IRoutineMetadata* aMetadata)
+	SharedProcedure(Engine* aEngine, const IRoutineMetadata* aMetadata,
+				BlrMessage* inBlr, BlrMessage* outBlr)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -279,7 +284,8 @@ public:
 		  children(*getDefaultMemoryPool())
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
-		engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
+		ProcedureNode* node = engine->findNode<ProcedureNode>(registeredProcedures, moduleName, entryPoint);
+		node->factory->setup(metadata, inBlr, outBlr);
 	}
 
 	virtual ~SharedProcedure()
@@ -313,7 +319,7 @@ public:
 	}
 
 	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
-		UCHAR* inMsg, UCHAR* outMsg)
+		void* inMsg, void* outMsg)
 	{
 		try
 		{
@@ -353,7 +359,8 @@ public:
 		  children(*getDefaultMemoryPool())
 	{
 		engine->loadModule(metadata, &moduleName, &entryPoint);
-		engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
+		TriggerNode* node = engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
+		node->factory->setup(metadata);
 	}
 
 	virtual ~SharedTrigger()
@@ -387,7 +394,7 @@ public:
 	}
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
-		ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg)
+		ExternalTrigger::Action action, void* oldMsg, void* newMsg)
 	{
 		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
@@ -408,9 +415,10 @@ public:
 //--------------------------------------
 
 
-extern "C" void fbUdrRegFunction(FunctionFactory* factory)
+extern "C" void fbUdrRegFunction(const char* name, FunctionFactory* factory)
 {
 	FunctionNode* node = new FunctionNode();
+	node->name = name;
 	node->module = loadingModule();
 	node->factory = factory;
 	node->next = registeredFunctions;
@@ -418,9 +426,10 @@ extern "C" void fbUdrRegFunction(FunctionFactory* factory)
 }
 
 
-extern "C" void fbUdrRegProcedure(ProcedureFactory* factory)
+extern "C" void fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
 {
 	ProcedureNode* node = new ProcedureNode();
+	node->name = name;
 	node->module = loadingModule();
 	node->factory = factory;
 	node->next = registeredProcedures;
@@ -428,19 +437,14 @@ extern "C" void fbUdrRegProcedure(ProcedureFactory* factory)
 }
 
 
-extern "C" void fbUdrRegTrigger(TriggerFactory* factory)
+extern "C" void fbUdrRegTrigger(const char* name, TriggerFactory* factory)
 {
 	TriggerNode* node = new TriggerNode();
+	node->name = name;
 	node->module = loadingModule();
 	node->factory = factory;
 	node->next = registeredTriggers;
 	registeredTriggers = node;
-}
-
-
-extern "C" void* fbUdrGetFunction(const char* symbol)
-{
-	return libraryModule->findSymbol(symbol);
 }
 
 
@@ -600,7 +604,7 @@ template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
 {
 	for (T* node = nodes; node; node = node->next)
 	{
-		if (node->module == moduleName && entryPoint == node->factory->getName())
+		if (node->module == moduleName && entryPoint == node->name)
 			return node;
 	}
 
@@ -679,11 +683,11 @@ void FB_CALL Engine::closeAttachment(Error* error, ExternalContext* context)
 
 
 ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*context*/,
-	const IRoutineMetadata* metadata)
+	const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	try
 	{
-		return new SharedFunction(this, metadata);
+		return new SharedFunction(this, metadata, inBlr, outBlr);
 	}
 	catch (const ThrowError::Exception& e)
 	{
@@ -694,11 +698,11 @@ ExternalFunction* FB_CALL Engine::makeFunction(Error* error, ExternalContext* /*
 
 
 ExternalProcedure* FB_CALL Engine::makeProcedure(Error* error, ExternalContext* /*context*/,
-	const IRoutineMetadata* metadata)
+	const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	try
 	{
-		return new SharedProcedure(this, metadata);
+		return new SharedProcedure(this, metadata, inBlr, outBlr);
 	}
 	catch (const ThrowError::Exception& e)
 	{

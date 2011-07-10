@@ -75,7 +75,7 @@ namespace Firebird
 
 #define FB_UDR_EXECUTE__FUNCTION	\
 	virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-		UCHAR* inMsg, UCHAR* outMsg)	\
+		void* inMsg, void* outMsg)	\
 	{	\
 		try	\
 		{	\
@@ -131,7 +131,7 @@ namespace Firebird
 
 #define FB_UDR_EXECUTE__PROCEDURE	\
 	virtual ::Firebird::ExternalResultSet* FB_CALL open(::Firebird::Error* error, \
-		::Firebird::ExternalContext* context, UCHAR* inMsg, UCHAR* outMsg)	\
+		::Firebird::ExternalContext* context, void* inMsg, void* outMsg)	\
 	{	\
 		try	\
 		{	\
@@ -192,7 +192,7 @@ namespace Firebird
 	{	\
 	public:	\
 		virtual void FB_CALL execute(::Firebird::Error* error, ::Firebird::ExternalContext* context, \
-			::Firebird::ExternalTrigger::Action action, UCHAR* oldMsg, UCHAR* newMsg);
+			::Firebird::ExternalTrigger::Action action, void* oldMsg, void* newMsg);
 
 #define FB_UDR_END_DECLARE_TRIGGER(name)	\
 	};
@@ -204,7 +204,7 @@ namespace Firebird
 #define FB_UDR_BEGIN_TRIGGER(name)	\
 	void FB_CALL FB_UDR_TRIGGER(name)::execute(::Firebird::Error* error,	\
 		::Firebird::ExternalContext* context, ::Firebird::ExternalTrigger::Action action, \
-		UCHAR* oldMsg, UCHAR* newMsg)	\
+		void* oldMsg, void* newMsg)	\
 	{	\
 		try	\
 		{
@@ -459,11 +459,6 @@ public:
 		ThrowError::check(status);
 		return handle;
 	}
-
-	static void* getEntryPoint(ExternalContext* /*context*/, const char* entryPoint)
-	{
-		return fbUdrGetFunction(entryPoint);
-	}
 };
 
 
@@ -602,16 +597,15 @@ public:
 template <typename T> class FunctionFactoryImpl : public FunctionFactory
 {
 public:
-	explicit FunctionFactoryImpl(const char* aName)
-		: name(aName)
+	explicit FunctionFactoryImpl(const char* name)
 	{
-		fbUdrRegFunction(this);
+		fbUdrRegFunction(name, this);
 	}
 
-public:
-	virtual const char* FB_CALL getName()
+	virtual void setup(const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
 	{
-		return name;
+		setBlr(inBlr, (typename T::InMessage*) 0);
+		setBlr(outBlr, (typename T::OutMessage*) 0);
 	}
 
 	virtual ExternalFunction* FB_CALL newItem(const IRoutineMetadata* metadata)
@@ -620,23 +614,30 @@ public:
 	}
 
 private:
-	const char* name;
+	template <typename MessageType> void setBlr(BlrMessage* blrMessage, MessageType*)
+	{
+		blrMessage->blr = MessageType::getBlr(&blrMessage->blrLength);
+		blrMessage->bufferLength = MessageType::getSize();
+	}
+
+	void setBlr(BlrMessage* blrMessage, void**)
+	{
+	}
 };
 
 
 template <typename T> class ProcedureFactoryImpl : public ProcedureFactory
 {
 public:
-	explicit ProcedureFactoryImpl(const char* aName)
-		: name(aName)
+	explicit ProcedureFactoryImpl(const char* name)
 	{
-		fbUdrRegProcedure(this);
+		fbUdrRegProcedure(name, this);
 	}
 
-public:
-	virtual const char* FB_CALL getName()
+	virtual void setup(const IRoutineMetadata* /*metadata*/, BlrMessage* inBlr, BlrMessage* outBlr)
 	{
-		return name;
+		setBlr(inBlr, (typename T::InMessage*) 0);
+		setBlr(outBlr, (typename T::OutMessage*) 0);
 	}
 
 	virtual ExternalProcedure* FB_CALL newItem(const IRoutineMetadata* metadata)
@@ -645,32 +646,34 @@ public:
 	}
 
 private:
-	const char* name;
+	template <typename MessageType> void setBlr(BlrMessage* blrMessage, MessageType*)
+	{
+		blrMessage->blr = MessageType::getBlr(&blrMessage->blrLength);
+		blrMessage->bufferLength = MessageType::getSize();
+	}
+
+	void setBlr(BlrMessage* blrMessage, void**)
+	{
+	}
 };
 
 
 template <typename T> class TriggerFactoryImpl : public TriggerFactory
 {
 public:
-	explicit TriggerFactoryImpl(const char* aName)
-		: name(aName)
+	explicit TriggerFactoryImpl(const char* name)
 	{
-		fbUdrRegTrigger(this);
+		fbUdrRegTrigger(name, this);
 	}
 
-public:
-	virtual const char* FB_CALL getName()
+	virtual void setup(const IRoutineMetadata* /*metadata*/)
 	{
-		return name;
 	}
 
 	virtual ExternalTrigger* FB_CALL newItem(const IRoutineMetadata* metadata)
 	{
 		return new(metadata) Routine<T>;
 	}
-
-private:
-	const char* name;
 };
 
 

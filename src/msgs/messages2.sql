@@ -813,6 +813,8 @@ Data source : @4', NULL, NULL)
 ('invalid_boolean_usage', NULL, NULL, NULL, 0, 703, NULL, 'Invalid usage of boolean expression', NULL, NULL);
 ('sysf_argscant_both_be_zero', 'evlAtan2', 'SysFunction.cpp', NULL, 0, 704, NULL, 'Arguments for @1 cannot both be zero', NULL, NULL)
 ('spb_no_id', 'Service::start', 'svc.c', NULL, 0, 705, NULL, 'missing service ID in spb', NULL, NULL);
+('ee_blr_mismatch_null', NULL, 'met.epp', NULL, 0, 706, NULL, 'External BLR message mismatch: invalid null descriptor at field @1', NULL, NULL)
+('ee_blr_mismatch_length', NULL, 'met.epp', NULL, 0, 707, NULL, 'External BLR message mismatch: length = @1, expected @2', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

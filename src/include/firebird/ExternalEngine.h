@@ -43,6 +43,14 @@ class ExternalEngine;
 const int EXTERNAL_VERSION_1 = 1;
 
 
+struct BlrMessage
+{
+	const unsigned char* blr;
+	unsigned int blrLength;
+	unsigned int bufferLength;
+};
+
+
 // Connection to current database in external engine.
 // Context passed to ExternalEngine has SYSDBA privileges.
 // Context passed to ExternalFunction, ExternalProcedure and ExternalTrigger
@@ -97,7 +105,7 @@ public:
 		Utf8* name, uint nameSize) = 0;
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
-		UCHAR* inMsg, UCHAR* outMsg) = 0;
+		void* inMsg, void* outMsg) = 0;
 };
 
 
@@ -114,7 +122,7 @@ public:
 	// Returning NULL results in a result set of one record.
 	// Procedures without output parameters should return NULL.
 	virtual ExternalResultSet* FB_CALL open(Error* error, ExternalContext* context,
-		UCHAR* inMsg, UCHAR* outMsg) = 0;
+		void* inMsg, void* outMsg) = 0;
 };
 
 
@@ -149,7 +157,7 @@ public:
 		Utf8* name, uint nameSize) = 0;
 
 	virtual void FB_CALL execute(Error* error, ExternalContext* context,
-		Action action, UCHAR* oldMsg, UCHAR* newMsg) = 0;
+		Action action, void* oldMsg, void* newMsg) = 0;
 };
 
 
@@ -192,9 +200,9 @@ public:
 	// Called when engine wants to load object in the cache. Objects are disposed when
 	// going out of the cache.
 	virtual ExternalFunction* FB_CALL makeFunction(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata) = 0;
+		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
 	virtual ExternalProcedure* FB_CALL makeProcedure(Error* error, ExternalContext* context,
-		const IRoutineMetadata* metadata) = 0;
+		const IRoutineMetadata* metadata, BlrMessage* inBlr, BlrMessage* outBlr) = 0;
 	virtual ExternalTrigger* FB_CALL makeTrigger(Error* error, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };

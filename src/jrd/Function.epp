@@ -386,16 +386,25 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					body.getBuffer(1)[0] = 0;
 				}
 
+				BlrMessage inBlr;
+				inBlr.blr = NULL;
+				inBlr.blrLength = 0;
+				inBlr.bufferLength = 0;
+
+				BlrMessage outBlr;
+				outBlr.blr = NULL;
+				outBlr.blrLength = 0;
+				outBlr.bufferLength = 0;
+
 				function->fun_external =
 					dbb->dbb_extManager.makeFunction(tdbb, function, X.RDB$ENGINE_NAME,
-					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin());
+					(X.RDB$ENTRYPOINT.NULL ? "" : X.RDB$ENTRYPOINT), (char*) body.begin(),
+					&inBlr, &outBlr);
 
 				if (!function->fun_external)
-				{
 					function->setImplemented(false);
-				}
 
-				function->makeFormat();
+				function->makeFormat(tdbb, (inBlr.blr ? &inBlr : NULL), (outBlr.blr ? &outBlr : NULL));
 			}
 			else if (!X.RDB$FUNCTION_BLR.NULL)
 			{
@@ -427,7 +436,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					throw;
 				}
 
-				function->makeFormat();
+				function->makeFormat(tdbb, NULL, NULL);
 			}
 			else if (!X.RDB$MODULE_NAME.NULL && !X.RDB$ENTRYPOINT.NULL)
 			{
@@ -566,6 +575,23 @@ ULONG Function::allocateImpure(CompilerScratch* csb) const
 		fb_assert(fun_out_msg_format.fmt_count == 2);
 		fb_assert(fun_out_msg_format.fmt_length);
 		CMP_impure(csb, fun_out_msg_format.fmt_length);
+
+		if (fun_in_msg_format2.fmt_count)
+		{
+			fb_assert(fun_in_msg_format2.fmt_length);
+			CMP_impure(csb, fun_in_msg_format2.fmt_length);
+		}
+
+		fb_assert(fun_out_msg_format2.fmt_count == 2 ||
+			(fun_out_msg_format2.fmt_length == 0 && fun_out_msg_format2.fmt_count == 0));
+
+		if (fun_out_msg_format2.fmt_length)
+		{
+			fb_assert(fun_out_msg_format2.fmt_count == 2);
+			CMP_impure(csb, fun_out_msg_format2.fmt_length);
+		}
+		else
+			fb_assert(fun_out_msg_format2.fmt_count == 0);
 	}
 
 	return impure;
@@ -719,34 +745,77 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 
 		Jrd::Attachment* attachment = tdbb->getAttachment();
 
-		const ULONG in_msg_length = fun_in_msg_format.fmt_length;
-		const ULONG out_msg_length = fun_out_msg_format.fmt_length;
+		const ULONG inMsgLength = fun_in_msg_format.fmt_length;
+		const ULONG outMsgLength = fun_out_msg_format.fmt_length;
 
 		UCHAR* const impure = reinterpret_cast<UCHAR*>(value);
-		UCHAR* const in_msg = (UCHAR*) FB_ALIGN((IPTR) impure + sizeof(impure_value), FB_ALIGNMENT);
-		UCHAR* const out_msg = (UCHAR*) FB_ALIGN((IPTR) in_msg + in_msg_length, FB_ALIGNMENT);
+		UCHAR* const inMsg = (UCHAR*) FB_ALIGN((IPTR) impure + sizeof(impure_value), FB_ALIGNMENT);
+		UCHAR* const outMsg = (UCHAR*) FB_ALIGN((IPTR) inMsg + inMsgLength, FB_ALIGNMENT);
+
+		const ULONG inMsgLength2 = fun_in_msg_format2.fmt_length;
+		const ULONG outMsgLength2 = fun_out_msg_format2.fmt_length;
+		UCHAR* const inMsg2 = inMsgLength2 ?
+			(UCHAR*) FB_ALIGN((IPTR) outMsg + outMsgLength, FB_ALIGNMENT) : inMsg;
+		UCHAR* const outMsg2 = outMsgLength2 ?
+			(UCHAR*) FB_ALIGN((IPTR) inMsg2 + inMsgLength2, FB_ALIGNMENT) : outMsg;
 
 		for (USHORT i = 0; i < fun_inputs; i++)
 		{
-			const ULONG arg_offset = (IPTR) fun_in_msg_format.fmt_desc[i * 2].dsc_address;
-			const ULONG null_offset = (IPTR) fun_in_msg_format.fmt_desc[i * 2 + 1].dsc_address;
-			UCHAR* const null_ptr = in_msg + null_offset;
+			const ULONG argOffset = (IPTR) fun_in_msg_format.fmt_desc[i * 2].dsc_address;
+			const ULONG nullOffset = (IPTR) fun_in_msg_format.fmt_desc[i * 2 + 1].dsc_address;
+			SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(inMsg + nullOffset);
+			dsc argDesc = fun_args[i + 1].fun_parameter->prm_desc;
+			argDesc.dsc_address = inMsg + argOffset;
 
-			dsc* const src_desc = EVL_expr(tdbb, request, args[i]);
-			if (src_desc && !(request->req_flags & req_null))
+			//// TODO: Validate constraints for external.
+			dsc* const srcDesc = EVL_expr(tdbb, request, args[i]);
+			if (srcDesc && !(request->req_flags & req_null))
 			{
-				*reinterpret_cast<SSHORT*>(null_ptr) = FALSE;
-
-				dsc arg_desc = fun_args[i + 1].fun_parameter->prm_desc;
-				arg_desc.dsc_address = in_msg + arg_offset;
-				MOV_move(tdbb, src_desc, &arg_desc);
+				*nullPtr = FALSE;
+				MOV_move(tdbb, srcDesc, &argDesc);
 			}
 			else
-				*reinterpret_cast<SSHORT*>(null_ptr) = TRUE;
+				*nullPtr = TRUE;
+
+			if (fun_external && inMsgLength2)
+			{
+				const ULONG argOffset2 = (IPTR) fun_in_msg_format2.fmt_desc[i * 2].dsc_address;
+				const ULONG nullOffset2 = (IPTR) fun_in_msg_format2.fmt_desc[i * 2 + 1].dsc_address;
+				SSHORT* const nullPtr2 = reinterpret_cast<SSHORT*>(inMsg2 + nullOffset2);
+
+				if (!(*nullPtr2 = *nullPtr))
+				{
+					dsc argDesc2 = fun_in_msg_format2.fmt_desc[i * 2];
+					argDesc2.dsc_address = inMsg2 + argOffset2;
+					MOV_move(tdbb, &argDesc, &argDesc2);
+				}
+			}
 		}
 
+		const ULONG argOffset = (IPTR) fun_out_msg_format.fmt_desc[0].dsc_address;
+		const ULONG nullOffset = (IPTR) fun_out_msg_format.fmt_desc[1].dsc_address;
+		SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(outMsg + nullOffset);
+		dsc argDesc = fun_args[fun_return_arg].fun_parameter->prm_desc;
+		argDesc.dsc_address = outMsg + argOffset;
+
 		if (fun_external)
-			fun_external->execute(tdbb, in_msg, out_msg);
+		{
+			fun_external->execute(tdbb, inMsg2, outMsg2);
+
+			if (outMsgLength2)
+			{
+				const ULONG argOffset2 = (IPTR) fun_out_msg_format2.fmt_desc[0].dsc_address;
+				const ULONG nullOffset2 = (IPTR) fun_out_msg_format2.fmt_desc[1].dsc_address;
+				SSHORT* const nullPtr2 = reinterpret_cast<SSHORT*>(outMsg2 + nullOffset2);
+
+				if (!(*nullPtr = *nullPtr2))
+				{
+					dsc argDesc2 = fun_out_msg_format2.fmt_desc[0];
+					argDesc2.dsc_address = outMsg2 + argOffset2;
+					MOV_move(tdbb, &argDesc2, &argDesc);
+				}
+			}
+		}
 		else
 		{
 			jrd_req* const new_request = getStatement()->findRequest(tdbb);
@@ -764,13 +833,11 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 
 				EXE_start(tdbb, new_request, transaction);
 
-				if (in_msg_length)
-				{
-					EXE_send(tdbb, new_request, 0, in_msg_length, in_msg);
-				}
+				if (inMsgLength)
+					EXE_send(tdbb, new_request, 0, inMsgLength, inMsg);
 
-				fb_assert(out_msg_length);
-				EXE_receive(tdbb, new_request, 1, out_msg_length, out_msg);
+				fb_assert(outMsgLength);
+				EXE_receive(tdbb, new_request, 1, outMsgLength, outMsg);
 
 				// Clean up all savepoints started during execution of the function
 
@@ -799,18 +866,13 @@ dsc* Function::execute(thread_db* tdbb, const NestValueArray& args, impure_value
 			new_request->req_flags &= ~req_in_use;
 		}
 
-		const ULONG arg_offset = (IPTR) fun_out_msg_format.fmt_desc[0].dsc_address;
-		const ULONG null_offset = (IPTR) fun_out_msg_format.fmt_desc[1].dsc_address;
-
-		UCHAR* const null_ptr = out_msg + null_offset;
-		if (*reinterpret_cast<SSHORT*>(null_ptr))
+		//// TODO: Validate constraints for external.
+		if (*nullPtr)
 			request->req_flags |= req_null;
 		else
 		{
-			dsc arg_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
-			arg_desc.dsc_address = out_msg + arg_offset;
 			request->req_flags &= ~req_null;
-			MOV_move(tdbb, &arg_desc, &value->vlu_desc);
+			MOV_move(tdbb, &argDesc, &value->vlu_desc);
 		}
 	}
 	else
@@ -841,15 +903,105 @@ USHORT Function::incrementAlterCount()
 	return ++fun_alter_count;
 }
 
-void Function::makeFormat()
+void Function::makeFormat(thread_db* tdbb, const BlrMessage* inBlr, const BlrMessage* outBlr)
 {
 	// Input format
 
-	const USHORT count = fun_inputs * 2;
+	bool messageNeeded = false;
+	ULONG offset = 0;
+	UCHAR maxAlignment = 0;
+	USHORT count;
+
+	dsc shortDesc;
+	shortDesc.makeShort(0);
+
+	if (inBlr)
+	{
+		BlrReader reader(inBlr->blr, inBlr->blrLength);
+
+		reader.checkByte(blr_version5);
+		reader.checkByte(blr_begin);
+		reader.checkByte(blr_message);
+		reader.getByte();	// message number: ignore it
+		count = reader.checkWord(fun_inputs * 2);
+
+		fun_in_msg_format2.fmt_desc.resize(count);
+		fun_in_msg_format2.fmt_count = count;
+
+		for (unsigned i = 0; i < count / 2; ++i)
+		{
+			dsc* desc = &fun_in_msg_format2.fmt_desc[i * 2];
+			PAR_datatype(tdbb, reader, desc);
+
+			if (desc->dsc_dtype >= dtype_aligned)
+			{
+				maxAlignment = MAX(maxAlignment, type_alignments[desc->dsc_dtype]);
+				offset = FB_ALIGN(offset, type_alignments[desc->dsc_dtype]);
+			}
+
+			desc->dsc_address = (UCHAR*)(IPTR) offset;
+			offset += desc->dsc_length;
+
+			const dsc* prmDesc = &fun_args[i + 1].fun_parameter->prm_desc;
+
+			if (desc->isText() && desc->getCharSet() == CS_NONE)
+				desc->setTextType(prmDesc->getTextType());
+			desc->setNullable(prmDesc->isNullable());
+
+			messageNeeded |= !DSC_EQUIV(desc, prmDesc, false);
+
+			++desc;
+			PAR_datatype(tdbb, reader, desc);
+
+			if (!DSC_EQUIV(desc, &shortDesc, false))
+			{
+				status_exception::raise(
+					Arg::Gds(isc_ee_blr_mismatch_null) <<
+					Arg::Num(i * 2 + 1));
+			}
+
+			offset = FB_ALIGN(offset, sizeof(SSHORT));
+			desc->dsc_address = (UCHAR*)(IPTR) offset;
+			offset += sizeof(SSHORT);
+
+			messageNeeded |= !DSC_EQUIV(desc, &shortDesc, false);
+		}
+
+		reader.checkByte(blr_end);
+		reader.checkByte(blr_eoc);
+
+		if (offset != inBlr->bufferLength)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_ee_blr_mismatch_length) <<
+				Arg::Num(inBlr->bufferLength) <<
+				Arg::Num(offset));
+		}
+
+		if (messageNeeded)
+		{
+			// Pad the external message.
+			offset = FB_ALIGN(offset, MAX(maxAlignment, sizeof(SSHORT)));
+
+			if (offset > MAX_MESSAGE_SIZE)
+				status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+
+			fun_in_msg_format2.fmt_length = offset;
+		}
+		else
+		{
+			// The external and internal messages are compatible, so there is no need to create a new one.
+			fun_in_msg_format2.fmt_desc.clear();
+			fun_in_msg_format2.fmt_count = 0;
+		}
+	}
+
+	count = fun_inputs * 2;
 	fun_in_msg_format.fmt_desc.resize(count);
 	fun_in_msg_format.fmt_count = count;
 
-	ULONG offset = 0;
+	offset = 0;
+	maxAlignment = 0;
 
 	for (USHORT i = 0; i < fun_inputs; i++)
 	{
@@ -857,8 +1009,10 @@ void Function::makeFormat()
 
 		if (arg_desc.dsc_dtype >= dtype_aligned)
 		{
+			maxAlignment = MAX(maxAlignment, type_alignments[arg_desc.dsc_dtype]);
 			offset = FB_ALIGN(offset, type_alignments[arg_desc.dsc_dtype]);
 		}
+
 		arg_desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += arg_desc.dsc_length;
 		fun_in_msg_format.fmt_desc[i * 2] = arg_desc;
@@ -870,23 +1024,100 @@ void Function::makeFormat()
 		fun_in_msg_format.fmt_desc[i * 2 + 1] = arg_desc;
 	}
 
-	if (offset > MAX_MESSAGE_SIZE)
+	if (!messageNeeded)
 	{
-		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+		// This message will be used by external. Pad it.
+		offset = FB_ALIGN(offset, MAX(maxAlignment, sizeof(SSHORT)));
 	}
+
+	if (offset > MAX_MESSAGE_SIZE)
+		status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	fun_in_msg_format.fmt_length = offset;
 
 	// Output format
 
+	messageNeeded = false;
+
+	if (outBlr)
+	{
+		BlrReader reader(outBlr->blr, outBlr->blrLength);
+
+		reader.checkByte(blr_version5);
+		reader.checkByte(blr_begin);
+		reader.checkByte(blr_message);
+		reader.getByte();	// message number: ignore it
+		count = reader.checkWord(2);
+
+		fun_out_msg_format2.fmt_desc.resize(2);
+		fun_out_msg_format2.fmt_count = 2;
+
+		offset = 0;
+
+		dsc* desc = &fun_out_msg_format2.fmt_desc[0];
+		PAR_datatype(tdbb, reader, desc);
+
+		if (desc->dsc_dtype >= dtype_aligned)
+			offset = FB_ALIGN(offset, type_alignments[desc->dsc_dtype]);
+
+		desc->dsc_address = (UCHAR*)(IPTR) offset;
+		offset += desc->dsc_length;
+
+		const dsc* prmDesc = &fun_args[fun_return_arg].fun_parameter->prm_desc;
+
+		if (desc->isText() && desc->getCharSet() == CS_NONE)
+			desc->setTextType(prmDesc->getTextType());
+		desc->setNullable(prmDesc->isNullable());
+
+		messageNeeded |= !DSC_EQUIV(desc, prmDesc, false);
+
+		++desc;
+		PAR_datatype(tdbb, reader, desc);
+
+		if (!DSC_EQUIV(desc, &shortDesc, false))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_ee_blr_mismatch_null) <<
+				Arg::Num(1));
+		}
+
+		offset = FB_ALIGN(offset, sizeof(SSHORT));
+		desc->dsc_address = (UCHAR*)(IPTR) offset;
+		offset += sizeof(SSHORT);
+
+		messageNeeded |= !DSC_EQUIV(desc, &shortDesc, false);
+
+		reader.checkByte(blr_end);
+		reader.checkByte(blr_eoc);
+
+		if (offset != outBlr->bufferLength)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_ee_blr_mismatch_length) <<
+				Arg::Num(outBlr->bufferLength) <<
+				Arg::Num(offset));
+		}
+
+		// Pad the external message.
+		offset = FB_ALIGN(offset,
+			MAX(type_alignments[fun_out_msg_format2.fmt_desc[0].dsc_dtype], sizeof(SSHORT)));
+
+		if (messageNeeded)
+			fun_out_msg_format2.fmt_length = offset;
+		else
+		{
+			// The external and internal messages are compatible, so there is no need to create a new one.
+			fun_out_msg_format2.fmt_desc.clear();
+			fun_out_msg_format2.fmt_count = 0;
+		}
+	}
+
 	fun_out_msg_format.fmt_desc.resize(2);
 	fun_out_msg_format.fmt_count = 2;
 
-	offset = 0;
-
 	dsc ret_desc = fun_args[fun_return_arg].fun_parameter->prm_desc;
-	ret_desc.dsc_address = (UCHAR*)(IPTR) offset;
-	offset += ret_desc.dsc_length;
+	ret_desc.dsc_address = (UCHAR*)(IPTR) 0;
+	offset = ret_desc.dsc_length;
 	fun_out_msg_format.fmt_desc[0] = ret_desc;
 
 	ret_desc.makeShort(0);
@@ -894,6 +1125,14 @@ void Function::makeFormat()
 	ret_desc.dsc_address = (UCHAR*)(IPTR) offset;
 	offset += sizeof(SSHORT);
 	fun_out_msg_format.fmt_desc[1] = ret_desc;
+
+	if (!messageNeeded)
+	{
+		// This message will be used by external. Pad it.
+		offset = FB_ALIGN(offset,
+			MAX(type_alignments[fun_args[fun_return_arg].fun_parameter->prm_desc.dsc_dtype],
+				sizeof(SSHORT)));
+	}
 
 	fun_out_msg_format.fmt_length = offset;
 }

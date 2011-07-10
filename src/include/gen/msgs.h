@@ -730,6 +730,8 @@ Data source : @4"},		/* eds_statement */
 	{335545023, "Invalid usage of boolean expression"},		/* invalid_boolean_usage */
 	{335545024, "Arguments for @1 cannot both be zero"},		/* sysf_argscant_both_be_zero */
 	{335545025, "missing service ID in spb"},		/* spb_no_id */
+	{335545026, "External BLR message mismatch: invalid null descriptor at field @1"},		/* ee_blr_mismatch_null */
+	{335545027, "External BLR message mismatch: length = @1, expected @2"},		/* ee_blr_mismatch_length */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

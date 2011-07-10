@@ -125,7 +125,8 @@ static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name,
 	BoolExprNode** expr, StmtNode** stmt);
-static void parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*, bool);
+static void parse_procedure_blr(thread_db*, jrd_prc*, bid*, CompilerScratch*, bool,
+	const BlrMessage& extInBlr, const BlrMessage& extOutBlr);
 static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, CompilerScratch*);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JrdStatement*, blb*, bid*,
@@ -3000,6 +3001,38 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 			END_FOR
 
+			BlrMessage inBlr;
+			inBlr.blr = NULL;
+			inBlr.blrLength = 0;
+			inBlr.bufferLength = 0;
+
+			BlrMessage outBlr;
+			outBlr.blr = NULL;
+			outBlr.blrLength = 0;
+			outBlr.bufferLength = 0;
+
+			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
+
+			if (external)
+			{
+				HalfStaticArray<char, 512> body;
+
+				if (!P.RDB$PROCEDURE_SOURCE.NULL)
+				{
+					blb* blob = BLB_open(tdbb, attachment->getSysTransaction(),
+						&P.RDB$PROCEDURE_SOURCE);
+					ULONG len = BLB_get_data(tdbb, blob,
+						(UCHAR*) body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
+					body.begin()[MIN(blob->blb_length, len)] = '\0';
+				}
+				else
+					body.getBuffer(1)[0] = '\0';
+
+				procedure->setExternal(dbb->dbb_extManager.makeProcedure(
+					tdbb, procedure, P.RDB$ENGINE_NAME,
+					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin(), &inBlr, &outBlr));
+			}
+
 			Array<NestConst<Parameter> >& paramArray = procedure->prc_output_fields;
 
 			if (paramArray.hasData() && paramArray[0])
@@ -3029,7 +3062,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 			}
 
 			prc_t prc_type = prc_legacy;
-			const bool external = !P.RDB$ENGINE_NAME.NULL;	// ODS_12_0
 
 			MemoryPool* csb_pool = attachment->createPool();
 
@@ -3048,7 +3080,8 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				try
 				{
 					parse_procedure_blr(tdbb, procedure,
-						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb, external);
+						(P.RDB$PROCEDURE_BLR.NULL ? NULL : &P.RDB$PROCEDURE_BLR), csb, external,
+						inBlr, outBlr);
 				}
 				catch (const Exception&)
 				{
@@ -3079,26 +3112,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				}
 				delete csb;
 			} // scope
-
-			if (external)
-			{
-				HalfStaticArray<char, 512> body;
-
-				if (!P.RDB$PROCEDURE_SOURCE.NULL)
-				{
-					blb* blob = BLB_open(tdbb, attachment->getSysTransaction(),
-						&P.RDB$PROCEDURE_SOURCE);
-					ULONG len = BLB_get_data(tdbb, blob,
-						(UCHAR*) body.getBuffer(blob->blb_length + 1), blob->blb_length + 1);
-					body.begin()[MIN(blob->blb_length, len)] = '\0';
-				}
-				else
-					body.getBuffer(1)[0] = '\0';
-
-				procedure->setExternal(dbb->dbb_extManager.makeProcedure(
-					tdbb, procedure, P.RDB$ENGINE_NAME,
-					(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin()));
-			}
 
 			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)
 				valid_blr = false;
@@ -3135,11 +3148,19 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	catch (const Exception&)
 	{
 		procedure->prc_flags &= ~(PRC_being_scanned | PRC_scanned);
+
+		if (procedure->getExternal())
+		{
+			delete procedure->getExternal();
+			procedure->setExternal(NULL);
+		}
+
 		if (procedure->prc_existence_lock)
 		{
 			LCK_release(tdbb, procedure->prc_existence_lock);
 			procedure->prc_existence_lock = NULL;
 		}
+
 		throw;
 	}
 
@@ -4371,20 +4392,128 @@ static void parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const Meta
 
 
 // Generate BLR message for external procedures
-static void gen_ext_message(UCharBuffer& blr, UCHAR message,
-	const Array<NestConst<Parameter> >& parameters)
+static bool gen_ext_message(thread_db* tdbb, UCharBuffer& blr, UCHAR message, UCHAR message2,
+	const Array<NestConst<Parameter> >& parameters, const BlrMessage& extBlr,
+	UCharBuffer& appendBlr)
 {
-	size_t count = parameters.getCount();
-	count = count * 2 + message;
+	size_t prevAppendBlrSize = appendBlr.getCount();
+	bool messageNeeded = false;
+	size_t count = 0;
+	size_t countPos = 0;
+	ULONG offset = 0;
+	UCHAR maxAlignment = 0;
+
+	dsc shortDesc;
+	shortDesc.makeShort(0);
+
+	if (extBlr.blr)
+	{
+		BlrReader reader(extBlr.blr, extBlr.blrLength);
+
+		reader.checkByte(blr_version5);
+		reader.checkByte(blr_begin);
+		reader.checkByte(blr_message);
+		reader.getByte();	// message number: ignore it
+		count = reader.checkWord(parameters.getCount() * 2);
+
+		appendBlr.add(blr_message);
+		appendBlr.add(message2);
+		countPos = appendBlr.getCount();
+		appendBlr.add(UCHAR(count));	// parameters (with nulls)
+		appendBlr.add(UCHAR(count >> 8));
+
+		for (unsigned i = 0; i < count / 2; ++i)
+		{
+			dsc desc;
+			PAR_datatype(tdbb, reader, &desc);
+			PreparedStatement::generateBlr(&desc, appendBlr);
+
+			if (desc.dsc_dtype >= dtype_aligned)
+			{
+				maxAlignment = MAX(maxAlignment, type_alignments[desc.dsc_dtype]);
+				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
+			}
+
+			offset += desc.dsc_length;
+
+			const dsc* prmDesc = &parameters[i]->prm_desc;
+
+			if (desc.isText() && desc.getCharSet() == CS_NONE)
+				desc.setTextType(prmDesc->getTextType());
+			desc.setNullable(prmDesc->isNullable());
+
+			messageNeeded |= !DSC_EQUIV(&desc, prmDesc, false);
+
+			PAR_datatype(tdbb, reader, &desc);
+
+			if (!DSC_EQUIV(&desc, &shortDesc, false))
+			{
+				status_exception::raise(
+					Arg::Gds(isc_ee_blr_mismatch_null) <<
+					Arg::Num(i * 2 + 1));
+			}
+
+			PreparedStatement::generateBlr(&desc, appendBlr);
+
+			if (desc.dsc_dtype >= dtype_aligned)
+			{
+				maxAlignment = MAX(maxAlignment, type_alignments[desc.dsc_dtype]);
+				offset = FB_ALIGN(offset, type_alignments[desc.dsc_dtype]);
+			}
+
+			offset += desc.dsc_length;
+
+			messageNeeded |= !DSC_EQUIV(&desc, &shortDesc, false);
+		}
+
+		reader.checkByte(blr_end);
+		reader.checkByte(blr_eoc);
+
+		if (offset != extBlr.bufferLength)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_ee_blr_mismatch_length) <<
+				Arg::Num(extBlr.bufferLength) <<
+				Arg::Num(offset));
+		}
+	}
+
+	if (messageNeeded)
+	{
+		// Pad the external message.
+		ULONG pad = FB_ALIGN(offset, maxAlignment) - offset;
+
+		if (pad != 0)
+		{
+			++count;
+			appendBlr[countPos] = UCHAR(count);
+			appendBlr[countPos + 1] = UCHAR(count >> 8);
+
+			dsc desc;
+			desc.makeText(pad, 0);
+			PreparedStatement::generateBlr(&desc, appendBlr);
+		}
+	}
+	else
+	{
+		// The external and internal messages are compatible, so there is no need to create a new one.
+		appendBlr.shrink(prevAppendBlrSize);
+		appendBlr.add(blr_begin);
+		appendBlr.add(blr_end);
+	}
+
+	// Input message is 0 and output message is 1. Output message need the eof (+1) field.
+	count = parameters.getCount() * 2 + message;
 	fb_assert(count < MAX_USHORT);
 
 	blr.add(blr_message);	// e_extproc_input_message, e_extproc_output_message
 	blr.add(message);
-	blr.add(count);	// parameters (with nulls)
-	blr.add(count >> 8);
+	countPos = blr.getCount();
+	blr.add(UCHAR(count));	// parameters (with nulls)
+	blr.add(UCHAR(count >> 8));
 
-	dsc shortDesc;
-	shortDesc.makeShort(0);
+	offset = 0;
+	maxAlignment = 0;
 
 	for (const NestConst<Parameter>* i = parameters.begin(); i != parameters.end(); ++i)
 	{
@@ -4393,8 +4522,10 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 		if (!parameter->prm_nullable)
 			blr.add(blr_not_nullable);
 
+		const dsc* desc = &parameter->prm_desc;
+
 		if (parameter->prm_mechanism == prm_mech_type_of)
-			PreparedStatement::generateBlr(&parameter->prm_desc, blr);
+			PreparedStatement::generateBlr(desc, blr);
 		else
 		{
 			fb_assert(parameter->prm_mechanism == prm_mech_normal);
@@ -4422,16 +4553,43 @@ static void gen_ext_message(UCharBuffer& blr, UCHAR message,
 			}
 		}
 
+		if (desc->dsc_dtype >= dtype_aligned)
+		{
+			maxAlignment = MAX(maxAlignment, type_alignments[desc->dsc_dtype]);
+			offset = FB_ALIGN(offset, type_alignments[desc->dsc_dtype]);
+		}
+
+		offset += desc->dsc_length;
+
 		PreparedStatement::generateBlr(&shortDesc, blr);	// null flag
+
+		maxAlignment = MAX(maxAlignment, sizeof(SSHORT));
+		offset = FB_ALIGN(offset, sizeof(SSHORT)) + shortDesc.dsc_length;
 	}
+
+	if (!messageNeeded)
+	{
+		// This message will be used by external. Pad it if needed.
+		ULONG pad = FB_ALIGN(offset, maxAlignment) - offset;
+
+		if (pad != 0)
+		{
+			++count;
+			blr[countPos] = UCHAR(count);
+			blr[countPos + 1] = UCHAR(count >> 8);
+
+			dsc desc;
+			desc.makeText(pad, 0);
+			PreparedStatement::generateBlr(&desc, blr);
+		}
+	}
+
+	return messageNeeded;
 }
 
 
-static void parse_procedure_blr(thread_db* tdbb,
-								jrd_prc* procedure,
-								bid* blob_id,
-								CompilerScratch* csb,
-								bool external)
+static void parse_procedure_blr(thread_db* tdbb, jrd_prc* procedure, bid* blob_id,
+	CompilerScratch* csb, bool external, const BlrMessage& extInBlr, const BlrMessage& extOutBlr)
 {
 /**************************************
  *
@@ -4453,28 +4611,52 @@ static void parse_procedure_blr(thread_db* tdbb,
 		tmp.add(blr_version5);
 		tmp.add(blr_begin);
 
-		// ASF: Generate input messages even when number of parameters is 0
-		// because we'll use hardcoded message number (0 and 1) in execution.
-		gen_ext_message(tmp, 0, procedure->prc_input_fields);	// input message
-		gen_ext_message(tmp, 1, procedure->prc_output_fields);	// output message
+		// ASF: Generate nodes even when they could be avoided, because we will use hardoced
+		// message and statement numbers. See e_extproc_*.
+
+		UCharBuffer appendBlr;
+
+		bool genExtIn = gen_ext_message(tdbb, tmp, e_extproc_input_message, e_extproc_input_message2,
+			procedure->prc_input_fields, extInBlr, appendBlr);
+		bool genExtOut = gen_ext_message(tdbb, tmp, e_extproc_output_message, e_extproc_output_message2,
+			procedure->prc_output_fields, extOutBlr, appendBlr);
 
 		dsc shortDesc;
 		shortDesc.makeShort(0);
-		PreparedStatement::generateBlr(&shortDesc, tmp);	// end flag
+		PreparedStatement::generateBlr(&shortDesc, tmp);	// end flag for the output message
+
+		tmp.join(appendBlr);
 
 		tmp.add(blr_begin);	// e_extproc_input_assign
 
 		fb_assert(procedure->prc_input_fields.getCount() < MAX_USHORT / 2);
-		for (USHORT i = 0; i < procedure->prc_input_fields.getCount(); ++i)
+		for (size_t i = 0; i < procedure->prc_input_fields.getCount(); ++i)
 		{
-			tmp.add(blr_assignment);
-			tmp.add(blr_parameter2);
-			tmp.add(0);	// input message
-			tmp.add((i * 2));
-			tmp.add((i * 2) >> 8);
-			tmp.add((i * 2) + 1);	// null indicator
-			tmp.add(((i * 2) + 1) >> 8);
-			tmp.add(blr_null);
+			const Parameter* parameter = procedure->prc_input_fields[i];
+
+			if (genExtIn || parameter->prm_mechanism != prm_mech_type_of || !parameter->prm_nullable)
+			{
+				tmp.add(blr_assignment);
+
+				tmp.add(blr_parameter2);
+				tmp.add(e_extproc_input_message);
+				tmp.add(UCHAR(i * 2));
+				tmp.add(UCHAR((i * 2) >> 8));
+				tmp.add(UCHAR((i * 2) + 1));	// null indicator
+				tmp.add(UCHAR(((i * 2) + 1) >> 8));
+
+				if (genExtIn)
+				{
+					tmp.add(blr_parameter2);
+					tmp.add(e_extproc_input_message2);
+					tmp.add(UCHAR(i * 2));
+					tmp.add(UCHAR((i * 2) >> 8));
+					tmp.add(UCHAR((i * 2) + 1));	// null indicator
+					tmp.add(UCHAR(((i * 2) + 1) >> 8));
+				}
+				else
+					tmp.add(blr_null);
+			}
 		}
 
 		tmp.add(blr_end);
@@ -4482,16 +4664,41 @@ static void parse_procedure_blr(thread_db* tdbb,
 		tmp.add(blr_begin);	// e_extproc_output_assign
 
 		fb_assert(procedure->prc_output_fields.getCount() < MAX_USHORT / 2);
-		for (USHORT i = 0; i < procedure->prc_output_fields.getCount(); ++i)
+		for (size_t i = 0; i < procedure->prc_output_fields.getCount(); ++i)
 		{
-			tmp.add(blr_assignment);
-			tmp.add(blr_parameter2);
-			tmp.add(1);	// output message
-			tmp.add((i * 2));
-			tmp.add((i * 2) >> 8);
-			tmp.add((i * 2) + 1);	// null indicator
-			tmp.add(((i * 2) + 1) >> 8);
-			tmp.add(blr_null);
+			const Parameter* parameter = procedure->prc_output_fields[i];
+
+			if (genExtOut || parameter->prm_mechanism != prm_mech_type_of || !parameter->prm_nullable)
+			{
+				tmp.add(blr_assignment);
+
+				if (genExtOut)
+				{
+					tmp.add(blr_parameter2);
+					tmp.add(e_extproc_output_message2);
+					tmp.add(UCHAR(i * 2));
+					tmp.add(UCHAR((i * 2) >> 8));
+					tmp.add(UCHAR((i * 2) + 1));	// null indicator
+					tmp.add(UCHAR(((i * 2) + 1) >> 8));
+
+					tmp.add(blr_parameter2);
+					tmp.add(e_extproc_output_message);
+					tmp.add(UCHAR(i * 2));
+					tmp.add(UCHAR((i * 2) >> 8));
+					tmp.add(UCHAR((i * 2) + 1));	// null indicator
+					tmp.add(UCHAR(((i * 2) + 1) >> 8));
+				}
+				else
+				{
+					tmp.add(blr_parameter2);
+					tmp.add(e_extproc_output_message);
+					tmp.add(UCHAR(i * 2));
+					tmp.add(UCHAR((i * 2) >> 8));
+					tmp.add(UCHAR((i * 2) + 1));	// null indicator
+					tmp.add(UCHAR(((i * 2) + 1) >> 8));
+					tmp.add(blr_null);
+				}
+			}
 		}
 
 		tmp.add(blr_end);

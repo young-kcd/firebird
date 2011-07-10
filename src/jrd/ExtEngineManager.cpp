@@ -594,7 +594,8 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 
 
 ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, const Jrd::Function* udf,
-	const MetaName& engine, const string& entryPoint, const string& body)
+	const MetaName& engine, const string& entryPoint, const string& body,
+	BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -640,7 +641,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment());
 
-		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata);
+		externalFunction = attInfo->engine->makeFunction(RaiseError(), attInfo->context, metadata,
+			inBlr, outBlr);
 
 		if (!externalFunction)
 		{
@@ -665,7 +667,8 @@ ExtEngineManager::Function* ExtEngineManager::makeFunction(thread_db* tdbb, cons
 
 
 ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, const jrd_prc* prc,
-	const MetaName& engine, const string& entryPoint, const string& body)
+	const MetaName& engine, const string& entryPoint, const string& body,
+	BlrMessage* inBlr, BlrMessage* outBlr)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
@@ -716,7 +719,8 @@ ExtEngineManager::Procedure* ExtEngineManager::makeProcedure(thread_db* tdbb, co
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment());
 
-		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata);
+		externalProcedure = attInfo->engine->makeProcedure(RaiseError(), attInfo->context, metadata,
+			inBlr, outBlr);
 
 		if (!externalProcedure)
 		{

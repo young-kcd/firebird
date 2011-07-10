@@ -289,7 +289,7 @@ public:
 		blrLength = 0;
 		blr = blrPos = new ISC_UCHAR[sizeof(HEADER) + 10 * itemCount + 2];
 		bufferLength = 0;
-		buffer = (ISC_UCHAR*) aBuffer;
+		buffer = static_cast<ISC_UCHAR*>(aBuffer);
 
 		memcpy(blrPos, HEADER, sizeof(HEADER));
 		blrPos += sizeof(HEADER);
@@ -795,6 +795,7 @@ FB_UDR_BEGIN_PROCEDURE(inc)
 FB_UDR_END_PROCEDURE
 
 
+//// TODO: Rework triggers.
 /***
 Sample usage:
 

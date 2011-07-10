@@ -304,10 +304,10 @@ public:
 
 	Function* makeFunction(thread_db* tdbb, const Jrd::Function* udf,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body);
+		const Firebird::string& body, Firebird::BlrMessage* inBlr, Firebird::BlrMessage* outBlr);
 	Procedure* makeProcedure(thread_db* tdbb, const jrd_prc* prc,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
-		const Firebird::string& body);
+		const Firebird::string& body, Firebird::BlrMessage* inBlr, Firebird::BlrMessage* outBlr);
 	Trigger* makeTrigger(thread_db* tdbb, const Jrd::Trigger* trg,
 		const Firebird::MetaName& engine, const Firebird::string& entryPoint,
 		const Firebird::string& body, Firebird::ExternalTrigger::Type type);
