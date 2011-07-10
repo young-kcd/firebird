@@ -1,3 +1,33 @@
+ 2011-07-10 01:23  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/BlrReader.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/Function.epp
+   M src/jrd/Function.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/met.epp
+   M src/jrd/par.cpp
+   M src/jrd/par_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/plugins/udr_engine/UdrEngine.cpp
+Use the BLR message definition of external procedures and functions.
+
  2011-07-07 07:58  robocop 
    M src/common/StatusHolder.cpp
    M src/common/StatusHolder.h
