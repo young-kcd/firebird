@@ -136,6 +136,7 @@ public:
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
+	Firebird::SortedArray<dsql_req*> dbb_requests;
 	dsql_str*		dbb_dfl_charset;
 #ifdef SCROLLABLE_CURSORS
 	USHORT			dbb_base_level;		// indicates the version of the engine code itself
@@ -149,7 +150,9 @@ public:
 	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
 	explicit dsql_dbb(MemoryPool& p) :
-		dbb_pool(p), dbb_charsets_by_id(p, 16)
+		dbb_pool(p), 
+		dbb_requests(p),
+		dbb_charsets_by_id(p, 16)
 	{}
 
 	~dsql_dbb();
@@ -382,12 +385,6 @@ enum REQ_TYPE
 class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
-	explicit dsql_req(MemoryPool& p)
-		: req_pool(p),
-		  req_blr_data(p)
-	{
-	}
-
 	dsql_req*	req_parent;		// Source request, if cursor update
 	dsql_req*	req_sibling;	// Next sibling request, if cursor update
 	dsql_req*	req_offspring;	// Cursor update requests
@@ -427,6 +424,11 @@ public:
 	bool req_traced;				// request is traced via TraceAPI
 
 protected:
+	dsql_req(MemoryPool& p)
+		: req_pool(p),
+		  req_blr_data(p)
+	{
+	}
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~dsql_req()

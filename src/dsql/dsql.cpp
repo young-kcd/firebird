@@ -159,6 +159,11 @@ IMPLEMENT_TRACE_ROUTINE(dsql_trace, "DSQL")
 
 dsql_dbb::~dsql_dbb()
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
+	while (!dbb_requests.isEmpty())
+		release_request(tdbb, dbb_requests[0], true);
+
 	HSHD_finish(this);
 }
 
@@ -184,8 +189,9 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb, Attachment* attachment)
 	// allocate the request block
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	dsql_req* const request = FB_NEW(pool) dsql_req(pool);
+	dsql_req* const request = FB_NEW(pool) CompiledStatement(pool);
 	request->req_dbb = database;
+	database->dbb_requests.add(request);
 
 	return request;
 }
@@ -2581,6 +2587,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	CompiledStatement* statement = FB_NEW(pool) CompiledStatement(pool);
 	statement->req_dbb = database;
+	database->dbb_requests.add(statement);
 	statement->req_transaction = transaction;
 	statement->req_client_dialect = client_dialect;
 	statement->req_traced = true;
@@ -2915,7 +2922,12 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	if (drop)
 	{
-		request->req_dbb->deletePool(&request->req_pool);
+		dsql_dbb* dbb = request->req_dbb;
+		size_t pos;
+		if (dbb->dbb_requests.find(request, pos)) {
+			dbb->dbb_requests.remove(pos);
+		}
+		dbb->deletePool(&request->req_pool);
 	}
 }
 
