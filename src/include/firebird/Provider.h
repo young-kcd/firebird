@@ -148,13 +148,6 @@ public:
 };
 #define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 12)
 
-#ifndef DSQL_close
-// TODO: avoid code duplication
-#define DSQL_close		1
-#define DSQL_drop		2
-#define DSQL_unprepare	4
-#endif
-
 class IRequest : public IRefCounted
 {
 public:

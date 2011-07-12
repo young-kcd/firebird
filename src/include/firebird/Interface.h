@@ -29,7 +29,7 @@
 #ifndef FB_INCLUDE_INTERFACE
 #define FB_INCLUDE_INTERFACE
 
-#include "types_pub.h"	//// FIXME:
+#include "ibase.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define FB_CARG __cdecl

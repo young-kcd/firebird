@@ -25,6 +25,7 @@
 
 #include "ibase.h"
 #include "firebird/impl/boost/preprocessor/seq/for_each_i.hpp"
+#include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
 	FB_MESSAGE_I(name, FB_BOOST_PP_CAT(FB_MESSAGE_X fields, 0))

@@ -145,7 +145,6 @@ typedef IPTR FB_THREAD_ID;
 
 /* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
-#define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
 // Intl types
 typedef SSHORT CHARSET_ID;

@@ -27,6 +27,8 @@
  *
  */
 
+#define FB_COMPILING_WHY_CPP
+
 #include "firebird.h"
 #include "firebird/Provider.h"
 #include "memory_routines.h"

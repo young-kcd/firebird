@@ -33,8 +33,6 @@
 #include "./Plugin.h"
 #include "./Provider.h"
 
-#include "firebird.h" //// FIXME:
-
 namespace Firebird {
 
 class ExternalEngine;
