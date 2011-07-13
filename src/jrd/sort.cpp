@@ -441,7 +441,6 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			wp[2] = wp[3];
 			wp[3] = w;
 
-		case SKD_d_float:
 		case SKD_float:
 			if (!direction)
 			{
@@ -1237,6 +1236,27 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		USHORT n = key->skd_length;
 		USHORT complement = key->skd_flags & SKD_descending;
 
+		// This trick replaces possibly negative zero with positive zero, so that both
+		// would be transformed into the same sort key and thus properly compared (see CORE-3547).
+		// Note that it's done only once, per SORT_put(), i.e. the transformation is not symmetric.
+		if (direction)
+		{
+			if (key->skd_dtype == SKD_double)
+			{
+				if (*(double*) p == 0)
+				{
+					*(double*) p = 0;
+				}
+			}
+			else if (key->skd_dtype == SKD_float)
+			{
+				if (*(float*) p == 0)
+				{
+					*(float*) p = 0;
+				}
+			}
+		}
+
 		switch (key->skd_dtype)
 		{
 		case SKD_ulong:
@@ -1289,7 +1309,6 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		case SKD_text:
 			break;
 
-		case SKD_d_float:
 		case SKD_float:
 		case SKD_double:
 			flag = (direction || !complement) ? direction : TRUE;
@@ -1384,7 +1403,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 					*(double*) p = 0;
 				}
 			}
-			else if (key->skd_dtype == SKD_float || key->skd_dtype == SKD_d_float)
+			else if (key->skd_dtype == SKD_float)
 			{
 				if (*(float*) p == 0)
 				{
@@ -1521,7 +1540,6 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			wp[2] = wp[3];
 			wp[3] = w;
 
-		case SKD_d_float:
 		case SKD_float:
 			if (!direction)
 			{
