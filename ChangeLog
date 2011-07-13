@@ -1,3 +1,21 @@
+ 2011-07-13 02:10  asfernandes 
+   M src/include/firebird/ExternalEngine.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+Remove the old getVersion method from external engines.
+
+ 2011-07-12 16:07  asfernandes 
+   M src/dsql/sqlda_pub.h
+   M src/include/fb_types.h
+   M src/include/firebird/ExternalEngine.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/Provider.h
+   M src/include/ibase.h
+   M src/include/types_pub.h
+   M src/yvalve/why.cpp
+Fixed problems in public headers.
+
  2011-07-10 01:23  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M lang_helpers/gds_codes.ftn
