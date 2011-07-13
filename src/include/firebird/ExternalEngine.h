@@ -38,9 +38,6 @@ namespace Firebird {
 class ExternalEngine;
 
 
-const int EXTERNAL_VERSION_1 = 1;
-
-
 struct BlrMessage
 {
 	const unsigned char* blr;
@@ -180,8 +177,6 @@ public:
 class ExternalEngine : public IPluginBase
 {
 public:
-	virtual int FB_CALL getVersion(Error* error) = 0;
-
 	// This method is called once (per ExternalEngine instance) before any following methods.
 	// The requested character set for data exchange inside methods of this interface should
 	// be copied to charSet parameter.

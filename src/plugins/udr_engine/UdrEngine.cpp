@@ -148,7 +148,6 @@ private:
 		const IRoutineMetadata* metadata, const string& entryPoint);
 
 public:
-	virtual int FB_CALL getVersion(Error* error);
 	virtual void FB_CALL open(Error* error, ExternalContext* context, Utf8* name, uint nameSize);
 	virtual void FB_CALL openAttachment(Error* error, ExternalContext* context);
 	virtual void FB_CALL closeAttachment(Error* error, ExternalContext* context);
@@ -626,12 +625,6 @@ template <typename T, typename T2> T2* Engine::getNode(T* nodes, const PathName&
 {
 	T* node = findNode<T>(nodes, moduleName, entryPoint);
 	return node->factory->newItem(metadata);
-}
-
-
-int FB_CALL Engine::getVersion(Error* /*error*/)
-{
-	return EXTERNAL_VERSION_1;
 }
 
 

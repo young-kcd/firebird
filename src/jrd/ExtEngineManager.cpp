@@ -846,14 +846,6 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 					engine = engineControl.plugin();
 					if (engine)
 					{
-						int version = engine->getVersion(RaiseError());
-						if (version != EXTERNAL_VERSION_1)
-						{
-							status_exception::raise(
-								Arg::Gds(isc_eem_bad_plugin_ver) <<
-									Arg::Num(version) << name);
-						}
-
 						Attachment::SyncGuard attGuard(tdbb->getAttachment());
 
 						key = EngineAttachment(engine, tdbb->getAttachment());
