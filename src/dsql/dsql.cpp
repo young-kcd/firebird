@@ -657,17 +657,6 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 		try {
 
-			if (!string) {
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
-					isc_arg_gds, isc_command_end_err2,
-					// CVC: Nothing will be line 1, column 1 for the user.
-					isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
-					isc_arg_end);	// Unexpected end of command
-			}
-			if (!length) {
-				length = strlen(string);
-			}
-
 // Figure out which parser version to use 
 /* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
@@ -1360,18 +1349,6 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		request->req_trans = *trans_handle;
 
 		try {
-
-			if (!string) {
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
-					isc_arg_gds, isc_command_end_err2,
-					// CVC: Nothing will be line 1, column 1 for the user.
-					isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
-					isc_arg_end);	// Unexpected end of command
-			}
-
-			if (!length) {
-				length = strlen(string);
-			}
 
 // Figure out which parser version to use 
 /* Since the API to dsql8_prepare is public and can not be changed, there needs to
@@ -4697,16 +4674,20 @@ static dsql_req* prepare(
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_wish_list, isc_arg_end);
 
-	if (!string) {
+	if (string && !string_length) {
+		size_t sql_length = strlen(string);
+		if (sql_length > MAX_USHORT)
+			sql_length = MAX_USHORT;
+		string_length = static_cast<USHORT>(sql_length);
+	}
+
+	if (!string || !string_length) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
 			isc_arg_gds, isc_command_end_err2,
 			// CVC: Nothing will be line 1, column 1 for the user.
 			isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
 			isc_arg_end);	// Unexpected end of command
 	}
-
-	if (!string_length)
-		string_length = strlen(string);
 
 /* Get rid of the trailing ";" if there is one. */
 
