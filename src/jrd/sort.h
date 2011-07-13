@@ -149,12 +149,11 @@ const int SKD_double		= 7;
 const int SKD_quad			= 8;
 const int SKD_timestamp		= 9;
 const int SKD_bytes			= 10;
-const int SKD_d_float		= 11;
-const int SKD_varying		= 12;		// non-international
-const int SKD_cstring		= 13;		// non-international
-const int SKD_sql_time		= 14;
-const int SKD_sql_date		= 15;
-const int SKD_int64			= 16;
+const int SKD_varying		= 11;		// non-international
+const int SKD_cstring		= 12;		// non-international
+const int SKD_sql_time		= 13;
+const int SKD_sql_date		= 14;
+const int SKD_int64			= 15;
 
 // skd_flags
 const UCHAR SKD_ascending		= 0;	// default initializer
