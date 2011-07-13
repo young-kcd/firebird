@@ -1,3 +1,8 @@
+ 2011-07-12 09:06  hvlad 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+Fixed bug CORE-3533 : Firebird memory not released (Using superserver)
+
  2011-07-08 11:33  paulbeach 
    M src/jrd/divorce.cpp
 Fix problem with fid's and GCD for MacOS 10.7 SuperServer
