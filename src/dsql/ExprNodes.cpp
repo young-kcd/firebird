@@ -4946,7 +4946,10 @@ bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode
 	}
 
 	const FieldNode* o = other->as<FieldNode>();
-	return o && fieldId == o->fieldId && fieldStream == o->fieldStream;
+	return o && fieldId == o->fieldId &&
+		(fieldStream == o->fieldStream ||
+		csb->csb_rpt[fieldStream].csb_relation == csb->csb_rpt[o->fieldStream].csb_relation ||
+		csb->csb_rpt[fieldStream].csb_procedure == csb->csb_rpt[o->fieldStream].csb_procedure);
 }
 
 bool FieldNode::computable(CompilerScratch* csb, SSHORT stream,
@@ -7610,7 +7613,10 @@ bool RecordKeyNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ Expr
 	RecordKeyNode* o = other->as<RecordKeyNode>();
 	fb_assert(o);
 
-	return blrOp == o->blrOp && recStream == o->recStream;
+	return blrOp == o->blrOp &&
+		(recStream == o->recStream ||
+		csb->csb_rpt[recStream].csb_relation == csb->csb_rpt[o->recStream].csb_relation ||
+		csb->csb_rpt[recStream].csb_procedure == csb->csb_rpt[o->recStream].csb_procedure);
 }
 
 ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)
