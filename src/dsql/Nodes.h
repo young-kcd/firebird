@@ -172,6 +172,9 @@ public:
 		const Firebird::string& sqlText);
 
 protected:
+	typedef Firebird::Pair<Firebird::Left<Firebird::MetaName, bid> > MetaNameBidPair;
+	typedef Firebird::GenericMap<MetaNameBidPair> MetaNameBidMap;
+
 	// Return exception code based on combination of create and alter clauses.
 	static ISC_STATUS createAlterCode(bool create, bool alter, ISC_STATUS createCode,
 		ISC_STATUS alterCode, ISC_STATUS createOrAlterCode)

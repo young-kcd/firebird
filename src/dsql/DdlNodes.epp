@@ -1378,6 +1378,10 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 	if (!secondPass && modified)
 	{
+		// Get all comments from the old parameter list.
+		MetaNameBidMap comments;
+		collectParamComments(tdbb, transaction, comments);
+
 		// delete all old arguments
 		DropFunctionNode::dropArguments(tdbb, transaction, name, package);
 
@@ -1386,12 +1390,18 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		ParameterClause returnParameter(*tdbb->getDefaultPool(), returnType.legacyField,
 			returnType.collate, NULL, NULL);
 		returnParameter.resolve(dsqlScratch);
-		storeArgument(tdbb, dsqlScratch, transaction, 0, returnParameter);
+		storeArgument(tdbb, dsqlScratch, transaction, 0, returnParameter, NULL);
 
 		for (unsigned i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause& parameter = parameters[i];
-			storeArgument(tdbb, dsqlScratch, transaction, i + 1, parameter);
+			bid comment;
+
+			// Find the original comment to recreate in the new parameter.
+			if (!comments.get(parameter.name, comment))
+				comment.clear();
+
+			storeArgument(tdbb, dsqlScratch, transaction, i + 1, parameter, &comment);
 		}
 	}
 
@@ -1399,7 +1409,8 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, unsigned pos, const ParameterClause& parameter)
+	jrd_tra* transaction, unsigned pos, const ParameterClause& parameter,
+	const bid* comment)
 {
 	Attachment* attachment = transaction->getAttachment();
 
@@ -1427,6 +1438,9 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 		}
 		else
 			ARG.RDB$PACKAGE_NAME.NULL = TRUE;
+
+		ARG.RDB$SYSTEM_FLAG = 0;
+		ARG.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 		ARG.RDB$ARGUMENT_POSITION.NULL = FALSE;
 		ARG.RDB$ARGUMENT_POSITION = pos;
@@ -1518,6 +1532,10 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
 				dsqlScratch->getBlrData());
 		}
+
+		ARG.RDB$DESCRIPTION.NULL = !comment || comment->isEmpty();
+		if (!ARG.RDB$DESCRIPTION.NULL)
+			ARG.RDB$DESCRIPTION = *comment;
 	}
 	END_STORE
 }
@@ -1639,6 +1657,22 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 	}
 
 	invalid = false;
+}
+
+void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* transaction,
+	MetaNameBidMap& items)
+{
+	AutoRequest requestHandle;
+
+	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+		ARG IN RDB$FUNCTION_ARGUMENTS
+		WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
+			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
+	{
+		if (!ARG.RDB$DESCRIPTION.NULL)
+			items.put(ARG.RDB$ARGUMENT_NAME, ARG.RDB$DESCRIPTION);
+	}
+	END_FOR
 }
 
 

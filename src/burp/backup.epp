@@ -3033,6 +3033,8 @@ void write_function_args(const GDS_NAME package, GDS_NAME funcptr)
 				PUT_TEXT(att_functionarg_field_name, X.RDB$FIELD_NAME);
 			if (!X.RDB$RELATION_NAME.NULL)
 				PUT_TEXT(att_functionarg_relation_name, X.RDB$RELATION_NAME);
+			if (!X.RDB$DESCRIPTION.NULL)
+				put_source_blob(att_functionarg_description, att_functionarg_description, X.RDB$DESCRIPTION);
 
 			put(tdgbl, att_end);
 		END_FOR;

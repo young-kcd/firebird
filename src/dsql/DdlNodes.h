@@ -275,8 +275,9 @@ private:
 		bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		unsigned pos, const ParameterClause& parameter);
+		unsigned pos, const ParameterClause& parameter, const bid* comment);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
+	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
 
 public:
 	Firebird::MetaName name;
@@ -372,9 +373,6 @@ protected:
 	}
 
 private:
-	typedef Firebird::Pair<Firebird::Left<Firebird::MetaName, bid> > MetaNameBidPair;
-	typedef Firebird::GenericMap<MetaNameBidPair> MetaNameBidMap;
-
 	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);

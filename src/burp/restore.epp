@@ -4618,6 +4618,13 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					bad_attribute(scan_next_attr, attribute, 90);
 				break;
 
+			case att_functionarg_description:
+				if (tdgbl->RESTORE_format >= 10)
+					eat_blob(tdgbl);
+				else
+					bad_attribute(scan_next_attr, attribute, 90);
+				break;
+
 			default:
 				bad_attribute(scan_next_attr, attribute, 90);
 				// msg 90 function argument
@@ -4648,6 +4655,10 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 			X.RDB$ARGUMENT_MECHANISM.NULL = TRUE;
 			X.RDB$FIELD_NAME.NULL = TRUE;
 			X.RDB$RELATION_NAME.NULL = TRUE;
+			X.RDB$DESCRIPTION.NULL = TRUE;
+
+			X.RDB$SYSTEM_FLAG = 0;
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 
 			skip_init(&scan_next_attr);
 			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -4814,6 +4825,16 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
+				case att_functionarg_description:
+					if (tdgbl->RESTORE_format >= 10)
+					{
+						get_source_blob(tdgbl, X.RDB$DESCRIPTION, false);
+						X.RDB$DESCRIPTION.NULL = FALSE;
+					}
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
 				default:
 					bad_attribute(scan_next_attr, attribute, 90);
 					// msg 90 function argument
@@ -4920,6 +4941,13 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
 
+				case att_functionarg_description:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
 				default:
 					bad_attribute(scan_next_attr, attribute, 90);
 					// msg 90 function argument
@@ -5018,6 +5046,13 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_relation_name:
 					if (tdgbl->RESTORE_format >= 10)
 						eat_text(tdgbl);
+					else
+						bad_attribute(scan_next_attr, attribute, 90);
+					break;
+
+				case att_functionarg_description:
+					if (tdgbl->RESTORE_format >= 10)
+						eat_blob(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;

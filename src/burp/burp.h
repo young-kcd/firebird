@@ -444,6 +444,7 @@ enum att_type {
 	att_functionarg_type_mechanism, // type inheritance
 	att_functionarg_field_name,
 	att_functionarg_relation_name,
+	att_functionarg_description,
 
 	// TYPE relation attributes
 	att_type_name = SERIES,

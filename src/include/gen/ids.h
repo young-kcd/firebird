@@ -263,6 +263,8 @@
 	const USHORT  f_arg_arg_mech = 17;
 	const USHORT  f_arg_fname = 18;
 	const USHORT  f_arg_rname = 19;
+	const USHORT  f_arg_sys_flag = 20;
+	const USHORT  f_arg_desc = 21;
 
 
 // Relation 16 (RDB$FILTERS)
@@ -601,5 +603,17 @@
 	const USHORT  f_sec_first_name = 4;
 	const USHORT  f_sec_middle_name = 5;
 	const USHORT  f_sec_last_name = 6;
+
+
+// Relation 44 (MON$TIME_STATS)
+
+	const USHORT  f_mon_time_stat_id = 0;
+	const USHORT  f_mon_time_stat_group = 1;
+	const USHORT  f_mon_time_cpu_user = 2;
+	const USHORT  f_mon_time_cpu_sys = 3;
+	const USHORT  f_mon_time_sync_user = 4;
+	const USHORT  f_mon_time_sync_sys = 5;
+	const USHORT  f_mon_time_io_user = 6;
+	const USHORT  f_mon_time_io_sys = 7;
 
 
