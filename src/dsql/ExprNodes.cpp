@@ -4946,10 +4946,19 @@ bool FieldNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ ExprNode
 	}
 
 	const FieldNode* o = other->as<FieldNode>();
-	return o && fieldId == o->fieldId &&
-		(fieldStream == o->fieldStream ||
-		csb->csb_rpt[fieldStream].csb_relation == csb->csb_rpt[o->fieldStream].csb_relation ||
-		csb->csb_rpt[fieldStream].csb_procedure == csb->csb_rpt[o->fieldStream].csb_procedure);
+
+	if (o)
+	{
+		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[fieldStream];
+		CompilerScratch::csb_repeat* const other_tail = &csb->csb_rpt[o->fieldStream];
+
+		return fieldId == o->fieldId &&
+			(fieldStream == o->fieldStream ||
+			(tail->csb_relation && other_tail->csb_relation && tail->csb_relation->rel_id == other_tail->csb_relation->rel_id) ||
+			(tail->csb_procedure && other_tail->csb_procedure && tail->csb_procedure->getId() == other_tail->csb_procedure->getId()));
+	}
+
+	return false;
 }
 
 bool FieldNode::computable(CompilerScratch* csb, SSHORT stream,
@@ -7613,10 +7622,13 @@ bool RecordKeyNode::sameAs(thread_db* tdbb, CompilerScratch* csb, /*const*/ Expr
 	RecordKeyNode* o = other->as<RecordKeyNode>();
 	fb_assert(o);
 
+	CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[recStream];
+	CompilerScratch::csb_repeat* const other_tail = &csb->csb_rpt[o->recStream];
+
 	return blrOp == o->blrOp &&
 		(recStream == o->recStream ||
-		csb->csb_rpt[recStream].csb_relation == csb->csb_rpt[o->recStream].csb_relation ||
-		csb->csb_rpt[recStream].csb_procedure == csb->csb_rpt[o->recStream].csb_procedure);
+		(tail->csb_relation && other_tail->csb_relation && tail->csb_relation->rel_id == other_tail->csb_relation->rel_id) ||
+		(tail->csb_procedure && other_tail->csb_procedure && tail->csb_procedure->getId() == other_tail->csb_procedure->getId()));
 }
 
 ValueExprNode* RecordKeyNode::pass1(thread_db* tdbb, CompilerScratch* csb)

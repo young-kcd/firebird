@@ -78,7 +78,20 @@ bool checkExpressionIndex(thread_db* tdbb, CompilerScratch* csb, const index_des
 		}
 
 		fb_assert(idx->idx_flags & idx_expressn);
-		return idx->idx_expression->sameAs(tdbb, csb, node);
+
+		// We need to copy the expression so that its streams would be
+		// remapped to our csb and thus compared properly
+		UCHAR local_map[JrdStatement::MAP_LENGTH];
+		UCHAR* map = csb->csb_rpt[stream].csb_map;
+		if (!map)
+		{
+			map = local_map;
+			fb_assert(stream <= MAX_STREAMS);
+			map[0] = (UCHAR) stream;
+		}
+
+		AutoPtr<ExprNode> expression(NodeCopier::copy(tdbb, csb, idx->idx_expression, map));
+		return expression->sameAs(tdbb, csb, node);
 	}
 
 	return false;
