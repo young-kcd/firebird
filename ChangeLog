@@ -1,3 +1,13 @@
+ 2011-07-13 15:15  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/sort.cpp
+   M src/jrd/sort.h
+Front ported CORE-3547: Floating-point negative zero doesn't match positive zero in the index.
+
+ 2011-07-13 14:50  dimitr 
+   M src/dsql/ExprNodes.cpp
+Poor man's attempt to fix the expression indices. In the old code, we didn't require node1->stream and node2->stream to be the same, we just needed node2->stream to be the one we considered for index matching. Different contexts don't necessarily mean different nodes, the relation could still be the same.
+
  2011-07-13 02:10  asfernandes 
    M src/include/firebird/ExternalEngine.h
    M src/jrd/ExtEngineManager.cpp
